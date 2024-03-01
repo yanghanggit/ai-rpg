@@ -20,25 +20,7 @@ prompt = ChatPromptTemplate.from_messages(
     [
         (
             "system",
-<<<<<<< HEAD
             f"""{prompt_content}""",
-=======
-            """
-# Profile
-
-## Role
-- 你需要扮演类似《龙与地下城》中的1位老人.
-- 用户将扮演冒险者. 
-- 老人是冒险者的祖父.
-
-## Backgroud
-- 这是一个类似《龙与地下城》的故事；
-
-## Rule
-- 不要回答任何超出你的角色设定的问题.
-- 每次输出不要超过50个token, 语意要保持完整
-            """,
->>>>>>> f791899ab7ef4639b47758d3f2988f0f707610be
         ),
         MessagesPlaceholder(variable_name="chat_history"),
         ("user", "{input}"),

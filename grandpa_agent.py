@@ -29,8 +29,10 @@ prompt = ChatPromptTemplate.from_messages(
 ## Rule
 - 你需要给出一些意见,来帮助他可以探索地下城,最终拿到地下城的宝剑.
 - 你每次回答的时候都应该给出三个选择.
+- 你需要根据下面输入的背景故事和对话来推动故事发展.
             """,
         ),
+        ("background_story"),
         MessagesPlaceholder(variable_name="chat_history"),
         ("user", "{input}"),
         MessagesPlaceholder(variable_name="agent_scratchpad"),
@@ -51,6 +53,7 @@ llm_with_tools = llm.bind_functions(tools)
 agent = (
     {
         "input": lambda x: x["input"],
+        "background_story": lambda x: x["background_story"],
         "agent_scratchpad": lambda x: format_to_openai_tool_messages(
             x["intermediate_steps"]
         ),
@@ -71,6 +74,7 @@ app = FastAPI(
 
 class Input(BaseModel):
     input: str
+    background_story: str
     chat_history: List[Union[HumanMessage, AIMessage, FunctionMessage]] = Field(
         ...,
         extra={"widget": {"type": "chat", "input": "input", "output": "output"}},

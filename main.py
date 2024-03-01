@@ -38,7 +38,7 @@ def main():
         story_history.extend([HumanMessage(content=conversation),story])
 
     
-        courage_response = evaluate_agent.invoke({"input": human})
+        courage_response = evaluate_agent.invoke({"input": story_response['output']})
         courage = courage_response['output']
         if (type(courage) == int):
             total_courage += courage 

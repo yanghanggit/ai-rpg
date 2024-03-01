@@ -12,39 +12,32 @@ def main():
     total_courage = 0
     background_story = ""
 
-    print("成功进入龙与地下城世界.")
+    print("进入main")
+    print("-------------------")
 
-    story_response = story_agent.invoke({"input": "进入龙与地下城世界,开始探索.", "chat_history": story_history})
+    story_response = story_agent.invoke({"input": "故事开始.", "chat_history": story_history})
     story = AIMessage(content=story_response['output'])
-    story_history.extend([HumanMessage(content="进入龙与地下城世界,开始探索."), story])
-    background_story.join("背景故事:" + story_response['output'])
-
-    grandpa_response = grandpa_agent.invoke({"input": "祖父,我想去探索村外的地下城."
-                                             , "background_story": background_story
-                                             , "chat_history": chat_to_grandpa_history})
-    grandpa = AIMessage(content=grandpa_response['output'])
-    chat_to_grandpa_history.extend([HumanMessage(content="祖父,我想去探索村外的地下城."), grandpa])
-
+    story_history.extend([HumanMessage(content="故事开始."), story])
     print("故事:" + story_response['output'])
-    print("\n祖父:" + grandpa_response['output'])
 
     while True:
-        human = input("你:")
+        human = input("冒险者:")
         if "quit" in human:
             sys.exit()
 
-        story_response = story_agent.invoke({"input": human, "chat_history": story_history})
-        story = AIMessage(content=story_response['output'])
-        story_history.extend([HumanMessage(content=human),story])
-        background_story.join(story_response['output'])
-
-        
         grandpa_response = grandpa_agent.invoke({"input": human
-                                                 , "background_story": background_story
                                                  , "chat_history": chat_to_grandpa_history})
         grandpa = AIMessage(content=grandpa_response['output'])
-        chat_to_grandpa_history.extend([HumanMessage(content=human), grandpa])
+        chat_to_grandpa_history.extend([HumanMessage(content=human), grandpa])   
 
+        conversation = "冒险者说:" + human + ".\n祖父说:" + grandpa_response['output']
+        inputs = f"""请将{conversation}里的内容进行整理并润色，然后输出"""      
+
+        story_response = story_agent.invoke({"input": inputs, "chat_history": story_history})
+        story = AIMessage(content=story_response['output'])
+        story_history.extend([HumanMessage(content=conversation),story])
+
+    
         courage_response = evaluate_agent.invoke({"input": human})
         courage = courage_response['output']
         if (type(courage) == int):
@@ -53,8 +46,7 @@ def main():
             total_courage += 0
 
         print("故事:" + story_response['output'])
-        print("\n祖父:" + grandpa_response['output'])
-        print(f"当前勇气值是{total_courage}")
+        print(f"放心程度:{total_courage}")
         
 
         

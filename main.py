@@ -19,6 +19,7 @@ def main():
     story = AIMessage(content=story_response['output'])
     story_history.extend([HumanMessage(content="故事开始."), story])
     print("故事:" + story_response['output'])
+    print("-------------------")
 
     while True:
         human = input("用户输入:")

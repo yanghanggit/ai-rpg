@@ -47,6 +47,7 @@ def main():
 
         print("故事:" + story_response['output'])
         print(f"放心程度:{total_courage}")
+        print("----------")
         
 
         

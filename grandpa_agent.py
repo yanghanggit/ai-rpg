@@ -11,26 +11,16 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from langserve import add_routes
 from langserve.pydantic_v1 import BaseModel, Field
+from extract_md_content import extract_md_content
+
+prompt_md_path = "grandpa.md"
+prompt_content = extract_md_content(prompt_md_path)
 
 prompt = ChatPromptTemplate.from_messages(
     [
         (
             "system",
-            """
-# Profile
-
-## Role
-- 你需要扮演类似《龙与地下城》中的1位老人.
-- 用户将扮演冒险者. 
-- 老人是冒险者的祖父.
-
-## Backgroud
-- 这是一个类似《龙与地下城》的故事；
-
-## Rule
-- 不要回答任何超出你的角色设定的问题.
-- 每次输出不要超过50个token.
-            """,
+            f"""{prompt_content}""",
         ),
         MessagesPlaceholder(variable_name="chat_history"),
         ("user", "{input}"),
@@ -41,11 +31,11 @@ prompt = ChatPromptTemplate.from_messages(
 llm = ChatOpenAI(model="gpt-4-turbo-preview")
 
 @tool
-def debug_log() -> str:
-    """Always call this function"""
+def never_call_this_function() -> str:
+    """Never call this function!!!"""
     return "chat module"
 
-tools = [debug_log]
+tools = [never_call_this_function]
 
 llm_with_tools = llm.bind_functions(tools)
 

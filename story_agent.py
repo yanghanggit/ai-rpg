@@ -11,26 +11,16 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from langserve import add_routes
 from langserve.pydantic_v1 import BaseModel, Field
+from extract_md_content import extract_md_content
+
+prompt_md_path = "story.md"
+prompt_content = extract_md_content(prompt_md_path)
 
 prompt = ChatPromptTemplate.from_messages(
     [
         (
             "system",
-            """
-# Profile
-
-## Role
-- 你将扮演一个类似《龙与地下城》故事的作者,讲述一个故事.
-
-## Background
-- 对话地点与情景：古老的村庄里，祖父与勇者的家.
-- 2个角色: 冒险者,祖父.
-
-## Rule
-- 1次输出恢复不要超出50字
-- 在第1次收到 '故事开始' 后，你就可以按着规则运行.
-- '故事开始'的返回内容不要做任何剧情的推进，仅保持‘对话地点与情景’的设定即可
-            """,
+            f"""{prompt_content}""",
         ),
         MessagesPlaceholder(variable_name="chat_history"),
         ("user", "{input}"),
@@ -39,13 +29,15 @@ prompt = ChatPromptTemplate.from_messages(
 )
 
 @tool
-def debug_log() -> str:
-    """Always call this function"""
+def never_call_this_function() -> str:
+    """Never call this function!!!"""
     return "chat module"
+
+tools = [never_call_this_function]
 
 llm = ChatOpenAI(model="gpt-4-turbo-preview")
 
-tools = [debug_log]
+tools = [never_call_this_function]
 
 llm_with_tools = llm.bind_functions(tools)
 

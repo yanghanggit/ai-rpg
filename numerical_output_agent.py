@@ -8,6 +8,10 @@ from langchain_openai import ChatOpenAI
 from fastapi import FastAPI
 from typing import Any
 from langserve import add_routes
+from extract_md_content import extract_md_content
+
+prompt_md_path = "evaluate.md"
+prompt_content = extract_md_content(prompt_md_path)
 
 class Evaluate(BaseModel):
     """Evaluate based on prompt"""
@@ -31,21 +35,7 @@ def parse(output):
 prompt = ChatPromptTemplate.from_messages(
     [
         ("system",
-        """
-# Profile
-
-## Role
-- 你需要负责对输入的话进行评估,评估的标准必须参考Rule;
-
-## Background
-- 一个冒险者与他的祖父之间的对话,冒险者希望说服祖父让他出村去地下城探索.
-- 祖父非常担心冒险者的安全.
-
-## Rule
-- 每次从冒险者和祖父的对话中评估出祖父的放心程度.
-- 根据对话的效果给出不同数值的放心程度.
-- 放心程度的范围是[1-10].
-    """),
+        f"""{prompt_content}"""),
     ("user", "{input}"),
     MessagesPlaceholder(variable_name="agent_scratchpad"),
     ]

@@ -29,7 +29,7 @@ prompt = ChatPromptTemplate.from_messages(
 
 ## Rule
 - 不要回答任何超出你的角色设定的问题.
-- 每次输出不要超过50个token.
+- 每次输出不要超过50个token, 语意要保持完整
             """,
         ),
         MessagesPlaceholder(variable_name="chat_history"),

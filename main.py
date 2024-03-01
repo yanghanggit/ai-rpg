@@ -21,7 +21,7 @@ def main():
     print("故事:" + story_response['output'])
 
     while True:
-        human = input("冒险者:")
+        human = input("用户输入:")
         if "quit" in human:
             sys.exit()
 
@@ -47,7 +47,7 @@ def main():
 
         print("故事:" + story_response['output'])
         print(f"放心程度:{total_courage}")
-        
+        print("-------------------")
 
         
         

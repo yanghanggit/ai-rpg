@@ -24,34 +24,52 @@ def run_user_system():
     scene_achat_history = []
 
     #
-    env_script = talk_to_agent(
+    scene_state = talk_to_agent(
             f"""
 #状态
--村长坐在屋子里（篝火旁）
+-晚上
+#事件
+-村长坐在屋子里（篝火旁），回忆年轻时的事情
 #需求
 -请根据#状态与#事件，输出一段描写文字，表现此时的场景状态
             """, 
             scene_agent, scene_achat_history)
     #
-    print("[scene]:", env_script)
+    print("[scene]:", scene_state)
 
+    #
+    event = f"""我进入了屋子，面色凝重"""
+    print("[event]:", event)
 
     #
     print("[npc]:", talk_to_agent(
             f"""
-#状态
--{env_script}
+#场景
+-{scene_state}
 #事件
--我进入了屋子
-#要求
--根据#此时环境状态，输出一段对话以标志着村长与我的对话开始
+-{event}
+#需求
+-根据#场景与#事件，输出对话，并开启对话村长与我的对话开始
             """, 
             npc_agent, npc_achat_history))
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     while True:
         usr_input = input("[user input]: ")
 
-        if "quit" in usr_input:
+        if "/quit" in usr_input:
             sys.exit()
 
         elif "/talk" in usr_input:
@@ -74,4 +92,5 @@ def run_user_system():
 
 
 if __name__ == "__main__":
+    print("==============================================")
     run_user_system()

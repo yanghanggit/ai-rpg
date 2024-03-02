@@ -15,33 +15,63 @@ def parse_talk(input_val):
 
 def run_user_system():
 
+    #
     npc_agent = RemoteRunnable("http://localhost:8001/actor/npc/elder/")
-    chat_history = []
+    npc_achat_history = []
 
-    print(
-         talk_to_agent("故事开始", npc_agent, chat_history)
-    )
-    print("---------------------------------------------------")
+    #
+    scene_agent = RemoteRunnable("http://localhost:8002/actor/npc/house/")
+    scene_achat_history = []
 
+    #
+    env_script = talk_to_agent(
+            f"""
+#状态
+-村长坐在屋子里（篝火旁）
+#事件
+-勇者进入了屋子
+#需求
+-请根据#状态与#事件，输出一段描写文字，表现此时的场景状态
+            """, 
+            scene_agent, scene_achat_history)
+    #
+    print("[scene]:", env_script)
+
+
+    #
+    print("[npc]:", talk_to_agent(
+            f"""
+#此时环境状态
+-{env_script}
+#要求
+-根据#此时环境状态，输出一段对话，标志着村长与勇者的对话开始
+            """, 
+            npc_agent, npc_achat_history))
 
     while True:
         usr_input = input("[user input]: ")
-        print("---------------------------------------------------")
+
         if "quit" in usr_input:
             sys.exit()
-        
 
-        if "/talk" in usr_input:
+        elif "/talk" in usr_input:
             real_input = parse_talk(usr_input)
-            print("[you say]:", real_input)
+            print("[you]:", real_input)
             print(
-                '[npc say]:', talk_to_agent(real_input, npc_agent, chat_history)
+                '[npc]:', talk_to_agent(real_input, npc_agent, npc_achat_history)
             )
+
         else:
             print("error command!")
 
 
-        print("---------------------------------------------------")
+
+
+
+
+
+
+
 
 if __name__ == "__main__":
     run_user_system()

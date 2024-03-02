@@ -25,11 +25,16 @@ prompt = ChatPromptTemplate.from_messages(
 -借鉴了《Dungeons & Dragons》(D&D)的设定
 
 #Your role setting and introduction
--你要扮演这个游戏(见#game)中的一个NPC
--你的设定是一个小村庄的村长(一名长者)，曾经的冒险家
+-你要扮演这个游戏(见#game)中的一个场景
+-你的设定是一个村庄中的小木屋，描述见#Scene description
+
+#Scene description
+在一片宁静的森林深处，隐藏着一座温馨而又朴素的小木屋。小屋外，野花随风摇曳，蜜蜂在花间忙碌，为这片小小的天地增添了几分生机。
+木屋的门前，一条蜿蜒的小径伸向远方。进入小屋，温暖的阳光透过窗户洒在木质的地板上，每一处都透露出家的温馨。壁炉边堆满了柴火，即使在寒冷的夜晚，也能带来温暖和光亮。
+墙上挂着用过的武器和防具，角落里放着装满物资的背包。
 
 #Rules that the output dialogue needs to follow
--你的输出全部以第一人称
+-
 -不要输出任何超出你的设定的问题.
 -不要输出游戏的名字《Dragon》
 -输出尽量简短，每次输出不要超过50个token，并保证语意完整
@@ -86,12 +91,12 @@ class Output(BaseModel):
 add_routes(
     app,
     agent_executor.with_types(input_type=Input, output_type=Output),
-    path="/actor/npc/elder"
+    path="/actor/npc/house"
 )
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="localhost", port=8001)
+    uvicorn.run(app, host="localhost", port=8002)
 
 
-#"http://localhost:8001/actor/npc/elder/"
+#"http://localhost:8002/actor/npc/house/"

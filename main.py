@@ -22,16 +22,16 @@ def main():
     print("-------------------")
 
     while True:
-        human = input("用户输入:")
-        if "quit" in human:
+        usr_input = input("用户输入:")
+        if "quit" in usr_input:
             sys.exit()
 
-        grandpa_response = grandpa_agent.invoke({"input": human
+        grandpa_response = grandpa_agent.invoke({"input": usr_input
                                                  , "chat_history": chat_to_grandpa_history})
         grandpa = AIMessage(content=grandpa_response['output'])
-        chat_to_grandpa_history.extend([HumanMessage(content=human), grandpa])   
+        chat_to_grandpa_history.extend([HumanMessage(content=usr_input), grandpa])   
 
-        conversation = "冒险者说:" + human + ".\n祖父说:" + grandpa_response['output']
+        conversation = "冒险者说:" + usr_input + ".\n祖父说:" + grandpa_response['output']
         inputs = f"""请将{conversation}里的内容进行整理并润色，然后输出"""      
 
         story_response = story_agent.invoke({"input": inputs, "chat_history": story_history})

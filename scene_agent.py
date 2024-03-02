@@ -34,7 +34,7 @@ prompt = ChatPromptTemplate.from_messages(
 墙上挂着用过的武器和防具，角落里放着装满物资的背包。
 
 #Rules that the output dialogue needs to follow
--
+-你的输出全部以第3人称
 -不要输出任何超出你的设定的问题.
 -不要输出游戏的名字《Dragon》
 -输出尽量简短，每次输出不要超过50个token，并保证语意完整

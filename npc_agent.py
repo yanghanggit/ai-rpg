@@ -29,7 +29,7 @@ prompt = ChatPromptTemplate.from_messages(
 -你的设定是一个小村庄的村长(一名长者)，曾经的冒险家
 
 #Rules that the output dialogue needs to follow
--你的输出全部以第一人称
+-你的输出全部以第1人称
 -不要输出任何超出你的设定的问题.
 -不要输出游戏的名字《Dragon》
 -输出尽量简短，每次输出不要超过50个token，并保证语意完整

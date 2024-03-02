@@ -44,24 +44,14 @@ def run_user_system():
     #
     print("[npc]:", talk_to_agent(
             f"""
-#场景
+# 场景
 -{scene_state}
-#事件
+# 事件
 -{event}
-#需求
--根据#场景与#事件，输出对话，并开启对话村长与我的对话开始
+# 需求
+-根据场景与事件输出对话。标志着村长与我的对话开始
             """, 
             npc_agent, npc_achat_history))
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -80,15 +70,11 @@ def run_user_system():
             )
 
         else:
-            print("error command!")
-
-
-
-
-
-
-
-
+            real_input = parse_talk(usr_input)
+            print("[default]:", real_input)
+            print(
+                '[npc]:', talk_to_agent(real_input, npc_agent, npc_achat_history)
+            )
 
 
 if __name__ == "__main__":

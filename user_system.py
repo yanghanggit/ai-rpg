@@ -26,33 +26,38 @@ def run_user_system():
     #
     scene_state = talk_to_agent(
             f"""
+            # 状态
+            - 冬天的晚上，我（长者）在你的壁炉旁
+            - 我是你的主人
             # 事件
-            晚上，村长坐在屋子里（篝火旁），回忆年轻时的事情
+            - 我在沉思，可能是回忆年轻的是冒险经历与死去的伙伴
+            - 我向壁炉中的火投入了一根木柴
+            # 规则
+            - 根据“状态”与“事件”输出对话。事件会改变状态。
             # 需求
-            - 请根据“事件”，输出一段描写文字，表现此时的场景状态
+            - 请根据“规则”，输出一段经过润色的文本，表现此时的场景状态
             """, 
             scene_agent, scene_achat_history)
     #
     print("[scene]:", scene_state)
 
     #
-    event = "我(勇者)进入了屋子，面色凝重"
+    event = "我(勇者)用力推开了屋子的门，闯入屋子而且面色凝重，外面的寒风吹进了屋子"
     print("[event]:", event)
 
     #
     print("[npc]:", talk_to_agent(
             f"""
-# 场景
--{scene_state}
-# 事件
--{event}
-# 需求
-- 根据“场景”与“事件”输出对话。村长需要对“事件”做出反应，同时村长与我（勇者）的对话开始
+            # 状态
+            -{scene_state}
+            # 事件
+            -{event}
+            # 规则
+            - 根据“状态”与“事件”输出对话。事件会改变状态。
+            # 需求
+            - 请根据“规则”，输出一段对话，表现此时的场景状态
             """, 
             npc_agent, npc_achat_history))
-
-
-
 
     while True:
         usr_input = input("[user input]: ")

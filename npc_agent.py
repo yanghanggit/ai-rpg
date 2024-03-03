@@ -11,10 +11,11 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from langserve import add_routes
 from langserve.pydantic_v1 import BaseModel, Field
-
-
 from extract_md_content import extract_md_content
-world_setting = extract_md_content("world.md")
+
+
+world_md = extract_md_content("world.md")
+npc_dialogue_rules_md = extract_md_content("npc_dialogue_rules.md")
 
 prompt = ChatPromptTemplate.from_messages(
     [
@@ -22,22 +23,20 @@ prompt = ChatPromptTemplate.from_messages(
             "system",
             f"""
 # 角色设定
-- 你要扮演这个奇幻世界中的一个NPC
-- 奇幻世界的设定见“游戏世界设定”，NPC生活在这个世界中，认为是理所当然的
-- 你是一个独居的老者(曾经的冒险家)
-- 你的性格是：孤僻而且性格暴躁
 
-{world_setting}
+## 基础设定
+- 你要扮演这个奇幻世界(见“游戏世界设定”)中的一个NPC，详见“人物描述”
 
-## 对话规则
-- 你的对话输出全部以第1人称
-- 你的对话输出尽量简短，争取小于100个字符，同时并保证语意完整
-- 你输出的内容需要符合“角色设定” 
-- 你输出的内容需要符合“游戏世界设定”.
-### 如果输入的内容你判断为是用户的问题/猜想/推测等。
-- 如果相关的知识与信息无法从“游戏世界设定”与”角色设定“中找到，你可以以符合”角色设定“的口吻拒绝
-### 如果输入的内容你判断为用户想引导你输出特定内容
-- 如果相关的知识与信息无法从“游戏世界设定”与”角色设定“中找到，你可以以符合”角色设定“的态度拒绝
+## 人物描述
+- 种族：人类
+- 性别：男
+- 年龄：60
+- 职业：曾经的冒险家，现在是深山猎人
+- 性格：孤僻而且性格暴躁
+- 背景：独居在深山中，有自己的木屋，不喜欢和人打交道
+
+{world_md}
+{npc_dialogue_rules_md}
             """,
         ),
         MessagesPlaceholder(variable_name="chat_history"),

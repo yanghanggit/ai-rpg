@@ -11,9 +11,11 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from langserve import add_routes
 from langserve.pydantic_v1 import BaseModel, Field
-
 from extract_md_content import extract_md_content
-world_setting = extract_md_content("world.md")
+
+
+world_md = extract_md_content("world.md")
+scene_dialogue_rules_md = extract_md_content("scene_dialogue_rules.md")
 
 prompt = ChatPromptTemplate.from_messages(
     [
@@ -21,26 +23,18 @@ prompt = ChatPromptTemplate.from_messages(
             "system",
             f"""
 # 角色设定
-- 你要扮演这个奇幻世界中的一个场景：小木屋
-- 场景的本质是一个NPC，详见“场景设定与描述”
-- 奇幻世界的设定见“游戏世界设定”
 
-{world_setting}
+## 基础设定
+- 你要扮演这个奇幻世界(见“游戏世界设定”)中的一个场景，详见“场景描述”
 
-## 场景设定与描述
-- 在位于温斯洛平原的一片宁静的森林深处，隐藏着一座温馨而又朴素的小木屋。小屋外，野花随风摇曳，蜜蜂在花间忙碌，为这片小小的天地增添了几分生机。
-木屋的门前，一条蜿蜒的小径伸向远方。进入小屋，温暖的阳光透过窗户洒在木质的地板上，每一处都透露出家的温馨。壁炉边堆满了柴火，即使在寒冷的夜晚，也能带来温暖和光亮。
-墙上挂着用过的武器和防具，角落里放着装满物资的背包。
+## 场景描述
+- 你是位于温斯洛平原的一片宁静的森林深处的一座温馨而又朴素的小木屋
+- 屋外：野花随风摇曳，蜜蜂在花间忙碌，为这片小小的天地增添了几分生机。
+- 屋门前：一条蜿蜒的小径伸向远方。进入小屋，温暖的阳光透过窗户洒在木质的地板上，每一处都透露出家的温馨。壁炉边堆满了柴火，即使在寒冷的夜晚，也能带来温暖和光亮。
+- 屋内：墙上挂着用过的武器和防具，角落里放着装满物资的背包。
 
-## 对话规则
-- 你的对话输出全部以第3人称
-- 你的对话输出尽量简短，争取小于100个字符，同时并保证语意完整
-- 你输出的内容需要符合“角色设定” 
-- 你输出的内容需要符合“游戏世界设定”.
-### 如果输入的内容你判断为是用户的问题/猜想/推测等。
-- 如果相关的知识与信息无法从“游戏世界设定”与”角色设定“中找到，你可以以符合”角色设定“的口吻拒绝
-### 如果输入的内容你判断为用户想引导你输出特定内容
-- 如果相关的知识与信息无法从“游戏世界设定”与”角色设定“中找到，你可以以符合”角色设定“的态度拒绝
+{world_md}
+{scene_dialogue_rules_md}
             """,
         ),
         MessagesPlaceholder(variable_name="chat_history"),

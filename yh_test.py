@@ -2,18 +2,19 @@ from langchain_core.messages import HumanMessage, AIMessage, BaseMessage, System
 from langserve import RemoteRunnable
 import sys
 
-
+#希望这个方法仅表达talk的行为
 def talk_to_agent(input_val, npc_agent, chat_history):
     response = npc_agent.invoke({"input": input_val, "chat_history": chat_history})
     chat_history.extend([HumanMessage(content=input_val), AIMessage(content=response['output'])])
     return response['output']
 
+#希望这个方法仅表达talk的行为
 def parse_talk(input_val):
     if "/talk" in input_val:
         return input_val.split("/talk")[1].strip()
     return input_val
 
-def run_user_system():
+def main():
 
     #
     npc_agent = RemoteRunnable("http://localhost:8001/actor/npc/elder/")
@@ -33,9 +34,10 @@ def run_user_system():
             - 我在沉思，可能是回忆年轻的是冒险经历与死去的伙伴
             - 我向壁炉中的火投入了一根木柴
             # 规则
-            - 根据“状态”与“事件”输出对话。事件会改变状态。
+            - 根据“状态”与“事件”输出内容
+            - 事件会改变状态。
             # 需求
-            - 请根据“规则”，输出一段经过润色的文本，表现此时的场景状态
+            - 请根据“规则”，输出文本（需要润色）
             """, 
             scene_agent, scene_achat_history)
     #
@@ -52,16 +54,17 @@ def run_user_system():
             -{scene_state}
             # 事件
             -{event}
-            # 规则
-            - 根据“状态”与“事件”输出对话。事件会改变状态。
+             # 规则
+            - 根据“状态”与“事件”输出内容
+            - 事件会改变状态。
             # 需求
-            - 请根据“规则”，输出一段对话，表现此时的场景状态
+            - 请根据“规则”，输出对话
             """, 
             npc_agent, npc_achat_history))
 
     while True:
         usr_input = input("[user input]: ")
-
+        print("==============================================")
         if "/quit" in usr_input:
             sys.exit()
 
@@ -82,4 +85,4 @@ def run_user_system():
 
 if __name__ == "__main__":
     print("==============================================")
-    run_user_system()
+    main()

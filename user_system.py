@@ -26,19 +26,17 @@ def run_user_system():
     #
     scene_state = talk_to_agent(
             f"""
-# 状态
-- 晚上
-# 事件
-- 村长坐在屋子里（篝火旁），回忆年轻时的事情
-# 需求
-- 请根据#状态与#事件，输出一段描写文字，表现此时的场景状态
+            # 事件
+            晚上，村长坐在屋子里（篝火旁），回忆年轻时的事情
+            # 需求
+            - 请根据“事件”，输出一段描写文字，表现此时的场景状态
             """, 
             scene_agent, scene_achat_history)
     #
     print("[scene]:", scene_state)
 
     #
-    event = f"""我进入了屋子，面色凝重"""
+    event = "我(勇者)进入了屋子，面色凝重"
     print("[event]:", event)
 
     #
@@ -49,7 +47,7 @@ def run_user_system():
 # 事件
 -{event}
 # 需求
--根据场景与事件输出对话。标志着村长与我的对话开始
+- 根据“场景”与“事件”输出对话。村长需要对“事件”做出反应，同时村长与我（勇者）的对话开始
             """, 
             npc_agent, npc_achat_history))
 

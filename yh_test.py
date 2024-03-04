@@ -94,7 +94,13 @@ def item_enter_scene(item, scene, prompt):
     last_message = scene.chat_history[-1]
     message_content = last_message.content
     str2 = talk_to_agent(
-        message_content, 
+        f"""
+        # 当前场景状态
+        - {message_content}
+        # 需求
+        - 关于“当前场景状态“，你需要理解（即你处于这种环境下）。
+        - 请输出你的感受与想法
+        """,
         item.agent, item.chat_history)
 
     return [str1, str2]

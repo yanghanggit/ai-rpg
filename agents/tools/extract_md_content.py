@@ -1,8 +1,9 @@
 import os
 
 def extract_md_content(file_path) -> str:
+    """提取md内容,文件路径eg: /xxx/xxx.md"""
     try:
-        file_path = os.getcwd() + "/prompts/" + file_path
+        file_path = os.getcwd() + "/prompts" + file_path
         with open(file_path, 'r', encoding='utf-8') as file:
             md_content = file.read()
             if isinstance(md_content, str):

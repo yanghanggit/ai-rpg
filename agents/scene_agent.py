@@ -1,26 +1,43 @@
-from typing import Any, List, Union
+from typing import List, Union
 from fastapi import FastAPI
-from langchain.agents import AgentExecutor, tool
-from langchain.agents.format_scratchpad.openai_tools import (
-    format_to_openai_tool_messages,
-)
-from langchain.agents.output_parsers.openai_tools import OpenAIToolsAgentOutputParser
+from langchain.agents import AgentExecutor, create_openai_functions_agent
 from langchain.prompts import MessagesPlaceholder
 from langchain_core.messages import AIMessage, FunctionMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from langserve import add_routes
 from langserve.pydantic_v1 import BaseModel, Field
-from extract_md_content import extract_md_content
+from tools.extract_md_content import extract_md_content
+from langchain_community.vectorstores import FAISS
+from langchain_openai.embeddings import OpenAIEmbeddings
+from langchain.tools.retriever import create_retriever_tool
 
-prompt_md_path = "grandpa.md"
-prompt_content = extract_md_content(prompt_md_path)
+
+world_view = extract_md_content("/story/world_view.md")
+scene_setting = extract_md_content("/scene/house.md")
+scene_dialogue_rules = extract_md_content("/scene/scene_dialogue_rules.md")
+
+vector_store = FAISS.from_texts(
+    [world_view],
+    embedding=OpenAIEmbeddings()
+)
+
+retriever = vector_store.as_retriever()
+
+retriever_tool = create_retriever_tool(
+    retriever,
+    "get_information_about_world_view",
+    "You must refer these information before response user."
+)
 
 prompt = ChatPromptTemplate.from_messages(
     [
         (
             "system",
-            f"""{prompt_content}""",
+            f"""
+{scene_setting}\n
+{scene_dialogue_rules}
+            """,
         ),
         MessagesPlaceholder(variable_name="chat_history"),
         ("user", "{input}"),
@@ -30,27 +47,9 @@ prompt = ChatPromptTemplate.from_messages(
 
 llm = ChatOpenAI(model="gpt-4-turbo-preview")
 
-@tool
-def never_call_this_function() -> str:
-    """Never call this function!!!"""
-    return "chat module"
+tools = [retriever_tool]
 
-tools = [never_call_this_function]
-
-llm_with_tools = llm.bind_functions(tools)
-
-agent = (
-    {
-        "input": lambda x: x["input"],
-        "agent_scratchpad": lambda x: format_to_openai_tool_messages(
-            x["intermediate_steps"]
-        ),
-        "chat_history": lambda x: x["chat_history"],
-    }
-    | prompt
-    | llm_with_tools
-    | OpenAIToolsAgentOutputParser()
-)
+agent = create_openai_functions_agent(llm, tools, prompt)
 
 agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
 
@@ -73,10 +72,12 @@ class Output(BaseModel):
 add_routes(
     app,
     agent_executor.with_types(input_type=Input, output_type=Output),
-    path="/actor/npc/grandapa"
+    path="/actor/npc/house"
 )
 
 if __name__ == "__main__":
     import uvicorn
+    uvicorn.run(app, host="localhost", port=8002)
 
-    uvicorn.run(app, host="localhost", port=8009)
+
+#"http://localhost:8002/actor/npc/house/"

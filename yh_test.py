@@ -1,0 +1,159 @@
+from langchain_core.messages import HumanMessage, AIMessage, BaseMessage, SystemMessage
+from langserve import RemoteRunnable
+import sys
+
+#希望这个方法仅表达talk的行为
+def talk_to_agent(input_val, npc_agent, chat_history):
+    response = npc_agent.invoke({"input": input_val, "chat_history": chat_history})
+    chat_history.extend([HumanMessage(content=input_val), AIMessage(content=response['output'])])
+    return response['output']
+
+#希望这个方法仅表达talk的行为
+def parse_talk(input_val):
+    if "/talk" in input_val:
+        return input_val.split("/talk")[1].strip()
+    return input_val
+
+#
+class Actor:
+    def __init__(self, name):
+        self.name = name
+
+    def conncect(self, url):
+        self.agent = RemoteRunnable(url)
+        self.chat_history = []
+
+#
+class Player(Actor):
+    def __init__(self, name):
+        super().__init__(name)
+
+#
+class NPC(Actor): 
+    def __init__(self, name):
+        super().__init__(name)
+
+#
+class Scene:
+
+    def __init__(self, name):
+        self.name = name
+        self.actors = []
+
+    def conncect(self, url):
+        self.agent = RemoteRunnable(url)
+        self.chat_history = []
+
+#
+def npc_enter_scene(npc, scene, prompt):
+    #记录!!
+    scene.actors.append(npc)
+
+    #场景触发
+    str1 = talk_to_agent(
+    prompt, 
+    scene.agent, scene.chat_history)
+
+    #同步给NPC
+    last_message = scene.chat_history[-1]
+    message_content = last_message.content
+    str2 = talk_to_agent(
+        message_content, 
+        npc.agent, npc.chat_history)
+
+
+    return [str1, str2]
+
+#
+def player_enter_scene(player, scene, prompt):
+    scene.actors.append(player)
+    name_list = []
+    #场景触发
+    str1 = talk_to_agent(
+        prompt, 
+        scene.agent, scene.chat_history)
+    
+    name_list.append(f"{scene.name}")
+
+    #广播给场景的所有actor
+    str_array = []
+    for actor in scene.actors:
+        if (actor == player):
+            continue
+        str2 = talk_to_agent(
+            prompt, 
+            actor.agent, actor.chat_history)
+        str_array.append(str2)
+        name_list.append(f"{actor.name}")
+
+    result = [str1] + str_array
+    return [name_list, result]
+
+#
+def player_talk_to_npc(player, npc, prompt):
+    str1 = talk_to_agent(
+        prompt, 
+        npc.agent, npc.chat_history)
+    return str1
+
+
+#
+def main():
+    #
+    npc_name = "卡斯帕·艾伦德"
+    my_name = "勇者"
+    scene_name = "小木屋"
+    #
+    player = Player(my_name)
+    #
+    npc = NPC(npc_name)
+    npc.conncect("http://localhost:8001/actor/npc/elder/")
+    #
+    scene = Scene(scene_name)
+    scene.conncect("http://localhost:8002/actor/npc/house/")
+
+    #
+    nes_res = npc_enter_scene(npc, scene, 
+    f"""
+    # 状态
+    - 冬天的晚上，我（{npc.name}）坐在你({scene.name})的壁炉旁
+    # 事件
+    - 我（{npc.name}）在沉思和回忆过往，有一些难过，并向壁炉中的火投入了一根木柴
+    # 延展推理
+    - 你可以根据“状态”与“事件”做判断与推理，并进一步延展
+    # 需求
+    - 请根据“状态“，”事件“，“延展推理”与“对话规则”来输出文本（并适当润色）
+    """)
+    #
+    print(f"[{scene.name}]:", nes_res[0])
+    print(f"[{npc.name}]:", nes_res[1])
+    print("==============================================")
+
+    #
+    pes_res = player_enter_scene(player, scene, f"我({player.name})用力推开了屋子的门，闯入屋子而且面色凝重，外面的寒风吹进了屋子")
+    for i in range(len(pes_res[0])):
+        print(f"[{pes_res[0][i]}]:", pes_res[1][i])
+    print("==============================================")
+    
+    # 输入循环
+    while True:
+        usr_input = input("[user input]: ")
+        if "/quit" in usr_input:
+            sys.exit()
+
+        elif "/talk" in usr_input:
+            talk_content = parse_talk(usr_input)
+            #
+            print(f"[{player.name}]:", talk_content)
+            print(f"[{npc.name}]:", player_talk_to_npc(player, npc, talk_content))
+
+        else:
+            talk_content = parse_talk(usr_input)
+            #
+            print(f"[{player.name}]:", talk_content)
+            print(f"[{npc.name}]:", player_talk_to_npc(player, npc, talk_content))
+        print("==============================================")
+
+if __name__ == "__main__":
+    print("==============================================")
+    main()

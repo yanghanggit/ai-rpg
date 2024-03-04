@@ -16,6 +16,9 @@ from extract_md_content import extract_md_content
 
 world_md = extract_md_content("world.md")
 npc_dialogue_rules_md = extract_md_content("npc_dialogue_rules.md")
+old_man_md = extract_md_content("old_man.md")
+
+
 
 prompt = ChatPromptTemplate.from_messages(
     [
@@ -23,18 +26,9 @@ prompt = ChatPromptTemplate.from_messages(
             "system",
             f"""
 # 角色设定
-
-## 基础设定
 - 你要扮演这个世界(见“游戏世界设定”)中的一个NPC，详见“人物描述”
-- 所有NPC认为“游戏世界设定”是理所当然不证自明的
-
-## 人物描述
-- 种族：人类
-- 性别：男
-- 年龄：60
-- 性格：暴躁
-- 背景：现在是猎人，曾经是冒险家。年轻时代最后一次冒险所有的同伴都阵亡了，他是唯一的幸存者，从此变得孤僻而且暴躁
-
+- 所有NPC认为“游戏世界设定”是理所当然且不证自明的
+{old_man_md}
 {world_md}
 {npc_dialogue_rules_md}
             """,

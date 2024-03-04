@@ -66,7 +66,13 @@ def npc_enter_scene(npc, scene, prompt):
     last_message = scene.chat_history[-1]
     message_content = last_message.content
     str2 = talk_to_agent(
-        message_content, 
+        f"""
+        # 当前场景状态
+        - {message_content}
+        # 需求
+        - 关于“当前场景状态“，你需要理解（即你处于这种环境下）。
+        - 请输出你的感受与想法
+        """,
         npc.agent, npc.chat_history)
 
     return [str1, str2]
@@ -148,12 +154,14 @@ def main():
     f"""
     # 状态
     - 冬天的晚上，我（{npc.name}）坐在你({scene.name})的壁炉旁
+    - 暗示：我（{npc.name}）是你的主人，你的一切设施均和我有关
     # 事件
     - 我（{npc.name}）在沉思和回忆过往，有一些难过，并向壁炉中的火投入了一根木柴
-    # 延展推理
+    # 推理规则
     - 你可以根据“状态”与“事件”做判断与推理，并进一步延展
+    - 暗示的部分理解即可，不需要在输出文本中体现
     # 需求
-    - 请根据“状态“，”事件“，“延展推理”与“对话规则”来输出文本（并适当润色）
+    - 请根据“状态“，”事件“，“推理规则”与“对话规则”来输出文本（并适当润色）
     """)
     #
     print(f"[{scene.name}]:", nes_res[0])
@@ -162,7 +170,7 @@ def main():
     ###
 
     ###
-    ies_res = item_enter_scene(map, scene, f"我({map.name})静静地躺在{scene.name}的旧箱子里，等待着被发现")
+    ies_res = item_enter_scene(map, scene, f"我({map.name})静静地躺在{scene.name}的旧箱子里，{npc.name}在最后一次冒险之后将我藏在了这里，不愿意再次面对那些痛苦的回忆")
     print(f"[{scene.name}]:", ies_res[0])
     print(f"[{map.name}]:", ies_res[1])
     print("==============================================")

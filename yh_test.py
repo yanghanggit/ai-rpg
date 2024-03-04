@@ -34,6 +34,11 @@ class NPC(Actor):
         super().__init__(name)
 
 #
+class Item(Actor): 
+    def __init__(self, name):
+        super().__init__(name)
+
+#
 class Scene:
 
     def __init__(self, name):
@@ -46,6 +51,9 @@ class Scene:
 
 #
 def npc_enter_scene(npc, scene, prompt):
+    print(f"npc_enter_scene: {npc.name} enter {scene.name}", prompt)
+    print("==============================================")
+
     #记录!!
     scene.actors.append(npc)
 
@@ -61,11 +69,35 @@ def npc_enter_scene(npc, scene, prompt):
         message_content, 
         npc.agent, npc.chat_history)
 
+    return [str1, str2]
+
+#
+def item_enter_scene(item, scene, prompt):
+    print(f"item_enter_scene: {item.name} enter {scene.name}", prompt)
+    print("==============================================")
+
+    #记录!!
+    scene.actors.append(item)
+
+    #场景触发
+    str1 = talk_to_agent(
+    prompt, 
+    scene.agent, scene.chat_history)
+
+    #同步给NPC
+    last_message = scene.chat_history[-1]
+    message_content = last_message.content
+    str2 = talk_to_agent(
+        message_content, 
+        item.agent, item.chat_history)
 
     return [str1, str2]
 
 #
 def player_enter_scene(player, scene, prompt):
+    print(f"player_enter_scene: {player.name} enter {scene.name}", prompt)
+    print("==============================================")
+    #记录!!
     scene.actors.append(player)
     name_list = []
     #场景触发
@@ -79,7 +111,8 @@ def player_enter_scene(player, scene, prompt):
     str_array = []
     for actor in scene.actors:
         if (actor == player):
-            continue
+            continue 
+
         str2 = talk_to_agent(
             prompt, 
             actor.agent, actor.chat_history)
@@ -96,23 +129,21 @@ def player_talk_to_npc(player, npc, prompt):
         npc.agent, npc.chat_history)
     return str1
 
-
 #
 def main():
     #
-    npc_name = "卡斯帕·艾伦德"
-    my_name = "勇者"
-    scene_name = "小木屋"
+    player = Player("勇者")
     #
-    player = Player(my_name)
-    #
-    npc = NPC(npc_name)
+    npc = NPC("卡斯帕·艾伦德")
     npc.conncect("http://localhost:8001/actor/npc/elder/")
     #
-    scene = Scene(scene_name)
+    scene = Scene("小木屋")
     scene.conncect("http://localhost:8002/actor/npc/house/")
-
     #
+    map = Item("神秘地图")
+    map.conncect("http://localhost:8003/actor/npc/item/")
+
+    ###
     nes_res = npc_enter_scene(npc, scene, 
     f"""
     # 状态
@@ -128,12 +159,21 @@ def main():
     print(f"[{scene.name}]:", nes_res[0])
     print(f"[{npc.name}]:", nes_res[1])
     print("==============================================")
+    ###
 
-    #
+    ###
+    ies_res = item_enter_scene(map, scene, f"我({map.name})静静地躺在{scene.name}的旧箱子里，等待着被发现")
+    print(f"[{scene.name}]:", ies_res[0])
+    print(f"[{map.name}]:", ies_res[1])
+    print("==============================================")
+    ###
+
+    ###
     pes_res = player_enter_scene(player, scene, f"我({player.name})用力推开了屋子的门，闯入屋子而且面色凝重，外面的寒风吹进了屋子")
     for i in range(len(pes_res[0])):
         print(f"[{pes_res[0][i]}]:", pes_res[1][i])
     print("==============================================")
+    ###
     
     # 输入循环
     while True:

@@ -17,6 +17,11 @@ def parse_talk(input_val):
 def main():
 
     #
+    npc_name = "卡斯帕·艾伦德"
+    my_name = "勇者"
+    scene_name = "小木屋"
+
+    #
     npc_agent = RemoteRunnable("http://localhost:8001/actor/npc/elder/")
     npc_achat_history = []
 
@@ -31,50 +36,53 @@ def main():
     scene_state = talk_to_agent(
             f"""
             # 状态
-            - 冬天的晚上，我（长者）坐在你的壁炉旁
+            - 冬天的晚上，我（{npc_name}）坐在你({scene_name})的壁炉旁
             # 事件
-            - 我在沉思，可能是回忆过往，并向壁炉中的火投入了一根木柴
+            - 我在沉思和回忆过往，有一些难过，并向壁炉中的火投入了一根木柴
+            # 延展推理
+            - 你可以根据“状态”与“事件”做判断与推理，并进一步延展
+            - 例如：你可以猜想我为什么会难过，或者我为什么会投入木柴
             # 需求
-            - 在上述“状态”下发生了“事件”（“事件”可以改变”状态“），请根据“对话规则”输出文本
+            - 请根据“状态“，”事件“，“延展推理”与“对话规则”来输出文本（并适当润色）
             """, 
             scene_agent, scene_achat_history)
     #
-    print("[scene]:", scene_state)
+    print(f"[{scene_name}]:", scene_state)
 
     #
-    event = "我(勇者)用力推开了屋子的门，闯入屋子而且面色凝重，外面的寒风吹进了屋子"
+    event = f"我({my_name})用力推开了屋子的门，闯入屋子而且面色凝重，外面的寒风吹进了屋子"
     print("[event]:", event)
 
     #
-    print("[npc]:", talk_to_agent(
+    print(f"[{npc_name}]:", talk_to_agent(
             f"""
             # 状态
             -{scene_state}
             # 事件
             -{event}
             # 需求
-            - 在上述“状态”下发生了“事件”（“事件”可以改变”状态“），请根据“对话规则”输出文本
+            - 请根据“状态“，”事件“与”“对话规则”输出文本
             """, 
             npc_agent, npc_achat_history))
 
     while True:
-        usr_input = input("[user input]: ")
         print("==============================================")
+        usr_input = input("[user input]: ")
         if "/quit" in usr_input:
             sys.exit()
 
         elif "/talk" in usr_input:
             real_input = parse_talk(usr_input)
-            print("[you]:", real_input)
+            print(f"[{my_name}]:", real_input)
             print(
-                '[npc]:', talk_to_agent(real_input, npc_agent, npc_achat_history)
+                f"[{npc_name}]:", talk_to_agent(real_input, npc_agent, npc_achat_history)
             )
 
         else:
             real_input = parse_talk(usr_input)
-            print("[default]:", real_input)
+            print(f"[{my_name}]:", real_input)
             print(
-                '[npc]:', talk_to_agent(real_input, npc_agent, npc_achat_history)
+                f"[{npc_name}]:", talk_to_agent(real_input, npc_agent, npc_achat_history)
             )
 
 

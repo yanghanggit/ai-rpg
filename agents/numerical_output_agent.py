@@ -8,10 +8,9 @@ from langchain_openai import ChatOpenAI
 from fastapi import FastAPI
 from typing import Any
 from langserve import add_routes
-from extract_md_content import extract_md_content
+from tools.extract_md_content import extract_md_content
 
-prompt_md_path = "evaluate.md"
-prompt_content = extract_md_content(prompt_md_path)
+prompt_content = extract_md_content("/program/evaluate.md")
 
 class Evaluate(BaseModel):
     """Evaluate based on prompt"""
@@ -34,8 +33,8 @@ def parse(output):
     
 prompt = ChatPromptTemplate.from_messages(
     [
-        ("system",
-        f"""{prompt_content}"""),
+    ("system",
+    f"""{prompt_content}"""),
     ("user", "{input}"),
     MessagesPlaceholder(variable_name="agent_scratchpad"),
     ]

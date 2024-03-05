@@ -2,15 +2,6 @@ from langchain_core.messages import HumanMessage, AIMessage, BaseMessage, System
 from langserve import RemoteRunnable
 import sys
 
-#希望这个方法仅表达talk的行为
-# def talk_to_agent(input_val, npc_agent, chat_history):
-#     response = npc_agent.invoke({"input": input_val, "chat_history": chat_history})
-#     chat_history.extend([HumanMessage(content=input_val), AIMessage(content=response['output'])])
-#     return response['output']
-
-
-
-
 class World:
     def __init__(self, name):
         self.name = name
@@ -66,10 +57,6 @@ class Item(Actor):
 def call_agent(target, prompt):
     if not hasattr(target, 'agent') or not hasattr(target, 'chat_history'):
         return None
-    # return talk_to_agent(
-    #     prompt, 
-    #     target.agent, target.chat_history)
-
     response = target.agent.invoke({"input": prompt, "chat_history": target.chat_history})
     target.chat_history.extend([HumanMessage(content=prompt), AIMessage(content=response['output'])])
     return response['output']
@@ -80,6 +67,9 @@ def parse_input(input_val, split_str):
         return input_val.split(split_str)[1].strip()
     return input_val
 
+#
+def player_talk_to_npc(player, npc, talk_content):
+    return call_agent(npc, f"""#{player.name}对你说{talk_content}""")
 #
 def main():
 
@@ -229,27 +219,27 @@ def main():
             talk_content = parse_input(usr_input, "/talk")
             #
             print(f"[{player.name}]:", talk_content)
-            print(f"[{npc.name}]:", call_agent(npc, talk_content))
+            print(f"[{npc.name}]:", player_talk_to_npc(player, npc, talk_content))
             print("==============================================")
 
         elif "/stage" in usr_input:
             talk_content = parse_input(usr_input, "/stage")
             #
             print(f"[{player.name}]:", talk_content)
-            print(f"[{stage.name}]:", call_agent(stage, talk_content))
+            print(f"[{stage.name}]:", player_talk_to_npc(player, stage, talk_content))
             print("==============================================")
 
         elif "/world" in usr_input:
             talk_content = parse_input(usr_input, "/world")
             #
             print(f"[{player.name}]:", talk_content)
-            print(f"[{world.name}]:", call_agent(world, talk_content))
+            print(f"[{world.name}]:", player_talk_to_npc(player, world, talk_content))
             print("==============================================")
         
         else:
             talk_content = parse_input(usr_input, "/what")
             print(f"[{player.name}]:", talk_content)
-            print(f"[{npc.name}]:", call_agent(npc, talk_content))
+            print(f"[{npc.name}]:", player_talk_to_npc(player, npc, talk_content))
             print("==============================================")
 
 if __name__ == "__main__":

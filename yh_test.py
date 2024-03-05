@@ -195,10 +195,59 @@ def main():
     stage.conncect("http://localhost:8002/actor/npc/house/")
     npc.conncect("http://localhost:8001/actor/npc/elder/")
 
+ 
+
+    #test call
+    # print(f"[{world.name}]:", call_agent(world, "你见过鱼人与独角兽嘛？"))
+    # print(f"[{stage.name}]:", call_agent(stage, f"我({player.name})用力推开了屋子的门，闯入屋子而且面色凝重，外面的寒风吹进了屋子"))
+    # print(f"[{npc.name}]:", call_agent(npc, "你好！你见过鱼人与独角兽嘛？"))
+
+
     #first load！！
-    print(f"[{world.name}]:", call_agent(world, "你见过鱼人与独角兽嘛？"))
-    print(f"[{stage.name}]:", call_agent(stage, f"我({player.name})用力推开了屋子的门，闯入屋子而且面色凝重，外面的寒风吹进了屋子"))
-    print(f"[{npc.name}]:", call_agent(npc, "你好！你见过鱼人与独角兽嘛？"))
+
+    #load world
+    print(f"[{world.name}]:", call_agent(world, "世界在你的观察下开始运行"))
+    print("==============================================")
+    #add stage
+    stage_state = call_agent(stage, f"""[system]请介绍你自己，并且描述你的当前的状态""")
+    print("stage_state:", stage_state)
+    print("==============================================")
+
+    statge2world = call_agent(world, f"""
+    # 关于我
+    - 我是{stage.name}，你可以在“世界设定”里查找与我相关的信息
+    # 我当前的状态
+    - {stage_state}
+    # 需求
+    - 请根据“我当前的状态“，你需要理解，并确认"""
+    )
+    print(f"[{world.name}]:", statge2world)
+    print("==============================================")
+
+    #add npc
+    npc_state = call_agent(npc, f"""[system]请介绍你自己，并且描述你的当前的状态""")
+    print("npc_state:", npc_state)
+    print("==============================================")
+
+    npc2stage = call_agent(stage, f"""
+    # 关于我
+    - 我是{npc.name},
+    - 我的介绍：{npc_state},
+    - 我是你的主人，你的一切设施均和我有关
+    # 我在做什么
+    - 冬天的晚上，我（{npc.name}）坐在你({stage.name})的壁炉旁
+    - 我（{npc.name}）在沉思和回忆过往，有一些难过，并向壁炉中的火投入了一根木柴
+    # 需求
+    - 请建立我们之间的关系
+    - 理解“关于我”，“我在做什么”来输出文本（并适当润色）
+    """
+    )
+    print(f"[{stage.name}]:", npc2stage)
+    print("==============================================")
+
+
+
+
 
     # str2 = talk_to_agent(
     #     f"""

@@ -155,7 +155,8 @@ def main():
     - （{npc.name}）在沉思和回忆过往，有一些难过，并向壁炉中的火投入了一根木柴
     ## 需求
     - 根据上下文建立与（{npc.name}）的关系
-    - 理解“当前NPC的状态”，“当前NPC的介绍”,"当前NPC的行为",你需要理解，推断，并输出描述此时场景状态的文本（适当润色）
+    - 理解“当前NPC的状态”，“当前NPC的介绍”,"当前NPC的行为",你需要理解，推断。
+    - 以第3人称输出描述此时场景状态的文本（适当润色）
     """
     )
     print(f"[{stage.name}]:", npc2stage)
@@ -177,12 +178,14 @@ def main():
         usr_input = input("[user input]: ")
         if "/quit" in usr_input:
             sys.exit()
+        if "/cancel" in usr_input:
+            continue
 
         elif "/start" in usr_input:
             stage.add_actor(player)
 
             #add player to world
-            player2world = call_agent(world, f"""[system]{player.name}是用户，请确认"""
+            player2world = call_agent(world, f"""{player.name}是用户，请确认"""
             )
             print(f"[{world.name}]:", player2world)
             print("==============================================")
@@ -194,7 +197,11 @@ def main():
             ## 事件
             - ({player.name})用力推开了屋子的门，闯入屋子而且面色凝重，外面的寒风吹进了屋子
             ## 需求
-            - 理解“事件”来更新状态并输出文本
+            - 根据“事件”更新场景状态
+            - 推断NPC对“”事件“的反应，并更新状态
+            - 输入场景更新的文本
+            - 输出NPC的反应文本
+            - 以第3人称输出文本（适当润色）
             """
             )
             print(f"[{stage.name}]:", player2stage)
@@ -206,11 +213,14 @@ def main():
                 broadcast_event = call_agent(
                     actor, 
                     f"""
-                    # 发生了事件场景状态发生更新
+                    # 你所在场景内发生事件
                     ## 当前场景的状态描写
                     - {player2stage},
                     ## 需求
-                    - 理解“当前场景的状态描写”来更新的状态并输出文本"""
+                    - 理解“当前场景的状态描写”来更新你的逻辑状态
+                    - 推断出你的心里描或产生对话并输出文本
+                    - 以第1人称输出文本
+                    """
                     )
                 print(f"[{actor.name}]:", broadcast_event)
                 print("==============================================")
@@ -222,6 +232,21 @@ def main():
             print(f"[{player.name}]:", talk_content)
             print(f"[{npc.name}]:", call_agent(npc, talk_content))
             print("==============================================")
+
+        elif "/stage" in usr_input:
+            talk_content = parse_talk(usr_input)
+            #
+            print(f"[{player.name}]:", talk_content)
+            print(f"[{stage.name}]:", call_agent(stage, talk_content))
+            print("==============================================")
+
+        elif "/world" in usr_input:
+            talk_content = parse_talk(usr_input)
+            #
+            print(f"[{player.name}]:", talk_content)
+            print(f"[{world.name}]:", call_agent(world, talk_content))
+            print("==============================================")
+        
         else:
             talk_content = parse_talk(usr_input)
             print(f"[{player.name}]:", talk_content)

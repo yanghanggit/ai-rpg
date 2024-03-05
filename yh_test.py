@@ -94,7 +94,7 @@ def main():
 
     #test call
     # print(f"[{world.name}]:", call_agent(world, "你见过鱼人与独角兽嘛？"))
-    # print(f"[{stage.name}]:", call_agent(stage, f"我({player.name})用力推开了屋子的门，闯入屋子而且面色凝重，外面的寒风吹进了屋子"))
+    # print(f"[{stage.name}]:", call_agent(stage, f"({player.name})用力推开了屋子的门，闯入屋子而且面色凝重，外面的寒风吹进了屋子"))
     # print(f"[{npc.name}]:", call_agent(npc, "你好！你见过鱼人与独角兽嘛？"))
 
     #当作first load！！
@@ -110,12 +110,14 @@ def main():
 
     #add stage to world
     statge2world = call_agent(world, f"""
-    # 关于我
-    - 我是{stage.name}，你可以在“世界设定”里查找与我相关的信息
-    # 我当前的状态
+    # 在世界添加一个场景
+    ## 场景介绍                          
+    - {stage.name}
+    - 可以在“世界设定”里查找与之相关的信息
+    ## 当前场景的状态
     - {stage_current}
-    # 需求
-    - 请根据"关于我","我当前的状态"，你需要理解并确认，并回复确认即可"""
+    ## 需求
+    - 对"场景介绍","场景的状态"理解，记录，并回复确认即可"""
     )
     print(f"[{world.name}]:", statge2world)
     print("==============================================")
@@ -127,29 +129,33 @@ def main():
 
     #add npc to world
     npc2world = call_agent(world, f"""
-    # 关于我
-    - 我是{npc.name}，你可以在“世界设定”里查找与我相关的信息
-    # 我当前的状态
+    # 在世界添加一个NPC
+    ## NPC介绍    
+    - {npc.name}
+    - 可以在“世界设定”里查找与之相关的信息
+    ## 当前NPC的状态
     - {npc_current}
-    # 需求
-    - 请根据"关于我", “我当前的状态“，你需要理解并确认，并回复确认即可
-    """
+    ## 需求
+    - 对"NPC介绍","当前NPC的状态"理解，记录，并回复确认即可"""
     )
     print(f"[{world.name}]:", npc2world)
     print("==============================================")
 
     #add npc to stage
     npc2stage = call_agent(stage, f"""
-    # 关于我
-    - 我是{npc.name},
-    - 我的介绍：{npc_current},
-    - 我是你的主人，你的一切设施均和我有关
-    # 我在做什么
-    - 冬天的晚上，我（{npc.name}）坐在你({stage.name})的壁炉旁
-    - 我（{npc.name}）在沉思和回忆过往，有一些难过，并向壁炉中的火投入了一根木柴
-    # 需求
-    - 请建立我们之间的关系
-    - 理解“关于我”，“我在做什么”, 你需要理解并回复确认即可
+    # 在场景添加一个NPC
+    - {npc.name},
+    ## 当前NPC的状态
+    - {npc_current}
+    - {npc.name} 是你的主人，你的一切设施均和{npc.name} 有关
+    ## 当前NPC的介绍
+    - {npc_current}
+    ## 当前NPC的行为
+    - 冬天的晚上，（{npc.name}）坐在你({stage.name})的壁炉旁
+    - （{npc.name}）在沉思和回忆过往，有一些难过，并向壁炉中的火投入了一根木柴
+    ## 需求
+    - 根据上下文建立与（{npc.name}）的关系
+    - 理解“当前NPC的状态”，“当前NPC的介绍”,"当前NPC的行为",你需要理解，推断，并输出描述此时场景状态的文本（适当润色）
     """
     )
     print(f"[{stage.name}]:", npc2stage)
@@ -157,16 +163,14 @@ def main():
 
     #stage broadcast npc
     stage2npc = call_agent(npc, f"""
-        # 当前的场景描述
+        # 当前场景的状态描写
         - {npc2stage},
-        - 如果出现了你的名字，就代表是你
-        # 需求
-        - 需要你理解“当前的场景描述”做推理和做出合理的行为与反应，并输出文本。
+        ## 需求
+        - 需要你理解“当前场景的状态描写。记录，并回复确认即可”。
         """
         )
     print(f"[{npc.name}]:", stage2npc)
     print("==============================================")
-
 
     # 输入循环
     while True:
@@ -178,20 +182,19 @@ def main():
             stage.add_actor(player)
 
             #add player to world
-            player2world = call_agent(world, f"""[system]我是{player.name}，我是用户，请确认"""
+            player2world = call_agent(world, f"""[system]{player.name}是用户，请确认"""
             )
             print(f"[{world.name}]:", player2world)
             print("==============================================")
 
             #add npc to stage
             player2stage = call_agent(stage, f"""
-            # 关于我
-            - 我是{player.name},
-            # 事件
-            - 我({player.name})用力推开了屋子的门，闯入屋子而且面色凝重，外面的寒风吹进了屋子
-            # 需求
-            - 请建立我们之间的关系
-            - 理解“关于我”，“事件”来更新你的状态并输出文本
+            # 向场景添加一个勇者
+            - {player.name},
+            ## 事件
+            - ({player.name})用力推开了屋子的门，闯入屋子而且面色凝重，外面的寒风吹进了屋子
+            ## 需求
+            - 理解“事件”来更新状态并输出文本
             """
             )
             print(f"[{stage.name}]:", player2stage)
@@ -204,10 +207,10 @@ def main():
                     actor, 
                     f"""
                     # 发生了事件场景状态发生更新
+                    ## 当前场景的状态描写
                     - {player2stage},
-                    # 需求
-                    - 请建立我们之间的关系
-                    - 理解“发生了事件场景状态发生更新”来更新你的状态并输出文本"""
+                    ## 需求
+                    - 理解“当前场景的状态描写”来更新的状态并输出文本"""
                     )
                 print(f"[{actor.name}]:", broadcast_event)
                 print("==============================================")

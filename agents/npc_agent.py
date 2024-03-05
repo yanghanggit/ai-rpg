@@ -14,8 +14,8 @@ from langchain.tools.retriever import create_retriever_tool
 
 
 world_view = extract_md_content("/story/world_view.md")
-npc_personality = extract_md_content("/actor/npc/elder.md")
-npc_dialogue_rules = extract_md_content("/actor/npc/npc_dialogue_rules.md")
+elder_md = extract_md_content("/actor/npc/elder.md")
+#npc_dialogue_rules = extract_md_content("/actor/npc/npc_dialogue_rules.md")
 
 vector_store = FAISS.from_texts(
     [world_view],
@@ -35,8 +35,7 @@ prompt = ChatPromptTemplate.from_messages(
         (
             "system",
             f"""
-{npc_personality}\n
-{npc_dialogue_rules}
+{elder_md}\n
             """,
         ),
         MessagesPlaceholder(variable_name="chat_history"),

@@ -14,8 +14,8 @@ from langchain.tools.retriever import create_retriever_tool
 
 
 world_view = extract_md_content("/story/world_view.md")
-scene_setting = extract_md_content("/scene/house.md")
-scene_dialogue_rules = extract_md_content("/scene/scene_dialogue_rules.md")
+house_md = extract_md_content("/scene/house.md")
+#scene_dialogue_rules = extract_md_content("/scene/scene_dialogue_rules.md")
 
 vector_store = FAISS.from_texts(
     [world_view],
@@ -35,8 +35,7 @@ prompt = ChatPromptTemplate.from_messages(
         (
             "system",
             f"""
-{scene_setting}\n
-{scene_dialogue_rules}
+{house_md}
             """,
         ),
         MessagesPlaceholder(variable_name="chat_history"),

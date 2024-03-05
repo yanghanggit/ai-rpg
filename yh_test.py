@@ -165,14 +165,26 @@ def player_talk_to_npc(player, npc, prompt):
         npc.agent, npc.chat_history)
     return str1
 
+
+#
+def call_agent(target, prompt):
+    if not hasattr(target, 'agent') or not hasattr(target, 'chat_history'):
+        return None
+    return talk_to_agent(
+        prompt, 
+        target.agent, target.chat_history)
+
 #
 def main():
+
+    #
+    player = Player("勇者")
 
     #
     world = World("世界观察者")
     stage = Stage("小木屋")
     npc = NPC("卡斯帕·艾伦德")
-    player = Player("勇者")
+    
 
     #
     world.add_stage(stage)
@@ -180,14 +192,21 @@ def main():
 
     #
     world.conncect("http://localhost:8004/world/")
+    stage.conncect("http://localhost:8002/actor/npc/house/")
+    npc.conncect("http://localhost:8001/actor/npc/elder/")
 
-    str2 = talk_to_agent(
-        f"""
-        你是谁？
-        """,
-        world.agent, world.chat_history)
+    #first load！！
+    print(f"[{world.name}]:", call_agent(world, "你是谁？"))
+    print(f"[{stage.name}]:", call_agent(stage, f"我({player.name})用力推开了屋子的门，闯入屋子而且面色凝重，外面的寒风吹进了屋子"))
+    print(f"[{npc.name}]:", call_agent(npc, "你好！"))
 
-    print(f"[{world.name}]:", str2)
+    # str2 = talk_to_agent(
+    #     f"""
+    #     你是谁？
+    #     """,
+    #     world.agent, world.chat_history)
+
+    # print(f"[{world.name}]:", str2)
 
 
 
@@ -245,9 +264,9 @@ def main():
             sys.exit()
 
 
-        talk_content = parse_talk(usr_input)
-        print(f"[{player.name}]:", talk_content)
-        print(f"[{world.name}]:", player_talk_to_npc(player, world, talk_content))
+        # talk_content = parse_talk(usr_input)
+        # print(f"[{player.name}]:", talk_content)
+        # print(f"[{world.name}]:", player_talk_to_npc(player, world, talk_content))
 
 
         # elif "/talk" in usr_input:

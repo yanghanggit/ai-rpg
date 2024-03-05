@@ -3,16 +3,12 @@ from langserve import RemoteRunnable
 import sys
 
 #希望这个方法仅表达talk的行为
-def talk_to_agent(input_val, npc_agent, chat_history):
-    response = npc_agent.invoke({"input": input_val, "chat_history": chat_history})
-    chat_history.extend([HumanMessage(content=input_val), AIMessage(content=response['output'])])
-    return response['output']
+# def talk_to_agent(input_val, npc_agent, chat_history):
+#     response = npc_agent.invoke({"input": input_val, "chat_history": chat_history})
+#     chat_history.extend([HumanMessage(content=input_val), AIMessage(content=response['output'])])
+#     return response['output']
 
-#希望这个方法仅表达talk的行为
-def parse_talk(input_val):
-    if "/talk" in input_val:
-        return input_val.split("/talk")[1].strip()
-    return input_val
+
 
 
 class World:
@@ -70,9 +66,19 @@ class Item(Actor):
 def call_agent(target, prompt):
     if not hasattr(target, 'agent') or not hasattr(target, 'chat_history'):
         return None
-    return talk_to_agent(
-        prompt, 
-        target.agent, target.chat_history)
+    # return talk_to_agent(
+    #     prompt, 
+    #     target.agent, target.chat_history)
+
+    response = target.agent.invoke({"input": prompt, "chat_history": target.chat_history})
+    target.chat_history.extend([HumanMessage(content=prompt), AIMessage(content=response['output'])])
+    return response['output']
+
+#希望这个方法仅表达talk的行为
+def parse_input(input_val, split_str):
+    if split_str in input_val:
+        return input_val.split(split_str)[1].strip()
+    return input_val
 
 #
 def main():
@@ -117,7 +123,7 @@ def main():
     ## 当前场景的状态
     - {stage_current}
     ## 需求
-    - 对"场景介绍","场景的状态"理解，记录，并回复确认即可"""
+    - 对"场景介绍","场景的状态"理解记录加入“对话上下文”，并回复确认即可"""
     )
     print(f"[{world.name}]:", statge2world)
     print("==============================================")
@@ -136,7 +142,7 @@ def main():
     ## 当前NPC的状态
     - {npc_current}
     ## 需求
-    - 对"NPC介绍","当前NPC的状态"理解，记录，并回复确认即可"""
+    - 对"NPC介绍","当前NPC的状态"理解记录加入“对话上下文”，并回复确认即可"""
     )
     print(f"[{world.name}]:", npc2world)
     print("==============================================")
@@ -167,7 +173,7 @@ def main():
         # 当前场景的状态描写
         - {npc2stage},
         ## 需求
-        - 需要你理解“当前场景的状态描写。记录，并回复确认即可”。
+        - 需要你理解“当前场景的状态描写记录并回复确认即可”。
         """
         )
     print(f"[{npc.name}]:", stage2npc)
@@ -185,22 +191,16 @@ def main():
             stage.add_actor(player)
 
             #add player to world
-            player2world = call_agent(world, f"""{player.name}是用户，请确认"""
+            player2world = call_agent(world, f"""{player.name}是用户，加入了这个世界，回复确认即可"""
             )
             print(f"[{world.name}]:", player2world)
             print("==============================================")
 
             #add npc to stage
             player2stage = call_agent(stage, f"""
-            # 向场景添加一个勇者
-            - {player.name},
-            ## 事件
-            - ({player.name})用力推开了屋子的门，闯入屋子而且面色凝重，外面的寒风吹进了屋子
+            # 事件
+            - {player.name}进入了{stage.name}。用力推开了门，闯入屋子而且面色凝重，外面的寒风吹进了屋子
             ## 需求
-            - 根据“事件”更新场景状态
-            - 推断NPC对“”事件“的反应，并更新状态
-            - 输入场景更新的文本
-            - 输出NPC的反应文本
             - 以第3人称输出文本（适当润色）
             """
             )
@@ -213,13 +213,12 @@ def main():
                 broadcast_event = call_agent(
                     actor, 
                     f"""
-                    # 你所在场景内发生事件
-                    ## 当前场景的状态描写
+                    # 场景事件
                     - {player2stage},
                     ## 需求
-                    - 理解“当前场景的状态描写”来更新你的逻辑状态
-                    - 推断出你的心里描或产生对话并输出文本
-                    - 以第1人称输出文本
+                    - 理解“场景事件”更新你的逻辑状态
+                    - 以第1人称输出你的对话文本
+                    - 不要输出心里描写
                     """
                     )
                 print(f"[{actor.name}]:", broadcast_event)
@@ -227,28 +226,28 @@ def main():
 
 
         elif "/talk" in usr_input:
-            talk_content = parse_talk(usr_input)
+            talk_content = parse_input(usr_input, "/talk")
             #
             print(f"[{player.name}]:", talk_content)
             print(f"[{npc.name}]:", call_agent(npc, talk_content))
             print("==============================================")
 
         elif "/stage" in usr_input:
-            talk_content = parse_talk(usr_input)
+            talk_content = parse_input(usr_input, "/stage")
             #
             print(f"[{player.name}]:", talk_content)
             print(f"[{stage.name}]:", call_agent(stage, talk_content))
             print("==============================================")
 
         elif "/world" in usr_input:
-            talk_content = parse_talk(usr_input)
+            talk_content = parse_input(usr_input, "/world")
             #
             print(f"[{player.name}]:", talk_content)
             print(f"[{world.name}]:", call_agent(world, talk_content))
             print("==============================================")
         
         else:
-            talk_content = parse_talk(usr_input)
+            talk_content = parse_input(usr_input, "/what")
             print(f"[{player.name}]:", talk_content)
             print(f"[{npc.name}]:", call_agent(npc, talk_content))
             print("==============================================")

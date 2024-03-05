@@ -36,7 +36,6 @@ prompt = ChatPromptTemplate.from_messages(
             "system",
             f"""
 {world}\n
-{world_view}
             """,
         ),
         MessagesPlaceholder(variable_name="chat_history"),

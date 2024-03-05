@@ -196,9 +196,9 @@ def main():
     npc.conncect("http://localhost:8001/actor/npc/elder/")
 
     #first load！！
-    print(f"[{world.name}]:", call_agent(world, "你是谁？"))
+    print(f"[{world.name}]:", call_agent(world, "你见过鱼人与独角兽嘛？"))
     print(f"[{stage.name}]:", call_agent(stage, f"我({player.name})用力推开了屋子的门，闯入屋子而且面色凝重，外面的寒风吹进了屋子"))
-    print(f"[{npc.name}]:", call_agent(npc, "你好！"))
+    print(f"[{npc.name}]:", call_agent(npc, "你好！你见过鱼人与独角兽嘛？"))
 
     # str2 = talk_to_agent(
     #     f"""
@@ -207,8 +207,6 @@ def main():
     #     world.agent, world.chat_history)
 
     # print(f"[{world.name}]:", str2)
-
-
 
 
     # #

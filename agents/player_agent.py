@@ -47,7 +47,7 @@ def talk_to_npc(words: str) -> str:
 @tool
 def talk_to_scene(words: str) -> str:
     """User talk to iterm."""
-    scene_agent = RemoteRunnable("http://localhost:8002/scene/house/")
+    scene_agent = RemoteRunnable("http://localhost:8002/actor/npc/house/")
     scene_response = talk_to_agent(words, scene_agent, [])
     return scene_response
 

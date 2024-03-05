@@ -232,6 +232,31 @@ def main():
             print(f"[{npc.name}]:", player_talk_to_npc(player, npc, talk_content))
             print("==============================================")
 
+            #
+            syn2player = call_agent(
+                    player, 
+                    f"""
+                    # 事件
+                    - /listen {npc.name} 对你说: {talk_to_npc_res}
+                    """
+                    )
+            print(f"[{player.name}]:", syn2player)
+            print("==============================================")
+
+        if "/think" in usr_input:
+            talk_content = parse_input(usr_input, "/think")
+            print(f"[{player.name}]:", talk_content)
+
+            syn2player = call_agent(
+                    player, 
+                    f"""
+                    # 事件
+                    - /think {player.name} 对你说: {talk_content}
+                    """
+                    )
+            print(f"[{player.name}]:", syn2player)
+            print("==============================================")
+
         elif "/stage" in usr_input:
             talk_content = parse_input(usr_input, "/stage")
             #
@@ -247,7 +272,7 @@ def main():
             print("==============================================")
         
         else:
-            talk_content = parse_input(usr_input, "/what")
+            talk_content = parse_input(usr_input, "/?")
             print(f"[{player.name}]:", talk_content)
 
             #

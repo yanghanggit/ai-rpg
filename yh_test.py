@@ -87,11 +87,13 @@ def main():
     world.conncect("http://localhost:8004/world/")
     stage.conncect("http://localhost:8002/actor/npc/house/")
     npc.conncect("http://localhost:8001/actor/npc/elder/")
+    player.conncect("http://localhost:8008/actor/player/")
 
     #test call
     # print(f"[{world.name}]:", call_agent(world, "你见过鱼人与独角兽嘛？"))
     # print(f"[{stage.name}]:", call_agent(stage, f"({player.name})用力推开了屋子的门，闯入屋子而且面色凝重，外面的寒风吹进了屋子"))
     # print(f"[{npc.name}]:", call_agent(npc, "你好！你见过鱼人与独角兽嘛？"))
+    # print(f"[{player.name}]:", call_agent(player, f"""请告诉你是谁？"""))   #/think 请告诉你是谁？
 
     #当作first load！！
 
@@ -169,6 +171,9 @@ def main():
     print(f"[{npc.name}]:", stage2npc)
     print("==============================================")
 
+
+    game_start = False
+
     # 输入循环
     while True:
         usr_input = input("[user input]: ")
@@ -178,6 +183,7 @@ def main():
             continue
 
         elif "/start" in usr_input:
+            game_start = True
             stage.add_actor(player)
 
             #add player to world
@@ -214,8 +220,12 @@ def main():
                 print(f"[{actor.name}]:", broadcast_event)
                 print("==============================================")
 
+            continue
 
-        elif "/talk" in usr_input:
+        if not game_start:
+            continue
+
+        if "/talk" in usr_input:
             talk_content = parse_input(usr_input, "/talk")
             #
             print(f"[{player.name}]:", talk_content)
@@ -239,7 +249,20 @@ def main():
         else:
             talk_content = parse_input(usr_input, "/what")
             print(f"[{player.name}]:", talk_content)
-            print(f"[{npc.name}]:", player_talk_to_npc(player, npc, talk_content))
+
+            #
+            talk_to_npc_res = player_talk_to_npc(player, npc, talk_content)
+            print(f"[{npc.name}]:", talk_to_npc_res)
+            
+            #
+            syn2player = call_agent(
+                    player, 
+                    f"""
+                    # 事件
+                    - /listen {npc.name} 对你说: {talk_to_npc_res}
+                    """
+                    )
+            print(f"[{player.name}]:", syn2player)
             print("==============================================")
 
 if __name__ == "__main__":

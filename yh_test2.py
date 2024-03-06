@@ -89,14 +89,14 @@ def main():
 
     #
     player = Player("勇者")
-    stage = Stage("小木屋")
+   
     
     #
     # world.add_stage(stage)
     # stage.add_actor(npc)
 
     #
-    # stage.conncect("http://localhost:8002/actor/npc/house/")
+   
     # npc.conncect("http://localhost:8001/actor/npc/elder/")
     # player.conncect("http://localhost:8008/actor/player/")
 
@@ -115,10 +115,15 @@ def main():
     print(f"[{old_hunter.name}]:", log)
     print("==============================================")
 
+    #
+    old_hunters_cabin = Stage("老猎人隐居的小木屋")
+    old_hunters_cabin.conncect("http://localhost:8022/stage/old_hunters_cabin/")
+    log = system_administrator_talk_to_npc(system_administrator, old_hunters_cabin, "请启动")
+    print(f"[{old_hunters_cabin.name}]:", log)
+    print("==============================================")
 
 
-
-    game_start = False
+    #
     while True:
         usr_input = input("[user input]: ")
         if "/quit" in usr_input:
@@ -130,20 +135,27 @@ def main():
             print("==============================================")
             continue
 
-        elif "/mw" in usr_input:
-            content = parse_input(usr_input, "/mv")
+        elif "/1" in usr_input:
+            content = parse_input(usr_input, "/1")
             print(f"[{system_administrator}]:", content)
             print(f"[{world_watcher.name}]:", system_administrator_talk_to_npc(system_administrator, world_watcher, content))
             print("==============================================")
 
-        elif "/mn" in usr_input:
-            content = parse_input(usr_input, "/mn")
+        elif "/2" in usr_input:
+            content = parse_input(usr_input, "/2")
             print(f"[{system_administrator}]:", content)
             print(f"[{old_hunter.name}]:", system_administrator_talk_to_npc(system_administrator, old_hunter, content))
-        print("==============================================")
+        
+        elif "/3" in usr_input:
+            content = parse_input(usr_input, "/3")
+            print(f"[{system_administrator}]:", content)
+            print(f"[{old_hunters_cabin.name}]:", system_administrator_talk_to_npc(system_administrator, old_hunters_cabin, content))
+        
 
-        if not game_start:
-            continue
+
+
+
+        
 
 if __name__ == "__main__":
     print("==============================================")

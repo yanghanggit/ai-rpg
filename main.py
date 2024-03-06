@@ -19,7 +19,7 @@ def main():
     #
     npc_name = "卡斯帕·艾伦德"
     my_name = "勇者"
-    scene_name = "小木屋"
+    scene_name = "老猎人隐居的小木屋"
 
     #
     npc_agent = RemoteRunnable("http://localhost:8001/actor/npc/elder/")

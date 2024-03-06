@@ -76,7 +76,7 @@ def main():
     #
     player = Player("勇者")
     world = World("世界观察者")
-    stage = Stage("小木屋")
+    stage = Stage("老猎人隐居的小木屋")
     npc = NPC("卡斯帕·艾伦德")
     
     #

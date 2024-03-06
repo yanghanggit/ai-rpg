@@ -70,12 +70,26 @@ def parse_input(input_val, split_str):
 #
 def player_talk_to_npc(player, npc, talk_content):
     return call_agent(npc, f"""#{player.name}对你说{talk_content}""")
+
+#
+def system_administrator_talk_to_npc(system_administrator, npc, talk_content):
+    prompt = f"""
+    # 系统消息
+    ## 来自{system_administrator}                    
+    ## 内容
+    - 对你说"{talk_content}"
+    """
+    return call_agent(npc, prompt)
+
 #
 def main():
 
     #
+    system_administrator = "系统管理员"
+
+    #
     player = Player("勇者")
-    world = World("世界观察者")
+    world_watcher = World("世界观察者")
     stage = Stage("小木屋")
     npc = NPC("卡斯帕·艾伦德")
     
@@ -84,17 +98,25 @@ def main():
     # stage.add_actor(npc)
 
     #
-    world.conncect("http://localhost:8004/world/")
+    world_watcher.conncect("http://localhost:8004/world/")
     # stage.conncect("http://localhost:8002/actor/npc/house/")
     # npc.conncect("http://localhost:8001/actor/npc/elder/")
     # player.conncect("http://localhost:8008/actor/player/")
 
    
+    #add stage to world
+    statge2world = call_agent(world_watcher, f"""
+    # 系统消息
+    ## 来自{system_administrator}                    
+    ## 内容
+    - 对你说“请启动”
+    """
+    )
+    print(f"[{world_watcher.name}]:", statge2world)
+    print("==============================================")
 
 
     game_start = False
-
-    # 输入循环
     while True:
         usr_input = input("[user input]: ")
         if "/quit" in usr_input:
@@ -104,8 +126,13 @@ def main():
 
         elif "/start" in usr_input:
             print("==============================================")
-
             continue
+
+        elif "/world" in usr_input:
+            content = parse_input(usr_input, "/world")
+            print(f"[{system_administrator}]:", content)
+            print(f"[{world_watcher.name}]:", system_administrator_talk_to_npc(system_administrator, world_watcher, content))
+            print("==============================================")
 
         if not game_start:
             continue

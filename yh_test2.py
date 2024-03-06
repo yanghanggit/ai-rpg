@@ -132,7 +132,7 @@ def stage_director(stage, actorsPlanGroup):
 #
 def actor_plan(actor, stage_mem):
     prompt = f"""
-    # 这是你要的做规划[plan]
+    # 这是你要的做规划[plan]，表达你想要这么做，但是还没有执行
     ## 来自{actor.name}                    
     ## 步骤(不要输出)
     - 第1步：理解场景{stage_mem}的状态。如果出现了你的名字（就是你），那么你就是场景的一部分。
@@ -140,11 +140,28 @@ def actor_plan(actor, stage_mem):
     - 第3步：思考你将要执行的动作：是[talk]，[idle]或[fight]其中之一。
     ## 需求
     - 完成思考步骤之后，输出[talk]或[idle]或[fight]的结果
-    - 如果是[talk]，请输出你的对话内容。格式为“[talk]:xxxx”
-    - 如果是[idle]，请输出你的思考或者行动的内容。格式为“[idle]:xxxx”
-    - 如果是[fight]，请输出你想要攻击的对象。格式为“[fight]:xxxx”
+    - 如果是[talk]，代表着你计划要说。请输出你的对话内容。格式为“[talk]:xxxx”
+    - 如果是[idle]，代表着你计划休息。请输出你的思考或者行动的内容。格式为“[idle]:xxxx”
+    - 如果是[fight]，代表着你计划攻击。请输出你想要攻击的对象。格式为“[fight]:xxxx”
     """
     return call_agent(actor, prompt)
+
+#
+def actor_confirm_action(actor, stage_mem):
+    prompt = f"""
+    # 这是一个状态同步，代表着你所处于的场景的最新状态和已经发生的既成事实
+    ## 来自{actor.name}                    
+    ## 步骤(不要输出)
+    - 第1步：确认并理解场景{stage_mem}的状态。如果出现了你的名字（就是你），那么你就是场景的一部分。
+    - 第2步：确认并理解在场景的最新状态中你的状态与行动结果。
+    - 第3步：确认你的状态与行动结果是否与你的计划一致。
+    ## 需求
+    - 最终结果不论是否一致。你都要接受这个事实，并且强制更新你的状态。
+    - 如最终结果和你的计划一致，你的输出内容格式为“[success]:xxxx”。
+    - 如最终结果和你的计划不一致，你的输出内容格式为“[fall]:xxxx”。
+    """
+    return call_agent(actor, prompt)
+
 #
 def main():
 
@@ -232,11 +249,17 @@ def main():
             #print(f"{plan_group}")
             plan_group_str = '\n'.join(plan_group)
             #print(plan_group_str)
+
+            ##导演
             new_stage_mem = stage_director(old_hunters_cabin, plan_group_str)
             print(f"[{old_hunters_cabin.name}]:", new_stage_mem)
             print("==============================================")
-
-
+            
+            ##确认行动
+            for actor in old_hunters_cabin.actors:
+                res = actor_confirm_action(actor, stage_mem)
+                print(f"[{actor.name}]:", res)
+            print("==============================================")
 
         elif "/1" in usr_input:
             content = parse_input(usr_input, "/1")

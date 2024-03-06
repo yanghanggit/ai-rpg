@@ -74,17 +74,17 @@ def player_talk_to_npc(player, npc, talk_content):
 #
 def system_administrator_talk_to_npc(system_administrator, npc, talk_content):
     prompt = f"""
-    # 系统消息
+    # 这是系统消息
     ## 来自{system_administrator}                    
     ## 内容
-    - 对你说"{talk_content}"
+    - {talk_content}
     """
     return call_agent(npc, prompt)
 
 #
 def actor_talk_to_actor(from_actor, to_actor, talk_content):
     prompt = f"""
-    # 对话[talk]
+    # 这是一次对话[talk]
     ## 来自{from_actor.name}                    
     ## 内容
     - {talk_content}
@@ -94,7 +94,7 @@ def actor_talk_to_actor(from_actor, to_actor, talk_content):
 #
 def stage_current(stage):
     prompt = f"""
-    # 指令[command]
+    # 这是一个指令[command]
     ## 来自{stage.name}                    
     ## 步骤(不要输出)
     - 第1步：确认并理解你自身当前状态。
@@ -105,6 +105,21 @@ def stage_current(stage):
     """
     return call_agent(stage, prompt)
 
+#
+def actor_plan(actor, stage_mem):
+    prompt = f"""
+    # 这是你要的做规划[plan]
+    ## 来自{actor.name}                    
+    ## 步骤(不要输出)
+    - 第1步：理解场景{stage_mem}的状态。如果出现了你的名字（就是你），那么你就是场景的一部分。
+    - 第2步：确认并理解你当前的状态与信息。
+    - 第3步：思考你的计划的行动：是[talk]，[idle]其中之一。
+    ## 需求
+    - 完成思考步骤之后，输出[talk]或[idle]
+    - 如果是[talk]，请输出你的对话内容。格式为“[talk]:xxxx”
+    - 如果是[idle]，请输出你的思考或者行动的内容。格式为“[idle]:xxxx”
+    """
+    return call_agent(actor, prompt)
 #
 def main():
 
@@ -174,24 +189,23 @@ def main():
 
         elif "/ss" in usr_input:
             content = parse_input(usr_input, "/ss")
-            log = stage_current(old_hunters_cabin)
-            print(f"[{old_hunters_cabin.name}]:", log)
+            stage_mem = stage_current(old_hunters_cabin)
+            print(f"[{old_hunters_cabin.name}]:", stage_mem)
+            print("==============================================")
+
+        elif "/ff" in usr_input:
+            content = parse_input(usr_input, "/ss")
+            stage_mem = stage_current(old_hunters_cabin)
+            print(f"[{old_hunters_cabin.name}]:", stage_mem)
+
+            for actor in old_hunters_cabin.actors:
+                # log = stage_current(actor)
+                # print(f"[{actor.name}]:", log)
+                plan = actor_plan(actor, stage_mem)
+                print(f"[{actor.name}]:", plan)
             print("==============================================")
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-            continue
 
         elif "/1" in usr_input:
             content = parse_input(usr_input, "/1")

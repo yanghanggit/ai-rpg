@@ -192,7 +192,7 @@ def actor_broadcast_to_stage(player, npc, stage, talk_content):
     - 确保{stage.name}里的所有人都会听见“{player.name} 对 {npc.name} 说 { talk_content }”这句话
     ## 需求
     - 在输出文本里，要带着“{player.name} 对 {npc.name} 说 { talk_content }”这句话
-    - 在输出文本里，要带着“{npc.name} 听见了 { talk_content }”的意图
+    - 在输出文本里，要带着“{npc.name} 听见了 { talk_content }”的结果
     """
     return call_agent(stage, prompt)
 

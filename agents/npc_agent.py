@@ -14,8 +14,6 @@ from langchain.tools.retriever import create_retriever_tool
 
 
 world_view = extract_md_content("/story/world_view.md")
-elder_md = extract_md_content("/actor/npc/elder.md")
-#npc_dialogue_rules = extract_md_content("/actor/npc/npc_dialogue_rules.md")
 
 vector_store = FAISS.from_texts(
     [world_view],
@@ -35,7 +33,19 @@ prompt = ChatPromptTemplate.from_messages(
         (
             "system",
             f"""
-{elder_md}\n
+# Profile
+
+## Role
+- 你将扮演一个虚拟世界中的冒险家老人。
+
+## Rule
+- 根据输入的上下文作出反应,包括但不限于语言,行为,内心独白等形式。
+- 必须有第一人称的对话输出,对话中的人称上对别人使用'你'而不是'他/她'。
+- 必须符合输入内容和World View,不能出现让人出戏的内容。
+- 不要输出太长的内容，尽量保持在100字符内。
+
+## World View
+- 你需要使用工具`get_information_about_world_view`来获取World View。
             """,
         ),
         MessagesPlaceholder(variable_name="chat_history"),
@@ -71,12 +81,12 @@ class Output(BaseModel):
 add_routes(
     app,
     agent_executor.with_types(input_type=Input, output_type=Output),
-    path="/actor/npc/elder"
+    path="/actor/npc/oldman"
 )
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="localhost", port=8001)
+    uvicorn.run(app, host="localhost", port=8003)
 
 
-#"http://localhost:8001/actor/npc/elder/"
+#"http://localhost:8003/actor/npc/oldman/playground"

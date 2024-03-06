@@ -36,14 +36,13 @@ prompt = ChatPromptTemplate.from_messages(
 # Profile
 
 ## Role
-- 你将扮演虚拟世界中的一位年轻的勇者。
+- 你是一个非常优秀的故事讲述者。
+- 需要根据输入的内容,结合上下文来写出一段非常精彩的故事。
 
 ## Rule
-- 输入的内容是年轻的勇者说的话。
-- 根据输入的内容加上下文，润色丰富输入的内容。
-- 必须以第一人称的形式输出。
-- 必须符合输入内容和World View,不能出现让人出戏的内容。
-- 不要输出太长的内容，尽量保持在100字符内。
+- 每次生成故事,剧情只推进一点点就行,仅描述出一段即可,内容需要有让人非常想继续探索下去的欲望。
+- 不要生成对话类型的内容。
+- 尽量控制在300字符内。
 
 ## World View
 - 你需要使用工具`get_information_about_world_view`来获取World View。
@@ -57,6 +56,11 @@ prompt = ChatPromptTemplate.from_messages(
 
 llm = ChatOpenAI(model="gpt-4-turbo-preview")
 
+def talk_to_agent(input_val, npc_agent, chat_history):
+    response = npc_agent.invoke({"input": input_val, "chat_history": chat_history})
+    chat_history.extend([HumanMessage(content=input_val), AIMessage(content=response['output'])])
+    return response['output']
+    
 tools = [retriever_tool]
 
 agent = create_openai_functions_agent(llm, tools, prompt)
@@ -82,12 +86,11 @@ class Output(BaseModel):
 add_routes(
     app,
     agent_executor.with_types(input_type=Input, output_type=Output),
-    path="/actor/player"
+    path="/system/story"
 )
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="localhost", port=8004)
+    uvicorn.run(app, host="localhost", port=8002)
 
-
-#"http://localhost:8004/actor/player/playground/"
+#http://localhost:8002/system/story/playerground/

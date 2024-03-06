@@ -13,6 +13,8 @@ from langchain_openai.embeddings import OpenAIEmbeddings
 from langchain.tools.retriever import create_retriever_tool
 
 
+user_input = "一位年轻的勇者偶遇一位曾经的冒险家老人,绞尽脑汁想要从老人手中获得他的神秘地图。"
+
 world_view = extract_md_content("/story/world_view.md")
 
 vector_store = FAISS.from_texts(
@@ -32,18 +34,19 @@ prompt = ChatPromptTemplate.from_messages(
     [
         (
             "system",
-            f"""
+            """
 # Profile
 
+## Target
+{brief_task}\n
+
 ## Role
-- 你将扮演虚拟世界中的一位年轻的勇者。
+- 你将扮演一个虚拟世界的任务系统。
 
 ## Rule
-- 输入的内容是年轻的勇者说的话。
-- 根据输入的内容加上下文，润色丰富输入的内容。
-- 必须以第一人称的形式输出。
-- 必须符合输入内容和World View,不能出现让人出戏的内容。
-- 不要输出太长的内容，尽量保持在100字符内。
+- 你必须根据Target的输入来推理出一个完全符合World View的任务内容。
+- 输出你推理出的任务,不要过于复杂。
+- 尽量控制在300个字符以内。
 
 ## World View
 - 你需要使用工具`get_information_about_world_view`来获取World View。
@@ -56,7 +59,7 @@ prompt = ChatPromptTemplate.from_messages(
 )
 
 llm = ChatOpenAI(model="gpt-4-turbo-preview")
-
+    
 tools = [retriever_tool]
 
 agent = create_openai_functions_agent(llm, tools, prompt)
@@ -70,6 +73,7 @@ app = FastAPI(
 )
 
 class Input(BaseModel):
+    brief_task: str
     input: str
     chat_history: List[Union[HumanMessage, AIMessage, FunctionMessage]] = Field(
         ...,
@@ -82,12 +86,11 @@ class Output(BaseModel):
 add_routes(
     app,
     agent_executor.with_types(input_type=Input, output_type=Output),
-    path="/actor/player"
+    path="/system/task"
 )
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="localhost", port=8004)
+    uvicorn.run(app, host="localhost", port=8001)
 
-
-#"http://localhost:8004/actor/player/playground/"
+#http://localhost:8001/system/task/playground/

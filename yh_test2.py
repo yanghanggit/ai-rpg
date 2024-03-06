@@ -68,10 +68,6 @@ def parse_input(input_val, split_str):
     return input_val
 
 #
-def player_talk_to_npc(player, npc, talk_content):
-    return call_agent(npc, f"""#{player.name}对你说{talk_content}""")
-
-#
 def system_administrator_talk_to_npc(system_administrator, npc, talk_content):
     prompt = f"""
     # 这是系统消息
@@ -81,10 +77,10 @@ def system_administrator_talk_to_npc(system_administrator, npc, talk_content):
     """
     return call_agent(npc, prompt)
 
-#
-def actor_talk_to_actor(from_actor, to_actor, talk_content):
+#wisper
+def actor_wisper_to_npc(from_actor, to_actor, talk_content):
     prompt = f"""
-    # 这是一次对话[talk]
+    # 这是1对1的对话[wisper],别人是听不见的
     ## 来自{from_actor.name}                    
     ## 内容
     - {talk_content}
@@ -176,7 +172,6 @@ def player_enter_stage(player, stage, how_to_enter):
     """
     return call_agent(stage, prompt)
 
-
 # 
 def actor_update_from_stage(actor, stage, content):
     prompt = f"""
@@ -186,9 +181,23 @@ def actor_update_from_stage(actor, stage, content):
     - {content}
     """
     return call_agent(actor, prompt)
+
+
+# 这是一个发生的事件，一角色在场景里对同场景的角色做公开的发言
+def actor_broadcast_to_stage(player, npc, stage, talk_content):
+    prompt = f"""
+    # 这是一个{stage.name} 内发生的事件，一角色在场景里对同场景的角色做公开的发言
+    ## 来自 {player.name}                
+    ## 事件
+    - 确保{stage.name}里的所有人都会听见“{player.name} 对 {npc.name} 说 { talk_content }”这句话
+    ## 需求
+    - 在输出文本里，要带着“{player.name} 对 {npc.name} 说 { talk_content }”这句话
+    - 在输出文本里，要带着“{npc.name} 听见了 { talk_content }”的意图
+    """
+    return call_agent(stage, prompt)
+
 #
 def main():
-
     #
     system_administrator = "系统管理员"
 
@@ -241,7 +250,7 @@ def main():
 
     #
     player = Player("yang_hang")
-    log = actor_talk_to_actor(player, world_watcher, f"我加入了这个世界")
+    log = actor_wisper_to_npc(player, world_watcher, f"我加入了这个世界")
     print(f"[{world_watcher.name}]:", log)
     print("==============================================")
 
@@ -292,6 +301,7 @@ def main():
             #print(plan_group_str)
 
             ##导演
+            print("==============================================")
             new_stage_mem = stage_director(old_hunters_cabin, plan_group_str)
             print(f"[{old_hunters_cabin.name}] => ", new_stage_mem)
             print("==============================================")
@@ -324,6 +334,34 @@ def main():
                 content = parse_input(usr_input, "/4")
                 print(f"[{system_administrator}]:", content)
                 print(f"[{old_hunters_dog.name}]:", system_administrator_talk_to_npc(system_administrator, old_hunters_dog, content))
+
+
+        elif "/t1" in usr_input:
+            content = parse_input(usr_input, "/t1")
+            print(f"[{player.name}]:", content)
+            stage_mem = actor_broadcast_to_stage(player, old_hunter, old_hunters_cabin, content)
+            print(f"[{old_hunters_cabin.name}]:", stage_mem)
+            for actor in old_hunters_cabin.actors:
+                if actor == player:
+                    continue
+                update_npc = actor_update_from_stage(actor, old_hunters_cabin, stage_mem)
+                print(f"[{actor.name}]:", update_npc)
+            print("==============================================")
+
+
+        elif "/t2" in usr_input:
+            content = parse_input(usr_input, "/t2")
+            print(f"[{player.name}]:", content)
+            stage_mem = actor_broadcast_to_stage(player, old_hunters_dog, old_hunters_cabin, content)
+            print(f"[{old_hunters_cabin.name}]:", stage_mem)
+            for actor in old_hunters_cabin.actors:
+                if actor == player:
+                    continue
+                update_npc = actor_update_from_stage(actor, old_hunters_cabin, stage_mem)
+                print(f"[{actor.name}]:", update_npc)
+            print("==============================================")
+
+                
 
 
 if __name__ == "__main__":

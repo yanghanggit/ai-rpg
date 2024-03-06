@@ -162,6 +162,30 @@ def actor_confirm_action(actor, stage_mem):
     """
     return call_agent(actor, prompt)
 
+
+#
+def player_enter_stage(player, stage, how_to_enter):
+    prompt = f"""
+    # 这是一个针对场景发生的事件[event]
+    ## 来自 {player.name}                    
+    ## 步骤(不要输出)
+    - 第1步：仅确认并理解你自身当前状态，不要考虑场景内其他角色的状态。
+    - 第2步：在 {player.name} 以 {how_to_enter} 进入场景之后，场景的状态发生了变化。
+    ## 需求
+    - 完成思考步骤之后，输出文本内容。
+    """
+    return call_agent(stage, prompt)
+
+
+# 
+def actor_update_from_stage(actor, stage, content):
+    prompt = f"""
+    # 这是一个广播[broadcast]
+    ## 来自 {stage.name}                    
+    ## 内容
+    - {content}
+    """
+    return call_agent(actor, prompt)
 #
 def main():
 
@@ -229,6 +253,21 @@ def main():
         if "/cancel" in usr_input:
             continue
 
+        elif "/ee" in usr_input:
+            content = parse_input(usr_input, "/ee")
+            print(f"[{player.name}]:", content)
+            old_hunters_cabin.add_actor(player)
+            stage_mem = player_enter_stage(player, old_hunters_cabin, content)
+            print(f"[{old_hunters_cabin.name}]:", stage_mem)
+            print("==============================================")
+            for actor in old_hunters_cabin.actors:
+                if actor == player:
+                    continue
+                update_npc = actor_update_from_stage(actor, old_hunters_cabin, stage_mem)
+                print(f"[{actor.name}]:", update_npc)
+
+            print("==============================================")
+
         elif "/ss" in usr_input:
             content = parse_input(usr_input, "/ss")
             stage_mem = stage_current(old_hunters_cabin)
@@ -242,6 +281,8 @@ def main():
 
             plan_group = []
             for actor in old_hunters_cabin.actors:
+                if actor == player:
+                    continue
                 plan = actor_plan(actor, stage_mem)
                 print(f"[{actor.name}] plan:", plan)
                 plan_group.append(f"[{actor.name}]" + plan)
@@ -257,6 +298,8 @@ def main():
             
             ##确认行动
             for actor in old_hunters_cabin.actors:
+                if actor == player:
+                    continue
                 res = actor_confirm_action(actor, stage_mem)
                 print(f"[{actor.name}]: action", res)
             print("==============================================")

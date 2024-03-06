@@ -7,7 +7,7 @@ class World:
         self.name = name
         self.stages = []
 
-    def conncect(self, url):
+    def connect(self, url):
         self.agent = RemoteRunnable(url)
         self.chat_history = []
 
@@ -21,7 +21,7 @@ class Stage:
         self.name = name
         self.actors = []
 
-    def conncect(self, url):
+    def connect(self, url):
         self.agent = RemoteRunnable(url)
         self.chat_history = []
 
@@ -33,7 +33,7 @@ class Actor:
     def __init__(self, name):
         self.name = name
 
-    def conncect(self, url):
+    def connect(self, url):
         self.agent = RemoteRunnable(url)
         self.chat_history = []
 
@@ -84,10 +84,10 @@ def main():
     stage.add_actor(npc)
 
     #
-    world.conncect("http://localhost:8004/world/")
-    stage.conncect("http://localhost:8002/actor/npc/house/")
-    npc.conncect("http://localhost:8001/actor/npc/elder/")
-    player.conncect("http://localhost:8008/actor/player/")
+    world.connect("http://localhost:8004/world/")
+    stage.connect("http://localhost:8002/actor/npc/house/")
+    npc.connect("http://localhost:8001/actor/npc/elder/")
+    player.connect("http://localhost:8008/actor/player/")
 
     #test call
     # print(f"[{world.name}]:", call_agent(world, "你见过鱼人与独角兽嘛？"))

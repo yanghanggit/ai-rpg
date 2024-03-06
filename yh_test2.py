@@ -86,39 +86,34 @@ def main():
 
     #
     system_administrator = "系统管理员"
-
     #
     player = Player("勇者")
-   
-    
-    #
-    # world.add_stage(stage)
-    # stage.add_actor(npc)
-
-    #
-   
-    # npc.conncect("http://localhost:8001/actor/npc/elder/")
-    # player.conncect("http://localhost:8008/actor/player/")
-
    
     #start world
     world_watcher = World("世界观察者")
     world_watcher.conncect("http://localhost:8004/world/")
-    log = system_administrator_talk_to_npc(system_administrator, world_watcher, "请启动")
+    log = system_administrator_talk_to_npc(system_administrator, world_watcher, "启动")
     print(f"[{world_watcher.name}]:", log)
     print("==============================================")
 
     #
     old_hunter = NPC("卡斯帕·艾伦德")
     old_hunter.conncect("http://localhost:8021/actor/npc/old_hunter/")
-    log = system_administrator_talk_to_npc(system_administrator, old_hunter, "请启动")
+    log = system_administrator_talk_to_npc(system_administrator, old_hunter, "启动")
     print(f"[{old_hunter.name}]:", log)
+    print("==============================================")
+
+    #
+    old_hunters_dog = NPC("小狗'短剑'")
+    old_hunters_dog.conncect("http://localhost:8023/actor/npc/old_hunters_dog/")
+    log = system_administrator_talk_to_npc(system_administrator, old_hunters_dog, "启动")
+    print(f"[{old_hunters_dog.name}]:", log)
     print("==============================================")
 
     #
     old_hunters_cabin = Stage("老猎人隐居的小木屋")
     old_hunters_cabin.conncect("http://localhost:8022/stage/old_hunters_cabin/")
-    log = system_administrator_talk_to_npc(system_administrator, old_hunters_cabin, "请启动")
+    log = system_administrator_talk_to_npc(system_administrator, old_hunters_cabin, "启动")
     print(f"[{old_hunters_cabin.name}]:", log)
     print("==============================================")
 
@@ -151,11 +146,11 @@ def main():
             print(f"[{system_administrator}]:", content)
             print(f"[{old_hunters_cabin.name}]:", system_administrator_talk_to_npc(system_administrator, old_hunters_cabin, content))
         
+        elif "4" in usr_input:
+                content = parse_input(usr_input, "/4")
+                print(f"[{system_administrator}]:", content)
+                print(f"[{old_hunters_dog.name}]:", system_administrator_talk_to_npc(system_administrator, old_hunters_dog, content))
 
-
-
-
-        
 
 if __name__ == "__main__":
     print("==============================================")

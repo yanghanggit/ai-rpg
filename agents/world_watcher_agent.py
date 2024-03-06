@@ -13,7 +13,7 @@ from langchain_openai.embeddings import OpenAIEmbeddings
 from langchain.tools.retriever import create_retriever_tool
 
 
-world = extract_md_content("/story/world.md")
+world_watcher_md = extract_md_content("/story/world_watcher.md")
 world_view = extract_md_content("/story/world_view.md")
 
 
@@ -35,7 +35,7 @@ prompt = ChatPromptTemplate.from_messages(
         (
             "system",
             f"""
-{world}\n
+            {world_watcher_md}\n
             """,
         ),
         MessagesPlaceholder(variable_name="chat_history"),

@@ -243,7 +243,7 @@ def main():
             plan_group = []
             for actor in old_hunters_cabin.actors:
                 plan = actor_plan(actor, stage_mem)
-                print(f"[{actor.name}]:", plan)
+                print(f"[{actor.name}] plan:", plan)
                 plan_group.append(f"[{actor.name}]" + plan)
             
             #print(f"{plan_group}")
@@ -252,13 +252,13 @@ def main():
 
             ##导演
             new_stage_mem = stage_director(old_hunters_cabin, plan_group_str)
-            print(f"[{old_hunters_cabin.name}]:", new_stage_mem)
+            print(f"[{old_hunters_cabin.name}] => ", new_stage_mem)
             print("==============================================")
             
             ##确认行动
             for actor in old_hunters_cabin.actors:
                 res = actor_confirm_action(actor, stage_mem)
-                print(f"[{actor.name}]:", res)
+                print(f"[{actor.name}]: action", res)
             print("==============================================")
 
         elif "/1" in usr_input:

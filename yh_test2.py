@@ -35,8 +35,8 @@ class Actor:
         self.name = name
         #An assessment of the combat effectiveness of an army
         self.health = 10
-        self.damage = 1
-        self.enable = True
+        self.power = 10
+     
 
     def connect(self, url):
         self.agent = RemoteRunnable(url)
@@ -143,8 +143,13 @@ class FightEvent:
         return f"{self.src_actor_name}=>{self.dest_actor_name}:{self.say_content}"
     
     def make_plan(self):
-        res = self.dest_actor.health - self.src_actor.damage
-        if (res <= 0):
+        self.src_actor.health -= 3
+        self.dest_actor.health = -3
+        if self.src_actor.health <= 0:
+            return f"""{self.src_actor_name}准备向{self.dest_actor_name}发起攻击,
+            他（她/它）说到（或者内心的想法）：{self.say_content}。
+            结果：{self.src_actor_name}将会死亡。"""
+        elif self.dest_actor.health <= 0:
             return f"""{self.src_actor_name}准备向{self.dest_actor_name}发起攻击,
             他（她/它）说到（或者内心的想法）：{self.say_content}。
             结果：{self.dest_actor_name}将会死亡。"""
@@ -197,9 +202,9 @@ def actor_plan_prompt(actor):
     
     ## 注意！输出的关键字，只能在如下中选择：
     - [fight]，代表着你计划攻击某个目标（角色）。
-    - [stay]，代表着你保持现状，不做任何事。
     - [leave]，代表着你计划要离开你当前场景。
-
+    - [stay]，代表着你保持现状，不做任何事。
+    
     ## 输出规则与示例：
     - 如果你想攻击某个目标，那么你的输出格式为：“[fight][目标的名字]:...“，...代表着你本次攻击要说的话与心里活动。
     - 如果你想离开，那么你的输出格式为：“[leave]:...“，...代表着你本次要说的话与心里活动。
@@ -265,10 +270,10 @@ def main():
 
     #
     player = Player("yang_hang")
-    log = call_agent(world_watcher,  f"""{player.name}加入了这个世界""")
+    log = call_agent(world_watcher,  f"""你知道了如下事件：{player.name}加入了这个世界""")
     print(f"[{world_watcher.name}]:", log)
     player.health = 10000000
-    player.damage = 10000000
+    player.power = 10000000
 
 
     print("//////////////////////////////////////////////////////////////////////////////////////")
@@ -397,10 +402,6 @@ def main():
             print("==============================================")
 
         
-
-                
-
-
 if __name__ == "__main__":
     print("==============================================")
     main()

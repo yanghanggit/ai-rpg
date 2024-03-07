@@ -232,7 +232,7 @@ def stage_plan_prompt(stage):
     - 第2步：理解你的场景内所有角色的当前状态。
     - 第3步：根据以2步，输出你需要做出计划。
 
-    ## 注意！输出的关键字，只能是如下之一：
+   ## 注意！输出的关键字，只能是如下之一：
     - [fight]，代表着你计划攻击某个目标（角色）。
     - [stay]，代表着你保持现状，不做任何事。
     - [talk], 代表着你计划要说出来的话或者心里活动的描写。
@@ -263,7 +263,6 @@ def actor_plan_prompt(actor):
     - [fight]，代表着你计划攻击某个目标（角色）。
     - [stay]，代表着你保持现状，不做任何事。
     - [talk], 代表着你计划要说出来的话或者心里活动的描写。
-    
 
     ## 输出规则与示例：
     - 如果你想攻击某个目标，那么你的输出格式为：“[fight][目标的名字]:...“，...代表着你本次攻击要说的话与心里活动。
@@ -395,7 +394,7 @@ def main():
 
             #
             log = call_agent(current_stage, stage_plan_prompt(current_stage))
-            print(f"<{current_stage.name}>:", log)
+            #print(f"<{current_stage.name}>:", log)
             str = f"[{current_stage.name}]{log}"
             plans.append(str)
             print("==============================================")
@@ -405,7 +404,7 @@ def main():
                 if actor == player:
                     continue
                 log = call_agent(actor, actor_plan_prompt(actor))
-                print(f"<{actor.name}>:", log)
+                #print(f"<{actor.name}>:", log)
                 str = f"[{actor.name}]{log}"
                 plans.append(str)
                 print("==============================================")
@@ -464,8 +463,7 @@ def main():
                     continue
                 res = actor_confirm_and_update_from_stage_state(actor, stage_state)
                 print(f"[{actor.name}]: action", res)
-            
-            
+        
             """
             
             print("==============================================")

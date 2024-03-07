@@ -258,9 +258,6 @@ def stage_plan_prompt(stage):
     """
     return prompt
 
-
-
-
 #
 class FightEvent:
     def __init__(self, stage, src_actor_name, dest_actor_name, say_content):
@@ -322,8 +319,6 @@ def director_prompt(stage, plans_group):
    
     ## 输出规则
     - 最终输出的结果，需要包括每个角色的结果(包括你自己)。
-    - 如果角色计划执行成功，则输出“[success][角色名字]:....”,其中....代表着角色的计划结果。
-    - 如果角色计划执行成功，则输出“[fall][角色名字]:....”，其中....代表着角色的计划结果。
     """
 
 #场景需要根据状态做出计划
@@ -361,18 +356,18 @@ def actor_confirm_prompt(actor, stage_state):
     - 第2步：确认并理解场景{stage_state}的推演结果。如果出现了你的名字（就是你）。
     - 第3步：对比你的计划在推演结果中的表现，是否得到执行。
     - 第4步：你需要更新你的状态。
-    - 最后，输出你的状态。
+    - 第5步：输出你的状态，注意看“输出规则”。
 
     ## 注意！输出的关键字，只能在如下中选择：
-    - [live]，代表着你你还活着（还存在）。
+    - [live]，代表着你还活着（还存在）。
     - [dead]，代表着你死了（不存在了）。
-    - [leave], 代表着你希望离开这个场景。
-    - [stay], 代表着你希望留在这个场景。
 
-    ## 输出规则与示例：
-    - [live][stay]:xxxx，代表你还活着，你还留在这个场景。xxxx代表着你的心里活动或者对话。
-    - [live][leave]:xxxx，代表你还活着，你希望离开。xxxx代表着你的心里活动或者对话。
+    ## 输出规则：
+    - [live]:xxxx，代表你还活着，还留在这个场景。xxxx代表着你的心里活动或者对话。
     - [dead]:xxxx，代表你死了。xxxx代表着你的心里活动或者对话。
+
+    ## 输出
+    - 最后结果至少带[live]或者[dead]之一。
     """
     return call_agent(actor, prompt)
 
@@ -564,30 +559,26 @@ def main():
             for actor in current_stage.actors:
                 actor_comfirm_prompt_str = actor_confirm_prompt(actor, director_res)
                 actor_res = call_agent(actor, actor_comfirm_prompt_str)
-                print(f"[{actor.name}]=>", actor_res)
+                print(f"[{actor.name}]=>:", actor_res)
             print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-
-            
-        
-           
             
             print("==============================================")
 
 
-        elif "/ee" in usr_input:
-            content = parse_input(usr_input, "/ee")
-            print(f"[{player.name}]:", content)
-            old_hunters_cabin.add_actor(player)
-            stage_state = player_enter_stage(player, old_hunters_cabin, content)
-            print(f"[{old_hunters_cabin.name}]:", stage_state)
-            print("==============================================")
-            for actor in old_hunters_cabin.actors:
-                if actor == player:
-                    continue
-                update_npc = actor_receive_event_from_stage(actor, old_hunters_cabin, stage_state)
-                print(f"[{actor.name}]:", update_npc)
+        # elif "/ee" in usr_input:
+        #     content = parse_input(usr_input, "/ee")
+        #     print(f"[{player.name}]:", content)
+        #     old_hunters_cabin.add_actor(player)
+        #     stage_state = player_enter_stage(player, old_hunters_cabin, content)
+        #     print(f"[{old_hunters_cabin.name}]:", stage_state)
+        #     print("==============================================")
+        #     for actor in old_hunters_cabin.actors:
+        #         if actor == player:
+        #             continue
+        #         update_npc = actor_receive_event_from_stage(actor, old_hunters_cabin, stage_state)
+        #         print(f"[{actor.name}]:", update_npc)
 
-            print("==============================================")
+        #     print("==============================================")
 
         # elif "/ss" in usr_input:
         #     content = parse_input(usr_input, "/ss")

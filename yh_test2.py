@@ -569,56 +569,7 @@ def main():
 
             
         
-            """
-            user input]: /rr
-[老猎人隐居的小木屋][stay]:...
-[卡斯帕·艾伦德][stay][talk]:明日得去森林瞧瞧，看看有无新的猎物。
-[小狗'短剑'][stay][talk]:我想去看看卡斯帕先生，但还想多睡会。
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-['[老猎人隐居的小木屋]', '[stay]']
-[老猎人隐居的小木屋]:...
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-['[卡斯帕·艾伦德]', '[stay]', '[talk]']
-[卡斯帕·艾伦德]:明日得去森林瞧瞧，看看有无新的猎物。
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-["[小狗'短剑']", '[stay]', '[talk]']
-[小狗'短剑']:我想去看看卡斯帕先生，但还想多睡会。
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-==============================================
-
-
-
-            stage_state = get_stage_current_state(old_hunters_cabin)
-            #print(f"[{old_hunters_cabin.name}]:", stage_state)
-
-            plan_group = []
-            for event in fight_events:
-                plan = event.make_plan()
-                plan_group.append(plan)
-
-            for event in stay_events:
-                plan = event.make_plan()
-                plan_group.append(plan)
-
-            plan_group_str = '\n'.join(plan_group)
-            #print(plan_group_str)
-
-            ##导演
-            print("==============================================")
-            new_stage_state = stage_advance_plot_as_director(old_hunters_cabin, plan_group_str)
-            print(f"[{old_hunters_cabin.name}] => ", new_stage_state)
-            print("==============================================")
-            
-            ##确认行动
-            for actor in old_hunters_cabin.actors:
-                if actor == player:
-                    continue
-                res = actor_confirm_and_update_from_stage_state(actor, stage_state)
-                print(f"[{actor.name}]: action", res)
-        
-            """
+           
             
             print("==============================================")
 
@@ -638,40 +589,40 @@ def main():
 
             print("==============================================")
 
-        elif "/ss" in usr_input:
-            content = parse_input(usr_input, "/ss")
-            stage_state = get_stage_current_state(old_hunters_cabin)
-            print(f"[{old_hunters_cabin.name}]:", stage_state)
-            print("==============================================")
+        # elif "/ss" in usr_input:
+        #     content = parse_input(usr_input, "/ss")
+        #     stage_state = get_stage_current_state(old_hunters_cabin)
+        #     print(f"[{old_hunters_cabin.name}]:", stage_state)
+        #     print("==============================================")
 
         
 
         
 
-        elif "/t1" in usr_input:
-            content = parse_input(usr_input, "/t1")
-            print(f"[{player.name}]:", content)
-            stage_state = actor_speak_to_actor_publicly_in_stage(player, old_hunter, old_hunters_cabin, content)
-            print(f"[{old_hunters_cabin.name}]:", stage_state)
-            for actor in old_hunters_cabin.actors:
-                if actor == player:
-                    continue
-                update_npc = actor_receive_event_from_stage(actor, old_hunters_cabin, stage_state)
-                print(f"[{actor.name}]:", update_npc)
-            print("==============================================")
+        # elif "/t1" in usr_input:
+        #     content = parse_input(usr_input, "/t1")
+        #     print(f"[{player.name}]:", content)
+        #     stage_state = actor_speak_to_actor_publicly_in_stage(player, old_hunter, old_hunters_cabin, content)
+        #     print(f"[{old_hunters_cabin.name}]:", stage_state)
+        #     for actor in old_hunters_cabin.actors:
+        #         if actor == player:
+        #             continue
+        #         update_npc = actor_receive_event_from_stage(actor, old_hunters_cabin, stage_state)
+        #         print(f"[{actor.name}]:", update_npc)
+        #     print("==============================================")
 
 
-        elif "/t2" in usr_input:
-            content = parse_input(usr_input, "/t2")
-            print(f"[{player.name}]:", content)
-            stage_state = actor_speak_to_actor_publicly_in_stage(player, old_hunters_dog, old_hunters_cabin, content)
-            print(f"[{old_hunters_cabin.name}]:", stage_state)
-            for actor in old_hunters_cabin.actors:
-                if actor == player:
-                    continue
-                update_npc = actor_receive_event_from_stage(actor, old_hunters_cabin, stage_state)
-                print(f"[{actor.name}]:", update_npc)
-            print("==============================================")
+        # elif "/t2" in usr_input:
+        #     content = parse_input(usr_input, "/t2")
+        #     print(f"[{player.name}]:", content)
+        #     stage_state = actor_speak_to_actor_publicly_in_stage(player, old_hunters_dog, old_hunters_cabin, content)
+        #     print(f"[{old_hunters_cabin.name}]:", stage_state)
+        #     for actor in old_hunters_cabin.actors:
+        #         if actor == player:
+        #             continue
+        #         update_npc = actor_receive_event_from_stage(actor, old_hunters_cabin, stage_state)
+        #         print(f"[{actor.name}]:", update_npc)
+        #     print("==============================================")
 
                 
 

@@ -221,6 +221,79 @@ load_prompt = f"""
 - 保留关键信息(时间，地点，人物，事件)，不要推断，增加与润色。输出在保证语意完整基础上字符尽量少。
 """
 
+#场景需要根据状态做出计划
+def stage_plan_prompt(stage):
+    prompt = f"""
+    # 你需要做出计划
+    - 如果你的场景设定中，允许你做出计划，那么你需要做出计划。否则，仅更新你的状态即可。   
+
+    ## 步骤
+    - 第1步：理解你自身当前状态。
+    - 第2步：理解你的场景内所有角色的当前状态。
+    - 第3步：根据以2步，输出你需要做出计划。
+
+    ## 注意！输出的关键字，只能是如下之一：
+    - [fight]，代表着你计划攻击某个目标（角色）。
+    - [stay]，代表着你保持现状，不做任何事。
+    - [talk], 代表着你计划要说出来的话或者心里活动的描写。
+
+    ## 输出规则与示例：
+    - 如果你想攻击某个目标，那么你的输出格式为：“[fight][目标的名字]:...“，...代表着你本次攻击要说的话与心里活动。
+    - 如果你想保持现状，那么你的输出格式为：“[stay][talk]：...“，...代表着你本次保持现状要说的话与心里活动。
+    - 如果你想说话，那么你的输出格式为：“[stay][talk]:...“，...代表着你本次要说的话与心里活动。
+    - 如果不在以上3种情况，就输出"[stay]:...", ...仅代表着你的心里活动。
+
+    ## 输出规则：
+    - 不要推断，增加与润色。
+    - 输出在保证语意完整基础上字符尽量少。
+    """
+    return prompt
+
+
+#场景需要根据状态做出计划
+def actor_plan_prompt(actor):
+    prompt = f"""
+    # 你需要做出计划（即你想要做的事，但是还没有做，或者是心里想的事情）    
+    ## 步骤
+    - 第1步：理解你自身当前状态。
+    - 第2步：理解你的场景内所有角色的当前状态。
+    - 第3步：根据以2步，输出你需要做出计划。请关注“计划的输出规则”
+    
+    ## 注意！输出的关键字，只能是如下之一：
+    - [fight]，代表着你计划攻击某个目标（角色）。
+    - [stay]，代表着你保持现状，不做任何事。
+    - [talk], 代表着你计划要说出来的话或者心里活动的描写。
+    
+
+    ## 输出规则与示例：
+    - 如果你想攻击某个目标，那么你的输出格式为：“[fight][目标的名字]:...“，...代表着你本次攻击要说的话与心里活动。
+    - 如果你想保持现状，那么你的输出格式为：“[stay][talk]：...“，...代表着你本次保持现状要说的话与心里活动。
+    - 如果你想说话，那么你的输出格式为：“[stay][talk]:...“，...代表着你本次要说的话与心里活动。
+    - 如果不在以上3种情况，就输出"[stay]:...", ...仅代表着你的心里活动。
+
+    ## 输出规则：
+    - 输出在保证语意完整基础上字符尽量少。
+    """
+    return prompt
+
+
+# prompt = f"""
+#     # 这是你要的做规划[plan]，表达你想要这么做，但是还没有执行
+#     ## 来自{actor.name}                    
+#     ## 步骤(不要输出)
+#     - 第1步：理解场景{stage_state}的状态。如果出现了你的名字（就是你），那么你就是场景的一部分。
+#     - 第2步：确认并理解你当前的状态与信息。
+#     - 第3步：思考你将要执行的动作：是[talk]，[idle]或[fight]其中之一。
+#     ## 需求
+#     - 完成思考步骤之后，输出[talk]或[idle]或[fight]的结果
+#     - 如果是[talk]，代表着你计划要说。请输出你的对话内容。格式为“[talk]:xxxx”
+#     - 如果是[idle]，代表着你计划休息。请输出你的思考或者行动的内容。格式为“[idle]:xxxx”
+#     - 如果是[fight]，代表着你计划攻击。请输出你想要攻击的对象。格式为“[fight]:xxxx”
+#     """
+
+
+
+
 #
 def main():
     #
@@ -261,9 +334,14 @@ def main():
 
     #
     player = Player("yang_hang")
-    log = actor_wisper_to_actor(player, world_watcher, f"我加入了这个世界")
+    log = call_agent(world_watcher,  f"""{player.name}加入了这个世界""")
     print(f"[{world_watcher.name}]:", log)
     print("==============================================")
+
+
+    print("//////////////////////////////////////////////////////////////////////////////////////")
+    print("//////////////////////////////////////////////////////////////////////////////////////")
+    print("//////////////////////////////////////////////////////////////////////////////////////")
 
     #
     while True:
@@ -272,6 +350,13 @@ def main():
             sys.exit()
         if "/cancel" in usr_input:
             continue
+        
+        elif "/0" in usr_input:
+            content = parse_input(usr_input, "/0")
+            # print(f"[{system_administrator}]:", content)
+            # print(f"[{world_watcher.name}]:", call_agent(world_watcher, content))
+            print("==============================================")
+
 
         elif "/1" in usr_input:
             content = parse_input(usr_input, "/1")
@@ -297,29 +382,61 @@ def main():
             print(f"[{old_hunters_dog.name}]:",  call_agent(old_hunters_dog, content))
             print("==============================================")
 
-        elif "/ee" in usr_input:
-            content = parse_input(usr_input, "/ee")
-            print(f"[{player.name}]:", content)
-            old_hunters_cabin.add_actor(player)
-            stage_state = player_enter_stage(player, old_hunters_cabin, content)
-            print(f"[{old_hunters_cabin.name}]:", stage_state)
+        elif "/rr" in usr_input:
+            content = parse_input(usr_input, "/rr")
+            current_stage = old_hunters_cabin
+            all_actors = current_stage.actors
+            #最后状态
+            # last_chat = current_stage.chat_history[-1]
+            # print(f"[{current_stage.name}]:", last_chat.content)
+
+            ##
+            plans = []
+
+            #
+            log = call_agent(current_stage, stage_plan_prompt(current_stage))
+            print(f"<{current_stage.name}>:", log)
+            str = f"[{current_stage.name}]{log}"
+            plans.append(str)
             print("==============================================")
-            for actor in old_hunters_cabin.actors:
+            
+            #
+            for actor in all_actors:
                 if actor == player:
                     continue
-                update_npc = actor_receive_event_from_stage(actor, old_hunters_cabin, stage_state)
-                print(f"[{actor.name}]:", update_npc)
+                log = call_agent(actor, actor_plan_prompt(actor))
+                print(f"<{actor.name}>:", log)
+                str = f"[{actor.name}]{log}"
+                plans.append(str)
+                print("==============================================")
 
-            print("==============================================")
+            print('\n'.join(plans))
+        
+            """
+            [user input]: /rr
+            <老猎人隐居的小木屋>: [stay][talk]:小木屋中一切安静，只有壁炉的微光与微弱的 crackling 声。
+            ==============================================
+            <卡斯帕·艾伦德>: [stay][talk]:可能该训练断剑狩猎了，让它不闲着。
+            ==============================================
+            <小狗'短剑'>: [stay][talk]:温暖的火光和主人的陪伴，这就是我最喜欢的时刻。
+            ==============================================
+            ==============================================
 
-        elif "/ss" in usr_input:
-            content = parse_input(usr_input, "/ss")
-            stage_state = get_stage_current_state(old_hunters_cabin)
-            print(f"[{old_hunters_cabin.name}]:", stage_state)
-            print("==============================================")
 
-        elif "/ff" in usr_input:
-            content = parse_input(usr_input, "/ff")
+            [user input]: /rr
+            <老猎人隐居的小木屋>: [stay]:...
+            ==============================================
+            <卡斯帕·艾伦德>: [stay][talk]:可能是时候再去外面看看世界了。
+            ==============================================
+            <小狗'短剑'>: [stay]:我想醒来，去看看卡斯帕。
+            ==============================================
+            [老猎人隐居的小木屋][stay]:...
+            [卡斯帕·艾伦德][stay][talk]:可能是时候再去外面看看世界了。
+            [小狗'短剑'][stay]:我想醒来，去看看卡斯帕。
+            ==============================================
+
+
+
             stage_state = get_stage_current_state(old_hunters_cabin)
             #print(f"[{old_hunters_cabin.name}]:", stage_state)
 
@@ -347,7 +464,38 @@ def main():
                     continue
                 res = actor_confirm_and_update_from_stage_state(actor, stage_state)
                 print(f"[{actor.name}]: action", res)
+            
+            
+            """
+            
             print("==============================================")
+
+
+
+
+
+        elif "/ee" in usr_input:
+            content = parse_input(usr_input, "/ee")
+            print(f"[{player.name}]:", content)
+            old_hunters_cabin.add_actor(player)
+            stage_state = player_enter_stage(player, old_hunters_cabin, content)
+            print(f"[{old_hunters_cabin.name}]:", stage_state)
+            print("==============================================")
+            for actor in old_hunters_cabin.actors:
+                if actor == player:
+                    continue
+                update_npc = actor_receive_event_from_stage(actor, old_hunters_cabin, stage_state)
+                print(f"[{actor.name}]:", update_npc)
+
+            print("==============================================")
+
+        elif "/ss" in usr_input:
+            content = parse_input(usr_input, "/ss")
+            stage_state = get_stage_current_state(old_hunters_cabin)
+            print(f"[{old_hunters_cabin.name}]:", stage_state)
+            print("==============================================")
+
+        
 
         
 

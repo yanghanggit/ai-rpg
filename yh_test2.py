@@ -67,15 +67,20 @@ def parse_input(input_val, split_str):
         return input_val.split(split_str)[1].strip()
     return input_val
 
+
+
+
+
+
 #
-def system_administrator_msg(system_administrator, npc, talk_content):
-    prompt = f"""
-    # 这是系统消息
-    ## 来自{system_administrator}                    
-    ## 内容
-    - {talk_content}
-    """
-    return call_agent(npc, prompt)
+# def system_administrator_msg(system_administrator, npc, talk_content):
+#     prompt = f"""
+#     # 这是系统消息
+#     ## 来自{system_administrator}                    
+#     ## 内容
+#     - {talk_content}
+#     """
+#     return call_agent(npc, prompt)
 
 #wisper
 def actor_wisper_to_actor(from_actor, to_actor, talk_content):
@@ -120,7 +125,7 @@ def stage_advance_plot_as_director(stage, actors_plan_group):
     - 第3步：理解{actors_plan_group}，见“针对‘[角色名][计划的行动]:xxx’的解析规则”。
     - 第4步：分析每个角色的计划后，判断是否有冲突的地方，如果有，你来裁决并保证合理
     - 第5步：每个角色执行计划后，更新场景的状态。和每个角色的状态
-    
+
     ## 需求
     - 输出文本内容。要包含场景的最新状态与场景内所有角色的最新状态。
     """
@@ -196,50 +201,56 @@ def actor_speak_to_actor_publicly_in_stage(player, npc, stage, talk_content):
     """
     return call_agent(stage, prompt)
 
+
+#
+init_archivist = f"""
+# 游戏世界存档
+- 大陆纪元2000年1月1日，冬夜.
+- “卡斯帕·艾伦德”坐在他的“老猎人隐居的小木屋”中的壁炉旁，在沉思和回忆过往，并向壁炉中的火投入了一根木柴。
+- 他的小狗（名叫"断剑"）在屋子里的一角睡觉。
+"""
+
+load_prompt = f"""
+# 你需要读取存档
+## 步骤:
+- 第1步，读取{init_archivist}.
+- 第2步：理解这些信息(尤其是和你有关的信息).
+- 第3步：根据信息更新你的最新状态与逻辑.
+- 第4部：如果是你角色输则出你在做什么，如果你是场景则输出场景中正在发生的一切.
+## 输出规则：
+- 保留关键信息(时间，地点，人物，事件)，不要推断，增加与润色。输出在保证语意完整基础上字符尽量少。
+"""
+
 #
 def main():
     #
     system_administrator = "系统管理员"
 
-    #
-    archivist = f"""
-    # 游戏世界存档
-    - 大陆纪元2000年1月1日，冬夜.
-    - “卡斯帕·艾伦德”坐在他的“老猎人隐居的小木屋”中的壁炉旁，在沉思和回忆过往，并向壁炉中的火投入了一根木柴。
-    - 他的小狗（名叫"断剑"）在屋子里的一角睡觉。
-    """
-
-    loadprompt = f"""
-    - 第1步，读取{archivist}.
-    - 第2步：理解这些信息(尤其是和你有关的信息)
-    - 第3步：根据信息更新你的最新状态与逻辑.
-    """
-
     #load!!!!
     world_watcher = World("世界观察者")
     world_watcher.connect("http://localhost:8004/world/")
-    log = system_administrator_msg(system_administrator, world_watcher,  loadprompt + "告诉我,你现在在做什么")
+    log = call_agent(world_watcher,  load_prompt)
     print(f"[{world_watcher.name}]:", log)
     print("==============================================")
 
     #
     old_hunter = NPC("卡斯帕·艾伦德")
     old_hunter.connect("http://localhost:8021/actor/npc/old_hunter/")
-    log = system_administrator_msg(system_administrator, old_hunter, loadprompt + "告诉我,你现在在做什么")
+    log = call_agent(old_hunter, load_prompt)
     print(f"[{old_hunter.name}]:", log)
     print("==============================================")
 
     #
     old_hunters_dog = NPC("小狗'短剑'")
     old_hunters_dog.connect("http://localhost:8023/actor/npc/old_hunters_dog/")
-    log = system_administrator_msg(system_administrator, old_hunters_dog, loadprompt + "告诉我,你现在在做什么")
+    log = call_agent(old_hunters_dog, load_prompt)
     print(f"[{old_hunters_dog.name}]:", log)
     print("==============================================")
 
     #
     old_hunters_cabin = Stage("老猎人隐居的小木屋")
     old_hunters_cabin.connect("http://localhost:8022/stage/old_hunters_cabin/")
-    log = system_administrator_msg(system_administrator, old_hunters_cabin, loadprompt + "告诉我你现在，场景中正在发生的一切")
+    log = call_agent(old_hunters_cabin, load_prompt)
     print(f"[{old_hunters_cabin.name}]:", log)
     print("==============================================")
 
@@ -261,6 +272,30 @@ def main():
             sys.exit()
         if "/cancel" in usr_input:
             continue
+
+        elif "/1" in usr_input:
+            content = parse_input(usr_input, "/1")
+            print(f"[{system_administrator}]:", content)
+            print(f"[{world_watcher.name}]:", call_agent(world_watcher, content))
+            print("==============================================")
+
+        elif "/2" in usr_input:
+            content = parse_input(usr_input, "/2")
+            print(f"[{system_administrator}]:", content)
+            print(f"[{old_hunter.name}]:",  call_agent(old_hunter, content))
+            print("==============================================")
+        
+        elif "/3" in usr_input:
+            content = parse_input(usr_input, "/3")
+            print(f"[{system_administrator}]:", content)
+            print(f"[{old_hunters_cabin.name}]:",  call_agent(old_hunters_cabin, content))
+            print("==============================================")
+
+        elif "4" in usr_input:
+            content = parse_input(usr_input, "/4")
+            print(f"[{system_administrator}]:", content)
+            print(f"[{old_hunters_dog.name}]:",  call_agent(old_hunters_dog, content))
+            print("==============================================")
 
         elif "/ee" in usr_input:
             content = parse_input(usr_input, "/ee")
@@ -314,27 +349,7 @@ def main():
                 print(f"[{actor.name}]: action", res)
             print("==============================================")
 
-        elif "/1" in usr_input:
-            content = parse_input(usr_input, "/1")
-            print(f"[{system_administrator}]:", content)
-            print(f"[{world_watcher.name}]:", system_administrator_msg(system_administrator, world_watcher, content))
-            print("==============================================")
-
-        elif "/2" in usr_input:
-            content = parse_input(usr_input, "/2")
-            print(f"[{system_administrator}]:", content)
-            print(f"[{old_hunter.name}]:", system_administrator_msg(system_administrator, old_hunter, content))
         
-        elif "/3" in usr_input:
-            content = parse_input(usr_input, "/3")
-            print(f"[{system_administrator}]:", content)
-            print(f"[{old_hunters_cabin.name}]:", system_administrator_msg(system_administrator, old_hunters_cabin, content))
-        
-        elif "4" in usr_input:
-                content = parse_input(usr_input, "/4")
-                print(f"[{system_administrator}]:", content)
-                print(f"[{old_hunters_dog.name}]:", system_administrator_msg(system_administrator, old_hunters_dog, content))
-
 
         elif "/t1" in usr_input:
             content = parse_input(usr_input, "/t1")

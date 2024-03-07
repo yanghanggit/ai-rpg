@@ -1,7 +1,7 @@
 from langchain_core.messages import HumanMessage, AIMessage, BaseMessage, SystemMessage
 from langserve import RemoteRunnable
 import sys
-import re
+##import re
 
 class World:
     def __init__(self, name):
@@ -32,11 +32,7 @@ class Stage:
 #
 class Actor:
     def __init__(self, name):
-        self.name = name
-        #An assessment of the combat effectiveness of an army
-        # self.health = 10
-        # self.power = 10
-     
+        self.name = name     
 
     def connect(self, url):
         self.agent = RemoteRunnable(url)
@@ -83,7 +79,6 @@ init_archivist = f"""
 - “卡斯帕·艾伦德”坐在他的“老猎人隐居的小木屋”中的壁炉旁，在沉思和回忆过往，并向壁炉中的火投入了一根木柴。
 - 他的小狗（名叫"断剑"）在屋子里的一角睡觉。
 """
-
 load_prompt = f"""
 # 你需要读取存档
 ## 步骤:
@@ -94,97 +89,55 @@ load_prompt = f"""
 ## 输出规则：
 - 保留关键信息(时间，地点，人物，事件)，不要推断，增加与润色。输出在保证语意完整基础上字符尽量少。
 """
+######################################################################
+##################################################################################################################################################################################################################
+##################################################################################################################################################################################################################
+##################################################################################################################################################################################################################
 #
-# class FightEvent:
-#     def __init__(self, stage, src_actor_name, dest_actor_name, say_content):
-#         self.stage = stage
-#         self.src_actor_name = src_actor_name
-#         self.dest_actor_name = dest_actor_name
-#         self.say_content = say_content
-#         self.src_actor = None
-#         self.dest_actor = None
-#         self.init()
-
-#     def init(self):
-#         for actor in self.stage.actors:
-#             check_name = f"{[actor.name]}"
-#             if check_name == self.src_actor_name:
-#                 self.src_actor = actor
-#             elif check_name == self.dest_actor_name:
-#                 self.dest_actor = actor
-
-#     def __str__(self):
-#         return f"{self.src_actor_name}=>{self.dest_actor_name}:{self.say_content}"
-    
-#     def make_plan(self):
-#         #
-#         if self.dest_actor == None:
-#             return f"""{self.src_actor_name}准备向{self.dest_actor_name}发起攻击,他（她/它）说到（或者内心的想法）：{self.say_content}"""
-#         #
-#         self.src_actor.health -= 3
-#         self.dest_actor.health = -3
-#         if self.src_actor.health <= 0:
-#             return f"""{self.src_actor_name}准备向{self.dest_actor_name}发起攻击,
-#             他（她/它）说到（或者内心的想法）：{self.say_content}。
-#             结果：{self.src_actor_name}将会死亡。"""
-#         elif self.dest_actor.health <= 0:
-#             return f"""{self.src_actor_name}准备向{self.dest_actor_name}发起攻击,
-#             他（她/它）说到（或者内心的想法）：{self.say_content}。
-#             结果：{self.dest_actor_name}将会死亡。"""
-#         return f"""{self.src_actor_name}准备向{self.dest_actor_name}发起攻击,他（她/它）说到（或者内心的想法）：{self.say_content}"""
-    
-# class StayEvent:
-#     def __init__(self, stage, actor_name, say_content):
-#         self.stage = stage
-#         self.actor_name = actor_name
-#         self.say_content = say_content
-#         self.init()
-
-#     def init(self):
-#         for actor in self.stage.actors:
-#             if actor.name == self.actor_name:
-#                 self.actor = actor
-
-#     def __str__(self):
-#         return f"{self.actor_name}:{self.say_content}"
-    
-#     def make_plan(self):
-#         return f"""{self.actor_name}准备保持现状,他（她/它）说到（或者内心的想法）：{self.say_content}"""
-
-
 #场景需要根据状态做出计划
 def stage_plan_prompt(stage):
-    prompt = f"""
+    return f"""
     # 你需要做出计划
-    - 如果你的场景设定中，允许你做出计划，那么你需要做出计划。否则，仅更新你的状态即可。   
     ## 步骤
-    - 第1步：理解你自身当前状态。
-    - 第2步：理解你的场景内所有角色的当前状态。
-    - 第3步：根据以2步，输出你需要做出计划。
+    - 第1步：理解你的当前状态。
+    - 第2步：理解场景内所有角色的当前状态。
+    - 第3步：输出你的计划。如果没有更新你的状态。   
     ## 输出规则：
     - 不要推断，增加与润色。
     - 输出在保证语意完整基础上字符尽量少。
     """
-    return prompt
 
 #场景需要根据状态做出计划
 def actor_plan_prompt(actor):
-    prompt = f"""
-    # 你需要做出计划（即你想要做的事，但是还没有做，或者是心里想的事情）    
+    return f"""
+    # 你需要做出计划（即你想要做的事还没做）    
     ## 步骤
     - 第1步：理解你自身当前状态。
     - 第2步：理解你的场景内所有角色的当前状态。
-    - 第3步：根据以2步，输出你需要做出计划。请关注“计划的输出规则”
-    
+    - 第3步：输出你需要做出计划。
     ## 输出规则：
     - 如果你想攻击某个目标，就必须输出目标的名字。
     - 如果你想离开本场景，就必须输出你所知道的地点的名字。
     - 输出在保证语意完整基础上字符尽量少。
     """
-    return prompt
+##
+def director_prompt(stage, plans_group):
+    return f"""
+    # 你需要根据所有角色（可能包括你自己）的计划，做出最终的决定，推演与执行。
+    ## 所有角色的计划如下
+    - {plans_group}
+    ## 步骤（不需要输出）
+    - 第1步：理解所有角色的计划，不要漏掉任何相关角色。
+    - 第2步：做出推演与判断（决定每个角色的计划能否能成功）。
+    - 第3步：执行所有计划。
+    - 第4步：根据执行结果更新场景的状态以及所有角色的状态。
+    - 第5步：输出。
+    ## 输出规则
+    - 最终输出的结果，需要包括每个角色的结果(包括你自己)。
+    """
 #
 def actor_confirm_prompt(actor, stage_state):
-    prompt = f"""
+    return f"""
     #这是你所在场景的推演结果与执行结果，你需要接受这个事实，并且强制更新你的状态。
     ## 步骤(不要输出)
     - 第1步：回顾你的计划。
@@ -192,25 +145,6 @@ def actor_confirm_prompt(actor, stage_state):
     - 第3步：对比你的计划在推演结果中的表现，是否得到执行。
     - 第4步：你需要更新你的状态。
     - 第5步：输出你的状态
-    """
-    return call_agent(actor, prompt)
-
-##
-def director_prompt(stage, plans_group):
-    return f"""
-    # 你需要根据所有角色（可能包括你自己）的计划，做出最终的决定，推演与执行。
-
-    ## 所有角色的计划如下
-    - {plans_group}
-
-    ## 步骤（不需要输出）
-    - 第1步：理解所有角色的计划，不要漏掉任何相关角色。
-    - 第2步：做出推演与判断（决定每个角色的计划能否能成功）。
-    - 第3步：执行所有计划。
-    - 第4步：根据执行结果更新场景的状态以及所有角色的状态。
-   
-    ## 输出规则
-    - 最终输出的结果，需要包括每个角色的结果(包括你自己)。
     """
 #
 def main():
@@ -232,7 +166,7 @@ def main():
     print("==============================================")
 
     #
-    old_hunters_dog = NPC("小狗'短剑'")
+    old_hunters_dog = NPC("小狗'断剑'")
     old_hunters_dog.connect("http://localhost:8023/actor/npc/old_hunters_dog/")
     log = call_agent(old_hunters_dog, load_prompt)
     print(f"[{old_hunters_dog.name}]:", log)
@@ -276,16 +210,16 @@ def main():
 
             ## 必须加上！！！！！！！
             old_hunters_cabin.add_actor(player)
-            event = f"""{player.name}, {content}"""
-            print(f"[{player.name}]=>", event)
+            event_prompt = f"""{player.name}, {content}"""
+            print(f"[{player.name}]=>", event_prompt)
 
-            old_hunters_cabin.chat_history.append(HumanMessage(content=event))
+            old_hunters_cabin.chat_history.append(HumanMessage(content=event_prompt))
             print(f"[{old_hunters_cabin.name}]:", call_agent(old_hunters_cabin, "更新你的状态"))
 
             for actor in old_hunters_cabin.actors:
                 if (actor == player):
                     continue
-                actor.chat_history.append(HumanMessage(content=event))
+                actor.chat_history.append(HumanMessage(content=event_prompt))
                 print(f"[{actor.name}]:", call_agent(actor, "更新你的状态"))
             print("==============================================")
 
@@ -319,7 +253,6 @@ def main():
             for actor in old_hunters_cabin.actors:
                 actor.chat_history.append(HumanMessage(content=content))
                 print(f"[{actor.name}]:", call_agent(actor, "更新你的状态"))
-
             print("==============================================")
 
         
@@ -331,12 +264,12 @@ def main():
             #last_chat = current_stage.chat_history[-1]
             #print(f"[{current_stage.name}]%", last_chat.content)
             ##
-            plans = []
+            plans_collector = []
             #
             log = call_agent(current_stage, stage_plan_prompt(current_stage))
             print(f"<{current_stage.name}>:", log)
             str = f"[{current_stage.name}]的计划是: {log}"
-            plans.append(str)
+            plans_collector.append(str)
             #print("==============================================")
             
             #
@@ -347,21 +280,24 @@ def main():
                 log = call_agent(actor, actor_plan_prompt(actor))
                 #print(f"<{actor.name}>:", log)
                 str = f"[{actor.name}]的计划是: {log}"
-                plans.append(str)
+                plans_collector.append(str)
                 #print("==============================================")
             print("==============================================")
 
             ##
             #print(total_plans)
-            plan_group_str = '\n'.join(plans)
+            plan_group_str = '\n'.join(plans_collector)
             print(plan_group_str)
-
-
             ## 
 
-
-
-
+            ## 战斗分析
+            fight_analysis = f"""\n
+            ## 你的决策中，如果出现了战斗的事件，你需要分析。规则如下。
+            - {player.name} 无比强大是绝对无可战胜的存在，任何攻击他的人都会死亡
+            - {old_hunter.name} 普通勇者的战斗力
+            - {old_hunters_dog.name} 没有任何战斗力
+            """
+            plan_group_str += fight_analysis
 
             print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
             director_prompt_str = director_prompt(current_stage, plan_group_str)
@@ -371,6 +307,7 @@ def main():
             ##确认行动
             for actor in current_stage.actors:
                 if (actor == player):
+                    print(f"{player.name}接受行动？因为没有agent?")
                     continue
                 actor_comfirm_prompt_str = actor_confirm_prompt(actor, director_res)
                 actor_res = call_agent(actor, actor_comfirm_prompt_str)

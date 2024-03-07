@@ -290,8 +290,6 @@ def main():
         
         elif "/0" in usr_input:
             content = parse_input(usr_input, "/0")
-            # print(f"[{system_administrator}]:", content)
-            # print(f"[{world_watcher.name}]:", call_agent(world_watcher, content))
             print("==============================================")
 
 
@@ -306,17 +304,31 @@ def main():
             print(f"[{system_administrator}]:", content)
             print(f"[{old_hunter.name}]:",  call_agent(old_hunter, content))
             print("==============================================")
-        
-        elif "/3" in usr_input:
+
+        elif "3" in usr_input:
             content = parse_input(usr_input, "/3")
             print(f"[{system_administrator}]:", content)
-            print(f"[{old_hunters_cabin.name}]:",  call_agent(old_hunters_cabin, content))
+            print(f"[{old_hunters_dog.name}]:",  call_agent(old_hunters_dog, content))
             print("==============================================")
-
-        elif "4" in usr_input:
+        
+        elif "/4" in usr_input:
+            
+            # 所有人都知道了这件事
             content = parse_input(usr_input, "/4")
             print(f"[{system_administrator}]:", content)
-            print(f"[{old_hunters_dog.name}]:",  call_agent(old_hunters_dog, content))
+
+            old_hunters_cabin.chat_history.append(HumanMessage(content=content))
+            print(f"[{old_hunters_cabin.name}]:", call_agent(old_hunters_cabin, "更新你的状态"))
+
+            for actor in old_hunters_cabin.actors:
+                actor.chat_history.append(HumanMessage(content=content))
+                print(f"[{actor.name}]:", call_agent(actor, "更新你的状态"))
+
+            #print(f"[{old_hunters_cabin.name}]:", call_agent(old_hunters_cabin, content))
+            #for actors old_hunters_cabin.actors
+            #last_chat = old_hunters_cabin.chat_history[-1]
+            #print(f"[{old_hunters_cabin.name}]%", last_chat.content)
+           
             print("==============================================")
 
         elif "/rr" in usr_input:
@@ -324,8 +336,8 @@ def main():
             current_stage = old_hunters_cabin
             all_actors = current_stage.actors
             #最后状态
-            # last_chat = current_stage.chat_history[-1]
-            # print(f"[{current_stage.name}]:", last_chat.content)
+            last_chat = current_stage.chat_history[-1]
+            print(f"[{current_stage.name}]%", last_chat.content)
 
             ##
             plans = []

@@ -46,7 +46,6 @@ class Actor:
 class Player(Actor):
     def __init__(self, name):
         super().__init__(name)
-        self.items = []
 
 #
 class NPC(Actor): 
@@ -130,6 +129,8 @@ class FightEvent:
         self.src_actor_name = src_actor_name
         self.dest_actor_name = dest_actor_name
         self.say_content = say_content
+        self.src_actor = None
+        self.dest_actor = None
         self.init()
 
     def init(self):
@@ -143,6 +144,10 @@ class FightEvent:
         return f"{self.src_actor_name}=>{self.dest_actor_name}:{self.say_content}"
     
     def make_plan(self):
+        #
+        if self.dest_actor == None:
+            return f"""{self.src_actor_name}准备向{self.dest_actor_name}发起攻击,他（她/它）说到（或者内心的想法）：{self.say_content}"""
+        #
         self.src_actor.health -= 3
         self.dest_actor.health = -3
         if self.src_actor.health <= 0:
@@ -206,7 +211,7 @@ def actor_plan_prompt(actor):
     - [stay]，代表着你保持现状，不做任何事。
     
     ## 输出规则与示例：
-    - 如果你想攻击某个目标，那么你的输出格式为：“[fight][目标的名字]:...“，...代表着你本次攻击要说的话与心里活动。
+    - 如果你想攻击某个目标，那么你的输出格式为：“[fight][?]:...“，?是目标的名字，且目标是必须存在的。否则就输出"[stay]:..."，...代表着你本次要说的话与心里活动。
     - 如果你想离开，那么你的输出格式为：“[leave]:...“，...代表着你本次要说的话与心里活动。
     - 如果不在以上种情况，就输出"[stay]:..."，...代表着你本次要说的话与心里活动。
 
@@ -270,11 +275,11 @@ def main():
 
     #
     player = Player("yang_hang")
+    #player.connect("http://localhost:8023/12345/")
     log = call_agent(world_watcher,  f"""你知道了如下事件：{player.name}加入了这个世界""")
     print(f"[{world_watcher.name}]:", log)
     player.health = 10000000
     player.power = 10000000
-
 
     print("//////////////////////////////////////////////////////////////////////////////////////")
     print("//////////////////////////////////////////////////////////////////////////////////////")
@@ -290,6 +295,21 @@ def main():
         
         elif "/0" in usr_input:
             content = parse_input(usr_input, "/0")
+            print(f"[{system_administrator}]:", content)
+
+            ## 必须加上！！！！！！！
+            old_hunters_cabin.add_actor(player)
+            event = f"""{player.name}, {content}"""
+            print(f"[{player.name}]=>", event)
+
+            old_hunters_cabin.chat_history.append(HumanMessage(content=event))
+            print(f"[{old_hunters_cabin.name}]:", call_agent(old_hunters_cabin, "更新你的状态"))
+
+            for actor in old_hunters_cabin.actors:
+                if (actor == player):
+                    continue
+                actor.chat_history.append(HumanMessage(content=event))
+                print(f"[{actor.name}]:", call_agent(actor, "更新你的状态"))
             print("==============================================")
 
 
@@ -312,7 +332,6 @@ def main():
             print("==============================================")
         
         elif "/4" in usr_input:
-            
             # 所有人都知道了这件事
             content = parse_input(usr_input, "/4")
             print(f"[{system_administrator}]:", content)
@@ -324,11 +343,6 @@ def main():
                 actor.chat_history.append(HumanMessage(content=content))
                 print(f"[{actor.name}]:", call_agent(actor, "更新你的状态"))
 
-            #print(f"[{old_hunters_cabin.name}]:", call_agent(old_hunters_cabin, content))
-            #for actors old_hunters_cabin.actors
-            #last_chat = old_hunters_cabin.chat_history[-1]
-            #print(f"[{old_hunters_cabin.name}]%", last_chat.content)
-           
             print("==============================================")
 
         elif "/rr" in usr_input:
@@ -336,27 +350,29 @@ def main():
             current_stage = old_hunters_cabin
             all_actors = current_stage.actors
             #最后状态
-            last_chat = current_stage.chat_history[-1]
-            print(f"[{current_stage.name}]%", last_chat.content)
-
+            #last_chat = current_stage.chat_history[-1]
+            #print(f"[{current_stage.name}]%", last_chat.content)
             ##
             plans = []
             #
             log = call_agent(current_stage, stage_plan_prompt(current_stage))
-            #print(f"<{current_stage.name}>:", log)
+            print(f"<{current_stage.name}>:", log)
             str = f"[{current_stage.name}]{log}"
             plans.append(str)
             #print("==============================================")
             
             #
             for actor in all_actors:
+                if (actor == player):
+                    continue
                 log = call_agent(actor, actor_plan_prompt(actor))
-                #print(f"<{actor.name}>:", log)
+                print(f"<{actor.name}>:", log)
                 str = f"[{actor.name}]{log}"
                 plans.append(str)
                 #print("==============================================")
 
             print("==============================================")
+
             fight_events:FightEvent = []
             stay_events:StayEvent = []
             total_plans = []
@@ -373,15 +389,17 @@ def main():
                     #print(match)
 
                 #print(extracted_elements)
-
                 name = extracted_elements[0]
                 actions = extracted_elements[1:]
                 if actions[0] == "[fight]":
-                    target = actions[1]
-                    #print(f"{name}=>{target}:{b}")
-                    fight_events.append(FightEvent(current_stage, name, target, b))
-                    #print(fight_events[-1])
-                    total_plans.append(fight_events[-1].make_plan())
+                    if len(actions) > 1:
+                        target = actions[1]
+                        #print(f"{name}=>{target}:{b}")
+                        fight_events.append(FightEvent(current_stage, name, target, b))
+                        #print(fight_events[-1])
+                        total_plans.append(fight_events[-1].make_plan())
+                    else:
+                        print("error: 你想打谁?，尽然没有目标！？")
 
                 elif actions[0] == "[leave]":
                     print("想跑？？？？？？？？？？？？？？？？？？！！！！！！？")
@@ -403,17 +421,16 @@ def main():
             director_res = call_agent(current_stage, director_prompt_str)
             print(f"[{current_stage.name}]:", director_res)
             print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-
               ##确认行动
             for actor in current_stage.actors:
+                if (actor == player):
+                    continue
                 actor_comfirm_prompt_str = actor_confirm_prompt(actor, director_res)
                 actor_res = call_agent(actor, actor_comfirm_prompt_str)
-                print(f"[{actor.name}]=>", actor_res)
+                print(f"[{actor.name}]=>" + actor_res)
 
             print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-            print("==============================================")
 
-        
 if __name__ == "__main__":
     print("==============================================")
     main()

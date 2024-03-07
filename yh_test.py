@@ -41,7 +41,6 @@ class Actor:
 class Player(Actor):
     def __init__(self, name):
         super().__init__(name)
-        self.items = []
 
 #
 class NPC(Actor): 

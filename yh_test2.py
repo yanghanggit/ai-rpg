@@ -135,9 +135,10 @@ class FightEvent:
 
     def init(self):
         for actor in self.stage.actors:
-            if actor.name == self.src_actor_name:
+            check_name = f"{[actor.name]}"
+            if check_name == self.src_actor_name:
                 self.src_actor = actor
-            elif actor.name == self.dest_actor_name:
+            elif check_name == self.dest_actor_name:
                 self.dest_actor = actor
 
     def __str__(self):
@@ -399,7 +400,7 @@ def main():
                         #print(fight_events[-1])
                         total_plans.append(fight_events[-1].make_plan())
                     else:
-                        print("error: 你想打谁?，尽然没有目标！？")
+                        print("目标丢失 error: -------------------------------------------xw")
 
                 elif actions[0] == "[leave]":
                     print("想跑？？？？？？？？？？？？？？？？？？！！！！！！？")

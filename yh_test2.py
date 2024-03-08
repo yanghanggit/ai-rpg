@@ -133,19 +133,7 @@ load_prompt = f"""
 ##################################################################################################################################################################################################################
 
 
-#场景需要根据状态做出计划
-def actor_plan_prompt(actor):
-    return f"""
-    # 你需要做出计划（即你想要做的事还没做）    
-    ## 步骤
-    - 第1步：理解你自身当前状态。
-    - 第2步：理解你的场景内所有角色的当前状态。
-    - 第3步：输出你需要做出计划。
-    ## 输出规则：
-    - 如果你想攻击某个目标，就必须输出目标的名字。
-    - 如果你想离开本场景，就必须输出你所知道的地点的名字。
-    - 输出在保证语意完整基础上字符尽量少。
-    """
+
 ##
 def director_prompt(stage, plans_group):
     return f"""
@@ -294,20 +282,22 @@ def main():
             input_content = parse_input(usr_input, flag)
         
             #current_stage = old_hunters_cabin
-            this_stage_plan = stage_plan(old_hunters_cabin)
+            sp = stage_plan(old_hunters_cabin)
 
             print("111")
             
+            ###
+            npcs = []
+            for actor in old_hunters_cabin.actors:
+                if actor != player:
+                    npcs.append(actor)
+
+            ###
+            for npc in npcs:
+                np = npc_plan(npc)
 
 
-
-
-            #all_actors = current_stage.actors
-
-
-
-
-
+            print("222")
 
 
 
@@ -390,7 +380,6 @@ def check_stage_is_valid_in_world(world: World, stage_name: str) -> bool:
 
 #场景需要根据状态做出计划
 def stage_plan_prompt(stage: Stage)-> str:
-
     ###
     sample_json = {
     "action": ["", "", ""],
@@ -421,9 +410,9 @@ def stage_plan_prompt(stage: Stage)-> str:
     - 关于"/stay"：除了"/fight"，"/leave"，之外的其他行为都是"/stay"，代表你想保持现状, targets你在这个场景的名字（如果你自己就是场景，那就是你的名字）
 
     ### say与tags说明
-    - say: 你的输出的话(或者心里活动)，可以是多个，但是必须是字符串。如果没什么想说的就说“无事想做”
+    - say: 你的输出的话(或者心里活动)，可以是多个，但是必须是字符串
     - tags: 输出的标签（你的特点），可以是多个，但是必须是字符串
-    
+
     ## 输出限制：
     - 按着如上规则，输出JSON
     - 不要推断，增加与润色。
@@ -438,7 +427,7 @@ def stage_plan(stage: Stage) -> Action:
     call_res = call_agent(stage, make_prompt)
     print(f"<{stage.name}>:", call_res)
 
-    error_action = Action([STAY], [stage.name], [""], [""])
+    error_action = Action([STAY], [stage.name], ["什么都不做"], [""])
 
     try:
         json_data = json.loads(call_res)
@@ -448,10 +437,13 @@ def stage_plan(stage: Stage) -> Action:
         #
         action = Action(json_data['action'], json_data['targets'], json_data['say'], json_data['tags'])
         if not (check_actions_is_valid(action.action) 
-                or check_targets_is_valid_actor_in_stage(stage, action.targets) 
-                or check_stage_is_valid_in_world(stage.world, stage.name)):
+                or check_targets_is_valid_actor_in_stage(stage, action.targets)):
             return error_action
         
+        if action.action[0] == LEAVE or action.action[0] == STAY:
+            if not check_stage_is_valid_in_world(stage.world, action.targets[0]):
+                return error_action
+
     except Exception as e:
         print(f"stage_plan error = {e}")
         return error_action
@@ -460,8 +452,76 @@ def stage_plan(stage: Stage) -> Action:
 
 
 
+#场景需要根据状态做出计划
+def npc_plan_prompt(npc: NPC)-> str:
 
+    ###
+    sample_json = {
+    "action": ["", "", ""],
+    "targets": ["", "", ""],
+    "say": ["", "", ""],
+    "tags": ["", "", ""]
+    }
+    sample_json_str = json.dumps(sample_json)
 
+    return f"""
+    # 你需要做出计划（即你想要做的事还没做）    
+    ## 步骤
+    - 第1步：理解你自身当前状态。
+    - 第2步：理解你的场景内所有角色的当前状态。
+    - 第3步：输出你需要做出计划。
+
+     ## 输出规则（最终输出为JSON）：
+    - 你的输出必须是一个JSON，包括action, targets, say, tags四个字段。
+    - action: 默认是[""]，只能是["/fight", "/stay", "/leave"]中的一个（即都是字符串），不允许多个。
+    - targets: 默认是[""]，可以是多个，必须是场景内的角色名字或者是你的名字，即都是字符串
+    - say: 默认是[""]，可以是多个，但是必须是字符串；
+    - tags: 默认是[""]，可以是多个，但是必须是字符串；
+    ### 输出格式请参考: {sample_json_str}
+   
+    ### action与targets说明
+    - "/fight"：代表你想对某个角色发动攻击或者敌意行为，targets是场景内某个角色的名字
+    - "/leave"：代表你想离开本场景，targets是你知道的这个在这个世界某个地点的名字
+    - 关于"/stay"：除了"/fight"，"/leave"，之外的其他行为都是"/stay"，代表你想保持现状, targets你在这个场景的名字（如果你自己就是场景，那就是你的名字）
+
+    ### say与tags说明
+    - say: 你的输出的话(或者心里活动)，可以是多个，但是必须是字符串
+    - tags: 输出的标签（你的特点），可以是多个，但是必须是字符串
+
+    ## 输出规则：
+    - 按着如上规则，输出JSON
+    - 输出在保证语意完整基础上字符尽量少。
+    """
+
+###
+def npc_plan(npc: NPC) -> Action:
+    make_prompt = npc_plan_prompt(npc)
+    print(f"npc_plan_prompt:", make_prompt)
+
+    call_res = call_agent(npc, make_prompt)
+    print(f"<{npc.name}>:", call_res)
+
+    error_action = Action([STAY], [npc.stage.name], ["什么都不做"], [""])
+
+    try:
+        json_data = json.loads(call_res)
+        if not check_data_format(json_data['action'], json_data['targets'], json_data['say'], json_data['tags']):
+            return error_action
+        #
+        action = Action(json_data['action'], json_data['targets'], json_data['say'], json_data['tags'])
+        if not (check_actions_is_valid(action.action) 
+                or check_targets_is_valid_actor_in_stage(npc.stage, action.targets)):
+            return error_action
+        
+        if action.action[0] == LEAVE or action.action[0] == STAY:
+            if not check_stage_is_valid_in_world(npc.stage.world, action.targets[0]):
+                return error_action
+        
+    except Exception as e:
+        print(f"stage_plan error = {e}")
+        return error_action
+
+    return error_action
 
 
 

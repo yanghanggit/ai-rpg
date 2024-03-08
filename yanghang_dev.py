@@ -150,7 +150,7 @@ def main():
             old_hunters_cabin.add_actor(player)
             player.stage = old_hunters_cabin
             ###
-            event_prompt = f"""{player.name}, {content}"""
+            event_prompt = f"""{player.name}{content}"""
             print(f"[{player.name}]=>", event_prompt)
 
             old_hunters_cabin.chat_history.append(HumanMessage(content=event_prompt))
@@ -317,7 +317,7 @@ def state_run(current_stage: Stage, players_action: list[Action]) -> None:
         if action.planer in leave_actors:
             leave_actors.remove(action.planer)
 
-        print(f"fight action: {action}")
+        #print(f"fight action: {action}")
         movie_script.append(f"{action.planer.name}对{action.targets}发动了攻击")
 
         for target_name in action.targets:

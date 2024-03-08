@@ -81,7 +81,7 @@ def npc_plan_prompt(npc: NPC)-> str:
 def stage_plan(stage: Stage) -> Action:
 
     make_prompt = stage_plan_prompt(stage)
-    print(f"stage_plan_prompt:", make_prompt)
+    #print(f"stage_plan_prompt:", make_prompt)
 
     call_res = stage.call_agent(make_prompt)
     print(f"<{stage.name}>:", call_res)
@@ -116,7 +116,7 @@ def stage_plan(stage: Stage) -> Action:
 ##################################################################################################################
 def npc_plan(npc: NPC) -> Action:
     make_prompt = npc_plan_prompt(npc)
-    print(f"npc_plan_prompt:", make_prompt)
+    #print(f"npc_plan_prompt:", make_prompt)
 
     call_res = npc.call_agent(make_prompt)
     print(f"<{npc.name}>:", call_res)

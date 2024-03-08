@@ -4,12 +4,9 @@ from actor import Actor
 
 class World(Actor):
     def __init__(self, name: str):
+        super().__init__(name)
         self.name = name
         self.stages = []
 
     def add_stage(self, stage) -> None:
         self.stages.append(stage)
-
-
-
-

@@ -34,7 +34,6 @@ load_prompt = f"""
 - 第1步，读取{init_archivist}.
 - 第2步：理解这些信息(尤其是和你有关的信息).
 - 第3步：根据信息更新你的最新状态与逻辑.
-- 第4部：如果是你角色输则出你在做什么，如果你是场景则输出场景中正在发生的一切.
 ## 输出规则：
 - 保留关键信息(时间，地点，人物，事件)，不要推断，增加与润色。输出在保证语意完整基础上字符尽量少。
 """
@@ -51,7 +50,7 @@ def director_prompt(stage, movie_script):
     - 第1步：理解我的剧本，其中的步骤，场景，角色，事件。
     - 第2步：根据剧本，完善你的故事讲述。但是要保证和脚本的结果一致。
     - 第3步：输出你的故事讲述。
-    - 第4步：更新场景的状态以及所有角色的状态。
+    - 第4步：更新所有角色的状态。
     ## 输出规则
     - 输出在保证语意完整基础上字符尽量少。
     """
@@ -69,7 +68,7 @@ def actor_confirm_prompt(actor, stage_state):
     # 这是已经发生的事情：
     - {stage_state}
     ## 你知道
-    - {all_names}都还存在于这个场景。
+    - {all_names}都还存在。
     - 你知道了这些事情，你需要确认你的状态。
     """
 ######################################################################
@@ -124,7 +123,7 @@ def main():
     player = Player("yang_hang")
     player.max_hp = 1000000
     player.hp = 1000000
-    player.damage = 100
+    player.damage = 100000
     #player.connect("http://localhost:8023/12345/")
     log = world_watcher.call_agent(f"""你知道了如下事件：{player.name}加入了这个世界""")
     print(f"[{world_watcher.name}]:", log)
@@ -258,6 +257,21 @@ def state_run(current_stage: Stage, players_action: list[Action]) -> None:
     if len(players_action) > 0:
         actions_collector.extend(players_action)
 
+    if len(actions_collector) == 0:
+        print("没有行动")
+        return
+    print("-------------------------------------------------------------")
+
+
+    ##记录用
+    movie_script: list[str] = []
+
+    # 先说话
+    for action in actions_collector:
+        if (len(action.say) > 0):
+            movie_script.append(f"{action.planer.name}说：{action.say[0]}")
+            print(f"{action.planer.name}说（或者是心里活动）：{action.say[0]}")
+    print("-------------------------------------------------------------")
 
     fight_actions = []
     for action in actions_collector:
@@ -274,8 +288,7 @@ def state_run(current_stage: Stage, players_action: list[Action]) -> None:
         if action.action[0] == STAY:
             stay_actions.append(action)
 
-    ##记录用
-    movie_script: list[str] = []
+  
 
     ###先收集出来
     stay_actors: list[Actor] = []
@@ -284,15 +297,16 @@ def state_run(current_stage: Stage, players_action: list[Action]) -> None:
         if (action.planer == current_stage):
             continue
         stay_actors.append(action.planer)
-        movie_script.append(f"{action.planer.name}在{current_stage.name}里")
+        #movie_script.append(f"{action.planer.name}在{current_stage.name}里")
     
     ###先收集出来
     leave_actors: list[Actor] = []
     for action in leave_actions:
         print(f"leave action: {action}")
         leave_actors.append(action.planer)
-        movie_script.append(f"{action.planer.name}想要离开，并去往{action.targets}")
-    print("==============================================")
+        #movie_script.append(f"{action.planer.name}想要离开，并去往{action.targets}")
+
+    print("-------------------------------------------------------------")
 
     #
     if len(fight_actions) > 0:
@@ -300,7 +314,7 @@ def state_run(current_stage: Stage, players_action: list[Action]) -> None:
     #
     dead_actors: list[Actor] = []
     for action in fight_actions:
-
+        print(f"fight action: {action}")
         #进入战斗的不能跑
         if action.planer in leave_actors:
             leave_actors.remove(action.planer)
@@ -316,7 +330,7 @@ def state_run(current_stage: Stage, players_action: list[Action]) -> None:
             #被攻击不能走
             if target in leave_actors:
                 leave_actors.remove(target) 
-                movie_script.append(f"{target.name}被攻击，不能离开")
+                #movie_script.append(f"{target.name}被攻击，不能离开")
 
             #最简单战斗计算
             print("这是一个测试的战斗计算，待补充")
@@ -327,16 +341,16 @@ def state_run(current_stage: Stage, players_action: list[Action]) -> None:
                 print(f"{target.name}已经死亡")
                 movie_script.append(f"{target.name}已经死亡")
             else:
-                print(f"{target.name}还在场景里并且活着，剩余{target.hp/target.max_hp*100}%血量")
+                print(f"{target.name}剩余{target.hp/target.max_hp*100}%血量")
 
     ##被打死的不能走
     for actor in dead_actors:
         if actor in leave_actors:
             leave_actors.remove(actor)
-            movie_script.append(f"{actor.name}已经死亡，不能离开")
+            #movie_script.append(f"{actor.name}已经死亡，不能离开")
         if  actor in stay_actors:
             stay_actors.remove(actor)
-            movie_script.append(f"{actor.name}已经死亡，不能留下")
+            #movie_script.append(f"{actor.name}已经死亡，不能留下")
 
     ##处理离开的
     for actor in leave_actors:
@@ -352,14 +366,15 @@ def state_run(current_stage: Stage, players_action: list[Action]) -> None:
 
     ##处理留下的
     for actor in stay_actors:
-        print(f"{actor.name}留在{current_stage.name}")
-        movie_script.append(f"{actor.name}留在{current_stage.name}")
-
+        pass
+        #print(f"{actor.name}留在{current_stage.name}")
+        #movie_script.append(f"{actor.name}留在{current_stage.name}")
 
     movie_script_str = '\n'.join(movie_script)
-    print("<<<<<<<<<<<<<<<<<<<<<<<<<剧本>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n",movie_script_str)
+    if len(movie_script_str) == 0:
+        movie_script_str = "无事发生"
+        #return
 
-    ##导演讲故事
     print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
     director_prompt_str = director_prompt(current_stage, movie_script_str)
     director_res = current_stage.call_agent(director_prompt_str)
@@ -370,11 +385,10 @@ def state_run(current_stage: Stage, players_action: list[Action]) -> None:
     print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
     for actor in current_stage.npcs:
         last_memory = f"""
-        # 你的场景里发生了下面的事：
+        # 你知道发生了下面的事，并更新了你的记忆：
         {movie_script_str}
         """
         actor.chat_history.append(AIMessage(content=last_memory))
-
         actor_comfirm_prompt_str = actor_confirm_prompt(actor, director_res)
         actor_res = actor.call_agent(actor_comfirm_prompt_str)
         print(f"[{actor.name}]=>" + actor_res)

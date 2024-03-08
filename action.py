@@ -30,14 +30,15 @@ def check_actions_is_valid(actions: list[str], from_data: list[str]) -> bool:
     return True
 
 #
-def check_targets_is_valid_actor_in_stage(stage: Stage, targets: list[str]) -> bool:
+def check_targets_is_valid(stage: Stage, targets: list[str]) -> bool:
+    all_actors = [stage] + stage.actors
     for target in targets:
-        if not any(actor.name == target for actor in stage.actors):
+        if not any(actor.name == target for actor in all_actors):
             return False
     return True
 
 #
-def check_stage_is_valid_in_world(world: World, stage_name: str) -> bool:
+def check_stage_is_valid(world: World, stage_name: str) -> bool:
     if not any(stage.name == stage_name for stage in world.stages):
         return False
     return True
@@ -54,7 +55,7 @@ class Action:
 
     ###
     def __str__(self):
-        return f"{self.planer.name} =>: {self.action}, Targets: {self.targets}, Say: {self.say}, Tags: {self.tags}"
+        return f"{self.planer.name} =>: action: {self.action}, targets: {self.targets}, say: {self.say}, tags: {self.tags}"
 
         
 

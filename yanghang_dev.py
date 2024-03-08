@@ -288,8 +288,6 @@ def state_run(current_stage: Stage, players_action: list[Action]) -> None:
         if action.action[0] == STAY:
             stay_actions.append(action)
 
-  
-
     ###先收集出来
     stay_actors: list[Actor] = []
     for action in stay_actions:

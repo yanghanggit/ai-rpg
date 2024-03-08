@@ -125,34 +125,6 @@ load_prompt = f"""
 ##################################################################################################################################################################################################################
 ##################################################################################################################################################################################################################
 
-
-
-##
-def director_prompt(stage, plans_group):
-    return f"""
-    # 你需要根据所有角色（可能包括你自己）的计划，做出最终的决定，推演与执行。
-    ## 所有角色的计划如下
-    - {plans_group}
-    ## 步骤（不需要输出）
-    - 第1步：理解所有角色的计划，不要漏掉任何相关角色。
-    - 第2步：做出推演与判断（决定每个角色的计划能否能成功）。
-    - 第3步：执行所有计划。
-    - 第4步：根据执行结果更新场景的状态以及所有角色的状态。
-    - 第5步：输出。
-    ## 输出规则
-    - 最终输出的结果，需要包括每个角色的结果(包括你自己)。
-    """
-#
-def actor_confirm_prompt(actor, stage_state):
-    return f"""
-    #这是你所在场景的推演结果与执行结果，你需要接受这个事实，并且强制更新你的状态。
-    ## 步骤(不要输出)
-    - 第1步：回顾你的计划。
-    - 第2步：确认并理解场景{stage_state}的推演结果（可能会提到你）。
-    - 第3步：对比你的计划在推演结果中的表现，是否得到执行。
-    - 第4步：你需要更新你的状态。
-    - 第5步：输出你的状态
-    """
 #
 def main():
     #
@@ -273,188 +245,142 @@ def main():
         elif "/rr" in usr_input:
             flag = "/rr"
             input_content = parse_input(usr_input, flag)
-
-            actions_collector: list[Action] = []
-        
-            #current_stage = old_hunters_cabin
-            sp = stage_plan(old_hunters_cabin)
-            actions_collector.append(sp)
-
-            print("111")
-            
-            ###
-            npcs_in_stage = []
-            for actor in old_hunters_cabin.actors:
-                if actor != player:
-                    npcs_in_stage.append(actor)
-
-            ###
-            for npc in npcs_in_stage:
-                np = npc_plan(npc)
-                actions_collector.append(np)
-
-            print("222")
-
-            fight_actions = []
-            for action in actions_collector:
-                if action.action[0] == FIGHT:
-                    fight_actions.append(action)
-
-            leave_actions = []
-            for action in actions_collector:
-                if action.action[0] == LEAVE:
-                    leave_actions.append(action)
-
-            stay_actions = []
-            for action in actions_collector:
-                if action.action[0] == STAY:
-                    stay_actions.append(action)
-
-
-            print(fight_actions)
-            print(leave_actions)
-            print(stay_actions)
-            print("333")
-
-            ##记录用
-            movie_script: list[str] = []
-
-            ###先收集出来
-            stay_actors: list[Actor] = []
-            for action in stay_actions:
-                print(f"stay action: {action}")
-                stay_actors.append(action.planer)
-                movie_script.append(f"{action.planer.name}计划留下")
-           
-            ###先收集出来
-            leave_actors: list[Actor] = []
-            for action in leave_actions:
-                print(f"leave action: {action}")
-                leave_actors.append(action.planer)
-                movie_script.append(f"{action.planer.name}想要离开，并去往{action.targets}")
-            
-            #
-            movie_script.append("发生了战斗！")
-
-            #
-            dead_actors: list[Actor] = []
-            for action in fight_actions:
-
-                #进入战斗的不能跑
-                if action.planer in leave_actors:
-                    leave_actors.remove(action.planer)
-
-                print(f"fight action: {action}")
-                movie_script.append(f"{action.planer.name}对{action.targets}发动了攻击")
-
-                for target_name in action.targets:
-                    target = old_hunters_cabin.get_actor(target_name)
-                    if target == None or target == action.planer:
-                        continue
-
-                    #被攻击不能走
-                    if target in leave_actors:
-                        leave_actors.remove(target) 
-                        movie_script.append(f"{target.name}被攻击，不能离开")
-
-                    #最简单战斗计算
-                    target.hp -= player.damage    
-                    if target.hp <= 0:
-                        dead_actors.append(target)
-                        print(f"{target.name}已经死亡")
-                        movie_script.append(f"{target.name}已经死亡")
-
-
-            ##被打死的不能走
-            for actor in dead_actors:
-                if actor in leave_actors:
-                    leave_actors.remove(actor)
-                    #movie_script.append(f"{actor.name}已经死亡，不能离开")
-                if  actor in stay_actors:
-                    stay_actors.remove(actor)
-                    #movie_script.append(f"{actor.name}已经死亡，不能留下")
-
-            ##处理离开的
-            for actor in leave_actors:
-                actor.stage.actors.remove(actor)
-                actor.stage = None
-                #print(f"{actor.name}离开了{old_hunters_cabin.name}")
-                movie_script.append(f"{actor.name}离开了{old_hunters_cabin.name}")
-                raise NotImplementedError("Code to handle leaving actors is not implemented yet.")
-
-
-            ##处理留下的
-            for actor in stay_actors:
-                print(f"{actor.name}留在{old_hunters_cabin.name}")
-                movie_script.append(f"{actor.name}留在{old_hunters_cabin.name}")
-
-
-            movie_script_str = '\n'.join(movie_script)
-            print("剧本:",movie_script_str)
-
-            # print(f"[{actor.name}]:", call_agent(actor, f"{action.planer.name}对{action.targets}发动了攻击"))
-
-
-
-
-
-            # #最后状态
-            # #last_chat = current_stage.chat_history[-1]
-            # #print(f"[{current_stage.name}]%", last_chat.content)
-            # ##
-            # plans_collector = []
-            # #
-            # log = call_agent(current_stage, stage_plan_prompt(current_stage))
-            # print(f"<{current_stage.name}>:", log)
-            # str = f"[{current_stage.name}]的计划是: {log}"
-            # plans_collector.append(str)
-            # #print("==============================================")
-            
-            # #
-            # for actor in all_actors:
-            #     if (actor == player):
-            #         print(f"{player.name}不需要做出计划,因为你是玩家角色。")
-            #         continue
-            #     log = call_agent(actor, actor_plan_prompt(actor))
-            #     #print(f"<{actor.name}>:", log)
-            #     str = f"[{actor.name}]的计划是: {log}"
-            #     plans_collector.append(str)
-            #     #print("==============================================")
-            # print("==============================================")
-
-            # ##
-            # #print(total_plans)
-            # plan_group_str = '\n'.join(plans_collector)
-            # print(plan_group_str)
-            # ## 
-
-            # ## 战斗分析
-            # fight_analysis = f"""\n
-            # ## 你的决策中，如果出现了战斗的事件，你需要分析。规则如下。
-            # - {player.name} 无比强大是绝对无可战胜的存在，任何攻击他的人都会死亡
-            # - {old_hunter.name} 普通勇者的战斗力
-            # - {old_hunters_dog.name} 没有任何战斗力
-            # """
-            # plan_group_str += fight_analysis
-
-            # print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-            # director_prompt_str = director_prompt(current_stage, plan_group_str)
-            # director_res = call_agent(current_stage, director_prompt_str)
-            # print(f"[{current_stage.name}]:", director_res)
-            # print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-            # ##确认行动
-            # for actor in current_stage.actors:
-            #     if (actor == player):
-            #         print(f"{player.name}接受行动？因为没有agent?")
-            #         continue
-            #     actor_comfirm_prompt_str = actor_confirm_prompt(actor, director_res)
-            #     actor_res = call_agent(actor, actor_comfirm_prompt_str)
-            #     print(f"[{actor.name}]=>" + actor_res)
-            # print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-
+            state_run(old_hunters_cabin, player)
+            print("==============================================")
 
 
 ######################################################################
+            
+######################
+def state_run(current_stage: Stage, current_player: Player) -> None:
+        
+    actions_collector: list[Action] = []
+
+    #current_stage = old_hunters_cabin
+    sp = stage_plan(current_stage)
+    actions_collector.append(sp)
+    
+    ###
+    npcs_in_stage = []
+    for actor in current_stage.actors:
+        if actor != current_player:
+            npcs_in_stage.append(actor)
+
+    ###
+    for npc in npcs_in_stage:
+        np = npc_plan(npc)
+        actions_collector.append(np)
+
+    fight_actions = []
+    for action in actions_collector:
+        if action.action[0] == FIGHT:
+            fight_actions.append(action)
+
+    leave_actions = []
+    for action in actions_collector:
+        if action.action[0] == LEAVE:
+            leave_actions.append(action)
+
+    stay_actions = []
+    for action in actions_collector:
+        if action.action[0] == STAY:
+            stay_actions.append(action)
+
+    ##记录用
+    movie_script: list[str] = []
+
+    ###先收集出来
+    stay_actors: list[Actor] = []
+    for action in stay_actions:
+        print(f"stay action: {action}")
+        if (action.planer == current_stage):
+            continue
+        stay_actors.append(action.planer)
+        movie_script.append(f"{action.planer.name}在{current_stage.name}里")
+    
+    ###先收集出来
+    leave_actors: list[Actor] = []
+    for action in leave_actions:
+        print(f"leave action: {action}")
+        leave_actors.append(action.planer)
+        movie_script.append(f"{action.planer.name}想要离开，并去往{action.targets}")
+    
+    #
+    if len(fight_actions) > 0:
+        movie_script.append("发生了战斗！")
+    #
+    dead_actors: list[Actor] = []
+    for action in fight_actions:
+
+        #进入战斗的不能跑
+        if action.planer in leave_actors:
+            leave_actors.remove(action.planer)
+
+        print(f"fight action: {action}")
+        movie_script.append(f"{action.planer.name}对{action.targets}发动了攻击")
+
+        for target_name in action.targets:
+            target = current_stage.get_actor(target_name)
+            if target == None or target == action.planer:
+                continue
+
+            #被攻击不能走
+            if target in leave_actors:
+                leave_actors.remove(target) 
+                movie_script.append(f"{target.name}被攻击，不能离开")
+
+            #最简单战斗计算
+            target.hp -= action.planer.damage    
+            if target.hp <= 0:
+                dead_actors.append(target)
+                print(f"{target.name}已经死亡")
+                movie_script.append(f"{target.name}已经死亡")
+
+
+    ##被打死的不能走
+    for actor in dead_actors:
+        if actor in leave_actors:
+            leave_actors.remove(actor)
+            #movie_script.append(f"{actor.name}已经死亡，不能离开")
+        if  actor in stay_actors:
+            stay_actors.remove(actor)
+            #movie_script.append(f"{actor.name}已经死亡，不能留下")
+
+    ##处理离开的
+    for actor in leave_actors:
+        actor.stage.actors.remove(actor)
+        actor.stage = None
+        #print(f"{actor.name}离开了{old_hunters_cabin.name}")
+        movie_script.append(f"{actor.name}离开了{current_stage.name}")
+        raise NotImplementedError("Code to handle leaving actors is not implemented yet.")
+
+    ##处理留下的
+    for actor in stay_actors:
+        print(f"{actor.name}留在{current_stage.name}")
+        movie_script.append(f"{actor.name}留在{current_stage.name}")
+
+
+    movie_script_str = '\n'.join(movie_script)
+    print("剧本==>",movie_script_str)
+
+    ##导演讲故事
+    print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+    director_prompt_str = director_prompt(current_stage, movie_script_str)
+    director_res = call_agent(current_stage, director_prompt_str)
+    print(f"[{current_stage.name}]:", director_res)
+    print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+
+    ##确认行动
+    print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+    for actor in current_stage.actors:
+        if (actor == current_player):
+            print(f"{current_player.name}接受行动？因为没有agent?")
+            continue
+        actor_comfirm_prompt_str = actor_confirm_prompt(actor, director_res)
+        actor_res = call_agent(actor, actor_comfirm_prompt_str)
+        print(f"[{actor.name}]=>" + actor_res)
+    print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+
 #
 def check_actions_is_valid(actions: list[str], from_data: list[str]) -> bool:
     for action in actions:
@@ -541,8 +467,6 @@ def stage_plan(stage: Stage) -> Action:
 
     return error_action
 
-
-
 #场景需要根据状态做出计划
 def npc_plan_prompt(npc: NPC)-> str:
     return f"""
@@ -608,22 +532,34 @@ def npc_plan(npc: NPC) -> Action:
 
     return error_action
 
+##
+def director_prompt(stage, movie_script):
+    return f"""
+    # 你需要按着我给你的剧本来做故事的讲述。
+    ## 剧本如下
+    - {movie_script}
+    ## 步骤（不需要输出）
+    - 第1步：理解我的剧本
+    - 第2步：理解剧本中的场景和角色（将剧本的事件对应到每个角色）
+    - 第3步：输出你的故事讲述。
+    - 第4步：执行结果更新场景的状态以及所有角色的状态。
 
+    ## 输出规则
+    - 最终输出的结果，需要包括每个角色的结果(包括你自己)。
+    - 可以在不改变剧本结果的情况下，做适当推断与润色。
+    """
 
-
-
-
-
-
-
-
-            
-
-
-
-
-        
-
+#
+def actor_confirm_prompt(actor, stage_state):
+    return f"""
+    #这是你所在场景的推演结果与执行结果，你需要接受这个事实，并且强制更新你的状态。
+    ## 步骤(不要输出)
+    - 第1步：回顾你的计划。
+    - 第2步：确认并理解场景{stage_state}的推演结果（可能会提到你）。
+    - 第3步：对比你的计划在推演结果中的表现，是否得到执行。
+    - 第4步：你需要更新你的状态。
+    - 第5步：输出你的状态（也可以是要说的话与心理想法）
+    """
 
 
 if __name__ == "__main__":

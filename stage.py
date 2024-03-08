@@ -23,8 +23,12 @@ class Stage(Actor):
         return None
     
     def remove_actor(self, actor: Actor) -> None:
+        if not actor in self.actors:
+            print(0, f"actor {actor.name} not in stage {self.name}")
+            return
         self.actors.remove(actor)
         if isinstance(actor, NPC):
             self.npcs.remove(actor)
+        actor.stage = None
 
 

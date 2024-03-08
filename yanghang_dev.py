@@ -244,8 +244,6 @@ def main():
 
 
 ######################################################################
-            
-######################
 def state_run(current_stage: Stage, players_action: list[Action]) -> None:
         
     actions_collector: list[Action] = []
@@ -347,16 +345,13 @@ def state_run(current_stage: Stage, players_action: list[Action]) -> None:
     for actor in leave_actors:
         actor.stage.remove_actor(actor)
         actor.stage = None
-        #print(f"{actor.name}离开了{old_hunters_cabin.name}")
         movie_script.append(f"{actor.name}离开了{current_stage.name}")
         raise NotImplementedError("Code to handle leaving actors is not implemented yet.")
     
     for actor in dead_actors:
         actor.stage.remove_actor(actor)
         actor.stage = None
-        #print(f"{actor.name}离开了{old_hunters_cabin.name}")
         movie_script.append(f"{actor.name}死了，离开了这个世界")
-        #raise NotImplementedError("Code to handle leaving actors is not implemented yet.")
 
     ##处理留下的
     for actor in stay_actors:
@@ -386,5 +381,4 @@ def state_run(current_stage: Stage, players_action: list[Action]) -> None:
 
 
 if __name__ == "__main__":
-    print("==============================================")
     main()

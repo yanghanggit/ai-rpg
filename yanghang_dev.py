@@ -2,112 +2,20 @@ from langchain_core.messages import HumanMessage, AIMessage, BaseMessage, System
 from langserve import RemoteRunnable
 import sys
 import json
-import re
+from actor import Actor
+from world import World
+from stage import Stage
+from stage import NPC
+from player import Player
+from action import Action, FIGHT, STAY, LEAVE
+from make_plan import stage_plan_prompt, stage_plan, npc_plan
 
-#
-class Actor:
-    def __init__(self, name: str):
-        self.name = name     
-
-    def connect(self, url: str)-> None:
-        self.agent = RemoteRunnable(url)
-        self.chat_history = []
-
-#
-def call_agent(target: Actor, prompt: str) -> str:
-    # if not hasattr(target, 'agent') or not hasattr(target, 'chat_history'):
-    #     return None
-    response = target.agent.invoke({"input": prompt, "chat_history": target.chat_history})
-    target.chat_history.extend([HumanMessage(content=prompt), AIMessage(content=response['output'])])
-    return response['output']
-
-
-FIGHT: str = '/fight'
-STAY: str = '/stay'
-LEAVE: str = '/leave'
-ALL_ACTIONS: list[str] = [FIGHT, STAY, LEAVE]
-
-#
-def check_data_format(action: any, targets: any, say: any, tags: any) -> bool:
-    if not isinstance(action, list) or not all(isinstance(a, str) for a in action):
-        return False
-    if not isinstance(targets, list) or not all(isinstance(t, str) for t in targets):
-        return False
-    if not isinstance(say, list) or not all(isinstance(s, str) for s in say):
-        return False
-    if not isinstance(tags, list) or not all(isinstance(tag, str) for tag in tags):
-        return False
-    return True
-
-
-class Action:
-
-    def __init__(self, action: list[str], targets: list[str], say: list[str], tags: list[str]):
-        self.action = action
-        self.targets = targets
-        self.say = say
-        self.tags = tags
-        self.planer: Actor = None
-
-    def __str__(self):
-        return f"Action(action={self.action}, targets={self.targets}, say={self.say}, tags={self.tags})"
-
-class World(Actor):
-    def __init__(self, name: str):
-        self.name = name
-        self.stages = []
-
-    def add_stage(self, stage) -> None:
-        self.stages.append(stage)
-
-#
-class Stage(Actor):
-    def __init__(self, name:str):
-        self.name = name
-        self.actors = []
-        self.world = None
-        self.npcs = []
-
-    def add_actor(self, actor: Actor)-> None:
-        self.actors.append(actor)
-        if isinstance(actor, NPC):
-            self.npcs.append(actor)
-
-    def get_actor(self, name: str) -> Actor:
-        for actor in self.actors:
-            if actor.name == name:
-                return actor
-        return None
-    
-    def remove_actor(self, actor: Actor) -> None:
-        self.actors.remove(actor)
-        if isinstance(actor, NPC):
-            self.npcs.remove(actor)
-
-#
-class Player(Actor):
-    def __init__(self, name: str):
-        super().__init__(name)
-        self.stage = None
-        self.max_hp = 100
-        self.hp = 100
-        self.damage = 10
-
-#
-class NPC(Actor): 
-    def __init__(self, name: str):
-        super().__init__(name)
-        self.stage = None
-        self.max_hp = 100
-        self.hp = 100
-        self.damage = 10
 
 #
 def parse_input(input_val: str, split_str: str)-> str:
     if split_str in input_val:
         return input_val.split(split_str)[1].strip()
     return input_val
-
 
 ######################################################################
 ##################################################################################################################################################################################################################
@@ -134,6 +42,45 @@ load_prompt = f"""
 ##################################################################################################################################################################################################################
 ##################################################################################################################################################################################################################
 ##################################################################################################################################################################################################################
+def director_prompt(stage, movie_script):
+    return f"""
+    # 你需要按着我给你的剧本来做故事的讲述，要完全按着剧本来演并最终是剧本的结果。
+    ## 剧本如下
+    - {movie_script}
+    ## 步骤（不需要输出）
+    - 第1步：理解我的剧本
+    - 第2步：理解剧本中的场景和角色（将剧本的事件对应到每个角色）
+    - 第3步：输出你的故事讲述。
+    - 第4步：执行结果更新场景的状态以及所有角色的状态。
+
+    ## 输出规则
+    - 最终输出的结果，需要包括每个角色的结果(包括你自己)。
+    - 输出语句可以适当推断与润色。
+    - 输出在保证语意完整基础上字符尽量少。
+    """
+######################################################################
+##################################################################################################################################################################################################################
+##################################################################################################################################################################################################################
+##################################################################################################################################################################################################################
+#
+def actor_confirm_prompt(actor, stage_state):
+    stage = actor.stage
+    actors = stage.actors
+    actor_names = [actor.name for actor in actors]
+    all_names = ' '.join(actor_names)
+    return f"""
+    #这是你所在场景的推演结果与执行结果，你需要接受这个事实，并且强制更新你的状态。
+    ## 步骤(不要输出)
+    - 第1步：回顾你的计划。
+    - 第2步：确认并理解场景{stage_state}的推演结果（可能会提到你）。而且你知道: {all_names}都还存在于这个场景。
+    - 第3步：对比你的计划在推演结果中的表现，是否得到执行。
+    - 第4步：你需要更新你的状态。
+    - 第5步：输出你的状态（也可以是要说的话与心理想法）
+    """
+######################################################################
+##################################################################################################################################################################################################################
+##################################################################################################################################################################################################################
+##################################################################################################################################################################################################################
 
 #
 def main():
@@ -143,28 +90,28 @@ def main():
     #load!!!!
     world_watcher = World("世界观察者")
     world_watcher.connect("http://localhost:8004/world/")
-    log = call_agent(world_watcher,  load_prompt)
+    log = world_watcher.call_agent(load_prompt)
     print(f"[{world_watcher.name}]:", log)
     print("==============================================")
 
     #
     old_hunter = NPC("卡斯帕·艾伦德")
     old_hunter.connect("http://localhost:8021/actor/npc/old_hunter/")
-    log = call_agent(old_hunter, load_prompt)
+    log = old_hunter.call_agent(load_prompt)
     print(f"[{old_hunter.name}]:", log)
     print("==============================================")
 
     #
     old_hunters_dog = NPC("小狗'断剑'")
     old_hunters_dog.connect("http://localhost:8023/actor/npc/old_hunters_dog/")
-    log = call_agent(old_hunters_dog, load_prompt)
+    log = old_hunters_dog.call_agent(load_prompt)
     print(f"[{old_hunters_dog.name}]:", log)
     print("==============================================")
 
     #
     old_hunters_cabin = Stage("老猎人隐居的小木屋")
     old_hunters_cabin.connect("http://localhost:8022/stage/old_hunters_cabin/")
-    log = call_agent(old_hunters_cabin, load_prompt)
+    log = old_hunters_cabin.call_agent(load_prompt)
     print(f"[{old_hunters_cabin.name}]:", log)
     print("==============================================")
 
@@ -184,7 +131,7 @@ def main():
     player.hp = 1000000
     player.damage = 100
     #player.connect("http://localhost:8023/12345/")
-    log = call_agent(world_watcher,  f"""你知道了如下事件：{player.name}加入了这个世界""")
+    log = world_watcher.call_agent(f"""你知道了如下事件：{player.name}加入了这个世界""")
     print(f"[{world_watcher.name}]:", log)
 
     print("//////////////////////////////////////////////////////////////////////////////////////")
@@ -213,31 +160,31 @@ def main():
             print(f"[{player.name}]=>", event_prompt)
 
             old_hunters_cabin.chat_history.append(HumanMessage(content=event_prompt))
-            print(f"[{old_hunters_cabin.name}]:", call_agent(old_hunters_cabin, "更新你的状态"))
+            print(f"[{old_hunters_cabin.name}]:", old_hunters_cabin.call_agent("更新你的状态"))
 
             for actor in old_hunters_cabin.actors:
                 if (actor == player):
                     continue
                 actor.chat_history.append(HumanMessage(content=event_prompt))
-                print(f"[{actor.name}]:", call_agent(actor, "更新你的状态"))
+                print(f"[{actor.name}]:", actor.call_agent("更新你的状态"))
             print("==============================================")
 
         elif "/1" in usr_input:
             content = parse_input(usr_input, "/1")
             print(f"[{system_administrator}]:", content)
-            print(f"[{world_watcher.name}]:", call_agent(world_watcher, content))
+            print(f"[{world_watcher.name}]:", world_watcher.call_agent(content))
             print("==============================================")
 
         elif "/2" in usr_input:
             content = parse_input(usr_input, "/2")
             print(f"[{system_administrator}]:", content)
-            print(f"[{old_hunter.name}]:",  call_agent(old_hunter, content))
+            print(f"[{old_hunter.name}]:",  old_hunter.call_agent(content))
             print("==============================================")
 
         elif "3" in usr_input:
             content = parse_input(usr_input, "/3")
             print(f"[{system_administrator}]:", content)
-            print(f"[{old_hunters_dog.name}]:",  call_agent(old_hunters_dog, content))
+            print(f"[{old_hunters_dog.name}]:",  old_hunters_dog.call_agent(content))
             print("==============================================")
         
         elif "/4" in usr_input:
@@ -246,11 +193,11 @@ def main():
             print(f"[{system_administrator}]:", content)
 
             old_hunters_cabin.chat_history.append(HumanMessage(content=content))
-            print(f"[{old_hunters_cabin.name}]:", call_agent(old_hunters_cabin, "更新你的状态"))
+            print(f"[{old_hunters_cabin.name}]:", old_hunters_cabin.call_agent("更新你的状态"))
 
             for actor in old_hunters_cabin.actors:
                 actor.chat_history.append(HumanMessage(content=content))
-                print(f"[{actor.name}]:", call_agent(actor, "更新你的状态"))
+                print(f"[{actor.name}]:", actor.call_agent("更新你的状态"))
             print("==============================================")
 
         
@@ -272,16 +219,14 @@ def main():
             print(f"[{player.name}]=>", event_prompt)
 
             old_hunters_cabin.chat_history.append(HumanMessage(content=event_prompt))
-            print(f"[{old_hunters_cabin.name}]:", call_agent(old_hunters_cabin, "更新你的状态"))
+            print(f"[{old_hunters_cabin.name}]:", old_hunters_cabin.call_agent("更新你的状态"))
 
             for actor in old_hunters_cabin.actors:
                 if (actor == player):
                     continue
                 actor.chat_history.append(HumanMessage(content=event_prompt))
-                print(f"[{actor.name}]:", call_agent(actor, "更新你的状态"))
+                print(f"[{actor.name}]:", actor.call_agent("更新你的状态"))
             print("==============================================")
-
-
 
         elif "/attack" in usr_input:
             flag = "/attack"
@@ -293,11 +238,8 @@ def main():
             if target == None:  
                 continue
 
-            players_action = Action([FIGHT], [target.name], ["看招，雷霆大潮袭！！！！！"], [""])
-            players_action.planer = player
-            state_run(old_hunters_cabin, [players_action])
-            print("==============================================")
-          
+            players_action = Action(player, [FIGHT], [target.name], ["看招，雷霆大潮袭！！！！！"], [""])
+            state_run(old_hunters_cabin, [players_action])          
             print("==============================================")
 
 
@@ -428,7 +370,7 @@ def state_run(current_stage: Stage, players_action: list[Action]) -> None:
     ##导演讲故事
     print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
     director_prompt_str = director_prompt(current_stage, movie_script_str)
-    director_res = call_agent(current_stage, director_prompt_str)
+    director_res = current_stage.call_agent(director_prompt_str)
     print(f"[{current_stage.name}]:", director_res)
     print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 
@@ -436,196 +378,11 @@ def state_run(current_stage: Stage, players_action: list[Action]) -> None:
     print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
     for actor in current_stage.npcs:
         actor_comfirm_prompt_str = actor_confirm_prompt(actor, director_res)
-        actor_res = call_agent(actor, actor_comfirm_prompt_str)
+        actor_res = actor.call_agent(actor_comfirm_prompt_str)
         print(f"[{actor.name}]=>" + actor_res)
     print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 
-#
-def check_actions_is_valid(actions: list[str], from_data: list[str]) -> bool:
-    for action in actions:
-        if action not in from_data:
-            return False
-    return True
 
-#
-def check_targets_is_valid_actor_in_stage(stage: Stage, targets: list[str]) -> bool:
-    for target in targets:
-        if not any(actor.name == target for actor in stage.actors):
-            return False
-    return True
-
-#
-def check_stage_is_valid_in_world(world: World, stage_name: str) -> bool:
-    if not any(stage.name == stage_name for stage in world.stages):
-        return False
-    return True
-
-#场景需要根据状态做出计划
-def stage_plan_prompt(stage: Stage)-> str:
-    return f"""
-    # 你需要做出计划
-    ## 步骤
-    - 第1步：理解你的当前状态。
-    - 第2步：理解场景内所有角色的当前状态。
-    - 第3步：输出你的计划。
-
-    ## 输出规则（最终输出为JSON）：
-    - 你的输出必须是一个JSON，包括action, targets, say, tags四个字段。
-    - action: 默认是[""]，只能是["/fight", "/stay", "/leave"]中的一个（即都是字符串）。
-    - targets: 默认是[""]，可以是多个，即都是字符串
-    - say: 默认是[""]，可以是多个，即都是字符串
-    - tags: 默认是[""]，可以是多个，即都是字符串
-    - 参考格式 'action': ["/stay"], 'targets': ["目标1", "目标2"], 'say': ["我什么都不做"], 'tags': ["我是一个场景"]
-   
-    ### action与targets说明
-    - "/fight"：代表你想对某个角色发动攻击或者敌意行为，targets是场景内某个角色的名字
-    - "/leave"：代表你想离开本场景，targets是你知道的这个在这个世界某个地点的名字
-    - 关于"/stay"：除了"/fight"，"/leave"，之外的其他行为都是"/stay"，代表你想保持现状, targets是你所在这个场景的名字（如果你自己就是场景，那就是你的名字）
-
-    ### say与tags说明
-    - say:是你想要说的话(或者心里活动)
-    - tags:是你的特点
-
-    ## 输出限制：
-    - 按着如上规则，输出JSON
-    - 不要推断，增加与润色。
-    - 输出在保证语意完整基础上字符尽量少。
-    """
-      
-def stage_plan(stage: Stage) -> Action:
-
-    make_prompt = stage_plan_prompt(stage)
-    #print(f"stage_plan_prompt:", make_prompt)
-
-    call_res = call_agent(stage, make_prompt)
-    print(f"<{stage.name}>:", call_res)
-
-    error_action = Action([STAY], [stage.name], ["什么都不做"], [""])
-    error_action.planer = stage
-
-    try:
-        json_data = json.loads(call_res)
-        if not check_data_format(json_data['action'], json_data['targets'], json_data['say'], json_data['tags']):
-            return error_action
-
-        #
-        action = Action(json_data['action'], json_data['targets'], json_data['say'], json_data['tags'])
-        if not (check_actions_is_valid(action.action, ALL_ACTIONS) 
-                or check_targets_is_valid_actor_in_stage(stage, action.targets)):
-            return error_action
-        
-        if action.action[0] == LEAVE or action.action[0] == STAY:
-            if not check_stage_is_valid_in_world(stage.world, action.targets[0]):
-                return error_action
-
-        action.planer = stage
-        return action
-
-    except Exception as e:
-        print(f"stage_plan error = {e}")
-        return error_action
-
-    return error_action
-
-#场景需要根据状态做出计划
-def npc_plan_prompt(npc: NPC)-> str:
-    return f"""
-    # 你需要做出计划（即你想要做的事还没做）  
-      
-    ## 步骤
-    - 第1步：理解你自身当前状态。
-    - 第2步：理解你的场景内所有角色的当前状态。
-    - 第3步：输出你需要做出计划。
-
-        ## 输出规则（最终输出为JSON）：
-    - 你的输出必须是一个JSON，包括action, targets, say, tags四个字段。
-    - action: 默认是[""]，只能是["/fight", "/stay", "/leave"]中的一个（即都是字符串）。
-    - targets: 默认是[""]，可以是多个，即都是字符串
-    - say: 默认是[""]，可以是多个，即都是字符串
-    - tags: 默认是[""]，可以是多个，即都是字符串
-    - 参考格式 'action': ["/stay"], 'targets': ["目标1", "目标2"], 'say': ["我什么都不做"], 'tags': ["我是一个场景"]
-   
-    ### action与targets说明
-    - "/fight"：代表你想对某个角色发动攻击或者敌意行为，targets是场景内某个角色的名字
-    - "/leave"：代表你想离开本场景，targets是你知道的这个在这个世界某个地点的名字
-    - 关于"/stay"：除了"/fight"，"/leave"，之外的其他行为都是"/stay"，代表你想保持现状, targets是你所在这个场景的名字（如果你自己就是场景，那就是你的名字）
-
-    ### say与tags说明
-    - say:是你想要说的话(或者心里活动)
-    - tags:是你的特点
-
-    ## 输出限制：
-    - 按着如上规则，输出JSON
-    - 输出在保证语意完整基础上字符尽量少。
-    """
-
-###
-def npc_plan(npc: NPC) -> Action:
-    make_prompt = npc_plan_prompt(npc)
-    #print(f"npc_plan_prompt:", make_prompt)
-
-    call_res = call_agent(npc, make_prompt)
-    print(f"<{npc.name}>:", call_res)
-
-    error_action = Action([STAY], [npc.stage.name], ["什么都不做"], [""])
-    error_action.planer = npc
-
-    try:
-        json_data = json.loads(call_res)
-        if not check_data_format(json_data['action'], json_data['targets'], json_data['say'], json_data['tags']):
-            return error_action
-        #
-        action = Action(json_data['action'], json_data['targets'], json_data['say'], json_data['tags'])
-        if not (check_actions_is_valid(action.action, ALL_ACTIONS) 
-                or check_targets_is_valid_actor_in_stage(npc.stage, action.targets)):
-            return error_action
-        
-        if action.action[0] == LEAVE or action.action[0] == STAY:
-            if not check_stage_is_valid_in_world(npc.stage.world, action.targets[0]):
-                return error_action
-            
-        action.planer = npc
-        return action
-    
-    except Exception as e:
-        print(f"npc_plan error = {e}")
-        return error_action
-
-    return error_action
-
-##
-def director_prompt(stage, movie_script):
-    return f"""
-    # 你需要按着我给你的剧本来做故事的讲述，要完全按着剧本来演并最终是剧本的结果。
-    ## 剧本如下
-    - {movie_script}
-    ## 步骤（不需要输出）
-    - 第1步：理解我的剧本
-    - 第2步：理解剧本中的场景和角色（将剧本的事件对应到每个角色）
-    - 第3步：输出你的故事讲述。
-    - 第4步：执行结果更新场景的状态以及所有角色的状态。
-
-    ## 输出规则
-    - 最终输出的结果，需要包括每个角色的结果(包括你自己)。
-    - 输出语句可以适当推断与润色。
-    - 输出在保证语意完整基础上字符尽量少。
-    """
-
-#
-def actor_confirm_prompt(actor, stage_state):
-    stage = actor.stage
-    actors = stage.actors
-    actor_names = [actor.name for actor in actors]
-    all_names = ' '.join(actor_names)
-    return f"""
-    #这是你所在场景的推演结果与执行结果，你需要接受这个事实，并且强制更新你的状态。
-    ## 步骤(不要输出)
-    - 第1步：回顾你的计划。
-    - 第2步：确认并理解场景{stage_state}的推演结果（可能会提到你）。而且你知道: {all_names}都还存在于这个场景。
-    - 第3步：对比你的计划在推演结果中的表现，是否得到执行。
-    - 第4步：你需要更新你的状态。
-    - 第5步：输出你的状态（也可以是要说的话与心理想法）
-    """
 
 
 if __name__ == "__main__":

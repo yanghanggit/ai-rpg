@@ -78,12 +78,18 @@ class Stage(Actor):
             if actor.name == name:
                 return actor
         return None
+    
+    def remove_actor(self, actor: Actor) -> None:
+        self.actors.remove(actor)
+        if isinstance(actor, NPC):
+            self.npcs.remove(actor)
 
 #
 class Player(Actor):
     def __init__(self, name: str):
         super().__init__(name)
         self.stage = None
+        self.max_hp = 100
         self.hp = 100
         self.damage = 10
 
@@ -92,6 +98,7 @@ class NPC(Actor):
     def __init__(self, name: str):
         super().__init__(name)
         self.stage = None
+        self.max_hp = 100
         self.hp = 100
         self.damage = 10
 
@@ -173,6 +180,7 @@ def main():
 
     #
     player = Player("yang_hang")
+    player.max_hp = 1000000
     player.hp = 1000000
     player.damage = 100
     #player.connect("http://localhost:8023/12345/")
@@ -191,10 +199,12 @@ def main():
         if "/cancel" in usr_input:
             continue
         
+        ##某人进入场景的事件
         elif "/0" in usr_input:
             content = parse_input(usr_input, "/0")
             print(f"[{system_administrator}]:", content)
-
+            if player.stage != None:
+                continue
             ## 必须加上！！！！！！！
             old_hunters_cabin.add_actor(player)
             player.stage = old_hunters_cabin
@@ -211,7 +221,6 @@ def main():
                 actor.chat_history.append(HumanMessage(content=event_prompt))
                 print(f"[{actor.name}]:", call_agent(actor, "更新你的状态"))
             print("==============================================")
-
 
         elif "/1" in usr_input:
             content = parse_input(usr_input, "/1")
@@ -249,6 +258,27 @@ def main():
             flag = "/rr"
             parse_input(usr_input, flag)
             state_run(old_hunters_cabin)
+            print("==============================================")
+
+
+        elif "/talk" in usr_input:
+            flag = "/talk"
+            content = parse_input(usr_input, flag)
+            print(f"[{player.name}]:", content)
+            if player.stage == None:
+                continue
+            ###
+            event_prompt = f"""{player.name}, {content}"""
+            print(f"[{player.name}]=>", event_prompt)
+
+            old_hunters_cabin.chat_history.append(HumanMessage(content=event_prompt))
+            print(f"[{old_hunters_cabin.name}]:", call_agent(old_hunters_cabin, "更新你的状态"))
+
+            for actor in old_hunters_cabin.actors:
+                if (actor == player):
+                    continue
+                actor.chat_history.append(HumanMessage(content=event_prompt))
+                print(f"[{actor.name}]:", call_agent(actor, "更新你的状态"))
             print("==============================================")
 
 
@@ -327,6 +357,7 @@ def state_run(current_stage: Stage) -> None:
                 movie_script.append(f"{target.name}被攻击，不能离开")
 
             #最简单战斗计算
+            print("这是一个测试的战斗计算，待补充")
             target.hp -= action.planer.damage    
             movie_script.append(f"{action.planer.name}对{action.targets}产生了{action.planer.damage}点伤害")
             if target.hp <= 0:
@@ -334,7 +365,7 @@ def state_run(current_stage: Stage) -> None:
                 print(f"{target.name}已经死亡")
                 movie_script.append(f"{target.name}已经死亡")
             else:
-                print(f"{target.name}还在场景里并且活着")
+                print(f"{target.name}还在场景里并且活着，剩余{target.hp/target.max_hp*100}%血量")
 
     ##被打死的不能走
     for actor in dead_actors:
@@ -347,7 +378,7 @@ def state_run(current_stage: Stage) -> None:
 
     ##处理离开的
     for actor in leave_actors:
-        actor.stage.actors.remove(actor)
+        actor.stage.remove_actor(actor)
         actor.stage = None
         #print(f"{actor.name}离开了{old_hunters_cabin.name}")
         movie_script.append(f"{actor.name}离开了{current_stage.name}")
@@ -360,7 +391,7 @@ def state_run(current_stage: Stage) -> None:
 
 
     movie_script_str = '\n'.join(movie_script)
-    print("<剧本>\n",movie_script_str)
+    print("<<<<<<<<<<<<<<<<<<<<<<<<<剧本>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n",movie_script_str)
 
     ##导演讲故事
     print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")

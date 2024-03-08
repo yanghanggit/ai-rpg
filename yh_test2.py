@@ -257,7 +257,7 @@ def main():
         elif "/rr" in usr_input:
             flag = "/rr"
             parse_input(usr_input, flag)
-            state_run(old_hunters_cabin)
+            state_run(old_hunters_cabin, [])
             print("==============================================")
 
 
@@ -282,20 +282,45 @@ def main():
             print("==============================================")
 
 
+
+        elif "/attack" in usr_input:
+            flag = "/attack"
+            target_name = parse_input(usr_input, flag)
+            print(f"[{player.name}] xxx:", target_name)
+            if player.stage == None:
+                continue
+            target = player.stage.get_actor(target_name)
+            if target == None:  
+                continue
+
+            players_action = Action([FIGHT], [target.name], ["看招，雷霆大潮袭！！！！！"], [""])
+            players_action.planer = player
+            state_run(old_hunters_cabin, [players_action])
+            print("==============================================")
+          
+            print("==============================================")
+
+
 ######################################################################
             
 ######################
-def state_run(current_stage: Stage) -> None:
+def state_run(current_stage: Stage, players_action: list[Action]) -> None:
         
     actions_collector: list[Action] = []
 
+    ###场景的
     sp = stage_plan(current_stage)
     actions_collector.append(sp)
 
-    ###
+    ###npc
     for npc in current_stage.npcs:
         np = npc_plan(npc)
         actions_collector.append(np)
+
+    ###角色的
+    if len(players_action) > 0:
+        actions_collector.extend(players_action)
+
 
     fight_actions = []
     for action in actions_collector:
@@ -383,6 +408,13 @@ def state_run(current_stage: Stage) -> None:
         #print(f"{actor.name}离开了{old_hunters_cabin.name}")
         movie_script.append(f"{actor.name}离开了{current_stage.name}")
         raise NotImplementedError("Code to handle leaving actors is not implemented yet.")
+    
+    for actor in dead_actors:
+        actor.stage.remove_actor(actor)
+        actor.stage = None
+        #print(f"{actor.name}离开了{old_hunters_cabin.name}")
+        movie_script.append(f"{actor.name}死了，离开了这个世界")
+        #raise NotImplementedError("Code to handle leaving actors is not implemented yet.")
 
     ##处理留下的
     for actor in stay_actors:
@@ -469,6 +501,7 @@ def stage_plan(stage: Stage) -> Action:
     print(f"<{stage.name}>:", call_res)
 
     error_action = Action([STAY], [stage.name], ["什么都不做"], [""])
+    error_action.planer = stage
 
     try:
         json_data = json.loads(call_res)
@@ -535,6 +568,7 @@ def npc_plan(npc: NPC) -> Action:
     print(f"<{npc.name}>:", call_res)
 
     error_action = Action([STAY], [npc.stage.name], ["什么都不做"], [""])
+    error_action.planer = npc
 
     try:
         json_data = json.loads(call_res)
@@ -549,7 +583,7 @@ def npc_plan(npc: NPC) -> Action:
         if action.action[0] == LEAVE or action.action[0] == STAY:
             if not check_stage_is_valid_in_world(npc.stage.world, action.targets[0]):
                 return error_action
-        
+            
         action.planer = npc
         return action
     
@@ -579,11 +613,15 @@ def director_prompt(stage, movie_script):
 
 #
 def actor_confirm_prompt(actor, stage_state):
+    stage = actor.stage
+    actors = stage.actors
+    actor_names = [actor.name for actor in actors]
+    all_names = ' '.join(actor_names)
     return f"""
     #这是你所在场景的推演结果与执行结果，你需要接受这个事实，并且强制更新你的状态。
     ## 步骤(不要输出)
     - 第1步：回顾你的计划。
-    - 第2步：确认并理解场景{stage_state}的推演结果（可能会提到你）。
+    - 第2步：确认并理解场景{stage_state}的推演结果（可能会提到你）。而且你知道: {all_names}都还存在于这个场景。
     - 第3步：对比你的计划在推演结果中的表现，是否得到执行。
     - 第4步：你需要更新你的状态。
     - 第5步：输出你的状态（也可以是要说的话与心理想法）

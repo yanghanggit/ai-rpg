@@ -66,9 +66,12 @@ class Stage(Actor):
         self.name = name
         self.actors = []
         self.world = None
+        self.npcs = []
 
     def add_actor(self, actor: Actor)-> None:
         self.actors.append(actor)
+        if isinstance(actor, NPC):
+            self.npcs.append(actor)
 
     def get_actor(self, name: str) -> Actor:
         for actor in self.actors:
@@ -244,30 +247,23 @@ def main():
         
         elif "/rr" in usr_input:
             flag = "/rr"
-            input_content = parse_input(usr_input, flag)
-            state_run(old_hunters_cabin, player)
+            parse_input(usr_input, flag)
+            state_run(old_hunters_cabin)
             print("==============================================")
 
 
 ######################################################################
             
 ######################
-def state_run(current_stage: Stage, current_player: Player) -> None:
+def state_run(current_stage: Stage) -> None:
         
     actions_collector: list[Action] = []
 
-    #current_stage = old_hunters_cabin
     sp = stage_plan(current_stage)
     actions_collector.append(sp)
-    
-    ###
-    npcs_in_stage = []
-    for actor in current_stage.actors:
-        if actor != current_player:
-            npcs_in_stage.append(actor)
 
     ###
-    for npc in npcs_in_stage:
+    for npc in current_stage.npcs:
         np = npc_plan(npc)
         actions_collector.append(np)
 
@@ -304,7 +300,8 @@ def state_run(current_stage: Stage, current_player: Player) -> None:
         print(f"leave action: {action}")
         leave_actors.append(action.planer)
         movie_script.append(f"{action.planer.name}想要离开，并去往{action.targets}")
-    
+    print("==============================================")
+
     #
     if len(fight_actions) > 0:
         movie_script.append("发生了战斗！")
@@ -331,20 +328,22 @@ def state_run(current_stage: Stage, current_player: Player) -> None:
 
             #最简单战斗计算
             target.hp -= action.planer.damage    
+            movie_script.append(f"{action.planer.name}对{action.targets}产生了{action.planer.damage}点伤害")
             if target.hp <= 0:
                 dead_actors.append(target)
                 print(f"{target.name}已经死亡")
                 movie_script.append(f"{target.name}已经死亡")
-
+            else:
+                print(f"{target.name}还在场景里并且活着")
 
     ##被打死的不能走
     for actor in dead_actors:
         if actor in leave_actors:
             leave_actors.remove(actor)
-            #movie_script.append(f"{actor.name}已经死亡，不能离开")
+            movie_script.append(f"{actor.name}已经死亡，不能离开")
         if  actor in stay_actors:
             stay_actors.remove(actor)
-            #movie_script.append(f"{actor.name}已经死亡，不能留下")
+            movie_script.append(f"{actor.name}已经死亡，不能留下")
 
     ##处理离开的
     for actor in leave_actors:
@@ -361,7 +360,7 @@ def state_run(current_stage: Stage, current_player: Player) -> None:
 
 
     movie_script_str = '\n'.join(movie_script)
-    print("剧本==>",movie_script_str)
+    print("<剧本>\n",movie_script_str)
 
     ##导演讲故事
     print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
@@ -372,10 +371,7 @@ def state_run(current_stage: Stage, current_player: Player) -> None:
 
     ##确认行动
     print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-    for actor in current_stage.actors:
-        if (actor == current_player):
-            print(f"{current_player.name}接受行动？因为没有agent?")
-            continue
+    for actor in current_stage.npcs:
         actor_comfirm_prompt_str = actor_confirm_prompt(actor, director_res)
         actor_res = call_agent(actor, actor_comfirm_prompt_str)
         print(f"[{actor.name}]=>" + actor_res)
@@ -535,7 +531,7 @@ def npc_plan(npc: NPC) -> Action:
 ##
 def director_prompt(stage, movie_script):
     return f"""
-    # 你需要按着我给你的剧本来做故事的讲述。
+    # 你需要按着我给你的剧本来做故事的讲述，要完全按着剧本来演并最终是剧本的结果。
     ## 剧本如下
     - {movie_script}
     ## 步骤（不需要输出）
@@ -546,7 +542,8 @@ def director_prompt(stage, movie_script):
 
     ## 输出规则
     - 最终输出的结果，需要包括每个角色的结果(包括你自己)。
-    - 可以在不改变剧本结果的情况下，做适当推断与润色。
+    - 输出语句可以适当推断与润色。
+    - 输出在保证语意完整基础上字符尽量少。
     """
 
 #

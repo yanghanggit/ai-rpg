@@ -4,44 +4,6 @@ import sys
 import json
 import re
 
-
-# from yh_test2 import Stage
-# from yh_test2 import World
-
-
-
-"""
-action: ["a1", "a2", "a3"],
-targets: ["猎人", "小狗"],
-say: ["hello", "world"],
-tags: ["t1", "t2", "t3"]
-"""
-
-json_str = '''
-{
-    "action": ["", "", ""],
-    "targets": ["", ""],
-    "say": ["", ""],
-    "tags": ["", "", ""]
-}
-'''
-          
-FIGHT: str = '/fight'
-STAY: str = '/stay'
-LEAVE: str = '/leave'
-ALL_ACTIONS: list[str] = [FIGHT, STAY, LEAVE]
-
-#
-def check_data_format(action: any, targets: any, say: any, tags: any) -> bool:
-    if not isinstance(action, list) or not all(isinstance(a, str) for a in action):
-        return False
-    if not isinstance(targets, list) or not all(isinstance(t, str) for t in targets):
-        return False
-    if not isinstance(say, list) or not all(isinstance(s, str) for s in say):
-        return False
-    if not isinstance(tags, list) or not all(isinstance(tag, str) for tag in tags):
-        return False
-
 #
 class Actor:
     def __init__(self, name: str):
@@ -59,15 +21,36 @@ def call_agent(target: Actor, prompt: str) -> str:
     target.chat_history.extend([HumanMessage(content=prompt), AIMessage(content=response['output'])])
     return response['output']
 
+
+FIGHT: str = '/fight'
+STAY: str = '/stay'
+LEAVE: str = '/leave'
+ALL_ACTIONS: list[str] = [FIGHT, STAY, LEAVE]
+
+#
+def check_data_format(action: any, targets: any, say: any, tags: any) -> bool:
+    if not isinstance(action, list) or not all(isinstance(a, str) for a in action):
+        return False
+    if not isinstance(targets, list) or not all(isinstance(t, str) for t in targets):
+        return False
+    if not isinstance(say, list) or not all(isinstance(s, str) for s in say):
+        return False
+    if not isinstance(tags, list) or not all(isinstance(tag, str) for tag in tags):
+        return False
+    return True
+
+
 class Action:
+
     def __init__(self, action: list[str], targets: list[str], say: list[str], tags: list[str]):
         self.action = action
         self.targets = targets
         self.say = say
         self.tags = tags
+        self.planer: Actor = None
 
     def __str__(self):
-        return f"action: {self.action}, targets: {self.targets}, say: {self.say}, tags: {self.tags}"
+        return f"Action(action={self.action}, targets={self.targets}, say={self.say}, tags={self.tags})"
 
 class World(Actor):
     def __init__(self, name: str):
@@ -87,17 +70,27 @@ class Stage(Actor):
     def add_actor(self, actor: Actor)-> None:
         self.actors.append(actor)
 
+    def get_actor(self, name: str) -> Actor:
+        for actor in self.actors:
+            if actor.name == name:
+                return actor
+        return None
+
 #
 class Player(Actor):
     def __init__(self, name: str):
         super().__init__(name)
         self.stage = None
+        self.hp = 100
+        self.damage = 10
 
 #
 class NPC(Actor): 
     def __init__(self, name: str):
         super().__init__(name)
         self.stage = None
+        self.hp = 100
+        self.damage = 10
 
 #
 def parse_input(input_val: str, split_str: str)-> str:
@@ -205,11 +198,11 @@ def main():
 
     #
     player = Player("yang_hang")
+    player.hp = 1000000
+    player.damage = 100
     #player.connect("http://localhost:8023/12345/")
     log = call_agent(world_watcher,  f"""你知道了如下事件：{player.name}加入了这个世界""")
     print(f"[{world_watcher.name}]:", log)
-    # player.health = 10000000
-    # player.power = 10000000
 
     print("//////////////////////////////////////////////////////////////////////////////////////")
     print("//////////////////////////////////////////////////////////////////////////////////////")
@@ -280,24 +273,128 @@ def main():
         elif "/rr" in usr_input:
             flag = "/rr"
             input_content = parse_input(usr_input, flag)
+
+            actions_collector: list[Action] = []
         
             #current_stage = old_hunters_cabin
             sp = stage_plan(old_hunters_cabin)
+            actions_collector.append(sp)
 
             print("111")
             
             ###
-            npcs = []
+            npcs_in_stage = []
             for actor in old_hunters_cabin.actors:
                 if actor != player:
-                    npcs.append(actor)
+                    npcs_in_stage.append(actor)
 
             ###
-            for npc in npcs:
+            for npc in npcs_in_stage:
                 np = npc_plan(npc)
-
+                actions_collector.append(np)
 
             print("222")
+
+            fight_actions = []
+            for action in actions_collector:
+                if action.action[0] == FIGHT:
+                    fight_actions.append(action)
+
+            leave_actions = []
+            for action in actions_collector:
+                if action.action[0] == LEAVE:
+                    leave_actions.append(action)
+
+            stay_actions = []
+            for action in actions_collector:
+                if action.action[0] == STAY:
+                    stay_actions.append(action)
+
+
+            print(fight_actions)
+            print(leave_actions)
+            print(stay_actions)
+            print("333")
+
+            ##记录用
+            movie_script: list[str] = []
+
+            ###先收集出来
+            stay_actors: list[Actor] = []
+            for action in stay_actions:
+                print(f"stay action: {action}")
+                stay_actors.append(action.planer)
+                movie_script.append(f"{action.planer.name}计划留下")
+           
+            ###先收集出来
+            leave_actors: list[Actor] = []
+            for action in leave_actions:
+                print(f"leave action: {action}")
+                leave_actors.append(action.planer)
+                movie_script.append(f"{action.planer.name}想要离开，并去往{action.targets}")
+            
+            #
+            movie_script.append("发生了战斗！")
+
+            #
+            dead_actors: list[Actor] = []
+            for action in fight_actions:
+
+                #进入战斗的不能跑
+                if action.planer in leave_actors:
+                    leave_actors.remove(action.planer)
+
+                print(f"fight action: {action}")
+                movie_script.append(f"{action.planer.name}对{action.targets}发动了攻击")
+
+                for target_name in action.targets:
+                    target = old_hunters_cabin.get_actor(target_name)
+                    if target == None or target == action.planer:
+                        continue
+
+                    #被攻击不能走
+                    if target in leave_actors:
+                        leave_actors.remove(target) 
+                        movie_script.append(f"{target.name}被攻击，不能离开")
+
+                    #最简单战斗计算
+                    target.hp -= player.damage    
+                    if target.hp <= 0:
+                        dead_actors.append(target)
+                        print(f"{target.name}已经死亡")
+                        movie_script.append(f"{target.name}已经死亡")
+
+
+            ##被打死的不能走
+            for actor in dead_actors:
+                if actor in leave_actors:
+                    leave_actors.remove(actor)
+                    #movie_script.append(f"{actor.name}已经死亡，不能离开")
+                if  actor in stay_actors:
+                    stay_actors.remove(actor)
+                    #movie_script.append(f"{actor.name}已经死亡，不能留下")
+
+            ##处理离开的
+            for actor in leave_actors:
+                actor.stage.actors.remove(actor)
+                actor.stage = None
+                #print(f"{actor.name}离开了{old_hunters_cabin.name}")
+                movie_script.append(f"{actor.name}离开了{old_hunters_cabin.name}")
+                raise NotImplementedError("Code to handle leaving actors is not implemented yet.")
+
+
+            ##处理留下的
+            for actor in stay_actors:
+                print(f"{actor.name}留在{old_hunters_cabin.name}")
+                movie_script.append(f"{actor.name}留在{old_hunters_cabin.name}")
+
+
+            movie_script_str = '\n'.join(movie_script)
+            print("剧本:",movie_script_str)
+
+            # print(f"[{actor.name}]:", call_agent(actor, f"{action.planer.name}对{action.targets}发动了攻击"))
+
+
 
 
 
@@ -359,9 +456,9 @@ def main():
 
 ######################################################################
 #
-def check_actions_is_valid(actions: list[str]) -> bool:
+def check_actions_is_valid(actions: list[str], from_data: list[str]) -> bool:
     for action in actions:
-        if action not in ALL_ACTIONS:
+        if action not in from_data:
             return False
     return True
 
@@ -380,38 +477,29 @@ def check_stage_is_valid_in_world(world: World, stage_name: str) -> bool:
 
 #场景需要根据状态做出计划
 def stage_plan_prompt(stage: Stage)-> str:
-    ###
-    sample_json = {
-    "action": ["", "", ""],
-    "targets": ["", "", ""],
-    "say": ["", "", ""],
-    "tags": ["", "", ""]
-    }
-    sample_json_str = json.dumps(sample_json)
-
     return f"""
     # 你需要做出计划
     ## 步骤
     - 第1步：理解你的当前状态。
     - 第2步：理解场景内所有角色的当前状态。
-    - 第3步：输出你的计划。如果没有更新你的状态。   
+    - 第3步：输出你的计划。
 
     ## 输出规则（最终输出为JSON）：
     - 你的输出必须是一个JSON，包括action, targets, say, tags四个字段。
-    - action: 默认是[""]，只能是["/fight", "/stay", "/leave"]中的一个（即都是字符串），不允许多个。
-    - targets: 默认是[""]，可以是多个，必须是场景内的角色名字或者是你的名字，即都是字符串
-    - say: 默认是[""]，可以是多个，但是必须是字符串；
-    - tags: 默认是[""]，可以是多个，但是必须是字符串；
-    ### 输出格式请参考: {sample_json_str}
+    - action: 默认是[""]，只能是["/fight", "/stay", "/leave"]中的一个（即都是字符串）。
+    - targets: 默认是[""]，可以是多个，即都是字符串
+    - say: 默认是[""]，可以是多个，即都是字符串
+    - tags: 默认是[""]，可以是多个，即都是字符串
+    - 参考格式 'action': ["/stay"], 'targets': ["目标1", "目标2"], 'say': ["我什么都不做"], 'tags': ["我是一个场景"]
    
     ### action与targets说明
     - "/fight"：代表你想对某个角色发动攻击或者敌意行为，targets是场景内某个角色的名字
     - "/leave"：代表你想离开本场景，targets是你知道的这个在这个世界某个地点的名字
-    - 关于"/stay"：除了"/fight"，"/leave"，之外的其他行为都是"/stay"，代表你想保持现状, targets你在这个场景的名字（如果你自己就是场景，那就是你的名字）
+    - 关于"/stay"：除了"/fight"，"/leave"，之外的其他行为都是"/stay"，代表你想保持现状, targets是你所在这个场景的名字（如果你自己就是场景，那就是你的名字）
 
     ### say与tags说明
-    - say: 你的输出的话(或者心里活动)，可以是多个，但是必须是字符串
-    - tags: 输出的标签（你的特点），可以是多个，但是必须是字符串
+    - say:是你想要说的话(或者心里活动)
+    - tags:是你的特点
 
     ## 输出限制：
     - 按着如上规则，输出JSON
@@ -422,7 +510,7 @@ def stage_plan_prompt(stage: Stage)-> str:
 def stage_plan(stage: Stage) -> Action:
 
     make_prompt = stage_plan_prompt(stage)
-    print(f"stage_plan_prompt:", make_prompt)
+    #print(f"stage_plan_prompt:", make_prompt)
 
     call_res = call_agent(stage, make_prompt)
     print(f"<{stage.name}>:", call_res)
@@ -436,13 +524,16 @@ def stage_plan(stage: Stage) -> Action:
 
         #
         action = Action(json_data['action'], json_data['targets'], json_data['say'], json_data['tags'])
-        if not (check_actions_is_valid(action.action) 
+        if not (check_actions_is_valid(action.action, ALL_ACTIONS) 
                 or check_targets_is_valid_actor_in_stage(stage, action.targets)):
             return error_action
         
         if action.action[0] == LEAVE or action.action[0] == STAY:
             if not check_stage_is_valid_in_world(stage.world, action.targets[0]):
                 return error_action
+
+        action.planer = stage
+        return action
 
     except Exception as e:
         print(f"stage_plan error = {e}")
@@ -454,41 +545,32 @@ def stage_plan(stage: Stage) -> Action:
 
 #场景需要根据状态做出计划
 def npc_plan_prompt(npc: NPC)-> str:
-
-    ###
-    sample_json = {
-    "action": ["", "", ""],
-    "targets": ["", "", ""],
-    "say": ["", "", ""],
-    "tags": ["", "", ""]
-    }
-    sample_json_str = json.dumps(sample_json)
-
     return f"""
-    # 你需要做出计划（即你想要做的事还没做）    
+    # 你需要做出计划（即你想要做的事还没做）  
+      
     ## 步骤
     - 第1步：理解你自身当前状态。
     - 第2步：理解你的场景内所有角色的当前状态。
     - 第3步：输出你需要做出计划。
 
-     ## 输出规则（最终输出为JSON）：
+        ## 输出规则（最终输出为JSON）：
     - 你的输出必须是一个JSON，包括action, targets, say, tags四个字段。
-    - action: 默认是[""]，只能是["/fight", "/stay", "/leave"]中的一个（即都是字符串），不允许多个。
-    - targets: 默认是[""]，可以是多个，必须是场景内的角色名字或者是你的名字，即都是字符串
-    - say: 默认是[""]，可以是多个，但是必须是字符串；
-    - tags: 默认是[""]，可以是多个，但是必须是字符串；
-    ### 输出格式请参考: {sample_json_str}
+    - action: 默认是[""]，只能是["/fight", "/stay", "/leave"]中的一个（即都是字符串）。
+    - targets: 默认是[""]，可以是多个，即都是字符串
+    - say: 默认是[""]，可以是多个，即都是字符串
+    - tags: 默认是[""]，可以是多个，即都是字符串
+    - 参考格式 'action': ["/stay"], 'targets': ["目标1", "目标2"], 'say': ["我什么都不做"], 'tags': ["我是一个场景"]
    
     ### action与targets说明
     - "/fight"：代表你想对某个角色发动攻击或者敌意行为，targets是场景内某个角色的名字
     - "/leave"：代表你想离开本场景，targets是你知道的这个在这个世界某个地点的名字
-    - 关于"/stay"：除了"/fight"，"/leave"，之外的其他行为都是"/stay"，代表你想保持现状, targets你在这个场景的名字（如果你自己就是场景，那就是你的名字）
+    - 关于"/stay"：除了"/fight"，"/leave"，之外的其他行为都是"/stay"，代表你想保持现状, targets是你所在这个场景的名字（如果你自己就是场景，那就是你的名字）
 
     ### say与tags说明
-    - say: 你的输出的话(或者心里活动)，可以是多个，但是必须是字符串
-    - tags: 输出的标签（你的特点），可以是多个，但是必须是字符串
+    - say:是你想要说的话(或者心里活动)
+    - tags:是你的特点
 
-    ## 输出规则：
+    ## 输出限制：
     - 按着如上规则，输出JSON
     - 输出在保证语意完整基础上字符尽量少。
     """
@@ -496,7 +578,7 @@ def npc_plan_prompt(npc: NPC)-> str:
 ###
 def npc_plan(npc: NPC) -> Action:
     make_prompt = npc_plan_prompt(npc)
-    print(f"npc_plan_prompt:", make_prompt)
+    #print(f"npc_plan_prompt:", make_prompt)
 
     call_res = call_agent(npc, make_prompt)
     print(f"<{npc.name}>:", call_res)
@@ -509,7 +591,7 @@ def npc_plan(npc: NPC) -> Action:
             return error_action
         #
         action = Action(json_data['action'], json_data['targets'], json_data['say'], json_data['tags'])
-        if not (check_actions_is_valid(action.action) 
+        if not (check_actions_is_valid(action.action, ALL_ACTIONS) 
                 or check_targets_is_valid_actor_in_stage(npc.stage, action.targets)):
             return error_action
         
@@ -517,8 +599,11 @@ def npc_plan(npc: NPC) -> Action:
             if not check_stage_is_valid_in_world(npc.stage.world, action.targets[0]):
                 return error_action
         
+        action.planer = npc
+        return action
+    
     except Exception as e:
-        print(f"stage_plan error = {e}")
+        print(f"npc_plan error = {e}")
         return error_action
 
     return error_action

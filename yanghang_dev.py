@@ -164,10 +164,19 @@ def main():
             print("==============================================")
 
 
-
-
-
-
+        elif "/r" in usr_input:
+            command = "/r"
+            stage_name = console.parse_command(usr_input, command)
+            if stage_name == None:
+                print("/r error1 = ", stage_name, "没有找到这个场景") 
+                continue
+            stage = world_watcher.get_stage(stage_name)
+            if stage == None:
+                print("/r error2 = ", stage_name, "没有找到这个场景") 
+                continue
+            print(f"[{stage.name}] /r:")
+            state_run(stage, [])    
+            print("==============================================")
 
 
 
@@ -194,29 +203,7 @@ def main():
                 print(f"[{actor.name}]:", actor.call_agent("更新你的状态"))
             print("==============================================")
 
-       
-        # elif "/4" in usr_input:
-        #     # 所有人都知道了这件事
-        #     content = parse_input(usr_input, "/4")
-        #     print(f"[{system_administrator}]:", content)
-
-        #     old_hunters_cabin.chat_history.append(HumanMessage(content=content))
-        #     print(f"[{old_hunters_cabin.name}]:", old_hunters_cabin.call_agent("更新你的状态"))
-
-        #     for actor in old_hunters_cabin.actors:
-        #         if (actor == player):
-        #             continue
-        #         actor.chat_history.append(HumanMessage(content=content))
-        #         print(f"[{actor.name}]:", actor.call_agent("更新你的状态"))
-        #     print("==============================================")
-
-        
-        elif "/rr" in usr_input:
-            flag = "/rr"
-            parse_input(usr_input, flag)
-            state_run(old_hunters_cabin, [])
-            print("==============================================")
-
+               
 
         elif "/talk" in usr_input:
             flag = "/talk"

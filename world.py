@@ -7,8 +7,16 @@ class World(Actor):
         super().__init__(name)
         self.stages = []
 
+    #
     def add_stage(self, stage) -> None:
         self.stages.append(stage)
+    
+    #
+    def get_stage(self, find_name: str):
+        for stage in self.stages:
+            if stage.name == find_name:
+                return stage
+        return None
 
     #
     def get_actor(self, find_name: str) -> Actor:

@@ -118,13 +118,14 @@ def main():
     old_hunters_dog.stage = old_hunters_cabin
 
     #
-    player = Player("yang_hang")
-    player.max_hp = 1000000
-    player.hp = 1000000
-    player.damage = 100000
-    #player.connect("http://localhost:8023/12345/")
-    log = world_watcher.call_agent(f"""你知道了如下事件：{player.name}加入了这个世界""")
-    print(f"[{world_watcher.name}]:", log)
+    player = None
+    # Player("yang_hang")
+    # player.max_hp = 1000000
+    # player.hp = 1000000
+    # player.damage = 100000
+    # #player.connect("http://localhost:8023/12345/")
+    # log = world_watcher.call_agent(f"""你知道了如下事件：{player.name}加入了这个世界""")
+    # print(f"[{world_watcher.name}]:", log)
 
     print("//////////////////////////////////////////////////////////////////////////////////////")
     print("//////////////////////////////////////////////////////////////////////////////////////")
@@ -140,15 +141,15 @@ def main():
         if "/quit" in usr_input:
             sys.exit()
  
-        elif "/s" in usr_input:
-            command = "/s"
+        elif "/call" in usr_input:
+            command = "/call"
             input_content = console.parse_command(usr_input, command)
-            print(f"</speak>:", input_content)
+            print(f"</call>:", input_content)
             tp = console.parse_speak(input_content)
             target = tp[0]
             content = tp[1]
             if target == None:
-                print("/s 没有指定@目标") 
+                print("/call 没有指定@目标") 
                 continue
 
             speak2actors = []
@@ -160,84 +161,113 @@ def main():
                     speak2actors.append(find_actor)
 
             for actor in speak2actors:
-                print(f"[{actor.name}] /s:", actor.call_agent(content))
+                print(f"[{actor.name}] /call:", actor.call_agent(content))
             print("==============================================")
 
 
-        elif "/r" in usr_input:
-            command = "/r"
+        elif "/run" in usr_input:
+            command = "/run"
             stage_name = console.parse_command(usr_input, command)
             if stage_name == None:
-                print("/r error1 = ", stage_name, "没有找到这个场景") 
+                print("/run error1 = ", stage_name, "没有找到这个场景") 
                 continue
             stage = world_watcher.get_stage(stage_name)
             if stage == None:
-                print("/r error2 = ", stage_name, "没有找到这个场景") 
+                print("/run error2 = ", stage_name, "没有找到这个场景") 
                 continue
-            print(f"[{stage.name}] /r:")
+            print(f"[{stage.name}] /run:")
             state_run(stage, [])    
             print("==============================================")
 
 
-
         ##某人进入场景的事件
-        elif "/0" in usr_input:
-            content = parse_input(usr_input, "/0")
-            print(f"[{system_administrator}]:", content)
-            if player.stage != None:
-                continue
-            ## 必须加上！！！！！！！
-            old_hunters_cabin.add_actor(player)
-            player.stage = old_hunters_cabin
-            ###
-            event_prompt = f"""{player.name}{content}"""
-            print(f"[{player.name}]=>", event_prompt)
+        elif "/player" in usr_input:
+            player_settings = parse_input(usr_input, "/player")
+            print(f"/player:", player_settings)
+            if player == None:
+                player = Player("yang_hang")
 
-            old_hunters_cabin.chat_history.append(HumanMessage(content=event_prompt))
-            print(f"[{old_hunters_cabin.name}]:", old_hunters_cabin.call_agent("更新你的状态"))
+                if player_settings != None or player_settings != "":
+                    player.description = player_settings
+                    
+                player.max_hp = 1000000
+                player.hp = 1000000
+                player.damage = 100000
+                notify_world = world_watcher.call_agent(f"""你知道了如下事件：{player.name}加入了这个世界""")
+                print(f"[{world_watcher.name}]:", notify_world)
+                
 
-            for actor in old_hunters_cabin.actors:
-                if (actor == player):
-                    continue
-                actor.chat_history.append(HumanMessage(content=event_prompt))
-                print(f"[{actor.name}]:", actor.call_agent("更新你的状态"))
+            # if player.stage == None:
+            #     old_hunters_cabin.add_actor(player)
+            #     player.stage = old_hunters_cabin
+                #print(f"[{old_hunters_cabin.name}]:", old_hunters_cabin.call_agent("更新你的状态"))
+
+
+            # if player.stage != None:
+            #     continue
+
+            # Player("yang_hang")
+            # player.max_hp = 1000000
+            # player.hp = 1000000
+            # player.damage = 100000
+            # #player.connect("http://localhost:8023/12345/")
+            # log = world_watcher.call_agent(f"""你知道了如下事件：{player.name}加入了这个世界""")
+            # print(f"[{world_watcher.name}]:", log)
+
+
+
+            # ## 必须加上！！！！！！！
+            # old_hunters_cabin.add_actor(player)
+            # player.stage = old_hunters_cabin
+            # ###
+            # event_prompt = f"""{player.name}{content}"""
+            # print(f"[{player.name}]=>", event_prompt)
+
+            # old_hunters_cabin.chat_history.append(HumanMessage(content=event_prompt))
+            # print(f"[{old_hunters_cabin.name}]:", old_hunters_cabin.call_agent("更新你的状态"))
+
+            # for actor in old_hunters_cabin.actors:
+            #     if (actor == player):
+            #         continue
+            #     actor.chat_history.append(HumanMessage(content=event_prompt))
+            #     print(f"[{actor.name}]:", actor.call_agent("更新你的状态"))
             print("==============================================")
 
                
 
-        elif "/talk" in usr_input:
-            flag = "/talk"
-            content = parse_input(usr_input, flag)
-            print(f"[{player.name}]:", content)
-            if player.stage == None:
-                continue
-            ###
-            event_prompt = f"""{player.name}, {content}"""
-            print(f"[{player.name}]=>", event_prompt)
+        # elif "/talk" in usr_input:
+        #     flag = "/talk"
+        #     content = parse_input(usr_input, flag)
+        #     print(f"[{player.name}]:", content)
+        #     if player.stage == None:
+        #         continue
+        #     ###
+        #     event_prompt = f"""{player.name}, {content}"""
+        #     print(f"[{player.name}]=>", event_prompt)
 
-            old_hunters_cabin.chat_history.append(HumanMessage(content=event_prompt))
-            print(f"[{old_hunters_cabin.name}]:", old_hunters_cabin.call_agent("更新你的状态"))
+        #     old_hunters_cabin.chat_history.append(HumanMessage(content=event_prompt))
+        #     print(f"[{old_hunters_cabin.name}]:", old_hunters_cabin.call_agent("更新你的状态"))
 
-            for actor in old_hunters_cabin.actors:
-                if (actor == player):
-                    continue
-                actor.chat_history.append(HumanMessage(content=event_prompt))
-                print(f"[{actor.name}]:", actor.call_agent("更新你的状态"))
-            print("==============================================")
+        #     for actor in old_hunters_cabin.actors:
+        #         if (actor == player):
+        #             continue
+        #         actor.chat_history.append(HumanMessage(content=event_prompt))
+        #         print(f"[{actor.name}]:", actor.call_agent("更新你的状态"))
+        #     print("==============================================")
 
-        elif "/attack" in usr_input:
-            flag = "/attack"
-            target_name = parse_input(usr_input, flag)
-            print(f"[{player.name}] xxx:", target_name)
-            if player.stage == None:
-                continue
-            target = player.stage.get_actor(target_name)
-            if target == None:  
-                continue
+        # elif "/attack" in usr_input:
+        #     flag = "/attack"
+        #     target_name = parse_input(usr_input, flag)
+        #     print(f"[{player.name}] xxx:", target_name)
+        #     if player.stage == None:
+        #         continue
+        #     target = player.stage.get_actor(target_name)
+        #     if target == None:  
+        #         continue
 
-            players_action = Action(player, [FIGHT], [target.name], ["看招，雷霆大潮袭！！！！！"], [""])
-            state_run(old_hunters_cabin, [players_action])          
-            print("==============================================")
+        #     players_action = Action(player, [FIGHT], [target.name], ["看招，雷霆大潮袭！！！！！"], [""])
+        #     state_run(old_hunters_cabin, [players_action])          
+        #     print("==============================================")
 
 
 ######################################################################

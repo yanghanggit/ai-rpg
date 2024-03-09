@@ -47,7 +47,7 @@ from console import Console
 def main():
 
 
-    console = Console("console")
+   # console = Console("console")
 
 
     
@@ -69,29 +69,29 @@ def main():
         #     print(tp2)
 
 
-        elif "/s" in usr_input:
-            command = "/s"
-            input_content = console.parse_command(usr_input, command)
-            print(f"</speak>:", input_content)
-            tp = console.parse_speak(input_content)
-            tp1 = tp[0]
-            tp2 = tp[1]
-            print(tp1)
-            print(tp2)
-            speak2actors = []
-            if tp1 == "all":
-                print("123")
-                #speak2actors.append(world_watcher.all_actors())
-            else:
-                ##find_actor = world_watcher.get_actor(tp1)
-                ##speak2actors.append(find_actor)
+        # elif "/call" in usr_input:
+        #     command = "/call"
+        #     input_content = console.parse_command(usr_input, command)
+        #     print(f"</speak>:", input_content)
+        #     tp = console.parse_speak(input_content)
+        #     tp1 = tp[0]
+        #     tp2 = tp[1]
+        #     print(tp1)
+        #     print(tp2)
+        #     speak2actors = []
+        #     if tp1 == "all":
+        #         print("123")
+        #         #speak2actors.append(world_watcher.all_actors())
+        #     else:
+        #         ##find_actor = world_watcher.get_actor(tp1)
+        #         ##speak2actors.append(find_actor)
 
-            for actor in speak2actors:
-                print(f"[{actor.name}] /s:", actor.call_agent(tp2))
+        #     for actor in speak2actors:
+        #         print(f"[{actor.name}] /call:", actor.call_agent(tp2))
 
-            for actor in speak2actors:
-                actor_res = actor.call_agent(tp2)
-                print(f"[{actor.name}]=>" + actor_res)
+        #     for actor in speak2actors:
+        #         actor_res = actor.call_agent(tp2)
+        #         print(f"[{actor.name}]=>" + actor_res)
 
 
             

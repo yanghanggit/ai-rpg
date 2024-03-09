@@ -9,6 +9,7 @@ from stage import NPC
 from player import Player
 from action import Action, FIGHT, STAY, LEAVE
 from make_plan import stage_plan_prompt, stage_plan, npc_plan
+from console import Console
 
 
 #
@@ -129,14 +130,47 @@ def main():
     print("//////////////////////////////////////////////////////////////////////////////////////")
     print("//////////////////////////////////////////////////////////////////////////////////////")
 
+
+    ###
+    console = Console("系统管理员")
+
     #
     while True:
         usr_input = input("[user input]: ")
         if "/quit" in usr_input:
             sys.exit()
-        if "/cancel" in usr_input:
-            continue
-        
+ 
+        elif "/s" in usr_input:
+            command = "/s"
+            input_content = console.parse_command(usr_input, command)
+            print(f"</speak>:", input_content)
+            tp = console.parse_speak(input_content)
+            target = tp[0]
+            content = tp[1]
+            if target == None:
+                print("/s 没有指定@目标") 
+                continue
+
+            speak2actors = []
+            if target == "all":
+                speak2actors = world_watcher.all_actors()
+            else:
+                find_actor = world_watcher.get_actor(target)
+                if find_actor != None:
+                    speak2actors.append(find_actor)
+
+            for actor in speak2actors:
+                print(f"[{actor.name}] /s:", actor.call_agent(content))
+            print("==============================================")
+
+
+
+
+
+
+
+
+
         ##某人进入场景的事件
         elif "/0" in usr_input:
             content = parse_input(usr_input, "/0")
@@ -160,38 +194,21 @@ def main():
                 print(f"[{actor.name}]:", actor.call_agent("更新你的状态"))
             print("==============================================")
 
-        elif "/1" in usr_input:
-            content = parse_input(usr_input, "/1")
-            print(f"[{system_administrator}]:", content)
-            print(f"[{world_watcher.name}]:", world_watcher.call_agent(content))
-            print("==============================================")
+       
+        # elif "/4" in usr_input:
+        #     # 所有人都知道了这件事
+        #     content = parse_input(usr_input, "/4")
+        #     print(f"[{system_administrator}]:", content)
 
-        elif "/2" in usr_input:
-            content = parse_input(usr_input, "/2")
-            print(f"[{system_administrator}]:", content)
-            print(f"[{old_hunter.name}]:",  old_hunter.call_agent(content))
-            print("==============================================")
+        #     old_hunters_cabin.chat_history.append(HumanMessage(content=content))
+        #     print(f"[{old_hunters_cabin.name}]:", old_hunters_cabin.call_agent("更新你的状态"))
 
-        elif "3" in usr_input:
-            content = parse_input(usr_input, "/3")
-            print(f"[{system_administrator}]:", content)
-            print(f"[{old_hunters_dog.name}]:",  old_hunters_dog.call_agent(content))
-            print("==============================================")
-        
-        elif "/4" in usr_input:
-            # 所有人都知道了这件事
-            content = parse_input(usr_input, "/4")
-            print(f"[{system_administrator}]:", content)
-
-            old_hunters_cabin.chat_history.append(HumanMessage(content=content))
-            print(f"[{old_hunters_cabin.name}]:", old_hunters_cabin.call_agent("更新你的状态"))
-
-            for actor in old_hunters_cabin.actors:
-                if (actor == player):
-                    continue
-                actor.chat_history.append(HumanMessage(content=content))
-                print(f"[{actor.name}]:", actor.call_agent("更新你的状态"))
-            print("==============================================")
+        #     for actor in old_hunters_cabin.actors:
+        #         if (actor == player):
+        #             continue
+        #         actor.chat_history.append(HumanMessage(content=content))
+        #         print(f"[{actor.name}]:", actor.call_agent("更新你的状态"))
+        #     print("==============================================")
 
         
         elif "/rr" in usr_input:

@@ -19,3 +19,24 @@ pip install langchain_core langserve fastapi langchain_openai sse_starlette fais
 ## yanghang_dev.py
 - yanghang的代码测试
 - pm2 start agents/world_watcher_agent.py agents/old_hunters_cabin_agent.py agents/old_hunter_agent.py agents/old_hunters_dog_agent.py
+
+
+
+## 系统消息
+- /call @all 你是谁？跟我说说你
+- /call @小狗'断剑' 你喜欢吃什么？
+- /call @老猎人隐居的小木屋 周围有什么，你有什么布置？你自己最讨厌什么?
+- /call @卡斯帕·艾伦德 最令你悔恨的是什么？
+- /call @悠扬林谷 讲讲关于你
+- /call @坏运气先生 你知道世界上的哪些地方？
+
+
+## 要求场景做一次推进，最后必须加空格，因为解析没怎么写好
+- /run 老猎人隐居的小木屋 
+
+
+## 玩家控制
+- /player 一个高大的兽人战士，独眼。手中拿着巨斧，杀气腾腾
+- /enterstage 老猎人隐居的小木屋 
+- /talkall 你们好！我迷路了！
+- /attacknpc 卡斯帕·艾伦德

@@ -30,7 +30,7 @@ def check_actions_is_valid(actions: list[str], from_data: list[str]) -> bool:
     return True
 
 #
-def check_targets_is_valid(stage: Stage, targets: list[str]) -> bool:
+def check_fight_or_stay_target_is_valid(stage: Stage, targets: list[str]) -> bool:
     all_actors = [stage] + stage.actors
     for target in targets:
         if not any(actor.name == target for actor in all_actors):
@@ -38,7 +38,7 @@ def check_targets_is_valid(stage: Stage, targets: list[str]) -> bool:
     return True
 
 #
-def check_stage_is_valid(world: World, stage_name: str) -> bool:
+def check_leave2stage_is_valid(world: World, stage_name: str) -> bool:
     if not any(stage.name == stage_name for stage in world.stages):
         return False
     return True

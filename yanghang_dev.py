@@ -22,6 +22,7 @@ init_archivist = f"""
 - 温斯洛平原的深处的“悠扬林谷”中的“老猎人隐居的小木屋”里。
 - “卡斯帕·艾伦德”坐在他的“老猎人隐居的小木屋”中的壁炉旁，在沉思和回忆过往，并向壁炉中的火投入了一根木柴。
 - 他的小狗（名叫"断剑"）在屋子里的一角睡觉。
+- 一只老鼠（名叫"坏运气先生"）在屋子里的另一角找到了一些食物。
 """
 load_prompt = f"""
 # 你需要读取存档
@@ -98,18 +99,28 @@ def main():
     log = old_hunters_dog.call_agent(load_prompt)
     print(f"[{old_hunters_dog.name}]:", log)
     print("==============================================")
+
     #
     melodious_forest_valley = Stage("悠扬林谷")
     melodious_forest_valley.connect("http://localhost:8024/stage/melodious_forest_valley/")
     log = melodious_forest_valley.call_agent(load_prompt)
     print(f"[{melodious_forest_valley.name}]:", log)
-    
+    print("==============================================")
+
+
+    rat = NPC("坏运气先生")
+    rat.connect("http://localhost:8025/actor/npc/rat/")
+    log = rat.call_agent(load_prompt)
+    print(f"[{rat.name}]:", log)
+    print("==============================================")
+
     #
     world_watcher.add_stage(old_hunters_cabin)
     world_watcher.add_stage(melodious_forest_valley)
     #
     old_hunters_cabin.add_actor(old_hunter)
     old_hunters_cabin.add_actor(old_hunters_dog)
+    old_hunters_cabin.add_actor(rat)
 
     #
     player = None
@@ -251,6 +262,8 @@ def new_stage_memory(stage: Stage, content: str):
         if isinstance(actor, NPC):
             actor.chat_history.append(HumanMessage(content=content))
 ######################################################################
+            
+#### 待重构！！！！！！！！！！！！！！            
 def run_stage(current_stage: Stage, players_action: list[Action]) -> None:
         
     actions_collector: list[Action] = []
@@ -364,20 +377,18 @@ def run_stage(current_stage: Stage, players_action: list[Action]) -> None:
     ##处理离开的
     for actor in leave_actors:
         actor.stage.remove_actor(actor)
-        actor.stage = None
         movie_script.append(f"{actor.name}离开了{current_stage.name}")
-        raise NotImplementedError("Code to handle leaving actors is not implemented yet.")
+        
     
     for actor in dead_actors:
         actor.stage.remove_actor(actor)
-        actor.stage = None
         movie_script.append(f"{actor.name}死了，离开了这个世界")
 
-    ##处理留下的
-    for actor in stay_actors:
-        pass
-        #print(f"{actor.name}留在{current_stage.name}")
-        #movie_script.append(f"{actor.name}留在{current_stage.name}")
+    # ##处理留下的
+    # for actor in stay_actors:
+    #     pass
+    #     #print(f"{actor.name}留在{current_stage.name}")
+    #     #movie_script.append(f"{actor.name}留在{current_stage.name}")
 
     movie_script_str = '\n'.join(movie_script)
     if len(movie_script_str) == 0:
@@ -403,7 +414,31 @@ def run_stage(current_stage: Stage, players_action: list[Action]) -> None:
         print(f"[{actor.name}]=>" + actor_res)
     print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 
+    ## 最后处理逃跑!!!!!!!!!!!!!!!!!!!!!!
+    for actor in leave_actors:
+        if actor == current_stage:
+            print(f"{actor.name} 是当前场景不能逃跑！！！")
+            continue
+        if actor.stage != None:
+            print(f"{actor.name} 还有在{actor.stage.name}里，是个错误，说明上面没有移除成功")
+            continue    
 
+        for action in leave_actions:
+            if actor != action.planer:
+                continue
+
+            target_stage = current_stage.world.get_stage(action.targets[0])
+            if target_stage == None:
+                print(f"{actor.name} 想要去{action.targets[0]}，但是世界上没有这个地方")
+                continue
+            
+            target_stage.add_actor(actor)
+            enter_event = f"""你知道了发生了如下事件：{actor.name}进入了{target_stage.name}"""
+            new_stage_memory(target_stage, enter_event)
+            npc_action = Action(actor, [STAY], [target_stage.name], [""], [""])
+            run_stage(target_stage, [npc_action])      
+            
+    
 
 
 if __name__ == "__main__":

@@ -4,7 +4,7 @@ from langchain_core.messages import HumanMessage, AIMessage, BaseMessage, System
 import json
 from stage import Stage
 from stage import NPC
-from action import Action, STAY, LEAVE, ALL_ACTIONS, check_data_format, check_actions_is_valid, check_targets_is_valid, check_stage_is_valid
+from action import Action, FIGHT,STAY, LEAVE, ALL_ACTIONS, check_data_format, check_actions_is_valid, check_fight_or_stay_target_is_valid, check_leave2stage_is_valid
 
 
 ##################################################################################################################
@@ -96,11 +96,13 @@ def stage_plan(stage: Stage) -> Action:
         if not check_actions_is_valid(json_data['action'], ALL_ACTIONS):
             return error
         
-        if not check_targets_is_valid(stage, json_data['targets']):
-            return error
-        
-        if json_data['action'][0] == LEAVE:
-            if not check_stage_is_valid(stage.world, json_data['targets'][0]):
+        if json_data['action'][0] == FIGHT:
+            if not check_fight_or_stay_target_is_valid(stage, json_data['targets']):
+                print(f"stage_plan {stage.name} error: FIGHT action must have valid targets = ", json_data['targets'])
+                return error
+        elif json_data['action'][0] == STAY:
+             if json_data['targets'][0] != stage.name:
+                print(f"stage_plan {stage.name} error: STAY action must have stage name as target = ", json_data['targets'][0])
                 return error
         #
         return Action(stage, json_data['action'], json_data['targets'], json_data['say'], json_data['tags'])
@@ -124,19 +126,23 @@ def npc_plan(npc: NPC) -> Action:
     error = Action(npc, [STAY], [npc.stage.name], ["什么都不做"], [""])
     try:
         json_data = json.loads(call_res)
-
-
         if not check_data_format(json_data['action'], json_data['targets'], json_data['say'], json_data['tags']):
             return error
         
         if not check_actions_is_valid(json_data['action'], ALL_ACTIONS):
             return error
         
-        if not check_targets_is_valid(npc.stage, json_data['targets']):
-            return error
-        
-        if json_data['action'][0] == LEAVE:
-            if not check_stage_is_valid(npc.stage.world, json_data['targets'][0]):
+
+        if json_data['action'][0] == FIGHT:
+            if not check_fight_or_stay_target_is_valid(npc.stage, json_data['targets']):
+                print(f"npc_plan {npc.name} error: FIGHT action must have valid targets = ", json_data['targets'])
+                return error
+        elif json_data['action'][0] == LEAVE:
+            if not check_leave2stage_is_valid(npc.stage.world, json_data['targets'][0]):
+                return error
+        elif json_data['action'][0] == STAY:
+             if json_data['targets'][0] != npc.stage.name:
+                print(f"npc_plan {npc.name} error: STAY action must have stage name as target = ", json_data['targets'][0])
                 return error
         #
         return Action(npc, json_data['action'], json_data['targets'], json_data['say'], json_data['tags'])

@@ -2,87 +2,106 @@ from langchain_core.messages import HumanMessage, AIMessage, BaseMessage, System
 from langserve import RemoteRunnable
 import sys
 
-#希望这个方法仅表达talk的行为
-def talk_to_agent(input_val, npc_agent, chat_history):
-    response = npc_agent.invoke({"input": input_val, "chat_history": chat_history})
-    chat_history.extend([HumanMessage(content=input_val), AIMessage(content=response['output'])])
-    return response['output']
+class BaseAgent():
+    def __init__(self, name):
+        self.name = name
 
-#希望这个方法仅表达talk的行为
-def parse_talk(input_val):
-    if "/talk" in input_val:
-        return input_val.split("/talk")[1].strip()
-    return input_val
+    def connect(self, url):
+        self.agent = RemoteRunnable(url)
+
+class TaskAgent(BaseAgent):
+    def __init__(self, name):
+        super().__init__(name)
+
+class StoryAgent(BaseAgent):
+    def __init__(self, name):
+        super().__init__(name)
+
+class NpcAgent(BaseAgent):
+    def __init__(self, name):
+        super().__init__(name)
+
+class PlayerAgent(BaseAgent):
+    def __init__(self, name):
+        super().__init__(name)
+
 
 def main():
 
-    #
-    npc_name = "卡斯帕·艾伦德"
-    my_name = "勇者"
-    scene_name = "老猎人隐居的小木屋"
+    task = TaskAgent("Task")
+    story = StoryAgent("Story")
+    npc = NpcAgent("NPC")
+    player = PlayerAgent("Player")
 
-    #
-    npc_agent = RemoteRunnable("http://localhost:8001/actor/npc/elder/")
-    npc_achat_history = []
+    task.connect("http://localhost:8001/system/task/")
+    story.connect("http://localhost:8002/system/story/")
+    npc.connect("http://localhost:8003/actor/npc/oldman")
+    player.connect("http://localhost:8004/actor/player/")
 
-    #
-    scene_agent = RemoteRunnable("http://localhost:8002/actor/npc/house/")
-    scene_achat_history = []
+    story_history = []
+    npc_history = []
+    player_history = []
+    story_input = ""
+    npc_input = ""
+    player_input = ""
 
-    # 数值计算系统
-    numerical_system_agent = RemoteRunnable("http://localhost:8007/system/evaluate")
+    # 一位年轻的勇者偶遇一位曾经的冒险家老人,绞尽脑汁想要从老人手中获得他的神秘地图。
+    brief_task = input("请输入任务简述:")
 
-    #
-    scene_state = talk_to_agent(
-            f"""
-            # 状态
-            - 冬天的晚上，我（{npc_name}）坐在你({scene_name})的壁炉旁
-            # 事件
-            - 我在沉思和回忆过往，有一些难过，并向壁炉中的火投入了一根木柴
-            # 延展推理
-            - 你可以根据“状态”与“事件”做判断与推理，并进一步延展
-            # 需求
-            - 请根据“状态“，”事件“，“延展推理”与“对话规则”来输出文本（并适当润色）
-            """, 
-            scene_agent, scene_achat_history)
-    #
-    print(f"[{scene_name}]:", scene_state)
-
-    #
-    event = f"我({my_name})用力推开了屋子的门，闯入屋子而且面色凝重，外面的寒风吹进了屋子"
-    print("[event]:", event)
-
-    #
-    print(f"[{npc_name}]:", talk_to_agent(
-            f"""
-            # 状态
-            -{scene_state}
-            # 事件
-            -{event}
-            # 需求
-            - 请根据“状态“，”事件“与”“对话规则”输出文本
-            """, 
-            npc_agent, npc_achat_history))
-
+    task_response = task.agent.invoke({"brief_task":brief_task , "input": "输出一个任务。", "chat_history":[]})
+    print("[任务系统]" + task_response['output'])
+    print("==============================================")
+    # story_input = task_response['output']
+    story_response = story.agent.invoke({"input": task_response['output'], "chat_history": story_history})
+    # 故事历史存入【任务内容】【故事】
+    story_history.extend([HumanMessage(content=task_response['output']), AIMessage(content=story_response['output'])])
+    print("[故事]" + story_response['output'])
+    print("==============================================")
+    #npc_input = story_response['output']
+    npc_response = npc.agent.invoke({"input": story_response['output'], "chat_history": npc_history})
+    # NPC历史存入【任务内容】【故事】【NPC反应】
+    npc_history.extend([AIMessage(content=task_response['output']),AIMessage(content=story_response['output']),AIMessage(content=npc_response['output'])])
+    print("[老人]" + npc_response['output'])
+    print("==============================================")
+    player_input_manual = input("[user input]: ")
+    print("==============================================")
+    # player_input = npc_response['output']
+    player_history.append(HumanMessage(content=npc_response['output']))
+    player_response = player.agent.invoke({"input": player_input_manual, "chat_history": player_history})
+    # Player历史存入【任务内容】【故事】【NPC反应】【Player回应】
+    player_history.extend([AIMessage(content=task_response['output']),AIMessage(content=story_response['output']),AIMessage(content=npc_response['output']),HumanMessage(content=player_input_manual), AIMessage(content=player_response['output'])])
+    print("[勇者]" + player_response['output'])
+    print("==============================================")
     while True:
+        # story_input = player_response['output']
+        story_response = story.agent.invoke({"input": player_response['output'], "chat_history": story_history})
+        # 故事历史存入【NPC反应】【Player回应】【故事】
+        story_history.extend([HumanMessage(content=npc_response['output']),HumanMessage(content=player_response['output']), AIMessage(content=story_response['output'])])
+        print("[故事]" + story_response['output'])
         print("==============================================")
+
+        # npc_input = story_response['output']
+        npc_response = npc.agent.invoke({"input": story_response['output'], "chat_history": npc_history})
+        # NPC历史存入【Player回应】【故事】【NPC反应】
+        npc_history.extend([HumanMessage(content=player_response['output']),HumanMessage(content=story_response['output']),AIMessage(content=npc_response['output'])])
+        print("[老人]" + npc_response['output'])
+        print("==============================================")
+
+        # player_input = npc_response['output']
+        # Player历史存入【故事】【NPC反应】
+        player_history.extend([AIMessage(content=story_response['output']),HumanMessage(content=npc_response['output'])])
+
         usr_input = input("[user input]: ")
         if "/quit" in usr_input:
             sys.exit()
 
-        elif "/talk" in usr_input:
-            real_input = parse_talk(usr_input)
-            print(f"[{my_name}]:", real_input)
-            print(
-                f"[{npc_name}]:", talk_to_agent(real_input, npc_agent, npc_achat_history)
-            )
+        player_response = player.agent.invoke({"input": usr_input, "chat_history": player_history})
+        # Player历史存入【Player回应】
+        player_history.append(AIMessage(content=player_response['output']))
+        print("[勇者]" + player_response['output'])
+        print("==============================================")
+        
 
-        else:
-            real_input = parse_talk(usr_input)
-            print(f"[{my_name}]:", real_input)
-            print(
-                f"[{npc_name}]:", talk_to_agent(real_input, npc_agent, npc_achat_history)
-            )
 
 
 if __name__ == "__main__":

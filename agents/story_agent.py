@@ -13,8 +13,6 @@ from langchain_openai.embeddings import OpenAIEmbeddings
 from langchain.tools.retriever import create_retriever_tool
 
 
-user_input = "一位年轻的勇者偶遇一位曾经的冒险家老人,绞尽脑汁想要从老人手中获得他的神秘地图。"
-
 world_view = extract_md_content("/story/world_view.md")
 
 vector_store = FAISS.from_texts(
@@ -34,19 +32,17 @@ prompt = ChatPromptTemplate.from_messages(
     [
         (
             "system",
-            """
+            f"""
 # Profile
 
-## Target
-{brief_task}\n
-
 ## Role
-- 你将扮演一个虚拟世界的任务系统。
+- 你是一个非常优秀的故事讲述者。
+- 需要根据输入的内容,结合上下文来写出一段非常精彩的故事。
 
 ## Rule
-- 你必须根据Target的输入来推理出一个完全符合World View的任务内容。
-- 输出你推理出的任务,不要过于复杂。
-- 尽量控制在300个字符以内。
+- 每次生成故事,剧情只推进一点点就行,仅描述出一段即可,内容需要有让人非常想继续探索下去的欲望。
+- 不要生成对话类型的内容。
+- 尽量控制在300字符内。
 
 ## World View
 - 你需要使用工具`get_information_about_world_view`来获取World View。
@@ -59,6 +55,11 @@ prompt = ChatPromptTemplate.from_messages(
 )
 
 llm = ChatOpenAI(model="gpt-4-turbo-preview")
+
+def talk_to_agent(input_val, npc_agent, chat_history):
+    response = npc_agent.invoke({"input": input_val, "chat_history": chat_history})
+    chat_history.extend([HumanMessage(content=input_val), AIMessage(content=response['output'])])
+    return response['output']
     
 tools = [retriever_tool]
 
@@ -73,7 +74,6 @@ app = FastAPI(
 )
 
 class Input(BaseModel):
-    brief_task: str
     input: str
     chat_history: List[Union[HumanMessage, AIMessage, FunctionMessage]] = Field(
         ...,
@@ -86,11 +86,11 @@ class Output(BaseModel):
 add_routes(
     app,
     agent_executor.with_types(input_type=Input, output_type=Output),
-    path="/system/task"
+    path="/system/story"
 )
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="localhost", port=8001)
+    uvicorn.run(app, host="localhost", port=8002)
 
-#http://localhost:8001/system/task/playground/
+#http://localhost:8002/system/story/playerground/

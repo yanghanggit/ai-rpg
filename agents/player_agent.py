@@ -1,6 +1,6 @@
 from typing import List, Union
 from fastapi import FastAPI
-from langchain.agents import AgentExecutor, create_openai_functions_agent, tool
+from langchain.agents import AgentExecutor, create_openai_functions_agent
 from langchain.prompts import MessagesPlaceholder
 from langchain_core.messages import AIMessage, FunctionMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate
@@ -8,18 +8,45 @@ from langchain_openai import ChatOpenAI
 from langserve import add_routes
 from langserve.pydantic_v1 import BaseModel, Field
 from tools.extract_md_content import extract_md_content
-from langserve import RemoteRunnable
+from langchain_community.vectorstores import FAISS
+from langchain_openai.embeddings import OpenAIEmbeddings
+from langchain.tools.retriever import create_retriever_tool
 
-player_md = extract_md_content("/actor/player/player.md")
-# npc_dialogue_rules = extract_md_content("/actor/npc/npc_dialogue_rules.md")
-# {npc_dialogue_rules}
+
+world_view = extract_md_content("/story/world_view.md")
+
+vector_store = FAISS.from_texts(
+    [world_view],
+    embedding=OpenAIEmbeddings()
+)
+
+retriever = vector_store.as_retriever()
+
+retriever_tool = create_retriever_tool(
+    retriever,
+    "get_information_about_world_view",
+    "You must refer these information before response user."
+)
 
 prompt = ChatPromptTemplate.from_messages(
     [
         (
             "system",
             f"""
-            {player_md}\n
+# Profile
+
+## Role
+- 你将扮演虚拟世界中的一位年轻的勇者。
+
+## Rule
+- 输入的内容是年轻的勇者说的话。
+- 根据输入的内容加上下文，润色丰富输入的内容。
+- 必须以第一人称的形式输出。
+- 必须符合输入内容和World View,不能出现让人出戏的内容。
+- 不要输出太长的内容，尽量保持在100字符内。
+
+## World View
+- 你需要使用工具`get_information_about_world_view`来获取World View。
             """,
         ),
         MessagesPlaceholder(variable_name="chat_history"),
@@ -30,49 +57,7 @@ prompt = ChatPromptTemplate.from_messages(
 
 llm = ChatOpenAI(model="gpt-4-turbo-preview")
 
-def call_agent(input_val, npc_agent, chat_history):
-    response = npc_agent.invoke({"input": input_val, "chat_history": chat_history})
-    chat_history.extend([HumanMessage(content=input_val), AIMessage(content=response['output'])])
-    return response['output']
-
-@tool
-def call_task_agent(words: str) -> str:
-    """User talk to npc."""
-    #return "talk_to_npc"
-    task_agent = RemoteRunnable("http://localhost:8005/actor/task/")
-    task_agent = call_agent(words, task_agent, [])
-    return task_agent
-
-# @tool
-# def talk_to_scene(words: str) -> str:
-#     """User talk to iterm."""
-#     return "talk_to_scene"
-#     # scene_agent = RemoteRunnable("http://localhost:8002/actor/npc/house/")
-#     # scene_response = talk_to_agent(words, scene_agent, [])
-#     # return scene_response
-
-# @tool
-# def interact_to_item(words: str) -> str:
-#     """User interact to item."""
-#     return "interact_to_item"
-#     # if "地图" in words:
-#     #     npc_agent = RemoteRunnable("http://localhost:8001/actor/npc/elder/")
-#     #     talk_to_agent("勇者获得了地图", npc_agent, [])
-#     #     return "成功获取地图"
-#     # return " "
-
-# @tool
-# def talk_to_self(words: str) -> str:
-#     """User talk to self."""
-#     return "talk_to_self"
-#     #return "自言自语道" + "或许可以环顾四周找找有没有什么东西"
-
-@tool
-def how_feel_about_it(words: str) -> str:
-    """"""
-
-    
-tools = [call_task_agent]
+tools = [retriever_tool]
 
 agent = create_openai_functions_agent(llm, tools, prompt)
 
@@ -102,7 +87,7 @@ add_routes(
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="localhost", port=8008)
+    uvicorn.run(app, host="localhost", port=8004)
 
 
-#"http://localhost:8008/actor/player/"
+#"http://localhost:8004/actor/player/playground/"

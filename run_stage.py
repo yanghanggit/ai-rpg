@@ -7,13 +7,13 @@ from stage_events import StageEvents
        
      
 #### 待重构！！！！！！！！！！！！！！            
-def run_stage(current_stage: Stage, players_plans: list[Action]) -> None:        
+def run_stage(current_stage: Stage, ex_plans: list[Action]) -> None:        
     
     #制作计划
     make_plan = MakePlan(current_stage)
     make_plan.make_all_npcs_plan()
     make_plan.make_stage_paln()
-    make_plan.add_players_plan(players_plans)
+    make_plan.add_extra_plan(ex_plans)
     if len(make_plan.actions) == 0:
         print(f"{current_stage.name}目前没有行动与计划")
         return

@@ -138,6 +138,7 @@ def main():
 
             ##
             console.current_actor = player
+            print(f"你现在控制了{console.current_actor.name}")
 
         elif "/who" in usr_input:
             command = "/who"
@@ -148,7 +149,7 @@ def main():
             last_control = console.current_actor
             select_actor = None
 
-            if actor_name == player.name:
+            if player != None and actor_name == player.name:
                 select_actor = player
             elif actor_name == world_watcher.name:
                 select_actor = world_watcher
@@ -240,7 +241,7 @@ def main():
             if target == None:  
                 print(f"[{current_actor.name}]=>", f"没有找到这个人{target_name}")
                 continue
-
+            print(f"[{current_actor.name}]=>", f"你攻击了{target.name}")
             playaction = Action(current_actor, [FIGHT], [target.name], [""], [""])
             run_stage(stage, [playaction])          
             print("==============================================")

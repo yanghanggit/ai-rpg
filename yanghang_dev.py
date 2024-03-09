@@ -204,17 +204,23 @@ def main():
             if player == None:
                 print("/enterstage error3 = ", "没有找到这个玩家") 
                 continue
-            if player.stage != None:
-                print(f"[{player.name}]=>", f"你已经在{player.stage.name}里了")
+            if player.stage == stage:
+                print(f"[{player.name}]=>", f"你已经在{stage.name}")
                 continue
+
+            if player.stage != None:
+                old_stage = player.stage
+                old_stage.remove_actor(player)
+                print(f"[{player.name}]=>", f"你离开了{old_stage.name}")
+                leave_event = f"""你知道了发生了如下事件：{player.name}离开了{old_stage.name}"""
+                new_stage_memory(old_stage, leave_event)
+                print("==============================================")
+    
             #
             stage.add_actor(player)
-            #
+            print(f"[{player.name}]=>", f"你进入了{stage.name}")
             enter_event = f"""你知道了发生了如下事件：{player.name}进入了{stage.name}, 他是{player.description}"""
-            print(f"/enterstage", enter_event)
             new_stage_memory(stage, enter_event)
-            playeraction = Action(player, [STAY], [stage.name], [""], [""])
-            run_stage(stage, [playeraction])      
             print("==============================================")
 
             
@@ -231,7 +237,7 @@ def main():
             enter_event = f"""{player.name} 说 {content}"""
             print(f"[{player.name}]=>", enter_event)
             new_stage_memory(stage, enter_event)
-            run_stage(old_hunters_cabin, [])         
+            run_stage(stage, [])         
             print("==============================================")
 
         elif "/attacknpc" in usr_input:
@@ -375,7 +381,6 @@ def run_stage(current_stage: Stage, players_plans: list[Action]) -> None:
         print(f"{actor.name} 到达了 {target_stage.name}")
         enter_event = f"""你知道了发生了如下事件：{actor.name}进入了{target_stage.name}"""
         new_stage_memory(target_stage, enter_event)
-        run_stage(target_stage, [])      
 
     print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 

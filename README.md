@@ -40,3 +40,11 @@ pip install langchain_core langserve fastapi langchain_openai sse_starlette fais
 - /enterstage 老猎人隐居的小木屋 
 - /talkall 你们好！我迷路了！
 - /attacknpc 卡斯帕·艾伦德
+
+
+
+
+/talkall 我很饿，你们这有老鼠吃么？我最喜欢吃老鼠，但是我最喜欢小狗
+/talkall 老鼠怎么没了？
+/run 悠扬林谷 
+/enterstage 悠扬林谷

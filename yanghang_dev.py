@@ -11,13 +11,6 @@ from action import Action, FIGHT, STAY, LEAVE
 from make_plan import stage_plan_prompt, stage_plan, npc_plan
 from console import Console
 
-
-#
-# def parse_input(input_val: str, split_str: str)-> str:
-#     if split_str in input_val:
-#         return input_val.split(split_str)[1].strip()
-#     return input_val
-
 ######################################################################
 ##################################################################################################################################################################################################################
 ##################################################################################################################################################################################################################
@@ -218,41 +211,50 @@ def main():
                 print(f"[{actor.name}]:", actor.call_agent("更新你的状态"))
             print("==============================================")
 
-               
+            
+        elif "/talkall" in usr_input:
+            command = "/talkall"
+            content = console.parse_command(usr_input, command)
+            if player == None:
+                print("/talkall error1 = ", "没有找到这个玩家") 
+                continue
+            if player.stage == None:
+                print(f"[{player.name}]=>", "你还没有进入任何场景")
+                continue
+            ###
+            talk_all_event = f"""{player.name} 说 {content}"""
+            print(f"[{player.name}]=>", talk_all_event)
 
-        # elif "/talk" in usr_input:
-        #     flag = "/talk"
-        #     content = parse_input(usr_input, flag)
-        #     print(f"[{player.name}]:", content)
-        #     if player.stage == None:
-        #         continue
-        #     ###
-        #     event_prompt = f"""{player.name}, {content}"""
-        #     print(f"[{player.name}]=>", event_prompt)
+            ##
+            stage = player.stage
+            stage.chat_history.append(HumanMessage(content=talk_all_event))
+            print(f"[{stage.name}]:", stage.call_agent("更新你的状态"))
+            for actor in stage.actors:
+                if (actor == player):
+                    continue
+                actor.chat_history.append(HumanMessage(content=talk_all_event))
+                print(f"[{actor.name}]:", actor.call_agent("更新你的状态"))
+            print("==============================================")
 
-        #     old_hunters_cabin.chat_history.append(HumanMessage(content=event_prompt))
-        #     print(f"[{old_hunters_cabin.name}]:", old_hunters_cabin.call_agent("更新你的状态"))
+        elif "/attacknpc" in usr_input:
+            command = "/attacknpc"
+            target_name = console.parse_command(usr_input, command)
+            if player == None:
+                print("/talkall error1 = ", "没有找到这个玩家") 
+                continue
+            if player.stage == None:
+                print(f"[{player.name}]=>", "你还没有进入任何场景")
+                continue
 
-        #     for actor in old_hunters_cabin.actors:
-        #         if (actor == player):
-        #             continue
-        #         actor.chat_history.append(HumanMessage(content=event_prompt))
-        #         print(f"[{actor.name}]:", actor.call_agent("更新你的状态"))
-        #     print("==============================================")
+            target = player.stage.get_actor(target_name)
+            if target == None:  
+                print(f"[{player.name}]=>", f"没有找到这个人{target_name}")
+                continue
 
-        # elif "/attack" in usr_input:
-        #     flag = "/attack"
-        #     target_name = parse_input(usr_input, flag)
-        #     print(f"[{player.name}] xxx:", target_name)
-        #     if player.stage == None:
-        #         continue
-        #     target = player.stage.get_actor(target_name)
-        #     if target == None:  
-        #         continue
-
-        #     players_action = Action(player, [FIGHT], [target.name], ["看招，雷霆大潮袭！！！！！"], [""])
-        #     state_run(old_hunters_cabin, [players_action])          
-        #     print("==============================================")
+            print(f"[{player.name}] xxx:", target_name)
+            players_action = Action(player, [FIGHT], [target.name], [""], [""])
+            state_run(old_hunters_cabin, [players_action])          
+            print("==============================================")
 
 
 ######################################################################

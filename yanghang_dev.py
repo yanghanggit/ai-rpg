@@ -84,9 +84,8 @@ def main():
     old_hunters_cabin.add_actor(rat)
 
     #
-    player = None
     console = Console("系统管理员")
-    console.current_actor = player
+    player = None
     print("//////////////////////////////////////////////////////////////////////////////////////")
     print("//////////////////////////////////////////////////////////////////////////////////////")
     print("//////////////////////////////////////////////////////////////////////////////////////")
@@ -126,8 +125,10 @@ def main():
             print(f"/createplayer:", description)
             if player == None:
                 player = Player("yang_hang")
+                
                 if description != None or description != "":
                     player.description = description
+                
                 player.max_hp = 1000000
                 player.hp = 1000000
                 player.damage = 100000
@@ -136,42 +137,31 @@ def main():
             else:
                 print(f"[{player.name}]=>", f"你已经在这个世界了")
 
-            ##
+            #
             console.current_actor = player
-            print(f"你现在控制了{console.current_actor.name}")
+            print("你控制了玩家：", player.name)
 
         elif "/who" in usr_input:
             command = "/who"
             actor_name = console.parse_command(usr_input, command)
-            if actor_name == None:
-                continue
-
-            last_control = console.current_actor
-            select_actor = None
-
-            if player != None and actor_name == player.name:
-                select_actor = player
-            elif actor_name == world_watcher.name:
-                select_actor = world_watcher
+            console.current_actor = world_watcher.get_actor(actor_name)
+            if console.current_actor != None:
+                print(f"你控制了玩家：", console.current_actor.name)
             else:
-                select_actor = world_watcher.get_actor(actor_name)
-
-            if select_actor == None or select_actor == last_control:
-                continue
+                print(f"没有找到这个玩家：", actor_name)
             
-            console.current_actor = select_actor
-            print(f"你现在控制了{console.current_actor.name}")
-
         elif "/runstage" in usr_input:
             command = "/runstage"
             stage_name = console.parse_command(usr_input, command)
             if stage_name == None:
                 print("/runstage error1 = ", stage_name, "没有找到这个场景") 
                 continue
+            
             stage = world_watcher.get_stage(stage_name)
             if stage == None:
                 print("/runstage error2 = ", stage_name, "没有找到这个场景") 
                 continue
+            
             print(f"[{stage.name}] /runstage:")
             run_stage(stage, [])    
             print("==============================================")
@@ -179,21 +169,24 @@ def main():
         elif "/enterstage" in usr_input:
             command = "/enterstage"
             stage_name = console.parse_command(usr_input, command)
-            if stage_name == None:
-                print("/enterstage error1 = ", stage_name, "没有找到这个场景") 
-                continue
             stage = world_watcher.get_stage(stage_name)
             if stage == None:
                 print("/enterstage error2 = ", stage_name, "没有找到这个场景") 
                 continue
-
+            
             current_actor = console.current_actor
             if current_actor == None:
                 print("/enterstage error3 = ", "没有找到这个玩家") 
                 continue
+            
+            if isinstance(current_actor, Stage) or isinstance(current_actor, World):
+                print(f"{current_actor.name}=>你不能进入{stage.name}, 因为你是一个场景或者世界")
+                continue
+
             if current_actor.stage == stage:
                 print(f"[{current_actor.name}]=>", f"你已经在{stage.name}")
                 continue
+            
             if current_actor.stage != None:
                 old_stage = current_actor.stage
                 old_stage.remove_actor(current_actor)
@@ -215,14 +208,22 @@ def main():
             if current_actor == None:
                 print("/say2everyone error1 = ", "没有找到这个玩家") 
                 continue
-            if current_actor.stage == None:
-                print(f"[{current_actor.name}]=>", "你还没有进入任何场景")
-                continue
+
+            target_stage = None
+            if isinstance(current_actor, Stage):
+                target_stage = current_actor
+            else:
+                if current_actor.stage == None:
+                    print(f"[{current_actor.name}]=>", "你还没有进入任何场景")
+                    continue
+                else:
+                    target_stage = current_actor.stage
+            
             ###
             enter_event = f"""{current_actor.name} 说 {content}"""
             print(f"[{current_actor.name}]=>", enter_event)
-            stage.add_memory(enter_event)
-            run_stage(stage, [])         
+            target_stage.add_memory(enter_event)
+            run_stage(target_stage, [])         
             print("==============================================")
 
         elif "/attack" in usr_input:
@@ -232,12 +233,18 @@ def main():
             if current_actor == None:
                 print("/say2everyone error1 = ", "没有找到这个玩家") 
                 continue
-            if current_actor.stage == None:
-                print(f"[{current_actor.name}]=>", "你还没有进入任何场景")
-                continue
+
+            target_stage = None
+            if isinstance(current_actor, Stage):
+                target_stage = current_actor
+            else:
+                if current_actor.stage == None:
+                    print(f"[{current_actor.name}]=>", "你还没有进入任何场景")
+                    continue
+                else:
+                    target_stage = current_actor.stage
                 
-            stage = current_actor.stage
-            target = stage.get_actor(target_name)
+            target = target_stage.get_actor(target_name)
             if target == None:  
                 print(f"[{current_actor.name}]=>", f"没有找到这个人{target_name}")
                 continue
@@ -248,7 +255,7 @@ def main():
             
             attackaction = Action(current_actor, [FIGHT], [target.name], [""], [""])
             print(attackaction)
-            run_stage(stage, [attackaction])          
+            run_stage(target_stage, [attackaction])          
             print("==============================================")
 
        

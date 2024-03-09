@@ -43,6 +43,7 @@ pip install langchain_core langserve fastapi langchain_openai sse_starlette fais
 - /who 卡斯帕·艾伦德
 - /who 小狗'断剑'
 - /who 坏运气先生
+- /who 老猎人隐居的小木屋
 
 - /attack 小狗'断剑'
 - /attack 卡斯帕·艾伦德

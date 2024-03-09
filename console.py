@@ -2,13 +2,18 @@
 ###
 ###
 
+from actor import Actor
+from world import World
+from stage import Stage 
+from player import Player
+
 class Console:
 
     #
     def __init__(self, name: str):
         self.name = name
-        self.current_actor = None
-
+        self.current_actor: Actor = None
+    
     #
     def parse_command(self, input_val: str, split_str: str)-> str:
         if split_str in input_val:
@@ -24,4 +29,5 @@ class Console:
         p1 = input_val[start_index:end_index]
         message = input_val[end_index+1:]
         return p1, message
+    
     

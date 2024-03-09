@@ -68,7 +68,7 @@ def npc_plan_prompt(npc: NPC)-> str:
     ### targets：action的目标对象，可多选。
     - 如果action是/stay，则targets是当前场景的名字
     - 如果action是/fight，则targets是你想攻击的对象，在{str}中选择一个或多个
-    - 如果action是/leave，则targets是你想要去往的场景名字，或者你曾经知道的场景名字
+    - 如果action是/leave，则targets是你想要去往的场景名字（你必须能明确叫出场景的名字），或者你曾经知道的场景名字
 
     ### say:你打算说的话或心里想的.
     ### tags：与你相关的特征标签.

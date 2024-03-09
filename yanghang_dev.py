@@ -264,8 +264,14 @@ def new_stage_memory(stage: Stage, content: str):
 ######################################################################
             
 #### 待重构！！！！！！！！！！！！！！            
-def run_stage(current_stage: Stage, players_action: list[Action]) -> None:
-        
+def run_stage(current_stage: Stage, players_action: list[Action]) -> None:        
+    ##检查一下
+    for check in players_action:
+        if isinstance(check.planer, Player) == False:
+            print(f"{check.planer.name} 不是玩家，是个错误，不应该有这个行动")
+    players_action = [action for action in players_action if isinstance(action.planer, Player)]
+
+    ###
     actions_collector: list[Action] = []
 
     ###场景的
@@ -385,10 +391,10 @@ def run_stage(current_stage: Stage, players_action: list[Action]) -> None:
         movie_script.append(f"{actor.name}死了，离开了这个世界")
 
     # ##处理留下的
-    # for actor in stay_actors:
-    #     pass
-    #     #print(f"{actor.name}留在{current_stage.name}")
-    #     #movie_script.append(f"{actor.name}留在{current_stage.name}")
+    for actor in stay_actors:
+        pass
+        #print(f"{actor.name}留在{current_stage.name}")
+        #movie_script.append(f"{actor.name}留在{current_stage.name}")
 
     movie_script_str = '\n'.join(movie_script)
     if len(movie_script_str) == 0:
@@ -435,8 +441,7 @@ def run_stage(current_stage: Stage, players_action: list[Action]) -> None:
             target_stage.add_actor(actor)
             enter_event = f"""你知道了发生了如下事件：{actor.name}进入了{target_stage.name}"""
             new_stage_memory(target_stage, enter_event)
-            npc_action = Action(actor, [STAY], [target_stage.name], [""], [""])
-            run_stage(target_stage, [npc_action])      
+            run_stage(target_stage, [])      
             
     
 

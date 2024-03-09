@@ -194,15 +194,12 @@ class MakePlan:
         return [action.planer for action in self.actions if action.action[0] == LEAVE]
 
     def get_actor_leave_target_stage(self, actor) -> str:
-
         if isinstance(actor, Stage) :
             print(f"{actor.name} 是场景，不能离开！")
             return ""
-        
         if actor.stage != None:
             print(f"{actor.name} 还有在{actor.stage.name}里，是个错误，说明上面没有移除成功")
             return ""    
-
         for action in self.actions:
             if action.planer == actor and action.action[0] == LEAVE:
                 return action.targets[0]

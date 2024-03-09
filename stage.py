@@ -27,11 +27,19 @@ class Stage(Actor):
         self.actors.remove(actor)
         actor.stage = None
 
+
     def get_all_npcs(self) -> list[NPC]:
         npcs = []
         for actor in self.actors:
             if isinstance(actor, NPC):
                 npcs.append(actor)
         return npcs
+    
+    def add_memory(self, content: str)-> None:
+        super().add_memory(content)
+        for actor in self.actors:
+            actor.add_memory(content)
+
+       
 
 

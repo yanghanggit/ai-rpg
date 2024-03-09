@@ -19,6 +19,7 @@ from console import Console
 init_archivist = f"""
 # 游戏世界存档
 - 大陆纪元2000年1月1日，冬夜.
+- 温斯洛平原的深处的“悠扬林谷”中的“老猎人隐居的小木屋”里。
 - “卡斯帕·艾伦德”坐在他的“老猎人隐居的小木屋”中的壁炉旁，在沉思和回忆过往，并向壁炉中的火投入了一根木柴。
 - 他的小狗（名叫"断剑"）在屋子里的一角睡觉。
 """
@@ -69,8 +70,6 @@ def actor_confirm_prompt(actor, stage_state):
 
 #
 def main():
-    #
-    system_administrator = "系统管理员"
 
     #load!!!!
     world_watcher = World("世界观察者")
@@ -86,14 +85,7 @@ def main():
     print(f"[{old_hunter.name}]:", log)
     print("==============================================")
 
-    #
-    old_hunters_dog = NPC("小狗'断剑'")
-    old_hunters_dog.connect("http://localhost:8023/actor/npc/old_hunters_dog/")
-    log = old_hunters_dog.call_agent(load_prompt)
-    print(f"[{old_hunters_dog.name}]:", log)
-    print("==============================================")
-
-    #
+     #
     old_hunters_cabin = Stage("老猎人隐居的小木屋")
     old_hunters_cabin.connect("http://localhost:8022/stage/old_hunters_cabin/")
     log = old_hunters_cabin.call_agent(load_prompt)
@@ -101,25 +93,30 @@ def main():
     print("==============================================")
 
     #
+    old_hunters_dog = NPC("小狗'断剑'")
+    old_hunters_dog.connect("http://localhost:8023/actor/npc/old_hunters_dog/")
+    log = old_hunters_dog.call_agent(load_prompt)
+    print(f"[{old_hunters_dog.name}]:", log)
+    print("==============================================")
+    #
+    melodious_forest_valley = Stage("悠扬林谷")
+    melodious_forest_valley.connect("http://localhost:8024/stage/melodious_forest_valley/")
+    log = melodious_forest_valley.call_agent(load_prompt)
+    print(f"[{melodious_forest_valley.name}]:", log)
+    
+    #
     world_watcher.add_stage(old_hunters_cabin)
-    old_hunters_cabin.world = world_watcher
+    world_watcher.add_stage(melodious_forest_valley)
     #
     old_hunters_cabin.add_actor(old_hunter)
-    old_hunter.stage = old_hunters_cabin
-
     old_hunters_cabin.add_actor(old_hunters_dog)
-    old_hunters_dog.stage = old_hunters_cabin
 
     #
     player = None
-    print("//////////////////////////////////////////////////////////////////////////////////////")
-    print("//////////////////////////////////////////////////////////////////////////////////////")
-    print("//////////////////////////////////////////////////////////////////////////////////////")
-
-
-    ###
     console = Console("系统管理员")
-
+    print("//////////////////////////////////////////////////////////////////////////////////////")
+    print("//////////////////////////////////////////////////////////////////////////////////////")
+    print("//////////////////////////////////////////////////////////////////////////////////////")
     #
     while True:
         usr_input = input("[user input]: ")

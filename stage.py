@@ -9,13 +9,11 @@ class Stage(Actor):
         super().__init__(name)
         self.actors = []
         self.world = None
-        self.npcs = []
 
     def add_actor(self, actor: Actor)-> None:
         self.actors.append(actor)
-        if isinstance(actor, NPC):
-            self.npcs.append(actor)
-
+        actor.stage = self
+      
     def get_actor(self, name: str) -> Actor:
         for actor in self.actors:
             if actor.name == name:
@@ -27,8 +25,13 @@ class Stage(Actor):
             print(0, f"actor {actor.name} not in stage {self.name}")
             return
         self.actors.remove(actor)
-        if isinstance(actor, NPC):
-            self.npcs.remove(actor)
         actor.stage = None
+
+    def get_all_npcs(self) -> list[NPC]:
+        npcs = []
+        for actor in self.actors:
+            if isinstance(actor, NPC):
+                npcs.append(actor)
+        return npcs
 
 

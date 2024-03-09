@@ -13,10 +13,10 @@ from console import Console
 
 
 #
-def parse_input(input_val: str, split_str: str)-> str:
-    if split_str in input_val:
-        return input_val.split(split_str)[1].strip()
-    return input_val
+# def parse_input(input_val: str, split_str: str)-> str:
+#     if split_str in input_val:
+#         return input_val.split(split_str)[1].strip()
+#     return input_val
 
 ######################################################################
 ##################################################################################################################################################################################################################
@@ -119,14 +119,6 @@ def main():
 
     #
     player = None
-    # Player("yang_hang")
-    # player.max_hp = 1000000
-    # player.hp = 1000000
-    # player.damage = 100000
-    # #player.connect("http://localhost:8023/12345/")
-    # log = world_watcher.call_agent(f"""你知道了如下事件：{player.name}加入了这个世界""")
-    # print(f"[{world_watcher.name}]:", log)
-
     print("//////////////////////////////////////////////////////////////////////////////////////")
     print("//////////////////////////////////////////////////////////////////////////////////////")
     print("//////////////////////////////////////////////////////////////////////////////////////")
@@ -145,7 +137,7 @@ def main():
             command = "/call"
             input_content = console.parse_command(usr_input, command)
             print(f"</call>:", input_content)
-            tp = console.parse_speak(input_content)
+            tp = console.parse_at_symbol(input_content)
             target = tp[0]
             content = tp[1]
             if target == None:
@@ -182,55 +174,48 @@ def main():
 
         ##某人进入场景的事件
         elif "/player" in usr_input:
-            player_settings = parse_input(usr_input, "/player")
-            print(f"/player:", player_settings)
+            command = "/player"
+            description = console.parse_command(usr_input, command)
+            print(f"/player:", description)
             if player == None:
                 player = Player("yang_hang")
-
-                if player_settings != None or player_settings != "":
-                    player.description = player_settings
-                    
+                if description != None or description != "":
+                    player.description = description
                 player.max_hp = 1000000
                 player.hp = 1000000
                 player.damage = 100000
-                notify_world = world_watcher.call_agent(f"""你知道了如下事件：{player.name}加入了这个世界""")
+                notify_world = world_watcher.call_agent(f"""你知道了如下事件：{player.name}加入了这个世界, 他是{player.description}""")
                 print(f"[{world_watcher.name}]:", notify_world)
-                
-
-            # if player.stage == None:
-            #     old_hunters_cabin.add_actor(player)
-            #     player.stage = old_hunters_cabin
-                #print(f"[{old_hunters_cabin.name}]:", old_hunters_cabin.call_agent("更新你的状态"))
 
 
-            # if player.stage != None:
-            #     continue
-
-            # Player("yang_hang")
-            # player.max_hp = 1000000
-            # player.hp = 1000000
-            # player.damage = 100000
-            # #player.connect("http://localhost:8023/12345/")
-            # log = world_watcher.call_agent(f"""你知道了如下事件：{player.name}加入了这个世界""")
-            # print(f"[{world_watcher.name}]:", log)
-
-
-
-            # ## 必须加上！！！！！！！
-            # old_hunters_cabin.add_actor(player)
-            # player.stage = old_hunters_cabin
-            # ###
-            # event_prompt = f"""{player.name}{content}"""
-            # print(f"[{player.name}]=>", event_prompt)
-
-            # old_hunters_cabin.chat_history.append(HumanMessage(content=event_prompt))
-            # print(f"[{old_hunters_cabin.name}]:", old_hunters_cabin.call_agent("更新你的状态"))
-
-            # for actor in old_hunters_cabin.actors:
-            #     if (actor == player):
-            #         continue
-            #     actor.chat_history.append(HumanMessage(content=event_prompt))
-            #     print(f"[{actor.name}]:", actor.call_agent("更新你的状态"))
+        elif "/enterstage" in usr_input:
+            command = "/enterstage"
+            stage_name = console.parse_command(usr_input, command)
+            if stage_name == None:
+                print("/enterstage error1 = ", stage_name, "没有找到这个场景") 
+                continue
+            stage = world_watcher.get_stage(stage_name)
+            if stage == None:
+                print("/enterstage error2 = ", stage_name, "没有找到这个场景") 
+                continue
+            if player == None:
+                print("/enterstage error3 = ", "没有找到这个玩家") 
+                continue
+            if player.stage != None:
+                print(f"[{player.name}]=>", f"你已经在{player.stage.name}里了")
+                continue
+            #
+            stage.add_actor(player)
+            enter_event = f"""发生了如下事件：{player.name}进入了{stage.name}, 他是{player.description}"""
+            print(f"/enterstage", enter_event)
+            #
+            stage.chat_history.append(HumanMessage(content=enter_event))
+            print(f"[{stage.name}]:", stage.call_agent("更新你的状态"))
+            for actor in stage.actors:
+                if (actor == player):
+                    continue
+                actor.chat_history.append(HumanMessage(content=enter_event))
+                print(f"[{actor.name}]:", actor.call_agent("更新你的状态"))
             print("==============================================")
 
                
@@ -280,7 +265,7 @@ def state_run(current_stage: Stage, players_action: list[Action]) -> None:
     actions_collector.append(sp)
 
     ###npc
-    for npc in current_stage.npcs:
+    for npc in current_stage.get_all_npcs():
         np = npc_plan(npc)
         actions_collector.append(np)
 
@@ -412,7 +397,7 @@ def state_run(current_stage: Stage, players_action: list[Action]) -> None:
 
     ##确认行动
     print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-    for actor in current_stage.npcs:
+    for actor in current_stage.get_all_npcs():
         last_memory = f"""
         # 你知道发生了下面的事，并更新了你的记忆：
         {movie_script_str}

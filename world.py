@@ -10,6 +10,7 @@ class World(Actor):
     #
     def add_stage(self, stage) -> None:
         self.stages.append(stage)
+        stage.world = self
     
     #
     def get_stage(self, find_name: str):

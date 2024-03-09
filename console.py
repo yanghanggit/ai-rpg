@@ -9,9 +9,6 @@ import json
 from actor import Actor
 from world import World
 
-#from make_plan import stage_plan_prompt, stage_plan, npc_plan
-
-
 class Console:
 
     #
@@ -25,7 +22,7 @@ class Console:
         return input_val
 
     #
-    def parse_speak(self, input_val: str) -> tuple:
+    def parse_at_symbol(self, input_val: str) -> tuple:
         if "@" not in input_val:
             return None, input_val
         start_index = input_val.index("@") + 1

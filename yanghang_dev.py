@@ -161,7 +161,6 @@ def main():
             console.current_actor = select_actor
             print(f"你现在控制了{console.current_actor.name}")
 
-
         elif "/runstage" in usr_input:
             command = "/runstage"
             stage_name = console.parse_command(usr_input, command)
@@ -175,7 +174,6 @@ def main():
             print(f"[{stage.name}] /runstage:")
             run_stage(stage, [])    
             print("==============================================")
-
 
         elif "/enterstage" in usr_input:
             command = "/enterstage"
@@ -208,7 +206,6 @@ def main():
             enter_event = f"""你知道了发生了如下事件：{current_actor.name}进入了{stage.name}, 他是{current_actor.description}"""
             stage.add_memory(enter_event)
             print("==============================================")
-
             
         elif "/say2everyone" in usr_input: 
             command = "/say2everyone"

@@ -30,21 +30,15 @@ pip install langchain_core langserve fastapi langchain_openai sse_starlette fais
 - /call @悠扬林谷 讲讲关于你
 - /call @坏运气先生 你知道世界上的哪些地方？
 
+## 创建玩家
+- /createplayer 一个高大的兽人战士，独眼。手中拿着巨斧，杀气腾腾
 
 ## 要求场景做一次推进，最后必须加空格，因为解析没怎么写好
 - /runstage 老猎人隐居的小木屋 
 
-
-## 玩家控制
-- /createplayer 一个高大的兽人战士，独眼。手中拿着巨斧，杀气腾腾
-- /enterstage 老猎人隐居的小木屋 
-- /say2everyone 你们好！我迷路了！
+## 控制actor
+- /who 卡斯帕·艾伦德
+- /enterstage 老猎人隐居的小木屋
+- /say2everyone 你们好呀！！
 - /attack 卡斯帕·艾伦德
-
-
-
-
-/say2everyone 我很饿，你们这有老鼠吃么？我最喜欢吃老鼠，但是我最喜欢小狗
-/say2everyone 老鼠怎么没了？
-/runstage 悠扬林谷 
-/enterstage 悠扬林谷
+- /attack 小狗'断剑'

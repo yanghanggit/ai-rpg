@@ -241,9 +241,14 @@ def main():
             if target == None:  
                 print(f"[{current_actor.name}]=>", f"没有找到这个人{target_name}")
                 continue
-            print(f"[{current_actor.name}]=>", f"你攻击了{target.name}")
-            playaction = Action(current_actor, [FIGHT], [target.name], [""], [""])
-            run_stage(stage, [playaction])          
+
+            if target == current_actor:
+                print(f"[{current_actor.name}]=>", f"你不能攻击自己")
+                continue
+            
+            attackaction = Action(current_actor, [FIGHT], [target.name], [""], [""])
+            print(attackaction)
+            run_stage(stage, [attackaction])          
             print("==============================================")
 
        

@@ -102,7 +102,8 @@ def stage_plan(stage: Stage) -> Action:
         elif json_data['action'][0] == STAY:
              if json_data['targets'][0] != stage.name:
                 print(f"stage_plan {stage.name} error: STAY action must have stage name as target = ", json_data['targets'][0])
-                return error
+                json_data['targets'][0] = stage.name
+                #return error
         #
         return Action(stage, json_data['action'], json_data['targets'], json_data['say'], json_data['tags'])
 
@@ -140,7 +141,8 @@ def npc_plan(npc: NPC) -> Action:
         elif json_data['action'][0] == STAY:
              if json_data['targets'][0] != npc.stage.name:
                 print(f"npc_plan {npc.name} error: STAY action must have stage name as target = ", json_data['targets'][0])
-                return error
+                json_data['targets'][0] = npc.stage.name
+                #return error
         #
         return Action(npc, json_data['action'], json_data['targets'], json_data['say'], json_data['tags'])
     
@@ -157,21 +159,23 @@ class MakePlan:
         self.actions = []
 
     #
-    def make_stage_paln(self):
+    def make_stage_paln(self, ex_actions: list[Action] = []):
+        if self.stage in [action.planer for action in ex_actions]:
+            return
         sp = stage_plan(self.stage)
         self.actions.append(sp)
 
     #
-    def make_all_npcs_plan(self):
+    def make_all_npcs_plan(self, ex_actions: list[Action] = []):
         npcs = self.stage.get_all_npcs()
         for npc in npcs:
+            if npc in [action.planer for action in ex_actions]:
+                continue
             action = npc_plan(npc)
             self.actions.append(action)
 
     #
-    def add_extra_plan(self, ex_actions: list[Action]):
-        for exa_action in ex_actions:
-            self.actions = [action for action in self.actions if action.planer != exa_action.planer]
+    def add_command(self, ex_actions: list[Action]):
         self.actions.extend(ex_actions)
 
     #

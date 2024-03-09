@@ -7,13 +7,13 @@ from stage_events import StageEvents
        
      
 #### 待重构！！！！！！！！！！！！！！            
-def run_stage(current_stage: Stage, ex_plans: list[Action]) -> None:        
+def run_stage(current_stage: Stage, command_plans: list[Action]) -> None:        
     
     #制作计划
     make_plan = MakePlan(current_stage)
-    make_plan.make_all_npcs_plan()
-    make_plan.make_stage_paln()
-    make_plan.add_extra_plan(ex_plans)
+    make_plan.make_all_npcs_plan(command_plans)
+    make_plan.make_stage_paln(command_plans)
+    make_plan.add_command(command_plans)
     if len(make_plan.actions) == 0:
         print(f"{current_stage.name}目前没有行动与计划")
         return
@@ -55,7 +55,7 @@ def run_stage(current_stage: Stage, ex_plans: list[Action]) -> None:
                     who_is_dead.append(target)
                     stage_events.add_event(f"{target.name}已经死亡")
                 else:
-                    #print(f"{target.name}剩余{target.hp/target.max_hp*100}%血量")
+                    print(f"{target.name}剩余{target.hp/target.max_hp*100}%血量")
                     pass
                 print("-------------------------------------------------------------------------")
 

@@ -37,10 +37,13 @@ pip install langchain_core langserve fastapi langchain_openai sse_starlette fais
 - /runstage 老猎人隐居的小木屋 
 
 ## 控制actor
+- /enterstage 老猎人隐居的小木屋
+- /say2everyone 你们好呀！！
+
 - /who 卡斯帕·艾伦德
 - /who 小狗'断剑'
 - /who 坏运气先生
-- /enterstage 老猎人隐居的小木屋
-- /say2everyone 你们好呀！！
+
+- /attack 小狗'断剑'
 - /attack 卡斯帕·艾伦德
 - /attack 坏运气先生

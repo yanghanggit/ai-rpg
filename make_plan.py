@@ -5,7 +5,8 @@ import json
 from stage import Stage
 from stage import NPC
 from action import Action, FIGHT,STAY, LEAVE, ALL_ACTIONS, check_data_format, check_actions_is_valid, check_fight_or_stay_target_is_valid, check_leave2stage_is_valid
-
+from player import Player
+from actor import Actor
 
 ##################################################################################################################
 def stage_plan_prompt(stage: Stage)-> str:
@@ -113,9 +114,6 @@ def stage_plan(stage: Stage) -> Action:
     return error
 ##################################################################################################################
 ##################################################################################################################
-
-##################################################################################################################
-##################################################################################################################
 def npc_plan(npc: NPC) -> Action:
     make_prompt = npc_plan_prompt(npc)
     #print(f"npc_plan_prompt:", make_prompt)
@@ -152,4 +150,50 @@ def npc_plan(npc: NPC) -> Action:
         return error
     return error
 ##################################################################################################################
+
+#
+class MakePlan:
+    def __init__(self, stage: Stage):
+        self.stage = stage     
+        self.actions = []
+
+    #
+    def make_stage_paln(self):
+        sp = stage_plan(self.stage)
+        self.actions.append(sp)
+
+    #
+    def make_all_npcs_plan(self):
+        npcs = self.stage.get_all_npcs()
+        for npc in npcs:
+            action = npc_plan(npc)
+            self.actions.append(action)
+
+    #
+    def add_players_plan(self, player_action: list[Action]):
+        ###
+        for check in players_action:
+            if isinstance(check.planer, Player) == False:
+                print(f"{check.planer.name} 不是玩家，是个错误，不应该有这个行动")
+        ##
+        players_action = [action for action in players_action if isinstance(action.planer, Player)]
+        if len(player_action) > 0:
+            self.actions.extend(player_action)
+
+    def get_fight_actions(self) -> list[Action]:
+        return [action for action in self.actions if action.action[0] == FIGHT]
+
+    def get_leave_actions(self) -> list[Action]:
+        return [action for action in self.actions if action.action[0] == LEAVE]
+    
+    def get_stay_actions(self) -> list[Action]:
+        return [action for action in self.actions if action.action[0] == STAY]
+    
+    def who_wana_leave(self) -> list[Actor]:
+        return [action.planer for action in self.actions if action.action[0] == LEAVE]
+
+
+
+
+
 ##################################################################################################################

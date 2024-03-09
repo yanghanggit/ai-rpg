@@ -170,15 +170,15 @@ class MakePlan:
             self.actions.append(action)
 
     #
-    def add_players_plan(self, player_action: list[Action]):
+    def add_players_plan(self, players_plans: list[Action]):
         ###
-        for check in players_action:
+        for check in players_plans:
             if isinstance(check.planer, Player) == False:
                 print(f"{check.planer.name} 不是玩家，是个错误，不应该有这个行动")
         ##
-        players_action = [action for action in players_action if isinstance(action.planer, Player)]
-        if len(player_action) > 0:
-            self.actions.extend(player_action)
+        players_plans = [action for action in players_plans if isinstance(action.planer, Player)]
+        if len(players_plans) > 0:
+            self.actions.extend(players_plans)
 
     def get_fight_actions(self) -> list[Action]:
         return [action for action in self.actions if action.action[0] == FIGHT]
@@ -192,8 +192,20 @@ class MakePlan:
     def who_wana_leave(self) -> list[Actor]:
         return [action.planer for action in self.actions if action.action[0] == LEAVE]
 
+    def get_actor_leave_target_stage(self, actor) -> str:
 
+        if isinstance(actor, Stage) :
+            print(f"{actor.name} 是场景，不能离开！")
+            return ""
+        
+        if actor.stage != None:
+            print(f"{actor.name} 还有在{actor.stage.name}里，是个错误，说明上面没有移除成功")
+            return ""    
 
+        for action in self.actions:
+            if action.planer == actor and action.action[0] == LEAVE:
+                return action.targets[0]
+        return ""
 
 
 ##################################################################################################################

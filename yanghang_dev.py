@@ -263,24 +263,14 @@ def new_stage_memory(stage: Stage, content: str):
             actor.chat_history.append(HumanMessage(content=content))
 ######################################################################
             
-
-
-
-
-
 #### 待重构！！！！！！！！！！！！！！            
-def run_stage(current_stage: Stage, players_action: list[Action]) -> None:        
+def run_stage(current_stage: Stage, players_plans: list[Action]) -> None:        
+    
     #制作计划
     make_plan = MakePlan(current_stage)
-    print("make_all_npcs_plan...")
     make_plan.make_all_npcs_plan()
-
-    print("make_stage_paln...")
     make_plan.make_stage_paln()
-    
-    print("add_players_plan...")
-    make_plan.add_players_plan(players_action)
-
+    make_plan.add_players_plan(players_plans)
     if len(make_plan.actions) == 0:
         print(f"{current_stage.name}目前没有行动与计划")
         return
@@ -292,13 +282,13 @@ def run_stage(current_stage: Stage, players_action: list[Action]) -> None:
     ###谁死了
     who_is_dead: list[Actor] = []
 
-    print("所有人允许说话 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+    print("++++++++++++++++++++++++++++++++++++++++ 所有人允许说话 ++++++++++++++++++++++++++++++++++++++++++++++++++++++")
     for action in make_plan.actions:
         if (len(action.say) > 0):
             movie_script.append(f"{action.planer.name}说：{action.say[0]}")
             print(f"{action.planer.name}说：{action.say[0]}")
 
-    print("处理战斗 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+    print("+++++++++++++++++++++++++++++++++++++ 处理战斗 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
     fight_actions = make_plan.get_fight_actions()
     if len(fight_actions) > 0:
         #
@@ -331,33 +321,33 @@ def run_stage(current_stage: Stage, players_action: list[Action]) -> None:
                     print(f"{target.name}剩余{target.hp/target.max_hp*100}%血量")
                 print("-------------------------------------------------------------------------")
 
-    print("处理战斗结果，死了的 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+    print("+++++++++++++++++++++++++++++++++++++++ 处理战斗结果，死了的 +++++++++++++++++++++++++++++++++++++++++++++++++++++++")
     for actor in who_is_dead:
         actor.stage.remove_actor(actor)
         movie_script.append(f"{actor.name}死了，离开了这个世界")
         print(f"{actor.name}死了，离开了这个世界")
 
     ##处理离开的
-    print("脱离本场景的 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+    print("++++++++++++++++++++++++++++++++++++++++ 脱离本场景的 ++++++++++++++++++++++++++++++++++++++++++++++++++++++")
     for actor in who_wana_leave:
         actor.stage.remove_actor(actor)
         movie_script.append(f"{actor.name}离开了{current_stage.name}")
         print(f"{actor.name}离开了{current_stage.name}")
         
-    print("最后组装剧本 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+    print("++++++++++++++++++++++++++++++++++++ 最后组装剧本 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
     movie_script_str = '\n'.join(movie_script)
     if len(movie_script_str) == 0:
         movie_script_str = "剧本为空，说明没有任何事发生，更新状态即可"
         print(f"{current_stage.name}剧本为空，说明没有任何事发生，更新状态即可")
 
     #
-    print("按着剧本更新场景 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+    print(f"++++++++++++++++++++++++++++++++++++ {current_stage.name} 场景开始演绎剧本 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
     director_prompt_str = director_prompt(current_stage, movie_script_str)
     director_res = current_stage.call_agent(director_prompt_str)
     print(f"[{current_stage.name}]:", director_res)
 
     ##
-    print("npc确认行动++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+    print("++++++++++++++++++++++++++++++++++++++++还在场景内的npc确认行动（不在的要么死了，要么离开了）++++++++++++++++++++++++++++++++++++++++++++++++++++++")
     for actor in current_stage.get_all_npcs():
         last_memory = f"""
         # 你知道发生了下面的事，并更新了你的记忆：
@@ -368,27 +358,24 @@ def run_stage(current_stage: Stage, players_action: list[Action]) -> None:
         actor_res = actor.call_agent(actor_comfirm_prompt_str)
         print(f"[{actor.name}]~" + actor_res)
 
-    print("最后处理离开或者战斗中逃跑的人，去往某个场景（必须知道场景名字），此时他们已经脱离本场景 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-    leave_actions = make_plan.get_leave_actions()
+    print("++++++++++++++++++++++++++++++++++最后处理离开或者战斗中逃跑的人，去往某个场景（必须知道场景名字），此时他们已经脱离本场景++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
     for actor in who_wana_leave:
-        if actor == current_stage:
-            print(f"{actor.name} 是当前场景不能逃跑！！！")
+        stage_name = make_plan.get_actor_leave_target_stage(actor)
+        if stage_name == "":
+            print(f"{actor.name} 想要离开，但是不知道去哪里")
             continue
-        if actor.stage != None:
-            print(f"{actor.name} 还有在{actor.stage.name}里，是个错误，说明上面没有移除成功")
-            continue    
-        for action in leave_actions:
-            if actor != action.planer:
-                continue
-            target_stage = current_stage.world.get_stage(action.targets[0])
-            if target_stage == None:
-                print(f"{actor.name} 想要去{action.targets[0]}，但是世界上没有这个地方")
-                continue
-            target_stage.add_actor(actor)
-            enter_event = f"""你知道了发生了如下事件：{actor.name}进入了{target_stage.name}"""
-            new_stage_memory(target_stage, enter_event)
-            run_stage(target_stage, [])      
-            break
+
+        print(f"{actor.name} 想要去{stage_name}")   
+        target_stage = current_stage.world.get_stage(stage_name)
+        if target_stage == None:
+            print(f"{actor.name} 想要去{action.targets[0]}，但是数据上看没有这个地方！")
+            continue
+
+        target_stage.add_actor(actor)
+        print(f"{actor.name} 到达了 {target_stage.name}")
+        enter_event = f"""你知道了发生了如下事件：{actor.name}进入了{target_stage.name}"""
+        new_stage_memory(target_stage, enter_event)
+        run_stage(target_stage, [])      
 
     print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 

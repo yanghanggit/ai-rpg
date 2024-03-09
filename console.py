@@ -1,19 +1,13 @@
 ###
-### 测试和LLM无关的工具型代码用
 ###
-
-from langchain_core.messages import HumanMessage, AIMessage, BaseMessage, SystemMessage
-from langserve import RemoteRunnable
-import sys
-import json
-from actor import Actor
-from world import World
+###
 
 class Console:
 
     #
     def __init__(self, name: str):
         self.name = name
+        self.current_actor = None
 
     #
     def parse_command(self, input_val: str, split_str: str)-> str:

@@ -32,19 +32,19 @@ pip install langchain_core langserve fastapi langchain_openai sse_starlette fais
 
 
 ## 要求场景做一次推进，最后必须加空格，因为解析没怎么写好
-- /run 老猎人隐居的小木屋 
+- /runstage 老猎人隐居的小木屋 
 
 
 ## 玩家控制
-- /player 一个高大的兽人战士，独眼。手中拿着巨斧，杀气腾腾
+- /createplayer 一个高大的兽人战士，独眼。手中拿着巨斧，杀气腾腾
 - /enterstage 老猎人隐居的小木屋 
-- /talkall 你们好！我迷路了！
-- /attacknpc 卡斯帕·艾伦德
+- /say2everyone 你们好！我迷路了！
+- /attack 卡斯帕·艾伦德
 
 
 
 
-/talkall 我很饿，你们这有老鼠吃么？我最喜欢吃老鼠，但是我最喜欢小狗
-/talkall 老鼠怎么没了？
-/run 悠扬林谷 
+/say2everyone 我很饿，你们这有老鼠吃么？我最喜欢吃老鼠，但是我最喜欢小狗
+/say2everyone 老鼠怎么没了？
+/runstage 悠扬林谷 
 /enterstage 悠扬林谷

@@ -1,8 +1,4 @@
-from langchain_core.messages import HumanMessage, AIMessage, BaseMessage, SystemMessage
-from langserve import RemoteRunnable
 import sys
-import json
-from actor import Actor
 from world import World
 from stage import Stage
 from stage import NPC
@@ -90,6 +86,7 @@ def main():
     #
     player = None
     console = Console("系统管理员")
+    console.current_actor = player
     print("//////////////////////////////////////////////////////////////////////////////////////")
     print("//////////////////////////////////////////////////////////////////////////////////////")
     print("//////////////////////////////////////////////////////////////////////////////////////")
@@ -122,27 +119,11 @@ def main():
                 print(f"[{actor.name}] /call:", actor.call_agent(content))
             print("==============================================")
 
-
-        elif "/run" in usr_input:
-            command = "/run"
-            stage_name = console.parse_command(usr_input, command)
-            if stage_name == None:
-                print("/run error1 = ", stage_name, "没有找到这个场景") 
-                continue
-            stage = world_watcher.get_stage(stage_name)
-            if stage == None:
-                print("/run error2 = ", stage_name, "没有找到这个场景") 
-                continue
-            print(f"[{stage.name}] /run:")
-            run_stage(stage, [])    
-            print("==============================================")
-
-
-        ##某人进入场景的事件
-        elif "/player" in usr_input:
-            command = "/player"
+        ##
+        elif "/createplayer" in usr_input:
+            command = "/createplayer"
             description = console.parse_command(usr_input, command)
-            print(f"/player:", description)
+            print(f"/createplayer:", description)
             if player == None:
                 player = Player("yang_hang")
                 if description != None or description != "":
@@ -155,6 +136,46 @@ def main():
             else:
                 print(f"[{player.name}]=>", f"你已经在这个世界了")
 
+            ##
+            console.current_actor = player
+
+        elif "/who" in usr_input:
+            command = "/who"
+            actor_name = console.parse_command(usr_input, command)
+            if actor_name == None:
+                continue
+
+            last_control = console.current_actor
+            select_actor = None
+
+            if actor_name == player.name:
+                select_actor = player
+            elif actor_name == world_watcher.name:
+                select_actor = world_watcher
+            else:
+                select_actor = world_watcher.get_actor(actor_name)
+
+            if select_actor == None or select_actor == last_control:
+                continue
+            
+            console.current_actor = select_actor
+            print(f"你现在控制了{console.current_actor.name}")
+
+
+        elif "/runstage" in usr_input:
+            command = "/runstage"
+            stage_name = console.parse_command(usr_input, command)
+            if stage_name == None:
+                print("/runstage error1 = ", stage_name, "没有找到这个场景") 
+                continue
+            stage = world_watcher.get_stage(stage_name)
+            if stage == None:
+                print("/runstage error2 = ", stage_name, "没有找到这个场景") 
+                continue
+            print(f"[{stage.name}] /runstage:")
+            run_stage(stage, [])    
+            print("==============================================")
+
 
         elif "/enterstage" in usr_input:
             command = "/enterstage"
@@ -166,62 +187,64 @@ def main():
             if stage == None:
                 print("/enterstage error2 = ", stage_name, "没有找到这个场景") 
                 continue
-            if player == None:
+
+            current_actor = console.current_actor
+            if current_actor == None:
                 print("/enterstage error3 = ", "没有找到这个玩家") 
                 continue
-            if player.stage == stage:
-                print(f"[{player.name}]=>", f"你已经在{stage.name}")
+            if current_actor.stage == stage:
+                print(f"[{current_actor.name}]=>", f"你已经在{stage.name}")
                 continue
-
-            if player.stage != None:
-                old_stage = player.stage
-                old_stage.remove_actor(player)
-                print(f"[{player.name}]=>", f"你离开了{old_stage.name}")
-                leave_event = f"""你知道了发生了如下事件：{player.name}离开了{old_stage.name}"""
+            if current_actor.stage != None:
+                old_stage = current_actor.stage
+                old_stage.remove_actor(current_actor)
+                print(f"[{current_actor.name}]=>", f"你离开了{old_stage.name}")
+                leave_event = f"""你知道了发生了如下事件：{current_actor.name}离开了{old_stage.name}"""
                 old_stage.add_memory(leave_event)
                 print("==============================================")
-    
             #
-            stage.add_actor(player)
-            print(f"[{player.name}]=>", f"你进入了{stage.name}")
-            enter_event = f"""你知道了发生了如下事件：{player.name}进入了{stage.name}, 他是{player.description}"""
+            stage.add_actor(current_actor)
+            print(f"[{current_actor.name}]=>", f"你进入了{stage.name}")
+            enter_event = f"""你知道了发生了如下事件：{current_actor.name}进入了{stage.name}, 他是{current_actor.description}"""
             stage.add_memory(enter_event)
             print("==============================================")
 
             
-        elif "/talkall" in usr_input:
-            command = "/talkall"
+        elif "/say2everyone" in usr_input: 
+            command = "/say2everyone"
             content = console.parse_command(usr_input, command)
-            if player == None:
-                print("/talkall error1 = ", "没有找到这个玩家") 
+            current_actor = console.current_actor
+            if current_actor == None:
+                print("/say2everyone error1 = ", "没有找到这个玩家") 
                 continue
-            if player.stage == None:
-                print(f"[{player.name}]=>", "你还没有进入任何场景")
+            if current_actor.stage == None:
+                print(f"[{current_actor.name}]=>", "你还没有进入任何场景")
                 continue
             ###
-            enter_event = f"""{player.name} 说 {content}"""
-            print(f"[{player.name}]=>", enter_event)
+            enter_event = f"""{current_actor.name} 说 {content}"""
+            print(f"[{current_actor.name}]=>", enter_event)
             stage.add_memory(enter_event)
             run_stage(stage, [])         
             print("==============================================")
 
-        elif "/attacknpc" in usr_input:
-            command = "/attacknpc"
+        elif "/attack" in usr_input:
+            command = "/attack"
             target_name = console.parse_command(usr_input, command)
-            if player == None:
-                print("/talkall error1 = ", "没有找到这个玩家") 
+            current_actor = console.current_actor
+            if current_actor == None:
+                print("/say2everyone error1 = ", "没有找到这个玩家") 
                 continue
-            if player.stage == None:
-                print(f"[{player.name}]=>", "你还没有进入任何场景")
+            if current_actor.stage == None:
+                print(f"[{current_actor.name}]=>", "你还没有进入任何场景")
                 continue
                 
-            stage = player.stage
+            stage = current_actor.stage
             target = stage.get_actor(target_name)
             if target == None:  
-                print(f"[{player.name}]=>", f"没有找到这个人{target_name}")
+                print(f"[{current_actor.name}]=>", f"没有找到这个人{target_name}")
                 continue
 
-            playaction = Action(player, [FIGHT], [target.name], [""], [""])
+            playaction = Action(current_actor, [FIGHT], [target.name], [""], [""])
             run_stage(stage, [playaction])          
             print("==============================================")
 

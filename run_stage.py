@@ -1,7 +1,7 @@
 from actor import Actor
 from stage import Stage
 from action import Action
-from make_plan import stage_plan, npc_plan, MakePlan
+from make_plan import MakePlan
 from director import Director
 from stage_events import StageEvents
        

@@ -161,7 +161,7 @@ def main():
                 print("/run error2 = ", stage_name, "没有找到这个场景") 
                 continue
             print(f"[{stage.name}] /run:")
-            state_run(stage, [])    
+            run_stage(stage, [])    
             print("==============================================")
 
 
@@ -179,6 +179,8 @@ def main():
                 player.damage = 100000
                 notify_world = world_watcher.call_agent(f"""你知道了如下事件：{player.name}加入了这个世界, 他是{player.description}""")
                 print(f"[{world_watcher.name}]:", notify_world)
+            else:
+                print(f"[{player.name}]=>", f"你已经在这个世界了")
 
 
         elif "/enterstage" in usr_input:
@@ -199,16 +201,12 @@ def main():
                 continue
             #
             stage.add_actor(player)
-            enter_event = f"""发生了如下事件：{player.name}进入了{stage.name}, 他是{player.description}"""
-            print(f"/enterstage", enter_event)
             #
-            stage.chat_history.append(HumanMessage(content=enter_event))
-            print(f"[{stage.name}]:", stage.call_agent("更新你的状态"))
-            for actor in stage.actors:
-                if (actor == player):
-                    continue
-                actor.chat_history.append(HumanMessage(content=enter_event))
-                print(f"[{actor.name}]:", actor.call_agent("更新你的状态"))
+            enter_event = f"""你知道了发生了如下事件：{player.name}进入了{stage.name}, 他是{player.description}"""
+            print(f"/enterstage", enter_event)
+            new_stage_memory(stage, enter_event)
+            playeraction = Action(player, [STAY], [stage.name], [""], [""])
+            run_stage(stage, [playeraction])      
             print("==============================================")
 
             
@@ -222,18 +220,10 @@ def main():
                 print(f"[{player.name}]=>", "你还没有进入任何场景")
                 continue
             ###
-            talk_all_event = f"""{player.name} 说 {content}"""
-            print(f"[{player.name}]=>", talk_all_event)
-
-            ##
-            stage = player.stage
-            stage.chat_history.append(HumanMessage(content=talk_all_event))
-            print(f"[{stage.name}]:", stage.call_agent("更新你的状态"))
-            for actor in stage.actors:
-                if (actor == player):
-                    continue
-                actor.chat_history.append(HumanMessage(content=talk_all_event))
-                print(f"[{actor.name}]:", actor.call_agent("更新你的状态"))
+            enter_event = f"""{player.name} 说 {content}"""
+            print(f"[{player.name}]=>", enter_event)
+            new_stage_memory(stage, enter_event)
+            run_stage(old_hunters_cabin, [])         
             print("==============================================")
 
         elif "/attacknpc" in usr_input:
@@ -245,20 +235,26 @@ def main():
             if player.stage == None:
                 print(f"[{player.name}]=>", "你还没有进入任何场景")
                 continue
-
-            target = player.stage.get_actor(target_name)
+                
+            stage = player.stage
+            target = stage.get_actor(target_name)
             if target == None:  
                 print(f"[{player.name}]=>", f"没有找到这个人{target_name}")
                 continue
 
-            print(f"[{player.name}] xxx:", target_name)
-            players_action = Action(player, [FIGHT], [target.name], [""], [""])
-            state_run(old_hunters_cabin, [players_action])          
+            playaction = Action(player, [FIGHT], [target.name], [""], [""])
+            run_stage(stage, [playaction])          
             print("==============================================")
 
 
 ######################################################################
-def state_run(current_stage: Stage, players_action: list[Action]) -> None:
+def new_stage_memory(stage: Stage, content: str):
+    stage.chat_history.append(HumanMessage(content=content))
+    for actor in stage.actors:
+        if isinstance(actor, NPC):
+            actor.chat_history.append(HumanMessage(content=content))
+######################################################################
+def run_stage(current_stage: Stage, players_action: list[Action]) -> None:
         
     actions_collector: list[Action] = []
 

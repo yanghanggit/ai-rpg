@@ -1,7 +1,6 @@
 ###
 ### 测试和LLM无关的工具型代码用
 ###
-
 from langchain_core.messages import HumanMessage, AIMessage, BaseMessage, SystemMessage
 from langserve import RemoteRunnable
 import sys

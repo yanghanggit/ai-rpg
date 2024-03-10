@@ -1,7 +1,6 @@
-from actor import Actor
 from stage import Stage
 from world import World
-from typing import Any, List
+from typing import List
 from npc import NPC
 from player import Player
 

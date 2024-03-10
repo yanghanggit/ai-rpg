@@ -1,6 +1,5 @@
 from actor import Actor
 from rpg import RPG
-
 from typing import Optional
 #
 class Player(Actor, RPG):

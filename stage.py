@@ -1,7 +1,6 @@
 from actor import Actor
 from npc import NPC
 from rpg import RPG
-
 from typing import Optional
 from player import Player
 

@@ -6,7 +6,7 @@ from action import FIGHT
 from typing import Optional
 
 ###                 
-def actor_attack(actor: Stage | NPC | Player, target_name: str) -> tuple[Optional[Stage], Optional[Action]]:       
+def create_actor_attack_action(actor: Stage | NPC | Player, target_name: str) -> tuple[Optional[Stage], Optional[Action]]:       
     if actor is None:
         return None, None
     

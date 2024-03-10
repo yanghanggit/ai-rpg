@@ -1,11 +1,8 @@
 ###
 ### 测试与LLM无关的代码，和一些尝试
 ###
-import sys
 import json
-import os
 from builder import WorldBuilder, StageBuilder, NPCBuilder
-
 
 def main():
 

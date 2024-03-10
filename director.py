@@ -1,7 +1,4 @@
-from actor import Actor
 from stage import Stage
-from npc import NPC
-from player import Player
 
 def normal_director_prompt(stage: Stage, movie_script: str) -> str:
     return f"""
@@ -16,19 +13,9 @@ def normal_director_prompt(stage: Stage, movie_script: str) -> str:
     - 输出在保证语意完整基础上字符尽量少。
     """
 
-def actor_feedback_confirm_prompt(stage: Stage, movie: str) -> str:
-    actors = stage.actors
-    actor_names = [actor.name for actor in actors]
-    all_names = ' '.join(actor_names)
-    return f"""
-    # 你目睹或者参与了这一切，并更新了你的记忆
-    - {movie}
-    # 你能确认
-    - {all_names} 都还存在。
-    """
-
-
+#未来可以尝试加Agent做战斗推演的润色用
 class Director:
+    
     def __init__(self, name: str, stage: Stage):
         self.name: str = name
         self.stage: Stage = stage
@@ -36,9 +23,6 @@ class Director:
     def direct(self, script: str)-> str:
         prompt = normal_director_prompt(self.stage, script)
         return self.stage.call_agent(prompt)
-            
-    def actor_feedback_prompt(self, movie: str)-> str:
-        return actor_feedback_confirm_prompt(self.stage, movie)
 
 
 

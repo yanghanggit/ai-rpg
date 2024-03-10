@@ -4,7 +4,7 @@ from console import Console
 from run_stage import run_stage
 from actor_enter_stage import actor_enter_stage
 from actor_broadcast import actor_broadcast
-from actor_attack import actor_attack
+from create_actor_attack_action import create_actor_attack_action
 import json
 from builder import WorldBuilder
 from actor import Actor
@@ -157,7 +157,7 @@ def main() -> None:
             if  console.current_actor is None:
                 continue
             if isinstance(console.current_actor, Player) or isinstance(console.current_actor, NPC) or isinstance(console.current_actor, Stage):
-                stage_and_action: tuple[Optional[Stage], Optional[Action]] = actor_attack(console.current_actor, target_name)
+                stage_and_action: tuple[Optional[Stage], Optional[Action]] = create_actor_attack_action(console.current_actor, target_name)
                 stage = stage_and_action[0]
                 action = stage_and_action[1]
                 if stage is not None and action is not None:

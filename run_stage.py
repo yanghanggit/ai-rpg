@@ -1,4 +1,3 @@
-from actor import Actor
 from stage import Stage
 from action import Action
 from make_plan import MakePlan
@@ -7,6 +6,18 @@ from stage_events import StageEvents
 from stage import Stage
 from npc import NPC
 from player import Player
+
+
+def actor_feedback_confirm_prompt(stage: Stage, movie: str) -> str:
+    actors = stage.actors
+    actor_names = [actor.name for actor in actors]
+    all_names = ' '.join(actor_names)
+    return f"""
+    # 你目睹或者参与了这一切，并更新了你的记忆
+    - {movie}
+    # 你能确认
+    - {all_names} 都还存在。
+    """
        
      
 #### 待重构！！！！！！！！！！！！！！            
@@ -94,7 +105,7 @@ def run_stage(current_stage: Stage, command_plans: list[Action]) -> None:
     #new_stage_state = current_stage.call_agent(movie)
     #print(f"[{current_stage.name}]>", new_stage_state)
     for actor in current_stage.actors:
-        feedback = director.actor_feedback_prompt(movie)
+        feedback = actor_feedback_confirm_prompt(current_stage, movie)
         print(f"[{actor.name}]>" + actor.call_agent(feedback))   
 
     print("++++++++++++++++++++++++++++++++++最后处理离开或者战斗中逃跑的人，去往某个场景（必须知道场景名字），此时他们已经脱离本场景++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")

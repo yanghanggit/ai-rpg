@@ -6,7 +6,6 @@ from world import World
 from stage import Stage
 from npc import NPC
 
-
 #
 class NPCBuilder:
     def __init__(self):
@@ -22,7 +21,6 @@ class NPCBuilder:
         npc = NPC(self.data['name'])
         npc.url = self.data['url']
         return npc
-
 #
 class StageBuilder:
     def __init__(self):
@@ -39,7 +37,6 @@ class StageBuilder:
     def __str__(self) -> str:
         return f"StageBuilder: {self.data}"
     
-
     def create(self)-> Stage:
         stage = Stage(self.data['name'])
         stage.url = self.data['url']
@@ -64,11 +61,9 @@ class WorldBuilder:
             stage_builder.build(stage)
             self.stage_builders.append(stage_builder)
 
-
     def __str__(self) -> str:
         return f"WorldBuilder: {self.data}"
     
-
     def create(self)-> World:
         self.world = World(self.data['name'])
         self.world.url = self.data['url']    

@@ -1,7 +1,4 @@
 import sys
-from world import World
-from stage import Stage
-from stage import NPC
 from player import Player
 from console import Console
 from run_stage import run_stage
@@ -9,7 +6,7 @@ from actor_enter_stage import actor_enter_stage
 from actor_broadcast import actor_broadcast
 from actor_attack import actor_attack
 import json
-from builder import WorldBuilder, StageBuilder, NPCBuilder
+from builder import WorldBuilder
 
 ######################################################################
 ##################################################################################################################################################################################################################
@@ -42,32 +39,21 @@ def main():
     console = Console("系统管理员")
     player = None
 
-
     try:
         with open(path, "r") as file:
             json_data = json.load(file)
-            print(json_data)
-            #
+          
             world_builder = WorldBuilder()
             world_builder.build(json_data)
-            
-            # print(world_builder)
-            # for stage_builder in world_builder.stage_builders:
-            #     print(stage_builder)
-            #     for npc_builder in stage_builder.npc_builders:
-            #         print(npc_builder)
-
-            ##
+    
             world = world_builder.create_world()
             world.connect_all()
             world.load_all(load_prompt)
-
 
     except Exception as e:
         print(e)
         return
 
-   
     print("//////////////////////////////////////////////////////////////////////////////////////")
     print("//////////////////////////////////////////////////////////////////////////////////////")
     print("//////////////////////////////////////////////////////////////////////////////////////")
@@ -164,7 +150,6 @@ def main():
             run_stage(stage, [action])          
             print("==============================================")
 
-       
 
 if __name__ == "__main__":
     main()

@@ -102,6 +102,7 @@ def stage_plan(stage: Stage) -> Action:
              if json_data['targets'][0] != stage.name:
                 print(f"stage_plan {stage.name} error: STAY action must have stage name as target = ", json_data['targets'][0])
                 json_data['targets'][0] = stage.name
+                print(f"强行设置成{stage.name}")
                 #return error
         #
         return Action(stage, json_data['action'], json_data['targets'], json_data['say'], json_data['tags'])
@@ -141,6 +142,7 @@ def npc_plan(npc: NPC) -> Action:
              if json_data['targets'][0] != npc.stage.name:
                 print(f"npc_plan {npc.name} error: STAY action must have stage name as target = ", json_data['targets'][0])
                 json_data['targets'][0] = npc.stage.name
+                print(f"强行设置成{npc.stage.name}")
                 #return error
         #
         return Action(npc, json_data['action'], json_data['targets'], json_data['say'], json_data['tags'])

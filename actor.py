@@ -9,12 +9,6 @@ class Actor:
         self.agent = None
         self.chat_history = None
 
-        #测试的
-        self.max_hp = 100
-        self.hp = 100
-        self.damage = 10  #General description and profile of the character
-        self.profile_character = ""
-
     def connect(self, url: str)-> None:
         self.agent = RemoteRunnable(url)
         self.chat_history = []
@@ -27,7 +21,7 @@ class Actor:
             print(f"call_agent: {self.name} have no chat history.")
             return ""
         response = self.agent.invoke({"input": prompt, "chat_history": self.chat_history})
-        print(f"{self.name} call_agent => ", response)
+        #print(f"{self.name} call_agent => ", response)
         self.chat_history.extend([HumanMessage(content=prompt), AIMessage(content=response['output'])])
         return response['output']
     

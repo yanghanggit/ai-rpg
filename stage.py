@@ -1,11 +1,13 @@
 from actor import Actor
 from npc import NPC
+from rpg import RPG
 
 #
-class Stage(Actor):
+class Stage(Actor, RPG):
 
     def __init__(self, name:str):
-        super().__init__(name)
+        Actor.__init__(self, name)  # 显式地初始化Actor基类
+        RPG.__init__(self)          # 显式地初始化RPG基类
         self.actors: list[Actor] = []
         self.world = None
         self.stage = self

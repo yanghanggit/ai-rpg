@@ -53,7 +53,6 @@ class World(Actor):
 
     #
     def load_all(self, prompt: str):
-
         # 世界载入
         log = self.call_agent(prompt)
         print(f"[{self.name}] load=>", log)

@@ -28,6 +28,7 @@ def actor_attack(actor: Actor, target_name:str) -> Action:
         print(f"[{actor.name}]=>", f"你不能攻击自己")
         return
     
+    actor.add_memory(f"你准备对{attack_target.name}发动攻击")
     return curent_stage, Action(actor, [FIGHT], [attack_target.name], [""], [""])
 
 

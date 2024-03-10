@@ -3,8 +3,6 @@ from world import World
 from stage import Stage
 from stage import NPC
 from player import Player
-from action import Action, FIGHT, STAY, LEAVE
-from make_plan import stage_plan, npc_plan, MakePlan
 from console import Console
 from run_stage import run_stage
 from actor_enter_stage import actor_enter_stage

@@ -1,11 +1,7 @@
 ###
 ###
 ###
-
 from actor import Actor
-from world import World
-from stage import Stage 
-from player import Player
 
 class Console:
 

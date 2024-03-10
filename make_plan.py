@@ -3,7 +3,6 @@ import json
 from stage import Stage
 from stage import NPC
 from action import Action, FIGHT,STAY, LEAVE, ALL_ACTIONS, check_data_format, check_actions_is_valid, check_fight_or_stay_target_is_valid, check_leave2stage_is_valid
-from player import Player
 from actor import Actor
 
 ##################################################################################################################

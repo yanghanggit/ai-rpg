@@ -1,9 +1,5 @@
 from actor import Actor
 from stage import Stage
-from action import Action
-from make_plan import MakePlan
-from director import Director
-from stage_events import StageEvents
 from world import World
        
 def actor_enter_stage(actor:Actor, stage:Stage)->bool:        

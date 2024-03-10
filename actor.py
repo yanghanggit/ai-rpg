@@ -26,6 +26,7 @@ class Actor:
             print(f"call_agent: {self.name} have no chat history.")
             return ""
         response = self.agent.invoke({"input": prompt, "chat_history": self.chat_history})
+        print(f"{self.name} call_agent => ", response)
         self.chat_history.extend([HumanMessage(content=prompt), AIMessage(content=response['output'])])
         return response['output']
     

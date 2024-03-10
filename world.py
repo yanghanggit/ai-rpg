@@ -39,3 +39,26 @@ class World(Actor):
             for actor in stage.actors:
                 actors.append(actor)
         return actors
+    
+    #
+    def connect_all(self):
+        self.connect(self.url)
+        for stage in self.stages:
+            stage.connect(self.url)
+            for actor in stage.actors:
+                actor.connect(self.url)
+
+    #
+    def load_all(self, prompt: str):
+        log = self.call_agent(prompt)
+        print(f"[{self.name}]:", log)
+        print("==============================================")
+        for stage in self.stages:
+            stage.stage_load(prompt)
+        print("==============================================")
+        for stage in self.stages:
+            for actor in stage.actors:
+                actor.actor_load(prompt)
+        print("==============================================")
+        print("==============================================")
+        print("==============================================")

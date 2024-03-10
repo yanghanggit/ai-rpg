@@ -26,13 +26,18 @@ load_prompt = f"""
 # 你需要读取存档
 ## 步骤:
 - 第1步，读取{init_archivist}.
-- 第2步：理解这些信息(尤其是和你有关的信息).
+- 第2步：理解其中所有的信息
+- 第3步：理解其中关于你的信息（如何提到了你，那就是你）
 - 第3步：根据信息更新你的最新状态与逻辑.
 ## 输出规则：
 - 保留关键信息(时间，地点，人物，事件)，不要推断，增加与润色。输出在保证语意完整基础上字符尽量少。
 """
 #
 def main():
+
+    
+
+
 
     #load!!!!
     world_watcher = World("世界观察者")
@@ -145,8 +150,14 @@ def main():
         elif "/who" in usr_input:
             command = "/who"
             actor_name = console.parse_command(usr_input, command)
-            console.current_actor = world_watcher.get_actor(actor_name)
-            print(f"你控制了玩家：", console.current_actor.name)
+
+            if console.current_actor != None:
+                print(f"/who 你当前控制=>", console.current_actor.name)
+
+            change_actor = world_watcher.get_actor(actor_name)
+            if change_actor != None and change_actor != console.current_actor:
+                console.current_actor = change_actor
+                print(f"/who 你现在控制了=>", console.current_actor.name)
             
         elif "/runstage" in usr_input:
             command = "/runstage"

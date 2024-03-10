@@ -5,6 +5,7 @@ from langserve import RemoteRunnable
 class Actor:
     def __init__(self, name: str):
         self.name = name   
+        self.url = ""
         self.agent = None
         self.chat_history = None
 

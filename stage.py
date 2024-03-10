@@ -7,6 +7,7 @@ class Stage(Actor):
         super().__init__(name)
         self.actors = []
         self.world = None
+        self.stage = self
 
     def add_actor(self, actor: Actor)-> None:
         self.actors.append(actor)

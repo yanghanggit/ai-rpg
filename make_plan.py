@@ -1,9 +1,10 @@
 # We will use this file to make a plan for each actor in the game.
 import json
 from stage import Stage
-from stage import NPC
+from npc import NPC
 from action import Action, FIGHT,STAY, LEAVE, ALL_ACTIONS, check_data_format, check_actions_is_valid, check_fight_or_stay_target_is_valid, check_leave2stage_is_valid
 from actor import Actor
+from player import Player
 
 ##################################################################################################################
 def stage_plan_prompt(stage: Stage)-> str:
@@ -41,6 +42,8 @@ def stage_plan_prompt(stage: Stage)-> str:
 
 def npc_plan_prompt(npc: NPC)-> str:
     stage = npc.stage
+    if stage is None:
+        return ""
     all_actors_names = [actor.name for actor in stage.actors]
     str = ", ".join([stage.name] + all_actors_names)
     return f"""
@@ -114,6 +117,9 @@ def stage_plan(stage: Stage) -> Action:
 ##################################################################################################################
 ##################################################################################################################
 def npc_plan(npc: NPC) -> Action:
+    if npc.stage is None or npc.stage.world is None:
+        return Action(npc, [STAY], ["error"], ["error"], ["error"])
+
     make_prompt = npc_plan_prompt(npc)
     #print(f"npc_plan_prompt:", make_prompt)
 
@@ -155,19 +161,20 @@ def npc_plan(npc: NPC) -> Action:
 
 #
 class MakePlan:
+
     def __init__(self, stage: Stage):
         self.stage = stage     
-        self.actions = []
+        self.actions: list[Action] = []
 
     #
-    def make_stage_paln(self, ex_actions: list[Action] = []):
+    def make_stage_paln(self, ex_actions: list[Action] = []) -> None:
         if self.stage in [action.planer for action in ex_actions]:
             return
         sp = stage_plan(self.stage)
         self.actions.append(sp)
 
     #
-    def make_all_npcs_plan(self, ex_actions: list[Action] = []):
+    def make_all_npcs_plan(self, ex_actions: list[Action] = []) -> None:
         npcs = self.stage.get_all_npcs()
         for npc in npcs:
             if npc in [action.planer for action in ex_actions]:
@@ -176,7 +183,7 @@ class MakePlan:
             self.actions.append(action)
 
     #
-    def add_command(self, ex_actions: list[Action]):
+    def add_command(self, ex_actions: list[Action]) -> None:
         self.actions.extend(ex_actions)
 
     #
@@ -196,11 +203,8 @@ class MakePlan:
         return [action.planer for action in self.actions if action.action[0] == LEAVE]
 
     #
-    def get_actor_leave_target_stage(self, actor) -> str:
-        if isinstance(actor, Stage) :
-            print(f"{actor.name} 是场景，不能离开！")
-            return ""
-        if actor.stage != None:
+    def get_actor_leave_target_stage(self, actor: NPC | Player) -> str:
+        if actor.stage is not None:
             print(f"{actor.name} 还有在{actor.stage.name}里，是个错误，说明上面没有移除成功")
             return ""    
         for action in self.actions:

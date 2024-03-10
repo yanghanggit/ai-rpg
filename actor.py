@@ -33,7 +33,7 @@ class Actor:
         if self.chat_history == None:
             print(f"add_memory: {self.name} have no chat history.")
             return False
-        self.chat_history.append(AIMessage(content=content))
+        self.chat_history.append(HumanMessage(content=content))
         return True
 
 

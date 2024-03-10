@@ -22,8 +22,6 @@ def actor_feedback_confirm(actor, new_stage_state, movie):
     return f"""
     # 你目睹或者参与了这一切，并更新了你的记忆
     - {movie}
-    # 目前你所在场景场景的最新状态，与所有角色的状态
-    - {new_stage_state}
     # 你能确认
     - {all_names} 都还存在。
     """

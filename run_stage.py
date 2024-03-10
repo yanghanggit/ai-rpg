@@ -79,10 +79,10 @@ def run_stage(current_stage: Stage, command_plans: list[Action]) -> None:
     print(f"++++++++++++++++++++++++++++++++++++ {current_stage.name} 场景开始演绎剧本, 结束后所有npc需要确认 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
     movie = director.direct(all_stage_events)
     print(f"movie >>", movie)
-    new_stage_state = current_stage.call_agent(movie)
-    print(f"[{current_stage.name}]>", new_stage_state)
+    #new_stage_state = current_stage.call_agent(movie)
+    #print(f"[{current_stage.name}]>", new_stage_state)
     for actor in current_stage.actors:
-        feedback = director.actor_feedback(new_stage_state, movie)
+        feedback = director.actor_feedback("", movie)
         print(f"[{actor.name}]>" + actor.call_agent(feedback))   
 
     print("++++++++++++++++++++++++++++++++++最后处理离开或者战斗中逃跑的人，去往某个场景（必须知道场景名字），此时他们已经脱离本场景++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")

@@ -22,7 +22,10 @@ def actor_enter_stage(actor:Actor, stage:Stage)->bool:
     if actor.stage != None:
         old_stage = actor.stage
         old_stage.remove_actor(actor)
+        #
         print(f"[{actor.name}]=>", f"你离开了{old_stage.name}")
+        actor.add_memory(f"你离开了{old_stage.name}")
+        #
         leave_event = f"""你知道了发生了如下事件：{actor.name}离开了{old_stage.name}"""
         old_stage.add_memory(leave_event)
         print("==============================================")

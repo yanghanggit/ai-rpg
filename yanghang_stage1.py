@@ -139,6 +139,7 @@ def main() -> None:
                 continue
             if isinstance(console.current_actor, Player) or isinstance(console.current_actor, NPC):
                 actor_enter_stage(console.current_actor, stage)
+                run_stage(stage, []) 
             print("==============================================")
             
         elif "/say2everyone" in usr_input: 
@@ -146,7 +147,6 @@ def main() -> None:
             content = console.parse_command(usr_input, command)
             if console.current_actor is None:
                 continue
-
             if isinstance(console.current_actor, Player) or isinstance(console.current_actor, NPC) or isinstance(console.current_actor, Stage):
                 actor_broadcast(console.current_actor, content)
             print("==============================================")

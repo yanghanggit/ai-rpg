@@ -23,7 +23,7 @@ pip install langchain_core langserve fastapi langchain_openai sse_starlette fais
 
 
 ## 系统消息
-- /call @all 你是谁？跟我说说你
+- /call @all 你是谁？跟我说说你，并且告诉我你在做什么？
 - /call @小狗'断剑' 你喜欢吃什么？
 - /call @老猎人隐居的小木屋 周围有什么，你有什么布置？你自己最讨厌什么?
 - /call @卡斯帕·艾伦德 最令你悔恨的是什么？

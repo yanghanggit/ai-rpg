@@ -8,6 +8,8 @@ from run_stage import run_stage
 from actor_enter_stage import actor_enter_stage
 from actor_broadcast import actor_broadcast
 from actor_attack import actor_attack
+import json
+from builder import WorldBuilder, StageBuilder, NPCBuilder
 
 ######################################################################
 ##################################################################################################################################################################################################################
@@ -35,63 +37,37 @@ load_prompt = f"""
 #
 def main():
 
-    
-
-
-
-    #load!!!!
-    world_watcher = World("世界观察者")
-    world_watcher.connect("http://localhost:8004/world/")
-    log = world_watcher.call_agent(load_prompt)
-    print(f"[{world_watcher.name}]:", log)
-    print("==============================================")
-
-    #
-    old_hunter = NPC("卡斯帕·艾伦德")
-    old_hunter.connect("http://localhost:8021/actor/npc/old_hunter/")
-    log = old_hunter.call_agent(load_prompt)
-    print(f"[{old_hunter.name}]:", log)
-    print("==============================================")
-
-     #
-    old_hunters_cabin = Stage("老猎人隐居的小木屋")
-    old_hunters_cabin.connect("http://localhost:8022/stage/old_hunters_cabin/")
-    log = old_hunters_cabin.call_agent(load_prompt)
-    print(f"[{old_hunters_cabin.name}]:", log)
-    print("==============================================")
-
-    #
-    old_hunters_dog = NPC("小狗'断剑'")
-    old_hunters_dog.connect("http://localhost:8023/actor/npc/old_hunters_dog/")
-    log = old_hunters_dog.call_agent(load_prompt)
-    print(f"[{old_hunters_dog.name}]:", log)
-    print("==============================================")
-
-    #
-    melodious_forest_valley = Stage("悠扬林谷")
-    melodious_forest_valley.connect("http://localhost:8024/stage/melodious_forest_valley/")
-    log = melodious_forest_valley.call_agent(load_prompt)
-    print(f"[{melodious_forest_valley.name}]:", log)
-    print("==============================================")
-
-
-    rat = NPC("坏运气先生")
-    rat.connect("http://localhost:8025/actor/npc/rat/")
-    log = rat.call_agent(load_prompt)
-    print(f"[{rat.name}]:", log)
-    print("==============================================")
-
-    #
-    world_watcher.add_stage(old_hunters_cabin)
-    world_watcher.add_stage(melodious_forest_valley)
-    #
-    old_hunters_cabin.add_actor(old_hunter)
-    old_hunters_cabin.add_actor(old_hunters_dog)
-    old_hunters_cabin.add_actor(rat)
-
-    #
+    world = None
+    path = "./yanghang_stage1.json"
     console = Console("系统管理员")
     player = None
+
+
+    try:
+        with open(path, "r") as file:
+            json_data = json.load(file)
+            print(json_data)
+            #
+            world_builder = WorldBuilder()
+            world_builder.build(json_data)
+            
+            # print(world_builder)
+            # for stage_builder in world_builder.stage_builders:
+            #     print(stage_builder)
+            #     for npc_builder in stage_builder.npc_builders:
+            #         print(npc_builder)
+
+            ##
+            world = world_builder.create_world()
+            world.connect_all()
+            world.load_all(load_prompt)
+
+
+    except Exception as e:
+        print(e)
+        return
+
+   
     print("//////////////////////////////////////////////////////////////////////////////////////")
     print("//////////////////////////////////////////////////////////////////////////////////////")
     print("//////////////////////////////////////////////////////////////////////////////////////")
@@ -114,9 +90,9 @@ def main():
 
             speak2actors = []
             if target == "all":
-                speak2actors = world_watcher.all_actors()
+                speak2actors = world.all_actors()
             else:
-                find_actor = world_watcher.get_actor(target)
+                find_actor = world.get_actor(target)
                 if find_actor != None:
                     speak2actors.append(find_actor)
 
@@ -138,8 +114,8 @@ def main():
                 player.max_hp = 1000000
                 player.hp = 1000000
                 player.damage = 100000
-                notify_world = world_watcher.call_agent(f"""你知道了如下事件：{player.name}加入了这个世界, 他是{player.profile_character}""")
-                print(f"[{world_watcher.name}]:", notify_world)
+                notify_world = world.call_agent(f"""你知道了如下事件：{player.name}加入了这个世界, 他是{player.profile_character}""")
+                print(f"[{world.name}]:", notify_world)
             else:
                 print(f"[{player.name}]=>", f"你已经在这个世界了")
 
@@ -154,7 +130,7 @@ def main():
             if console.current_actor != None:
                 print(f"/who 你当前控制=>", console.current_actor.name)
 
-            change_actor = world_watcher.get_actor(actor_name)
+            change_actor = world.get_actor(actor_name)
             if change_actor != None and change_actor != console.current_actor:
                 console.current_actor = change_actor
                 print(f"/who 你现在控制了=>", console.current_actor.name)
@@ -162,14 +138,14 @@ def main():
         elif "/runstage" in usr_input:
             command = "/runstage"
             stage_name = console.parse_command(usr_input, command)    
-            stage = world_watcher.get_stage(stage_name) 
+            stage = world.get_stage(stage_name) 
             run_stage(stage, [])    
             print("==============================================")
 
         elif "/enterstage" in usr_input:
             command = "/enterstage"
             stage_name = console.parse_command(usr_input, command)
-            stage = world_watcher.get_stage(stage_name)
+            stage = world.get_stage(stage_name)
             actor_enter_stage(console.current_actor, stage)
             print("==============================================")
             

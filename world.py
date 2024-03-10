@@ -1,8 +1,11 @@
+###
 from actor import Actor
 
 class World(Actor):
+
     def __init__(self, name: str):
         super().__init__(name)
+        self.world = self
         self.stages = []
 
     #
@@ -30,7 +33,7 @@ class World(Actor):
                     return actor
         return None
     
-
+    #
     def all_actors(self):
         actors = []
         actors.append(self)
@@ -44,21 +47,27 @@ class World(Actor):
     def connect_all(self):
         self.connect(self.url)
         for stage in self.stages:
-            stage.connect(self.url)
+            stage.connect(stage.url)
             for actor in stage.actors:
-                actor.connect(self.url)
+                actor.connect(actor.url)
 
     #
     def load_all(self, prompt: str):
+
+        # 世界载入
         log = self.call_agent(prompt)
-        print(f"[{self.name}]:", log)
+        print(f"[{self.name}] load=>", log)
         print("==============================================")
+
         for stage in self.stages:
-            stage.stage_load(prompt)
-        print("==============================================")
-        for stage in self.stages:
+            #场景载入
+            log = stage.call_agent(prompt)
+            print(f"[{stage.name}] load=>", log)
+            print("==============================================")
+
             for actor in stage.actors:
-                actor.actor_load(prompt)
-        print("==============================================")
-        print("==============================================")
-        print("==============================================")
+                log = actor.call_agent(prompt)
+                print(f"[{actor.name}] load=>", log)
+                print("==============================================")
+
+ 

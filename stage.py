@@ -3,9 +3,10 @@ from npc import NPC
 
 #
 class Stage(Actor):
+
     def __init__(self, name:str):
         super().__init__(name)
-        self.actors = []
+        self.actors: list[Actor] = []
         self.world = None
         self.stage = self
 

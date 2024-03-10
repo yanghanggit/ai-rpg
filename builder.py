@@ -74,7 +74,7 @@ class WorldBuilder:
         self.world.url = self.data['url']    
         return self.world
 
-    def all(self)->World:
+    def create_world(self)->World:
         self.world = self.create()
         for stage_builder in self.stage_builders:
             stage = stage_builder.create()

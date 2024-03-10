@@ -25,7 +25,7 @@ def main():
                     print(npc_builder)
 
             print("==============================================")
-            world = world_builder.all()
+            world = world_builder.create_world()
             print("?")
 
 

@@ -156,50 +156,40 @@ def npc_plan(npc: NPC) -> Action:
         return error
     return error
 ##################################################################################################################
-
-#
 class MakePlan:
 
     def __init__(self, stage: Stage):
         self.stage = stage     
         self.actions: list[Action] = []
-
     #
-    def make_stage_paln(self, ex_actions: list[Action] = []) -> None:
-        if self.stage in [action.planer for action in ex_actions]:
+    def make_stage_paln(self, command_actions: list[Action] = []) -> None:
+        if self.stage in [action.planer for action in command_actions]:
             return
         sp = stage_plan(self.stage)
         self.actions.append(sp)
-
     #
-    def make_all_npcs_plan(self, ex_actions: list[Action] = []) -> None:
+    def make_all_npcs_plan(self, command_actions: list[Action] = []) -> None:
         npcs = self.stage.get_all_npcs()
         for npc in npcs:
-            if npc in [action.planer for action in ex_actions]:
+            if npc in [action.planer for action in command_actions]:
                 continue
             action = npc_plan(npc)
             self.actions.append(action)
-
     #
-    def add_command(self, ex_actions: list[Action]) -> None:
-        self.actions.extend(ex_actions)
-
+    def add_command(self, command_actions: list[Action]) -> None:
+        self.actions.extend(command_actions)
     #
     def get_fight_actions(self) -> list[Action]:
         return [action for action in self.actions if action.action[0] == FIGHT]
-
     #
     def get_leave_actions(self) -> list[Action]:
         return [action for action in self.actions if action.action[0] == LEAVE]
-    
     #
     def get_stay_actions(self) -> list[Action]:
         return [action for action in self.actions if action.action[0] == STAY]
-    
     #
     def who_wana_leave(self) -> list[NPC|Player]:
         return [action.planer for action in self.actions if action.action[0] == LEAVE and not isinstance(action.planer, Stage)]
-
     #
     def get_actor_leave_target_stage(self, actor: NPC | Player) -> str:
         if actor.stage is not None:

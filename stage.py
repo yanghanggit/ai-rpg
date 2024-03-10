@@ -40,7 +40,7 @@ class Stage(Actor, RPG):
                 npcs.append(actor)
         return npcs
     
-    def add_memory(self, content: str)->bool:
+    def add_memory(self, content: str) -> bool:
         super().add_memory(content)
         for actor in self.actors:
             actor.add_memory(content)

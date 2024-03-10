@@ -10,4 +10,4 @@ class NPC(Actor, RPG):
         RPG.__init__(self)          # 显式地初始化RPG基类
         
         from stage import Stage
-        self.stage: Optional[Stage] = None       
+        self.stage: Optional[Stage] = None 

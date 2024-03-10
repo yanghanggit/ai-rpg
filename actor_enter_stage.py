@@ -22,8 +22,18 @@ def actor_enter_stage(actor: NPC | Player, stage: Stage) -> None:
         leave_event = f"""你知道了发生了如下事件：{actor.name}离开了{old_stage.name}"""
         old_stage.add_memory(leave_event)
         print("==============================================")
-            
+
+    #       
     stage.add_actor(actor)
     print(f"[{actor.name}]=>", f"你进入了{stage.name}")
-    enter_event = f"""你知道了发生了如下事件：{actor.name}进入了{stage.name}, 他是{actor.profile_character}"""
-    stage.add_memory(enter_event)
+
+    #
+    if actor.profile_character  == "":
+        enter_event = f"""你知道了发生了如下事件：{actor.name}进入了{stage.name}，如果{actor.name}是你自己，就确认就好"""
+        stage.add_memory(enter_event)
+    else:
+        enter_event = f"""你知道了发生了如下事件：{actor.name}进入了{stage.name}, 他是{actor.profile_character}"""
+        stage.add_memory(enter_event)
+
+
+   

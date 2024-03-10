@@ -99,10 +99,7 @@ def main() -> None:
             print(f"/createplayer:", profile_character)
             if player is None:
                 player = Player("yang_hang")
-                
-                if profile_character != None or profile_character != "":
-                    player.profile_character = profile_character
-                
+                player.profile_character = profile_character
                 player.max_hp = 1000000
                 player.hp = 1000000
                 player.damage = 100000

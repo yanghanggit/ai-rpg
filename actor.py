@@ -1,34 +1,32 @@
+###
+from typing import List, Union, cast
 from langchain_core.messages import HumanMessage, AIMessage
-from langserve import RemoteRunnable
-
+from langserve import RemoteRunnable  # type: ignore
 #
 class Actor:
     def __init__(self, name: str):
-        self.name = name   
-        self.url = ""
-        self.agent = None
-        self.chat_history = None
+        self.name: str = name   
+        self.url: str = ""
+        self.agent: RemoteRunnable = None
+        self.chat_history: List[Union[HumanMessage, AIMessage]] = []
 
     def connect(self, url: str)-> None:
         self.agent = RemoteRunnable(url)
         self.chat_history = []
 
     def call_agent(self, prompt: str) -> str:
-        if self.agent == None:
+        if self.agent is None:
             print(f"call_agent: {self.name} have no agent.")
             return ""
-        if self.chat_history == None:
+        if self.chat_history is None:
             print(f"call_agent: {self.name} have no chat history.")
             return ""
         response = self.agent.invoke({"input": prompt, "chat_history": self.chat_history})
-        #print(f"{self.name} call_agent => ", response)
-        self.chat_history.extend([HumanMessage(content=prompt), AIMessage(content=response['output'])])
-        return response['output']
-    
+        response_output = cast(str, response.get('output', ''))
+        self.chat_history.extend([HumanMessage(content=prompt), AIMessage(content=response_output)])
+        return response_output
+
     def add_memory(self, content: str) -> bool:
-        if self.chat_history == None:
-            print(f"add_memory: {self.name} have no chat history.")
-            return False
         self.chat_history.append(HumanMessage(content=content))
         return True
 

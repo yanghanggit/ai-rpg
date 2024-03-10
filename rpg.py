@@ -4,7 +4,7 @@
 
 #
 class RPG:
-    def __init__(self):
+    def __init__(self)->None:
         #测试的
         self.max_hp = 100
         self.hp = 100

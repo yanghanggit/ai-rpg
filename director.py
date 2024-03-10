@@ -1,7 +1,9 @@
 from actor import Actor
 from stage import Stage
+from npc import NPC
+from player import Player
 
-def normal_director(stage, movie_script):
+def normal_director_prompt(stage: Stage, movie_script: str) -> str:
     return f"""
     # 你按着我的给你的脚本来演绎过程，并适当润色让过程更加生动。
     ## 剧本如下
@@ -14,8 +16,7 @@ def normal_director(stage, movie_script):
     - 输出在保证语意完整基础上字符尽量少。
     """
 
-def actor_feedback_confirm(actor, new_stage_state, movie):
-    stage = actor.stage
+def actor_feedback_confirm_prompt(stage: Stage, movie: str) -> str:
     actors = stage.actors
     actor_names = [actor.name for actor in actors]
     all_names = ' '.join(actor_names)
@@ -27,20 +28,17 @@ def actor_feedback_confirm(actor, new_stage_state, movie):
     """
 
 
-class Director(Actor):
+class Director:
     def __init__(self, name: str, stage: Stage):
-        super().__init__(name)
-        self.stage = stage
-        print("Director", self.name, "inited")
+        self.name: str = name
+        self.stage: Stage = stage
 
     def direct(self, script: str)-> str:
-        prompt = normal_director(self.stage, script)
-        res = self.stage.call_agent(prompt)
-        return res
+        prompt = normal_director_prompt(self.stage, script)
+        return self.stage.call_agent(prompt)
             
-    def actor_feedback(self, new_stage_state: str, movie: str)-> str:
-        res = actor_feedback_confirm(self, new_stage_state, movie)
-        return res
+    def actor_feedback_prompt(self, movie: str)-> str:
+        return actor_feedback_confirm_prompt(self.stage, movie)
 
 
 

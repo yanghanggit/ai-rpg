@@ -4,7 +4,6 @@ from typing import List
 from stage import Stage  # 假设你有一个名为Stage的类
 from typing import Optional
 
-
 class World(Actor):
 
     def __init__(self, name:str):

@@ -39,6 +39,7 @@ pip install langchain_core langserve fastapi langchain_openai sse_starlette fais
 
 ## 控制actor
 - /enterstage 老猎人隐居的小木屋
+- /enterstage 悠扬林谷
 - /say2everyone 你们好呀！！
 
 - /who 卡斯帕·艾伦德

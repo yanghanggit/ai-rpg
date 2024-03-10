@@ -1,7 +1,7 @@
 from actor import Actor
 from npc import NPC
 from rpg import RPG
-from world import World
+
 from typing import Optional
 from player import Player
 
@@ -11,8 +11,12 @@ class Stage(Actor, RPG):
     def __init__(self, name:str):
         Actor.__init__(self, name)  # 显式地初始化Actor基类
         RPG.__init__(self)          # 显式地初始化RPG基类
+        
         self.actors: list[ NPC | Player ] = []
+
+        from world import World
         self.world: Optional[World] = None
+        
         self.stage: Stage = self
 
     def add_actor(self, actor: NPC|Player)-> None:

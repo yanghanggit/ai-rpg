@@ -198,8 +198,8 @@ class MakePlan:
         return [action for action in self.actions if action.action[0] == STAY]
     
     #
-    def who_wana_leave(self) -> list[Actor]:
-        return [action.planer for action in self.actions if action.action[0] == LEAVE]
+    def who_wana_leave(self) -> list[NPC|Player]:
+        return [action.planer for action in self.actions if action.action[0] == LEAVE and not isinstance(action.planer, Stage)]
 
     #
     def get_actor_leave_target_stage(self, actor: NPC | Player) -> str:

@@ -2,6 +2,8 @@ from actor import Actor
 from stage import Stage
 from world import World
 from typing import Any, List
+from npc import NPC
+from player import Player
 
 
 FIGHT: str = '/fight'
@@ -43,14 +45,13 @@ def check_leave2stage_is_valid(world: World, stage_name: str) -> bool:
     return True
 
 class Action:
-
     ###
-    def __init__(self, planer: Actor, action: list[str], targets: list[str], say: list[str], tags: list[str]):
+    def __init__(self, planer: Stage | NPC | Player, action: list[str], targets: list[str], say: list[str], tags: list[str]):
         self.action = action
         self.targets = targets
         self.say = say
         self.tags = tags
-        self.planer: Actor = planer
+        self.planer: Stage | NPC | Player = planer
 
     ###
     def __str__(self) -> str:

@@ -4,6 +4,9 @@ from action import Action
 from make_plan import MakePlan
 from director import Director
 from stage_events import StageEvents
+from stage import Stage
+from npc import NPC
+from player import Player
        
      
 #### 待重构！！！！！！！！！！！！！！            
@@ -24,7 +27,7 @@ def run_stage(current_stage: Stage, command_plans: list[Action]) -> None:
     ###谁想离开？
     who_wana_leave = make_plan.who_wana_leave()
     ###谁死了
-    who_is_dead: list[Actor] = []
+    who_is_dead: list[Stage | NPC | Player] = []
     ###创建一个导演
     director = Director("测试的导演", current_stage)
 
@@ -43,7 +46,7 @@ def run_stage(current_stage: Stage, command_plans: list[Action]) -> None:
             stage_events.add_event(f"{action.planer.name}对{action.targets}发动了攻击")
             for target_name in action.targets:
                 target = current_stage.get_actor(target_name)
-                if target == None:
+                if target is None:
                     continue
                 #被攻击不能走
                 if target in who_wana_leave:
@@ -61,12 +64,21 @@ def run_stage(current_stage: Stage, command_plans: list[Action]) -> None:
 
     print("+++++++++++++++++++++++++++++++++++++++ 处理战斗结果，死了的 +++++++++++++++++++++++++++++++++++++++++++++++++++++++")
     for actor in who_is_dead:
+        if actor.stage is None:
+            continue
+        if isinstance(actor, Stage):
+            print("场景不能死!!!!!!!!!!!!!!!!")
+            continue
         actor.stage.remove_actor(actor)
         stage_events.add_event(f"{actor.name}死了，离开了这个世界")
+            
 
     ##处理离开的
     print("++++++++++++++++++++++++++++++++++++++++ 脱离本场景的 ++++++++++++++++++++++++++++++++++++++++++++++++++++++")
     for actor in who_wana_leave:
+        if actor.stage is None:
+            print(f"这是个错误目前没有场景是不可能的！")
+            continue
         actor.stage.remove_actor(actor)
         stage_events.add_event(f"{actor.name}离开了{current_stage.name}")
         
@@ -88,15 +100,15 @@ def run_stage(current_stage: Stage, command_plans: list[Action]) -> None:
     print("++++++++++++++++++++++++++++++++++最后处理离开或者战斗中逃跑的人，去往某个场景（必须知道场景名字），此时他们已经脱离本场景++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
     for actor in who_wana_leave:
         stage_name = make_plan.get_actor_leave_target_stage(actor)
-        if stage_name == "":
-            print(f"{actor.name} 想要离开，但是不知道去哪里")
-            continue
-
         print(f"{actor.name} 想要去{stage_name}")   
+        if current_stage.world is None:
+            print("没有世界？这是个错误！！！")
+            continue
         target_stage = current_stage.world.get_stage(stage_name)
-        if target_stage == None:
+        if target_stage is None:
             print(f"{actor.name} 想要去{action.targets[0]}，但是数据上看没有这个地方！")
             continue
+
         ###移动
         target_stage.add_actor(actor)
         print(f"{actor.name} 到达了 {target_stage.name}")

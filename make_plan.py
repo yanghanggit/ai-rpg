@@ -10,7 +10,6 @@ from player import Player
 def stage_plan_prompt(stage: Stage)-> str:
     all_actors_names = [actor.name for actor in stage.actors]
     str = ", ".join([stage.name] + all_actors_names)
-
     return f"""
     # 你需要做出计划(你将要做的事)，并以JSON输出结果.（注意！以下规则与限制仅限本次对话生成，结束后回复原有对话规则）
 

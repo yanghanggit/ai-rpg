@@ -147,7 +147,8 @@ def main():
             tp = actor_attack(console.current_actor, target_name)
             stage = tp[0]
             action = tp[1]
-            run_stage(stage, [action])          
+            if stage != None and action != None:
+                run_stage(stage, [action])          
             print("==============================================")
 
 

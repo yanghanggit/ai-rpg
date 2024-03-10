@@ -7,6 +7,12 @@ from actor_broadcast import actor_broadcast
 from actor_attack import actor_attack
 import json
 from builder import WorldBuilder
+from actor import Actor
+from world import World
+from typing import Optional
+from npc import NPC
+from stage import Stage
+from action import Action
 
 ######################################################################
 ##################################################################################################################################################################################################################
@@ -32,12 +38,12 @@ load_prompt = f"""
 - 保留关键信息(时间，地点，人物，事件)，不要推断，增加与润色。输出在保证语意完整基础上字符尽量少。
 """
 #
-def main():
+def main() -> None:
 
-    world = None
-    path = "./yanghang_stage1.json"
-    console = Console("系统管理员")
-    player = None
+    world: Optional[World]  = None
+    path: str = "./yanghang_stage1.json"
+    console: Console = Console("系统管理员")
+    player: Optional[Player]  = None
 
     try:
         with open(path, "r") as file:
@@ -67,19 +73,19 @@ def main():
             command = "/call"
             input_content = console.parse_command(usr_input, command)
             print(f"</call>:", input_content)
-            tp = console.parse_at_symbol(input_content)
-            target = tp[0]
-            content = tp[1]
+            parse_res: tuple[str, str] = console.parse_at_symbol(input_content)
+            target = parse_res[0]
+            content = parse_res[1]
             if target == None:
                 print("/call 没有指定@目标") 
                 continue
 
-            speak2actors = []
+            speak2actors: list[Actor] = []
             if target == "all":
                 speak2actors = world.all_actors()
             else:
                 find_actor = world.get_actor(target)
-                if find_actor != None:
+                if find_actor is not None:
                     speak2actors.append(find_actor)
 
             for actor in speak2actors:
@@ -91,7 +97,7 @@ def main():
             command = "/createplayer"
             profile_character = console.parse_command(usr_input, command)
             print(f"/createplayer:", profile_character)
-            if player == None:
+            if player is None:
                 player = Player("yang_hang")
                 
                 if profile_character != None or profile_character != "":
@@ -112,43 +118,53 @@ def main():
         elif "/who" in usr_input:
             command = "/who"
             actor_name = console.parse_command(usr_input, command)
-
-            if console.current_actor != None:
-                print(f"/who 你当前控制=>", console.current_actor.name)
-
             change_actor = world.get_actor(actor_name)
-            if change_actor != None and change_actor != console.current_actor:
-                console.current_actor = change_actor
-                print(f"/who 你现在控制了=>", console.current_actor.name)
-            
+            if change_actor is None or change_actor == console.current_actor:
+                continue
+            if console.current_actor is not None:
+                print(f"/who 你 当前 控制=>", console.current_actor.name)
+            console.current_actor = change_actor
+            print(f"/who 你 现在 控制了=>", console.current_actor.name)
+                   
         elif "/runstage" in usr_input:
             command = "/runstage"
             stage_name = console.parse_command(usr_input, command)    
             stage = world.get_stage(stage_name) 
-            run_stage(stage, [])    
+            if stage is not None:
+                run_stage(stage, [])    
             print("==============================================")
 
         elif "/enterstage" in usr_input:
             command = "/enterstage"
             stage_name = console.parse_command(usr_input, command)
             stage = world.get_stage(stage_name)
-            actor_enter_stage(console.current_actor, stage)
+            if stage is None or console.current_actor is None:
+                continue
+            if isinstance(console.current_actor, Player) or isinstance(console.current_actor, NPC):
+                actor_enter_stage(console.current_actor, stage)
             print("==============================================")
             
         elif "/say2everyone" in usr_input: 
             command = "/say2everyone"
             content = console.parse_command(usr_input, command)
-            actor_broadcast(console.current_actor, content)
+            if console.current_actor is None:
+                continue
+
+            if isinstance(console.current_actor, Player) or isinstance(console.current_actor, NPC) or isinstance(console.current_actor, Stage):
+                actor_broadcast(console.current_actor, content)
             print("==============================================")
 
         elif "/attack" in usr_input:
             command = "/attack"
             target_name = console.parse_command(usr_input, command)    
-            tp = actor_attack(console.current_actor, target_name)
-            stage = tp[0]
-            action = tp[1]
-            if stage != None and action != None:
-                run_stage(stage, [action])          
+            if  console.current_actor is None:
+                continue
+            if isinstance(console.current_actor, Player) or isinstance(console.current_actor, NPC) or isinstance(console.current_actor, Stage):
+                stage_and_action: tuple[Optional[Stage], Optional[Action]] = actor_attack(console.current_actor, target_name)
+                stage = stage_and_action[0]
+                action = stage_and_action[1]
+                if stage is not None and action is not None:
+                    run_stage(stage, [action])          
             print("==============================================")
 
 

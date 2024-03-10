@@ -1,6 +1,8 @@
 from actor import Actor
 from stage import Stage
 from world import World
+from typing import Any, List
+
 
 FIGHT: str = '/fight'
 STAY: str = '/stay'
@@ -8,7 +10,7 @@ LEAVE: str = '/leave'
 ALL_ACTIONS: list[str] = [FIGHT, STAY, LEAVE]
 
 #
-def check_data_format(action: any, targets: any, say: any, tags: any) -> bool:
+def check_data_format(action: List[str], targets: List[str], say: List[str], tags: List[str]) -> bool:
     if not isinstance(action, list) or not all(isinstance(a, str) for a in action):
         return False
     if not isinstance(targets, list) or not all(isinstance(t, str) for t in targets):
@@ -51,7 +53,7 @@ class Action:
         self.planer: Actor = planer
 
     ###
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.planer.name} =>: action: {self.action}, targets: {self.targets}, say: {self.say}, tags: {self.tags}"
 
         

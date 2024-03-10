@@ -35,6 +35,7 @@ pip install langchain_core langserve fastapi langchain_openai sse_starlette fais
 
 ## 要求场景做一次推进，最后必须加空格，因为解析没怎么写好
 - /runstage 老猎人隐居的小木屋 
+- /runstage 悠扬林谷 
 
 ## 控制actor
 - /enterstage 老猎人隐居的小木屋

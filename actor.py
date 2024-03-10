@@ -11,7 +11,8 @@ class Actor:
         #测试的
         self.max_hp = 100
         self.hp = 100
-        self.damage = 10
+        self.damage = 10  #General description and profile of the character
+        self.profile_character = ""
 
     def connect(self, url: str)-> None:
         self.agent = RemoteRunnable(url)

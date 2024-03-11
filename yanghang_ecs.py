@@ -4,10 +4,10 @@ from entitas import Entity, Matcher, Context, Processors, ExecuteProcessor, Reac
 # import time
 import json
 import sys
-from run_stage import run_stage
-from actor_enter_stage import actor_enter_stage
-from actor_broadcast import actor_broadcast
-from create_actor_attack_action import create_actor_attack_action
+# from run_stage import run_stage
+# from actor_enter_stage import actor_enter_stage
+# from actor_broadcast import actor_broadcast
+# from create_actor_attack_action import create_actor_attack_action
 import json
 from typing import List, Union, cast
 from langchain_core.messages import HumanMessage, AIMessage
@@ -83,9 +83,64 @@ Movable = namedtuple('Movable', '')
 testjson = f"""
 {{
 "FightActionComponent": ["target1", "target2", "target3"],
-"LeaveActionComponent": ["leave1", "leave2", "leave3"]
+"LeaveActionComponent": ["leave1", "leave2", "leave3"],
+"SpeakActionComponent": ["content1", "content2", "content3"]
 }}
 """
+#
+def check_data_format(json_data: dict) -> bool:
+    for key, value in json_data.items():
+        if not isinstance(key, str):
+            return False
+        if not isinstance(value, list) or not all(isinstance(v, str) for v in value):
+            return False
+    return True
+
+class Action:
+
+    def __init__(self) -> None:
+        self.name: str = ""  
+        self.actionname: str = ""
+        self.values: list[str] = []
+
+    def init(self, name: str, actionname: str, values: list[str]) -> None:
+        self.name: str = name  
+        self.actionname: str = actionname
+        self.values: list[str] = values
+
+    def __str__(self) -> str:
+        return f"Action({self.name}, {self.actionname}, {self.values})"
+
+
+class Plan:
+
+    def __init__(self, name: str, jsonstr: str, json: json) -> None:
+        self.name: str = name  
+        self.jsonstr: str = jsonstr
+        self.json: json = json
+        self.actions: List[Action] = []
+
+        self.build(self.json)
+
+    def build(self, json: json) -> None:
+        for key, value in json.items():
+            action = Action()
+            action.init(self.name, key, value)
+            self.actions.append(action)
+
+    def __str__(self) -> str:
+        return f"Plan({self.name}, {self.jsonstr}, {self.json})"
+
+
+# plan = Plan("悠扬林谷", testjson, json.loads(testjson))
+# print(plan)
+# for action in plan.actions:
+#     print(action)
+    
+
+# print("!!!!!!")
+       
+
 
 ###############################################################################################################################################
 ###############################################################################################################################################
@@ -96,12 +151,10 @@ testjson = f"""
 WorldComponent = namedtuple('WorldComponent', 'name agent')
 StageComponent = namedtuple('StageComponent', 'name agent')
 NPCComponent = namedtuple('NPCComponent', 'name agent')
-
-
-FightActionComponent = namedtuple('FightActionComponent', 'context')
-SpeakActionComponent = namedtuple('SpeakActionComponent', 'context')
-LeaveActionComponent = namedtuple('LeaveActionComponent', 'context')
-
+###############################################################################################################################################
+FightActionComponent = namedtuple('FightActionComponent', 'action')
+SpeakActionComponent = namedtuple('SpeakActionComponent', 'action')
+LeaveActionComponent = namedtuple('LeaveActionComponent', 'action')
 ###############################################################################################################################################
 class ActorAgent:
 
@@ -248,27 +301,40 @@ class StagePlanSystem(ExecuteProcessor):
         ## 补充约束
         - 不要将JSON输出生这样的格式：```...```
         """
-        
+
         ##
         comp = entity.get(StageComponent)
+
+        #
         if comp.name == '悠扬林谷':
             return
 
         ##
         try:
             response = comp.agent.request(prompt)
+            print("{comp.name} plan response:", response)
+
             json_data = json.loads(response)
+            if not check_data_format(json_data):
+                print(f"stage_plan error = {comp.name} json format error")
+                return
+
+            ##        
             print(json_data)
 
-            print("==============================================")
+            ###
+            makeplan = Plan(comp.name, response, json_data)
+            for action in makeplan.actions:
+                print(action)
 
-            # if not entity.has(FightActionComponent):
-            #     fightactions = json_data["FightActionComponent"]
-            #     entity.add(FightActionComponent, fightactions)
-
-            # if not entity.has(LeaveActionComponent):
-            #     leaveactions = json_data["LeaveActionComponent"]
-            #     entity.add(LeaveActionComponent, leaveactions)                
+                if action.actionname == "FightActionComponent":
+                    pass
+                elif action.actionname == "SpeakActionComponent":
+                    if len(action.values) == 0:
+                        continue
+                    if not entity.has(SpeakActionComponent):
+                        entity.add(SpeakActionComponent, action)
+                        print("????")
 
         except Exception as e:
             print(f"stage_plan error = {e}")
@@ -314,6 +380,37 @@ class FightActionSystem(ReactiveProcessor):
         for entity in entities:
             print(entity.get(FightActionComponent).context)
             entity.remove(FightActionComponent)         
+
+###############################################################################################################################################
+###############################################################################################################################################
+###############################################################################################################################################
+###############################################################################################################################################    
+class SpeakActionSystem(ReactiveProcessor):
+
+    def __init__(self, context) -> None:
+        super().__init__(context)
+        self.context = context
+
+    def get_trigger(self):
+        return {Matcher(SpeakActionComponent): GroupEvent.ADDED}
+
+    def filter(self, entity):
+        return entity.has(SpeakActionComponent)
+
+    def react(self, entities):
+        print("<<<<<<<<<<<<<  SpeakActionSystem >>>>>>>>>>>>>>>>>")
+
+        # 开始处理
+        for entity in entities:
+            comp = entity.get(SpeakActionComponent)
+            action: Action = comp.action
+            for value in action.values:
+                print(f"[{action.name}] /speak:", value)
+            print("++++++++++++++++++++++++++++++++++++++++++++++++")
+
+        # 必须移除！！！
+        for entity in entities:
+            entity.remove(SpeakActionComponent)      
 
 ###############################################################################################################################################
 ###############################################################################################################################################
@@ -385,6 +482,7 @@ def main() -> None:
     #processors.add(NPCPlanSystem(context))
 
     #行动逻辑
+    processors.add(SpeakActionSystem(context))
     processors.add(FightActionSystem(context))
     processors.add(LeaveActionSystem(context))
 

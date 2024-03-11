@@ -86,8 +86,8 @@ NPCComponent = namedtuple('NPCComponent', 'name agent current_stage')
 ###############################################################################################################################################
 
 ###############################################################################################################################################
-FightActionComponent = namedtuple('FightActionComponent', 'action')
 SpeakActionComponent = namedtuple('SpeakActionComponent', 'action')
+FightActionComponent = namedtuple('FightActionComponent', 'action')
 LeaveActionComponent = namedtuple('LeaveActionComponent', 'action')
 ###############################################################################################################################################
 class ActorAgent:
@@ -135,7 +135,6 @@ def create_entities(context: Context, worldbuilder: WorldBuilder) -> None:
             #
             if stage_builder.data['name'] == '悠扬林谷':
                 return
-
 
             #创建stage       
             stage_agent = ActorAgent()
@@ -237,6 +236,7 @@ class StagePlanSystem(ExecuteProcessor):
         ### 关于“行动类型”的逻辑
         - 如果你希望对目标产生敌对行为，比如攻击。则action的值为"FightActionComponent"，value为你本行动针对的目标
         - 如果你你有想要说的话或者心里描写。则action的值为"SpeakActionComponent"，value为你想说的话或者心里描写
+        - action值不允许出现FightActionComponent，SpeakActionComponent之外的值
     
         ## 补充约束
         - 不要将JSON输出生这样的格式：```...```
@@ -247,7 +247,7 @@ class StagePlanSystem(ExecuteProcessor):
         ##
         try:
             response = comp.agent.request(prompt)
-            print("{comp.name} plan response:", response)
+            #print("{comp.name} plan response:", response)
 
             json_data = json.loads(response)
             if not check_data_format(json_data):
@@ -255,20 +255,26 @@ class StagePlanSystem(ExecuteProcessor):
                 return
 
             ##        
-            print(json_data)
+            #print(json_data)
 
             ###
             makeplan = Plan(comp.name, response, json_data)
             for action in makeplan.actions:
                 print(action)
 
+                if len(action.values) == 0:
+                    continue
+
                 if action.actionname == "FightActionComponent":
-                    pass
+                    if not entity.has(FightActionComponent):
+                        entity.add(FightActionComponent, action)
+
                 elif action.actionname == "SpeakActionComponent":
-                    if len(action.values) == 0:
-                        continue
                     if not entity.has(SpeakActionComponent):
                         entity.add(SpeakActionComponent, action)
+                else:
+                    print(f"error {action.actionname}, action value")
+                    continue
 
         except Exception as e:
             print(f"stage_plan error = {e}")
@@ -306,8 +312,10 @@ class NPCPlanSystem(ExecuteProcessor):
         
         ### 关于“行动类型”的逻辑
         - 如果你希望对目标产生敌对行为，比如攻击。则action的值为"FightActionComponent"，value为你本行动针对的目标
-        - 如果你你有想要说的话或者心里描写。则action的值为"SpeakActionComponent"，value为你想说的话或者心里描写
-    
+        - 如果你有想要说的话或者心里描写。则action的值为"SpeakActionComponent"，value为你想说的话或者心里描写
+        - 如果表示想离开当前场景，有可能是逃跑。action的值为"LeaveActionComponent"，value是你想要去往的场景名字（你必须能明确叫出场景的名字），或者你曾经知道的场景名字
+        - action值不允许出现FightActionComponent，SpeakActionComponent，LeaveActionComponent之外的值
+
         ## 补充约束
         - 不要将JSON输出生这样的格式：```...```
         """
@@ -317,7 +325,7 @@ class NPCPlanSystem(ExecuteProcessor):
         ##
         try:
             response = comp.agent.request(prompt)
-            print("{comp.name} plan response:", response)
+            #print("{comp.name} plan response:", response)
 
             json_data = json.loads(response)
             if not check_data_format(json_data):
@@ -325,20 +333,30 @@ class NPCPlanSystem(ExecuteProcessor):
                 return
 
             ##        
-            print(json_data)
+            #print(json_data)
 
             ###
             makeplan = Plan(comp.name, response, json_data)
             for action in makeplan.actions:
                 print(action)
 
+                if len(action.values) == 0:
+                    print(f"stage_plan error = {comp.name} action values error is empty")
+                    continue
+
                 if action.actionname == "FightActionComponent":
-                    pass
+                    if not entity.has(FightActionComponent):
+                        entity.add(FightActionComponent, action)
+                
+                elif action.actionname == "LeaveActionComponent":
+                    if not entity.has(LeaveActionComponent):
+                        entity.add(LeaveActionComponent, action)
+
                 elif action.actionname == "SpeakActionComponent":
-                    if len(action.values) == 0:
-                        continue
                     if not entity.has(SpeakActionComponent):
                         entity.add(SpeakActionComponent, action)
+                else:
+                    print(f"error {action.actionname}, action value")
 
         except Exception as e:
             print(f"stage_plan error = {e}")
@@ -363,7 +381,7 @@ class FightActionSystem(ReactiveProcessor):
     def react(self, entities):
         print("<<<<<<<<<<<<<  FightActionSystem >>>>>>>>>>>>>>>>>")
         for entity in entities:
-            print(entity.get(FightActionComponent).context)
+            #print(entity.get(FightActionComponent).context)
             entity.remove(FightActionComponent)         
 
 ###############################################################################################################################################
@@ -430,7 +448,7 @@ class LeaveActionSystem(ReactiveProcessor):
     def react(self, entities):
         print("<<<<<<<<<<<<<  LeaveActionSystem >>>>>>>>>>>>>>>>>")
         for entity in entities:
-            print(entity.get(LeaveActionComponent).context)
+            #print(entity.get(LeaveActionComponent).context)
             entity.remove(LeaveActionComponent)    
 ###############################################################################################################################################
 ###############################################################################################################################################
@@ -474,6 +492,8 @@ class DirectorSystem(ExecuteProcessor):
         """
         #
         response = comp.agent.request(director_prompt)
+        print("============================================================================")
+
         print(f"{comp.name}=>", response)
 
 
@@ -545,11 +565,11 @@ def main() -> None:
     #行动结束后导演
     processors.add(DirectorSystem(context))
     
+    ####
+    inited:bool = False
+    started:bool = False
+    who: str = ""
 
-
-
-    inited = False
-    started = False
     while True:
         usr_input = input("[user input]: ")
         if "/quit" in usr_input:
@@ -577,6 +597,22 @@ def main() -> None:
             debug_call(context, parse_res[0], parse_res[1])
             print("==============================================")
 
+        elif "/who" in usr_input:
+            if not started:
+                print("请先/run")
+                continue
+            command = "/who"
+            who = console.parse_command(usr_input, command)
+            print(f"/who 你现在控制了=>", who)
+
+        elif "/attack" in usr_input:
+            if not started:
+                print("请先/run")
+                continue
+            command = "/attack"
+            target_name = console.parse_command(usr_input, command)    
+            debug_attack(context, who, target_name)
+            print("==============================================")   
 
     processors.clear_reactive_processors()
     processors.tear_down()
@@ -602,6 +638,53 @@ def debug_call(context: Context, name: str, content: str) -> None:
         if comp.name == name:
             print(f"[{comp.name}] /call:", comp.agent.request(content))
             return
+        
+###############################################################################################################################################
+def debug_attack(context: Context, src: str, dest: str) -> None:
+    print(f"debug_attack: {src} attack {dest}")
+
+    # parse_res: tuple[str, str] = console.parse_at_symbol(input_content)
+    #         target = parse_res[0]
+    #         content = parse_res[1]
+
+    srcentity_info: tuple[Entity, NPCComponent] = debug_get_npc(context, src)
+    ensrc = srcentity_info[0]
+    compsrc = srcentity_info[1]
+    if ensrc is None:
+        print(f"debug_attack error: {src} not found")
+        return
+        
+    destentity_info = debug_get_npc(context, dest)
+    endest = destentity_info[0]
+    compdest = destentity_info[1]
+    if endest is None:
+        print(f"debug_attack error: {dest} not found")
+        return
+    
+    if not ensrc.has(FightActionComponent):
+        action = Action()
+        action.init(compsrc.name, "FightActionComponent", [str])
+        ensrc.add(FightActionComponent, action)
+        print(f"debug_attack: {src} add {action}")
+###############################################################################################################################################
+def debug_get_npc(context: Context, name: str) -> tuple[Entity, NPCComponent]:
+    # for entity in context.get_group(Matcher(WorldComponent)).entities:
+    #     comp = entity.get(WorldComponent)
+    #     if comp.name == name:
+    #         return entity, WorldComponent
+    
+    # for entity in context.get_group(Matcher(StageComponent)).entities:
+    #     comp = entity.get(StageComponent)
+    #     if comp.name == name:
+    #         return entity, StageComponent
+        
+    for entity in context.get_group(Matcher(NPCComponent)).entities:
+        comp = entity.get(NPCComponent)
+        if comp.name == name:
+            return entity, NPCComponent
+
+    return None, None
+
 ###############################################################################################################################################
 
     

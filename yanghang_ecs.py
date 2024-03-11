@@ -7,153 +7,131 @@
 
 
 from collections import namedtuple
-from entitas import Entity, Matcher, Context, Processors, ExecuteProcessor, ReactiveProcessor, GroupEvent, InitializeProcessor
+from entitas import Entity, Matcher, Context, Processors, ExecuteProcessor, ReactiveProcessor, GroupEvent, InitializeProcessor, Group
 import time
 
-
-print('hello python!')
-
-'''
-全局变量
-'''
-running = True
-frame_duration = 1 / 30  # 每帧所需时间（30帧每秒）
-
-'''
-全局函数
-'''
-def stop_running():
-    global running
-    running = False
-
-'''
-components
-'''
 Position = namedtuple('Position', 'x y')
 Health = namedtuple('Health', 'value')
 Movable = namedtuple('Movable', '')
 
-'''
-MyInitializeProcessor
-'''
+
+
+
+###############################################################################################################################################
+###############################################################################################################################################
+###############################################################################################################################################
+###############################################################################################################################################
+ActorComponent = namedtuple('ActorComponent', 'name')
+WorldComponent = namedtuple('WorldComponent', 'name')
+StageComponent = namedtuple('StageComponent', 'name')
+NPCComponent = namedtuple('NPCComponent', 'name')
+LoadEventComponent = namedtuple('LoadEventComponent', 'load_script')
+AutoPlanComponent = namedtuple('AutoPlanComponent', 'plan_prompt')
+###############################################################################################################################################
+###############################################################################################################################################
+###############################################################################################################################################
+###############################################################################################################################################
 class MyInitializeProcessor(InitializeProcessor):
 
-    def __init__(self, context):
-        self._context = context
+    def __init__(self, context: Context) -> None:
+        self.context: Context = context
       
-    def initialize(self):
-        print('MyInitializeProcessor')
-        """
-        添加一些entities
-        """
-        entity = context.create_entity()
-        entity.add(Position, 3, 7)
-        entity.add(Movable)
+    def initialize(self) -> None:
 
+        worlds: set = self.context.get_group(Matcher(WorldComponent)).entities
+        for world in worlds:
+            print(world.get(WorldComponent).name)
+            world.add(LoadEventComponent, "load world")
 
+        stages: Group = self.context.get_group(Matcher(StageComponent))
+        for stage in stages.entities:
+            print(stage.get(StageComponent).name)
+            stage.add(LoadEventComponent, "load stage")
+            stage.add(AutoPlanComponent, "auto plan")
 
-'''
-MyExecuteProcessor
-'''
-class MyExecuteProcessor(ExecuteProcessor):
+        npcs: Group = self.context.get_group(Matcher(NPCComponent))
+        for npc in npcs.entities:
+            print(npc.get(NPCComponent).name)
+            npc.add(LoadEventComponent, "load npc")
+            npc.add(AutoPlanComponent, "auto plan")
 
-    def __init__(self, context):
-        self._context = context
-        self._execute_count = 0
-       
-    def execute(self):
-        self._execute_count += 1
-        if self._execute_count == 10:
-            stop_running()
-
-'''
-MyReactiveProcessor
-'''
+###############################################################################################################################################
+###############################################################################################################################################
+###############################################################################################################################################
+############################################################################################################################################### 
 class MyReactiveProcessor(ReactiveProcessor):
 
-    def __init__(self, context):
+    def __init__(self, context) -> None:
         super().__init__(context)
-        self._context = context
+        self.context = context
 
     def get_trigger(self):
-        return {Matcher(Movable): GroupEvent.ADDED}
+        return {Matcher(LoadEventComponent): GroupEvent.ADDED}
 
     def filter(self, entity):
-        return entity.has(Movable)
+        return entity.has(LoadEventComponent)
 
     def react(self, entities):
+        print("<<<<<<<<<<<<<  LoadEventComponent >>>>>>>>>>>>>>>>>")
         for entity in entities:
-            print('x = ', entity.get(Position).x)
-            print('y = ', entity.get(Position).y)
-           
+            print(entity.get(LoadEventComponent).load_script)
 
-'''
-执行核心区间
-'''
-print("Game Start_____________________")
+###############################################################################################################################################
+###############################################################################################################################################
+###############################################################################################################################################
+###############################################################################################################################################       
+class MyExecuteProcessor(ExecuteProcessor):
+    
+    def __init__(self, context) -> None:
+        self.context = context
 
-"""
-全局上下文
-"""
-context = Context()
+    def execute(self) -> None:
+        print("<<<<<<<<<<<<<  MyExecuteProcessor >>>>>>>>>>>>>>>>>")
+        entities = self.context.get_group(Matcher(ActorComponent, AutoPlanComponent)).entities
+        for entity in entities:
+            print(entity.get(AutoPlanComponent).plan_prompt)
+            print(entity.get(ActorComponent).name)
 
-"""
-添加一些processors
-"""
-processors = Processors()
-processors.add(MyInitializeProcessor(context))
-processors.add(MyExecuteProcessor(context))
-processors.add(MyReactiveProcessor(context))
 
-#
-processors.activate_reactive_processors()
-#processors.initialize()
+###############################################################################################################################################
+###############################################################################################################################################
+###############################################################################################################################################
+###############################################################################################################################################           
+def main() -> None:
+    context = Context()
+    processors = Processors()
 
-"""
-核心循环
-"""
-inited = False
-while running:
+    entity = context.create_entity()
+    entity.add(Position, 3, 7)
+    entity.add(Movable)
 
-    start_time = time.time()  # 获取当前时间
+    world_entity = context.create_entity() 
+    world_entity.add(ActorComponent, "<world>")
+    world_entity.add(WorldComponent, "<world>")
 
-    if not inited:
-        inited = True
-        processors.initialize()
+    stage_entity = context.create_entity()
+    stage_entity.add(ActorComponent, "<stage>")
+    stage_entity.add(StageComponent, "<stage>")
+
+    npc_entity = context.create_entity()
+    npc_entity.add(ActorComponent, "<npc>")      
+    npc_entity.add(NPCComponent, "<npc>")  
+
         
+
+
+
+    print("beginning...")
+    processors.add(MyInitializeProcessor(context))
+    processors.add(MyReactiveProcessor(context))
+    processors.add(MyExecuteProcessor(context))
+    processors.activate_reactive_processors()
+    processors.initialize()
     processors.execute()
     processors.cleanup()
-
-    end_time = time.time()  # 获取循环结束的时间
-    elapsed = end_time - start_time  # 计算循环执行所花费的时间
-    if elapsed < frame_duration:
-        time.sleep(frame_duration - elapsed)  # 如果循环执行时间小于一帧所需时间，等待剩余时间
- 
-
-processors.clear_reactive_processors()
-processors.tear_down()
-
-print("Game Over_____________________")
-
-
-
-
-
-
-
-
-
-
-def main():
-    print("hello world!")
-    pass
-
+    processors.clear_reactive_processors()
+    processors.tear_down()
+    print("end.")
     
-
-
-            
-
-        
-
 if __name__ == "__main__":
     main()

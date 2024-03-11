@@ -1,13 +1,7 @@
 
 from collections import namedtuple
-from entitas import Entity, Matcher, Context, Processors, ExecuteProcessor, ReactiveProcessor, GroupEvent, InitializeProcessor, Group
-# import time
+from entitas import Entity, Matcher, Context, Processors, ExecuteProcessor, ReactiveProcessor, GroupEvent, InitializeProcessor, Group, EntityIndex, PrimaryEntityIndex
 import json
-import sys
-# from run_stage import run_stage
-# from actor_enter_stage import actor_enter_stage
-# from actor_broadcast import actor_broadcast
-# from create_actor_attack_action import create_actor_attack_action
 import json
 from typing import List, Union, cast
 from langchain_core.messages import HumanMessage, AIMessage
@@ -36,24 +30,6 @@ load_prompt = f"""
 - 保留关键信息(时间，地点，人物，事件)，不要推断，增加与润色。输出在保证语意完整基础上字符尽量少。
 """
 
-
-
-
-Position = namedtuple('Position', 'x y')
-Health = namedtuple('Health', 'value')
-Movable = namedtuple('Movable', '')
-###############################################################################################################################################
-###############################################################################################################################################
-###############################################################################################################################################
-###############################################################################################################################################
-
-# testjson = f"""
-# {{
-# "FightActionComponent": ["target1", "target2", "target3"],
-# "LeaveActionComponent": ["leave1", "leave2", "leave3"],
-# "SpeakActionComponent": ["content1", "content2", "content3"]
-# }}
-# """
 #
 def check_data_format(json_data: dict) -> bool:
     for key, value in json_data.items():
@@ -62,6 +38,7 @@ def check_data_format(json_data: dict) -> bool:
         if not isinstance(value, list) or not all(isinstance(v, str) for v in value):
             return False
     return True
+
 
 class Action:
 
@@ -98,26 +75,16 @@ class Plan:
     def __str__(self) -> str:
         return f"Plan({self.name}, {self.jsonstr}, {self.json})"
 
-
-# plan = Plan("悠扬林谷", testjson, json.loads(testjson))
-# print(plan)
-# for action in plan.actions:
-#     print(action)
-    
-
-# print("!!!!!!")
-       
-
-
 ###############################################################################################################################################
 ###############################################################################################################################################
 ###############################################################################################################################################
 ###############################################################################################################################################
-#ActorComponent = namedtuple('ActorComponent', 'name agent')
 ###############################################################################################################################################
 WorldComponent = namedtuple('WorldComponent', 'name agent')
-StageComponent = namedtuple('StageComponent', 'name agent')
-NPCComponent = namedtuple('NPCComponent', 'name agent')
+StageComponent = namedtuple('StageComponent', 'name agent events')
+NPCComponent = namedtuple('NPCComponent', 'name agent current_stage')
+###############################################################################################################################################
+
 ###############################################################################################################################################
 FightActionComponent = namedtuple('FightActionComponent', 'action')
 SpeakActionComponent = namedtuple('SpeakActionComponent', 'action')
@@ -164,18 +131,24 @@ def create_entities(context: Context, worldbuilder: WorldBuilder) -> None:
         world_entity.add(WorldComponent, worldagent.name, worldagent)
 
         for stage_builder in worldbuilder.stage_builders:     
+
+            #
+            if stage_builder.data['name'] == '悠扬林谷':
+                return
+
+
             #创建stage       
             stage_agent = ActorAgent()
             stage_agent.init(stage_builder.data['name'], stage_builder.data['url'])
             stage_entity = context.create_entity()
-            stage_entity.add(StageComponent, stage_agent.name, stage_agent)
+            stage_entity.add(StageComponent, stage_agent.name, stage_agent, [])
             
             for npc_builder in stage_builder.npc_builders:
                 #创建npc
                 npc_agent = ActorAgent()
                 npc_agent.init(npc_builder.data['name'], npc_builder.data['url'])
                 npc_entity = context.create_entity()
-                npc_entity.add(NPCComponent, npc_agent.name, npc_agent)
+                npc_entity.add(NPCComponent, npc_agent.name, npc_agent, stage_agent.name)
 
 ###############################################################################################################################################
 ###############################################################################################################################################
@@ -271,11 +244,6 @@ class StagePlanSystem(ExecuteProcessor):
 
         ##
         comp = entity.get(StageComponent)
-
-        #
-        if comp.name == '悠扬林谷':
-            return
-
         ##
         try:
             response = comp.agent.request(prompt)
@@ -301,14 +269,11 @@ class StagePlanSystem(ExecuteProcessor):
                         continue
                     if not entity.has(SpeakActionComponent):
                         entity.add(SpeakActionComponent, action)
-                        print("????")
 
         except Exception as e:
             print(f"stage_plan error = {e}")
             return
         return
-
-
 ###############################################################################################################################################
 ###############################################################################################################################################
 ###############################################################################################################################################
@@ -374,13 +339,11 @@ class NPCPlanSystem(ExecuteProcessor):
                         continue
                     if not entity.has(SpeakActionComponent):
                         entity.add(SpeakActionComponent, action)
-                        print("????")
 
         except Exception as e:
             print(f"stage_plan error = {e}")
             return
-        return
-            
+        return    
 ###############################################################################################################################################
 ###############################################################################################################################################
 ###############################################################################################################################################
@@ -428,12 +391,26 @@ class SpeakActionSystem(ReactiveProcessor):
             action: Action = comp.action
             for value in action.values:
                 print(f"[{action.name}] /speak:", value)
+                stagecomp = self.getstage(entity)
+                if stagecomp is not None:
+                    stagecomp.events.append(f"{action.name} 说（或者心里活动）: {value}")
+
             print("++++++++++++++++++++++++++++++++++++++++++++++++")
 
         # 必须移除！！！
         for entity in entities:
-            entity.remove(SpeakActionComponent)      
+            entity.remove(SpeakActionComponent)     
 
+    def getstage(self, entity: Entity) -> StageComponent:
+        if entity.has(StageComponent):
+            return entity.get(StageComponent)
+
+        elif entity.has(NPCComponent):
+            current_stage_name = entity.get(NPCComponent).current_stage
+            for stage in self.context.get_group(Matcher(StageComponent)).entities:
+                if stage.get(StageComponent).name == current_stage_name:
+                    return stage.get(StageComponent)
+        return None
 ###############################################################################################################################################
 ###############################################################################################################################################
 ###############################################################################################################################################
@@ -455,30 +432,43 @@ class LeaveActionSystem(ReactiveProcessor):
         for entity in entities:
             print(entity.get(LeaveActionComponent).context)
             entity.remove(LeaveActionComponent)    
-           
 ###############################################################################################################################################
 ###############################################################################################################################################
 ###############################################################################################################################################
-###############################################################################################################################################    
+###############################################################################################################################################               
+class DirectorSystem(ExecuteProcessor):
+    
+    def __init__(self, context) -> None:
+        self.context = context
 
+    def execute(self) -> None:
+        print("<<<<<<<<<<<<<  DirectorSystem >>>>>>>>>>>>>>>>>")
+        entities = self.context.get_group(Matcher(StageComponent)).entities
+        for entity in entities:
+            self.handle(entity)
 
-###############################################################################################################################################    
+            #清空
+            comp = entity.get(StageComponent)
+            comp.events.clear()
+            print("000000000000000")
 
-
+    def handle(self, entity: Entity) -> None:
+        comp = entity.get(StageComponent)
+        print(f"[{comp.name}] events:")
+        if len(comp.events) == 0:
+            return
+        for event in comp.events:
+            print("moive:", event)
+###############################################################################################################################################
+###############################################################################################################################################
+###############################################################################################################################################
+############################################################################################################################################### 
 def main() -> None:
+
     context = Context()
     processors = Processors()
     console = Console("测试后台管理")
-
-    # entity = context.create_entity()
-    # entity.add(Position, 3, 7)
-    # entity.add(Movable)
-
-
-    #world: Optional[World]  = None
     path: str = "./yanghang_stage1.json"
-    # console: Console = Console("系统管理员")
-    # player: Optional[Player]  = None
 
     try:
         with open(path, "r") as file:
@@ -493,7 +483,19 @@ def main() -> None:
 
     except Exception as e:
         print(e)
-        return
+        return    
+
+    # #StageComponent = namedtuple('StageComponent', 'name agent events')
+
+    # entities = context.get_group(Matcher(StageComponent)).entities
+    # for entity in entities:
+    #     comp = entity.get(StageComponent)
+    #     print(comp.name)
+    #     print(comp.agent)
+    #     print(comp.events)
+    #     comp.events.clear()
+    #     print("????????????")
+    
 
     print("<<<<<<<<<<<<<<<<<<<<< 构建系统 >>>>>>>>>>>>>>>>>>>>>>>>>>>")
     #初始化系统
@@ -507,6 +509,11 @@ def main() -> None:
     processors.add(SpeakActionSystem(context))
     processors.add(FightActionSystem(context))
     processors.add(LeaveActionSystem(context))
+
+    #行动结束后导演
+    processors.add(DirectorSystem(context))
+    
+
 
 
     inited = False

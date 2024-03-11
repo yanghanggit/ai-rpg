@@ -13,6 +13,7 @@ from typing import List, Union, cast
 from langchain_core.messages import HumanMessage, AIMessage
 from langserve import RemoteRunnable  # type: ignore
 from builder import WorldBuilder
+from console import Console
 
 
 #
@@ -189,7 +190,7 @@ class InitSystem(InitializeProcessor):
             comp = stage.get(StageComponent)
             print(comp.name)
             print(comp.agent)
-
+            # 场景载入
             comp.agent.connect()
             loadres = comp.agent.request(load_prompt)
             
@@ -202,7 +203,7 @@ class InitSystem(InitializeProcessor):
             comp = npc.get(NPCComponent)
             print(comp.name)
             print(comp.agent)
-
+            # NPC载入
             comp.agent.connect()
             loadres = comp.agent.request(load_prompt)
             
@@ -222,23 +223,53 @@ class StagePlanSystem(ExecuteProcessor):
         print("<<<<<<<<<<<<<  StagePlanSystem >>>>>>>>>>>>>>>>>")
         entities = self.context.get_group(Matcher(StageComponent)).entities
         for entity in entities:
-            #print(entity.get(StageComponent).name)
             self.handle(entity)
 
     def handle(self, entity: Entity) -> None:
-        print(entity.get(StageComponent).name)
-        response = self.call(entity)
+        # prompt =  f"""
+        # # 你需要做出计划(你将要做的事)，并以JSON输出结果.（注意！以下规则与限制仅限本次对话生成，结束后回复原有对话规则）
+
+        # ## 步骤
+        # 1. 确认自身状态。
+        # 2. 所有角色当前所处的状态和关系。
+        # 3. 思考你下一步的行动。
+        # 4. 基于上述信息，构建你的行动计划。
+
+        # ## 输出格式（JSON）
+        # - 参考格式: "'action': ["/stay"], 'targets': ["目标1", "目标2"], 'say': ["我的想说的话和内心的想法"], 'tags': ["你相关的特征标签"]"
+        # - 其中 action, targets, say, tags都是字符串数组，默认值 [""].
+        
+        # ### action：代表你行动的核心意图.
+        # - 只能选 ["/fight"], ["/stay"]
+        # - "/fight" 表示你希望对目标产生敌对行为，比如攻击。
+        # - "/stay"是除了"/fight"之外的所有其它行为，比如观察、交流等。
+
+        # ### targets：action的目标对象，可多选。
+        # - 如果action是/stay，则targets是当前场景的名字
+        # - 如果action是/fight，则targets是你想攻击的对象，在{str}中选择一个或多个
+
+        # ### say:你打算说的话或心里想的.
+        # ### tags：与你相关的特征标签.
+    
+        # ### 补充约束
+        # - 不要将JSON输出生这样的格式：```...```
+        # """
+
+
+        # print(entity.get(StageComponent).name)
+        # response = self.call(entity)
         try:
-            json_data = json.loads(response)
-            print(json_data)
+            print("??????")
+            # json_data = json.loads(response)
+            # print(json_data)
 
-            if not entity.has(FightActionComponent):
-                fightactions = json_data["FightActionComponent"]
-                entity.add(FightActionComponent, fightactions)
+            # if not entity.has(FightActionComponent):
+            #     fightactions = json_data["FightActionComponent"]
+            #     entity.add(FightActionComponent, fightactions)
 
-            if not entity.has(LeaveActionComponent):
-                leaveactions = json_data["LeaveActionComponent"]
-                entity.add(LeaveActionComponent, leaveactions)                
+            # if not entity.has(LeaveActionComponent):
+            #     leaveactions = json_data["LeaveActionComponent"]
+            #     entity.add(LeaveActionComponent, leaveactions)                
 
         except Exception as e:
             print(f"stage_plan error = {e}")
@@ -319,6 +350,7 @@ class LeaveActionSystem(ReactiveProcessor):
 def main() -> None:
     context = Context()
     processors = Processors()
+    console = Console("测试后台管理")
 
     # entity = context.create_entity()
     # entity.add(Position, 3, 7)
@@ -351,22 +383,21 @@ def main() -> None:
     
     #规划逻辑
     processors.add(StagePlanSystem(context))
-    processors.add(NPCPlanSystem(context))
+    #processors.add(NPCPlanSystem(context))
 
     #行动逻辑
     processors.add(FightActionSystem(context))
     processors.add(LeaveActionSystem(context))
 
-
- 
-    ###############################################################################################################################################
+    
     inited = False
+    started = False
     while True:
         usr_input = input("[user input]: ")
         if "/quit" in usr_input:
             break
 
-        if "/run" in usr_input:
+        elif "/run" in usr_input:
             #顺序不要动！！！！！！！！！
             if not inited:
                 inited = True
@@ -374,16 +405,46 @@ def main() -> None:
                 processors.initialize()
             processors.execute()
             processors.cleanup()
-###############################################################################################################################################
+            started = True
+            print("==============================================")
+        elif "/call" in usr_input:
+            if not started:
+                print("请先/run")
+                continue
+            command = "/call"
+            input_content = console.parse_command(usr_input, command)     
+            print(f"</call>:", input_content)
+            parse_res: tuple[str, str] = console.parse_at_symbol(input_content)
+            debug_call(context, parse_res[0], parse_res[1])
+            print("==============================================")
 
 
     processors.clear_reactive_processors()
     processors.tear_down()
-
-
-
-
     print("end.")
+
+###############################################################################################################################################
+def debug_call(context: Context, name: str, content: str) -> None:
+    #
+    for entity in context.get_group(Matcher(WorldComponent)).entities:
+        comp = entity.get(WorldComponent)
+        if comp.name == name:
+            print(f"[{comp.name}] /call:", comp.agent.request(content))
+            return
+    #   
+    for entity in context.get_group(Matcher(StageComponent)).entities:
+        comp = entity.get(StageComponent)
+        if comp.name == name:
+            print(f"[{comp.name}] /call:", comp.agent.request(content))
+            return
+    #
+    for entity in context.get_group(Matcher(NPCComponent)).entities:
+        comp = entity.get(NPCComponent)
+        if comp.name == name:
+            print(f"[{comp.name}] /call:", comp.agent.request(content))
+            return
+###############################################################################################################################################
+
     
 if __name__ == "__main__":
     main()

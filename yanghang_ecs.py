@@ -51,15 +51,11 @@ stage_plan_prompt = f"""
 
 """
 
-# testaction = f""""
-# FightActionComponent": ["target1", "target2", "target3"],"LeaveActionComponent": ["place1", "place2", "place3"],"StayActionComponent": ["place1", "place2", "place2"]
-# """
 
 testjson = f"""
 {{
 "FightActionComponent": ["target1", "target2", "target3"],
-"LeaveActionComponent": ["leave1", "leave2", "leave3"],
-"StayActionComponent": ["place1", "place2", "place2"]
+"LeaveActionComponent": ["leave1", "leave2", "leave3"]
 }}
 """
 
@@ -76,13 +72,13 @@ StageComponent = namedtuple('StageComponent', 'name')
 NPCComponent = namedtuple('NPCComponent', 'name')
 
 
-LoadEventComponent = namedtuple('LoadEventComponent', 'load_script')
+
+#LoadEventComponent = namedtuple('LoadEventComponent', 'load_script')
 
 
 
 FightActionComponent = namedtuple('FightActionComponent', 'context')
 LeaveActionComponent = namedtuple('LeaveActionComponent', 'context')
-StayActionComponent = namedtuple('StayActionComponent', 'context')
 ###############################################################################################################################################
 ###############################################################################################################################################
 ###############################################################################################################################################
@@ -99,39 +95,39 @@ class InitSystem(InitializeProcessor):
         worlds: set = self.context.get_group(Matcher(WorldComponent)).entities
         for world in worlds:
             print(world.get(WorldComponent).name)
-            world.add(LoadEventComponent, "load world")
+            #world.add(LoadEventComponent, "load world")
 
         stages: Group = self.context.get_group(Matcher(StageComponent))
         for stage in stages.entities:
             print(stage.get(StageComponent).name)
-            stage.add(LoadEventComponent, "load stage")
+            #stage.add(LoadEventComponent, "load stage")
 
         npcs: Group = self.context.get_group(Matcher(NPCComponent))
         for npc in npcs.entities:
             print(npc.get(NPCComponent).name)
-            npc.add(LoadEventComponent, "load npc")
+            #npc.add(LoadEventComponent, "load npc")
 
 ###############################################################################################################################################
 ###############################################################################################################################################
 ###############################################################################################################################################
 ############################################################################################################################################### 
-class LoadSystem(ReactiveProcessor):
+# class LoadSystem(ReactiveProcessor):
 
-    def __init__(self, context) -> None:
-        super().__init__(context)
-        self.context = context
+#     def __init__(self, context) -> None:
+#         super().__init__(context)
+#         self.context = context
 
-    def get_trigger(self):
-        return {Matcher(LoadEventComponent): GroupEvent.ADDED}
+#     def get_trigger(self):
+#         return {Matcher(LoadEventComponent): GroupEvent.ADDED}
 
-    def filter(self, entity):
-        return entity.has(LoadEventComponent)
+#     def filter(self, entity):
+#         return entity.has(LoadEventComponent)
 
-    def react(self, entities):
-        print("<<<<<<<<<<<<<  LoadEventComponent >>>>>>>>>>>>>>>>>")
-        for entity in entities:
-            print(entity.get(LoadEventComponent).load_script)
-            entity.remove(LoadEventComponent)            
+#     def react(self, entities):
+#         print("<<<<<<<<<<<<<  LoadEventComponent >>>>>>>>>>>>>>>>>")
+#         for entity in entities:
+#             print(entity.get(LoadEventComponent).load_script)
+#             entity.remove(LoadEventComponent)            
 
 ###############################################################################################################################################
 ###############################################################################################################################################
@@ -146,26 +142,23 @@ class StagePlanSystem(ExecuteProcessor):
         print("<<<<<<<<<<<<<  StagePlanSystem >>>>>>>>>>>>>>>>>")
         entities = self.context.get_group(Matcher(StageComponent)).entities
         for entity in entities:
-            print(entity.get(StageComponent).name)
+            #print(entity.get(StageComponent).name)
             self.handle(entity)
 
     def handle(self, entity: Entity) -> None:
-        print("<<<<<<<<<<<<<  StagePlanSystem.handle >>>>>>>>>>>>>>>>>")
         print(entity.get(StageComponent).name)
         response = self.call(entity)
         try:
             json_data = json.loads(response)
             print(json_data)
 
-            fightactions = json_data["FightActionComponent"]
-            entity.add(FightActionComponent, fightactions)
+            if not entity.has(FightActionComponent):
+                fightactions = json_data["FightActionComponent"]
+                entity.add(FightActionComponent, fightactions)
 
-            leaveactions = json_data["LeaveActionComponent"]
-            entity.add(LeaveActionComponent, leaveactions)
-
-            stayactions = json_data["StayActionComponent"]
-            entity.add(StayActionComponent, stayactions)
-                
+            if not entity.has(LeaveActionComponent):
+                leaveactions = json_data["LeaveActionComponent"]
+                entity.add(LeaveActionComponent, leaveactions)                
 
         except Exception as e:
             print(f"stage_plan error = {e}")
@@ -189,13 +182,11 @@ class NPCPlanSystem(ExecuteProcessor):
         entities = self.context.get_group(Matcher(NPCComponent)).entities
         for entity in entities:
             print(entity.get(NPCComponent).name)
-            entity.add(StayActionComponent, "stay npc")
-     
-###############################################################################################################################################
-###############################################################################################################################################
-###############################################################################################################################################
-###############################################################################################################################################  
             
+###############################################################################################################################################
+###############################################################################################################################################
+###############################################################################################################################################
+###############################################################################################################################################    
 class FightActionSystem(ReactiveProcessor):
 
     def __init__(self, context) -> None:
@@ -218,7 +209,6 @@ class FightActionSystem(ReactiveProcessor):
 ###############################################################################################################################################
 ###############################################################################################################################################
 ###############################################################################################################################################   
-
 class LeaveActionSystem(ReactiveProcessor):
 
     def __init__(self, context) -> None:
@@ -236,29 +226,7 @@ class LeaveActionSystem(ReactiveProcessor):
         for entity in entities:
             print(entity.get(LeaveActionComponent).context)
             entity.remove(LeaveActionComponent)    
-
-###############################################################################################################################################
-###############################################################################################################################################
-###############################################################################################################################################
-###############################################################################################################################################   
-            
-class StayActionSystem(ReactiveProcessor):
-
-    def __init__(self, context) -> None:
-        super().__init__(context)
-        self.context = context
-
-    def get_trigger(self):
-        return {Matcher(StayActionComponent): GroupEvent.ADDED}
-
-    def filter(self, entity):
-        return entity.has(StayActionComponent)
-
-    def react(self, entities):
-        print("<<<<<<<<<<<<<  StayActionSystem >>>>>>>>>>>>>>>>>")
-        for entity in entities:
-            print(entity.get(StayActionComponent).context)
-            entity.remove(StayActionComponent)         
+           
 ###############################################################################################################################################
 ###############################################################################################################################################
 ###############################################################################################################################################
@@ -283,7 +251,8 @@ def main() -> None:
     npc_entity.add(ActorComponent, "<npc>")      
     npc_entity.add(NPCComponent, "<npc>")  
 
-        
+    
+
 
 
 
@@ -296,10 +265,12 @@ def main() -> None:
     processors.add(NPCPlanSystem(context))
 
     #行动逻辑
-    processors.add(LoadSystem(context))
+    
     processors.add(FightActionSystem(context))
     processors.add(LeaveActionSystem(context))
-    processors.add(StayActionSystem(context))
+
+
+
 
 
     ###############################################################################################################################################

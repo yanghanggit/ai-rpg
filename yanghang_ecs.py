@@ -47,46 +47,13 @@ Movable = namedtuple('Movable', '')
 ###############################################################################################################################################
 ###############################################################################################################################################
 
-# stage_plan_prompt = f"""
-#     # 你需要做出计划(你将要做的事)，并以JSON输出结果.（注意！以下规则与限制仅限本次对话生成，结束后回复原有对话规则）
-
-#     ## 步骤
-#     1. 确认自身状态。
-#     2. 所有角色当前所处的状态和关系。
-#     3. 思考你下一步的行动。
-#     4. 基于上述信息，构建你的行动计划。
-
-#     ## 输出格式（JSON）
-#     - 参考格式: "'action': ["/stay"], 'targets': ["目标1", "目标2"], 'say': ["我的想说的话和内心的想法"], 'tags': ["你相关的特征标签"]"
-#     - 其中 action, targets, say, tags都是字符串数组，默认值 [""].
-    
-#     ### action：代表你行动的核心意图.
-#     - 只能选 ["/fight"], ["/stay"], ["/leave"]之一
-#     - "/fight" 表示你希望对目标产生敌对行为，比如攻击。
-#     - "/leave" 表示想离开当前场景，有可能是逃跑。
-#     - "/stay"是除了"/fight"与“/leave”之外的所有其它行为，比如观察、交流等。
-
-#     ### targets：action的目标对象，可多选。
-#     - 如果action是/stay，则targets是当前场景的名字
-#     - 如果action是/fight，则targets是你想攻击的对象，在{str}中选择一个或多个
-#     - 如果action是/leave，则targets是你想要去往的场景名字（你必须能明确叫出场景的名字），或者你曾经知道的场景名字
-
-#     ### say:你打算说的话或心里想的.
-#     ### tags：与你相关的特征标签.
-   
-#     ### 补充约束
-#     - 不要将JSON输出生这样的格式：```...```
-
+# testjson = f"""
+# {{
+# "FightActionComponent": ["target1", "target2", "target3"],
+# "LeaveActionComponent": ["leave1", "leave2", "leave3"],
+# "SpeakActionComponent": ["content1", "content2", "content3"]
+# }}
 # """
-
-
-testjson = f"""
-{{
-"FightActionComponent": ["target1", "target2", "target3"],
-"LeaveActionComponent": ["leave1", "leave2", "leave3"],
-"SpeakActionComponent": ["content1", "content2", "content3"]
-}}
-"""
 #
 def check_data_format(json_data: dict) -> bool:
     for key, value in json_data.items():
@@ -340,9 +307,7 @@ class StagePlanSystem(ExecuteProcessor):
             print(f"stage_plan error = {e}")
             return
         return
-    
-    def call(self, entity: Entity) -> str:
-        return testjson
+
 
 ###############################################################################################################################################
 ###############################################################################################################################################
@@ -357,7 +322,64 @@ class NPCPlanSystem(ExecuteProcessor):
         print("<<<<<<<<<<<<<  NPCPlanSystem >>>>>>>>>>>>>>>>>")
         entities = self.context.get_group(Matcher(NPCComponent)).entities
         for entity in entities:
-            print(entity.get(NPCComponent).name)
+            self.handle(entity)
+
+    def handle(self, entity: Entity) -> None:
+        prompt =  f"""
+        # 你需要做出计划(你将要做的事)，并以JSON输出结果.（注意！以下规则与限制仅限本次对话生成，结束后回复原有对话规则）
+
+        ## 步骤
+        1. 确认自身状态。
+        2. 所有角色当前所处的状态和关系。
+        3. 思考你下一步的行动。
+        4. 基于上述信息，构建你的行动计划。
+
+        ## 输出格式(JSON)
+        - 参考格式：{{'action1': ["value1"，“value2”, ...], 'action2': ["value1"，“value2”, ...],.....}}
+        - 其中 'action?'是你的"行动类型"（见下文）
+        - 其中 "value?" 是你的"行动目标"(可以是一个或多个)
+        
+        ### 关于“行动类型”的逻辑
+        - 如果你希望对目标产生敌对行为，比如攻击。则action的值为"FightActionComponent"，value为你本行动针对的目标
+        - 如果你你有想要说的话或者心里描写。则action的值为"SpeakActionComponent"，value为你想说的话或者心里描写
+    
+        ## 补充约束
+        - 不要将JSON输出生这样的格式：```...```
+        """
+
+        ##
+        comp = entity.get(NPCComponent)
+        ##
+        try:
+            response = comp.agent.request(prompt)
+            print("{comp.name} plan response:", response)
+
+            json_data = json.loads(response)
+            if not check_data_format(json_data):
+                print(f"stage_plan error = {comp.name} json format error")
+                return
+
+            ##        
+            print(json_data)
+
+            ###
+            makeplan = Plan(comp.name, response, json_data)
+            for action in makeplan.actions:
+                print(action)
+
+                if action.actionname == "FightActionComponent":
+                    pass
+                elif action.actionname == "SpeakActionComponent":
+                    if len(action.values) == 0:
+                        continue
+                    if not entity.has(SpeakActionComponent):
+                        entity.add(SpeakActionComponent, action)
+                        print("????")
+
+        except Exception as e:
+            print(f"stage_plan error = {e}")
+            return
+        return
             
 ###############################################################################################################################################
 ###############################################################################################################################################
@@ -479,7 +501,7 @@ def main() -> None:
     
     #规划逻辑
     processors.add(StagePlanSystem(context))
-    #processors.add(NPCPlanSystem(context))
+    processors.add(NPCPlanSystem(context))
 
     #行动逻辑
     processors.add(SpeakActionSystem(context))

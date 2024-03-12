@@ -1,8 +1,7 @@
 
 from entitas import Entity, Matcher, ExecuteProcessor
-import json
 from components import NPCComponent, FightActionComponent, SpeakActionComponent, LeaveActionComponent
-from actor_action import ActorPlan, check_data_format
+from actor_action import ActorPlan
 
 
 
@@ -51,38 +50,22 @@ class NPCPlanSystem(ExecuteProcessor):
         ##
         try:
             response = comp.agent.request(prompt)
-            #print("{comp.name} plan response:", response)
-
-            json_data = json.loads(response)
-            if not check_data_format(json_data):
-                print(f"stage_plan error = {comp.name} json format error")
-                return
-
-            ##        
-            #print(json_data)
-
-            ###
-            makeplan = ActorPlan(comp.name, response, json_data)
-            for action in makeplan.actions:
+            actorplan = ActorPlan(comp.name, response)
+            for action in actorplan.actions:
                 print(action)
-
                 if len(action.values) == 0:
-                    print(f"stage_plan error = {comp.name} action values error is empty")
                     continue
-
                 if action.actionname == "FightActionComponent":
                     if not entity.has(FightActionComponent):
                         entity.add(FightActionComponent, action)
-                
                 elif action.actionname == "LeaveActionComponent":
                     if not entity.has(LeaveActionComponent):
                         entity.add(LeaveActionComponent, action)
-
                 elif action.actionname == "SpeakActionComponent":
                     if not entity.has(SpeakActionComponent):
                         entity.add(SpeakActionComponent, action)
                 else:
-                    print(f"error {action.actionname}, action value")
+                    print(f" {action.actionname}, Unknown action name")
 
         except Exception as e:
             print(f"stage_plan error = {e}")

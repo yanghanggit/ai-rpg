@@ -1,7 +1,8 @@
 
-from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent
-from components import StageComponent, NPCComponent, SpeakActionComponent
+from entitas import Matcher, ReactiveProcessor, GroupEvent
+from components import SpeakActionComponent
 from actor_action import ActorAction
+from extended_context import ExtendedContext
 
 ###############################################################################################################################################
 ###############################################################################################################################################
@@ -9,7 +10,7 @@ from actor_action import ActorAction
 ###############################################################################################################################################    
 class SpeakActionSystem(ReactiveProcessor):
 
-    def __init__(self, context) -> None:
+    def __init__(self, context: ExtendedContext) -> None:
         super().__init__(context)
         self.context = context
 
@@ -28,7 +29,7 @@ class SpeakActionSystem(ReactiveProcessor):
             action: ActorAction = comp.action
             for value in action.values:
                 print(f"[{action.name}] /speak:", value)
-                stagecomp = self.getstage(entity)
+                stagecomp = self.context.getstage_by_entity(entity)
                 if stagecomp is not None:
                     stagecomp.events.append(f"{action.name} 说（或者心里活动）: {value}")
 
@@ -37,14 +38,3 @@ class SpeakActionSystem(ReactiveProcessor):
         # 必须移除！！！
         for entity in entities:
             entity.remove(SpeakActionComponent)     
-
-    def getstage(self, entity: Entity) -> StageComponent:
-        if entity.has(StageComponent):
-            return entity.get(StageComponent)
-
-        elif entity.has(NPCComponent):
-            current_stage_name = entity.get(NPCComponent).current_stage
-            for stage in self.context.get_group(Matcher(StageComponent)).entities:
-                if stage.get(StageComponent).name == current_stage_name:
-                    return stage.get(StageComponent)
-        return None

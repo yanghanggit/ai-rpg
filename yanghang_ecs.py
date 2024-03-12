@@ -1,10 +1,10 @@
 
-from entitas import Entity, Matcher, Context, Processors
+from entitas import Context, Processors
 import json
 from builder import WorldBuilder
 from console import Console
-from components import WorldComponent, StageComponent, NPCComponent, FightActionComponent
-from actor_action import ActorAction, check_data_format
+from components import WorldComponent, StageComponent, NPCComponent, FightActionComponent, PlayerComponent
+from actor_action import ActorAction
 from actor_agent import ActorAgent
 from init_system import InitSystem
 from stage_plan_system import StagePlanSystem
@@ -13,6 +13,9 @@ from speak_action_system import SpeakActionSystem
 from fight_action_system import FightActionSystem
 from leave_action_system import LeaveActionSystem
 from director_system import DirectorSystem
+from extended_context import ExtendedContext
+from dead_action_system import DeadActionSystem
+from destroy_system import DestroySystem
 
 
 ###############################################################################################################################################
@@ -24,11 +27,9 @@ def create_entities(context: Context, worldbuilder: WorldBuilder) -> None:
         world_entity.add(WorldComponent, worldagent.name, worldagent)
 
         for stage_builder in worldbuilder.stage_builders:     
-
             #
             if stage_builder.data['name'] == '悠扬林谷':
                 return
-
             #创建stage       
             stage_agent = ActorAgent()
             stage_agent.init(stage_builder.data['name'], stage_builder.data['url'])
@@ -42,16 +43,13 @@ def create_entities(context: Context, worldbuilder: WorldBuilder) -> None:
                 npc_entity = context.create_entity()
                 npc_entity.add(NPCComponent, npc_agent.name, npc_agent, stage_agent.name)
 
-
-
-
 ###############################################################################################################################################
 ###############################################################################################################################################
 ###############################################################################################################################################
 ############################################################################################################################################### 
 def main() -> None:
 
-    context = Context()
+    context = ExtendedContext()
     processors = Processors()
     console = Console("测试后台管理")
     path: str = "./yanghang_stage1.json"
@@ -83,14 +81,18 @@ def main() -> None:
     processors.add(SpeakActionSystem(context))
     processors.add(FightActionSystem(context))
     processors.add(LeaveActionSystem(context))
+    processors.add(DeadActionSystem(context))
 
     #行动结束后导演
     processors.add(DirectorSystem(context))
-    
+
+    ###必须最后
+    processors.add(DestroySystem(context))
+
+
     ####
     inited:bool = False
     started:bool = False
-    who: str = ""
 
     while True:
         usr_input = input("[user input]: ")
@@ -125,7 +127,8 @@ def main() -> None:
                 continue
             command = "/who"
             who = console.parse_command(usr_input, command)
-            print(f"/who 你现在控制了=>", who)
+            debug_be_who(context, who)
+           
 
         elif "/attack" in usr_input:
             if not started:
@@ -133,66 +136,67 @@ def main() -> None:
                 continue
             command = "/attack"
             target_name = console.parse_command(usr_input, command)    
-            debug_attack(context, who, target_name)
-            print("==============================================")   
+            debug_attack(context, target_name)
+            #print("==============================================")   
 
     processors.clear_reactive_processors()
     processors.tear_down()
     print("end.")
-
 ###############################################################################################################################################
-def debug_call(context: Context, name: str, content: str) -> None:
-    #
-    for entity in context.get_group(Matcher(WorldComponent)).entities:
-        comp = entity.get(WorldComponent)
-        if comp.name == name:
-            print(f"[{comp.name}] /call:", comp.agent.request(content))
-            return
-    #   
-    for entity in context.get_group(Matcher(StageComponent)).entities:
+def debug_be_who(context: ExtendedContext, name: str) -> None:
+
+    playerentity = context.getplayer()
+    if playerentity is not None:
+        comp = playerentity.get(PlayerComponent)
+        print(f"debug_be_who current is : {comp.name}")
+        playerentity.remove(PlayerComponent)
+
+    entity = context.getnpc(name)
+    if entity is not None:
+        comp = entity.get(NPCComponent)
+        print(f"debug_be_who => : {name} is {comp.name}")
+        entity.add(PlayerComponent, comp.name)
+        return
+    
+    entity = context.getstage(name)
+    if entity is not None:
         comp = entity.get(StageComponent)
-        if comp.name == name:
-            print(f"[{comp.name}] /call:", comp.agent.request(content))
-            return
-    #
-    for entity in context.get_group(Matcher(NPCComponent)).entities:
-        comp = entity.get(NPCComponent)
-        if comp.name == name:
-            print(f"[{comp.name}] /call:", comp.agent.request(content))
-            return
-        
-###############################################################################################################################################
-def debug_attack(context: Context, src: str, dest: str) -> None:
-    
-    print(f"debug_attack: {src} attack {dest}")
-    srcentity_info: tuple[Entity, NPCComponent] = debug_get_npc(context, src)
-    ensrc = srcentity_info[0]
-    compsrc = srcentity_info[1]
-    if ensrc is None:
-        print(f"debug_attack error: {src} not found")
+        print(f"debug_be_who => : {name} is {comp.name}")
+        entity.add(PlayerComponent, comp.name)
         return
-        
-    destentity_info = debug_get_npc(context, dest)
-    endest = destentity_info[0]
-    compdest = destentity_info[1]
-    if endest is None:
-        print(f"debug_attack error: {dest} not found")
-        return
-    
-    if not ensrc.has(FightActionComponent):
-        action = ActorAction()
-        action.init(compsrc.name, "FightActionComponent", [str])
-        ensrc.add(FightActionComponent, action)
-        print(f"debug_attack: {src} add {action}")
-###############################################################################################################################################
-def debug_get_npc(context: Context, name: str) -> tuple[Entity, NPCComponent]:
-    for entity in context.get_group(Matcher(NPCComponent)).entities:
-        comp = entity.get(NPCComponent)
-        if comp.name == name:
-            return entity, comp
-    return None, None
-###############################################################################################################################################
 
+###############################################################################################################################################
+def debug_call(context: ExtendedContext, name: str, content: str) -> None:
+
+    entity = context.getnpc(name)
+    if entity is not None:
+        comp = entity.get(NPCComponent)
+        print(f"[{comp.name}] /call:", comp.agent.request(content))
+        return
+    
+    entity = context.getstage(name)
+    if entity is not None:
+        comp = entity.get(StageComponent)
+        print(f"[{comp.name}] /call:", comp.agent.request(content))
+        return
+    
+    entity = context.getworld()
+    if entity is not None:
+        comp = entity.get(WorldComponent)
+        print(f"[{comp.name}] /call:", comp.agent.request(content))
+        return        
+###############################################################################################################################################
+def debug_attack(context: ExtendedContext, dest: str) -> None:
+    playerentity = context.getplayer()
+    if playerentity is not None:
+        comp = playerentity.get(PlayerComponent)
+        action = ActorAction()
+        action.init(comp.name, "FightActionComponent", [dest])
+        playerentity.add(FightActionComponent, action)
+        print(f"debug_attack: {comp.name} add {action}")
+        return
+
+###############################################################################################################################################
     
 if __name__ == "__main__":
     main()

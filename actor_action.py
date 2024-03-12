@@ -2,14 +2,6 @@
 from typing import List
 import json
 
-def check_data_format(json_data: dict) -> bool:
-    for key, value in json_data.items():
-        if not isinstance(key, str):
-            return False
-        if not isinstance(value, list) or not all(isinstance(v, str) for v in value):
-            return False
-    return True
-
 
 class ActorAction:
 
@@ -29,13 +21,34 @@ class ActorAction:
 
 class ActorPlan:
 
-    def __init__(self, name: str, jsonstr: str, json: json) -> None:
+    def __init__(self, name: str, jsonstr: str) -> None:
         self.name: str = name  
         self.jsonstr: str = jsonstr
-        self.json: json = json
+        self.json: json = None
         self.actions: List[ActorAction] = []
 
-        self.build(self.json)
+        try:
+            print(f"ActorPlan __init__ {self.name}: {self.jsonstr}")
+            json_data = json.loads(self.jsonstr)
+            if not self.check_data_format(json_data):
+                print(f"stage_plan error = {self.name} json format error")
+                return
+            
+            self.json = json_data
+            self.build(self, self.json)
+
+        except Exception as e:
+            print(f"ActorPlan __init__ = {e}")
+            return
+        return    
+
+    def check_data_format(self, json_data: dict) -> bool:
+        for key, value in json_data.items():
+            if not isinstance(key, str):
+                return False
+            if not isinstance(value, list) or not all(isinstance(v, str) for v in value):
+                return False
+        return True
 
     def build(self, json: json) -> None:
         for key, value in json.items():

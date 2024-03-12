@@ -141,6 +141,29 @@ def main() -> None:
     processors.clear_reactive_processors()
     processors.tear_down()
     print("end.")
+
+
+
+###############################################################################################################################################
+def debug_call(context: ExtendedContext, name: str, content: str) -> None:
+
+    entity = context.getnpc(name)
+    if entity is not None:
+        comp = entity.get(NPCComponent)
+        print(f"[{comp.name}] /call:", comp.agent.request(content))
+        return
+    
+    entity = context.getstage(name)
+    if entity is not None:
+        comp = entity.get(StageComponent)
+        print(f"[{comp.name}] /call:", comp.agent.request(content))
+        return
+    
+    entity = context.getworld()
+    if entity is not None:
+        comp = entity.get(WorldComponent)
+        print(f"[{comp.name}] /call:", comp.agent.request(content))
+        return           
 ###############################################################################################################################################
 def debug_be_who(context: ExtendedContext, name: str) -> None:
 
@@ -163,29 +186,9 @@ def debug_be_who(context: ExtendedContext, name: str) -> None:
         print(f"debug_be_who => : {name} is {comp.name}")
         entity.add(PlayerComponent, comp.name)
         return
-
-###############################################################################################################################################
-def debug_call(context: ExtendedContext, name: str, content: str) -> None:
-
-    entity = context.getnpc(name)
-    if entity is not None:
-        comp = entity.get(NPCComponent)
-        print(f"[{comp.name}] /call:", comp.agent.request(content))
-        return
-    
-    entity = context.getstage(name)
-    if entity is not None:
-        comp = entity.get(StageComponent)
-        print(f"[{comp.name}] /call:", comp.agent.request(content))
-        return
-    
-    entity = context.getworld()
-    if entity is not None:
-        comp = entity.get(WorldComponent)
-        print(f"[{comp.name}] /call:", comp.agent.request(content))
-        return        
 ###############################################################################################################################################
 def debug_attack(context: ExtendedContext, dest: str) -> None:
+    
     playerentity = context.getplayer()
     if playerentity is not None:
         comp = playerentity.get(PlayerComponent)

@@ -27,8 +27,8 @@ def create_entities(context: Context, worldbuilder: WorldBuilder) -> None:
         world_entity.add(WorldComponent, worldagent.name, worldagent)
 
         for stage_builder in worldbuilder.stage_builders:     
-            if stage_builder.data['name'] == '悠扬林谷':
-                return
+            # if stage_builder.data['name'] == '悠扬林谷':
+            #     return
             #创建stage       
             stage_agent = ActorAgent()
             stage_agent.init(stage_builder.data['name'], stage_builder.data['url'])
@@ -74,7 +74,7 @@ def main() -> None:
     processors.add(InitSystem(context))
     
     #规划逻辑
-    processors.add(StagePlanSystem(context))
+    #processors.add(StagePlanSystem(context))
     processors.add(NPCPlanSystem(context))
 
     #行动逻辑

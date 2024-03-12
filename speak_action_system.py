@@ -22,7 +22,7 @@ class SpeakActionSystem(ReactiveProcessor):
         return entity.has(SpeakActionComponent)
 
     def react(self, entities: list[Entity]):
-        print("<<<<<<<<<<<<<  SpeakActionSystem >>>>>>>>>>>>>>>>>")
+        print("<<<<<<<<<<<<<  SpeakActionSystem  >>>>>>>>>>>>>>>>>")
         self.handlememory(entities)
         self.handlespeak(entities)
         # 必须移除！！！

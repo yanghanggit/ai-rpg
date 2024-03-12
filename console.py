@@ -1,7 +1,4 @@
-###
-###
-###
-from actor import Actor
+
 from typing import Optional
 
 class Console:

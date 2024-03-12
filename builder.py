@@ -2,9 +2,6 @@
 ### 测试与LLM无关的代码，和一些尝试
 ###
 
-from world import World
-from stage import Stage
-from npc import NPC
 from typing import Any, List, Optional
 
 #
@@ -18,13 +15,6 @@ class NPCBuilder:
 
     def build(self, json_data: dict[str, Any]) -> None:
         self.data = json_data
-    
-    def create_npc(self)-> NPC:
-        if self.data is None:  # 检查data不为None
-            raise ValueError("NPC data is not set")
-        npc = NPC(self.data['name'])
-        npc.url = self.data['url']
-        return npc
 #
 class StageBuilder:
 
@@ -42,20 +32,12 @@ class StageBuilder:
             npc_builder = NPCBuilder()
             npc_builder.build(npc)
             self.npc_builders.append(npc_builder)
-
-    def create_stage(self)-> Stage:
-        if self.data is None:  # 检查data不为None
-            raise ValueError("Stage data is not set")
-        stage = Stage(self.data['name'])
-        stage.url = self.data['url']
-        return stage  
 #
 class WorldBuilder:
     #
     def __init__(self) -> None:
         self.data: Optional[dict[str, Any]] = None
         self.stage_builders: List[StageBuilder] = []
-        self.world: Optional[World] = None  
 
     def __str__(self) -> str:
         return f"WorldBuilder: {self.data}"       
@@ -70,21 +52,6 @@ class WorldBuilder:
                 stage_builder = StageBuilder()
                 stage_builder.build(stage)
                 self.stage_builders.append(stage_builder)
-    #
-    def create_world(self) -> World:
-        if self.data is None:  # 检查data不为None
-            raise ValueError("World data is not set")
-
-        self.world = World(self.data['name'])
-        self.world.url = self.data['url']    
-        for stage_builder in self.stage_builders:
-            stage = stage_builder.create_stage()
-            self.world.add_stage(stage)
-            for npc_builder in stage_builder.npc_builders:
-                npc = npc_builder.create_npc()
-                stage.add_actor(npc)
-        return self.world
-
     
 
 

@@ -48,7 +48,6 @@ class DirectorSystem(ExecuteProcessor):
         - 输出在保证语意完整基础上字符尽量少。
         """
         #
-        print("============================================================================")
         response = stagecomp.agent.request(director_prompt)
         npcs_in_stage = self.context.get_npcs_in_stage(stagecomp.name)
         npcs_names = "\n".join([npc.get(NPCComponent).name for npc in npcs_in_stage])

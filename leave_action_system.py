@@ -1,6 +1,6 @@
 
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent
-from components import LeaveActionComponent, NPCComponent, StageComponent, DeadActionComponent
+from components import LeaveActionComponent, NPCComponent, StageComponent
 from actor_action import ActorAction
 from extended_context import ExtendedContext
 

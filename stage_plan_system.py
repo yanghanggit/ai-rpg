@@ -1,6 +1,6 @@
 
 from entitas import Entity, Matcher, ExecuteProcessor
-from components import StageComponent, FightActionComponent, SpeakActionComponent
+from components import StageComponent, FightActionComponent, SpeakActionComponent, TagActionComponent
 from actor_action import ActorPlan
 
 ###############################################################################################################################################
@@ -60,8 +60,8 @@ class StagePlanSystem(ExecuteProcessor):
                     if not entity.has(SpeakActionComponent):
                         entity.add(SpeakActionComponent, action)
                 elif action.actionname == "TagActionComponent":
-                    pass
-                    #print(f"TagActionComponent, action value = {action.values}")
+                    if not entity.has(TagActionComponent):
+                        entity.add(TagActionComponent, action)
                 else:
                     print(f"error {action.actionname}, action value {action.values}")
                     continue

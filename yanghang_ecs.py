@@ -16,7 +16,7 @@ from director_system import DirectorSystem
 from extended_context import ExtendedContext
 from dead_action_system import DeadActionSystem
 from destroy_system import DestroySystem
-
+from tag_action_system import TagActionSystem
 
 ###############################################################################################################################################
 def create_entities(context: Context, worldbuilder: WorldBuilder) -> None:
@@ -78,17 +78,21 @@ def main() -> None:
     processors.add(NPCPlanSystem(context))
 
     #行动逻辑
+    processors.add(TagActionSystem(context))
     processors.add(SpeakActionSystem(context))
     processors.add(FightActionSystem(context))
-    processors.add(LeaveActionSystem(context))
-    processors.add(DeadActionSystem(context))
 
+    #####死亡必须是战斗之后，因为如果死了就不能离开
+    processors.add(DeadActionSystem(context)) 
+    #########################################
+    #处理离开
+    processors.add(LeaveActionSystem(context))
     #行动结束后导演
     processors.add(DirectorSystem(context))
-
+    
+    #########################################
     ###必须最后
     processors.add(DestroySystem(context))
-
 
     ####
     inited:bool = False

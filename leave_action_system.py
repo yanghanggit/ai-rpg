@@ -1,6 +1,6 @@
 
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent
-from components import LeaveActionComponent, NPCComponent, StageComponent
+from components import LeaveActionComponent, NPCComponent, StageComponent, DeadActionComponent
 from actor_action import ActorAction
 from extended_context import ExtendedContext
 
@@ -23,6 +23,8 @@ class LeaveActionSystem(ReactiveProcessor):
     def react(self, entities: list[Entity]):
         print("<<<<<<<<<<<<<  LeaveActionSystem  >>>>>>>>>>>>>>>>>")
         self.handle(entities)
+
+
         #必须移除！！！！！
         for entity in entities:
             entity.remove(LeaveActionComponent)    

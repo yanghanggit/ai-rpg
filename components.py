@@ -13,6 +13,6 @@ DestroyComponent = namedtuple('DestroyComponent', 'cause')
 SpeakActionComponent = namedtuple('SpeakActionComponent', 'action')
 FightActionComponent = namedtuple('FightActionComponent', 'action')
 LeaveActionComponent = namedtuple('LeaveActionComponent', 'action')
+TagActionComponent = namedtuple('TagActionComponent', 'action')
 DeadActionComponent = namedtuple('DeadActionComponent', 'cause')
-TagActionComponent = namedtuple('TagActionComponent', 'cause')
 ###############################################################################################################################################

@@ -1,6 +1,6 @@
 
 from entitas import Entity, Matcher, ExecuteProcessor
-from components import NPCComponent, FightActionComponent, SpeakActionComponent, LeaveActionComponent
+from components import NPCComponent, FightActionComponent, SpeakActionComponent, LeaveActionComponent, TagActionComponent
 from actor_action import ActorPlan
 
 
@@ -66,8 +66,8 @@ class NPCPlanSystem(ExecuteProcessor):
                     if not entity.has(SpeakActionComponent):
                         entity.add(SpeakActionComponent, action)
                 elif action.actionname == "TagActionComponent":
-                    pass
-                    #print(f"TagActionComponent, action value = {action.values}")
+                    if not entity.has(TagActionComponent):
+                        entity.add(TagActionComponent, action)
                 else:
                     print(f" {action.actionname}, Unknown action name")
 

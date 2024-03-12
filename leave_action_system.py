@@ -63,6 +63,8 @@ class LeaveActionSystem(ReactiveProcessor):
                         entity.replace(NPCComponent, replace_name, replace_agent, replace_current_stage)
                         #给当前场景添加记忆
                         cur_stage_comp.agent.add_chat_history(f"{npccomp.name} 离开了")
+                        #给当前场景添加剧本，如果本次有导演就合进事件
+                        cur_stage_comp.directorscripts.append(f"{npccomp.name} 离开了")
                         #自己的记忆更新
                         npccomp.agent.add_chat_history(f"你离开了{current_stage}, 去往了{target_stage_name}")
                         #新的场景添加记忆
@@ -77,6 +79,8 @@ class LeaveActionSystem(ReactiveProcessor):
                         npccomp.agent.add_chat_history(f"你进入了{target_stage_name}")
                         #新的场景添加记忆
                         target_stage_entity.get(StageComponent).agent.add_chat_history(f"{npccomp.name} 进入了场景")
+                        #新的场景添加导演剧本
+                        target_stage_entity.get(StageComponent).directorscripts.append(f"{npccomp.name} 进入了场景")
                         #因为是第一次进入，就必须通知所有已经在场的NPC!
                         npcs_in_stage = self.context.get_npcs_in_stage(target_stage_name)
                         #测试用，到了这里就是Player

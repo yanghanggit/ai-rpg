@@ -31,5 +31,5 @@ class TagActionSystem(ReactiveProcessor):
     def handle(self, entities: list[Entity]) -> None:
         for entity in entities:
             tagcomp = entity.get(TagActionComponent)
-            print("tag_action ===== >", tagcomp.action)
+            #print("tag_action ===== >", tagcomp.action)
     ###############################################################################################################################################

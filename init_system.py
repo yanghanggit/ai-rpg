@@ -49,7 +49,7 @@ class InitSystem(InitializeProcessor):
             comp.agent.connect()
             loadres = comp.agent.request(load_prompt)
 
-            print(f"[{comp.name}]load=>", loadres)
+            #print(f"[{comp.name}]load=>", loadres)
             print("______________________________________")
         
     def handlestages(self) -> None:
@@ -62,7 +62,7 @@ class InitSystem(InitializeProcessor):
             comp.agent.connect()
             loadres = comp.agent.request(load_prompt)
             
-            print(f"[{comp.name}]load=>", loadres)
+            #print(f"[{comp.name}]load=>", loadres)
             print("______________________________________")
 
     def handlenpcs(self) -> None:
@@ -75,5 +75,5 @@ class InitSystem(InitializeProcessor):
             comp.agent.connect()
             loadres = comp.agent.request(load_prompt)
             
-            print(f"[{comp.name}]load=>", loadres)
+            #print(f"[{comp.name}]load=>", loadres)
             print("______________________________________")

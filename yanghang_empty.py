@@ -1,35 +1,36 @@
 ###
 ### 测试与LLM无关的代码，和一些尝试
 ###
-import json
-from builder import WorldBuilder, StageBuilder, NPCBuilder
+# import json
+# from builder import WorldBuilder, StageBuilder, NPCBuilder
 
 def main():
+    pass
 
-    try:
-        path = "./yanghang_stage1.json"
-        with open(path, "r") as file:
-            json_data = json.load(file)
-            print(json_data)
-            #
-            world_builder = WorldBuilder()
-            world_builder.build(json_data)
+    # try:
+    #     path = "./yanghang_stage1.json"
+    #     with open(path, "r") as file:
+    #         json_data = json.load(file)
+    #         print(json_data)
+    #         #
+    #         world_builder = WorldBuilder()
+    #         world_builder.build(json_data)
             
-            print(world_builder)
-            for stage_builder in world_builder.stage_builders:
-                print(stage_builder)
-                for npc_builder in stage_builder.npc_builders:
-                    print(npc_builder)
+    #         print(world_builder)
+    #         for stage_builder in world_builder.stage_builders:
+    #             print(stage_builder)
+    #             for npc_builder in stage_builder.npc_builders:
+    #                 print(npc_builder)
 
-            print("==============================================")
-            world = world_builder.create_world()
-            print("?")
+    #         print("==============================================")
+    #         world = world_builder.create_world()
+    #         print("?")
 
 
 
         
-    except Exception as e:
-        print(e)
+    # except Exception as e:
+    #     print(e)
 
 
             

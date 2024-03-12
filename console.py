@@ -6,7 +6,6 @@ class Console:
     #
     def __init__(self, name: str):
         self.name = name
-        self.current_actor: Optional[Actor] = None
     
     #
     def parse_command(self, input_val: str, split_str: str)-> str:

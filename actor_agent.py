@@ -33,5 +33,8 @@ class ActorAgent:
         self.chat_history.extend([HumanMessage(content=prompt), AIMessage(content=response_output)])
         return response_output
     
+    def add_chat_history(self, chat_history: List[Union[HumanMessage]]) -> None:
+        self.chat_history.extend(chat_history)
+    
     def __str__(self) -> str:
         return f"ActorAgent({self.name}, {self.url})"

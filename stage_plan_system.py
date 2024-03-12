@@ -35,8 +35,9 @@ class StagePlanSystem(ExecuteProcessor):
         
         ### 关于action——“行动类型”的逻辑
         - 如果你希望对目标产生敌对行为，比如攻击。则action的值为"FightActionComponent"，value为你本行动针对的目标
-        - 如果你你有想要说的话或者心里描写。则action的值为"SpeakActionComponent"，value为你想说的话或者心里描写
-        - action值不允许出现FightActionComponent，SpeakActionComponent之外的值
+        - 如果你有想要说的话或者心里描写。则action的值为"SpeakActionComponent"，value为你想说的话或者心里描写
+        - 如果与你相关的特征标签。则action的值为"TagActionComponent"，value你的特征标签
+        - action值不允许出现FightActionComponent，SpeakActionComponent，TagActionComponent之外的值
     
         ## 补充约束
         - 不要将JSON输出生这样的格式：```...```
@@ -58,8 +59,10 @@ class StagePlanSystem(ExecuteProcessor):
                 elif action.actionname == "SpeakActionComponent":
                     if not entity.has(SpeakActionComponent):
                         entity.add(SpeakActionComponent, action)
+                elif action.actionname == "TagActionComponent":
+                    print(f"TagActionComponent, action value = {action.values}")
                 else:
-                    print(f"error {action.actionname}, action value")
+                    print(f"error {action.actionname}, action value {action.values}")
                     continue
 
         except Exception as e:

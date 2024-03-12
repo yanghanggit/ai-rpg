@@ -41,7 +41,7 @@ class ExtendedContext(Context):
 
         elif entity.has(NPCComponent):
             current_stage_name = entity.get(NPCComponent).current_stage
-            for stage in self.context.get_group(Matcher(StageComponent)).entities:
+            for stage in self.get_group(Matcher(StageComponent)).entities:
                 if stage.get(StageComponent).name == current_stage_name:
                     return stage.get(StageComponent)
         return None

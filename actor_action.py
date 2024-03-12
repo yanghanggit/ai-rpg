@@ -35,7 +35,7 @@ class ActorPlan:
                 return
             
             self.json = json_data
-            self.build(self, self.json)
+            self.build(self.json)
 
         except Exception as e:
             print(f"ActorPlan __init__ = {e}")

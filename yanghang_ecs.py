@@ -27,7 +27,6 @@ def create_entities(context: Context, worldbuilder: WorldBuilder) -> None:
         world_entity.add(WorldComponent, worldagent.name, worldagent)
 
         for stage_builder in worldbuilder.stage_builders:     
-            #
             if stage_builder.data['name'] == '悠扬林谷':
                 return
             #创建stage       

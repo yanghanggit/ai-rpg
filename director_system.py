@@ -2,6 +2,7 @@
 from entitas import Entity, Matcher, ExecuteProcessor
 from components import StageComponent, NPCComponent
 from typing import List
+from extended_context import ExtendedContext
 
 
 ###############################################################################################################################################
@@ -10,7 +11,7 @@ from typing import List
 ###############################################################################################################################################               
 class DirectorSystem(ExecuteProcessor):
     
-    def __init__(self, context) -> None:
+    def __init__(self, context: ExtendedContext) -> None:
         self.context = context
 
     def execute(self) -> None:
@@ -23,16 +24,18 @@ class DirectorSystem(ExecuteProcessor):
             comp.events.clear() #不能 = []，会报错！！！
 
     def handle(self, entity: Entity) -> None:
-        comp = entity.get(StageComponent)
-        print(f"[{comp.name}] 开始导演+++++++++++++++++++++++++++++++++++++++++++++++++++++")
-        if len(comp.events) == 0:
+        stagecomp = entity.get(StageComponent)
+        print(f"[{stagecomp.name}] 开始导演+++++++++++++++++++++++++++++++++++++++++++++++++++++")
+
+        events = self.context.get_stage_events(stagecomp.name)
+        if len(events) == 0:
             return
     
         #debug
-        for event in comp.events:
+        for event in events:
             print("moive:", event)
 
-        allevents = "\n".join(comp.events)
+        allevents = "\n".join(events)
         director_prompt =  f"""
         # 你按着我的给你的脚本来演绎过程，并适当润色让过程更加生动。
         ## 剧本如下
@@ -45,28 +48,25 @@ class DirectorSystem(ExecuteProcessor):
         - 输出在保证语意完整基础上字符尽量少。
         """
         #
-        response = comp.agent.request(director_prompt)
+        response = stagecomp.agent.request(director_prompt)
         print("============================================================================")
+        print(f"{stagecomp.name}=>", response)
 
-        print(f"{comp.name}=>", response)
-
-
-        npccomps = self.getnpcs(comp.name)
-        all_names = "、".join([ncomp.name for ncomp in npccomps])
-
+        npcs_in_stage = self.context.get_npcs_in_stage(stagecomp.name)
+        npcs_names = "\n".join([npc.get(NPCComponent).name for npc in npcs_in_stage])
         confirm_prompt = f"""
         # 你目睹或者参与了这一切，并更新了你的记忆
         - {response}
         # 你能确认
-        - {all_names} 都还存在。
+        - {npcs_names} 都还在此 {stagecomp.name} 场景中。
         """
 
-        for ncomp in npccomps:
+        for npcen in npcs_in_stage:
+            ncomp = npcen.get(NPCComponent)
             response = ncomp.agent.request(confirm_prompt)
             print(f"[{ncomp.name}]=>", response)
 
-
-        print(f"[{comp.name}] 结束导演+++++++++++++++++++++++++++++++++++++++++++++++++++++")
+        print(f"[{stagecomp.name}] 结束导演+++++++++++++++++++++++++++++++++++++++++++++++++++++")
 
 
     def getnpcs(self, stage: str) -> List[NPCComponent]:

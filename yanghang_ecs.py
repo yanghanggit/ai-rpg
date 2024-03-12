@@ -52,6 +52,7 @@ def main() -> None:
     processors = Processors()
     console = Console("测试后台管理")
     path: str = "./yanghang_stage1.json"
+    playername = "yanghang"
 
     try:
         with open(path, "r") as file:
@@ -120,13 +121,22 @@ def main() -> None:
             debug_call(context, parse_res[0], parse_res[1])
             print("==============================================")
 
+        elif "/showstages" in usr_input:
+            if not started:
+                print("请先/run")
+                continue
+            command = "/showstages"
+            who = console.parse_command(usr_input, command)
+            log = context.showstages()
+            print(f"/showstages: \n", log)
+
         elif "/who" in usr_input:
             if not started:
                 print("请先/run")
                 continue
             command = "/who"
             who = console.parse_command(usr_input, command)
-            debug_be_who(context, who)
+            debug_be_who(context, who, playername)
            
 
         elif "/attack" in usr_input:
@@ -165,37 +175,49 @@ def debug_call(context: ExtendedContext, name: str, content: str) -> None:
         print(f"[{comp.name}] /call:", comp.agent.request(content))
         return           
 ###############################################################################################################################################
-def debug_be_who(context: ExtendedContext, name: str) -> None:
+def debug_be_who(context: ExtendedContext, name: str, playname: str) -> None:
 
     playerentity = context.getplayer()
     if playerentity is not None:
-        comp = playerentity.get(PlayerComponent)
-        print(f"debug_be_who current is : {comp.name}")
+        playercomp = playerentity.get(PlayerComponent)
+        print(f"debug_be_who current player is : {playercomp.name}")
         playerentity.remove(PlayerComponent)
 
     entity = context.getnpc(name)
     if entity is not None:
-        comp = entity.get(NPCComponent)
-        print(f"debug_be_who => : {name} is {comp.name}")
-        entity.add(PlayerComponent, comp.name)
+        npccomp = entity.get(NPCComponent)
+        print(f"debug_be_who => : {npccomp.name} is {playname}")
+        entity.add(PlayerComponent, playname)
         return
     
     entity = context.getstage(name)
     if entity is not None:
-        comp = entity.get(StageComponent)
-        print(f"debug_be_who => : {name} is {comp.name}")
-        entity.add(PlayerComponent, comp.name)
+        stagecomp = entity.get(StageComponent)
+        print(f"debug_be_who => : {stagecomp.name} is {playname}")
+        entity.add(PlayerComponent, playname)
         return
 ###############################################################################################################################################
 def debug_attack(context: ExtendedContext, dest: str) -> None:
     
     playerentity = context.getplayer()
-    if playerentity is not None:
-        comp = playerentity.get(PlayerComponent)
+    if playerentity is None:
+        print("debug_attack: player is None")
+        return
+       
+    if playerentity.has(NPCComponent):
+        npccomp = playerentity.get(NPCComponent)
         action = ActorAction()
-        action.init(comp.name, "FightActionComponent", [dest])
+        action.init(npccomp.name, "FightActionComponent", [dest])
         playerentity.add(FightActionComponent, action)
-        print(f"debug_attack: {comp.name} add {action}")
+        print(f"debug_attack: {npccomp.name} add {action}")
+        return
+    
+    elif playerentity.has(StageComponent):
+        stagecomp = playerentity.get(StageComponent)
+        action = ActorAction()
+        action.init(stagecomp.name, "FightActionComponent", [dest])
+        playerentity.add(FightActionComponent, action)
+        print(f"debug_attack: {stagecomp.name} add {action}")
         return
 
 ###############################################################################################################################################

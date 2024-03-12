@@ -29,10 +29,9 @@ class SpeakActionSystem(ReactiveProcessor):
             action: ActorAction = comp.action
             for value in action.values:
                 print(f"[{action.name}] /speak:", value)
-                stagecomp = self.context.getstage_by_entity(entity)
+                stagecomp = self.context.get_stage_by_entity(entity)
                 if stagecomp is not None:
-                    stagecomp.events.append(f"{action.name} 说（或者心里活动）: {value}")
-
+                    self.context.add_stage_events(stagecomp.name, f"{action.name} 说（或者心里活动）: {value}")
             print("++++++++++++++++++++++++++++++++++++++++++++++++")
 
         # 必须移除！！！

@@ -37,7 +37,7 @@ class SpeakActionSystem(ReactiveProcessor):
             for value in action.values:
                 stagecomp = self.context.get_stage_by_entity(entity)
                 if stagecomp is not None:
-                    self.context.add_stage_events(stagecomp.name, f"{action.name} 说（或者心里活动）: {value}")
+                    stagecomp.directorscripts.append(f"{action.name} 说（或者心里活动）: {value}")
         
     def handlememory(self, entities: list[Entity]) -> None:
         for entity in entities:

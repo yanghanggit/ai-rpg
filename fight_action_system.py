@@ -5,10 +5,6 @@ from extended_context import ExtendedContext
 from actor_action import ActorAction
 from actor_agent import ActorAgent
 
-###############################################################################################################################################
-###############################################################################################################################################
-###############################################################################################################################################
-###############################################################################################################################################    
 class FightActionSystem(ReactiveProcessor):
 
     def __init__(self, context: ExtendedContext) -> None:
@@ -22,13 +18,15 @@ class FightActionSystem(ReactiveProcessor):
         return entity.has(FightActionComponent)
 
     def react(self, entities):
-        print("<<<<<<<<<<<<<  FightActionSystem >>>>>>>>>>>>>>>>>")
+        print("<<<<<<<<<<<<<  FightActionSystem  >>>>>>>>>>>>>>>>>")
         for entity in entities:
             self.handlememory(entity)
             self.handlefight(entity)
-            entity.remove(FightActionComponent)         
 
-    ###############################################################################################################################################
+        ### 必须删除！！！！！！！！！！！！！！！！！！！！！！！！！！
+        for entity in entities:
+            entity.remove(FightActionComponent)
+
     def handlememory(self, entity) -> None:
         comp = entity.get(FightActionComponent)
         print(f"FightActionSystem: {comp.action}")
@@ -50,7 +48,6 @@ class FightActionSystem(ReactiveProcessor):
             agent.add_chat_history(f"你向{alltargets}发起了攻击")
             return
         
-    ###############################################################################################################################################
     def handlefight(self, entity) -> None:
         comp = entity.get(FightActionComponent)
         print(f"FightActionSystem: {comp.action}")

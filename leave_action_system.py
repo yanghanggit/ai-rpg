@@ -1,6 +1,6 @@
 
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent
-from components import LeaveActionComponent, NPCComponent, StageComponent
+from components import LeaveActionComponent, NPCComponent, StageComponent, PlayerComponent, SimpleRPGRoleComponent
 from actor_action import ActorAction
 from extended_context import ExtendedContext
 
@@ -23,7 +23,6 @@ class LeaveActionSystem(ReactiveProcessor):
     def react(self, entities: list[Entity]):
         print("<<<<<<<<<<<<<  LeaveActionSystem  >>>>>>>>>>>>>>>>>")
         self.handle(entities)
-
 
         #必须移除！！！！！
         for entity in entities:
@@ -50,26 +49,45 @@ class LeaveActionSystem(ReactiveProcessor):
 
                 npccomp = entity.get(NPCComponent)
                 current_stage: str = npccomp.current_stage
+                
                 if current_stage != target_stage_name:
-
                     #当前在的场景，准备通知
                     cur_stage_entity = self.context.getstage(current_stage)
-                    cur_stage_comp = cur_stage_entity.get(StageComponent)
-                   
-                    #更换数据, 因为是namedtuple 只能用替换手段
-                    replace_name = npccomp.name
-                    replace_agent = npccomp.agent
-                    replace_current_stage = target_stage_name
-                    entity.replace(NPCComponent, replace_name, replace_agent, replace_current_stage)
-
-                    #添加场景事件
-                    self.context.add_stage_events(current_stage, f"{npccomp.name} 离开了")
-
-                    #给当前场景添加记忆
-                    cur_stage_comp.agent.add_chat_history(f"{npccomp.name} 离开了")
-                    #自己的记忆更新
-                    npccomp.agent.add_chat_history(f"你离开了{current_stage}, 去往了{target_stage_name}")
-                    #新的场景添加记忆
-                    target_stage_entity.get(StageComponent).agent.add_chat_history(f"{npccomp.name} 进入了场景")
+                    if cur_stage_entity is not None:
+                        #当前有场景
+                        cur_stage_comp = cur_stage_entity.get(StageComponent)
+                        #更换数据, 因为是namedtuple 只能用替换手段
+                        replace_name = npccomp.name
+                        replace_agent = npccomp.agent
+                        replace_current_stage = target_stage_name
+                        entity.replace(NPCComponent, replace_name, replace_agent, replace_current_stage)
+                        #给当前场景添加记忆
+                        cur_stage_comp.agent.add_chat_history(f"{npccomp.name} 离开了")
+                        #自己的记忆更新
+                        npccomp.agent.add_chat_history(f"你离开了{current_stage}, 去往了{target_stage_name}")
+                        #新的场景添加记忆
+                        target_stage_entity.get(StageComponent).agent.add_chat_history(f"{npccomp.name} 进入了场景")
+                    else :
+                        #当前没有场景, 可能是凭空创建一个player（NPC）
+                        replace_name = npccomp.name
+                        replace_agent = npccomp.agent
+                        replace_current_stage = target_stage_name
+                        entity.replace(NPCComponent, replace_name, replace_agent, replace_current_stage)
+                        #自己的记忆更新
+                        npccomp.agent.add_chat_history(f"你进入了{target_stage_name}")
+                        #新的场景添加记忆
+                        target_stage_entity.get(StageComponent).agent.add_chat_history(f"{npccomp.name} 进入了场景")
+                        #因为是第一次进入，就必须通知所有已经在场的NPC!
+                        npcs_in_stage = self.context.get_npcs_in_stage(target_stage_name)
+                        #测试用，到了这里就是Player
+                        desc = entity.get(SimpleRPGRoleComponent).desc
+                        for npc in npcs_in_stage:
+                            npc_comp = npc.get(NPCComponent)
+                            if desc != "":
+                                npc_comp.agent.add_chat_history(f"{npccomp.name} 进入了场景, {desc}")
+                            else:
+                                npc_comp.agent.add_chat_history(f"{npccomp.name} 进入了场景")
                 else:
-                  print(f"LeaveActionSystem: {npccomp.name} is in {target_stage_name}")
+                    print(f"LeaveActionSystem: {npccomp.name} is in {target_stage_name}")
+
+    ###############################################################################################################################################

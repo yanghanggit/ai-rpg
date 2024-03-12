@@ -3,7 +3,7 @@ from entitas import Context, Processors
 import json
 from builder import WorldBuilder
 from console import Console
-from components import WorldComponent, StageComponent, NPCComponent, FightActionComponent, PlayerComponent
+from components import WorldComponent, StageComponent, NPCComponent, FightActionComponent, PlayerComponent, SimpleRPGRoleComponent, LeaveActionComponent
 from actor_action import ActorAction
 from actor_agent import ActorAgent
 from init_system import InitSystem
@@ -34,6 +34,7 @@ def create_entities(context: Context, worldbuilder: WorldBuilder) -> None:
             stage_agent.init(stage_builder.data['name'], stage_builder.data['url'])
             stage_entity = context.create_entity()
             stage_entity.add(StageComponent, stage_agent.name, stage_agent, [])
+            stage_entity.add(SimpleRPGRoleComponent, stage_agent.name, 100, 100, 10, "")
             
             for npc_builder in stage_builder.npc_builders:
                 #创建npc
@@ -41,6 +42,7 @@ def create_entities(context: Context, worldbuilder: WorldBuilder) -> None:
                 npc_agent.init(npc_builder.data['name'], npc_builder.data['url'])
                 npc_entity = context.create_entity()
                 npc_entity.add(NPCComponent, npc_agent.name, npc_agent, stage_agent.name)
+                npc_entity.add(SimpleRPGRoleComponent, npc_agent.name, 100, 100, 10, "")
 
 ###############################################################################################################################################
 ###############################################################################################################################################
@@ -133,6 +135,26 @@ def main() -> None:
             who = console.parse_command(usr_input, command)
             log = context.showstages()
             print(f"/showstages: \n", log)
+            print("==============================================")
+
+        elif "/player" in usr_input:
+            if not started:
+                print("请先/run")
+                continue
+            command = "/player"
+            player_info = console.parse_command(usr_input, command)
+            print("/player:", player_info)
+           # "haha|老猎人隐居的小木屋|一个高大的兽人战士，独眼。手中拿着巨斧，杀气腾腾"
+           # player_info = "haha|老猎人隐居的小木屋|一个高大的兽人战士，独眼。手中拿着巨斧，杀气腾腾"
+            info_parts = player_info.split("|")
+            name = info_parts[0]
+            location = info_parts[1]
+            description = info_parts[2]
+            print("Name:", name)
+            print("Location:", location)
+            print("Description:", description)
+            debug_create_player(context, name, location, description)
+            print("==============================================")
 
         elif "/who" in usr_input:
             if not started:
@@ -141,8 +163,8 @@ def main() -> None:
             command = "/who"
             who = console.parse_command(usr_input, command)
             debug_be_who(context, who, playername)
+            print("==============================================")
            
-
         elif "/attack" in usr_input:
             if not started:
                 print("请先/run")
@@ -150,13 +172,11 @@ def main() -> None:
             command = "/attack"
             target_name = console.parse_command(usr_input, command)    
             debug_attack(context, target_name)
-            #print("==============================================")   
+            print("==============================================")
 
     processors.clear_reactive_processors()
     processors.tear_down()
     print("end.")
-
-
 
 ###############################################################################################################################################
 def debug_call(context: ExtendedContext, name: str, content: str) -> None:
@@ -178,6 +198,27 @@ def debug_call(context: ExtendedContext, name: str, content: str) -> None:
         comp = entity.get(WorldComponent)
         print(f"[{comp.name}] /call:", comp.agent.request(content))
         return           
+    
+###############################################################################################################################################
+def debug_create_player(context: ExtendedContext, playername: str, stage: str, desc: str) -> None:
+    playerentity = context.getplayer()
+    if playerentity is not None:
+        print("debug_create_player: player is not None")
+        return
+    
+    #创建player 本质就是npc
+    playeragent = ActorAgent()
+    playeragent.init("", [])
+    playerentity = context.create_entity()
+    playerentity.add(NPCComponent, playername, playeragent, "?")
+    playerentity.add(SimpleRPGRoleComponent, playername, 10000000, 10000000, 10000000, desc)
+    playerentity.add(PlayerComponent, playername)
+
+    action = ActorAction()
+    action.init(playername, "LeaveActionComponent", [stage])
+    playerentity.add(LeaveActionComponent, action)
+    print(f"debug_create_player: {playername} add {action}")
+
 ###############################################################################################################################################
 def debug_be_who(context: ExtendedContext, name: str, playname: str) -> None:
 

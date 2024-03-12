@@ -53,6 +53,9 @@ pip install langchain_core langserve fastapi langchain_openai sse_starlette fais
 - /attack 坏运气先生
 
 
+- /player yanghang|老猎人隐居的小木屋|他是一个高大的兽人战士，独眼。手中拿着巨斧，杀气腾腾
+
+
 
 pm2 start agents/world_watcher_agent.py agents/old_hunters_cabin_agent.py agents/old_hunter_agent.py agents/old_hunt
 ers_dog_agent.py agents/rat_agent.py agents/melodious_forest_valley_agent.py 

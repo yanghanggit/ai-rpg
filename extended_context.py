@@ -53,21 +53,7 @@ class ExtendedContext(Context):
                 if stage.get(StageComponent).name == current_stage_name:
                     return stage.get(StageComponent)
         return None
-    
-    def add_stage_events(self, name: str, content: str) -> None:
-        entity = self.getstage(name)
-        if entity is not None:
-            comp = entity.get(StageComponent)
-            comp.events.append(content)
-            return
         
-    def get_stage_events(self, name: str) -> list[str]:
-        entity = self.getstage(name)
-        if entity is not None:
-            comp = entity.get(StageComponent)
-            return comp.events
-        return []
-    
     def showstages(self) -> str:
 
         stagesentities = self.get_group(Matcher(StageComponent)).entities

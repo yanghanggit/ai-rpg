@@ -21,25 +21,21 @@ class DirectorSystem(ExecuteProcessor):
             self.handle(entity)
             #清空
             comp = entity.get(StageComponent)
-            comp.events.clear() #不能 = []，会报错！！！
+            comp.directorscripts.clear() #不能 = []，会报错！！！
 
     def handle(self, entity: Entity) -> None:
         stagecomp = entity.get(StageComponent)
         print(f"[{stagecomp.name}] 开始导演+++++++++++++++++++++++++++++++++++++++++++++++++++++")
 
-        events = self.context.get_stage_events(stagecomp.name)
-        if len(events) == 0:
+        directorscripts: list[str] = stagecomp.directorscripts
+        if len(directorscripts) == 0:
             return
     
-        #debug
-        # for event in events:
-        #     print("moive:", event)
-
-        allevents = "\n".join(events)
+        director_scripts_str = "\n".join(directorscripts)
         director_prompt =  f"""
         # 你按着我的给你的脚本来演绎过程，并适当润色让过程更加生动。
         ## 剧本如下
-        - {allevents}
+        - {director_scripts_str}
         ## 步骤
         - 第1步：理解我的剧本
         - 第2步：根据剧本，完善你的故事讲述(同一个人物的行为描述要合并处理)。要保证和脚本的结果一致。

@@ -22,10 +22,7 @@ class LeaveActionSystem(ReactiveProcessor):
 
     def react(self, entities: list[Entity]):
         print("<<<<<<<<<<<<<  LeaveActionSystem  >>>>>>>>>>>>>>>>>")
-
         self.handle(entities)
-
-
         #必须移除！！！！！
         for entity in entities:
             entity.remove(LeaveActionComponent)    
@@ -57,17 +54,12 @@ class LeaveActionSystem(ReactiveProcessor):
                     cur_stage_entity = self.context.getstage(current_stage)
                     cur_stage_comp = cur_stage_entity.get(StageComponent)
                    
-                    #更换数据
+                    #更换数据, 因为是namedtuple 只能用替换手段
                     replace_name = npccomp.name
                     replace_agent = npccomp.agent
                     replace_current_stage = target_stage_name
                     entity.replace(NPCComponent, replace_name, replace_agent, replace_current_stage)
 
-                    
-
-                    print("test??? = ", entity.get(NPCComponent).name, entity.get(NPCComponent).current_stage)
-
-                    #print(f"LeaveActionSystem: {npccomp.name} leave {current_stage} to {target_stage_name}")
                     #添加场景事件
                     self.context.add_stage_events(current_stage, f"{npccomp.name} 离开了")
 

@@ -1,16 +1,12 @@
 
 from entitas import Matcher, Context, InitializeProcessor
 from components import WorldComponent, StageComponent, NPCComponent
+from agents.tools.extract_md_content import extract_md_content
+from actor_agent import ActorAgent
 
 #
-init_archivist = f"""
-# 游戏世界存档
-- 大陆纪元2000年1月1日，冬夜.
-- 温斯洛平原的深处的“悠扬林谷”中的“老猎人隐居的小木屋”里。
-- “卡斯帕·艾伦德”坐在他的“老猎人隐居的小木屋”中的壁炉旁，在沉思和回忆过往，并向壁炉中的火投入了一根木柴。
-- 他的小狗（名叫"断剑"）在屋子里的一角睡觉。
-- 一只老鼠（名叫"坏运气先生"）在屋子里的另一角找到了一些食物。
-"""
+init_archivist = ""
+
 load_prompt = f"""
 # 你需要读取存档
 ## 步骤:
@@ -42,11 +38,17 @@ class InitSystem(InitializeProcessor):
     def handleworld(self) -> None:
         worlds: set = self.context.get_group(Matcher(WorldComponent)).entities
         for world in worlds:
-            comp = world.get(WorldComponent)
+            comp: WorldComponent = world.get(WorldComponent)
             print(comp.name)
             print(comp.agent)
             # 世界载入
-            comp.agent.connect()
+            agent: ActorAgent = comp.agent
+            agent.connect()
+            global init_archivist
+            if agent.memory == "":
+                agent.memory = "/savedData/basic_archive.md"
+            init_archivist = extract_md_content(agent.memory)
+            print(f"{comp.name}读取存档记忆=>\n{init_archivist}")
             loadres = comp.agent.request(load_prompt)
 
             #print(f"[{comp.name}]load=>", loadres)
@@ -55,11 +57,17 @@ class InitSystem(InitializeProcessor):
     def handlestages(self) -> None:
         stages: set = self.context.get_group(Matcher(StageComponent)).entities
         for stage in stages:
-            comp = stage.get(StageComponent)
+            comp: StageComponent = stage.get(StageComponent)
             print(comp.name)
             print(comp.agent)
             # 场景载入
-            comp.agent.connect()
+            agent: ActorAgent = comp.agent
+            agent.connect()
+            global init_archivist
+            if agent.memory == "":
+                agent.memory = "/savedData/basic_archive.md" 
+            init_archivist = extract_md_content(agent.memory)
+            print(f"{comp.name}读取存档记忆=>\n{init_archivist}")
             loadres = comp.agent.request(load_prompt)
             
             #print(f"[{comp.name}]load=>", loadres)
@@ -68,11 +76,17 @@ class InitSystem(InitializeProcessor):
     def handlenpcs(self) -> None:
         npcs: set = self.context.get_group(Matcher(NPCComponent)).entities
         for npc in npcs:
-            comp = npc.get(NPCComponent)
+            comp: NPCComponent = npc.get(NPCComponent)
             print(comp.name)
             print(comp.agent)
             # NPC载入
-            comp.agent.connect()
+            agent: ActorAgent = comp.agent
+            agent.connect()
+            global init_archivist
+            if agent.memory == "":
+                agent.memory = "/savedData/basic_archive.md" 
+            init_archivist = extract_md_content(agent.memory)
+            print(f"{comp.name}读取存档记忆=>\n{init_archivist}")
             loadres = comp.agent.request(load_prompt)
             
             #print(f"[{comp.name}]load=>", loadres)

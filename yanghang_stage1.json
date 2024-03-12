@@ -2,34 +2,34 @@
     "World": {
       "name": "世界观察者",
       "url": "http://localhost:8004/world/",
-      "memory": "这里可以填写世界的存档信息",
+      "memory": "/savedData/世界观察者.md",
       "Stages": [
         {
           "name": "老猎人隐居的小木屋",
           "url": "http://localhost:8022/stage/old_hunters_cabin/",
-          "memory": "这里可以填写Stage的存档信息",
+          "memory": "/savedData/老猎人隐居的小木屋.md",
           "NPCs": [
             {
               "name": "卡斯帕·艾伦德",
               "url": "http://localhost:8021/actor/npc/old_hunter/",
-              "memory": "这里可以填写NPC的存档信息"
+              "memory": "/savedData/卡斯帕·艾伦德.md"
             },
             {
               "name": "小狗'断剑'",
               "url": "http://localhost:8023/actor/npc/old_hunters_dog/",
-              "memory": "这里可以填写NPC的存档信息"
+              "memory": "/savedData/小狗'断剑'.md"
             },
             {
               "name": "坏运气先生",
               "url": "http://localhost:8025/actor/npc/rat/",
-              "memory": "这里可以填写NPC的存档信息"
+              "memory": "/savedData/坏运气先生.md"
             }
           ]
         },
         {
           "name": "悠扬林谷",
           "url": "http://localhost:8024/stage/melodious_forest_valley/",
-          "memory": "这里可以填写Stage的存档信息",
+          "memory": "/savedData/悠扬林谷.md",
           "NPCs": [
           ]
         }

@@ -10,12 +10,14 @@ class ActorAgent:
     def __init__(self):
         self.name: str = ""   
         self.url: str = ""
+        self.memory: str = ""
         self.agent: RemoteRunnable = None
         self.chat_history: List[Union[HumanMessage, AIMessage]] = []
 
-    def init(self, name: str, url: str) -> None:
+    def init(self, name: str, url: str, memory: str) -> None:
         self.name = name
         self.url = url
+        self.memory = memory
 
     def connect(self)-> None:
         self.agent = RemoteRunnable(self.url)

@@ -4,22 +4,6 @@ from components import WorldComponent, StageComponent, NPCComponent
 from agents.tools.extract_md_content import extract_md_content
 from actor_agent import ActorAgent
 
-#
-init_archivist = ""
-
-load_prompt = f"""
-# 你需要读取存档
-## 步骤:
-- 第1步，读取{init_archivist}.
-- 第2步：理解其中所有的信息
-- 第3步：理解其中关于你的信息（如何提到了你，那就是你）
-- 第3步：根据信息更新你的最新状态与逻辑.
-## 输出规则：
-- 保留关键信息(时间，地点，人物，事件)，不要推断，增加与润色。输出在保证语意完整基础上字符尽量少。
-"""
-
-
-
 ###############################################################################################################################################
 ###############################################################################################################################################
 ###############################################################################################################################################
@@ -44,11 +28,21 @@ class InitSystem(InitializeProcessor):
             # 世界载入
             agent: ActorAgent = comp.agent
             agent.connect()
-            global init_archivist
             if agent.memory == "":
                 agent.memory = "/savedData/basic_archive.md"
+
             init_archivist = extract_md_content(agent.memory)
-            print(f"{comp.name}读取存档记忆=>\n{init_archivist}")
+            load_prompt = f"""
+# 你需要恢复记忆
+## 步骤:
+- 第1步，记忆如下{init_archivist}.
+- 第2步：理解其中所有的信息
+- 第3步：理解其中关于你的信息（如何提到了你，那就是你）
+- 第3步：根据信息更新你的最新状态与逻辑.
+## 输出规则：
+- 保留关键信息(时间，地点，人物，事件)，不要推断，增加与润色。输出在保证语意完整基础上字符尽量少。
+"""
+            print(f"{comp.name}读取存档记忆=>\n{load_prompt}")
             loadres = comp.agent.request(load_prompt)
 
             #print(f"[{comp.name}]load=>", loadres)
@@ -63,11 +57,21 @@ class InitSystem(InitializeProcessor):
             # 场景载入
             agent: ActorAgent = comp.agent
             agent.connect()
-            global init_archivist
             if agent.memory == "":
                 agent.memory = "/savedData/basic_archive.md" 
+            
             init_archivist = extract_md_content(agent.memory)
-            print(f"{comp.name}读取存档记忆=>\n{init_archivist}")
+            load_prompt = f"""
+# 你需要恢复记忆
+## 步骤:
+- 第1步，记忆如下{init_archivist}.
+- 第2步：理解其中所有的信息
+- 第3步：理解其中关于你的信息（如何提到了你，那就是你）
+- 第3步：根据信息更新你的最新状态与逻辑.
+## 输出规则：
+- 保留关键信息(时间，地点，人物，事件)，不要推断，增加与润色。输出在保证语意完整基础上字符尽量少。
+"""
+            print(f"{comp.name}读取存档记忆=>\n{load_prompt}")
             loadres = comp.agent.request(load_prompt)
             
             #print(f"[{comp.name}]load=>", loadres)
@@ -82,11 +86,20 @@ class InitSystem(InitializeProcessor):
             # NPC载入
             agent: ActorAgent = comp.agent
             agent.connect()
-            global init_archivist
             if agent.memory == "":
                 agent.memory = "/savedData/basic_archive.md" 
             init_archivist = extract_md_content(agent.memory)
-            print(f"{comp.name}读取存档记忆=>\n{init_archivist}")
+            load_prompt = f"""
+# 你需要恢复记忆
+## 步骤:
+- 第1步，记忆如下{init_archivist}.
+- 第2步：理解其中所有的信息
+- 第3步：理解其中关于你的信息（如何提到了你，那就是你）
+- 第3步：根据信息更新你的最新状态与逻辑.
+## 输出规则：
+- 保留关键信息(时间，地点，人物，事件)，不要推断，增加与润色。输出在保证语意完整基础上字符尽量少。
+"""
+            print(f"{comp.name}读取存档记忆=>\n{load_prompt}")
             loadres = comp.agent.request(load_prompt)
             
             #print(f"[{comp.name}]load=>", loadres)

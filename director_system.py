@@ -50,7 +50,7 @@ class DirectorSystem(ExecuteProcessor):
         #
         response = stagecomp.agent.request(director_prompt)
         print("============================================================================")
-        print(f"{stagecomp.name}=>", response)
+        #print(f"{stagecomp.name}=>", response)
 
         npcs_in_stage = self.context.get_npcs_in_stage(stagecomp.name)
         npcs_names = "\n".join([npc.get(NPCComponent).name for npc in npcs_in_stage])
@@ -64,7 +64,7 @@ class DirectorSystem(ExecuteProcessor):
         for npcen in npcs_in_stage:
             ncomp = npcen.get(NPCComponent)
             response = ncomp.agent.request(confirm_prompt)
-            print(f"[{ncomp.name}]=>", response)
+            #print(f"[{ncomp.name}]=>", response)
 
         print(f"[{stagecomp.name}] 结束导演+++++++++++++++++++++++++++++++++++++++++++++++++++++")
 

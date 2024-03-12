@@ -50,7 +50,7 @@ class StagePlanSystem(ExecuteProcessor):
             response = comp.agent.request(prompt)
             actorplan = ActorPlan(comp.name, response)
             for action in actorplan.actions:
-                print(action)
+                #print(action)
                 if len(action.values) == 0:
                     continue
                 if action.actionname == "FightActionComponent":
@@ -60,7 +60,8 @@ class StagePlanSystem(ExecuteProcessor):
                     if not entity.has(SpeakActionComponent):
                         entity.add(SpeakActionComponent, action)
                 elif action.actionname == "TagActionComponent":
-                    print(f"TagActionComponent, action value = {action.values}")
+                    pass
+                    #print(f"TagActionComponent, action value = {action.values}")
                 else:
                     print(f"error {action.actionname}, action value {action.values}")
                     continue

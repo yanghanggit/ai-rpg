@@ -53,7 +53,7 @@ class NPCPlanSystem(ExecuteProcessor):
             response = comp.agent.request(prompt)
             actorplan = ActorPlan(comp.name, response)
             for action in actorplan.actions:
-                print(action)
+                #print(action)
                 if len(action.values) == 0:
                     continue
                 if action.actionname == "FightActionComponent":
@@ -66,7 +66,8 @@ class NPCPlanSystem(ExecuteProcessor):
                     if not entity.has(SpeakActionComponent):
                         entity.add(SpeakActionComponent, action)
                 elif action.actionname == "TagActionComponent":
-                    print(f"TagActionComponent, action value = {action.values}")
+                    pass
+                    #print(f"TagActionComponent, action value = {action.values}")
                 else:
                     print(f" {action.actionname}, Unknown action name")
 

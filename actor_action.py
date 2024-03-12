@@ -27,18 +27,17 @@ class ActorPlan:
         self.json: json = None
         self.actions: List[ActorAction] = []
 
+        #print(f"ActorPlan: {self.name} response = ", jsonstr)
         try:
-            print(f"ActorPlan __init__ {self.name}: {self.jsonstr}")
             json_data = json.loads(self.jsonstr)
             if not self.check_data_format(json_data):
                 print(f"stage_plan error = {self.name} json format error")
                 return
-            
             self.json = json_data
             self.build(self.json)
 
         except Exception as e:
-            print(f"ActorPlan __init__ = {e}")
+            print(f"ActorPlan __init__ error = {e}")
             return
         return    
 

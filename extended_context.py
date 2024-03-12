@@ -75,14 +75,14 @@ class ExtendedContext(Context):
         map: dict[str, list[str]] = {}
 
         for entity in stagesentities:
-            comp = entity.get(StageComponent)
-            ls = map.get(comp.name, [])
-            map[comp.name] = ls
+            stagecomp = entity.get(StageComponent)
+            ls = map.get(stagecomp.name, [])
+            map[stagecomp.name] = ls
 
             for entity in npcsentities:
-                comp = entity.get(NPCComponent)
-                if comp.current_stage == comp.name:
-                    ls.append(comp.name)
+                npccomp = entity.get(NPCComponent)
+                if npccomp.current_stage == stagecomp.name:
+                    ls.append(npccomp.name)
         return map
 
 

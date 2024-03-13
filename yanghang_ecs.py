@@ -35,7 +35,7 @@ def create_entities(context: Context, worldbuilder: WorldBuilder) -> None:
             stage_agent.init(stage_builder.data['name'], stage_builder.data['url'], worldbuilder.data['memory'])
             stage_entity = context.create_entity()
             stage_entity.add(StageComponent, stage_agent.name, stage_agent, [])
-            stage_entity.add(SimpleRPGRoleComponent, stage_agent.name, 100, 100, 10, "")
+            stage_entity.add(SimpleRPGRoleComponent, stage_agent.name, 100, 100, 100, "")
             
             for npc_builder in stage_builder.npc_builders:
                 #创建npc
@@ -43,7 +43,7 @@ def create_entities(context: Context, worldbuilder: WorldBuilder) -> None:
                 npc_agent.init(npc_builder.data['name'], npc_builder.data['url'], worldbuilder.data['memory'])
                 npc_entity = context.create_entity()
                 npc_entity.add(NPCComponent, npc_agent.name, npc_agent, stage_agent.name)
-                npc_entity.add(SimpleRPGRoleComponent, npc_agent.name, 100, 100, 10, "")
+                npc_entity.add(SimpleRPGRoleComponent, npc_agent.name, 100, 100, 100, "")
 
 ###############################################################################################################################################
 ###############################################################################################################################################
@@ -77,7 +77,7 @@ def main() -> None:
     processors.add(InitSystem(context))
     
     #规划逻辑
-    processors.add(StagePlanSystem(context))
+    # processors.add(StagePlanSystem(context))
     processors.add(NPCPlanSystem(context))
 
     #行动逻辑

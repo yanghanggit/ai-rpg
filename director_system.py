@@ -30,7 +30,7 @@ class DirectorSystem(ExecuteProcessor):
         directorscripts: list[str] = stagecomp.directorscripts
         if len(directorscripts) == 0:
             return
-    
+        print(f"{stagecomp.name}剧本:{directorscripts}\n")
         director_scripts_str = "\n".join(directorscripts)
         director_prompt =  f"""
         # 你按着我的给你的脚本来演绎过程，并适当润色让过程更加生动。
@@ -45,10 +45,11 @@ class DirectorSystem(ExecuteProcessor):
         """
         #
         response = stagecomp.agent.request(director_prompt)
+        print(f"剧本:\n{director_scripts_str}")
         npcs_in_stage = self.context.get_npcs_in_stage(stagecomp.name)
         npcs_names = "\n".join([npc.get(NPCComponent).name for npc in npcs_in_stage])
         confirm_prompt = f"""
-        # 你目睹或者参与了这一切，并更新了你的记忆
+        # 你目睹或者参与了这一切，并更新了你的记忆,如果与你记忆不相符则按照下面内容强行更新你的记忆
         - {response}
         # 你能确认
         - {npcs_names} 都还在此 {stagecomp.name} 场景中。

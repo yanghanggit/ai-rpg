@@ -1,6 +1,6 @@
 
-from entitas import Matcher, ReactiveProcessor, GroupEvent
-from components import FightActionComponent, NPCComponent, StageComponent
+from entitas import Matcher, ReactiveProcessor, GroupEvent, Entity
+from components import FightActionComponent, NPCComponent, StageComponent, SimpleRPGRoleComponent, DeadActionComponent
 from extended_context import ExtendedContext
 from actor_action import ActorAction
 from actor_agent import ActorAgent
@@ -48,7 +48,28 @@ class FightActionSystem(ReactiveProcessor):
             agent.add_chat_history(f"你向{alltargets}发起了攻击")
             return
         
-    def handlefight(self, entity) -> None:
-        comp = entity.get(FightActionComponent)
+    def handlefight(self, entity: Entity) -> None:
+        comp: FightActionComponent = entity.get(FightActionComponent)
         print(f"FightActionSystem: {comp.action}")
+        action: ActorAction = comp.action
+        stage: StageComponent = self.context.get_stage_by_entity(entity)
+
+        attacker: Entity = self.context.getnpc(action.name)
+        for value in action.values:
+            attacked: Entity = self.context.getnpc(value)
+            if attacker.has(SimpleRPGRoleComponent) and attacked.has(SimpleRPGRoleComponent):
+                attacker_comp: SimpleRPGRoleComponent = attacker.get(SimpleRPGRoleComponent)
+                attacked_comp: SimpleRPGRoleComponent = attacked.get(SimpleRPGRoleComponent)
+                if attacked_comp.hp - attacker_comp.attack <= 0:
+                    attacked.add(DeadActionComponent, action)
+                    fight = f"{action.name}对{value}发动了一次攻击,造成了{value}死亡。"
+                    stage.directorscripts.append(fight)
+                    print(f"stage:{stage.name} output:{stage.directorscripts}")
+                else:
+                    attacked_comp.hp -= attacker_comp.attack
+                    fight = f"{action.name}对{value}发动了一次攻击,造成了{value}死亡。"
+                    stage.directorscripts.append(fight)
+                    print(f"{action.name}对{value}发动了一次攻击,但是没有使{value}死亡。")
+            else:
+                print("attacker or attacked has no simple rpg role comp.")
        

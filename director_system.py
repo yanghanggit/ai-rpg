@@ -34,7 +34,7 @@ class DirectorSystem(ExecuteProcessor):
         director_scripts_str = "\n".join(directorscripts)
         director_prompt =  f"""
         # 你按着我的给你的脚本来演绎过程，并适当润色让过程更加生动。
-        ## 剧本如下
+        ## 剧本如下:
         - {director_scripts_str}
         ## 步骤
         - 第1步：理解我的剧本
@@ -43,7 +43,7 @@ class DirectorSystem(ExecuteProcessor):
         ## 输出规则
         - 输出在保证语意完整基础上字符尽量少。
         """
-        
+
         print(f"剧本:\n{director_prompt}\n")
         response = stagecomp.agent.request(director_prompt)
         npcs_in_stage = self.context.get_npcs_in_stage(stagecomp.name)

@@ -28,7 +28,7 @@ class GameSaveSystem(TearDownProcessor):
             comp: WorldComponent = entity.get(WorldComponent)
             agent: ActorAgent = comp.agent
             archive_prompt = """
-            请根据上下文，对自己知道的事情进行梳理总结成markdown格式后输出:
+            请根据上下文，对自己知道的事情进行梳理总结成markdown格式后输出,但不要生成```markdown xxx```的形式:
             # 游戏世界存档
             ## 地点
             ### xxx
@@ -51,7 +51,7 @@ class GameSaveSystem(TearDownProcessor):
             comp: StageComponent = entity.get(StageComponent)
             agent: ActorAgent = comp.agent
             archive_prompt = """
-            请根据上下文，对自己知道的事情进行梳理总结成markdown格式后输出:
+            请根据上下文，对自己知道的事情进行梳理总结成markdown格式后输出,但不要生成```markdown xxx```的形式:
             # 游戏世界存档
             ## 地点
             - xxxxx
@@ -70,7 +70,7 @@ class GameSaveSystem(TearDownProcessor):
             comp: StageComponent = entity.get(NPCComponent)
             agent: ActorAgent = comp.agent
             archive_prompt = """
-            请根据上下文，对只和自己有关的事情进行梳理总结成markdown格式后输出:
+            请根据上下文，对自己知道的事情进行梳理总结成markdown格式后输出,但不要生成```markdown xxx```的形式:
             # 游戏世界存档
             ## 地点
             ### xxx

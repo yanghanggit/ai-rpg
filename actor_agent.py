@@ -34,7 +34,7 @@ class ActorAgent:
         response_output = cast(str, response.get('output', ''))
         self.chat_history.extend([HumanMessage(content=prompt), AIMessage(content=response_output)])
 
-        print(f"{self.name } request = ", response_output)
+        print(f"{self.name } request = {response_output}\n{'=' * 50}")
         return response_output
     
     def add_chat_history(self, new_chat: str) -> None:

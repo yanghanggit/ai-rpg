@@ -65,7 +65,7 @@ class Context(object):
         if not self.has_entity(entity):
             raise MissingEntity()
 
-        entity.destroy()
+        # entity.destroy()
 
         self._entities.remove(entity)
         self._reusable_entities.append(entity)

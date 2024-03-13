@@ -1,29 +1,68 @@
+"""
+This module contains the implementation of the LeaveActionSystem class, which is responsible for handling the leave action of entities in a game.
+
+The LeaveActionSystem class is a subclass of the ReactiveProcessor class and is used to react to entities that have the LeaveActionComponent added to them.
+
+Classes:
+- LeaveActionSystem: A class that handles the leave action of entities in a game.
+
+Methods:
+- __init__(self, context: ExtendedContext): Initializes a new instance of the LeaveActionSystem class.
+- get_trigger(self): Returns the trigger for the system, which is the LeaveActionComponent added to entities.
+- filter(self, entity: list[Entity]): Filters the entities based on the presence of the LeaveActionComponent.
+- react(self, entities: list[Entity]): Reacts to the entities by handling the leave action.
+- handle2(self, entities: list[Entity]) -> None: Handles the leave action for the entities.
+- enter_stage(self, handle: LeaveHandle) -> None: Handles the entering of a new stage for the entity.
+- leave_stage(self, handle: LeaveHandle) -> None: Handles the leaving of the current stage for the entity.
+"""
 
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent
-from components import LeaveActionComponent, NPCComponent, StageComponent, PlayerComponent, SimpleRPGRoleComponent
+from components import LeaveActionComponent, NPCComponent, StageComponent, SimpleRPGRoleComponent
 from actor_action import ActorAction
 from extended_context import ExtendedContext
 
-
 ###集中写一下方便处理，不然每次还要再搜，很麻烦
 class LeaveHandle:
+    """
+    Class representing the leave handling system.
+
+    Attributes:
+    - context (ExtendedContext): The extended context object.
+    - who_wana_leave (Entity): The entity that wants to leave.
+    - current_stage_name (str): The name of the current stage.
+    - current_stage (Entity): The current stage entity.
+    - target_stage_name (str): The name of the target stage.
+    - target_stage (Entity): The target stage entity.
+    """
 
     def __init__(self, context: ExtendedContext) -> None:
+        """
+        Initializes a new instance of the LeaveHandle class.
+
+        Parameters:
+        - context (ExtendedContext): The extended context object.
+        """
         self.context = context
         self.who_wana_leave: Entity = None
-
         self.current_stage_name: str = ""
         self.current_stage: Entity = None
-
         self.target_stage_name: str = ""
         self.target_stage: Entity = None
 
     def init(self, who_wana_leave: Entity, target_stage_name: str) -> bool:
-        #
+        """
+        Initializes the leave handling system.
+
+        Parameters:
+        - who_wana_leave (Entity): The entity that wants to leave.
+        - target_stage_name (str): The name of the target stage.
+
+        Returns:
+        - bool: True if initialization is successful, False otherwise.
+        """
         self.who_wana_leave = who_wana_leave
         self.current_stage_name = who_wana_leave.get(NPCComponent).current_stage
         self.current_stage = self.context.getstage(self.current_stage_name)
-        #
         self.target_stage_name = target_stage_name
         self.target_stage = self.context.getstage(target_stage_name)
         return True
@@ -31,7 +70,10 @@ class LeaveHandle:
 
 ###############################################################################################################################################
 class LeaveActionSystem(ReactiveProcessor):
-
+    """
+    The LeaveActionSystem is responsible for handling the leave action of entities in the game.
+    It reacts to the addition of entities with the LeaveActionComponent and performs the necessary actions.
+    """
     def __init__(self, context: ExtendedContext) -> None:
         super().__init__(context)
         self.context = context
@@ -43,6 +85,10 @@ class LeaveActionSystem(ReactiveProcessor):
         return entity.has(LeaveActionComponent)
 
     def react(self, entities: list[Entity]):
+        """
+        Reacts to the addition of entities with the LeaveActionComponent.
+        Performs the necessary actions for leaving the current stage and entering a new stage.
+        """
         print("<<<<<<<<<<<<<  LeaveActionSystem  >>>>>>>>>>>>>>>>>")
         self.handle2(entities)
 
@@ -52,6 +98,9 @@ class LeaveActionSystem(ReactiveProcessor):
 
     ###############################################################################################################################################
     def handle2(self, entities: list[Entity]) -> None:
+        """
+        Handles the leave action for each entity in the given list of entities.
+        """
         for entity in entities:
             if not entity.has(NPCComponent):
                 print(f"LeaveActionSystem: {entity} is not NPC?!")
@@ -90,6 +139,9 @@ class LeaveActionSystem(ReactiveProcessor):
     ###############################################################################################################################################            
     #当前没有场景, 可能是凭空创建一个player（NPC）
     def enter_stage(self, handle: LeaveHandle) -> None:
+        """
+        Enters a new stage for the entity.
+        """
         ####
         entity = handle.who_wana_leave
         current_stage_name = handle.current_stage_name
@@ -119,6 +171,9 @@ class LeaveActionSystem(ReactiveProcessor):
 
     ###############################################################################################################################################
     def leave_stage(self, handle: LeaveHandle) -> None:
+        """
+        Leaves the current stage for the entity.
+        """
         #当前有场景
         entity: Entity = handle.who_wana_leave
         npccomp: NPCComponent = entity.get(NPCComponent)
@@ -133,72 +188,5 @@ class LeaveActionSystem(ReactiveProcessor):
 
         #给当前场景添加剧本，如果本次有导演就合进事件
         cur_stage_comp.directorscripts.append(f"{npccomp.name} 离开了")
-
-    ###############################################################################################################################################
-    # def handle(self, entities: list[Entity]) -> None:
-    #     return self.handle2(entities)
-    #     # 开始处理
-    #     for entity in entities:
-    #         leavecomp = entity.get(LeaveActionComponent)
-    #         action: ActorAction = leavecomp.action
-    #         print(f"LeaveActionSystem: {action}")
-    #         if len(action.values) == 0:
-    #            print(f"LeaveActionSystem: {action.values} is None")
-    #            continue
-            
-    #         target_stage_name = action.values[0]
-    #         target_stage_entity = self.context.getstage(target_stage_name)
-    #         if target_stage_entity is None:
-    #             print(f"LeaveActionSystem: {target_stage_name} is None")
-    #             continue
-
-    #         if entity.has(NPCComponent):
-
-    #             npccomp = entity.get(NPCComponent)
-    #             current_stage: str = npccomp.current_stage
-                
-    #             if current_stage != target_stage_name:
-    #                 #当前在的场景，准备通知
-    #                 cur_stage_entity = self.context.getstage(current_stage)
-    #                 if cur_stage_entity is not None:
-    #                     #当前有场景
-    #                     cur_stage_comp = cur_stage_entity.get(StageComponent)
-    #                     #更换数据, 因为是namedtuple 只能用替换手段
-    #                     replace_name = npccomp.name
-    #                     replace_agent = npccomp.agent
-    #                     replace_current_stage = target_stage_name
-    #                     entity.replace(NPCComponent, replace_name, replace_agent, replace_current_stage)
-    #                     #给当前场景添加记忆
-    #                     cur_stage_comp.agent.add_chat_history(f"{npccomp.name} 离开了")
-    #                     #给当前场景添加剧本，如果本次有导演就合进事件
-    #                     cur_stage_comp.directorscripts.append(f"{npccomp.name} 离开了")
-    #                     #自己的记忆更新
-    #                     npccomp.agent.add_chat_history(f"你离开了{current_stage}, 去往了{target_stage_name}")
-    #                     #新的场景添加记忆
-    #                     target_stage_entity.get(StageComponent).agent.add_chat_history(f"{npccomp.name} 进入了场景")
-    #                 else :
-    #                     #当前没有场景, 可能是凭空创建一个player（NPC）
-    #                     replace_name = npccomp.name
-    #                     replace_agent = npccomp.agent
-    #                     replace_current_stage = target_stage_name
-    #                     entity.replace(NPCComponent, replace_name, replace_agent, replace_current_stage)
-    #                     #自己的记忆更新
-    #                     npccomp.agent.add_chat_history(f"你进入了{target_stage_name}")
-    #                     #新的场景添加记忆
-    #                     target_stage_entity.get(StageComponent).agent.add_chat_history(f"{npccomp.name} 进入了场景")
-    #                     #新的场景添加导演剧本
-    #                     target_stage_entity.get(StageComponent).directorscripts.append(f"{npccomp.name} 进入了场景")
-    #                     #因为是第一次进入，就必须通知所有已经在场的NPC!
-    #                     npcs_in_stage = self.context.get_npcs_in_stage(target_stage_name)
-    #                     #测试用，到了这里就是Player
-    #                     desc = entity.get(SimpleRPGRoleComponent).desc
-    #                     for npc in npcs_in_stage:
-    #                         npc_comp = npc.get(NPCComponent)
-    #                         if desc != "":
-    #                             npc_comp.agent.add_chat_history(f"{npccomp.name} 进入了场景, {desc}")
-    #                         else:
-    #                             npc_comp.agent.add_chat_history(f"{npccomp.name} 进入了场景")
-    #             else:
-    #                 print(f"LeaveActionSystem: {npccomp.name} is in {target_stage_name}")
 
     ###############################################################################################################################################

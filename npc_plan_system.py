@@ -38,6 +38,7 @@ class NPCPlanSystem(ExecuteProcessor):
         ### 关于action——“行动类型”的逻辑
         - 如果你希望对目标产生敌对行为，比如攻击。则action的值为"FightActionComponent"，value为你本行动针对的目标
         - 如果你有想要说的话或者心里描写。则action的值为"SpeakActionComponent"，value为你想说的话或者心里描写
+        - 如果表示想离开当前场景，有可能是逃跑。action的值为"LeaveActionComponent"，value是你想要去往的场景名字（你必须能明确叫出场景的名字），或者你曾经知道的场景名字
         - 如果与你相关的特征标签。则action的值为"TagActionComponent"，value你的特征标签
         - action值不允许出现FightActionComponent，SpeakActionComponent，LeaveActionComponent，TagActionComponent之外的值
 

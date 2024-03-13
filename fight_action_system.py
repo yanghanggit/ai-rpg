@@ -34,10 +34,11 @@ class FightActionSystem(ReactiveProcessor):
         action: ActorAction = comp.action
         entity = self.context.getnpc(action.name)
         if entity is not None:
-            npccomp = entity.get(NPCComponent) 
+            npccomp: NPCComponent = entity.get(NPCComponent) 
             agent: ActorAgent = npccomp.agent
             alltargets = "\n".join(action.values)
             agent.add_chat_history(f"你向{alltargets}发起了攻击")
+            print(f"{npccomp.name}向{alltargets}发动了attack.")
             return
         
         entity = self.context.getstage(action.name)
@@ -46,6 +47,7 @@ class FightActionSystem(ReactiveProcessor):
             agent: ActorAgent = npccomp.agent
             alltargets = "\n".join(action.values)
             agent.add_chat_history(f"你向{alltargets}发起了攻击")
+            print(f"{npccomp.name}向{alltargets}发动了attack.")
             return
         
     def handlefight(self, entity: Entity) -> None:
@@ -60,16 +62,15 @@ class FightActionSystem(ReactiveProcessor):
             if attacker.has(SimpleRPGRoleComponent) and attacked.has(SimpleRPGRoleComponent):
                 attacker_comp: SimpleRPGRoleComponent = attacker.get(SimpleRPGRoleComponent)
                 attacked_comp: SimpleRPGRoleComponent = attacked.get(SimpleRPGRoleComponent)
-                if attacked_comp.hp - attacker_comp.attack <= 0:
+                attack_result = attacked_comp.hp - attacker_comp.attack
+                attacked.replace(SimpleRPGRoleComponent,attacked_comp.name,100,attack_result,60,"")
+                if attack_result <= 0:
                     attacked.add(DeadActionComponent, action)
                     fight = f"{action.name}对{value}发动了一次攻击,造成了{value}死亡。"
                     stage.directorscripts.append(fight)
-                    print(f"stage:{stage.name} output:{stage.directorscripts}")
                 else:
-                    attacked_comp.hp -= attacker_comp.attack
-                    fight = f"{action.name}对{value}发动了一次攻击,造成了{value}死亡。"
+                    fight = f"{action.name}对{value}发动了一次攻击,但是没有能造成{value}死亡。"
                     stage.directorscripts.append(fight)
-                    print(f"{action.name}对{value}发动了一次攻击,但是没有使{value}死亡。")
             else:
                 print("attacker or attacked has no simple rpg role comp.")
        

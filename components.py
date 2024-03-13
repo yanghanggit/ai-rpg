@@ -1,7 +1,7 @@
 
 from collections import namedtuple
 
-#类型标记类
+###类型标记类
 WorldComponent = namedtuple('WorldComponent', 'name agent')
 StageComponent = namedtuple('StageComponent', 'name agent directorscripts')
 NPCComponent = namedtuple('NPCComponent', 'name agent current_stage')
@@ -18,3 +18,5 @@ DeadActionComponent = namedtuple('DeadActionComponent', 'action')
 ###############################################################################################################################################
 SimpleRPGRoleComponent = namedtuple('SimpleRPGComponent', 'name maxhp hp attack desc')
 ###############################################################################################################################################
+###特殊标记类
+HumanInterferenceComponent=namedtuple('HumanInterferenceComponent', 'reason')

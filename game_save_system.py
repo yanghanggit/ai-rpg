@@ -43,7 +43,7 @@ class GameSaveSystem(TearDownProcessor):
             - xx时间，xxx
             """
             archive = agent.request(archive_prompt)
-            print(f"{agent.name}:\n{archive}")
+            # print(f"{agent.name}:\n{archive}")
             wirte_content_into_md(archive, f"/savedData/{agent.name}.md")
         # 对Stage的chat_history进行梳理总结输出
         entities: set[Entity] = self.context.get_group(Matcher(StageComponent)).entities
@@ -61,7 +61,7 @@ class GameSaveSystem(TearDownProcessor):
             - xx时间，xxx
             """
             archive = agent.request(archive_prompt)
-            print(f"{agent.name}:\n{archive}")
+            # print(f"{agent.name}:\n{archive}")
             wirte_content_into_md(archive, f"/savedData/{agent.name}.md")
 
         # 对NPC的chat_history进行梳理总结输出
@@ -87,7 +87,7 @@ class GameSaveSystem(TearDownProcessor):
             - xx时间，xx对我说了xxxx
             """
             archive = agent.request(archive_prompt)
-            print(f"{agent.name}:\n{archive}")
+            # print(f"{agent.name}:\n{archive}")
             wirte_content_into_md(archive, f"/savedData/{agent.name}.md")
 
 

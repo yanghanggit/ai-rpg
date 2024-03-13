@@ -42,7 +42,7 @@ class InitSystem(InitializeProcessor):
 ## 输出规则：
 - 保留关键信息(时间，地点，人物，事件)，不要推断，增加与润色。输出在保证语意完整基础上字符尽量少。
 """
-            print(f"{comp.name}读取存档记忆=>\n{load_prompt}")
+            # print(f"{comp.name}读取存档记忆=>\n{load_prompt}")
             loadres = comp.agent.request(load_prompt)
 
             #print(f"[{comp.name}]load=>", loadres)
@@ -71,7 +71,7 @@ class InitSystem(InitializeProcessor):
 ## 输出规则：
 - 保留关键信息(时间，地点，人物，事件)，不要推断，增加与润色。输出在保证语意完整基础上字符尽量少。
 """
-            print(f"{comp.name}读取存档记忆=>\n{load_prompt}")
+            # print(f"{comp.name}读取存档记忆=>\n{load_prompt}")
             loadres = comp.agent.request(load_prompt)
             
             #print(f"[{comp.name}]load=>", loadres)
@@ -99,7 +99,7 @@ class InitSystem(InitializeProcessor):
 ## 输出规则：
 - 保留关键信息(时间，地点，人物，事件)，不要推断，增加与润色。输出在保证语意完整基础上字符尽量少。
 """
-            print(f"{comp.name}读取存档记忆=>\n{load_prompt}")
+            # print(f"{comp.name}读取存档记忆=>\n{load_prompt}")
             loadres = comp.agent.request(load_prompt)
             
             #print(f"[{comp.name}]load=>", loadres)

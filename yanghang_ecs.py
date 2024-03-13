@@ -3,7 +3,14 @@ from entitas import Context, Processors
 import json
 from builder import WorldBuilder
 from console import Console
-from components import WorldComponent, StageComponent, NPCComponent, FightActionComponent, PlayerComponent, SimpleRPGRoleComponent, LeaveActionComponent
+from components import (WorldComponent,
+                        StageComponent, 
+                        NPCComponent, 
+                        FightActionComponent, 
+                        PlayerComponent, 
+                        SimpleRPGRoleComponent, 
+                        LeaveActionComponent, 
+                        HumanInterferenceComponent)
 from actor_action import ActorAction
 from actor_agent import ActorAgent
 from init_system import InitSystem
@@ -35,7 +42,7 @@ def create_entities(context: Context, worldbuilder: WorldBuilder) -> None:
             stage_agent.init(stage_builder.data['name'], stage_builder.data['url'], worldbuilder.data['memory'])
             stage_entity = context.create_entity()
             stage_entity.add(StageComponent, stage_agent.name, stage_agent, [])
-            stage_entity.add(SimpleRPGRoleComponent, stage_agent.name, 100, 100, 100, "")
+            stage_entity.add(SimpleRPGRoleComponent, stage_agent.name, 100, 100, 60, "")
             
             for npc_builder in stage_builder.npc_builders:
                 #创建npc
@@ -43,7 +50,7 @@ def create_entities(context: Context, worldbuilder: WorldBuilder) -> None:
                 npc_agent.init(npc_builder.data['name'], npc_builder.data['url'], worldbuilder.data['memory'])
                 npc_entity = context.create_entity()
                 npc_entity.add(NPCComponent, npc_agent.name, npc_agent, stage_agent.name)
-                npc_entity.add(SimpleRPGRoleComponent, npc_agent.name, 100, 100, 100, "")
+                npc_entity.add(SimpleRPGRoleComponent, npc_agent.name, 100, 100, 60, "")
 
 ###############################################################################################################################################
 ###############################################################################################################################################
@@ -257,6 +264,7 @@ def debug_attack(context: ExtendedContext, dest: str) -> None:
         action = ActorAction()
         action.init(npccomp.name, "FightActionComponent", [dest])
         playerentity.add(FightActionComponent, action)
+        playerentity.add(HumanInterferenceComponent, 'Human Interference')
         print(f"debug_attack: {npccomp.name} add {action}")
         return
     
@@ -264,6 +272,7 @@ def debug_attack(context: ExtendedContext, dest: str) -> None:
         stagecomp = playerentity.get(StageComponent)
         action = ActorAction()
         action.init(stagecomp.name, "FightActionComponent", [dest])
+        playerentity.add(HumanInterferenceComponent, 'Human Interference')
         playerentity.add(FightActionComponent, action)
         print(f"debug_attack: {stagecomp.name} add {action}")
         return

@@ -25,11 +25,13 @@ class InitSystem(InitializeProcessor):
             comp: WorldComponent = world.get(WorldComponent)
             print(comp.name)
             print(comp.agent)
+            print(comp.agent.memory)
             # 世界载入
             agent: ActorAgent = comp.agent
             agent.connect()
             if agent.memory == "":
                 agent.memory = "/savedData/basic_archive.md"
+                print(f"{agent.name}未找到专属存档，载入默认存档")
 
             init_archivist = extract_md_content(agent.memory)
             load_prompt = f"""
@@ -55,11 +57,13 @@ class InitSystem(InitializeProcessor):
             comp: StageComponent = stage.get(StageComponent)
             print(comp.name)
             print(comp.agent)
+            print(comp.agent.memory)
             # 场景载入
             agent: ActorAgent = comp.agent
             agent.connect()
             if agent.memory == "":
                 agent.memory = "/savedData/basic_archive.md" 
+                print(f"{agent.name}未找到专属存档，载入默认存档")
             
             init_archivist = extract_md_content(agent.memory)
             load_prompt = f"""
@@ -85,11 +89,14 @@ class InitSystem(InitializeProcessor):
             comp: NPCComponent = npc.get(NPCComponent)
             print(comp.name)
             print(comp.agent)
+            print(comp.agent.memory)
             # NPC载入
             agent: ActorAgent = comp.agent
             agent.connect()
             if agent.memory == "":
                 agent.memory = "/savedData/basic_archive.md" 
+                print(f"{agent.name}未找到专属存档，载入默认存档")
+
             init_archivist = extract_md_content(agent.memory)
             load_prompt = f"""
 # 你需要恢复记忆

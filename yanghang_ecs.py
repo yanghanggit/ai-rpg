@@ -24,7 +24,7 @@ from extended_context import ExtendedContext
 from dead_action_system import DeadActionSystem
 from destroy_system import DestroySystem
 from tag_action_system import TagActionSystem
-from game_save_system import GameSaveSystem
+from data_save_system import DataSaveSystem
 
 ###############################################################################################################################################
 def create_entities(context: Context, worldbuilder: WorldBuilder) -> None:
@@ -39,7 +39,8 @@ def create_entities(context: Context, worldbuilder: WorldBuilder) -> None:
             #     return
             #创建stage       
             stage_agent = ActorAgent()
-            stage_agent.init(stage_builder.data['name'], stage_builder.data['url'], worldbuilder.data['memory'])
+            stage_agent.init(stage_builder.data['name'], stage_builder.data['url'], stage_builder.data['memory'])
+            print(f"创建场景:{stage_builder.data['name']}\nURL:{stage_builder.data['url']}\nMemory:{stage_builder.data['memory']}")
             stage_entity = context.create_entity()
             stage_entity.add(StageComponent, stage_agent.name, stage_agent, [])
             stage_entity.add(SimpleRPGRoleComponent, stage_agent.name, 100, 100, 60, "")
@@ -47,7 +48,8 @@ def create_entities(context: Context, worldbuilder: WorldBuilder) -> None:
             for npc_builder in stage_builder.npc_builders:
                 #创建npc
                 npc_agent = ActorAgent()
-                npc_agent.init(npc_builder.data['name'], npc_builder.data['url'], worldbuilder.data['memory'])
+                npc_agent.init(npc_builder.data['name'], npc_builder.data['url'], npc_builder.data['memory'])
+                print(f"创建NPC:{npc_builder.data['name']}\nURL:{npc_builder.data['url']}\nMemory:{npc_builder.data['memory']}")
                 npc_entity = context.create_entity()
                 npc_entity.add(NPCComponent, npc_agent.name, npc_agent, stage_agent.name)
                 npc_entity.add(SimpleRPGRoleComponent, npc_agent.name, 100, 100, 60, "")
@@ -104,7 +106,7 @@ def main() -> None:
     ###必须最后
     processors.add(DestroySystem(context))
 
-    processors.add(GameSaveSystem(context))
+    processors.add(DataSaveSystem(context))
 
     ####
     inited:bool = False

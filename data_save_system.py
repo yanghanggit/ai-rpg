@@ -12,7 +12,7 @@ from components import (
 from actor_agent import ActorAgent
 from agents.tools.extract_md_content import wirte_content_into_md
 
-class GameSaveSystem(TearDownProcessor):
+class DataSaveSystem(TearDownProcessor):
 
     def __init__(self, context: Context) -> None:
         super().__init__()

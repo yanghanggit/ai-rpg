@@ -15,9 +15,9 @@
               "memory": "/savedData/卡斯帕·艾伦德.md"
             },
             {
-              "name": "小狗'断剑'",
+              "name": "断剑",
               "url": "http://localhost:8023/actor/npc/old_hunters_dog/",
-              "memory": "/savedData/小狗'断剑'.md"
+              "memory": "/savedData/断剑.md"
             },
             {
               "name": "坏运气先生",
@@ -31,6 +31,11 @@
           "url": "http://localhost:8024/stage/melodious_forest_valley/",
           "memory": "/savedData/悠扬林谷.md",
           "NPCs": [
+            {
+              "name": "无影",
+              "url": "http://localhost:8026/actor/npc/thief/",
+              "memory": "/savedData/无影.md"
+            }
           ]
         }
       ]

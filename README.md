@@ -57,5 +57,4 @@ pip install langchain_core langserve fastapi langchain_openai sse_starlette fais
 
 
 
-pm2 start agents/world_watcher_agent.py agents/old_hunters_cabin_agent.py agents/old_hunter_agent.py agents/old_hunt
-ers_dog_agent.py agents/rat_agent.py agents/melodious_forest_valley_agent.py 
+pm2 start agents/world_watcher_agent.py agents/old_hunters_cabin_agent.py agents/old_hunter_agent.py agents/old_hunters_dog_agent.py agents/rat_agent.py agents/melodious_forest_valley_agent.py 

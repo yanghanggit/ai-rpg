@@ -218,9 +218,9 @@ def debug_create_player(context: ExtendedContext, playername: str, stage: str, d
     
     #创建player 本质就是npc
     playeragent = ActorAgent()
-    playeragent.init(playername, [])
+    playeragent.init(playername, [], "")
     playerentity = context.create_entity()
-    playerentity.add(NPCComponent, playername, playeragent, "?")
+    playerentity.add(NPCComponent, playername, playeragent, "")
     playerentity.add(SimpleRPGRoleComponent, playername, 10000000, 10000000, 10000000, desc)
     playerentity.add(PlayerComponent, playername)
 

@@ -92,6 +92,8 @@ class LeaveActionSystem(ReactiveProcessor):
     def enter_stage(self, handle: LeaveHandle) -> None:
         ####
         entity = handle.who_wana_leave
+        current_stage_name = handle.current_stage_name
+
         target_stage_name = handle.target_stage_name
         target_stage_entity = handle.target_stage
         npccomp = entity.get(NPCComponent)
@@ -102,16 +104,18 @@ class LeaveActionSystem(ReactiveProcessor):
         replace_current_stage = target_stage_name
         entity.replace(NPCComponent, replace_name, replace_agent, replace_current_stage)
 
-        #加入导演的事件
-        desc = ""
-        if entity.has(SimpleRPGRoleComponent):
-            desc = entity.get(SimpleRPGRoleComponent).desc
         ##
         target_stage_comp = target_stage_entity.get(StageComponent)
-        if desc != "":
-            target_stage_comp.directorscripts.append(f"{npccomp.name} 进入了场景, {desc}")
+        if current_stage_name != "":
+            target_stage_comp.directorscripts.append(f"{npccomp.name} 离开了{current_stage_name} 并进入了场景 {target_stage_name}")
         else:
-            target_stage_comp.directorscripts.append(f"{npccomp.name} 进入了场景")
+            target_stage_comp.directorscripts.append(f"{npccomp.name} 进入了场景 {target_stage_name}")
+        
+        ##
+        if entity.has(SimpleRPGRoleComponent):
+            desc = entity.get(SimpleRPGRoleComponent).desc
+            if desc != "":
+                target_stage_comp.directorscripts.append(f"{npccomp.name}的描述：{desc}")
 
     ###############################################################################################################################################
     def leave_stage(self, handle: LeaveHandle) -> None:

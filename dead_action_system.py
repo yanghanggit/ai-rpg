@@ -28,8 +28,10 @@ class DeadActionSystem(ExecuteProcessor):
             if not entity.has(DestroyComponent):
                 entity.add(DestroyComponent, "Dead")
                 if entity.has(NPCComponent):
-                    npc_comp:NPCComponent = entity.has(NPCComponent)
+                    npc_comp: NPCComponent = entity.get(NPCComponent)
                     npc_agent: ActorAgent = npc_comp.agent
+                    dead_prompt = "最终你被打死了."
+                    npc_agent.request(dead_prompt)
                     archive_prompt = """
             请根据上下文，对自己知道的事情进行梳理总结成markdown格式后输出,但不要生成```markdown xxx```的形式:
             # 游戏世界存档

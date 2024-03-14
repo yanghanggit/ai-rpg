@@ -69,7 +69,7 @@ class FightActionSystem(ReactiveProcessor):
                     fight = f"{action.name}对{value}发动了一次攻击,造成了{value}死亡。"
                     stage.directorscripts.append(fight)
                 else:
-                    fight = f"{action.name}对{value}发动了一次攻击,但是没有能造成{value}死亡。"
+                    fight = f"{action.name}对{value}发动了一次攻击,但是没有能造成{value}死亡,{value}血量剩余{attack_result}%."
                     stage.directorscripts.append(fight)
             else:
                 print("attacker or attacked has no simple rpg role comp.")

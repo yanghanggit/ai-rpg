@@ -54,7 +54,7 @@ class FightActionSystem(ReactiveProcessor):
         comp: FightActionComponent = entity.get(FightActionComponent)
         print(f"FightActionSystem: {comp.action}")
         action: ActorAction = comp.action
-        stage: StageComponent = self.context.get_stage_by_entity(entity)
+        stage: StageComponent = self.context.get_stagecomponent_by_uncertain_entity(entity)
 
         attacker: Entity = self.context.getnpc(action.name)
         for value in action.values:

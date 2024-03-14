@@ -144,7 +144,7 @@ def main() -> None:
                 continue
             command = "/showstages"
             who = console.parse_command(usr_input, command)
-            log = context.showstages()
+            log = context.show_stages_log()
             print(f"/showstages: \n", log)
             print("==============================================")
 

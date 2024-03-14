@@ -35,7 +35,7 @@ class SpeakActionSystem(ReactiveProcessor):
             speakcomp = entity.get(SpeakActionComponent)
             action: ActorAction = speakcomp.action
             for value in action.values:
-                stagecomp = self.context.get_stage_by_entity(entity)
+                stagecomp = self.context.get_stagecomponent_by_uncertain_entity(entity)
                 if stagecomp is not None:
                     stagecomp.directorscripts.append(f"{action.name} 说（或者心里活动）: {value}")
         

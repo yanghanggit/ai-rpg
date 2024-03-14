@@ -43,7 +43,7 @@ class ExtendedContext(Context):
         return None
     
 
-    def get_stage_by_entity(self, entity: Entity) -> StageComponent:
+    def get_stagecomponent_by_uncertain_entity(self, entity: Entity) -> StageComponent:
         if entity.has(StageComponent):
             return entity.get(StageComponent)
 
@@ -54,7 +54,7 @@ class ExtendedContext(Context):
                     return stage.get(StageComponent)
         return None
         
-    def showstages(self) -> str:
+    def show_stages_log(self) -> str:
 
         stagesentities = self.get_group(Matcher(StageComponent)).entities
         npcsentities = self.get_group(Matcher(NPCComponent)).entities

@@ -32,7 +32,7 @@ def npc_plan_prompt(entity: Entity, context: ExtendedContext) -> str:
         - action值不允许出现FightActionComponent，SpeakActionComponent，LeaveActionComponent，TagActionComponent之外的值
 
         ## 补充约束
-        - 不要将JSON输出生这样的格式：```...```
+        - 不要将JSON输出生这样的格式：```json...```
         """
     return prompt
 
@@ -62,7 +62,7 @@ def stage_plan_prompt(entity: Entity, context: ExtendedContext) -> str:
         - action值不允许出现FightActionComponent，SpeakActionComponent，TagActionComponent之外的值
     
         ## 补充约束
-        - 不要将JSON输出生这样的格式：```...```
+        - 不要将JSON输出生这样的格式：```json...```
         """
     return prompt
 

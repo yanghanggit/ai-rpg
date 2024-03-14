@@ -37,7 +37,7 @@ class FightActionSystem(ReactiveProcessor):
             npccomp: NPCComponent = entity.get(NPCComponent) 
             agent: ActorAgent = npccomp.agent
             alltargets = "\n".join(action.values)
-            agent.add_chat_history(f"你向{alltargets}发起了攻击")
+            # agent.add_chat_history(f"你向{alltargets}发起了攻击")
             print(f"{npccomp.name}向{alltargets}发动了attack.")
             return
         
@@ -46,7 +46,7 @@ class FightActionSystem(ReactiveProcessor):
             npccomp = entity.get(StageComponent) 
             agent: ActorAgent = npccomp.agent
             alltargets = "\n".join(action.values)
-            agent.add_chat_history(f"你向{alltargets}发起了攻击")
+            # agent.add_chat_history(f"你向{alltargets}发起了攻击")
             print(f"{npccomp.name}向{alltargets}发动了attack.")
             return
         

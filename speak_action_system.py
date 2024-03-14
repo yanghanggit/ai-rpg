@@ -40,6 +40,7 @@ class SpeakActionSystem(ReactiveProcessor):
                     stagecomp.directorscripts.append(f"{action.name} 说（或者心里活动）: {value}")
         
     def handlememory(self, entities: list[Entity]) -> None:
+        return
         for entity in entities:
             speakcomp = entity.get(SpeakActionComponent)
             action: ActorAction = speakcomp.action

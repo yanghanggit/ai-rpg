@@ -49,7 +49,7 @@ class InitSystem(InitializeProcessor):
             loadres = comp.agent.request(load_prompt)
 
             #print(f"[{comp.name}]load=>", loadres)
-            print("______________________________________")
+            # print("______________________________________")
         
     def handlestages(self) -> None:
         stages: set = self.context.get_group(Matcher(StageComponent)).entities
@@ -81,7 +81,7 @@ class InitSystem(InitializeProcessor):
             loadres = comp.agent.request(load_prompt)
             
             #print(f"[{comp.name}]load=>", loadres)
-            print("______________________________________")
+            # print("______________________________________")
 
     def handlenpcs(self) -> None:
         npcs: set = self.context.get_group(Matcher(NPCComponent)).entities
@@ -113,4 +113,4 @@ class InitSystem(InitializeProcessor):
             loadres = comp.agent.request(load_prompt)
             
             #print(f"[{comp.name}]load=>", loadres)
-            print("______________________________________")
+            # print("______________________________________")

@@ -16,9 +16,8 @@ pip install langchain_core langserve fastapi langchain_openai sse_starlette fais
 2. 然后运行main.py进行对话;
 
 
-## yanghang_dev.py
-- yanghang的代码测试
-- pm2 start agents/world_watcher_agent.py agents/old_hunters_cabin_agent.py agents/old_hunter_agent.py agents/old_hunters_dog_agent.py
+## yanghang的代码测试
+- pm2 start agents/world_watcher_agent.py agents/old_hunters_cabin_agent.py agents/old_hunter_agent.py agents/old_hunters_dog_agent.py agents/rat_agent.py agents/melodious_forest_valley_agent.py 
 
 
 
@@ -31,17 +30,9 @@ pip install langchain_core langserve fastapi langchain_openai sse_starlette fais
 - /call @坏运气先生 你知道世界上的哪些地方？
 
 ## 创建玩家
-- /createplayer 一个高大的兽人战士，独眼。手中拿着巨斧，杀气腾腾
+- /player yanghang|老猎人隐居的小木屋|他是一个高大的兽人战士，独眼。手中拿着巨斧，杀气腾腾
 
-## 要求场景做一次推进，最后必须加空格，因为解析没怎么写好
-- /runstage 老猎人隐居的小木屋 
-- /runstage 悠扬林谷 
-
-## 控制actor
-- /enterstage 老猎人隐居的小木屋
-- /enterstage 悠扬林谷
-- /say2everyone 你们好呀！！
-
+## 控制npc
 - /who 卡斯帕·艾伦德
 - /who 小狗'断剑'
 - /who 坏运气先生
@@ -51,10 +42,3 @@ pip install langchain_core langserve fastapi langchain_openai sse_starlette fais
 - /attack 小狗'断剑'
 - /attack 卡斯帕·艾伦德
 - /attack 坏运气先生
-
-
-- /player yanghang|老猎人隐居的小木屋|他是一个高大的兽人战士，独眼。手中拿着巨斧，杀气腾腾
-
-
-
-pm2 start agents/world_watcher_agent.py agents/old_hunters_cabin_agent.py agents/old_hunter_agent.py agents/old_hunters_dog_agent.py agents/rat_agent.py agents/melodious_forest_valley_agent.py 

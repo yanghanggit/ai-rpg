@@ -84,7 +84,7 @@ class DirectorSystem(ExecuteProcessor):
         - {npcs_names} 都还在此 {stage_comp.name} 场景中。
         - 你需要更新你的状态并以此作为做后续计划的基础。
         """
-        print(f"记忆添加内容:\n{confirm_prompt}\n")
+        # print(f"记忆添加内容:\n{confirm_prompt}\n")
         for npcen in npcs_in_stage:
             npc_comp: NPCComponent = npcen.get(NPCComponent)
             npc_agent: ActorAgent = npc_comp.agent

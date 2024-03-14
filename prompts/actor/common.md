@@ -9,9 +9,9 @@
 ### 输出格式（JSON）：
 你的输出应该遵循以下JSON结构：
 {{
-  "XXXComponent": ["value"],
-  "XXXComponent": ["value"],
-  "XXXComponent": ["value"],
+  "XXXComponent": ["value1", "value2", ...],
+  "XXXComponent": ["value1", "value2", ...],
+  "XXXComponent": ["value1", "value2", ...],
   ...
 }}
 

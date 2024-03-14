@@ -31,18 +31,32 @@ class StagePlanSystem(ExecuteProcessor):
                 #print(action)
                 if len(action.values) == 0:
                     continue
-                if action.actionname == "FightActionComponent":
-                    if not entity.has(FightActionComponent):
-                        entity.add(FightActionComponent, action)
-                elif action.actionname == "SpeakActionComponent":
-                    if not entity.has(SpeakActionComponent):
-                        entity.add(SpeakActionComponent, action)
-                elif action.actionname == "TagActionComponent":
-                    if not entity.has(TagActionComponent):
-                        entity.add(TagActionComponent, action)
-                else:
-                    print(f"error {action.actionname}, action value {action.values}")
-                    continue
+                # if action.actionname == "FightActionComponent":
+                #     if not entity.has(FightActionComponent):
+                #         entity.add(FightActionComponent, action)
+                # elif action.actionname == "SpeakActionComponent":
+                #     if not entity.has(SpeakActionComponent):
+                #         entity.add(SpeakActionComponent, action)
+                # elif action.actionname == "TagActionComponent":
+                #     if not entity.has(TagActionComponent):
+                #         entity.add(TagActionComponent, action)
+                # else:
+                #     print(f"error {action.actionname}, action value {action.values}")
+                #     continue
+                match action.actionname:
+                    case "FightActionComponent":
+                        if not entity.has(FightActionComponent):
+                            entity.add(FightActionComponent, action)
+                    case "SpeakActionComponent":
+                        if not entity.has(SpeakActionComponent):
+                            entity.add(SpeakActionComponent, action)
+                    case "TagActionComponent":
+                        if not entity.has(TagActionComponent):
+                            entity.add(TagActionComponent, action)
+                    case _:
+                        print(f"error {action.actionname}, action value {action.values}")
+                        continue
+
 
         except Exception as e:
             print(f"stage_plan error = {e}")

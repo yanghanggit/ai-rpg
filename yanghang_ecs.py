@@ -92,9 +92,9 @@ def main() -> None:
     #行动逻辑
     processors.add(TagActionSystem(context))
     processors.add(SpeakActionSystem(context))
-    processors.add(FightActionSystem(context))
 
     #####死亡必须是战斗之后，因为如果死了就不能离开
+    processors.add(FightActionSystem(context))
     processors.add(DeadActionSystem(context)) 
     #########################################
     #处理离开
@@ -105,7 +105,6 @@ def main() -> None:
     #########################################
     ###必须最后
     processors.add(DestroySystem(context))
-
     processors.add(DataSaveSystem(context))
 
     ####

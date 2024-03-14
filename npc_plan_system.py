@@ -58,20 +58,39 @@ class NPCPlanSystem(ExecuteProcessor):
             for action in actorplan.actions:
                 if len(action.values) == 0:
                     continue
-                if action.actionname == "FightActionComponent":
-                    if not entity.has(FightActionComponent):
-                        entity.add(FightActionComponent, action)
-                elif action.actionname == "LeaveActionComponent":
-                    if not entity.has(LeaveActionComponent):
-                        entity.add(LeaveActionComponent, action)
-                elif action.actionname == "SpeakActionComponent":
-                    if not entity.has(SpeakActionComponent):
-                        entity.add(SpeakActionComponent, action)
-                elif action.actionname == "TagActionComponent":
-                    if not entity.has(TagActionComponent):
-                        entity.add(TagActionComponent, action)
-                else:
-                    print(f" {action.actionname}, Unknown action name")
+                # if action.actionname == "FightActionComponent":
+                #     if not entity.has(FightActionComponent):
+                #         entity.add(FightActionComponent, action)
+                # elif action.actionname == "LeaveActionComponent":
+                #     if not entity.has(LeaveActionComponent):
+                #         entity.add(LeaveActionComponent, action)
+                # elif action.actionname == "SpeakActionComponent":
+                #     if not entity.has(SpeakActionComponent):
+                #         entity.add(SpeakActionComponent, action)
+                # elif action.actionname == "TagActionComponent":
+                #     if not entity.has(TagActionComponent):
+                #         entity.add(TagActionComponent, action)
+                # else:
+                #     print(f" {action.actionname}, Unknown action name")
+                match action.actionname:
+                    case "FightActionComponent":
+                        if not entity.has(FightActionComponent):
+                            entity.add(FightActionComponent, action)
+
+                    case "LeaveActionComponent":
+                        if not entity.has(LeaveActionComponent):
+                            entity.add(LeaveActionComponent, action)
+
+                    case "SpeakActionComponent":
+                        if not entity.has(SpeakActionComponent):
+                            entity.add(SpeakActionComponent, action)
+                    
+                    case "TagActionComponent":
+                        if not entity.has(TagActionComponent):
+                            entity.add(TagActionComponent, action)
+                    case _:
+                        print(f" {action.actionname}, Unknown action name")
+                        continue
 
         except Exception as e:
             print(f"stage_plan error = {e}")

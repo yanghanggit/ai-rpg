@@ -44,22 +44,12 @@
 - "value" 是你的"行动目标"，可以是一个或多个目标。
 
 ### 行动类型说明：
-- 敌对行为：若欲执行敌对行为（如攻击），则将action的值设置为"FightActionComponent"，value为目标。
-- 发表言论或心理活动：若有话语或内心想法需表达，则将action的值设置为"SpeakActionComponent"，value为你的言论或心理活动。
-- 离开场景：若意图离开当前场景（可能为逃跑），则将action的值设置为"LeaveActionComponent"，value为目的地场景名称。你必须能明确指出场景名称，或者是你曾知晓的场景。
-- 特征标签：若需表明与你相关的特征标签，则将action的值设置为"TagActionComponent"，value为你的特征标签。
+- 敌对行为：若欲执行敌对行为（如攻击），则将XXXComponent设置为"FightActionComponent"，value为目标。
+- 发表言论或心理活动：若有话语或内心想法需表达，则将XXXComponent设置为"SpeakActionComponent"，value是以'第三人称'客观讲述已经发生的事情和环境。
+- 特征标签：若需表明与你相关的特征标签，则将XXXComponent设置为"TagActionComponent"，value为你的特征标签。
 ### 行动值限制：
-- 行动的action值只允许使用"FightActionComponent", "SpeakActionComponent", "LeaveActionComponent", 或 "TagActionComponent"。
+- XXXComponent只允许设置为"FightActionComponent", "SpeakActionComponent" 或 "TagActionComponent"。
 
 ## 注意：
-- 不要使用英文回答。
-- 当输出JSON格式数据时，请确保不要使用三重引号（```）来封装JSON数据。
-
-
-
-
-
-
-
-
-
+不要使用英文回答。
+当输出JSON格式数据时，请确保不要使用三重引号（```）来封装JSON数据。

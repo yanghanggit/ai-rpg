@@ -71,7 +71,7 @@ class DirectorSystem(ExecuteProcessor):
         dirprompt = director_prompt("\n".join(directorscripts), entity, self.context)
 
         print(f"剧本:\n{dirprompt}\n")
-
+        
         response = stagecomp.agent.request(dirprompt)
 
         npcs_in_stage = self.context.get_npcs_in_stage(stagecomp.name)

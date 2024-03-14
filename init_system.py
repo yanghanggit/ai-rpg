@@ -67,7 +67,7 @@ class InitSystem(InitializeProcessor):
             
             init_archivist = extract_md_content(agent.memory)
             load_prompt = f"""
-# 你需要恢复记忆,本次恢复记忆只需要以json格式回复 "SpeakActionComponent": "确认恢复记忆" 即可，不要其他任何多余信息。
+# 你需要恢复记忆,本次恢复记忆只需要以json格式回复 "SpeakActionComponent": ["确认恢复记忆"] 即可，不要其他任何多余信息。
 ## 步骤:
 - 第1步:记忆如下{init_archivist}.
 - 第2步:理解其中所有的信息.
@@ -99,7 +99,7 @@ class InitSystem(InitializeProcessor):
 
             init_archivist = extract_md_content(agent.memory)
             load_prompt = f"""
-# 你需要恢复记忆,本次恢复记忆只需要以json格式回复 "SpeakActionComponent": "确认恢复记忆" 即可，不要其他任何多余信息。
+# 你需要恢复记忆,本次恢复记忆只需要以json格式回复 "SpeakActionComponent": ["确认恢复记忆"] 即可，不要其他任何多余信息。
 ## 步骤:
 - 第1步:记忆如下{init_archivist}.
 - 第2步:理解其中所有的信息.

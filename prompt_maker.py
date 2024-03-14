@@ -66,7 +66,7 @@ def npc_plan_prompt(entity: Entity, context: ExtendedContext) -> str:
 # - 不要使用英文回答。
 # - 当输出JSON格式数据时，请确保不要使用三重引号（```）来封装JSON数据。
 # """
-    prompt = "输出你的计划。"
+    prompt = "请回忆之前发生的事情并确认自身状态，然后作出你的计划。"
     return prompt
 
 
@@ -128,7 +128,7 @@ def stage_plan_prompt(entity: Entity, context: ExtendedContext) -> str:
 # 不要使用英文回答。
 # 当输出JSON格式数据时，请确保不要使用三重引号（```）来封装JSON数据。
 # """
-    prompt = "输出你的计划。"
+    prompt = "请回忆之前发生的事情并确认自身状态，然后作出你的计划。"
     return prompt
 
 

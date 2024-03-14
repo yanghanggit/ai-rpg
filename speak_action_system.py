@@ -4,6 +4,7 @@ from components import SpeakActionComponent, NPCComponent, StageComponent
 from actor_action import ActorAction
 from extended_context import ExtendedContext
 from typing import List
+from agents.tools.print_in_color import Color
 
 ###############################################################################################################################################
 ###############################################################################################################################################
@@ -37,7 +38,9 @@ class SpeakActionSystem(ReactiveProcessor):
             for value in action.values:
                 stagecomp = self.context.get_stagecomponent_by_uncertain_entity(entity)
                 if stagecomp is not None:
-                    stagecomp.directorscripts.append(f"{action.name} 说（或者心里活动）: {value}")
+                    what_to_said = f"{action.name}说:{value}"
+                    print(f"{Color.HEADER}{what_to_said}{Color.ENDC}")
+                    stagecomp.directorscripts.append(what_to_said)
         
     # def handlememory(self, entities: list[Entity]) -> None:
     #     for entity in entities:

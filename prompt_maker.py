@@ -37,7 +37,7 @@ def npc_plan_prompt(entity: Entity, context: ExtendedContext) -> str:
 
     #gpt 优化后的结果
     prompt = f"""
-# 制定你的计划并以JSON格式输出结果，请按照以下步骤和规则操作。注意，这些规则仅适用于本次对话，结束后将恢复到原有的对话规则。
+# 根据你之前知道的事情，来制定你的下一步计划并以JSON格式输出结果，请按照以下步骤和规则操作。注意，这些规则仅适用于本次对话，结束后将恢复到原有的对话规则。
 
 ## 步骤概述：
 1. 确认自身状态：检查并确认你当前的状态。
@@ -63,6 +63,7 @@ def npc_plan_prompt(entity: Entity, context: ExtendedContext) -> str:
 - 行动的action值只允许使用"FightActionComponent", "SpeakActionComponent", "LeaveActionComponent", 或 "TagActionComponent"。
 
 ## 注意：
+不要使用英文回答。
 当输出JSON格式数据时，请确保不要使用三重引号（```）来封装JSON数据。
 """
     return prompt
@@ -98,7 +99,7 @@ def stage_plan_prompt(entity: Entity, context: ExtendedContext) -> str:
     
     #gpt 优化后的结果
     prompt = f"""
-# 制定你的计划并以JSON格式输出结果，请按照以下步骤和规则操作。注意，这些规则仅适用于本次对话，结束后将恢复到原有的对话规则。
+# 根据你之前知道的事情，来制定你的下一步计划并以JSON格式输出结果，请按照以下步骤和规则操作。注意，这些规则仅适用于本次对话，结束后将恢复到原有的对话规则。
 
 ## 步骤概述：
 1. 确认自身状态：检查并确认你当前的状态。
@@ -117,12 +118,13 @@ def stage_plan_prompt(entity: Entity, context: ExtendedContext) -> str:
 
 ### 行动类型说明：
 - 敌对行为：若欲执行敌对行为（如攻击），则将action的值设置为"FightActionComponent"，value为目标。
-- 发表言论或心理活动：若有话语或内心想法需表达，则将action的值设置为"SpeakActionComponent"，value为你的言论或心理活动。
+- 发表言论或心理活动：若有话语或内心想法需表达，则将action的值设置为"SpeakActionComponent"，value是以'第三人称'客观讲述已经发生的事情和环境。
 - 特征标签：若需表明与你相关的特征标签，则将action的值设置为"TagActionComponent"，value为你的特征标签。
 ### 行动值限制：
 - 行动的action值只允许使用"FightActionComponent", "SpeakActionComponent" 或 "TagActionComponent"。
 
 ## 注意：
+不要使用英文回答。
 当输出JSON格式数据时，请确保不要使用三重引号（```）来封装JSON数据。
 """
 

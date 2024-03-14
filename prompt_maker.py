@@ -49,7 +49,8 @@ def npc_plan_prompt(entity: Entity, context: ExtendedContext) -> str:
 你的输出应该遵循以下JSON结构：
 {{
   "action1": ["value1", "value2", ...],
-  "action2": ["value1", "value2", ...]
+  "action2": ["value1", "value2", ...],
+  ...
 }}
 "action?" 表示你的"行动类型"。
 "value?" 是你的"行动目标"，可以是一个或多个目标。
@@ -110,7 +111,8 @@ def stage_plan_prompt(entity: Entity, context: ExtendedContext) -> str:
 你的输出应该遵循以下JSON结构：
 {{
   "action1": ["value1", "value2", ...],
-  "action2": ["value1", "value2", ...]
+  "action2": ["value1", "value2", ...],
+  ...
 }}
 "action?" 表示你的"行动类型"。
 "value?" 是你的"行动目标"，可以是一个或多个目标。

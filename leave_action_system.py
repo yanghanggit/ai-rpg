@@ -187,6 +187,6 @@ class LeaveActionSystem(ReactiveProcessor):
         entity.replace(NPCComponent, replace_name, replace_agent, replace_current_stage)
 
         #给当前场景添加剧本，如果本次有导演就合进事件
-        cur_stage_comp.directorscripts.append(f"{npccomp.name} 离开了")
+        cur_stage_comp.directorscripts.append(f"{npccomp.name} 离开{handle.current_stage_name}去了{handle.target_stage_name}")
 
     ###############################################################################################################################################

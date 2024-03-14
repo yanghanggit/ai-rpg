@@ -305,12 +305,12 @@ def debug_chat_history(context: ExtendedContext, name: str) -> None:
     if entity is not None:
         npc_comp: NPCComponent = entity.get(NPCComponent)
         npc_agent: ActorAgent = npc_comp.agent
-        print(f"{'=' * 50}\ndebug_chat_history for {npc_comp.name} => :\n")
+        print(f"{'=' * 50}\ndebug_chat_history for {npc_comp.name} => :")
         for history in npc_agent.chat_history:
             if isinstance(history, HumanMessage):
-                print(f"Human:{history.content}")
+                print(f"{'=' * 50}\nHuman:{history.content}")
             elif isinstance(history, AIMessage):
-                print(f"AI:{history.content}")
+                print(f"{'=' * 50}\nAI:{history.content}")
         print(f"{'=' * 50}")
         return
     

@@ -20,35 +20,35 @@ class FightActionSystem(ReactiveProcessor):
     def react(self, entities):
         print("<<<<<<<<<<<<<  FightActionSystem  >>>>>>>>>>>>>>>>>")
         for entity in entities:
-            self.handlememory(entity)
+            #self.handlememory(entity)
             self.handlefight(entity)
 
         ### 必须删除！！！！！！！！！！！！！！！！！！！！！！！！！！
         for entity in entities:
             entity.remove(FightActionComponent)
 
-    def handlememory(self, entity) -> None:
-        comp = entity.get(FightActionComponent)
-        print(f"FightActionSystem: {comp.action}")
+    # def handlememory(self, entity) -> None:
+    #     comp = entity.get(FightActionComponent)
+    #     print(f"FightActionSystem: {comp.action}")
 
-        action: ActorAction = comp.action
-        entity = self.context.getnpc(action.name)
-        if entity is not None:
-            npccomp: NPCComponent = entity.get(NPCComponent) 
-            agent: ActorAgent = npccomp.agent
-            alltargets = "\n".join(action.values)
-            agent.add_chat_history(f"你向{alltargets}发起了攻击")
-            print(f"{npccomp.name}向{alltargets}发动了attack.")
-            return
+    #     action: ActorAction = comp.action
+    #     entity = self.context.getnpc(action.name)
+    #     if entity is not None:
+    #         npccomp: NPCComponent = entity.get(NPCComponent) 
+    #         agent: ActorAgent = npccomp.agent
+    #         alltargets = "\n".join(action.values)
+    #         agent.add_chat_history(f"你向{alltargets}发起了攻击")
+    #         print(f"{npccomp.name}向{alltargets}发动了attack.")
+    #         return
         
-        entity = self.context.getstage(action.name)
-        if entity is not None:
-            npccomp = entity.get(StageComponent) 
-            agent: ActorAgent = npccomp.agent
-            alltargets = "\n".join(action.values)
-            agent.add_chat_history(f"你向{alltargets}发起了攻击")
-            print(f"{npccomp.name}向{alltargets}发动了attack.")
-            return
+    #     entity = self.context.getstage(action.name)
+    #     if entity is not None:
+    #         npccomp = entity.get(StageComponent) 
+    #         agent: ActorAgent = npccomp.agent
+    #         alltargets = "\n".join(action.values)
+    #         agent.add_chat_history(f"你向{alltargets}发起了攻击")
+    #         print(f"{npccomp.name}向{alltargets}发动了attack.")
+    #         return
         
     def handlefight(self, entity: Entity) -> None:
         comp: FightActionComponent = entity.get(FightActionComponent)

@@ -23,7 +23,7 @@ class SpeakActionSystem(ReactiveProcessor):
 
     def react(self, entities: list[Entity]):
         print("<<<<<<<<<<<<<  SpeakActionSystem  >>>>>>>>>>>>>>>>>")
-        self.handlememory(entities)
+        #self.handlememory(entities)
         self.handlespeak(entities)
         # 必须移除！！！
         for entity in entities:
@@ -39,19 +39,19 @@ class SpeakActionSystem(ReactiveProcessor):
                 if stagecomp is not None:
                     stagecomp.directorscripts.append(f"{action.name} 说（或者心里活动）: {value}")
         
-    def handlememory(self, entities: list[Entity]) -> None:
-        for entity in entities:
-            speakcomp = entity.get(SpeakActionComponent)
-            action: ActorAction = speakcomp.action
+    # def handlememory(self, entities: list[Entity]) -> None:
+    #     for entity in entities:
+    #         speakcomp = entity.get(SpeakActionComponent)
+    #         action: ActorAction = speakcomp.action
 
-            if entity.has(NPCComponent):
-                npccomp = entity.get(NPCComponent)
-                agent = npccomp.agent
-                for value in action.values:
-                    agent.add_chat_history(f"你说（或者心里活动）: {value}")
-            elif entity.has(StageComponent):
-                stagecomp = entity.get(StageComponent)
-                agent = stagecomp.agent
-                for value in action.values:
-                    agent.add_chat_history(f"你说（或者心里活动）: {value}")
+    #         if entity.has(NPCComponent):
+    #             npccomp = entity.get(NPCComponent)
+    #             agent = npccomp.agent
+    #             for value in action.values:
+    #                 agent.add_chat_history(f"你说（或者心里活动）: {value}")
+    #         elif entity.has(StageComponent):
+    #             stagecomp = entity.get(StageComponent)
+    #             agent = stagecomp.agent
+    #             for value in action.values:
+    #                 agent.add_chat_history(f"你说（或者心里活动）: {value}")
                 

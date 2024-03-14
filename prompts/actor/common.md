@@ -9,14 +9,14 @@
 ### 输出格式（JSON）：
 你的输出应该遵循以下JSON结构：
 {{
-  "XXXComponent": ["value1", "value2", ...],
-  "XXXComponent": ["value1", "value2", ...],
-  "XXXComponent": ["value1", "value2", ...],
+  "XXXComponent1": ["value1", "value2", ...],
+  "XXXComponent2": ["value1", "value2", ...],
+  "XXXComponent3": ["value1", "value2", ...],
   ...
 }}
 
-- "XXXComponent" 表示你的"行动类型",根据需要尽可能类型丰富。
-- "value" 是你的"行动目标"，可以是一个或多个目标。
+- "XXXComponent？" 表示你的"行动类型",根据需要尽可能类型丰富。
+- ["value？", "value？", ...] 必须是字符串数组。"value" 是你的"行动目标"，可以是一个或多个目标。
 
 #### 行动类型说明：
 - 敌对行为：若欲执行敌对行为（如攻击），则将XXXComponent设置为"FightActionComponent"，value为你的全部目标。

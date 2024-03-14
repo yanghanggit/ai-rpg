@@ -57,8 +57,14 @@ class FightActionSystem(ReactiveProcessor):
         stage: StageComponent = self.context.get_stagecomponent_by_uncertain_entity(entity)
 
         attacker: Entity = self.context.getnpc(action.name)
+        if attacker is None:
+            print(f"攻击者{action.name}错误,导致attacker对象为None,本次攻击无效.")
+            return
         for value in action.values:
             attacked: Entity = self.context.getnpc(value)
+            if attacked is None:
+                print(f"攻击者{action.name}错误,导致attacker对象为None,本次攻击无效.")
+                return
             if attacker.has(SimpleRPGRoleComponent) and attacked.has(SimpleRPGRoleComponent):
                 attacker_comp: SimpleRPGRoleComponent = attacker.get(SimpleRPGRoleComponent)
                 attacked_comp: SimpleRPGRoleComponent = attacked.get(SimpleRPGRoleComponent)

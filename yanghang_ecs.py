@@ -25,6 +25,9 @@ from dead_action_system import DeadActionSystem
 from destroy_system import DestroySystem
 from tag_action_system import TagActionSystem
 from data_save_system import DataSaveSystem
+from langchain_core.messages import (
+    HumanMessage,
+    AIMessage)
 
 ###############################################################################################################################################
 def create_entities(context: Context, worldbuilder: WorldBuilder) -> None:
@@ -184,6 +187,14 @@ def main() -> None:
             target_name = console.parse_command(usr_input, command)    
             debug_attack(context, target_name)
             print("==============================================")
+        
+        elif "/mem" in usr_input:
+            if not started:
+                print("请先/run")
+                continue
+            command = "/mem"
+            target_name = console.parse_command(usr_input, command)
+            debug_chat_history(context, target_name)
 
     processors.clear_reactive_processors()
     processors.tear_down()
@@ -280,5 +291,45 @@ def debug_attack(context: ExtendedContext, dest: str) -> None:
 
 ###############################################################################################################################################
     
+
+
+def debug_chat_history(context: ExtendedContext, name: str) -> None:
+
+    # playerentity = context.getplayer()
+    # if playerentity is not None:
+    #     playercomp = playerentity.get(PlayerComponent)
+    #     print(f"debug_be_who current player is : {playercomp.name}")
+    #     playerentity.remove(PlayerComponent)
+
+    entity = context.getnpc(name)
+    if entity is not None:
+        npc_comp: NPCComponent = entity.get(NPCComponent)
+        npc_agent: ActorAgent = npc_comp.agent
+        print(f"{'=' * 50}\ndebug_chat_history for {npc_comp.name} => :\n")
+        for history in npc_agent.chat_history:
+            if isinstance(history, HumanMessage):
+                print(f"Human:{history.content}")
+            elif isinstance(history, AIMessage):
+                print(f"AI:{history.content}")
+        print(f"{'=' * 50}")
+        return
+    
+    entity = context.getstage(name)
+    if entity is not None:
+        stage_comp: StageComponent = entity.get(StageComponent)
+        stage_agent: ActorAgent = stage_comp.agent
+        print(f"{'=' * 50}\ndebug_chat_history for {stage_comp.name} => :\n")
+        for history in stage_agent.chat_history:
+            if isinstance(history, HumanMessage):
+                print(f"Human:{history.content}")
+            elif isinstance(history, AIMessage):
+                print(f"AI:{history.content}")
+        print(f"{'=' * 50}")
+        return
+
+
+###############################################################################################################################################
+
+
 if __name__ == "__main__":
     main()

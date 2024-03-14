@@ -4,6 +4,7 @@ from components import StageComponent, NPCComponent
 from typing import List
 from extended_context import ExtendedContext
 from prompt_maker import director_prompt
+from actor_agent import ActorAgent
 
 class DirectorSystem(ExecuteProcessor):
     """
@@ -70,21 +71,23 @@ class DirectorSystem(ExecuteProcessor):
 
         dirprompt = director_prompt("\n".join(directorscripts), entity, self.context)
 
-        print(f"剧本:\n{dirprompt}\n")
+        print(f"剧本Prompt:\n{dirprompt}\n")
         
         response = stagecomp.agent.request(dirprompt)
 
         npcs_in_stage = self.context.get_npcs_in_stage(stagecomp.name)
-        npcs_names = "\n".join([npc.get(NPCComponent).name for npc in npcs_in_stage])
-        confirm_prompt = f"""
-        # 你目睹或者参与了这一切，并更新了你的记忆,如果与你记忆不相符则按照下面内容强行更新你的记忆
-        - {response}
-        # 你能确认
-        - {npcs_names} 都还在此 {stagecomp.name} 场景中。
-        """
+        # npcs_names = "\n".join([npc.get(NPCComponent).name for npc in npcs_in_stage])
+        # confirm_prompt = f"""
+        # # 你目睹或者参与了这一切，并更新了你的记忆,如果与你记忆不相符则按照下面内容强行更新你的记忆
+        # - {response}
+        # # 你能确认
+        # - {npcs_names} 都还在此 {stagecomp.name} 场景中。
+        # """
 
+        ## 直接更新NPC的记忆成导演的剧本
         for npcen in npcs_in_stage:
-            ncomp = npcen.get(NPCComponent)
-            response = ncomp.agent.request(confirm_prompt)
+            npc_comp: NPCComponent = npcen.get(NPCComponent)
+            npc_agent: ActorAgent = npc_comp.agent
+            npc_agent.add_chat_history(response)
 
         print(f"[{stagecomp.name}] 结束导演+++++++++++++++++++++++++++++++++++++++++++++++++++++")

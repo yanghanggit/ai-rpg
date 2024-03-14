@@ -32,18 +32,17 @@ class ActorAgent:
             return ""
         response = self.agent.invoke({"input": prompt, "chat_history": self.chat_history})
         response_output = cast(str, response.get('output', ''))
-        self.chat_history.extend([HumanMessage(content=prompt), AIMessage(content=response_output)])
+        # self.chat_history.extend([HumanMessage(content=prompt), AIMessage(content=response_output)])
 
-        print(f"{self.name } request = {response_output}\n{'=' * 50}")
+        print(f"{'=' * 50}\n{self.name} request result:\n{response_output}\n{'=' * 50}")
         return response_output
     
     def add_chat_history(self, new_chat: str) -> None:
-        return
         if self.agent is None:
             print(f"add_chat_history: {self.name} have no agent.")
             return ""
-        print(f"{self.name } add_chat_history = ", new_chat)
-        self.chat_history.extend([HumanMessage(content = new_chat)])
+        # print(f"{self.name } add_chat_history = ", new_chat)
+        self.chat_history.extend([AIMessage(content = new_chat)])
     
     def __str__(self) -> str:
         return f"ActorAgent({self.name}, {self.url})"

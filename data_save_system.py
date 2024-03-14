@@ -33,14 +33,14 @@ class DataSaveSystem(TearDownProcessor):
             ## 地点
             ### xxx
             #### 发生的事件
-            - xx时间，xxx
-            - xx时间，xxx
-            - xx时间，xxx
+            - xxxx
+            - xxxx
+            - xxxx
             ### xxx
             #### 发生的事件
-            - xx时间，xxx
-            - xx时间，xxx
-            - xx时间，xxx
+            - xxxx
+            - xxxx
+            - xxxx
             """
             archive = agent.request(archive_prompt)
             # print(f"{agent.name}:\n{archive}")
@@ -56,9 +56,9 @@ class DataSaveSystem(TearDownProcessor):
             ## 地点
             - xxxxx
             ## 发生的事情
-            - xx时间，xxx
-            - xx时间，xxx
-            - xx时间，xxx
+            - xxxx
+            - xxxx
+            - xxxx
             """
             archive = agent.request(archive_prompt)
             # print(f"{agent.name}:\n{archive}")
@@ -75,16 +75,16 @@ class DataSaveSystem(TearDownProcessor):
             ## 地点
             ### xxx
             #### 和我有关的事
-            - xx时间，我对xx说xxxx
-            - xx时间，我对xx干了xxxx
-            - xx时间，xx对我干了xxxx
-            - xx时间，xx对我说了xxxx
+            - xxxx
+            - xxxx
+            - xxxx
+            - xxxx
             ### xxx
             #### 和我有关的事
-            - xx时间，我对xx说xxxx
-            - xx时间，我对xx干了xxxx
-            - xx时间，xx对我干了xxxx
-            - xx时间，xx对我说了xxxx
+            - xxxx
+            - xxxx
+            - xxxx
+            - xxxx
             """
             archive = agent.request(archive_prompt)
             # print(f"{agent.name}:\n{archive}")

@@ -62,32 +62,34 @@ class DirectorSystem(ExecuteProcessor):
         Args:
             entity (Entity): The stage entity to handle.
         """
-        stagecomp = entity.get(StageComponent)
-        print(f"[{stagecomp.name}] 开始导演+++++++++++++++++++++++++++++++++++++++++++++++++++++")
+        stage_comp: StageComponent = entity.get(StageComponent)
+        print(f"[{stage_comp.name}] 开始导演+++++++++++++++++++++++++++++++++++++++++++++++++++++")
 
-        directorscripts: list[str] = stagecomp.directorscripts
+        directorscripts: list[str] = stage_comp.directorscripts
         if len(directorscripts) == 0:
             return
 
         dirprompt = director_prompt("\n".join(directorscripts), entity, self.context)
 
-        print(f"剧本Prompt:\n{dirprompt}\n")
+        # print(f"剧本Prompt:\n{dirprompt}\n")
         
-        response = stagecomp.agent.request(dirprompt)
+        # response = stagecomp.agent.request(dirprompt)
 
-        npcs_in_stage = self.context.get_npcs_in_stage(stagecomp.name)
-        # npcs_names = "\n".join([npc.get(NPCComponent).name for npc in npcs_in_stage])
-        # confirm_prompt = f"""
-        # # 你目睹或者参与了这一切，并更新了你的记忆,如果与你记忆不相符则按照下面内容强行更新你的记忆
-        # - {response}
-        # # 你能确认
-        # - {npcs_names} 都还在此 {stagecomp.name} 场景中。
-        # """
-
-        ## 直接更新NPC的记忆成导演的剧本
+        npcs_in_stage = self.context.get_npcs_in_stage(stage_comp.name)
+        npcs_names = " ".join([npc.get(NPCComponent).name for npc in npcs_in_stage])
+        confirm_prompt = f"""
+        # 你目睹或者参与了这一切，并更新了你的记忆,如果与你记忆不相符则按照下面内容强行更新你的记忆
+        - {directorscripts}
+        # 你能确认
+        - {npcs_names} 都还在此 {stage_comp.name} 场景中。
+        """
+        print(f"记忆添加内容:\n{confirm_prompt}\n")
         for npcen in npcs_in_stage:
             npc_comp: NPCComponent = npcen.get(NPCComponent)
             npc_agent: ActorAgent = npc_comp.agent
-            npc_agent.add_chat_history(response)
+            npc_agent.add_chat_history(confirm_prompt)
 
-        print(f"[{stagecomp.name}] 结束导演+++++++++++++++++++++++++++++++++++++++++++++++++++++")
+        stage_agent: ActorAgent = stage_comp.agent
+        stage_agent.add_chat_history(confirm_prompt)
+
+        print(f"[{stage_comp.name}] 结束导演+++++++++++++++++++++++++++++++++++++++++++++++++++++")

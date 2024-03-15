@@ -7,14 +7,14 @@ from components import NPCComponent, StageComponent
 def npc_plan_prompt(entity: Entity, context: ExtendedContext) -> str:
     if not entity.has(NPCComponent):
         raise ValueError("npc_plan_prompt, entity has no NPCComponent")
-    prompt = "请回忆之前发生的事情并确认自身状态，然后作出你的计划。"
+    prompt = f"请回忆之前发生的事情并确认自身状态，根据‘做计划的规则’作出你的计划。"
     return prompt
 
 
 def stage_plan_prompt(entity: Entity, context: ExtendedContext) -> str:
     if not entity.has(StageComponent):
         raise ValueError("stage_plan_prompt, entity has no StageComponent")
-    prompt = "请回忆之前发生的事情并确认自身状态，然后作出你的计划。"
+    prompt = f"请回忆之前发生的事情并确认自身状态，根据‘做计划的规则’作出你的计划。"
     return prompt
 
 

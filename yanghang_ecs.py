@@ -89,8 +89,8 @@ def main() -> None:
     processors.add(InitSystem(context))
     
     #规划逻辑
-   # processors.add(StagePlanSystem(context))
-   # processors.add(NPCPlanSystem(context))
+    processors.add(StagePlanSystem(context))
+    processors.add(NPCPlanSystem(context))
 
     #行动逻辑
     processors.add(TagActionSystem(context))

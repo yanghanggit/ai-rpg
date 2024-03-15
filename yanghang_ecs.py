@@ -90,22 +90,18 @@ def main() -> None:
         print(e)
         return        
 
-    print("<<<<<<<<<<<<<<<<<<<<< 构建系统 >>>>>>>>>>>>>>>>>>>>>>>>>>>")
-    #初始化系统
+    #初始化系统########################
     processors.add(InitSystem(context))
-    
-    #规划逻辑
+    #规划逻辑########################
     processors.add(StagePlanSystem(context))
     processors.add(NPCPlanSystem(context))
-
-    #行动逻辑
+    #行动逻辑########################
     processors.add(TagActionSystem(context))
     processors.add(MindVoiceActionSystem(context))
     processors.add(WhisperActionSystem(context))
     processors.add(BroadcastActionSystem(context))
     processors.add(SpeakActionSystem(context))
-
-    #####死亡必须是战斗之后，因为如果死了就不能离开
+    #死亡必须是战斗之后，因为如果死了就不能离开###############
     processors.add(FightActionSystem(context))
     processors.add(DeadActionSystem(context)) 
     #########################################
@@ -113,7 +109,6 @@ def main() -> None:
     processors.add(LeaveActionSystem(context))
     #行动结束后导演
     processors.add(DirectorSystem(context))
-    
     #########################################
     ###必须最后
     processors.add(DestroySystem(context))

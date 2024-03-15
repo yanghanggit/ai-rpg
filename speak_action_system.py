@@ -3,9 +3,9 @@ from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent
 from components import SpeakActionComponent, NPCComponent, StageComponent
 from actor_action import ActorAction
 from extended_context import ExtendedContext
-from typing import List
 from agents.tools.print_in_color import Color
    
+####################################################################################################
 class SpeakActionSystem(ReactiveProcessor):
 
     def __init__(self, context: ExtendedContext) -> None:
@@ -23,34 +23,34 @@ class SpeakActionSystem(ReactiveProcessor):
         # 核心执行
         for entity in entities:
             self.handle(entity)  
-
         # 必须移除！！！
         for entity in entities:
             entity.remove(SpeakActionComponent)     
-
+####################################################################################################
     def handle(self, entity: Entity) -> None:
         speakcomp = entity.get(SpeakActionComponent)
         action: ActorAction = speakcomp.action
         #debug
-        for value in action.values:
-            what_to_said = f"{action.name}说:{value}"
-            print(f"SpeakActionSystem debug: {what_to_said}")
+        # for value in action.values:
+        #     what_to_said = f"{action.name}说:{value}"
+        #     print(f"SpeakActionSystem debug: {what_to_said}")
 
         for value in action.values:
             tp = self.parsespeak(value)
-            
             target = tp[0]
             message = tp[1]
-            print(f"SpeakActionSystem debug: {target}说:{message}")
+            #print(f"SpeakActionSystem debug: {target}说:{message}")
 
+            ##如果检查不过就能继续
             if not self.check_speak_enable(entity, target):
                 continue
-
+            ##拼接说话内容
             saycontent = f"{action.name}对{target}对说:{message}"
             print(f"{Color.HEADER}{saycontent}{Color.ENDC}")
+            ##添加场景事件，最后随着导演剧本走
             stagecomp = self.context.get_stagecomponent_by_uncertain_entity(entity)
             stagecomp.directorscripts.append(saycontent)
-
+####################################################################################################
     def check_speak_enable(self, src: Entity, dstname: str) -> bool:
 
         npc_entity: Entity = self.context.getnpc(dstname)
@@ -69,7 +69,7 @@ class SpeakActionSystem(ReactiveProcessor):
             return False
         
         return True
-
+####################################################################################################
     def parsespeak(self, content: str) -> tuple[str, str]:
         # 解析出说话者和说话内容
         target, message = content.split(">")

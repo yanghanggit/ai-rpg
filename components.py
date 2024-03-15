@@ -1,7 +1,7 @@
 
 from collections import namedtuple
 
-###类型标记类
+###核心组件
 WorldComponent = namedtuple('WorldComponent', 'name agent')
 StageComponent = namedtuple('StageComponent', 'name agent directorscripts')
 NPCComponent = namedtuple('NPCComponent', 'name agent current_stage')
@@ -11,25 +11,16 @@ DestroyComponent = namedtuple('DestroyComponent', 'name')
 ###############################################################################################################################################
 ###动作类的组件
 RememberActionComponent = namedtuple('RememberActionComponent', 'action')
-
-FightActionComponent = namedtuple('FightActionComponent', 'action')
-LeaveActionComponent = namedtuple('LeaveActionComponent', 'action')
-TagActionComponent = namedtuple('TagActionComponent', 'action')
-DeadActionComponent = namedtuple('DeadActionComponent', 'action')
-
-
-
 MindVoiceActionComponent = namedtuple('MindVoiceActionComponent', 'action')
 BroadcastActionComponent = namedtuple('BroadcastActionComponent', 'action')
 WhisperActionComponent = namedtuple('WhisperActionComponent', 'action')
 SpeakActionComponent = namedtuple('SpeakActionComponent', 'action')
-
-
-
-
-
-
+FightActionComponent = namedtuple('FightActionComponent', 'action')
+LeaveActionComponent = namedtuple('LeaveActionComponent', 'action')
+TagActionComponent = namedtuple('TagActionComponent', 'action')
+DeadActionComponent = namedtuple('DeadActionComponent', 'action')
 ###############################################################################################################################################
+###游戏业务组件
 SimpleRPGRoleComponent = namedtuple('SimpleRPGComponent', 'name maxhp hp attack desc')
 ###############################################################################################################################################
 ###特殊标记类

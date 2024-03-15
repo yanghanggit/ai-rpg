@@ -25,9 +25,15 @@ from dead_action_system import DeadActionSystem
 from destroy_system import DestroySystem
 from tag_action_system import TagActionSystem
 from data_save_system import DataSaveSystem
+from broadcast_action_system import BroadcastActionSystem  
+from whisper_action_system import WhisperActionSystem 
+
+
 from langchain_core.messages import (
     HumanMessage,
     AIMessage)
+
+from mind_voice_action_system import MindVoiceActionSystem
 
 ###############################################################################################################################################
 def create_entities(context: Context, worldbuilder: WorldBuilder) -> None:
@@ -84,19 +90,18 @@ def main() -> None:
         print(e)
         return        
 
-    print("<<<<<<<<<<<<<<<<<<<<< 构建系统 >>>>>>>>>>>>>>>>>>>>>>>>>>>")
-    #初始化系统
+    #初始化系统########################
     processors.add(InitSystem(context))
-    
-    #规划逻辑
+    #规划逻辑########################
     processors.add(StagePlanSystem(context))
     processors.add(NPCPlanSystem(context))
-
-    #行动逻辑
+    #行动逻辑########################
     processors.add(TagActionSystem(context))
+    processors.add(MindVoiceActionSystem(context))
+    processors.add(WhisperActionSystem(context))
+    processors.add(BroadcastActionSystem(context))
     processors.add(SpeakActionSystem(context))
-
-    #####死亡必须是战斗之后，因为如果死了就不能离开
+    #死亡必须是战斗之后，因为如果死了就不能离开###############
     processors.add(FightActionSystem(context))
     processors.add(DeadActionSystem(context)) 
     #########################################
@@ -104,7 +109,6 @@ def main() -> None:
     processors.add(LeaveActionSystem(context))
     #行动结束后导演
     processors.add(DirectorSystem(context))
-    
     #########################################
     ###必须最后
     processors.add(DestroySystem(context))
@@ -291,16 +295,7 @@ def debug_attack(context: ExtendedContext, dest: str) -> None:
 
 ###############################################################################################################################################
     
-
-
 def debug_chat_history(context: ExtendedContext, name: str) -> None:
-
-    # playerentity = context.getplayer()
-    # if playerentity is not None:
-    #     playercomp = playerentity.get(PlayerComponent)
-    #     print(f"debug_be_who current player is : {playercomp.name}")
-    #     playerentity.remove(PlayerComponent)
-
     entity = context.getnpc(name)
     if entity is not None:
         npc_comp: NPCComponent = entity.get(NPCComponent)

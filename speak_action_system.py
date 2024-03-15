@@ -3,13 +3,10 @@ from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent
 from components import SpeakActionComponent, NPCComponent, StageComponent
 from actor_action import ActorAction
 from extended_context import ExtendedContext
-from typing import List
 from agents.tools.print_in_color import Color
-
-###############################################################################################################################################
-###############################################################################################################################################
-###############################################################################################################################################
-###############################################################################################################################################    
+from prompt_maker import speak_action_prompt
+   
+####################################################################################################
 class SpeakActionSystem(ReactiveProcessor):
 
     def __init__(self, context: ExtendedContext) -> None:
@@ -24,37 +21,60 @@ class SpeakActionSystem(ReactiveProcessor):
 
     def react(self, entities: list[Entity]):
         print("<<<<<<<<<<<<<  SpeakActionSystem  >>>>>>>>>>>>>>>>>")
-        #self.handlememory(entities)
-        self.handlespeak(entities)
+        # 核心执行
+        for entity in entities:
+            self.handle(entity)  
         # 必须移除！！！
         for entity in entities:
             entity.remove(SpeakActionComponent)     
+####################################################################################################
+    def handle(self, entity: Entity) -> None:
+        speakcomp = entity.get(SpeakActionComponent)
+        action: ActorAction = speakcomp.action
+        #debug
+        # for value in action.values:
+        #     what_to_said = f"{action.name}说:{value}"
+        #     print(f"SpeakActionSystem debug: {what_to_said}")
 
-    def handlespeak(self, entities: list[Entity]) -> None:
-        # 开始处理
-        for entity in entities:
-            speakcomp = entity.get(SpeakActionComponent)
-            action: ActorAction = speakcomp.action
-            for value in action.values:
-                stagecomp = self.context.get_stagecomponent_by_uncertain_entity(entity)
-                if stagecomp is not None:
-                    what_to_said = f"{action.name}说:{value}"
-                    print(f"{Color.HEADER}{what_to_said}{Color.ENDC}")
-                    stagecomp.directorscripts.append(what_to_said)
+        for value in action.values:
+            tp = self.parsespeak(value)
+            target = tp[0]
+            message = tp[1]
+            #print(f"SpeakActionSystem debug: {target}说:{message}")
+
+            ##如果检查不过就能继续
+            if not self.check_speak_enable(entity, target):
+                continue
+            ##拼接说话内容
+            #saycontent = f"{action.name}对{target}对说:{message}"
+            saycontent = speak_action_prompt(action.name, target, message, self.context)
+            print(f"{Color.HEADER}{saycontent}{Color.ENDC}")
+            ##添加场景事件，最后随着导演剧本走
+            stagecomp = self.context.get_stagecomponent_by_uncertain_entity(entity)
+            stagecomp.directorscripts.append(saycontent)
+####################################################################################################
+    def check_speak_enable(self, src: Entity, dstname: str) -> bool:
+
+        npc_entity: Entity = self.context.getnpc(dstname)
+        if npc_entity is None:
+            print(f"没有找到名字为{dstname}的NPC")
+            return False
+
+        current_stage_comp: StageComponent = self.context.get_stagecomponent_by_uncertain_entity(src)  
+        if current_stage_comp is None:
+            print(f"没有找到{src}的StageComponent")
+            return False  
         
-    # def handlememory(self, entities: list[Entity]) -> None:
-    #     for entity in entities:
-    #         speakcomp = entity.get(SpeakActionComponent)
-    #         action: ActorAction = speakcomp.action
-
-    #         if entity.has(NPCComponent):
-    #             npccomp = entity.get(NPCComponent)
-    #             agent = npccomp.agent
-    #             for value in action.values:
-    #                 agent.add_chat_history(f"你说（或者心里活动）: {value}")
-    #         elif entity.has(StageComponent):
-    #             stagecomp = entity.get(StageComponent)
-    #             agent = stagecomp.agent
-    #             for value in action.values:
-    #                 agent.add_chat_history(f"你说（或者心里活动）: {value}")
-                
+        npccomp: NPCComponent = npc_entity.get(NPCComponent)
+        if current_stage_comp.name != npccomp.current_stage:
+            print(f"{src}不在{npccomp.current_stage}, {current_stage_comp.name}中")
+            return False
+        
+        return True
+####################################################################################################
+    def parsespeak(self, content: str) -> tuple[str, str]:
+        # 解析出说话者和说话内容
+        target, message = content.split(">")
+        target = target[1:]  # Remove the '@' symbol
+        return target, message
+       

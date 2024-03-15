@@ -10,6 +10,7 @@ PlayerComponent = namedtuple('PlayerComponent', 'name')
 DestroyComponent = namedtuple('DestroyComponent', 'name')
 ###############################################################################################################################################
 ###动作类的组件
+RememberActionComponent = namedtuple('RememberActionComponent', 'action')
 SpeakActionComponent = namedtuple('SpeakActionComponent', 'action')
 FightActionComponent = namedtuple('FightActionComponent', 'action')
 LeaveActionComponent = namedtuple('LeaveActionComponent', 'action')

@@ -1,6 +1,6 @@
 
 from entitas import Entity, Matcher, ExecuteProcessor
-from components import StageComponent, FightActionComponent, SpeakActionComponent, TagActionComponent
+from components import StageComponent, FightActionComponent, SpeakActionComponent, TagActionComponent, MindVoiceActionComponent
 from actor_action import ActorPlan
 from prompt_maker import stage_plan_prompt
       
@@ -53,12 +53,19 @@ class StagePlanSystem(ExecuteProcessor):
                     case "FightActionComponent":
                         if not entity.has(FightActionComponent):
                             entity.add(FightActionComponent, action)
+
                     case "SpeakActionComponent":
                         if not entity.has(SpeakActionComponent):
                             entity.add(SpeakActionComponent, action)
+
                     case "TagActionComponent":
                         if not entity.has(TagActionComponent):
                             entity.add(TagActionComponent, action)
+
+                    case "MindVoiceActionComponent":
+                        if not entity.has(MindVoiceActionComponent):
+                            entity.add(MindVoiceActionComponent, action)
+                            
                     case _:
                         print(f"error {action.actionname}, action value {action.values}")
                         continue

@@ -16,6 +16,7 @@ FightActionComponent = namedtuple('FightActionComponent', 'action')
 LeaveActionComponent = namedtuple('LeaveActionComponent', 'action')
 TagActionComponent = namedtuple('TagActionComponent', 'action')
 DeadActionComponent = namedtuple('DeadActionComponent', 'action')
+MindVoiceActionComponent = namedtuple('MindVoiceActionComponent', 'action')
 ###############################################################################################################################################
 SimpleRPGRoleComponent = namedtuple('SimpleRPGComponent', 'name maxhp hp attack desc')
 ###############################################################################################################################################

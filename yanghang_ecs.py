@@ -29,6 +29,8 @@ from langchain_core.messages import (
     HumanMessage,
     AIMessage)
 
+from mind_voice_action_system import MindVoiceActionSystem
+
 ###############################################################################################################################################
 def create_entities(context: Context, worldbuilder: WorldBuilder) -> None:
         ##创建world
@@ -94,6 +96,7 @@ def main() -> None:
 
     #行动逻辑
     processors.add(TagActionSystem(context))
+    processors.add(MindVoiceActionSystem(context))
     processors.add(SpeakActionSystem(context))
 
     #####死亡必须是战斗之后，因为如果死了就不能离开

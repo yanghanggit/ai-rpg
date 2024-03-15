@@ -25,15 +25,23 @@
 
 #### 注意！行动类型说明：
 - 敌对行为：若欲执行敌对行为（如攻击），则将XXXComponent设置为"FightActionComponent"，value为你的全部目标。
-- 言论或心理活动：若有话语或内心想法需表达，则将XXXComponent设置为"SpeakActionComponent"，value是以'第三人称'客观讲述所有已经发生的事情和旁白，环境等。
+- 言论：若有话语需表达，则将XXXComponent设置为"SpeakActionComponent"，
+  - 如果你是NPC, value是以'第1人称'输出你要说的话。
+  - 如果你是场景，value是以'第3人称'讲述所有你知道的已经发生的事情和旁白，环境等。
 - 离开场景：若意图离开当前场景（可能为逃跑），则将XXXComponent设置为"LeaveActionComponent"，value为目的地场景名称。
-  - 如果你是场景，就不具有此行动类型
+  - 注意！如果你是场景，就不具有'离开场景'的行动类型
   - 你必须能明确指出场景名称，或者是你曾知晓的场景。
 - 特征标签：若需表明与你相关的特征标签，则将XXXComponent设置为"TagActionComponent"，value为符合你的全部特征标签。
 - 恢复记忆：表明你执行的是"恢复记忆"，将XXXComponent设置为"RememberActionComponent"，value为"确认恢复记忆"。
+- 心理活动：若有内心想法需表达，则将XXXComponent设置为"MindVoiceActionComponent"，value是以'第1人称'，输出你的心里活动与内心独白。
 
-#### 注意！XXXComponent选择限制：
-- XXXComponent只允许设置为"FightActionComponent", "SpeakActionComponent", "LeaveActionComponent" 或 "TagActionComponent", RememberActionComponent
+#### 注意！XXXComponent选择限制（即能选取允许如下的设置）：
+- "FightActionComponent"
+- "SpeakActionComponent"
+- "LeaveActionComponent"
+- "TagActionComponent"
+- "RememberActionComponent"
+- "MindVoiceActionComponent"
 
 ## 其他限制：
 - 不要使用英文回答。

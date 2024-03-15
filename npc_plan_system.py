@@ -1,7 +1,13 @@
 
 
 from entitas import Entity, Matcher, ExecuteProcessor
-from components import NPCComponent, FightActionComponent, SpeakActionComponent, LeaveActionComponent, TagActionComponent, HumanInterferenceComponent
+from components import (NPCComponent, 
+                        FightActionComponent, 
+                        SpeakActionComponent, 
+                        LeaveActionComponent, 
+                        TagActionComponent, 
+                        HumanInterferenceComponent,
+                        MindVoiceActionComponent)
 from actor_action import ActorPlan
 from prompt_maker import npc_plan_prompt
 from extended_context import ExtendedContext
@@ -74,6 +80,11 @@ class NPCPlanSystem(ExecuteProcessor):
                     case "TagActionComponent":
                         if not entity.has(TagActionComponent):
                             entity.add(TagActionComponent, action)
+
+                    case "MindVoiceActionComponent":
+                        if not entity.has(MindVoiceActionComponent):
+                            entity.add(MindVoiceActionComponent, action)
+                    
                     case _:
                         print(f" {action.actionname}, Unknown action name")
                         continue

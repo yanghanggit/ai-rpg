@@ -17,7 +17,11 @@ Methods:
 """
 
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent
-from components import LeaveActionComponent, NPCComponent, StageComponent, SimpleRPGRoleComponent
+from components import (LeaveActionComponent, 
+                        NPCComponent, 
+                        StageComponent, 
+                        SimpleRPGRoleComponent,
+                        BagComponent)
 from actor_action import ActorAction
 from extended_context import ExtendedContext
 
@@ -126,6 +130,18 @@ class LeaveActionSystem(ReactiveProcessor):
             if handle.target_stage == handle.current_stage:
                 print(f"想要去往的场景是当前的场景{handle.current_stage_name}: {stagename} 不用往下进行了")
                 continue
+
+            if handle.current_stage_name == '老猎人隐居的小木屋' and entity.has(BagComponent):
+                bag_comp: BagComponent = entity.get(BagComponent)
+                if '古老的地图' not in bag_comp.name_items:
+                    print(f"没有'古老的地图'，不能离开当前场景")
+                    stage_comp: StageComponent =  handle.current_stage.get(StageComponent)
+                    stage_comp.directorscripts.append(f"{entity.get(NPCComponent).name} 试图离开{handle.current_stage_name} 但没有'古老的地图'，不能离开")
+                    continue
+                else:
+                    print(f"有'古老的地图'，可以离开当前场景")
+            else:
+                print(f"当前场景{handle.current_stage_name}不是'悠扬林谷'，可以离开")
             
             ##如果当前有场景就要离开
             if handle.current_stage is not None:

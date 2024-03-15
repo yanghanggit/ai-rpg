@@ -35,6 +35,7 @@
 - 心理活动：若有内心想法需表达，则将XXXComponent设置为"MindVoiceActionComponent"，["value？", "value？", ...]为你的全部想以'第1人称'输出你的心里活动与内心独白。
 - 场景广播：若有话语，需向场景内所有的人说。则将XXXComponent设置为"BroadcastActionComponent"，["value？", "value？", ...]为你的全部想以'第1人称'输出你的的话。
 - 低语：若有话语你需要对特定角色说同时不希望被其他人听到。则将XXXComponent设置为"WhisperActionComponent"，["value？", "value？", ...] 只能是这种形式：["目标对象", "说话内容"]，也就是说只有2个元素，"目标对象"必须是你场景内的人物。
+- 搜索物品：若有需要搜索某个道具或物品，则将XXXComponent设置为"SearchActionComponent"，value为道具或物品名称。
 
 
 #### 注意！XXXComponent选择限制, 即只能从如下的设置中来选取

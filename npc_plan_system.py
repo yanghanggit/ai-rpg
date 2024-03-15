@@ -9,7 +9,9 @@ from components import (NPCComponent,
                         HumanInterferenceComponent,
                         MindVoiceActionComponent,
                         BroadcastActionComponent, 
-                        WhisperActionComponent)
+                        WhisperActionComponent,
+                        HumanInterferenceComponent, 
+                        SearchActionComponent)
 from actor_action import ActorPlan
 from prompt_maker import npc_plan_prompt
 from extended_context import ExtendedContext
@@ -98,6 +100,10 @@ class NPCPlanSystem(ExecuteProcessor):
                     case "WhisperActionComponent":
                         if not entity.has(WhisperActionComponent):
                             entity.add(WhisperActionComponent, action)
+
+                    case "SearchActionComponent":
+                        if not entity.has(SearchActionComponent):
+                            entity.add(SearchActionComponent, action)
                     case _:
                         print(f" {action.actionname}, Unknown action name")
                         continue

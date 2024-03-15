@@ -10,7 +10,9 @@ from components import (WorldComponent,
                         PlayerComponent, 
                         SimpleRPGRoleComponent, 
                         LeaveActionComponent, 
-                        HumanInterferenceComponent)
+                        HumanInterferenceComponent,
+                        UniquePropComponent,
+                        BagComponent)
 from actor_action import ActorAction
 from actor_agent import ActorAgent
 from init_system import InitSystem
@@ -27,6 +29,7 @@ from tag_action_system import TagActionSystem
 from data_save_system import DataSaveSystem
 from broadcast_action_system import BroadcastActionSystem  
 from whisper_action_system import WhisperActionSystem 
+from search_props_system import SearchPropsSystem
 
 
 from langchain_core.messages import (
@@ -44,8 +47,6 @@ def create_entities(context: Context, worldbuilder: WorldBuilder) -> None:
         world_entity.add(WorldComponent, worldagent.name, worldagent)
 
         for stage_builder in worldbuilder.stage_builders:     
-            # if stage_builder.data['name'] == '悠扬林谷':
-            #     return
             #创建stage       
             stage_agent = ActorAgent()
             stage_agent.init(stage_builder.data['name'], stage_builder.data['url'], stage_builder.data['memory'])
@@ -53,7 +54,11 @@ def create_entities(context: Context, worldbuilder: WorldBuilder) -> None:
             stage_entity = context.create_entity()
             stage_entity.add(StageComponent, stage_agent.name, stage_agent, [])
             stage_entity.add(SimpleRPGRoleComponent, stage_agent.name, 100, 100, 60, "")
-            
+
+            if stage_builder.data['name'] == '老猎人隐居的小木屋':
+                prop_entity = context.create_entity()
+                prop_entity.add(UniquePropComponent, "古老的地图", "None")
+
             for npc_builder in stage_builder.npc_builders:
                 #创建npc
                 npc_agent = ActorAgent()
@@ -62,6 +67,7 @@ def create_entities(context: Context, worldbuilder: WorldBuilder) -> None:
                 npc_entity = context.create_entity()
                 npc_entity.add(NPCComponent, npc_agent.name, npc_agent, stage_agent.name)
                 npc_entity.add(SimpleRPGRoleComponent, npc_agent.name, 100, 100, 60, "")
+                npc_entity.add(BagComponent, set())
 
 ###############################################################################################################################################
 ###############################################################################################################################################
@@ -105,6 +111,8 @@ def main() -> None:
     processors.add(FightActionSystem(context))
     processors.add(DeadActionSystem(context)) 
     #########################################
+    # 处理搜寻道具行为
+    processors.add(SearchPropsSystem(context))
     #处理离开
     processors.add(LeaveActionSystem(context))
     #行动结束后导演

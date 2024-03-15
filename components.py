@@ -6,6 +6,8 @@ WorldComponent = namedtuple('WorldComponent', 'name agent')
 StageComponent = namedtuple('StageComponent', 'name agent directorscripts')
 NPCComponent = namedtuple('NPCComponent', 'name agent current_stage')
 PlayerComponent = namedtuple('PlayerComponent', 'name')
+UniquePropComponent = namedtuple('UniquePropComponent', 'name owner')
+BagComponent = namedtuple('BagComponent', 'name_items')
 ###############################################################################################################################################
 DestroyComponent = namedtuple('DestroyComponent', 'name')
 ###############################################################################################################################################
@@ -19,6 +21,7 @@ FightActionComponent = namedtuple('FightActionComponent', 'action')
 LeaveActionComponent = namedtuple('LeaveActionComponent', 'action')
 TagActionComponent = namedtuple('TagActionComponent', 'action')
 DeadActionComponent = namedtuple('DeadActionComponent', 'action')
+SearchActionComponent = namedtuple('SearchActionComponent', 'action')
 ###############################################################################################################################################
 ###游戏业务组件
 SimpleRPGRoleComponent = namedtuple('SimpleRPGComponent', 'name maxhp hp attack desc')

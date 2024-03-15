@@ -26,9 +26,7 @@
 
 #### 注意！行动类型说明：
 - 敌对行为：若欲执行敌对行为（如攻击），则将XXXComponent设置为"FightActionComponent"，["value？", "value？", ...]为你的全部目标。
-- 言论：若有话语需表达，则将XXXComponent设置为"SpeakActionComponent"，["value？", "value？", ...]为你的全部想以'第1人称'输出你的话。
-  - 如果你是NPC, value是以'第1人称'输出你要说的话。
-  - 如果你是场景，value是以'第3人称'讲述所有你知道的已经发生的事情和旁白，环境等。
+- 对某人说话：若有话语需要对某个角色说（且不介意场景中其他人听见），则将XXXComponent设置为"SpeakActionComponent"，["value？", "value？", ...]为你的全部行动结果。每一个行动结果代表着“目标名字与对话内容”。注意！每一个value的格式如下："@目标名字>对话内容"。其中"目标名字"是你要对话的角色（必须在本个场景里），对话内容就是内容。例子：比如你需要对A说“hello world”，输出结果为["@A>hello world"]。
 - 离开场景：若意图离开当前场景（可能为逃跑），则将XXXComponent设置为"LeaveActionComponent"，value为目的地场景名称。
   - 注意！如果你是场景，就不具有'离开场景'的行动类型
   - 你必须能明确指出场景名称，或者是你曾知晓的场景。

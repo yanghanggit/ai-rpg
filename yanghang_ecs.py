@@ -295,16 +295,7 @@ def debug_attack(context: ExtendedContext, dest: str) -> None:
 
 ###############################################################################################################################################
     
-
-
 def debug_chat_history(context: ExtendedContext, name: str) -> None:
-
-    # playerentity = context.getplayer()
-    # if playerentity is not None:
-    #     playercomp = playerentity.get(PlayerComponent)
-    #     print(f"debug_be_who current player is : {playercomp.name}")
-    #     playerentity.remove(PlayerComponent)
-
     entity = context.getnpc(name)
     if entity is not None:
         npc_comp: NPCComponent = entity.get(NPCComponent)

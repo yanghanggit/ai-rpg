@@ -4,6 +4,7 @@ from components import SpeakActionComponent, NPCComponent, StageComponent
 from actor_action import ActorAction
 from extended_context import ExtendedContext
 from agents.tools.print_in_color import Color
+from prompt_maker import speak_action_prompt
    
 ####################################################################################################
 class SpeakActionSystem(ReactiveProcessor):
@@ -45,7 +46,8 @@ class SpeakActionSystem(ReactiveProcessor):
             if not self.check_speak_enable(entity, target):
                 continue
             ##拼接说话内容
-            saycontent = f"{action.name}对{target}对说:{message}"
+            #saycontent = f"{action.name}对{target}对说:{message}"
+            saycontent = speak_action_prompt(action.name, target, message, self.context)
             print(f"{Color.HEADER}{saycontent}{Color.ENDC}")
             ##添加场景事件，最后随着导演剧本走
             stagecomp = self.context.get_stagecomponent_by_uncertain_entity(entity)

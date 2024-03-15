@@ -4,6 +4,7 @@ from components import BroadcastActionComponent, StageComponent
 from actor_action import ActorAction
 from extended_context import ExtendedContext
 from agents.tools.print_in_color import Color
+from prompt_maker import broadcast_action_prompt
 
 class BroadcastActionSystem(ReactiveProcessor):
 
@@ -34,7 +35,8 @@ class BroadcastActionSystem(ReactiveProcessor):
             return
         action: ActorAction = broadcastcomp.action
         for value in action.values:
-            broadcast_say = f"{action.name}对{stagecomp.name}里的所有人说:{value}"
+            #broadcast_say = f"{action.name}对{stagecomp.name}里的所有人说:{value}"
+            broadcast_say = broadcast_action_prompt(action.name, stagecomp.name, value, self.context)
             print(f"{Color.HEADER}{broadcast_say}{Color.ENDC}")
             stagecomp.directorscripts.append(broadcast_say)
             

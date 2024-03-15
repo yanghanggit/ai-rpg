@@ -36,6 +36,7 @@ class MindVoiceActionSystem(ReactiveProcessor):
             return
         action: ActorAction = mindvoicecomp.action
         for value in action.values:
+            #纯测试，暂时无用
             what_to_said = f"{action.name},心里想到:{value}"
             print(f"{Color.BLUE}{what_to_said}{Color.ENDC}")
             #stagecomp.directorscripts.append(what_to_said) # 先不往场景时间里面添加，因为这个是内心的想法，不是说出来的话

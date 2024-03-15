@@ -21,12 +21,7 @@ DeadActionComponent = namedtuple('DeadActionComponent', 'action')
 
 MindVoiceActionComponent = namedtuple('MindVoiceActionComponent', 'action')
 BroadcastActionComponent = namedtuple('BroadcastActionComponent', 'action')
-
-
-
-
-
-
+WhisperActionComponent = namedtuple('WhisperActionComponent', 'action')
 
 
 

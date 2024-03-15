@@ -20,8 +20,9 @@
   ...
 }}
 
-- "XXXComponent？" 表示你的"行动类型"，输出结果不要出现2个相同的"行动类型"。
+- "XXXComponent？" 表示你的"行动类型".
 - ["value？", "value？", ...] 必须是字符串数组。"value" 是你会根据“行动类型说明”有不同设置方式。可以是多个。
+- JSON输出的结果不能出现同样的XXXComponent
 
 #### 注意！行动类型说明：
 - 敌对行为：若欲执行敌对行为（如攻击），则将XXXComponent设置为"FightActionComponent"，["value？", "value？", ...]为你的全部目标。
@@ -32,18 +33,14 @@
   - 注意！如果你是场景，就不具有'离开场景'的行动类型
   - 你必须能明确指出场景名称，或者是你曾知晓的场景。
 - 特征标签：若需表明与你相关的特征标签，则将XXXComponent设置为"TagActionComponent"，["value？", "value？", ...]为符合你的全部特征标签。
-- 恢复记忆：表明你执行的是"恢复记忆"，将XXXComponent设置为"RememberActionComponent"，value为"确认恢复记忆"。
+- 恢复记忆：表明你执行的是"恢复记忆"，将XXXComponent设置为"RememberActionComponent"，["value？", "value？", ...]为[ " 确认恢复记忆 "]。
 - 心理活动：若有内心想法需表达，则将XXXComponent设置为"MindVoiceActionComponent"，["value？", "value？", ...]为你的全部想以'第1人称'输出你的心里活动与内心独白。
 - 场景广播：若有话语，需向场景内所有的人说。则将XXXComponent设置为"BroadcastActionComponent"，["value？", "value？", ...]为你的全部想以'第1人称'输出你的的话。
+- 低语：若有话语你需要对特定角色说同时不希望被其他人听到。则将XXXComponent设置为"WhisperActionComponent"，["value？", "value？", ...] 只能是这种形式：["目标对象", "说话内容"]，也就是说只有2个元素，"目标对象"必须是你场景内的人物。
 
-#### 注意！XXXComponent选择限制（即能选取允许如下的设置）：
-1. "FightActionComponent"
-2. "SpeakActionComponent"
-3. "LeaveActionComponent"
-4. "TagActionComponent"
-5. "RememberActionComponent"
-6. "MindVoiceActionComponent"
-7. "BroadcastActionComponent"
+
+#### 注意！XXXComponent选择限制, 即只能从如下的设置中来选取
+- "FightActionComponent", "SpeakActionComponent", "LeaveActionComponent", "TagActionComponent", "RememberActionComponent", "MindVoiceActionComponent", "BroadcastActionComponent", “WhisperActionComponent”
 
 ## 其他限制：
 - 不要使用英文回答。

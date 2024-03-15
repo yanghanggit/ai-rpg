@@ -26,6 +26,7 @@ from destroy_system import DestroySystem
 from tag_action_system import TagActionSystem
 from data_save_system import DataSaveSystem
 from broadcast_action_system import BroadcastActionSystem  
+from whisper_action_system import WhisperActionSystem 
 
 
 from langchain_core.messages import (
@@ -100,6 +101,7 @@ def main() -> None:
     #行动逻辑
     processors.add(TagActionSystem(context))
     processors.add(MindVoiceActionSystem(context))
+    processors.add(WhisperActionSystem(context))
     processors.add(BroadcastActionSystem(context))
     processors.add(SpeakActionSystem(context))
 

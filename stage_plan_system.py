@@ -6,7 +6,8 @@ from components import (StageComponent,
                         TagActionComponent,
                         MindVoiceActionComponent,
                         RememberActionComponent,
-                        BroadcastActionComponent)
+                        BroadcastActionComponent,
+                        WhisperActionComponent)
 from actor_action import ActorPlan
 from prompt_maker import stage_plan_prompt
       
@@ -69,7 +70,7 @@ class StagePlanSystem(ExecuteProcessor):
                             entity.add(TagActionComponent, action)
 
                     case "RememberActionComponent":
-                        print(f"RememberActionComponent: {action.values}")
+                        #print(f"RememberActionComponent: {action.values}")
                         pass
 
                     case "MindVoiceActionComponent":
@@ -79,7 +80,11 @@ class StagePlanSystem(ExecuteProcessor):
                     case "BroadcastActionComponent":
                         if not entity.has(BroadcastActionComponent):
                             entity.add(BroadcastActionComponent, action)
-                            
+
+                    case "WhisperActionComponent":
+                        if not entity.has(WhisperActionComponent):
+                            entity.add(WhisperActionComponent, action)
+                             
                     case _:
                         print(f"error {action.actionname}, action value {action.values}")
                         continue

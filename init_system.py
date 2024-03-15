@@ -37,7 +37,7 @@ class InitSystem(InitializeProcessor):
             init_archivist = extract_md_content(agent.memory)
             prompt = load_prompt(init_archivist, world, self.context)
             comp.agent.request(prompt)
-            print("___________________________________________________")
+            #print("___________________________________________________")
         
     def handlestages(self) -> None:
         stages: set = self.context.get_group(Matcher(StageComponent)).entities
@@ -56,7 +56,7 @@ class InitSystem(InitializeProcessor):
             init_archivist = extract_md_content(agent.memory)
             prompt = load_prompt(init_archivist, stage, self.context)
             comp.agent.request(prompt)
-            print("___________________________________________________")
+            #print("___________________________________________________")
 
     def handlenpcs(self) -> None:
         npcs: set = self.context.get_group(Matcher(NPCComponent)).entities
@@ -75,4 +75,4 @@ class InitSystem(InitializeProcessor):
             init_archivist = extract_md_content(agent.memory)
             prompt = load_prompt(init_archivist, npc, self.context)
             comp.agent.request(prompt)
-            print("___________________________________________________")
+            #print("___________________________________________________")

@@ -19,7 +19,7 @@ class MindVoiceActionSystem(ReactiveProcessor):
 
     def react(self, entities: list[Entity]):
 
-        print("<<<<<<<<<<<<<  MindVoiceActionComponent  >>>>>>>>>>>>>>>>>")
+        print("<<<<<<<<<<<<<  MindVoiceActionSystem  >>>>>>>>>>>>>>>>>")
 
         # 核心处理
         for entity in entities:

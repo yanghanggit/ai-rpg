@@ -41,20 +41,3 @@ class SpeakActionSystem(ReactiveProcessor):
                     what_to_said = f"{action.name}说:{value}"
                     print(f"{Color.HEADER}{what_to_said}{Color.ENDC}")
                     stagecomp.directorscripts.append(what_to_said)
-        
-    # def handlememory(self, entities: list[Entity]) -> None:
-    #     for entity in entities:
-    #         speakcomp = entity.get(SpeakActionComponent)
-    #         action: ActorAction = speakcomp.action
-
-    #         if entity.has(NPCComponent):
-    #             npccomp = entity.get(NPCComponent)
-    #             agent = npccomp.agent
-    #             for value in action.values:
-    #                 agent.add_chat_history(f"你说（或者心里活动）: {value}")
-    #         elif entity.has(StageComponent):
-    #             stagecomp = entity.get(StageComponent)
-    #             agent = stagecomp.agent
-    #             for value in action.values:
-    #                 agent.add_chat_history(f"你说（或者心里活动）: {value}")
-                

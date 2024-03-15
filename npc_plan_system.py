@@ -7,7 +7,8 @@ from components import (NPCComponent,
                         LeaveActionComponent, 
                         TagActionComponent, 
                         HumanInterferenceComponent,
-                        MindVoiceActionComponent)
+                        MindVoiceActionComponent,
+                        BroadcastActionComponent)
 from actor_action import ActorPlan
 from prompt_maker import npc_plan_prompt
 from extended_context import ExtendedContext
@@ -80,11 +81,19 @@ class NPCPlanSystem(ExecuteProcessor):
                     case "TagActionComponent":
                         if not entity.has(TagActionComponent):
                             entity.add(TagActionComponent, action)
+                    
+                    case "RememberActionComponent":
+                        print(f"RememberActionComponent: {action.values}")
+                        pass
 
                     case "MindVoiceActionComponent":
                         if not entity.has(MindVoiceActionComponent):
                             entity.add(MindVoiceActionComponent, action)
-                    
+
+                    case "BroadcastActionComponent":
+                        if not entity.has(BroadcastActionComponent):
+                            entity.add(BroadcastActionComponent, action)
+                            
                     case _:
                         print(f" {action.actionname}, Unknown action name")
                         continue

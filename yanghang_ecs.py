@@ -25,6 +25,9 @@ from dead_action_system import DeadActionSystem
 from destroy_system import DestroySystem
 from tag_action_system import TagActionSystem
 from data_save_system import DataSaveSystem
+from broadcast_action_system import BroadcastActionSystem  
+
+
 from langchain_core.messages import (
     HumanMessage,
     AIMessage)
@@ -97,6 +100,7 @@ def main() -> None:
     #行动逻辑
     processors.add(TagActionSystem(context))
     processors.add(MindVoiceActionSystem(context))
+    processors.add(BroadcastActionSystem(context))
     processors.add(SpeakActionSystem(context))
 
     #####死亡必须是战斗之后，因为如果死了就不能离开

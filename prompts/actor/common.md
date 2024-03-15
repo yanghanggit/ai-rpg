@@ -20,28 +20,30 @@
   ...
 }}
 
-- "XXXComponent？" 表示你的"行动类型"
-- ["value？", "value？", ...] 必须是字符串数组。"value" 是你的"行动目标"，可以是一个或多个目标。
+- "XXXComponent？" 表示你的"行动类型"，输出结果不要出现2个相同的"行动类型"。
+- ["value？", "value？", ...] 必须是字符串数组。"value" 是你会根据“行动类型说明”有不同设置方式。可以是多个。
 
 #### 注意！行动类型说明：
-- 敌对行为：若欲执行敌对行为（如攻击），则将XXXComponent设置为"FightActionComponent"，value为你的全部目标。
-- 言论：若有话语需表达，则将XXXComponent设置为"SpeakActionComponent"，
+- 敌对行为：若欲执行敌对行为（如攻击），则将XXXComponent设置为"FightActionComponent"，["value？", "value？", ...]为你的全部目标。
+- 言论：若有话语需表达，则将XXXComponent设置为"SpeakActionComponent"，["value？", "value？", ...]为你的全部想以'第1人称'输出你的话。
   - 如果你是NPC, value是以'第1人称'输出你要说的话。
   - 如果你是场景，value是以'第3人称'讲述所有你知道的已经发生的事情和旁白，环境等。
 - 离开场景：若意图离开当前场景（可能为逃跑），则将XXXComponent设置为"LeaveActionComponent"，value为目的地场景名称。
   - 注意！如果你是场景，就不具有'离开场景'的行动类型
   - 你必须能明确指出场景名称，或者是你曾知晓的场景。
-- 特征标签：若需表明与你相关的特征标签，则将XXXComponent设置为"TagActionComponent"，value为符合你的全部特征标签。
+- 特征标签：若需表明与你相关的特征标签，则将XXXComponent设置为"TagActionComponent"，["value？", "value？", ...]为符合你的全部特征标签。
 - 恢复记忆：表明你执行的是"恢复记忆"，将XXXComponent设置为"RememberActionComponent"，value为"确认恢复记忆"。
-- 心理活动：若有内心想法需表达，则将XXXComponent设置为"MindVoiceActionComponent"，value是以'第1人称'，输出你的心里活动与内心独白。
+- 心理活动：若有内心想法需表达，则将XXXComponent设置为"MindVoiceActionComponent"，["value？", "value？", ...]为你的全部想以'第1人称'输出你的心里活动与内心独白。
+- 场景广播：若有话语，需向场景内所有的人说。则将XXXComponent设置为"BroadcastActionComponent"，["value？", "value？", ...]为你的全部想以'第1人称'输出你的的话。
 
 #### 注意！XXXComponent选择限制（即能选取允许如下的设置）：
-- "FightActionComponent"
-- "SpeakActionComponent"
-- "LeaveActionComponent"
-- "TagActionComponent"
-- "RememberActionComponent"
-- "MindVoiceActionComponent"
+1. "FightActionComponent"
+2. "SpeakActionComponent"
+3. "LeaveActionComponent"
+4. "TagActionComponent"
+5. "RememberActionComponent"
+6. "MindVoiceActionComponent"
+7. "BroadcastActionComponent"
 
 ## 其他限制：
 - 不要使用英文回答。

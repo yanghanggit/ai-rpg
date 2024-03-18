@@ -1,7 +1,7 @@
 
 from entitas import Matcher, ExecuteProcessor, Entity
 from components import (DeadActionComponent, 
-                        LeaveActionComponent, 
+                        LeaveForActionComponent, 
                         TagActionComponent, 
                         DestroyComponent,
                         NPCComponent)
@@ -19,8 +19,8 @@ class DeadActionSystem(ExecuteProcessor):
         print("<<<<<<<<<<<<<  DeadActionSystem  >>>>>>>>>>>>>>>>>")
         entities:set[Entity] = self.context.get_group(Matcher(DeadActionComponent)).entities
         for entity in entities:
-            if entity.has(LeaveActionComponent):
-                entity.remove(LeaveActionComponent)
+            if entity.has(LeaveForActionComponent):
+                entity.remove(LeaveForActionComponent)
              
             if entity.has(TagActionComponent):
                 entity.remove(TagActionComponent)

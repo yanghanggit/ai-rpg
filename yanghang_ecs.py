@@ -9,7 +9,7 @@ from components import (WorldComponent,
                         FightActionComponent, 
                         PlayerComponent, 
                         SimpleRPGRoleComponent, 
-                        LeaveActionComponent, 
+                        LeaveForActionComponent, 
                         HumanInterferenceComponent,
                         UniquePropComponent,
                         BagComponent)
@@ -20,7 +20,7 @@ from stage_plan_system import StagePlanSystem
 from npc_plan_system import NPCPlanSystem
 from speak_action_system import SpeakActionSystem
 from fight_action_system import FightActionSystem
-from leave_action_system import LeaveActionSystem
+from leave_action_system import LeaveForActionSystem
 from director_system import DirectorSystem
 from extended_context import ExtendedContext
 from dead_action_system import DeadActionSystem
@@ -114,7 +114,7 @@ def main() -> None:
     # 处理搜寻道具行为
     processors.add(SearchPropsSystem(context))
     #处理离开
-    processors.add(LeaveActionSystem(context))
+    processors.add(LeaveForActionSystem(context))
     #行动结束后导演
     processors.add(DirectorSystem(context))
     #########################################
@@ -248,8 +248,8 @@ def debug_create_player(context: ExtendedContext, playername: str, stage: str, d
     playerentity.add(SimpleRPGRoleComponent, playername, 10000000, 10000000, 10000000, desc)
     playerentity.add(PlayerComponent, playername)
 
-    action = ActorAction(playername, "LeaveActionComponent", [stage])
-    playerentity.add(LeaveActionComponent, action)
+    action = ActorAction(playername, "LeaveForActionComponent", [stage])
+    playerentity.add(LeaveForActionComponent, action)
     print(f"debug_create_player: {playername} add {action}")
 
 ###############################################################################################################################################

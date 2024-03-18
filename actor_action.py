@@ -1,19 +1,15 @@
 
 from typing import List
 import json
+from typing import Any
 
 
 class ActorAction:
 
-    def __init__(self) -> None:
-        self.name: str = ""  
-        self.actionname: str = ""
-        self.values: list[str] = []
-
-    def init(self, name: str, actionname: str, values: list[str]) -> None:
-        self.name: str = name  
-        self.actionname: str = actionname
-        self.values: list[str] = values
+    def __init__(self, name: str = "", actionname: str = "", values: List[str] = []) -> None:
+        self.name = name  
+        self.actionname = actionname
+        self.values = values
 
     def __str__(self) -> str:
         return f"Action({self.name}, {self.actionname}, {self.values})"
@@ -24,15 +20,16 @@ class ActorPlan:
     def __init__(self, name: str, jsonstr: str) -> None:
         self.name: str = name  
         self.jsonstr: str = jsonstr
-        self.json: json = None
+        self.json: dict[str, list[str]] = {}
         self.actions: List[ActorAction] = []
 
         #print(f"ActorPlan: {self.name} response = ", jsonstr)
         try:
             json_data = json.loads(self.jsonstr)
             if not self.check_data_format(json_data):
-                print(f"stage_plan error = {self.name} json format error")
+                print(f"ActorPlan __init__ json.loads = {self.name} error")
                 return
+            
             self.json = json_data
             self.build(self.json)
 
@@ -41,7 +38,7 @@ class ActorPlan:
             return
         return    
 
-    def check_data_format(self, json_data: dict) -> bool:
+    def check_data_format(self, json_data: Any) -> bool:
         for key, value in json_data.items():
             if not isinstance(key, str):
                 return False
@@ -49,10 +46,9 @@ class ActorPlan:
                 return False
         return True
 
-    def build(self, json: json) -> None:
+    def build(self, json: dict[str, list[str]]) -> None:
         for key, value in json.items():
-            action = ActorAction()
-            action.init(self.name, key, value)
+            action = ActorAction(self.name, key, value)
             self.actions.append(action)
 
     def __str__(self) -> str:

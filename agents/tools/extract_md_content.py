@@ -1,6 +1,6 @@
 import os
 
-def extract_md_content(file_path) -> str:
+def extract_md_content(file_path: str) -> str:
     """提取md内容。文件路径示例: /xxx/xxx.md"""
     try:
         file_path = os.getcwd() + "/prompts" + file_path

@@ -24,7 +24,7 @@ DeadActionComponent = namedtuple('DeadActionComponent', 'action')
 SearchActionComponent = namedtuple('SearchActionComponent', 'action')
 ###############################################################################################################################################
 ###游戏业务组件
-SimpleRPGRoleComponent = namedtuple('SimpleRPGComponent', 'name maxhp hp attack desc')
+SimpleRPGRoleComponent = namedtuple('SimpleRPGRoleComponent', 'name maxhp hp attack desc')
 ###############################################################################################################################################
 ###特殊标记类
 HumanInterferenceComponent = namedtuple('HumanInterferenceComponent', 'reason')

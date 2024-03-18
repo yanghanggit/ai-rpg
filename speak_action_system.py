@@ -31,22 +31,14 @@ class SpeakActionSystem(ReactiveProcessor):
     def handle(self, entity: Entity) -> None:
         speakcomp = entity.get(SpeakActionComponent)
         action: ActorAction = speakcomp.action
-        #debug
-        # for value in action.values:
-        #     what_to_said = f"{action.name}说:{value}"
-        #     print(f"SpeakActionSystem debug: {what_to_said}")
-
         for value in action.values:
             tp = self.parsespeak(value)
             target = tp[0]
             message = tp[1]
-            #print(f"SpeakActionSystem debug: {target}说:{message}")
-
             ##如果检查不过就能继续
             if not self.check_speak_enable(entity, target):
                 continue
             ##拼接说话内容
-            #saycontent = f"{action.name}对{target}对说:{message}"
             saycontent = speak_action_prompt(action.name, target, message, self.context)
             print(f"{Color.HEADER}{saycontent}{Color.ENDC}")
             ##添加场景事件，最后随着导演剧本走
@@ -57,17 +49,17 @@ class SpeakActionSystem(ReactiveProcessor):
 
         npc_entity: Entity = self.context.getnpc(dstname)
         if npc_entity is None:
-            print(f"没有找到名字为{dstname}的NPC")
+            print(f"No NPC named {dstname} found")
             return False
 
         current_stage_comp: StageComponent = self.context.get_stagecomponent_by_uncertain_entity(src)  
         if current_stage_comp is None:
-            print(f"没有找到{src}的StageComponent")
+            print(f"StageComponent not found for {src}")
             return False  
         
         npccomp: NPCComponent = npc_entity.get(NPCComponent)
         if current_stage_comp.name != npccomp.current_stage:
-            print(f"{src}不在{npccomp.current_stage}, {current_stage_comp.name}中")
+            print(f"{src} is not in {npccomp.current_stage}, {current_stage_comp.name}")
             return False
         
         return True

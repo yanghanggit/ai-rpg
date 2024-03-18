@@ -7,17 +7,17 @@ from langserve import RemoteRunnable  # type: ignore
 ###############################################################################################################################################
 class ActorAgent:
 
-    def __init__(self):
-        self.name: str = ""   
-        self.url: str = ""
-        self.memory: str = ""
+    def __init__(self, name: str = "", url: str = "", memory: str = "") -> None:
+        self.name: str = name 
+        self.url: str = url
+        self.memory: str = memory
         self.agent: RemoteRunnable = None
         self.chat_history: List[Union[HumanMessage, AIMessage]] = []
 
-    def init(self, name: str, url: str, memory: str) -> None:
-        self.name = name
-        self.url = url
-        self.memory = memory
+    # def init(self, name: str, url: str, memory: str) -> None:
+    #     self.name = name
+    #     self.url = url
+    #     self.memory = memory
 
     def connect(self)-> None:
         self.agent = RemoteRunnable(self.url)

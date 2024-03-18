@@ -44,12 +44,12 @@ class WhisperActionSystem(ReactiveProcessor):
         target_name: str = values[0]
         target_entity = self.context.getnpc(target_name)
         if target_entity is None:
-            print(f"要低语的对象不存在，或者不是NPC！")
+            print(f"The person you want to whisper does not exist, or is not an NPC!")
             return
         
         target_npc_comp: NPCComponent = target_entity.get(NPCComponent)
         if target_npc_comp.current_stage != stagecomp.name:
-            print(f"不在本场景里！")
+            print(f"Not in this stage!")
             return
         
         #组装新的记忆。但是不要加到场景事件里

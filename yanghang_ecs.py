@@ -41,15 +41,15 @@ from mind_voice_action_system import MindVoiceActionSystem
 ###############################################################################################################################################
 def create_entities(context: Context, worldbuilder: WorldBuilder) -> None:
         ##创建world
-        worldagent = ActorAgent()
-        worldagent.init(worldbuilder.data['name'], worldbuilder.data['url'], worldbuilder.data['memory'])
+        worldagent = ActorAgent(worldbuilder.data['name'], worldbuilder.data['url'], worldbuilder.data['memory'])
+        #worldagent.init(worldbuilder.data['name'], worldbuilder.data['url'], worldbuilder.data['memory'])
         world_entity = context.create_entity() 
         world_entity.add(WorldComponent, worldagent.name, worldagent)
 
         for stage_builder in worldbuilder.stage_builders:     
             #创建stage       
-            stage_agent = ActorAgent()
-            stage_agent.init(stage_builder.data['name'], stage_builder.data['url'], stage_builder.data['memory'])
+            stage_agent = ActorAgent(stage_builder.data['name'], stage_builder.data['url'], stage_builder.data['memory'])
+            #stage_agent.init(stage_builder.data['name'], stage_builder.data['url'], stage_builder.data['memory'])
             # print(f"创建场景:{stage_builder.data['name']}\nURL:{stage_builder.data['url']}\nMemory:{stage_builder.data['memory']}")
             stage_entity = context.create_entity()
             stage_entity.add(StageComponent, stage_agent.name, stage_agent, [])
@@ -61,8 +61,8 @@ def create_entities(context: Context, worldbuilder: WorldBuilder) -> None:
 
             for npc_builder in stage_builder.npc_builders:
                 #创建npc
-                npc_agent = ActorAgent()
-                npc_agent.init(npc_builder.data['name'], npc_builder.data['url'], npc_builder.data['memory'])
+                npc_agent = ActorAgent(npc_builder.data['name'], npc_builder.data['url'], npc_builder.data['memory'])
+                #npc_agent.init(npc_builder.data['name'], npc_builder.data['url'], npc_builder.data['memory'])
                 # print(f"创建NPC:{npc_builder.data['name']}\nURL:{npc_builder.data['url']}\nMemory:{npc_builder.data['memory']}")
                 npc_entity = context.create_entity()
                 npc_entity.add(NPCComponent, npc_agent.name, npc_agent, stage_agent.name)
@@ -241,8 +241,8 @@ def debug_create_player(context: ExtendedContext, playername: str, stage: str, d
         return
     
     #创建player 本质就是npc
-    playeragent = ActorAgent()
-    playeragent.init(playername, [], "")
+    playeragent = ActorAgent(playername, "", "")
+   #playeragent.init(playername, [], "")
     playerentity = context.create_entity()
     playerentity.add(NPCComponent, playername, playeragent, "")
     playerentity.add(SimpleRPGRoleComponent, playername, 10000000, 10000000, 10000000, desc)

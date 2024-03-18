@@ -1,7 +1,7 @@
 
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent
 from components import TagActionComponent
-from actor_action import ActorAction
+#from actor_action import ActorAction
 from extended_context import ExtendedContext
 
 

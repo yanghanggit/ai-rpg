@@ -71,6 +71,16 @@ class ExtendedContext(Context):
                     ls.append(npccomp.name)
         return map
 
+    ##给一个实体添加记忆
+    def add_agent_memory(self, entity: Entity, memory: str) -> bool:
+        if entity.has(NPCComponent):
+            entity.get(NPCComponent).agent.add_chat_history(memory)
+            return True
+        if entity.has(StageComponent):
+            entity.get(StageComponent).agent.add_chat_history(memory)
+            return True
+        return False
+
 
 
 

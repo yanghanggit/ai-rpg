@@ -39,9 +39,7 @@ class ActorAgent:
     
     def add_chat_history(self, new_chat: str) -> None:
         if self.agent is None:
-            print(f"add_chat_history: {self.name} have no agent.")
-            return ""
-        # print(f"{self.name } add_chat_history = ", new_chat)
+            return
         self.chat_history.extend([HumanMessage(content = new_chat)])
     
     def __str__(self) -> str:

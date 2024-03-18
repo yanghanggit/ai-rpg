@@ -1,6 +1,6 @@
 
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent
-from components import MindVoiceActionComponent
+from components import MindVoiceActionComponent, StageComponent
 from actor_action import ActorAction
 from extended_context import ExtendedContext
 from agents.tools.print_in_color import Color
@@ -18,7 +18,6 @@ class MindVoiceActionSystem(ReactiveProcessor):
         return entity.has(MindVoiceActionComponent)
 
     def react(self, entities: list[Entity]):
-
         print("<<<<<<<<<<<<<  MindVoiceActionSystem  >>>>>>>>>>>>>>>>>")
 
         # 核心处理
@@ -30,8 +29,8 @@ class MindVoiceActionSystem(ReactiveProcessor):
             entity.remove(MindVoiceActionComponent)         
 
     def handle(self, entity: Entity) -> None:
-        mindvoicecomp = entity.get(MindVoiceActionComponent)
-        stagecomp = self.context.get_stagecomponent_by_uncertain_entity(entity)
+        mindvoicecomp: MindVoiceActionComponent = entity.get(MindVoiceActionComponent)
+        stagecomp: StageComponent = self.context.get_stagecomponent_by_uncertain_entity(entity)
         if stagecomp is None or mindvoicecomp is None:
             return
         action: ActorAction = mindvoicecomp.action

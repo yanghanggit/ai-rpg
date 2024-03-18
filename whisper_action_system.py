@@ -27,26 +27,24 @@ class WhisperActionSystem(ReactiveProcessor):
         for entity in entities:
             entity.remove(WhisperActionComponent)  # 必须移除！！！       
 
-    def handle(self, entity: Entity) -> None:
+    def handle(self, entity_stage_or_npc: Entity) -> None:
 
-        whispercomp: WhisperActionComponent = entity.get(WhisperActionComponent)
-        stagecomp: StageComponent = self.context.get_stagecomponent_by_uncertain_entity(entity) 
+        whispercomp: WhisperActionComponent = entity_stage_or_npc.get(WhisperActionComponent)
+        stagecomp: StageComponent = self.context.get_stagecomponent_by_uncertain_entity(entity_stage_or_npc) 
         if stagecomp is None or whispercomp is None:
             print(f"WhisperActionSystem: stagecomp or whispercomp is None!")
             return
 
-        #debug!
         action: ActorAction = whispercomp.action
-        # for value in action.values:
-        #     print(f"{Color.HEADER}{action.name} 密语到 :{value}{Color.ENDC}")
         values: list[str] = action.values
         if len(values) < 2:
+            print(f"WhisperActionSystem: values length < 2")
             return
 
         target_name: str = values[0]
         target_entity = self.context.getnpc(target_name)
         if target_entity is None:
-            print(f"要低语的对象不存在")
+            print(f"要低语的对象不存在，或者不是NPC！")
             return
         
         target_npc_comp: NPCComponent = target_entity.get(NPCComponent)
@@ -56,17 +54,12 @@ class WhisperActionSystem(ReactiveProcessor):
         
         #组装新的记忆。但是不要加到场景事件里
         content: str = values[1]
-        #new_memory = f"{action.name}对{target_name}低语道:{content}"
         new_memory = whisper_action_prompt(action.name, target_name, content, self.context)
         print(f"{Color.HEADER}{new_memory}{Color.ENDC}")
-        ###加到发起者和接受者的记忆里
-        if entity.has(NPCComponent):
-            entity.get(NPCComponent).agent.add_chat_history(new_memory)
-        elif entity.has(StageComponent):
-            entity.get(StageComponent).agent.add_chat_history(new_memory)
 
-        ### 接受对话的只能是npc
-        target_entity.get(NPCComponent).agent.add_chat_history(new_memory)
+        #整理代码，加到记忆里
+        self.context.add_agent_memory(entity_stage_or_npc, new_memory)
+        self.context.add_agent_memory(target_entity, new_memory)
 
             
         

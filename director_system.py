@@ -55,14 +55,14 @@ class DirectorSystem(ExecuteProcessor):
             comp = entity.get(StageComponent)
             comp.directorscripts.clear()
 
-    def handlestage(self, entity: Entity) -> None:
+    def handlestage(self, entitystage: Entity) -> None:
         """
         Handles a specific stage entity by printing the director's scripts and prompting the agent for responses.
 
         Args:
             entity (Entity): The stage entity to handle.
         """
-        stage_comp: StageComponent = entity.get(StageComponent)
+        stage_comp: StageComponent = entitystage.get(StageComponent)
         print(f"[{stage_comp.name}] 开始导演+++++++++++++++++++++++++++++++++++++++++++++++++++++")
 
         directorscripts: list[str] = stage_comp.directorscripts
@@ -74,12 +74,9 @@ class DirectorSystem(ExecuteProcessor):
 
         confirm_prompt = confirm_everything_after_director_add_new_memories_prompt(directorscripts, npcs_names, stage_comp.name, self.context)
         print(f"记忆添加内容:\n{confirm_prompt}\n")
-        for npcen in npcs_in_stage:
-            npc_comp: NPCComponent = npcen.get(NPCComponent)
-            npc_agent: ActorAgent = npc_comp.agent
-            npc_agent.add_chat_history(confirm_prompt)
 
-        stage_agent: ActorAgent = stage_comp.agent
-        stage_agent.add_chat_history(confirm_prompt)
+        self.context.add_agent_memory(entitystage, confirm_prompt)
+        for npcen in npcs_in_stage:
+            self.context.add_agent_memory(npcen, confirm_prompt)
 
         print(f"[{stage_comp.name}] 结束导演+++++++++++++++++++++++++++++++++++++++++++++++++++++")

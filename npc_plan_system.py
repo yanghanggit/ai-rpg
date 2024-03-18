@@ -4,7 +4,7 @@ from entitas import Entity, Matcher, ExecuteProcessor
 from components import (NPCComponent, 
                         FightActionComponent, 
                         SpeakActionComponent, 
-                        LeaveActionComponent, 
+                        LeaveForActionComponent, 
                         TagActionComponent, 
                         HumanInterferenceComponent,
                         MindVoiceActionComponent,
@@ -73,9 +73,9 @@ class NPCPlanSystem(ExecuteProcessor):
                         if not entity.has(FightActionComponent):
                             entity.add(FightActionComponent, action)
 
-                    case "LeaveActionComponent":
-                        if not entity.has(LeaveActionComponent):
-                            entity.add(LeaveActionComponent, action)
+                    case "LeaveForActionComponent":
+                        if not entity.has(LeaveForActionComponent):
+                            entity.add(LeaveForActionComponent, action)
 
                     case "SpeakActionComponent":
                         if not entity.has(SpeakActionComponent):

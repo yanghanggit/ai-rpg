@@ -27,7 +27,7 @@
 #### 注意！行动类型说明：
 - 敌对行为：若欲执行敌对行为（如攻击），则将XXXComponent设置为"FightActionComponent"，["value？", "value？", ...]为你的全部目标。
 - 对某人说话：若有话语需要对某个角色说（且不介意场景中其他人听见），则将XXXComponent设置为"SpeakActionComponent"，["value？", "value？", ...]为你的全部行动结果。每一个行动结果代表着“目标名字与对话内容”。注意！每一个value的格式如下："@目标名字>对话内容"。其中"目标名字"是你要对话的角色（必须在本个场景里），对话内容就是内容。例子：比如你需要对A说“hello world”，输出结果为["@A>hello world"]。
-- 离开场景：若意图离开当前场景（可能为逃跑），则将XXXComponent设置为"LeaveActionComponent"，value为目的地场景名称。
+- 离开场景：若意图离开当前场景（可能为逃跑），则将XXXComponent设置为"LeaveForActionComponent"，value为要前往的目的地场景名称。
   - 注意！如果你是场景，就不具有'离开场景'的行动类型
   - 你必须能明确指出场景名称，或者是你曾知晓的场景。
 - 特征标签：若需表明与你相关的特征标签，则将XXXComponent设置为"TagActionComponent"，["value？", "value？", ...]为符合你的全部特征标签。
@@ -39,7 +39,7 @@
 
 
 #### 注意！XXXComponent选择限制, 即只能从如下的设置中来选取
-- "FightActionComponent", "SpeakActionComponent", "LeaveActionComponent", "TagActionComponent", "RememberActionComponent", "MindVoiceActionComponent", "BroadcastActionComponent", “WhisperActionComponent”
+- "FightActionComponent", "SpeakActionComponent", "LeaveForActionComponent", "TagActionComponent", "RememberActionComponent", "MindVoiceActionComponent", "BroadcastActionComponent", “WhisperActionComponent”
 
 ## 其他限制：
 - 不要使用英文回答。

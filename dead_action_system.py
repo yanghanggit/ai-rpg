@@ -1,7 +1,7 @@
 
 from entitas import Matcher, ExecuteProcessor, Entity
 from components import (DeadActionComponent, 
-                        LeaveActionComponent, 
+                        LeaveForActionComponent, 
                         TagActionComponent, 
                         DestroyComponent,
                         NPCComponent)
@@ -26,8 +26,8 @@ class DeadActionSystem(ExecuteProcessor):
 
         #核心处理，如果死了就要处理下面的组件
         for entity in entities:
-            if entity.has(LeaveActionComponent):
-                entity.remove(LeaveActionComponent)
+            if entity.has(LeaveForActionComponent):
+                entity.remove(LeaveForActionComponent)
              
             if entity.has(TagActionComponent):
                 entity.remove(TagActionComponent)

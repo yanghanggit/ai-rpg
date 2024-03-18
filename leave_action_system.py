@@ -1,15 +1,15 @@
 """
-This module contains the implementation of the LeaveActionSystem class, which is responsible for handling the leave action of entities in a game.
+This module contains the implementation of the LeaveForActionSystem class, which is responsible for handling the leave action of entities in a game.
 
-The LeaveActionSystem class is a subclass of the ReactiveProcessor class and is used to react to entities that have the LeaveActionComponent added to them.
+The LeaveForActionSystem class is a subclass of the ReactiveProcessor class and is used to react to entities that have the LeaveForActionComponent added to them.
 
 Classes:
-- LeaveActionSystem: A class that handles the leave action of entities in a game.
+- LeaveForActionSystem: A class that handles the leave action of entities in a game.
 
 Methods:
-- __init__(self, context: ExtendedContext): Initializes a new instance of the LeaveActionSystem class.
-- get_trigger(self): Returns the trigger for the system, which is the LeaveActionComponent added to entities.
-- filter(self, entity: list[Entity]): Filters the entities based on the presence of the LeaveActionComponent.
+- __init__(self, context: ExtendedContext): Initializes a new instance of the LeaveForActionSystem class.
+- get_trigger(self): Returns the trigger for the system, which is the LeaveForActionComponent added to entities.
+- filter(self, entity: list[Entity]): Filters the entities based on the presence of the LeaveForActionComponent.
 - react(self, entities: list[Entity]): Reacts to the entities by handling the leave action.
 - handle2(self, entities: list[Entity]) -> None: Handles the leave action for the entities.
 - enter_stage(self, handle: LeaveHandle) -> None: Handles the entering of a new stage for the entity.
@@ -17,7 +17,7 @@ Methods:
 """
 
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent
-from components import (LeaveActionComponent, 
+from components import (LeaveForActionComponent, 
                         NPCComponent, 
                         StageComponent, 
                         SimpleRPGRoleComponent,
@@ -73,32 +73,32 @@ class LeaveHandle:
 
 
 ###############################################################################################################################################
-class LeaveActionSystem(ReactiveProcessor):
+class LeaveForActionSystem(ReactiveProcessor):
     """
-    The LeaveActionSystem is responsible for handling the leave action of entities in the game.
-    It reacts to the addition of entities with the LeaveActionComponent and performs the necessary actions.
+    The LeaveForActionSystem is responsible for handling the leave action of entities in the game.
+    It reacts to the addition of entities with the LeaveForActionComponent and performs the necessary actions.
     """
     def __init__(self, context: ExtendedContext) -> None:
         super().__init__(context)
         self.context = context
 
     def get_trigger(self):
-        return {Matcher(LeaveActionComponent): GroupEvent.ADDED}
+        return {Matcher(LeaveForActionComponent): GroupEvent.ADDED}
 
     def filter(self, entity: list[Entity]):
-        return entity.has(LeaveActionComponent)
+        return entity.has(LeaveForActionComponent)
 
     def react(self, entities: list[Entity]):
         """
-        Reacts to the addition of entities with the LeaveActionComponent.
+        Reacts to the addition of entities with the LeaveForActionComponent.
         Performs the necessary actions for leaving the current stage and entering a new stage.
         """
-        print("<<<<<<<<<<<<<  LeaveActionSystem  >>>>>>>>>>>>>>>>>")
+        print("<<<<<<<<<<<<<  LeaveForActionSystem  >>>>>>>>>>>>>>>>>")
         self.handle2(entities)
 
         #必须移除！！！！！
         for entity in entities:
-            entity.remove(LeaveActionComponent)    
+            entity.remove(LeaveForActionComponent)    
 
     ###############################################################################################################################################
     def handle2(self, entities: list[Entity]) -> None:
@@ -107,17 +107,17 @@ class LeaveActionSystem(ReactiveProcessor):
         """
         for entity in entities:
             if not entity.has(NPCComponent):
-                print(f"LeaveActionSystem: {entity} is not NPC?!")
+                print(f"LeaveForActionSystem: {entity} is not NPC?!")
                 continue
 
-            leavecomp: LeaveActionComponent = entity.get(LeaveActionComponent)
+            leavecomp: LeaveForActionComponent = entity.get(LeaveForActionComponent)
             action: ActorAction = leavecomp.action
             if len(action.values) == 0:
                print("没有目标？！")
                continue
 
             #组织一下数据
-            print(f"LeaveActionSystem: {action}")
+            print(f"LeaveForActionSystem: {action}")
             stagename = action.values[0]
             handle = LeaveHandle(self.context)
             handle.init(entity, stagename)
@@ -141,7 +141,7 @@ class LeaveActionSystem(ReactiveProcessor):
                 else:
                     print(f"有'古老的地图'，可以离开当前场景")
             else:
-                print(f"当前场景{handle.current_stage_name}不是'悠扬林谷'，可以离开")
+                print(f"当前场景{handle.current_stage_name}不是'老猎人隐居的小木屋'，可以离开")
             
             ##如果当前有场景就要离开
             if handle.current_stage is not None:

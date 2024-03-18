@@ -1,5 +1,5 @@
 
-from entitas import Matcher,ExecuteProcessor,Group,Context,Entity
+from entitas import Matcher, ExecuteProcessor, Group, Context, Entity
 from components import DestroyComponent
    
 class DestroySystem(ExecuteProcessor):

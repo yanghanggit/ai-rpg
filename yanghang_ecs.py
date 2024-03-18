@@ -240,8 +240,7 @@ def debug_create_player(context: ExtendedContext, playername: str, stage: str, d
     playerentity.add(SimpleRPGRoleComponent, playername, 10000000, 10000000, 10000000, desc)
     playerentity.add(PlayerComponent, playername)
 
-    action = ActorAction()
-    action.init(playername, "LeaveActionComponent", [stage])
+    action = ActorAction(playername, "LeaveActionComponent", [stage])
     playerentity.add(LeaveActionComponent, action)
     print(f"debug_create_player: {playername} add {action}")
 
@@ -277,8 +276,7 @@ def debug_attack(context: ExtendedContext, dest: str) -> None:
        
     if playerentity.has(NPCComponent):
         npccomp = playerentity.get(NPCComponent)
-        action = ActorAction()
-        action.init(npccomp.name, "FightActionComponent", [dest])
+        action = ActorAction(npccomp.name, "FightActionComponent", [dest])
         playerentity.add(FightActionComponent, action)
         playerentity.add(HumanInterferenceComponent, 'Human Interference')
         print(f"debug_attack: {npccomp.name} add {action}")
@@ -286,8 +284,7 @@ def debug_attack(context: ExtendedContext, dest: str) -> None:
     
     elif playerentity.has(StageComponent):
         stagecomp = playerentity.get(StageComponent)
-        action = ActorAction()
-        action.init(stagecomp.name, "FightActionComponent", [dest])
+        action = ActorAction(stagecomp.name, "FightActionComponent", [dest])
         playerentity.add(HumanInterferenceComponent, 'Human Interference')
         playerentity.add(FightActionComponent, action)
         print(f"debug_attack: {stagecomp.name} add {action}")

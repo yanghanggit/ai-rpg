@@ -100,3 +100,6 @@ def gen_world_archive_prompt(context: ExtendedContext) -> str:
 - xxxx
 """
      return prompt
+
+def npc_memory_before_death(context: ExtendedContext) -> str:
+    return f"你已经死亡（在战斗中受到了致命的攻击）"

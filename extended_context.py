@@ -1,6 +1,7 @@
 
 from entitas import Entity, Matcher, Context
 from components import WorldComponent, StageComponent, NPCComponent, PlayerComponent
+from agents.tools.extract_md_content import wirte_content_into_md
 
 class ExtendedContext(Context):
 
@@ -80,6 +81,12 @@ class ExtendedContext(Context):
             entity.get(StageComponent).agent.add_chat_history(memory)
             return True
         return False
+    
+
+    ## 方便调用的存档方法
+    def savearchive(archive: str, filename: str) -> None:
+        wirte_content_into_md(archive, f"/savedData/{filename}.md")
+
 
 
 

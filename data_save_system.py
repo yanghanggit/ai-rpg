@@ -10,12 +10,13 @@ from components import (
     WorldComponent,
 )
 from actor_agent import ActorAgent
-from agents.tools.extract_md_content import wirte_content_into_md
+#from agents.tools.extract_md_content import wirte_content_into_md
 from prompt_maker import gen_npc_archive_prompt, gen_stage_archive_prompt, gen_world_archive_prompt
+from extended_context import ExtendedContext
 
 class DataSaveSystem(TearDownProcessor):
 
-    def __init__(self, context: Context) -> None:
+    def __init__(self, context: ExtendedContext) -> None:
         super().__init__()
         self.context = context
 
@@ -46,7 +47,10 @@ class DataSaveSystem(TearDownProcessor):
             archive_prompt = gen_world_archive_prompt(self.context)
             archive = agent.request(archive_prompt)
             # print(f"{agent.name}:\n{archive}")
-            wirte_content_into_md(archive, f"/savedData/{agent.name}.md")
+            #wirte_content_into_md(archive, f"/savedData/{agent.name}.md")
+            self.context.savearchive(archive, agent.name)
+            
+
         # 对Stage的chat_history进行梳理总结输出
         entities: set[Entity] = self.context.get_group(Matcher(StageComponent)).entities
         for entity in entities:
@@ -65,7 +69,8 @@ class DataSaveSystem(TearDownProcessor):
             archive_prompt = gen_stage_archive_prompt(self.context)
             archive = agent.request(archive_prompt)
             # print(f"{agent.name}:\n{archive}")
-            wirte_content_into_md(archive, f"/savedData/{agent.name}.md")
+            #wirte_content_into_md(archive, f"/savedData/{agent.name}.md")
+            self.context.savearchive(archive, agent.name)
 
         # 对NPC的chat_history进行梳理总结输出
         entities: set[Entity] = self.context.get_group(Matcher(NPCComponent)).entities
@@ -92,6 +97,7 @@ class DataSaveSystem(TearDownProcessor):
             archive_prompt = gen_npc_archive_prompt(self.context)
             archive = agent.request(archive_prompt)
             # print(f"{agent.name}:\n{archive}")
-            wirte_content_into_md(archive, f"/savedData/{agent.name}.md")
+            #wirte_content_into_md(archive, f"/savedData/{agent.name}.md")
+            self.context.savearchive(archive, agent.name)
 
 

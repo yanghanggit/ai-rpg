@@ -49,3 +49,54 @@ def speak_action_prompt(srcname: str, destname: str, content: str, context: Exte
     prompt = f"{srcname}对{destname}说:{content}"   
     return prompt
 
+def gen_npc_archive_prompt(context: ExtendedContext) -> str:
+    prompt = """
+请根据上下文，对自己知道的事情进行梳理总结成markdown格式后输出,但不要生成```markdown xxx```的形式:
+# 游戏世界存档
+## 地点
+### xxx
+#### 和我有关的事
+- xxxx
+- xxxx
+- xxxx
+- xxxx
+### xxx
+#### 和我有关的事
+- xxxx
+- xxxx
+- xxxx
+- xxxx
+"""
+    return prompt
+
+def gen_stage_archive_prompt(context: ExtendedContext) -> str:
+     prompt = """
+请根据上下文，对自己知道的事情进行梳理总结成markdown格式后输出,但不要生成```markdown xxx```的形式:
+# 游戏世界存档
+## 地点
+- xxxxx
+## 发生的事情
+- xxxx
+- xxxx
+- xxxx
+"""
+     return prompt
+    
+
+def gen_world_archive_prompt(context: ExtendedContext) -> str:
+     prompt = """
+请根据上下文，对自己知道的事情进行梳理总结成markdown格式后输出,但不要生成```markdown xxx```的形式:
+# 游戏世界存档
+## 地点
+### xxx
+#### 发生的事件
+- xxxx
+- xxxx
+- xxxx
+### xxx
+#### 发生的事件
+- xxxx
+- xxxx
+- xxxx
+"""
+     return prompt

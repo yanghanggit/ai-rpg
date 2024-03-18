@@ -21,9 +21,46 @@ from components import (LeaveForActionComponent,
                         NPCComponent, 
                         StageComponent, 
                         SimpleRPGRoleComponent,
-                        BagComponent)
+                        BackpackComponent,
+                        StageEntryConditionComponent,
+                        StageExitConditionComponent)
 from actor_action import ActorAction
 from extended_context import ExtendedContext
+
+class NpcBackpackComponentHandle:
+    """
+    Class representing the NPC handling system.
+
+    Attributes:
+    - context (ExtendedContext): The extended context object.
+    - bag_comp (BackpackComponent): The bag component of the NPC.
+    - bag_comp_content (set[str]): The content of the bag component.
+    """
+
+    def __init__(self, context: ExtendedContext) -> None:
+        """
+        Initializes a new instance of the NpcHandle class.
+
+        Parameters:
+        - context (ExtendedContext): The extended context object.
+        """
+        self.context = context
+        self.bag_comp: BackpackComponent = None
+        self.bag_comp_content: set[str] = set()
+
+    def init(self, npc_entity: Entity) -> bool:
+        """
+        Initializes the NPC handling system.
+
+        Parameters:
+        - npc_entity (Entity): The NPC entity.
+
+        Returns:
+        - bool: True if initialization is successful, False otherwise.
+        """
+        self.bag_comp: BackpackComponent = npc_entity.get(BackpackComponent)
+        self.bag_comp_content = set(self.bag_comp.name_items)
+        return True
 
 ###集中写一下方便处理，不然每次还要再搜，很麻烦
 class LeaveHandle:
@@ -109,12 +146,16 @@ class LeaveForActionSystem(ReactiveProcessor):
             if not entity.has(NPCComponent):
                 print(f"LeaveForActionSystem: {entity} is not NPC?!")
                 continue
-
+            
             leavecomp: LeaveForActionComponent = entity.get(LeaveForActionComponent)
             action: ActorAction = leavecomp.action
             if len(action.values) == 0:
                print("没有目标？！")
                continue
+
+            #先处理npc的背包
+            npc_handle = NpcBackpackComponentHandle(self.context)
+            npc_handle.init(entity)
 
             #组织一下数据
             print(f"LeaveForActionSystem: {action}")
@@ -131,17 +172,29 @@ class LeaveForActionSystem(ReactiveProcessor):
                 print(f"想要去往的场景是当前的场景{handle.current_stage_name}: {stagename} 不用往下进行了")
                 continue
 
-            if handle.current_stage_name == '老猎人隐居的小木屋' and entity.has(BagComponent):
-                bag_comp: BagComponent = entity.get(BagComponent)
-                if '古老的地图' not in bag_comp.name_items:
-                    print(f"没有'古老的地图'，不能离开当前场景")
-                    stage_comp: StageComponent =  handle.current_stage.get(StageComponent)
-                    stage_comp.directorscripts.append(f"{entity.get(NPCComponent).name} 试图离开{handle.current_stage_name} 但没有'古老的地图'，不能离开")
-                    continue
-                else:
-                    print(f"有'古老的地图'，可以离开当前场景")
-            else:
-                print(f"当前场景{handle.current_stage_name}不是'老猎人隐居的小木屋'，可以离开")
+            # 判断当前场景的离开条件和目标场景的进入条件
+            if handle.current_stage.has(StageExitConditionComponent) or handle.target_stage.has(StageEntryConditionComponent):
+                #先处理npc的背包内容
+                npc_handle = NpcBackpackComponentHandle(self.context)
+                npc_handle.init(entity)
+                # 先检查当前场景的离开条件
+                if handle.current_stage.has(StageExitConditionComponent):
+                    exit_condition_comp: StageExitConditionComponent = handle.current_stage.get(StageExitConditionComponent)
+                    for condition in exit_condition_comp.conditions:
+                        if condition not in npc_handle.bag_comp_content:
+                            print(f"背包中没有{condition}，不能离开{handle.current_stage_name}")
+                            current_stage_comp: StageComponent = handle.current_stage.get(StageComponent)
+                            current_stage_comp.directorscripts.append(f"{entity.get(NPCComponent).name} 试图离开{handle.current_stage_name} 但背包中没有{condition}，不能离开，或许需要尝试搜索一下'{condition}'.")
+                            return
+                # 再检查目标场景的进入条件  
+                if handle.target_stage.has(StageEntryConditionComponent):
+                    entry_condition_comp: StageEntryConditionComponent = handle.target_stage.get(StageEntryConditionComponent)
+                    for condition in entry_condition_comp.conditions:
+                        if condition not in npc_handle.bag_comp_content:
+                            print(f"背包中没有{condition}，不能进入{handle.target_stage_name}")
+                            current_stage_comp: StageComponent = handle.current_stage.get(StageComponent)
+                            current_stage_comp.directorscripts.append(f"{entity.get(NPCComponent).name} 试图进入{handle.target_stage_name} 但背包中没有{condition}，不能进入，或许需要尝试搜索一下'{condition}'.")
+                            return
             
             ##如果当前有场景就要离开
             if handle.current_stage is not None:

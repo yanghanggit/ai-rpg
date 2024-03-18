@@ -39,7 +39,7 @@
 
 
 #### 注意！XXXComponent选择限制, 即只能从如下的设置中来选取
-- "FightActionComponent", "SpeakActionComponent", "LeaveForActionComponent", "TagActionComponent", "RememberActionComponent", "MindVoiceActionComponent", "BroadcastActionComponent", “WhisperActionComponent”
+- "FightActionComponent", "SpeakActionComponent", "LeaveForActionComponent", "TagActionComponent", "RememberActionComponent", "MindVoiceActionComponent", "BroadcastActionComponent", “WhisperActionComponent”, "SearchActionComponent"
 
 ## 其他限制：
 - 不要使用英文回答。

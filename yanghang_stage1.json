@@ -24,6 +24,21 @@
               "url": "http://localhost:8025/actor/npc/rat/",
               "memory": "/savedData/坏运气先生.md"
             }
+          ],
+          "EntryConditions":[
+            {
+            "name": "小木屋的钥匙"
+            }
+          ],
+          "ExitConditions":[
+            {
+              "name": "古老的地图"
+            }
+          ],
+          "UniqueProps": [
+            { 
+              "name": "古老的地图"
+            }
           ]
         },
         {
@@ -35,6 +50,16 @@
               "name": "无影",
               "url": "http://localhost:8026/actor/npc/thief/",
               "memory": "/savedData/无影.md"
+            }
+          ],
+          "EntryConditions":[
+            {
+              "name":"古老的地图"
+            }
+          ],
+          "UniqueProps": [
+            {
+              "name": "小木屋的钥匙"
             }
           ]
         }

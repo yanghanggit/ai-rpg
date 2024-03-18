@@ -1,6 +1,11 @@
 from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity, Group
 from extended_context import ExtendedContext
-from components import SearchActionComponent, UniquePropComponent, NPCComponent, BagComponent, StageComponent
+from components import (SearchActionComponent, 
+                        UniquePropComponent, 
+                        NPCComponent, 
+                        BackpackComponent, 
+                        StageComponent, 
+                        DestroyComponent)
 from actor_action import ActorAction
 from actor_agent import ActorAgent
 
@@ -27,25 +32,23 @@ class SearchPropsSystem(ReactiveProcessor):
 
             for npc_search_target in npc_search_action.values:
                 for unique_prop_entity in unique_props_entities:
-                    unique_props_comp: UniquePropComponent = unique_prop_entity.get(UniquePropComponent)
-                    # 判断道具无主 and 道具是NPC要找的道具
-                    if unique_props_comp.owner == "None" and unique_props_comp.name == npc_search_target:
+                    if unique_prop_entity.has(DestroyComponent):
+                        continue
+                    unique_prop_comp: UniquePropComponent = unique_prop_entity.get(UniquePropComponent)
+                    if unique_prop_comp.name in npc_search_target:
                         if npc_entity.has(NPCComponent):
                             npc_comp: NPCComponent = npc_entity.get(NPCComponent)
                             npc_agent: ActorAgent = npc_comp.agent
-                            unique_prop_entity.replace(UniquePropComponent, npc_search_target, npc_agent.name)
-                            npc_bag_comp: BagComponent = npc_entity.get(BagComponent)
+                            npc_bag_comp: BackpackComponent = npc_entity.get(BackpackComponent)
                             npc_bag_content: set = npc_bag_comp.name_items
                             npc_bag_content.add(npc_search_target)
                             npc_stage: StageComponent = self.context.get_stagecomponent_by_uncertain_entity(npc_entity)
-                            # 导演剧本加入成功找到道具的消息
                             npc_stage.directorscripts.append(f"{npc_agent.name}找到了{npc_search_target},{npc_search_target}只存在唯一一份，其他人无法再搜到了。")
                             print(f"{npc_agent.name}成功找到了{npc_search_target}。")
                             npc_entity.remove(SearchActionComponent)
+                            unique_prop_entity.add(DestroyComponent, f"{unique_prop_comp.name} Dead")      
                         else:
-                            print(f"{npc_entity}有SearchActionComponent，但不是NPC，该情况不合理，请检查配置。")
-                    else:
-                        print(f"道具Owner：{unique_props_comp.owner}，道具Name：{unique_props_comp.name}，NPC要找的道具：{npc_search_target}，不符合条件。")
+                            print(f"{npc_entity}有SearchActionComponent，但没有NPC Component，该情况不合理，请检查配置。")
                             
 
 

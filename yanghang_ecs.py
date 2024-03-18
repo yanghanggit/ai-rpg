@@ -12,7 +12,9 @@ from components import (WorldComponent,
                         LeaveForActionComponent, 
                         HumanInterferenceComponent,
                         UniquePropComponent,
-                        BagComponent)
+                        BackpackComponent,
+                        StageEntryConditionComponent,
+                        StageExitConditionComponent)
 from actor_action import ActorAction
 from actor_agent import ActorAgent
 from init_system import InitSystem
@@ -20,7 +22,7 @@ from stage_plan_system import StagePlanSystem
 from npc_plan_system import NPCPlanSystem
 from speak_action_system import SpeakActionSystem
 from fight_action_system import FightActionSystem
-from leave_action_system import LeaveForActionSystem
+from leave_for_action_system import LeaveForActionSystem
 from director_system import DirectorSystem
 from extended_context import ExtendedContext
 from dead_action_system import DeadActionSystem
@@ -55,10 +57,6 @@ def create_entities(context: Context, worldbuilder: WorldBuilder) -> None:
             stage_entity.add(StageComponent, stage_agent.name, stage_agent, [])
             stage_entity.add(SimpleRPGRoleComponent, stage_agent.name, 100, 100, 60, "")
 
-            if stage_builder.data['name'] == '老猎人隐居的小木屋':
-                prop_entity = context.create_entity()
-                prop_entity.add(UniquePropComponent, "古老的地图", "None")
-
             for npc_builder in stage_builder.npc_builders:
                 #创建npc
                 npc_agent = ActorAgent(npc_builder.data['name'], npc_builder.data['url'], npc_builder.data['memory'])
@@ -67,7 +65,20 @@ def create_entities(context: Context, worldbuilder: WorldBuilder) -> None:
                 npc_entity = context.create_entity()
                 npc_entity.add(NPCComponent, npc_agent.name, npc_agent, stage_agent.name)
                 npc_entity.add(SimpleRPGRoleComponent, npc_agent.name, 100, 100, 60, "")
-                npc_entity.add(BagComponent, set())
+                npc_entity.add(BackpackComponent, set())
+            
+            for unique_prop_builder in stage_builder.unique_prop_builders:
+                #创建道具
+                prop_entity = context.create_entity()
+                prop_entity.add(UniquePropComponent, unique_prop_builder.data['name'])
+            
+            for entry_condition_builder in stage_builder.entry_condition_builders:
+                #创建入口条件
+                stage_entity.add(StageEntryConditionComponent, [entry_condition_builder.data['name']])
+            
+            for exit_condition_builder in stage_builder.exit_condition_builders:
+                #创建出口条件
+                stage_entity.add(StageExitConditionComponent, [exit_condition_builder.data['name']])
 
 ###############################################################################################################################################
 ###############################################################################################################################################
@@ -207,6 +218,14 @@ def main() -> None:
             command = "/mem"
             target_name = console.parse_command(usr_input, command)
             debug_chat_history(context, target_name)
+        
+        elif "/leave" in usr_input:
+            if not started:
+                print("请先/run")
+                continue
+            command = "/leave"
+            target_name = console.parse_command(usr_input, command)
+            debug_leave(context, target_name)
 
     processors.clear_reactive_processors()
     processors.tear_down()
@@ -330,6 +349,23 @@ def debug_chat_history(context: ExtendedContext, name: str) -> None:
 
 ###############################################################################################################################################
 
+def debug_leave(context: ExtendedContext, stage: str) -> None:
+    playerentity = context.getplayer()
+    if playerentity is None:
+        print("debug_leave: player is None")
+        return
+    
+    npc_comp: NPCComponent = playerentity.get(NPCComponent)
+    npc_agent: ActorAgent = npc_comp.agent
+    action = ActorAction(npc_comp.name, "LeaveForActionComponent", [stage])
+    playerentity.add(LeaveForActionComponent, action)
+    playerentity.add(HumanInterferenceComponent, 'Human Interference')
+    npc_agent.add_chat_history(f"""{{
+        "LeaveForActionComponent": ["{stage}"]
+    }}""")
+    print(f"debug_leave: {npc_agent.name} add {action}")
+    
+###############################################################################################################################################
 
 if __name__ == "__main__":
     main()

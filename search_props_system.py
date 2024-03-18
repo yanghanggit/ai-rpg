@@ -41,6 +41,10 @@ class SearchPropsSystem(ReactiveProcessor):
                             # 导演剧本加入成功找到道具的消息
                             npc_stage.directorscripts.append(f"{npc_agent.name}找到了{npc_search_target},{npc_search_target}只存在唯一一份，其他人无法再搜到了。")
                             print(f"{npc_agent.name}成功找到了{npc_search_target}。")
+                        else:
+                            print(f"{npc_entity}有SearchActionComponent，但不是NPC，该情况不合理，请检查配置。")
+                    else:
+                        print(f"道具Owner：{unique_props_comp.owner}，道具Name：{unique_props_comp.name}，NPC要找的道具：{npc_search_target}，不符合条件。")
                             
 
 

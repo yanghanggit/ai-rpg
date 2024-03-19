@@ -1,10 +1,10 @@
 
 from entitas import Entity, Matcher, ExecuteProcessor
-from components import StageComponent, NPCComponent
+from auxiliary.components import StageComponent, NPCComponent
 from typing import List
-from extended_context import ExtendedContext
-from prompt_maker import confirm_everything_after_director_add_new_memories_prompt
-from actor_agent import ActorAgent
+from auxiliary.extended_context import ExtendedContext
+from auxiliary.prompt_maker import confirm_everything_after_director_add_new_memories_prompt
+from auxiliary.actor_agent import ActorAgent
 
 class DirectorSystem(ExecuteProcessor):
     """

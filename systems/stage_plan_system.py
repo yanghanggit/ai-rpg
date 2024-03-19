@@ -1,6 +1,6 @@
 
 from entitas import Entity, Matcher, ExecuteProcessor
-from components import (StageComponent, 
+from auxiliary.components import (StageComponent, 
                         FightActionComponent, 
                         SpeakActionComponent,
                         TagActionComponent,
@@ -8,8 +8,8 @@ from components import (StageComponent,
                         RememberActionComponent,
                         BroadcastActionComponent,
                         WhisperActionComponent)
-from actor_action import ActorPlan
-from prompt_maker import stage_plan_prompt
+from auxiliary.actor_action import ActorPlan
+from auxiliary.prompt_maker import stage_plan_prompt
       
 class StagePlanSystem(ExecuteProcessor):
     """

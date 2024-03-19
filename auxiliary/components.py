@@ -6,8 +6,11 @@ WorldComponent = namedtuple('WorldComponent', 'name agent')
 StageComponent = namedtuple('StageComponent', 'name agent directorscripts')
 NPCComponent = namedtuple('NPCComponent', 'name agent current_stage')
 PlayerComponent = namedtuple('PlayerComponent', 'name')
-UniquePropComponent = namedtuple('UniquePropComponent', 'name owner')
-BagComponent = namedtuple('BagComponent', 'name_items')
+UniquePropComponent = namedtuple('UniquePropComponent', 'name')
+StageEntryConditionComponent = namedtuple('StageEntryConditionComponent', 'conditions')
+StageExitConditionComponent = namedtuple('StageExitConditionComponent', 'conditions')
+###
+BackpackComponent = namedtuple('BackpackComponent', 'name_items')
 ###############################################################################################################################################
 DestroyComponent = namedtuple('DestroyComponent', 'name')
 ###############################################################################################################################################

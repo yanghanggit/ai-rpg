@@ -1,10 +1,10 @@
 
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent
-from components import SpeakActionComponent, NPCComponent, StageComponent
-from actor_action import ActorAction
-from extended_context import ExtendedContext
+from auxiliary.components import SpeakActionComponent, NPCComponent, StageComponent
+from auxiliary.actor_action import ActorAction
+from auxiliary.extended_context import ExtendedContext
 from agents.tools.print_in_color import Color
-from prompt_maker import speak_action_prompt
+from auxiliary.prompt_maker import speak_action_prompt
    
 ####################################################################################################
 class SpeakActionSystem(ReactiveProcessor):

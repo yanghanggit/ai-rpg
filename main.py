@@ -1,9 +1,8 @@
-
 from entitas import Context, Processors
 import json
-from builder import WorldBuilder
-from console import Console
-from components import (WorldComponent,
+from auxiliary.builder import WorldBuilder
+from auxiliary.console import Console
+from auxiliary.components import (WorldComponent,
                         StageComponent, 
                         NPCComponent, 
                         FightActionComponent, 
@@ -12,31 +11,32 @@ from components import (WorldComponent,
                         LeaveForActionComponent, 
                         HumanInterferenceComponent,
                         UniquePropComponent,
-                        BagComponent)
-from actor_action import ActorAction
-from actor_agent import ActorAgent
-from init_system import InitSystem
-from stage_plan_system import StagePlanSystem
-from npc_plan_system import NPCPlanSystem
-from speak_action_system import SpeakActionSystem
-from fight_action_system import FightActionSystem
-from leave_action_system import LeaveForActionSystem
-from director_system import DirectorSystem
-from extended_context import ExtendedContext
-from dead_action_system import DeadActionSystem
-from destroy_system import DestroySystem
-from tag_action_system import TagActionSystem
-from data_save_system import DataSaveSystem
-from broadcast_action_system import BroadcastActionSystem  
-from whisper_action_system import WhisperActionSystem 
-from search_props_system import SearchPropsSystem
-
+                        BackpackComponent,
+                        StageEntryConditionComponent,
+                        StageExitConditionComponent)
+from auxiliary.actor_action import ActorAction
+from auxiliary.actor_agent import ActorAgent
+from auxiliary.extended_context import ExtendedContext
+from systems.init_system import InitSystem
+from systems.stage_plan_system import StagePlanSystem
+from systems.npc_plan_system import NPCPlanSystem
+from systems.speak_action_system import SpeakActionSystem
+from systems.fight_action_system import FightActionSystem
+from systems.leave_for_action_system import LeaveForActionSystem
+from systems.director_system import DirectorSystem
+from systems.dead_action_system import DeadActionSystem
+from systems.destroy_system import DestroySystem
+from systems.tag_action_system import TagActionSystem
+from systems.data_save_system import DataSaveSystem
+from systems.broadcast_action_system import BroadcastActionSystem  
+from systems.whisper_action_system import WhisperActionSystem 
+from systems.search_props_system import SearchPropsSystem
+from systems.mind_voice_action_system import MindVoiceActionSystem
 
 from langchain_core.messages import (
     HumanMessage,
     AIMessage)
 
-from mind_voice_action_system import MindVoiceActionSystem
 
 ###############################################################################################################################################
 def create_entities(context: Context, worldbuilder: WorldBuilder) -> None:
@@ -53,11 +53,7 @@ def create_entities(context: Context, worldbuilder: WorldBuilder) -> None:
             # print(f"创建场景:{stage_builder.data['name']}\nURL:{stage_builder.data['url']}\nMemory:{stage_builder.data['memory']}")
             stage_entity = context.create_entity()
             stage_entity.add(StageComponent, stage_agent.name, stage_agent, [])
-            stage_entity.add(SimpleRPGRoleComponent, stage_agent.name, 100, 100, 60, "")
-
-            if stage_builder.data['name'] == '老猎人隐居的小木屋':
-                prop_entity = context.create_entity()
-                prop_entity.add(UniquePropComponent, "古老的地图", "None")
+            stage_entity.add(SimpleRPGRoleComponent, stage_agent.name, 100, 100, 1, "")
 
             for npc_builder in stage_builder.npc_builders:
                 #创建npc
@@ -66,8 +62,21 @@ def create_entities(context: Context, worldbuilder: WorldBuilder) -> None:
                 # print(f"创建NPC:{npc_builder.data['name']}\nURL:{npc_builder.data['url']}\nMemory:{npc_builder.data['memory']}")
                 npc_entity = context.create_entity()
                 npc_entity.add(NPCComponent, npc_agent.name, npc_agent, stage_agent.name)
-                npc_entity.add(SimpleRPGRoleComponent, npc_agent.name, 100, 100, 60, "")
-                npc_entity.add(BagComponent, set())
+                npc_entity.add(SimpleRPGRoleComponent, npc_agent.name, 100, 100, 20, "")
+                npc_entity.add(BackpackComponent, set())
+            
+            for unique_prop_builder in stage_builder.unique_prop_builders:
+                #创建道具
+                prop_entity = context.create_entity()
+                prop_entity.add(UniquePropComponent, unique_prop_builder.data['name'])
+            
+            for entry_condition_builder in stage_builder.entry_condition_builders:
+                #创建入口条件
+                stage_entity.add(StageEntryConditionComponent, set([entry_condition_builder.data['name']]))
+            
+            for exit_condition_builder in stage_builder.exit_condition_builders:
+                #创建出口条件
+                stage_entity.add(StageExitConditionComponent, set([exit_condition_builder.data['name']]))
 
 ###############################################################################################################################################
 ###############################################################################################################################################
@@ -78,7 +87,7 @@ def main() -> None:
     context = ExtendedContext()
     processors = Processors()
     console = Console("测试后台管理")
-    path: str = "./yanghang_stage1.json"
+    path: str = "./game_settings.json"
     playername = "yanghang"
 
     try:
@@ -207,6 +216,14 @@ def main() -> None:
             command = "/mem"
             target_name = console.parse_command(usr_input, command)
             debug_chat_history(context, target_name)
+        
+        elif "/leave" in usr_input:
+            if not started:
+                print("请先/run")
+                continue
+            command = "/leave"
+            target_name = console.parse_command(usr_input, command)
+            debug_leave(context, target_name)
 
     processors.clear_reactive_processors()
     processors.tear_down()
@@ -330,6 +347,23 @@ def debug_chat_history(context: ExtendedContext, name: str) -> None:
 
 ###############################################################################################################################################
 
+def debug_leave(context: ExtendedContext, stage: str) -> None:
+    playerentity = context.getplayer()
+    if playerentity is None:
+        print("debug_leave: player is None")
+        return
+    
+    npc_comp: NPCComponent = playerentity.get(NPCComponent)
+    npc_agent: ActorAgent = npc_comp.agent
+    action = ActorAction(npc_comp.name, "LeaveForActionComponent", [stage])
+    playerentity.add(LeaveForActionComponent, action)
+    playerentity.add(HumanInterferenceComponent, 'Human Interference')
+    npc_agent.add_chat_history(f"""{{
+        "LeaveForActionComponent": ["{stage}"]
+    }}""")
+    print(f"debug_leave: {npc_agent.name} add {action}")
+    
+###############################################################################################################################################
 
 if __name__ == "__main__":
     main()

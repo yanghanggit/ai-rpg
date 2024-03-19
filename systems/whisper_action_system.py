@@ -1,10 +1,10 @@
 
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent
-from components import WhisperActionComponent, StageComponent, NPCComponent
-from actor_action import ActorAction
-from extended_context import ExtendedContext
+from auxiliary.components import WhisperActionComponent, StageComponent, NPCComponent
+from auxiliary.actor_action import ActorAction
+from auxiliary.extended_context import ExtendedContext
 from agents.tools.print_in_color import Color
-from prompt_maker import whisper_action_prompt
+from auxiliary.prompt_maker import whisper_action_prompt
 
 class WhisperActionSystem(ReactiveProcessor):
 

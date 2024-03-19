@@ -1,7 +1,7 @@
 
 
 from entitas import Entity, Matcher, ExecuteProcessor
-from components import (NPCComponent, 
+from auxiliary.components import (NPCComponent, 
                         FightActionComponent, 
                         SpeakActionComponent, 
                         LeaveForActionComponent, 
@@ -12,9 +12,9 @@ from components import (NPCComponent,
                         WhisperActionComponent,
                         HumanInterferenceComponent, 
                         SearchActionComponent)
-from actor_action import ActorPlan
-from prompt_maker import npc_plan_prompt
-from extended_context import ExtendedContext
+from auxiliary.actor_action import ActorPlan
+from auxiliary.prompt_maker import npc_plan_prompt
+from auxiliary.extended_context import ExtendedContext
 
 class NPCPlanSystem(ExecuteProcessor):
     """

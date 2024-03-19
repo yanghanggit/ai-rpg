@@ -1,8 +1,8 @@
 
 
 from entitas import Entity
-from extended_context import ExtendedContext
-from components import NPCComponent, StageComponent
+from auxiliary.extended_context import ExtendedContext
+from auxiliary.components import NPCComponent, StageComponent
 
 def npc_plan_prompt(entity: Entity, context: ExtendedContext) -> str:
     if not entity.has(NPCComponent):
@@ -103,3 +103,30 @@ def gen_world_archive_prompt(context: ExtendedContext) -> str:
 
 def npc_memory_before_death(context: ExtendedContext) -> str:
     return f"你已经死亡（在战斗中受到了致命的攻击）"
+
+
+def unique_prop_taken_away(entity: Entity, prop_name:str) -> str:
+    if entity.has(NPCComponent):
+        npc_name = entity.get(NPCComponent).name
+        return f"{npc_name}找到了{prop_name},{prop_name}只存在唯一一份，其他人无法再搜到了。"
+    else:
+        return ""
+    
+def fail_to_enter_stage(npc_name: str, stage_name: str, enter_condition: str) -> str:
+    return f"{npc_name}试图进入{stage_name} 但背包中没有{enter_condition}，不能进入，或许{npc_name}需要尝试搜索一下'{enter_condition}'."
+
+def fail_to_exit_stage(npc_name: str, stage_name: str, exit_condition: str) -> str:
+    return f"{npc_name}试图离开{stage_name} 但背包中没有{exit_condition}，不能离开，或许{npc_name}需要尝试搜索一下'{exit_condition}'."
+
+def npc_enter_stage(npc_name: str, stage_name: str) -> str:
+    return f"{npc_name}进入了{stage_name} 场景。"
+
+def npc_leave_for_stage(npc_name: str, current_stage_name: str, leave_for_stage_name: str) -> str:
+    return f"{npc_name}离开了{current_stage_name} 场景，前往{leave_for_stage_name} 场景。"
+
+def kill_someone(attacker_name: str, target_name: str) -> str:
+    return f"{attacker_name}对{target_name}发动了一次攻击,造成了{target_name}死亡。"
+
+def attack_someone(attacker_name: str, target_name: str, damage: int, target_current_hp: int ,target_max_hp: int) -> str:
+    health_percent = (target_current_hp - damage) / target_max_hp * 100
+    return f"{attacker_name}对{target_name}发动了一次攻击,造成了{damage}点伤害,当前{target_name}的生命值剩余{health_percent}%。"

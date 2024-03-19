@@ -1,8 +1,8 @@
 
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent
-from components import MindVoiceActionComponent, StageComponent
-from actor_action import ActorAction
-from extended_context import ExtendedContext
+from auxiliary.components import MindVoiceActionComponent, StageComponent
+from auxiliary.actor_action import ActorAction
+from auxiliary.extended_context import ExtendedContext
 from agents.tools.print_in_color import Color
 
 class MindVoiceActionSystem(ReactiveProcessor):

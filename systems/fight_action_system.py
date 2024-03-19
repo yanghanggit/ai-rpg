@@ -1,9 +1,10 @@
 
 from entitas import Matcher, ReactiveProcessor, GroupEvent, Entity
-from components import FightActionComponent, NPCComponent, StageComponent, SimpleRPGRoleComponent, DeadActionComponent
-from extended_context import ExtendedContext
-from actor_action import ActorAction
-from actor_agent import ActorAgent
+from auxiliary.components import FightActionComponent, NPCComponent, StageComponent, SimpleRPGRoleComponent, DeadActionComponent
+from auxiliary.extended_context import ExtendedContext
+from auxiliary.actor_action import ActorAction
+from auxiliary.actor_agent import ActorAgent
+from auxiliary.prompt_maker import kill_someone, attack_someone
 
 class FightActionSystem(ReactiveProcessor):
 
@@ -46,14 +47,14 @@ class FightActionSystem(ReactiveProcessor):
                 attacker_comp: SimpleRPGRoleComponent = attacker.get(SimpleRPGRoleComponent)
                 attacked_comp: SimpleRPGRoleComponent = attacked.get(SimpleRPGRoleComponent)
                 attack_result = attacked_comp.hp - attacker_comp.attack
-                attacked.replace(SimpleRPGRoleComponent,attacked_comp.name,100,attack_result,60,"")
+                attacked.replace(SimpleRPGRoleComponent,attacked_comp.name,100,attack_result,20,"")
                 if attack_result <= 0:
                     attacked.add(DeadActionComponent, action)
-                    fight = f"{action.name}对{value}发动了一次攻击,造成了{value}死亡。"
-                    stage.directorscripts.append(fight)
+                    self.context.add_content_to_director_script_by_entity(attacker, kill_someone(action.name, value))
                 else:
-                    fight = f"{action.name}对{value}发动了一次攻击,但是没有能造成{value}死亡,{value}血量剩余{attack_result}%."
-                    stage.directorscripts.append(fight)
+                    self.context.add_content_to_director_script_by_entity(attacker, attack_someone(action.name, value, attacker_comp.attack, attacked_comp.hp, attacked_comp.maxhp))
+                    # fight = f"{action.name}对{value}发动了一次攻击,但是没有能造成{value}死亡,{value}血量剩余{attack_result}%."
+                    # stage.directorscripts.append(fight)
             else:
                 print("attacker or attacked has no simple rpg role comp.")
        

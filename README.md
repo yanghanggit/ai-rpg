@@ -42,3 +42,8 @@ pip install langchain_core langserve fastapi langchain_openai sse_starlette fais
 - /attack 小狗'断剑'
 - /attack 卡斯帕·艾伦德
 - /attack 坏运气先生
+
+
+
+## 严格模式检查
+mypy --strict main.py

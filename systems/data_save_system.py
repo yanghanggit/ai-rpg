@@ -1,9 +1,4 @@
-from entitas import (
-    TearDownProcessor,
-    Context,
-    Matcher,
-    Entity
-                     ) #type: ignore
+from entitas import (TearDownProcessor, Matcher, Entity) #type: ignore
 from auxiliary.components import (
     NPCComponent,
     StageComponent,
@@ -20,84 +15,35 @@ class DataSaveSystem(TearDownProcessor):
         super().__init__()
         self.context = context
 
-    def tear_down(self):
+    def tear_down(self) -> None:
         self.output_all_npc_archive()
 
     def output_all_npc_archive(self) -> None:
         #
-        entities: set[Entity] = self.context.get_group(Matcher(WorldComponent)).entities
-        for entity in entities:
-            comp: WorldComponent = entity.get(WorldComponent)
-            agent: ActorAgent = comp.agent
-            # archive_prompt = """
-            # 请根据上下文，对自己知道的事情进行梳理总结成markdown格式后输出,但不要生成```markdown xxx```的形式:
-            # # 游戏世界存档
-            # ## 地点
-            # ### xxx
-            # #### 发生的事件
-            # - xxxx
-            # - xxxx
-            # - xxxx
-            # ### xxx
-            # #### 发生的事件
-            # - xxxx
-            # - xxxx
-            # - xxxx
-            # """
+        #entities: set[Entity] = self.context.get_group(Matcher(WorldComponent)).entities
+        for entity in self.context.get_group(Matcher(WorldComponent)).entities:
+            worldcomp: WorldComponent = entity.get(WorldComponent)
+            wagent: ActorAgent = worldcomp.agent
             archive_prompt = gen_world_archive_prompt(self.context)
-            archive = agent.request(archive_prompt)
-            # print(f"{agent.name}:\n{archive}")
-            #wirte_content_into_md(archive, f"/savedData/{agent.name}.md")
-            self.context.savearchive(archive, agent.name)
+            archive = wagent.request(archive_prompt)
+            self.context.savearchive(archive, wagent.name)
             
-
         # 对Stage的chat_history进行梳理总结输出
-        entities: set[Entity] = self.context.get_group(Matcher(StageComponent)).entities
-        for entity in entities:
-            comp: StageComponent = entity.get(StageComponent)
-            agent: ActorAgent = comp.agent
-            # archive_prompt = """
-            # 请根据上下文，对自己知道的事情进行梳理总结成markdown格式后输出,但不要生成```markdown xxx```的形式:
-            # # 游戏世界存档
-            # ## 地点
-            # - xxxxx
-            # ## 发生的事情
-            # - xxxx
-            # - xxxx
-            # - xxxx
-            # """
+        #entities: set[Entity] = self.context.get_group(Matcher(StageComponent)).entities
+        for entity in self.context.get_group(Matcher(StageComponent)).entities:
+            stagecomp: StageComponent = entity.get(StageComponent)
+            sagent: ActorAgent = stagecomp.agent
             archive_prompt = gen_stage_archive_prompt(self.context)
-            archive = agent.request(archive_prompt)
-            # print(f"{agent.name}:\n{archive}")
-            #wirte_content_into_md(archive, f"/savedData/{agent.name}.md")
-            self.context.savearchive(archive, agent.name)
+            archive = sagent.request(archive_prompt)
+            self.context.savearchive(archive, sagent.name)
 
         # 对NPC的chat_history进行梳理总结输出
-        entities: set[Entity] = self.context.get_group(Matcher(NPCComponent)).entities
-        for entity in entities:
-            comp: NPCComponent = entity.get(NPCComponent)
-            agent: ActorAgent = comp.agent
-            # archive_prompt = """
-            # 请根据上下文，对自己知道的事情进行梳理总结成markdown格式后输出,但不要生成```markdown xxx```的形式:
-            # # 游戏世界存档
-            # ## 地点
-            # ### xxx
-            # #### 和我有关的事
-            # - xxxx
-            # - xxxx
-            # - xxxx
-            # - xxxx
-            # ### xxx
-            # #### 和我有关的事
-            # - xxxx
-            # - xxxx
-            # - xxxx
-            # - xxxx
-            # """
+        #entities: set[Entity] = self.context.get_group(Matcher(NPCComponent)).entities
+        for entity in self.context.get_group(Matcher(NPCComponent)).entities:
+            npccomp: NPCComponent = entity.get(NPCComponent)
+            nagent: ActorAgent = npccomp.agent
             archive_prompt = gen_npc_archive_prompt(self.context)
-            archive = agent.request(archive_prompt)
-            # print(f"{agent.name}:\n{archive}")
-            #wirte_content_into_md(archive, f"/savedData/{agent.name}.md")
-            self.context.savearchive(archive, agent.name)
+            archive = nagent.request(archive_prompt)
+            self.context.savearchive(archive, nagent.name)
 
 

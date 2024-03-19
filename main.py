@@ -53,7 +53,7 @@ def create_entities(context: Context, worldbuilder: WorldBuilder) -> None:
             # print(f"创建场景:{stage_builder.data['name']}\nURL:{stage_builder.data['url']}\nMemory:{stage_builder.data['memory']}")
             stage_entity = context.create_entity()
             stage_entity.add(StageComponent, stage_agent.name, stage_agent, [])
-            stage_entity.add(SimpleRPGRoleComponent, stage_agent.name, 100, 100, 60, "")
+            stage_entity.add(SimpleRPGRoleComponent, stage_agent.name, 100, 100, 1, "")
 
             for npc_builder in stage_builder.npc_builders:
                 #创建npc
@@ -62,7 +62,7 @@ def create_entities(context: Context, worldbuilder: WorldBuilder) -> None:
                 # print(f"创建NPC:{npc_builder.data['name']}\nURL:{npc_builder.data['url']}\nMemory:{npc_builder.data['memory']}")
                 npc_entity = context.create_entity()
                 npc_entity.add(NPCComponent, npc_agent.name, npc_agent, stage_agent.name)
-                npc_entity.add(SimpleRPGRoleComponent, npc_agent.name, 100, 100, 60, "")
+                npc_entity.add(SimpleRPGRoleComponent, npc_agent.name, 100, 100, 20, "")
                 npc_entity.add(BackpackComponent, set())
             
             for unique_prop_builder in stage_builder.unique_prop_builders:

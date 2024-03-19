@@ -19,5 +19,5 @@ class GroupSingleEntity(Exception):
 
 
 class EntitasException(Exception):
-    def __init__(self, message, hint):
+    def __init__(self, message: str, hint: str) -> None:
         super().__init__(message + '\n' + hint if hint else message)

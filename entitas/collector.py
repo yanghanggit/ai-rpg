@@ -1,20 +1,22 @@
 from .group import GroupEvent
-
+from .entity import Entity
+from .group import Group
+from typing import Any, Dict
 
 class Collector(object):
 
-    def __init__(self):
-        self._collected_entities = set()
-        self._groups = {}
+    def __init__(self) -> None:
+        self._collected_entities: set[Entity] = set()
+        self._groups: Dict[Group, GroupEvent] = {}
 
     @property
-    def collected_entities(self):
+    def collected_entities(self) -> set[Entity]:
         return self._collected_entities
 
-    def add(self, group, group_event):
+    def add(self, group: Group, group_event: GroupEvent) -> None:
         self._groups[group] = group_event
 
-    def activate(self):
+    def activate(self) -> None:
         for group in self._groups:
             group_event = self._groups[group]
 
@@ -30,18 +32,18 @@ class Collector(object):
                 group.on_entity_removed -= self._add_entity
                 group.on_entity_removed += self._add_entity
 
-    def deactivate(self):
+    def deactivate(self) -> None:
         for group in self._groups:
             group.on_entity_added -= self._add_entity
             group.on_entity_removed -= self._add_entity
 
         self.clear_collected_entities()
 
-    def clear_collected_entities(self):
+    def clear_collected_entities(self) -> None:
         self._collected_entities.clear()
 
-    def _add_entity(self, entity, component):  # , component
+    def _add_entity(self, entity: Entity, component: Any) -> None:  # , component
         self._collected_entities.add(entity)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<Collector [{}]'.format(', '.join(map(str, self._groups)))

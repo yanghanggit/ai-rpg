@@ -123,3 +123,10 @@ def npc_enter_stage(npc_name: str, stage_name: str) -> str:
 
 def npc_leave_for_stage(npc_name: str, current_stage_name: str, leave_for_stage_name: str) -> str:
     return f"{npc_name}离开了{current_stage_name} 场景，前往{leave_for_stage_name} 场景。"
+
+def kill_someone(attacker_name: str, target_name: str) -> str:
+    return f"{attacker_name}对{target_name}发动了一次攻击,造成了{target_name}死亡。"
+
+def attack_someone(attacker_name: str, target_name: str, damage: int, target_current_hp: int ,target_max_hp: int) -> str:
+    health_percent = (target_current_hp - damage) / target_max_hp * 100
+    return f"{attacker_name}对{target_name}发动了一次攻击,造成了{damage}点伤害,当前{target_name}的生命值剩余{health_percent}%。"

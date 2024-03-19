@@ -1,6 +1,6 @@
 
 
-from entitas import Entity
+from entitas import Entity # type: ignore
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.components import NPCComponent, StageComponent
 

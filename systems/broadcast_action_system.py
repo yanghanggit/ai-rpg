@@ -1,10 +1,11 @@
 
-from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent
+from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
 from auxiliary.components import BroadcastActionComponent, StageComponent
 from auxiliary.actor_action import ActorAction
 from auxiliary.extended_context import ExtendedContext
 from agents.tools.print_in_color import Color
 from auxiliary.prompt_maker import broadcast_action_prompt
+from typing import Optional
 
 class BroadcastActionSystem(ReactiveProcessor):
 
@@ -12,13 +13,13 @@ class BroadcastActionSystem(ReactiveProcessor):
         super().__init__(context)
         self.context = context
 
-    def get_trigger(self):
+    def get_trigger(self) -> dict[Matcher, GroupEvent]:
         return {Matcher(BroadcastActionComponent): GroupEvent.ADDED}
 
-    def filter(self, entity: list[Entity]):
+    def filter(self, entity: Entity) -> bool:
         return entity.has(BroadcastActionComponent)
 
-    def react(self, entities: list[Entity]):
+    def react(self, entities: list[Entity]) -> None:
         print("<<<<<<<<<<<<<  BroadcastActionSystem  >>>>>>>>>>>>>>>>>")
 
         for entity in entities:
@@ -29,7 +30,7 @@ class BroadcastActionSystem(ReactiveProcessor):
 
     def handle(self, entity: Entity) -> None:
         broadcastcomp: BroadcastActionComponent = entity.get(BroadcastActionComponent)
-        stagecomp: StageComponent = self.context.get_stagecomponent_by_uncertain_entity(entity) 
+        stagecomp: Optional[StageComponent] = self.context.get_stagecomponent_by_uncertain_entity(entity) 
         if stagecomp is None or broadcastcomp is None:
             print(f"BroadcastActionSystem: stagecomp or broadcastcomp is None!")
             return

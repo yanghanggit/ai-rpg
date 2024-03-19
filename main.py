@@ -1,4 +1,4 @@
-from entitas import Context, Processors
+from entitas import Context, Processors #type: ignore
 import json
 from auxiliary.builder import WorldBuilder
 from auxiliary.console import Console
@@ -40,13 +40,17 @@ from langchain_core.messages import (
 
 ###############################################################################################################################################
 def create_entities(context: Context, worldbuilder: WorldBuilder) -> None:
+        if worldbuilder.data is None:
+            return
         ##创建world
         worldagent = ActorAgent(worldbuilder.data['name'], worldbuilder.data['url'], worldbuilder.data['memory'])
         #worldagent.init(worldbuilder.data['name'], worldbuilder.data['url'], worldbuilder.data['memory'])
         world_entity = context.create_entity() 
         world_entity.add(WorldComponent, worldagent.name, worldagent)
 
-        for stage_builder in worldbuilder.stage_builders:     
+        for stage_builder in worldbuilder.stage_builders:    
+            if stage_builder.data is None:
+                continue 
             #创建stage       
             stage_agent = ActorAgent(stage_builder.data['name'], stage_builder.data['url'], stage_builder.data['memory'])
             #stage_agent.init(stage_builder.data['name'], stage_builder.data['url'], stage_builder.data['memory'])
@@ -56,6 +60,8 @@ def create_entities(context: Context, worldbuilder: WorldBuilder) -> None:
             stage_entity.add(SimpleRPGRoleComponent, stage_agent.name, 100, 100, 1, "")
 
             for npc_builder in stage_builder.npc_builders:
+                if npc_builder.data is None:
+                    continue
                 #创建npc
                 npc_agent = ActorAgent(npc_builder.data['name'], npc_builder.data['url'], npc_builder.data['memory'])
                 #npc_agent.init(npc_builder.data['name'], npc_builder.data['url'], npc_builder.data['memory'])
@@ -66,15 +72,21 @@ def create_entities(context: Context, worldbuilder: WorldBuilder) -> None:
                 npc_entity.add(BackpackComponent, set())
             
             for unique_prop_builder in stage_builder.unique_prop_builders:
+                if unique_prop_builder.data is None:
+                    continue
                 #创建道具
                 prop_entity = context.create_entity()
                 prop_entity.add(UniquePropComponent, unique_prop_builder.data['name'])
             
             for entry_condition_builder in stage_builder.entry_condition_builders:
+                if entry_condition_builder.data is None:
+                    continue
                 #创建入口条件
                 stage_entity.add(StageEntryConditionComponent, set([entry_condition_builder.data['name']]))
             
             for exit_condition_builder in stage_builder.exit_condition_builders:
+                if exit_condition_builder.data is None:
+                    continue
                 #创建出口条件
                 stage_entity.add(StageExitConditionComponent, set([exit_condition_builder.data['name']]))
 

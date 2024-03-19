@@ -1,5 +1,5 @@
 
-from entitas import Matcher, ReactiveProcessor, GroupEvent, Entity
+from entitas import Matcher, ReactiveProcessor, GroupEvent, Entity # type: ignore
 from auxiliary.components import FightActionComponent, NPCComponent, StageComponent, SimpleRPGRoleComponent, DeadActionComponent
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.actor_action import ActorAction

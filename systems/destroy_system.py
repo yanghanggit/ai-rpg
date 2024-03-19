@@ -1,5 +1,5 @@
 
-from entitas import Matcher, ExecuteProcessor, Group, Entity
+from entitas import Matcher, ExecuteProcessor, Group, Entity #type: ignore
 from auxiliary.components import DestroyComponent
 from auxiliary.extended_context import ExtendedContext
    

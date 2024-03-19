@@ -1,9 +1,11 @@
 
-from entitas import Matcher, Context, InitializeProcessor
+from entitas import Entity, Matcher, Context, InitializeProcessor # type: ignore
 from auxiliary.components import WorldComponent, StageComponent, NPCComponent
 from agents.tools.extract_md_content import extract_md_content
 from auxiliary.actor_agent import ActorAgent
 from auxiliary.prompt_maker import read_archives_when_system_init_prompt
+from auxiliary.extended_context import ExtendedContext
+
 
 ###############################################################################################################################################
 ###############################################################################################################################################
@@ -11,8 +13,8 @@ from auxiliary.prompt_maker import read_archives_when_system_init_prompt
 ###############################################################################################################################################
 class InitSystem(InitializeProcessor):
 
-    def __init__(self, context: Context) -> None:
-        self.context: Context = context
+    def __init__(self, context: ExtendedContext) -> None:
+        self.context: ExtendedContext = context
       
     def initialize(self) -> None:
         print("<<<<<<<<<<<<<  InitSystem >>>>>>>>>>>>>>>>>")
@@ -21,7 +23,7 @@ class InitSystem(InitializeProcessor):
         self.handlenpcs()
 
     def handleworld(self) -> None:
-        worlds: set = self.context.get_group(Matcher(WorldComponent)).entities
+        worlds: set[Entity] = self.context.get_group(Matcher(WorldComponent)).entities
         for world in worlds:
             comp: WorldComponent = world.get(WorldComponent)
             print(comp.name)
@@ -39,7 +41,7 @@ class InitSystem(InitializeProcessor):
             comp.agent.request(prompt)
         
     def handlestages(self) -> None:
-        stages: set = self.context.get_group(Matcher(StageComponent)).entities
+        stages: set[Entity] = self.context.get_group(Matcher(StageComponent)).entities
         for stage in stages:
             comp: StageComponent = stage.get(StageComponent)
             print(comp.name)
@@ -57,7 +59,7 @@ class InitSystem(InitializeProcessor):
             comp.agent.request(prompt)
 
     def handlenpcs(self) -> None:
-        npcs: set = self.context.get_group(Matcher(NPCComponent)).entities
+        npcs: set[Entity] = self.context.get_group(Matcher(NPCComponent)).entities
         for npc in npcs:
             comp: NPCComponent = npc.get(NPCComponent)
             print(comp.name)

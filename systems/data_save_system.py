@@ -3,7 +3,7 @@ from entitas import (
     Context,
     Matcher,
     Entity
-                     )
+                     ) #type: ignore
 from auxiliary.components import (
     NPCComponent,
     StageComponent,

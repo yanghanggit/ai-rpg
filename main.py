@@ -72,11 +72,11 @@ def create_entities(context: Context, worldbuilder: WorldBuilder) -> None:
             
             for entry_condition_builder in stage_builder.entry_condition_builders:
                 #创建入口条件
-                stage_entity.add(StageEntryConditionComponent, [entry_condition_builder.data['name']])
+                stage_entity.add(StageEntryConditionComponent, set([entry_condition_builder.data['name']]))
             
             for exit_condition_builder in stage_builder.exit_condition_builders:
                 #创建出口条件
-                stage_entity.add(StageExitConditionComponent, [exit_condition_builder.data['name']])
+                stage_entity.add(StageExitConditionComponent, set([exit_condition_builder.data['name']]))
 
 ###############################################################################################################################################
 ###############################################################################################################################################

@@ -92,7 +92,7 @@ class ExtendedContext(Context):
     
 
     ## 方便调用的存档方法
-    def savearchive(archive: str, filename: str) -> None:
+    def savearchive(self, archive: str, filename: str) -> None:
         wirte_content_into_md(archive, f"/savedData/{filename}.md")
 
     # 向Entity的背包中添加道具

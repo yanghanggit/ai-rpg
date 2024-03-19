@@ -4,15 +4,15 @@ from entitas import (
     Matcher,
     Entity
                      )
-from components import (
+from auxiliary.components import (
     NPCComponent,
     StageComponent,
     WorldComponent,
 )
-from actor_agent import ActorAgent
+from auxiliary.actor_agent import ActorAgent
 #from agents.tools.extract_md_content import wirte_content_into_md
-from prompt_maker import gen_npc_archive_prompt, gen_stage_archive_prompt, gen_world_archive_prompt
-from extended_context import ExtendedContext
+from auxiliary.prompt_maker import gen_npc_archive_prompt, gen_stage_archive_prompt, gen_world_archive_prompt
+from auxiliary.extended_context import ExtendedContext
 
 class DataSaveSystem(TearDownProcessor):
 

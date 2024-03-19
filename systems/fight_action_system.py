@@ -1,9 +1,9 @@
 
 from entitas import Matcher, ReactiveProcessor, GroupEvent, Entity
-from components import FightActionComponent, NPCComponent, StageComponent, SimpleRPGRoleComponent, DeadActionComponent
-from extended_context import ExtendedContext
-from actor_action import ActorAction
-from actor_agent import ActorAgent
+from auxiliary.components import FightActionComponent, NPCComponent, StageComponent, SimpleRPGRoleComponent, DeadActionComponent
+from auxiliary.extended_context import ExtendedContext
+from auxiliary.actor_action import ActorAction
+from auxiliary.actor_agent import ActorAgent
 
 class FightActionSystem(ReactiveProcessor):
 

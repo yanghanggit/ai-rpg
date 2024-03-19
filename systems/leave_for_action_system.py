@@ -17,17 +17,17 @@ Methods:
 """
 
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent
-from components import (LeaveForActionComponent, 
+from auxiliary.components import (LeaveForActionComponent, 
                         NPCComponent, 
                         StageComponent, 
                         SimpleRPGRoleComponent,
                         BackpackComponent,
                         StageEntryConditionComponent,
                         StageExitConditionComponent)
-from actor_action import ActorAction
-from extended_context import ExtendedContext
+from auxiliary.actor_action import ActorAction
+from auxiliary.extended_context import ExtendedContext
 from agents.tools.print_in_color import Color
-from prompt_maker import fail_to_enter_stage, fail_to_exit_stage, npc_enter_stage, npc_leave_for_stage
+from auxiliary.prompt_maker import fail_to_enter_stage, fail_to_exit_stage, npc_enter_stage, npc_leave_for_stage
 
 class NpcBackpackComponentHandle:
     """
@@ -167,11 +167,11 @@ class LeaveForActionSystem(ReactiveProcessor):
             
             #开始使用，简化代码
             if handle.target_stage is None:
-                print(f"想要去往的场景是不存在的: {stagename} 不用往下进行了")
+                print(f"{entity.get(NPCComponent).name}想要去往的场景是不存在的: {stagename} 不用往下进行了")
                 continue
 
             if handle.target_stage == handle.current_stage:
-                print(f"想要去往的场景是当前的场景{handle.current_stage_name}: {stagename} 不用往下进行了")
+                print(f"{entity.get(NPCComponent).name}想要去往的场景是当前的场景{handle.current_stage_name}: {stagename} 不用往下进行了")
                 continue
 
             # 判断当前场景的离开条件和目标场景的进入条件
@@ -184,7 +184,7 @@ class LeaveForActionSystem(ReactiveProcessor):
                     exit_condition_comp: StageExitConditionComponent = handle.current_stage.get(StageExitConditionComponent)
                     for condition in exit_condition_comp.conditions:
                         if condition not in npc_handle.backpack_comp_content:
-                            print(f"{Color.WARNING}背包中没有{condition}，不能离开{handle.current_stage_name}.{Color.ENDC}")
+                            print(f"{Color.WARNING}{entity.get(NPCComponent).name}背包中没有{condition}，不能离开{handle.current_stage_name}.{Color.ENDC}")
                             self.context.add_content_to_director_script_by_entity(entity, fail_to_exit_stage(entity.get(NPCComponent).name, handle.current_stage_name, condition))
                             return
                 # 再检查目标场景的进入条件  
@@ -192,7 +192,7 @@ class LeaveForActionSystem(ReactiveProcessor):
                     entry_condition_comp: StageEntryConditionComponent = handle.target_stage.get(StageEntryConditionComponent)
                     for condition in entry_condition_comp.conditions:
                         if condition not in npc_handle.backpack_comp_content:
-                            print(f"{Color.WARNING}背包中没有{condition}，不能进入{handle.target_stage_name}.{Color.ENDC}")
+                            print(f"{Color.WARNING}{entity.get(NPCComponent).name}背包中没有{condition}，不能进入{handle.target_stage_name}.{Color.ENDC}")
                             self.context.add_content_to_director_script_by_entity(entity, fail_to_enter_stage(entity.get(NPCComponent).name, handle.target_stage_name, condition))
                             return
             
@@ -229,10 +229,10 @@ class LeaveForActionSystem(ReactiveProcessor):
         target_stage_comp = target_stage_entity.get(StageComponent)
         if current_stage_name != "":
             self.context.add_content_to_director_script_by_entity(target_stage_entity, npc_leave_for_stage(npccomp.name, current_stage_name, target_stage_name))
-            # target_stage_comp.directorscripts.append(f"{npccomp.name} 离开了{current_stage_name} 并进入了场景 {target_stage_name}")
+            print(f"{Color.GREEN}{npccomp.name} 离开了{current_stage_name}去了{target_stage_name}.{Color.ENDC}")
         else:
             self.context.add_content_to_director_script_by_entity(target_stage_entity, npc_enter_stage(npccomp.name, target_stage_name))
-            # target_stage_comp.directorscripts.append(f"{npccomp.name} 进入了场景 {target_stage_name}")
+            print(f"{Color.GREEN}{npccomp.name} 进入了{target_stage_name}.{Color.ENDC}")
         
         ##
         if entity.has(SimpleRPGRoleComponent):

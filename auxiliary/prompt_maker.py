@@ -1,8 +1,8 @@
 
 
 from entitas import Entity
-from extended_context import ExtendedContext
-from components import NPCComponent, StageComponent
+from auxiliary.extended_context import ExtendedContext
+from auxiliary.components import NPCComponent, StageComponent
 
 def npc_plan_prompt(entity: Entity, context: ExtendedContext) -> str:
     if not entity.has(NPCComponent):

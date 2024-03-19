@@ -1,9 +1,8 @@
-
 from entitas import Context, Processors
 import json
-from builder import WorldBuilder
-from console import Console
-from components import (WorldComponent,
+from auxiliary.builder import WorldBuilder
+from auxiliary.console import Console
+from auxiliary.components import (WorldComponent,
                         StageComponent, 
                         NPCComponent, 
                         FightActionComponent, 
@@ -15,30 +14,29 @@ from components import (WorldComponent,
                         BackpackComponent,
                         StageEntryConditionComponent,
                         StageExitConditionComponent)
-from actor_action import ActorAction
-from actor_agent import ActorAgent
-from init_system import InitSystem
-from stage_plan_system import StagePlanSystem
-from npc_plan_system import NPCPlanSystem
-from speak_action_system import SpeakActionSystem
-from fight_action_system import FightActionSystem
-from leave_for_action_system import LeaveForActionSystem
-from director_system import DirectorSystem
-from extended_context import ExtendedContext
-from dead_action_system import DeadActionSystem
-from destroy_system import DestroySystem
-from tag_action_system import TagActionSystem
-from data_save_system import DataSaveSystem
-from broadcast_action_system import BroadcastActionSystem  
-from whisper_action_system import WhisperActionSystem 
-from search_props_system import SearchPropsSystem
-
+from auxiliary.actor_action import ActorAction
+from auxiliary.actor_agent import ActorAgent
+from auxiliary.extended_context import ExtendedContext
+from systems.init_system import InitSystem
+from systems.stage_plan_system import StagePlanSystem
+from systems.npc_plan_system import NPCPlanSystem
+from systems.speak_action_system import SpeakActionSystem
+from systems.fight_action_system import FightActionSystem
+from systems.leave_for_action_system import LeaveForActionSystem
+from systems.director_system import DirectorSystem
+from systems.dead_action_system import DeadActionSystem
+from systems.destroy_system import DestroySystem
+from systems.tag_action_system import TagActionSystem
+from systems.data_save_system import DataSaveSystem
+from systems.broadcast_action_system import BroadcastActionSystem  
+from systems.whisper_action_system import WhisperActionSystem 
+from systems.search_props_system import SearchPropsSystem
+from systems.mind_voice_action_system import MindVoiceActionSystem
 
 from langchain_core.messages import (
     HumanMessage,
     AIMessage)
 
-from mind_voice_action_system import MindVoiceActionSystem
 
 ###############################################################################################################################################
 def create_entities(context: Context, worldbuilder: WorldBuilder) -> None:
@@ -89,7 +87,7 @@ def main() -> None:
     context = ExtendedContext()
     processors = Processors()
     console = Console("测试后台管理")
-    path: str = "./yanghang_stage1.json"
+    path: str = "./game_settings.json"
     playername = "yanghang"
 
     try:

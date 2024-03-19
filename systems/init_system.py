@@ -1,9 +1,9 @@
 
 from entitas import Matcher, Context, InitializeProcessor
-from components import WorldComponent, StageComponent, NPCComponent
+from auxiliary.components import WorldComponent, StageComponent, NPCComponent
 from agents.tools.extract_md_content import extract_md_content
-from actor_agent import ActorAgent
-from prompt_maker import read_archives_when_system_init_prompt
+from auxiliary.actor_agent import ActorAgent
+from auxiliary.prompt_maker import read_archives_when_system_init_prompt
 
 ###############################################################################################################################################
 ###############################################################################################################################################

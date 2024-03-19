@@ -1,7 +1,7 @@
 
 from entitas import Matcher, ExecuteProcessor, Group, Entity
-from components import DestroyComponent
-from extended_context import ExtendedContext
+from auxiliary.components import DestroyComponent
+from auxiliary.extended_context import ExtendedContext
    
 class DestroySystem(ExecuteProcessor):
     

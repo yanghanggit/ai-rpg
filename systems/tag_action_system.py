@@ -1,8 +1,8 @@
 
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent
-from components import TagActionComponent
-#from actor_action import ActorAction
-from extended_context import ExtendedContext
+from auxiliary.components import TagActionComponent
+#from auxiliary.actor_action import ActorAction
+from auxiliary.extended_context import ExtendedContext
 
 
 class TagActionSystem(ReactiveProcessor):

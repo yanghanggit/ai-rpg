@@ -1,6 +1,6 @@
 
 from entitas import Entity, Matcher, Context, Group
-from components import (WorldComponent, 
+from auxiliary.components import (WorldComponent, 
                         StageComponent, 
                         NPCComponent, 
                         PlayerComponent,
@@ -8,8 +8,8 @@ from components import (WorldComponent,
                         BackpackComponent,
                         SearchActionComponent)
 from agents.tools.extract_md_content import wirte_content_into_md
-from actor_agent import ActorAgent
-from actor_action import ActorAction
+from auxiliary.actor_agent import ActorAgent
+from auxiliary.actor_action import ActorAction
 
 class ExtendedContext(Context):
 

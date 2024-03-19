@@ -1,14 +1,14 @@
 
 from entitas import Matcher, ExecuteProcessor, Entity
-from components import (DeadActionComponent, 
+from auxiliary.components import (DeadActionComponent, 
                         LeaveForActionComponent, 
                         TagActionComponent, 
                         DestroyComponent,
                         NPCComponent)
-from extended_context import ExtendedContext
-from actor_agent import ActorAgent
+from auxiliary.extended_context import ExtendedContext
+from auxiliary.actor_agent import ActorAgent
 #from agents.tools.extract_md_content import wirte_content_into_md
-from prompt_maker import gen_npc_archive_prompt, npc_memory_before_death
+from auxiliary.prompt_maker import gen_npc_archive_prompt, npc_memory_before_death
 
 
 class DeadActionSystem(ExecuteProcessor):

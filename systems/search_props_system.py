@@ -1,14 +1,14 @@
 from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity, Group
-from extended_context import ExtendedContext
-from components import (SearchActionComponent, 
+from auxiliary.extended_context import ExtendedContext
+from auxiliary.components import (SearchActionComponent, 
                         UniquePropComponent, 
                         NPCComponent, 
                         BackpackComponent, 
                         StageComponent, 
                         DestroyComponent)
-from actor_action import ActorAction
-from actor_agent import ActorAgent
-from prompt_maker import unique_prop_taken_away
+from auxiliary.actor_action import ActorAction
+from auxiliary.actor_agent import ActorAgent
+from auxiliary.prompt_maker import unique_prop_taken_away
 from agents.tools.print_in_color import Color
 
 class SearchPropsSystem(ReactiveProcessor):

@@ -26,6 +26,8 @@ from components import (LeaveForActionComponent,
                         StageExitConditionComponent)
 from actor_action import ActorAction
 from extended_context import ExtendedContext
+from agents.tools.print_in_color import Color
+from prompt_maker import fail_to_enter_stage, fail_to_exit_stage, npc_enter_stage, npc_leave_for_stage
 
 class NpcBackpackComponentHandle:
     """
@@ -33,8 +35,8 @@ class NpcBackpackComponentHandle:
 
     Attributes:
     - context (ExtendedContext): The extended context object.
-    - bag_comp (BackpackComponent): The bag component of the NPC.
-    - bag_comp_content (set[str]): The content of the bag component.
+    - backpack_comp (BackpackComponent): The backpack component of the NPC.
+    - backpack_comp_content (set[str]): The content of the backpack component.
     """
 
     def __init__(self, context: ExtendedContext) -> None:
@@ -45,8 +47,8 @@ class NpcBackpackComponentHandle:
         - context (ExtendedContext): The extended context object.
         """
         self.context = context
-        self.bag_comp: BackpackComponent = None
-        self.bag_comp_content: set[str] = set()
+        self.backpack_comp: BackpackComponent = None
+        self.backpack_comp_content: set[str] = set()
 
     def init(self, npc_entity: Entity) -> bool:
         """
@@ -58,8 +60,8 @@ class NpcBackpackComponentHandle:
         Returns:
         - bool: True if initialization is successful, False otherwise.
         """
-        self.bag_comp: BackpackComponent = npc_entity.get(BackpackComponent)
-        self.bag_comp_content = set(self.bag_comp.name_items)
+        self.backpack_comp: BackpackComponent = npc_entity.get(BackpackComponent)
+        self.backpack_comp_content = set(self.backpack_comp.name_items)
         return True
 
 ###集中写一下方便处理，不然每次还要再搜，很麻烦
@@ -181,19 +183,17 @@ class LeaveForActionSystem(ReactiveProcessor):
                 if handle.current_stage.has(StageExitConditionComponent):
                     exit_condition_comp: StageExitConditionComponent = handle.current_stage.get(StageExitConditionComponent)
                     for condition in exit_condition_comp.conditions:
-                        if condition not in npc_handle.bag_comp_content:
-                            print(f"背包中没有{condition}，不能离开{handle.current_stage_name}")
-                            current_stage_comp: StageComponent = handle.current_stage.get(StageComponent)
-                            current_stage_comp.directorscripts.append(f"{entity.get(NPCComponent).name} 试图离开{handle.current_stage_name} 但背包中没有{condition}，不能离开，或许需要尝试搜索一下'{condition}'.")
+                        if condition not in npc_handle.backpack_comp_content:
+                            print(f"{Color.WARNING}背包中没有{condition}，不能离开{handle.current_stage_name}.{Color.ENDC}")
+                            self.context.add_content_to_director_script_by_entity(entity, fail_to_exit_stage(entity.get(NPCComponent).name, handle.current_stage_name, condition))
                             return
                 # 再检查目标场景的进入条件  
                 if handle.target_stage.has(StageEntryConditionComponent):
                     entry_condition_comp: StageEntryConditionComponent = handle.target_stage.get(StageEntryConditionComponent)
                     for condition in entry_condition_comp.conditions:
-                        if condition not in npc_handle.bag_comp_content:
-                            print(f"背包中没有{condition}，不能进入{handle.target_stage_name}")
-                            current_stage_comp: StageComponent = handle.current_stage.get(StageComponent)
-                            current_stage_comp.directorscripts.append(f"{entity.get(NPCComponent).name} 试图进入{handle.target_stage_name} 但背包中没有{condition}，不能进入，或许需要尝试搜索一下'{condition}'.")
+                        if condition not in npc_handle.backpack_comp_content:
+                            print(f"{Color.WARNING}背包中没有{condition}，不能进入{handle.target_stage_name}.{Color.ENDC}")
+                            self.context.add_content_to_director_script_by_entity(entity, fail_to_enter_stage(entity.get(NPCComponent).name, handle.target_stage_name, condition))
                             return
             
             ##如果当前有场景就要离开
@@ -228,9 +228,11 @@ class LeaveForActionSystem(ReactiveProcessor):
         ##
         target_stage_comp = target_stage_entity.get(StageComponent)
         if current_stage_name != "":
-            target_stage_comp.directorscripts.append(f"{npccomp.name} 离开了{current_stage_name} 并进入了场景 {target_stage_name}")
+            self.context.add_content_to_director_script_by_entity(target_stage_entity, npc_leave_for_stage(npccomp.name, current_stage_name, target_stage_name))
+            # target_stage_comp.directorscripts.append(f"{npccomp.name} 离开了{current_stage_name} 并进入了场景 {target_stage_name}")
         else:
-            target_stage_comp.directorscripts.append(f"{npccomp.name} 进入了场景 {target_stage_name}")
+            self.context.add_content_to_director_script_by_entity(target_stage_entity, npc_enter_stage(npccomp.name, target_stage_name))
+            # target_stage_comp.directorscripts.append(f"{npccomp.name} 进入了场景 {target_stage_name}")
         
         ##
         if entity.has(SimpleRPGRoleComponent):
@@ -247,7 +249,7 @@ class LeaveForActionSystem(ReactiveProcessor):
         entity: Entity = handle.who_wana_leave
         npccomp: NPCComponent = entity.get(NPCComponent)
         current_stage: Entity = handle.current_stage
-        cur_stage_comp: StageComponent = current_stage.get(StageComponent)
+        # cur_stage_comp: StageComponent = current_stage.get(StageComponent)
 
         #更换数据, 因为是namedtuple 只能用替换手段
         replace_name = npccomp.name
@@ -256,6 +258,7 @@ class LeaveForActionSystem(ReactiveProcessor):
         entity.replace(NPCComponent, replace_name, replace_agent, replace_current_stage)
 
         #给当前场景添加剧本，如果本次有导演就合进事件
-        cur_stage_comp.directorscripts.append(f"{npccomp.name} 离开{handle.current_stage_name}去了{handle.target_stage_name}")
+        # cur_stage_comp.directorscripts.append(f"{npccomp.name} 离开{handle.current_stage_name}去了{handle.target_stage_name}")
+        self.context.add_content_to_director_script_by_entity(current_stage, npc_leave_for_stage(npccomp.name, handle.current_stage_name, handle.target_stage_name))
 
     ###############################################################################################################################################

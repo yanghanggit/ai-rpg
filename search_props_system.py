@@ -8,6 +8,8 @@ from components import (SearchActionComponent,
                         DestroyComponent)
 from actor_action import ActorAction
 from actor_agent import ActorAgent
+from prompt_maker import unique_prop_taken_away
+from agents.tools.print_in_color import Color
 
 class SearchPropsSystem(ReactiveProcessor):
 
@@ -21,35 +23,31 @@ class SearchPropsSystem(ReactiveProcessor):
     def filter(self, entity: Entity):
         return entity.has(SearchActionComponent)
     
+    
     def react(self, entities: list[Entity]):
         print("<<<<<<<<<<<<<  SearchPropsSystem  >>>>>>>>>>>>>>>>>")
+        unique_props_names: set[str] = self.context.get_all_unique_props_names()
+
         for npc_entity in entities:
-            npc_search_action_component: SearchActionComponent = npc_entity.get(SearchActionComponent)
-            npc_search_action: ActorAction = npc_search_action_component.action    
+            npc_search_action: ActorAction = self.context.get_search_action_by_entity(npc_entity)
+            npc_search_targes: set[str] = set(npc_search_action.values)
+            unique_prop_match_success: set[str] = unique_props_names & npc_search_targes
 
-            unique_props_group: Group = self.context.get_group(Matcher(UniquePropComponent))
-            unique_props_entities: set[Entity] = unique_props_group.entities
-
-            for npc_search_target in npc_search_action.values:
-                for unique_prop_entity in unique_props_entities:
-                    if unique_prop_entity.has(DestroyComponent):
-                        continue
-                    unique_prop_comp: UniquePropComponent = unique_prop_entity.get(UniquePropComponent)
-                    if unique_prop_comp.name in npc_search_target:
-                        if npc_entity.has(NPCComponent):
-                            npc_comp: NPCComponent = npc_entity.get(NPCComponent)
-                            npc_agent: ActorAgent = npc_comp.agent
-                            npc_bag_comp: BackpackComponent = npc_entity.get(BackpackComponent)
-                            npc_bag_content: set = npc_bag_comp.name_items
-                            npc_bag_content.add(npc_search_target)
-                            npc_stage: StageComponent = self.context.get_stagecomponent_by_uncertain_entity(npc_entity)
-                            npc_stage.directorscripts.append(f"{npc_agent.name}找到了{npc_search_target},{npc_search_target}只存在唯一一份，其他人无法再搜到了。")
-                            print(f"{npc_agent.name}成功找到了{npc_search_target}。")
+            if len(unique_prop_match_success) == 0:
+                print(f"{Color.WARNING}{npc_entity.get(NPCComponent).name}没有找到符合的道具。{Color.ENDC}")
+                continue
+            else:
+                for unique_prop_name in unique_prop_match_success:
+                    unique_prop_entity: Entity = self.context.get_unique_prop_entity_by_name(unique_prop_name)
+                    if not unique_prop_entity.has(DestroyComponent) and npc_entity.has(NPCComponent):
+                        
+                        if npc_entity.has(SearchActionComponent):
                             npc_entity.remove(SearchActionComponent)
-                            unique_prop_entity.add(DestroyComponent, f"{unique_prop_comp.name} Dead")      
-                        else:
-                            print(f"{npc_entity}有SearchActionComponent，但没有NPC Component，该情况不合理，请检查配置。")
-                            
 
+                        self.context.put_unique_prop_into_backpack(npc_entity, unique_prop_name)
 
+                        self.context.add_content_to_director_script_by_entity(npc_entity, unique_prop_taken_away(npc_entity, unique_prop_name))
 
+                        unique_prop_entity.add(DestroyComponent, f"{unique_prop_name}被获取.")
+
+                        print(f"{Color.GREEN}{npc_entity.get(NPCComponent).name}找到了{unique_prop_name}。{Color.ENDC}")

@@ -1,10 +1,11 @@
 
-from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent
+from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
 from auxiliary.components import SpeakActionComponent, NPCComponent, StageComponent
 from auxiliary.actor_action import ActorAction
 from auxiliary.extended_context import ExtendedContext
 from agents.tools.print_in_color import Color
 from auxiliary.prompt_maker import speak_action_prompt
+from typing import Optional
    
 ####################################################################################################
 class SpeakActionSystem(ReactiveProcessor):
@@ -13,13 +14,13 @@ class SpeakActionSystem(ReactiveProcessor):
         super().__init__(context)
         self.context = context
 
-    def get_trigger(self):
+    def get_trigger(self) -> dict[Matcher, GroupEvent]:
         return {Matcher(SpeakActionComponent): GroupEvent.ADDED}
 
-    def filter(self, entity: list[Entity]):
+    def filter(self, entity: Entity) -> bool:
         return entity.has(SpeakActionComponent)
 
-    def react(self, entities: list[Entity]):
+    def react(self, entities: list[Entity]) -> None:
         print("<<<<<<<<<<<<<  SpeakActionSystem  >>>>>>>>>>>>>>>>>")
         # 核心执行
         for entity in entities:
@@ -42,17 +43,18 @@ class SpeakActionSystem(ReactiveProcessor):
             saycontent = speak_action_prompt(action.name, target, message, self.context)
             print(f"{Color.HEADER}{saycontent}{Color.ENDC}")
             ##添加场景事件，最后随着导演剧本走
-            stagecomp = self.context.get_stagecomponent_by_uncertain_entity(entity)
-            stagecomp.directorscripts.append(saycontent)
+            stagecomp: Optional[StageComponent] = self.context.get_stagecomponent_by_uncertain_entity(entity)
+            if stagecomp is not None:
+                stagecomp.directorscripts.append(saycontent)
 ####################################################################################################
     def check_speak_enable(self, src: Entity, dstname: str) -> bool:
 
-        npc_entity: Entity = self.context.getnpc(dstname)
+        npc_entity: Optional[Entity] = self.context.getnpc(dstname)
         if npc_entity is None:
             print(f"No NPC named {dstname} found")
             return False
 
-        current_stage_comp: StageComponent = self.context.get_stagecomponent_by_uncertain_entity(src)  
+        current_stage_comp: Optional[StageComponent] = self.context.get_stagecomponent_by_uncertain_entity(src)  
         if current_stage_comp is None:
             print(f"StageComponent not found for {src}")
             return False  

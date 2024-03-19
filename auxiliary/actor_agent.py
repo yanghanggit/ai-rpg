@@ -3,8 +3,6 @@ from typing import List, Union, cast
 from langchain_core.messages import HumanMessage, AIMessage
 from langserve import RemoteRunnable  # type: ignore
 
-
-###############################################################################################################################################
 class ActorAgent:
 
     def __init__(self, name: str = "", url: str = "", memory: str = "") -> None:
@@ -13,11 +11,6 @@ class ActorAgent:
         self.memory: str = memory
         self.agent: RemoteRunnable = None
         self.chat_history: List[Union[HumanMessage, AIMessage]] = []
-
-    # def init(self, name: str, url: str, memory: str) -> None:
-    #     self.name = name
-    #     self.url = url
-    #     self.memory = memory
 
     def connect(self)-> None:
         self.agent = RemoteRunnable(self.url)
@@ -39,6 +32,7 @@ class ActorAgent:
     
     def add_chat_history(self, new_chat: str) -> None:
         if self.agent is None:
+            print(f"add_chat_history: {self.name} have no agent.")
             return
         self.chat_history.extend([HumanMessage(content = new_chat)])
     

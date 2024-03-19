@@ -1,10 +1,11 @@
 
-from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent
+from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
 from auxiliary.components import WhisperActionComponent, StageComponent, NPCComponent
 from auxiliary.actor_action import ActorAction
 from auxiliary.extended_context import ExtendedContext
 from agents.tools.print_in_color import Color
 from auxiliary.prompt_maker import whisper_action_prompt
+from typing import Optional
 
 class WhisperActionSystem(ReactiveProcessor):
 
@@ -12,13 +13,13 @@ class WhisperActionSystem(ReactiveProcessor):
         super().__init__(context)
         self.context = context
 
-    def get_trigger(self):
+    def get_trigger(self) -> dict[Matcher, GroupEvent]:
         return {Matcher(WhisperActionComponent): GroupEvent.ADDED}
 
-    def filter(self, entity: list[Entity]):
+    def filter(self, entity: Entity) -> bool:
         return entity.has(WhisperActionComponent)
 
-    def react(self, entities: list[Entity]):
+    def react(self, entities: list[Entity]) -> None:
         print("<<<<<<<<<<<<<  WhisperActionSystem  >>>>>>>>>>>>>>>>>")
 
         for entity in entities:
@@ -30,7 +31,7 @@ class WhisperActionSystem(ReactiveProcessor):
     def handle(self, entity_stage_or_npc: Entity) -> None:
 
         whispercomp: WhisperActionComponent = entity_stage_or_npc.get(WhisperActionComponent)
-        stagecomp: StageComponent = self.context.get_stagecomponent_by_uncertain_entity(entity_stage_or_npc) 
+        stagecomp: Optional[StageComponent] = self.context.get_stagecomponent_by_uncertain_entity(entity_stage_or_npc) 
         if stagecomp is None or whispercomp is None:
             print(f"WhisperActionSystem: stagecomp or whispercomp is None!")
             return

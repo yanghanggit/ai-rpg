@@ -1,6 +1,6 @@
 
 
-from entitas import Entity, Matcher, ExecuteProcessor
+from entitas import Entity, Matcher, ExecuteProcessor #type: ignore
 from auxiliary.components import (NPCComponent, 
                         FightActionComponent, 
                         SpeakActionComponent, 

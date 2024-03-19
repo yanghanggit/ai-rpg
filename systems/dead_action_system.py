@@ -1,5 +1,5 @@
 
-from entitas import Matcher, ExecuteProcessor, Entity
+from entitas import Matcher, ExecuteProcessor, Entity #type: ignore
 from auxiliary.components import (DeadActionComponent, 
                         LeaveForActionComponent, 
                         TagActionComponent, 

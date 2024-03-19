@@ -1,9 +1,10 @@
 
-from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent
+from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
 from auxiliary.components import MindVoiceActionComponent, StageComponent
 from auxiliary.actor_action import ActorAction
 from auxiliary.extended_context import ExtendedContext
 from agents.tools.print_in_color import Color
+from typing import Optional
 
 class MindVoiceActionSystem(ReactiveProcessor):
 
@@ -11,13 +12,13 @@ class MindVoiceActionSystem(ReactiveProcessor):
         super().__init__(context)
         self.context = context
 
-    def get_trigger(self):
+    def get_trigger(self) -> dict[Matcher, GroupEvent]:
         return {Matcher(MindVoiceActionComponent): GroupEvent.ADDED}
 
-    def filter(self, entity: list[Entity]):
+    def filter(self, entity: Entity) -> bool:
         return entity.has(MindVoiceActionComponent)
 
-    def react(self, entities: list[Entity]):
+    def react(self, entities: list[Entity]) -> None:
         print("<<<<<<<<<<<<<  MindVoiceActionSystem  >>>>>>>>>>>>>>>>>")
 
         # 核心处理
@@ -30,7 +31,7 @@ class MindVoiceActionSystem(ReactiveProcessor):
 
     def handle(self, entity: Entity) -> None:
         mindvoicecomp: MindVoiceActionComponent = entity.get(MindVoiceActionComponent)
-        stagecomp: StageComponent = self.context.get_stagecomponent_by_uncertain_entity(entity)
+        stagecomp: Optional[StageComponent] = self.context.get_stagecomponent_by_uncertain_entity(entity)
         if stagecomp is None or mindvoicecomp is None:
             return
         action: ActorAction = mindvoicecomp.action

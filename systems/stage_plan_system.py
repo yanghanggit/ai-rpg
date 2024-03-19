@@ -1,5 +1,5 @@
 
-from entitas import Entity, Matcher, ExecuteProcessor
+from entitas import Entity, Matcher, ExecuteProcessor #type: ignore
 from auxiliary.components import (StageComponent, 
                         FightActionComponent, 
                         SpeakActionComponent,
@@ -10,6 +10,7 @@ from auxiliary.components import (StageComponent,
                         WhisperActionComponent)
 from auxiliary.actor_action import ActorPlan
 from auxiliary.prompt_maker import stage_plan_prompt
+from auxiliary.extended_context import ExtendedContext
       
 class StagePlanSystem(ExecuteProcessor):
     """
@@ -23,7 +24,7 @@ class StagePlanSystem(ExecuteProcessor):
         handle: Handles a single stage plan entity.
     """
 
-    def __init__(self, context) -> None:
+    def __init__(self, context: ExtendedContext) -> None:
         """
         Initializes a new instance of the StagePlanSystem class.
 

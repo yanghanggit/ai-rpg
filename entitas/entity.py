@@ -12,6 +12,7 @@ namedtuples for readability.
 from .utils import Event
 from .exceptions import (
     EntityNotEnabled, AlreadyAddedComponent, MissingComponent)
+from typing import Any, Dict, Type
 
 
 class Entity(object):
@@ -20,7 +21,7 @@ class Entity(object):
     You can add, replace and remove components to an entity.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
 
         #: Occurs when a component gets added.
         self.on_component_added = Event()
@@ -32,7 +33,7 @@ class Entity(object):
         self.on_component_replaced = Event()
 
         #: Dictionary mapping component type and component instance.
-        self._components = {}
+        self._components: Dict[Type[Any], Any] = {}
 
         #: Each entity has its own unique creationIndex which will be
         #: set by the context when you create the entity.
@@ -42,11 +43,11 @@ class Entity(object):
         #: Active entities are enabled, destroyed entities are not.
         self._is_enabled = False
 
-    def activate(self, creation_index):
+    def activate(self, creation_index: int) -> None:
         self._creation_index = creation_index
         self._is_enabled = True
 
-    def add(self, comp_type, *args):
+    def add(self, comp_type: Type[Any], *args: Any) -> None:
         """Adds a component.
         :param comp_type: namedtuple type
         :param *args: (optional) data values
@@ -65,7 +66,7 @@ class Entity(object):
         self._components[comp_type] = new_comp
         self.on_component_added(self, new_comp)
 
-    def remove(self, comp_type):
+    def remove(self, comp_type: Type[Any]) -> None:
         """Removes a component.
         :param comp_type: namedtuple type
         """
@@ -81,7 +82,7 @@ class Entity(object):
 
         self._replace(comp_type, None)
 
-    def replace(self, comp_type, *args):
+    def replace(self, comp_type: Type[Any], *args: Any) -> None:
         """Replaces an existing component or adds it if it doesn't exist
         yet.
         :param comp_type: namedtuple type
@@ -97,7 +98,7 @@ class Entity(object):
         else:
             self.add(comp_type, *args)
 
-    def _replace(self, comp_type, args):
+    def _replace(self, comp_type: Type[Any], args: Any) -> None:
         previous_comp = self._components[comp_type]
         if args is None:
             del self._components[comp_type]
@@ -107,7 +108,7 @@ class Entity(object):
             self._components[comp_type] = new_comp
             self.on_component_replaced(self, previous_comp, new_comp)
 
-    def get(self, comp_type):
+    def get(self, comp_type: Type[Any]) -> Any:
         """Retrieves a component by its type.
         :param comp_type: namedtuple type
         :rtype: namedtuple
@@ -119,7 +120,7 @@ class Entity(object):
 
         return self._components[comp_type]
 
-    def has(self, *args):
+    def has(self, *args: Type[Any]) -> bool:
         """Checks if the entity has all components of the given type(s).
         :param args: namedtuple types
         :rtype: bool
@@ -129,26 +130,26 @@ class Entity(object):
 
         return all([comp_type in self._components for comp_type in args])
 
-    def has_any(self, *args):
+    def has_any(self, *args: Type[Any]) -> bool:
         """Checks if the entity has any component of the given type(s).
         :param args: namedtuple types
         :rtype: bool
         """
         return any([comp_type in self._components for comp_type in args])
 
-    def remove_all(self):
+    def remove_all(self) -> None:
         """Removes all components."""
         for comp_type in list(self._components):
             self._replace(comp_type, None)
 
-    def destroy(self):
+    def destroy(self) -> None:
         """This method is used internally. Don't call it yourself.
         Use context.destroy_entity(entity).
         """
         self._is_enabled = False
         self.remove_all()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """ <Entity_0 [Position(x=1, y=2, z=3)]> """
         return '<Entity_{} [{}]>'.format(
             self._creation_index,

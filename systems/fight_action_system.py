@@ -1,10 +1,11 @@
 
-from entitas import Matcher, ReactiveProcessor, GroupEvent, Entity
+from entitas import Matcher, ReactiveProcessor, GroupEvent, Entity # type: ignore
 from auxiliary.components import FightActionComponent, NPCComponent, StageComponent, SimpleRPGRoleComponent, DeadActionComponent
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.actor_action import ActorAction
 from auxiliary.actor_agent import ActorAgent
 from auxiliary.prompt_maker import kill_someone, attack_someone
+from typing import Optional
 
 class FightActionSystem(ReactiveProcessor):
 
@@ -12,13 +13,13 @@ class FightActionSystem(ReactiveProcessor):
         super().__init__(context)
         self.context = context
 
-    def get_trigger(self):
+    def get_trigger(self) -> dict[Matcher, GroupEvent]:
         return {Matcher(FightActionComponent): GroupEvent.ADDED}
 
-    def filter(self, entity):
+    def filter(self, entity: Entity) -> bool:
         return entity.has(FightActionComponent)
 
-    def react(self, entities):
+    def react(self, entities: list[Entity]) -> None:
         print("<<<<<<<<<<<<<  FightActionSystem  >>>>>>>>>>>>>>>>>")
         ## 核心处理
         for entity in entities:
@@ -32,14 +33,14 @@ class FightActionSystem(ReactiveProcessor):
         comp: FightActionComponent = entity.get(FightActionComponent)
         print(f"FightActionSystem: {comp.action}")
         action: ActorAction = comp.action
-        stage: StageComponent = self.context.get_stagecomponent_by_uncertain_entity(entity)
+        #stage: StageComponent = self.context.get_stagecomponent_by_uncertain_entity(entity)
 
-        attacker: Entity = self.context.getnpc(action.name)
+        attacker: Optional[Entity] = self.context.getnpc(action.name)
         if attacker is None:
             print(f"攻击者{action.name}错误,导致attacker对象为None,本次攻击无效.")
             return
         for value in action.values:
-            attacked: Entity = self.context.getnpc(value)
+            attacked: Optional[Entity] = self.context.getnpc(value)
             if attacked is None:
                 print(f"攻击者{action.name}错误,导致attacker对象为None,本次攻击无效.")
                 return

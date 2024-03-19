@@ -154,11 +154,7 @@ class LeaveForActionSystem(ReactiveProcessor):
             if len(action.values) == 0:
                print("没有目标？！")
                continue
-
-            #先处理npc的背包
-            npc_handle = NpcBackpackComponentHandle(self.context)
-            npc_handle.init(entity)
-
+            
             #组织一下数据
             print(f"LeaveForActionSystem: {action}")
             stagename = action.values[0]

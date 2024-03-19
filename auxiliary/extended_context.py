@@ -10,12 +10,20 @@ from auxiliary.components import (WorldComponent,
 from agents.tools.extract_md_content import wirte_content_into_md
 from auxiliary.actor_agent import ActorAgent
 from auxiliary.actor_action import ActorAction
+from auxiliary.file_system import FileSystem
 
 class ExtendedContext(Context):
 
     #
     def __init__(self):
         super().__init__()
+        self.file_system = FileSystem()
+
+    # def init_file_system(self) -> None:
+    #     self.file_system = FileSystem()
+
+    # def file_system(self) -> FileSystem:
+    #     return self.file_system
 
     #
     def getworld(self) -> Entity:
@@ -99,8 +107,7 @@ class ExtendedContext(Context):
     def put_unique_prop_into_backpack(self, entity: Entity, unique_prop_name: str) -> bool:
         if entity.has(BackpackComponent):
             npc_backpack_comp: BackpackComponent = entity.get(BackpackComponent)
-            npc_backpack_content: set = npc_backpack_comp.name_items
-            npc_backpack_content.add(unique_prop_name)
+            self.file_system.add_content_into_backpack(npc_backpack_comp, unique_prop_name)
 
     # 向Entity所在的场景中添加导演脚本
     def add_content_to_director_script_by_entity(self, entity: Entity, content: str) -> bool:

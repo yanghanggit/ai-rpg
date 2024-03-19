@@ -9,8 +9,7 @@ PlayerComponent = namedtuple('PlayerComponent', 'name')
 UniquePropComponent = namedtuple('UniquePropComponent', 'name')
 StageEntryConditionComponent = namedtuple('StageEntryConditionComponent', 'conditions')
 StageExitConditionComponent = namedtuple('StageExitConditionComponent', 'conditions')
-###
-BackpackComponent = namedtuple('BackpackComponent', 'name_items')
+BackpackComponent = namedtuple('BackpackComponent', 'owner_name')
 ###############################################################################################################################################
 DestroyComponent = namedtuple('DestroyComponent', 'name')
 ###############################################################################################################################################

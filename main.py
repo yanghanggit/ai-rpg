@@ -39,7 +39,7 @@ from langchain_core.messages import (
 
 
 ###############################################################################################################################################
-def create_entities(context: Context, worldbuilder: WorldBuilder) -> None:
+def create_entities(context: ExtendedContext, worldbuilder: WorldBuilder) -> None:
         ##创建world
         worldagent = ActorAgent(worldbuilder.data['name'], worldbuilder.data['url'], worldbuilder.data['memory'])
         #worldagent.init(worldbuilder.data['name'], worldbuilder.data['url'], worldbuilder.data['memory'])
@@ -63,7 +63,9 @@ def create_entities(context: Context, worldbuilder: WorldBuilder) -> None:
                 npc_entity = context.create_entity()
                 npc_entity.add(NPCComponent, npc_agent.name, npc_agent, stage_agent.name)
                 npc_entity.add(SimpleRPGRoleComponent, npc_agent.name, 100, 100, 20, "")
-                npc_entity.add(BackpackComponent, set())
+                npc_entity.add(BackpackComponent, npc_agent.name)
+
+                context.file_system.init_backpack_component(npc_entity.get(BackpackComponent))
             
             for unique_prop_builder in stage_builder.unique_prop_builders:
                 #创建道具

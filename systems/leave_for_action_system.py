@@ -61,7 +61,7 @@ class NpcBackpackComponentHandle:
         - bool: True if initialization is successful, False otherwise.
         """
         self.backpack_comp: BackpackComponent = npc_entity.get(BackpackComponent)
-        self.backpack_comp_content = set(self.backpack_comp.name_items)
+        self.backpack_comp_content = self.context.file_system.get_backpack_contents(self.backpack_comp)
         return True
 
 ###集中写一下方便处理，不然每次还要再搜，很麻烦
@@ -179,7 +179,7 @@ class LeaveForActionSystem(ReactiveProcessor):
                 if handle.current_stage.has(StageExitConditionComponent):
                     exit_condition_comp: StageExitConditionComponent = handle.current_stage.get(StageExitConditionComponent)
                     for condition in exit_condition_comp.conditions:
-                        if condition not in npc_handle.backpack_comp_content:
+                        if condition not in self.context.file_system.get_backpack_contents(entity.get(BackpackComponent)):
                             print(f"{Color.WARNING}{entity.get(NPCComponent).name}背包中没有{condition}，不能离开{handle.current_stage_name}.{Color.ENDC}")
                             self.context.add_content_to_director_script_by_entity(entity, fail_to_exit_stage(entity.get(NPCComponent).name, handle.current_stage_name, condition))
                             return
@@ -187,7 +187,7 @@ class LeaveForActionSystem(ReactiveProcessor):
                 if handle.target_stage.has(StageEntryConditionComponent):
                     entry_condition_comp: StageEntryConditionComponent = handle.target_stage.get(StageEntryConditionComponent)
                     for condition in entry_condition_comp.conditions:
-                        if condition not in npc_handle.backpack_comp_content:
+                        if condition not in self.context.file_system.get_backpack_contents(entity.get(BackpackComponent)):
                             print(f"{Color.WARNING}{entity.get(NPCComponent).name}背包中没有{condition}，不能进入{handle.target_stage_name}.{Color.ENDC}")
                             self.context.add_content_to_director_script_by_entity(entity, fail_to_enter_stage(entity.get(NPCComponent).name, handle.target_stage_name, condition))
                             return

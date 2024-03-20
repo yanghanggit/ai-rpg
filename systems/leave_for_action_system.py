@@ -223,6 +223,9 @@ class LeaveForActionSystem(ReactiveProcessor):
         entity.replace(NPCComponent, replace_name, replace_agent, replace_current_stage)
 
         ##
+        if target_stage_entity is None:
+            print(f"{Color.WARNING}target_stage_entitiy is None，请检查配置。{Color.ENDC}")
+            return
         target_stage_comp = target_stage_entity.get(StageComponent)
         if current_stage_name != "":
             self.context.add_content_to_director_script_by_entity(target_stage_entity, npc_leave_for_stage(npccomp.name, current_stage_name, target_stage_name))
@@ -245,6 +248,9 @@ class LeaveForActionSystem(ReactiveProcessor):
         #当前有场景
         entity: Entity = handle.who_wana_leave
         npccomp: NPCComponent = entity.get(NPCComponent)
+        if handle.current_stage is None:
+            print(f"{Color.WARNING}current_stage is None，请检查配置。{Color.ENDC}")
+            return
         current_stage: Entity = handle.current_stage
         # cur_stage_comp: StageComponent = current_stage.get(StageComponent)
 

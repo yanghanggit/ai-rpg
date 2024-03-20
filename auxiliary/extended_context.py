@@ -12,6 +12,7 @@ from agents.tools.extract_md_content import wirte_content_into_md
 from auxiliary.actor_action import ActorAction
 from auxiliary.file_system import FileSystem
 from typing import Optional, cast
+from actor_agent import ActorAgent
 
 class ExtendedContext(Context):
 
@@ -90,14 +91,20 @@ class ExtendedContext(Context):
 
         return map
 
-    ##给一个实体添加记忆
+    ##给一个实体添加记忆，尽量统一走这个方法
     def add_agent_memory(self, entity: Entity, memory: str) -> bool:
         if entity.has(NPCComponent):
-            entity.get(NPCComponent).agent.add_chat_history(memory)
+            npccomp: NPCComponent = entity.get(NPCComponent)
+            npcagent: ActorAgent = npccomp.agent
+            npcagent.add_chat_history(memory)
             return True
-        if entity.has(StageComponent):
-            entity.get(StageComponent).agent.add_chat_history(memory)
+        elif entity.has(StageComponent):
+            stagecomp: StageComponent = entity.get(StageComponent)
+            stageagent: ActorAgent = stagecomp.agent
+            stageagent.add_chat_history(memory)
             return True
+    
+        raise ValueError("实体不是NPC或者Stage")
         return False
     
 

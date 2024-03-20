@@ -1,4 +1,4 @@
-from entitas import Context, Processors #type: ignore
+from entitas import Processors #type: ignore
 import json
 from auxiliary.builder import WorldBuilder
 from auxiliary.console import Console
@@ -136,7 +136,7 @@ def main() -> None:
     #########################################
     # 处理搜寻道具行为
     processors.add(SearchPropsSystem(context))
-    #处理离开
+    # 处理离开并去往的行为
     processors.add(LeaveForActionSystem(context))
     #行动结束后导演
     processors.add(DirectorSystem(context))
@@ -361,21 +361,26 @@ def debug_chat_history(context: ExtendedContext, name: str) -> None:
 
 ###############################################################################################################################################
 
-def debug_leave(context: ExtendedContext, stage: str) -> None:
+def debug_leave(context: ExtendedContext, stagename: str) -> None:
     playerentity = context.getplayer()
     if playerentity is None:
         print("debug_leave: player is None")
         return
     
     npc_comp: NPCComponent = playerentity.get(NPCComponent)
-    npc_agent: ActorAgent = npc_comp.agent
-    action = ActorAction(npc_comp.name, "LeaveForActionComponent", [stage])
+    #npc_agent: ActorAgent = npc_comp.agent
+    action = ActorAction(npc_comp.name, "LeaveForActionComponent", [stagename])
     playerentity.add(LeaveForActionComponent, action)
     playerentity.add(HumanInterferenceComponent, 'Human Interference')
-    npc_agent.add_chat_history(f"""{{
-        "LeaveForActionComponent": ["{stage}"]
-    }}""")
-    print(f"debug_leave: {npc_agent.name} add {action}")
+    # npc_agent.add_chat_history(f"""{{
+    #     "LeaveForActionComponent": ["{stage}"]
+    # }}""")
+
+    newmemory = f"""{{
+        "LeaveForActionComponent": ["{stagename}"]
+    }}"""
+    context.add_agent_memory(playerentity, newmemory)
+    print(f"debug_leave: {npc_comp.name} add {action}")
     
 ###############################################################################################################################################
 

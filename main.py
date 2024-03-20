@@ -1,4 +1,4 @@
-from entitas import Context, Processors #type: ignore
+from entitas import Processors #type: ignore
 import json
 from auxiliary.builder import WorldBuilder
 from auxiliary.console import Console
@@ -136,7 +136,7 @@ def main() -> None:
     #########################################
     # 处理搜寻道具行为
     processors.add(SearchPropsSystem(context))
-    #处理离开
+    # 处理离开并去往的行为
     processors.add(LeaveForActionSystem(context))
     #行动结束后导演
     processors.add(DirectorSystem(context))

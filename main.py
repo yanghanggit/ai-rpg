@@ -4,7 +4,7 @@ import datetime #type: ignore
 import json
 from auxiliary.builder import WorldBuilder
 from auxiliary.console import Console
-from auxiliary.components import (WorldComponent,
+from auxiliary.components import (BroadcastActionComponent, SpeakActionComponent, WorldComponent,
                         StageComponent, 
                         NPCComponent, 
                         FightActionComponent, 
@@ -237,6 +237,22 @@ def main() -> None:
             command = "/leave"
             target_name = console.parse_command(usr_input, command)
             debug_leave(context, target_name)
+        
+        elif "/broadcast" in usr_input:
+            if not started:
+                logger.warning("请先/run")
+                continue
+            command = "/broadcast"
+            content = console.parse_command(usr_input, command)
+            debug_broadcast(context, content)
+            
+        elif "/speak" in usr_input:
+            if not started:
+                logger.warning("请先/run")
+                continue
+            command = "/speak"
+            content = console.parse_command(usr_input, command)
+            debug_speak(context, content)
 
     processors.clear_reactive_processors()
     processors.tear_down()
@@ -367,13 +383,9 @@ def debug_leave(context: ExtendedContext, stagename: str) -> None:
         return
     
     npc_comp: NPCComponent = playerentity.get(NPCComponent)
-    #npc_agent: ActorAgent = npc_comp.agent
     action = ActorAction(npc_comp.name, "LeaveForActionComponent", [stagename])
     playerentity.add(LeaveForActionComponent, action)
     playerentity.add(HumanInterferenceComponent, 'Human Interference')
-    # npc_agent.add_chat_history(f"""{{
-    #     "LeaveForActionComponent": ["{stage}"]
-    # }}""")
 
     newmemory = f"""{{
         "LeaveForActionComponent": ["{stagename}"]
@@ -381,6 +393,42 @@ def debug_leave(context: ExtendedContext, stagename: str) -> None:
     context.add_agent_memory(playerentity, newmemory)
     logger.debug(f"debug_leave: {npc_comp.name} add {action}")
     
+###############################################################################################################################################
+def debug_broadcast(context: ExtendedContext, content: str) -> None:
+    playerentity = context.getplayer()
+    if playerentity is None:
+        logger.warning("debug_broadcast: player is None")
+        return
+    
+    npc_comp: NPCComponent = playerentity.get(NPCComponent)
+    action = ActorAction(npc_comp.name, "BroadcastActionComponent", [content])
+    playerentity.add(BroadcastActionComponent, action)
+    playerentity.add(HumanInterferenceComponent, 'Human Interference')
+
+    newmemory = f"""{{
+        "BroadcastActionComponent": ["{content}"]
+    }}"""
+    context.add_agent_memory(playerentity, newmemory)
+    logger.debug(f"debug_broadcast: {npc_comp.name} add {action}")
+
+###############################################################################################################################################
+def debug_speak(context: ExtendedContext, content: str) -> None:
+    playerentity = context.getplayer()
+    if playerentity is None:
+        logger.warning("debug_speak: player is None")
+        return
+    
+    npc_comp: NPCComponent = playerentity.get(NPCComponent)
+    action = ActorAction(npc_comp.name, "SpeakActionComponent", [content])
+    playerentity.add(SpeakActionComponent, action)
+    playerentity.add(HumanInterferenceComponent, 'Human Interference')
+
+    newmemory = f"""{{
+        "SpeakActionComponent": ["{content}"]
+    }}"""
+    context.add_agent_memory(playerentity, newmemory)
+    logger.debug(f"debug_speak: {npc_comp.name} add {action}")
+
 ###############################################################################################################################################
 
 if __name__ == "__main__":

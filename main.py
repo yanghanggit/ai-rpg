@@ -229,6 +229,7 @@ def main() -> None:
             command = "/mem"
             target_name = console.parse_command(usr_input, command)
             debug_chat_history(context, target_name)
+            logger.debug(f"{'=' * 50}")
         
         elif "/leave" in usr_input:
             if not started:
@@ -237,6 +238,7 @@ def main() -> None:
             command = "/leave"
             target_name = console.parse_command(usr_input, command)
             debug_leave(context, target_name)
+            logger.debug(f"{'=' * 50}")
         
         elif "/broadcast" in usr_input:
             if not started:
@@ -245,6 +247,7 @@ def main() -> None:
             command = "/broadcast"
             content = console.parse_command(usr_input, command)
             debug_broadcast(context, content)
+            logger.debug(f"{'=' * 50}")
             
         elif "/speak" in usr_input:
             if not started:
@@ -253,6 +256,7 @@ def main() -> None:
             command = "/speak"
             content = console.parse_command(usr_input, command)
             debug_speak(context, content)
+            logger.debug(f"{'=' * 50}")
 
     processors.clear_reactive_processors()
     processors.tear_down()

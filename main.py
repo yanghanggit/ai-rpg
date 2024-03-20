@@ -361,21 +361,26 @@ def debug_chat_history(context: ExtendedContext, name: str) -> None:
 
 ###############################################################################################################################################
 
-def debug_leave(context: ExtendedContext, stage: str) -> None:
+def debug_leave(context: ExtendedContext, stagename: str) -> None:
     playerentity = context.getplayer()
     if playerentity is None:
         print("debug_leave: player is None")
         return
     
     npc_comp: NPCComponent = playerentity.get(NPCComponent)
-    npc_agent: ActorAgent = npc_comp.agent
-    action = ActorAction(npc_comp.name, "LeaveForActionComponent", [stage])
+    #npc_agent: ActorAgent = npc_comp.agent
+    action = ActorAction(npc_comp.name, "LeaveForActionComponent", [stagename])
     playerentity.add(LeaveForActionComponent, action)
     playerentity.add(HumanInterferenceComponent, 'Human Interference')
-    npc_agent.add_chat_history(f"""{{
-        "LeaveForActionComponent": ["{stage}"]
-    }}""")
-    print(f"debug_leave: {npc_agent.name} add {action}")
+    # npc_agent.add_chat_history(f"""{{
+    #     "LeaveForActionComponent": ["{stage}"]
+    # }}""")
+
+    newmemory = f"""{{
+        "LeaveForActionComponent": ["{stagename}"]
+    }}"""
+    context.add_agent_memory(playerentity, newmemory)
+    print(f"debug_leave: {npc_comp.name} add {action}")
     
 ###############################################################################################################################################
 

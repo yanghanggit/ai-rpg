@@ -1,4 +1,6 @@
 from entitas import Processors #type: ignore
+from loguru import logger #type: ignore
+import datetime #type: ignore
 import json
 from auxiliary.builder import WorldBuilder
 from auxiliary.console import Console
@@ -53,8 +55,6 @@ def create_entities(context: ExtendedContext, worldbuilder: WorldBuilder) -> Non
                 continue 
             #创建stage       
             stage_agent = ActorAgent(stage_builder.data['name'], stage_builder.data['url'], stage_builder.data['memory'])
-            #stage_agent.init(stage_builder.data['name'], stage_builder.data['url'], stage_builder.data['memory'])
-            # print(f"创建场景:{stage_builder.data['name']}\nURL:{stage_builder.data['url']}\nMemory:{stage_builder.data['memory']}")
             stage_entity = context.create_entity()
             stage_entity.add(StageComponent, stage_agent.name, stage_agent, [])
             stage_entity.add(SimpleRPGRoleComponent, stage_agent.name, 100, 100, 1, "")
@@ -64,8 +64,6 @@ def create_entities(context: ExtendedContext, worldbuilder: WorldBuilder) -> Non
                     continue
                 #创建npc
                 npc_agent = ActorAgent(npc_builder.data['name'], npc_builder.data['url'], npc_builder.data['memory'])
-                #npc_agent.init(npc_builder.data['name'], npc_builder.data['url'], npc_builder.data['memory'])
-                # print(f"创建NPC:{npc_builder.data['name']}\nURL:{npc_builder.data['url']}\nMemory:{npc_builder.data['memory']}")
                 npc_entity = context.create_entity()
                 npc_entity.add(NPCComponent, npc_agent.name, npc_agent, stage_agent.name)
                 npc_entity.add(SimpleRPGRoleComponent, npc_agent.name, 100, 100, 20, "")
@@ -98,6 +96,9 @@ def create_entities(context: ExtendedContext, worldbuilder: WorldBuilder) -> Non
 ############################################################################################################################################### 
 def main() -> None:
 
+    log_start_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    logger.add(f"logs/{log_start_time}.log", level="DEBUG")
+
     context = ExtendedContext()
     processors = Processors()
     console = Console("测试后台管理")
@@ -116,7 +117,7 @@ def main() -> None:
             create_entities(context, world_builder)
 
     except Exception as e:
-        print(e)
+        logger.exception(e)
         return        
 
     #初始化系统########################
@@ -163,69 +164,67 @@ def main() -> None:
             processors.execute()
             processors.cleanup()
             started = True
-            print("==============================================")
+            logger.debug("==============================================")
 
         elif "/call" in usr_input:
             if not started:
-                print("请先/run")
+                logger.warning("请先/run")
                 continue
             command = "/call"
-            input_content = console.parse_command(usr_input, command)     
-            print(f"</call>:", input_content)
+            input_content = console.parse_command(usr_input, command) 
+            logger.debug(f"</call>:", input_content)
             parse_res: tuple[str, str] = console.parse_at_symbol(input_content)
             debug_call(context, parse_res[0], parse_res[1])
-            print("==============================================")
+            logger.debug(f"{'=' * 50}")
 
         elif "/showstages" in usr_input:
             if not started:
-                print("请先/run")
+                logger.warning("请先/run")
                 continue
             command = "/showstages"
             who = console.parse_command(usr_input, command)
             log = context.show_stages_log()
-            print(f"/showstages: \n", log)
-            print("==============================================")
+            logger.debug(f"/showstages: \n{log}")
+            logger.debug(f"{'=' * 50}")
 
         elif "/player" in usr_input:
             if not started:
-                print("请先/run")
+                logger.warning("请先/run")
                 continue
             command = "/player"
             player_info = console.parse_command(usr_input, command)
-            print("/player:", player_info)
+            logger.debug("/player:", player_info)
            # "haha|老猎人隐居的小木屋|一个高大的兽人战士，独眼。手中拿着巨斧，杀气腾腾"
            # player_info = "haha|老猎人隐居的小木屋|一个高大的兽人战士，独眼。手中拿着巨斧，杀气腾腾"
             info_parts = player_info.split("|")
             name = info_parts[0]
             location = info_parts[1]
             description = info_parts[2]
-            print("Name:", name)
-            print("Location:", location)
-            print("Description:", description)
+            logger.debug("Name:", name, "Location:", location, "Description:", description)
             debug_create_player(context, name, location, description)
-            print("==============================================")
+            logger.debug(f"{'=' * 50}")
 
         elif "/who" in usr_input:
             if not started:
-                print("请先/run")
+                logger.warning("请先/run")
                 continue
             command = "/who"
             who = console.parse_command(usr_input, command)
             debug_be_who(context, who, playername)
-            print("==============================================")
+            logger.debug(f"{'=' * 50}")
            
         elif "/attack" in usr_input:
             if not started:
-                print("请先/run")
+                logger.warning("请先/run")
                 continue
             command = "/attack"
             target_name = console.parse_command(usr_input, command)    
             debug_attack(context, target_name)
-            print("==============================================")
+            logger.debug(f"{'=' * 50}")
         
         elif "/mem" in usr_input:
             if not started:
-                print("请先/run")
+                logger.warning("请先/run")
                 continue
             command = "/mem"
             target_name = console.parse_command(usr_input, command)
@@ -233,7 +232,7 @@ def main() -> None:
         
         elif "/leave" in usr_input:
             if not started:
-                print("请先/run")
+                logger.warning("请先/run")
                 continue
             command = "/leave"
             target_name = console.parse_command(usr_input, command)
@@ -241,7 +240,7 @@ def main() -> None:
 
     processors.clear_reactive_processors()
     processors.tear_down()
-    print("end.")
+    logger.info("Game Over")
 
 ###############################################################################################################################################
 def debug_call(context: ExtendedContext, name: str, content: str) -> None:
@@ -249,26 +248,26 @@ def debug_call(context: ExtendedContext, name: str, content: str) -> None:
     entity = context.getnpc(name)
     if entity is not None:
         comp = entity.get(NPCComponent)
-        print(f"[{comp.name}] /call:", comp.agent.request(content))
+        logger.debug(f"[{comp.name}] /call:", comp.agent.request(content))
         return
     
     entity = context.getstage(name)
     if entity is not None:
         comp = entity.get(StageComponent)
-        print(f"[{comp.name}] /call:", comp.agent.request(content))
+        logger.debug(f"[{comp.name}] /call:", comp.agent.request(content))
         return
     
     entity = context.getworld()
     if entity is not None:
         comp = entity.get(WorldComponent)
-        print(f"[{comp.name}] /call:", comp.agent.request(content))
+        logger.debug(f"[{comp.name}] /call:", comp.agent.request(content))
         return           
     
 ###############################################################################################################################################
 def debug_create_player(context: ExtendedContext, playername: str, stage: str, desc: str) -> None:
     playerentity = context.getplayer()
     if playerentity is not None:
-        print("debug_create_player: player is not None")
+        logger.error("debug_create_player: player is not None")
         return
     
     #创建player 本质就是npc
@@ -281,7 +280,7 @@ def debug_create_player(context: ExtendedContext, playername: str, stage: str, d
 
     action = ActorAction(playername, "LeaveForActionComponent", [stage])
     playerentity.add(LeaveForActionComponent, action)
-    print(f"debug_create_player: {playername} add {action}")
+    logger.debug(f"debug_create_player: {playername} add {action}")
 
 ###############################################################################################################################################
 def debug_be_who(context: ExtendedContext, name: str, playname: str) -> None:
@@ -289,20 +288,20 @@ def debug_be_who(context: ExtendedContext, name: str, playname: str) -> None:
     playerentity = context.getplayer()
     if playerentity is not None:
         playercomp = playerentity.get(PlayerComponent)
-        print(f"debug_be_who current player is : {playercomp.name}")
+        logger.debug(f"debug_be_who current player is : {playercomp.name}")
         playerentity.remove(PlayerComponent)
 
     entity = context.getnpc(name)
     if entity is not None:
         npccomp = entity.get(NPCComponent)
-        print(f"debug_be_who => : {npccomp.name} is {playname}")
+        logger.debug(f"debug_be_who => : {npccomp.name} is {playname}")
         entity.add(PlayerComponent, playname)
         return
     
     entity = context.getstage(name)
     if entity is not None:
         stagecomp = entity.get(StageComponent)
-        print(f"debug_be_who => : {stagecomp.name} is {playname}")
+        logger.debug(f"debug_be_who => : {stagecomp.name} is {playname}")
         entity.add(PlayerComponent, playname)
         return
 ###############################################################################################################################################
@@ -310,7 +309,7 @@ def debug_attack(context: ExtendedContext, dest: str) -> None:
     
     playerentity = context.getplayer()
     if playerentity is None:
-        print("debug_attack: player is None")
+        logger.warning("debug_attack: player is None")
         return
        
     if playerentity.has(NPCComponent):
@@ -318,7 +317,7 @@ def debug_attack(context: ExtendedContext, dest: str) -> None:
         action = ActorAction(npccomp.name, "FightActionComponent", [dest])
         playerentity.add(FightActionComponent, action)
         playerentity.add(HumanInterferenceComponent, 'Human Interference')
-        print(f"debug_attack: {npccomp.name} add {action}")
+        logger.debug(f"debug_attack: {npccomp.name} add {action}")
         return
     
     elif playerentity.has(StageComponent):
@@ -326,7 +325,7 @@ def debug_attack(context: ExtendedContext, dest: str) -> None:
         action = ActorAction(stagecomp.name, "FightActionComponent", [dest])
         playerentity.add(HumanInterferenceComponent, 'Human Interference')
         playerentity.add(FightActionComponent, action)
-        print(f"debug_attack: {stagecomp.name} add {action}")
+        logger.debug(f"debug_attack: {stagecomp.name} add {action}")
         return
 
 ###############################################################################################################################################
@@ -336,26 +335,26 @@ def debug_chat_history(context: ExtendedContext, name: str) -> None:
     if entity is not None:
         npc_comp: NPCComponent = entity.get(NPCComponent)
         npc_agent: ActorAgent = npc_comp.agent
-        print(f"{'=' * 50}\ndebug_chat_history for {npc_comp.name} => :")
+        logger.info(f"{'=' * 50}\ndebug_chat_history for {npc_comp.name} => :")
         for history in npc_agent.chat_history:
             if isinstance(history, HumanMessage):
-                print(f"{'=' * 50}\nHuman:{history.content}")
+                logger.info(f"{'=' * 50}\nHuman:{history.content}")
             elif isinstance(history, AIMessage):
-                print(f"{'=' * 50}\nAI:{history.content}")
-        print(f"{'=' * 50}")
+                logger.info(f"{'=' * 50}\nAI:{history.content}")
+        logger.info(f"{'=' * 50}")
         return
     
     entity = context.getstage(name)
     if entity is not None:
         stage_comp: StageComponent = entity.get(StageComponent)
         stage_agent: ActorAgent = stage_comp.agent
-        print(f"{'=' * 50}\ndebug_chat_history for {stage_comp.name} => :\n")
+        logger.info(f"{'=' * 50}\ndebug_chat_history for {stage_comp.name} => :\n")
         for history in stage_agent.chat_history:
             if isinstance(history, HumanMessage):
-                print(f"Human:{history.content}")
+                logger.info(f"Human:{history.content}")
             elif isinstance(history, AIMessage):
-                print(f"AI:{history.content}")
-        print(f"{'=' * 50}")
+                logger.info(f"AI:{history.content}")
+        logger.info(f"{'=' * 50}")
         return
 
 
@@ -364,7 +363,7 @@ def debug_chat_history(context: ExtendedContext, name: str) -> None:
 def debug_leave(context: ExtendedContext, stagename: str) -> None:
     playerentity = context.getplayer()
     if playerentity is None:
-        print("debug_leave: player is None")
+        logger.warning("debug_leave: player is None")
         return
     
     npc_comp: NPCComponent = playerentity.get(NPCComponent)
@@ -380,7 +379,7 @@ def debug_leave(context: ExtendedContext, stagename: str) -> None:
         "LeaveForActionComponent": ["{stagename}"]
     }}"""
     context.add_agent_memory(playerentity, newmemory)
-    print(f"debug_leave: {npc_comp.name} add {action}")
+    logger.debug(f"debug_leave: {npc_comp.name} add {action}")
     
 ###############################################################################################################################################
 

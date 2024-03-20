@@ -6,6 +6,7 @@ from auxiliary.extended_context import ExtendedContext
 from agents.tools.print_in_color import Color
 from auxiliary.prompt_maker import whisper_action_prompt
 from typing import Optional
+from loguru import logger  # type: ignore
 
 class WhisperActionSystem(ReactiveProcessor):
 
@@ -20,7 +21,7 @@ class WhisperActionSystem(ReactiveProcessor):
         return entity.has(WhisperActionComponent)
 
     def react(self, entities: list[Entity]) -> None:
-        print("<<<<<<<<<<<<<  WhisperActionSystem  >>>>>>>>>>>>>>>>>")
+        logger.debug("<<<<<<<<<<<<<  WhisperActionSystem  >>>>>>>>>>>>>>>>>")
 
         for entity in entities:
             self.handle(entity)  # 核心处理
@@ -33,30 +34,30 @@ class WhisperActionSystem(ReactiveProcessor):
         whispercomp: WhisperActionComponent = entity_stage_or_npc.get(WhisperActionComponent)
         stagecomp: Optional[StageComponent] = self.context.get_stagecomponent_by_uncertain_entity(entity_stage_or_npc) 
         if stagecomp is None or whispercomp is None:
-            print(f"WhisperActionSystem: stagecomp or whispercomp is None!")
+            logger.warning(f"WhisperActionSystem: stagecomp or whispercomp is None!")
             return
 
         action: ActorAction = whispercomp.action
         values: list[str] = action.values
         if len(values) < 2:
-            print(f"WhisperActionSystem: values length < 2")
+            logger.warning(f"WhisperActionSystem: values length < 2")
             return
 
         target_name: str = values[0]
         target_entity = self.context.getnpc(target_name)
         if target_entity is None:
-            print(f"The person you want to whisper does not exist, or is not an NPC!")
+            logger.warning(f"The person you want to whisper does not exist, or is not an NPC!")
             return
         
         target_npc_comp: NPCComponent = target_entity.get(NPCComponent)
         if target_npc_comp.current_stage != stagecomp.name:
-            print(f"Not in this stage!")
+            logger.warning(f"Not in this stage!")
             return
         
         #组装新的记忆。但是不要加到场景事件里
         content: str = values[1]
         new_memory = whisper_action_prompt(action.name, target_name, content, self.context)
-        print(f"{Color.HEADER}{new_memory}{Color.ENDC}")
+        logger.info(f"{Color.HEADER}{new_memory}{Color.ENDC}")
 
         #整理代码，加到记忆里
         self.context.add_agent_memory(entity_stage_or_npc, new_memory)

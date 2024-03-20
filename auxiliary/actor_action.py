@@ -2,6 +2,7 @@
 from typing import List
 import json
 from typing import Any
+from loguru import logger # type: ignore
 
 
 class ActorAction:
@@ -23,18 +24,17 @@ class ActorPlan:
         self.json: dict[str, list[str]] = {}
         self.actions: List[ActorAction] = []
 
-        #print(f"ActorPlan: {self.name} response = ", jsonstr)
         try:
             json_data = json.loads(self.jsonstr)
             if not self.check_data_format(json_data):
-                print(f"ActorPlan __init__ json.loads = {self.name} error")
+                logger.error(f"ActorPlan __init__ json.loads = {self.name} error")
                 return
             
             self.json = json_data
             self.build(self.json)
 
         except Exception as e:
-            print(f"ActorPlan __init__ error = {e}")
+            logger.exception(f"ActorPlan __init__ error = {e}")
             return
         return    
 

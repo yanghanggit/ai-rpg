@@ -6,6 +6,7 @@ from auxiliary.actor_action import ActorAction
 from auxiliary.actor_agent import ActorAgent
 from auxiliary.prompt_maker import kill_someone, attack_someone
 from typing import Optional
+from loguru import logger #type: ignore
 
 class FightActionSystem(ReactiveProcessor):
 
@@ -20,7 +21,7 @@ class FightActionSystem(ReactiveProcessor):
         return entity.has(FightActionComponent)
 
     def react(self, entities: list[Entity]) -> None:
-        print("<<<<<<<<<<<<<  FightActionSystem  >>>>>>>>>>>>>>>>>")
+        logger.debug("<<<<<<<<<<<<<  FightActionSystem  >>>>>>>>>>>>>>>>>")
         ## 核心处理
         for entity in entities:
             self.handlefight(entity)
@@ -31,18 +32,18 @@ class FightActionSystem(ReactiveProcessor):
         
     def handlefight(self, entity: Entity) -> None:
         comp: FightActionComponent = entity.get(FightActionComponent)
-        print(f"FightActionSystem: {comp.action}")
+        logger.info(f"FightActionSystem: {comp.action}")
         action: ActorAction = comp.action
         #stage: StageComponent = self.context.get_stagecomponent_by_uncertain_entity(entity)
 
         attacker: Optional[Entity] = self.context.getnpc(action.name)
         if attacker is None:
-            print(f"攻击者{action.name}错误,导致attacker对象为None,本次攻击无效.")
+            logger.warning(f"攻击者{action.name}错误,导致attacker对象为None,本次攻击无效.")
             return
         for value in action.values:
             attacked: Optional[Entity] = self.context.getnpc(value)
             if attacked is None:
-                print(f"攻击者{action.name}错误,导致attacker对象为None,本次攻击无效.")
+                logger.warning(f"攻击者{action.name}错误,导致attacker对象为None,本次攻击无效.")
                 return
             if attacker.has(SimpleRPGRoleComponent) and attacked.has(SimpleRPGRoleComponent):
                 attacker_comp: SimpleRPGRoleComponent = attacker.get(SimpleRPGRoleComponent)
@@ -54,8 +55,6 @@ class FightActionSystem(ReactiveProcessor):
                     self.context.add_content_to_director_script_by_entity(attacker, kill_someone(action.name, value))
                 else:
                     self.context.add_content_to_director_script_by_entity(attacker, attack_someone(action.name, value, attacker_comp.attack, attacked_comp.hp, attacked_comp.maxhp))
-                    # fight = f"{action.name}对{value}发动了一次攻击,但是没有能造成{value}死亡,{value}血量剩余{attack_result}%."
-                    # stage.directorscripts.append(fight)
             else:
-                print("attacker or attacked has no simple rpg role comp.")
+                logger.warning("attacker or attacked has no simple rpg role comp.")
        

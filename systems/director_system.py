@@ -4,7 +4,7 @@ from auxiliary.components import StageComponent, NPCComponent
 from typing import List
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.prompt_maker import confirm_everything_after_director_add_new_memories_prompt
-from auxiliary.actor_agent import ActorAgent
+from loguru import logger #type: ignore
 
 class DirectorSystem(ExecuteProcessor):
     """
@@ -33,7 +33,7 @@ class DirectorSystem(ExecuteProcessor):
         """
         Executes the director system by calling the handle() and clear() methods.
         """
-        print("<<<<<<<<<<<<<  DirectorSystem  >>>>>>>>>>>>>>>>>")
+        logger.debug("<<<<<<<<<<<<<  DirectorSystem  >>>>>>>>>>>>>>>>>")
         self.handle()
         self.clear()
 
@@ -63,7 +63,7 @@ class DirectorSystem(ExecuteProcessor):
             entity (Entity): The stage entity to handle.
         """
         stage_comp: StageComponent = entitystage.get(StageComponent)
-        print(f"[{stage_comp.name}] 开始导演+++++++++++++++++++++++++++++++++++++++++++++++++++++")
+        logger.debug(f"[{stage_comp.name}] 开始导演+++++++++++++++++++++++++++++++++++++++++++++++++++++")
 
         directorscripts: list[str] = stage_comp.directorscripts
         if len(directorscripts) == 0:
@@ -73,10 +73,10 @@ class DirectorSystem(ExecuteProcessor):
         npcs_names = " ".join([npc.get(NPCComponent).name for npc in npcs_in_stage])
 
         confirm_prompt = confirm_everything_after_director_add_new_memories_prompt(directorscripts, npcs_names, stage_comp.name, self.context)
-        print(f"记忆添加内容:\n{confirm_prompt}\n")
+        logger.debug(f"记忆添加内容:\n{confirm_prompt}\n")
 
         self.context.add_agent_memory(entitystage, confirm_prompt)
         for npcen in npcs_in_stage:
             self.context.add_agent_memory(npcen, confirm_prompt)
 
-        print(f"[{stage_comp.name}] 结束导演+++++++++++++++++++++++++++++++++++++++++++++++++++++")
+        logger.debug(f"[{stage_comp.name}] 结束导演+++++++++++++++++++++++++++++++++++++++++++++++++++++")

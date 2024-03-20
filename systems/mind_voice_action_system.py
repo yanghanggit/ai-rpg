@@ -5,6 +5,7 @@ from auxiliary.actor_action import ActorAction
 from auxiliary.extended_context import ExtendedContext
 from agents.tools.print_in_color import Color
 from typing import Optional
+from loguru import logger # type: ignore
 
 class MindVoiceActionSystem(ReactiveProcessor):
 
@@ -19,7 +20,7 @@ class MindVoiceActionSystem(ReactiveProcessor):
         return entity.has(MindVoiceActionComponent)
 
     def react(self, entities: list[Entity]) -> None:
-        print("<<<<<<<<<<<<<  MindVoiceActionSystem  >>>>>>>>>>>>>>>>>")
+        logger.debug("<<<<<<<<<<<<<  MindVoiceActionSystem  >>>>>>>>>>>>>>>>>")
 
         # 核心处理
         for entity in entities:
@@ -38,7 +39,7 @@ class MindVoiceActionSystem(ReactiveProcessor):
         for value in action.values:
             #纯测试，暂时无用
             what_to_said = f"{action.name},心里想到:{value}"
-            print(f"{Color.BLUE}{what_to_said}{Color.ENDC}")
+            logger.info(f"{Color.BLUE}{what_to_said}{Color.ENDC}")
             
         
                 

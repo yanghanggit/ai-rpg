@@ -1,4 +1,5 @@
 import os
+from loguru import logger #type: ignore
 
 def extract_md_content(file_path: str) -> str:
     """提取md内容。文件路径示例: /xxx/xxx.md"""
@@ -9,7 +10,7 @@ def extract_md_content(file_path: str) -> str:
             if isinstance(md_content, str):
                 return md_content
             else:
-                print("Failed to read the file:", md_content)
+                logger.error(f"Failed to read the file:{md_content}")
                 return ""
     except FileNotFoundError:
         return f"File not found: {file_path}"
@@ -24,4 +25,4 @@ def wirte_content_into_md(content:str, file_path:str) -> None:
         with open(file_path, 'w', encoding='utf-8') as file:
             file.write(content)
     except Exception as e:
-        print(f"An error occurred: {e}")
+        logger.exception(f"An error occurred: {e}")

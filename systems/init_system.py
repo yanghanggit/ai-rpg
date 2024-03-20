@@ -5,6 +5,7 @@ from agents.tools.extract_md_content import extract_md_content
 from auxiliary.actor_agent import ActorAgent
 from auxiliary.prompt_maker import read_archives_when_system_init_prompt
 from auxiliary.extended_context import ExtendedContext
+from loguru import logger # type: ignore
 
 
 ###############################################################################################################################################
@@ -17,7 +18,7 @@ class InitSystem(InitializeProcessor):
         self.context: ExtendedContext = context
       
     def initialize(self) -> None:
-        print("<<<<<<<<<<<<<  InitSystem >>>>>>>>>>>>>>>>>")
+        logger.debug("<<<<<<<<<<<<<  InitSystem >>>>>>>>>>>>>>>>>")
         self.handleworld()
         self.handlestages()
         self.handlenpcs()
@@ -26,15 +27,13 @@ class InitSystem(InitializeProcessor):
         worlds: set[Entity] = self.context.get_group(Matcher(WorldComponent)).entities
         for world in worlds:
             comp: WorldComponent = world.get(WorldComponent)
-            print(comp.name)
-            print(comp.agent)
-            print(comp.agent.memory)
+            logger.debug(f"World: {comp.name} | Agent: {comp.agent.name} | Memory: {comp.agent.memory}")
             # 世界载入
             agent: ActorAgent = comp.agent
             agent.connect()
             if agent.memory == "":
                 agent.memory = "/savedData/basic_archive.md"
-                print(f"{agent.name}未找到专属存档，载入默认存档")
+                logger.warning(f"{agent.name}未找到专属存档，载入默认存档")
 
             init_archivist = extract_md_content(agent.memory)
             prompt = read_archives_when_system_init_prompt(init_archivist, world, self.context)
@@ -44,15 +43,13 @@ class InitSystem(InitializeProcessor):
         stages: set[Entity] = self.context.get_group(Matcher(StageComponent)).entities
         for stage in stages:
             comp: StageComponent = stage.get(StageComponent)
-            print(comp.name)
-            print(comp.agent)
-            print(comp.agent.memory)
+            logger.debug(f"Stage: {comp.name}, Agent: {comp.agent.name}, Memory: {comp.agent.memory}")
             # 场景载入
             agent: ActorAgent = comp.agent
             agent.connect()
             if agent.memory == "":
                 agent.memory = "/savedData/basic_archive.md" 
-                print(f"{agent.name}未找到专属存档，载入默认存档")
+                logger.warning(f"{agent.name}未找到专属存档，载入默认存档")
             
             init_archivist = extract_md_content(agent.memory)
             prompt = read_archives_when_system_init_prompt(init_archivist, stage, self.context)
@@ -62,15 +59,13 @@ class InitSystem(InitializeProcessor):
         npcs: set[Entity] = self.context.get_group(Matcher(NPCComponent)).entities
         for npc in npcs:
             comp: NPCComponent = npc.get(NPCComponent)
-            print(comp.name)
-            print(comp.agent)
-            print(comp.agent.memory)
+            logger.debug(f"NPC: {comp.name}, Agent: {comp.agent.name}, Memory: {comp.agent.memory}")
             # NPC载入
             agent: ActorAgent = comp.agent
             agent.connect()
             if agent.memory == "":
                 agent.memory = "/savedData/basic_archive.md" 
-                print(f"{agent.name}未找到专属存档，载入默认存档")
+                logger.warning(f"{agent.name}未找到专属存档，载入默认存档")
 
             init_archivist = extract_md_content(agent.memory)
             prompt = read_archives_when_system_init_prompt(init_archivist, npc, self.context)

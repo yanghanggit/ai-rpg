@@ -7,8 +7,8 @@ from auxiliary.components import (DeadActionComponent,
                         NPCComponent)
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.actor_agent import ActorAgent
-#from agents.tools.extract_md_content import wirte_content_into_md
 from auxiliary.prompt_maker import gen_npc_archive_prompt, npc_memory_before_death
+from loguru import logger #type: ignore
 
 
 class DeadActionSystem(ExecuteProcessor):
@@ -17,7 +17,7 @@ class DeadActionSystem(ExecuteProcessor):
         self.context = context
 
     def execute(self) -> None:
-        print("<<<<<<<<<<<<<  DeadActionSystem  >>>>>>>>>>>>>>>>>")
+        logger.debug("<<<<<<<<<<<<<  DeadActionSystem  >>>>>>>>>>>>>>>>>")
         entities:set[Entity] = self.context.get_group(Matcher(DeadActionComponent)).entities
 
         ##如果死的是NPC，就要保存存档
@@ -40,16 +40,12 @@ class DeadActionSystem(ExecuteProcessor):
         if entity.has(NPCComponent):
             npc_comp: NPCComponent = entity.get(NPCComponent)
             npc_agent: ActorAgent = npc_comp.agent
-            # dead_prompt = "最终你被打死了."
-            # npc_agent.request(dead_prompt)
             # 添加记忆
             mem_before_death = npc_memory_before_death(self.context)
             self.context.add_agent_memory(entity, mem_before_death)
             # 推理死亡，并且进行存档
             archive_prompt = gen_npc_archive_prompt(self.context)
             archive = npc_agent.request(archive_prompt)
-            # print(f"{agent.name}:\n{archive}")
-            #wirte_content_into_md(archive, f"/savedData/{npc_agent.name}.md")
             self.context.savearchive(archive, npc_agent.name)
 
         

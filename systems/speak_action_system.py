@@ -6,6 +6,7 @@ from auxiliary.extended_context import ExtendedContext
 from agents.tools.print_in_color import Color
 from auxiliary.prompt_maker import speak_action_prompt
 from typing import Optional
+from loguru import logger # type: ignore
    
 ####################################################################################################
 class SpeakActionSystem(ReactiveProcessor):
@@ -21,7 +22,7 @@ class SpeakActionSystem(ReactiveProcessor):
         return entity.has(SpeakActionComponent)
 
     def react(self, entities: list[Entity]) -> None:
-        print("<<<<<<<<<<<<<  SpeakActionSystem  >>>>>>>>>>>>>>>>>")
+        logger.debug("<<<<<<<<<<<<<  SpeakActionSystem  >>>>>>>>>>>>>>>>>")
         # 核心执行
         for entity in entities:
             self.handle(entity)  
@@ -41,7 +42,7 @@ class SpeakActionSystem(ReactiveProcessor):
                 continue
             ##拼接说话内容
             saycontent = speak_action_prompt(action.name, target, message, self.context)
-            print(f"{Color.HEADER}{saycontent}{Color.ENDC}")
+            logger.info(f"{Color.HEADER}{saycontent}{Color.ENDC}")
             ##添加场景事件，最后随着导演剧本走
             stagecomp: Optional[StageComponent] = self.context.get_stagecomponent_by_uncertain_entity(entity)
             if stagecomp is not None:
@@ -51,17 +52,17 @@ class SpeakActionSystem(ReactiveProcessor):
 
         npc_entity: Optional[Entity] = self.context.getnpc(dstname)
         if npc_entity is None:
-            print(f"No NPC named {dstname} found")
+            logger.warning(f"No NPC named {dstname} found")
             return False
 
         current_stage_comp: Optional[StageComponent] = self.context.get_stagecomponent_by_uncertain_entity(src)  
         if current_stage_comp is None:
-            print(f"StageComponent not found for {src}")
+            logger.warning(f"StageComponent not found for {src}")
             return False  
         
         npccomp: NPCComponent = npc_entity.get(NPCComponent)
         if current_stage_comp.name != npccomp.current_stage:
-            print(f"{src} is not in {npccomp.current_stage}, {current_stage_comp.name}")
+            logger.warning(f"{src} is not in {npccomp.current_stage}, {current_stage_comp.name}")
             return False
         
         return True

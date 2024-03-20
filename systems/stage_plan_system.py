@@ -11,6 +11,7 @@ from auxiliary.components import (StageComponent,
 from auxiliary.actor_action import ActorPlan
 from auxiliary.prompt_maker import stage_plan_prompt
 from auxiliary.extended_context import ExtendedContext
+from loguru import logger #type: ignore
       
 class StagePlanSystem(ExecuteProcessor):
     """
@@ -37,7 +38,7 @@ class StagePlanSystem(ExecuteProcessor):
         """
         Executes the StagePlanSystem and handles stage plans.
         """
-        print("<<<<<<<<<<<<<  StagePlanSystem  >>>>>>>>>>>>>>>>>")
+        logger.debug("<<<<<<<<<<<<<  StagePlanSystem  >>>>>>>>>>>>>>>>>")
         entities = self.context.get_group(Matcher(StageComponent)).entities
         for entity in entities:
             self.handle(entity)
@@ -71,7 +72,6 @@ class StagePlanSystem(ExecuteProcessor):
                             entity.add(TagActionComponent, action)
 
                     case "RememberActionComponent":
-                        #print(f"RememberActionComponent: {action.values}")
                         pass
 
                     case "MindVoiceActionComponent":
@@ -87,10 +87,10 @@ class StagePlanSystem(ExecuteProcessor):
                             entity.add(WhisperActionComponent, action)
                              
                     case _:
-                        print(f"error {action.actionname}, action value {action.values}")
+                        logger.warning(f"error {action.actionname}, action value {action.values}")
                         continue
 
         except Exception as e:
-            print(f"StagePlanSystem: {e}")  
+            logger.exception(f"StagePlanSystem: {e}")  
             return
         return

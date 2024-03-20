@@ -3,6 +3,7 @@ from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignor
 from auxiliary.components import TagActionComponent
 #from auxiliary.actor_action import ActorAction
 from auxiliary.extended_context import ExtendedContext
+from loguru import logger # type: ignore
 
 
 class TagActionSystem(ReactiveProcessor):
@@ -18,7 +19,7 @@ class TagActionSystem(ReactiveProcessor):
         return entity.has(TagActionComponent)
 
     def react(self, entities: list[Entity]) -> None:
-        print("<<<<<<<<<<<<<  TagActionSystem  >>>>>>>>>>>>>>>>>")
+        logger.debug("<<<<<<<<<<<<<  TagActionSystem  >>>>>>>>>>>>>>>>>")
         #必须移除！！！！！
         for entity in entities:
             entity.remove(TagActionComponent)    

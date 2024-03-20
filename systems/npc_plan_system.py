@@ -15,6 +15,7 @@ from auxiliary.components import (NPCComponent,
 from auxiliary.actor_action import ActorPlan
 from auxiliary.prompt_maker import npc_plan_prompt
 from auxiliary.extended_context import ExtendedContext
+from loguru import logger   #type: ignore
 
 class NPCPlanSystem(ExecuteProcessor):
     """
@@ -42,12 +43,12 @@ class NPCPlanSystem(ExecuteProcessor):
         """
         Executes the NPC plan system.
         """
-        print("<<<<<<<<<<<<<  NPCPlanSystem  >>>>>>>>>>>>>>>>>")
+        logger.debug("<<<<<<<<<<<<<  NPCPlanSystem  >>>>>>>>>>>>>>>>>")
         entities = self.context.get_group(Matcher(NPCComponent)).entities
         for entity in entities:
             if entity.has(HumanInterferenceComponent):
                 entity.remove(HumanInterferenceComponent)
-                print(f"{entity.get(NPCComponent).name}本轮行为计划被人类接管。\n")
+                logger.info(f"{entity.get(NPCComponent).name}本轮行为计划被人类接管。\n")
                 continue
 
             #开始处理NPC的行为计划
@@ -86,7 +87,6 @@ class NPCPlanSystem(ExecuteProcessor):
                             entity.add(TagActionComponent, action)
                     
                     case "RememberActionComponent":
-                        #print(f"RememberActionComponent: {action.values}")
                         pass
 
                     case "MindVoiceActionComponent":
@@ -105,10 +105,10 @@ class NPCPlanSystem(ExecuteProcessor):
                         if not entity.has(SearchActionComponent):
                             entity.add(SearchActionComponent, action)
                     case _:
-                        print(f" {action.actionname}, Unknown action name")
+                        logger.warning(f" {action.actionname}, Unknown action name")
                         continue
 
         except Exception as e:
-            print(f"NPCPlanSystem: {e}")  
+            logger.exception(f"NPCPlanSystem: {e}")  
             return
         return

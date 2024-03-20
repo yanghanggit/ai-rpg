@@ -8,11 +8,10 @@ from auxiliary.components import (WorldComponent,
                         BackpackComponent,
                         SearchActionComponent)
 from agents.tools.extract_md_content import wirte_content_into_md
-#from auxiliary.actor_agent import ActorAgent
 from auxiliary.actor_action import ActorAction
 from auxiliary.file_system import FileSystem
 from typing import Optional, cast
-from actor_agent import ActorAgent
+from auxiliary.actor_agent import ActorAgent
 
 class ExtendedContext(Context):
 

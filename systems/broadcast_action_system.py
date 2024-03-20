@@ -6,6 +6,7 @@ from auxiliary.extended_context import ExtendedContext
 from agents.tools.print_in_color import Color
 from auxiliary.prompt_maker import broadcast_action_prompt
 from typing import Optional
+from loguru import logger #type: ignore
 
 class BroadcastActionSystem(ReactiveProcessor):
 
@@ -20,7 +21,7 @@ class BroadcastActionSystem(ReactiveProcessor):
         return entity.has(BroadcastActionComponent)
 
     def react(self, entities: list[Entity]) -> None:
-        print("<<<<<<<<<<<<<  BroadcastActionSystem  >>>>>>>>>>>>>>>>>")
+        logger.debug("<<<<<<<<<<<<<  BroadcastActionSystem  >>>>>>>>>>>>>>>>>")
 
         for entity in entities:
             self.handle(entity)  # 核心处理
@@ -32,13 +33,12 @@ class BroadcastActionSystem(ReactiveProcessor):
         broadcastcomp: BroadcastActionComponent = entity.get(BroadcastActionComponent)
         stagecomp: Optional[StageComponent] = self.context.get_stagecomponent_by_uncertain_entity(entity) 
         if stagecomp is None or broadcastcomp is None:
-            print(f"BroadcastActionSystem: stagecomp or broadcastcomp is None!")
+            logger.error(f"BroadcastActionSystem: stagecomp or broadcastcomp is None!")
             return
         action: ActorAction = broadcastcomp.action
         for value in action.values:
-            #broadcast_say = f"{action.name}对{stagecomp.name}里的所有人说:{value}"
             broadcast_say = broadcast_action_prompt(action.name, stagecomp.name, value, self.context)
-            print(f"{Color.HEADER}{broadcast_say}{Color.ENDC}")
+            logger.info(f"{Color.HEADER}{broadcast_say}{Color.ENDC}")
             stagecomp.directorscripts.append(broadcast_say)
             
 

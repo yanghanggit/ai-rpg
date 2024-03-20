@@ -1,6 +1,7 @@
+from typing import Optional
 from entitas import Processors #type: ignore
-from loguru import logger #type: ignore
-import datetime #type: ignore
+from loguru import logger
+import datetime
 import json
 from auxiliary.builder import WorldBuilder
 from auxiliary.console import Console
@@ -15,10 +16,12 @@ from auxiliary.components import (BroadcastActionComponent, SpeakActionComponent
                         UniquePropComponent,
                         BackpackComponent,
                         StageEntryConditionComponent,
-                        StageExitConditionComponent)
+                        StageExitConditionComponent,
+                        WhisperActionComponent)
 from auxiliary.actor_action import ActorAction
 from auxiliary.actor_agent import ActorAgent
 from auxiliary.extended_context import ExtendedContext
+from entitas.entity import Entity
 from systems.init_system import InitSystem
 from systems.stage_plan_system import StagePlanSystem
 from systems.npc_plan_system import NPCPlanSystem
@@ -46,29 +49,18 @@ def create_entities(context: ExtendedContext, worldbuilder: WorldBuilder) -> Non
             return
         ##创建world
         worldagent = ActorAgent(worldbuilder.data['name'], worldbuilder.data['url'], worldbuilder.data['memory'])
-        #worldagent.init(worldbuilder.data['name'], worldbuilder.data['url'], worldbuilder.data['memory'])
         world_entity = context.create_entity() 
         world_entity.add(WorldComponent, worldagent.name, worldagent)
 
         for stage_builder in worldbuilder.stage_builders:    
             if stage_builder.data is None:
+                logger.error("没有StageBuilder数据，请检查game_settings.json配置。")
                 continue 
             #创建stage       
             stage_agent = ActorAgent(stage_builder.data['name'], stage_builder.data['url'], stage_builder.data['memory'])
             stage_entity = context.create_entity()
             stage_entity.add(StageComponent, stage_agent.name, stage_agent, [])
             stage_entity.add(SimpleRPGRoleComponent, stage_agent.name, 100, 100, 1, "")
-
-            if stage_builder.player_builder.data is not None:
-                #创建player
-                player_agent = ActorAgent(stage_builder.player_builder.data['name'], stage_builder.player_builder.data['url'], stage_builder.player_builder.data['memory'])
-                player_entity = context.create_entity()
-                player_entity.add(NPCComponent, player_agent.name, player_agent, stage_agent.name)
-                player_entity.add(SimpleRPGRoleComponent, player_agent.name, 10000, 10000, 10, "")
-                player_entity.add(BackpackComponent, player_agent.name)
-                player_entity.add(PlayerComponent, player_agent.name)
-
-                context.file_system.init_backpack_component(player_entity.get(BackpackComponent))
 
             for npc_builder in stage_builder.npc_builders:
                 if npc_builder.data is None:
@@ -100,11 +92,33 @@ def create_entities(context: ExtendedContext, worldbuilder: WorldBuilder) -> Non
                     continue
                 #创建出口条件
                 stage_entity.add(StageExitConditionComponent, set([exit_condition_builder.data['name']]))
+
+            if stage_builder.player_builders is None:
+                logger.error("没有PlayerBuilders，请检查game_settings.json配置。")
+                return None               
+            
+            for player_builder in stage_builder.player_builders:
+                if player_builder.data is None:
+                    logger.error("没有PlayerBuilder数据，请检查game_settings.json配置。")
+                    continue
+                #创建player
+                player_agent = ActorAgent(player_builder.data['name'], player_builder.data['url'], player_builder.data['memory'])
+                player_entity = context.create_entity()
+                player_entity.add(NPCComponent, player_agent.name, player_agent, stage_agent.name)
+                player_entity.add(SimpleRPGRoleComponent, player_agent.name, 10000, 10000, 10, "")
+                player_entity.add(BackpackComponent, player_agent.name)
+                player_entity.add(PlayerComponent, player_agent.name)
+
+                context.file_system.init_backpack_component(player_entity.get(BackpackComponent))
     
 def set_default_player(context: ExtendedContext, player_name: str = "player") -> None:
-    player_entity = context.getplayer()
-    context.file_system.add_content_into_backpack(player_entity.get(BackpackComponent), ["生锈的铁剑", "破旧的盔甲"])
-    player_entity.replace(PlayerComponent, player_name)
+    player_entity: Optional[Entity] = context.getplayer()
+    if player_entity is not None:
+        player_entity.replace(PlayerComponent, player_name)
+        if player_entity.has(BackpackComponent):
+            player_backpack_comp: BackpackComponent = player_entity.get(BackpackComponent)
+            context.file_system.add_content_into_backpack(player_backpack_comp, "生锈的铁剑")
+            context.file_system.add_content_into_backpack(player_backpack_comp, "破旧的盔甲")
 
 ###############################################################################################################################################
 ###############################################################################################################################################
@@ -277,6 +291,15 @@ def main() -> None:
             debug_speak(context, content)
             logger.debug(f"{'=' * 50}")
 
+        elif "/whisper" in usr_input:
+            if not started:
+                logger.warning("请先/run")
+                continue
+            command = "/whisper"
+            content = console.parse_command(usr_input, command)
+            debug_whisper(context, content)
+            logger.debug(f"{'=' * 50}")
+
     processors.clear_reactive_processors()
     processors.tear_down()
     logger.info("Game Over")
@@ -284,28 +307,28 @@ def main() -> None:
 ###############################################################################################################################################
 def debug_call(context: ExtendedContext, name: str, content: str) -> None:
 
-    entity = context.getnpc(name)
-    if entity is not None:
-        comp: NPCComponent = entity.get(NPCComponent)
-        request = comp.agent.request(content)
-        if request is not None:
-            logger.debug(f"[{comp.name}] /call:", comp.agent.request(content))
+    npc_entity: Optional[Entity] = context.getnpc(name)
+    if npc_entity is not None:
+        npc_comp: NPCComponent = npc_entity.get(NPCComponent)
+        npc_request: Optional[str] = npc_comp.agent.request(content)
+        if npc_request is not None:
+            logger.debug(f"[{npc_comp.name}] /call:", npc_request)
         return
     
-    entity = context.getstage(name)
-    if entity is not None:
-        comp: StageComponent = entity.get(StageComponent)
-        request = comp.agent.request(content)
-        if request is not None:
-            logger.debug(f"[{comp.name}] /call:", comp.agent.request(content))
+    stage_entity: Optional[Entity] = context.getstage(name)
+    if stage_entity is not None:
+        stage_comp: StageComponent = stage_entity.get(StageComponent)
+        stage_request: Optional[str] = stage_comp.agent.request(content)
+        if stage_request is not None:
+            logger.debug(f"[{stage_comp.name}] /call:", stage_request)
         return
     
-    entity = context.getworld()
-    if entity is not None:
-        comp = entity.get(WorldComponent)
-        request = comp.agent.request(content)
+    world_entity: Optional[Entity] = context.getworld()
+    if world_entity is not None:
+        world_comp: WorldComponent = world_entity.get(WorldComponent)
+        request: Optional[str] = world_comp.agent.request(content)
         if request is not None:
-            logger.debug(f"[{comp.name}] /call:", comp.agent.request(content))
+            logger.debug(f"[{world_comp.name}] /call:", world_comp.agent.request(content))
         return           
     
 ###############################################################################################################################################
@@ -361,14 +384,16 @@ def debug_attack(context: ExtendedContext, dest: str) -> None:
         npccomp = playerentity.get(NPCComponent)
         action = ActorAction(npccomp.name, "FightActionComponent", [dest])
         playerentity.add(FightActionComponent, action)
-        playerentity.add(HumanInterferenceComponent, 'Human Interference')
+        if not playerentity.has(HumanInterferenceComponent):
+            playerentity.add(HumanInterferenceComponent, 'Human Interference')
         logger.debug(f"debug_attack: {npccomp.name} add {action}")
         return
     
     elif playerentity.has(StageComponent):
         stagecomp = playerentity.get(StageComponent)
         action = ActorAction(stagecomp.name, "FightActionComponent", [dest])
-        playerentity.add(HumanInterferenceComponent, 'Human Interference')
+        if not playerentity.has(HumanInterferenceComponent):
+            playerentity.add(HumanInterferenceComponent, 'Human Interference')
         playerentity.add(FightActionComponent, action)
         logger.debug(f"debug_attack: {stagecomp.name} add {action}")
         return
@@ -414,7 +439,8 @@ def debug_leave(context: ExtendedContext, stagename: str) -> None:
     npc_comp: NPCComponent = playerentity.get(NPCComponent)
     action = ActorAction(npc_comp.name, "LeaveForActionComponent", [stagename])
     playerentity.add(LeaveForActionComponent, action)
-    playerentity.add(HumanInterferenceComponent, 'Human Interference')
+    if not playerentity.has(HumanInterferenceComponent):
+        playerentity.add(HumanInterferenceComponent, 'Human Interference')
 
     newmemory = f"""{{
         "LeaveForActionComponent": ["{stagename}"]
@@ -450,13 +476,33 @@ def debug_speak(context: ExtendedContext, content: str) -> None:
     npc_comp: NPCComponent = playerentity.get(NPCComponent)
     action = ActorAction(npc_comp.name, "SpeakActionComponent", [content])
     playerentity.add(SpeakActionComponent, action)
-    playerentity.add(HumanInterferenceComponent, 'Human Interference')
+    if not playerentity.has(HumanInterferenceComponent):
+        playerentity.add(HumanInterferenceComponent, 'Human Interference')
 
     newmemory = f"""{{
         "SpeakActionComponent": ["{content}"]
     }}"""
     context.add_agent_memory(playerentity, newmemory)
     logger.debug(f"debug_speak: {npc_comp.name} add {action}")
+
+###############################################################################################################################################
+def debug_whisper(context: ExtendedContext, content: str) -> None:
+    playerentity = context.getplayer()
+    if playerentity is None:
+        logger.warning("debug_whisper: player is None")
+        return
+    
+    npc_comp: NPCComponent = playerentity.get(NPCComponent)
+    action = ActorAction(npc_comp.name, "WhisperActionComponent", [content])
+    playerentity.add(WhisperActionComponent, action)
+    if not playerentity.has(HumanInterferenceComponent):
+        playerentity.add(HumanInterferenceComponent, 'Human Interference')
+
+    newmemory = f"""{{
+        "WhisperActionComponent": ["{content}"]
+    }}"""
+    context.add_agent_memory(playerentity, newmemory)
+    logger.debug(f"debug_whisper: {npc_comp.name} add {action}")
 
 ###############################################################################################################################################
 

@@ -3,7 +3,7 @@ from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignor
 from auxiliary.components import TagActionComponent
 #from auxiliary.actor_action import ActorAction
 from auxiliary.extended_context import ExtendedContext
-from loguru import logger # type: ignore
+from loguru import logger
 
 
 class TagActionSystem(ReactiveProcessor):

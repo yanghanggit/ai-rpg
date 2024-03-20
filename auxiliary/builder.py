@@ -64,7 +64,7 @@ class StageBuilder:
 
     def __init__(self) -> None:
         self.data: Optional[dict[str, Any]] = None
-        self.player_builder: Optional[PlayerBuilder] = None
+        self.player_builders: List[PlayerBuilder] = []
         self.npc_builders: List[NPCBuilder] = []
         self.unique_prop_builders: List[UniquePropBuilder] = []
         self.entry_condition_builders: List[StageEntryConditionsBuilder] = []
@@ -75,10 +75,6 @@ class StageBuilder:
 
     def build(self, json_data: dict[str, Any]) -> None:
         self.data = json_data
-        player = json_data.get("Player")
-        player_builder = PlayerBuilder()
-        player_builder.build(player)
-        self.player_builder = player_builder
 
         npcs = json_data.get("NPCs", [])  # 使用.get安全访问
         for npc in npcs:
@@ -103,6 +99,12 @@ class StageBuilder:
             stage_exit_condition_builder = StageExitConditionsBuilder()
             stage_exit_condition_builder.build(stage_exit_condition)
             self.exit_condition_builders.append(stage_exit_condition_builder)
+
+        players = json_data.get("Player", [])
+        for player in players:
+            player_builder = PlayerBuilder()
+            player_builder.build(player)
+            self.player_builders.append(player_builder)
 
 #
 class WorldBuilder:

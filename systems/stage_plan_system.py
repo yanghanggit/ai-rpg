@@ -11,7 +11,7 @@ from auxiliary.components import (StageComponent,
 from auxiliary.actor_action import ActorPlan
 from auxiliary.prompt_maker import stage_plan_prompt
 from auxiliary.extended_context import ExtendedContext
-from loguru import logger #type: ignore
+from loguru import logger 
       
 class StagePlanSystem(ExecuteProcessor):
     """

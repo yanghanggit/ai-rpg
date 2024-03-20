@@ -1,5 +1,7 @@
-
-from entitas import Entity, Matcher, Context, Group # type: ignore
+from entitas import (Entity, # type: ignore
+                    Matcher, 
+                    Context, 
+                    Group)
 from auxiliary.components import (WorldComponent, 
                         StageComponent, 
                         NPCComponent, 
@@ -7,7 +9,7 @@ from auxiliary.components import (WorldComponent,
                         UniquePropComponent,
                         BackpackComponent,
                         SearchActionComponent)
-from agents.tools.extract_md_content import wirte_content_into_md
+from auxiliary.extract_md_content import wirte_content_into_md
 from auxiliary.actor_action import ActorAction
 from auxiliary.file_system import FileSystem
 from typing import Optional, cast

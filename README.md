@@ -51,6 +51,9 @@ pip install langchain_core langserve fastapi langchain_openai sse_starlette fais
 ### SpeakToNpc
 - /speak @断剑>你是谁？
 
+### WhisperToNpc
+- /whisper @断剑>你喜欢吃什么？
+
 
 ## 严格模式检查
 mypy --strict main.py

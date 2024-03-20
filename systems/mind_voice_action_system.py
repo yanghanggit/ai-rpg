@@ -3,9 +3,9 @@ from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignor
 from auxiliary.components import MindVoiceActionComponent, StageComponent
 from auxiliary.actor_action import ActorAction
 from auxiliary.extended_context import ExtendedContext
-from agents.tools.print_in_color import Color
+from auxiliary.print_in_color import Color
 from typing import Optional
-from loguru import logger # type: ignore
+from loguru import logger
 
 class MindVoiceActionSystem(ReactiveProcessor):
 

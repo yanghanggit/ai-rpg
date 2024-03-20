@@ -2,7 +2,7 @@
 from typing import List, Optional, Union, cast
 from langchain_core.messages import HumanMessage, AIMessage
 from langserve import RemoteRunnable  # type: ignore
-from loguru import logger  # type: ignore
+from loguru import logger
 
 class ActorAgent:
 
@@ -15,7 +15,7 @@ class ActorAgent:
 
     def connect(self)-> None:
         if self.url == "":
-            logger.info(f"connect: {self.name} have no url. 因为是默认玩家。")
+            logger.warning(f"connect: {self.name} have no url. 请确认是默认玩家，否则检查game_settings.json中配置。")
             self.agent = None
         else:
             self.agent = RemoteRunnable(self.url)
@@ -27,7 +27,7 @@ class ActorAgent:
 
     def request(self, prompt: str) -> Optional[str]:
         if self.agent is None:
-            logger.warning(f"request: {self.name} have no agent.")
+            logger.warning(f"request: {self.name} have no agent.请确认是默认玩家，否则检查game_settings.json中配置。")
             return None
         if self.chat_history is None:
             logger.warning(f"request: {self.name} have no chat history.")
@@ -40,9 +40,9 @@ class ActorAgent:
         return response_output
     
     def add_chat_history(self, new_chat: str) -> None:
-        if self.agent is None:
-            logger.warning(f"add_chat_history: {self.name} have no agent.")
-            return
+        # if self.agent is None:
+        #     logger.warning(f"add_chat_history: {self.name} have no agent.")
+        #     return
         self.chat_history.extend([HumanMessage(content = new_chat)])
     
     def __str__(self) -> str:

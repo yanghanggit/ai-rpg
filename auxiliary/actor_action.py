@@ -2,7 +2,7 @@
 from typing import List
 import json
 from typing import Any
-from loguru import logger # type: ignore
+from loguru import logger
 
 
 class ActorAction:

@@ -3,10 +3,11 @@ from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignor
 from auxiliary.components import SpeakActionComponent, NPCComponent, StageComponent
 from auxiliary.actor_action import ActorAction
 from auxiliary.extended_context import ExtendedContext
-from agents.tools.print_in_color import Color
+from auxiliary.print_in_color import Color
 from auxiliary.prompt_maker import speak_action_prompt
 from typing import Optional
-from loguru import logger # type: ignore
+from loguru import logger
+from auxiliary.dialogue_rule import check_speak_enable, parse_taget_and_message
    
 ####################################################################################################
 class SpeakActionSystem(ReactiveProcessor):
@@ -31,45 +32,19 @@ class SpeakActionSystem(ReactiveProcessor):
             entity.remove(SpeakActionComponent)     
 ####################################################################################################
     def handle(self, entity: Entity) -> None:
-        speakcomp = entity.get(SpeakActionComponent)
-        action: ActorAction = speakcomp.action
-        for value in action.values:
-            tp = self.parsespeak(value)
-            target = tp[0]
-            message = tp[1]
+        speak_comp: SpeakActionComponent = entity.get(SpeakActionComponent)
+        speak_action: ActorAction = speak_comp.action
+        for value in speak_action.values:
+            tagret_message_pair = parse_taget_and_message(value)
+            target: str = tagret_message_pair[0]
+            message: str = tagret_message_pair[1]
             ##如果检查不过就能继续
-            if not self.check_speak_enable(entity, target):
+            if not check_speak_enable(self.context, entity, target):
                 continue
             ##拼接说话内容
-            saycontent = speak_action_prompt(action.name, target, message, self.context)
-            logger.info(f"{Color.HEADER}{saycontent}{Color.ENDC}")
+            say_content: str = speak_action_prompt(speak_action.name, target, message, self.context)
+            logger.info(f"{Color.HEADER}{say_content}{Color.ENDC}")
             ##添加场景事件，最后随着导演剧本走
-            stagecomp: Optional[StageComponent] = self.context.get_stagecomponent_by_uncertain_entity(entity)
-            if stagecomp is not None:
-                stagecomp.directorscripts.append(saycontent)
-####################################################################################################
-    def check_speak_enable(self, src: Entity, dstname: str) -> bool:
+            self.context.add_content_to_director_script_by_entity(entity, say_content)
 
-        npc_entity: Optional[Entity] = self.context.getnpc(dstname)
-        if npc_entity is None:
-            logger.warning(f"No NPC named {dstname} found")
-            return False
-
-        current_stage_comp: Optional[StageComponent] = self.context.get_stagecomponent_by_uncertain_entity(src)  
-        if current_stage_comp is None:
-            logger.warning(f"StageComponent not found for {src}")
-            return False  
-        
-        npccomp: NPCComponent = npc_entity.get(NPCComponent)
-        if current_stage_comp.name != npccomp.current_stage:
-            logger.warning(f"{src} is not in {npccomp.current_stage}, {current_stage_comp.name}")
-            return False
-        
-        return True
-####################################################################################################
-    def parsespeak(self, content: str) -> tuple[str, str]:
-        # 解析出说话者和说话内容
-        target, message = content.split(">")
-        target = target[1:]  # Remove the '@' symbol
-        return target, message
        

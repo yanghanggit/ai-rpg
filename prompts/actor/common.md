@@ -34,7 +34,7 @@
 - 恢复记忆：表明你执行的是"恢复记忆"，将XXXComponent设置为"RememberActionComponent"，["value？", "value？", ...]为[ " 确认恢复记忆 "]。
 - 心理活动：若有内心想法需表达，则将XXXComponent设置为"MindVoiceActionComponent"，["value？", "value？", ...]为你的全部想以'第1人称'输出你的心里活动与内心独白。
 - 场景广播：若有话语，需向场景内所有的人说。则将XXXComponent设置为"BroadcastActionComponent"，["value？", "value？", ...]为你的全部想以'第1人称'输出你的的话。
-- 低语：若有话语你需要对特定角色说同时不希望被其他人听到。则将XXXComponent设置为"WhisperActionComponent"，["value？", "value？", ...] 只能是这种形式：["目标对象", "说话内容"]，也就是说只有2个元素，"目标对象"必须是你场景内的人物。
+- 低语：若有话语你需要对特定角色说(且不希望被其他人听到)，则将XXXComponent设置为"WhisperActionComponent"，["value？", "value？", ...]为你的全部行动结果。 注意！每一个value的格式如下："@目标名字>对话内容"。其中"目标名字"是你要对话的角色（必须在本个场景里），对话内容就是内容。例子：比如你需要对A说“hello world”，输出结果为["@A>hello world"]。
 - 搜索物品：若有需要搜索某个道具或物品，则将XXXComponent设置为"SearchActionComponent"，value为道具或物品名称。
 
 

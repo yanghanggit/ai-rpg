@@ -8,7 +8,7 @@ from auxiliary.components import (DeadActionComponent,
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.actor_agent import ActorAgent
 from auxiliary.prompt_maker import gen_npc_archive_prompt, npc_memory_before_death
-from loguru import logger #type: ignore
+from loguru import logger
 
 
 class DeadActionSystem(ExecuteProcessor):
@@ -50,7 +50,8 @@ class DeadActionSystem(ExecuteProcessor):
             # 推理死亡，并且进行存档
             archive_prompt = gen_npc_archive_prompt(self.context)
             archive = npc_agent.request(archive_prompt)
-            self.context.savearchive(archive, npc_agent.name)
+            if archive is not None:
+                self.context.savearchive(archive, npc_agent.name)
 
         
              

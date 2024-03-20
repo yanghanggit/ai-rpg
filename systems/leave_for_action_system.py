@@ -26,9 +26,9 @@ from auxiliary.components import (LeaveForActionComponent,
                         StageExitConditionComponent)
 from auxiliary.actor_action import ActorAction
 from auxiliary.extended_context import ExtendedContext
-from agents.tools.print_in_color import Color
+from auxiliary.print_in_color import Color
 from auxiliary.prompt_maker import fail_to_enter_stage, fail_to_exit_stage, npc_enter_stage, npc_leave_for_stage
-from loguru import logger # type: ignore
+from loguru import logger
 
 class NpcBackpackComponentHandle:
     """
@@ -225,6 +225,9 @@ class LeaveForActionSystem(ReactiveProcessor):
 
     ###############################################################################################################################################
     def check_current_stage_meets_conditions_for_leaving(self, handle: LeaveHandle) -> bool:
+        if handle.current_stage is None:
+            logger.warning(f"{Color.WARNING}handle.current_stage is None，请检查配置。{Color.ENDC}")
+            return False
         # 先检查当前场景的离开条件
         if not handle.current_stage.has(StageExitConditionComponent):
             # 如果没有离开条件，直接返回True
@@ -241,7 +244,11 @@ class LeaveForActionSystem(ReactiveProcessor):
         return True
     ###############################################################################################################################################
     def check_conditions_for_entering_target_stage(self, handle: LeaveHandle) -> bool:
-        if not  handle.target_stage.has(StageEntryConditionComponent):
+        if handle.target_stage is None:
+            logger.warning(f"{Color.WARNING}handle.target_stage is None，请检查配置。{Color.ENDC}")
+            return False
+        
+        if not handle.target_stage.has(StageEntryConditionComponent):
             return True
         
         entry_condition_comp: StageEntryConditionComponent = handle.target_stage.get(StageEntryConditionComponent)

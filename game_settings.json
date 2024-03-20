@@ -45,11 +45,13 @@
           "name": "悠扬林谷",
           "url": "http://localhost:8024/stage/melodious_forest_valley/",
           "memory": "/savedData/悠扬林谷.md",
-          "Player": {  
+          "Player": [
+            {  
             "name": "无名旅人",
             "url": "",
             "memory": "/savedData/无名旅人.md"
-          },
+            }
+          ],
           "NPCs": [
             {
               "name": "无影",

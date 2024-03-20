@@ -2,7 +2,7 @@
 from entitas import Matcher, ExecuteProcessor, Group, Entity #type: ignore
 from auxiliary.components import DestroyComponent
 from auxiliary.extended_context import ExtendedContext
-from loguru import logger #type: ignore
+from loguru import logger
    
 class DestroySystem(ExecuteProcessor):
     

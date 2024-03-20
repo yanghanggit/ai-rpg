@@ -4,7 +4,7 @@ from auxiliary.components import StageComponent, NPCComponent
 from typing import List
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.prompt_maker import confirm_everything_after_director_add_new_memories_prompt
-from loguru import logger #type: ignore
+from loguru import logger
 
 class DirectorSystem(ExecuteProcessor):
     """

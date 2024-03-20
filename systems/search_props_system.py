@@ -7,9 +7,9 @@ from auxiliary.components import (SearchActionComponent,
                         DestroyComponent)
 from auxiliary.actor_action import ActorAction
 from auxiliary.prompt_maker import unique_prop_taken_away
-from agents.tools.print_in_color import Color
+from auxiliary.print_in_color import Color
 from typing import Optional
-from loguru import logger #type: ignore
+from loguru import logger
 
 class SearchPropsSystem(ReactiveProcessor):
 

@@ -1,5 +1,5 @@
 import os
-from loguru import logger #type: ignore
+from loguru import logger
 
 def extract_md_content(file_path: str) -> str:
     """提取md内容。文件路径示例: /xxx/xxx.md"""

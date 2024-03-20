@@ -6,7 +6,7 @@ from auxiliary.actor_action import ActorAction
 from auxiliary.actor_agent import ActorAgent
 from auxiliary.prompt_maker import kill_someone, attack_someone
 from typing import Optional
-from loguru import logger #type: ignore
+from loguru import logger
 
 class FightActionSystem(ReactiveProcessor):
 

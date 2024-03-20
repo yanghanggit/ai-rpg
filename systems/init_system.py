@@ -1,11 +1,11 @@
 
 from entitas import Entity, Matcher, Context, InitializeProcessor # type: ignore
 from auxiliary.components import WorldComponent, StageComponent, NPCComponent, PlayerComponent
-from agents.tools.extract_md_content import extract_md_content
+from auxiliary.extract_md_content import extract_md_content
 from auxiliary.actor_agent import ActorAgent
 from auxiliary.prompt_maker import read_archives_when_system_init_prompt
 from auxiliary.extended_context import ExtendedContext
-from loguru import logger # type: ignore
+from loguru import logger
 
 
 ###############################################################################################################################################

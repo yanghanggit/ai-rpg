@@ -16,7 +16,7 @@ from auxiliary.components import (NPCComponent,
 from auxiliary.actor_action import ActorPlan
 from auxiliary.prompt_maker import npc_plan_prompt
 from auxiliary.extended_context import ExtendedContext
-from loguru import logger   #type: ignore
+from loguru import logger
 
 class NPCPlanSystem(ExecuteProcessor):
     """

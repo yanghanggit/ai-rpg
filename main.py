@@ -59,6 +59,17 @@ def create_entities(context: ExtendedContext, worldbuilder: WorldBuilder) -> Non
             stage_entity.add(StageComponent, stage_agent.name, stage_agent, [])
             stage_entity.add(SimpleRPGRoleComponent, stage_agent.name, 100, 100, 1, "")
 
+            if stage_builder.player_builder.data is not None:
+                #创建player
+                player_agent = ActorAgent(stage_builder.player_builder.data['name'], stage_builder.player_builder.data['url'], stage_builder.player_builder.data['memory'])
+                player_entity = context.create_entity()
+                player_entity.add(NPCComponent, player_agent.name, player_agent, stage_agent.name)
+                player_entity.add(SimpleRPGRoleComponent, player_agent.name, 10000, 10000, 10, "")
+                player_entity.add(BackpackComponent, player_agent.name)
+                player_entity.add(PlayerComponent, player_agent.name)
+
+                context.file_system.init_backpack_component(player_entity.get(BackpackComponent))
+
             for npc_builder in stage_builder.npc_builders:
                 if npc_builder.data is None:
                     continue
@@ -89,6 +100,11 @@ def create_entities(context: ExtendedContext, worldbuilder: WorldBuilder) -> Non
                     continue
                 #创建出口条件
                 stage_entity.add(StageExitConditionComponent, set([exit_condition_builder.data['name']]))
+    
+def set_default_player(context: ExtendedContext, player_name: str = "player") -> None:
+    player_entity = context.getplayer()
+    context.file_system.add_content_into_backpack(player_entity.get(BackpackComponent), ["生锈的铁剑", "破旧的盔甲"])
+    player_entity.replace(PlayerComponent, player_name)
 
 ###############################################################################################################################################
 ###############################################################################################################################################
@@ -115,6 +131,9 @@ def main() -> None:
 
             #创建所有entities
             create_entities(context, world_builder)
+            #设置默认player
+            set_default_player(context)
+
 
     except Exception as e:
         logger.exception(e)
@@ -267,20 +286,26 @@ def debug_call(context: ExtendedContext, name: str, content: str) -> None:
 
     entity = context.getnpc(name)
     if entity is not None:
-        comp = entity.get(NPCComponent)
-        logger.debug(f"[{comp.name}] /call:", comp.agent.request(content))
+        comp: NPCComponent = entity.get(NPCComponent)
+        request = comp.agent.request(content)
+        if request is not None:
+            logger.debug(f"[{comp.name}] /call:", comp.agent.request(content))
         return
     
     entity = context.getstage(name)
     if entity is not None:
-        comp = entity.get(StageComponent)
-        logger.debug(f"[{comp.name}] /call:", comp.agent.request(content))
+        comp: StageComponent = entity.get(StageComponent)
+        request = comp.agent.request(content)
+        if request is not None:
+            logger.debug(f"[{comp.name}] /call:", comp.agent.request(content))
         return
     
     entity = context.getworld()
     if entity is not None:
         comp = entity.get(WorldComponent)
-        logger.debug(f"[{comp.name}] /call:", comp.agent.request(content))
+        request = comp.agent.request(content)
+        if request is not None:
+            logger.debug(f"[{comp.name}] /call:", comp.agent.request(content))
         return           
     
 ###############################################################################################################################################

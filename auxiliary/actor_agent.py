@@ -1,5 +1,5 @@
 
-from typing import List, Union, cast
+from typing import List, Optional, Union, cast
 from langchain_core.messages import HumanMessage, AIMessage
 from langserve import RemoteRunnable  # type: ignore
 from loguru import logger  # type: ignore
@@ -14,15 +14,23 @@ class ActorAgent:
         self.chat_history: List[Union[HumanMessage, AIMessage]] = []
 
     def connect(self)-> None:
-        self.agent = RemoteRunnable(self.url)
+        if self.url == "":
+            logger.info(f"connect: {self.name} have no url. 因为是默认玩家。")
+            self.agent = None
+        else:
+            self.agent = RemoteRunnable(self.url)
         self.chat_history = []
 
-    def request(self, prompt: str) -> str:
+        if self.memory == "":
+            self.memory = "/savedData/basic_archive.md"
+            logger.warning(f"{self.name}未找到专属存档，载入默认存档")
+
+    def request(self, prompt: str) -> Optional[str]:
         if self.agent is None:
-            logger.error(f"request: {self.name} have no agent.")
-            return ""
+            logger.warning(f"request: {self.name} have no agent.")
+            return None
         if self.chat_history is None:
-            logger.error(f"request: {self.name} have no chat history.")
+            logger.warning(f"request: {self.name} have no chat history.")
             return ""
         response = self.agent.invoke({"input": prompt, "chat_history": self.chat_history})
         response_output = cast(str, response.get('output', ''))
@@ -33,7 +41,7 @@ class ActorAgent:
     
     def add_chat_history(self, new_chat: str) -> None:
         if self.agent is None:
-            logger.error(f"add_chat_history: {self.name} have no agent.")
+            logger.warning(f"add_chat_history: {self.name} have no agent.")
             return
         self.chat_history.extend([HumanMessage(content = new_chat)])
     

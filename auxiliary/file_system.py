@@ -10,8 +10,8 @@ class FileSystem:
     def get_backpack_contents(self, comp: BackpackComponent) -> set[str]:
         return self.backpack.get(comp.owner_name, set())
 
-    def add_content_into_backpack(self, comp: BackpackComponent, item: str) -> None:
-        self.backpack.setdefault(comp.owner_name, set()).add(item)
+    def add_content_into_backpack(self, comp: BackpackComponent, item: list[str]) -> None:
+        self.backpack.setdefault(comp.owner_name, set()).update(item)
 
     def remove_from_backpack(self, comp: BackpackComponent, item: str) -> None:
         self.backpack.get(comp.owner_name, set()).remove(item)

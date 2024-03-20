@@ -56,6 +56,8 @@ class StagePlanSystem(ExecuteProcessor):
         ##
         try:
             response = comp.agent.request(prompt)
+            if response is None:
+                return None
             actorplan = ActorPlan(comp.name, response)
             for action in actorplan.actions:
                 match action.actionname:

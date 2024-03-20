@@ -11,7 +11,8 @@ from auxiliary.components import (NPCComponent,
                         BroadcastActionComponent, 
                         WhisperActionComponent,
                         HumanInterferenceComponent, 
-                        SearchActionComponent)
+                        SearchActionComponent,
+                        PlayerComponent)
 from auxiliary.actor_action import ActorPlan
 from auxiliary.prompt_maker import npc_plan_prompt
 from auxiliary.extended_context import ExtendedContext
@@ -50,6 +51,9 @@ class NPCPlanSystem(ExecuteProcessor):
                 entity.remove(HumanInterferenceComponent)
                 logger.info(f"{entity.get(NPCComponent).name}本轮行为计划被人类接管。\n")
                 continue
+            if entity.has(PlayerComponent):
+                logger.info(f"{entity.get(NPCComponent).name}正在被玩家控制，不执行自动计划。\n")
+                continue
 
             #开始处理NPC的行为计划
             self.handle(entity)
@@ -65,6 +69,9 @@ class NPCPlanSystem(ExecuteProcessor):
         comp = entity.get(NPCComponent)
         try:
             response = comp.agent.request(prompt)
+            if response is None:
+                logger.warning("Agent request is None.如果不是默认Player可能需要检查配置。")
+                return
             actorplan = ActorPlan(comp.name, response)
             for action in actorplan.actions:
                 if len(action.values) == 0:

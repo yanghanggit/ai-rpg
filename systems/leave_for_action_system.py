@@ -174,26 +174,34 @@ class LeaveForActionSystem(ReactiveProcessor):
                 print(f"{entity.get(NPCComponent).name}想要去往的场景是当前的场景{handle.current_stage_name}: {stagename} 不用往下进行了")
                 continue
 
+            if not self.check_current_stage_meets_conditions_for_leaving(handle):
+                print(f"{entity.get(NPCComponent).name}当前场景{handle.current_stage_name}不满足离开条件，不能离开")
+                continue
+
+            if not self.check_conditions_for_entering_target_stage(handle):
+                print(f"{entity.get(NPCComponent).name}目标场景{handle.target_stage_name}不满足进入条件，不能进入")
+                continue
+
             # 判断当前场景的离开条件和目标场景的进入条件
-            if handle.current_stage.has(StageExitConditionComponent) or handle.target_stage.has(StageEntryConditionComponent):
-                # 先检查当前场景的离开条件
-                if handle.current_stage.has(StageExitConditionComponent):
-                    exit_condition_comp: StageExitConditionComponent = handle.current_stage.get(StageExitConditionComponent)
-                    for condition in exit_condition_comp.conditions:
-                        if condition not in self.context.file_system.get_backpack_contents(entity.get(BackpackComponent)):
-                            print(f"{Color.WARNING}{entity.get(NPCComponent).name}背包中没有{condition}，不能离开{handle.current_stage_name}.{Color.ENDC}")
-                            self.context.add_content_to_director_script_by_entity(entity, fail_to_exit_stage(entity.get(NPCComponent).name, handle.current_stage_name, condition))
-                            return
-                # 再检查目标场景的进入条件  
-                if handle.target_stage.has(StageEntryConditionComponent):
-                    entry_condition_comp: StageEntryConditionComponent = handle.target_stage.get(StageEntryConditionComponent)
-                    for condition in entry_condition_comp.conditions:
-                        if condition not in self.context.file_system.get_backpack_contents(entity.get(BackpackComponent)):
-                            print(f"{Color.WARNING}{entity.get(NPCComponent).name}背包中没有{condition}，不能进入{handle.target_stage_name}.{Color.ENDC}")
-                            self.context.add_content_to_director_script_by_entity(entity, fail_to_enter_stage(entity.get(NPCComponent).name, handle.target_stage_name, condition))
-                            return
+            # if handle.current_stage.has(StageExitConditionComponent) or handle.target_stage.has(StageEntryConditionComponent):
+            #     # 先检查当前场景的离开条件
+            #     if handle.current_stage.has(StageExitConditionComponent):
+            #         exit_condition_comp: StageExitConditionComponent = handle.current_stage.get(StageExitConditionComponent)
+            #         for condition in exit_condition_comp.conditions:
+            #             if condition not in self.context.file_system.get_backpack_contents(entity.get(BackpackComponent)):
+            #                 print(f"{Color.WARNING}{entity.get(NPCComponent).name}背包中没有{condition}，不能离开{handle.current_stage_name}.{Color.ENDC}")
+            #                 self.context.add_content_to_director_script_by_entity(entity, fail_to_exit_stage(entity.get(NPCComponent).name, handle.current_stage_name, condition))
+            #                 return
+            #     # 再检查目标场景的进入条件  
+            #     if handle.target_stage.has(StageEntryConditionComponent):
+            #         entry_condition_comp: StageEntryConditionComponent = handle.target_stage.get(StageEntryConditionComponent)
+            #         for condition in entry_condition_comp.conditions:
+            #             if condition not in self.context.file_system.get_backpack_contents(entity.get(BackpackComponent)):
+            #                 print(f"{Color.WARNING}{entity.get(NPCComponent).name}背包中没有{condition}，不能进入{handle.target_stage_name}.{Color.ENDC}")
+            #                 self.context.add_content_to_director_script_by_entity(entity, fail_to_enter_stage(entity.get(NPCComponent).name, handle.target_stage_name, condition))
+            #                 return
             
-            ##如果当前有场景就要离开
+            ##开始行动了，到了这里就不能终止，前面都是检查。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。。
             if handle.current_stage is not None:
                 self.leave_stage(handle)
             else:
@@ -259,3 +267,31 @@ class LeaveForActionSystem(ReactiveProcessor):
         self.context.add_content_to_director_script_by_entity(current_stage, npc_leave_for_stage(npccomp.name, handle.current_stage_name, handle.target_stage_name))
 
     ###############################################################################################################################################
+    def check_current_stage_meets_conditions_for_leaving(self, handle: LeaveHandle) -> bool:
+        # 先检查当前场景的离开条件
+        if not handle.current_stage.has(StageExitConditionComponent):
+            # 如果没有离开条件，直接返回True
+            return True
+        
+        #有检查条件
+        exit_condition_comp: StageExitConditionComponent = handle.current_stage.get(StageExitConditionComponent)
+        for condition in exit_condition_comp.conditions:
+            if condition not in self.context.file_system.get_backpack_contents(handle.who_wana_leave.get(BackpackComponent)):
+                print(f"{Color.WARNING}{handle.who_wana_leave.get(NPCComponent).name}背包中没有{condition}，不能离开{handle.current_stage_name}.{Color.ENDC}")
+                self.context.add_content_to_director_script_by_entity(handle.who_wana_leave, fail_to_exit_stage(handle.who_wana_leave.get(NPCComponent).name, handle.current_stage_name, condition))
+                #如果不满足就失败
+                return False
+        return True
+    ###############################################################################################################################################
+    def check_conditions_for_entering_target_stage(self, handle: LeaveHandle) -> bool:
+        if not  handle.target_stage.has(StageEntryConditionComponent):
+            return True
+        
+        entry_condition_comp: StageEntryConditionComponent = handle.target_stage.get(StageEntryConditionComponent)
+        for condition in entry_condition_comp.conditions:
+            if condition not in self.context.file_system.get_backpack_contents(handle.who_wana_leave.get(BackpackComponent)):
+                print(f"{Color.WARNING}{handle.who_wana_leave.get(NPCComponent).name}背包中没有{condition}，不能进入{handle.target_stage_name}.{Color.ENDC}")
+                self.context.add_content_to_director_script_by_entity(handle.who_wana_leave, fail_to_enter_stage(handle.who_wana_leave.get(NPCComponent).name, handle.target_stage_name, condition))
+                return False
+        return True
+

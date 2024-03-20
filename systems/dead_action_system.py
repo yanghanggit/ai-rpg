@@ -2,7 +2,7 @@
 from entitas import Matcher, ExecuteProcessor, Entity #type: ignore
 from auxiliary.components import (DeadActionComponent, 
                         LeaveForActionComponent, 
-                        TagActionComponent, 
+                        SearchActionComponent, 
                         DestroyComponent,
                         NPCComponent)
 from auxiliary.extended_context import ExtendedContext
@@ -26,12 +26,16 @@ class DeadActionSystem(ExecuteProcessor):
 
         #核心处理，如果死了就要处理下面的组件
         for entity in entities:
+
+            #死了的不允许再搜索
+            if entity.has(SearchActionComponent):
+                entity.remove(SearchActionComponent)
+
+            #死了的不允许再离开
             if entity.has(LeaveForActionComponent):
                 entity.remove(LeaveForActionComponent)
              
-            if entity.has(TagActionComponent):
-                entity.remove(TagActionComponent)
-            
+            #死了的需要准备销毁
             if not entity.has(DestroyComponent):
                 entity.add(DestroyComponent, "from DeadActionSystem")
 

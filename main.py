@@ -85,17 +85,23 @@ def create_entities(context: ExtendedContext, worldbuilder: WorldBuilder) -> Non
                 prop_entity = context.create_entity()
                 prop_entity.add(UniquePropComponent, unique_prop_builder.data['name'])
             
-            for entry_condition_builder in stage_builder.entry_condition_builders:
-                if entry_condition_builder.data is None:
-                    continue
-                #创建入口条件
-                stage_entity.add(StageEntryConditionComponent, set([entry_condition_builder.data['name']]))
-            
+            enter_condition_set = set()
+            for enter_condition_builder in stage_builder.entry_condition_builders:
+                if enter_condition_builder.data is not None:
+                    enter_condition_set.add(enter_condition_builder.data['name'])
+                    
+            if len(enter_condition_set) > 0:
+                stage_entity.add(StageEntryConditionComponent, enter_condition_set)
+                logger.debug(f"{stage_agent.name}的入口条件为：{enter_condition_set}")
+
+            exit_condition_set = set()
             for exit_condition_builder in stage_builder.exit_condition_builders:
-                if exit_condition_builder.data is None:
-                    continue
-                #创建出口条件
-                stage_entity.add(StageExitConditionComponent, set([exit_condition_builder.data['name']]))
+                if exit_condition_builder.data is not None:
+                    exit_condition_set.add(exit_condition_builder.data['name'])
+
+            if len(exit_condition_set) > 0:
+                stage_entity.add(StageExitConditionComponent, exit_condition_set)
+                logger.debug(f"{stage_agent.name}的出口条件为：{exit_condition_set}")
 
             if stage_builder.player_builders is None:
                 logger.error("没有PlayerBuilders，请检查game_settings.json配置。")
@@ -124,6 +130,11 @@ def set_default_player(context: ExtendedContext, player_name: str = "player") ->
             context.file_system.add_content_into_backpack(player_backpack_comp, "生锈的铁剑")
             context.file_system.add_content_into_backpack(player_backpack_comp, "破旧的盔甲")
 
+def init_NPCs_settings(context: ExtendedContext) -> None:
+    npc_entity: Optional[Entity] = context.get_entity_by_name("坏运气先生")
+    if npc_entity is not None:
+        context.file_system.add_content_into_backpack(npc_entity.get(BackpackComponent), "老鼠洞的位置")
+
 ###############################################################################################################################################
 ###############################################################################################################################################
 ###############################################################################################################################################
@@ -150,6 +161,8 @@ def main() -> None:
             create_entities(context, world_builder)
             #设置默认player
             set_default_player(context)
+            #初始化npc的背包
+            init_NPCs_settings(context)
 
 
     except Exception as e:

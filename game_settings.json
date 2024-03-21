@@ -27,12 +27,18 @@
           ],
           "EntryConditions":[
             {
-            "name": "小木屋的钥匙"
+              "name": "小木屋的钥匙"
+            },
+            {
+              "name": "老鼠洞的位置"
             }
           ],
           "ExitConditions":[
             {
               "name": "古老的地图"
+            },
+            {
+              "name": "老鼠洞的位置"
             }
           ],
           "UniqueProps": [
@@ -52,9 +58,9 @@
             "memory": "/savedData/无名旅人.md"
             }
           ],
-          "EntryConditions":[
+          "ExitConditions":[
             {
-              "name":"古老的地图"
+              "name":"小木屋的钥匙"
             }
           ],
           "UniqueProps": [
@@ -67,6 +73,13 @@
           "name": "地下城",
           "url": "http://localhost:8027/stage/underground_city/",
           "memory": "/savedData/地下城.md",
+          "NPCs":[
+            {
+              "name" : "暗影巨龙",
+              "url": "http://localhost:8028/actor/npc/shadow_dragon/",
+              "memory": "/savedData/暗影巨龙.md"
+            }
+          ],
           "EntryConditions":[
             {
               "name":"古老的地图"

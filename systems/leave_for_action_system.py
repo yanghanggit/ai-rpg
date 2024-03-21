@@ -235,13 +235,17 @@ class LeaveForActionSystem(ReactiveProcessor):
         
         #有检查条件
         exit_condition_comp: StageExitConditionComponent = handle.current_stage.get(StageExitConditionComponent)
+        search_list: str = ""
         for condition in exit_condition_comp.conditions:
-            if condition not in self.context.file_system.get_backpack_contents(handle.who_wana_leave.get(BackpackComponent)):
-                logger.info(f"{Color.WARNING}{handle.who_wana_leave.get(NPCComponent).name}背包中没有{condition}，不能离开{handle.current_stage_name}.{Color.ENDC}")
-                self.context.add_content_to_director_script_by_entity(handle.who_wana_leave, fail_to_exit_stage(handle.who_wana_leave.get(NPCComponent).name, handle.current_stage_name, condition))
-                #如果不满足就失败
-                return False
-        return True
+            if condition in self.context.file_system.get_backpack_contents(handle.who_wana_leave.get(BackpackComponent)):
+                #如果满足就放行
+                return True
+            else:
+                search_list += f"'{condition}' "
+
+        logger.info(f"{Color.WARNING}{handle.who_wana_leave.get(NPCComponent).name}背包中没有{search_list}，不能离开{handle.current_stage_name}.{Color.ENDC}")
+        self.context.add_content_to_director_script_by_entity(handle.who_wana_leave, fail_to_exit_stage(handle.who_wana_leave.get(NPCComponent).name, handle.current_stage_name, search_list))
+        return False
     ###############################################################################################################################################
     def check_conditions_for_entering_target_stage(self, handle: LeaveHandle) -> bool:
         if handle.target_stage is None:
@@ -252,10 +256,14 @@ class LeaveForActionSystem(ReactiveProcessor):
             return True
         
         entry_condition_comp: StageEntryConditionComponent = handle.target_stage.get(StageEntryConditionComponent)
+        search_list: str = ""
         for condition in entry_condition_comp.conditions:
-            if condition not in self.context.file_system.get_backpack_contents(handle.who_wana_leave.get(BackpackComponent)):
-                logger.info(f"{Color.WARNING}{handle.who_wana_leave.get(NPCComponent).name}背包中没有{condition}，不能进入{handle.target_stage_name}.{Color.ENDC}")
-                self.context.add_content_to_director_script_by_entity(handle.who_wana_leave, fail_to_enter_stage(handle.who_wana_leave.get(NPCComponent).name, handle.target_stage_name, condition))
-                return False
-        return True
+            if condition in self.context.file_system.get_backpack_contents(handle.who_wana_leave.get(BackpackComponent)):
+                return True
+            else:
+                search_list += f"'{condition}' "
+        
+        logger.info(f"{Color.WARNING}{handle.who_wana_leave.get(NPCComponent).name}背包中没有{search_list}，不能进入{handle.target_stage_name}.{Color.ENDC}")
+        self.context.add_content_to_director_script_by_entity(handle.who_wana_leave, fail_to_enter_stage(handle.who_wana_leave.get(NPCComponent).name, handle.target_stage_name, search_list))
+        return False
 

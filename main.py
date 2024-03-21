@@ -1,10 +1,9 @@
-from typing import Optional
+from typing import List, Optional, Union
 from entitas import Processors #type: ignore
 from loguru import logger
 import datetime
 import json
 from auxiliary.builder import WorldBuilder
-from auxiliary.console import Console
 from auxiliary.components import (
     BroadcastActionComponent, 
     SpeakActionComponent, 
@@ -25,6 +24,7 @@ from auxiliary.components import (
 from auxiliary.actor_action import ActorAction
 from auxiliary.actor_agent import ActorAgent
 from auxiliary.extended_context import ExtendedContext
+from auxiliary.dialogue_rule import parse_command, parse_target_and_message_by_symbol
 from entitas.entity import Entity
 from systems.init_system import InitSystem
 from systems.stage_plan_system import StagePlanSystem
@@ -135,7 +135,6 @@ def main() -> None:
 
     context = ExtendedContext()
     processors = Processors()
-    console = Console("测试后台管理")
     path: str = "./game_settings.json"
     playername = "yanghang"
 
@@ -203,15 +202,26 @@ def main() -> None:
             started = True
             logger.debug("==============================================")
 
-        elif "/call" in usr_input:
+        elif "/push" in usr_input:
+            # if not started:
+            #     logger.warning("请先/run")
+            #     continue
+            command = "/push"
+            input_content = parse_command(usr_input, command) 
+            push_command_parse_res: tuple[str, str] = parse_target_and_message_by_symbol(input_content)
+            logger.debug(f"</force push command to {push_command_parse_res[0]}>:", input_content)
+            debug_push(context, push_command_parse_res[0], push_command_parse_res[1])
+            logger.debug(f"{'=' * 50}")
+
+        elif "/ask" in usr_input:
             if not started:
                 logger.warning("请先/run")
                 continue
-            command = "/call"
-            input_content = console.parse_command(usr_input, command) 
-            logger.debug(f"</call>:", input_content)
-            parse_res: tuple[str, str] = console.parse_at_symbol(input_content)
-            debug_call(context, parse_res[0], parse_res[1])
+            command = "/ask"
+            input_content = parse_command(usr_input, command)
+            ask_command_parse_res: tuple[str, str] = parse_target_and_message_by_symbol(input_content)
+            logger.debug(f"</ask command to {ask_command_parse_res[0]}>:", input_content)
+            debug_ask(context, ask_command_parse_res[0], ask_command_parse_res[1])
             logger.debug(f"{'=' * 50}")
 
         elif "/showstages" in usr_input:
@@ -219,7 +229,7 @@ def main() -> None:
                 logger.warning("请先/run")
                 continue
             command = "/showstages"
-            who = console.parse_command(usr_input, command)
+            who = parse_command(usr_input, command)
             log = context.show_stages_log()
             logger.debug(f"/showstages: \n{log}")
             logger.debug(f"{'=' * 50}")
@@ -229,7 +239,7 @@ def main() -> None:
                 logger.warning("请先/run")
                 continue
             command = "/who"
-            who = console.parse_command(usr_input, command)
+            who = parse_command(usr_input, command)
             debug_be_who(context, who, playername)
             logger.debug(f"{'=' * 50}")
            
@@ -238,7 +248,7 @@ def main() -> None:
                 logger.warning("请先/run")
                 continue
             command = "/attack"
-            target_name = console.parse_command(usr_input, command)    
+            target_name = parse_command(usr_input, command)    
             debug_attack(context, target_name)
             logger.debug(f"{'=' * 50}")
         
@@ -247,7 +257,7 @@ def main() -> None:
                 logger.warning("请先/run")
                 continue
             command = "/mem"
-            target_name = console.parse_command(usr_input, command)
+            target_name = parse_command(usr_input, command)
             debug_chat_history(context, target_name)
             logger.debug(f"{'=' * 50}")
         
@@ -256,7 +266,7 @@ def main() -> None:
                 logger.warning("请先/run")
                 continue
             command = "/leave"
-            target_name = console.parse_command(usr_input, command)
+            target_name = parse_command(usr_input, command)
             debug_leave(context, target_name)
             logger.debug(f"{'=' * 50}")
         
@@ -265,7 +275,7 @@ def main() -> None:
                 logger.warning("请先/run")
                 continue
             command = "/broadcast"
-            content = console.parse_command(usr_input, command)
+            content = parse_command(usr_input, command)
             debug_broadcast(context, content)
             logger.debug(f"{'=' * 50}")
             
@@ -274,7 +284,7 @@ def main() -> None:
                 logger.warning("请先/run")
                 continue
             command = "/speak"
-            content = console.parse_command(usr_input, command)
+            content = parse_command(usr_input, command)
             debug_speak(context, content)
             logger.debug(f"{'=' * 50}")
 
@@ -283,7 +293,7 @@ def main() -> None:
                 logger.warning("请先/run")
                 continue
             command = "/whisper"
-            content = console.parse_command(usr_input, command)
+            content = parse_command(usr_input, command)
             debug_whisper(context, content)
             logger.debug(f"{'=' * 50}")
         
@@ -292,7 +302,7 @@ def main() -> None:
                 logger.warning("请先/run")
                 continue
             command = "/search"
-            content = console.parse_command(usr_input, command)
+            content = parse_command(usr_input, command)
             debug_search(context, content)
             logger.debug(f"{'=' * 50}")
 
@@ -301,31 +311,41 @@ def main() -> None:
     logger.info("Game Over")
 
 ###############################################################################################################################################
-def debug_call(context: ExtendedContext, name: str, content: str) -> None:
+def debug_push(context: ExtendedContext, name: str, content: str) -> Union[None, NPCComponent, StageComponent, WorldComponent]:
 
     npc_entity: Optional[Entity] = context.getnpc(name)
     if npc_entity is not None:
         npc_comp: NPCComponent = npc_entity.get(NPCComponent)
         npc_request: Optional[str] = npc_comp.agent.request(content)
         if npc_request is not None:
-            logger.debug(f"[{npc_comp.name}] /call:", npc_request)
-        return
+            npc_comp.agent.chat_history.pop()
+        return npc_comp
     
     stage_entity: Optional[Entity] = context.getstage(name)
     if stage_entity is not None:
         stage_comp: StageComponent = stage_entity.get(StageComponent)
         stage_request: Optional[str] = stage_comp.agent.request(content)
         if stage_request is not None:
-            logger.debug(f"[{stage_comp.name}] /call:", stage_request)
-        return
+            stage_comp.agent.chat_history.pop()
+        return stage_comp
     
     world_entity: Optional[Entity] = context.getworld()
     if world_entity is not None:
         world_comp: WorldComponent = world_entity.get(WorldComponent)
         request: Optional[str] = world_comp.agent.request(content)
         if request is not None:
-            logger.debug(f"[{world_comp.name}] /call:", world_comp.agent.request(content))
-        return           
+            world_comp.agent.chat_history.pop()
+        return world_comp
+
+    return None        
+    
+def debug_ask(context: ExtendedContext, name: str, content: str) -> None:
+    pushed_comp = debug_push(context, name, content)
+    if pushed_comp is None:
+        logger.warning(f"debug_ask: {name} not found.")
+        return
+    pushed_agent: ActorAgent = pushed_comp.agent
+    pushed_agent.chat_history.pop()
 
 ###############################################################################################################################################
 def debug_be_who(context: ExtendedContext, name: str, playname: str) -> None:
@@ -358,21 +378,21 @@ def debug_attack(context: ExtendedContext, dest: str) -> None:
         return
        
     if playerentity.has(NPCComponent):
-        npccomp = playerentity.get(NPCComponent)
-        action = ActorAction(npccomp.name, "FightActionComponent", [dest])
+        npc_comp: NPCComponent = playerentity.get(NPCComponent)
+        action = ActorAction(npc_comp.name, "FightActionComponent", [dest])
         playerentity.add(FightActionComponent, action)
         if not playerentity.has(HumanInterferenceComponent):
-            playerentity.add(HumanInterferenceComponent, 'Human Interference')
-        logger.debug(f"debug_attack: {npccomp.name} add {action}")
+            playerentity.add(HumanInterferenceComponent, f'{npc_comp.name}攻击{dest}')
+        logger.debug(f"debug_attack: {npc_comp.name} add {action}")
         return
     
     elif playerentity.has(StageComponent):
-        stagecomp = playerentity.get(StageComponent)
-        action = ActorAction(stagecomp.name, "FightActionComponent", [dest])
+        stage_comp: StageComponent = playerentity.get(StageComponent)
+        action = ActorAction(stage_comp.name, "FightActionComponent", [dest])
         if not playerentity.has(HumanInterferenceComponent):
-            playerentity.add(HumanInterferenceComponent, 'Human Interference')
+            playerentity.add(HumanInterferenceComponent, f'{stage_comp.name}攻击{dest}')
         playerentity.add(FightActionComponent, action)
-        logger.debug(f"debug_attack: {stagecomp.name} add {action}")
+        logger.debug(f"debug_attack: {stage_comp.name} add {action}")
         return
 
 ###############################################################################################################################################
@@ -417,7 +437,7 @@ def debug_leave(context: ExtendedContext, stagename: str) -> None:
     action = ActorAction(npc_comp.name, "LeaveForActionComponent", [stagename])
     playerentity.add(LeaveForActionComponent, action)
     if not playerentity.has(HumanInterferenceComponent):
-        playerentity.add(HumanInterferenceComponent, 'Human Interference')
+        playerentity.add(HumanInterferenceComponent, f'{npc_comp.name}离开了{stagename}')
 
     newmemory = f"""{{
         "LeaveForActionComponent": ["{stagename}"]
@@ -435,7 +455,7 @@ def debug_broadcast(context: ExtendedContext, content: str) -> None:
     npc_comp: NPCComponent = playerentity.get(NPCComponent)
     action = ActorAction(npc_comp.name, "BroadcastActionComponent", [content])
     playerentity.add(BroadcastActionComponent, action)
-    playerentity.add(HumanInterferenceComponent, 'Human Interference')
+    playerentity.add(HumanInterferenceComponent, f'{npc_comp.name}大声说道：{content}')
 
     newmemory = f"""{{
         "BroadcastActionComponent": ["{content}"]
@@ -454,7 +474,7 @@ def debug_speak(context: ExtendedContext, content: str) -> None:
     action = ActorAction(npc_comp.name, "SpeakActionComponent", [content])
     playerentity.add(SpeakActionComponent, action)
     if not playerentity.has(HumanInterferenceComponent):
-        playerentity.add(HumanInterferenceComponent, 'Human Interference')
+        playerentity.add(HumanInterferenceComponent, f'{npc_comp.name}说道：{content}')
 
     newmemory = f"""{{
         "SpeakActionComponent": ["{content}"]
@@ -473,7 +493,7 @@ def debug_whisper(context: ExtendedContext, content: str) -> None:
     action = ActorAction(npc_comp.name, "WhisperActionComponent", [content])
     playerentity.add(WhisperActionComponent, action)
     if not playerentity.has(HumanInterferenceComponent):
-        playerentity.add(HumanInterferenceComponent, 'Human Interference')
+        playerentity.add(HumanInterferenceComponent, f'{npc_comp.name}低语道：{content}')
 
     newmemory = f"""{{
         "WhisperActionComponent": ["{content}"]
@@ -493,7 +513,7 @@ def debug_search(context: ExtendedContext, content: str) -> None:
     action = ActorAction(npc_comp.name, "SearchActionComponent", [content])
     playerentity.add(SearchActionComponent, action)
     if not playerentity.has(HumanInterferenceComponent):
-        playerentity.add(HumanInterferenceComponent, 'Human Interference')
+        playerentity.add(HumanInterferenceComponent, f'{npc_comp.name}搜索{content}')
 
     newmemory = f"""{{
         "SearchActionComponent": ["{content}"]

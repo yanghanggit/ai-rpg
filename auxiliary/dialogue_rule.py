@@ -31,3 +31,17 @@ def parse_taget_and_message(content: str) -> tuple[str, str]:
     target, message = content.split(">")
     target = target[1:]  # Remove the '@' symbol
     return target, message
+
+def parse_command(input_val: str, split_str: str)-> str:
+    if split_str in input_val:
+        return input_val.split(split_str)[1].strip()
+    return input_val
+
+def parse_target_and_message_by_symbol(input_val: str) -> tuple[str, str]:
+    if "@" not in input_val:
+        return "", input_val
+    start_index = input_val.index("@") + 1
+    end_index = input_val.index(">")
+    taget = input_val[start_index:end_index]
+    message = input_val[end_index+1:]
+    return taget, message

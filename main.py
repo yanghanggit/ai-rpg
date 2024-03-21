@@ -5,19 +5,23 @@ import datetime
 import json
 from auxiliary.builder import WorldBuilder
 from auxiliary.console import Console
-from auxiliary.components import (BroadcastActionComponent, SpeakActionComponent, WorldComponent,
-                        StageComponent, 
-                        NPCComponent, 
-                        FightActionComponent, 
-                        PlayerComponent, 
-                        SimpleRPGRoleComponent, 
-                        LeaveForActionComponent, 
-                        HumanInterferenceComponent,
-                        UniquePropComponent,
-                        BackpackComponent,
-                        StageEntryConditionComponent,
-                        StageExitConditionComponent,
-                        WhisperActionComponent)
+from auxiliary.components import (
+    BroadcastActionComponent, 
+    SpeakActionComponent, 
+    WorldComponent,
+    StageComponent, 
+    NPCComponent, 
+    FightActionComponent, 
+    PlayerComponent, 
+    SimpleRPGRoleComponent, 
+    LeaveForActionComponent, 
+    HumanInterferenceComponent,
+    UniquePropComponent,
+    BackpackComponent,
+    StageEntryConditionComponent,
+    StageExitConditionComponent,
+    WhisperActionComponent,
+    SearchActionComponent)
 from auxiliary.actor_action import ActorAction
 from auxiliary.actor_agent import ActorAgent
 from auxiliary.extended_context import ExtendedContext
@@ -299,6 +303,15 @@ def main() -> None:
             content = console.parse_command(usr_input, command)
             debug_whisper(context, content)
             logger.debug(f"{'=' * 50}")
+        
+        elif "/search" in usr_input:
+            if not started:
+                logger.warning("请先/run")
+                continue
+            command = "/search"
+            content = console.parse_command(usr_input, command)
+            debug_search(context, content)
+            logger.debug(f"{'=' * 50}")
 
     processors.clear_reactive_processors()
     processors.tear_down()
@@ -505,6 +518,25 @@ def debug_whisper(context: ExtendedContext, content: str) -> None:
     logger.debug(f"debug_whisper: {npc_comp.name} add {action}")
 
 ###############################################################################################################################################
+
+def debug_search(context: ExtendedContext, content: str) -> None:
+    playerentity = context.getplayer()
+    if playerentity is None:
+        logger.warning("debug_search: player is None")
+        return
+    
+    npc_comp: NPCComponent = playerentity.get(NPCComponent)
+    action = ActorAction(npc_comp.name, "SearchActionComponent", [content])
+    playerentity.add(SearchActionComponent, action)
+    if not playerentity.has(HumanInterferenceComponent):
+        playerentity.add(HumanInterferenceComponent, 'Human Interference')
+
+    newmemory = f"""{{
+        "SearchActionComponent": ["{content}"]
+    }}"""
+    context.add_agent_memory(playerentity, newmemory)
+    logger.debug(f"debug_search: {npc_comp.name} add {action}")
+
 
 if __name__ == "__main__":
     main()

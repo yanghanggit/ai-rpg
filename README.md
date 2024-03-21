@@ -25,6 +25,7 @@ pip install langchain_core langserve fastapi langchain_openai sse_starlette fais
 - /call @卡斯帕·艾伦德 最令你悔恨的是什么？
 - /call @悠扬林谷 讲讲关于你
 - /call @坏运气先生 你知道世界上的哪些地方？
+- /call @地下城 你为什么不攻击无名旅人？
 
 ## 创建玩家
 - /player yanghang|老猎人隐居的小木屋|他是一个高大的兽人战士，独眼。手中拿着巨斧，杀气腾腾

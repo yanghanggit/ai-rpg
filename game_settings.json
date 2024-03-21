@@ -52,13 +52,6 @@
             "memory": "/savedData/无名旅人.md"
             }
           ],
-          "NPCs": [
-            {
-              "name": "无影",
-              "url": "http://localhost:8026/actor/npc/thief/",
-              "memory": "/savedData/无影.md"
-            }
-          ],
           "EntryConditions":[
             {
               "name":"古老的地图"
@@ -67,6 +60,26 @@
           "UniqueProps": [
             {
               "name": "小木屋的钥匙"
+            }
+          ]
+        },
+        {
+          "name": "地下城",
+          "url": "http://localhost:8027/stage/underground_city/",
+          "memory": "/savedData/地下城.md",
+          "EntryConditions":[
+            {
+              "name":"古老的地图"
+            }
+          ],
+          "ExitConditions":[
+            {
+              "name": "传说中的圣剑"
+            }
+          ],
+          "UniqueProps": [
+            {
+              "name": "传说中的圣剑"
             }
           ]
         }

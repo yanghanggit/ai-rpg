@@ -48,6 +48,18 @@ class ExtendedContext(Context):
                 return entity
         return None
     
+    def get_entity_by_name(self, name: str) -> Optional[Entity]:
+        for entity in self.get_group(Matcher(PlayerComponent)).entities:
+            if entity.get(PlayerComponent).name == name:
+                return entity
+        for entity in self.get_group(Matcher(NPCComponent)).entities:
+            if entity.get(NPCComponent).name == name:
+                return entity
+        for entity in self.get_group(Matcher(StageComponent)).entities:
+            if entity.get(StageComponent).name == name:
+                return entity
+        return None
+    
     def get_npcs_in_stage(self, stage_name: str) -> list[Entity]:   
         npcs: list[Entity] = []
         for entity in self.get_group(Matcher(NPCComponent)).entities:

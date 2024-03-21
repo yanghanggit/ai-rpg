@@ -224,23 +224,6 @@ def main() -> None:
             logger.debug(f"/showstages: \n{log}")
             logger.debug(f"{'=' * 50}")
 
-        elif "/player" in usr_input:
-            if not started:
-                logger.warning("请先/run")
-                continue
-            command = "/player"
-            player_info = console.parse_command(usr_input, command)
-            logger.debug("/player:", player_info)
-           # "haha|老猎人隐居的小木屋|一个高大的兽人战士，独眼。手中拿着巨斧，杀气腾腾"
-           # player_info = "haha|老猎人隐居的小木屋|一个高大的兽人战士，独眼。手中拿着巨斧，杀气腾腾"
-            info_parts = player_info.split("|")
-            name = info_parts[0]
-            location = info_parts[1]
-            description = info_parts[2]
-            logger.debug("Name:", name, "Location:", location, "Description:", description)
-            debug_create_player(context, name, location, description)
-            logger.debug(f"{'=' * 50}")
-
         elif "/who" in usr_input:
             if not started:
                 logger.warning("请先/run")
@@ -343,25 +326,6 @@ def debug_call(context: ExtendedContext, name: str, content: str) -> None:
         if request is not None:
             logger.debug(f"[{world_comp.name}] /call:", world_comp.agent.request(content))
         return           
-    
-###############################################################################################################################################
-def debug_create_player(context: ExtendedContext, playername: str, stage: str, desc: str) -> None:
-    playerentity = context.getplayer()
-    if playerentity is not None:
-        logger.error("debug_create_player: player is not None")
-        return
-    
-    #创建player 本质就是npc
-    playeragent = ActorAgent(playername, "", "")
-   #playeragent.init(playername, [], "")
-    playerentity = context.create_entity()
-    playerentity.add(NPCComponent, playername, playeragent, "")
-    playerentity.add(SimpleRPGRoleComponent, playername, 10000000, 10000000, 10000000, desc)
-    playerentity.add(PlayerComponent, playername)
-
-    action = ActorAction(playername, "LeaveForActionComponent", [stage])
-    playerentity.add(LeaveForActionComponent, action)
-    logger.debug(f"debug_create_player: {playername} add {action}")
 
 ###############################################################################################################################################
 def debug_be_who(context: ExtendedContext, name: str, playname: str) -> None:

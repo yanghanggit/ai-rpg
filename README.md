@@ -81,3 +81,12 @@ pip install langchain_core langserve fastapi langchain_openai sse_starlette fais
 
 ## 严格模式检查
 mypy --strict main.py
+
+
+
+
+
+
+## yanghang gen npc test
+
+pip install pandas openpyxl

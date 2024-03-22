@@ -17,7 +17,7 @@ from langchain.tools.retriever import create_retriever_tool
 from loguru import logger
 
 RAG_MD_PATH: str = f"""/budding_world/rag.md"""
-SYS_PROMPT_MD_PATH: str = f"""/budding_world/gen_npc_sys_prompt/old_hunters_cabin_sys_prompt.md"""
+SYS_PROMPT_MD_PATH: str = f"""/budding_world/gen_stage_sys_prompt/old_hunters_cabin_sys_prompt.md"""
 GPT_MODEL: str = f"""gpt-4-turbo-preview"""
 PORT: int = 8051
 API: str = f"""/stage/old_hunters_cabin"""

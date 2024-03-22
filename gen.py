@@ -108,7 +108,7 @@ class TblStage:
     def gen_agentpy(self, orgin_agent_template: str, path: str) -> str:
         agentpy = str(orgin_agent_template)
         agentpy = agentpy.replace("<%RAG_MD_PATH>", f"""{path}/{self.worldview}""")
-        agentpy = agentpy.replace("<%SYS_PROMPT_MD_PATH>", f"""{path}/gen_npc_sys_prompt/{self.codename}_sys_prompt.md""")
+        agentpy = agentpy.replace("<%SYS_PROMPT_MD_PATH>", f"""{path}/gen_stage_sys_prompt/{self.codename}_sys_prompt.md""")
         agentpy = agentpy.replace("<%GPT_MODEL>", self.gptmodel)
         agentpy = agentpy.replace("<%PORT>", str(self.port))
         agentpy = agentpy.replace("<%API>", self.api)

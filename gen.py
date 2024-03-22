@@ -45,57 +45,123 @@ class TblNpc:
         self.sysprompt = npc_prompt
         return self.sysprompt
 
+class TblStage:
 
+    def __init__(self, name: str, codename: str, description: str) -> None:
+        self.name: str = name
+        self.codename: str = codename
+        self.description: str = description
+        self.sysprompt: str = ""
+
+    def __str__(self) -> str:
+        return f"TblStage({self.name}, {self.codename}, {self.description})"
+        
+    def isvalid(self) -> bool:
+        return self.name and self.codename and self.description
+    
+    def gen_sys_prompt(self, orgin_stage_template: str) -> str:
+        stage_prompt = str(orgin_stage_template)
+        stage_prompt = stage_prompt.replace("<%name>", self.name)
+        stage_prompt = stage_prompt.replace("<%description>", self.description)
+        self.sysprompt = stage_prompt
+        return self.sysprompt
+
+
+
+
+
+
+
+def gen_npc_sys_prompt() -> None:
+    ## 读取md文件
+    orgin_npc_template = read_md("/budding_world/npc_sys_prompt_template.md")
+    #print(orgin_npc_template)
+    #print("________________________________________________________________________")
+
+    # 读取xlsx文件
+    df = pd.read_excel('budding_world/budding_world.xlsx',  sheet_name='NPC', engine='openpyxl')
+    #print(df)
+    # 将DataFrame转换为JSON，禁用ASCII强制转换
+    json_data: DataFrame = df.to_json(orient='records', force_ascii=False)
+    #print(json_data)
+    #print("________________________________________________________________________")
+
+    gen_tbl_npc: list[TblNpc] = []
+    ## 读取Excel文件
+    for index, row in df.iterrows():
+        tblnpc = TblNpc(row["name"], row["codename"], row["description"], row["history"])
+        if not tblnpc.isvalid():
+            print(f"Invalid row: {tblnpc}")
+            continue
+
+        tblnpc.gen_sys_prompt(orgin_npc_template)
+        gen_tbl_npc.append(tblnpc)
+    print("________________________________________________________________________")
+
+    for tblnpc in gen_tbl_npc:
+        directory = f"budding_world/gen_npc_sys_prompt"
+        filename = f"{tblnpc.codename}_sys_prompt.md"
+        path = os.path.join(directory, filename)
+
+        # 确保目录存在
+        os.makedirs(directory, exist_ok=True)
+
+        with open(path, 'w', encoding='utf-8') as file:
+            file.write(tblnpc.sysprompt)
+            file.write("\n\n\n")
+    
+    print("________________________________________________________________________")
+
+
+
+
+def gen_stage_sys_prompt() -> None:
+    ## 读取md文件
+    orgin_stage_template = read_md("/budding_world/stage_sys_prompt_template.md")
+    #print(orgin_stage_template)
+    #print("________________________________________________________________________")
+
+    # 读取xlsx文件
+    df = pd.read_excel('budding_world/budding_world.xlsx', sheet_name='Stage', engine='openpyxl')
+    #print(df)
+    # 将DataFrame转换为JSON，禁用ASCII强制转换
+    json_data: DataFrame = df.to_json(orient='records', force_ascii=False)
+    #print(json_data)
+    #print("________________________________________________________________________")
+
+    gen_tbl_stage: list[TblStage] = []
+    ## 读取Excel文件
+    for index, row in df.iterrows():
+        tblstage = TblStage(row["name"], row["codename"], row["description"])
+        if not tblstage.isvalid():
+            print(f"Invalid row: {tblstage}")
+            continue
+
+        tblstage.gen_sys_prompt(orgin_stage_template)
+        gen_tbl_stage.append(tblstage)
+    print("________________________________________________________________________")
+
+    for tblstage in gen_tbl_stage:
+        directory = f"budding_world/gen_stage_sys_prompt"
+        filename = f"{tblstage.codename}_sys_prompt.md"
+        path = os.path.join(directory, filename)
+
+        # 确保目录存在
+        os.makedirs(directory, exist_ok=True)
+
+        with open(path, 'w', encoding='utf-8') as file:
+            file.write(tblstage.sysprompt)
+            file.write("\n\n\n")
+    
+    print("________________________________________________________________________")
 
 
 def main() -> None:
-    print("Hello, World!")
+    #print("Hello, World!")
 
     try:
-        ## 读取md文件
-        orgin_npc_template = read_md("/budding_world/gen_npc_template.md")
-        #print(orgin_npc_template)
-        #print("________________________________________________________________________")
-
-        # 读取xlsx文件
-        df = pd.read_excel('budding_world/budding_world.xlsx', engine='openpyxl')
-        print(df)
-        # 将DataFrame转换为JSON，禁用ASCII强制转换
-        json_data: DataFrame = df.to_json(orient='records', force_ascii=False)
-        #print(json_data)
-        #print("________________________________________________________________________")
-
-
-
-        gen_tbl_npc: list[TblNpc] = []
-        ## 读取Excel文件
-        for index, row in df.iterrows():
-            tblnpc = TblNpc(row["name"], row["codename"], row["description"], row["history"])
-            if not tblnpc.isvalid():
-                print(f"Invalid row: {tblnpc}")
-                continue
-
-            tblnpc.gen_sys_prompt(orgin_npc_template)
-            gen_tbl_npc.append(tblnpc)
-        print("________________________________________________________________________")
-
-        for tblnpc in gen_tbl_npc:
-            directory = f"budding_world/gen_npc_sys_prompt"
-            filename = f"{tblnpc.codename}_sys_prompt.md"
-            path = os.path.join(directory, filename)
-
-            # 确保目录存在
-            os.makedirs(directory, exist_ok=True)
-
-            with open(path, 'w', encoding='utf-8') as file:
-                file.write(tblnpc.sysprompt)
-                file.write("\n\n\n")
-        
-        print("________________________________________________________________________")
-
-
-
-
+        gen_npc_sys_prompt()
+        gen_stage_sys_prompt()
        
 
        
@@ -106,10 +172,10 @@ def main() -> None:
 
 
 
-        print("________________________________________________________________________")
+        #print("________________________________________________________________________")
 
     except Exception as e:
-        print("读取Excel文件时出现问题：", e)
+        print("==> ", e)
         #logger.exception(e)
         return
 

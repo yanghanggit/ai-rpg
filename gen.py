@@ -68,10 +68,6 @@ class TblStage:
 
 
 
-
-
-
-
 def gen_npc_sys_prompt() -> None:
     ## 读取md文件
     orgin_npc_template = read_md("/budding_world/npc_sys_prompt_template.md")
@@ -156,12 +152,45 @@ def gen_stage_sys_prompt() -> None:
     print("________________________________________________________________________")
 
 
+
+def gen_npc_agents() -> None:
+    with open("budding_world/gpt_agent_template.py", 'r', encoding='utf-8') as file:
+        agent_template = file.read()
+
+
+        agentpy = str(agent_template)
+        agentpy = agentpy.replace("<%RAG_MD_PATH>", "/story/world_view.md")
+        agentpy = agentpy.replace("<%SYS_PROMPT_MD_PATH>", "/actor/npc/thief.md")
+        agentpy = agentpy.replace("<%GPT_MODEL>", "gpt-4-turbo-preview")
+        agentpy = agentpy.replace("<%PORT>", "8026")
+        agentpy = agentpy.replace("<%API>", "/actor/npc/thief/")
+    
+        print(agentpy)
+
+        directory = f"budding_world/gen_agent"
+        filename = f"test_agent.py"
+        path = os.path.join(directory, filename)
+
+        # 确保目录存在
+        os.makedirs(directory, exist_ok=True)
+
+        with open(path, 'w', encoding='utf-8') as file:
+            file.write(agentpy)
+            file.write("\n\n\n")
+
+
+
+
+
 def main() -> None:
     #print("Hello, World!")
 
     try:
-        gen_npc_sys_prompt()
-        gen_stage_sys_prompt()
+        #gen_npc_sys_prompt()
+
+        #gen_stage_sys_prompt()
+
+        gen_npc_agents()
        
 
        

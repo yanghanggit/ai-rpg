@@ -1,6 +1,7 @@
 
 def main() -> None:
 
+    print("Hello, World!")
 
     try:
 
@@ -12,10 +13,10 @@ def main() -> None:
 
     
 
-    while True:
-        usr_input = input("[user input]: ")
-        if "/quit" in usr_input:
-            break
+    # while True:
+    #     usr_input = input("[user input]: ")
+    #     if "/quit" in usr_input:
+    #         break
 
         
 

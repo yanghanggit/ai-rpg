@@ -1,10 +1,24 @@
 import pandas as pd
-#from auxiliary.extract_md_content import extract_md_content
 import os
 from loguru import logger
-#from typing import Any
-from pandas import DataFrame
 
+
+##全局的，方便，不封装了，反正当工具用
+# 核心设置
+WORLD_NAME = "budding_world"
+
+#模版
+GPT_AGENT_TEMPLATE = "gpt_agent_template.py"
+NPC_SYS_PROMPT_TEMPLATE = "npc_sys_prompt_template.md"
+STAGE_SYS_PROMPT_TEMPLATE = "stage_sys_prompt_template.md"
+
+#默认rag
+RAG_FILE = "rag.md"
+
+## 输出路径
+OUT_PUT_NPC_SYS_PROMPT = "gen_npc_sys_prompt"
+OUT_PUT_STAGE_SYS_PROMPT = "gen_stage_sys_prompt"
+OUT_PUT_AGENT = "gen_agent"
 
 def read_md(file_path: str) -> str:
     try:
@@ -68,10 +82,10 @@ class TblNpc:
         self.sysprompt = npc_prompt
         return self.sysprompt
     
-    def gen_agentpy(self, orgin_agent_template: str, path: str) -> str:
+    def gen_agentpy(self, orgin_agent_template: str) -> str:
         agentpy = str(orgin_agent_template)
-        agentpy = agentpy.replace("<%RAG_MD_PATH>", f"""{path}/{self.worldview}""")
-        agentpy = agentpy.replace("<%SYS_PROMPT_MD_PATH>", f"""{path}/gen_npc_sys_prompt/{self.codename}_sys_prompt.md""")
+        agentpy = agentpy.replace("<%RAG_MD_PATH>", f"""/{WORLD_NAME}/{self.worldview}""")
+        agentpy = agentpy.replace("<%SYS_PROMPT_MD_PATH>", f"""/{WORLD_NAME}/{OUT_PUT_NPC_SYS_PROMPT}/{self.codename}_sys_prompt.md""")
         agentpy = agentpy.replace("<%GPT_MODEL>", self.gptmodel)
         agentpy = agentpy.replace("<%PORT>", str(self.port))
         agentpy = agentpy.replace("<%API>", self.api)
@@ -105,10 +119,10 @@ class TblStage:
         self.sysprompt = stage_prompt
         return self.sysprompt
     
-    def gen_agentpy(self, orgin_agent_template: str, path: str) -> str:
+    def gen_agentpy(self, orgin_agent_template: str) -> str:
         agentpy = str(orgin_agent_template)
-        agentpy = agentpy.replace("<%RAG_MD_PATH>", f"""{path}/{self.worldview}""")
-        agentpy = agentpy.replace("<%SYS_PROMPT_MD_PATH>", f"""{path}/gen_stage_sys_prompt/{self.codename}_sys_prompt.md""")
+        agentpy = agentpy.replace("<%RAG_MD_PATH>", f"""/{WORLD_NAME}/{self.worldview}""")
+        agentpy = agentpy.replace("<%SYS_PROMPT_MD_PATH>", f"""/{WORLD_NAME}/{OUT_PUT_STAGE_SYS_PROMPT}/{self.codename}_sys_prompt.md""")
         agentpy = agentpy.replace("<%GPT_MODEL>", self.gptmodel)
         agentpy = agentpy.replace("<%PORT>", str(self.port))
         agentpy = agentpy.replace("<%API>", self.api)
@@ -116,28 +130,29 @@ class TblStage:
         return self.agentpy
     
 
+##全局的，方便，不封装了，反正当工具用
+npc_sys_prompt_template = read_md(f"/{WORLD_NAME}/{NPC_SYS_PROMPT_TEMPLATE}")
+stage_sys_prompt_template = read_md(f"/{WORLD_NAME}/{STAGE_SYS_PROMPT_TEMPLATE}")
+gpt_agent_template = read_py(f"/{WORLD_NAME}/{GPT_AGENT_TEMPLATE}")
+npcsheet = pd.read_excel(f"{WORLD_NAME}/{WORLD_NAME}.xlsx", sheet_name='NPC', engine='openpyxl')
+stagesheet = pd.read_excel(f"{WORLD_NAME}/{WORLD_NAME}.xlsx", sheet_name='Stage', engine='openpyxl')
+tbl_npcs: list[TblNpc] = []
+tbl_stages: list[TblStage] = []    
+    
 def gen_npcs() -> None:
-    ## 读取md文件
-    orgin_npc_template = read_md("/budding_world/npc_sys_prompt_template.md")
-    orgin_agent_template = read_py("/budding_world/gpt_agent_template.py")
-    # 读取xlsx文件
-    df = pd.read_excel('budding_world/budding_world.xlsx',  sheet_name='NPC', engine='openpyxl')
-    # 将DataFrame转换为JSON，禁用ASCII强制转换
-    #json_data: DataFrame = df.to_json(orient='records', force_ascii=False)
 
-    gen_tbl_npc: list[TblNpc] = []
     ## 读取Excel文件
-    for index, row in df.iterrows():
-        tblnpc = TblNpc(row["name"], row["codename"], row["description"], row["history"], row["GPT_MODEL"], row["PORT"], row["API"], "rag.md")
+    for index, row in npcsheet.iterrows():
+        tblnpc = TblNpc(row["name"], row["codename"], row["description"], row["history"], row["GPT_MODEL"], row["PORT"], row["API"], RAG_FILE)
         if not tblnpc.isvalid():
             print(f"Invalid row: {tblnpc}")
             continue
-        tblnpc.gen_sys_prompt(orgin_npc_template)
-        tblnpc.gen_agentpy(orgin_agent_template, "/budding_world")
-        gen_tbl_npc.append(tblnpc)
+        tblnpc.gen_sys_prompt(npc_sys_prompt_template)
+        tblnpc.gen_agentpy(gpt_agent_template)
+        tbl_npcs.append(tblnpc)
 
-    for tblnpc in gen_tbl_npc:
-        directory = f"budding_world/gen_npc_sys_prompt"
+    for tblnpc in tbl_npcs:
+        directory = f"{WORLD_NAME}/{OUT_PUT_NPC_SYS_PROMPT}"
         filename = f"{tblnpc.codename}_sys_prompt.md"
         path = os.path.join(directory, filename)
         # 确保目录存在
@@ -146,8 +161,8 @@ def gen_npcs() -> None:
             file.write(tblnpc.sysprompt)
             file.write("\n\n\n")
 
-    for tblnpc in gen_tbl_npc:
-        directory = f"budding_world/gen_agent"
+    for tblnpc in tbl_npcs:
+        directory = f"{WORLD_NAME}/{OUT_PUT_AGENT}"
         filename = f"{tblnpc.codename}_agent.py"
         path = os.path.join(directory, filename)
         # 确保目录存在
@@ -158,27 +173,19 @@ def gen_npcs() -> None:
 
 
 def gen_stages() -> None:
-    ## 读取md文件
-    orgin_stage_template = read_md("/budding_world/stage_sys_prompt_template.md")
-    orgin_agent_template = read_py("/budding_world/gpt_agent_template.py")
-    # 读取xlsx文件
-    df = pd.read_excel('budding_world/budding_world.xlsx', sheet_name='Stage', engine='openpyxl')
-    # 将DataFrame转换为JSON，禁用ASCII强制转换
-    #json_data: DataFrame = df.to_json(orient='records', force_ascii=False)
-
-    gen_tbl_stage: list[TblStage] = []
+   
     ## 读取Excel文件
-    for index, row in df.iterrows():
-        tblstage = TblStage(row["name"], row["codename"], row["description"], row["GPT_MODEL"], row["PORT"], row["API"], "rag.md")
+    for index, row in stagesheet.iterrows():
+        tblstage = TblStage(row["name"], row["codename"], row["description"], row["GPT_MODEL"], row["PORT"], row["API"], RAG_FILE)
         if not tblstage.isvalid():
             print(f"Invalid row: {tblstage}")
             continue
-        tblstage.gen_sys_prompt(orgin_stage_template)
-        tblstage.gen_agentpy(orgin_agent_template, "/budding_world")
-        gen_tbl_stage.append(tblstage)
+        tblstage.gen_sys_prompt(stage_sys_prompt_template)
+        tblstage.gen_agentpy(gpt_agent_template)
+        tbl_stages.append(tblstage)
 
-    for tblstage in gen_tbl_stage:
-        directory = f"budding_world/gen_stage_sys_prompt"
+    for tblstage in tbl_stages:
+        directory = f"{WORLD_NAME}/{OUT_PUT_STAGE_SYS_PROMPT}"
         filename = f"{tblstage.codename}_sys_prompt.md"
         path = os.path.join(directory, filename)
         # 确保目录存在
@@ -187,8 +194,8 @@ def gen_stages() -> None:
             file.write(tblstage.sysprompt)
             file.write("\n\n\n")
 
-    for tblstage in gen_tbl_stage:
-        directory = f"budding_world/gen_agent"
+    for tblstage in tbl_stages:
+        directory = f"{WORLD_NAME}/{OUT_PUT_AGENT}"
         filename = f"{tblstage.codename}_agent.py"
         path = os.path.join(directory, filename)
         # 确保目录存在
@@ -198,12 +205,8 @@ def gen_stages() -> None:
             file.write("\n\n\n")
 
 def main() -> None:
-    try:
-        gen_npcs()
-        gen_stages()
-    except Exception as e:
-        logger.exception(e)
-        return
+    gen_npcs()
+    gen_stages()
 
 if __name__ == "__main__":
     main()

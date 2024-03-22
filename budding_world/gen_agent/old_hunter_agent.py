@@ -16,11 +16,11 @@ from langchain_openai.embeddings import OpenAIEmbeddings
 from langchain.tools.retriever import create_retriever_tool
 from loguru import logger
 
-RAG_MD_PATH: str = f"""/story/world_view.md"""
-SYS_PROMPT_MD_PATH: str = f"""/actor/npc/thief.md"""
+RAG_MD_PATH: str = f"""/budding_world/rag.md"""
+SYS_PROMPT_MD_PATH: str = f"""/budding_world/gen_npc_sys_prompt/old_hunter_sys_prompt.md"""
 GPT_MODEL: str = f"""gpt-4-turbo-preview"""
-PORT: int = 8026
-API: str = f"""/actor/npc/thief/"""
+PORT: int = 8002
+API: str = f"""/npc/old_hunter"""
 
 def read_md(file_path: str) -> str:
     try:
@@ -99,5 +99,8 @@ add_routes(
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="localhost", port = PORT)
+
+
+#"http://localhost:8025/actor/npc/rat/"
 
 

@@ -16,11 +16,11 @@ from langchain_openai.embeddings import OpenAIEmbeddings
 from langchain.tools.retriever import create_retriever_tool
 from loguru import logger
 
-RAG_MD_PATH: str = f"""<%RAG_MD_PATH>"""
-SYS_PROMPT_MD_PATH: str = f"""<%SYS_PROMPT_MD_PATH>"""
-GPT_MODEL: str = f"""<%GPT_MODEL>"""
-PORT: int = <%PORT>
-API: str = f"""<%API>"""
+RAG_MD_PATH: str = f"""/budding_world/rag.md"""
+SYS_PROMPT_MD_PATH: str = f"""/budding_world/gen_npc_sys_prompt/world_watcher_sys_prompt.md"""
+GPT_MODEL: str = f"""gpt-4-turbo-preview"""
+PORT: int = 8001
+API: str = f"""/npc/world_watcher"""
 
 def read_md(file_path: str) -> str:
     try:
@@ -102,3 +102,5 @@ if __name__ == "__main__":
 
 
 #"http://localhost:8025/actor/npc/rat/"
+
+

@@ -4,7 +4,7 @@
 ```python
 conda create -n first_seed python=3.10 
 
-pip install langchain_core langserve fastapi langchain_openai sse_starlette faiss-cpu loguru mypy
+pip install langchain_core langserve fastapi langchain_openai sse_starlette faiss-cpu loguru mypy pandas openpyxl
 ```
 
 ## 注意点
@@ -82,11 +82,3 @@ pip install langchain_core langserve fastapi langchain_openai sse_starlette fais
 ## 严格模式检查
 mypy --strict main.py
 
-
-
-
-
-
-## yanghang gen npc test
-
-pip install pandas openpyxl

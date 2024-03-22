@@ -101,6 +101,4 @@ if __name__ == "__main__":
     uvicorn.run(app, host="localhost", port = PORT)
 
 
-#"http://localhost:8025/actor/npc/rat/"
-
 

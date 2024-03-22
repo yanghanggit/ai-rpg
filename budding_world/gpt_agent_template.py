@@ -99,6 +99,3 @@ add_routes(
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="localhost", port = PORT)
-
-
-#"http://localhost:8025/actor/npc/rat/"

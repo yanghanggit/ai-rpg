@@ -1,8 +1,8 @@
 import pandas as pd
-from auxiliary.extract_md_content import extract_md_content
+#from auxiliary.extract_md_content import extract_md_content
 import os
 from loguru import logger
-from typing import Any
+#from typing import Any
 from pandas import DataFrame
 
 
@@ -123,7 +123,7 @@ def gen_npcs() -> None:
     # 读取xlsx文件
     df = pd.read_excel('budding_world/budding_world.xlsx',  sheet_name='NPC', engine='openpyxl')
     # 将DataFrame转换为JSON，禁用ASCII强制转换
-    json_data: DataFrame = df.to_json(orient='records', force_ascii=False)
+    #json_data: DataFrame = df.to_json(orient='records', force_ascii=False)
 
     gen_tbl_npc: list[TblNpc] = []
     ## 读取Excel文件
@@ -132,20 +132,16 @@ def gen_npcs() -> None:
         if not tblnpc.isvalid():
             print(f"Invalid row: {tblnpc}")
             continue
-
         tblnpc.gen_sys_prompt(orgin_npc_template)
         tblnpc.gen_agentpy(orgin_agent_template, "/budding_world")
         gen_tbl_npc.append(tblnpc)
-    print("________________________________________________________________________")
 
     for tblnpc in gen_tbl_npc:
         directory = f"budding_world/gen_npc_sys_prompt"
         filename = f"{tblnpc.codename}_sys_prompt.md"
         path = os.path.join(directory, filename)
-
         # 确保目录存在
         os.makedirs(directory, exist_ok=True)
-
         with open(path, 'w', encoding='utf-8') as file:
             file.write(tblnpc.sysprompt)
             file.write("\n\n\n")
@@ -160,20 +156,15 @@ def gen_npcs() -> None:
             file.write(tblnpc.agentpy)
             file.write("\n\n\n")
 
-    print("________________________________________________________________________")
-
-
-
 
 def gen_stages() -> None:
     ## 读取md文件
     orgin_stage_template = read_md("/budding_world/stage_sys_prompt_template.md")
     orgin_agent_template = read_py("/budding_world/gpt_agent_template.py")
-    
     # 读取xlsx文件
     df = pd.read_excel('budding_world/budding_world.xlsx', sheet_name='Stage', engine='openpyxl')
     # 将DataFrame转换为JSON，禁用ASCII强制转换
-    json_data: DataFrame = df.to_json(orient='records', force_ascii=False)
+    #json_data: DataFrame = df.to_json(orient='records', force_ascii=False)
 
     gen_tbl_stage: list[TblStage] = []
     ## 读取Excel文件
@@ -182,11 +173,9 @@ def gen_stages() -> None:
         if not tblstage.isvalid():
             print(f"Invalid row: {tblstage}")
             continue
-
         tblstage.gen_sys_prompt(orgin_stage_template)
         tblstage.gen_agentpy(orgin_agent_template, "/budding_world")
         gen_tbl_stage.append(tblstage)
-    print("________________________________________________________________________")
 
     for tblstage in gen_tbl_stage:
         directory = f"budding_world/gen_stage_sys_prompt"
@@ -207,9 +196,6 @@ def gen_stages() -> None:
         with open(path, 'w', encoding='utf-8') as file:
             file.write(tblstage.agentpy)
             file.write("\n\n\n")
-
-    print("________________________________________________________________________")
-
 
 def main() -> None:
     try:

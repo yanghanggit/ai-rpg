@@ -169,14 +169,16 @@ stage_sys_prompt_template: str = readmd(f"/{WORLD_NAME}/{STAGE_SYS_PROMPT_TEMPLA
 gpt_agent_template: str = readpy(f"/{WORLD_NAME}/{GPT_AGENT_TEMPLATE}")
 
 
-npcsheet: DataFrame = pd.read_excel(f"{WORLD_NAME}/{WORLD_NAME}.xlsx", sheet_name='NPC', engine='openpyxl')
-stagesheet: DataFrame = pd.read_excel(f"{WORLD_NAME}/{WORLD_NAME}.xlsx", sheet_name='Stage', engine='openpyxl')
-propsheet: DataFrame = pd.read_excel(f"{WORLD_NAME}/{WORLD_NAME}.xlsx", sheet_name='Prop', engine='openpyxl')
-
 excelnpcs: list[ExcelNPC] = []
 excelstages: list[ExcelStage] = []    
 excelprops: list[ExcelProp] = []
 
+
+npcsheet: DataFrame = pd.read_excel(f"{WORLD_NAME}/{WORLD_NAME}.xlsx", sheet_name='NPC', engine='openpyxl')
+stagesheet: DataFrame = pd.read_excel(f"{WORLD_NAME}/{WORLD_NAME}.xlsx", sheet_name='Stage', engine='openpyxl')
+propsheet: DataFrame = pd.read_excel(f"{WORLD_NAME}/{WORLD_NAME}.xlsx", sheet_name='Prop', engine='openpyxl')
+####测试的一个世界编辑
+world1sheet: DataFrame = pd.read_excel(f"{WORLD_NAME}/{WORLD_NAME}.xlsx", sheet_name='World1', engine='openpyxl')
 
 ############################################################################################################
 def gennpcs() -> None:
@@ -329,27 +331,98 @@ def analyze_relationship_graph_betweennpcs_and_props() -> None:
             logger.warning(f"{prop_name}: {mentioned_by}")
 
 ############################################################################################################
+            
+class EditorNPC:
+    def __init__(self, data: Any) -> None:
+        self.data: str = data
+        self.files: List[str] = []
+
+        if self.data["type"] not in ["AdminNPC", "PlayerNPC", "NPC"]:
+            logger.error(f"Invalid NPC type: {self.data['type']}")
+            return
+        
+        self.buildfiles()
+        print(self)
+        
+    def buildfiles(self) -> None:
+        filesdata = self.data["files"]
+        if filesdata is None:
+            return        
+        self.files = filesdata.split(";")
+
+    def __str__(self) -> str:
+        return f"EditorNPC({self.data["name"]}, {self.data["type"]}, {self.files})"
+   
+
+class EditorWorld:
+    def __init__(self, data: List[Any]) -> None:
+        # 根数据
+        self.data: List[Any] = data
+        # 解析数据用
+        self.data_adminnpcs: List[Any] = []
+        self.data_playernpcs: List[Any] = []
+        self.data_npcs: List[Any] = []
+        self.data_stages: List[Any] = []
+        #构建数据
+        self.editor_adminnpcs: List[EditorNPC] = []
+        self.editor_playernpcs: List[EditorNPC] = []
+        self.editor_npcs: List[EditorNPC] = []
+     
+        ##
+        self.build_and_categorize_data()
+        self.build_editor_adminnpcs()
+        self.build_editor_playernpcs()
+        self.build_editor_npcs()
+
+
+    #先将数据分类
+    def build_and_categorize_data(self) -> None:
+        for item in self.data:
+            if item["type"] == "AdminNPC":
+                self.data_adminnpcs.append(item)
+            elif item["type"] == "PlayerNPC":
+                self.data_playernpcs.append(item)
+            elif item["type"] == "NPC":
+                self.data_npcs.append(item)
+            elif item["type"] == "Stage":
+                self.data_stages.append(item)
+
+
+    def build_editor_adminnpcs(self) -> None:
+        for item in self.data_adminnpcs:
+            editor_npc = EditorNPC(item)
+            self.editor_adminnpcs.append(editor_npc)
+
+    def build_editor_playernpcs(self) -> None:
+        for item in self.data_playernpcs:
+            editor_npc = EditorNPC(item)
+            self.editor_playernpcs.append(editor_npc)
+       
+    def build_editor_npcs(self) -> None:
+        for item in self.data_npcs:
+            editor_npc = EditorNPC(item)
+            self.editor_npcs.append(editor_npc)
+
+
+
+############################################################################################################
+def gen_world1() -> None:
+    world1_sheet_str: str = world1sheet.to_json(orient='records', force_ascii=False)
+    world1data: List[Any] = json.loads(world1_sheet_str)
+    #print(type(world1data))
+    logger.info(world1data)
+
+
+    worldeditor = EditorWorld(world1data)
+
+############################################################################################################
 def main() -> None:
     gennpcs()
     genstages()
     genprops()
     analyze_npc_relationship_graph()
     analyze_relationship_graph_betweennpcs_and_props()
+    gen_world1() #测试这个世界编辑
 
 if __name__ == "__main__":
     main()
-
-
-
-
-#graph structure
-
-#name, [names,......]
-# npcgraph: Dict[str, List[str]] = {}
-# stagegraph: Dict[str, List[str]] = {}
-# propgraph: Dict[str, List[str]] = {}
-#stage_json_str: str = stagesheet.to_json(orient='records', force_ascii=False)
-#prop_json_str: str = propsheet.to_json(orient='records', force_ascii=False)
-# stagearray = json.loads(stage_json_str)
-# proparray = json.loads(prop_json_str)
-#

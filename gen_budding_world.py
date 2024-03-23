@@ -56,7 +56,7 @@ def readpy(file_path: str) -> str:
         return f"An error occurred: {e}"
     
 
-class ExcelNPC:
+class ExcelDataNPC:
 
     def __init__(self, name: str, codename: str, description: str, history: str, gptmodel: str, port: int, api: str, worldview: str) -> None:
         self.name: str = name
@@ -100,7 +100,7 @@ class ExcelNPC:
     def localhost_api(self) -> str:
         return f"http://localhost:{self.port}{self.api}/"
 
-class ExcelStage:
+class ExcelDataStage:
 
     def __init__(self, name: str, codename: str, description: str, gptmodel: str, port: int, api: str, worldview: str) -> None:
         self.name: str = name
@@ -143,7 +143,7 @@ class ExcelStage:
         return f"http://localhost:{self.port}{self.api}/"
     
 
-class ExcelProp:
+class ExcelDataProp:
     
     def __init__(self, name: str, codename: str, isunique: str, description: str, worldview: str) -> None:
         self.name: str = name
@@ -169,9 +169,9 @@ stage_sys_prompt_template: str = readmd(f"/{WORLD_NAME}/{STAGE_SYS_PROMPT_TEMPLA
 gpt_agent_template: str = readpy(f"/{WORLD_NAME}/{GPT_AGENT_TEMPLATE}")
 
 
-excelnpcs: list[ExcelNPC] = []
-excelstages: list[ExcelStage] = []    
-excelprops: list[ExcelProp] = []
+excelnpcs: list[ExcelDataNPC] = []
+excelstages: list[ExcelDataStage] = []    
+excelprops: list[ExcelDataProp] = []
 
 
 npcsheet: DataFrame = pd.read_excel(f"{WORLD_NAME}/{WORLD_NAME}.xlsx", sheet_name='NPC', engine='openpyxl')
@@ -185,7 +185,7 @@ def gennpcs() -> None:
 
     ## 读取Excel文件
     for index, row in npcsheet.iterrows():
-        excelnpc = ExcelNPC(row["name"], row["codename"], row["description"], row["history"], row["GPT_MODEL"], row["PORT"], row["API"], RAG_FILE)
+        excelnpc = ExcelDataNPC(row["name"], row["codename"], row["description"], row["history"], row["GPT_MODEL"], row["PORT"], row["API"], RAG_FILE)
         if not excelnpc.isvalid():
             #print(f"Invalid row: {excelnpc}")
             continue
@@ -218,7 +218,7 @@ def genstages() -> None:
    
     ## 读取Excel文件
     for index, row in stagesheet.iterrows():
-        excelstage = ExcelStage(row["name"], row["codename"], row["description"], row["GPT_MODEL"], row["PORT"], row["API"], RAG_FILE)
+        excelstage = ExcelDataStage(row["name"], row["codename"], row["description"], row["GPT_MODEL"], row["PORT"], row["API"], RAG_FILE)
         if not excelstage.isvalid():
             #print(f"Invalid row: {excelstage}")
             continue
@@ -250,7 +250,7 @@ def genstages() -> None:
 def genprops() -> None:
     ## 读取Excel文件
     for index, row in propsheet.iterrows():
-        excelprop = ExcelProp(row["name"], row["codename"], row["isunique"], row["description"], RAG_FILE)
+        excelprop = ExcelDataProp(row["name"], row["codename"], row["isunique"], row["description"], RAG_FILE)
         if not excelprop.isvalid():
             #(f"Invalid row: {excelprop}")
             continue
@@ -330,31 +330,94 @@ def analyze_relationship_graph_betweennpcs_and_props() -> None:
         if mentioned_by and len(mentioned_by) > 0:
             logger.warning(f"{prop_name}: {mentioned_by}")
 
-############################################################################################################
-            
-class EditorNPC:
+################################################################################################################   
+class ExcelEditorNPC:
     def __init__(self, data: Any) -> None:
         self.data: str = data
         self.files: List[str] = []
+        self.initialization_memory: str = ""
 
         if self.data["type"] not in ["AdminNPC", "PlayerNPC", "NPC"]:
             logger.error(f"Invalid NPC type: {self.data['type']}")
             return
         
-        self.buildfiles()
-        print(self)
+        self.parsefiles()
+        self.parse_initialization_memory()
         
-    def buildfiles(self) -> None:
+    def parsefiles(self) -> None:
         filesdata = self.data["files"]
         if filesdata is None:
             return        
         self.files = filesdata.split(";")
 
-    def __str__(self) -> str:
-        return f"EditorNPC({self.data["name"]}, {self.data["type"]}, {self.files})"
-   
+    def parse_initialization_memory(self) -> None:
+        initialization_memory = self.data["initialization_memory"]
+        if initialization_memory is None:
+            return
+        self.initialization_memory = str(initialization_memory)
 
-class EditorWorld:
+    def __str__(self) -> str:
+        return f"EditorNPC({self.data["name"]}, {self.data["type"]}, files: {self.files}, initialization_memory: {self.initialization_memory})"
+   
+################################################################################################################
+class ExcelEditorStage:
+    def __init__(self, data: Any) -> None:
+        self.data: str = data
+
+        #数据
+        self.stage_entry_conditions: List[str] = []
+        self.stage_exit_conditions: List[str] = []
+        self.props_in_stage: List[str] = []
+        self.npcs_in_stage: List[str] = []
+        self.initialization_memory: str = ""
+
+        if self.data["type"] not in ["Stage"]:
+            logger.error(f"Invalid Stage type: {self.data['type']}")
+            return
+
+        #分析数据
+        self.parse_stage_entry_conditions()
+        self.parse_stage_exit_conditions()
+        self.parse_props_in_stage()
+        self.parse_npcs_in_stage()
+        self.parse_initialization_memory()
+    
+
+    def parse_stage_entry_conditions(self) -> None:
+        stage_entry_conditions = self.data["stage_entry_conditions"]
+        if stage_entry_conditions is None:
+            return        
+        self.stage_entry_conditions = stage_entry_conditions.split(";")
+
+    def parse_stage_exit_conditions(self) -> None:
+        stage_exit_conditions = self.data["stage_exit_conditions"]
+        if stage_exit_conditions is None:
+            return
+        self.stage_exit_conditions = stage_exit_conditions.split(";")
+
+    def parse_props_in_stage(self) -> None:
+        props_in_stage = self.data["props_in_stage"]
+        if props_in_stage is None:
+            return
+        self.props_in_stage = props_in_stage.split(";")
+
+    def parse_npcs_in_stage(self) -> None:
+        npcs_in_stage = self.data["npcs_in_stage"]
+        if npcs_in_stage is None:
+            return
+        self.npcs_in_stage = npcs_in_stage.split(";")
+
+    def parse_initialization_memory(self) -> None:
+        initialization_memory = self.data["initialization_memory"]
+        if initialization_memory is None:
+            return
+        self.initialization_memory = str(initialization_memory)
+
+    def __str__(self) -> str:
+        return f"EditorStage({self.data["name"]}, {self.data["type"]}, stage_entry_conditions: {self.stage_entry_conditions}, stage_exit_conditions: {self.stage_exit_conditions}, props_in_stage: {self.props_in_stage}, npcs_in_stage: {self.npcs_in_stage}, initialization_memory: {self.initialization_memory})"
+
+################################################################################################################
+class ExcelEditorWorld:
     def __init__(self, data: List[Any]) -> None:
         # 根数据
         self.data: List[Any] = data
@@ -364,16 +427,16 @@ class EditorWorld:
         self.data_npcs: List[Any] = []
         self.data_stages: List[Any] = []
         #构建数据
-        self.editor_adminnpcs: List[EditorNPC] = []
-        self.editor_playernpcs: List[EditorNPC] = []
-        self.editor_npcs: List[EditorNPC] = []
-     
-        ##
+        self.editor_adminnpcs: List[ExcelEditorNPC] = []
+        self.editor_playernpcs: List[ExcelEditorNPC] = []
+        self.editor_npcs: List[ExcelEditorNPC] = []
+        self.editor_stages: List[ExcelEditorStage] = []
+        ##构建流程
         self.build_and_categorize_data()
         self.build_editor_adminnpcs()
         self.build_editor_playernpcs()
         self.build_editor_npcs()
-
+        self.build_editor_stages()
 
     #先将数据分类
     def build_and_categorize_data(self) -> None:
@@ -387,33 +450,41 @@ class EditorWorld:
             elif item["type"] == "Stage":
                 self.data_stages.append(item)
 
-
     def build_editor_adminnpcs(self) -> None:
         for item in self.data_adminnpcs:
-            editor_npc = EditorNPC(item)
+            editor_npc = ExcelEditorNPC(item)
             self.editor_adminnpcs.append(editor_npc)
+            logger.info(editor_npc)
 
     def build_editor_playernpcs(self) -> None:
         for item in self.data_playernpcs:
-            editor_npc = EditorNPC(item)
+            editor_npc = ExcelEditorNPC(item)
             self.editor_playernpcs.append(editor_npc)
+            logger.info(editor_npc)
        
     def build_editor_npcs(self) -> None:
         for item in self.data_npcs:
-            editor_npc = EditorNPC(item)
+            editor_npc = ExcelEditorNPC(item)
             self.editor_npcs.append(editor_npc)
+            logger.info(editor_npc)
 
+    def build_editor_stages(self) -> None:
+        for item in self.data_stages:
+            editor_stage = ExcelEditorStage(item)
+            self.editor_stages.append(editor_stage)
+            logger.info(editor_stage)
 
+    #最后生成JSON
+    def buildworld(self) -> None:
+        logger.warning("Building world..., 需要检查，例如NPC里出现了，但是场景中没有出现，那就是错误。一顿关联，最后生成JSON文件")
 
 ############################################################################################################
 def gen_world1() -> None:
     world1_sheet_str: str = world1sheet.to_json(orient='records', force_ascii=False)
     world1data: List[Any] = json.loads(world1_sheet_str)
-    #print(type(world1data))
-    logger.info(world1data)
-
-
-    worldeditor = EditorWorld(world1data)
+    #logger.info(world1data)
+    worldeditor = ExcelEditorWorld(world1data)
+    worldeditor.buildworld()
 
 ############################################################################################################
 def main() -> None:

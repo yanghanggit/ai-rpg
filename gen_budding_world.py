@@ -281,19 +281,48 @@ def analyze_npc_relationship_graph() -> None:
                 logger.warning(f"{person} mentioned {name}, but {name} did not mention {person}")
 
 ############################################################################################################
+def analyze_relationship_graph_betweennpcs_and_props() -> None:
+    
+    npc_json_str: str = npcsheet.to_json(orient='records', force_ascii=False)
+    npcarray: List[str] = json.loads(npc_json_str)
 
+    prop_json_str: str = propsheet.to_json(orient='records', force_ascii=False)
+    proparray: List[str] = json.loads(prop_json_str)
 
+    # 以名字为key, 将description和history合并，作为总内容。里面可能含有其他人的名字
+    npcgraph_name_description_history: Dict[str, str] = {}
+    for npc in npcarray:
+        key = npc["name"]
+        content = f"{npc['description']} {npc['history']}"
+        npcgraph_name_description_history[key] = content
 
+    # 以名字为key, 将description合并，作为总内容。里面可能含有其他人的名字
+    propgraph_name_description: Dict[str, str] = {}
+    for prop in proparray:
+        key = prop["name"]
+        content = f"{prop['description']}"
+        propgraph_name_description[key] = content
 
+    ##分析道具有谁提到了这个道具，并输出
+    prop_mentions: Dict[str, List[str]] = {}
+    for prop_name, prop_description in propgraph_name_description.items():
+        mentioned_by = []
+        for npc_name, npc_content in npcgraph_name_description_history.items():
+            if prop_name in npc_content:
+                mentioned_by.append(npc_name)
+        prop_mentions[prop_name] = mentioned_by
 
+    for prop_name, mentioned_by in prop_mentions.items():
+        if mentioned_by and len(mentioned_by) > 0:
+            print(f"{prop_name}: {mentioned_by}")
 
-
-
+############################################################################################################
 def main() -> None:
     gennpcs()
     genstages()
     genprops()
     analyze_npc_relationship_graph()
+    analyze_relationship_graph_betweennpcs_and_props()
 
 if __name__ == "__main__":
     main()

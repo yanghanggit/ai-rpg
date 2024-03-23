@@ -2,7 +2,9 @@
 import pandas as pd
 import os
 from loguru import logger
-
+from pandas.core.frame import DataFrame
+import json
+from typing import List, Dict, Any
 
 ##全局的，方便，不封装了，反正当工具用
 # 核心设置
@@ -151,20 +153,21 @@ class ExcelProp:
        
 
 ##全局的，方便，不封装了，反正当工具用
-npc_sys_prompt_template = readmd(f"/{WORLD_NAME}/{NPC_SYS_PROMPT_TEMPLATE}")
-stage_sys_prompt_template = readmd(f"/{WORLD_NAME}/{STAGE_SYS_PROMPT_TEMPLATE}")
-gpt_agent_template = readpy(f"/{WORLD_NAME}/{GPT_AGENT_TEMPLATE}")
+npc_sys_prompt_template: str = readmd(f"/{WORLD_NAME}/{NPC_SYS_PROMPT_TEMPLATE}")
+stage_sys_prompt_template: str = readmd(f"/{WORLD_NAME}/{STAGE_SYS_PROMPT_TEMPLATE}")
+gpt_agent_template: str = readpy(f"/{WORLD_NAME}/{GPT_AGENT_TEMPLATE}")
 
 
-npcsheet = pd.read_excel(f"{WORLD_NAME}/{WORLD_NAME}.xlsx", sheet_name='NPC', engine='openpyxl')
-stagesheet = pd.read_excel(f"{WORLD_NAME}/{WORLD_NAME}.xlsx", sheet_name='Stage', engine='openpyxl')
-propsheet = pd.read_excel(f"{WORLD_NAME}/{WORLD_NAME}.xlsx", sheet_name='Prop', engine='openpyxl')
+npcsheet: DataFrame = pd.read_excel(f"{WORLD_NAME}/{WORLD_NAME}.xlsx", sheet_name='NPC', engine='openpyxl')
+stagesheet: DataFrame = pd.read_excel(f"{WORLD_NAME}/{WORLD_NAME}.xlsx", sheet_name='Stage', engine='openpyxl')
+propsheet: DataFrame = pd.read_excel(f"{WORLD_NAME}/{WORLD_NAME}.xlsx", sheet_name='Prop', engine='openpyxl')
 
 excelnpcs: list[ExcelNPC] = []
 excelstages: list[ExcelStage] = []    
 excelprops: list[ExcelProp] = []
 
 
+############################################################################################################
 def gennpcs() -> None:
 
     ## 读取Excel文件
@@ -197,7 +200,7 @@ def gennpcs() -> None:
             file.write(excelnpc.agentpy)
             file.write("\n\n\n")
 
-
+############################################################################################################
 def genstages() -> None:
    
     ## 读取Excel文件
@@ -230,7 +233,7 @@ def genstages() -> None:
             file.write(excelstage.agentpy)
             file.write("\n\n\n")
 
-
+############################################################################################################
 def genprops() -> None:
     ## 读取Excel文件
     for index, row in propsheet.iterrows():
@@ -240,10 +243,44 @@ def genprops() -> None:
             continue
         excelprops.append(excelprop)
 
+############################################################################################################
+def analyze_npc_relationship_graph() -> None:
+    npc_json_str: str = npcsheet.to_json(orient='records', force_ascii=False)
+    npcarray: List[str] = json.loads(npc_json_str)
+ 
+    # 以名字为key, 将description和history合并，作为总内容。里面可能含有其他人的名字
+    npcgraph_name_description_history: Dict[str, str] = {}
+    for npc in npcarray:
+        key = npc["name"]
+        content = f"{npc['description']} {npc['history']}"
+        npcgraph_name_description_history[key] = content
 
+    #key是名字，value是在他们的description与history里提到这个名字的人
+    relationship_graph: Dict[str, List[str]] = {}
+    # 遍历每一个名字
+    for name in npcgraph_name_description_history:
+        # 初始化关系列表
+        who_mentioned_you = []
+        
+        # 遍历每一个名字的关系内容
+        for other_name, content in npcgraph_name_description_history.items():
+            # 如果A的名字出现在B的content里，就加入A的who_mentioned_you
+            if name != other_name and name in content:
+                who_mentioned_you.append(other_name)
+        
+        # 将关系列表加入数据结构
+        relationship_graph[name] = who_mentioned_you
 
+    # 最后遍历这个relationship_graph，其中的value部分代表着‘who_mentioned_you’。
+    # 例如，name为A，who_mentioned_you = [B,C]代表着B和C都提到了A。
+    # 这样请在relationship_graph结构里索引B或C,如果他们的‘who_mentioned_you’没有A，
+    # 代表着A没提到B或C，凡是满足这个情况的，就答应log来报警
+    for name, mentioned in relationship_graph.items():
+        for person in mentioned:
+            if name not in relationship_graph.get(person, []):
+                logger.warning(f"{person} mentioned {name}, but {name} did not mention {person}")
 
-
+############################################################################################################
 
 
 
@@ -256,6 +293,22 @@ def main() -> None:
     gennpcs()
     genstages()
     genprops()
+    analyze_npc_relationship_graph()
 
 if __name__ == "__main__":
     main()
+
+
+
+
+#graph structure
+
+#name, [names,......]
+# npcgraph: Dict[str, List[str]] = {}
+# stagegraph: Dict[str, List[str]] = {}
+# propgraph: Dict[str, List[str]] = {}
+#stage_json_str: str = stagesheet.to_json(orient='records', force_ascii=False)
+#prop_json_str: str = propsheet.to_json(orient='records', force_ascii=False)
+# stagearray = json.loads(stage_json_str)
+# proparray = json.loads(prop_json_str)
+#

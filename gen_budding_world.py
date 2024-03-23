@@ -21,7 +21,7 @@ OUT_PUT_NPC_SYS_PROMPT = "gen_npc_sys_prompt"
 OUT_PUT_STAGE_SYS_PROMPT = "gen_stage_sys_prompt"
 OUT_PUT_AGENT = "gen_agent"
 
-def read_md(file_path: str) -> str:
+def readmd(file_path: str) -> str:
     try:
         file_path = os.getcwd() + file_path
         with open(file_path, 'r', encoding='utf-8') as file:
@@ -37,7 +37,7 @@ def read_md(file_path: str) -> str:
         return f"An error occurred: {e}"
     
 
-def read_py(file_path: str) -> str:
+def readpy(file_path: str) -> str:
     try:
         file_path = os.getcwd() + file_path
         with  open(file_path, 'r', encoding='utf-8') as file:
@@ -54,7 +54,7 @@ def read_py(file_path: str) -> str:
         return f"An error occurred: {e}"
     
 
-class TblNpc:
+class ExcelNPC:
 
     def __init__(self, name: str, codename: str, description: str, history: str, gptmodel: str, port: int, api: str, worldview: str) -> None:
         self.name: str = name
@@ -70,21 +70,21 @@ class TblNpc:
         self.agentpy: str = ""
 
     def __str__(self) -> str:
-        return f"TblNpc({self.name}, {self.codename}, {self.description}, {self.history}, {self.gptmodel}, {self.port}, {self.api}, {self.worldview})"
+        return f"ExcelNPC({self.name}, {self.codename}, {self.description}, {self.gptmodel}, {self.port}, {self.api}, {self.worldview})"
         
     def isvalid(self) -> bool:
         return True
     
-    def gen_sys_prompt(self, orgin_npc_template: str) -> str:
-        npc_prompt = str(orgin_npc_template)
-        npc_prompt = npc_prompt.replace("<%name>", self.name)
-        npc_prompt = npc_prompt.replace("<%description>", self.description)
-        npc_prompt = npc_prompt.replace("<%history>", self.history)
-        self.sysprompt = npc_prompt
+    def gen_sys_prompt(self, sys_prompt_template: str) -> str:
+        genprompt = str(sys_prompt_template)
+        genprompt = genprompt.replace("<%name>", self.name)
+        genprompt = genprompt.replace("<%description>", self.description)
+        genprompt = genprompt.replace("<%history>", self.history)
+        self.sysprompt = genprompt
         return self.sysprompt
     
-    def gen_agentpy(self, orgin_agent_template: str) -> str:
-        agentpy = str(orgin_agent_template)
+    def gen_agentpy(self, agent_py_template: str) -> str:
+        agentpy = str(agent_py_template)
         agentpy = agentpy.replace("<%RAG_MD_PATH>", f"""/{WORLD_NAME}/{self.worldview}""")
         agentpy = agentpy.replace("<%SYS_PROMPT_MD_PATH>", f"""/{WORLD_NAME}/{OUT_PUT_NPC_SYS_PROMPT}/{self.codename}_sys_prompt.md""")
         agentpy = agentpy.replace("<%GPT_MODEL>", self.gptmodel)
@@ -93,7 +93,7 @@ class TblNpc:
         self.agentpy = agentpy
         return self.agentpy
 
-class TblStage:
+class ExcelStage:
 
     def __init__(self, name: str, codename: str, description: str, gptmodel: str, port: int, api: str, worldview: str) -> None:
         self.name: str = name
@@ -108,20 +108,20 @@ class TblStage:
         self.agentpy: str = ""
 
     def __str__(self) -> str:
-        return f"TblStage({self.name}, {self.codename}, {self.description}, {self.gptmodel}, {self.port}, {self.api}, {self.worldview})"
+        return f"ExcelStage({self.name}, {self.codename}, {self.description}, {self.gptmodel}, {self.port}, {self.api}, {self.worldview})"
         
     def isvalid(self) -> bool:
         return True
     
-    def gen_sys_prompt(self, orgin_stage_template: str) -> str:
-        stage_prompt = str(orgin_stage_template)
-        stage_prompt = stage_prompt.replace("<%name>", self.name)
-        stage_prompt = stage_prompt.replace("<%description>", self.description)
-        self.sysprompt = stage_prompt
+    def gen_sys_prompt(self, sys_prompt_template: str) -> str:
+        genprompt = str(sys_prompt_template)
+        genprompt = genprompt.replace("<%name>", self.name)
+        genprompt = genprompt.replace("<%description>", self.description)
+        self.sysprompt = genprompt
         return self.sysprompt
     
-    def gen_agentpy(self, orgin_agent_template: str) -> str:
-        agentpy = str(orgin_agent_template)
+    def gen_agentpy(self, agent_py_template: str) -> str:
+        agentpy = str(agent_py_template)
         agentpy = agentpy.replace("<%RAG_MD_PATH>", f"""/{WORLD_NAME}/{self.worldview}""")
         agentpy = agentpy.replace("<%SYS_PROMPT_MD_PATH>", f"""/{WORLD_NAME}/{OUT_PUT_STAGE_SYS_PROMPT}/{self.codename}_sys_prompt.md""")
         agentpy = agentpy.replace("<%GPT_MODEL>", self.gptmodel)
@@ -131,83 +131,131 @@ class TblStage:
         return self.agentpy
     
 
+class ExcelProp:
+    
+    def __init__(self, name: str, codename: str, description: str, worldview: str) -> None:
+        self.name: str = name
+        self.codename: str = codename
+        self.description: str = description
+        self.worldview: str = worldview
+
+        self.sysprompt: str = ""
+        self.agentpy: str = ""
+
+    def __str__(self) -> str:
+        return f"TblProp({self.name}, {self.codename}, {self.description}, {self.worldview})"
+        
+    def isvalid(self) -> bool:
+        return True
+        
+       
+
 ##全局的，方便，不封装了，反正当工具用
-npc_sys_prompt_template = read_md(f"/{WORLD_NAME}/{NPC_SYS_PROMPT_TEMPLATE}")
-stage_sys_prompt_template = read_md(f"/{WORLD_NAME}/{STAGE_SYS_PROMPT_TEMPLATE}")
-gpt_agent_template = read_py(f"/{WORLD_NAME}/{GPT_AGENT_TEMPLATE}")
+npc_sys_prompt_template = readmd(f"/{WORLD_NAME}/{NPC_SYS_PROMPT_TEMPLATE}")
+stage_sys_prompt_template = readmd(f"/{WORLD_NAME}/{STAGE_SYS_PROMPT_TEMPLATE}")
+gpt_agent_template = readpy(f"/{WORLD_NAME}/{GPT_AGENT_TEMPLATE}")
+
+
 npcsheet = pd.read_excel(f"{WORLD_NAME}/{WORLD_NAME}.xlsx", sheet_name='NPC', engine='openpyxl')
 stagesheet = pd.read_excel(f"{WORLD_NAME}/{WORLD_NAME}.xlsx", sheet_name='Stage', engine='openpyxl')
-tbl_npcs: list[TblNpc] = []
-tbl_stages: list[TblStage] = []    
-    
-def gen_npcs() -> None:
+propsheet = pd.read_excel(f"{WORLD_NAME}/{WORLD_NAME}.xlsx", sheet_name='Prop', engine='openpyxl')
+
+excelnpcs: list[ExcelNPC] = []
+excelstages: list[ExcelStage] = []    
+excelprops: list[ExcelProp] = []
+
+
+def gennpcs() -> None:
 
     ## 读取Excel文件
     for index, row in npcsheet.iterrows():
-        tblnpc = TblNpc(row["name"], row["codename"], row["description"], row["history"], row["GPT_MODEL"], row["PORT"], row["API"], RAG_FILE)
-        if not tblnpc.isvalid():
-            print(f"Invalid row: {tblnpc}")
+        excelnpc = ExcelNPC(row["name"], row["codename"], row["description"], row["history"], row["GPT_MODEL"], row["PORT"], row["API"], RAG_FILE)
+        if not excelnpc.isvalid():
+            print(f"Invalid row: {excelnpc}")
             continue
-        tblnpc.gen_sys_prompt(npc_sys_prompt_template)
-        tblnpc.gen_agentpy(gpt_agent_template)
-        tbl_npcs.append(tblnpc)
+        excelnpc.gen_sys_prompt(npc_sys_prompt_template)
+        excelnpc.gen_agentpy(gpt_agent_template)
+        excelnpcs.append(excelnpc)
 
-    for tblnpc in tbl_npcs:
+    for excelnpc in excelnpcs:
         directory = f"{WORLD_NAME}/{OUT_PUT_NPC_SYS_PROMPT}"
-        filename = f"{tblnpc.codename}_sys_prompt.md"
+        filename = f"{excelnpc.codename}_sys_prompt.md"
         path = os.path.join(directory, filename)
         # 确保目录存在
         os.makedirs(directory, exist_ok=True)
         with open(path, 'w', encoding='utf-8') as file:
-            file.write(tblnpc.sysprompt)
+            file.write(excelnpc.sysprompt)
             file.write("\n\n\n")
 
-    for tblnpc in tbl_npcs:
+    for excelnpc in excelnpcs:
         directory = f"{WORLD_NAME}/{OUT_PUT_AGENT}"
-        filename = f"{tblnpc.codename}_agent.py"
+        filename = f"{excelnpc.codename}_agent.py"
         path = os.path.join(directory, filename)
         # 确保目录存在
         os.makedirs(directory, exist_ok=True)
         with open(path, 'w', encoding='utf-8') as file:
-            file.write(tblnpc.agentpy)
+            file.write(excelnpc.agentpy)
             file.write("\n\n\n")
 
 
-def gen_stages() -> None:
+def genstages() -> None:
    
     ## 读取Excel文件
     for index, row in stagesheet.iterrows():
-        tblstage = TblStage(row["name"], row["codename"], row["description"], row["GPT_MODEL"], row["PORT"], row["API"], RAG_FILE)
-        if not tblstage.isvalid():
-            print(f"Invalid row: {tblstage}")
+        excelstage = ExcelStage(row["name"], row["codename"], row["description"], row["GPT_MODEL"], row["PORT"], row["API"], RAG_FILE)
+        if not excelstage.isvalid():
+            print(f"Invalid row: {excelstage}")
             continue
-        tblstage.gen_sys_prompt(stage_sys_prompt_template)
-        tblstage.gen_agentpy(gpt_agent_template)
-        tbl_stages.append(tblstage)
+        excelstage.gen_sys_prompt(stage_sys_prompt_template)
+        excelstage.gen_agentpy(gpt_agent_template)
+        excelstages.append(excelstage)
 
-    for tblstage in tbl_stages:
+    for excelstage in excelstages:
         directory = f"{WORLD_NAME}/{OUT_PUT_STAGE_SYS_PROMPT}"
-        filename = f"{tblstage.codename}_sys_prompt.md"
+        filename = f"{excelstage.codename}_sys_prompt.md"
         path = os.path.join(directory, filename)
         # 确保目录存在
         os.makedirs(directory, exist_ok=True)
         with open(path, 'w', encoding='utf-8') as file:
-            file.write(tblstage.sysprompt)
+            file.write(excelstage.sysprompt)
             file.write("\n\n\n")
 
-    for tblstage in tbl_stages:
+    for excelstage in excelstages:
         directory = f"{WORLD_NAME}/{OUT_PUT_AGENT}"
-        filename = f"{tblstage.codename}_agent.py"
+        filename = f"{excelstage.codename}_agent.py"
         path = os.path.join(directory, filename)
         # 确保目录存在
         os.makedirs(directory, exist_ok=True)
         with open(path, 'w', encoding='utf-8') as file:
-            file.write(tblstage.agentpy)
+            file.write(excelstage.agentpy)
             file.write("\n\n\n")
+
+
+def genprops() -> None:
+    ## 读取Excel文件
+    for index, row in propsheet.iterrows():
+        excelprop = ExcelProp(row["name"], row["codename"], row["description"], RAG_FILE)
+        if not excelprop.isvalid():
+            print(f"Invalid row: {excelprop}")
+            continue
+        excelprops.append(excelprop)
+
+
+
+
+
+
+
+
+
+
+
+
 
 def main() -> None:
-    gen_npcs()
-    gen_stages()
+    gennpcs()
+    genstages()
+    genprops()
 
 if __name__ == "__main__":
     main()

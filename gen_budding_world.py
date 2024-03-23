@@ -174,7 +174,7 @@ def gennpcs() -> None:
     for index, row in npcsheet.iterrows():
         excelnpc = ExcelNPC(row["name"], row["codename"], row["description"], row["history"], row["GPT_MODEL"], row["PORT"], row["API"], RAG_FILE)
         if not excelnpc.isvalid():
-            print(f"Invalid row: {excelnpc}")
+            #print(f"Invalid row: {excelnpc}")
             continue
         excelnpc.gen_sys_prompt(npc_sys_prompt_template)
         excelnpc.gen_agentpy(gpt_agent_template)
@@ -207,7 +207,7 @@ def genstages() -> None:
     for index, row in stagesheet.iterrows():
         excelstage = ExcelStage(row["name"], row["codename"], row["description"], row["GPT_MODEL"], row["PORT"], row["API"], RAG_FILE)
         if not excelstage.isvalid():
-            print(f"Invalid row: {excelstage}")
+            #print(f"Invalid row: {excelstage}")
             continue
         excelstage.gen_sys_prompt(stage_sys_prompt_template)
         excelstage.gen_agentpy(gpt_agent_template)
@@ -239,7 +239,7 @@ def genprops() -> None:
     for index, row in propsheet.iterrows():
         excelprop = ExcelProp(row["name"], row["codename"], row["description"], RAG_FILE)
         if not excelprop.isvalid():
-            print(f"Invalid row: {excelprop}")
+            #(f"Invalid row: {excelprop}")
             continue
         excelprops.append(excelprop)
 
@@ -314,7 +314,7 @@ def analyze_relationship_graph_betweennpcs_and_props() -> None:
 
     for prop_name, mentioned_by in prop_mentions.items():
         if mentioned_by and len(mentioned_by) > 0:
-            print(f"{prop_name}: {mentioned_by}")
+            logger.warning(f"{prop_name}: {mentioned_by}")
 
 ############################################################################################################
 def main() -> None:

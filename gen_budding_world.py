@@ -71,6 +71,8 @@ class ExcelNPC:
         self.sysprompt: str = ""
         self.agentpy: str = ""
 
+        logger.info(self.localhost_api())
+
     def __str__(self) -> str:
         return f"ExcelNPC({self.name}, {self.codename}, {self.description}, {self.gptmodel}, {self.port}, {self.api}, {self.worldview})"
         
@@ -94,6 +96,9 @@ class ExcelNPC:
         agentpy = agentpy.replace("<%API>", self.api)
         self.agentpy = agentpy
         return self.agentpy
+    
+    def localhost_api(self) -> str:
+        return f"http://localhost:{self.port}{self.api}/"
 
 class ExcelStage:
 
@@ -108,6 +113,8 @@ class ExcelStage:
 
         self.sysprompt: str = ""
         self.agentpy: str = ""
+
+        logger.info(self.localhost_api())
 
     def __str__(self) -> str:
         return f"ExcelStage({self.name}, {self.codename}, {self.description}, {self.gptmodel}, {self.port}, {self.api}, {self.worldview})"
@@ -132,20 +139,24 @@ class ExcelStage:
         self.agentpy = agentpy
         return self.agentpy
     
+    def localhost_api(self) -> str:
+        return f"http://localhost:{self.port}{self.api}/"
+    
 
 class ExcelProp:
     
-    def __init__(self, name: str, codename: str, description: str, worldview: str) -> None:
+    def __init__(self, name: str, codename: str, isunique: str, description: str, worldview: str) -> None:
         self.name: str = name
         self.codename: str = codename
         self.description: str = description
+        self.isunique: str = isunique
         self.worldview: str = worldview
 
         self.sysprompt: str = ""
         self.agentpy: str = ""
 
     def __str__(self) -> str:
-        return f"TblProp({self.name}, {self.codename}, {self.description}, {self.worldview})"
+        return f"TblProp({self.name}, {self.codename}, {self.isunique}, {self.description}, {self.worldview})"
         
     def isvalid(self) -> bool:
         return True
@@ -237,7 +248,7 @@ def genstages() -> None:
 def genprops() -> None:
     ## 读取Excel文件
     for index, row in propsheet.iterrows():
-        excelprop = ExcelProp(row["name"], row["codename"], row["description"], RAG_FILE)
+        excelprop = ExcelProp(row["name"], row["codename"], row["isunique"], row["description"], RAG_FILE)
         if not excelprop.isvalid():
             #(f"Invalid row: {excelprop}")
             continue
@@ -312,6 +323,7 @@ def analyze_relationship_graph_betweennpcs_and_props() -> None:
                 mentioned_by.append(npc_name)
         prop_mentions[prop_name] = mentioned_by
 
+    ## 有哪些人提到了这个道具
     for prop_name, mentioned_by in prop_mentions.items():
         if mentioned_by and len(mentioned_by) > 0:
             logger.warning(f"{prop_name}: {mentioned_by}")

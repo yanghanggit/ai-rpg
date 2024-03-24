@@ -243,7 +243,7 @@ all_stages_data: Dict[str, ExcelDataStage] = {}
 all_props_data: Dict[str, ExcelDataProp] = {}
 
 ############################################################################################################
-def gennpcs() -> None:
+def gen_npcs_data() -> None:
     ## 读取Excel文件
     for index, row in npcsheet.iterrows():
         excelnpc = ExcelDataNPC(row["name"], row["codename"], row["description"], row["history"], row["GPT_MODEL"], row["PORT"], row["API"], RAG_FILE)
@@ -256,7 +256,7 @@ def gennpcs() -> None:
         excelnpc.write_agentpy()
         all_npcs_data[excelnpc.name] = excelnpc
 ############################################################################################################
-def genstages() -> None:
+def gen_stages_data() -> None:
     ## 读取Excel文件
     for index, row in stagesheet.iterrows():
         excelstage = ExcelDataStage(row["name"], row["codename"], row["description"], row["GPT_MODEL"], row["PORT"], row["API"], RAG_FILE)
@@ -269,7 +269,7 @@ def genstages() -> None:
         excelstage.write_agentpy()    
         all_stages_data[excelstage.name] = excelstage 
 ############################################################################################################
-def genprops() -> None:
+def gen_props_data() -> None:
     ## 读取Excel文件
     for index, row in propsheet.iterrows():
         excelprop = ExcelDataProp(row["name"], row["codename"], row["isunique"], row["description"], RAG_FILE)
@@ -436,8 +436,9 @@ class ExcelEditorStage:
         return f"ExcelEditorStage({self.data["name"]}, {self.data["type"]}, stage_entry_conditions: {entrystr}, stage_exit_conditions: {exitstr}, props_in_stage: {propsstr}, npcs_in_stage: {npcsstr})"
 ################################################################################################################
 class ExcelEditorWorld:
-    def __init__(self, data: List[Any]) -> None:
+    def __init__(self, worldname: str, data: List[Any]) -> None:
         # 根数据
+        self.name: str = worldname
         self.data: List[Any] = data
         #笨一点，先留着吧。。。
         self.data_adminnpcs: List[Any] = []
@@ -493,28 +494,34 @@ class ExcelEditorWorld:
             self.editor_stages.append(editor_stage)
             logger.info(editor_stage)
 
+    def __str__(self) -> str:
+        return f"ExcelEditorWorld({self.name})"
+
     #最后生成JSON
     def buildworld(self) -> None:
         logger.warning("Building world..., 需要检查，例如NPC里出现了，但是场景中没有出现，那就是错误。一顿关联，最后生成JSON文件")
 ############################################################################################################
-def gen_world1() -> None:
+def genworld(worldname: str) -> ExcelEditorWorld:
     ####测试的一个世界编辑
-    world1sheet: DataFrame = pd.read_excel(f"{WORLD_NAME}/{WORLD_NAME}.xlsx", sheet_name='World1', engine='openpyxl')
-    world1_sheet_str: str = world1sheet.to_json(orient='records', force_ascii=False)
-    world1data: List[Any] = json.loads(world1_sheet_str)
-    worldeditor = ExcelEditorWorld(world1data)
+    worlddata: DataFrame = pd.read_excel(f"{WORLD_NAME}/{WORLD_NAME}.xlsx", sheet_name = worldname, engine='openpyxl')
+    ###费2遍事，就是试试转换成json好使不，其实可以不用直接dataframe做也行
+    worlddata2json: str = worlddata.to_json(orient='records', force_ascii=False)
+    worlddata2list: List[Any] = json.loads(worlddata2json)
+    worldeditor = ExcelEditorWorld(worldname, worlddata2list)
     worldeditor.buildworld()
+    return worldeditor
 ############################################################################################################
 def main() -> None:
     #分析必要数据
-    gennpcs()
-    genstages()
-    genprops()
-    #尝试分析之间的关系并做一定的自我检查
+    gen_npcs_data()
+    gen_stages_data()
+    gen_props_data()
+    #尝试分析之间的关系并做一定的自我检查，这里是例子，实际应用中，可以根据需求做更多的检查
     analyze_npc_relationship_graph()
     analyze_relationship_graph_betweennpcs_and_props()
     #测试这个世界编辑，未完成
-    gen_world1() 
+    world = genworld('World1')
+    logger.warning(world)
 ############################################################################################################
 if __name__ == "__main__":
     main()

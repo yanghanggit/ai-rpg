@@ -261,7 +261,7 @@ def genprops() -> None:
 ############################################################################################################
 def analyze_npc_relationship_graph() -> None:
     npc_json_str: str = npcsheet.to_json(orient='records', force_ascii=False)
-    npcarray: List[str] = json.loads(npc_json_str)
+    npcarray: List[Any] = json.loads(npc_json_str)
  
     # 以名字为key, 将description和history合并，作为总内容。里面可能含有其他人的名字
     npcgraph_name_description_history: Dict[str, str] = {}
@@ -299,10 +299,10 @@ def analyze_npc_relationship_graph() -> None:
 def analyze_relationship_graph_betweennpcs_and_props() -> None:
     
     npc_json_str: str = npcsheet.to_json(orient='records', force_ascii=False)
-    npcarray: List[str] = json.loads(npc_json_str)
+    npcarray: List[Any] = json.loads(npc_json_str)
 
     prop_json_str: str = propsheet.to_json(orient='records', force_ascii=False)
-    proparray: List[str] = json.loads(prop_json_str)
+    proparray: List[Any] = json.loads(prop_json_str)
 
     # 以名字为key, 将description和history合并，作为总内容。里面可能含有其他人的名字
     npcgraph_name_description_history: Dict[str, str] = {}
@@ -335,7 +335,7 @@ def analyze_relationship_graph_betweennpcs_and_props() -> None:
 ################################################################################################################   
 class ExcelEditorNPC:
     def __init__(self, data: Any) -> None:
-        self.data: str = data
+        self.data: Any = data
         self.files: List[str] = []
         self.initialization_memory: str = ""
 
@@ -364,7 +364,7 @@ class ExcelEditorNPC:
 ################################################################################################################
 class ExcelEditorStage:
     def __init__(self, data: Any) -> None:
-        self.data: str = data
+        self.data: Any = data
 
         #数据
         self.stage_entry_conditions: List[str] = []

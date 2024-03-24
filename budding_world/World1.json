@@ -1,0 +1,196 @@
+{
+    "adminnpcs": [
+        {
+            "npc": {
+                "name": "世界观察者",
+                "codename": "world_watcher",
+                "url": "http://localhost:8001/npc/world_watcher/",
+                "memory": "## 时间\n- 大陆纪元2000年1月1日，冬夜.\n## 事件\n- 你默默记录"
+            },
+            "props": []
+        }
+    ],
+    "playernpcs": [
+        {
+            "npc": {
+                "name": "无名旅人",
+                "codename": "unknown_traveler",
+                "url": "http://localhost:8007/npc/unknown_traveler/",
+                "memory": "## 时间\n- 大陆纪元2000年1月1日，冬夜.\n## 事件\n- 你从昏迷中醒来，并发现自己在此"
+            },
+            "props": [
+                {
+                    "name": "生锈的铁剑",
+                    "codename": "rusty_iron_sword",
+                    "description": "无名旅人的初始武器",
+                    "isunique": "No"
+                },
+                {
+                    "name": "破旧的盔甲",
+                    "codename": "worn_armor",
+                    "description": "无名旅人的初始装备",
+                    "isunique": "No"
+                }
+            ]
+        }
+    ],
+    "npcs": [
+        {
+            "npc": {
+                "name": "坏运气先生",
+                "codename": "rat",
+                "url": "http://localhost:8004/npc/rat/",
+                "memory": "## 时间\n- 大陆纪元2000年1月1日，冬夜.\n## 事件\n- 你在“老猎人隐居的小木屋”里，你看见了“卡斯帕·艾伦德”与\"断剑\"\n- 你虽然不喜欢他们，但是你仍在屋子里的另一角找到了一些食物。"
+            },
+            "props": [
+                {
+                    "name": "老鼠洞的位置",
+                    "codename": "location_of_mouse_hole",
+                    "description": "坏运气先生的家",
+                    "isunique": "Yes"
+                }
+            ]
+        },
+        {
+            "npc": {
+                "name": "卡斯帕·艾伦德",
+                "codename": "old_hunter",
+                "url": "http://localhost:8002/npc/old_hunter/",
+                "memory": "## 时间\n- 大陆纪元2000年1月1日，冬夜.\n## 事件\n- 你坐在“老猎人隐居的小木屋”中的壁炉旁，在沉思和回忆过往，并向壁炉中的火投入了一根木柴。\n- 你的小狗（名叫\"断剑\"）在屋子里的一角睡觉。"
+            },
+            "props": []
+        },
+        {
+            "npc": {
+                "name": "断剑",
+                "codename": "old_hunters_dog",
+                "url": "http://localhost:8003/npc/old_hunters_dog/",
+                "memory": "## 时间\n- 大陆纪元2000年1月1日，冬夜.\n## 事件\n- 你在“老猎人隐居的小木屋”的一角睡觉。你陪伴着“卡斯帕·艾伦德”。"
+            },
+            "props": []
+        },
+        {
+            "npc": {
+                "name": "暗影巨龙",
+                "codename": "shadow_dragon",
+                "url": "http://localhost:8005/npc/shadow_dragon/",
+                "memory": "## 时间\n- 大陆纪元2000年1月1日，冬夜.\n## 事件\n- 你在依旧沉睡\n- 在梦中，无数闯入者的样子已经模糊，但是你如何碾碎他们的情景你确能记得"
+            },
+            "props": []
+        }
+    ],
+    "stages": [
+        {
+            "entry_conditions": [],
+            "exit_conditions": [
+                {
+                    "name": "小木屋的钥匙",
+                    "type": "Prop",
+                    "propname": "小木屋的钥匙"
+                }
+            ],
+            "props": [
+                {
+                    "name": "小木屋的钥匙",
+                    "codename": "cabin_key",
+                    "description": "打开小木屋的方法",
+                    "isunique": "Yes"
+                }
+            ],
+            "npcs": [
+                {
+                    "name": "无名旅人",
+                    "codename": "unknown_traveler",
+                    "url": "http://localhost:8007/npc/unknown_traveler/",
+                    "memory": "## 时间\n- 大陆纪元2000年1月1日，冬夜.\n## 事件\n- 无名旅人从昏迷中醒来，并发现自己在此"
+                }
+            ]
+        },
+        {
+            "entry_conditions": [
+                {
+                    "name": "小木屋的钥匙",
+                    "type": "Prop",
+                    "propname": "小木屋的钥匙"
+                },
+                {
+                    "name": "老鼠洞的位置",
+                    "type": "Prop",
+                    "propname": "老鼠洞的位置"
+                }
+            ],
+            "exit_conditions": [
+                {
+                    "name": "古老的地图",
+                    "type": "Prop",
+                    "propname": "古老的地图"
+                },
+                {
+                    "name": "老鼠洞的位置",
+                    "type": "Prop",
+                    "propname": "老鼠洞的位置"
+                }
+            ],
+            "props": [
+                {
+                    "name": "古老的地图",
+                    "codename": "ancient_map",
+                    "description": "指向古老的遗迹",
+                    "isunique": "Yes"
+                }
+            ],
+            "npcs": [
+                {
+                    "name": "卡斯帕·艾伦德",
+                    "codename": "old_hunter",
+                    "url": "http://localhost:8002/npc/old_hunter/",
+                    "memory": "## 时间\n- 大陆纪元2000年1月1日，冬夜.\n## 事件\n- “卡斯帕·艾伦德”坐在他的“老猎人隐居的小木屋”中的壁炉旁，在沉思和回忆过往，并向壁炉中的火投入了一根木柴。\n- 他的小狗（名叫\"断剑\"）在屋子里的一角睡觉。\n- 一只老鼠（名叫\"坏运气先生\"）在屋子里的另一角找到了一些食物。"
+                },
+                {
+                    "name": "断剑",
+                    "codename": "old_hunters_dog",
+                    "url": "http://localhost:8003/npc/old_hunters_dog/",
+                    "memory": "## 时间\n- 大陆纪元2000年1月1日，冬夜.\n## 事件\n- “卡斯帕·艾伦德”坐在他的“老猎人隐居的小木屋”中的壁炉旁，在沉思和回忆过往，并向壁炉中的火投入了一根木柴。\n- 他的小狗（名叫\"断剑\"）在屋子里的一角睡觉。\n- 一只老鼠（名叫\"坏运气先生\"）在屋子里的另一角找到了一些食物。"
+                },
+                {
+                    "name": "坏运气先生",
+                    "codename": "rat",
+                    "url": "http://localhost:8004/npc/rat/",
+                    "memory": "## 时间\n- 大陆纪元2000年1月1日，冬夜.\n## 事件\n- “卡斯帕·艾伦德”坐在他的“老猎人隐居的小木屋”中的壁炉旁，在沉思和回忆过往，并向壁炉中的火投入了一根木柴。\n- 他的小狗（名叫\"断剑\"）在屋子里的一角睡觉。\n- 一只老鼠（名叫\"坏运气先生\"）在屋子里的另一角找到了一些食物。"
+                }
+            ]
+        },
+        {
+            "entry_conditions": [
+                {
+                    "name": "古老的地图",
+                    "type": "Prop",
+                    "propname": "古老的地图"
+                }
+            ],
+            "exit_conditions": [
+                {
+                    "name": "传说中的圣剑",
+                    "type": "Prop",
+                    "propname": "传说中的圣剑"
+                }
+            ],
+            "props": [
+                {
+                    "name": "传说中的圣剑",
+                    "codename": "legendary_holy_sword",
+                    "description": "充满力量的不详之物",
+                    "isunique": "Yes"
+                }
+            ],
+            "npcs": [
+                {
+                    "name": "暗影巨龙",
+                    "codename": "shadow_dragon",
+                    "url": "http://localhost:8005/npc/shadow_dragon/",
+                    "memory": "## 时间\n- 大陆纪元2000年1月1日，冬夜.\n## 事件\n- 暗影巨龙依旧沉睡"
+                }
+            ]
+        }
+    ]
+}

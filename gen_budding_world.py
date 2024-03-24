@@ -111,7 +111,7 @@ class ExcelDataNPC:
                 file.write(self.sysprompt)
                 file.write("\n\n\n")
         except Exception as e:
-            return f"An error occurred: {e}"
+            logger.error(f"An error occurred: {e}") 
 
     def write_agentpy(self) -> None:
         try:
@@ -124,7 +124,7 @@ class ExcelDataNPC:
                 file.write(self.agentpy)
                 file.write("\n\n\n")
         except Exception as e:
-            return f"An error occurred: {e}"
+            logger.error(f"An error occurred: {e}") 
 
     def add_mentioned_npc(self, name: str) -> bool:
         if name == self.name:
@@ -207,7 +207,7 @@ class ExcelDataStage:
                 file.write(self.sysprompt)
                 file.write("\n\n\n")
         except Exception as e:
-            return f"An error occurred: {e}"
+            logger.error(f"An error occurred: {e}") 
 
     def write_agentpy(self) -> None:
         try:
@@ -220,7 +220,7 @@ class ExcelDataStage:
                 file.write(self.agentpy)
                 file.write("\n\n\n")
         except Exception as e:
-            return f"An error occurred: {e}"
+            logger.error(f"An error occurred: {e}") 
 ############################################################################################################
 class ExcelDataProp:
     
@@ -230,9 +230,6 @@ class ExcelDataProp:
         self.description: str = description
         self.isunique: str = isunique
         self.worldview: str = worldview
-
-        self.sysprompt: str = ""
-        self.agentpy: str = ""
 
     def __str__(self) -> str:
         return f"ExcelDataProp({self.name}, {self.codename}, {self.isunique})"
@@ -329,6 +326,7 @@ class ExcelEditorNPC:
             logger.error(f"Invalid NPC type: {self.data['type']}")
             return
         
+        self.excelnpc = all_npcs_data[self.data["name"]]
         self.parsefiles()
         self.parse_initialization_memory()
         
@@ -352,6 +350,36 @@ class ExcelEditorNPC:
     def __str__(self) -> str:
         propsstr = ', '.join(str(prop) for prop in self.excelprops)
         return f"ExcelEditorNPC({self.data['name']}, {self.data['type']}, files: {propsstr})"
+    
+    def make_npc_dict(self, target: Optional[ExcelDataNPC]) -> Dict[str, str]:
+        if target is None:
+            return {}
+        dict: Dict[str, str] = {}
+        dict['name'] = target.name
+        dict['codename'] = target.codename
+        dict['url'] = target.localhost_api()
+        dict['memory'] = self.initialization_memory
+        return dict
+    
+    def make_props_list(self, excelprops: List[ExcelDataProp]) -> List[Dict[str, str]]:
+        props: List[Dict[str, str]] = []
+        for prop in excelprops:
+            dict: Dict[str, str] = {}
+            dict['name'] = prop.name
+            dict['codename'] = prop.codename
+            dict['description'] = prop.description
+            dict['isunique'] = prop.isunique
+            props.append(dict)
+        return props
+
+    def makedict(self) -> Dict[str, Any]:
+        npc = self.make_npc_dict(self.excelnpc)
+        props = self.make_props_list(self.excelprops)
+        dict: Dict[str, Any] = {}
+        dict["npc"] = npc
+        dict["props"] = props
+        return dict
+
 ################################################################################################################
 class ExcelEditorStageCondition:
     def __init__(self, name: str, type: str) -> None:
@@ -368,6 +396,14 @@ class ExcelEditorStageCondition:
         
     def __str__(self) -> str:
         return f"ExcelEditorStageCondition({self.name}, {self.type})"    
+    
+    def makedict(self) -> Dict[str, str]:
+        dict: Dict[str, str] = {}
+        dict['name'] = self.name
+        dict['type'] = self.type
+        if self.exceldataprop is not None:
+            dict['propname'] = self.exceldataprop.name
+        return dict
 ################################################################################################################
 class ExcelEditorStage:
     def __init__(self, data: Any) -> None:
@@ -446,6 +482,47 @@ class ExcelEditorStage:
         entrystr = ', '.join(str(condition) for condition in self.stage_entry_conditions)
         exitstr = ', '.join(str(condition) for condition in self.stage_exit_conditions)
         return f"ExcelEditorStage({self.data["name"]}, {self.data["type"]}, stage_entry_conditions: {entrystr}, stage_exit_conditions: {exitstr}, props_in_stage: {propsstr}, npcs_in_stage: {npcsstr})"
+
+    def make_stage_conditions_list(self, conditions: List[ExcelEditorStageCondition]) -> List[Dict[str, str]]:
+        list: List[Dict[str, str]] = []
+        for condition in conditions:
+            list.append(condition.makedict())
+        return list
+    
+    def make_stage_props_list(self, props: List[ExcelDataProp]) -> List[Dict[str, str]]:
+        list: List[Dict[str, str]] = []
+        for prop in props:
+            dict: Dict[str, str] = {}
+            dict['name'] = prop.name
+            dict['codename'] = prop.codename
+            dict['description'] = prop.description
+            dict['isunique'] = prop.isunique
+            list.append(dict)
+        return list
+    
+    def make_stage_npcs_list(self, npcs: List[ExcelDataNPC]) -> List[Dict[str, str]]:
+        list: List[Dict[str, str]] = []
+        for npc in npcs:
+            dict: Dict[str, str] = {}
+            dict['name'] = npc.name
+            dict['codename'] = npc.codename
+            dict['url'] = npc.localhost_api()
+            dict['memory'] = self.initialization_memory
+            list.append(dict)
+        return list
+    
+    def makedict(self) -> Dict[str, Any]:
+        entry_conditions = self.make_stage_conditions_list(self.stage_entry_conditions)
+        exit_conditions = self.make_stage_conditions_list(self.stage_exit_conditions)
+        props = self.make_stage_props_list(self.props_in_stage)
+        npcs = self.make_stage_npcs_list(self.npcs_in_stage)
+        dict: Dict[str, Any] = {}
+        dict["entry_conditions"] = entry_conditions
+        dict["exit_conditions"] = exit_conditions
+        dict["props"] = props
+        dict["npcs"] = npcs
+        return dict
+        
 ################################################################################################################
 class ExcelEditorWorld:
     def __init__(self, worldname: str, data: List[Any]) -> None:
@@ -453,10 +530,10 @@ class ExcelEditorWorld:
         self.name: str = worldname
         self.data: List[Any] = data
         #笨一点，先留着吧。。。
-        self.data_adminnpcs: List[Any] = []
-        self.data_playernpcs: List[Any] = []
-        self.data_npcs: List[Any] = []
-        self.data_stages: List[Any] = []
+        self.raw_adminnpcs: List[Any] = []
+        self.raw_playernpcs: List[Any] = []
+        self.raw_npcs: List[Any] = []
+        self.raw_stages: List[Any] = []
         #真正的构建数据
         self.editor_adminnpcs: List[ExcelEditorNPC] = []
         self.editor_playernpcs: List[ExcelEditorNPC] = []
@@ -465,43 +542,43 @@ class ExcelEditorWorld:
         ##把数据分类
         self.categorizedata()
         ##根据分类各种处理。。。
-        self.build_editor_adminnpcs()
-        self.build_editor_playernpcs()
-        self.build_editor_npcs()
-        self.build_editor_stages()
+        self.create_editor_adminnpcs()
+        self.create_editor_playernpcs()
+        self.create_editor_npcs()
+        self.create_editor_stages()
 
     #先将数据分类
     def categorizedata(self) -> None:
         for item in self.data:
             if item["type"] == "AdminNPC":
-                self.data_adminnpcs.append(item)
+                self.raw_adminnpcs.append(item)
             elif item["type"] == "PlayerNPC":
-                self.data_playernpcs.append(item)
+                self.raw_playernpcs.append(item)
             elif item["type"] == "NPC":
-                self.data_npcs.append(item)
+                self.raw_npcs.append(item)
             elif item["type"] == "Stage":
-                self.data_stages.append(item)
+                self.raw_stages.append(item)
 
-    def build_editor_adminnpcs(self) -> None:
-        for item in self.data_adminnpcs:
+    def create_editor_adminnpcs(self) -> None:
+        for item in self.raw_adminnpcs:
             editor_npc = ExcelEditorNPC(item)
             self.editor_adminnpcs.append(editor_npc)
             logger.info(editor_npc)
 
-    def build_editor_playernpcs(self) -> None:
-        for item in self.data_playernpcs:
+    def create_editor_playernpcs(self) -> None:
+        for item in self.raw_playernpcs:
             editor_npc = ExcelEditorNPC(item)
             self.editor_playernpcs.append(editor_npc)
             logger.info(editor_npc)
        
-    def build_editor_npcs(self) -> None:
-        for item in self.data_npcs:
+    def create_editor_npcs(self) -> None:
+        for item in self.raw_npcs:
             editor_npc = ExcelEditorNPC(item)
             self.editor_npcs.append(editor_npc)
             logger.info(editor_npc)
 
-    def build_editor_stages(self) -> None:
-        for item in self.data_stages:
+    def create_editor_stages(self) -> None:
+        for item in self.raw_stages:
             editor_stage = ExcelEditorStage(item)
             self.editor_stages.append(editor_stage)
             logger.info(editor_stage)
@@ -510,8 +587,32 @@ class ExcelEditorWorld:
         return f"ExcelEditorWorld({self.name})"
 
     #最后生成JSON
-    def buildworld(self) -> None:
+    def makedict(self) -> Dict[str, Any]:
         logger.warning("Building world..., 需要检查，例如NPC里出现了，但是场景中没有出现，那就是错误。一顿关联，最后生成JSON文件")
+        dict: Dict[str, Any] = {}
+        dict["adminnpcs"] = [editor_npc.makedict() for editor_npc in self.editor_adminnpcs]
+        dict["playernpcs"] = [editor_npc.makedict() for editor_npc in self.editor_playernpcs]
+        dict["npcs"] = [editor_npc.makedict() for editor_npc in self.editor_npcs]
+        dict["stages"] = [editor_stage.makedict() for editor_stage in self.editor_stages]
+        return dict
+    
+    def writejson(self) -> bool:
+        builddata = self.makedict()    
+        logger.warning(builddata)
+        builddata_json = json.dumps(builddata, indent=4, ensure_ascii = False)
+        try:
+            directory = f"{WORLD_NAME}/"
+            filename = f"{self.name}.json"
+            path = os.path.join(directory, filename)
+            # 确保目录存在
+            os.makedirs(directory, exist_ok=True)
+            with open(path, 'w', encoding='utf-8') as file:
+                file.write(builddata_json)
+                return True
+        except Exception as e:
+            logger.error(f"An error occurred: {e}") 
+        return False
+
 ############################################################################################################
 def genworld(worldname: str) -> ExcelEditorWorld:
     ####测试的一个世界编辑
@@ -520,7 +621,7 @@ def genworld(worldname: str) -> ExcelEditorWorld:
     worlddata2json: str = worlddata.to_json(orient='records', force_ascii=False)
     worlddata2list: List[Any] = json.loads(worlddata2json)
     worldeditor = ExcelEditorWorld(worldname, worlddata2list)
-    worldeditor.buildworld()
+    worldeditor.makedict()
     return worldeditor
 ############################################################################################################
 def main() -> None:
@@ -531,9 +632,10 @@ def main() -> None:
     #尝试分析之间的关系并做一定的自我检查，这里是例子，实际应用中，可以根据需求做更多的检查
     analyze_npc_relationship_graph()
     analyze_relationship_graph_between_npcs_and_props()
-    #测试这个世界编辑，未完成
+    #测试这个世界编辑，未完成?
     world = genworld('World1')
-    logger.warning(world)
+    if world is not None:
+        world.writejson()
 ############################################################################################################
 if __name__ == "__main__":
     main()

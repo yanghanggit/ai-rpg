@@ -299,7 +299,8 @@ def analyze_npc_relationship_graph() -> None:
         npc.mentioned_npcs.clear()
         for other_npc in dict_excelnpcs.values():
             if npc.add_mentioned_npc(other_npc.name):
-                logger.info(f"{npc.name} mentioned {other_npc.name}")
+                pass
+                #logger.info(f"{npc.name} mentioned {other_npc.name}")
 
     #再检查
     for npc in dict_excelnpcs.values():
@@ -314,7 +315,8 @@ def analyze_relationship_graph_betweennpcs_and_props() -> None:
         npc.mentioned_props.clear()
         for other_prop in dict_excelprops.values():
             if npc.add_mentioned_prop(other_prop.name):
-                logger.info(f"{npc.name} mentioned {other_prop.name}")
+                pass
+                #logger.info(f"{npc.name} mentioned {other_prop.name}")
     #再检查
     for npc in dict_excelnpcs.values():
         if len(npc.mentioned_props) > 0:
@@ -490,18 +492,20 @@ class ExcelEditorWorld:
 def gen_world1() -> None:
     world1_sheet_str: str = world1sheet.to_json(orient='records', force_ascii=False)
     world1data: List[Any] = json.loads(world1_sheet_str)
-    #logger.info(world1data)
     worldeditor = ExcelEditorWorld(world1data)
     worldeditor.buildworld()
 
 ############################################################################################################
 def main() -> None:
+    #分析必要数据
     gennpcs()
     genstages()
     genprops()
+    #尝试分析之间的关系并做一定的自我检查
     analyze_npc_relationship_graph()
     analyze_relationship_graph_betweennpcs_and_props()
-    gen_world1() #测试这个世界编辑
+    #测试这个世界编辑，未完成
+    gen_world1() 
 
 if __name__ == "__main__":
     main()

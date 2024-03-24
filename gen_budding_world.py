@@ -293,7 +293,7 @@ def analyze_npc_relationship_graph() -> None:
             if npc.check_mentioned_npc(other_npc.name) and not other_npc.check_mentioned_npc(npc.name):
                 logger.warning(f"{npc.name} mentioned {other_npc.name}, but {other_npc.name} did not mention {npc.name}")
 ################################################################################################################
-def analyze_relationship_graph_betweennpcs_and_props() -> None:
+def analyze_relationship_graph_between_npcs_and_props() -> None:
     #先构建
     for npc in all_npcs_data.values():
         npc.mentioned_props.clear()
@@ -518,7 +518,7 @@ def main() -> None:
     gen_props_data()
     #尝试分析之间的关系并做一定的自我检查，这里是例子，实际应用中，可以根据需求做更多的检查
     analyze_npc_relationship_graph()
-    analyze_relationship_graph_betweennpcs_and_props()
+    analyze_relationship_graph_between_npcs_and_props()
     #测试这个世界编辑，未完成
     world = genworld('World1')
     logger.warning(world)

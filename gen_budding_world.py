@@ -67,11 +67,13 @@ class ExcelDataNPC:
         self.port: int = port
         self.api: str = api
         self.worldview: str = worldview
+        self.desc_and_history: str = f"""{self.description} {self.history}"""
+        self.I_mentioned_someone: List[str] = []
+
+        #B is mentioned in A's log
 
         self.sysprompt: str = ""
         self.agentpy: str = ""
-        self.who_mentioned_you: List[str] = []
-
         logger.info(self.localhost_api())
 
     def __str__(self) -> str:
@@ -120,6 +122,25 @@ class ExcelDataNPC:
         with open(path, 'w', encoding='utf-8') as file:
             file.write(self.agentpy)
             file.write("\n\n\n")
+
+# 2024-03-24 13:38:57.464 | WARNING  | __main__:analyze_npc_relationship_graph:302 - 断剑 mentioned 卡斯帕·艾伦德, but 卡斯帕·艾伦德 did not mention 断剑
+# 2024-03-24 13:38:57.464 | WARNING  | __main__:analyze_npc_relationship_graph:302 - 卡斯帕·艾伦德 mentioned 暗影巨龙, but 暗影巨龙 did not mention 卡斯帕
+
+    def add_mentioned_someone(self, name: str) -> bool:
+        if name == self.name:
+            return False
+        if name in self.I_mentioned_someone:
+            return True
+        if name in self.desc_and_history:
+            self.I_mentioned_someone.append(name)
+            return True
+        return False
+    
+    def check_mentioned(self, name: str) -> bool:
+        if name in self.I_mentioned_someone:
+            return True
+        return False
+
 
 class ExcelDataStage:
 
@@ -210,11 +231,13 @@ npc_sys_prompt_template: str = readmd(f"/{WORLD_NAME}/{NPC_SYS_PROMPT_TEMPLATE}"
 stage_sys_prompt_template: str = readmd(f"/{WORLD_NAME}/{STAGE_SYS_PROMPT_TEMPLATE}")
 gpt_agent_template: str = readpy(f"/{WORLD_NAME}/{GPT_AGENT_TEMPLATE}")
 
-
 excelnpcs: list[ExcelDataNPC] = []
 excelstages: list[ExcelDataStage] = []    
 excelprops: list[ExcelDataProp] = []
 
+dict_excelnpcs: Dict[str, ExcelDataNPC] = {}
+dict_excelstages: Dict[str, ExcelDataStage] = {}
+dict_excelprops: Dict[str, ExcelDataProp] = {}
 
 npcsheet: DataFrame = pd.read_excel(f"{WORLD_NAME}/{WORLD_NAME}.xlsx", sheet_name='NPC', engine='openpyxl')
 stagesheet: DataFrame = pd.read_excel(f"{WORLD_NAME}/{WORLD_NAME}.xlsx", sheet_name='Stage', engine='openpyxl')
@@ -235,6 +258,8 @@ def gennpcs() -> None:
         excelnpc.write_sys_prompt()
         excelnpc.gen_agentpy(gpt_agent_template)
         excelnpc.write_agentpy()
+        dict_excelnpcs[excelnpc.name] = excelnpc
+
 ############################################################################################################
 def genstages() -> None:
     ## 读取Excel文件
@@ -247,7 +272,8 @@ def genstages() -> None:
         excelstage.gen_sys_prompt(stage_sys_prompt_template)
         excelstage.write_sys_prompt()
         excelstage.gen_agentpy(gpt_agent_template)
-        excelstage.write_agentpy()     
+        excelstage.write_agentpy()    
+        dict_excelstages[excelstage.name] = excelstage 
 ############################################################################################################
 def genprops() -> None:
     ## 读取Excel文件
@@ -257,44 +283,21 @@ def genprops() -> None:
             #(f"Invalid row: {excelprop}")
             continue
         excelprops.append(excelprop)
-
+        dict_excelprops[excelprop.name] = excelprop
 ############################################################################################################
 def analyze_npc_relationship_graph() -> None:
-    npc_json_str: str = npcsheet.to_json(orient='records', force_ascii=False)
-    npcarray: List[Any] = json.loads(npc_json_str)
- 
-    # 以名字为key, 将description和history合并，作为总内容。里面可能含有其他人的名字
-    npcgraph_name_description_history: Dict[str, str] = {}
-    for npc in npcarray:
-        key = npc["name"]
-        content = f"{npc['description']} {npc['history']}"
-        npcgraph_name_description_history[key] = content
+    #先构建
+    for npc in dict_excelnpcs.values():
+        npc.I_mentioned_someone.clear()
+        for other_npc in dict_excelnpcs.values():
+            if npc.add_mentioned_someone(other_npc.name):
+                logger.info(f"{npc.name} mentioned {other_npc.name}")
 
-    #key是名字，value是在他们的description与history里提到这个名字的人
-    relationship_graph: Dict[str, List[str]] = {}
-    # 遍历每一个名字
-    for name in npcgraph_name_description_history:
-        # 初始化关系列表
-        who_mentioned_you = []
-        
-        # 遍历每一个名字的关系内容
-        for other_name, content in npcgraph_name_description_history.items():
-            # 如果A的名字出现在B的content里，就加入A的who_mentioned_you
-            if name != other_name and name in content:
-                who_mentioned_you.append(other_name)
-        
-        # 将关系列表加入数据结构
-        relationship_graph[name] = who_mentioned_you
-
-    # 最后遍历这个relationship_graph，其中的value部分代表着‘who_mentioned_you’。
-    # 例如，name为A，who_mentioned_you = [B,C]代表着B和C都提到了A。
-    # 这样请在relationship_graph结构里索引B或C,如果他们的‘who_mentioned_you’没有A，
-    # 代表着A没提到B或C，凡是满足这个情况的，就答应log来报警
-    for name, mentioned in relationship_graph.items():
-        for person in mentioned:
-            if name not in relationship_graph.get(person, []):
-                logger.warning(f"{person} mentioned {name}, but {name} did not mention {person}")
-
+    #再检查
+    for npc in dict_excelnpcs.values():
+        for other_npc in dict_excelnpcs.values():
+            if npc.check_mentioned(other_npc.name) and not other_npc.check_mentioned(npc.name):
+                logger.warning(f"{npc.name} mentioned {other_npc.name}, but {other_npc.name} did not mention {npc.name}")
 ############################################################################################################
 def analyze_relationship_graph_betweennpcs_and_props() -> None:
     

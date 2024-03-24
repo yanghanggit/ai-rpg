@@ -6,7 +6,7 @@ from pandas.core.frame import DataFrame
 import json
 from typing import List, Dict, Any, Optional
 
-##全局的，方便，不封装了，反正当工具用
+##全局的，方便，不封装了，反正当工具用.....
 # 核心设置
 WORLD_NAME = "budding_world"
 
@@ -22,7 +22,7 @@ RAG_FILE = "rag.md"
 OUT_PUT_NPC_SYS_PROMPT = "gen_npc_sys_prompt"
 OUT_PUT_STAGE_SYS_PROMPT = "gen_stage_sys_prompt"
 OUT_PUT_AGENT = "gen_agent"
-
+############################################################################################################
 def readmd(file_path: str) -> str:
     try:
         file_path = os.getcwd() + file_path
@@ -37,8 +37,7 @@ def readmd(file_path: str) -> str:
         return f"File not found: {file_path}"
     except Exception as e:
         return f"An error occurred: {e}"
-    
-
+############################################################################################################
 def readpy(file_path: str) -> str:
     try:
         file_path = os.getcwd() + file_path
@@ -54,8 +53,7 @@ def readpy(file_path: str) -> str:
         return f"File not found: {file_path}"
     except Exception as e:
         return f"An error occurred: {e}"
-    
-
+############################################################################################################
 class ExcelDataNPC:
 
     def __init__(self, name: str, codename: str, description: str, history: str, gptmodel: str, port: int, api: str, worldview: str) -> None:
@@ -149,8 +147,7 @@ class ExcelDataNPC:
         if name in self.mentioned_props:
             return True
         return False
-
-
+############################################################################################################
 class ExcelDataStage:
 
     def __init__(self, name: str, codename: str, description: str, gptmodel: str, port: int, api: str, worldview: str) -> None:
@@ -193,7 +190,6 @@ class ExcelDataStage:
     def localhost_api(self) -> str:
         return f"http://localhost:{self.port}{self.api}/"
     
-
     def write_sys_prompt(self) -> None: 
         directory = f"{WORLD_NAME}/{OUT_PUT_STAGE_SYS_PROMPT}"
         filename = f"{self.codename}_sys_prompt.md"
@@ -213,8 +209,7 @@ class ExcelDataStage:
         with open(path, 'w', encoding='utf-8') as file:
             file.write(self.agentpy)
             file.write("\n\n\n")
-    
-
+############################################################################################################
 class ExcelDataProp:
     
     def __init__(self, name: str, codename: str, isunique: str, description: str, worldview: str) -> None:
@@ -232,26 +227,20 @@ class ExcelDataProp:
         
     def isvalid(self) -> bool:
         return True
-        
+############################################################################################################
 
-##全局的，方便，不封装了，反正当工具用
+##全局的，方便，不封装了，反正当工具用.....
 npc_sys_prompt_template: str = readmd(f"/{WORLD_NAME}/{NPC_SYS_PROMPT_TEMPLATE}")
 stage_sys_prompt_template: str = readmd(f"/{WORLD_NAME}/{STAGE_SYS_PROMPT_TEMPLATE}")
 gpt_agent_template: str = readpy(f"/{WORLD_NAME}/{GPT_AGENT_TEMPLATE}")
 
-excelnpcs: list[ExcelDataNPC] = []
-excelstages: list[ExcelDataStage] = []    
-excelprops: list[ExcelDataProp] = []
-
-dict_excelnpcs: Dict[str, ExcelDataNPC] = {}
-dict_excelstages: Dict[str, ExcelDataStage] = {}
-dict_excelprops: Dict[str, ExcelDataProp] = {}
-
 npcsheet: DataFrame = pd.read_excel(f"{WORLD_NAME}/{WORLD_NAME}.xlsx", sheet_name='NPC', engine='openpyxl')
 stagesheet: DataFrame = pd.read_excel(f"{WORLD_NAME}/{WORLD_NAME}.xlsx", sheet_name='Stage', engine='openpyxl')
 propsheet: DataFrame = pd.read_excel(f"{WORLD_NAME}/{WORLD_NAME}.xlsx", sheet_name='Prop', engine='openpyxl')
-####测试的一个世界编辑
-world1sheet: DataFrame = pd.read_excel(f"{WORLD_NAME}/{WORLD_NAME}.xlsx", sheet_name='World1', engine='openpyxl')
+
+all_npcs_data: Dict[str, ExcelDataNPC] = {}
+all_stages_data: Dict[str, ExcelDataStage] = {}
+all_props_data: Dict[str, ExcelDataProp] = {}
 
 ############################################################################################################
 def gennpcs() -> None:
@@ -261,13 +250,11 @@ def gennpcs() -> None:
         if not excelnpc.isvalid():
             #print(f"Invalid row: {excelnpc}")
             continue
-        excelnpcs.append(excelnpc)
         excelnpc.gen_sys_prompt(npc_sys_prompt_template)
         excelnpc.write_sys_prompt()
         excelnpc.gen_agentpy(gpt_agent_template)
         excelnpc.write_agentpy()
-        dict_excelnpcs[excelnpc.name] = excelnpc
-
+        all_npcs_data[excelnpc.name] = excelnpc
 ############################################################################################################
 def genstages() -> None:
     ## 读取Excel文件
@@ -276,12 +263,11 @@ def genstages() -> None:
         if not excelstage.isvalid():
             #print(f"Invalid row: {excelstage}")
             continue
-        excelstages.append(excelstage)
         excelstage.gen_sys_prompt(stage_sys_prompt_template)
         excelstage.write_sys_prompt()
         excelstage.gen_agentpy(gpt_agent_template)
         excelstage.write_agentpy()    
-        dict_excelstages[excelstage.name] = excelstage 
+        all_stages_data[excelstage.name] = excelstage 
 ############################################################################################################
 def genprops() -> None:
     ## 读取Excel文件
@@ -290,35 +276,33 @@ def genprops() -> None:
         if not excelprop.isvalid():
             #(f"Invalid row: {excelprop}")
             continue
-        excelprops.append(excelprop)
-        dict_excelprops[excelprop.name] = excelprop
+        all_props_data[excelprop.name] = excelprop
 ############################################################################################################
 def analyze_npc_relationship_graph() -> None:
     #先构建
-    for npc in dict_excelnpcs.values():
+    for npc in all_npcs_data.values():
         npc.mentioned_npcs.clear()
-        for other_npc in dict_excelnpcs.values():
+        for other_npc in all_npcs_data.values():
             if npc.add_mentioned_npc(other_npc.name):
                 pass
                 #logger.info(f"{npc.name} mentioned {other_npc.name}")
 
     #再检查
-    for npc in dict_excelnpcs.values():
-        for other_npc in dict_excelnpcs.values():
+    for npc in all_npcs_data.values():
+        for other_npc in all_npcs_data.values():
             if npc.check_mentioned_npc(other_npc.name) and not other_npc.check_mentioned_npc(npc.name):
                 logger.warning(f"{npc.name} mentioned {other_npc.name}, but {other_npc.name} did not mention {npc.name}")
-
 ################################################################################################################
 def analyze_relationship_graph_betweennpcs_and_props() -> None:
     #先构建
-    for npc in dict_excelnpcs.values():
+    for npc in all_npcs_data.values():
         npc.mentioned_props.clear()
-        for other_prop in dict_excelprops.values():
+        for other_prop in all_props_data.values():
             if npc.add_mentioned_prop(other_prop.name):
                 pass
                 #logger.info(f"{npc.name} mentioned {other_prop.name}")
     #再检查
-    for npc in dict_excelnpcs.values():
+    for npc in all_npcs_data.values():
         if len(npc.mentioned_props) > 0:
             logger.warning(f"{npc.name}: {npc.mentioned_props}")
 ################################################################################################################   
@@ -342,8 +326,8 @@ class ExcelEditorNPC:
             return        
         files = filesdata.split(";")
         for file in files:
-            if file in dict_excelprops:
-                self.excelprops.append(dict_excelprops[file])
+            if file in all_props_data:
+                self.excelprops.append(all_props_data[file])
             else:
                 logger.error(f"Invalid file: {file}")
 
@@ -356,15 +340,29 @@ class ExcelEditorNPC:
     def __str__(self) -> str:
         propsstr = ', '.join(str(prop) for prop in self.excelprops)
         return f"ExcelEditorNPC({self.data['name']}, {self.data['type']}, files: {propsstr})"
-   
+################################################################################################################
+class ExcelEditorStageCondition:
+    def __init__(self, name: str, type: str) -> None:
+        self.name: str = name
+        self.type: str = type
+        self.exceldataprop: Optional[ExcelDataProp] = None
+        self.parsecondition()
+
+    def parsecondition(self) -> None:
+        if self.type == "Prop":
+            self.exceldataprop = all_props_data[self.name]
+        else:
+            logger.error(f"Invalid condition type: {self.type}")
+        
+    def __str__(self) -> str:
+        return f"ExcelEditorStageCondition({self.name}, {self.type})"    
 ################################################################################################################
 class ExcelEditorStage:
     def __init__(self, data: Any) -> None:
         self.data: Any = data
-
         #数据
-        self.stage_entry_conditions: List[str] = []
-        self.stage_exit_conditions: List[str] = []
+        self.stage_entry_conditions: List[ExcelEditorStageCondition] = []
+        self.stage_exit_conditions: List[ExcelEditorStageCondition] = []
         self.props_in_stage: List[ExcelDataProp] = []
         self.npcs_in_stage: List[ExcelDataNPC] = []
         self.initialization_memory: str = ""
@@ -384,13 +382,23 @@ class ExcelEditorStage:
         stage_entry_conditions = self.data["stage_entry_conditions"]
         if stage_entry_conditions is None:
             return        
-        self.stage_entry_conditions = stage_entry_conditions.split(";")
+        list_stage_entry_conditions = stage_entry_conditions.split(";")
+        for condition in list_stage_entry_conditions:
+            if condition in all_props_data:
+                self.stage_entry_conditions.append(ExcelEditorStageCondition(condition, "Prop"))
+            else:
+                logger.error(f"Invalid condition: {condition}")
 
     def parse_stage_exit_conditions(self) -> None:
         stage_exit_conditions = self.data["stage_exit_conditions"]
         if stage_exit_conditions is None:
             return
-        self.stage_exit_conditions = stage_exit_conditions.split(";")
+        list_stage_exit_conditions = stage_exit_conditions.split(";")
+        for condition in list_stage_exit_conditions:
+            if condition in all_props_data:
+                self.stage_exit_conditions.append(ExcelEditorStageCondition(condition, "Prop"))
+            else:
+                logger.error(f"Invalid condition: {condition}")
 
     def parse_props_in_stage(self) -> None:
         props_in_stage = self.data["props_in_stage"]
@@ -398,8 +406,8 @@ class ExcelEditorStage:
             return
         list_props_in_stage = props_in_stage.split(";")
         for prop in list_props_in_stage:
-            if prop in dict_excelprops:
-                self.props_in_stage.append(dict_excelprops[prop])
+            if prop in all_props_data:
+                self.props_in_stage.append(all_props_data[prop])
             else:
                 logger.error(f"Invalid prop: {prop}")
 
@@ -409,8 +417,8 @@ class ExcelEditorStage:
             return
         list_npcs_in_stage = npcs_in_stage.split(";")
         for npc in list_npcs_in_stage:
-            if npc in dict_excelnpcs:
-                self.npcs_in_stage.append(dict_excelnpcs[npc])
+            if npc in all_npcs_data:
+                self.npcs_in_stage.append(all_npcs_data[npc])
             else:
                 logger.error(f"Invalid npc: {npc}")
 
@@ -423,26 +431,27 @@ class ExcelEditorStage:
     def __str__(self) -> str:
         propsstr = ', '.join(str(prop) for prop in self.props_in_stage)
         npcsstr = ', '.join(str(npc) for npc in self.npcs_in_stage)
-        return f"ExcelEditorStage({self.data["name"]}, {self.data["type"]}, stage_entry_conditions: {self.stage_entry_conditions}, stage_exit_conditions: {self.stage_exit_conditions}, props_in_stage: {propsstr}, npcs_in_stage: {npcsstr})"
-
+        entrystr = ', '.join(str(condition) for condition in self.stage_entry_conditions)
+        exitstr = ', '.join(str(condition) for condition in self.stage_exit_conditions)
+        return f"ExcelEditorStage({self.data["name"]}, {self.data["type"]}, stage_entry_conditions: {entrystr}, stage_exit_conditions: {exitstr}, props_in_stage: {propsstr}, npcs_in_stage: {npcsstr})"
 ################################################################################################################
 class ExcelEditorWorld:
     def __init__(self, data: List[Any]) -> None:
         # 根数据
         self.data: List[Any] = data
-        # 解析数据用
+        #笨一点，先留着吧。。。
         self.data_adminnpcs: List[Any] = []
         self.data_playernpcs: List[Any] = []
         self.data_npcs: List[Any] = []
         self.data_stages: List[Any] = []
-        #构建数据
+        #真正的构建数据
         self.editor_adminnpcs: List[ExcelEditorNPC] = []
         self.editor_playernpcs: List[ExcelEditorNPC] = []
         self.editor_npcs: List[ExcelEditorNPC] = []
         self.editor_stages: List[ExcelEditorStage] = []
-        ##构建流程
+        ##把数据分类
         self.categorizedata()
-        ##
+        ##根据分类各种处理。。。
         self.build_editor_adminnpcs()
         self.build_editor_playernpcs()
         self.build_editor_npcs()
@@ -487,14 +496,14 @@ class ExcelEditorWorld:
     #最后生成JSON
     def buildworld(self) -> None:
         logger.warning("Building world..., 需要检查，例如NPC里出现了，但是场景中没有出现，那就是错误。一顿关联，最后生成JSON文件")
-
 ############################################################################################################
 def gen_world1() -> None:
+    ####测试的一个世界编辑
+    world1sheet: DataFrame = pd.read_excel(f"{WORLD_NAME}/{WORLD_NAME}.xlsx", sheet_name='World1', engine='openpyxl')
     world1_sheet_str: str = world1sheet.to_json(orient='records', force_ascii=False)
     world1data: List[Any] = json.loads(world1_sheet_str)
     worldeditor = ExcelEditorWorld(world1data)
     worldeditor.buildworld()
-
 ############################################################################################################
 def main() -> None:
     #分析必要数据
@@ -506,6 +515,6 @@ def main() -> None:
     analyze_relationship_graph_betweennpcs_and_props()
     #测试这个世界编辑，未完成
     gen_world1() 
-
+############################################################################################################
 if __name__ == "__main__":
     main()

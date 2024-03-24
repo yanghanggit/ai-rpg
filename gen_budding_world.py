@@ -70,6 +70,7 @@ class ExcelDataNPC:
 
         self.sysprompt: str = ""
         self.agentpy: str = ""
+        self.who_mentioned_you: List[str] = []
 
         logger.info(self.localhost_api())
 
@@ -99,6 +100,26 @@ class ExcelDataNPC:
     
     def localhost_api(self) -> str:
         return f"http://localhost:{self.port}{self.api}/"
+    
+    def write_sys_prompt(self) -> None: 
+        directory = f"{WORLD_NAME}/{OUT_PUT_NPC_SYS_PROMPT}"
+        filename = f"{self.codename}_sys_prompt.md"
+        path = os.path.join(directory, filename)
+        # 确保目录存在
+        os.makedirs(directory, exist_ok=True)
+        with open(path, 'w', encoding='utf-8') as file:
+            file.write(self.sysprompt)
+            file.write("\n\n\n")
+
+    def write_agentpy(self) -> None:
+        directory = f"{WORLD_NAME}/{OUT_PUT_AGENT}"
+        filename = f"{self.codename}_agent.py"
+        path = os.path.join(directory, filename)
+        # 确保目录存在
+        os.makedirs(directory, exist_ok=True)
+        with open(path, 'w', encoding='utf-8') as file:
+            file.write(self.agentpy)
+            file.write("\n\n\n")
 
 class ExcelDataStage:
 
@@ -143,6 +164,27 @@ class ExcelDataStage:
         return f"http://localhost:{self.port}{self.api}/"
     
 
+    def write_sys_prompt(self) -> None: 
+        directory = f"{WORLD_NAME}/{OUT_PUT_STAGE_SYS_PROMPT}"
+        filename = f"{self.codename}_sys_prompt.md"
+        path = os.path.join(directory, filename)
+        # 确保目录存在
+        os.makedirs(directory, exist_ok=True)
+        with open(path, 'w', encoding='utf-8') as file:
+            file.write(self.sysprompt)
+            file.write("\n\n\n")
+
+    def write_agentpy(self) -> None:
+        directory = f"{WORLD_NAME}/{OUT_PUT_AGENT}"
+        filename = f"{self.codename}_agent.py"
+        path = os.path.join(directory, filename)
+        # 确保目录存在
+        os.makedirs(directory, exist_ok=True)
+        with open(path, 'w', encoding='utf-8') as file:
+            file.write(self.agentpy)
+            file.write("\n\n\n")
+    
+
 class ExcelDataProp:
     
     def __init__(self, name: str, codename: str, isunique: str, description: str, worldview: str) -> None:
@@ -182,70 +224,30 @@ world1sheet: DataFrame = pd.read_excel(f"{WORLD_NAME}/{WORLD_NAME}.xlsx", sheet_
 
 ############################################################################################################
 def gennpcs() -> None:
-
     ## 读取Excel文件
     for index, row in npcsheet.iterrows():
         excelnpc = ExcelDataNPC(row["name"], row["codename"], row["description"], row["history"], row["GPT_MODEL"], row["PORT"], row["API"], RAG_FILE)
         if not excelnpc.isvalid():
             #print(f"Invalid row: {excelnpc}")
             continue
-        excelnpc.gen_sys_prompt(npc_sys_prompt_template)
-        excelnpc.gen_agentpy(gpt_agent_template)
         excelnpcs.append(excelnpc)
-
-    for excelnpc in excelnpcs:
-        directory = f"{WORLD_NAME}/{OUT_PUT_NPC_SYS_PROMPT}"
-        filename = f"{excelnpc.codename}_sys_prompt.md"
-        path = os.path.join(directory, filename)
-        # 确保目录存在
-        os.makedirs(directory, exist_ok=True)
-        with open(path, 'w', encoding='utf-8') as file:
-            file.write(excelnpc.sysprompt)
-            file.write("\n\n\n")
-
-    for excelnpc in excelnpcs:
-        directory = f"{WORLD_NAME}/{OUT_PUT_AGENT}"
-        filename = f"{excelnpc.codename}_agent.py"
-        path = os.path.join(directory, filename)
-        # 确保目录存在
-        os.makedirs(directory, exist_ok=True)
-        with open(path, 'w', encoding='utf-8') as file:
-            file.write(excelnpc.agentpy)
-            file.write("\n\n\n")
-
+        excelnpc.gen_sys_prompt(npc_sys_prompt_template)
+        excelnpc.write_sys_prompt()
+        excelnpc.gen_agentpy(gpt_agent_template)
+        excelnpc.write_agentpy()
 ############################################################################################################
 def genstages() -> None:
-   
     ## 读取Excel文件
     for index, row in stagesheet.iterrows():
         excelstage = ExcelDataStage(row["name"], row["codename"], row["description"], row["GPT_MODEL"], row["PORT"], row["API"], RAG_FILE)
         if not excelstage.isvalid():
             #print(f"Invalid row: {excelstage}")
             continue
-        excelstage.gen_sys_prompt(stage_sys_prompt_template)
-        excelstage.gen_agentpy(gpt_agent_template)
         excelstages.append(excelstage)
-
-    for excelstage in excelstages:
-        directory = f"{WORLD_NAME}/{OUT_PUT_STAGE_SYS_PROMPT}"
-        filename = f"{excelstage.codename}_sys_prompt.md"
-        path = os.path.join(directory, filename)
-        # 确保目录存在
-        os.makedirs(directory, exist_ok=True)
-        with open(path, 'w', encoding='utf-8') as file:
-            file.write(excelstage.sysprompt)
-            file.write("\n\n\n")
-
-    for excelstage in excelstages:
-        directory = f"{WORLD_NAME}/{OUT_PUT_AGENT}"
-        filename = f"{excelstage.codename}_agent.py"
-        path = os.path.join(directory, filename)
-        # 确保目录存在
-        os.makedirs(directory, exist_ok=True)
-        with open(path, 'w', encoding='utf-8') as file:
-            file.write(excelstage.agentpy)
-            file.write("\n\n\n")
-
+        excelstage.gen_sys_prompt(stage_sys_prompt_template)
+        excelstage.write_sys_prompt()
+        excelstage.gen_agentpy(gpt_agent_template)
+        excelstage.write_agentpy()     
 ############################################################################################################
 def genprops() -> None:
     ## 读取Excel文件

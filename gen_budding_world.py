@@ -4,7 +4,7 @@ import os
 from loguru import logger
 from pandas.core.frame import DataFrame
 import json
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 ##全局的，方便，不封装了，反正当工具用
 # 核心设置
@@ -323,7 +323,8 @@ def analyze_relationship_graph_betweennpcs_and_props() -> None:
 class ExcelEditorNPC:
     def __init__(self, data: Any) -> None:
         self.data: Any = data
-        self.files: List[str] = []
+        self.excelnpc: Optional[ExcelDataNPC] = None
+        self.excelprops: List[ExcelDataProp] = []
         self.initialization_memory: str = ""
 
         if self.data["type"] not in ["AdminNPC", "PlayerNPC", "NPC"]:
@@ -334,10 +335,15 @@ class ExcelEditorNPC:
         self.parse_initialization_memory()
         
     def parsefiles(self) -> None:
-        filesdata = self.data["files"]
+        filesdata: str = self.data["files"]
         if filesdata is None:
             return        
-        self.files = filesdata.split(";")
+        files = filesdata.split(";")
+        for file in files:
+            if file in dict_excelprops:
+                self.excelprops.append(dict_excelprops[file])
+            else:
+                logger.error(f"Invalid file: {file}")
 
     def parse_initialization_memory(self) -> None:
         initialization_memory = self.data["initialization_memory"]
@@ -346,7 +352,8 @@ class ExcelEditorNPC:
         self.initialization_memory = str(initialization_memory)
 
     def __str__(self) -> str:
-        return f"EditorNPC({self.data["name"]}, {self.data["type"]}, files: {self.files}, initialization_memory: {self.initialization_memory})"
+        propsstr = ', '.join(str(prop) for prop in self.excelprops)
+        return f"EditorNPC({self.data['name']}, {self.data['type']}, files: {propsstr}, initialization_memory: {self.initialization_memory})"
    
 ################################################################################################################
 class ExcelEditorStage:
@@ -421,6 +428,7 @@ class ExcelEditorWorld:
         self.editor_stages: List[ExcelEditorStage] = []
         ##构建流程
         self.build_and_categorize_data()
+        ##
         self.build_editor_adminnpcs()
         self.build_editor_playernpcs()
         self.build_editor_npcs()

@@ -68,9 +68,8 @@ class ExcelDataNPC:
         self.api: str = api
         self.worldview: str = worldview
         self.desc_and_history: str = f"""{self.description} {self.history}"""
-        self.I_mentioned_someone: List[str] = []
-
-        #B is mentioned in A's log
+        self.mentioned_npcs: List[str] = []
+        self.mentioned_props: List[str] = []
 
         self.sysprompt: str = ""
         self.agentpy: str = ""
@@ -123,21 +122,31 @@ class ExcelDataNPC:
             file.write(self.agentpy)
             file.write("\n\n\n")
 
-# 2024-03-24 13:38:57.464 | WARNING  | __main__:analyze_npc_relationship_graph:302 - 断剑 mentioned 卡斯帕·艾伦德, but 卡斯帕·艾伦德 did not mention 断剑
-# 2024-03-24 13:38:57.464 | WARNING  | __main__:analyze_npc_relationship_graph:302 - 卡斯帕·艾伦德 mentioned 暗影巨龙, but 暗影巨龙 did not mention 卡斯帕
-
-    def add_mentioned_someone(self, name: str) -> bool:
+    def add_mentioned_npc(self, name: str) -> bool:
         if name == self.name:
             return False
-        if name in self.I_mentioned_someone:
+        if name in self.mentioned_npcs:
             return True
         if name in self.desc_and_history:
-            self.I_mentioned_someone.append(name)
+            self.mentioned_npcs.append(name)
             return True
         return False
     
-    def check_mentioned(self, name: str) -> bool:
-        if name in self.I_mentioned_someone:
+    def check_mentioned_npc(self, name: str) -> bool:
+        if name in self.mentioned_npcs:
+            return True
+        return False
+    
+    def add_mentioned_prop(self, name: str) -> bool:
+        if name in self.mentioned_props:
+            return True
+        if name in self.desc_and_history:
+            self.mentioned_props.append(name)
+            return True
+        return False
+    
+    def check_mentioned_prop(self, name: str) -> bool:
+        if name in self.mentioned_props:
             return True
         return False
 
@@ -224,7 +233,6 @@ class ExcelDataProp:
     def isvalid(self) -> bool:
         return True
         
-       
 
 ##全局的，方便，不封装了，反正当工具用
 npc_sys_prompt_template: str = readmd(f"/{WORLD_NAME}/{NPC_SYS_PROMPT_TEMPLATE}")
@@ -288,53 +296,29 @@ def genprops() -> None:
 def analyze_npc_relationship_graph() -> None:
     #先构建
     for npc in dict_excelnpcs.values():
-        npc.I_mentioned_someone.clear()
+        npc.mentioned_npcs.clear()
         for other_npc in dict_excelnpcs.values():
-            if npc.add_mentioned_someone(other_npc.name):
+            if npc.add_mentioned_npc(other_npc.name):
                 logger.info(f"{npc.name} mentioned {other_npc.name}")
 
     #再检查
     for npc in dict_excelnpcs.values():
         for other_npc in dict_excelnpcs.values():
-            if npc.check_mentioned(other_npc.name) and not other_npc.check_mentioned(npc.name):
+            if npc.check_mentioned_npc(other_npc.name) and not other_npc.check_mentioned_npc(npc.name):
                 logger.warning(f"{npc.name} mentioned {other_npc.name}, but {other_npc.name} did not mention {npc.name}")
-############################################################################################################
+
+################################################################################################################
 def analyze_relationship_graph_betweennpcs_and_props() -> None:
-    
-    npc_json_str: str = npcsheet.to_json(orient='records', force_ascii=False)
-    npcarray: List[Any] = json.loads(npc_json_str)
-
-    prop_json_str: str = propsheet.to_json(orient='records', force_ascii=False)
-    proparray: List[Any] = json.loads(prop_json_str)
-
-    # 以名字为key, 将description和history合并，作为总内容。里面可能含有其他人的名字
-    npcgraph_name_description_history: Dict[str, str] = {}
-    for npc in npcarray:
-        key = npc["name"]
-        content = f"{npc['description']} {npc['history']}"
-        npcgraph_name_description_history[key] = content
-
-    # 以名字为key, 将description合并，作为总内容。里面可能含有其他人的名字
-    propgraph_name_description: Dict[str, str] = {}
-    for prop in proparray:
-        key = prop["name"]
-        content = f"{prop['description']}"
-        propgraph_name_description[key] = content
-
-    ##分析道具有谁提到了这个道具，并输出
-    prop_mentions: Dict[str, List[str]] = {}
-    for prop_name, prop_description in propgraph_name_description.items():
-        mentioned_by = []
-        for npc_name, npc_content in npcgraph_name_description_history.items():
-            if prop_name in npc_content:
-                mentioned_by.append(npc_name)
-        prop_mentions[prop_name] = mentioned_by
-
-    ## 有哪些人提到了这个道具
-    for prop_name, mentioned_by in prop_mentions.items():
-        if mentioned_by and len(mentioned_by) > 0:
-            logger.warning(f"{prop_name}: {mentioned_by}")
-
+    #先构建
+    for npc in dict_excelnpcs.values():
+        npc.mentioned_props.clear()
+        for other_prop in dict_excelprops.values():
+            if npc.add_mentioned_prop(other_prop.name):
+                logger.info(f"{npc.name} mentioned {other_prop.name}")
+    #再检查
+    for npc in dict_excelnpcs.values():
+        if len(npc.mentioned_props) > 0:
+            logger.warning(f"{npc.name}: {npc.mentioned_props}")
 ################################################################################################################   
 class ExcelEditorNPC:
     def __init__(self, data: Any) -> None:
@@ -386,7 +370,6 @@ class ExcelEditorStage:
         self.parse_props_in_stage()
         self.parse_npcs_in_stage()
         self.parse_initialization_memory()
-    
 
     def parse_stage_entry_conditions(self) -> None:
         stage_entry_conditions = self.data["stage_entry_conditions"]

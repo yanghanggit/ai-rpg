@@ -76,7 +76,7 @@ class ExcelDataNPC:
         logger.info(self.localhost_api())
 
     def __str__(self) -> str:
-        return f"ExcelNPC({self.name}, {self.codename}, {self.description}, {self.gptmodel}, {self.port}, {self.api}, {self.worldview})"
+        return f"ExcelDataNPC({self.name}, {self.codename})"
         
     def isvalid(self) -> bool:
         return True
@@ -168,7 +168,7 @@ class ExcelDataStage:
         logger.info(self.localhost_api())
 
     def __str__(self) -> str:
-        return f"ExcelStage({self.name}, {self.codename}, {self.description}, {self.gptmodel}, {self.port}, {self.api}, {self.worldview})"
+        return f"ExcelDataStage({self.name}, {self.codename})"
         
     def isvalid(self) -> bool:
         return True
@@ -228,7 +228,7 @@ class ExcelDataProp:
         self.agentpy: str = ""
 
     def __str__(self) -> str:
-        return f"TblProp({self.name}, {self.codename}, {self.isunique}, {self.description}, {self.worldview})"
+        return f"ExcelDataProp({self.name}, {self.codename}, {self.isunique})"
         
     def isvalid(self) -> bool:
         return True
@@ -353,7 +353,7 @@ class ExcelEditorNPC:
 
     def __str__(self) -> str:
         propsstr = ', '.join(str(prop) for prop in self.excelprops)
-        return f"EditorNPC({self.data['name']}, {self.data['type']}, files: {propsstr}, initialization_memory: {self.initialization_memory})"
+        return f"ExcelEditorNPC({self.data['name']}, {self.data['type']}, files: {propsstr})"
    
 ################################################################################################################
 class ExcelEditorStage:
@@ -363,8 +363,8 @@ class ExcelEditorStage:
         #数据
         self.stage_entry_conditions: List[str] = []
         self.stage_exit_conditions: List[str] = []
-        self.props_in_stage: List[str] = []
-        self.npcs_in_stage: List[str] = []
+        self.props_in_stage: List[ExcelDataProp] = []
+        self.npcs_in_stage: List[ExcelDataNPC] = []
         self.initialization_memory: str = ""
 
         if self.data["type"] not in ["Stage"]:
@@ -394,13 +394,23 @@ class ExcelEditorStage:
         props_in_stage = self.data["props_in_stage"]
         if props_in_stage is None:
             return
-        self.props_in_stage = props_in_stage.split(";")
+        list_props_in_stage = props_in_stage.split(";")
+        for prop in list_props_in_stage:
+            if prop in dict_excelprops:
+                self.props_in_stage.append(dict_excelprops[prop])
+            else:
+                logger.error(f"Invalid prop: {prop}")
 
     def parse_npcs_in_stage(self) -> None:
         npcs_in_stage = self.data["npcs_in_stage"]
         if npcs_in_stage is None:
             return
-        self.npcs_in_stage = npcs_in_stage.split(";")
+        list_npcs_in_stage = npcs_in_stage.split(";")
+        for npc in list_npcs_in_stage:
+            if npc in dict_excelnpcs:
+                self.npcs_in_stage.append(dict_excelnpcs[npc])
+            else:
+                logger.error(f"Invalid npc: {npc}")
 
     def parse_initialization_memory(self) -> None:
         initialization_memory = self.data["initialization_memory"]
@@ -409,7 +419,9 @@ class ExcelEditorStage:
         self.initialization_memory = str(initialization_memory)
 
     def __str__(self) -> str:
-        return f"EditorStage({self.data["name"]}, {self.data["type"]}, stage_entry_conditions: {self.stage_entry_conditions}, stage_exit_conditions: {self.stage_exit_conditions}, props_in_stage: {self.props_in_stage}, npcs_in_stage: {self.npcs_in_stage}, initialization_memory: {self.initialization_memory})"
+        propsstr = ', '.join(str(prop) for prop in self.props_in_stage)
+        npcsstr = ', '.join(str(npc) for npc in self.npcs_in_stage)
+        return f"ExcelEditorStage({self.data["name"]}, {self.data["type"]}, stage_entry_conditions: {self.stage_entry_conditions}, stage_exit_conditions: {self.stage_exit_conditions}, props_in_stage: {propsstr}, npcs_in_stage: {npcsstr})"
 
 ################################################################################################################
 class ExcelEditorWorld:
@@ -427,7 +439,7 @@ class ExcelEditorWorld:
         self.editor_npcs: List[ExcelEditorNPC] = []
         self.editor_stages: List[ExcelEditorStage] = []
         ##构建流程
-        self.build_and_categorize_data()
+        self.categorizedata()
         ##
         self.build_editor_adminnpcs()
         self.build_editor_playernpcs()
@@ -435,7 +447,7 @@ class ExcelEditorWorld:
         self.build_editor_stages()
 
     #先将数据分类
-    def build_and_categorize_data(self) -> None:
+    def categorizedata(self) -> None:
         for item in self.data:
             if item["type"] == "AdminNPC":
                 self.data_adminnpcs.append(item)

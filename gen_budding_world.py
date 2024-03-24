@@ -101,24 +101,30 @@ class ExcelDataNPC:
         return f"http://localhost:{self.port}{self.api}/"
     
     def write_sys_prompt(self) -> None: 
-        directory = f"{WORLD_NAME}/{OUT_PUT_NPC_SYS_PROMPT}"
-        filename = f"{self.codename}_sys_prompt.md"
-        path = os.path.join(directory, filename)
-        # 确保目录存在
-        os.makedirs(directory, exist_ok=True)
-        with open(path, 'w', encoding='utf-8') as file:
-            file.write(self.sysprompt)
-            file.write("\n\n\n")
+        try:
+            directory = f"{WORLD_NAME}/{OUT_PUT_NPC_SYS_PROMPT}"
+            filename = f"{self.codename}_sys_prompt.md"
+            path = os.path.join(directory, filename)
+            # 确保目录存在
+            os.makedirs(directory, exist_ok=True)
+            with open(path, 'w', encoding='utf-8') as file:
+                file.write(self.sysprompt)
+                file.write("\n\n\n")
+        except Exception as e:
+            return f"An error occurred: {e}"
 
     def write_agentpy(self) -> None:
-        directory = f"{WORLD_NAME}/{OUT_PUT_AGENT}"
-        filename = f"{self.codename}_agent.py"
-        path = os.path.join(directory, filename)
-        # 确保目录存在
-        os.makedirs(directory, exist_ok=True)
-        with open(path, 'w', encoding='utf-8') as file:
-            file.write(self.agentpy)
-            file.write("\n\n\n")
+        try:
+            directory = f"{WORLD_NAME}/{OUT_PUT_AGENT}"
+            filename = f"{self.codename}_agent.py"
+            path = os.path.join(directory, filename)
+            # 确保目录存在
+            os.makedirs(directory, exist_ok=True)
+            with open(path, 'w', encoding='utf-8') as file:
+                file.write(self.agentpy)
+                file.write("\n\n\n")
+        except Exception as e:
+            return f"An error occurred: {e}"
 
     def add_mentioned_npc(self, name: str) -> bool:
         if name == self.name:
@@ -191,24 +197,30 @@ class ExcelDataStage:
         return f"http://localhost:{self.port}{self.api}/"
     
     def write_sys_prompt(self) -> None: 
-        directory = f"{WORLD_NAME}/{OUT_PUT_STAGE_SYS_PROMPT}"
-        filename = f"{self.codename}_sys_prompt.md"
-        path = os.path.join(directory, filename)
-        # 确保目录存在
-        os.makedirs(directory, exist_ok=True)
-        with open(path, 'w', encoding='utf-8') as file:
-            file.write(self.sysprompt)
-            file.write("\n\n\n")
+        try:
+            directory = f"{WORLD_NAME}/{OUT_PUT_STAGE_SYS_PROMPT}"
+            filename = f"{self.codename}_sys_prompt.md"
+            path = os.path.join(directory, filename)
+            # 确保目录存在
+            os.makedirs(directory, exist_ok=True)
+            with open(path, 'w', encoding='utf-8') as file:
+                file.write(self.sysprompt)
+                file.write("\n\n\n")
+        except Exception as e:
+            return f"An error occurred: {e}"
 
     def write_agentpy(self) -> None:
-        directory = f"{WORLD_NAME}/{OUT_PUT_AGENT}"
-        filename = f"{self.codename}_agent.py"
-        path = os.path.join(directory, filename)
-        # 确保目录存在
-        os.makedirs(directory, exist_ok=True)
-        with open(path, 'w', encoding='utf-8') as file:
-            file.write(self.agentpy)
-            file.write("\n\n\n")
+        try:
+            directory = f"{WORLD_NAME}/{OUT_PUT_AGENT}"
+            filename = f"{self.codename}_agent.py"
+            path = os.path.join(directory, filename)
+            # 确保目录存在
+            os.makedirs(directory, exist_ok=True)
+            with open(path, 'w', encoding='utf-8') as file:
+                file.write(self.agentpy)
+                file.write("\n\n\n")
+        except Exception as e:
+            return f"An error occurred: {e}"
 ############################################################################################################
 class ExcelDataProp:
     

@@ -511,18 +511,29 @@ class ExcelEditorStage:
             dict['memory'] = self.initialization_memory
             list.append(dict)
         return list
-    
+     
     def makedict(self) -> Dict[str, Any]:
+        data_stage: ExcelDataStage = all_stages_data[self.data["name"]]
+        dict: Dict[str, Any] = {}
+        dict["name"] = data_stage.name
+        dict["codename"] = data_stage.codename
+        dict["description"] = data_stage.description
+        dict["url"] = data_stage.localhost_api()
+        dict["memory"] = self.initialization_memory
+        
         entry_conditions = self.make_stage_conditions_list(self.stage_entry_conditions)
         exit_conditions = self.make_stage_conditions_list(self.stage_exit_conditions)
         props = self.make_stage_props_list(self.props_in_stage)
         npcs = self.make_stage_npcs_list(self.npcs_in_stage)
-        dict: Dict[str, Any] = {}
+
         dict["entry_conditions"] = entry_conditions
         dict["exit_conditions"] = exit_conditions
         dict["props"] = props
         dict["npcs"] = npcs
-        return dict
+
+        output_dict: Dict[str, Any] = {}
+        output_dict["stage"] = dict
+        return output_dict
         
 ################################################################################################################
 class ExcelEditorWorld:
@@ -595,6 +606,8 @@ class ExcelEditorWorld:
         dict["playernpcs"] = [editor_npc.makedict() for editor_npc in self.editor_playernpcs]
         dict["npcs"] = [editor_npc.makedict() for editor_npc in self.editor_npcs]
         dict["stages"] = [editor_stage.makedict() for editor_stage in self.editor_stages]
+        version_sign = input("请输入版本号:")
+        dict["version"] = version_sign
         return dict
     
     def writejson(self) -> bool:
@@ -622,7 +635,7 @@ def genworld(worldname: str) -> ExcelEditorWorld:
     worlddata2json: str = worlddata.to_json(orient='records', force_ascii=False)
     worlddata2list: List[Any] = json.loads(worlddata2json)
     worldeditor = ExcelEditorWorld(worldname, worlddata2list)
-    worldeditor.makedict()
+    # worldeditor.makedict()
     return worldeditor
 ############################################################################################################
 def main() -> None:

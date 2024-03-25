@@ -481,7 +481,8 @@ class ExcelEditorStage:
         npcsstr = ', '.join(str(npc) for npc in self.npcs_in_stage)
         entrystr = ', '.join(str(condition) for condition in self.stage_entry_conditions)
         exitstr = ', '.join(str(condition) for condition in self.stage_exit_conditions)
-        return f"ExcelEditorStage({self.data["name"]}, {self.data["type"]}, stage_entry_conditions: {entrystr}, stage_exit_conditions: {exitstr}, props_in_stage: {propsstr}, npcs_in_stage: {npcsstr})"
+        return "ExcelEditorStage({}, {}, stage_entry_conditions: {}, stage_exit_conditions: {}, props_in_stage: {}, npcs_in_stage: {})".format(self.data["name"], self.data["type"], entrystr, exitstr, propsstr, npcsstr)
+
 
     def make_stage_conditions_list(self, conditions: List[ExcelEditorStageCondition]) -> List[Dict[str, str]]:
         list: List[Dict[str, str]] = []

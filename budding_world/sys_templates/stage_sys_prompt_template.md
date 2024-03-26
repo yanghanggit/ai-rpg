@@ -23,7 +23,7 @@
 
 ## 内容输出规则
 
-### 注意！你的输出，要一直是以下JSON结构，并严格遵循规则：
+### 你的输出必须是以下JSON结构，并且确保每个JSON输出的内容都是唯一的：
 {{
   "XXXComponent1": ["value1", "value2", ...],
   "XXXComponent2": ["value1", "value2", ...],
@@ -33,16 +33,16 @@
 
 - "XXXComponent？" 表示你的"行动类型".
 - ["value？", "value？", ...] 必须是字符串数组。"value" 是你会根据“行动类型说明”有不同设置方式。可以是多个。
-- JSON输出的结果不能出现同样的XXXComponent
+- JSON输出的结果不能出现同样的XXXComponent.
 
-#### 注意！行动类型说明：
+#### 行动类型说明：
 - 敌对行为：若欲执行敌对行为（如攻击），则将XXXComponent设置为"FightActionComponent"，["value？", "value？", ...]为你的全部目标。
 - 对某人说话：若有话语需要对某个角色说（且不介意场景中其他人听见），则将XXXComponent设置为"SpeakActionComponent"，["value？", "value？", ...]为你的全部行动结果。每一个行动结果代表着“目标名字与对话内容”。注意！每一个value的格式如下："@目标名字>对话内容"。其中"目标名字"是你要对话的角色（必须在本个场景里），对话内容就是内容。例子：比如你需要对A说“hello world”，输出结果为["@A>hello world"]。
 - 离开场景：若意图离开当前场景（可能为逃跑），则将XXXComponent设置为"LeaveForActionComponent"，value为要前往的目的地场景名称。
   - 注意！如果你是场景，就不具有'离开场景'的行动类型
   - 你必须能明确指出场景名称，或者是你曾知晓的场景。
 - 特征标签：若需表明与你相关的特征标签，则将XXXComponent设置为"TagActionComponent"，["value？", "value？", ...]为符合你的全部特征标签。
-- 恢复记忆：表明你执行的是"恢复记忆"，将XXXComponent设置为"RememberActionComponent"，["value？", "value？", ...]为[ " 确认恢复记忆 "]。
+- 恢复记忆：表明你执行的是"恢复记忆"，将XXXComponent设置为"RememberActionComponent"，value为["确认恢复记忆"]。
 - 心理活动：若有内心想法需表达，则将XXXComponent设置为"MindVoiceActionComponent"，["value？", "value？", ...]为你的全部想以'第1人称'输出你的心里活动与内心独白。
 - 场景广播：若有话语，需向场景内所有的人说。则将XXXComponent设置为"BroadcastActionComponent"，["value？", "value？", ...]为你的全部想以'第1人称'输出你的的话。
 - 低语：若有话语你需要对特定角色说(且不希望被其他人听到)，则将XXXComponent设置为"WhisperActionComponent"，["value？", "value？", ...]为你的全部行动结果。 注意！每一个value的格式如下："@目标名字>对话内容"。其中"目标名字"是你要对话的角色（必须在本个场景里），对话内容就是内容。例子：比如你需要对A说“hello world”，输出结果为["@A>hello world"]。

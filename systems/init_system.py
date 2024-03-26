@@ -1,4 +1,5 @@
 
+from typing import Optional
 from entitas import Entity, Matcher, Context, InitializeProcessor # type: ignore
 from auxiliary.components import WorldComponent, StageComponent, NPCComponent, PlayerComponent
 from auxiliary.extract_md_content import extract_md_content
@@ -53,6 +54,10 @@ class InitSystem(InitializeProcessor):
         npcs: set[Entity] = self.context.get_group(Matcher(NPCComponent)).entities
         for npc in npcs:
             comp: NPCComponent = npc.get(NPCComponent)
+            entity: Optional[Entity] = self.context.get_entity_by_name(comp.name)
+            if entity is not None and entity.has(PlayerComponent):
+                logger.debug(f"NPC: {comp.name} is a player, skip loading memmory.")
+                continue
             # NPC载入
             agent: ActorAgent = comp.agent
             logger.debug(f"NPC: {comp.name}, Agent: {agent.url}, Memory: {comp.agent.memory}")

@@ -2,8 +2,6 @@ from typing import List, Optional, Union
 from entitas import Processors #type: ignore
 from loguru import logger
 import datetime
-import json
-from auxiliary.builder import WorldBuilder
 from auxiliary.components import (
     BroadcastActionComponent, 
     SpeakActionComponent, 
@@ -25,6 +23,7 @@ from auxiliary.actor_action import ActorAction
 from auxiliary.actor_agent import ActorAgent
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.dialogue_rule import parse_command, parse_target_and_message_by_symbol
+from auxiliary.world_data_builder import WorldDataBuilder, AdminNpcBuilder, StageBuilder, PlayerNpcBuilder, NpcBuilder
 from entitas.entity import Entity
 from systems.init_system import InitSystem
 from systems.stage_plan_system import StagePlanSystem
@@ -46,94 +45,106 @@ from langchain_core.messages import (
     HumanMessage,
     AIMessage)
 
-
-###############################################################################################################################################
-def create_entities(context: ExtendedContext, worldbuilder: WorldBuilder) -> None:
-        if worldbuilder.data is None:
-            return
-        ##创建world
-        worldagent = ActorAgent(worldbuilder.data['name'], worldbuilder.data['url'], worldbuilder.data['memory'])
-        world_entity = context.create_entity() 
-        world_entity.add(WorldComponent, worldagent.name, worldagent)
-
-        for stage_builder in worldbuilder.stage_builders:    
-            if stage_builder.data is None:
-                logger.error("没有StageBuilder数据，请检查game_settings.json配置。")
-                continue 
-            #创建stage       
-            stage_agent = ActorAgent(stage_builder.data['name'], stage_builder.data['url'], stage_builder.data['memory'])
-            stage_entity = context.create_entity()
-            stage_entity.add(StageComponent, stage_agent.name, stage_agent, [])
-            stage_entity.add(SimpleRPGRoleComponent, stage_agent.name, 100, 100, 1, "")
-
-            for npc_builder in stage_builder.npc_builders:
-                if npc_builder.data is None:
-                    continue
-                #创建npc
-                npc_agent = ActorAgent(npc_builder.data['name'], npc_builder.data['url'], npc_builder.data['memory'])
-                npc_entity = context.create_entity()
-                npc_entity.add(NPCComponent, npc_agent.name, npc_agent, stage_agent.name)
-                npc_entity.add(SimpleRPGRoleComponent, npc_agent.name, 100, 100, 20, "")
-                npc_entity.add(BackpackComponent, npc_agent.name)
-
-                context.file_system.init_backpack_component(npc_entity.get(BackpackComponent))
-            
-            for unique_prop_builder in stage_builder.unique_prop_builders:
-                if unique_prop_builder.data is None:
-                    continue
-                #创建道具
-                prop_entity = context.create_entity()
-                prop_entity.add(UniquePropComponent, unique_prop_builder.data['name'])
-            
-            enter_condition_set = set()
-            for enter_condition_builder in stage_builder.entry_condition_builders:
-                if enter_condition_builder.data is not None:
-                    enter_condition_set.add(enter_condition_builder.data['name'])
-                    
-            if len(enter_condition_set) > 0:
-                stage_entity.add(StageEntryConditionComponent, enter_condition_set)
-                logger.debug(f"{stage_agent.name}的入口条件为：{enter_condition_set}")
-
-            exit_condition_set = set()
-            for exit_condition_builder in stage_builder.exit_condition_builders:
-                if exit_condition_builder.data is not None:
-                    exit_condition_set.add(exit_condition_builder.data['name'])
-
-            if len(exit_condition_set) > 0:
-                stage_entity.add(StageExitConditionComponent, exit_condition_set)
-                logger.debug(f"{stage_agent.name}的出口条件为：{exit_condition_set}")
-
-            if stage_builder.player_builders is None:
-                logger.error("没有PlayerBuilders，请检查game_settings.json配置。")
-                return None               
-            
-            for player_builder in stage_builder.player_builders:
-                if player_builder.data is None:
-                    logger.error("没有PlayerBuilder数据，请检查game_settings.json配置。")
-                    continue
-                #创建player
-                player_agent = ActorAgent(player_builder.data['name'], player_builder.data['url'], player_builder.data['memory'])
-                player_entity = context.create_entity()
-                player_entity.add(NPCComponent, player_agent.name, player_agent, stage_agent.name)
-                player_entity.add(SimpleRPGRoleComponent, player_agent.name, 10000, 10000, 10, "")
-                player_entity.add(BackpackComponent, player_agent.name)
-                player_entity.add(PlayerComponent, player_agent.name)
-
-                context.file_system.init_backpack_component(player_entity.get(BackpackComponent))
+def create_entities(context: ExtendedContext, world_data_builder: WorldDataBuilder) -> None:
+    if world_data_builder.data is None:
+        logger.error("没有WorldBuilder数据，请检查World.json配置。")
+        return
+    ##创建Admin npc builder
+    admin_npc_builder: AdminNpcBuilder = world_data_builder.admin_npc_builder
+    if admin_npc_builder.data is None:
+        logger.error("没有AdminNpcBuilder数据，请检查World.json配置。")
+        return
+    for admin_npc in admin_npc_builder.npcs:
+        admin_npc_agent = ActorAgent(admin_npc.name, admin_npc.url, admin_npc.memory)
+        admin_npc_entity = context.create_entity()
+        admin_npc_entity.add(WorldComponent, admin_npc_agent.name, admin_npc_agent)
+        logger.debug(f"创建Admin npc：{admin_npc.name}")
+    # 创建Player npc builder
+    player_npc_builder: PlayerNpcBuilder = world_data_builder.player_npc_builder
+    if player_npc_builder.data is None:
+        logger.error("没有PlayerNpcBuilder数据，请检查World.json配置。")
+        return
+    for player_npc in player_npc_builder.npcs:
+        player_npc_agent = ActorAgent(player_npc.name, player_npc.url, player_npc.memory)
+        player_npc_entity = context.create_entity()
+        player_npc_entity.add(PlayerComponent, player_npc.name)
+        player_npc_entity.add(SimpleRPGRoleComponent, player_npc.name, 10000, 10000, 10, "")
+        player_npc_entity.add(NPCComponent, player_npc.name, player_npc_agent, '悠扬林谷')
+        player_npc_entity.add(BackpackComponent, player_npc.name)
+        context.file_system.init_backpack_component(player_npc_entity.get(BackpackComponent))
+        logger.debug(f"创建Player npc：{player_npc.name}")
+        if len(player_npc.props) > 0:
+            for prop in player_npc.props:
+                context.file_system.add_content_into_backpack(player_npc_entity.get(BackpackComponent), prop.name)
+                logger.debug(f"{player_npc.name}的背包中有：{prop.name}")
     
-def set_default_player(context: ExtendedContext, player_name: str = "player") -> None:
-    player_entity: Optional[Entity] = context.getplayer()
-    if player_entity is not None:
-        player_entity.replace(PlayerComponent, player_name)
-        if player_entity.has(BackpackComponent):
-            player_backpack_comp: BackpackComponent = player_entity.get(BackpackComponent)
-            context.file_system.add_content_into_backpack(player_backpack_comp, "生锈的铁剑")
-            context.file_system.add_content_into_backpack(player_backpack_comp, "破旧的盔甲")
+    ##创建stage builder
+    stage_builder: StageBuilder = world_data_builder.stage_builder
+    if stage_builder.data is None:
+        logger.error("没有StageBuilder数据，请检查World.json配置。")
+        return
+    for stage in stage_builder.stages:
+        stage_agent = ActorAgent(stage.name, stage.url, stage.memory)
+        stage_entity = context.create_entity()
+        stage_entity.add(StageComponent, stage_agent.name, stage_agent, [])
+        stage_entity.add(SimpleRPGRoleComponent, stage_agent.name, 100, 100, 1, "")
+        logger.debug(f"创建Stage：{stage.name}")
+        ## 创建npc  
+        for npc in stage.npcs:
+            if isinstance(npc, dict):
+                npc_name = npc.get("name")
+                npc_url = npc.get("url")
+                npc_memory = npc.get("memory")
+                if isinstance(npc_name, str) and isinstance(npc_url, str) and isinstance(npc_memory, str):
+                    npc_agent = ActorAgent(npc_name, npc_url, npc_memory)
+            npc_entity_in_stage = context.create_entity()
+            npc_entity_in_stage.add(NPCComponent, npc_agent.name, npc_agent, stage_agent.name)
+            npc_entity_in_stage.add(SimpleRPGRoleComponent, npc_agent.name, 100, 100, 20, "")
+            npc_entity_in_stage.add(BackpackComponent, npc_agent.name)
+            context.file_system.init_backpack_component(npc_entity_in_stage.get(BackpackComponent))
+            logger.debug(f"创建npc：{npc_agent.name}，属于Stage：{stage.name}")
 
-def init_NPCs_settings(context: ExtendedContext) -> None:
-    npc_entity: Optional[Entity] = context.get_entity_by_name("坏运气先生")
-    if npc_entity is not None:
-        context.file_system.add_content_into_backpack(npc_entity.get(BackpackComponent), "老鼠洞的位置")
+        # 创建道具
+        for unique_prop in stage.props:
+            prop_entity = context.create_entity()
+            if isinstance(unique_prop, dict):
+                prop_entity.add(UniquePropComponent, unique_prop.get("name"))
+                logger.debug(f'创建道具：{unique_prop.get("name")}')
+            else:
+                logger.error(f"道具配置错误：{unique_prop}")
+
+        ## 创建入口条件和出口条件
+        enter_condition_set = set()
+        for enter_condition in stage.entry_conditions:
+            enter_condition_set.add(enter_condition.name)
+        if len(enter_condition_set) > 0:
+            stage_entity.add(StageEntryConditionComponent, enter_condition_set)
+            logger.debug(f"{stage_agent.name}的入口条件为：{enter_condition_set}")
+
+        exit_condition_set = set()
+        for exit_condition in stage.exit_conditions:
+            exit_condition_set.add(exit_condition.name)
+        if len(exit_condition_set) > 0:
+            stage_entity.add(StageExitConditionComponent, set(exit_condition_set))
+            logger.debug(f"{stage_agent.name}的出口条件为：{exit_condition_set}")
+
+    ## 创建npc builder用来设置props     
+    npc_builder: NpcBuilder = world_data_builder.npc_buidler
+    if npc_builder.data is None:
+            logger.error("没有NpcBuilder数据，请检查World.json配置。")
+            return
+    
+    for npc in npc_builder.npcs:
+        npc_entity_in_builder: Optional[Entity] = context.getnpc(npc.name)
+        if npc_entity_in_builder is None:
+            logger.error(f'{npc.name}的entity不存在，请检查World.json配置。')
+        else:
+            for prop in npc.props:
+                context.file_system.add_content_into_backpack(npc_entity_in_builder.get(BackpackComponent), prop.name)
+                logger.debug(f"{npc.name}的背包中有：{prop.name}")
+        
+
+
 
 ###############################################################################################################################################
 ###############################################################################################################################################
@@ -146,28 +157,20 @@ def main() -> None:
 
     context = ExtendedContext()
     processors = Processors()
-    path: str = "./game_settings.json"
     playername = "yanghang"
 
-    try:
-        with open(path, "r") as file:
-            json_data = json.load(file)
+    world_data_path: str = "./budding_world/World1.json"
+    world_data_builder: Optional[WorldDataBuilder] = WorldDataBuilder()
+    if world_data_builder is None:
+        logger.error("WorldDataBuilder初始化失败。")
+        return
+    if world_data_builder.check_version_valid(world_data_path):
+        world_data_builder.build()
+    else:
+        logger.error("World.json版本不匹配，请检查版本号。")
+        return
 
-            #构建数据
-            world_builder = WorldBuilder()
-            world_builder.build(json_data)
-
-            #创建所有entities
-            create_entities(context, world_builder)
-            #设置默认player
-            set_default_player(context)
-            #初始化npc的背包
-            init_NPCs_settings(context)
-
-
-    except Exception as e:
-        logger.exception(e)
-        return        
+    create_entities(context, world_data_builder)   
 
     #初始化系统########################
     processors.add(InitSystem(context))

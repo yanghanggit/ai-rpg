@@ -33,7 +33,7 @@ class InitSystem(InitializeProcessor):
             logger.debug(f"NPC: {comp.name}, Agent: {agent.url}, Memory: {comp.agent.memory}")
             agent.connect()
 
-            init_archivist = extract_md_content(agent.memory)
+            init_archivist = agent.memory#extract_md_content(agent.memory)
             prompt = read_archives_when_system_init_prompt(init_archivist, world, self.context)
             comp.agent.request(prompt)
         
@@ -46,7 +46,7 @@ class InitSystem(InitializeProcessor):
             logger.debug(f"NPC: {comp.name}, Agent: {agent.url}, Memory: {comp.agent.memory}")
             agent.connect()
             
-            init_archivist = extract_md_content(agent.memory)
+            init_archivist = agent.memory#extract_md_content(agent.memory)
             prompt = read_archives_when_system_init_prompt(init_archivist, stage, self.context)
             comp.agent.request(prompt)
 
@@ -63,6 +63,6 @@ class InitSystem(InitializeProcessor):
             logger.debug(f"NPC: {comp.name}, Agent: {agent.url}, Memory: {comp.agent.memory}")
             agent.connect()
 
-            init_archivist = extract_md_content(agent.memory)
+            init_archivist = agent.memory#extract_md_content(agent.memory)
             prompt = read_archives_when_system_init_prompt(init_archivist, npc, self.context)
             comp.agent.request(prompt)

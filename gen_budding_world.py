@@ -22,6 +22,7 @@ RAG_FILE = "rag.md"
 OUT_PUT_NPC_SYS_PROMPT = "gen_npc_sys_prompt"
 OUT_PUT_STAGE_SYS_PROMPT = "gen_stage_sys_prompt"
 OUT_PUT_AGENT = "gen_agent"
+OUTPUT_RUNTIMES = "gen_runtimes"
 ############################################################################################################
 def readmd(file_path: str) -> str:
     try:
@@ -615,7 +616,7 @@ class ExcelEditorWorld:
         logger.warning(builddata)
         builddata_json = json.dumps(builddata, indent=4, ensure_ascii = False)
         try:
-            directory = f"{WORLD_NAME}/"
+            directory = f"{WORLD_NAME}/{OUTPUT_RUNTIMES}/"
             filename = f"{self.name}.json"
             path = os.path.join(directory, filename)
             # 确保目录存在

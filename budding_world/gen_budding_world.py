@@ -18,7 +18,7 @@ NPC_SYS_PROMPT_TEMPLATE = "npc_sys_prompt_template.md"
 STAGE_SYS_PROMPT_TEMPLATE = "stage_sys_prompt_template.md"
 
 #默认rag
-RAG_FILE = "rag_libraies/rag.md"
+RAG_FILE = "rag_libraries/rag.md"
 
 ## 输出路径
 OUT_PUT_NPC_SYS_PROMPT = "gen_npc_sys_prompt"

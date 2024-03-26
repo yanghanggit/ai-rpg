@@ -8,15 +8,17 @@ from typing import List, Dict, Any, Optional
 
 ##全局的，方便，不封装了，反正当工具用.....
 # 核心设置
+WORLD_DIR = "settings_editor"
 WORLD_NAME = "budding_world"
 
 #模版
+TEMPLATE_DIR = "sys_templates"
 GPT_AGENT_TEMPLATE = "gpt_agent_template.py"
 NPC_SYS_PROMPT_TEMPLATE = "npc_sys_prompt_template.md"
 STAGE_SYS_PROMPT_TEMPLATE = "stage_sys_prompt_template.md"
 
 #默认rag
-RAG_FILE = "rag.md"
+RAG_FILE = "rag_libraies/rag.md"
 
 ## 输出路径
 OUT_PUT_NPC_SYS_PROMPT = "gen_npc_sys_prompt"
@@ -240,13 +242,13 @@ class ExcelDataProp:
 ############################################################################################################
 
 ##全局的，方便，不封装了，反正当工具用.....
-npc_sys_prompt_template: str = readmd(f"/{WORLD_NAME}/{NPC_SYS_PROMPT_TEMPLATE}")
-stage_sys_prompt_template: str = readmd(f"/{WORLD_NAME}/{STAGE_SYS_PROMPT_TEMPLATE}")
-gpt_agent_template: str = readpy(f"/{WORLD_NAME}/{GPT_AGENT_TEMPLATE}")
+npc_sys_prompt_template: str = readmd(f"/{WORLD_NAME}/{TEMPLATE_DIR}/{NPC_SYS_PROMPT_TEMPLATE}")
+stage_sys_prompt_template: str = readmd(f"/{WORLD_NAME}/{TEMPLATE_DIR}/{STAGE_SYS_PROMPT_TEMPLATE}")
+gpt_agent_template: str = readpy(f"/{WORLD_NAME}/{TEMPLATE_DIR}/{GPT_AGENT_TEMPLATE}")
 
-npcsheet: DataFrame = pd.read_excel(f"{WORLD_NAME}/{WORLD_NAME}.xlsx", sheet_name='NPC', engine='openpyxl')
-stagesheet: DataFrame = pd.read_excel(f"{WORLD_NAME}/{WORLD_NAME}.xlsx", sheet_name='Stage', engine='openpyxl')
-propsheet: DataFrame = pd.read_excel(f"{WORLD_NAME}/{WORLD_NAME}.xlsx", sheet_name='Prop', engine='openpyxl')
+npcsheet: DataFrame = pd.read_excel(f"{WORLD_NAME}/{WORLD_DIR}/{WORLD_NAME}.xlsx", sheet_name='NPC', engine='openpyxl')
+stagesheet: DataFrame = pd.read_excel(f"{WORLD_NAME}/{WORLD_DIR}/{WORLD_NAME}.xlsx", sheet_name='Stage', engine='openpyxl')
+propsheet: DataFrame = pd.read_excel(f"{WORLD_NAME}/{WORLD_DIR}/{WORLD_NAME}.xlsx", sheet_name='Prop', engine='openpyxl')
 
 all_npcs_data: Dict[str, ExcelDataNPC] = {}
 all_stages_data: Dict[str, ExcelDataStage] = {}
@@ -634,7 +636,7 @@ class ExcelEditorWorld:
 ############################################################################################################
 def genworld(worldname: str) -> ExcelEditorWorld:
     ####测试的一个世界编辑
-    worlddata: DataFrame = pd.read_excel(f"{WORLD_NAME}/{WORLD_NAME}.xlsx", sheet_name = worldname, engine='openpyxl')
+    worlddata: DataFrame = pd.read_excel(f"{WORLD_NAME}/{WORLD_DIR}/{WORLD_NAME}.xlsx", sheet_name = worldname, engine='openpyxl')
     ###费2遍事，就是试试转换成json好使不，其实可以不用直接dataframe做也行
     worlddata2json: str = worlddata.to_json(orient='records', force_ascii=False)
     worlddata2list: List[Any] = json.loads(worlddata2json)

@@ -159,7 +159,7 @@ def main() -> None:
     processors = Processors()
     playername = "yanghang"
 
-    world_data_path: str = "./budding_world/runtimes/World1.json"
+    world_data_path: str = "./budding_world/gen_runtimes/World1.json"
     world_data_builder: Optional[WorldDataBuilder] = WorldDataBuilder()
     if world_data_builder is None:
         logger.error("WorldDataBuilder初始化失败。")

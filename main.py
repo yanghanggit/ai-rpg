@@ -159,7 +159,8 @@ def main() -> None:
     processors = Processors()
     playername = "yanghang"
 
-    world_data_path: str = "./budding_world/gen_runtimes/World1.json"
+    world_name = input("请输入要进入的世界名称(必须与自动化创建的名字一致):")
+    world_data_path: str = f"./budding_world/gen_runtimes/{world_name}.json"
     world_data_builder: Optional[WorldDataBuilder] = WorldDataBuilder()
     if world_data_builder is None:
         logger.error("WorldDataBuilder初始化失败。")

@@ -608,6 +608,9 @@ class ExcelEditorWorld:
         dict["npcs"] = [editor_npc.makedict() for editor_npc in self.editor_npcs]
         dict["stages"] = [editor_stage.makedict() for editor_stage in self.editor_stages]
         version_sign = input("请输入版本号:")
+        if version_sign == "":
+            version_sign = "ewan"
+            logger.warning(f"使用默认的版本号: {version_sign}")
         dict["version"] = version_sign
         return dict
     
@@ -648,7 +651,11 @@ def main() -> None:
     analyze_npc_relationship_graph()
     analyze_relationship_graph_between_npcs_and_props()
     #测试这个世界编辑，未完成?
-    world = genworld('World1')
+    world_name = input("输入要创建的World的名字(必须对应excel中的sheet名):")
+    if world_name == "":
+        world_name = "World1"
+        logger.warning(f"使用默认的World名称: {world_name}")
+    world = genworld(str(world_name))
     if world is not None:
         world.writejson()
 ############################################################################################################

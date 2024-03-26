@@ -11,7 +11,7 @@ pip install langchain_core langserve fastapi langchain_openai sse_starlette fais
 - Agent运行的设备需要挂代理；
 
 ## 运行步骤
-1. 进入first_seed文件夹，运行`python gen_budding_world.py`,输入版本号:`ewan`.
+1. 进入`first_seed/budding_world/`文件夹，运行`python gen_budding_world.py`,输入世界名(budding_world.xlsx内的创建世界的sheet页名),输入版本号:`ewan`(目前builder的解析版本是ewan).
 2. 运行`first_seed/budding_world/gen_agent`下面的全部agent，启动agents服务器;
 3. 然后运行main.py进行对话,输入`/run`开始对话.  
 

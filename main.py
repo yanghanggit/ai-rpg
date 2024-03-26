@@ -1,3 +1,4 @@
+import os
 from typing import List, Optional, Union
 from entitas import Processors #type: ignore
 from loguru import logger
@@ -59,6 +60,7 @@ def create_entities(context: ExtendedContext, world_data_builder: WorldDataBuild
         admin_npc_entity = context.create_entity()
         admin_npc_entity.add(WorldComponent, admin_npc_agent.name, admin_npc_agent)
         logger.debug(f"创建Admin npc：{admin_npc.name}")
+
     # 创建Player npc builder
     player_npc_builder: PlayerNpcBuilder = world_data_builder.player_npc_builder
     if player_npc_builder.data is None:
@@ -69,7 +71,7 @@ def create_entities(context: ExtendedContext, world_data_builder: WorldDataBuild
         player_npc_entity = context.create_entity()
         player_npc_entity.add(PlayerComponent, player_npc.name)
         player_npc_entity.add(SimpleRPGRoleComponent, player_npc.name, 10000, 10000, 10, "")
-        player_npc_entity.add(NPCComponent, player_npc.name, player_npc_agent, '悠扬林谷')
+        player_npc_entity.add(NPCComponent, player_npc.name, player_npc_agent, "")
         player_npc_entity.add(BackpackComponent, player_npc.name)
         context.file_system.init_backpack_component(player_npc_entity.get(BackpackComponent))
         logger.debug(f"创建Player npc：{player_npc.name}")
@@ -77,32 +79,48 @@ def create_entities(context: ExtendedContext, world_data_builder: WorldDataBuild
             for prop in player_npc.props:
                 context.file_system.add_content_into_backpack(player_npc_entity.get(BackpackComponent), prop.name)
                 logger.debug(f"{player_npc.name}的背包中有：{prop.name}")
+
+    # 创建npc builder
+    npc_builder: NpcBuilder = world_data_builder.npc_buidler
+    if npc_builder.data is None:
+        logger.error("没有NpcBuilder数据，请检查World.json配置。")
+        return
+    for npc_in_builder in npc_builder.npcs:
+        npc_entity_in_builder = context.create_entity()
+        npc_agent = ActorAgent(npc_in_builder.name, npc_in_builder.url, npc_in_builder.memory)
+        npc_entity_in_builder.add(NPCComponent, npc_agent.name, npc_agent, "")
+        npc_entity_in_builder.add(SimpleRPGRoleComponent, npc_agent.name, 100, 100, 10, "")
+        npc_entity_in_builder.add(BackpackComponent, npc_agent.name)
+        context.file_system.init_backpack_component(npc_entity_in_builder.get(BackpackComponent))
+        logger.debug(f"创建npc：{npc_agent.name}")
+        if len(npc_in_builder.props) > 0:
+            for prop in npc_in_builder.props:
+                context.file_system.add_content_into_backpack(npc_entity_in_builder.get(BackpackComponent), prop.name)
+                logger.debug(f"{npc_agent.name}的背包中有：{prop.name}")
     
-    ##创建stage builder
+    ##创建stage builder，并重新设置关系
     stage_builder: StageBuilder = world_data_builder.stage_builder
     if stage_builder.data is None:
         logger.error("没有StageBuilder数据，请检查World.json配置。")
         return
+    # 创建stage相关配置
     for stage in stage_builder.stages:
         stage_agent = ActorAgent(stage.name, stage.url, stage.memory)
         stage_entity = context.create_entity()
         stage_entity.add(StageComponent, stage_agent.name, stage_agent, [])
-        stage_entity.add(SimpleRPGRoleComponent, stage_agent.name, 100, 100, 1, "")
+        stage_entity.add(SimpleRPGRoleComponent, stage_agent.name, 10000, 10000, 1, "")
         logger.debug(f"创建Stage：{stage.name}")
-        ## 创建npc  
+        ## 重新设置npc和stage的关系
         for npc in stage.npcs:
             if isinstance(npc, dict):
                 npc_name = npc.get("name")
                 npc_url = npc.get("url")
                 npc_memory = npc.get("memory")
-                if isinstance(npc_name, str) and isinstance(npc_url, str) and isinstance(npc_memory, str):
-                    npc_agent = ActorAgent(npc_name, npc_url, npc_memory)
-            npc_entity_in_stage = context.create_entity()
-            npc_entity_in_stage.add(NPCComponent, npc_agent.name, npc_agent, stage_agent.name)
-            npc_entity_in_stage.add(SimpleRPGRoleComponent, npc_agent.name, 100, 100, 20, "")
-            npc_entity_in_stage.add(BackpackComponent, npc_agent.name)
-            context.file_system.init_backpack_component(npc_entity_in_stage.get(BackpackComponent))
-            logger.debug(f"创建npc：{npc_agent.name}，属于Stage：{stage.name}")
+                npc_agent = ActorAgent(npc_name, npc_url, npc_memory)
+                npc_entity_in_builder: Optional[Entity] = context.getnpc(npc_name)
+                if npc_entity_in_builder.has(NPCComponent):
+                    npc_entity_in_builder.replace(NPCComponent, npc_name, npc_agent, stage_agent.name)
+                    logger.debug(f"重新设置npc：{npc_name}的stage为：{stage.name}")
 
         # 创建道具
         for unique_prop in stage.props:
@@ -128,21 +146,6 @@ def create_entities(context: ExtendedContext, world_data_builder: WorldDataBuild
             stage_entity.add(StageExitConditionComponent, set(exit_condition_set))
             logger.debug(f"{stage_agent.name}的出口条件为：{exit_condition_set}")
 
-    ## 创建npc builder用来设置props     
-    npc_builder: NpcBuilder = world_data_builder.npc_buidler
-    if npc_builder.data is None:
-            logger.error("没有NpcBuilder数据，请检查World.json配置。")
-            return
-    
-    for npc in npc_builder.npcs:
-        npc_entity_in_builder: Optional[Entity] = context.getnpc(npc.name)
-        if npc_entity_in_builder is None:
-            logger.error(f'{npc.name}的entity不存在，请检查World.json配置。')
-        else:
-            for prop in npc.props:
-                context.file_system.add_content_into_backpack(npc_entity_in_builder.get(BackpackComponent), prop.name)
-                logger.debug(f"{npc.name}的背包中有：{prop.name}")
-        
 
 
 
@@ -160,7 +163,13 @@ def main() -> None:
     playername = "yanghang"
 
     world_name = input("请输入要进入的世界名称(必须与自动化创建的名字一致):")
-    world_data_path: str = f"./budding_world/gen_runtimes/{world_name}.json"
+    # 检查是否有存档
+    save_folder = f"./budding_world/saved_runtimes/{world_name}.json"
+    if not os.path.exists(save_folder):
+        world_data_path: str = f"./budding_world/gen_runtimes/{world_name}.json"
+    else:
+        world_data_path = save_folder
+
     world_data_builder: Optional[WorldDataBuilder] = WorldDataBuilder()
     if world_data_builder is None:
         logger.error("WorldDataBuilder初始化失败。")

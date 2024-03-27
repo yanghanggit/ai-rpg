@@ -185,7 +185,7 @@ def main() -> None:
     #初始化系统########################
     processors.add(InitSystem(context))
     #规划逻辑########################
-    processors.add(StagePlanSystem(context))
+    #processors.add(StagePlanSystem(context))
     processors.add(NPCPlanSystem(context))
     #行动逻辑########################
     processors.add(TagActionSystem(context))
@@ -528,11 +528,14 @@ def debug_whisper(context: ExtendedContext, content: str) -> None:
     logger.debug(f"debug_whisper: {npc_comp.name} add {action}")
 
 ###############################################################################################################################################
-
 def debug_search(context: ExtendedContext, content: str) -> None:
     playerentity = context.getplayer()
     if playerentity is None:
         logger.warning("debug_search: player is None")
+        return
+    
+    if playerentity.has(SearchActionComponent):
+        logger.warning("debug_search: player has SearchActionComponent")
         return
     
     npc_comp: NPCComponent = playerentity.get(NPCComponent)

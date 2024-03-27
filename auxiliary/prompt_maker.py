@@ -7,13 +7,13 @@ from auxiliary.components import NPCComponent, StageComponent
 def npc_plan_prompt(entity: Entity, context: ExtendedContext) -> str:
     if not entity.has(NPCComponent):
         raise ValueError("npc_plan_prompt, entity has no NPCComponent")
-    prompt = f"请回忆之前发生的事情并确认自身状态，根据‘做计划的规则’作出你的计划。请带上‘特征标签’"
+    prompt = f"请回忆之前发生的事情并确认自身状态，根据‘做计划的规则’作出你的计划。要求：输出结果格式要遵循‘内容输出规则’。请带上‘特征标签’"
     return prompt
 
 def stage_plan_prompt(entity: Entity, context: ExtendedContext) -> str:
     if not entity.has(StageComponent):
         raise ValueError("stage_plan_prompt, entity has no StageComponent")
-    prompt = f"请回忆之前发生的事情并确认自身状态，根据‘做计划的规则’作出你的计划。请带上‘特征标签’"
+    prompt = f"请回忆之前发生的事情并确认自身状态，根据‘做计划的规则’作出你的计划。要求：输出结果格式要遵循‘内容输出规则’。请带上‘特征标签’"
     return prompt
 
 def read_archives_when_system_init_prompt(archives: str, entity: Entity, context: ExtendedContext) -> str:
@@ -24,6 +24,7 @@ def read_archives_when_system_init_prompt(archives: str, entity: Entity, context
     - 第2步:理解其中所有的信息.
     - 第3步:理解其中关于你的信息（如果提到了你，那就是关于你的信息.）
     - 第4步:根据信息更新你的最新状态与逻辑.
+    - 根据‘做计划的规则’作出你的计划。要求：输出结果格式要遵循‘内容输出规则’
     """
     return prompt
 

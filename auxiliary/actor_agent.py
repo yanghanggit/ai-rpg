@@ -32,7 +32,7 @@ class ActorAgent:
         if self.chat_history is None:
             logger.warning(f"request: {self.name} have no chat history.")
             return ""
-        response = self.agent.invoke({"input": prompt + "\n请确保你的输出只有一个JSON对象!!!", "chat_history": self.chat_history})
+        response = self.agent.invoke({"input": prompt, "chat_history": self.chat_history})
         response_output = cast(str, response.get('output', ''))
         self.chat_history.extend([HumanMessage(content=prompt), AIMessage(content=response_output)])
 

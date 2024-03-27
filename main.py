@@ -449,6 +449,19 @@ def debug_chat_history(context: ExtendedContext, name: str) -> None:
                 logger.info(f"AI:{history.content}")
         logger.info(f"{'=' * 50}")
         return
+    
+    entity = context.getworld()
+    if entity is not None:
+        world_comp: WorldComponent = entity.get(WorldComponent)
+        world_agent: ActorAgent = world_comp.agent
+        logger.info(f"{'=' * 50}\ndebug_chat_history for {world_comp.name} => :\n")
+        for history in world_agent.chat_history:
+            if isinstance(history, HumanMessage):
+                logger.info(f"Human:{history.content}")
+            elif isinstance(history, AIMessage):
+                logger.info(f"AI:{history.content}")
+        logger.info(f"{'=' * 50}")
+        return
 
 
 ###############################################################################################################################################

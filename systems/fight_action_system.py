@@ -51,7 +51,8 @@ class FightActionSystem(ReactiveProcessor):
                 attack_result = attacked_comp.hp - attacker_comp.attack
                 attacked.replace(SimpleRPGRoleComponent,attacked_comp.name,100,attack_result,20,"")
                 if attack_result <= 0:
-                    attacked.add(DeadActionComponent, action)
+                    if not attacked.has(DeadActionComponent):
+                        attacked.add(DeadActionComponent, action)
                     self.context.add_content_to_director_script_by_entity(attacker, kill_someone(action.name, value))
                 else:
                     self.context.add_content_to_director_script_by_entity(attacker, attack_someone(action.name, value, attacker_comp.attack, attacked_comp.hp, attacked_comp.maxhp))

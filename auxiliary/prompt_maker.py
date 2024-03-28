@@ -27,10 +27,10 @@ def read_archives_when_system_init_prompt(archives: str, entity: Entity, context
     """
     return prompt
 
-def confirm_everything_after_director_add_new_memories_prompt(directorscripts: list[str], npcs_names: str, stagename: str, context: ExtendedContext) -> str:
+def confirm_everything_after_director_add_new_memories_prompt(allevents: list[str], npcs_names: str, stagename: str, context: ExtendedContext) -> str:
     prompt = f"""
     # 下面是已经发生的事情,你目睹或者参与了这一切，并更新了你的记忆,如果与你记忆不相符则按照下面内容强行更新你的记忆:
-    - {directorscripts}
+    - {allevents}
     # 你能确认
     - {npcs_names} 都还在此 {stagename} 场景中。
     - 你需要更新你的状态并以此作为做后续计划的基础。

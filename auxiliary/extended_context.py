@@ -80,7 +80,7 @@ class ExtendedContext(Context):
             return cast(StageComponent, entity.get(StageComponent)) 
 
         elif entity.has(NPCComponent):
-            current_stage_name = entity.get(NPCComponent).current_stage
+            current_stage_name: str = entity.get(NPCComponent).current_stage
             for stage in self.get_group(Matcher(StageComponent)).entities:
                 if stage.get(StageComponent).name == current_stage_name:
                     return cast(StageComponent, stage.get(StageComponent))

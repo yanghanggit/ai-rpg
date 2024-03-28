@@ -1,29 +1,19 @@
-import os
-from typing import List, Optional, Union
+from typing import List, Optional
 from entitas import Processors #type: ignore
 from loguru import logger
-import datetime
 from auxiliary.components import (
-    BroadcastActionComponent, 
-    SpeakActionComponent, 
     WorldComponent,
     StageComponent, 
     NPCComponent, 
-    FightActionComponent, 
     PlayerComponent, 
     SimpleRPGRoleComponent, 
-    LeaveForActionComponent, 
-    HumanInterferenceComponent,
     UniquePropComponent,
     BackpackComponent,
     StageEntryConditionComponent,
     StageExitConditionComponent,
-    WhisperActionComponent,
-    SearchActionComponent)
-from auxiliary.actor_action import ActorAction
+    DirectorComponent)
 from auxiliary.actor_agent import ActorAgent
 from auxiliary.extended_context import ExtendedContext
-from auxiliary.dialogue_rule import parse_command, parse_target_and_message_by_symbol
 from auxiliary.world_data_builder import WorldDataBuilder, AdminNpcBuilder, StageBuilder, PlayerNpcBuilder, NpcBuilder
 from entitas.entity import Entity
 from systems.init_system import InitSystem
@@ -41,11 +31,7 @@ from systems.broadcast_action_system import BroadcastActionSystem
 from systems.whisper_action_system import WhisperActionSystem 
 from systems.search_props_system import SearchPropsSystem
 from systems.mind_voice_action_system import MindVoiceActionSystem
-
-from langchain_core.messages import (
-    HumanMessage,
-    AIMessage)
-
+from director import Director
 
 class RPGGame:
 
@@ -194,6 +180,7 @@ class RPGGame:
             stage_agent = ActorAgent(stage.name, stage.url, stage.memory)
             stage_entity = context.create_entity()
             stage_entity.add(StageComponent, stage_agent.name, stage_agent, [])
+            stage_entity.add(DirectorComponent, stage_agent.name, Director(stage_agent.name)) ###
             stage_entity.add(SimpleRPGRoleComponent, stage_agent.name, 10000, 10000, 1, "")
             logger.debug(f"创建Stage：{stage.name}")
 

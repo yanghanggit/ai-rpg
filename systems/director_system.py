@@ -1,10 +1,11 @@
 
 from entitas import Entity, Matcher, ExecuteProcessor #type: ignore
-from auxiliary.components import StageComponent, NPCComponent
+from auxiliary.components import StageComponent, NPCComponent, DirectorComponent
 from typing import List
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.prompt_maker import confirm_everything_after_director_add_new_memories_prompt
 from loguru import logger
+from director import Director
 
 class DirectorSystem(ExecuteProcessor):
     """
@@ -54,6 +55,10 @@ class DirectorSystem(ExecuteProcessor):
         for entity in entities:
             comp = entity.get(StageComponent)
             comp.directorscripts.clear()
+            ### 重构的！！！
+            directorcomp = entity.get(DirectorComponent)
+            directorcomp.director.clear()
+
 
     def handlestage(self, entitystage: Entity) -> None:
         """

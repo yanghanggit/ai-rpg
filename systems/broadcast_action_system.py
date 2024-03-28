@@ -1,12 +1,13 @@
 
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
-from auxiliary.components import BroadcastActionComponent, StageComponent
+from auxiliary.components import BroadcastActionComponent, StageComponent, DirectorComponent
 from auxiliary.actor_action import ActorAction
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.print_in_color import Color
 from auxiliary.prompt_maker import broadcast_action_prompt
 from typing import Optional
 from loguru import logger
+from director import Director, BroadcastEvent
 
 class BroadcastActionSystem(ReactiveProcessor):
 
@@ -30,18 +31,33 @@ class BroadcastActionSystem(ReactiveProcessor):
             entity.remove(BroadcastActionComponent)  # 必须移除！！！       
 
     def handle(self, entity: Entity) -> None:
-        broadcastcomp: BroadcastActionComponent = entity.get(BroadcastActionComponent)
-        stagecomp: Optional[StageComponent] = self.context.get_stagecomponent_by_uncertain_entity(entity) 
-        if stagecomp is None or broadcastcomp is None:
-            logger.error(f"BroadcastActionSystem: stagecomp or broadcastcomp is None!")
+        ## 没有场景不需要广播
+        stageentity = self.context.get_stage_entity_by_uncertain_entity(entity)
+        if stageentity is None:
+            logger.error(f"BroadcastActionSystem: stageentity is None!")
             return
+        #
+        broadcastcomp: BroadcastActionComponent = entity.get(BroadcastActionComponent)
+        stagecomp: StageComponent = stageentity.get(StageComponent)
+        #
+        directorcomp: DirectorComponent = stageentity.get(DirectorComponent)
+        director: Director = directorcomp.director
+
+
+
+        # stagecomp: Optional[StageComponent] = self.context.get_stagecomponent_by_uncertain_entity(entity) 
+        # if stagecomp is None or broadcastcomp is None:
+        #     logger.error(f"BroadcastActionSystem: stagecomp or broadcastcomp is None!")
+        #     return
         action: ActorAction = broadcastcomp.action
         for value in action.values:
+            ## 原始处理
             broadcast_say = broadcast_action_prompt(action.name, stagecomp.name, value, self.context)
             logger.info(f"{Color.HEADER}{broadcast_say}{Color.ENDC}")
             stagecomp.directorscripts.append(broadcast_say)
-            
-
+            ## 重构处理
+            event = BroadcastEvent(action.name, stagecomp.name, value)
+            director.addevent(event)
             
         
                 

@@ -68,12 +68,21 @@ class ExtendedContext(Context):
                 npcs.append(entity)
         return npcs
     
-
     def getplayer(self) -> Optional[Entity]:
         for entity in self.get_group(Matcher(PlayerComponent)).entities:
             return entity
         return None
     
+    def get_stage_entity_by_uncertain_entity(self, entity: Entity) -> Optional[Entity]:
+        if entity.has(StageComponent):
+            return entity
+
+        elif entity.has(NPCComponent):
+            current_stage_name: str = entity.get(NPCComponent).current_stage
+            for stage in self.get_group(Matcher(StageComponent)).entities:
+                if stage.get(StageComponent).name == current_stage_name:
+                    return stage
+        return None
 
     def get_stagecomponent_by_uncertain_entity(self, entity: Entity) -> Optional[StageComponent]:
         if entity.has(StageComponent):

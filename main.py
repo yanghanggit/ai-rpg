@@ -61,9 +61,6 @@ def main() -> None:
             rpggame.execute()
 
         elif "/push" in usr_input:
-            # if not started:
-            #     logger.warning("请先/run")
-            #     continue
             command = "/push"
             input_content = parse_command(usr_input, command) 
             push_command_parse_res: tuple[str, str] = parse_target_and_message_by_symbol(input_content)

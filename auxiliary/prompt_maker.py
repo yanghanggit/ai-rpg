@@ -105,12 +105,19 @@ def npc_memory_before_death(context: ExtendedContext) -> str:
     return f"你已经死亡（在战斗中受到了致命的攻击）"
 
 
+# 重构用
+def __unique_prop_taken_away__(npcname: str, prop_name:str) -> str:
+    return f"{npcname}找到了{prop_name},{prop_name}只存在唯一一份，其他人无法再搜到了。"
+
+
 def unique_prop_taken_away(entity: Entity, prop_name:str) -> str:
     if entity.has(NPCComponent):
-        npc_name = entity.get(NPCComponent).name
-        return f"{npc_name}找到了{prop_name},{prop_name}只存在唯一一份，其他人无法再搜到了。"
-    else:
-        return ""
+        npc_name: str = entity.get(NPCComponent).name
+        return __unique_prop_taken_away__(npc_name, prop_name)
+        #return f"{npc_name}找到了{prop_name},{prop_name}只存在唯一一份，其他人无法再搜到了。"
+    #else:
+    return ""
+
     
 def fail_to_enter_stage(npc_name: str, stage_name: str, enter_condition: str) -> str:
     return f"{npc_name}试图进入{stage_name} 但背包中没有{enter_condition}，不能进入，或许{npc_name}需要尝试搜索一下'{enter_condition}'."

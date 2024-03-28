@@ -1,7 +1,15 @@
 
 from auxiliary.extended_context import ExtendedContext
 from typing import List
-from auxiliary.prompt_maker import broadcast_action_prompt, speak_action_prompt, __unique_prop_taken_away__, kill_someone, attack_someone
+from auxiliary.prompt_maker import ( broadcast_action_prompt, 
+speak_action_prompt,
+__unique_prop_taken_away__, 
+kill_someone,
+attack_someone,
+npc_leave_for_stage, 
+npc_enter_stage, 
+fail_to_exit_stage,
+fail_to_enter_stage)
 from loguru import logger
 from auxiliary.print_in_color import Color
 
@@ -109,6 +117,81 @@ class AttackSomeoneEvent(DirectorEvent):
             logger.error(f"攻击者与收听者不是一个人 => {targetname} vs {self.attacker}")
 
         event = attack_someone(self.attacker, self.target, self.damage, self.curhp, self.maxhp)
+        logger.info(event)
+        return event
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
+class LeaveForStageEvent(DirectorEvent):
+    def __init__(self, npc_name: str, current_stage_name: str, leave_for_stage_name: str) -> None:
+        self.npc_name = npc_name
+        self.current_stage_name = current_stage_name
+        self.leave_for_stage_name = leave_for_stage_name
+
+    def __str__(self) -> str:
+        return f"LeaveForStageEvent({self.npc_name}, {self.current_stage_name}, {self.leave_for_stage_name})"
+
+    def convert(self, targetname: str, extended_context: ExtendedContext) -> str:
+        if targetname != self.npc_name:
+            logger.error(f"离开者与收听者不是一个人 => {targetname} vs {self.npc_name}")
+
+        event = npc_leave_for_stage(self.npc_name, self.current_stage_name, self.leave_for_stage_name)
+        logger.info(event)
+        return event
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
+class EnterStageEvent(DirectorEvent):
+    def __init__(self, npc_name: str, stage_name: str) -> None:
+        self.npc_name = npc_name
+        self.stage_name = stage_name
+
+    def __str__(self) -> str:
+        return f"EnterStageEvent({self.npc_name}, {self.stage_name})"
+
+    def convert(self, targetname: str, extended_context: ExtendedContext) -> str:
+        if targetname != self.npc_name:
+            logger.error(f"进入者与收听者不是一个人 => {targetname} vs {self.npc_name}")
+
+        event = npc_enter_stage(self.npc_name, self.stage_name)
+        logger.info(event)
+        return event
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
+class FailExitStageEvent(DirectorEvent):
+    def __init__(self, npc_name: str, stage_name: str, exit_condition: str) -> None:
+        self.npc_name = npc_name
+        self.stage_name = stage_name
+        self.exit_condition = exit_condition
+
+    def __str__(self) -> str:
+        return f"FailExitStageEvent({self.npc_name}, {self.stage_name}, {self.exit_condition})"
+
+    def convert(self, targetname: str, extended_context: ExtendedContext) -> str:
+        if targetname != self.npc_name:
+            logger.error(f"离开者与收听者不是一个人 => {targetname} vs {self.npc_name}")
+
+        event = fail_to_exit_stage(self.npc_name, self.stage_name, self.exit_condition)
+        logger.info(event)
+        return event 
+####################################################################################################################################
+####################################################################################################################################
+#################################################################################################################################### 
+class FailEnterStageEvent(DirectorEvent):
+    def __init__(self, npc_name: str, stage_name: str, enter_condition: str) -> None:
+        self.npc_name = npc_name
+        self.stage_name = stage_name
+        self.enter_condition = enter_condition
+
+    def __str__(self) -> str:
+        return f"FailEnterStageEvent({self.npc_name}, {self.stage_name}, {self.enter_condition})"
+    
+    def convert(self, targetname: str, extended_context: ExtendedContext) -> str:
+        if targetname != self.npc_name:
+            logger.error(f"进入者与收听者不是一个人 => {targetname} vs {self.npc_name}")
+
+        event = fail_to_enter_stage(self.npc_name, self.stage_name, self.enter_condition)
         logger.info(event)
         return event
 ####################################################################################################################################

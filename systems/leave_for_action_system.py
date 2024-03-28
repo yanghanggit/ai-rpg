@@ -1,20 +1,3 @@
-"""
-This module contains the implementation of the LeaveForActionSystem class, which is responsible for handling the leave action of entities in a game.
-
-The LeaveForActionSystem class is a subclass of the ReactiveProcessor class and is used to react to entities that have the LeaveForActionComponent added to them.
-
-Classes:
-- LeaveForActionSystem: A class that handles the leave action of entities in a game.
-
-Methods:
-- __init__(self, context: ExtendedContext): Initializes a new instance of the LeaveForActionSystem class.
-- get_trigger(self): Returns the trigger for the system, which is the LeaveForActionComponent added to entities.
-- filter(self, entity: list[Entity]): Filters the entities based on the presence of the LeaveForActionComponent.
-- react(self, entities: list[Entity]): Reacts to the entities by handling the leave action.
-- handle2(self, entities: list[Entity]) -> None: Handles the leave action for the entities.
-- enter_stage(self, handle: LeaveHandle) -> None: Handles the entering of a new stage for the entity.
-- leave_stage(self, handle: LeaveHandle) -> None: Handles the leaving of the current stage for the entity.
-"""
 
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
 from auxiliary.components import (LeaveForActionComponent, 
@@ -23,30 +6,18 @@ from auxiliary.components import (LeaveForActionComponent,
                         SimpleRPGRoleComponent,
                         BackpackComponent,
                         StageEntryConditionComponent,
-                        StageExitConditionComponent)
+                        StageExitConditionComponent,
+                        DirectorComponent)
 from auxiliary.actor_action import ActorAction
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.print_in_color import Color
 from auxiliary.prompt_maker import fail_to_enter_stage, fail_to_exit_stage, npc_enter_stage, npc_leave_for_stage
 from loguru import logger
+from director import Director, LeaveForStageEvent, EnterStageEvent, FailEnterStageEvent, FailExitStageEvent
 
 class NpcBackpackComponentHandle:
-    """
-    Class representing the NPC handling system.
-
-    Attributes:
-    - context (ExtendedContext): The extended context object.
-    - backpack_comp (BackpackComponent): The backpack component of the NPC.
-    - backpack_comp_content (set[str]): The content of the backpack component.
-    """
 
     def __init__(self, context: ExtendedContext, npc_entity: Entity) -> None:
-        """
-        Initializes a new instance of the NpcHandle class.
-
-        Parameters:
-        - context (ExtendedContext): The extended context object.
-        """
         self.context = context
         self.backpack_comp: BackpackComponent = npc_entity.get(BackpackComponent)
         self.backpack_comp_content: set[str] = self.context.file_system.get_backpack_contents(self.backpack_comp)
@@ -54,25 +25,8 @@ class NpcBackpackComponentHandle:
 
 ###集中写一下方便处理，不然每次还要再搜，很麻烦
 class LeaveHandle:
-    """
-    Class representing the leave handling system.
-
-    Attributes:
-    - context (ExtendedContext): The extended context object.
-    - who_wana_leave (Entity): The entity that wants to leave.
-    - current_stage_name (str): The name of the current stage.
-    - current_stage (Entity): The current stage entity.
-    - target_stage_name (str): The name of the target stage.
-    - target_stage (Entity): The target stage entity.
-    """
 
     def __init__(self, context: ExtendedContext, who_wana_leave: Entity, target_stage_name: str) -> None:
-        """
-        Initializes a new instance of the LeaveHandle class.
-
-        Parameters:
-        - context (ExtendedContext): The extended context object.
-        """
         self.context = context
         self.who_wana_leave = who_wana_leave
         self.current_stage_name = who_wana_leave.get(NPCComponent).current_stage
@@ -84,10 +38,7 @@ class LeaveHandle:
 
 ###############################################################################################################################################
 class LeaveForActionSystem(ReactiveProcessor):
-    """
-    The LeaveForActionSystem is responsible for handling the leave action of entities in the game.
-    It reacts to the addition of entities with the LeaveForActionComponent and performs the necessary actions.
-    """
+
     def __init__(self, context: ExtendedContext) -> None:
         super().__init__(context)
         self.context = context
@@ -99,22 +50,16 @@ class LeaveForActionSystem(ReactiveProcessor):
         return entity.has(LeaveForActionComponent)
 
     def react(self, entities: list[Entity]) -> None:
-        """
-        Reacts to the addition of entities with the LeaveForActionComponent.
-        Performs the necessary actions for leaving the current stage and entering a new stage.
-        """
         logger.debug("<<<<<<<<<<<<<  LeaveForActionSystem  >>>>>>>>>>>>>>>>>")
-        self.handle2(entities)
+        self.handle(entities)
 
         #必须移除！！！！！
         for entity in entities:
             entity.remove(LeaveForActionComponent)    
 
     ###############################################################################################################################################
-    def handle2(self, entities: list[Entity]) -> None:
-        """
-        Handles the leave action for each entity in the given list of entities.
-        """
+    def handle(self, entities: list[Entity]) -> None:
+
         for entity in entities:
             if not entity.has(NPCComponent):
                 logger.warning(f"LeaveForActionSystem: {entity} is not NPC?!")
@@ -188,9 +133,11 @@ class LeaveForActionSystem(ReactiveProcessor):
         target_stage_comp = target_stage_entity.get(StageComponent)
         if current_stage_name != "":
             self.context.add_content_to_director_script_by_entity(target_stage_entity, npc_leave_for_stage(npccomp.name, current_stage_name, target_stage_name))
+            self.add_leave_for_stage_event_director(target_stage_entity, npccomp.name, current_stage_name, target_stage_name)
             logger.info(f"{Color.GREEN}{npccomp.name} 离开了{current_stage_name}去了{target_stage_name}.{Color.ENDC}")
         else:
             self.context.add_content_to_director_script_by_entity(target_stage_entity, npc_enter_stage(npccomp.name, target_stage_name))
+            self.add_enter_stage_event_director(target_stage_entity, npccomp.name, target_stage_name)
             logger.info(f"{Color.GREEN}{npccomp.name} 进入了{target_stage_name}.{Color.ENDC}")
         
         ##
@@ -222,6 +169,7 @@ class LeaveForActionSystem(ReactiveProcessor):
         #给当前场景添加剧本，如果本次有导演就合进事件
         # cur_stage_comp.directorscripts.append(f"{npccomp.name} 离开{handle.current_stage_name}去了{handle.target_stage_name}")
         self.context.add_content_to_director_script_by_entity(current_stage, npc_leave_for_stage(npccomp.name, handle.current_stage_name, handle.target_stage_name))
+        self.add_leave_for_stage_event_director(current_stage, npccomp.name, handle.current_stage_name, handle.target_stage_name)
 
     ###############################################################################################################################################
     def check_current_stage_meets_conditions_for_leaving(self, handle: LeaveHandle) -> bool:
@@ -245,6 +193,7 @@ class LeaveForActionSystem(ReactiveProcessor):
 
         logger.info(f"{Color.WARNING}{handle.who_wana_leave.get(NPCComponent).name}背包中没有{search_list}，不能离开{handle.current_stage_name}.{Color.ENDC}")
         self.context.add_content_to_director_script_by_entity(handle.who_wana_leave, fail_to_exit_stage(handle.who_wana_leave.get(NPCComponent).name, handle.current_stage_name, search_list))
+        self.add_fail_exit_stage_event_director(handle.current_stage, handle.who_wana_leave.get(NPCComponent).name, handle.current_stage_name, search_list)
         return False
     ###############################################################################################################################################
     def check_conditions_for_entering_target_stage(self, handle: LeaveHandle) -> bool:
@@ -265,5 +214,46 @@ class LeaveForActionSystem(ReactiveProcessor):
         
         logger.info(f"{Color.WARNING}{handle.who_wana_leave.get(NPCComponent).name}背包中没有{search_list}，不能进入{handle.target_stage_name}.{Color.ENDC}")
         self.context.add_content_to_director_script_by_entity(handle.who_wana_leave, fail_to_enter_stage(handle.who_wana_leave.get(NPCComponent).name, handle.target_stage_name, search_list))
+        
+        ##重构的        
+        if handle.current_stage is not None:
+            self.add_fail_enter_stage_event_director(handle.current_stage, handle.who_wana_leave.get(NPCComponent).name, handle.target_stage_name, search_list)
         return False
-
+    
+    ###############################################################################################################################################
+    def add_leave_for_stage_event_director(self, stageentity: Entity, npcname: str, cur_stage_name: str, target_stage_name: str) -> None:
+        if stageentity is None or not stageentity.has(DirectorComponent):
+            return
+        # ##添加导演事件
+        directorcomp = stageentity.get(DirectorComponent)
+        director: Director = directorcomp.director
+        leaveforstageevent = LeaveForStageEvent(npcname, cur_stage_name, target_stage_name)
+        director.addevent(leaveforstageevent)
+    ###############################################################################################################################################
+    def add_enter_stage_event_director(self, stageentity: Entity, npcname: str, target_stage_name: str) -> None:
+        if stageentity is None or not stageentity.has(DirectorComponent):
+            return
+        # ##添加导演事件
+        directorcomp = stageentity.get(DirectorComponent)
+        director: Director = directorcomp.director
+        enterstageevent = EnterStageEvent(npcname, target_stage_name)
+        director.addevent(enterstageevent)
+    ###############################################################################################################################################
+    def add_fail_enter_stage_event_director(self, stageentity: Entity, npcname: str, target_stage_name: str, search_list: str) -> None:
+        if stageentity is None or not stageentity.has(DirectorComponent):
+            return
+        # ##添加导演事件
+        directorcomp = stageentity.get(DirectorComponent)
+        director: Director = directorcomp.director
+        failevent = FailEnterStageEvent(npcname, target_stage_name, search_list)
+        director.addevent(failevent)
+    ###############################################################################################################################################
+    def add_fail_exit_stage_event_director(self, stageentity: Entity, npcname: str, cur_stage_name: str, search_list: str) -> None:
+        if stageentity is None or not stageentity.has(DirectorComponent):
+            return
+        # ##添加导演事件
+        directorcomp = stageentity.get(DirectorComponent)
+        director: Director = directorcomp.director
+        failevent = FailExitStageEvent(npcname, cur_stage_name, search_list)
+        director.addevent(failevent)
+    ###############################################################################################################################################

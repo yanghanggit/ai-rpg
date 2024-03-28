@@ -42,13 +42,7 @@ class BroadcastActionSystem(ReactiveProcessor):
         #
         directorcomp: DirectorComponent = stageentity.get(DirectorComponent)
         director: Director = directorcomp.director
-
-
-
-        # stagecomp: Optional[StageComponent] = self.context.get_stagecomponent_by_uncertain_entity(entity) 
-        # if stagecomp is None or broadcastcomp is None:
-        #     logger.error(f"BroadcastActionSystem: stagecomp or broadcastcomp is None!")
-        #     return
+        # 遍历处理
         action: ActorAction = broadcastcomp.action
         for value in action.values:
             ## 原始处理

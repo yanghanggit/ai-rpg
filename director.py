@@ -29,15 +29,15 @@ class BroadcastEvent(DirectorEvent):
     
     def convert(self, targetname: str, extended_context: ExtendedContext) -> str:
         if targetname != self.who_broadcast:
-            logger.error(f"BroadcastEvent: {targetname} != {self.who_broadcast}")
+            logger.error(f"广播者与收听者不是一个人 => {targetname} vs {self.who_broadcast}")
+
         broadcast_say = broadcast_action_prompt(self.who_broadcast, self.stagename, self.content, extended_context)
         logger.info(f"{Color.HEADER}{broadcast_say}{Color.ENDC}")
+        
         return broadcast_say
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-
-###
 class Director:
 
     def __init__(self, name: str) -> None:
@@ -55,4 +55,6 @@ class Director:
 
     def clear(self) -> None:
         self.events.clear()
-    
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################

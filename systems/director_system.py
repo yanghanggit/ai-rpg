@@ -40,7 +40,8 @@ class DirectorSystem(ExecuteProcessor):
             comp.directorscripts.clear()
             ### 重构的！！！
             directorcomp = entity.get(DirectorComponent)
-            directorcomp.director.clear()
+            director: Director = directorcomp.director
+            director.clear()
 
 
     def handlestage(self, entitystage: Entity) -> None:

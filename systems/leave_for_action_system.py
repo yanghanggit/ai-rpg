@@ -194,10 +194,10 @@ class LeaveForActionSystem(ReactiveProcessor):
             logger.info(f"{Color.GREEN}{npccomp.name} 进入了{target_stage_name}.{Color.ENDC}")
         
         ##
-        if entity.has(SimpleRPGRoleComponent):
-            desc = entity.get(SimpleRPGRoleComponent).desc
-            if desc != "":
-                target_stage_comp.directorscripts.append(f"{npccomp.name}的描述：{desc}")
+        # if entity.has(SimpleRPGRoleComponent):
+        #     desc = entity.get(SimpleRPGRoleComponent).desc
+        #     if desc != "":
+        #         target_stage_comp.directorscripts.append(f"{npccomp.name}的描述：{desc}")
 
     ###############################################################################################################################################
     def leave_stage(self, handle: LeaveHandle) -> None:

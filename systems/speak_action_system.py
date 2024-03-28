@@ -1,6 +1,6 @@
 
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
-from auxiliary.components import SpeakActionComponent, NPCComponent, StageComponent
+from auxiliary.components import SpeakActionComponent, NPCComponent, StageComponent, DirectorComponent
 from auxiliary.actor_action import ActorAction
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.print_in_color import Color
@@ -8,6 +8,8 @@ from auxiliary.prompt_maker import speak_action_prompt
 from typing import Optional
 from loguru import logger
 from auxiliary.dialogue_rule import check_speak_enable, parse_taget_and_message
+from director import Director, SpeakEvent
+
    
 ####################################################################################################
 class SpeakActionSystem(ReactiveProcessor):
@@ -46,5 +48,25 @@ class SpeakActionSystem(ReactiveProcessor):
             logger.info(f"{Color.HEADER}{say_content}{Color.ENDC}")
             ##添加场景事件，最后随着导演剧本走
             self.context.add_content_to_director_script_by_entity(entity, say_content)
+            self.add_event_to_director(entity, target, message)
+####################################################################################################
+    def add_event_to_director(self, entity: Entity, targetname: str, message: str) -> None:
+        if entity is None or not entity.has(NPCComponent):
+            ##写死，只有NPC才能说话
+            return
+        ##添加导演事件
+        stageentity = self.context.get_stage_entity_by_uncertain_entity(entity)
+        if stageentity is None or not stageentity.has(DirectorComponent):
+            return
+        #
+        npccomp = entity.get(NPCComponent)
+        npcname: str = npccomp.name
+        #
+        directorcomp = stageentity.get(DirectorComponent)
+        director: Director = directorcomp.director
+        speakevent = SpeakEvent(npcname, targetname, message)
+        director.addevent(speakevent)
+####################################################################################################
+
 
        

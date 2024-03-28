@@ -1,12 +1,13 @@
 
 from entitas import Matcher, ReactiveProcessor, GroupEvent, Entity # type: ignore
-from auxiliary.components import FightActionComponent, NPCComponent, StageComponent, SimpleRPGRoleComponent, DeadActionComponent
+from auxiliary.components import FightActionComponent, NPCComponent, StageComponent, SimpleRPGRoleComponent, DeadActionComponent, DirectorComponent
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.actor_action import ActorAction
 from auxiliary.actor_agent import ActorAgent
 from auxiliary.prompt_maker import kill_someone, attack_someone
 from typing import Optional
 from loguru import logger
+from director import Director, KillSomeoneEvent, AttackSomeoneEvent
 
 class FightActionSystem(ReactiveProcessor):
 
@@ -54,8 +55,45 @@ class FightActionSystem(ReactiveProcessor):
                     if not attacked.has(DeadActionComponent):
                         attacked.add(DeadActionComponent, action)
                     self.context.add_content_to_director_script_by_entity(attacker, kill_someone(action.name, value))
+                    self.add_kill_someone_event_to_director(attacker, value)
                 else:
                     self.context.add_content_to_director_script_by_entity(attacker, attack_someone(action.name, value, attacker_comp.attack, attacked_comp.hp, attacked_comp.maxhp))
+                    self.add_attack_someone_event_to_director(attacker, value, attacker_comp.attack, attacked_comp.hp, attacked_comp.maxhp)
             else:
                 logger.warning("attacker or attacked has no simple rpg role comp.")
+
+    ## 重构事件
+    def add_kill_someone_event_to_director(self, entity: Entity, targetname: str) -> None:
+        if entity is None or not entity.has(SimpleRPGRoleComponent):
+            return
+        ##添加导演事件
+        stageentity = self.context.get_stage_entity_by_uncertain_entity(entity)
+        if stageentity is None or not stageentity.has(DirectorComponent):
+            return
+        #
+        rpgcomp = entity.get(SimpleRPGRoleComponent)
+        rpgname: str = rpgcomp.name
+        #
+        directorcomp = stageentity.get(DirectorComponent)
+        director: Director = directorcomp.director
+        killsomeoneevent = KillSomeoneEvent(rpgname, targetname)
+        director.addevent(killsomeoneevent)
+
+    ## 重构事件
+    def add_attack_someone_event_to_director(self, entity: Entity, targetname: str, damage: int, curhp: int, maxhp: int) -> None:
+        if entity is None or not entity.has(SimpleRPGRoleComponent):
+            return
+        ##添加导演事件
+        stageentity = self.context.get_stage_entity_by_uncertain_entity(entity)
+        if stageentity is None or not stageentity.has(DirectorComponent):
+            return
+        #
+        rpgcomp = entity.get(SimpleRPGRoleComponent)
+        rpgname: str = rpgcomp.name
+        #
+        directorcomp = stageentity.get(DirectorComponent)
+        director: Director = directorcomp.director
+        attacksomeoneevent = AttackSomeoneEvent(rpgname, targetname, damage, curhp, maxhp)
+        director.addevent(attacksomeoneevent)
+
        

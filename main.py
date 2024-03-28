@@ -48,6 +48,10 @@ from langchain_core.messages import (
 
 from rpg_game import RPGGame 
 from player_proxy import PlayerProxy
+from gm_input import GMCommandPush
+from gm_input import GMCommandAsk
+from player_input import PlayerCommandBeWho
+
 
 # ###############################################################################################################################################
 # def create_admin_npc_entities(context: ExtendedContext, admin_npc_builder: AdminNpcBuilder) -> List[Entity]:
@@ -364,7 +368,7 @@ def main() -> None:
             # processors.execute()
             # processors.cleanup()
             # started = True
-            logger.debug("==============================================")
+            #logger.debug("==============================================")
 
         elif "/push" in usr_input:
             # if not started:
@@ -374,7 +378,11 @@ def main() -> None:
             input_content = parse_command(usr_input, command) 
             push_command_parse_res: tuple[str, str] = parse_target_and_message_by_symbol(input_content)
             logger.debug(f"</force push command to {push_command_parse_res[0]}>:", input_content)
-            debug_push(context, push_command_parse_res[0], push_command_parse_res[1])
+            ###
+            gmcommandpush = GMCommandPush("/push", rpggame, push_command_parse_res[0], push_command_parse_res[1])
+            gmcommandpush.execute()
+
+            #debug_push(context, push_command_parse_res[0], push_command_parse_res[1])
             logger.debug(f"{'=' * 50}")
 
         elif "/ask" in usr_input:
@@ -385,7 +393,11 @@ def main() -> None:
             input_content = parse_command(usr_input, command)
             ask_command_parse_res: tuple[str, str] = parse_target_and_message_by_symbol(input_content)
             logger.debug(f"</ask command to {ask_command_parse_res[0]}>:", input_content)
-            debug_ask(context, ask_command_parse_res[0], ask_command_parse_res[1])
+            ###
+            gmcommandask = GMCommandAsk("/ask", rpggame, ask_command_parse_res[0], ask_command_parse_res[1])
+            gmcommandask.execute()
+            
+            #debug_ask(context, ask_command_parse_res[0], ask_command_parse_res[1])
             logger.debug(f"{'=' * 50}")
 
         elif "/showstages" in usr_input:
@@ -404,7 +416,11 @@ def main() -> None:
                 continue
             command = "/who"
             who = parse_command(usr_input, command)
-            debug_be_who(context, who, playproxy.name)
+
+            playercommandbewho = PlayerCommandBeWho("/who", rpggame, playproxy, who)
+            playercommandbewho.execute()
+            #debug_be_who(context, who, playproxy.name)
+            
             logger.debug(f"{'=' * 50}")
            
         elif "/attack" in usr_input:
@@ -476,64 +492,64 @@ def main() -> None:
     #logger.info("Game Over")
 
 ###############################################################################################################################################
-def debug_push(context: ExtendedContext, name: str, content: str) -> Union[None, NPCComponent, StageComponent, WorldComponent]:
+# def debug_push(context: ExtendedContext, name: str, content: str) -> Union[None, NPCComponent, StageComponent, WorldComponent]:
 
-    npc_entity: Optional[Entity] = context.getnpc(name)
-    if npc_entity is not None:
-        npc_comp: NPCComponent = npc_entity.get(NPCComponent)
-        npc_request: Optional[str] = npc_comp.agent.request(content)
-        if npc_request is not None:
-            npc_comp.agent.chat_history.pop()
-        return npc_comp
+#     npc_entity: Optional[Entity] = context.getnpc(name)
+#     if npc_entity is not None:
+#         npc_comp: NPCComponent = npc_entity.get(NPCComponent)
+#         npc_request: Optional[str] = npc_comp.agent.request(content)
+#         if npc_request is not None:
+#             npc_comp.agent.chat_history.pop()
+#         return npc_comp
     
-    stage_entity: Optional[Entity] = context.getstage(name)
-    if stage_entity is not None:
-        stage_comp: StageComponent = stage_entity.get(StageComponent)
-        stage_request: Optional[str] = stage_comp.agent.request(content)
-        if stage_request is not None:
-            stage_comp.agent.chat_history.pop()
-        return stage_comp
+#     stage_entity: Optional[Entity] = context.getstage(name)
+#     if stage_entity is not None:
+#         stage_comp: StageComponent = stage_entity.get(StageComponent)
+#         stage_request: Optional[str] = stage_comp.agent.request(content)
+#         if stage_request is not None:
+#             stage_comp.agent.chat_history.pop()
+#         return stage_comp
     
-    world_entity: Optional[Entity] = context.getworld()
-    if world_entity is not None:
-        world_comp: WorldComponent = world_entity.get(WorldComponent)
-        request: Optional[str] = world_comp.agent.request(content)
-        if request is not None:
-            world_comp.agent.chat_history.pop()
-        return world_comp
+#     world_entity: Optional[Entity] = context.getworld()
+#     if world_entity is not None:
+#         world_comp: WorldComponent = world_entity.get(WorldComponent)
+#         request: Optional[str] = world_comp.agent.request(content)
+#         if request is not None:
+#             world_comp.agent.chat_history.pop()
+#         return world_comp
 
-    return None        
+#     return None        
     
-def debug_ask(context: ExtendedContext, name: str, content: str) -> None:
-    pushed_comp = debug_push(context, name, content)
-    if pushed_comp is None:
-        logger.warning(f"debug_ask: {name} not found.")
-        return
-    pushed_agent: ActorAgent = pushed_comp.agent
-    pushed_agent.chat_history.pop()
+# def debug_ask(context: ExtendedContext, name: str, content: str) -> None:
+#     pushed_comp = debug_push(context, name, content)
+#     if pushed_comp is None:
+#         logger.warning(f"debug_ask: {name} not found.")
+#         return
+#     pushed_agent: ActorAgent = pushed_comp.agent
+#     pushed_agent.chat_history.pop()
 
 ###############################################################################################################################################
-def debug_be_who(context: ExtendedContext, name: str, playname: str) -> None:
+# def debug_be_who(context: ExtendedContext, name: str, playname: str) -> None:
 
-    playerentity = context.getplayer()
-    if playerentity is not None:
-        playercomp = playerentity.get(PlayerComponent)
-        logger.debug(f"debug_be_who current player is : {playercomp.name}")
-        playerentity.remove(PlayerComponent)
+#     playerentity = context.getplayer()
+#     if playerentity is not None:
+#         playercomp = playerentity.get(PlayerComponent)
+#         logger.debug(f"debug_be_who current player is : {playercomp.name}")
+#         playerentity.remove(PlayerComponent)
 
-    entity = context.getnpc(name)
-    if entity is not None:
-        npccomp = entity.get(NPCComponent)
-        logger.debug(f"debug_be_who => : {npccomp.name} is {playname}")
-        entity.add(PlayerComponent, playname)
-        return
+#     entity = context.getnpc(name)
+#     if entity is not None:
+#         npccomp = entity.get(NPCComponent)
+#         logger.debug(f"debug_be_who => : {npccomp.name} is {playname}")
+#         entity.add(PlayerComponent, playname)
+#         return
     
-    entity = context.getstage(name)
-    if entity is not None:
-        stagecomp = entity.get(StageComponent)
-        logger.debug(f"debug_be_who => : {stagecomp.name} is {playname}")
-        entity.add(PlayerComponent, playname)
-        return
+#     entity = context.getstage(name)
+#     if entity is not None:
+#         stagecomp = entity.get(StageComponent)
+#         logger.debug(f"debug_be_who => : {stagecomp.name} is {playname}")
+#         entity.add(PlayerComponent, playname)
+#         return
 ###############################################################################################################################################
 def debug_attack(context: ExtendedContext, dest: str) -> None:
     

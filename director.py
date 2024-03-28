@@ -37,7 +37,7 @@ class BroadcastEvent(DirectorEvent):
     
     def convert(self, targetname: str, extended_context: ExtendedContext) -> str:
         if targetname != self.whobroadcast:
-            logger.error(f"广播者与收听者不是一个人 => {targetname} vs {self.whobroadcast}")
+            logger.error(f"BroadcastEvent => {targetname} vs {self.whobroadcast}")
 
         broadcastcontent = broadcast_action_prompt(self.whobroadcast, self.stagename, self.content, extended_context)
         logger.info(f"{Color.HEADER}{broadcastcontent}{Color.ENDC}")
@@ -57,7 +57,7 @@ class SpeakEvent(DirectorEvent):
 
     def convert(self, targetname: str, extended_context: ExtendedContext) -> str:
         if targetname != self.whospeak:
-            logger.error(f"说话者与收听者不是一个人 => {targetname} vs {self.whospeak}")
+            logger.error(f"SpeakEvent => {targetname} vs {self.whospeak}")
 
         speakcontent: str = speak_action_prompt(self.whospeak, self.target, self.message, extended_context)
         logger.info(f"{Color.HEADER}{speakcontent}{Color.ENDC}")
@@ -76,7 +76,7 @@ class SearchFailedEvent(DirectorEvent):
 
     def convert(self, targetname: str, extended_context: ExtendedContext) -> str:
         if targetname != self.who_search_failed:
-            logger.error(f"搜索失败的人与收听者不是一个人 => {targetname} vs {self.who_search_failed}")
+            logger.error(f"SearchFailedEvent => {targetname} vs {self.who_search_failed}")
         event = __unique_prop_taken_away__(self.who_search_failed, self.target)
         logger.info(event)
         return event
@@ -93,7 +93,7 @@ class KillSomeoneEvent(DirectorEvent):
     
     def convert(self, targetname: str, extended_context: ExtendedContext) -> str:
         if targetname != self.attacker:
-            logger.error(f"杀人者与收听者不是一个人 => {targetname} vs {self.attacker}")
+            logger.error(f"KillSomeoneEvent => {targetname} vs {self.attacker}")
 
         event = kill_someone(self.attacker, self.target)
         logger.info(event)
@@ -114,7 +114,7 @@ class AttackSomeoneEvent(DirectorEvent):
 
     def convert(self, targetname: str, extended_context: ExtendedContext) -> str:
         if targetname != self.attacker:
-            logger.error(f"攻击者与收听者不是一个人 => {targetname} vs {self.attacker}")
+            logger.error(f"AttackSomeoneEvent => {targetname} vs {self.attacker}")
 
         event = attack_someone(self.attacker, self.target, self.damage, self.curhp, self.maxhp)
         logger.info(event)
@@ -133,7 +133,7 @@ class LeaveForStageEvent(DirectorEvent):
 
     def convert(self, targetname: str, extended_context: ExtendedContext) -> str:
         if targetname != self.npc_name:
-            logger.error(f"离开者与收听者不是一个人 => {targetname} vs {self.npc_name}")
+            logger.error(f"LeaveForStageEvent => {targetname} vs {self.npc_name}")
 
         event = npc_leave_for_stage(self.npc_name, self.current_stage_name, self.leave_for_stage_name)
         logger.info(event)
@@ -151,7 +151,7 @@ class EnterStageEvent(DirectorEvent):
 
     def convert(self, targetname: str, extended_context: ExtendedContext) -> str:
         if targetname != self.npc_name:
-            logger.error(f"进入者与收听者不是一个人 => {targetname} vs {self.npc_name}")
+            logger.error(f"EnterStageEvent => {targetname} vs {self.npc_name}")
 
         event = npc_enter_stage(self.npc_name, self.stage_name)
         logger.info(event)
@@ -170,7 +170,7 @@ class FailExitStageEvent(DirectorEvent):
 
     def convert(self, targetname: str, extended_context: ExtendedContext) -> str:
         if targetname != self.npc_name:
-            logger.error(f"离开者与收听者不是一个人 => {targetname} vs {self.npc_name}")
+            logger.error(f"FailExitStageEvent => {targetname} vs {self.npc_name}")
 
         event = fail_to_exit_stage(self.npc_name, self.stage_name, self.exit_condition)
         logger.info(event)
@@ -189,7 +189,7 @@ class FailEnterStageEvent(DirectorEvent):
     
     def convert(self, targetname: str, extended_context: ExtendedContext) -> str:
         if targetname != self.npc_name:
-            logger.error(f"进入者与收听者不是一个人 => {targetname} vs {self.npc_name}")
+            logger.error(f"FailEnterStageEvent => {targetname} vs {self.npc_name}")
 
         event = fail_to_enter_stage(self.npc_name, self.stage_name, self.enter_condition)
         logger.info(event)

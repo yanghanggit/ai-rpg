@@ -70,6 +70,9 @@ class DirectorSystem(ExecuteProcessor):
         directorcomp: DirectorComponent = entitystage.get(DirectorComponent)
         director: Director = directorcomp.director
         for npcen in npcs_in_stage:
-            npcmem = director.convert(npcen.get(NPCComponent).name, self.context)
-            logger.debug(f"npcmem:{npcmem}")
+            events = director.convert(npcen.get(NPCComponent).name, self.context)            
+            npcmem = " ".join(events)
+            logger.debug(f"npcmem: {npcmem}")
+            
+
     

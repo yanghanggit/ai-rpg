@@ -1,56 +1,27 @@
 from rpg_game import RPGGame
-import os
-from typing import List, Optional, Union
-from entitas import Processors #type: ignore
+from typing import Optional, Union
 from loguru import logger
-import datetime
 from auxiliary.components import (
-    BroadcastActionComponent, 
-    SpeakActionComponent, 
     WorldComponent,
     StageComponent, 
-    NPCComponent, 
-    FightActionComponent, 
-    PlayerComponent, 
-    SimpleRPGRoleComponent, 
-    LeaveForActionComponent, 
-    HumanInterferenceComponent,
-    UniquePropComponent,
-    BackpackComponent,
-    StageEntryConditionComponent,
-    StageExitConditionComponent,
-    WhisperActionComponent,
-    SearchActionComponent)
-from auxiliary.actor_action import ActorAction
+    NPCComponent)
 from auxiliary.actor_agent import ActorAgent
-from auxiliary.extended_context import ExtendedContext
-from auxiliary.dialogue_rule import parse_command, parse_target_and_message_by_symbol
-from auxiliary.world_data_builder import WorldDataBuilder, AdminNpcBuilder, StageBuilder, PlayerNpcBuilder, NpcBuilder
 from entitas.entity import Entity
-from systems.init_system import InitSystem
-from systems.stage_plan_system import StagePlanSystem
-from systems.npc_plan_system import NPCPlanSystem
-from systems.speak_action_system import SpeakActionSystem
-from systems.fight_action_system import FightActionSystem
-from systems.leave_for_action_system import LeaveForActionSystem
-from systems.director_system import DirectorSystem
-from systems.dead_action_system import DeadActionSystem
-from systems.destroy_system import DestroySystem
-from systems.tag_action_system import TagActionSystem
-from systems.data_save_system import DataSaveSystem
-from systems.broadcast_action_system import BroadcastActionSystem  
-from systems.whisper_action_system import WhisperActionSystem 
-from systems.search_props_system import SearchPropsSystem
-from systems.mind_voice_action_system import MindVoiceActionSystem
+from langchain_core.messages import (
+    HumanMessage,
+    AIMessage)
 
-
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
 class GMInput:
 
     def __init__(self, name: str, game: RPGGame) -> None:
         self.name: str = name
         self.game: RPGGame = game
-
-
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
 class GMCommandPush(GMInput):
 
     def __init__(self, name: str, game: RPGGame, targetname: str, content: str) -> None:
@@ -89,7 +60,9 @@ class GMCommandPush(GMInput):
 
         return None        
 
-
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
 class GMCommandAsk(GMInput):
 
     def __init__(self, name: str, game: RPGGame, targetname: str, content: str) -> None:
@@ -106,6 +79,58 @@ class GMCommandAsk(GMInput):
         pushed_agent: ActorAgent = pushed_comp.agent
         pushed_agent.chat_history.pop()
    
-    
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
+class GMCommandLogChatHistory(GMInput):
 
+    def __init__(self, name: str, game: RPGGame, targetname: str) -> None:
+        super().__init__(name, game)
+        self.targetname = targetname
 
+    def execute(self) -> None:
+
+        context = self.game.extendedcontext
+        name = self.targetname
+
+        entity = context.getnpc(name)
+        if entity is not None:
+            npc_comp: NPCComponent = entity.get(NPCComponent)
+            npc_agent: ActorAgent = npc_comp.agent
+            logger.info(f"{'=' * 50}\ndebug_chat_history for {npc_comp.name} => :")
+            for history in npc_agent.chat_history:
+                if isinstance(history, HumanMessage):
+                    logger.info(f"{'=' * 50}\nHuman:{history.content}")
+                elif isinstance(history, AIMessage):
+                    logger.info(f"{'=' * 50}\nAI:{history.content}")
+            logger.info(f"{'=' * 50}")
+            return
+        
+        entity = context.getstage(name)
+        if entity is not None:
+            stage_comp: StageComponent = entity.get(StageComponent)
+            stage_agent: ActorAgent = stage_comp.agent
+            logger.info(f"{'=' * 50}\ndebug_chat_history for {stage_comp.name} => :\n")
+            for history in stage_agent.chat_history:
+                if isinstance(history, HumanMessage):
+                    logger.info(f"Human:{history.content}")
+                elif isinstance(history, AIMessage):
+                    logger.info(f"AI:{history.content}")
+            logger.info(f"{'=' * 50}")
+            return
+        
+        entity = context.getworld()
+        if entity is not None:
+            world_comp: WorldComponent = entity.get(WorldComponent)
+            world_agent: ActorAgent = world_comp.agent
+            logger.info(f"{'=' * 50}\ndebug_chat_history for {world_comp.name} => :\n")
+            for history in world_agent.chat_history:
+                if isinstance(history, HumanMessage):
+                    logger.info(f"Human:{history.content}")
+                elif isinstance(history, AIMessage):
+                    logger.info(f"AI:{history.content}")
+            logger.info(f"{'=' * 50}")
+            return
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################

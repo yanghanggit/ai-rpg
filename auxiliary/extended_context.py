@@ -86,7 +86,7 @@ class ExtendedContext(Context):
                     return cast(StageComponent, stage.get(StageComponent))
         return None
         
-    def show_stages_log(self) -> dict[str, list[str]]:
+    def information_about_all_stages_and_npcs(self) -> dict[str, list[str]]:
 
         stagesentities = self.get_group(Matcher(StageComponent)).entities
         npcsentities = self.get_group(Matcher(NPCComponent)).entities

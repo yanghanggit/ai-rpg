@@ -1,56 +1,31 @@
 from rpg_game import RPGGame
-import os
-from typing import List, Optional, Union
-from entitas import Processors #type: ignore
 from loguru import logger
-import datetime
 from auxiliary.components import (
     BroadcastActionComponent, 
     SpeakActionComponent, 
-    WorldComponent,
     StageComponent, 
     NPCComponent, 
     FightActionComponent, 
     PlayerComponent, 
-    SimpleRPGRoleComponent, 
     LeaveForActionComponent, 
     HumanInterferenceComponent,
-    UniquePropComponent,
-    BackpackComponent,
-    StageEntryConditionComponent,
-    StageExitConditionComponent,
     WhisperActionComponent,
     SearchActionComponent)
 from auxiliary.actor_action import ActorAction
-from auxiliary.actor_agent import ActorAgent
-from auxiliary.extended_context import ExtendedContext
-from auxiliary.dialogue_rule import parse_command, parse_target_and_message_by_symbol
-from auxiliary.world_data_builder import WorldDataBuilder, AdminNpcBuilder, StageBuilder, PlayerNpcBuilder, NpcBuilder
-from entitas.entity import Entity
-from systems.init_system import InitSystem
-from systems.stage_plan_system import StagePlanSystem
-from systems.npc_plan_system import NPCPlanSystem
-from systems.speak_action_system import SpeakActionSystem
-from systems.fight_action_system import FightActionSystem
-from systems.leave_for_action_system import LeaveForActionSystem
-from systems.director_system import DirectorSystem
-from systems.dead_action_system import DeadActionSystem
-from systems.destroy_system import DestroySystem
-from systems.tag_action_system import TagActionSystem
-from systems.data_save_system import DataSaveSystem
-from systems.broadcast_action_system import BroadcastActionSystem  
-from systems.whisper_action_system import WhisperActionSystem 
-from systems.search_props_system import SearchPropsSystem
-from systems.mind_voice_action_system import MindVoiceActionSystem
 from player_proxy import PlayerProxy
 
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
 class PlayerInput:
 
     def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy) -> None:
         self.name: str = name
         self.game: RPGGame = game
         self.playerproxy: PlayerProxy = playerproxy
-
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
 class PlayerCommandBeWho(PlayerInput):
 
     def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, targetname: str) -> None:
@@ -81,6 +56,179 @@ class PlayerCommandBeWho(PlayerInput):
             logger.debug(f"debug_be_who => : {stagecomp.name} is {playname}")
             entity.add(PlayerComponent, playname)
             return
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################     
+class PlayerCommandAttack(PlayerInput):
+
+    def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, targetname: str) -> None:
+        super().__init__(name, game, playerproxy)
+        self.targetname = targetname
+
+    def execute(self) -> None:
+        context = self.game.extendedcontext 
+        dest = self.targetname
+        playerentity = context.getplayer()
+        if playerentity is None:
+            logger.warning("debug_attack: player is None")
+            return
         
+        if playerentity.has(NPCComponent):
+            npc_comp: NPCComponent = playerentity.get(NPCComponent)
+            action = ActorAction(npc_comp.name, "FightActionComponent", [dest])
+            playerentity.add(FightActionComponent, action)
+            if not playerentity.has(HumanInterferenceComponent):
+                playerentity.add(HumanInterferenceComponent, f'{npc_comp.name}攻击{dest}')
+            logger.debug(f"debug_attack: {npc_comp.name} add {action}")
+            return
+        
+        elif playerentity.has(StageComponent):
+            stage_comp: StageComponent = playerentity.get(StageComponent)
+            action = ActorAction(stage_comp.name, "FightActionComponent", [dest])
+            if not playerentity.has(HumanInterferenceComponent):
+                playerentity.add(HumanInterferenceComponent, f'{stage_comp.name}攻击{dest}')
+            playerentity.add(FightActionComponent, action)
+            logger.debug(f"debug_attack: {stage_comp.name} add {action}")
+            return
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################     
+class PlayerCommandLeaveFor(PlayerInput):
 
+    def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, stagename: str) -> None:
+        super().__init__(name, game, playerproxy)
+        self.stagename = stagename
 
+    def execute(self) -> None:
+        context = self.game.extendedcontext
+        stagename = self.stagename
+        playerentity = context.getplayer()
+        if playerentity is None:
+            logger.warning("debug_leave: player is None")
+            return
+        
+        npc_comp: NPCComponent = playerentity.get(NPCComponent)
+        action = ActorAction(npc_comp.name, "LeaveForActionComponent", [stagename])
+        playerentity.add(LeaveForActionComponent, action)
+        if not playerentity.has(HumanInterferenceComponent):
+            playerentity.add(HumanInterferenceComponent, f'{npc_comp.name}离开了{stagename}')
+
+        newmemory = f"""{{
+            "LeaveForActionComponent": ["{stagename}"]
+        }}"""
+        context.add_agent_memory(playerentity, newmemory)
+        logger.debug(f"debug_leave: {npc_comp.name} add {action}")
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
+class PlayerCommandBroadcast(PlayerInput):
+
+    def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, content: str) -> None:
+        super().__init__(name, game, playerproxy)
+        self.content = content
+
+    def execute(self) -> None:
+        context = self.game.extendedcontext
+        content = self.content
+        playerentity = context.getplayer()
+        if playerentity is None:
+            logger.warning("debug_broadcast: player is None")
+            return
+        
+        npc_comp: NPCComponent = playerentity.get(NPCComponent)
+        action = ActorAction(npc_comp.name, "BroadcastActionComponent", [content])
+        playerentity.add(BroadcastActionComponent, action)
+        playerentity.add(HumanInterferenceComponent, f'{npc_comp.name}大声说道：{content}')
+
+        newmemory = f"""{{
+            "BroadcastActionComponent": ["{content}"]
+        }}"""
+        context.add_agent_memory(playerentity, newmemory)
+        logger.debug(f"debug_broadcast: {npc_comp.name} add {action}")
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
+class PlayerCommandSpeak(PlayerInput):
+
+    def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, commandstr: str) -> None:
+        super().__init__(name, game, playerproxy)
+        self.commandstr = commandstr
+
+    def execute(self) -> None:
+        context = self.game.extendedcontext
+        content = self.commandstr
+        playerentity = context.getplayer()
+        if playerentity is None:
+            logger.warning("debug_speak: player is None")
+            return
+        
+        npc_comp: NPCComponent = playerentity.get(NPCComponent)
+        action = ActorAction(npc_comp.name, "SpeakActionComponent", [content])
+        playerentity.add(SpeakActionComponent, action)
+        if not playerentity.has(HumanInterferenceComponent):
+            playerentity.add(HumanInterferenceComponent, f'{npc_comp.name}说道：{content}')
+
+        newmemory = f"""{{
+            "SpeakActionComponent": ["{content}"]
+        }}"""
+        context.add_agent_memory(playerentity, newmemory)
+        logger.debug(f"debug_speak: {npc_comp.name} add {action}")
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
+class PlayerCommandWhisper(PlayerInput):
+
+    def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, commandstr: str) -> None:
+        super().__init__(name, game, playerproxy)
+        self.commandstr = commandstr
+
+    def execute(self) -> None:
+        context = self.game.extendedcontext
+        content = self.commandstr
+        playerentity = context.getplayer()
+        if playerentity is None:
+            logger.warning("debug_whisper: player is None")
+            return
+        
+        npc_comp: NPCComponent = playerentity.get(NPCComponent)
+        action = ActorAction(npc_comp.name, "WhisperActionComponent", [content])
+        playerentity.add(WhisperActionComponent, action)
+        if not playerentity.has(HumanInterferenceComponent):
+            playerentity.add(HumanInterferenceComponent, f'{npc_comp.name}低语道：{content}')
+
+        newmemory = f"""{{
+            "WhisperActionComponent": ["{content}"]
+        }}"""
+        context.add_agent_memory(playerentity, newmemory)
+        logger.debug(f"debug_whisper: {npc_comp.name} add {action}")
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
+class PlayerCommandSearch(PlayerInput):
+
+    def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, targetname: str) -> None:
+        super().__init__(name, game, playerproxy)
+        self.targetname = targetname
+
+    def execute(self) -> None:
+        context = self.game.extendedcontext
+        content = self.targetname
+        playerentity = context.getplayer()
+        if playerentity is None:
+            logger.warning("debug_search: player is None")
+            return
+        
+        npc_comp: NPCComponent = playerentity.get(NPCComponent)
+        action = ActorAction(npc_comp.name, "SearchActionComponent", [content])
+        playerentity.add(SearchActionComponent, action)
+        if not playerentity.has(HumanInterferenceComponent):
+            playerentity.add(HumanInterferenceComponent, f'{npc_comp.name}搜索{content}')
+
+        newmemory = f"""{{
+            "SearchActionComponent": ["{content}"]
+        }}"""
+        context.add_agent_memory(playerentity, newmemory)
+        logger.debug(f"debug_search: {npc_comp.name} add {action}")
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################

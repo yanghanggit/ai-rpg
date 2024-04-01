@@ -32,6 +32,8 @@ from systems.whisper_action_system import WhisperActionSystem
 from systems.search_props_system import SearchPropsSystem
 from systems.mind_voice_action_system import MindVoiceActionSystem
 from director import Director
+from auxiliary.world_data_builder import Prop
+from auxiliary.file_system import FileSystem, PropFile
 
 class RPGGame:
 
@@ -88,7 +90,7 @@ class RPGGame:
         ## 必须最先调用
         self.worlddata = worlddata
         self.extendedcontext.memory_system.set_root_path(worlddata.runtimepath)
-
+        self.extendedcontext.file_system.set_root_path(worlddata.runtimepath)
 
         ### 创建实体
         adminnpcs = self.create_admin_npc_entities(worlddata.admin_npc_builder)
@@ -164,6 +166,10 @@ class RPGGame:
                     file_system.add_content_into_backpack(playernpcentity.get(BackpackComponent), prop.name)
                     logger.debug(f"{builddata.name}的背包中有：{prop.name}")
 
+                    ## 重构
+                    createpropfile = PropFile(prop.name, builddata.name, prop)
+                    file_system.write_prop_file(createpropfile)
+
             #重构
             agent_connect_system.register_actor_agent(builddata.name, builddata.url)
             memory_system.readmemory(builddata.name, builddata.memory)
@@ -196,6 +202,10 @@ class RPGGame:
                 for prop in builddata.props:
                     file_system.add_content_into_backpack(npcentity.get(BackpackComponent), prop.name)
                     logger.debug(f"{builddata.name}的背包中有：{prop.name}")
+
+                    ## 重构
+                    createpropfile = PropFile(prop.name, builddata.name, prop)
+                    file_system.write_prop_file(createpropfile)
 
             #重构
             agent_connect_system.register_actor_agent(builddata.name, builddata.url)

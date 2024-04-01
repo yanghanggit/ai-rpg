@@ -17,12 +17,12 @@ class MemorySystem:
         logger.debug(f"[{self.name}]设置了根路径为{rootpath}")
 
     ### 测试的方法
-    def memoryfile(self, who: str) -> str:
+    def memorymdfile(self, who: str) -> str:
         return f"{self.rootpath}{who}/memory.md"
     
     ### 删除
     def deletememory(self, who: str) -> None:
-        mempath = self.memoryfile(who)
+        mempath = self.memorymdfile(who)
         try:
             if os.path.exists(mempath):
                 os.remove(mempath)
@@ -36,7 +36,7 @@ class MemorySystem:
     ## 核心方法
     def readmemory(self, who: str, initmemory: str) -> None:
 
-        mempath = self.memoryfile(who)
+        mempath = self.memorymdfile(who)
         logger.debug(f"[{who}]的记忆路径为 = [{mempath}]")
 
         ## !!!!!!!!!!!!!测试(yh 目前每次都是重新来，先保证干净)

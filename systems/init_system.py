@@ -24,6 +24,9 @@ class InitSystem(InitializeProcessor):
         # self.handlestages()
         # self.handlenpcs()
 
+        ##
+        self.context.memory_system.debug_show_all_memory()
+
         ####
         self.handle_connect_all_agents()
         self.handle_init_memories()

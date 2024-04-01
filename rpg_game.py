@@ -41,7 +41,7 @@ class RPGGame:
         self.processors: Processors = Processors()
         self.started: bool = False
         self.inited: bool = False
-        self.worldbuilder: Optional[WorldDataBuilder] = None
+        self.worlddata: Optional[WorldDataBuilder] = None
         ### 做一些初始化
         self.createprocessors()
 ###############################################################################################################################################
@@ -80,16 +80,21 @@ class RPGGame:
        
        # processors.add(DataSaveSystem(context))
 ###############################################################################################################################################
-    def createworld(self, world_data_builder: WorldDataBuilder) -> None:
-        if world_data_builder is None or world_data_builder.data is None:
+    def createworld(self, worlddata: WorldDataBuilder) -> None:
+        if worlddata is None or worlddata.data is None:
             logger.error("没有WorldBuilder数据，请检查World.json配置。")
             return
         
-        self.worldbuilder = world_data_builder
-        adminnpcs = self.create_admin_npc_entities(world_data_builder.admin_npc_builder)
-        playernpcs = self.create_player_npc_entities(world_data_builder.player_npc_builder)
-        npcs = self.create_npc_entities(world_data_builder.npc_buidler)
-        stages = self.create_stage_entities(world_data_builder.stage_builder)
+        ## 必须最先调用
+        self.worlddata = worlddata
+        self.extendedcontext.memory_system.set_root_path(worlddata.runtimepath)
+
+
+        ### 创建实体
+        adminnpcs = self.create_admin_npc_entities(worlddata.admin_npc_builder)
+        playernpcs = self.create_player_npc_entities(worlddata.player_npc_builder)
+        npcs = self.create_npc_entities(worlddata.npc_buidler)
+        stages = self.create_stage_entities(worlddata.stage_builder)
 ###############################################################################################################################################
     def execute(self) -> None:
         #顺序不要动！！！！！！！！！
@@ -121,6 +126,9 @@ class RPGGame:
             admin_npc_agent = ActorAgent(admin_npc.name, admin_npc.url, admin_npc.memory)
             admin_npc_entity.add(WorldComponent, admin_npc_agent.name, admin_npc_agent)
             logger.debug(f"创建Admin npc：{admin_npc.name}")
+
+            #重构
+            self.extendedcontext.memory_system.readmemory(admin_npc.name, admin_npc.memory)
             
         return res
 ###############################################################################################################################################
@@ -148,6 +156,9 @@ class RPGGame:
                     context.file_system.add_content_into_backpack(player_npc_entity.get(BackpackComponent), prop.name)
                     logger.debug(f"{player_npc.name}的背包中有：{prop.name}")
 
+            #重构
+            self.extendedcontext.memory_system.readmemory(player_npc.name, player_npc.memory)
+
         return res
 ###############################################################################################################################################
     def create_npc_entities(self, npc_builder: NpcBuilder) -> List[Entity]:
@@ -172,7 +183,10 @@ class RPGGame:
                 for prop in npc_in_builder.props:
                     context.file_system.add_content_into_backpack(npc_entity_in_builder.get(BackpackComponent), prop.name)
                     logger.debug(f"{npc_agent.name}的背包中有：{prop.name}")
-        
+
+            #重构
+            self.extendedcontext.memory_system.readmemory(npc_in_builder.name, npc_in_builder.memory)
+                
         return res
 ###############################################################################################################################################
     def create_stage_entities(self, stage_builder: StageBuilder) -> List[Entity]:
@@ -229,6 +243,9 @@ class RPGGame:
             if len(exit_condition_set) > 0:
                 stage_entity.add(StageExitConditionComponent, set(exit_condition_set))
                 logger.debug(f"{stage_agent.name}的出口条件为：{exit_condition_set}")
+
+            #重构
+            self.extendedcontext.memory_system.readmemory(stage.name, stage.memory)
 
         return res
 ###############################################################################################################################################

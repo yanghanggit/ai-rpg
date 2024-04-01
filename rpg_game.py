@@ -168,7 +168,7 @@ class RPGGame:
 
                     ## 重构
                     createpropfile = PropFile(prop.name, builddata.name, prop)
-                    file_system.write_prop_file(createpropfile)
+                    file_system.add_prop_file(createpropfile)
 
             #重构
             agent_connect_system.register_actor_agent(builddata.name, builddata.url)
@@ -205,7 +205,7 @@ class RPGGame:
 
                     ## 重构
                     createpropfile = PropFile(prop.name, builddata.name, prop)
-                    file_system.write_prop_file(createpropfile)
+                    file_system.add_prop_file(createpropfile)
 
             #重构
             agent_connect_system.register_actor_agent(builddata.name, builddata.url)

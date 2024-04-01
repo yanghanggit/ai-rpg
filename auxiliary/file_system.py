@@ -3,31 +3,33 @@ from auxiliary.world_data_builder import Prop
 from loguru import logger
 import os
 import json
+from typing import Dict, List, Set
 
-
+############################################################################################################
 class BaseFile:
-    def __init__(self, name: str) -> None:
+    def __init__(self, name: str, ownersname: str) -> None:
         self.name = name
+        self.ownersname = ownersname
 
     def content(self) -> str:
         pass
-
+############################################################################################################
 ## 表达一个道具
 class PropFile(BaseFile):
     def __init__(self, name: str, ownersname: str, prop: Prop) -> None:
-        super().__init__(name)
-        self.ownersname = ownersname
+        super().__init__(name, ownersname)
         self.prop = prop
 
     def content(self) -> str:
         prop_json = json.dumps(self.prop.__dict__, ensure_ascii = False)
         return prop_json
-
+############################################################################################################
 class FileSystem:
     def __init__(self) -> None:
         self.backpack:dict[str, set[str]] = dict()
         self.rootpath = ""
-
+        self.propfiles: Dict[str, List[PropFile]] = dict()
+############################################################################################################
     def init_backpack_component(self, comp: BackpackComponent) -> None:
         self.backpack[comp.owner_name] = set()
 
@@ -93,4 +95,9 @@ class FileSystem:
         self.deletefile(propfile.ownersname, propfile.name)
         content = propfile.content()
         self.writlefile(propfile.ownersname, propfile.name, content)
+    ################################################################################################################
+    ## 添加一个道具文件
+    def add_prop_file(self, propfile: PropFile) -> None:
+        self.propfiles.setdefault(propfile.ownersname, []).append(propfile)
+        self.write_prop_file(propfile)
     ################################################################################################################

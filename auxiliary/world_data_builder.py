@@ -124,7 +124,16 @@ class StageBuilder:
                             else:
                                 logger.warning(f"StageBuilder: exit condition data is incomplete: {exit_condition_data}")
        
-                        stage = Stage(stage_name, stage_code_name, stage_description, stage_url, stage_memory, entry_conditions_in_stage, exit_conditions_in_stage, npcs_data_in_stage, props_data_in_stage)
+
+
+                        temppropset: set[Prop] = set()
+                        for obj in props_data_in_stage:
+                            prop = Prop(obj.get("name"), obj.get("codename"), obj.get("description"), obj.get("isunique"))
+                            temppropset.add(prop)
+                            
+                        ### 这里直接给props_data_in_stage是有问题的, 因为直接把对象给进去了。
+                        #stage = Stage(stage_name, stage_code_name, stage_description, stage_url, stage_memory, entry_conditions_in_stage, exit_conditions_in_stage, npcs_data_in_stage, props_data_in_stage)
+                        stage = Stage(stage_name, stage_code_name, stage_description, stage_url, stage_memory, entry_conditions_in_stage, exit_conditions_in_stage, npcs_data_in_stage, temppropset)
                         self.stages.append(stage)
                
 

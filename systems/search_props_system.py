@@ -18,16 +18,27 @@ class SearchPropsSystem(ReactiveProcessor):
     def __init__(self, context: ExtendedContext):
         super().__init__(context)
         self.context = context
-
+###################################################################################################################
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
         return { Matcher(SearchActionComponent): GroupEvent.ADDED }
-    
+###################################################################################################################
     def filter(self, entity: Entity) -> bool:
-        return entity.has(SearchActionComponent)
-    
-    
+        return entity.has(SearchActionComponent)    
+###################################################################################################################
     def react(self, entities: list[Entity]) -> None:
         logger.debug("<<<<<<<<<<<<<  SearchPropsSystem  >>>>>>>>>>>>>>>>>")
+
+        # ##开始行动
+        # for whosearchentity in entities:
+        #     self.handlesearch(whosearchentity)
+    
+        # ##一次行动结束
+        # for whosearchentity in entities:
+        #     if whosearchentity.has(SearchActionComponent):
+        #         whosearchentity.remove(SearchActionComponent)
+        # return
+
+
         unique_props_names: set[str] = self.context.get_all_unique_props_names()
 
         for npc_entity in entities:
@@ -61,6 +72,7 @@ class SearchPropsSystem(ReactiveProcessor):
 
                         logger.info(f"{Color.GREEN}{npc_entity.get(NPCComponent).name}找到了{unique_prop_name}。{Color.ENDC}")
 
+###################################################################################################################
     ## 重构的添加导演的类
     def add_event_to_director(self, entity: Entity, propname: str) -> None:
         if entity is None or not entity.has(NPCComponent):
@@ -79,3 +91,14 @@ class SearchPropsSystem(ReactiveProcessor):
         #
         searchfailedevent = SearchFailedEvent(npcname, propname)
         director.addevent(searchfailedevent)
+
+###################################################################################################################
+    def handlesearch(self, whosearchentity: Entity) -> None:
+        if not whosearchentity.has(NPCComponent):
+            # 写死目前只有NPC能搜寻
+            return
+        
+        searchactioncomp: SearchActionComponent = whosearchentity.get(SearchActionComponent)
+        action: ActorAction = searchactioncomp.action
+
+        

@@ -7,6 +7,7 @@ from auxiliary.components import (
     NPCComponent, 
     PlayerComponent, 
     SimpleRPGRoleComponent, 
+    PropComponent,
     UniquePropComponent,
     BackpackComponent,
     StageEntryConditionComponent,
@@ -218,6 +219,7 @@ class RPGGame:
         context = self.extendedcontext
         agent_connect_system = context.agent_connect_system
         memory_system = context.memory_system
+        file_system = context.file_system
         res: List[Entity] = []
 
         if stage_builder.data is None:
@@ -231,6 +233,7 @@ class RPGGame:
             stageentity.add(StageComponent, builddata.name, [])
             stageentity.add(DirectorComponent, builddata.name, Director(builddata.name)) ###
             stageentity.add(SimpleRPGRoleComponent, builddata.name, 10000, 10000, 1, "")
+            stageentity.add(BackpackComponent, builddata.name) ### 场景也可以有背包，容纳道具
             logger.debug(f"创建Stage：{builddata.name}")
 
             ## 重新设置npc和stage的关系
@@ -245,14 +248,18 @@ class RPGGame:
                         findnpcagain.replace(NPCComponent, npcname, builddata.name)
                         logger.debug(f"重新设置npc：{npcname}的stage为：{builddata.name}")
 
-            # 创建道具
+            # 场景内添加道具，如地图？？
             for unique_prop in builddata.props:
-                prop_entity = context.create_entity()
-                if isinstance(unique_prop, dict):
-                    prop_entity.add(UniquePropComponent, unique_prop.get("name"))
-                    logger.debug(f'创建道具：{unique_prop.get("name")}')
-                else:
-                    logger.error(f"道具配置错误：{unique_prop}")
+                propentity = context.create_entity()
+                # if isinstance(unique_prop, dict):
+                #     prop_entity.add(UniquePropComponent, unique_prop.get("name"))
+                #     logger.debug(f'创建道具：{unique_prop.get("name")}')
+                # else:
+                #     logger.error(f"道具配置错误：{unique_prop}")
+                propentity.add(PropComponent, unique_prop.name) # 是一个道具
+                propentity.add(UniquePropComponent, unique_prop.name) # 是一个唯一道具，不可复制。目前这么写是有问题的，所有道具都是唯一道具
+                createpropfile = PropFile(unique_prop.name, builddata.name, unique_prop)
+                file_system.add_prop_file(createpropfile)
 
             ## 创建入口条件和出口条件
             enter_condition_set = set()

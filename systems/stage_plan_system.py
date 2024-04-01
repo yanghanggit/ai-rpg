@@ -29,11 +29,8 @@ class StagePlanSystem(ExecuteProcessor):
         prompt = stage_plan_prompt(entity, self.context)
         agent_connect_system = self.context.agent_connect_system
         stagecomp: StageComponent = entity.get(StageComponent)
-
-        #agent: ActorAgent = stagecomp.agent
         ##
         try:
-            #response = agent.request(prompt)
             response = agent_connect_system.request2(stagecomp.name, prompt)
             if response is None or response == "":
                 logger.error(f"StagePlanSystem: response is None or empty")

@@ -40,31 +40,25 @@ class GMCommandPush(GMInput):
         npc_entity: Optional[Entity] = context.getnpc(name)
         if npc_entity is not None:
             npc_comp: NPCComponent = npc_entity.get(NPCComponent)
-            #npc_request: Optional[str] = npc_comp.agent.request(content)
             npc_request: Optional[str] = agent_connect_system.request2(npc_comp.name, content)
             if npc_request is not None:
                 agent_connect_system.pop_chat_history(npc_comp.name)
-                #npc_comp.agent.chat_history.pop()
             return npc_comp
         
         stage_entity: Optional[Entity] = context.getstage(name)
         if stage_entity is not None:
             stage_comp: StageComponent = stage_entity.get(StageComponent)
-            #stage_request: Optional[str] = stage_comp.agent.request(content)
             stage_request: Optional[str] = agent_connect_system.request2(stage_comp.name, content)
             if stage_request is not None:
                 agent_connect_system.pop_chat_history(stage_comp.name)
-                #stage_comp.agent.chat_history.pop()
             return stage_comp
         
         world_entity: Optional[Entity] = context.getworld()
         if world_entity is not None:
             world_comp: WorldComponent = world_entity.get(WorldComponent)
-            #request: Optional[str] = world_comp.agent.request(content)
             request: Optional[str] = agent_connect_system.request2(world_comp.name, content)
             if request is not None:
                 agent_connect_system.pop_chat_history(world_comp.name)
-                #world_comp.agent.chat_history.pop()
             return world_comp
 
         return None        

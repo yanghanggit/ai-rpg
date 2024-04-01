@@ -125,14 +125,10 @@ class ExtendedContext(Context):
         if entity.has(NPCComponent):
             npccomp: NPCComponent = entity.get(NPCComponent)
             agent_connect_system.add_chat_history(npccomp.name, memory)
-            # npcagent: ActorAgent = npccomp.agent
-            # npcagent.add_chat_history(memory)
             return True
         elif entity.has(StageComponent):
             stagecomp: StageComponent = entity.get(StageComponent)
             agent_connect_system.add_chat_history(stagecomp.name, memory)
-            # stageagent: ActorAgent = stagecomp.agent
-            # stageagent.add_chat_history(memory)
             return True
     
         raise ValueError("实体不是NPC或者Stage")

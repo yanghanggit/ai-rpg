@@ -162,9 +162,9 @@ class LeaveForActionSystem(ReactiveProcessor):
 
         #更换数据, 因为是namedtuple 只能用替换手段
         replace_name = npccomp.name
-        replace_agent = npccomp.agent
+        #replace_agent = npccomp.agent
         replace_current_stage = "" #设置空！！！！！
-        entity.replace(NPCComponent, replace_name, replace_agent, replace_current_stage)
+        entity.replace(NPCComponent, replace_name, replace_current_stage)
 
         #给当前场景添加剧本，如果本次有导演就合进事件
         # cur_stage_comp.directorscripts.append(f"{npccomp.name} 离开{handle.current_stage_name}去了{handle.target_stage_name}")

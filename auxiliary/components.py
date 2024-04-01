@@ -2,10 +2,10 @@
 from collections import namedtuple
 
 ###核心组件
-WorldComponent = namedtuple('WorldComponent', 'name agent')
-StageComponent = namedtuple('StageComponent', 'name agent directorscripts')
+WorldComponent = namedtuple('WorldComponent', 'name')
+StageComponent = namedtuple('StageComponent', 'name directorscripts')
 DirectorComponent = namedtuple('DirectorComponent', 'name director')
-NPCComponent = namedtuple('NPCComponent', 'name agent current_stage')
+NPCComponent = namedtuple('NPCComponent', 'name current_stage')
 PlayerComponent = namedtuple('PlayerComponent', 'name')
 UniquePropComponent = namedtuple('UniquePropComponent', 'name')
 StageEntryConditionComponent = namedtuple('StageEntryConditionComponent', 'conditions')

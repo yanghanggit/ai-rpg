@@ -9,6 +9,7 @@ from auxiliary.extended_context import ExtendedContext
 from auxiliary.actor_agent import ActorAgent
 from auxiliary.prompt_maker import gen_npc_archive_prompt, npc_memory_before_death
 from loguru import logger
+from auxiliary.agent_connect_system import AgentConnectSystem
 
 
 class DeadActionSystem(ExecuteProcessor):
@@ -29,17 +30,20 @@ class DeadActionSystem(ExecuteProcessor):
             self.save_npc(entity)
 
     def save_npc(self, entity: Entity) -> None:
+        agent_connect_system = self.context.agent_connect_system
         if entity.has(NPCComponent):
-            npc_comp: NPCComponent = entity.get(NPCComponent)
-            npc_agent: ActorAgent = npc_comp.agent
+            npccomp: NPCComponent = entity.get(NPCComponent)
+            #npc_agent: ActorAgent = npc_comp.agent
             # 添加记忆
             mem_before_death = npc_memory_before_death(self.context)
             self.context.add_agent_memory(entity, mem_before_death)
             # 推理死亡，并且进行存档
             archive_prompt = gen_npc_archive_prompt(self.context)
-            archive = npc_agent.request(archive_prompt)
+            #archive = npc_agent.request(archive_prompt)
+            archive = agent_connect_system.request2(npccomp.name, archive_prompt)
+
             if archive is not None:
-                self.context.savearchive(archive, npc_agent.name)
+                self.context.savearchive(archive, npccomp.name)
         else:
             raise ValueError("DeadActionSystem: 死亡的不是NPC！")
         

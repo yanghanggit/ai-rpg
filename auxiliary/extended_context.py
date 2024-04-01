@@ -119,15 +119,20 @@ class ExtendedContext(Context):
 
     ##给一个实体添加记忆，尽量统一走这个方法
     def add_agent_memory(self, entity: Entity, memory: str) -> bool:
+
+        agent_connect_system = self.agent_connect_system
+
         if entity.has(NPCComponent):
             npccomp: NPCComponent = entity.get(NPCComponent)
-            npcagent: ActorAgent = npccomp.agent
-            npcagent.add_chat_history(memory)
+            agent_connect_system.add_chat_history(npccomp.name, memory)
+            # npcagent: ActorAgent = npccomp.agent
+            # npcagent.add_chat_history(memory)
             return True
         elif entity.has(StageComponent):
             stagecomp: StageComponent = entity.get(StageComponent)
-            stageagent: ActorAgent = stagecomp.agent
-            stageagent.add_chat_history(memory)
+            agent_connect_system.add_chat_history(stagecomp.name, memory)
+            # stageagent: ActorAgent = stagecomp.agent
+            # stageagent.add_chat_history(memory)
             return True
     
         raise ValueError("实体不是NPC或者Stage")

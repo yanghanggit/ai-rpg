@@ -17,33 +17,14 @@ from auxiliary.actor_action import ActorPlan
 from auxiliary.prompt_maker import npc_plan_prompt
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
+from auxiliary.agent_connect_system import AgentConnectSystem
 
 class NPCPlanSystem(ExecuteProcessor):
-    """
-    This class represents a system for handling NPC plans.
-
-    Attributes:
-    - context: The context in which the system operates.
-
-    Methods:
-    - __init__(self, context): Initializes the NPCPlanSystem object.
-    - execute(self): Executes the NPC plan system.
-    - handle(self, entity): Handles the plan for a specific NPC entity.
-    """
 
     def __init__(self, context: ExtendedContext) -> None:
-        """
-        Initializes the NPCPlanSystem object.
-
-        Parameters:
-        - context: The context in which the system operates.
-        """
         self.context = context
 
     def execute(self) -> None:
-        """
-        Executes the NPC plan system.
-        """
         logger.debug("<<<<<<<<<<<<<  NPCPlanSystem  >>>>>>>>>>>>>>>>>")
         entities = self.context.get_group(Matcher(NPCComponent)).entities
         for entity in entities:
@@ -59,21 +40,20 @@ class NPCPlanSystem(ExecuteProcessor):
             self.handle(entity)
 
     def handle(self, entity: Entity) -> None:
-        """
-        Handles the plan for a specific NPC entity.
 
-        Parameters:
-        - entity: The NPC entity to handle the plan for.
-        """
         prompt = npc_plan_prompt(entity, self.context)
-        comp = entity.get(NPCComponent)
+        agent_connect_system = self.context.agent_connect_system
+        npccomp: NPCComponent = entity.get(NPCComponent)
+
         try:
-            response = comp.agent.request(prompt)
-            if response is None:
+            #response = comp.agent.request(prompt)
+            response = agent_connect_system.request2(npccomp.name, prompt)
+            if response is None or response == "":
                 logger.warning("Agent request is None.如果不是默认Player可能需要检查配置。")
                 return
-            actorplan = ActorPlan(comp.name, response)
-            for action in actorplan.actions:
+            
+            npcplanning = ActorPlan(npccomp.name, response)
+            for action in npcplanning.actions:
                 if len(action.values) == 0:
                     continue
                 match action.actionname:

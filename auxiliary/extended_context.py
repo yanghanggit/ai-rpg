@@ -15,6 +15,7 @@ from auxiliary.file_system import FileSystem
 from auxiliary.memory_system import MemorySystem
 from typing import Optional, cast
 from auxiliary.actor_agent import ActorAgent
+from auxiliary.agent_connect_system import AgentConnectSystem
 
 class ExtendedContext(Context):
 
@@ -23,6 +24,7 @@ class ExtendedContext(Context):
         super().__init__()
         self.file_system = FileSystem()
         self.memory_system = MemorySystem("memorey_system")
+        self.agent_connect_system = AgentConnectSystem("agent_connect_system")
 
     # def init_file_system(self) -> None:
     #     self.file_system = FileSystem()

@@ -5,10 +5,9 @@ from loguru import logger
 
 class ActorAgent:
 
-    def __init__(self, name: str = "", url: str = "", read_memory_path: str = "") -> None:
+    def __init__(self, name: str = "", url: str = "") -> None:
         self.name: str = name 
         self.url: str = url
-        self.read_memory_path: str = read_memory_path
         self.agent: RemoteRunnable = None
         self.chat_history: List[Union[HumanMessage, AIMessage]] = []
 
@@ -19,11 +18,6 @@ class ActorAgent:
             logger.warning(f"connect: {self.name} have no url. 请确认是默认玩家，否则检查game_settings.json中配置。")
  
         self.chat_history = []
-
-        # 临时代码
-        if self.read_memory_path == "":
-            self.read_memory_path = "/savedData/basic_archive.md"
-            logger.warning(f"{self.name}未找到专属存档，载入默认存档")
 
     def request(self, prompt: str) -> Optional[str]:
         if self.agent is None:

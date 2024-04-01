@@ -123,11 +123,12 @@ class RPGGame:
             admin_npc_entity = context.create_entity()
             res.append(admin_npc_entity)
 
-            admin_npc_agent = ActorAgent(admin_npc.name, admin_npc.url, admin_npc.memory)
+            admin_npc_agent = ActorAgent(admin_npc.name, admin_npc.url)
             admin_npc_entity.add(WorldComponent, admin_npc_agent.name, admin_npc_agent)
             logger.debug(f"创建Admin npc：{admin_npc.name}")
 
             #重构
+            self.extendedcontext.agent_connect_system.register_actor_agent(admin_npc.name, admin_npc.url)
             self.extendedcontext.memory_system.readmemory(admin_npc.name, admin_npc.memory)
             
         return res
@@ -144,7 +145,7 @@ class RPGGame:
             player_npc_entity = context.create_entity()
             res.append(player_npc_entity)
 
-            player_npc_agent = ActorAgent(player_npc.name, player_npc.url, player_npc.memory)
+            player_npc_agent = ActorAgent(player_npc.name, player_npc.url)
             player_npc_entity.add(PlayerComponent, player_npc.name)
             player_npc_entity.add(SimpleRPGRoleComponent, player_npc.name, 10000, 10000, 10, "")
             player_npc_entity.add(NPCComponent, player_npc.name, player_npc_agent, "")
@@ -157,6 +158,7 @@ class RPGGame:
                     logger.debug(f"{player_npc.name}的背包中有：{prop.name}")
 
             #重构
+            self.extendedcontext.agent_connect_system.register_actor_agent(player_npc.name, player_npc.url)
             self.extendedcontext.memory_system.readmemory(player_npc.name, player_npc.memory)
 
         return res
@@ -173,7 +175,7 @@ class RPGGame:
             npc_entity_in_builder = context.create_entity()
             res.append(npc_entity_in_builder)
 
-            npc_agent = ActorAgent(npc_in_builder.name, npc_in_builder.url, npc_in_builder.memory)
+            npc_agent = ActorAgent(npc_in_builder.name, npc_in_builder.url)
             npc_entity_in_builder.add(NPCComponent, npc_agent.name, npc_agent, "")
             npc_entity_in_builder.add(SimpleRPGRoleComponent, npc_agent.name, 100, 100, 10, "")
             npc_entity_in_builder.add(BackpackComponent, npc_agent.name)
@@ -185,6 +187,7 @@ class RPGGame:
                     logger.debug(f"{npc_agent.name}的背包中有：{prop.name}")
 
             #重构
+            self.extendedcontext.agent_connect_system.register_actor_agent(npc_in_builder.name, npc_in_builder.url)
             self.extendedcontext.memory_system.readmemory(npc_in_builder.name, npc_in_builder.memory)
                 
         return res
@@ -199,7 +202,7 @@ class RPGGame:
         
         # 创建stage相关配置
         for stage in stage_builder.stages:
-            stage_agent = ActorAgent(stage.name, stage.url, stage.memory)
+            stage_agent = ActorAgent(stage.name, stage.url)
             stage_entity = context.create_entity()
             stage_entity.add(StageComponent, stage_agent.name, stage_agent, [])
             stage_entity.add(DirectorComponent, stage_agent.name, Director(stage_agent.name)) ###
@@ -212,7 +215,7 @@ class RPGGame:
                     npc_name = npc.get("name", "")
                     npc_url = npc.get("url", "")
                     npc_memory = npc.get("memory", "")
-                    npc_agent = ActorAgent(npc_name, npc_url, npc_memory)
+                    npc_agent = ActorAgent(npc_name, npc_url)
                     npc_entity_in_builder: Optional[Entity] = context.getnpc(npc_name)
                     if npc_entity_in_builder is None:
                         continue
@@ -245,6 +248,7 @@ class RPGGame:
                 logger.debug(f"{stage_agent.name}的出口条件为：{exit_condition_set}")
 
             #重构
+            self.extendedcontext.agent_connect_system.register_actor_agent(stage.name, stage.url)
             self.extendedcontext.memory_system.readmemory(stage.name, stage.memory)
 
         return res

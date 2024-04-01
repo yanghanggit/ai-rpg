@@ -41,6 +41,7 @@ class RPGGame:
         self.processors: Processors = Processors()
         self.started: bool = False
         self.inited: bool = False
+        self.worldbuilder: Optional[WorldDataBuilder] = None
         ### 做一些初始化
         self.createprocessors()
 ###############################################################################################################################################
@@ -50,34 +51,41 @@ class RPGGame:
 
         #初始化系统########################
         processors.add(InitSystem(context))
+
+
         #规划逻辑########################
-        processors.add(StagePlanSystem(context))
-        processors.add(NPCPlanSystem(context))
-        #行动逻辑########################
-        processors.add(TagActionSystem(context))
-        processors.add(MindVoiceActionSystem(context))
-        processors.add(WhisperActionSystem(context))
-        processors.add(BroadcastActionSystem(context))
-        processors.add(SpeakActionSystem(context))
-        #死亡必须是战斗之后，因为如果死了就不能离开###############
-        processors.add(FightActionSystem(context))
-        processors.add(DeadActionSystem(context)) 
+        # processors.add(StagePlanSystem(context))
+        # processors.add(NPCPlanSystem(context))
+        # #行动逻辑########################
+        # processors.add(TagActionSystem(context))
+        # processors.add(MindVoiceActionSystem(context))
+        # processors.add(WhisperActionSystem(context))
+        # processors.add(BroadcastActionSystem(context))
+        # processors.add(SpeakActionSystem(context))
+        # #死亡必须是战斗之后，因为如果死了就不能离开###############
+        # processors.add(FightActionSystem(context))
+        # processors.add(DeadActionSystem(context)) 
+        # #########################################
+        # # 处理搜寻道具行为
+        # processors.add(SearchPropsSystem(context))
+        # # 处理离开并去往的行为
+        # processors.add(LeaveForActionSystem(context))
+        # #行动结束后导演
+        # processors.add(DirectorSystem(context))
         #########################################
-        # 处理搜寻道具行为
-        processors.add(SearchPropsSystem(context))
-        # 处理离开并去往的行为
-        processors.add(LeaveForActionSystem(context))
-        #行动结束后导演
-        processors.add(DirectorSystem(context))
-        #########################################
+
+
         ###必须最后
         processors.add(DestroySystem(context))
-        processors.add(DataSaveSystem(context))
+       
+       # processors.add(DataSaveSystem(context))
 ###############################################################################################################################################
     def createworld(self, world_data_builder: WorldDataBuilder) -> None:
         if world_data_builder is None or world_data_builder.data is None:
             logger.error("没有WorldBuilder数据，请检查World.json配置。")
             return
+        
+        self.worldbuilder = world_data_builder
         adminnpcs = self.create_admin_npc_entities(world_data_builder.admin_npc_builder)
         playernpcs = self.create_player_npc_entities(world_data_builder.player_npc_builder)
         npcs = self.create_npc_entities(world_data_builder.npc_buidler)

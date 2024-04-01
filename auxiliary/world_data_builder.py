@@ -38,9 +38,13 @@ class Stage:
         self.props: set[Prop] = props
 
 class WorldDataBuilder:
-    def __init__(self) -> None:
+    def __init__(self, name: str, version: str, runtimepath: str) -> None:
         # version必须与生成的world.json文件中的version一致
-        self.version = 'ewan'
+        self.name = name
+        self.runtimepath = runtimepath
+        self.version = version
+        
+        #####
         self.data: dict[str, Any] = dict()
         self.admin_npc_builder = AdminNpcBuilder()
         self.player_npc_builder = PlayerNpcBuilder()

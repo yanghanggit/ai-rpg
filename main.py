@@ -11,25 +11,33 @@ from player_input import PlayerCommandBeWho, PlayerCommandAttack, PlayerCommandL
 
 
 ### 临时的，写死创建budding_world
-def create_world_data_builder(world_name: str) -> Optional[WorldDataBuilder]:
+def read_world_data(world_name: str) -> Optional[WorldDataBuilder]:
     # 检查是否有存档
-    save_folder = f"./budding_world/saved_runtimes/{world_name}.json"
-    if not os.path.exists(save_folder):
-        world_data_path: str = f"./budding_world/gen_runtimes/{world_name}.json"
-    else:
-        world_data_path = save_folder
+    # save_folder = f"./budding_world/saved_runtimes/{world_name}.json"
+    # if not os.path.exists(save_folder):
+       
+    # else:
+    #     world_data_path = save_folder
 
-    world_data_builder: Optional[WorldDataBuilder] = WorldDataBuilder()
-    if world_data_builder is None:
+    #先写死！！！！
+    version = 'ewan'
+    runtimedir = f"./budding_world/gen_runtimes/"
+    world_data_path: str = f"{runtimedir}{world_name}.json"
+    if not os.path.exists(world_data_path):
+        logger.error("未找到存档，请检查存档是否存在。")
+        return None
+
+    createworld: Optional[WorldDataBuilder] = WorldDataBuilder(world_data_path, version, runtimedir)
+    if createworld is None:
         logger.error("WorldDataBuilder初始化失败。")
         return None
     
-    if not world_data_builder.check_version_valid(world_data_path):
+    if not createworld.check_version_valid(world_data_path):
         logger.error("World.json版本不匹配，请检查版本号。")
         return None
     
-    world_data_builder.build()
-    return world_data_builder
+    createworld.build()
+    return createworld
 
 ###############################################################################################################################################
 ###############################################################################################################################################
@@ -41,14 +49,14 @@ def main() -> None:
     logger.add(f"logs/{log_start_time}.log", level="DEBUG")
 
     worldname = input("请输入要进入的世界名称(必须与自动化创建的名字一致):")
-    world_data_builder = create_world_data_builder(worldname)
-    if world_data_builder is None:
+    worlddata = read_world_data(worldname)
+    if worlddata is None:
         logger.error("create_world_data_builder 失败。")
         return
 
     # 创建必要的变量
     rpggame = RPGGame(worldname)
-    rpggame.createworld(world_data_builder)
+    rpggame.createworld(worlddata)
     playproxy = PlayerProxy("yanghang")
 
     while True:

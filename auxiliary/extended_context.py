@@ -12,6 +12,7 @@ from auxiliary.components import (WorldComponent,
 from auxiliary.extract_md_content import wirte_content_into_md
 from auxiliary.actor_action import ActorAction
 from auxiliary.file_system import FileSystem
+from auxiliary.memory_system import MemorySystem
 from typing import Optional, cast
 from auxiliary.actor_agent import ActorAgent
 
@@ -21,6 +22,7 @@ class ExtendedContext(Context):
     def __init__(self) -> None:
         super().__init__()
         self.file_system = FileSystem()
+        self.memory_system = MemorySystem("memorey_system")
 
     # def init_file_system(self) -> None:
     #     self.file_system = FileSystem()

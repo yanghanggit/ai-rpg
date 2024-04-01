@@ -20,9 +20,23 @@ class InitSystem(InitializeProcessor):
       
     def initialize(self) -> None:
         logger.debug("<<<<<<<<<<<<<  InitSystem  >>>>>>>>>>>>>>>>>")
-        self.handleworld()
-        self.handlestages()
-        self.handlenpcs()
+        # self.handleworld()
+        # self.handlestages()
+        # self.handlenpcs()
+
+        ####
+        self.handle_connect_all_agents()
+        self.handle_init_memories()
+        self.handle_init_files()
+
+    def handle_connect_all_agents(self) -> None:
+        pass
+
+    def handle_init_memories(self) -> None:
+        pass
+
+    def handle_init_files(self) -> None:
+        pass
 
     def handleworld(self) -> None:
         worlds: set[Entity] = self.context.get_group(Matcher(WorldComponent)).entities

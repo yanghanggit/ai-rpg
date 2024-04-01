@@ -7,9 +7,9 @@ from auxiliary.components import (
     NPCComponent, 
     PlayerComponent, 
     SimpleRPGRoleComponent, 
-    PropComponent,
-    UniquePropComponent,
-    BackpackComponent,
+    # PropComponent,
+    # UniquePropComponent,
+    #BackpackComponent,
     StageEntryConditionComponent,
     StageExitConditionComponent,
     DirectorComponent)
@@ -158,14 +158,14 @@ class RPGGame:
             playernpcentity.add(PlayerComponent, "player") 
             playernpcentity.add(SimpleRPGRoleComponent, builddata.name, 10000, 10000, 10, "")
             playernpcentity.add(NPCComponent, builddata.name, "")
-            playernpcentity.add(BackpackComponent, builddata.name)
+            #playernpcentity.add(BackpackComponent, builddata.name)
 
-            file_system.init_backpack_component(playernpcentity.get(BackpackComponent))
+            #file_system.init_backpack_component(playernpcentity.get(BackpackComponent))
             logger.debug(f"创建Player npc：{builddata.name}")
             if len(builddata.props) > 0:
                 for prop in builddata.props:
-                    file_system.add_content_into_backpack(playernpcentity.get(BackpackComponent), prop.name)
-                    logger.debug(f"{builddata.name}的背包中有：{prop.name}")
+                    # file_system.add_content_into_backpack(playernpcentity.get(BackpackComponent), prop.name)
+                    # logger.debug(f"{builddata.name}的背包中有：{prop.name}")
 
                     ## 重构
                     createpropfile = PropFile(prop.name, builddata.name, prop)
@@ -195,14 +195,14 @@ class RPGGame:
 
             npcentity.add(NPCComponent, builddata.name, "")
             npcentity.add(SimpleRPGRoleComponent, builddata.name, 100, 100, 10, "")
-            npcentity.add(BackpackComponent, builddata.name)
+            #npcentity.add(BackpackComponent, builddata.name)
 
-            file_system.init_backpack_component(npcentity.get(BackpackComponent))
+            #file_system.init_backpack_component(npcentity.get(BackpackComponent))
             logger.debug(f"创建npc：{builddata.name}")
             if len(builddata.props) > 0:
                 for prop in builddata.props:
-                    file_system.add_content_into_backpack(npcentity.get(BackpackComponent), prop.name)
-                    logger.debug(f"{builddata.name}的背包中有：{prop.name}")
+                    # file_system.add_content_into_backpack(npcentity.get(BackpackComponent), prop.name)
+                    # logger.debug(f"{builddata.name}的背包中有：{prop.name}")
 
                     ## 重构
                     createpropfile = PropFile(prop.name, builddata.name, prop)
@@ -233,7 +233,7 @@ class RPGGame:
             stageentity.add(StageComponent, builddata.name, [])
             stageentity.add(DirectorComponent, builddata.name, Director(builddata.name)) ###
             stageentity.add(SimpleRPGRoleComponent, builddata.name, 10000, 10000, 1, "")
-            stageentity.add(BackpackComponent, builddata.name) ### 场景也可以有背包，容纳道具
+            #stageentity.add(BackpackComponent, builddata.name) ### 场景也可以有背包，容纳道具
             logger.debug(f"创建Stage：{builddata.name}")
 
             ## 重新设置npc和stage的关系
@@ -250,14 +250,14 @@ class RPGGame:
 
             # 场景内添加道具，如地图？？
             for unique_prop in builddata.props:
-                propentity = context.create_entity()
+                #propentity = context.create_entity()
                 # if isinstance(unique_prop, dict):
                 #     prop_entity.add(UniquePropComponent, unique_prop.get("name"))
                 #     logger.debug(f'创建道具：{unique_prop.get("name")}')
                 # else:
                 #     logger.error(f"道具配置错误：{unique_prop}")
-                propentity.add(PropComponent, unique_prop.name) # 是一个道具
-                propentity.add(UniquePropComponent, unique_prop.name) # 是一个唯一道具，不可复制。目前这么写是有问题的，所有道具都是唯一道具
+                # propentity.add(PropComponent, unique_prop.name) # 是一个道具
+                # propentity.add(UniquePropComponent, unique_prop.name) # 是一个唯一道具，不可复制。目前这么写是有问题的，所有道具都是唯一道具
                 createpropfile = PropFile(unique_prop.name, builddata.name, unique_prop)
                 file_system.add_prop_file(createpropfile)
 

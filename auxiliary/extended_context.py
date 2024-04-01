@@ -6,11 +6,12 @@ from auxiliary.components import (WorldComponent,
                         StageComponent, 
                         NPCComponent, 
                         PlayerComponent,
-                        UniquePropComponent,
-                        BackpackComponent,
-                        SearchActionComponent)
+                        #UniquePropComponent,
+                        #BackpackComponent,
+                        #SearchActionComponent
+                        )
 from auxiliary.extract_md_content import wirte_content_into_md
-from auxiliary.actor_action import ActorAction
+#from auxiliary.actor_action import ActorAction
 from auxiliary.file_system import FileSystem
 from auxiliary.memory_system import MemorySystem
 from typing import Optional, cast
@@ -119,9 +120,7 @@ class ExtendedContext(Context):
 
     ##给一个实体添加记忆，尽量统一走这个方法
     def add_agent_memory(self, entity: Entity, memory: str) -> bool:
-
         agent_connect_system = self.agent_connect_system
-
         if entity.has(NPCComponent):
             npccomp: NPCComponent = entity.get(NPCComponent)
             agent_connect_system.add_chat_history(npccomp.name, memory)
@@ -130,26 +129,25 @@ class ExtendedContext(Context):
             stagecomp: StageComponent = entity.get(StageComponent)
             agent_connect_system.add_chat_history(stagecomp.name, memory)
             return True
-    
         raise ValueError("实体不是NPC或者Stage")
         return False
-    
 
     ## 方便调用的存档方法
     def savearchive(self, archive: str, filename: str) -> None:
         wirte_content_into_md(archive, f"/savedData/{filename}.md")
+        raise NotImplementedError("legacy savearchive !!!!!")
 
-    # 向Entity的背包中添加道具
-    def put_unique_prop_into_backpack(self, entity: Entity, unique_prop_name: str) -> bool:
-        if entity.has(BackpackComponent):
-            npc_backpack_comp: BackpackComponent = entity.get(BackpackComponent)
-            self.file_system.add_content_into_backpack(npc_backpack_comp, unique_prop_name)
-            return True
-        return False
+    # # 向Entity的背包中添加道具
+    # def put_unique_prop_into_backpack(self, entity: Entity, unique_prop_name: str) -> bool:
+    #     if entity.has(BackpackComponent):
+    #         npc_backpack_comp: BackpackComponent = entity.get(BackpackComponent)
+    #         self.file_system.add_content_into_backpack(npc_backpack_comp, unique_prop_name)
+    #         return True
+    #     return False
 
 
     # 向Entity所在的场景中添加导演脚本
-    def add_content_to_director_script_by_entity(self, entity: Entity, content: str) -> bool:
+    def legacy_add_content_to_director_script_by_entity(self, entity: Entity, content: str) -> bool:
         npc_stage: Optional[StageComponent] = self.get_stagecomponent_by_uncertain_entity(entity)
         if npc_stage is None:
             return False
@@ -157,27 +155,27 @@ class ExtendedContext(Context):
         return True
 
     # 获取Entity的ActorAction
-    def get_search_action_by_entity(self, entity: Entity) -> Optional[ActorAction]:
-        if entity.has(SearchActionComponent):
-            npc_search_action_component: SearchActionComponent = entity.get(SearchActionComponent)
-            return cast(ActorAction, npc_search_action_component.action)
-        return None
+    # def get_search_action_by_entity(self, entity: Entity) -> Optional[ActorAction]:
+    #     if entity.has(SearchActionComponent):
+    #         npc_search_action_component: SearchActionComponent = entity.get(SearchActionComponent)
+    #         return cast(ActorAction, npc_search_action_component.action)
+    #     return None
 
-    # 获取所有UniqueProps的名字
-    def get_all_unique_props_names(self) -> set[str]:
-        unique_props_group: Group = self.get_group(Matcher(UniquePropComponent))
-        unique_props_entities = unique_props_group.entities
+    # # 获取所有UniqueProps的名字
+    # def get_all_unique_props_names(self) -> set[str]:
+    #     unique_props_group: Group = self.get_group(Matcher(UniquePropComponent))
+    #     unique_props_entities = unique_props_group.entities
 
-        unique_props_names: set[str] = set()
-        for entity in unique_props_entities:
-            unique_props_names.add(entity.get(UniquePropComponent).name)
+    #     unique_props_names: set[str] = set()
+    #     for entity in unique_props_entities:
+    #         unique_props_names.add(entity.get(UniquePropComponent).name)
         
-        return unique_props_names
+    #     return unique_props_names
     
-    # 根据Prop的名字获取Entity
-    def get_unique_prop_entity_by_name(self, name: str) -> Optional[Entity]:
-        for entity in self.get_group(Matcher(UniquePropComponent)).entities:
-            if entity.get(UniquePropComponent).name == name:
-                return entity
-        return None
+    # # 根据Prop的名字获取Entity
+    # def get_unique_prop_entity_by_name(self, name: str) -> Optional[Entity]:
+    #     for entity in self.get_group(Matcher(UniquePropComponent)).entities:
+    #         if entity.get(UniquePropComponent).name == name:
+    #             return entity
+    #     return None
     

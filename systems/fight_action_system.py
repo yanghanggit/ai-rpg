@@ -54,10 +54,10 @@ class FightActionSystem(ReactiveProcessor):
                 if attack_result <= 0:
                     if not attacked.has(DeadActionComponent):
                         attacked.add(DeadActionComponent, action)
-                    self.context.add_content_to_director_script_by_entity(attacker, kill_someone(action.name, value))
+                    self.context.legacy_add_content_to_director_script_by_entity(attacker, kill_someone(action.name, value))
                     self.add_kill_someone_event_to_director(attacker, value)
                 else:
-                    self.context.add_content_to_director_script_by_entity(attacker, attack_someone(action.name, value, attacker_comp.attack, attacked_comp.hp, attacked_comp.maxhp))
+                    self.context.legacy_add_content_to_director_script_by_entity(attacker, attack_someone(action.name, value, attacker_comp.attack, attacked_comp.hp, attacked_comp.maxhp))
                     self.add_attack_someone_event_to_director(attacker, value, attacker_comp.attack, attacked_comp.hp, attacked_comp.maxhp)
             else:
                 logger.warning("attacker or attacked has no simple rpg role comp.")

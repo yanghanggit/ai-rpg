@@ -1,9 +1,9 @@
-from auxiliary.components import BackpackComponent
+#from auxiliary.components import BackpackComponent
 from auxiliary.world_data_builder import Prop
 from loguru import logger
 import os
 import json
-from typing import Dict, List, Set
+from typing import Dict, List, Optional
 
 ############################################################################################################
 class BaseFile:
@@ -24,31 +24,14 @@ class PropFile(BaseFile):
         prop_json = json.dumps(self.prop.__dict__, ensure_ascii = False)
         return prop_json
 ############################################################################################################
+    
+### yh modified!!!!
 class FileSystem:
+
     def __init__(self) -> None:
-        self.backpack:dict[str, set[str]] = dict()
         self.rootpath = ""
-        self.propfiles: Dict[str, List[PropFile]] = dict()
-############################################################################################################
-    def init_backpack_component(self, comp: BackpackComponent) -> None:
-        self.backpack[comp.owner_name] = set()
-
-    def get_backpack_contents(self, comp: BackpackComponent) -> set[str]:
-        return self.backpack.get(comp.owner_name, set())
-
-    def add_content_into_backpack(self, comp: BackpackComponent, item: str) -> None:
-        self.backpack.setdefault(comp.owner_name, set()).add(item)
-
-    def remove_from_backpack(self, comp: BackpackComponent, item: str) -> None:
-        self.backpack.get(comp.owner_name, set()).remove(item)
-
-    def clear_backpack(self, comp: BackpackComponent) -> None:
-        self.backpack[comp.owner_name] = set()
-
-
-
+        self.propfiles: Dict[str, List[PropFile]] = {}
     ############################################################################################################
-    ### yanghang addd
     ### 必须设置根部的执行路行
     def set_root_path(self, rootpath: str) -> None:
         if self.rootpath != "":
@@ -101,3 +84,26 @@ class FileSystem:
         self.propfiles.setdefault(propfile.ownersname, []).append(propfile)
         self.write_prop_file(propfile)
     ################################################################################################################
+    def get_prop_files(self, ownersname: str) -> List[PropFile]:
+        return self.propfiles.get(ownersname, [])
+    ################################################################################################################
+    def get_prop_file(self, ownersname: str, propname: str) -> Optional[PropFile]:
+        propfiles = self.get_prop_files(ownersname)
+        for file in propfiles:
+            if file.name == propname:
+                return file
+        return None
+    ################################################################################################################
+    def has_prop_file(self, ownersname: str, propname: str) -> bool:
+        return self.get_prop_file(ownersname, propname) is not None
+    ################################################################################################################
+    def exchangefile(self, from_owner: str, to_owner: str, propname: str) -> None:
+        findownersfile = self.get_prop_file(from_owner, propname)
+        if findownersfile is None:
+            logger.error(f"{from_owner}没有{propname}这个道具。")
+            return
+        self.deletefile(from_owner, propname)
+        self.add_prop_file(PropFile(propname, to_owner, findownersfile.prop))
+    ################################################################################################################
+       
+        

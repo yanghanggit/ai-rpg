@@ -1,5 +1,3 @@
-
-
 from entitas import Entity, Matcher, ExecuteProcessor #type: ignore
 from auxiliary.components import (NPCComponent, 
                         FightActionComponent, 
@@ -10,7 +8,6 @@ from auxiliary.components import (NPCComponent,
                         MindVoiceActionComponent,
                         BroadcastActionComponent, 
                         WhisperActionComponent,
-                        HumanInterferenceComponent, 
                         SearchActionComponent,
                         PlayerComponent)
 from auxiliary.actor_action import ActorPlan
@@ -26,16 +23,19 @@ class NPCPlanSystem(ExecuteProcessor):
 
     def execute(self) -> None:
         logger.debug("<<<<<<<<<<<<<  NPCPlanSystem  >>>>>>>>>>>>>>>>>")
+
         entities = self.context.get_group(Matcher(NPCComponent)).entities
         for entity in entities:
-            if entity.has(HumanInterferenceComponent):
-                entity.remove(HumanInterferenceComponent)
-                logger.info(f"{entity.get(NPCComponent).name}本轮行为计划被人类接管。\n")
-                continue
+
             if entity.has(PlayerComponent):
                 logger.info(f"{entity.get(NPCComponent).name}正在被玩家控制，不执行自动计划。\n")
                 continue
 
+            if entity.has(HumanInterferenceComponent):
+                entity.remove(HumanInterferenceComponent)
+                logger.info(f"{entity.get(NPCComponent).name}本轮行为计划被人类接管。\n")
+                continue
+            
             #开始处理NPC的行为计划
             self.handle(entity)
 
@@ -53,8 +53,6 @@ class NPCPlanSystem(ExecuteProcessor):
             
             npcplanning = ActorPlan(npccomp.name, response)
             for action in npcplanning.actions:
-                if len(action.values) == 0:
-                    continue
                 match action.actionname:
                     case "FightActionComponent":
                         if not entity.has(FightActionComponent):

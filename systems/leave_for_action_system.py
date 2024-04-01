@@ -130,7 +130,7 @@ class LeaveForActionSystem(ReactiveProcessor):
         if target_stage_entity is None:
             logger.warning(f"{Color.WARNING}target_stage_entitiy is None，请检查配置。{Color.ENDC}")
             return
-        target_stage_comp = target_stage_entity.get(StageComponent)
+        #target_stage_comp = target_stage_entity.get(StageComponent)
         if current_stage_name != "":
             self.context.add_content_to_director_script_by_entity(target_stage_entity, npc_leave_for_stage(npccomp.name, current_stage_name, target_stage_name))
             self.add_leave_for_stage_event_director(target_stage_entity, npccomp.name, current_stage_name, target_stage_name)

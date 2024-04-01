@@ -1,6 +1,6 @@
 
 from typing import Optional
-from entitas import Entity, Matcher, Context, InitializeProcessor # type: ignore
+from entitas import Entity, Matcher, InitializeProcessor # type: ignore
 from auxiliary.components import WorldComponent, StageComponent, NPCComponent, PlayerComponent
 from auxiliary.extract_md_content import extract_md_content
 from auxiliary.actor_agent import ActorAgent
@@ -19,7 +19,7 @@ class InitSystem(InitializeProcessor):
         self.context: ExtendedContext = context
       
     def initialize(self) -> None:
-        logger.debug("<<<<<<<<<<<<<  InitSystem >>>>>>>>>>>>>>>>>")
+        logger.debug("<<<<<<<<<<<<<  InitSystem  >>>>>>>>>>>>>>>>>")
         self.handleworld()
         self.handlestages()
         self.handlenpcs()
@@ -27,42 +27,37 @@ class InitSystem(InitializeProcessor):
     def handleworld(self) -> None:
         worlds: set[Entity] = self.context.get_group(Matcher(WorldComponent)).entities
         for world in worlds:
-            comp: WorldComponent = world.get(WorldComponent)
+            worldcomp: WorldComponent = world.get(WorldComponent)
             # 世界载入
-            agent: ActorAgent = comp.agent
-            logger.debug(f"NPC: {comp.name}, Agent: {agent.url}, Memory: {comp.agent.memory}")
+            agent: ActorAgent = worldcomp.agent
+            logger.debug(f"NPC: {worldcomp.name}, Agent: {agent.url}, Memory: {agent.read_memory_path}")
             agent.connect()
-
-            init_archivist = agent.memory#extract_md_content(agent.memory)
-            prompt = read_archives_when_system_init_prompt(init_archivist, world, self.context)
-            comp.agent.request(prompt)
+            readarchprompt = read_archives_when_system_init_prompt(agent.read_memory_path, world, self.context)
+            agent.request(readarchprompt)
         
     def handlestages(self) -> None:
         stages: set[Entity] = self.context.get_group(Matcher(StageComponent)).entities
         for stage in stages:
-            comp: StageComponent = stage.get(StageComponent)
+            stagecomp: StageComponent = stage.get(StageComponent)
             # 场景载入
-            agent: ActorAgent = comp.agent
-            logger.debug(f"NPC: {comp.name}, Agent: {agent.url}, Memory: {comp.agent.memory}")
+            agent: ActorAgent = stagecomp.agent
+            logger.debug(f"NPC: {stagecomp.name}, Agent: {agent.url}, Memory: {agent.read_memory_path}")
             agent.connect()
-            
-            init_archivist = agent.memory#extract_md_content(agent.memory)
-            prompt = read_archives_when_system_init_prompt(init_archivist, stage, self.context)
-            comp.agent.request(prompt)
+            readarchprompt = read_archives_when_system_init_prompt(agent.read_memory_path, stage, self.context)
+            agent.request(readarchprompt)
 
     def handlenpcs(self) -> None:
-        npcs: set[Entity] = self.context.get_group(Matcher(NPCComponent)).entities
+        # 如果是PlayerComponent控制的entity，就不要connect
+        npcs: set[Entity] = self.context.get_group(Matcher(all_of=[NPCComponent], none_of=[PlayerComponent])).entities
         for npc in npcs:
-            comp: NPCComponent = npc.get(NPCComponent)
-            entity: Optional[Entity] = self.context.get_entity_by_name(comp.name)
-            if entity is not None and entity.has(PlayerComponent):
-                logger.debug(f"NPC: {comp.name} is a player, skip loading memmory.")
-                continue
+            npccomp: NPCComponent = npc.get(NPCComponent)
+            # entity: Optional[Entity] = self.context.get_entity_by_name(comp.name)
+            # if entity is not None and entity.has(PlayerComponent):
+            #     logger.debug(f"NPC: {comp.name} is a player, skip loading memmory.")
+            #     continue
             # NPC载入
-            agent: ActorAgent = comp.agent
-            logger.debug(f"NPC: {comp.name}, Agent: {agent.url}, Memory: {comp.agent.memory}")
+            agent: ActorAgent = npccomp.agent
+            logger.debug(f"NPC: {npccomp.name}, Agent: {agent.url}, Memory: {agent.read_memory_path}")
             agent.connect()
-
-            init_archivist = agent.memory#extract_md_content(agent.memory)
-            prompt = read_archives_when_system_init_prompt(init_archivist, npc, self.context)
-            comp.agent.request(prompt)
+            readarchprompt = read_archives_when_system_init_prompt(agent.read_memory_path, npc, self.context)
+            agent.request(readarchprompt)

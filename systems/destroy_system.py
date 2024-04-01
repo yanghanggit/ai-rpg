@@ -4,6 +4,7 @@ from auxiliary.components import DestroyComponent
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
    
+#### 这个类不允许再动了，基本固定了。
 class DestroySystem(ExecuteProcessor):
     
     def __init__(self, context: ExtendedContext) -> None:
@@ -11,6 +12,9 @@ class DestroySystem(ExecuteProcessor):
 
     def execute(self) -> None:
         logger.debug("<<<<<<<<<<<<<  DestroySystem  >>>>>>>>>>>>>>>>>")
+        self.handledestroy()
+
+    def handledestroy(self) -> None:
         entityGroup: Group = self.context.get_group(Matcher(DestroyComponent))
         entities: set[Entity] = entityGroup.entities
         #不能够一边遍历一边删除，所以先复制一份

@@ -5,7 +5,7 @@ from auxiliary.actor_action import ActorAction
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.print_in_color import Color
 from auxiliary.prompt_maker import broadcast_action_prompt
-from typing import Optional
+#from typing import Optional
 from loguru import logger
 from director import Director, BroadcastEvent
 
@@ -25,12 +25,13 @@ class BroadcastActionSystem(ReactiveProcessor):
         logger.debug("<<<<<<<<<<<<<  BroadcastActionSystem  >>>>>>>>>>>>>>>>>")
 
         for entity in entities:
-            self.handle(entity)  # 核心处理
+            self.handlebroadcast(entity)  # 核心处理
 
         for entity in entities:
             entity.remove(BroadcastActionComponent)  # 必须移除！！！       
 
-    def handle(self, entity: Entity) -> None:
+    ## 目前的设定是场景与NPC都能广播，后续会调整与修改。
+    def handlebroadcast(self, entity: Entity) -> None:
         ## 没有场景不需要广播
         stageentity = self.context.get_stage_entity_by_uncertain_entity(entity)
         if stageentity is None:

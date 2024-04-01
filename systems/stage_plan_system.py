@@ -1,65 +1,42 @@
-
 from entitas import Entity, Matcher, ExecuteProcessor #type: ignore
 from auxiliary.components import (StageComponent, 
                         FightActionComponent, 
                         SpeakActionComponent,
                         TagActionComponent,
                         MindVoiceActionComponent,
-                        RememberActionComponent,
                         BroadcastActionComponent,
                         WhisperActionComponent)
 from auxiliary.actor_action import ActorPlan
 from auxiliary.prompt_maker import stage_plan_prompt
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger 
-      
+from auxiliary.actor_agent import ActorAgent
+
+####################################################################################################    
 class StagePlanSystem(ExecuteProcessor):
-    """
-    The StagePlanSystem class is responsible for handling stage plans in the game.
-
-    Attributes:
-        context: The context object used to access entities and components.
-
-    Methods:
-        execute: Executes the StagePlanSystem and handles stage plans.
-        handle: Handles a single stage plan entity.
-    """
-
     def __init__(self, context: ExtendedContext) -> None:
-        """
-        Initializes a new instance of the StagePlanSystem class.
-
-        Args:
-            context: The context object used to access entities and components.
-        """
         self.context = context
-
+####################################################################################################
     def execute(self) -> None:
-        """
-        Executes the StagePlanSystem and handles stage plans.
-        """
         logger.debug("<<<<<<<<<<<<<  StagePlanSystem  >>>>>>>>>>>>>>>>>")
         entities = self.context.get_group(Matcher(StageComponent)).entities
         for entity in entities:
             self.handle(entity)
-
+####################################################################################################
     def handle(self, entity: Entity) -> None:
-        """
-        Handles a single stage plan entity.
-
-        Args:
-            entity: The entity representing a stage plan.
-        """
         prompt = stage_plan_prompt(entity, self.context)
         ##
-        comp = entity.get(StageComponent)
+        stagecomp: StageComponent = entity.get(StageComponent)
+        agent: ActorAgent = stagecomp.agent
         ##
         try:
-            response = comp.agent.request(prompt)
-            if response is None:
+            response = agent.request(prompt)
+            if response is None or response == "":
+                logger.error(f"StagePlanSystem: response is None or empty")
                 return None
-            actorplan = ActorPlan(comp.name, response)
-            for action in actorplan.actions:
+            
+            stageplanning = ActorPlan(stagecomp.name, response)
+            for action in stageplanning.actions:
                 match action.actionname:
                     case "FightActionComponent":
                         if not entity.has(FightActionComponent):
@@ -95,4 +72,4 @@ class StagePlanSystem(ExecuteProcessor):
         except Exception as e:
             logger.exception(f"StagePlanSystem: {e}")  
             return
-        return
+####################################################################################################

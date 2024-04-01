@@ -12,7 +12,7 @@ class BaseFile:
         self.ownersname = ownersname
 
     def content(self) -> str:
-        pass
+        return ""
 ############################################################################################################
 ## 表达一个道具
 class PropFile(BaseFile):
@@ -52,7 +52,7 @@ class FileSystem:
     ### 必须设置根部的执行路行
     def set_root_path(self, rootpath: str) -> None:
         if self.rootpath != "":
-            raise Exception(f"[{self.name}]已经设置了根路径，不能重复设置。")
+            raise Exception(f"[filesystem]已经设置了根路径，不能重复设置。")
         self.rootpath = rootpath
         logger.debug(f"[filesystem]设置了根路径为{rootpath}")
     ############################################################################################################

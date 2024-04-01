@@ -61,7 +61,7 @@ class SearchPropsSystem(ReactiveProcessor):
 
                         logger.info(f"{Color.GREEN}{npc_entity.get(NPCComponent).name}找到了{unique_prop_name}。{Color.ENDC}")
 
-    ## 重构的！
+    ## 重构的添加导演的类
     def add_event_to_director(self, entity: Entity, propname: str) -> None:
         if entity is None or not entity.has(NPCComponent):
             ##写死，只有NPC才能搜寻失败
@@ -71,10 +71,10 @@ class SearchPropsSystem(ReactiveProcessor):
         if stageentity is None or not stageentity.has(DirectorComponent):
             return
         #
-        npccomp = entity.get(NPCComponent)
+        npccomp: NPCComponent = entity.get(NPCComponent)
         npcname: str = npccomp.name
         #
-        directorcomp = stageentity.get(DirectorComponent)
+        directorcomp: DirectorComponent = stageentity.get(DirectorComponent)
         director: Director = directorcomp.director
         #
         searchfailedevent = SearchFailedEvent(npcname, propname)

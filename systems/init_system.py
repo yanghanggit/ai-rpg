@@ -25,20 +25,10 @@ class InitSystem(InitializeProcessor):
 ###############################################################################################################################################
     def initialize(self) -> None:
         logger.debug("<<<<<<<<<<<<<  InitSystem  >>>>>>>>>>>>>>>>>")
-        # self.handleworld()
-        # self.handlestages()
-        # self.handlenpcs()
-
-        ##debug
-        #self.context.agent_connect_system.debug_show_all_agents()
-        #self.context.memory_system.debug_show_all_memory()
-
         ##连接所有的agent
         self.handle_connect_all_agents()
         ##初始化所有的记忆
         self.handle_init_memories()
-        ##初始化所有的文件
-        self.handle_init_files()
 ###############################################################################################################################################
 ###############################################################################################################################################
 ###############################################################################################################################################
@@ -83,7 +73,6 @@ class InitSystem(InitializeProcessor):
             stagememory = memory_system.getmemory(stagecomp.name)
             readarchprompt = read_archives_when_system_init_prompt(stagememory, stage, self.context)
             agent_connect_system.request2(stagecomp.name, readarchprompt)
-
         ##
         npcs: set[Entity] = self.context.get_group(Matcher(all_of=[NPCComponent], none_of=[PlayerComponent])).entities
         for npc in npcs:
@@ -91,11 +80,4 @@ class InitSystem(InitializeProcessor):
             npcmemory = memory_system.getmemory(npccomp.name)
             readarchprompt = read_archives_when_system_init_prompt(npcmemory, npc, self.context)
             agent_connect_system.request2(npccomp.name, readarchprompt)
-###############################################################################################################################################
-###############################################################################################################################################
-###############################################################################################################################################
-###############################################################################################################################################
-    def handle_init_files(self) -> None:
-        pass
-
 ###############################################################################################################################################

@@ -97,11 +97,13 @@ class FileSystem:
     def has_prop_file(self, ownersname: str, propname: str) -> bool:
         return self.get_prop_file(ownersname, propname) is not None
     ################################################################################################################
-    def exchangefile(self, from_owner: str, to_owner: str, propname: str) -> None:
+    def exchange_prop_file(self, from_owner: str, to_owner: str, propname: str) -> None:
         findownersfile = self.get_prop_file(from_owner, propname)
         if findownersfile is None:
             logger.error(f"{from_owner}没有{propname}这个道具。")
             return
+        # 文件得拿走
+        self.propfiles[from_owner].remove(findownersfile)
         self.deletefile(from_owner, propname)
         self.add_prop_file(PropFile(propname, to_owner, findownersfile.prop))
     ################################################################################################################

@@ -11,7 +11,7 @@ from player_input import PlayerCommandBeWho, PlayerCommandAttack, PlayerCommandL
 
 
 ### 临时的，写死创建budding_world
-def read_world_data(world_name: str) -> Optional[WorldDataBuilder]:
+def read_world_data(worldname: str) -> Optional[WorldDataBuilder]:
     # 检查是否有存档
     # save_folder = f"./budding_world/saved_runtimes/{world_name}.json"
     # if not os.path.exists(save_folder):
@@ -22,17 +22,17 @@ def read_world_data(world_name: str) -> Optional[WorldDataBuilder]:
     #先写死！！！！
     version = 'ewan'
     runtimedir = f"./budding_world/gen_runtimes/"
-    world_data_path: str = f"{runtimedir}{world_name}.json"
-    if not os.path.exists(world_data_path):
+    worlddata: str = f"{runtimedir}{worldname}.json"
+    if not os.path.exists(worlddata):
         logger.error("未找到存档，请检查存档是否存在。")
         return None
 
-    createworld: Optional[WorldDataBuilder] = WorldDataBuilder(world_data_path, version, runtimedir)
+    createworld: Optional[WorldDataBuilder] = WorldDataBuilder(worldname, version, runtimedir)
     if createworld is None:
         logger.error("WorldDataBuilder初始化失败。")
         return None
     
-    if not createworld.check_version_valid(world_data_path):
+    if not createworld.check_version_valid(worlddata):
         logger.error("World.json版本不匹配，请检查版本号。")
         return None
     

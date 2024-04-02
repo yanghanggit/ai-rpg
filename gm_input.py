@@ -42,7 +42,7 @@ class GMCommandPush(GMInput):
             npc_comp: NPCComponent = npc_entity.get(NPCComponent)
             npc_request: Optional[str] = agent_connect_system.request2(npc_comp.name, content)
             if npc_request is not None:
-                agent_connect_system.pop_chat_history(npc_comp.name)
+                agent_connect_system.remove_last_conversation_between_human_and_ai(npc_comp.name)
             return npc_comp
         
         stage_entity: Optional[Entity] = context.getstage(name)
@@ -50,7 +50,7 @@ class GMCommandPush(GMInput):
             stage_comp: StageComponent = stage_entity.get(StageComponent)
             stage_request: Optional[str] = agent_connect_system.request2(stage_comp.name, content)
             if stage_request is not None:
-                agent_connect_system.pop_chat_history(stage_comp.name)
+                agent_connect_system.remove_last_conversation_between_human_and_ai(stage_comp.name)
             return stage_comp
         
         world_entity: Optional[Entity] = context.getworld()
@@ -58,7 +58,7 @@ class GMCommandPush(GMInput):
             world_comp: WorldComponent = world_entity.get(WorldComponent)
             request: Optional[str] = agent_connect_system.request2(world_comp.name, content)
             if request is not None:
-                agent_connect_system.pop_chat_history(world_comp.name)
+                agent_connect_system.remove_last_conversation_between_human_and_ai(world_comp.name)
             return world_comp
 
         return None        
@@ -84,13 +84,13 @@ class GMCommandAsk(GMInput):
         agent_connect_system = context.agent_connect_system
         
         if isinstance(unknowncomp, NPCComponent):
-            agent_connect_system.pop_chat_history(unknowncomp.name)
+            agent_connect_system.remove_last_conversation_between_human_and_ai(unknowncomp.name)
             return
         elif isinstance(unknowncomp, StageComponent):
-            agent_connect_system.pop_chat_history(unknowncomp.name)
+            agent_connect_system.remove_last_conversation_between_human_and_ai(unknowncomp.name)
             return
         elif isinstance(unknowncomp, WorldComponent):
-            agent_connect_system.pop_chat_history(unknowncomp.name)
+            agent_connect_system.remove_last_conversation_between_human_and_ai(unknowncomp.name)
             return
     
 ####################################################################################################################################

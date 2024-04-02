@@ -46,7 +46,7 @@ class StagePlanSystem(ExecuteProcessor):
         ##
         try:
             response = agent_connect_system.request2(stagecomp.name, prompt)
-            if response is None or response == "":
+            if response is None:
                 logger.error(f"StagePlanSystem: response is None or empty")
                 return None
             

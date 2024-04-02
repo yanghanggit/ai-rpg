@@ -88,16 +88,16 @@ class RPGGame:
             logger.error("没有WorldBuilder数据，请检查World.json配置。")
             return
         
-        ## 必须最先调用
+        ## 必须最先调用 './budding_world/gen_runtimes/'
         self.worlddata = worlddata
-        self.extendedcontext.memory_system.set_root_path(worlddata.runtimepath)
-        self.extendedcontext.file_system.set_root_path(worlddata.runtimepath)
+        self.extendedcontext.memory_system.set_root_path(f"{worlddata.runtimepath}{worlddata.name}/")
+        self.extendedcontext.file_system.set_root_path(f"{worlddata.runtimepath}{worlddata.name}/")
 
         ### 创建实体
-        adminnpcs = self.create_admin_npc_entities(worlddata.admin_npc_builder)
-        playernpcs = self.create_player_npc_entities(worlddata.player_npc_builder)
-        npcs = self.create_npc_entities(worlddata.npc_buidler)
-        stages = self.create_stage_entities(worlddata.stage_builder)
+        self.create_admin_npc_entities(worlddata.admin_npc_builder)
+        self.create_player_npc_entities(worlddata.player_npc_builder)
+        self.create_npc_entities(worlddata.npc_buidler)
+        self.create_stage_entities(worlddata.stage_builder)
 ###############################################################################################################################################
     def execute(self) -> None:
         #顺序不要动！！！！！！！！！

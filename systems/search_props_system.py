@@ -138,5 +138,5 @@ class SearchPropsSystem(ReactiveProcessor):
 ###################################################################################################################
     def stage_exchanges_prop_to_npc(self, stagename: str, npcname: str, propfilename: str) -> None:
         filesystem = self.context.file_system
-        filesystem.exchangefile(stagename, npcname, propfilename)
+        filesystem.exchange_prop_file(stagename, npcname, propfilename)
 ###################################################################################################################

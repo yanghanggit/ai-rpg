@@ -47,7 +47,7 @@ class NPCPlanSystem(ExecuteProcessor):
 
         try:
             response = agent_connect_system.request2(npccomp.name, prompt)
-            if response is None or response == "":
+            if response is None:
                 logger.warning("Agent request is None.如果不是默认Player可能需要检查配置。")
                 return
             

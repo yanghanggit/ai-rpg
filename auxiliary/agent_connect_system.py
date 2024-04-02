@@ -38,7 +38,6 @@ class AgentConnectSystem:
             logger.debug(f"request: {name} is requested.{prompt}")
             #return self.memorydict[name].request(prompt)
             return None
-    
         logger.error(f"request: {name} is not registered.")
         return None
 
@@ -54,18 +53,28 @@ class AgentConnectSystem:
     def get_chat_history(self, name: str) -> List[Union[HumanMessage, AIMessage]]:
         if name in self.memorydict:
             return self.memorydict[name].chat_history
-    
         logger.error(f"get_chat_history: {name} is not registered.")
         return []
-        
+    
     #
-    def pop_chat_history(self, name: str) -> None:
-        if name in self.memorydict:
-            self.memorydict[name].chat_history.pop()
-            logger.debug(f"pop_chat_history: {name} is poped chat history.")
-        else:
-            logger.error(f"pop_chat_history: {name} is not registered.")
-
+    def remove_last_conversation_between_human_and_ai(self, name: str) -> None:
+        if not name in self.memorydict:
+            return
         
+        chat_history = self.memorydict[name].chat_history
+        if len(chat_history) == 0:
+            return
 
+        if isinstance(chat_history[-1], AIMessage):
+            ## 是AI的回答，需要删除AI的回答和人的问题
+            chat_history.pop()
+        else:
+            return
+
+        ## 删除人的问题，直到又碰见AI的回答，就跳出        
+        for i in range(len(chat_history)-1, -1, -1):
+            if isinstance(chat_history[i], HumanMessage):
+                chat_history.pop(i)
+            elif isinstance(chat_history[i], AIMessage):
+                break
 

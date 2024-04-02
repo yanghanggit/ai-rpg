@@ -7,7 +7,7 @@ from auxiliary.components import (WorldComponent,
                         PlayerComponent)
 from auxiliary.file_system import FileSystem
 from auxiliary.memory_system import MemorySystem
-from typing import Optional, cast
+from typing import Optional
 from auxiliary.agent_connect_system import AgentConnectSystem
 from auxiliary.code_name_component_system import CodeNameComponentSystem
 from loguru import logger
@@ -73,34 +73,29 @@ class ExtendedContext(Context):
         #         return entity
         # return None
     
-    def get_npcs_in_stage(self, stage_name: str) -> list[Entity]:   
-        npcs: list[Entity] = []
-        for entity in self.get_group(Matcher(NPCComponent)).entities:
-            comp = entity.get(NPCComponent)
-            if comp.current_stage == stage_name:
-                npcs.append(entity)
-        return npcs
-        
+    def npcs_in_this_stage(self, stage_name: str) -> list[Entity]:   
+        # 测试！！！
+        stage_tag_component = self.code_name_component_system.get_stage_tag_component_class_by_name(stage_name)
+        entities: set[Entity] =  self.get_group(Matcher(all_of=[NPCComponent, stage_tag_component])).entities
+        return list(entities)
+        # npcs: list[Entity] = []
+        # for entity in self.get_group(Matcher(NPCComponent)).entities:
+        #     comp = entity.get(NPCComponent)
+        #     if comp.current_stage == stage_name:
+        #         npcs.append(entity)
+        # return npcs
+
     def get_stage_entity_by_uncertain_entity(self, entity: Entity) -> Optional[Entity]:
         if entity.has(StageComponent):
+            # 我自己！！！
             return entity
-
         elif entity.has(NPCComponent):
-            current_stage_name: str = entity.get(NPCComponent).current_stage
-            for stage in self.get_group(Matcher(StageComponent)).entities:
-                if stage.get(StageComponent).name == current_stage_name:
-                    return stage
-        return None
-
-    def get_stagecomponent_by_uncertain_entity(self, entity: Entity) -> Optional[StageComponent]:
-        if entity.has(StageComponent):
-            return cast(StageComponent, entity.get(StageComponent)) 
-
-        elif entity.has(NPCComponent):
-            current_stage_name: str = entity.get(NPCComponent).current_stage
-            for stage in self.get_group(Matcher(StageComponent)).entities:
-                if stage.get(StageComponent).name == current_stage_name:
-                    return cast(StageComponent, stage.get(StageComponent))
+            npccomp: NPCComponent = entity.get(NPCComponent)
+            return self.getstage(npccomp.current_stage)
+            # for stage in self.get_group(Matcher(StageComponent)).entities:
+            #     if stage.get(StageComponent).name == current_stage_name:
+            #         return stage
+        raise ValueError("实体不是NPC或者Stage")
         return None
 
     ##给一个实体添加记忆，尽量统一走这个方法
@@ -119,15 +114,20 @@ class ExtendedContext(Context):
 
     # 向Entity所在的场景中添加导演脚本
     def legacy_add_content_to_director_script_by_entity(self, entity: Entity, content: str) -> bool:
-        npc_stage: Optional[StageComponent] = self.get_stagecomponent_by_uncertain_entity(entity)
-        if npc_stage is None:
+        stageentity = self.get_stage_entity_by_uncertain_entity(entity)
+        if stageentity is None:
             return False
-        npc_stage.directorscripts.append(content)
+        stagecomp: StageComponent = stageentity.get(StageComponent)
+        stagecomp.directorscripts.append(content)
         return True
     
     #
     def change_stage_tag_component(self, entity: Entity, from_stagename: str, to_stagename: str) -> None:
-        logger.warning(f"change_stage_tag: {from_stagename} -> {to_stagename}")
+        if not entity.has(NPCComponent):
+            raise ValueError("实体不是NPC, 目前场景标记只给NPC!")
+        
+        npccomp: NPCComponent = entity.get(NPCComponent)
+        logger.warning(f"change_stage_tag:{npccomp.name}: {from_stagename} -> {to_stagename}")
         if from_stagename == to_stagename:
             logger.error(f"stagename相同，无需修改: {from_stagename}")
 

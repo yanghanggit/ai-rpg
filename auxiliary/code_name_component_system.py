@@ -8,11 +8,11 @@ class CodeNameComponentSystem:
     def __init__(self, name: str) -> None:
         self.name = name
 
-        #
+        #方便快速查找任何知道名字或者codename的对象
         self.name2codename: Dict[str, str] = {}
         self.codename2component: Dict[str, Any] = {}
 
-        #
+        #方便快速查找stage
         self.name2stagetag: Dict[str, str] = {}
         self.stagetag2component: Dict[str, Any] = {}
 

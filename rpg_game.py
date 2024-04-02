@@ -96,10 +96,11 @@ class RPGGame:
         self.create_admin_npc_entities(worlddata.admin_npc_builder)
         self.create_player_npc_entities(worlddata.player_npc_builder)
         self.create_npc_entities(worlddata.npc_buidler)
+        self.add_code_name_component_to_world_and_npcs_when_build()
         ### 第三步骤，创建stage
         self.create_stage_entities(worlddata.stage_builder)
         ## 第四步，最后处理因为需要上一阶段的注册流程
-        self.add_code_name_component_to_world_npcs_stages_when_build()
+        self.add_code_name_component_stages_when_build()
 
         ## test
         #老猎人隐居的小木屋
@@ -290,7 +291,7 @@ class RPGGame:
 
         return res
 ###############################################################################################################################################
-    def add_code_name_component_to_world_npcs_stages_when_build(self) -> None:
+    def add_code_name_component_to_world_and_npcs_when_build(self) -> None:
         context = self.extendedcontext
         code_name_component_system = context.code_name_component_system
 
@@ -309,10 +310,19 @@ class RPGGame:
             codecompclass = code_name_component_system.get_component_class_by_name(npccomp.name)
             if codecompclass is not None:
                 entity.add(codecompclass, npccomp.name)
-            
-            ##第一次添加场景标记，from_stagename为空
-            context.change_stage_tag_component(entity, "", npccomp.current_stage)
         #
+###############################################################################################################################################
+    def add_code_name_component_stages_when_build(self) -> None:
+        context = self.extendedcontext
+        code_name_component_system = context.code_name_component_system
+
+        ## 重新设置npc和stage的关系
+        npcsentities = context.get_group(Matcher(NPCComponent)).entities
+        for entity in npcsentities:
+            npccomp: NPCComponent = entity.get(NPCComponent)
+            context.change_stage_tag_component(entity, "", npccomp.current_stage)
+
+        ## 重新设置stage和stage的关系
         stagesentities = context.get_group(Matcher(StageComponent)).entities
         for entity in stagesentities:
             stagecomp: StageComponent = entity.get(StageComponent)

@@ -48,7 +48,7 @@ class DirectorSystem(ExecuteProcessor):
         if len(directorscripts) == 0:
             return
 
-        npcs_in_stage = self.context.get_npcs_in_stage(stagecomp.name)
+        npcs_in_stage = self.context.npcs_in_this_stage(stagecomp.name)
         npcs_names = " ".join([npc.get(NPCComponent).name for npc in npcs_in_stage])
 
         confirm_prompt = confirm_everything_after_director_add_new_memories_prompt(directorscripts, npcs_names, stagecomp.name, self.context)
@@ -64,7 +64,7 @@ class DirectorSystem(ExecuteProcessor):
     def director_handle_stage(self, entitystage: Entity) -> None:
 
         stagecomp: StageComponent = entitystage.get(StageComponent)
-        allnpcsinthestage = self.context.get_npcs_in_stage(stagecomp.name)
+        allnpcsinthestage = self.context.npcs_in_this_stage(stagecomp.name)
 
         directorcomp: DirectorComponent = entitystage.get(DirectorComponent)
         #director: Director = directorcomp.director

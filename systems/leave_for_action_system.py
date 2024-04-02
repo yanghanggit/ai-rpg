@@ -120,7 +120,7 @@ class LeaveForActionSystem(ReactiveProcessor):
         #更换场景的标记
         self.context.change_stage_tag_component(entity, current_stage_name, replace_current_stage)
 
-        #target_stage_comp = target_stage_entity.get(StageComponent)
+        ##给目标场景添加剧本
         if current_stage_name != "":
             self.context.legacy_add_content_to_director_script_by_entity(target_stage_entity, npc_leave_for_stage(npccomp.name, current_stage_name, target_stage_name))
             self.add_leave_for_stage_event_director(target_stage_entity, npccomp.name, current_stage_name, target_stage_name)
@@ -129,12 +129,6 @@ class LeaveForActionSystem(ReactiveProcessor):
             self.context.legacy_add_content_to_director_script_by_entity(target_stage_entity, npc_enter_stage(npccomp.name, target_stage_name))
             self.add_enter_stage_event_director(target_stage_entity, npccomp.name, target_stage_name)
             logger.info(f"{Color.GREEN}{npccomp.name} 进入了{target_stage_name}.{Color.ENDC}")
-        
-        ##
-        # if entity.has(SimpleRPGRoleComponent):
-        #     desc = entity.get(SimpleRPGRoleComponent).desc
-        #     if desc != "":
-        #         target_stage_comp.directorscripts.append(f"{npccomp.name}的描述：{desc}")
 
     ###############################################################################################################################################
     def leave_stage(self, handle: LeaveActionHelper) -> None:
@@ -155,7 +149,6 @@ class LeaveForActionSystem(ReactiveProcessor):
         self.context.change_stage_tag_component(entity, handle.current_stage_name, replace_current_stage)
 
         #给当前场景添加剧本，如果本次有导演就合进事件
-        # cur_stage_comp.directorscripts.append(f"{npccomp.name} 离开{handle.current_stage_name}去了{handle.target_stage_name}")
         self.context.legacy_add_content_to_director_script_by_entity(currentstage, npc_leave_for_stage(npccomp.name, handle.current_stage_name, handle.target_stage_name))
         self.add_leave_for_stage_event_director(currentstage, npccomp.name, handle.current_stage_name, handle.target_stage_name)
 

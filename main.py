@@ -86,18 +86,6 @@ def main() -> None:
             ###
             logger.debug(f"{'=' * 50}")
 
-        elif "/showstages" in usr_input:
-            if not rpggame.started:
-                logger.warning("请先/run")
-                continue
-            command = "/showstages"
-            who = parse_command(usr_input, command)
-            ###
-            log = rpggame.extendedcontext.information_about_all_stages_and_npcs()
-            ###
-            logger.debug(f"/showstages: \n{log}")
-            logger.debug(f"{'=' * 50}")
-
         elif "/who" in usr_input:
             if not rpggame.started:
                 logger.warning("请先/run")

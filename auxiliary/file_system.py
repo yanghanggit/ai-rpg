@@ -27,7 +27,8 @@ class PropFile(BaseFile):
 ### yh modified!!!!
 class FileSystem:
 
-    def __init__(self) -> None:
+    def __init__(self, name: str) -> None:
+        self.name = name
         self.rootpath = ""
         self.propfiles: Dict[str, List[PropFile]] = {}
     ############################################################################################################

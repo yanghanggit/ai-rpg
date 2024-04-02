@@ -9,7 +9,6 @@ from auxiliary.components import (
     SimpleRPGRoleComponent, 
     StageEntryConditionComponent,
     StageExitConditionComponent)
-from auxiliary.actor_agent import ActorAgent
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.builders import WorldDataBuilder, StageBuilder, NPCBuilder
 from entitas.entity import Entity
@@ -30,6 +29,8 @@ from systems.search_props_system import SearchPropsSystem
 from systems.mind_voice_action_system import MindVoiceActionSystem
 from director_component import DirectorComponent
 from auxiliary.file_system import PropFile
+from systems.begin_system import BeginSystem
+from systems.end_system import EndSystem
 
 
 ## 控制流程和数据创建
@@ -51,6 +52,7 @@ class RPGGame:
 
         #初始化系统########################
         processors.add(InitSystem(context))
+        processors.add(BeginSystem(context))
 
         #"""
         #规划逻辑########################
@@ -77,6 +79,8 @@ class RPGGame:
 
         ###必须最后
         processors.add(DestroySystem(context))
+        processors.add(EndSystem(context))
+
         processors.add(DataSaveSystem(context))
 ###############################################################################################################################################
     def createworld(self, worlddata: WorldDataBuilder) -> None:

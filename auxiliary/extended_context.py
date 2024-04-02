@@ -1,21 +1,13 @@
 from entitas import (Entity, # type: ignore
                     Matcher, 
-                    Context, 
-                    Group)
+                    Context)
 from auxiliary.components import (WorldComponent, 
                         StageComponent, 
                         NPCComponent, 
-                        PlayerComponent,
-                        #UniquePropComponent,
-                        #BackpackComponent,
-                        #SearchActionComponent
-                        )
-#from auxiliary.extract_md_content import wirte_content_into_md
-#from auxiliary.actor_action import ActorAction
+                        PlayerComponent)
 from auxiliary.file_system import FileSystem
 from auxiliary.memory_system import MemorySystem
 from typing import Optional, cast
-from auxiliary.actor_agent import ActorAgent
 from auxiliary.agent_connect_system import AgentConnectSystem
 
 class ExtendedContext(Context):
@@ -23,16 +15,9 @@ class ExtendedContext(Context):
     #
     def __init__(self) -> None:
         super().__init__()
-        self.file_system = FileSystem()
-        self.memory_system = MemorySystem("memorey_system")
-        self.agent_connect_system = AgentConnectSystem("agent_connect_system")
-
-    # def init_file_system(self) -> None:
-    #     self.file_system = FileSystem()
-
-    # def file_system(self) -> FileSystem:
-    #     return self.file_system
-
+        self.file_system = FileSystem("file_system， Because it involves IO operations, an independent system is more convenient.")
+        self.memory_system = MemorySystem("memorey_system， Because it involves IO operations, an independent system is more convenient.")
+        self.agent_connect_system = AgentConnectSystem("agent_connect_system， Because it involves net operations, an independent system is more convenient.")
     #
     def getworld(self) -> Optional[Entity]:
         for entity in self.get_group(Matcher(WorldComponent)).entities:
@@ -99,24 +84,6 @@ class ExtendedContext(Context):
                 if stage.get(StageComponent).name == current_stage_name:
                     return cast(StageComponent, stage.get(StageComponent))
         return None
-        
-    def information_about_all_stages_and_npcs(self) -> dict[str, list[str]]:
-
-        stagesentities = self.get_group(Matcher(StageComponent)).entities
-        npcsentities = self.get_group(Matcher(NPCComponent)).entities
-        map: dict[str, list[str]] = {}
-
-        for entity in stagesentities:
-            stagecomp = entity.get(StageComponent)
-            ls = map.get(stagecomp.name, [])
-            map[stagecomp.name] = ls
-
-            for entity in npcsentities:
-                npccomp = entity.get(NPCComponent)
-                if npccomp.current_stage == stagecomp.name:
-                    ls.append(npccomp.name)
-
-        return map
 
     ##给一个实体添加记忆，尽量统一走这个方法
     def add_agent_memory(self, entity: Entity, memory: str) -> bool:
@@ -132,20 +99,6 @@ class ExtendedContext(Context):
         raise ValueError("实体不是NPC或者Stage")
         return False
 
-    ## 方便调用的存档方法
-    # def savearchive(self, archive: str, filename: str) -> None:
-    #     wirte_content_into_md(archive, f"/savedData/{filename}.md")
-    #     raise NotImplementedError("legacy savearchive !!!!!")
-
-    # # 向Entity的背包中添加道具
-    # def put_unique_prop_into_backpack(self, entity: Entity, unique_prop_name: str) -> bool:
-    #     if entity.has(BackpackComponent):
-    #         npc_backpack_comp: BackpackComponent = entity.get(BackpackComponent)
-    #         self.file_system.add_content_into_backpack(npc_backpack_comp, unique_prop_name)
-    #         return True
-    #     return False
-
-
     # 向Entity所在的场景中添加导演脚本
     def legacy_add_content_to_director_script_by_entity(self, entity: Entity, content: str) -> bool:
         npc_stage: Optional[StageComponent] = self.get_stagecomponent_by_uncertain_entity(entity)
@@ -153,29 +106,3 @@ class ExtendedContext(Context):
             return False
         npc_stage.directorscripts.append(content)
         return True
-
-    # 获取Entity的ActorAction
-    # def get_search_action_by_entity(self, entity: Entity) -> Optional[ActorAction]:
-    #     if entity.has(SearchActionComponent):
-    #         npc_search_action_component: SearchActionComponent = entity.get(SearchActionComponent)
-    #         return cast(ActorAction, npc_search_action_component.action)
-    #     return None
-
-    # # 获取所有UniqueProps的名字
-    # def get_all_unique_props_names(self) -> set[str]:
-    #     unique_props_group: Group = self.get_group(Matcher(UniquePropComponent))
-    #     unique_props_entities = unique_props_group.entities
-
-    #     unique_props_names: set[str] = set()
-    #     for entity in unique_props_entities:
-    #         unique_props_names.add(entity.get(UniquePropComponent).name)
-        
-    #     return unique_props_names
-    
-    # # 根据Prop的名字获取Entity
-    # def get_unique_prop_entity_by_name(self, name: str) -> Optional[Entity]:
-    #     for entity in self.get_group(Matcher(UniquePropComponent)).entities:
-    #         if entity.get(UniquePropComponent).name == name:
-    #             return entity
-    #     return None
-    

@@ -12,13 +12,6 @@ from player_input import PlayerCommandBeWho, PlayerCommandAttack, PlayerCommandL
 
 ### 临时的，写死创建budding_world
 def read_world_data(worldname: str) -> Optional[WorldDataBuilder]:
-    # 检查是否有存档
-    # save_folder = f"./budding_world/saved_runtimes/{world_name}.json"
-    # if not os.path.exists(save_folder):
-       
-    # else:
-    #     world_data_path = save_folder
-
     #先写死！！！！
     version = 'ewan'
     runtimedir = f"./budding_world/gen_runtimes/"

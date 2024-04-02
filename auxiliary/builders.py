@@ -46,42 +46,42 @@ class WorldDataBuilder:
 ########################################################################################################################
 class StageBuilder:
     def __init__(self) -> None:
-        self.datalist: Optional[dict[str, Dict]] = None
+        self.datalist: Optional[dict[str, Any]] = None
         self.stages: list[StageData] = []
 
     def __str__(self) -> str:
         return f"StageBuilder: {self.datalist}"      
 
     #
-    def build_prop_conditions(self, condition_data: List[Dict]) -> list[StageConditionData]: 
+    def build_prop_conditions(self, condition_data: List[Any]) -> list[StageConditionData]: 
         res: list[StageConditionData] = []
         for data in condition_data:
             createcondition: StageConditionData = StageConditionData(data.get("name"), data.get("type"), data.get("propname"))
             res.append(createcondition)
         return res
     #
-    def build_props_in_stage(self, props_data: List[Dict]) -> set[PropData]:
+    def build_props_in_stage(self, props_data: List[Any]) -> set[PropData]:
         res: set[PropData] = set()
         for obj in props_data:
             prop = PropData(obj.get("name"), obj.get("codename"), obj.get("description"), obj.get("isunique"))
             res.add(prop)
         return res
     #
-    def build_npcs_in_stage(self, npcs_data: List[Dict]) -> set[NPCData]:
+    def build_npcs_in_stage(self, npcs_data: List[Any]) -> set[NPCData]:
         res: set[NPCData] = set()
         for obj in npcs_data:
             npc = NPCData(obj.get("name"), obj.get("codename"), obj.get("url"), obj.get("memory"))
             res.add(npc)
         return res
     #
-    def build(self, json_data: dict[str, Dict]) -> None:
+    def build(self, json_data: dict[str, Any]) -> None:
         self.datalist = json_data.get("stages")
         if self.datalist is None:
             logger.error("StageBuilder: stages data is None.")
             return
 
         for data in self.datalist:
-            stagedata: Dict = cast(Dict, data).get("stage")        
+            stagedata = data.get("stage")        
             entry_conditions_in_stage: list[StageConditionData] = self.build_prop_conditions(stagedata.get("entry_conditions"))
             exit_conditions_in_stage: list[StageConditionData] = self.build_prop_conditions( stagedata.get("exit_conditions")) 
             propsinstage: set[PropData] = self.build_props_in_stage(stagedata.get("props"))
@@ -103,7 +103,7 @@ class StageBuilder:
 class NPCBuilder:
 
     def __init__(self, dataname: str) -> None:
-        self.datalist: Optional[dict[str, Dict]] = None
+        self.datalist: Optional[dict[str, Any]] = None
         self.npcs: list[NPCData] = []
         self.dataname = dataname
 
@@ -111,20 +111,20 @@ class NPCBuilder:
         return f"NPCBuilder2: {self.datalist}"       
 
     #
-    def build(self, json_data: dict[str, Dict]) -> None:
+    def build(self, json_data: dict[str, Any]) -> None:
         self.datalist = json_data.get(self.dataname)
         if self.datalist is None:
             logger.error(f"NPCBuilder2: {self.dataname} data is None.")
             return
         for datablock in self.datalist:
             #yh 先不用做严格检查，因为自动化部分会做严格检查，比如第二阶段的自检过程，如果需要检查，可以单独开一个函数，就先检查一遍，这里就是集中行动
-            propdata: Dict = cast(Dict, datablock).get("props")
+            propdata = datablock.get("props")
             npcprops: set[PropData] = set()
             for propdata in propdata:
                 prop = PropData(propdata.get("name"), propdata.get("codename"),  propdata.get("description"), propdata.get("isunique"))
                 npcprops.add(prop)
             #
-            npc_data: Dict = cast(Dict, datablock).get("npc")
+            npc_data = datablock.get("npc")
             npc = NPCData(npc_data.get("name"), npc_data.get("codename"), npc_data.get("url"), npc_data.get("memory"), npcprops)
             self.npcs.append(npc)
 

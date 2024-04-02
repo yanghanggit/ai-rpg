@@ -7,9 +7,6 @@ from auxiliary.components import (
     NPCComponent, 
     PlayerComponent, 
     SimpleRPGRoleComponent, 
-    # PropComponent,
-    # UniquePropComponent,
-    #BackpackComponent,
     StageEntryConditionComponent,
     StageExitConditionComponent)
 from auxiliary.actor_agent import ActorAgent
@@ -32,9 +29,10 @@ from systems.whisper_action_system import WhisperActionSystem
 from systems.search_props_system import SearchPropsSystem
 from systems.mind_voice_action_system import MindVoiceActionSystem
 from director_component import DirectorComponent
-#from auxiliary.world_data_builder import Prop
 from auxiliary.file_system import PropFile
 
+
+## 控制流程和数据创建
 class RPGGame:
 
     def __init__(self, name: str) -> None:
@@ -53,9 +51,6 @@ class RPGGame:
 
         #初始化系统########################
         processors.add(InitSystem(context))
-
-
-
 
         #"""
         #规划逻辑########################
@@ -80,8 +75,6 @@ class RPGGame:
         #########################################
         #"""
 
-
-
         ###必须最后
         processors.add(DestroySystem(context))
         processors.add(DataSaveSystem(context))
@@ -91,7 +84,7 @@ class RPGGame:
             logger.error("没有WorldBuilder数据，请检查World.json配置。")
             return
         
-        ## 必须最先调用 './budding_world/gen_runtimes/'
+        ##
         self.worlddata = worlddata
         self.extendedcontext.memory_system.set_root_path(f"{worlddata.runtimepath}{worlddata.name}/")
         self.extendedcontext.file_system.set_root_path(f"{worlddata.runtimepath}{worlddata.name}/")
@@ -245,7 +238,7 @@ class RPGGame:
                 createpropfile = PropFile(propinstage.name, builddata.name, propinstage)
                 file_system.add_prop_file(createpropfile)
 
-            ## 创建入口条件和出口条件
+            ## 创建入口条件
             enter_condition_set = set()
             for enter_condition in builddata.entry_conditions:
                 enter_condition_set.add(enter_condition.name)
@@ -253,6 +246,7 @@ class RPGGame:
                 stageentity.add(StageEntryConditionComponent, enter_condition_set)
                 logger.debug(f"{builddata.name}的入口条件为：{enter_condition_set}")
 
+            ## 创建出口条件
             exit_condition_set = set()
             for exit_condition in builddata.exit_conditions:
                 exit_condition_set.add(exit_condition.name)

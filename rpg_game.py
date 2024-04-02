@@ -55,7 +55,10 @@ class RPGGame:
         #初始化系统########################
         processors.add(InitSystem(context))
 
-        """
+
+
+
+        #"""
         #规划逻辑########################
         processors.add(StagePlanSystem(context))
         processors.add(NPCPlanSystem(context))
@@ -76,7 +79,10 @@ class RPGGame:
         #行动结束后导演
         processors.add(DirectorSystem(context))
         #########################################
-        """
+        #"""
+
+
+
         ###必须最后
         processors.add(DestroySystem(context))
         processors.add(DataSaveSystem(context))

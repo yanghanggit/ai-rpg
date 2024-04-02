@@ -68,7 +68,13 @@ class StageBuilder:
             prop = PropData(obj.get("name"), obj.get("codename"), obj.get("description"), obj.get("isunique"))
             res.add(prop)
         return res
-
+    #
+    def build_npcs_in_stage(self, npcs_data: List[Any]) -> set[NPCData]:
+        res: set[NPCData] = set()
+        for obj in npcs_data:
+            npc = NPCData(obj.get("name"), obj.get("codename"), obj.get("url"), obj.get("memory"))
+            res.add(npc)
+        return res
     #
     def build(self, json_data: dict[str, Any]) -> None:
         self.datalist = json_data.get("stages")
@@ -81,6 +87,7 @@ class StageBuilder:
             entry_conditions_in_stage: list[StageConditionData] = self.build_prop_conditions(stagedata.get("entry_conditions"))
             exit_conditions_in_stage: list[StageConditionData] = self.build_prop_conditions( stagedata.get("exit_conditions")) 
             propsinstage: set[PropData] = self.build_props_in_stage(stagedata.get("props"))
+            npcsinstage: set[NPCData] = self.build_npcs_in_stage(stagedata.get("npcs"))
             stage = StageData(  stagedata.get("name"), 
                             stagedata.get("codename"), 
                             stagedata.get("description"), 
@@ -88,7 +95,8 @@ class StageBuilder:
                             stagedata.get("memory"), 
                             entry_conditions_in_stage, 
                             exit_conditions_in_stage, 
-                            stagedata.get("npcs"), propsinstage)
+                            npcsinstage, 
+                            propsinstage)
             self.stages.append(stage)
             
 ########################################################################################################################

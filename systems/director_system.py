@@ -1,10 +1,10 @@
 from entitas import Entity, Matcher, ExecuteProcessor #type: ignore
-from auxiliary.components import StageComponent, NPCComponent, DirectorComponent
+from auxiliary.components import StageComponent, NPCComponent
 from typing import List
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.prompt_maker import confirm_everything_after_director_add_new_memories_prompt
 from loguru import logger
-from director import Director
+from director_component import DirectorComponent
 
 # matcher = Matcher(all_of=[CompA, CompB, CompC],
 #                   any_of=[CompD, CompE],
@@ -35,9 +35,9 @@ class DirectorSystem(ExecuteProcessor):
             comp = entity.get(StageComponent)
             comp.directorscripts.clear()
             ### 重构的！！！
-            directorcomp = entity.get(DirectorComponent)
-            director: Director = directorcomp.director
-            director.clear()
+            directorcomp: DirectorComponent = entity.get(DirectorComponent)
+            #director: Director = directorcomp.director
+            directorcomp.clear()
 
     def handlestage(self, entitystage: Entity) -> None:
 
@@ -67,11 +67,11 @@ class DirectorSystem(ExecuteProcessor):
         allnpcsinthestage = self.context.get_npcs_in_stage(stagecomp.name)
 
         directorcomp: DirectorComponent = entitystage.get(DirectorComponent)
-        director: Director = directorcomp.director
+        #director: Director = directorcomp.director
 
         for npcen in allnpcsinthestage:
             npccomp: NPCComponent = npcen.get(NPCComponent)
-            convertedevents2npc = director.convert(npccomp.name, self.context)            
+            convertedevents2npc = directorcomp.convert(npccomp.name, self.context)            
             npcmemlist = "\n".join(convertedevents2npc)
             logger.debug(f"refactor npcmemlist: {npcmemlist}")
             

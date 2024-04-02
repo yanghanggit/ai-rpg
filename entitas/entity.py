@@ -63,6 +63,7 @@ class Entity(object):
                 .format(comp_type.__name__, self))
 
         new_comp = comp_type._make(args)
+        new_comp.__init__() ##yh add
         self._components[comp_type] = new_comp
         self.on_component_added(self, new_comp)
 
@@ -105,6 +106,7 @@ class Entity(object):
             self.on_component_removed(self, previous_comp)
         else:
             new_comp = comp_type._make(args)
+            new_comp.__init__() ##yh add
             self._components[comp_type] = new_comp
             self.on_component_replaced(self, previous_comp, new_comp)
 

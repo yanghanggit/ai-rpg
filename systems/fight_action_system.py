@@ -1,13 +1,12 @@
-
 from entitas import Matcher, ReactiveProcessor, GroupEvent, Entity # type: ignore
-from auxiliary.components import FightActionComponent, NPCComponent, StageComponent, SimpleRPGRoleComponent, DeadActionComponent, DirectorComponent
+from auxiliary.components import FightActionComponent, SimpleRPGRoleComponent, DeadActionComponent
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.actor_action import ActorAction
-from auxiliary.actor_agent import ActorAgent
 from auxiliary.prompt_maker import kill_someone, attack_someone
 from typing import Optional
 from loguru import logger
-from director import Director, KillSomeoneEvent, AttackSomeoneEvent
+from director_component import DirectorComponent
+from director_event import KillSomeoneEvent, AttackSomeoneEvent
 
 class FightActionSystem(ReactiveProcessor):
 
@@ -71,13 +70,13 @@ class FightActionSystem(ReactiveProcessor):
         if stageentity is None or not stageentity.has(DirectorComponent):
             return
         #
-        rpgcomp = entity.get(SimpleRPGRoleComponent)
+        rpgcomp: SimpleRPGRoleComponent = entity.get(SimpleRPGRoleComponent)
         rpgname: str = rpgcomp.name
         #
-        directorcomp = stageentity.get(DirectorComponent)
-        director: Director = directorcomp.director
+        directorcomp: DirectorComponent = stageentity.get(DirectorComponent)
+        #director: Director = directorcomp.director
         killsomeoneevent = KillSomeoneEvent(rpgname, targetname)
-        director.addevent(killsomeoneevent)
+        directorcomp.addevent(killsomeoneevent)
 
     ## 重构事件
     def add_attack_someone_event_to_director(self, entity: Entity, targetname: str, damage: int, curhp: int, maxhp: int) -> None:
@@ -88,12 +87,12 @@ class FightActionSystem(ReactiveProcessor):
         if stageentity is None or not stageentity.has(DirectorComponent):
             return
         #
-        rpgcomp = entity.get(SimpleRPGRoleComponent)
+        rpgcomp: SimpleRPGRoleComponent = entity.get(SimpleRPGRoleComponent)
         rpgname: str = rpgcomp.name
         #
-        directorcomp = stageentity.get(DirectorComponent)
-        director: Director = directorcomp.director
+        directorcomp: DirectorComponent = stageentity.get(DirectorComponent)
+        #director: Director = directorcomp.director
         attacksomeoneevent = AttackSomeoneEvent(rpgname, targetname, damage, curhp, maxhp)
-        director.addevent(attacksomeoneevent)
+        directorcomp.addevent(attacksomeoneevent)
 
        

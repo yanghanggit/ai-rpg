@@ -11,8 +11,7 @@ from auxiliary.components import (
     # UniquePropComponent,
     #BackpackComponent,
     StageEntryConditionComponent,
-    StageExitConditionComponent,
-    DirectorComponent)
+    StageExitConditionComponent)
 from auxiliary.actor_agent import ActorAgent
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.builders import WorldDataBuilder, StageBuilder, NPCBuilder
@@ -32,7 +31,7 @@ from systems.broadcast_action_system import BroadcastActionSystem
 from systems.whisper_action_system import WhisperActionSystem 
 from systems.search_props_system import SearchPropsSystem
 from systems.mind_voice_action_system import MindVoiceActionSystem
-from director import Director
+from director_component import DirectorComponent
 #from auxiliary.world_data_builder import Prop
 from auxiliary.file_system import PropFile
 
@@ -225,7 +224,7 @@ class RPGGame:
 
             #必要组件
             stageentity.add(StageComponent, builddata.name, [])
-            stageentity.add(DirectorComponent, builddata.name, Director(builddata.name)) ###
+            stageentity.add(DirectorComponent, builddata.name) ###
             stageentity.add(SimpleRPGRoleComponent, builddata.name, 10000, 10000, 1, "")
             
             ## 重新设置npc和stage的关系

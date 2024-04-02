@@ -2,16 +2,13 @@
 from collections import namedtuple
 
 ###核心组件
+###############################################################################################################################################
 WorldComponent = namedtuple('WorldComponent', 'name')
 StageComponent = namedtuple('StageComponent', 'name directorscripts')
-DirectorComponent = namedtuple('DirectorComponent', 'name director')
 NPCComponent = namedtuple('NPCComponent', 'name current_stage')
 PlayerComponent = namedtuple('PlayerComponent', 'name')
-# PropComponent = namedtuple('PropComponent', 'name')
-# UniquePropComponent = namedtuple('UniquePropComponent', 'name')
 StageEntryConditionComponent = namedtuple('StageEntryConditionComponent', 'conditions')
 StageExitConditionComponent = namedtuple('StageExitConditionComponent', 'conditions')
-#BackpackComponent = namedtuple('BackpackComponent', 'owner_name')
 ###############################################################################################################################################
 DestroyComponent = namedtuple('DestroyComponent', 'name')
 ###############################################################################################################################################
@@ -32,3 +29,4 @@ SimpleRPGRoleComponent = namedtuple('SimpleRPGRoleComponent', 'name maxhp hp att
 ###############################################################################################################################################
 ###特殊标记类
 HumanInterferenceComponent = namedtuple('HumanInterferenceComponent', 'reason')
+###############################################################################################################################################

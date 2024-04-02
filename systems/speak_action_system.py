@@ -1,12 +1,13 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
-from auxiliary.components import SpeakActionComponent, NPCComponent, DirectorComponent
+from auxiliary.components import SpeakActionComponent, NPCComponent
 from auxiliary.actor_action import ActorAction
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.print_in_color import Color
 from auxiliary.prompt_maker import speak_action_prompt
 from loguru import logger
 from auxiliary.dialogue_rule import check_speak_enable, parse_taget_and_message
-from director import Director, SpeakEvent
+from director_component import DirectorComponent
+from director_event import SpeakEvent
 
    
 ####################################################################################################
@@ -60,9 +61,9 @@ class SpeakActionSystem(ReactiveProcessor):
         npcname: str = npccomp.name
         #
         directorcomp: DirectorComponent = stageentity.get(DirectorComponent)
-        director: Director = directorcomp.director
+        #director: Director = directorcomp.director
         speakevent = SpeakEvent(npcname, targetname, message)
-        director.addevent(speakevent)
+        directorcomp.addevent(speakevent)
 ####################################################################################################
 
 

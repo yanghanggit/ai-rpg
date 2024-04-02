@@ -4,14 +4,14 @@ from auxiliary.components import (SearchActionComponent,
                         # UniquePropComponent, 
                         # PropComponent,
                         NPCComponent, 
-                        StageComponent, 
-                        DirectorComponent)
+                        StageComponent)
 from auxiliary.actor_action import ActorAction
 from auxiliary.prompt_maker import unique_prop_taken_away
 from auxiliary.print_in_color import Color
 #from typing import Optional
 from loguru import logger
-from director import Director, SearchFailedEvent
+from director_component import DirectorComponent
+from director_event import SearchFailedEvent
 from typing import List
 from auxiliary.file_system import PropFile
 
@@ -85,12 +85,9 @@ class SearchPropsSystem(ReactiveProcessor):
         #
         npccomp: NPCComponent = entity.get(NPCComponent)
         npcname: str = npccomp.name
-        #
         directorcomp: DirectorComponent = stageentity.get(DirectorComponent)
-        director: Director = directorcomp.director
-        #
         searchfailedevent = SearchFailedEvent(npcname, propname)
-        director.addevent(searchfailedevent)
+        directorcomp.addevent(searchfailedevent)
 ###################################################################################################################
     def handlesearch(self, whosearchentity: Entity) -> None:
         if not whosearchentity.has(NPCComponent):

@@ -1,13 +1,14 @@
 
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
-from auxiliary.components import BroadcastActionComponent, StageComponent, DirectorComponent
+from auxiliary.components import BroadcastActionComponent, StageComponent
 from auxiliary.actor_action import ActorAction
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.print_in_color import Color
 from auxiliary.prompt_maker import broadcast_action_prompt
 #from typing import Optional
 from loguru import logger
-from director import Director, BroadcastEvent
+from director_component import DirectorComponent
+from director_event import BroadcastEvent
 
 class BroadcastActionSystem(ReactiveProcessor):
 
@@ -42,7 +43,6 @@ class BroadcastActionSystem(ReactiveProcessor):
         stagecomp: StageComponent = stageentity.get(StageComponent)
         #
         directorcomp: DirectorComponent = stageentity.get(DirectorComponent)
-        director: Director = directorcomp.director
         # 遍历处理
         action: ActorAction = broadcastcomp.action
         for value in action.values:
@@ -52,7 +52,7 @@ class BroadcastActionSystem(ReactiveProcessor):
             stagecomp.directorscripts.append(broadcast_say)
             ## 重构处理
             event = BroadcastEvent(action.name, stagecomp.name, value)
-            director.addevent(event)
+            directorcomp.addevent(event)
             
         
                 

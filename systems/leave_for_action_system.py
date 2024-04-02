@@ -6,15 +6,15 @@ from auxiliary.components import (LeaveForActionComponent,
                         # SimpleRPGRoleComponent,
                         #BackpackComponent,
                         StageEntryConditionComponent,
-                        StageExitConditionComponent,
-                        DirectorComponent)
+                        StageExitConditionComponent
+                        )
 from auxiliary.actor_action import ActorAction
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.print_in_color import Color
 from auxiliary.prompt_maker import fail_to_enter_stage, fail_to_exit_stage, npc_enter_stage, npc_leave_for_stage
 from loguru import logger
-from director import Director, LeaveForStageEvent, EnterStageEvent, FailEnterStageEvent, FailExitStageEvent
-
+from director_component import DirectorComponent
+from director_event import LeaveForStageEvent, EnterStageEvent, FailEnterStageEvent, FailExitStageEvent
 ###############################################################################################################################################
 class LeaveActionHelper:
 
@@ -217,35 +217,35 @@ class LeaveForActionSystem(ReactiveProcessor):
         if stageentity is None or not stageentity.has(DirectorComponent):
             return
         # ##添加导演事件
-        directorcomp = stageentity.get(DirectorComponent)
-        director: Director = directorcomp.director
+        directorcomp: DirectorComponent = stageentity.get(DirectorComponent)
+        #director: Director = directorcomp.director
         leaveforstageevent = LeaveForStageEvent(npcname, cur_stage_name, target_stage_name)
-        director.addevent(leaveforstageevent)
+        directorcomp.addevent(leaveforstageevent)
     ###############################################################################################################################################
     def add_enter_stage_event_director(self, stageentity: Entity, npcname: str, target_stage_name: str) -> None:
         if stageentity is None or not stageentity.has(DirectorComponent):
             return
         # ##添加导演事件
-        directorcomp = stageentity.get(DirectorComponent)
-        director: Director = directorcomp.director
+        directorcomp: DirectorComponent = stageentity.get(DirectorComponent)
+        #director: Director = directorcomp.director
         enterstageevent = EnterStageEvent(npcname, target_stage_name)
-        director.addevent(enterstageevent)
+        directorcomp.addevent(enterstageevent)
     ###############################################################################################################################################
     def add_fail_enter_stage_event_director(self, stageentity: Entity, npcname: str, target_stage_name: str, search_list: str) -> None:
         if stageentity is None or not stageentity.has(DirectorComponent):
             return
         # ##添加导演事件
-        directorcomp = stageentity.get(DirectorComponent)
-        director: Director = directorcomp.director
+        directorcomp: DirectorComponent = stageentity.get(DirectorComponent)
+        #director: Director = directorcomp.director
         failevent = FailEnterStageEvent(npcname, target_stage_name, search_list)
-        director.addevent(failevent)
+        directorcomp.addevent(failevent)
     ###############################################################################################################################################
     def add_fail_exit_stage_event_director(self, stageentity: Entity, npcname: str, cur_stage_name: str, search_list: str) -> None:
         if stageentity is None or not stageentity.has(DirectorComponent):
             return
         # ##添加导演事件
-        directorcomp = stageentity.get(DirectorComponent)
-        director: Director = directorcomp.director
+        directorcomp: DirectorComponent = stageentity.get(DirectorComponent)
+       # director: Director = directorcomp.director
         failevent = FailExitStageEvent(npcname, cur_stage_name, search_list)
-        director.addevent(failevent)
+        directorcomp.addevent(failevent)
     ###############################################################################################################################################

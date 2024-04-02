@@ -36,7 +36,7 @@ class FightActionSystem(ReactiveProcessor):
         action: ActorAction = comp.action
         #stage: StageComponent = self.context.get_stagecomponent_by_uncertain_entity(entity)
 
-        attacker: Optional[Entity] = self.context.get_entity_by_name(action.name)
+        attacker: Optional[Entity] = self.context.getentity(action.name)
         if attacker is None:
             logger.warning(f"攻击者{action.name}本次攻击出现错误,原因是attacker对象为None,本次攻击无效.")
             return

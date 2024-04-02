@@ -37,7 +37,7 @@ class PlayerCommandBeWho(PlayerInput):
         name = self.targetname
         playname = self.playerproxy.name
 
-        playerentity = context.getplayer()
+        playerentity = context.get1player()
         if playerentity is not None:
             playercomp = playerentity.get(PlayerComponent)
             logger.debug(f"debug_be_who current player is : {playercomp.name}")
@@ -68,7 +68,7 @@ class PlayerCommandAttack(PlayerInput):
     def execute(self) -> None:
         context = self.game.extendedcontext 
         dest = self.targetname
-        playerentity = context.getplayer()
+        playerentity = context.get1player()
         if playerentity is None:
             logger.warning("debug_attack: player is None")
             return
@@ -102,7 +102,7 @@ class PlayerCommandLeaveFor(PlayerInput):
     def execute(self) -> None:
         context = self.game.extendedcontext
         stagename = self.stagename
-        playerentity = context.getplayer()
+        playerentity = context.get1player()
         if playerentity is None:
             logger.warning("debug_leave: player is None")
             return
@@ -130,7 +130,7 @@ class PlayerCommandBroadcast(PlayerInput):
     def execute(self) -> None:
         context = self.game.extendedcontext
         content = self.content
-        playerentity = context.getplayer()
+        playerentity = context.get1player()
         if playerentity is None:
             logger.warning("debug_broadcast: player is None")
             return
@@ -157,7 +157,7 @@ class PlayerCommandSpeak(PlayerInput):
     def execute(self) -> None:
         context = self.game.extendedcontext
         content = self.commandstr
-        playerentity = context.getplayer()
+        playerentity = context.get1player()
         if playerentity is None:
             logger.warning("debug_speak: player is None")
             return
@@ -185,7 +185,7 @@ class PlayerCommandWhisper(PlayerInput):
     def execute(self) -> None:
         context = self.game.extendedcontext
         content = self.commandstr
-        playerentity = context.getplayer()
+        playerentity = context.get1player()
         if playerentity is None:
             logger.warning("debug_whisper: player is None")
             return
@@ -213,7 +213,7 @@ class PlayerCommandSearch(PlayerInput):
     def execute(self) -> None:
         context = self.game.extendedcontext
         content = self.targetname
-        playerentity = context.getplayer()
+        playerentity = context.get1player()
         if playerentity is None:
             logger.warning("debug_search: player is None")
             return

@@ -9,46 +9,68 @@ from auxiliary.file_system import FileSystem
 from auxiliary.memory_system import MemorySystem
 from typing import Optional, cast
 from auxiliary.agent_connect_system import AgentConnectSystem
+from auxiliary.code_name_component_system import CodeNameComponentSystem
 
 class ExtendedContext(Context):
-
     #
     def __init__(self) -> None:
         super().__init__()
         self.file_system = FileSystem("file_system， Because it involves IO operations, an independent system is more convenient.")
         self.memory_system = MemorySystem("memorey_system， Because it involves IO operations, an independent system is more convenient.")
         self.agent_connect_system = AgentConnectSystem("agent_connect_system， Because it involves net operations, an independent system is more convenient.")
+        self.code_name_component_system = CodeNameComponentSystem("Build components by codename for special purposes")
     #
-    def getworld(self) -> Optional[Entity]:
+    def get1world(self) -> Optional[Entity]:
         for entity in self.get_group(Matcher(WorldComponent)).entities:
             return entity
         return None
-    
-    def getstage(self, name: str) -> Optional[Entity]:
-        for entity in self.get_group(Matcher(StageComponent)).entities:
-            comp = entity.get(StageComponent)
-            if comp.name == name:
-                return entity
-        return None
-    
-    def getnpc(self, name: str) -> Optional[Entity]:
-        for entity in self.get_group(Matcher(NPCComponent)).entities:
-            comp = entity.get(NPCComponent)
-            if comp.name == name:
-                return entity
-        return None
-    
-    def get_entity_by_name(self, name: str) -> Optional[Entity]:
+    #
+    def get1player(self) -> Optional[Entity]:
         for entity in self.get_group(Matcher(PlayerComponent)).entities:
-            if entity.get(PlayerComponent).name == name:
-                return entity
-        for entity in self.get_group(Matcher(NPCComponent)).entities:
-            if entity.get(NPCComponent).name == name:
-                return entity
-        for entity in self.get_group(Matcher(StageComponent)).entities:
-            if entity.get(StageComponent).name == name:
-                return entity
+            return entity
         return None
+    
+    #yh add 特殊的方法
+    def get_by_code_name_component(self, name: str) -> Optional[Entity]:
+        compclass = self.code_name_component_system.get_component_class_by_name(name)
+        if compclass is None:
+            return None
+        findstages: set[Entity] = self.get_group(Matcher(compclass)).entities
+        if len(findstages) > 0:
+            return next(iter(findstages))
+        return None
+    
+    #
+    def getstage(self, name: str) -> Optional[Entity]:
+        return self.get_by_code_name_component(name)
+        # for entity in self.get_group(Matcher(StageComponent)).entities:
+        #     comp = entity.get(StageComponent)
+        #     if comp.name == name:
+        #         return entity
+        # return None
+    
+    #
+    def getnpc(self, name: str) -> Optional[Entity]:
+        return self.get_by_code_name_component(name)
+        # for entity in self.get_group(Matcher(NPCComponent)).entities:
+        #     comp = entity.get(NPCComponent)
+        #     if comp.name == name:
+        #         return entity
+        # return None
+    
+    #
+    def getentity(self, name: str) -> Optional[Entity]:
+        return self.get_by_code_name_component(name)
+        # for entity in self.get_group(Matcher(PlayerComponent)).entities:
+        #     if entity.get(PlayerComponent).name == name:
+        #         return entity
+        # for entity in self.get_group(Matcher(NPCComponent)).entities:
+        #     if entity.get(NPCComponent).name == name:
+        #         return entity
+        # for entity in self.get_group(Matcher(StageComponent)).entities:
+        #     if entity.get(StageComponent).name == name:
+        #         return entity
+        # return None
     
     def get_npcs_in_stage(self, stage_name: str) -> list[Entity]:   
         npcs: list[Entity] = []
@@ -57,12 +79,7 @@ class ExtendedContext(Context):
             if comp.current_stage == stage_name:
                 npcs.append(entity)
         return npcs
-    
-    def getplayer(self) -> Optional[Entity]:
-        for entity in self.get_group(Matcher(PlayerComponent)).entities:
-            return entity
-        return None
-    
+        
     def get_stage_entity_by_uncertain_entity(self, entity: Entity) -> Optional[Entity]:
         if entity.has(StageComponent):
             return entity

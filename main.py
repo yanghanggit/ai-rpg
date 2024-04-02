@@ -3,7 +3,7 @@ from typing import Optional
 from loguru import logger
 import datetime
 from auxiliary.dialogue_rule import parse_command, parse_target_and_message_by_symbol
-from auxiliary.world_data_builder import WorldDataBuilder
+from auxiliary.builders import WorldDataBuilder
 from rpg_game import RPGGame 
 from player_proxy import PlayerProxy
 from gm_input import GMCommandPush, GMCommandAsk, GMCommandLogChatHistory

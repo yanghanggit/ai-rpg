@@ -1,5 +1,4 @@
-#from auxiliary.components import BackpackComponent
-from auxiliary.world_data_builder import Prop
+from auxiliary.base_data import PropData
 from loguru import logger
 import os
 import json
@@ -16,7 +15,7 @@ class BaseFile:
 ############################################################################################################
 ## 表达一个道具
 class PropFile(BaseFile):
-    def __init__(self, name: str, ownersname: str, prop: Prop) -> None:
+    def __init__(self, name: str, ownersname: str, prop: PropData) -> None:
         super().__init__(name, ownersname)
         self.prop = prop
 
@@ -102,8 +101,9 @@ class FileSystem:
         if findownersfile is None:
             logger.error(f"{from_owner}没有{propname}这个道具。")
             return
-        # 文件得拿走
+        # 文件得从管理数据结构中移除掉
         self.propfiles[from_owner].remove(findownersfile)
+        # 文件重新写入
         self.deletefile(from_owner, propname)
         self.add_prop_file(PropFile(propname, to_owner, findownersfile.prop))
     ################################################################################################################

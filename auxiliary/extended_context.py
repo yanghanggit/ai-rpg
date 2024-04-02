@@ -10,6 +10,7 @@ from auxiliary.memory_system import MemorySystem
 from typing import Optional, cast
 from auxiliary.agent_connect_system import AgentConnectSystem
 from auxiliary.code_name_component_system import CodeNameComponentSystem
+from loguru import logger
 
 class ExtendedContext(Context):
     #
@@ -123,3 +124,24 @@ class ExtendedContext(Context):
             return False
         npc_stage.directorscripts.append(content)
         return True
+    
+    #
+    def change_stage_tag_component(self, entity: Entity, from_stagename: str, to_stagename: str) -> None:
+        logger.warning(f"change_stage_tag: {from_stagename} -> {to_stagename}")
+        if from_stagename == to_stagename:
+            logger.error(f"stagename相同，无需修改: {from_stagename}")
+
+        from_stagetag_comp_class = self.code_name_component_system.get_stage_tag_component_class_by_name(from_stagename)
+        if from_stagetag_comp_class is not None and entity.has(from_stagetag_comp_class):
+            entity.remove(from_stagetag_comp_class)
+
+        to_stagetag_comp_class = self.code_name_component_system.get_stage_tag_component_class_by_name(to_stagename)
+        if to_stagetag_comp_class is None:
+            logger.error(f"stagetag component not found: {to_stagename}")
+            return
+        
+        if not entity.has(to_stagetag_comp_class):
+             entity.add(to_stagetag_comp_class, to_stagename)
+
+        
+       

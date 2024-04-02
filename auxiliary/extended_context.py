@@ -10,7 +10,7 @@ from auxiliary.components import (WorldComponent,
                         #BackpackComponent,
                         #SearchActionComponent
                         )
-from auxiliary.extract_md_content import wirte_content_into_md
+#from auxiliary.extract_md_content import wirte_content_into_md
 #from auxiliary.actor_action import ActorAction
 from auxiliary.file_system import FileSystem
 from auxiliary.memory_system import MemorySystem
@@ -133,9 +133,9 @@ class ExtendedContext(Context):
         return False
 
     ## 方便调用的存档方法
-    def savearchive(self, archive: str, filename: str) -> None:
-        wirte_content_into_md(archive, f"/savedData/{filename}.md")
-        raise NotImplementedError("legacy savearchive !!!!!")
+    # def savearchive(self, archive: str, filename: str) -> None:
+    #     wirte_content_into_md(archive, f"/savedData/{filename}.md")
+    #     raise NotImplementedError("legacy savearchive !!!!!")
 
     # # 向Entity的背包中添加道具
     # def put_unique_prop_into_backpack(self, entity: Entity, unique_prop_name: str) -> bool:

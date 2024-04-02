@@ -25,6 +25,7 @@ class DataSaveSystem(TearDownProcessor):
 ################################################################################################
     def make_world_archive(self) -> None:
         agent_connect_system = self.context.agent_connect_system
+        memory_system = self.context.memory_system
 
         entities: set[Entity] = self.context.get_group(Matcher(WorldComponent)).entities
         for entity in entities:
@@ -32,13 +33,16 @@ class DataSaveSystem(TearDownProcessor):
             archiveprompt = gen_world_archive_prompt(self.context)
             genarchive = agent_connect_system.request2(worldcomp.name, archiveprompt)
             if genarchive is not None:
-                self.context.savearchive(genarchive, worldcomp.name)
+                #self.context.savearchive(genarchive, worldcomp.name)
+                memory_system.overwritememory(worldcomp.name, genarchive)
             else:
                 chat_history = agent_connect_system.get_chat_history(worldcomp.name)
-                self.context.savearchive(self.archive_chat_history(chat_history), worldcomp.name)
+                #self.context.savearchive(self.archive_chat_history(chat_history), worldcomp.name)
+                memory_system.overwritememory(worldcomp.name, self.archive_chat_history(chat_history))
 ################################################################################################
     def make_stage_archive(self) -> None:
         agent_connect_system = self.context.agent_connect_system
+        memory_system = self.context.memory_system
 
         entites: set[Entity] = self.context.get_group(Matcher(StageComponent)).entities
         for entity in entites:
@@ -46,13 +50,16 @@ class DataSaveSystem(TearDownProcessor):
             archiveprompt = gen_stage_archive_prompt(self.context)
             genarchive = agent_connect_system.request2(stagecomp.name, archiveprompt)
             if genarchive is not None:
-                self.context.savearchive(genarchive, stagecomp.name)
+                #self.context.savearchive(genarchive, stagecomp.name)
+                memory_system.overwritememory(stagecomp.name, genarchive)
             else:
                 chat_history = agent_connect_system.get_chat_history(stagecomp.name)
-                self.context.savearchive(self.archive_chat_history(chat_history), stagecomp.name)
+                #self.context.savearchive(self.archive_chat_history(chat_history), stagecomp.name)
+                memory_system.overwritememory(stagecomp.name, self.archive_chat_history(chat_history))
 ################################################################################################
     def make_npc_archive(self) -> None:
         agent_connect_system = self.context.agent_connect_system
+        memory_system = self.context.memory_system
 
         entities: set[Entity] = self.context.get_group(Matcher(NPCComponent)).entities
         for entity in entities:
@@ -60,10 +67,12 @@ class DataSaveSystem(TearDownProcessor):
             archiveprompt = gen_npc_archive_prompt(self.context)
             genarchive = agent_connect_system.request2(npccomp.name, archiveprompt)
             if genarchive is not None:
-                self.context.savearchive(genarchive, npccomp.name)
+                #self.context.savearchive(genarchive, npccomp.name)
+                memory_system.overwritememory(npccomp.name, genarchive)
             else:
                 chat_history = agent_connect_system.get_chat_history(npccomp.name)
-                self.context.savearchive(self.archive_chat_history(chat_history), npccomp.name)
+                #self.context.savearchive(self.archive_chat_history(chat_history), npccomp.name)
+                memory_system.overwritememory(npccomp.name, self.archive_chat_history(chat_history))
 ################################################################################################
     def archive_chat_history(self, chat_history: List[Union[HumanMessage, AIMessage]]) -> str:
         if len(chat_history) == 0:

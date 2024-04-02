@@ -31,17 +31,18 @@ class DeadActionSystem(ExecuteProcessor):
 
     def save_npc(self, entity: Entity) -> None:
         agent_connect_system = self.context.agent_connect_system
+        memory_system = self.context.memory_system
         if entity.has(NPCComponent):
             npccomp: NPCComponent = entity.get(NPCComponent)
             # 添加记忆
             mem_before_death = npc_memory_before_death(self.context)
             self.context.add_agent_memory(entity, mem_before_death)
             # 推理死亡，并且进行存档
-            archive_prompt = gen_npc_archive_prompt(self.context)
-            archive = agent_connect_system.request2(npccomp.name, archive_prompt)
-
+            archiveprompt = gen_npc_archive_prompt(self.context)
+            archive = agent_connect_system.request2(npccomp.name, archiveprompt)
             if archive is not None:
-                self.context.savearchive(archive, npccomp.name)
+                #self.context.savearchive(archive, npccomp.name)
+                memory_system.overwritememory(npccomp.name, archive)
         else:
             raise ValueError("DeadActionSystem: 死亡的不是NPC！")
         

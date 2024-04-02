@@ -71,6 +71,19 @@ class MemorySystem:
     def debug_show_all_memory(self) -> None:
         for who, mem in self.memorydict.items():
             logger.debug(f"[{who}]的记忆为：\n{mem}")
+
+    ##强制写入
+    def overwritememory(self, who: str, content: str) -> None:
+        mempath = self.memorymdfile(who)
+        try:
+            if not os.path.exists(mempath):
+                os.makedirs(os.path.dirname(mempath), exist_ok=True)
+                with open(mempath, "w", encoding="utf-8") as f:
+                    f.write(content)
+                    logger.debug(f"[{who}]写入了记忆。")
+        except Exception as e:
+            logger.error(f"[{who}]写入记忆失败。")
+            return
         
 
 

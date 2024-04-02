@@ -20,17 +20,18 @@ class AgentConnectSystem:
         logger.debug(f"register_actor_agent: {name} is registered. url = {url}")
 
     ##
+    def debug_show_all_agents(self) -> None:
+        logger.debug(f"AgentConnectSystem: {self.name} has {len(self.memorydict)} actor agents.")
+        for name, agent in self.memorydict.items():
+            logger.debug(f"AgentConnectSystem: {name} = {agent}")
+
+    ##
     def connect_actor_agent(self, name: str) -> None:
         if name in self.memorydict:
             #self.memorydict[name].connect()
             logger.debug(f"connect_actor_agent: {name} is connected.")
         else:
             logger.error(f"connect_actor_agent: {name} is not registered.")
-    ##
-    def debug_show_all_agents(self) -> None:
-        logger.debug(f"AgentConnectSystem: {self.name} has {len(self.memorydict)} actor agents.")
-        for name, agent in self.memorydict.items():
-            logger.debug(f"AgentConnectSystem: {name} = {agent}")
 
     ##
     def request2(self, name: str, prompt: str) -> Optional[str]:

@@ -18,7 +18,7 @@ class FightActionSystem(ReactiveProcessor):
         return {Matcher(FightActionComponent): GroupEvent.ADDED}
 
     def filter(self, entity: Entity) -> bool:
-        return entity.has(FightActionComponent) and entity.has(SimpleRPGRoleComponent)
+        return entity.has(FightActionComponent)
 
     def react(self, entities: list[Entity]) -> None:
         logger.debug("<<<<<<<<<<<<<  FightActionSystem  >>>>>>>>>>>>>>>>>")
@@ -31,11 +31,14 @@ class FightActionSystem(ReactiveProcessor):
             entity.remove(FightActionComponent)
  ######################################################################################################################################################   
     def handle(self, entity: Entity) -> None:
+        rpgcomp: SimpleRPGRoleComponent = entity.get(SimpleRPGRoleComponent)
+        if rpgcomp is None:
+            logger.warning(f"FightActionSystem: 没有SimpleRPGRoleComponent,本次攻击无效.")
+            return
 
         context = self.context
         fightcomp: FightActionComponent = entity.get(FightActionComponent)
         action: ActorAction = fightcomp.action
-        rpgcomp: SimpleRPGRoleComponent = entity.get(SimpleRPGRoleComponent)
         for value in action.values:
 
             findtarget = context.get_by_code_name_component(value)

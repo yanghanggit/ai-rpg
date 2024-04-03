@@ -12,8 +12,6 @@ from auxiliary.actor_action import ActorPlan
 from auxiliary.prompt_maker import stage_plan_prompt
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger 
-from auxiliary.actor_agent import ActorAgent
-from auxiliary.agent_connect_system import AgentConnectSystem
 
 ####################################################################################################    
 class StagePlanSystem(ExecuteProcessor):
@@ -45,7 +43,7 @@ class StagePlanSystem(ExecuteProcessor):
         stagecomp: StageComponent = entity.get(StageComponent)
         ##
         try:
-            response = agent_connect_system.request2(stagecomp.name, prompt)
+            response = agent_connect_system.request(stagecomp.name, prompt)
             if response is None:
                 logger.error(f"StagePlanSystem: response is None or empty")
                 return None

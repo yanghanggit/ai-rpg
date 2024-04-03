@@ -1,6 +1,4 @@
-"""
-最干净与基础的数据结构
-"""
+##干净与基础的数据结构
 
 class StageConditionData:
     def __init__(self, name: str, type: str, prop_name: str) -> None:

@@ -41,7 +41,7 @@ class DeadActionSystem(ExecuteProcessor):
             self.context.add_agent_memory(entity, mem_before_death)
             # 推理死亡，并且进行存档
             archiveprompt = gen_npc_archive_prompt(self.context)
-            archive = agent_connect_system.request2(npccomp.name, archiveprompt)
+            archive = agent_connect_system.request(npccomp.name, archiveprompt)
             if archive is not None:
                 # 存档!
                 memory_system.overwritememory(npccomp.name, archive)

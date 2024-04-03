@@ -1,5 +1,3 @@
-
-from typing import Optional
 from entitas import Entity, Matcher, InitializeProcessor # type: ignore
 from auxiliary.components import WorldComponent, StageComponent, NPCComponent, PlayerComponent
 from auxiliary.extract_md_content import extract_md_content
@@ -65,19 +63,19 @@ class InitSystem(InitializeProcessor):
             worldcomp: WorldComponent = world.get(WorldComponent)
             worldmemory = memory_system.getmemory(worldcomp.name)
             readarchprompt = read_archives_when_system_init_prompt(worldmemory, world, self.context)
-            agent_connect_system.request2(worldcomp.name, readarchprompt)
+            agent_connect_system.request(worldcomp.name, readarchprompt)
         ##
         stages: set[Entity] = self.context.get_group(Matcher(StageComponent)).entities
         for stage in stages:
             stagecomp: StageComponent = stage.get(StageComponent)
             stagememory = memory_system.getmemory(stagecomp.name)
             readarchprompt = read_archives_when_system_init_prompt(stagememory, stage, self.context)
-            agent_connect_system.request2(stagecomp.name, readarchprompt)
+            agent_connect_system.request(stagecomp.name, readarchprompt)
         ##
         npcs: set[Entity] = self.context.get_group(Matcher(all_of=[NPCComponent], none_of=[PlayerComponent])).entities
         for npc in npcs:
             npccomp: NPCComponent = npc.get(NPCComponent)
             npcmemory = memory_system.getmemory(npccomp.name)
             readarchprompt = read_archives_when_system_init_prompt(npcmemory, npc, self.context)
-            agent_connect_system.request2(npccomp.name, readarchprompt)
+            agent_connect_system.request(npccomp.name, readarchprompt)
 ###############################################################################################################################################

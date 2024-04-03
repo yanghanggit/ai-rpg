@@ -97,18 +97,12 @@ class RPGGame:
         self.create_player_npc_entities(worlddata.player_npc_builder)
         self.create_npc_entities(worlddata.npc_buidler)
         self.add_code_name_component_to_world_and_npcs_when_build()
-        ### 第三步骤，创建stage
+
+        ### 第三步，创建stage
         self.create_stage_entities(worlddata.stage_builder)
+        
         ## 第四步，最后处理因为需要上一阶段的注册流程
         self.add_code_name_component_stages_when_build()
-
-        ## test
-        #老猎人隐居的小木屋
-        # compclass = self.extendedcontext.code_name_component_system.get_component_class_by_name("老猎人隐居的小木屋")
-        # findstages = self.extendedcontext.get_group(Matcher(compclass)).entities
-        # for stageentity in findstages:
-        #     stagecomp: StageComponent = stageentity.get(StageComponent)
-        #     logger.debug(f"找到stage：{stagecomp.name}")
 
 ###############################################################################################################################################
     def execute(self) -> None:

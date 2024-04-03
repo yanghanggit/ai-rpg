@@ -1,14 +1,11 @@
 from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity #type: ignore
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.components import (SearchActionComponent, 
-                        # UniquePropComponent, 
-                        # PropComponent,
                         NPCComponent, 
                         StageComponent)
 from auxiliary.actor_action import ActorAction
 from auxiliary.prompt_maker import unique_prop_taken_away
 from auxiliary.print_in_color import Color
-#from typing import Optional
 from loguru import logger
 from director_component import DirectorComponent
 from director_event import SearchFailedEvent

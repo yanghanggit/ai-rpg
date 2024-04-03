@@ -14,7 +14,6 @@ from auxiliary.actor_action import ActorPlan
 from auxiliary.prompt_maker import npc_plan_prompt
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
-from auxiliary.agent_connect_system import AgentConnectSystem
 
 class NPCPlanSystem(ExecuteProcessor):
 
@@ -46,7 +45,7 @@ class NPCPlanSystem(ExecuteProcessor):
         npccomp: NPCComponent = entity.get(NPCComponent)
 
         try:
-            response = agent_connect_system.request2(npccomp.name, prompt)
+            response = agent_connect_system.request(npccomp.name, prompt)
             if response is None:
                 logger.warning("Agent request is None.如果不是默认Player可能需要检查配置。")
                 return

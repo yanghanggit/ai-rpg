@@ -28,17 +28,17 @@ class AgentConnectSystem:
     ##
     def connect_actor_agent(self, name: str) -> None:
         if name in self.memorydict:
-            #self.memorydict[name].connect()
+            self.memorydict[name].connect()
             logger.debug(f"connect_actor_agent: {name} is connected.")
         else:
             logger.error(f"connect_actor_agent: {name} is not registered.")
 
     ##
-    def request2(self, name: str, prompt: str) -> Optional[str]:
+    def request(self, name: str, prompt: str) -> Optional[str]:
         if name in self.memorydict:
             logger.debug(f"request: {name} is requested.{prompt}")
-            #return self.memorydict[name].request(prompt)
-            return None
+            return self.memorydict[name].request(prompt)
+            #return None
         logger.error(f"request: {name} is not registered.")
         return None
 
@@ -70,6 +70,7 @@ class AgentConnectSystem:
             ## 是AI的回答，需要删除AI的回答和人的问题
             chat_history.pop()
         else:
+            ## 最后一次不是AI的回答，就跳出，因为可能是有问题的。ai还没有回答，只有人的问题
             return
 
         ## 删除人的问题，直到又碰见AI的回答，就跳出        

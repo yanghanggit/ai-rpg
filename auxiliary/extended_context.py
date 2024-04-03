@@ -44,46 +44,20 @@ class ExtendedContext(Context):
     #
     def getstage(self, name: str) -> Optional[Entity]:
         return self.get_by_code_name_component(name)
-        # for entity in self.get_group(Matcher(StageComponent)).entities:
-        #     comp = entity.get(StageComponent)
-        #     if comp.name == name:
-        #         return entity
-        # return None
     
     #
     def getnpc(self, name: str) -> Optional[Entity]:
         return self.get_by_code_name_component(name)
-        # for entity in self.get_group(Matcher(NPCComponent)).entities:
-        #     comp = entity.get(NPCComponent)
-        #     if comp.name == name:
-        #         return entity
-        # return None
     
     #
     def getentity(self, name: str) -> Optional[Entity]:
         return self.get_by_code_name_component(name)
-        # for entity in self.get_group(Matcher(PlayerComponent)).entities:
-        #     if entity.get(PlayerComponent).name == name:
-        #         return entity
-        # for entity in self.get_group(Matcher(NPCComponent)).entities:
-        #     if entity.get(NPCComponent).name == name:
-        #         return entity
-        # for entity in self.get_group(Matcher(StageComponent)).entities:
-        #     if entity.get(StageComponent).name == name:
-        #         return entity
-        # return None
     
     def npcs_in_this_stage(self, stage_name: str) -> list[Entity]:   
         # 测试！！！
         stage_tag_component = self.code_name_component_system.get_stage_tag_component_class_by_name(stage_name)
         entities: set[Entity] =  self.get_group(Matcher(all_of=[NPCComponent, stage_tag_component])).entities
         return list(entities)
-        # npcs: list[Entity] = []
-        # for entity in self.get_group(Matcher(NPCComponent)).entities:
-        #     comp = entity.get(NPCComponent)
-        #     if comp.current_stage == stage_name:
-        #         npcs.append(entity)
-        # return npcs
 
     def get_stage_entity_by_uncertain_entity(self, entity: Entity) -> Optional[Entity]:
         if entity.has(StageComponent):
@@ -92,9 +66,6 @@ class ExtendedContext(Context):
         elif entity.has(NPCComponent):
             npccomp: NPCComponent = entity.get(NPCComponent)
             return self.getstage(npccomp.current_stage)
-            # for stage in self.get_group(Matcher(StageComponent)).entities:
-            #     if stage.get(StageComponent).name == current_stage_name:
-            #         return stage
         raise ValueError("实体不是NPC或者Stage")
         return None
 

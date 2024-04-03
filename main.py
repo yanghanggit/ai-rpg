@@ -7,7 +7,13 @@ from auxiliary.builders import WorldDataBuilder
 from rpg_game import RPGGame 
 from player_proxy import PlayerProxy
 from gm_input import GMCommandPush, GMCommandAsk, GMCommandLogChatHistory
-from player_input import PlayerCommandNPC, PlayerCommandAttack, PlayerCommandLeaveFor, PlayerCommandBroadcast, PlayerCommandSpeak, PlayerCommandWhisper, PlayerCommandSearch
+from player_input import (PlayerCommandNPC, 
+                          PlayerCommandAttack, 
+                          PlayerCommandLeaveFor, 
+                          PlayerCommandBroadcast, 
+                          PlayerCommandSpeak, 
+                          PlayerCommandWhisper, 
+                          PlayerCommandSearch)
 
 
 ### 临时的，写死创建budding_world

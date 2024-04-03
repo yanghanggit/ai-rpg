@@ -6,10 +6,8 @@ from auxiliary.components import (
     StageComponent,
     WorldComponent,
 )
-#from auxiliary.actor_agent import ActorAgent
 from auxiliary.prompt_maker import gen_npc_archive_prompt, gen_stage_archive_prompt, gen_world_archive_prompt
 from auxiliary.extended_context import ExtendedContext
-#from auxiliary.agent_connect_system import AgentConnectSystem
 
 ################################################################################################
 class DataSaveSystem(TearDownProcessor):
@@ -31,7 +29,7 @@ class DataSaveSystem(TearDownProcessor):
         for entity in entities:
             worldcomp: WorldComponent = entity.get(WorldComponent)
             archiveprompt = gen_world_archive_prompt(self.context)
-            genarchive = agent_connect_system.request2(worldcomp.name, archiveprompt)
+            genarchive = agent_connect_system.request(worldcomp.name, archiveprompt)
             if genarchive is not None:
                 #self.context.savearchive(genarchive, worldcomp.name)
                 memory_system.overwritememory(worldcomp.name, genarchive)
@@ -48,7 +46,7 @@ class DataSaveSystem(TearDownProcessor):
         for entity in entites:
             stagecomp: StageComponent = entity.get(StageComponent)
             archiveprompt = gen_stage_archive_prompt(self.context)
-            genarchive = agent_connect_system.request2(stagecomp.name, archiveprompt)
+            genarchive = agent_connect_system.request(stagecomp.name, archiveprompt)
             if genarchive is not None:
                 #self.context.savearchive(genarchive, stagecomp.name)
                 memory_system.overwritememory(stagecomp.name, genarchive)
@@ -65,7 +63,7 @@ class DataSaveSystem(TearDownProcessor):
         for entity in entities:
             npccomp: NPCComponent = entity.get(NPCComponent)
             archiveprompt = gen_npc_archive_prompt(self.context)
-            genarchive = agent_connect_system.request2(npccomp.name, archiveprompt)
+            genarchive = agent_connect_system.request(npccomp.name, archiveprompt)
             if genarchive is not None:
                 #self.context.savearchive(genarchive, npccomp.name)
                 memory_system.overwritememory(npccomp.name, genarchive)

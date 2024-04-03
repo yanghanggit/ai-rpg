@@ -3,7 +3,6 @@ from auxiliary.components import FightActionComponent, SimpleRPGRoleComponent, D
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.actor_action import ActorAction
 from auxiliary.prompt_maker import kill_someone, attack_someone
-from typing import Optional
 from loguru import logger
 from director_component import DirectorComponent
 from director_event import KillSomeoneEvent, AttackSomeoneEvent

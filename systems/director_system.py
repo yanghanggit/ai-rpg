@@ -1,14 +1,10 @@
 from entitas import Entity, Matcher, ExecuteProcessor #type: ignore
 from auxiliary.components import StageComponent, NPCComponent
-from typing import List
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.prompt_maker import confirm_everything_after_director_add_new_memories_prompt
 from loguru import logger
 from director_component import DirectorComponent
 
-# matcher = Matcher(all_of=[CompA, CompB, CompC],
-#                   any_of=[CompD, CompE],
-#                   none_of=[CompF])
 class DirectorSystem(ExecuteProcessor):
 
     def __init__(self, context: ExtendedContext) -> None:

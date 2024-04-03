@@ -173,7 +173,7 @@ class RPGGame:
             res.append(playernpcentity)
 
             #必要组件
-            playernpcentity.add(PlayerComponent, "player") 
+            playernpcentity.add(PlayerComponent, "The game has not been controlled by the player after it is started.") ##此时没有被玩家控制
             playernpcentity.add(SimpleRPGRoleComponent, builddata.name, 10000, 10000, 10, "")
             playernpcentity.add(NPCComponent, builddata.name, "")
             

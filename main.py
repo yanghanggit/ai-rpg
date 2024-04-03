@@ -7,7 +7,7 @@ from auxiliary.builders import WorldDataBuilder
 from rpg_game import RPGGame 
 from player_proxy import PlayerProxy
 from gm_input import GMCommandPush, GMCommandAsk, GMCommandLogChatHistory
-from player_input import PlayerCommandBeWho, PlayerCommandAttack, PlayerCommandLeaveFor, PlayerCommandBroadcast, PlayerCommandSpeak, PlayerCommandWhisper, PlayerCommandSearch
+from player_input import PlayerCommandNPC, PlayerCommandAttack, PlayerCommandLeaveFor, PlayerCommandBroadcast, PlayerCommandSpeak, PlayerCommandWhisper, PlayerCommandSearch
 
 
 ### 临时的，写死创建budding_world
@@ -52,6 +52,10 @@ def main() -> None:
     rpggame.createworld(worlddata)
     playproxy = PlayerProxy("yanghang")
 
+    # 测试的代码，上来就控制一个NPC目标，先写死"无名旅人"
+    playerstartcmd = PlayerCommandNPC("/player-start-game", rpggame, playproxy, "无名旅人")
+    playerstartcmd.execute()
+
     while True:
         usr_input = input("[user input]: ")
         if "/quit" in usr_input:
@@ -93,7 +97,7 @@ def main() -> None:
             command = "/who"
             who = parse_command(usr_input, command)
             ###
-            playercommandbewho = PlayerCommandBeWho("/who", rpggame, playproxy, who)
+            playercommandbewho = PlayerCommandNPC("/who", rpggame, playproxy, who)
             playercommandbewho.execute()
             ###            
             logger.debug(f"{'=' * 50}")

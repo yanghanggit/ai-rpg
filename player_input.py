@@ -18,42 +18,42 @@ from player_proxy import PlayerProxy
 ####################################################################################################################################
 ####################################################################################################################################
 class PlayerInput:
-
-    def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy) -> None:
-        self.name: str = name
+    def __init__(self, inputname: str, game: RPGGame, playerproxy: PlayerProxy) -> None:
+        self.inputname: str = inputname
         self.game: RPGGame = game
         self.playerproxy: PlayerProxy = playerproxy
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class PlayerCommandBeWho(PlayerInput):
+class PlayerCommandNPC(PlayerInput):
 
     def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, targetname: str) -> None:
         super().__init__(name, game, playerproxy)
         self.targetname = targetname
 
     def execute(self) -> None:
+
         context = self.game.extendedcontext
         name = self.targetname
         playname = self.playerproxy.name
 
         playerentity = context.get1player()
         if playerentity is not None:
-            playercomp = playerentity.get(PlayerComponent)
-            logger.debug(f"debug_be_who current player is : {playercomp.name}")
+            playercomp: PlayerComponent = playerentity.get(PlayerComponent)
+            logger.debug(f"{self.inputname}, current player name: {playercomp.name}")
             playerentity.remove(PlayerComponent)
 
         entity = context.getnpc(name)
         if entity is not None:
-            npccomp = entity.get(NPCComponent)
-            logger.debug(f"debug_be_who => : {npccomp.name} is {playname}")
+            npccomp: NPCComponent = entity.get(NPCComponent)
+            logger.debug(f"{self.inputname}: [{npccomp.name}] is now controlled by the player [{playname}]")
             entity.add(PlayerComponent, playname)
             return
         
         entity = context.getstage(name)
         if entity is not None:
-            stagecomp = entity.get(StageComponent)
-            logger.debug(f"debug_be_who => : {stagecomp.name} is {playname}")
+            stagecomp: StageComponent = entity.get(StageComponent)
+            logger.debug(f"{self.inputname}: [{stagecomp.name}] is now controlled by the player [{playname}]")
             entity.add(PlayerComponent, playname)
             return
 ####################################################################################################################################

@@ -6,30 +6,32 @@ from auxiliary.components import (DeadActionComponent,
                         DestroyComponent,
                         NPCComponent)
 from auxiliary.extended_context import ExtendedContext
-from auxiliary.actor_agent import ActorAgent
 from auxiliary.prompt_maker import gen_npc_archive_prompt, npc_memory_before_death
 from loguru import logger
-from auxiliary.agent_connect_system import AgentConnectSystem
+from auxiliary.actor_action import ActorAction
 
 
 class DeadActionSystem(ExecuteProcessor):
     
+########################################################################################################################################################################
     def __init__(self, context: ExtendedContext) -> None:
         self.context = context
-
+########################################################################################################################################################################
     def execute(self) -> None:
         logger.debug("<<<<<<<<<<<<<  DeadActionSystem  >>>>>>>>>>>>>>>>>")
         # 如果死了先存档
-        self.handle_save_when_npc_dead()
+        self.must_save_archive()
         # 然后处理剩下的事情，例如关闭一些行为与准备销毁组件
-        self.handle_after_npc_dead()
-
-    def handle_save_when_npc_dead(self) -> None:
+        self.some_actions_need_to_be_removed()
+        # 最后销毁
+        self.must_destory()
+########################################################################################################################################################################
+    def must_save_archive(self) -> None:
          entities:set[Entity] = self.context.get_group(Matcher(DeadActionComponent)).entities
          for entity in entities:
-            self.save_npc(entity)
-
-    def save_npc(self, entity: Entity) -> None:
+            self.savenpc(entity)
+########################################################################################################################################################################
+    def savenpc(self, entity: Entity) -> None:
         agent_connect_system = self.context.agent_connect_system
         memory_system = self.context.memory_system
         if entity.has(NPCComponent):
@@ -41,12 +43,12 @@ class DeadActionSystem(ExecuteProcessor):
             archiveprompt = gen_npc_archive_prompt(self.context)
             archive = agent_connect_system.request2(npccomp.name, archiveprompt)
             if archive is not None:
-                #self.context.savearchive(archive, npccomp.name)
+                # 存档!
                 memory_system.overwritememory(npccomp.name, archive)
         else:
-            raise ValueError("DeadActionSystem: 死亡的不是NPC！")
-        
-    def handle_after_npc_dead(self) -> None:
+            raise ValueError("DeadActionSystem: 死亡的不是NPC！，能把场景打死算你厉害")
+########################################################################################################################################################################    
+    def some_actions_need_to_be_removed(self) -> None:
         entities:set[Entity] = self.context.get_group(Matcher(DeadActionComponent)).entities
         #核心处理，如果死了就要处理下面的组件
         for entity in entities:
@@ -55,13 +57,20 @@ class DeadActionSystem(ExecuteProcessor):
                 entity.remove(SearchActionComponent)
             #死了的不允许再离开
             if entity.has(LeaveForActionComponent):
-                entity.remove(LeaveForActionComponent)
+                entity.remove(LeaveForActionComponent)   
+########################################################################################################################################################################  
+    def must_destory(self) -> None:
+        entities:set[Entity] = self.context.get_group(Matcher(DeadActionComponent)).entities
+        #核心处理，如果死了就要处理下面的组件
+        for entity in entities:
+            deadcomp: DeadActionComponent = entity.get(DeadActionComponent)
+            action: ActorAction = deadcomp.action
             #死了的需要准备销毁
             if not entity.has(DestroyComponent):
-                entity.add(DestroyComponent, "why?")
+                entity.add(DestroyComponent, action.name) ### 这里只需要名字，不需要values，谁造成了你的死亡
             else:
                 raise ValueError("DeadActionSystem: 已经有销毁组件了！")
-        
+########################################################################################################################################################################
             
 
         

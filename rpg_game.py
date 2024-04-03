@@ -174,7 +174,7 @@ class RPGGame:
 
             #必要组件
             playernpcentity.add(PlayerComponent, "The game has not been controlled by the player after it is started.") ##此时没有被玩家控制
-            playernpcentity.add(SimpleRPGRoleComponent, builddata.name, 10000, 10000, 10, "")
+            playernpcentity.add(SimpleRPGRoleComponent, builddata.name, 10000, 10000, 10)
             playernpcentity.add(NPCComponent, builddata.name, "")
             
             #重构
@@ -210,7 +210,7 @@ class RPGGame:
 
             # 必要组件
             npcentity.add(NPCComponent, builddata.name, "")
-            npcentity.add(SimpleRPGRoleComponent, builddata.name, 100, 100, 10, "")
+            npcentity.add(SimpleRPGRoleComponent, builddata.name, 100, 100, 10)
        
             #重构
             agent_connect_system.register_actor_agent(builddata.name, builddata.url)
@@ -246,7 +246,7 @@ class RPGGame:
             #必要组件
             stageentity.add(StageComponent, builddata.name, [])
             stageentity.add(DirectorComponent, builddata.name) ###
-            stageentity.add(SimpleRPGRoleComponent, builddata.name, 10000, 10000, 1, "")
+            stageentity.add(SimpleRPGRoleComponent, builddata.name, 10000, 10000, 1)
             
             ## 重新设置npc和stage的关系
             for npc in builddata.npcs:

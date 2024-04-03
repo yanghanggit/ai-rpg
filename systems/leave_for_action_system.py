@@ -1,13 +1,8 @@
-
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
 from auxiliary.components import (LeaveForActionComponent, 
                         NPCComponent, 
-                        # StageComponent, 
-                        # SimpleRPGRoleComponent,
-                        #BackpackComponent,
                         StageEntryConditionComponent,
-                        StageExitConditionComponent
-                        )
+                        StageExitConditionComponent)
 from auxiliary.actor_action import ActorAction
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.print_in_color import Color
@@ -15,13 +10,16 @@ from auxiliary.prompt_maker import fail_to_enter_stage, fail_to_exit_stage, npc_
 from loguru import logger
 from director_component import DirectorComponent
 from director_event import LeaveForStageEvent, EnterStageEvent, FailEnterStageEvent, FailExitStageEvent
+from typing import cast
+
+
 ###############################################################################################################################################
 class LeaveActionHelper:
 
     def __init__(self, context: ExtendedContext, who_wana_leave: Entity, target_stage_name: str) -> None:
         self.context = context
         self.who_wana_leave = who_wana_leave
-        self.current_stage_name = who_wana_leave.get(NPCComponent).current_stage
+        self.current_stage_name = cast(NPCComponent, who_wana_leave.get(NPCComponent)).current_stage
         self.currentstage = self.context.getstage(self.current_stage_name)
         self.target_stage_name = target_stage_name
         self.target_stage = self.context.getstage(target_stage_name)

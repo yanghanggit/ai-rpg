@@ -18,49 +18,66 @@ class FightActionSystem(ReactiveProcessor):
         return {Matcher(FightActionComponent): GroupEvent.ADDED}
 
     def filter(self, entity: Entity) -> bool:
-        return entity.has(FightActionComponent)
+        return entity.has(FightActionComponent) and entity.has(SimpleRPGRoleComponent)
 
     def react(self, entities: list[Entity]) -> None:
         logger.debug("<<<<<<<<<<<<<  FightActionSystem  >>>>>>>>>>>>>>>>>")
         ## 核心处理
         for entity in entities:
-            self.handlefight(entity)
+            self.handle(entity)
 
         ### 必须删除！！！！！！！！！！！！！！！！！！！！！！！！！！
         for entity in entities:
             entity.remove(FightActionComponent)
-        
-    def handlefight(self, entity: Entity) -> None:
-        comp: FightActionComponent = entity.get(FightActionComponent)
-        logger.info(f"FightActionSystem: {comp.action}")
-        action: ActorAction = comp.action
-        #stage: StageComponent = self.context.get_stagecomponent_by_uncertain_entity(entity)
+ ######################################################################################################################################################   
+    def handle(self, entity: Entity) -> None:
 
-        attacker: Optional[Entity] = self.context.getentity(action.name)
-        if attacker is None:
-            logger.warning(f"攻击者{action.name}本次攻击出现错误,原因是attacker对象为None,本次攻击无效.")
-            return
+        context = self.context
+        fightcomp: FightActionComponent = entity.get(FightActionComponent)
+        action: ActorAction = fightcomp.action
+        rpgcomp: SimpleRPGRoleComponent = entity.get(SimpleRPGRoleComponent)
         for value in action.values:
-            attacked: Optional[Entity] = self.context.getnpc(value)
-            if attacked is None:
-                logger.warning(f"攻击者{action.name}本次攻击出现错误,原因是attacked对象为None,本次攻击无效.")
-                return
-            if attacker.has(SimpleRPGRoleComponent) and attacked.has(SimpleRPGRoleComponent):
-                attacker_comp: SimpleRPGRoleComponent = attacker.get(SimpleRPGRoleComponent)
-                attacked_comp: SimpleRPGRoleComponent = attacked.get(SimpleRPGRoleComponent)
-                attack_result = attacked_comp.hp - attacker_comp.attack
-                attacked.replace(SimpleRPGRoleComponent,attacked_comp.name,100,attack_result,20,"")
-                if attack_result <= 0:
-                    if not attacked.has(DeadActionComponent):
-                        attacked.add(DeadActionComponent, action)
-                    self.context.legacy_add_content_to_director_script_by_entity(attacker, kill_someone(action.name, value))
-                    self.add_kill_someone_event_to_director(attacker, value)
-                else:
-                    self.context.legacy_add_content_to_director_script_by_entity(attacker, attack_someone(action.name, value, attacker_comp.attack, attacked_comp.hp, attacked_comp.maxhp))
-                    self.add_attack_someone_event_to_director(attacker, value, attacker_comp.attack, attacked_comp.hp, attacked_comp.maxhp)
-            else:
-                logger.warning("attacker or attacked has no simple rpg role comp.")
 
+            findtarget = context.get_by_code_name_component(value)
+            if findtarget is None:
+                logger.warning(f"攻击者{action.name}意图攻击的对象{value}无法被找到,本次攻击无效.")
+                continue
+
+            if not findtarget.has(SimpleRPGRoleComponent):
+                logger.warning(f"攻击者{action.name}意图攻击的对象{value}没有SimpleRPGRoleComponent,本次攻击无效.")
+                continue
+            
+            #目标拿出来
+            targetsrpgcomp: SimpleRPGRoleComponent = findtarget.get(SimpleRPGRoleComponent)
+
+            #简单的战斗计算，简单的血减掉伤害
+            hp = targetsrpgcomp.hp
+            damage = rpgcomp.attack
+            # 必须控制在0和最大值之间
+            lefthp = hp - damage
+            lefthp = max(0, min(lefthp, targetsrpgcomp.maxhp))
+
+            #结果修改
+            findtarget.replace(SimpleRPGRoleComponent, targetsrpgcomp.name, targetsrpgcomp.maxhp, lefthp, targetsrpgcomp.attack)
+
+            ##死亡是关键
+            isdead = (lefthp <= 0)
+
+            ## 死亡组件系统必须要添加，单独处理，很重要
+            if isdead:
+                if not findtarget.has(DeadActionComponent):
+                    #复制一个，不用以前的，怕GC不掉
+                    findtarget.add(DeadActionComponent, ActorAction(action.name, action.actionname, action.values)) 
+
+            ## 导演系统，单独处理，有旧的代码
+            if isdead:
+                self.context.legacy_add_content_to_director_script_by_entity(entity, kill_someone(action.name, value))
+                self.add_kill_someone_event_to_director(entity, value)
+            else:
+                self.context.legacy_add_content_to_director_script_by_entity(entity, attack_someone(action.name, value, rpgcomp.attack, targetsrpgcomp.hp, targetsrpgcomp.maxhp))
+                self.add_attack_someone_event_to_director(entity, value, rpgcomp.attack, targetsrpgcomp.hp, targetsrpgcomp.maxhp)
+                
+######################################################################################################################################################
     ## 重构事件
     def add_kill_someone_event_to_director(self, entity: Entity, targetname: str) -> None:
         if entity is None or not entity.has(SimpleRPGRoleComponent):
@@ -74,10 +91,9 @@ class FightActionSystem(ReactiveProcessor):
         rpgname: str = rpgcomp.name
         #
         directorcomp: DirectorComponent = stageentity.get(DirectorComponent)
-        #director: Director = directorcomp.director
         killsomeoneevent = KillSomeoneEvent(rpgname, targetname)
         directorcomp.addevent(killsomeoneevent)
-
+######################################################################################################################################################
     ## 重构事件
     def add_attack_someone_event_to_director(self, entity: Entity, targetname: str, damage: int, curhp: int, maxhp: int) -> None:
         if entity is None or not entity.has(SimpleRPGRoleComponent):
@@ -91,8 +107,7 @@ class FightActionSystem(ReactiveProcessor):
         rpgname: str = rpgcomp.name
         #
         directorcomp: DirectorComponent = stageentity.get(DirectorComponent)
-        #director: Director = directorcomp.director
         attacksomeoneevent = AttackSomeoneEvent(rpgname, targetname, damage, curhp, maxhp)
         directorcomp.addevent(attacksomeoneevent)
-
+######################################################################################################################################################
        

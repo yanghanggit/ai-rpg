@@ -65,11 +65,15 @@ class FightActionSystem(ReactiveProcessor):
             ##死亡是关键
             isdead = (lefthp <= 0)
 
-            ## 死亡夺取唯一性道具
+            ## 死后处理大流程，step1——道具怎么办？后续可以封装的复杂一些: 夺取唯一性道具
             if isdead:  
                 self.if_target_is_killed_the_unique_prop_will_be_taken_away(entity, findtarget)
 
-            ## 死亡组件系统必须要添加，单独处理，很重要
+            ## 可以加一些别的。。。。。。。。。。。。
+            ## 比如杀人多了会被世界管理员记住——你是大坏蛋
+            ## 。。。。。。。。。。。。。。。。。。。
+
+            ## 死后处理大流程，step最后——死亡组件系统必须要添加
             if isdead:
                 if not findtarget.has(DeadActionComponent):
                     #复制一个，不用以前的，怕GC不掉
@@ -116,10 +120,10 @@ class FightActionSystem(ReactiveProcessor):
         attacksomeoneevent = AttackSomeoneEvent(rpgname, targetname, damage, curhp, maxhp)
         directorcomp.addevent(attacksomeoneevent)
 ######################################################################################################################################################
+    ## 杀死对方就直接夺取唯一性道具。
     def if_target_is_killed_the_unique_prop_will_be_taken_away(self, thekiller: Entity, whoiskilled: Entity) -> None:
-         # 在本场景搜索
+
         file_system = self.context.file_system
-        # 场景有这些道具文件
         thekiller_rpgcomp: SimpleRPGRoleComponent = thekiller.get(SimpleRPGRoleComponent)
         whoiskilled_rpgcomp: SimpleRPGRoleComponent = whoiskilled.get(SimpleRPGRoleComponent)
         logger.info(f"the killer is {thekiller_rpgcomp.name}, the killed is {whoiskilled_rpgcomp.name}")

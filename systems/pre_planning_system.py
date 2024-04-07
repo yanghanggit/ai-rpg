@@ -15,16 +15,19 @@ class PrePlanningSystem(ExecuteProcessor):
         self.strategy2_all_stages_and_npcs_except_player_allow_auto_planning()
 
         ## 选择比较省的策略。
-        playerentities = self.context.get_group(Matcher(PlayerComponent)).entities
-        for playerentity in playerentities:
-            self.strategy1_only_the_stage_where_player_is_located_and_the_npcs_in_it_allowed_make_plans(playerentity)
+        # playerentities = self.context.get_group(Matcher(PlayerComponent)).entities
+        # for playerentity in playerentities:
+        #     self.strategy1_only_the_stage_where_player_is_located_and_the_npcs_in_it_allowed_make_plans(playerentity)
         
 ############################################################################################################
     def strategy1_only_the_stage_where_player_is_located_and_the_npcs_in_it_allowed_make_plans(self, playerentity: Entity) -> None:
-        if playerentity is None:
-            logger.error("playerentity is None, 所以全世界都不能做planning")
-            return
 
+        if playerentity is None:
+            raise ValueError("playerentity is None")
+        
+        if not playerentity.has(PlayerComponent):
+            raise ValueError("playerentity must have PlayerComponent")
+            
         context = self.context
         stageentity = context.get_stage_entity_by_uncertain_entity(playerentity)
         if stageentity is None:

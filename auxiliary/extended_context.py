@@ -21,7 +21,7 @@ class ExtendedContext(Context):
         self.agent_connect_system = AgentConnectSystem("agent_connect_system， Because it involves net operations, an independent system is more convenient.")
         self.code_name_component_system = CodeNameComponentSystem("Build components by codename for special purposes")
 
-    #
+    #世界基本就一个（或者及其少的数量），所以就遍历一下得了。
     def getworld(self, worldname: str) -> Optional[Entity]:
         entities: set[Entity] = self.get_group(Matcher(WorldComponent)).entities
         for entity in entities:
@@ -30,7 +30,7 @@ class ExtendedContext(Context):
                 return entity
         return None
 
-    #
+    #玩家基本就一个（或者及其少的数量），所以就遍历一下得了，注意是playername，比如yanghang。
     def getplayer(self, playername: str) -> Optional[Entity]:
         entities: set[Entity] = self.get_group(Matcher(all_of=[PlayerComponent, NPCComponent])).entities
         for entity in entities:
@@ -50,20 +50,17 @@ class ExtendedContext(Context):
         return None
     
     #
-    def getstage(self, name: str) -> Optional[Entity]:
-        return self.get_by_code_name_component(name)
+    def getstage(self, stagename: str) -> Optional[Entity]:
+        return self.get_by_code_name_component(stagename)
     
     #
-    def getnpc(self, name: str) -> Optional[Entity]:
-        return self.get_by_code_name_component(name)
+    def getnpc(self, npcname: str) -> Optional[Entity]:
+        return self.get_by_code_name_component(npcname)
     
     #
-    def getentity(self, name: str) -> Optional[Entity]:
-        return self.get_by_code_name_component(name)
-    
-    def npcs_in_this_stage(self, stage_name: str) -> list[Entity]:   
+    def npcs_in_this_stage(self, stagename: str) -> list[Entity]:   
         # 测试！！！
-        stage_tag_component = self.code_name_component_system.get_stage_tag_component_class_by_name(stage_name)
+        stage_tag_component = self.code_name_component_system.get_stage_tag_component_class_by_name(stagename)
         entities: set[Entity] =  self.get_group(Matcher(all_of=[NPCComponent, stage_tag_component])).entities
         return list(entities)
 

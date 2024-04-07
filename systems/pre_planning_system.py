@@ -12,7 +12,7 @@ class PrePlanningSystem(ExecuteProcessor):
     def execute(self) -> None:
         logger.debug("<<<<<<<<<<<<<  PrePlanningSystem  >>>>>>>>>>>>>>>>>")
         ## 选择比较费的策略。
-        self.strategy2_all_stages_and_npcs_except_player__allow_auto_planning()
+        self.strategy2_all_stages_and_npcs_except_player_allow_auto_planning()
         ## 选择比较省的策略。
         #self.strategy1_only_the_stage_where_player_is_located_and_the_npcs_in_it_allowed_make_plans()
         
@@ -55,7 +55,7 @@ class PrePlanningSystem(ExecuteProcessor):
             else:
                 raise ValueError(f"npc {npccomp.name} has AutoPlanningComponent, so do not add again")
 ############################################################################################################
-    def strategy2_all_stages_and_npcs_except_player__allow_auto_planning(self) -> None:
+    def strategy2_all_stages_and_npcs_except_player_allow_auto_planning(self) -> None:
         context = self.context
         stages = context.get_group(Matcher(StageComponent)).entities
         for stage in stages:

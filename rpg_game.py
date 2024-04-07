@@ -13,8 +13,8 @@ from auxiliary.extended_context import ExtendedContext
 from auxiliary.builders import WorldDataBuilder, StageBuilder, NPCBuilder
 from entitas.entity import Entity
 from systems.init_system import InitSystem
-from systems.stage_plan_system import StagePlanSystem
-from systems.npc_plan_system import NPCPlanSystem
+from systems.stage_planning_system import StagePlanningSystem
+from systems.npc_planning_system import NPCPlanningSystem
 from systems.speak_action_system import SpeakActionSystem
 from systems.fight_action_system import FightActionSystem
 from systems.leave_for_action_system import LeaveForActionSystem
@@ -60,8 +60,8 @@ class RPGGame:
         #规划逻辑########################
         processors.add(PrePlanningSystem(context)) #### 在所有规划之前
         ### 所有规划
-        processors.add(StagePlanSystem(context))
-        processors.add(NPCPlanSystem(context))
+        processors.add(StagePlanningSystem(context))
+        processors.add(NPCPlanningSystem(context))
         processors.add(PostPlanningSystem(context)) #### 在所有规划之后
         #行动逻辑########################
         processors.add(TagActionSystem(context))

@@ -6,7 +6,7 @@ from langchain_core.messages import HumanMessage, AIMessage
 from loguru import logger
 from typing import Optional
 
-## 所有的初始记忆在这里管理
+## 单独封装一个系统，用于连接actor agent
 class AgentConnectSystem:
 
     ##

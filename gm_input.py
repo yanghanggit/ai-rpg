@@ -51,7 +51,7 @@ class GMCommandPush(GMInput):
                 agent_connect_system.remove_last_conversation_between_human_and_ai(stage_comp.name)
             return stage_comp
         
-        world_entity: Optional[Entity] = context.get1world()
+        world_entity: Optional[Entity] = context.getworld(name)
         if world_entity is not None:
             world_comp: WorldComponent = world_entity.get(WorldComponent)
             request: Optional[str] = agent_connect_system.request(world_comp.name, content)
@@ -116,7 +116,7 @@ class GMCommandLogChatHistory(GMInput):
             self.log_chat_history(stagecomp.name)
             return
         
-        entity = context.get1world()
+        entity = context.getworld(name)
         if entity is not None:
             worldcomp: WorldComponent = entity.get(WorldComponent)
             self.log_chat_history(worldcomp.name)

@@ -20,17 +20,23 @@ class ExtendedContext(Context):
         self.memory_system = MemorySystem("memorey_system， Because it involves IO operations, an independent system is more convenient.")
         self.agent_connect_system = AgentConnectSystem("agent_connect_system， Because it involves net operations, an independent system is more convenient.")
         self.code_name_component_system = CodeNameComponentSystem("Build components by codename for special purposes")
+
     #
-    def get1world(self) -> Optional[Entity]:
+    def getworld(self, worldname: str) -> Optional[Entity]:
         entities: set[Entity] = self.get_group(Matcher(WorldComponent)).entities
-        if len(entities) > 0:
-            return next(iter(entities))
+        for entity in entities:
+            worldcomp: WorldComponent = entity.get(WorldComponent)
+            if worldcomp.name == worldname:
+                return entity
         return None
+
     #
-    def get1player(self) -> Optional[Entity]:
+    def getplayer(self, playername: str) -> Optional[Entity]:
         entities: set[Entity] = self.get_group(Matcher(all_of=[PlayerComponent, NPCComponent])).entities
-        if len(entities) > 0:
-            return next(iter(entities))
+        for entity in entities:
+            playercomp: PlayerComponent = entity.get(PlayerComponent)
+            if playercomp.name == playername:
+                return entity
         return None
     
     #yh add 特殊的方法

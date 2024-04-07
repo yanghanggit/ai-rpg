@@ -8,7 +8,6 @@ from auxiliary.components import (
     FightActionComponent, 
     PlayerComponent, 
     LeaveForActionComponent, 
-    HumanInterferenceComponent,
     WhisperActionComponent,
     SearchActionComponent)
 from auxiliary.actor_action import ActorAction
@@ -77,16 +76,12 @@ class PlayerCommandAttack(PlayerInput):
             npc_comp: NPCComponent = playerentity.get(NPCComponent)
             action = ActorAction(npc_comp.name, "FightActionComponent", [dest])
             playerentity.add(FightActionComponent, action)
-            if not playerentity.has(HumanInterferenceComponent):
-                playerentity.add(HumanInterferenceComponent, f'{npc_comp.name}攻击{dest}')
             logger.debug(f"debug_attack: {npc_comp.name} add {action}")
             return
         
         elif playerentity.has(StageComponent):
             stage_comp: StageComponent = playerentity.get(StageComponent)
             action = ActorAction(stage_comp.name, "FightActionComponent", [dest])
-            if not playerentity.has(HumanInterferenceComponent):
-                playerentity.add(HumanInterferenceComponent, f'{stage_comp.name}攻击{dest}')
             playerentity.add(FightActionComponent, action)
             logger.debug(f"debug_attack: {stage_comp.name} add {action}")
             return
@@ -110,9 +105,6 @@ class PlayerCommandLeaveFor(PlayerInput):
         npc_comp: NPCComponent = playerentity.get(NPCComponent)
         action = ActorAction(npc_comp.name, "LeaveForActionComponent", [stagename])
         playerentity.add(LeaveForActionComponent, action)
-        if not playerentity.has(HumanInterferenceComponent):
-            playerentity.add(HumanInterferenceComponent, f'{npc_comp.name}离开了{stagename}')
-
         newmemory = f"""{{
             "LeaveForActionComponent": ["{stagename}"]
         }}"""
@@ -138,8 +130,7 @@ class PlayerCommandBroadcast(PlayerInput):
         npc_comp: NPCComponent = playerentity.get(NPCComponent)
         action = ActorAction(npc_comp.name, "BroadcastActionComponent", [content])
         playerentity.add(BroadcastActionComponent, action)
-        playerentity.add(HumanInterferenceComponent, f'{npc_comp.name}大声说道：{content}')
-
+        #playerentity.add(HumanInterferenceComponent, f'{npc_comp.name}大声说道：{content}')
         newmemory = f"""{{
             "BroadcastActionComponent": ["{content}"]
         }}"""
@@ -165,9 +156,6 @@ class PlayerCommandSpeak(PlayerInput):
         npc_comp: NPCComponent = playerentity.get(NPCComponent)
         action = ActorAction(npc_comp.name, "SpeakActionComponent", [content])
         playerentity.add(SpeakActionComponent, action)
-        if not playerentity.has(HumanInterferenceComponent):
-            playerentity.add(HumanInterferenceComponent, f'{npc_comp.name}说道：{content}')
-
         newmemory = f"""{{
             "SpeakActionComponent": ["{content}"]
         }}"""
@@ -193,9 +181,6 @@ class PlayerCommandWhisper(PlayerInput):
         npc_comp: NPCComponent = playerentity.get(NPCComponent)
         action = ActorAction(npc_comp.name, "WhisperActionComponent", [content])
         playerentity.add(WhisperActionComponent, action)
-        if not playerentity.has(HumanInterferenceComponent):
-            playerentity.add(HumanInterferenceComponent, f'{npc_comp.name}低语道：{content}')
-
         newmemory = f"""{{
             "WhisperActionComponent": ["{content}"]
         }}"""
@@ -221,9 +206,6 @@ class PlayerCommandSearch(PlayerInput):
         npc_comp: NPCComponent = playerentity.get(NPCComponent)
         action = ActorAction(npc_comp.name, "SearchActionComponent", [content])
         playerentity.add(SearchActionComponent, action)
-        if not playerentity.has(HumanInterferenceComponent):
-            playerentity.add(HumanInterferenceComponent, f'{npc_comp.name}搜索{content}')
-
         newmemory = f"""{{
             "SearchActionComponent": ["{content}"]
         }}"""

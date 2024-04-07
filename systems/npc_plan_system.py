@@ -4,7 +4,6 @@ from auxiliary.components import (NPCComponent,
                         SpeakActionComponent, 
                         LeaveForActionComponent, 
                         TagActionComponent, 
-                        HumanInterferenceComponent,
                         MindVoiceActionComponent,
                         BroadcastActionComponent, 
                         WhisperActionComponent,
@@ -30,11 +29,6 @@ class NPCPlanSystem(ExecuteProcessor):
                 logger.info(f"{entity.get(NPCComponent).name}正在被玩家控制，不执行自动计划。\n")
                 continue
 
-            if entity.has(HumanInterferenceComponent):
-                entity.remove(HumanInterferenceComponent)
-                logger.info(f"{entity.get(NPCComponent).name}本轮行为计划被人类接管。\n")
-                continue
-            
             #开始处理NPC的行为计划
             self.handle(entity)
 

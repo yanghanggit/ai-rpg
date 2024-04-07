@@ -8,7 +8,7 @@ from auxiliary.components import (NPCComponent,
                         BroadcastActionComponent, 
                         WhisperActionComponent,
                         SearchActionComponent,
-                        PlayerComponent)
+                        AutoPlanningComponent)
 from auxiliary.actor_action import ActorPlan
 from auxiliary.prompt_maker import npc_plan_prompt
 from auxiliary.extended_context import ExtendedContext
@@ -18,20 +18,14 @@ class NPCPlanSystem(ExecuteProcessor):
 
     def __init__(self, context: ExtendedContext) -> None:
         self.context = context
-
+####################################################################################################
     def execute(self) -> None:
         logger.debug("<<<<<<<<<<<<<  NPCPlanSystem  >>>>>>>>>>>>>>>>>")
-
-        entities = self.context.get_group(Matcher(NPCComponent)).entities
+        entities = self.context.get_group(Matcher(all_of=[NPCComponent, AutoPlanningComponent])).entities
         for entity in entities:
-
-            if entity.has(PlayerComponent):
-                logger.info(f"{entity.get(NPCComponent).name}正在被玩家控制，不执行自动计划。\n")
-                continue
-
             #开始处理NPC的行为计划
             self.handle(entity)
-
+####################################################################################################
     def handle(self, entity: Entity) -> None:
 
         prompt = npc_plan_prompt(entity, self.context)
@@ -89,3 +83,4 @@ class NPCPlanSystem(ExecuteProcessor):
             logger.exception(f"NPCPlanSystem: {e}")  
             return
         return
+####################################################################################################

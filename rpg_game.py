@@ -32,6 +32,8 @@ from auxiliary.file_system import PropFile
 from systems.begin_system import BeginSystem
 from systems.end_system import EndSystem
 import shutil
+from systems.pre_planning_system import PrePlanningSystem
+from systems.post_planning_system import PostPlanningSystem
 
 ## 控制流程和数据创建
 class RPGGame:
@@ -56,8 +58,11 @@ class RPGGame:
         #初始化系统########################
         processors.add(InitSystem(context))
         #规划逻辑########################
+        processors.add(PrePlanningSystem(context)) #### 在所有规划之前
+        ### 所有规划
         processors.add(StagePlanSystem(context))
         processors.add(NPCPlanSystem(context))
+        processors.add(PostPlanningSystem(context)) #### 在所有规划之后
         #行动逻辑########################
         processors.add(TagActionSystem(context))
         processors.add(MindVoiceActionSystem(context))

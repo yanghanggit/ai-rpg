@@ -9,8 +9,8 @@ NPCComponent = namedtuple('NPCComponent', 'name current_stage')
 PlayerComponent = namedtuple('PlayerComponent', 'name')
 StageEntryConditionComponent = namedtuple('StageEntryConditionComponent', 'conditions')
 StageExitConditionComponent = namedtuple('StageExitConditionComponent', 'conditions')
-###############################################################################################################################################
 DestroyComponent = namedtuple('DestroyComponent', 'name')
+AutoPlanningComponent = namedtuple('AutoPlanningComponent', 'name')
 ###############################################################################################################################################
 ###动作类的组件
 RememberActionComponent = namedtuple('RememberActionComponent', 'action')

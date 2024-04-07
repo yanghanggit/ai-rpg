@@ -6,7 +6,7 @@ from auxiliary.components import (StageComponent,
                         MindVoiceActionComponent,
                         BroadcastActionComponent,
                         WhisperActionComponent,
-                        PlayerComponent)
+                        AutoPlanningComponent)
 from auxiliary.actor_action import ActorPlan
 from auxiliary.prompt_maker import stage_plan_prompt
 from auxiliary.extended_context import ExtendedContext
@@ -19,14 +19,8 @@ class StagePlanSystem(ExecuteProcessor):
 ####################################################################################################
     def execute(self) -> None:
         logger.debug("<<<<<<<<<<<<<  StagePlanSystem  >>>>>>>>>>>>>>>>>")
-
-        entities = self.context.get_group(Matcher(StageComponent)).entities
+        entities = self.context.get_group(Matcher(all_of=[StageComponent, AutoPlanningComponent])).entities
         for entity in entities:
-
-            if entity.has(PlayerComponent):
-                logger.info(f"{entity.get(StageComponent).name}正在被玩家控制，不执行自动计划。\n")
-                continue
-
             ## 开始处理场景的行为与计划
             self.handle(entity)
 ####################################################################################################

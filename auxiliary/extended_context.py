@@ -22,13 +22,15 @@ class ExtendedContext(Context):
         self.code_name_component_system = CodeNameComponentSystem("Build components by codename for special purposes")
     #
     def get1world(self) -> Optional[Entity]:
-        for entity in self.get_group(Matcher(WorldComponent)).entities:
-            return entity
+        entities: set[Entity] = self.get_group(Matcher(WorldComponent)).entities
+        if len(entities) > 0:
+            return next(iter(entities))
         return None
     #
     def get1player(self) -> Optional[Entity]:
-        for entity in self.get_group(Matcher(PlayerComponent)).entities:
-            return entity
+        entities: set[Entity] = self.get_group(Matcher(all_of=[PlayerComponent, NPCComponent])).entities
+        if len(entities) > 0:
+            return next(iter(entities))
         return None
     
     #yh add 特殊的方法

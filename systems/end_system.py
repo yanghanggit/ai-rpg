@@ -12,11 +12,12 @@ class EndSystem(ExecuteProcessor):
 ############################################################################################################
     def execute(self) -> None:
         logger.debug("<<<<<<<<<<<<<  EndSystem  >>>>>>>>>>>>>>>>>")
-
         # 打印一下所有的场景信息
         infomap = self.information_about_all_stages_and_npcs()
-        logger.debug(f"/showstages: \n{infomap}")
-
+        if len(infomap.keys()) > 0:
+            logger.debug(f"/showstages: \n{infomap}")
+        else:
+            logger.debug("/showstages: No stages and npcs now !!!!!")
 ############################################################################################################
     def information_about_all_stages_and_npcs(self) -> dict[str, list[str]]:
         stagesentities = self.context.get_group(Matcher(StageComponent)).entities

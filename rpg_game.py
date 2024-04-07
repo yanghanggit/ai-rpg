@@ -49,11 +49,11 @@ class RPGGame:
         processors = self.processors
         context = self.extendedcontext
 
+        ##调试用的系统。监视进入运行之前的状态###############################################################################################################################################
+        processors.add(BeginSystem(context))
+        
         #初始化系统########################
         processors.add(InitSystem(context))
-        processors.add(BeginSystem(context))
-
-        #"""
         #规划逻辑########################
         processors.add(StagePlanSystem(context))
         processors.add(NPCPlanSystem(context))
@@ -74,13 +74,13 @@ class RPGGame:
         #行动结束后导演
         processors.add(DirectorSystem(context))
         #########################################
-        #"""
-
         ###必须最后
         processors.add(DestroySystem(context))
-        processors.add(EndSystem(context))
-
         processors.add(DataSaveSystem(context))
+
+         ##调试用的系统。监视进入运行之后的状态###############################################################################################################################################
+        processors.add(EndSystem(context))
+        
 ###############################################################################################################################################
     def createworld(self, worlddata: WorldDataBuilder) -> None:
         if worlddata is None or worlddata.data is None:

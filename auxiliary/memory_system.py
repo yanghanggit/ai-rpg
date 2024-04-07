@@ -35,12 +35,9 @@ class MemorySystem:
 
     ## 核心方法
     def readmemory(self, who: str, initmemory: str) -> None:
-
+        
         mempath = self.memorymdfile(who)
         logger.debug(f"[{who}]的记忆路径为 = [{mempath}]")
-
-        ## !!!!!!!!!!!!!测试(yh 目前每次都是重新来，先保证干净)
-        self.deletememory(who)
 
         try:
 

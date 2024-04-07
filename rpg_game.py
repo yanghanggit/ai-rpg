@@ -31,6 +31,7 @@ from director_component import DirectorComponent
 from auxiliary.file_system import PropFile
 from systems.begin_system import BeginSystem
 from systems.end_system import EndSystem
+import shutil
 
 ## 控制流程和数据创建
 class RPGGame:
@@ -87,10 +88,16 @@ class RPGGame:
             logger.error("没有WorldBuilder数据，请检查World.json配置。")
             return
         
+        ## 实际运行的路径
+        runtime_dir_for_world = f"{worlddata.runtimepath}{worlddata.name}/"
+
+        # 第0步，yh 目前用于测试!!!!!!!，直接删worlddata.name的文件夹，保证每次都是新的 删除runtime_dir_for_world的文件夹
+        shutil.rmtree(runtime_dir_for_world)
+
         ## 第一步，设置根路径
         self.worlddata = worlddata
-        self.extendedcontext.memory_system.set_root_path(f"{worlddata.runtimepath}{worlddata.name}/")
-        self.extendedcontext.file_system.set_root_path(f"{worlddata.runtimepath}{worlddata.name}/")
+        self.extendedcontext.memory_system.set_root_path(runtime_dir_for_world)
+        self.extendedcontext.file_system.set_root_path(runtime_dir_for_world)
 
         ### 第二步 创建实体
         self.create_admin_npc_entities(worlddata.admin_npc_builder)

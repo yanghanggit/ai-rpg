@@ -24,17 +24,17 @@ class PlayerInput:
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class PlayerCommandNPC(PlayerInput):
+class PlayerCommandCtrlNPC(PlayerInput):
 
     def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, targetname: str) -> None:
         super().__init__(name, game, playerproxy)
         self.targetname = targetname
 
     def execute(self) -> None:
-
         context = self.game.extendedcontext
         name = self.targetname
         playname = self.playerproxy.name
+        logger.debug(f"{self.inputname}, player name: {playname}, target name: {name}")
 
         playerentity = context.get1player()
         if playerentity is not None:
@@ -46,13 +46,6 @@ class PlayerCommandNPC(PlayerInput):
         if entity is not None:
             npccomp: NPCComponent = entity.get(NPCComponent)
             logger.debug(f"{self.inputname}: [{npccomp.name}] is now controlled by the player [{playname}]")
-            entity.add(PlayerComponent, playname)
-            return
-        
-        entity = context.getstage(name)
-        if entity is not None:
-            stagecomp: StageComponent = entity.get(StageComponent)
-            logger.debug(f"{self.inputname}: [{stagecomp.name}] is now controlled by the player [{playname}]")
             entity.add(PlayerComponent, playname)
             return
 ####################################################################################################################################

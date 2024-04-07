@@ -7,7 +7,7 @@ from auxiliary.builders import WorldDataBuilder
 from rpg_game import RPGGame 
 from player_proxy import PlayerProxy
 from gm_input import GMCommandPush, GMCommandAsk, GMCommandLogChatHistory
-from player_input import (PlayerCommandNPC, 
+from player_input import (PlayerCommandCtrlNPC, 
                           PlayerCommandAttack, 
                           PlayerCommandLeaveFor, 
                           PlayerCommandBroadcast, 
@@ -59,7 +59,7 @@ def main() -> None:
     playproxy = PlayerProxy("yanghang")
 
     # 测试的代码，上来就控制一个NPC目标，先写死"无名旅人"
-    playerstartcmd = PlayerCommandNPC("/player-start-game", rpggame, playproxy, "无名旅人")
+    playerstartcmd = PlayerCommandCtrlNPC("/player-start-game", rpggame, playproxy, "无名旅人")
     playerstartcmd.execute()
 
     while True:
@@ -103,7 +103,7 @@ def main() -> None:
             command = "/who"
             who = parse_command(usr_input, command)
             ###
-            playercommandbewho = PlayerCommandNPC("/who", rpggame, playproxy, who)
+            playercommandbewho = PlayerCommandCtrlNPC("/who", rpggame, playproxy, who)
             playercommandbewho.execute()
             ###            
             logger.debug(f"{'=' * 50}")

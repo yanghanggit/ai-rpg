@@ -8,11 +8,14 @@ class StageConditionData:
 
 
 class PropData:
-    def __init__(self, name: str, codename: str, description: str, is_unique: bool) -> None:
+    def __init__(self, name: str, codename: str, description: str, is_unique: str) -> None:
         self.name = name
         self.codename = codename
         self.description = description
         self.is_unique = is_unique
+
+    def isunique(self) -> bool:
+        return self.is_unique == "Yes"
 
 class NPCData:
     def __init__(self, name: str, codename: str, url: str, memory: str, props: set[PropData] = set()) -> None:

@@ -65,6 +65,10 @@ class FightActionSystem(ReactiveProcessor):
             ##死亡是关键
             isdead = (lefthp <= 0)
 
+            ## 死亡夺取唯一性道具
+            if isdead:  
+                self.if_target_is_killed_the_unique_prop_will_be_taken_away(entity, findtarget)
+
             ## 死亡组件系统必须要添加，单独处理，很重要
             if isdead:
                 if not findtarget.has(DeadActionComponent):
@@ -111,5 +115,22 @@ class FightActionSystem(ReactiveProcessor):
         directorcomp: DirectorComponent = stageentity.get(DirectorComponent)
         attacksomeoneevent = AttackSomeoneEvent(rpgname, targetname, damage, curhp, maxhp)
         directorcomp.addevent(attacksomeoneevent)
+######################################################################################################################################################
+    def if_target_is_killed_the_unique_prop_will_be_taken_away(self, thekiller: Entity, whoiskilled: Entity) -> None:
+         # 在本场景搜索
+        file_system = self.context.file_system
+        # 场景有这些道具文件
+        thekiller_rpgcomp: SimpleRPGRoleComponent = thekiller.get(SimpleRPGRoleComponent)
+        whoiskilled_rpgcomp: SimpleRPGRoleComponent = whoiskilled.get(SimpleRPGRoleComponent)
+        logger.info(f"the killer is {thekiller_rpgcomp.name}, the killed is {whoiskilled_rpgcomp.name}")
+        
+        lostpropfiles = file_system.get_prop_files(whoiskilled_rpgcomp.name)
+        for propfile in lostpropfiles:
+            if not propfile.prop.isunique():
+                logger.info(f"the propfile {propfile.name} is not unique, so it will not be taken away.")
+                continue
+            propfilename = propfile.name
+            logger.info(f"the propfile is {propfilename}")
+            file_system.exchange_prop_file(whoiskilled_rpgcomp.name, thekiller_rpgcomp.name, propfilename)        
 ######################################################################################################################################################
        

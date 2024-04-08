@@ -20,4 +20,9 @@ class ChaosBuddingWorld(IChaosEngineering):
     
     ##
     def on_read_memory_failed(self, extended_context: Any, name: str, readarchprompt: str) -> None:
+        from auxiliary.extended_context import ExtendedContext
+        context: ExtendedContext = extended_context
         logger.error(f"{self.name}: on_read_memory_failed {name} = {readarchprompt}")
+        agent_connect_system = context.agent_connect_system
+        agent_connect_system._add_human_message_to_chat_history_(name, readarchprompt)
+        agent_connect_system._add_ai_message_to_chat_history_(name, f"确认回忆")

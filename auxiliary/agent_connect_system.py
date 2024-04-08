@@ -46,7 +46,7 @@ class AgentConnectSystem:
         logger.error(f"request: {name} is not registered.")
         return None
 
-    #
+    ##
     def _add_human_message_to_chat_history_(self, name: str, chat: str) -> None:
         if name in self.memorydict:
             self.memorydict[name].add_human_message_to_chat_history(chat)
@@ -54,14 +54,22 @@ class AgentConnectSystem:
         else:
             logger.error(f"add_chat_history: {name} is not registered.")
 
-    #
+    ##
+    def _add_ai_message_to_chat_history_(self, name: str, chat: str) -> None:
+        if name in self.memorydict:
+            self.memorydict[name].add_ai_message_to_chat_history(chat)
+            logger.debug(f"add_chat_history: {name} is added chat history.")
+        else:
+            logger.error(f"add_chat_history: {name} is not registered.")
+
+    ##
     def get_chat_history(self, name: str) -> List[Union[HumanMessage, AIMessage]]:
         if name in self.memorydict:
             return self.memorydict[name].chat_history
         logger.error(f"get_chat_history: {name} is not registered.")
         return []
     
-    #
+    ##
     def remove_last_conversation_between_human_and_ai(self, name: str) -> None:
         if not name in self.memorydict:
             return
@@ -92,9 +100,7 @@ class AgentConnectSystem:
     def all_agents_chat_history_dump(self) -> None:
         for who in self.memorydict.keys():
             chatlist = self.output_chat_history_dump(who)
-            # Convert chatlist to JSON object
-            chat_json = json.dumps(chatlist)
-            # Convert JSON object to string
+            chat_json = json.dumps(chatlist, ensure_ascii = False)
             chat_string = str(chat_json)
             self.write_chat_history_dump(who, chat_string)
     

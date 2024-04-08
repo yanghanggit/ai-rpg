@@ -118,7 +118,7 @@ class SearchPropsSystem(ReactiveProcessor):
             self.stage_exchanges_prop_to_npc(stagecomp.name, npccomp.name, targetpropname)
 
             ## 事件记录的体系
-            self.context.legacy_add_content_to_director_script_by_entity(whosearchentity, unique_prop_taken_away(whosearchentity, targetpropname))
+            #self.context.legacy_add_content_to_director_script_by_entity(whosearchentity, unique_prop_taken_away(whosearchentity, targetpropname))
             self.add_event_to_director(whosearchentity, targetpropname)
             ## 打印一下
             logger.info(f"{Color.GREEN}{npccomp.name}找到了{targetpropname}。{Color.ENDC}")

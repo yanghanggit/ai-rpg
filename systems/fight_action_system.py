@@ -81,10 +81,10 @@ class FightActionSystem(ReactiveProcessor):
 
             ## 导演系统，单独处理，有旧的代码
             if isdead:
-                self.context.legacy_add_content_to_director_script_by_entity(entity, kill_someone(action.name, value))
+                #self.context.legacy_add_content_to_director_script_by_entity(entity, kill_someone(action.name, value))
                 self.add_kill_someone_event_to_director(entity, value)
             else:
-                self.context.legacy_add_content_to_director_script_by_entity(entity, attack_someone(action.name, value, rpgcomp.attack, targetsrpgcomp.hp, targetsrpgcomp.maxhp))
+                #self.context.legacy_add_content_to_director_script_by_entity(entity, attack_someone(action.name, value, rpgcomp.attack, targetsrpgcomp.hp, targetsrpgcomp.maxhp))
                 self.add_attack_someone_event_to_director(entity, value, rpgcomp.attack, targetsrpgcomp.hp, targetsrpgcomp.maxhp)
                 
 ######################################################################################################################################################

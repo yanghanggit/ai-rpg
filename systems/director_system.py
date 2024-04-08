@@ -50,9 +50,9 @@ class DirectorSystem(ExecuteProcessor):
         confirm_prompt = confirm_everything_after_director_add_new_memories_prompt(directorscripts, npcs_names, stagecomp.name, self.context)
         logger.debug(f"记忆添加内容:\n{confirm_prompt}\n")
 
-        self.context.add_agent_memory(entitystage, confirm_prompt)
+        self.context.add_human_message_to_entity(entitystage, confirm_prompt)
         for npcen in npcs_in_stage:
-            self.context.add_agent_memory(npcen, confirm_prompt)
+            self.context.add_human_message_to_entity(npcen, confirm_prompt)
         logger.debug(f"[{stagecomp.name}] 结束导演+++++++++++++++++++++++++++++++++++++++++++++++++++++")
 
 

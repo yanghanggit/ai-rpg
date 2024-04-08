@@ -1,10 +1,9 @@
+import os
 from loguru import logger
-from typing import Dict
+from typing import Dict,  List, Union, Optional
 from auxiliary.actor_agent import ActorAgent
-from typing import List, Union
 from langchain_core.messages import HumanMessage, AIMessage
-from loguru import logger
-from typing import Optional
+import json
 
 ## 单独封装一个系统，用于连接actor agent
 class AgentConnectSystem:
@@ -13,6 +12,14 @@ class AgentConnectSystem:
     def __init__(self, name: str) -> None:
         self.name: str = name
         self.memorydict: Dict[str, ActorAgent] = {}
+        self.rootpath = ""
+
+    ### 必须设置根部的执行路行
+    def set_root_path(self, rootpath: str) -> None:
+        if self.rootpath != "":
+            raise Exception(f"[filesystem]已经设置了根路径，不能重复设置。")
+        self.rootpath = rootpath
+        logger.debug(f"[filesystem]设置了根路径为{rootpath}")
 
     ##
     def register_actor_agent(self, name: str, url: str) -> None:
@@ -43,9 +50,9 @@ class AgentConnectSystem:
         return None
 
     #
-    def add_chat_history(self, name: str, chat: str) -> None:
+    def _add_human_message_to_chat_history_(self, name: str, chat: str) -> None:
         if name in self.memorydict:
-            self.memorydict[name].add_chat_history(chat)
+            self.memorydict[name].add_human_message_to_chat_history(chat)
             logger.debug(f"add_chat_history: {name} is added chat history.")
         else:
             logger.error(f"add_chat_history: {name} is not registered.")
@@ -80,3 +87,40 @@ class AgentConnectSystem:
             elif isinstance(chat_history[i], AIMessage):
                 break
 
+    ### 目标文件
+    def chat_history_dump(self, who: str) -> str:
+        return f"{self.rootpath}{who}/chat_history_dump.json"
+    
+    ### 所有的chathistory
+    def all_agents_chat_history_dump(self) -> None:
+        for who in self.memorydict.keys():
+            chatlist = self.output_chat_history_dump(who)
+            # Convert chatlist to JSON object
+            chat_json = json.dumps(chatlist)
+            # Convert JSON object to string
+            chat_string = str(chat_json)
+            self.write_chat_history_dump(who, chat_string)
+    
+    ### 准备dump
+    def output_chat_history_dump(self, who: str) ->  List[str]:
+        chathistory = self.get_chat_history(who)
+        chatlist: List[str] = []
+        for chat in chathistory:
+            if isinstance(chat, HumanMessage):
+                chatlist.append(f"[HumanMessage]: {chat.content}")
+            elif isinstance(chat, AIMessage):
+                chatlist.append(f"[{who}]: {chat.content}")
+        return chatlist
+
+    ##强制写入
+    def write_chat_history_dump(self, who: str, content: str) -> None:
+        mempath = self.chat_history_dump(who)
+        try:
+            if not os.path.exists(mempath):
+                os.makedirs(os.path.dirname(mempath), exist_ok=True)
+                with open(mempath, "w", encoding="utf-8") as f:
+                    f.write(content)
+
+        except Exception as e:
+            logger.error(f"[{who}]写入chat history dump失败。")
+            return

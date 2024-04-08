@@ -24,6 +24,47 @@ class PlayerInput:
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
+class PlayerCommandLogin(PlayerInput):
+
+    def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, targetname: str) -> None:
+        super().__init__(name, game, playerproxy)
+        self.targetname = targetname
+
+    def execute(self) -> None:
+        context = self.game.extendedcontext
+        name = self.targetname
+        playername = self.playerproxy.name
+        logger.debug(f"{self.inputname}, player name: {playername}, target name: {name}")
+
+        npcentity = context.getnpc(name)
+        if npcentity is None:
+            # 扮演的角色，本身就不存在于这个世界
+            logger.warning(f"{self.inputname}, npc is None, login failed")
+            return
+
+        playerentity = context.getplayer(playername)
+        if playerentity is not None:
+            # 已经登陆完成
+            logger.debug(f"{self.inputname}, already login")
+            return
+        
+        playercomp: PlayerComponent = npcentity.get(PlayerComponent)
+        if playercomp is None:
+            # 扮演的角色不是设定的玩家可控制NPC
+            logger.warning(f"{self.inputname}, npc is not player ctrl npc, login failed")
+            return
+        
+        if playercomp.name != "" and playercomp.name != playername:
+            # 已经有人控制了，但不是你
+            logger.warning(f"{self.inputname}, player already ctrl by some player, login failed")
+            return
+        
+        npccomp: NPCComponent = npcentity.get(NPCComponent)
+        npcentity.replace(PlayerComponent, playername)
+        logger.debug(f"{self.inputname}, [{npccomp.name}] is now controlled by the player [{playername}]")
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
 class PlayerCommandCtrlNPC(PlayerInput):
 
     def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, targetname: str) -> None:
@@ -108,7 +149,7 @@ class PlayerCommandLeaveFor(PlayerInput):
         newmemory = f"""{{
             "LeaveForActionComponent": ["{stagename}"]
         }}"""
-        context.add_agent_memory(playerentity, newmemory)
+        context.add_human_message_to_entity(playerentity, newmemory)
         logger.debug(f"debug_leave: {npc_comp.name} add {action}")
 ####################################################################################################################################
 ####################################################################################################################################
@@ -134,7 +175,7 @@ class PlayerCommandBroadcast(PlayerInput):
         newmemory = f"""{{
             "BroadcastActionComponent": ["{content}"]
         }}"""
-        context.add_agent_memory(playerentity, newmemory)
+        context.add_human_message_to_entity(playerentity, newmemory)
         logger.debug(f"debug_broadcast: {npc_comp.name} add {action}")
 ####################################################################################################################################
 ####################################################################################################################################
@@ -159,7 +200,7 @@ class PlayerCommandSpeak(PlayerInput):
         newmemory = f"""{{
             "SpeakActionComponent": ["{content}"]
         }}"""
-        context.add_agent_memory(playerentity, newmemory)
+        context.add_human_message_to_entity(playerentity, newmemory)
         logger.debug(f"debug_speak: {npc_comp.name} add {action}")
 ####################################################################################################################################
 ####################################################################################################################################
@@ -184,7 +225,7 @@ class PlayerCommandWhisper(PlayerInput):
         newmemory = f"""{{
             "WhisperActionComponent": ["{content}"]
         }}"""
-        context.add_agent_memory(playerentity, newmemory)
+        context.add_human_message_to_entity(playerentity, newmemory)
         logger.debug(f"debug_whisper: {npc_comp.name} add {action}")
 ####################################################################################################################################
 ####################################################################################################################################
@@ -209,7 +250,7 @@ class PlayerCommandSearch(PlayerInput):
         newmemory = f"""{{
             "SearchActionComponent": ["{content}"]
         }}"""
-        context.add_agent_memory(playerentity, newmemory)
+        context.add_human_message_to_entity(playerentity, newmemory)
         logger.debug(f"debug_search: {npc_comp.name} add {action}")
 ####################################################################################################################################
 ####################################################################################################################################

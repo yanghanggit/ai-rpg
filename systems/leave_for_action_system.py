@@ -120,11 +120,11 @@ class LeaveForActionSystem(ReactiveProcessor):
 
         ##给目标场景添加剧本
         if current_stage_name != "":
-            self.context.legacy_add_content_to_director_script_by_entity(target_stage_entity, npc_leave_for_stage(npccomp.name, current_stage_name, target_stage_name))
+            #self.context.legacy_add_content_to_director_script_by_entity(target_stage_entity, npc_leave_for_stage(npccomp.name, current_stage_name, target_stage_name))
             self.add_leave_for_stage_event_director(target_stage_entity, npccomp.name, current_stage_name, target_stage_name)
             logger.info(f"{Color.GREEN}{npccomp.name} 离开了{current_stage_name}去了{target_stage_name}.{Color.ENDC}")
         else:
-            self.context.legacy_add_content_to_director_script_by_entity(target_stage_entity, npc_enter_stage(npccomp.name, target_stage_name))
+            #self.context.legacy_add_content_to_director_script_by_entity(target_stage_entity, npc_enter_stage(npccomp.name, target_stage_name))
             self.add_enter_stage_event_director(target_stage_entity, npccomp.name, target_stage_name)
             logger.info(f"{Color.GREEN}{npccomp.name} 进入了{target_stage_name}.{Color.ENDC}")
 
@@ -147,7 +147,7 @@ class LeaveForActionSystem(ReactiveProcessor):
         self.context.change_stage_tag_component(entity, handle.current_stage_name, replace_current_stage)
 
         #给当前场景添加剧本，如果本次有导演就合进事件
-        self.context.legacy_add_content_to_director_script_by_entity(currentstage, npc_leave_for_stage(npccomp.name, handle.current_stage_name, handle.target_stage_name))
+        #self.context.legacy_add_content_to_director_script_by_entity(currentstage, npc_leave_for_stage(npccomp.name, handle.current_stage_name, handle.target_stage_name))
         self.add_leave_for_stage_event_director(currentstage, npccomp.name, handle.current_stage_name, handle.target_stage_name)
 
     ###############################################################################################################################################
@@ -175,7 +175,7 @@ class LeaveForActionSystem(ReactiveProcessor):
                 search_list += f"'{condition}' "
 
         logger.info(f"{Color.WARNING}{npccomp.name}背包中没有{search_list}，不能离开{handle.current_stage_name}.{Color.ENDC}")
-        self.context.legacy_add_content_to_director_script_by_entity(handle.who_wana_leave, fail_to_exit_stage(npccomp.name, handle.current_stage_name, search_list))
+        #self.context.legacy_add_content_to_director_script_by_entity(handle.who_wana_leave, fail_to_exit_stage(npccomp.name, handle.current_stage_name, search_list))
         self.add_fail_exit_stage_event_director(handle.currentstage, npccomp.name, handle.current_stage_name, search_list)
         return False
     ###############################################################################################################################################
@@ -199,7 +199,7 @@ class LeaveForActionSystem(ReactiveProcessor):
                 search_list += f"'{condition}' "
         
         logger.info(f"{Color.WARNING}{handle.who_wana_leave.get(NPCComponent).name}背包中没有{search_list}，不能进入{handle.target_stage_name}.{Color.ENDC}")
-        self.context.legacy_add_content_to_director_script_by_entity(handle.who_wana_leave, fail_to_enter_stage(handle.who_wana_leave.get(NPCComponent).name, handle.target_stage_name, search_list))
+        #self.context.legacy_add_content_to_director_script_by_entity(handle.who_wana_leave, fail_to_enter_stage(handle.who_wana_leave.get(NPCComponent).name, handle.target_stage_name, search_list))
         
         ##重构的        
         if handle.currentstage is not None:

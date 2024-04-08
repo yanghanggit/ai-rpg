@@ -45,7 +45,7 @@ class SpeakActionSystem(ReactiveProcessor):
             say_content: str = speak_action_prompt(speak_action.name, target, message, self.context)
             logger.info(f"{Color.HEADER}{say_content}{Color.ENDC}")
             ##添加场景事件，最后随着导演剧本走
-            self.context.legacy_add_content_to_director_script_by_entity(entity, say_content)
+            #self.context.legacy_add_content_to_director_script_by_entity(entity, say_content)
             self.add_event_to_director(entity, target, message)
 ####################################################################################################
     def add_event_to_director(self, entity: Entity, targetname: str, message: str) -> None:

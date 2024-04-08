@@ -29,7 +29,7 @@ class ActorAgent:
         logger.debug(f"\n{'=' * 50}\n{self.name} request result:\n{response_output}\n{'=' * 50}")
         return response_output
     
-    def add_chat_history(self, new_chat: str) -> None:
+    def add_human_message_to_chat_history(self, new_chat: str) -> None:
         self.chat_history.extend([HumanMessage(content = new_chat)])
     
     def __str__(self) -> str:

@@ -14,12 +14,21 @@ from loguru import logger
 
 class ExtendedContext(Context):
     #
-    def __init__(self) -> None:
+    def __init__(self, filesystem: FileSystem, memorysystem: MemorySystem, agentconnectsys: AgentConnectSystem, codenamecompsys: CodeNameComponentSystem) -> None:
         super().__init__()
-        self.file_system = FileSystem("file_system， Because it involves IO operations, an independent system is more convenient.")
-        self.memory_system = MemorySystem("memorey_system， Because it involves IO operations, an independent system is more convenient.")
-        self.agent_connect_system = AgentConnectSystem("agent_connect_system， Because it involves net operations, an independent system is more convenient.")
-        self.code_name_component_system = CodeNameComponentSystem("Build components by codename for special purposes")
+        
+        #
+        self.file_system = filesystem
+        self.memory_system = memorysystem
+        self.agent_connect_system = agentconnectsys
+        self.code_name_component_system = codenamecompsys
+
+        #        
+        assert self.file_system is not None, "self.file_system is None"
+        assert self.memory_system is not None, "self.memory_system is None"
+        assert self.agent_connect_system is not None, "self.agent_connect_system is None"
+        assert self.code_name_component_system is not None, "self.code_name_component_system is None"
+
 
     #世界基本就一个（或者及其少的数量），所以就遍历一下得了。
     def getworld(self, worldname: str) -> Optional[Entity]:
@@ -74,28 +83,28 @@ class ExtendedContext(Context):
         raise ValueError("实体不是NPC或者Stage")
         return None
 
-    ##给一个实体添加记忆，尽量统一走这个方法
-    def add_agent_memory(self, entity: Entity, memory: str) -> bool:
+    ##给一个实体添加记忆，尽量统一走这个方法, add_human_message_to_entity
+    def add_human_message_to_entity(self, entity: Entity, messagecontent: str) -> bool:
         agent_connect_system = self.agent_connect_system
         if entity.has(NPCComponent):
             npccomp: NPCComponent = entity.get(NPCComponent)
-            agent_connect_system.add_chat_history(npccomp.name, memory)
+            agent_connect_system._add_human_message_to_chat_history_(npccomp.name, messagecontent)
             return True
         elif entity.has(StageComponent):
             stagecomp: StageComponent = entity.get(StageComponent)
-            agent_connect_system.add_chat_history(stagecomp.name, memory)
+            agent_connect_system._add_human_message_to_chat_history_(stagecomp.name, messagecontent)
             return True
-        raise ValueError("实体不是NPC或者Stage")
+        raise ValueError("实体不是NPC或者Stage, 不能做添加")
         return False
 
     # 向Entity所在的场景中添加导演脚本
-    def legacy_add_content_to_director_script_by_entity(self, entity: Entity, content: str) -> bool:
-        stageentity = self.get_stage_entity_by_uncertain_entity(entity)
-        if stageentity is None:
-            return False
-        stagecomp: StageComponent = stageentity.get(StageComponent)
-        stagecomp.directorscripts.append(content)
-        return True
+    # def legacy_add_content_to_director_script_by_entity(self, entity: Entity, content: str) -> bool:
+    #     stageentity = self.get_stage_entity_by_uncertain_entity(entity)
+    #     if stageentity is None:
+    #         return False
+    #     stagecomp: StageComponent = stageentity.get(StageComponent)
+    #     stagecomp.directorscripts.append(content)
+    #     return True
     
     #
     def change_stage_tag_component(self, entity: Entity, from_stagename: str, to_stagename: str) -> None:

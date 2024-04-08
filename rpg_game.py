@@ -38,9 +38,9 @@ from systems.post_planning_system import PostPlanningSystem
 ## 控制流程和数据创建
 class RPGGame:
 
-    def __init__(self, name: str) -> None:
+    def __init__(self, name: str, context: ExtendedContext) -> None:
         self.name = name
-        self.extendedcontext: ExtendedContext = ExtendedContext()
+        self.extendedcontext: ExtendedContext = context
         self.processors: Processors = Processors()
         self.started: bool = False
         self.inited: bool = False
@@ -101,6 +101,7 @@ class RPGGame:
 
         ## 第一步，设置根路径
         self.worlddata = worlddata
+        self.extendedcontext.agent_connect_system.set_root_path(runtime_dir_for_world)
         self.extendedcontext.memory_system.set_root_path(runtime_dir_for_world)
         self.extendedcontext.file_system.set_root_path(runtime_dir_for_world)
 
@@ -179,7 +180,7 @@ class RPGGame:
             res.append(playernpcentity)
 
             #必要组件
-            playernpcentity.add(PlayerComponent, "The game has not been controlled by the player after it is started.") ##此时没有被玩家控制
+            playernpcentity.add(PlayerComponent, "") ##此时没有被玩家控制
             playernpcentity.add(SimpleRPGRoleComponent, builddata.name, 10000, 10000, 10)
             playernpcentity.add(NPCComponent, builddata.name, "")
             

@@ -12,12 +12,13 @@ class PrePlanningSystem(ExecuteProcessor):
     def execute(self) -> None:
         logger.debug("<<<<<<<<<<<<<  PrePlanningSystem  >>>>>>>>>>>>>>>>>")
         ## 选择比较费的策略。
-        self.strategy2_all_stages_and_npcs_except_player_allow_auto_planning()
+        #self.strategy2_all_stages_and_npcs_except_player_allow_auto_planning()
 
         ## 选择比较省的策略。
-        # playerentities = self.context.get_group(Matcher(PlayerComponent)).entities
-        # for playerentity in playerentities:
-        #     self.strategy1_only_the_stage_where_player_is_located_and_the_npcs_in_it_allowed_make_plans(playerentity)
+        playerentities = self.context.get_group(Matcher(PlayerComponent)).entities
+        for playerentity in playerentities:
+            # 如果有多个player在同一个stage，这里会多次执行, 但是没关系，因为这里是做防守的
+            self.strategy1_only_the_stage_where_player_is_located_and_the_npcs_in_it_allowed_make_plans(playerentity)
         
 ############################################################################################################
     def strategy1_only_the_stage_where_player_is_located_and_the_npcs_in_it_allowed_make_plans(self, playerentity: Entity) -> None:
@@ -38,9 +39,7 @@ class PrePlanningSystem(ExecuteProcessor):
         stagecomp: StageComponent = stageentity.get(StageComponent)
         if not stageentity.has(AutoPlanningComponent):
             stageentity.add(AutoPlanningComponent, stagecomp.name)
-        else:
-            raise ValueError(f"stage {stagecomp.name} has AutoPlanningComponent, so do not add again")
-        
+  
         ###player
         players_npc_comp: NPCComponent = playerentity.get(NPCComponent)
         logger.debug(f"playerentity {players_npc_comp.name} is in stage {stagecomp.name}, begin to add AutoPlanningComponent to stage and npcs in this stage")
@@ -57,8 +56,6 @@ class PrePlanningSystem(ExecuteProcessor):
             npccomp: NPCComponent = npc.get(NPCComponent)
             if not npc.has(AutoPlanningComponent):
                 npc.add(AutoPlanningComponent, npccomp.name)
-            else:
-                raise ValueError(f"npc {npccomp.name} has AutoPlanningComponent, so do not add again")
 ############################################################################################################
     def strategy2_all_stages_and_npcs_except_player_allow_auto_planning(self) -> None:
         context = self.context
@@ -67,8 +64,6 @@ class PrePlanningSystem(ExecuteProcessor):
             stagecomp: StageComponent = stage.get(StageComponent)
             if not stage.has(AutoPlanningComponent):
                 stage.add(AutoPlanningComponent, stagecomp.name)
-            else:
-                raise ValueError(f"stage {stagecomp.name} has AutoPlanningComponent, so do not add again")
         
         npcs = context.get_group(Matcher(NPCComponent)).entities
         for npc in npcs:
@@ -78,7 +73,5 @@ class PrePlanningSystem(ExecuteProcessor):
             npccomp: NPCComponent = npc.get(NPCComponent)
             if not npc.has(AutoPlanningComponent):
                 npc.add(AutoPlanningComponent, npccomp.name)
-            else:
-                raise ValueError(f"npc {npccomp.name} has AutoPlanningComponent, so do not add again")
 ############################################################################################################
 

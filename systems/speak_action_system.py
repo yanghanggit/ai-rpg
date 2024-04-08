@@ -3,7 +3,7 @@ from auxiliary.components import SpeakActionComponent, NPCComponent
 from auxiliary.actor_action import ActorAction
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.print_in_color import Color
-from auxiliary.prompt_maker import speak_action_prompt
+from auxiliary.prompt_maker import speak_action_prompt, speak_action_system_invalid_target
 from loguru import logger
 from auxiliary.dialogue_rule import check_speak_enable, parse_taget_and_message
 from director_component import DirectorComponent
@@ -38,14 +38,17 @@ class SpeakActionSystem(ReactiveProcessor):
             tagret_message_pair = parse_taget_and_message(value)
             target: str = tagret_message_pair[0]
             message: str = tagret_message_pair[1]
+
             ##如果检查不过就能继续
             if not check_speak_enable(self.context, entity, target):
+                # 加一个历史，让NPC在下一次的request中再仔细琢磨一下。
+                addchat = speak_action_system_invalid_target(target, message)
+                self.context.agent_connect_system._add_human_message_to_chat_history_(speak_action.name, addchat)
                 continue
+            
             ##拼接说话内容
             say_content: str = speak_action_prompt(speak_action.name, target, message, self.context)
             logger.info(f"{Color.HEADER}{say_content}{Color.ENDC}")
-            ##添加场景事件，最后随着导演剧本走
-            #self.context.legacy_add_content_to_director_script_by_entity(entity, say_content)
             self.add_event_to_director(entity, target, message)
 ####################################################################################################
     def add_event_to_director(self, entity: Entity, targetname: str, message: str) -> None:
@@ -58,11 +61,8 @@ class SpeakActionSystem(ReactiveProcessor):
             return
         #
         npccomp: NPCComponent = entity.get(NPCComponent)
-        npcname: str = npccomp.name
-        #
         directorcomp: DirectorComponent = stageentity.get(DirectorComponent)
-        #director: Director = directorcomp.director
-        speakevent = SpeakEvent(npcname, targetname, message)
+        speakevent = SpeakEvent(npccomp.name, targetname, message)
         directorcomp.addevent(speakevent)
 ####################################################################################################
 

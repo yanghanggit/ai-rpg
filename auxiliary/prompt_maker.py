@@ -135,3 +135,7 @@ def kill_someone(attacker_name: str, target_name: str) -> str:
 def attack_someone(attacker_name: str, target_name: str, damage: int, target_current_hp: int ,target_max_hp: int) -> str:
     health_percent = (target_current_hp - damage) / target_max_hp * 100
     return f"{attacker_name}对{target_name}发动了一次攻击,造成了{damage}点伤害,当前{target_name}的生命值剩余{health_percent}%。"
+
+def speak_action_system_invalid_target(target_name: str, speakcontent: str) -> str:
+    return f"[{target_name}]在你所在场景内无法找到，所以你不能对其说如下的内容：{speakcontent}"
+

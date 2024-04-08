@@ -11,7 +11,7 @@ error_extra_string_added = f"""{{"LeaveForActionComponent": ["悠扬林谷"]}}�
 
 ## SpeakActionComponent的格式，value格式就不对。应该是"@目标名字>对话内容"
 error_speak_format = f"""{{"SpeakActionComponent": ["这是一个错误的格式"]}}"""
-error_speak_target_is_invalid = f"""{{"SpeakActionComponent": ["@一个测试的目标>测试的对话内容"]}}"""
+error_speak_target_is_invalid = f"""{{"SpeakActionComponent": ["@黑暗君王索隆>你是魔戒里的人物吧？"]}}"""
 
 ## value必须以[]形式出现
 error_value_is_not_array = f"""{{"LeaveForActionComponent": "悠扬林谷"}}"""

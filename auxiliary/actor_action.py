@@ -13,7 +13,7 @@ class ActorAction:
         self.values = values
 
     def __str__(self) -> str:
-        return f"Action({self.name}, {self.actionname}, {self.values})"
+        return f"ActorAction({self.name}, {self.actionname}, {self.values})"
 
 
 class ActorPlan:
@@ -27,14 +27,14 @@ class ActorPlan:
         try:
             json_data = json.loads(self.jsonstr)
             if not self.check_data_format(json_data):
-                logger.error(f"ActorPlan __init__ json.loads = {self.name} error")
+                logger.error(f"[{self.name}] = ActorPlan, check_data_format error.")
                 return
             
             self.json = json_data
             self.build(self.json)
 
         except Exception as e:
-            logger.exception(f"ActorPlan __init__ error = {e}")
+            logger.error(f"[{self.name}] = json.loads error.")
             return
         return    
 
@@ -52,4 +52,4 @@ class ActorPlan:
             self.actions.append(action)
 
     def __str__(self) -> str:
-        return f"Plan({self.name}, {self.jsonstr}, {self.json})"
+        return f"ActorPlan({self.name}, {self.jsonstr})"

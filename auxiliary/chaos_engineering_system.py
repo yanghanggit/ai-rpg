@@ -19,6 +19,14 @@ class IChaosEngineering(ABC):
         pass
 
     @abstractmethod  
+    def on_stage_planning_system_excute(self, extended_context: Any) -> None:
+        pass
+
+    @abstractmethod  
+    def on_npc_planning_system_execute(self, extended_context: Any) -> None:
+        pass
+
+    @abstractmethod  
     def hack_stage_planning(self, extended_context: Any, stagename: str, planprompt: str) -> Optional[str]:
         pass
 
@@ -54,6 +62,14 @@ class EmptyChaosEngineeringSystem(IChaosEngineering):
     def hack_npc_planning(self, extended_context: Any, npcname: str, planprompt: str) -> Optional[str]:
         logger.debug(f"{self.name}: hack_npc_planning {npcname} {planprompt}")
         return None
+    
+    ##
+    def on_stage_planning_system_excute(self, extended_context: Any) -> None:
+        logger.debug(f"{self.name}: on_stage_planning_system_excute")
+
+    ##
+    def on_npc_planning_system_execute(self, extended_context: Any) -> None:
+        logger.debug(f"{self.name}: on_npc_planning_system_execute")
        
 
     

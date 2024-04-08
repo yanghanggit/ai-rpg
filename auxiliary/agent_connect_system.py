@@ -50,7 +50,7 @@ class AgentConnectSystem:
     def _add_human_message_to_chat_history_(self, name: str, chat: str) -> None:
         if name in self.memorydict:
             self.memorydict[name].add_human_message_to_chat_history(chat)
-            logger.debug(f"add_chat_history: {name} is added chat history.")
+            #logger.debug(f"add_chat_history: {name} is added chat history.")
         else:
             logger.error(f"add_chat_history: {name} is not registered.")
 
@@ -58,7 +58,7 @@ class AgentConnectSystem:
     def _add_ai_message_to_chat_history_(self, name: str, chat: str) -> None:
         if name in self.memorydict:
             self.memorydict[name].add_ai_message_to_chat_history(chat)
-            logger.debug(f"add_chat_history: {name} is added chat history.")
+            #logger.debug(f"add_chat_history: {name} is added chat history.")
         else:
             logger.error(f"add_chat_history: {name} is not registered.")
 

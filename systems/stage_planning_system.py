@@ -20,6 +20,9 @@ class StagePlanningSystem(ExecuteProcessor):
 ####################################################################################################
     def execute(self) -> None:
         logger.debug("<<<<<<<<<<<<<  StagePlanningSystem  >>>>>>>>>>>>>>>>>")
+        #记录事件
+        self.context.chaos_engineering_system.on_stage_planning_system_excute(self.context)
+        #正常流程
         entities = self.context.get_group(Matcher(all_of=[StageComponent, AutoPlanningComponent])).entities
         for entity in entities:
             ## 开始处理场景的行为与计划

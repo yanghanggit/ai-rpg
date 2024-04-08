@@ -4,34 +4,36 @@ from entitas.entity import Entity
 from auxiliary.components import StageComponent, NPCComponent
 from auxiliary.extended_context import ExtendedContext
 
-def check_speak_enable(context: ExtendedContext, src_entity: Entity, dest_name: str) -> bool:
+def check_speak_enable(context: ExtendedContext, srcentity: Entity, destnpcname: str) -> bool:
 
-    npc_entity: Optional[Entity] = context.getnpc(dest_name)
-    if npc_entity is None:
-        logger.warning(f"不存在{dest_name}，无法进行交谈。")
+    destnpcentity: Optional[Entity] = context.getnpc(destnpcname)
+    if destnpcentity is None:
+        logger.warning(f"不存在[{destnpcname}]，无法进行交谈。")
         return False
     
-    stageentity = context.get_stage_entity_by_uncertain_entity(src_entity)
+    stageentity = context.get_stage_entity_by_uncertain_entity(srcentity)
     if stageentity is None:
-        logger.warning(f"StageComponent not found for {src_entity}")
+        raise ValueError(f"未找到[{srcentity}]所在的场景。")
         return False
     
-    src_current_stage_comp: StageComponent = stageentity.get(StageComponent)
-    if src_current_stage_comp is None:
-        logger.warning(f"StageComponent not found for {src_entity}")
-        return False  
-        
-    dest_npc_comp: NPCComponent = npc_entity.get(NPCComponent)
-    if src_current_stage_comp.name != dest_npc_comp.current_stage:
-        if src_entity.has(NPCComponent):
-            logger.warning(f"{src_entity.get(NPCComponent).name}在{src_current_stage_comp.name},不能与在{dest_npc_comp.current_stage}的{dest_name}交谈。")
+    stagecomp: StageComponent = stageentity.get(StageComponent)       
+    destnpccomp: NPCComponent = destnpcentity.get(NPCComponent)
+    if stagecomp.name != destnpccomp.current_stage:
+        if srcentity.has(NPCComponent):
+            srcnpccomp: NPCComponent = srcentity.get(NPCComponent)
+            logger.warning(f"{srcnpccomp.name}在{stagecomp.name},不能与在{destnpccomp.current_stage}的{destnpcname}交谈。")
         else:
-            logger.warning(f"{src_current_stage_comp.name}不能与在{dest_npc_comp.current_stage}的{dest_name}交谈。")
+            logger.warning(f"{stagecomp.name}不能与在{destnpccomp.current_stage}的{destnpcname}交谈。")
         return False
         
     return True
 
 def parse_taget_and_message(content: str) -> tuple[str, str]:
+    if ">" not in content:
+        return "?", content  
+    if "@" not in content:
+        return "?", content
+
     # 解析出说话者和说话内容
     target, message = content.split(">")
     target = target[1:]  # Remove the '@' symbol

@@ -13,7 +13,6 @@ from auxiliary.agent_connect_system import AgentConnectSystem
 from auxiliary.code_name_component_system import CodeNameComponentSystem
 from auxiliary.chaos_engineering_system import IChaosEngineering
 
-
 class ExtendedContext(Context):
     #
     def __init__(self, 
@@ -140,4 +139,3 @@ class ExtendedContext(Context):
              entity.add(to_stagetag_comp_class, to_stagename)
 
         
-       

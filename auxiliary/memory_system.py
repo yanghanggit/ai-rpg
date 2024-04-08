@@ -2,7 +2,7 @@ from loguru import logger
 import os
 from typing import Dict
 
-## 所有的初始记忆在这里管理
+## 所有的初始记忆在这里管理, 目前是测试阶段因为就用一个md来存储是有问题的，后续会改进，比如按着时间来存储并加入数据库？
 class MemorySystem:
     def __init__(self, name: str) -> None:
         self.name: str = name

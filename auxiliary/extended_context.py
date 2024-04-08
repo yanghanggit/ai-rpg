@@ -1,3 +1,4 @@
+from loguru import logger
 from entitas import (Entity, # type: ignore
                     Matcher, 
                     Context)
@@ -10,11 +11,19 @@ from auxiliary.memory_system import MemorySystem
 from typing import Optional
 from auxiliary.agent_connect_system import AgentConnectSystem
 from auxiliary.code_name_component_system import CodeNameComponentSystem
-from loguru import logger
+from auxiliary.chaos_engineering_system import IChaosEngineering
+
 
 class ExtendedContext(Context):
     #
-    def __init__(self, filesystem: FileSystem, memorysystem: MemorySystem, agentconnectsys: AgentConnectSystem, codenamecompsys: CodeNameComponentSystem) -> None:
+    def __init__(self, 
+                 filesystem: FileSystem, 
+                 memorysystem: MemorySystem, 
+                 agentconnectsys: AgentConnectSystem, 
+                 codenamecompsys: CodeNameComponentSystem, 
+                 chaossystem: IChaosEngineering) -> None:
+        
+        #
         super().__init__()
         
         #
@@ -22,12 +31,14 @@ class ExtendedContext(Context):
         self.memory_system = memorysystem
         self.agent_connect_system = agentconnectsys
         self.code_name_component_system = codenamecompsys
+        self.chaos_engineering_system = chaossystem
 
         #        
         assert self.file_system is not None, "self.file_system is None"
         assert self.memory_system is not None, "self.memory_system is None"
         assert self.agent_connect_system is not None, "self.agent_connect_system is None"
         assert self.code_name_component_system is not None, "self.code_name_component_system is None"
+        assert self.chaos_engineering_system is not None, "self.chaos_engineering_system is None"
 
 
     #世界基本就一个（或者及其少的数量），所以就遍历一下得了。

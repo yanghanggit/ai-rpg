@@ -22,6 +22,10 @@ from auxiliary.memory_system import MemorySystem
 from typing import Optional
 from auxiliary.agent_connect_system import AgentConnectSystem
 from auxiliary.code_name_component_system import CodeNameComponentSystem
+from auxiliary.chaos_engineering_system import ChaosEngineeringSystem, IChaosEngineering
+
+### 专门的混动工程系统
+from budding_world.chaos_budding_world import ChaosBuddingWorld
 
 
 ### 临时的，写死创建budding_world
@@ -34,29 +38,40 @@ def read_world_data(worldname: str) -> Optional[WorldDataBuilder]:
         logger.error("未找到存档，请检查存档是否存在。")
         return None
 
-    createworld: Optional[WorldDataBuilder] = WorldDataBuilder(worldname, version, runtimedir)
-    if createworld is None:
+    worldbuilder: Optional[WorldDataBuilder] = WorldDataBuilder(worldname, version, runtimedir)
+    if worldbuilder is None:
         logger.error("WorldDataBuilder初始化失败。")
         return None
     
-    if not createworld.check_version_valid(worlddata):
+    if not worldbuilder.check_version_valid(worlddata):
         logger.error("World.json版本不匹配，请检查版本号。")
         return None
     
-    createworld.build()
-    return createworld
+    worldbuilder.build()
+    return worldbuilder
 
 ##
-def create_rpg_game(worldname: str) -> RPGGame:
+def create_rpg_game(worldname: str, chaosengineering: IChaosEngineering) -> RPGGame:
 
     # 依赖注入的特殊系统
     file_system = FileSystem("file_system， Because it involves IO operations, an independent system is more convenient.")
     memory_system = MemorySystem("memorey_system， Because it involves IO operations, an independent system is more convenient.")
     agent_connect_system = AgentConnectSystem("agent_connect_system， Because it involves net operations, an independent system is more convenient.")
     code_name_component_system = CodeNameComponentSystem("Build components by codename for special purposes")
+    
+    ##
+    chaos_engineering_system: Optional[IChaosEngineering] = None
+    if chaosengineering is not None:
+        chaos_engineering_system = chaosengineering
+    else:
+        chaos_engineering_system = ChaosEngineeringSystem("Used for testing, can simulate extreme situations, and can also be used to test system stability at runtime")
 
     # 创建上下文
-    context = ExtendedContext(file_system, memory_system, agent_connect_system, code_name_component_system)
+    context = ExtendedContext(file_system, 
+                              memory_system, 
+                              agent_connect_system, 
+                              code_name_component_system, 
+                              chaos_engineering_system)
 
     # 创建游戏
     rpggame = RPGGame(worldname, context)
@@ -78,8 +93,10 @@ def main() -> None:
         logger.error("create_world_data_builder 失败。")
         return
     
-    # 创建游戏
-    rpggame = create_rpg_game(worldname)
+    # 创建游戏 + 专门的混动工程系统
+    chaos_engineering_system: Optional[IChaosEngineering] = None
+    chaos_engineering_system = ChaosBuddingWorld("ChaosBuddingWorld")
+    rpggame = create_rpg_game(worldname, chaos_engineering_system)
     if rpggame is None:
         logger.error("create_rpg_game 失败。")
         return

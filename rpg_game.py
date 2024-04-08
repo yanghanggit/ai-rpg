@@ -93,17 +93,23 @@ class RPGGame:
             logger.error("没有WorldBuilder数据，请检查World.json配置。")
             return
         
+        context = self.extendedcontext
+        chaos_engineering_system = context.chaos_engineering_system
+        
         ## 实际运行的路径
         runtime_dir_for_world = f"{worlddata.runtimepath}{worlddata.name}/"
 
         # 第0步，yh 目前用于测试!!!!!!!，直接删worlddata.name的文件夹，保证每次都是新的 删除runtime_dir_for_world的文件夹
         shutil.rmtree(runtime_dir_for_world)
 
+        # 混沌系统，准备测试
+        chaos_engineering_system.on_pre_create_world(context, worlddata)
+
         ## 第一步，设置根路径
         self.worlddata = worlddata
-        self.extendedcontext.agent_connect_system.set_root_path(runtime_dir_for_world)
-        self.extendedcontext.memory_system.set_root_path(runtime_dir_for_world)
-        self.extendedcontext.file_system.set_root_path(runtime_dir_for_world)
+        context.agent_connect_system.set_root_path(runtime_dir_for_world)
+        context.memory_system.set_root_path(runtime_dir_for_world)
+        context.file_system.set_root_path(runtime_dir_for_world)
 
         ### 第二步 创建实体
         self.create_admin_npc_entities(worlddata.admin_npc_builder)
@@ -116,6 +122,9 @@ class RPGGame:
         
         ## 第四步，最后处理因为需要上一阶段的注册流程
         self.add_code_name_component_stages_when_build()
+
+        ## 混沌系统，准备测试
+        chaos_engineering_system.on_post_create_world(context, worlddata)
 
 ###############################################################################################################################################
     def execute(self) -> None:

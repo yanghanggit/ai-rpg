@@ -21,8 +21,8 @@ class NPCPlanningSystem(ExecuteProcessor):
 
     def __init__(self, context: ExtendedContext) -> None:
         self.context = context
-        self.dialogue_actions = [SpeakActionComponent, MindVoiceActionComponent, WhisperActionComponent]
-        self.available_actions = [FightActionComponent, 
+        self.npc_dialogue_actions = [SpeakActionComponent, MindVoiceActionComponent, WhisperActionComponent]
+        self.npc_available_actions = [FightActionComponent, 
                             LeaveForActionComponent, 
                             SpeakActionComponent, 
                             TagActionComponent, 
@@ -63,6 +63,17 @@ class NPCPlanningSystem(ExecuteProcessor):
         for action in npcplanning.actions:
             self.add_action_component(entity, action)
 ####################################################################################################
+    def requestplanning(self, npcname: str, prompt: str) -> Optional[str]:
+        #
+        context = self.context
+        chaos_engineering_system = context.chaos_engineering_system
+        response = chaos_engineering_system.hack_npc_planning(context, npcname, prompt)
+        # 可以先走混沌工程系统
+        if response is None:
+           response = self.context.agent_connect_system._request_(npcname, prompt)
+            
+        return response
+####################################################################################################
     def check_plan(self, entity: Entity, plan: ActorPlan) -> bool:
         if len(plan.actions) == 0:
             # 走到这里
@@ -79,10 +90,10 @@ class NPCPlanningSystem(ExecuteProcessor):
         return True
 ####################################################################################################
     def check_available(self, action: ActorAction) -> bool:
-        return action.actionname in [component.__name__ for component in self.available_actions]
+        return action.actionname in [component.__name__ for component in self.npc_available_actions]
 ####################################################################################################
     def check_dialogue(self, action: ActorAction) -> bool:
-        if action.actionname not in [component.__name__ for component in self.dialogue_actions]:
+        if action.actionname not in [component.__name__ for component in self.npc_dialogue_actions]:
             # 不是一个对话类型
             return True
     
@@ -97,23 +108,12 @@ class NPCPlanningSystem(ExecuteProcessor):
         #可以过
         return True
 ####################################################################################################
-    def add_action_component(self, entity: Entity, action: ActorAction) -> bool:
-        for action_component in self.available_actions:
+    def add_action_component(self, entity: Entity, action: ActorAction) -> None:
+        for action_component in self.npc_available_actions:
             if action_component.__name__ != action.actionname:
                 continue
             if not entity.has(action_component):
                 entity.add(action_component, action)
             ## 必须跳出
             break
-####################################################################################################
-    def requestplanning(self, npcname: str, prompt: str) -> Optional[str]:
-        #
-        context = self.context
-        chaos_engineering_system = context.chaos_engineering_system
-        response = chaos_engineering_system.hack_npc_planning(context, npcname, prompt)
-        # 可以先走混沌工程系统
-        if response is None:
-           response = self.context.agent_connect_system._request_(npcname, prompt)
-            
-        return response
 ####################################################################################################

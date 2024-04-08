@@ -22,7 +22,7 @@ from auxiliary.memory_system import MemorySystem
 from typing import Optional
 from auxiliary.agent_connect_system import AgentConnectSystem
 from auxiliary.code_name_component_system import CodeNameComponentSystem
-from auxiliary.chaos_engineering_system import ChaosEngineeringSystem, IChaosEngineering
+from auxiliary.chaos_engineering_system import EmptyChaosEngineeringSystem, IChaosEngineering
 
 ### 专门的混动工程系统
 from budding_world.chaos_budding_world import ChaosBuddingWorld
@@ -63,7 +63,7 @@ def create_rpg_game(worldname: str, chaosengineering: Optional[IChaosEngineering
     if chaosengineering is not None:
         chaos_engineering_system = chaosengineering
     else:
-        chaos_engineering_system = ChaosEngineeringSystem("empty chaos_engineering_system")
+        chaos_engineering_system = EmptyChaosEngineeringSystem("empty_chaos")
 
     # 创建上下文
     context = ExtendedContext(file_system, 

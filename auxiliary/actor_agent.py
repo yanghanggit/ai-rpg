@@ -10,27 +10,44 @@ class ActorAgent:
         self.url: str = url
         self.agent: RemoteRunnable = None
         self.chat_history: List[Union[HumanMessage, AIMessage]] = []
-
-    def connect(self)-> None:
-        if self.url != "":
+################################################################################################################################################################################
+    def connect(self) -> bool:
+        if self.url == "":
+            logger.error(f"connect: {self.name} have no url. 请确认是默认玩家，否则检查game_settings.json中配置。")
+            return False
+        try:
             self.agent = RemoteRunnable(self.url)
-        else:
-            logger.warning(f"connect: {self.name} have no url. 请确认是默认玩家，否则检查game_settings.json中配置。")
- 
-        self.chat_history = []
-
+            assert self.agent is not None
+            self.chat_history = []
+            return True
+        except Exception as e:
+            logger.error(e)
+            return False        
+        return False
+################################################################################################################################################################################
     def request(self, prompt: str) -> Optional[str]:
+
         if self.agent is None:
-            logger.warning(f"request: {self.name} have no agent.请确认是默认玩家，否则检查game_settings.json中配置。")
+            logger.error(f"request: {self.name} have no agent.请确认是默认玩家，否则检查game_settings.json中配置。")
             return None
-        response = self.agent.invoke({"input": prompt, "chat_history": self.chat_history})
-        response_output = cast(str, response.get('output', ''))
-        self.chat_history.extend([HumanMessage(content=prompt), AIMessage(content=response_output)])
-        logger.debug(f"\n{'=' * 50}\n{self.name} request result:\n{response_output}\n{'=' * 50}")
-        return response_output
     
+        try:
+
+            response = self.agent.invoke({"input": prompt, "chat_history": self.chat_history})
+            responsecontent = cast(str, response.get('output', ''))
+            self.chat_history.extend([HumanMessage(content = prompt), AIMessage(content = responsecontent)])
+            logger.debug(f"\n{'=' * 50}\n{self.name} request result:\n{responsecontent}\n{'=' * 50}")
+            return responsecontent
+           
+        except Exception as e:
+            logger.error(f"{self.name}: request error: {e}")
+            return None      
+
+        return None
+################################################################################################################################################################################
     def add_human_message_to_chat_history(self, new_chat: str) -> None:
         self.chat_history.extend([HumanMessage(content = new_chat)])
-    
+################################################################################################################################################################################
     def __str__(self) -> str:
         return f"ActorAgent({self.name}, {self.url})"
+################################################################################################################################################################################

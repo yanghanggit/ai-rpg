@@ -31,7 +31,7 @@ class StagePlanningSystem(ExecuteProcessor):
         stagecomp: StageComponent = entity.get(StageComponent)
         ##
         try:
-            response = agent_connect_system.request(stagecomp.name, prompt)
+            response = agent_connect_system._request_(stagecomp.name, prompt)
             if response is None:
                 logger.error(f"StagePlanSystem: response is None or empty")
                 return None

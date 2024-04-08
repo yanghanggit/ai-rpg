@@ -33,7 +33,7 @@ class NPCPlanningSystem(ExecuteProcessor):
         npccomp: NPCComponent = entity.get(NPCComponent)
 
         try:
-            response = agent_connect_system.request(npccomp.name, prompt)
+            response = agent_connect_system._request_(npccomp.name, prompt)
             if response is None:
                 logger.warning("Agent request is None.如果不是默认Player可能需要检查配置。")
                 return

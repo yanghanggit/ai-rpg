@@ -38,7 +38,7 @@ class GMCommandPush(GMInput):
         npc_entity: Optional[Entity] = context.getnpc(name)
         if npc_entity is not None:
             npc_comp: NPCComponent = npc_entity.get(NPCComponent)
-            npc_request: Optional[str] = agent_connect_system.request(npc_comp.name, content)
+            npc_request: Optional[str] = agent_connect_system._request_(npc_comp.name, content)
             if npc_request is not None:
                 agent_connect_system.remove_last_conversation_between_human_and_ai(npc_comp.name)
             return npc_comp
@@ -46,7 +46,7 @@ class GMCommandPush(GMInput):
         stage_entity: Optional[Entity] = context.getstage(name)
         if stage_entity is not None:
             stage_comp: StageComponent = stage_entity.get(StageComponent)
-            stage_request: Optional[str] = agent_connect_system.request(stage_comp.name, content)
+            stage_request: Optional[str] = agent_connect_system._request_(stage_comp.name, content)
             if stage_request is not None:
                 agent_connect_system.remove_last_conversation_between_human_and_ai(stage_comp.name)
             return stage_comp
@@ -54,7 +54,7 @@ class GMCommandPush(GMInput):
         world_entity: Optional[Entity] = context.getworld(name)
         if world_entity is not None:
             world_comp: WorldComponent = world_entity.get(WorldComponent)
-            request: Optional[str] = agent_connect_system.request(world_comp.name, content)
+            request: Optional[str] = agent_connect_system._request_(world_comp.name, content)
             if request is not None:
                 agent_connect_system.remove_last_conversation_between_human_and_ai(world_comp.name)
             return world_comp

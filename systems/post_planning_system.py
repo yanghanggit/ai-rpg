@@ -12,7 +12,7 @@ class PostPlanningSystem(ExecuteProcessor):
     def execute(self) -> None:
         logger.debug("<<<<<<<<<<<<<  PostPlanningSystem  >>>>>>>>>>>>>>>>>")
         entities: Set[Entity] = self.context.get_group(Matcher(AutoPlanningComponent)).entities
-        for entity in entities:
+        for entity in entities.copy():
             entity.remove(AutoPlanningComponent)
 ############################################################################################################
 

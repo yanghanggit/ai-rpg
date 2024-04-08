@@ -12,8 +12,12 @@ class ChaosBuddingWorld(IChaosEngineering):
 
     ##
     def on_pre_create_world(self, extended_context: Any, worlddata: WorldDataBuilder) -> None:
-        logger.debug(f"ChaosEngineeringSystem: {self.name} on_pre_create_world")
+        logger.error(f" {self.name}: on_pre_create_world")
 
     ##
     def on_post_create_world(self, extended_context: Any, worlddata: WorldDataBuilder) -> None:
-        logger.debug(f"ChaosEngineeringSystem: {self.name} on_post_create_world")
+        logger.error(f" {self.name}: on_post_create_world")
+    
+    ##
+    def on_read_memory_failed(self, extended_context: Any, name: str, readarchprompt: str) -> None:
+        logger.error(f"{self.name}: on_read_memory_failed {name} = {readarchprompt}")

@@ -33,19 +33,16 @@ class AgentConnectSystem:
             logger.debug(f"AgentConnectSystem: {name} = {agent}")
 
     ##
-    def connect_actor_agent(self, name: str) -> None:
+    def connect_actor_agent(self, name: str) -> bool:
         if name in self.memorydict:
-            self.memorydict[name].connect()
-            logger.debug(f"connect_actor_agent: {name} is connected.")
-        else:
-            logger.error(f"connect_actor_agent: {name} is not registered.")
+            return self.memorydict[name].connect()
+        logger.error(f"connect_actor_agent: {name} is not registered.")
+        return False
 
     ##
-    def request(self, name: str, prompt: str) -> Optional[str]:
+    def _request_(self, name: str, prompt: str) -> Optional[str]:
         if name in self.memorydict:
-            logger.debug(f"request: {name} is requested.{prompt}")
             return self.memorydict[name].request(prompt)
-            #return None
         logger.error(f"request: {name} is not registered.")
         return None
 

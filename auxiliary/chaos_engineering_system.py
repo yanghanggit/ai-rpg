@@ -1,7 +1,7 @@
 from loguru import logger
 from abc import ABC, abstractmethod
 from auxiliary.builders import WorldDataBuilder
-from typing import Any
+from typing import Any, Optional
 
 ##Used for testing, can simulate extreme situations, and can also be used to test system stability at runtime
 class IChaosEngineering(ABC):
@@ -18,8 +18,17 @@ class IChaosEngineering(ABC):
     def on_read_memory_failed(self, extended_context: Any, name: str, readarchprompt: str) -> None:
         pass
 
+    @abstractmethod  
+    def hack_stage_planning(self, extended_context: Any, stagename: str, planprompt: str) -> Optional[str]:
+        pass
+
+    @abstractmethod
+    def hack_npc_planning(self, extended_context: Any, npcname: str, planprompt: str) -> Optional[str]:
+        pass
+
 ## 运行中的测试系统, 空的混沌工程系统
 class EmptyChaosEngineeringSystem(IChaosEngineering):
+    
     ##
     def __init__(self, name: str) -> None:
         self.name: str = name
@@ -35,6 +44,16 @@ class EmptyChaosEngineeringSystem(IChaosEngineering):
     ##
     def on_read_memory_failed(self, extended_context: Any, name: str, readarchprompt: str) -> None:
         logger.debug(f"{self.name}: on_read_memory_failed {name} {readarchprompt}")
+
+    ##
+    def hack_stage_planning(self, extended_context: Any, stagename: str, planprompt: str) -> Optional[str]:
+        logger.debug(f"{self.name}: hack_stage_planning {stagename} {planprompt}")
+        return None
+
+    ##
+    def hack_npc_planning(self, extended_context: Any, npcname: str, planprompt: str) -> Optional[str]:
+        logger.debug(f"{self.name}: hack_npc_planning {npcname} {planprompt}")
+        return None
        
 
     

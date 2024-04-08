@@ -13,6 +13,7 @@ from auxiliary.actor_action import ActorPlan
 from auxiliary.prompt_maker import npc_plan_prompt
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
+from typing import Optional
 
 class NPCPlanningSystem(ExecuteProcessor):
 
@@ -29,58 +30,62 @@ class NPCPlanningSystem(ExecuteProcessor):
     def handle(self, entity: Entity) -> None:
 
         prompt = npc_plan_prompt(entity, self.context)
-        agent_connect_system = self.context.agent_connect_system
         npccomp: NPCComponent = entity.get(NPCComponent)
 
-        try:
-            response = agent_connect_system._request_(npccomp.name, prompt)
-            if response is None:
-                logger.warning("Agent request is None.如果不是默认Player可能需要检查配置。")
-                return
-            
-            npcplanning = ActorPlan(npccomp.name, response)
-            for action in npcplanning.actions:
-                match action.actionname:
-                    case "FightActionComponent":
-                        if not entity.has(FightActionComponent):
-                            entity.add(FightActionComponent, action)
-
-                    case "LeaveForActionComponent":
-                        if not entity.has(LeaveForActionComponent):
-                            entity.add(LeaveForActionComponent, action)
-
-                    case "SpeakActionComponent":
-                        if not entity.has(SpeakActionComponent):
-                            entity.add(SpeakActionComponent, action)
-                    
-                    case "TagActionComponent":
-                        if not entity.has(TagActionComponent):
-                            entity.add(TagActionComponent, action)
-                    
-                    case "RememberActionComponent":
-                        pass
-
-                    case "MindVoiceActionComponent":
-                        if not entity.has(MindVoiceActionComponent):
-                            entity.add(MindVoiceActionComponent, action)
-
-                    case "BroadcastActionComponent":
-                        if not entity.has(BroadcastActionComponent):
-                            entity.add(BroadcastActionComponent, action)
-
-                    case "WhisperActionComponent":
-                        if not entity.has(WhisperActionComponent):
-                            entity.add(WhisperActionComponent, action)
-
-                    case "SearchActionComponent":
-                        if not entity.has(SearchActionComponent):
-                            entity.add(SearchActionComponent, action)
-                    case _:
-                        logger.warning(f" {action.actionname}, Unknown action name")
-                        continue
-
-        except Exception as e:
-            logger.exception(f"NPCPlanSystem: {e}")  
+        response = self.requestplanning(npccomp.name, prompt)
+        if response is None:
+            logger.warning(f"NPCPlanningSystem: response is None or empty, so we can't get the planning.")
             return
-        return
+        
+        npcplanning = ActorPlan(npccomp.name, response)
+        for action in npcplanning.actions:
+            match action.actionname:
+                case "FightActionComponent":
+                    if not entity.has(FightActionComponent):
+                        entity.add(FightActionComponent, action)
+
+                case "LeaveForActionComponent":
+                    if not entity.has(LeaveForActionComponent):
+                        entity.add(LeaveForActionComponent, action)
+
+                case "SpeakActionComponent":
+                    if not entity.has(SpeakActionComponent):
+                        entity.add(SpeakActionComponent, action)
+                
+                case "TagActionComponent":
+                    if not entity.has(TagActionComponent):
+                        entity.add(TagActionComponent, action)
+                
+                case "RememberActionComponent":
+                    pass
+
+                case "MindVoiceActionComponent":
+                    if not entity.has(MindVoiceActionComponent):
+                        entity.add(MindVoiceActionComponent, action)
+
+                case "BroadcastActionComponent":
+                    if not entity.has(BroadcastActionComponent):
+                        entity.add(BroadcastActionComponent, action)
+
+                case "WhisperActionComponent":
+                    if not entity.has(WhisperActionComponent):
+                        entity.add(WhisperActionComponent, action)
+
+                case "SearchActionComponent":
+                    if not entity.has(SearchActionComponent):
+                        entity.add(SearchActionComponent, action)
+                case _:
+                    logger.warning(f" {action.actionname}, Unknown action name")
+                    continue
+####################################################################################################
+    def requestplanning(self, npcname: str, prompt: str) -> Optional[str]:
+        #
+        context = self.context
+        chaos_engineering_system = context.chaos_engineering_system
+        response = chaos_engineering_system.hack_npc_planning(context, npcname, prompt)
+        # 可以先走混沌工程系统
+        if response is None:
+           response = self.context.agent_connect_system._request_(npcname, prompt)
+            
+        return response
 ####################################################################################################

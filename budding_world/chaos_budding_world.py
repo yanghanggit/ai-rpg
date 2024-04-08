@@ -1,7 +1,7 @@
 from auxiliary.chaos_engineering_system import IChaosEngineering
 from loguru import logger
 from auxiliary.builders import WorldDataBuilder
-from typing import Any
+from typing import Any, Optional
 
 ## 运行中的测试系统, 空的混沌工程系统
 class ChaosBuddingWorld(IChaosEngineering):
@@ -26,3 +26,13 @@ class ChaosBuddingWorld(IChaosEngineering):
         agent_connect_system = context.agent_connect_system
         agent_connect_system._add_human_message_to_chat_history_(name, readarchprompt)
         agent_connect_system._add_ai_message_to_chat_history_(name, f"确认回忆")
+
+    ##
+    def hack_stage_planning(self, extended_context: Any, stagename: str, planprompt: str) -> Optional[str]:
+        logger.debug(f"{self.name}: hack_stage_planning {stagename} {planprompt}")
+        return None
+
+    ##
+    def hack_npc_planning(self, extended_context: Any, npcname: str, planprompt: str) -> Optional[str]:
+        logger.debug(f"{self.name}: hack_npc_planning {npcname} {planprompt}")
+        return None

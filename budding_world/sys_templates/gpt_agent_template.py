@@ -7,13 +7,11 @@ from langchain.agents import AgentExecutor, create_openai_functions_agent
 from langchain.prompts import MessagesPlaceholder
 from langchain_core.messages import AIMessage, FunctionMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_openai import ChatOpenAI
+from langchain_openai import AzureChatOpenAI
 from langserve import add_routes
 from langserve.pydantic_v1 import BaseModel, Field
-from langchain_community.vectorstores.faiss import FAISS
-from langchain_openai.embeddings import OpenAIEmbeddings
-from langchain.tools.retriever import create_retriever_tool
 from loguru import logger
+from langchain_core.tools import tool
 
 RAG_MD_PATH: str = f"""<%RAG_MD_PATH>"""
 SYS_PROMPT_MD_PATH: str = f"""<%SYS_PROMPT_MD_PATH>"""
@@ -40,19 +38,6 @@ def read_md(file_path: str) -> str:
 _rag_ = read_md(RAG_MD_PATH)
 _sys_prompt_ = read_md(SYS_PROMPT_MD_PATH)
 
-vector_store = FAISS.from_texts(
-    [_rag_],
-    embedding=OpenAIEmbeddings()
-)
-
-retriever = vector_store.as_retriever()
-
-retriever_tool = create_retriever_tool(
-    retriever,
-    "get_information_about_world_view",
-    "You must refer these information before response user."
-)
-
 prompt = ChatPromptTemplate.from_messages(
     [
         (
@@ -65,9 +50,21 @@ prompt = ChatPromptTemplate.from_messages(
     ]
 )
 
-llm = ChatOpenAI(model = GPT_MODEL)
+print(f'endpoint:{os.getenv("AZURE_OPENAI_ENDPOINT")}\n key:{os.getenv("AZURE_OPENAI_API_KEY")}')
 
-tools = [retriever_tool]
+llm = AzureChatOpenAI(
+    azure_endpoint= os.getenv("AZURE_OPENAI_ENDPOINT"),
+    api_key= os.getenv("AZURE_OPENAI_API_KEY"),
+    azure_deployment="GPT35-2",
+    api_version="2024-02-15-preview"
+)
+
+@tool
+def debug_tool():
+    """debug"""
+    return "Debug tool"
+
+tools = [debug_tool]
 
 agent = create_openai_functions_agent(llm, tools, prompt)
 

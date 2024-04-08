@@ -24,7 +24,7 @@ from auxiliary.agent_connect_system import AgentConnectSystem
 from auxiliary.code_name_component_system import CodeNameComponentSystem
 from auxiliary.chaos_engineering_system import EmptyChaosEngineeringSystem, IChaosEngineering
 
-### 专门的混动工程系统
+### 专门的混沌工程系统
 from budding_world.chaos_budding_world import ChaosBuddingWorld
 
 
@@ -59,7 +59,7 @@ def create_rpg_game(worldname: str, chaosengineering: Optional[IChaosEngineering
     agent_connect_system = AgentConnectSystem("agent_connect_system， Because it involves net operations, an independent system is more convenient.")
     code_name_component_system = CodeNameComponentSystem("Build components by codename for special purposes")
     
-    ### 混动工程系统
+    ### 混沌工程系统
     if chaosengineering is not None:
         chaos_engineering_system = chaosengineering
     else:
@@ -92,7 +92,7 @@ def main() -> None:
         logger.error("create_world_data_builder 失败。")
         return
     
-    # 创建游戏 + 专门的混动工程系统
+    # 创建游戏 + 专门的混沌工程系统
     #chaos_engineering_system = ChaosBuddingWorld("ChaosBuddingWorld")
     chaos_engineering_system: Optional[IChaosEngineering] = None
     rpggame = create_rpg_game(worldname, chaos_engineering_system)

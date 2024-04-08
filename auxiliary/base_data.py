@@ -16,6 +16,9 @@ class PropData:
 
     def isunique(self) -> bool:
         return self.is_unique == "Yes"
+    
+    def __str__(self) -> str:
+        return f"{self.name}"
 
 class NPCData:
     def __init__(self, name: str, codename: str, url: str, memory: str, props: set[PropData] = set()) -> None:

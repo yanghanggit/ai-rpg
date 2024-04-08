@@ -22,6 +22,9 @@ class PropFile(BaseFile):
     def content(self) -> str:
         prop_json = json.dumps(self.prop.__dict__, ensure_ascii = False)
         return prop_json
+    
+    def __str__(self) -> str:
+        return f"{self.prop}"
 ############################################################################################################
     
 ### yh modified!!!!

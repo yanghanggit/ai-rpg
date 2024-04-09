@@ -18,9 +18,12 @@ class DataSaveSystem(ExecuteProcessor, TearDownProcessor):
         self.context = context
         self.current_save_count = 0
         self.auto_save_count = auto_save_count
+        assert self.auto_save_count > 0
 ################################################################################################
     def execute(self) -> None:
-        logger.debug("<<<<<<<<<<<<<  PreActionSystem  >>>>>>>>>>>>>>>>>")
+        logger.debug("<<<<<<<<<<<<<  DataSaveSystem  >>>>>>>>>>>>>>>>>")
+
+        ## 运行一定次数后自动保存
         self.current_save_count += 1
         if self.current_save_count >= self.auto_save_count:
             self.current_save_count = 0

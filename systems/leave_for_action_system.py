@@ -6,7 +6,6 @@ from auxiliary.components import (LeaveForActionComponent,
 from auxiliary.actor_action import ActorAction
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.print_in_color import Color
-from auxiliary.prompt_maker import fail_to_enter_stage, fail_to_exit_stage, npc_enter_stage, npc_leave_for_stage
 from loguru import logger
 from director_component import DirectorComponent
 from director_event import LeaveForStageEvent, EnterStageEvent, FailEnterStageEvent, FailExitStageEvent
@@ -39,14 +38,10 @@ class LeaveForActionSystem(ReactiveProcessor):
 
     def react(self, entities: list[Entity]) -> None:
         logger.debug("<<<<<<<<<<<<<  LeaveForActionSystem  >>>>>>>>>>>>>>>>>")
-        self.handle(entities)
-
-        #必须移除！！！！！
-        for entity in entities:
-            entity.remove(LeaveForActionComponent)    
+        self.leavefor(entities)
 
     ###############################################################################################################################################
-    def handle(self, entities: list[Entity]) -> None:
+    def leavefor(self, entities: list[Entity]) -> None:
 
         for entity in entities:
             if not entity.has(NPCComponent):

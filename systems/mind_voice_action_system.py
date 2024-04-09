@@ -22,13 +22,9 @@ class MindVoiceActionSystem(ReactiveProcessor):
 
         # 核心处理
         for entity in entities:
-            self.handle(entity)
-            
-        # 必须移除！！！
-        for entity in entities:
-            entity.remove(MindVoiceActionComponent)         
+            self.mindvoice(entity)      
 ####################################################################################################
-    def handle(self, entity: Entity) -> None:
+    def mindvoice(self, entity: Entity) -> None:
         mindvoicecomp: MindVoiceActionComponent = entity.get(MindVoiceActionComponent)
         action: ActorAction = mindvoicecomp.action
         for value in action.values:

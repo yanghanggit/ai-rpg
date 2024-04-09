@@ -25,7 +25,7 @@ from systems.tag_action_system import TagActionSystem
 from systems.data_save_system import DataSaveSystem
 from systems.broadcast_action_system import BroadcastActionSystem  
 from systems.whisper_action_system import WhisperActionSystem 
-from systems.search_props_system import SearchPropsSystem
+from systems.search_action_system import SearchActionSystem
 from systems.mind_voice_action_system import MindVoiceActionSystem
 from director_component import DirectorComponent
 from auxiliary.file_system import PropFile
@@ -34,6 +34,9 @@ from systems.end_system import EndSystem
 import shutil
 from systems.pre_planning_system import PrePlanningSystem
 from systems.post_planning_system import PostPlanningSystem
+from systems.pre_action_system import PreActionSystem
+from systems.post_action_system import PostActionSystem
+from systems.post_fight_system import PostFightSystem
 
 ## 控制流程和数据创建
 class RPGGame:
@@ -45,6 +48,7 @@ class RPGGame:
         self.started: bool = False
         self.inited: bool = False
         self.worlddata: Optional[WorldDataBuilder] = None
+        self.auto_save_count: int = 1000000
         ### 做一些初始化
         self.createprocessors()
 ###############################################################################################################################################
@@ -57,32 +61,38 @@ class RPGGame:
         
         #初始化系统########################
         processors.add(InitSystem(context))
+        
+        
         #规划逻辑########################
-        processors.add(PrePlanningSystem(context)) #### 在所有规划之前
-        ### 所有规划
+        processors.add(PrePlanningSystem(context)) ######## 在所有规划之前
         processors.add(StagePlanningSystem(context))
         processors.add(NPCPlanningSystem(context))
-        processors.add(PostPlanningSystem(context)) #### 在所有规划之后
+        processors.add(PostPlanningSystem(context)) ####### 在所有规划之后
+
+
         #行动逻辑########################
+        processors.add(PreActionSystem(context)) ######## 在所有行动之前
         processors.add(TagActionSystem(context))
         processors.add(MindVoiceActionSystem(context))
         processors.add(WhisperActionSystem(context))
         processors.add(BroadcastActionSystem(context))
         processors.add(SpeakActionSystem(context))
-        #死亡必须是战斗之后，因为如果死了就不能离开###############
         processors.add(FightActionSystem(context))
+        processors.add(PostFightSystem(context))
         processors.add(DeadActionSystem(context)) 
-        #########################################
-        # 处理搜寻道具行为
-        processors.add(SearchPropsSystem(context))
-        # 处理离开并去往的行为
+        processors.add(SearchActionSystem(context))
         processors.add(LeaveForActionSystem(context))
+        processors.add(PostActionSystem(context)) ####### 在所有行动之后
+        #########################################
+
+
         #行动结束后导演
         processors.add(DirectorSystem(context))
+        
         #########################################
         ###必须最后
         processors.add(DestroySystem(context))
-        processors.add(DataSaveSystem(context))
+        processors.add(DataSaveSystem(context, self.auto_save_count))
 
          ##调试用的系统。监视进入运行之后的状态###############################################################################################################################################
         processors.add(EndSystem(context))

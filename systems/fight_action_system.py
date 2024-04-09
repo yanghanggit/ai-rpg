@@ -2,7 +2,6 @@ from entitas import Matcher, ReactiveProcessor, GroupEvent, Entity # type: ignor
 from auxiliary.components import FightActionComponent, SimpleRPGRoleComponent, DeadActionComponent
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.actor_action import ActorAction
-from auxiliary.prompt_maker import kill_someone, attack_someone
 from loguru import logger
 from director_component import DirectorComponent
 from director_event import KillSomeoneEvent, AttackSomeoneEvent
@@ -23,13 +22,10 @@ class FightActionSystem(ReactiveProcessor):
         logger.debug("<<<<<<<<<<<<<  FightActionSystem  >>>>>>>>>>>>>>>>>")
         ## 核心处理
         for entity in entities:
-            self.handle(entity)
+            self.fight(entity)
 
-        ### 必须删除！！！！！！！！！！！！！！！！！！！！！！！！！！
-        for entity in entities:
-            entity.remove(FightActionComponent)
  ######################################################################################################################################################   
-    def handle(self, entity: Entity) -> None:
+    def fight(self, entity: Entity) -> None:
         rpgcomp: SimpleRPGRoleComponent = entity.get(SimpleRPGRoleComponent)
         if rpgcomp is None:
             logger.warning(f"FightActionSystem: 没有SimpleRPGRoleComponent,本次攻击无效.")

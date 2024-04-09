@@ -110,15 +110,6 @@ class ExtendedContext(Context):
         raise ValueError("实体不是NPC或者Stage, 不能做添加")
         return False
 
-    # 向Entity所在的场景中添加导演脚本
-    # def legacy_add_content_to_director_script_by_entity(self, entity: Entity, content: str) -> bool:
-    #     stageentity = self.get_stage_entity_by_uncertain_entity(entity)
-    #     if stageentity is None:
-    #         return False
-    #     stagecomp: StageComponent = stageentity.get(StageComponent)
-    #     stagecomp.directorscripts.append(content)
-    #     return True
-    
     #
     def change_stage_tag_component(self, entity: Entity, from_stagename: str, to_stagename: str) -> None:
         if not entity.has(NPCComponent):

@@ -1,6 +1,6 @@
 from typing import List, Union
 from langchain_core.messages import HumanMessage, AIMessage
-from entitas import (TearDownProcessor, Matcher, Entity) #type: ignore
+from entitas import (TearDownProcessor, Matcher, Entity, ExecuteProcessor) #type: ignore
 from auxiliary.components import (
     NPCComponent,
     StageComponent,
@@ -8,13 +8,25 @@ from auxiliary.components import (
 )
 from auxiliary.prompt_maker import gen_npc_archive_prompt, gen_stage_archive_prompt, gen_world_archive_prompt
 from auxiliary.extended_context import ExtendedContext
+from loguru import logger
 
 ################################################################################################
-class DataSaveSystem(TearDownProcessor):
+class DataSaveSystem(ExecuteProcessor, TearDownProcessor):
 
-    def __init__(self, context: ExtendedContext) -> None:
+    def __init__(self, context: ExtendedContext, auto_save_count: int) -> None:
         super().__init__()
         self.context = context
+        self.current_save_count = 0
+        self.auto_save_count = auto_save_count
+################################################################################################
+    def execute(self) -> None:
+        logger.debug("<<<<<<<<<<<<<  PreActionSystem  >>>>>>>>>>>>>>>>>")
+        self.current_save_count += 1
+        if self.current_save_count >= self.auto_save_count:
+            self.current_save_count = 0
+            self.make_world_archive()
+            self.make_stage_archive()
+            self.make_npc_archive()
 ################################################################################################
     def tear_down(self) -> None:
         self.make_world_archive()
@@ -31,11 +43,9 @@ class DataSaveSystem(TearDownProcessor):
             archiveprompt = gen_world_archive_prompt(self.context)
             genarchive = agent_connect_system._request_(worldcomp.name, archiveprompt)
             if genarchive is not None:
-                #self.context.savearchive(genarchive, worldcomp.name)
                 memory_system.overwritememory(worldcomp.name, genarchive)
             else:
                 chat_history = agent_connect_system.get_chat_history(worldcomp.name)
-                #self.context.savearchive(self.archive_chat_history(chat_history), worldcomp.name)
                 memory_system.overwritememory(worldcomp.name, self.archive_chat_history(chat_history))
 ################################################################################################
     def make_stage_archive(self) -> None:
@@ -48,11 +58,9 @@ class DataSaveSystem(TearDownProcessor):
             archiveprompt = gen_stage_archive_prompt(self.context)
             genarchive = agent_connect_system._request_(stagecomp.name, archiveprompt)
             if genarchive is not None:
-                #self.context.savearchive(genarchive, stagecomp.name)
                 memory_system.overwritememory(stagecomp.name, genarchive)
             else:
                 chat_history = agent_connect_system.get_chat_history(stagecomp.name)
-                #self.context.savearchive(self.archive_chat_history(chat_history), stagecomp.name)
                 memory_system.overwritememory(stagecomp.name, self.archive_chat_history(chat_history))
 ################################################################################################
     def make_npc_archive(self) -> None:
@@ -65,11 +73,9 @@ class DataSaveSystem(TearDownProcessor):
             archiveprompt = gen_npc_archive_prompt(self.context)
             genarchive = agent_connect_system._request_(npccomp.name, archiveprompt)
             if genarchive is not None:
-                #self.context.savearchive(genarchive, npccomp.name)
                 memory_system.overwritememory(npccomp.name, genarchive)
             else:
                 chat_history = agent_connect_system.get_chat_history(npccomp.name)
-                #self.context.savearchive(self.archive_chat_history(chat_history), npccomp.name)
                 memory_system.overwritememory(npccomp.name, self.archive_chat_history(chat_history))
 ################################################################################################
     def archive_chat_history(self, chat_history: List[Union[HumanMessage, AIMessage]]) -> str:

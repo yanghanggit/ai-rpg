@@ -27,12 +27,9 @@ class SpeakActionSystem(ReactiveProcessor):
         logger.debug("<<<<<<<<<<<<<  SpeakActionSystem  >>>>>>>>>>>>>>>>>")
         # 核心执行
         for entity in entities:
-            self.handle(entity)  
-        # 必须移除！！！
-        for entity in entities:
-            entity.remove(SpeakActionComponent)     
+            self.speak(entity)  
 ####################################################################################################
-    def handle(self, entity: Entity) -> None:
+    def speak(self, entity: Entity) -> None:
         speak_comp: SpeakActionComponent = entity.get(SpeakActionComponent)
         speak_action: ActorAction = speak_comp.action
         for value in speak_action.values:

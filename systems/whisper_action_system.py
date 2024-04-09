@@ -22,14 +22,10 @@ class WhisperActionSystem(ReactiveProcessor):
 ####################################################################################################
     def react(self, entities: list[Entity]) -> None:
         logger.debug("<<<<<<<<<<<<<  WhisperActionSystem  >>>>>>>>>>>>>>>>>")
-
         for entity in entities:
-            self.handle(entity)  # 核心处理
-
-        for entity in entities:
-            entity.remove(WhisperActionComponent)  # 必须移除！！！       
+            self.whisper(entity)  # 核心处理 
 ####################################################################################################
-    def handle(self, entity: Entity) -> None:
+    def whisper(self, entity: Entity) -> None:
 
         whispercomp: WhisperActionComponent = entity.get(WhisperActionComponent)
         action: ActorAction = whispercomp.action

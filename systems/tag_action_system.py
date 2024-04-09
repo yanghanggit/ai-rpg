@@ -18,6 +18,4 @@ class TagActionSystem(ReactiveProcessor):
 ####################################################################################################
     def react(self, entities: list[Entity]) -> None:
         logger.debug("<<<<<<<<<<<<<  TagActionSystem  >>>>>>>>>>>>>>>>>")
-        for entity in entities:
-            entity.remove(TagActionComponent)    
 ####################################################################################################

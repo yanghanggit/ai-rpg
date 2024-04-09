@@ -23,15 +23,11 @@ class BroadcastActionSystem(ReactiveProcessor):
 
     def react(self, entities: list[Entity]) -> None:
         logger.debug("<<<<<<<<<<<<<  BroadcastActionSystem  >>>>>>>>>>>>>>>>>")
-
         for entity in entities:
-            self.handlebroadcast(entity)  # 核心处理
-
-        for entity in entities:
-            entity.remove(BroadcastActionComponent)  # 必须移除！！！       
+            self.broadcast(entity)  # 核心处理
 
     ## 目前的设定是场景与NPC都能广播，后续会调整与修改。
-    def handlebroadcast(self, entity: Entity) -> None:
+    def broadcast(self, entity: Entity) -> None:
         ## 没有场景不需要广播
         stageentity = self.context.get_stage_entity_by_uncertain_entity(entity)
         if stageentity is None:

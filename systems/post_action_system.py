@@ -17,14 +17,14 @@ class PostActionSystem(ExecuteProcessor):
         self.test()
 ############################################################################################################
     def remove_stage_actions(self) -> None:
-        entities = self.context.get_group(Matcher(all_of = [StageComponent], any_of = stage_available_actions_register)).entities
+        entities = self.context.get_group(Matcher(all_of = [StageComponent], any_of = stage_available_actions_register)).entities.copy()
         for entity in entities:
             for actionsclass in stage_available_actions_register:
                 if entity.has(actionsclass):
                     entity.remove(actionsclass)
 ############################################################################################################
     def remove_npc_actions(self) -> None:
-        entities = self.context.get_group(Matcher(all_of = [NPCComponent], any_of = npc_available_actions_register)).entities
+        entities = self.context.get_group(Matcher(all_of = [NPCComponent], any_of = npc_available_actions_register)).entities.copy()
         for entity in entities:
             for actionsclass in npc_available_actions_register:
                 if entity.has(actionsclass):

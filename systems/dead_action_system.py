@@ -22,7 +22,7 @@ class DeadActionSystem(ExecuteProcessor):
         self.must_destory()
 ########################################################################################################################################################################    
     def remove_npc_actions(self) -> None:
-        npcentities:set[Entity] = self.context.get_group(Matcher(all_of = [NPCComponent, DeadActionComponent])).entities
+        npcentities:set[Entity] = self.context.get_group(Matcher(all_of = [NPCComponent, DeadActionComponent])).entities.copy()
         #核心处理，如果死了就要处理下面的组件
         for entity in npcentities:
             for actionsclass in npc_interactive_actions_register:

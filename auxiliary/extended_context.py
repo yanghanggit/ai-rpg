@@ -13,7 +13,6 @@ from auxiliary.agent_connect_system import AgentConnectSystem
 from auxiliary.code_name_component_system import CodeNameComponentSystem
 from auxiliary.chaos_engineering_system import IChaosEngineering
 from typing import List, Any, Optional
-from auxiliary.dialogue_rule import parse_target_and_message
 
 
 class ExtendedContext(Context):
@@ -141,6 +140,8 @@ class ExtendedContext(Context):
     
     ## 
     def check_dialogue_action(self, actionname: str, actionvalues: List[str], actions_register: List[Any]) -> bool:
+        from auxiliary.dialogue_rule import parse_target_and_message
+
         if actionname not in [component.__name__ for component in actions_register]:
             # 不是一个对话类型
             return False

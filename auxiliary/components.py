@@ -27,3 +27,25 @@ SearchActionComponent = namedtuple('SearchActionComponent', 'action')
 ###游戏业务组件
 SimpleRPGRoleComponent = namedtuple('SimpleRPGRoleComponent', 'name maxhp hp attack')
 ###############################################################################################################################################
+
+
+#注册一下方便使用
+stage_dialogue_actions_register = [SpeakActionComponent, MindVoiceActionComponent, WhisperActionComponent]
+stage_available_actions_register = [ FightActionComponent, 
+                            SpeakActionComponent, 
+                            TagActionComponent, 
+                            RememberActionComponent,
+                            MindVoiceActionComponent,
+                            BroadcastActionComponent,
+                            WhisperActionComponent]
+#注册一下方便使用
+npc_dialogue_actions_register = [SpeakActionComponent, MindVoiceActionComponent, WhisperActionComponent]
+npc_available_actions_register = [FightActionComponent, 
+                         LeaveForActionComponent, 
+                         SpeakActionComponent, 
+                         TagActionComponent, 
+                         RememberActionComponent, 
+                         MindVoiceActionComponent, 
+                         BroadcastActionComponent,
+                         WhisperActionComponent,
+                         SearchActionComponent]

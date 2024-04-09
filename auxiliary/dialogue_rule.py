@@ -3,9 +3,10 @@ from loguru import logger
 from entitas.entity import Entity
 from auxiliary.components import StageComponent, NPCComponent
 from auxiliary.extended_context import ExtendedContext
-
+from typing import Optional
+####################################################################################################
 def check_speak_enable(context: ExtendedContext, srcentity: Entity, destnpcname: str) -> bool:
-
+    
     destnpcentity: Optional[Entity] = context.getnpc(destnpcname)
     if destnpcentity is None:
         logger.warning(f"不存在[{destnpcname}]，无法进行交谈。")
@@ -27,23 +28,37 @@ def check_speak_enable(context: ExtendedContext, srcentity: Entity, destnpcname:
         return False
         
     return True
+####################################################################################################
+def parse_target_and_message(content: str) -> tuple[Optional[str], Optional[str]]:
+    # 检查是否包含'@'和'>'符号
+    if "@" not in content or ">" not in content:
+        return None, content
 
-def parse_taget_and_message(content: str) -> tuple[str, str]:
-    if ">" not in content:
-        return "?", content  
-    if "@" not in content:
-        return "?", content
+    # 检查'@'是否出现在'>'之前
+    at_index = content.find("@")
+    gt_index = content.find(">")
+    if at_index > gt_index:
+        return None, content
 
-    # 解析出说话者和说话内容
-    target, message = content.split(">")
-    target = target[1:]  # Remove the '@' symbol
-    return target, message
+    # 提取目标和消息
+    try:
+        target = content[at_index + 1:gt_index].strip()
+        message = content[gt_index + 1:].strip()
 
+        # 确保目标和消息不为空
+        if not target or not message:
+            return None, content
+
+        return target, message
+    except Exception as e:
+        # 如果有任何异常，返回原始内容和异常提示
+        return None, content
+####################################################################################################
 def parse_command(input_val: str, split_str: str)-> str:
     if split_str in input_val:
         return input_val.split(split_str)[1].strip()
     return input_val
-
+####################################################################################################
 def parse_target_and_message_by_symbol(input_val: str) -> tuple[str, str]:
     if "@" not in input_val:
         return "", input_val

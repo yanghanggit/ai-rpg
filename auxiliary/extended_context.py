@@ -12,6 +12,9 @@ from typing import Optional
 from auxiliary.agent_connect_system import AgentConnectSystem
 from auxiliary.code_name_component_system import CodeNameComponentSystem
 from auxiliary.chaos_engineering_system import IChaosEngineering
+from typing import List, Any, Optional
+from auxiliary.dialogue_rule import parse_target_and_message
+
 
 class ExtendedContext(Context):
     #
@@ -137,5 +140,31 @@ class ExtendedContext(Context):
         
         if not entity.has(to_stagetag_comp_class):
              entity.add(to_stagetag_comp_class, to_stagename)
+
+    ##
+    def check_component_register(self, classname: str, actions_register: List[Any]) -> Any:
+        for component in actions_register:
+            if component.__name__ == classname:
+                return component
+        return None
+    
+    ## 
+    def check_dialogue_action(self, actionname: str, actionvalues: List[str], actions_register: List[Any]) -> bool:
+        if actionname not in [component.__name__ for component in actions_register]:
+            # 不是一个对话类型
+            return False
+    
+        for value in actionvalues:
+            pair = parse_target_and_message(value)
+            target: Optional[str] = pair[0]
+            message: Optional[str] = pair[1]
+            if target is None or message is None:
+                logger.error(f"target is None: {value}")
+                return False
+        #可以过
+        return True
+
+
+
 
         

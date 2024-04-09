@@ -6,7 +6,7 @@ from auxiliary.print_in_color import Color
 from auxiliary.prompt_maker import whisper_action_prompt
 from typing import Optional
 from loguru import logger
-from auxiliary.dialogue_rule import parse_taget_and_message, check_speak_enable
+from auxiliary.dialogue_rule import parse_target_and_message, check_speak_enable
 
 ####################################################################################################
 class WhisperActionSystem(ReactiveProcessor):
@@ -35,10 +35,13 @@ class WhisperActionSystem(ReactiveProcessor):
         action: ActorAction = whispercomp.action
 
         for value in action.values:
+            target_message_pair = parse_target_and_message(value)
+            targetname: Optional[str] = target_message_pair[0]
+            message: Optional[str] = target_message_pair[1]
+            if targetname is None or message is None:
+                logger.warning(f"WhisperActionSystem: targetname or message is None.")
+                continue
 
-            target_message_pair = parse_taget_and_message(value)
-            targetname: str = target_message_pair[0]
-            message: str = target_message_pair[1]
             if not check_speak_enable(self.context, entity, targetname):
                 # 如果检查不过就能继续
                 continue

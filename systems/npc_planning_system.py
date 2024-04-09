@@ -1,36 +1,19 @@
 from entitas import Entity, Matcher, ExecuteProcessor #type: ignore
 from auxiliary.components import (NPCComponent, 
-                        FightActionComponent, 
-                        SpeakActionComponent, 
-                        LeaveForActionComponent, 
-                        TagActionComponent, 
-                        MindVoiceActionComponent,
-                        BroadcastActionComponent, 
-                        WhisperActionComponent,
-                        SearchActionComponent,
                         AutoPlanningComponent,
-                        RememberActionComponent)
+                        npc_dialogue_actions_register, 
+                        npc_available_actions_register)
 from auxiliary.actor_action import ActorPlan, ActorAction
 from auxiliary.prompt_maker import npc_plan_prompt
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from typing import Optional
-from auxiliary.dialogue_rule import parse_taget_and_message
+
 
 class NPCPlanningSystem(ExecuteProcessor):
 
     def __init__(self, context: ExtendedContext) -> None:
         self.context = context
-        self.npc_dialogue_actions = [SpeakActionComponent, MindVoiceActionComponent, WhisperActionComponent]
-        self.npc_available_actions = [FightActionComponent, 
-                            LeaveForActionComponent, 
-                            SpeakActionComponent, 
-                            TagActionComponent, 
-                            RememberActionComponent,
-                            MindVoiceActionComponent,
-                            BroadcastActionComponent,
-                            WhisperActionComponent,
-                            SearchActionComponent]
 ####################################################################################################
     def execute(self) -> None:
         logger.debug("<<<<<<<<<<<<<  NPCPlanningSystem  >>>>>>>>>>>>>>>>>")
@@ -90,30 +73,15 @@ class NPCPlanningSystem(ExecuteProcessor):
         return True
 ####################################################################################################
     def check_available(self, action: ActorAction) -> bool:
-        return action.actionname in [component.__name__ for component in self.npc_available_actions]
+        return self.context.check_component_register(action.actionname, npc_available_actions_register) is not None
 ####################################################################################################
     def check_dialogue(self, action: ActorAction) -> bool:
-        if action.actionname not in [component.__name__ for component in self.npc_dialogue_actions]:
-            # 不是一个对话类型
-            return True
-    
-        for value in action.values:
-            pair = parse_taget_and_message(value)
-            target: str = pair[0]
-            message: str = pair[1]
-            if target == "?":
-                #格式错误
-                return False
-            
-        #可以过
-        return True
+        return self.context.check_dialogue_action(action.actionname, action.values, npc_dialogue_actions_register)
 ####################################################################################################
     def add_action_component(self, entity: Entity, action: ActorAction) -> None:
-        for action_component in self.npc_available_actions:
-            if action_component.__name__ != action.actionname:
-                continue
-            if not entity.has(action_component):
-                entity.add(action_component, action)
-            ## 必须跳出
-            break
+        compclass = self.context.check_component_register(action.actionname, npc_available_actions_register)
+        if compclass is None:
+            return
+        if not entity.has(compclass):
+            entity.add(compclass, action)
 ####################################################################################################

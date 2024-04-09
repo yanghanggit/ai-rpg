@@ -2,7 +2,7 @@ import os
 from typing import Optional
 from loguru import logger
 import datetime
-from auxiliary.dialogue_rule import parse_command, parse_target_and_message_by_symbol
+from auxiliary.dialogue_rule import pre_command, parse_target_and_message
 from auxiliary.builders import WorldDataBuilder
 from rpg_game import RPGGame 
 from player_proxy import PlayerProxy
@@ -122,8 +122,11 @@ def main() -> None:
 
         elif "/push" in usr_input:
             command = "/push"
-            input_content = parse_command(usr_input, command) 
-            push_command_parse_res: tuple[str, str] = parse_target_and_message_by_symbol(input_content)
+            input_content = pre_command(usr_input, command) 
+            push_command_parse_res: tuple[Optional[str], Optional[str]] = parse_target_and_message(input_content)
+            if push_command_parse_res[0] is None or push_command_parse_res[1] is None:
+                continue
+
             logger.debug(f"</force push command to {push_command_parse_res[0]}>:", input_content)
             ###
             gmcommandpush = GMCommandPush("/push", rpggame, push_command_parse_res[0], push_command_parse_res[1])
@@ -136,8 +139,10 @@ def main() -> None:
                 logger.warning("请先/run")
                 continue
             command = "/ask"
-            input_content = parse_command(usr_input, command)
-            ask_command_parse_res: tuple[str, str] = parse_target_and_message_by_symbol(input_content)
+            input_content = pre_command(usr_input, command)
+            ask_command_parse_res: tuple[Optional[str], Optional[str]] = parse_target_and_message(input_content)
+            if ask_command_parse_res[0] is None or ask_command_parse_res[1] is None:
+                continue
             logger.debug(f"</ask command to {ask_command_parse_res[0]}>:", input_content)
             ###
             gmcommandask = GMCommandAsk("/ask", rpggame, ask_command_parse_res[0], ask_command_parse_res[1])
@@ -150,7 +155,7 @@ def main() -> None:
                 logger.warning("请先/run")
                 continue
             command = "/who"
-            who = parse_command(usr_input, command)
+            who = pre_command(usr_input, command)
             ###
             playercommandbewho = PlayerCommandCtrlNPC("/who", rpggame, playproxy, who)
             playercommandbewho.execute()
@@ -162,7 +167,7 @@ def main() -> None:
                 logger.warning("请先/run")
                 continue
             command = "/attack"
-            target_name = parse_command(usr_input, command)    
+            target_name = pre_command(usr_input, command)    
             ###
             playercommandattack = PlayerCommandAttack("/attack", rpggame, playproxy, target_name)
             playercommandattack.execute()
@@ -174,7 +179,7 @@ def main() -> None:
                 logger.warning("请先/run")
                 continue
             command = "/mem"
-            target_name = parse_command(usr_input, command)
+            target_name = pre_command(usr_input, command)
             ###
             gmcommandlogchathistory = GMCommandLogChatHistory("/mem", rpggame, target_name)
             gmcommandlogchathistory.execute()
@@ -186,7 +191,7 @@ def main() -> None:
                 logger.warning("请先/run")
                 continue
             command = "/leave"
-            target_name = parse_command(usr_input, command)
+            target_name = pre_command(usr_input, command)
             ###
             playercommandleavefor = PlayerCommandLeaveFor("/leave", rpggame, playproxy, target_name)
             playercommandleavefor.execute()
@@ -198,7 +203,7 @@ def main() -> None:
                 logger.warning("请先/run")
                 continue
             command = "/broadcast"
-            content = parse_command(usr_input, command)
+            content = pre_command(usr_input, command)
             ###
             playercommandbroadcast = PlayerCommandBroadcast("/broadcast", rpggame, playproxy, content)
             playercommandbroadcast.execute()
@@ -210,7 +215,7 @@ def main() -> None:
                 logger.warning("请先/run")
                 continue
             command = "/speak"
-            content = parse_command(usr_input, command)
+            content = pre_command(usr_input, command)
             ###
             playercommandspeak = PlayerCommandSpeak("/speak", rpggame, playproxy, content)
             playercommandspeak.execute()
@@ -222,7 +227,7 @@ def main() -> None:
                 logger.warning("请先/run")
                 continue
             command = "/whisper"
-            content = parse_command(usr_input, command)
+            content = pre_command(usr_input, command)
             ###
             playercommandwhisper = PlayerCommandWhisper("/whisper", rpggame, playproxy, content)
             playercommandwhisper.execute()
@@ -234,7 +239,7 @@ def main() -> None:
                 logger.warning("请先/run")
                 continue
             command = "/search"
-            content = parse_command(usr_input, command)
+            content = pre_command(usr_input, command)
             ###
             playercommandsearch = PlayerCommandSearch("/search", rpggame, playproxy, content)
             playercommandsearch.execute()

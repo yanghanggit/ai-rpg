@@ -3,8 +3,8 @@ from auxiliary.components import FightActionComponent, SimpleRPGRoleComponent, D
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.actor_action import ActorAction
 from loguru import logger
-from director_component import DirectorComponent
-from director_event import KillSomeoneEvent, AttackSomeoneEvent
+from auxiliary.director_component import DirectorComponent
+from auxiliary.director_event import KillSomeoneEvent, AttackSomeoneEvent
 
 class FightActionSystem(ReactiveProcessor):
 

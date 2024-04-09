@@ -6,8 +6,8 @@ from auxiliary.extended_context import ExtendedContext
 from auxiliary.print_in_color import Color
 from auxiliary.prompt_maker import broadcast_action_prompt
 from loguru import logger
-from director_component import DirectorComponent
-from director_event import BroadcastEvent
+from auxiliary.director_component import DirectorComponent
+from auxiliary.director_event import BroadcastEvent
 
 class BroadcastActionSystem(ReactiveProcessor):
 

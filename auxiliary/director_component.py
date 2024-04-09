@@ -2,7 +2,7 @@ from auxiliary.extended_context import ExtendedContext
 from typing import List
 from loguru import logger
 from collections import namedtuple
-from director_event import IDirectorEvent
+from auxiliary.director_event import IDirectorEvent
 
 ## yh 第一个 扩展型组件，用于处理导演系统的事件
 DirectorComponentPrototype = namedtuple('DirectorComponentPrototype', 'name')

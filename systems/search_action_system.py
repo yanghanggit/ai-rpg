@@ -6,8 +6,8 @@ from auxiliary.components import (SearchActionComponent,
 from auxiliary.actor_action import ActorAction
 from auxiliary.print_in_color import Color
 from loguru import logger
-from director_component import DirectorComponent
-from director_event import SearchFailedEvent
+from auxiliary.director_component import DirectorComponent
+from auxiliary.director_event import SearchFailedEvent
 from typing import List
 from auxiliary.file_system import PropFile
 

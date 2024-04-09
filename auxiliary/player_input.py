@@ -11,7 +11,7 @@ from auxiliary.components import (
     WhisperActionComponent,
     SearchActionComponent)
 from auxiliary.actor_action import ActorAction
-from player_proxy import PlayerProxy
+from auxiliary.player_proxy import PlayerProxy
 
 ####################################################################################################################################
 ####################################################################################################################################

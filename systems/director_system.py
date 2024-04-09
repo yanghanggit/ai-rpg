@@ -3,7 +3,7 @@ from auxiliary.components import StageComponent, NPCComponent
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.prompt_maker import confirm_everything_after_director_add_new_memories_prompt
 from loguru import logger
-from director_component import DirectorComponent
+from auxiliary.director_component import DirectorComponent
 
 class DirectorSystem(ExecuteProcessor):
 

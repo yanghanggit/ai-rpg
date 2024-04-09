@@ -6,8 +6,8 @@ from auxiliary.print_in_color import Color
 from auxiliary.prompt_maker import speak_action_prompt, speak_action_system_invalid_target
 from loguru import logger
 from auxiliary.dialogue_rule import check_speak_enable, parse_target_and_message
-from director_component import DirectorComponent
-from director_event import SpeakEvent
+from auxiliary.director_component import DirectorComponent
+from auxiliary.director_event import SpeakEvent
 from typing import Optional
 
    

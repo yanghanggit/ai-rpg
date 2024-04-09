@@ -27,7 +27,7 @@ from systems.broadcast_action_system import BroadcastActionSystem
 from systems.whisper_action_system import WhisperActionSystem 
 from systems.search_action_system import SearchActionSystem
 from systems.mind_voice_action_system import MindVoiceActionSystem
-from director_component import DirectorComponent
+from auxiliary.director_component import DirectorComponent
 from auxiliary.file_system import PropFile
 from systems.begin_system import BeginSystem
 from systems.end_system import EndSystem

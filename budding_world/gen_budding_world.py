@@ -258,7 +258,7 @@ all_props_data: Dict[str, ExcelDataProp] = {}
 def gen_npcs_data() -> None:
     ## 读取Excel文件
     for index, row in npcsheet.iterrows():
-        excelnpc = ExcelDataNPC(row["name"], row["codename"], row["description"], row["history"], row["GPT_MODEL"], row["PORT"], row["API"], RAG_FILE)
+        excelnpc = ExcelDataNPC(row["name"], row["codename"], row["description"], row["history"], row["GPT_MODEL"], int(row["PORT"]), row["API"], RAG_FILE)
         if not excelnpc.isvalid():
             #print(f"Invalid row: {excelnpc}")
             continue
@@ -271,7 +271,7 @@ def gen_npcs_data() -> None:
 def gen_stages_data() -> None:
     ## 读取Excel文件
     for index, row in stagesheet.iterrows():
-        excelstage = ExcelDataStage(row["name"], row["codename"], row["description"], row["GPT_MODEL"], row["PORT"], row["API"], RAG_FILE)
+        excelstage = ExcelDataStage(row["name"], row["codename"], row["description"], row["GPT_MODEL"], int(row["PORT"]), row["API"], RAG_FILE)
         if not excelstage.isvalid():
             #print(f"Invalid row: {excelstage}")
             continue

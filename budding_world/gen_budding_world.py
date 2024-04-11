@@ -18,7 +18,9 @@ NPC_SYS_PROMPT_TEMPLATE = "npc_sys_prompt_template.md"
 STAGE_SYS_PROMPT_TEMPLATE = "stage_sys_prompt_template.md"
 
 #默认rag
-RAG_FILE = "rag_libraries/rag.md"
+#RAG_FILE = "rag_libraries/rag.md"
+RAG_FILE = "rag_libraries/rag2.md"
+
 
 ## 输出路径
 OUT_PUT_NPC_SYS_PROMPT = "gen_npc_sys_prompt"
@@ -258,6 +260,8 @@ all_props_data: Dict[str, ExcelDataProp] = {}
 def gen_npcs_data() -> None:
     ## 读取Excel文件
     for index, row in npcsheet.iterrows():
+        if pd.isna(row["name"]):
+            continue
         excelnpc = ExcelDataNPC(row["name"], row["codename"], row["description"], row["history"], row["GPT_MODEL"], int(row["PORT"]), row["API"], RAG_FILE)
         if not excelnpc.isvalid():
             #print(f"Invalid row: {excelnpc}")
@@ -271,6 +275,8 @@ def gen_npcs_data() -> None:
 def gen_stages_data() -> None:
     ## 读取Excel文件
     for index, row in stagesheet.iterrows():
+        if pd.isna(row["name"]):
+            continue
         excelstage = ExcelDataStage(row["name"], row["codename"], row["description"], row["GPT_MODEL"], int(row["PORT"]), row["API"], RAG_FILE)
         if not excelstage.isvalid():
             #print(f"Invalid row: {excelstage}")
@@ -284,6 +290,8 @@ def gen_stages_data() -> None:
 def gen_props_data() -> None:
     ## 读取Excel文件
     for index, row in propsheet.iterrows():
+        if pd.isna(row["name"]):
+            continue
         excelprop = ExcelDataProp(row["name"], row["codename"], row["isunique"], row["description"], RAG_FILE)
         if not excelprop.isvalid():
             #(f"Invalid row: {excelprop}")
@@ -430,7 +438,7 @@ class ExcelEditorStage:
         self.parse_initialization_memory()
 
     def parse_stage_entry_conditions(self) -> None:
-        stage_entry_conditions = self.data["stage_entry_conditions"]
+        stage_entry_conditions: Optional[str] = self.data["stage_entry_conditions"]
         if stage_entry_conditions is None:
             return        
         list_stage_entry_conditions = stage_entry_conditions.split(";")
@@ -452,7 +460,7 @@ class ExcelEditorStage:
                 logger.error(f"Invalid condition: {condition}")
 
     def parse_props_in_stage(self) -> None:
-        props_in_stage = self.data["props_in_stage"]
+        props_in_stage: Optional[str] = self.data["props_in_stage"]
         if props_in_stage is None:
             return
         list_props_in_stage = props_in_stage.split(";")
@@ -463,7 +471,7 @@ class ExcelEditorStage:
                 logger.error(f"Invalid prop: {prop}")
 
     def parse_npcs_in_stage(self) -> None:
-        npcs_in_stage = self.data["npcs_in_stage"]
+        npcs_in_stage: Optional[str] = self.data["npcs_in_stage"]
         if npcs_in_stage is None:
             return
         list_npcs_in_stage = npcs_in_stage.split(";")
@@ -655,7 +663,7 @@ def main() -> None:
     #测试这个世界编辑，未完成?
     world_name = input("输入要创建的World的名字(必须对应excel中的sheet名):")
     if world_name == "":
-        world_name = "World1"
+        world_name = "World2"
         logger.warning(f"使用默认的World名称: {world_name}")
     world = genworld(str(world_name))
     if world is not None:

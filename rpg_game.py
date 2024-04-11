@@ -1,3 +1,4 @@
+import os
 from typing import List, Optional
 from entitas import Processors, Matcher #type: ignore
 from loguru import logger
@@ -110,7 +111,8 @@ class RPGGame:
         runtime_dir_for_world = f"{worlddata.runtimepath}{worlddata.name}/"
 
         # 第0步，yh 目前用于测试!!!!!!!，直接删worlddata.name的文件夹，保证每次都是新的 删除runtime_dir_for_world的文件夹
-        shutil.rmtree(runtime_dir_for_world)
+        if os.path.exists(runtime_dir_for_world):
+            shutil.rmtree(runtime_dir_for_world)
 
         # 混沌系统，准备测试
         chaos_engineering_system.on_pre_create_world(context, worlddata)

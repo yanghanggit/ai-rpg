@@ -86,15 +86,15 @@ def main() -> None:
     logger.add(f"logs/{log_start_time}.log", level="DEBUG")
 
     # 读取世界资源文件
-    worldname = "World1"#input("请输入要进入的世界名称(必须与自动化创建的名字一致):")
+    worldname = input("请输入要进入的世界名称(必须与自动化创建的名字一致):")
     worlddata = read_world_data(worldname)
     if worlddata is None:
         logger.error("create_world_data_builder 失败。")
         return
     
     # 创建游戏 + 专门的混沌工程系统
-    chaos_engineering_system = ChaosBuddingWorld("ChaosBuddingWorld")
-    #chaos_engineering_system: Optional[IChaosEngineering] = None
+    #chaos_engineering_system = ChaosBuddingWorld("ChaosBuddingWorld")
+    chaos_engineering_system: Optional[IChaosEngineering] = None
     rpggame = create_rpg_game(worldname, chaos_engineering_system)
     if rpggame is None:
         logger.error("create_rpg_game 失败。")

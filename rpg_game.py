@@ -38,6 +38,7 @@ from systems.post_planning_system import PostPlanningSystem
 from systems.pre_action_system import PreActionSystem
 from systems.post_action_system import PostActionSystem
 from systems.post_fight_system import PostFightSystem
+from systems.relationship_system import RelationshipSystem
 
 ## 控制流程和数据创建
 class RPGGame:
@@ -62,6 +63,8 @@ class RPGGame:
         
         #初始化系统########################
         processors.add(InitSystem(context))
+        #更新关系网
+        processors.add(RelationshipSystem(context))
         
         
         #规划逻辑########################
@@ -89,7 +92,7 @@ class RPGGame:
 
         #行动结束后导演
         processors.add(DirectorSystem(context))
-        
+    
         #########################################
         ###必须最后
         processors.add(DestroySystem(context))
@@ -179,6 +182,9 @@ class RPGGame:
             agent_connect_system.register_actor_agent(builddata.name, builddata.url)
             memory_system.readmemory(builddata.name, builddata.memory)
             code_name_component_system.register_code_name_component_class(builddata.name, builddata.codename)
+
+            # 最后构建关系网，因为可能需要初始化的记忆
+            memory_system.initrelationship(builddata.name, builddata.mentioned_npcs)
             
         return res
 ###############################################################################################################################################
@@ -209,6 +215,8 @@ class RPGGame:
             agent_connect_system.register_actor_agent(builddata.name, builddata.url)
             memory_system.readmemory(builddata.name, builddata.memory)
             code_name_component_system.register_code_name_component_class(builddata.name, builddata.codename)
+            # 最后构建关系网，因为可能需要初始化的记忆
+            memory_system.initrelationship(builddata.name, builddata.mentioned_npcs)
 
             for prop in builddata.props:
                 ## 重构
@@ -244,6 +252,8 @@ class RPGGame:
             agent_connect_system.register_actor_agent(builddata.name, builddata.url)
             memory_system.readmemory(builddata.name, builddata.memory)
             code_name_component_system.register_code_name_component_class(builddata.name, builddata.codename)
+            # 最后构建关系网，因为可能需要初始化的记忆
+            memory_system.initrelationship(builddata.name, builddata.mentioned_npcs)
 
             for prop in builddata.props:
                 ## 重构

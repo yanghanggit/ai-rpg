@@ -133,7 +133,7 @@ class NPCBuilder:
             mentioned_npcs: Set[str] = set()
             mentioned_npcs_str = npc_data.get("mentioned_npcs")
             if len(mentioned_npcs_str) > 0:
-                 mentioned_npcs = (mentioned_npcs_str.split(';'))
+                 mentioned_npcs = set(mentioned_npcs_str.split(';'))
 
             # 最后的创建
             npc = NPCData(npc_data.get("name"), 

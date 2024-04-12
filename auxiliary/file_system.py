@@ -186,3 +186,10 @@ class FileSystem:
         content = known_stage_file.content()
         self.writlefile(known_stage_file.ownersname, known_stage_file.name, content)
     ################################################################################################################
+    def get_known_stage_file(self, ownersname: str, stagename: str) -> Optional[KnownStageFile]:
+        stagelist = self.known_stage_files.get(ownersname, [])
+        for file in stagelist:
+            if file.stagename == stagename:
+                return file
+        return None
+    ################################################################################################################

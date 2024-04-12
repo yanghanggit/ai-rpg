@@ -19,6 +19,7 @@ from systems.npc_planning_system import NPCPlanningSystem
 from systems.speak_action_system import SpeakActionSystem
 from systems.fight_action_system import FightActionSystem
 from systems.leave_for_action_system import LeaveForActionSystem
+from systems.pre_leave_for_system import PreLeaveForSystem
 from systems.director_system import DirectorSystem
 from systems.dead_action_system import DeadActionSystem
 from systems.destroy_system import DestroySystem
@@ -79,11 +80,17 @@ class RPGGame:
         processors.add(WhisperActionSystem(context))
         processors.add(BroadcastActionSystem(context))
         processors.add(SpeakActionSystem(context))
+
         processors.add(FightActionSystem(context))
         processors.add(PostFightSystem(context))
+        
         processors.add(DeadActionSystem(context)) 
+        
         processors.add(SearchActionSystem(context))
+
+        processors.add(PreLeaveForSystem(context)) 
         processors.add(LeaveForActionSystem(context))
+
         processors.add(PostActionSystem(context)) ####### 在所有行动之后
         #########################################
 

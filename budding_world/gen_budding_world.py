@@ -370,6 +370,7 @@ class ExcelEditorNPC:
         dict['codename'] = target.codename
         dict['url'] = target.localhost_api()
         dict['memory'] = self.initialization_memory
+        dict['mentioned_npcs'] = ";".join(target.mentioned_npcs)
         return dict
     
     def make_props_list(self, excelprops: List[ExcelDataProp]) -> List[Dict[str, str]]:

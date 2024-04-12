@@ -1,4 +1,4 @@
-from typing import Any, Optional, List
+from typing import Any, Optional, List, Set
 from loguru import logger
 import json
 from auxiliary.base_data import StageConditionData, PropData, NPCData, StageData
@@ -70,7 +70,8 @@ class StageBuilder:
     def build_npcs_in_stage(self, npcs_data: List[Any]) -> set[NPCData]:
         res: set[NPCData] = set()
         for obj in npcs_data:
-            npc = NPCData(obj.get("name"), obj.get("codename"), obj.get("url"), obj.get("memory"))
+            # 表达场景NPC的数据，其实需要的数据很少。主要是name
+            npc = NPCData(obj.get("name"), obj.get("codename"), obj.get("url"), obj.get("memory"), set(), set())
             res.add(npc)
         return res
     #
@@ -118,14 +119,30 @@ class NPCBuilder:
             return
         for datablock in self.datalist:
             #yh 先不用做严格检查，因为自动化部分会做严格检查，比如第二阶段的自检过程，如果需要检查，可以单独开一个函数，就先检查一遍，这里就是集中行动
-            propdata = datablock.get("props")
             npcprops: set[PropData] = set()
+            propdata = datablock.get("props")
             for propdata in propdata:
                 prop = PropData(propdata.get("name"), propdata.get("codename"),  propdata.get("description"), propdata.get("isunique"))
                 npcprops.add(prop)
-            #
+
+
+            # NPC核心数据
             npc_data = datablock.get("npc")
-            npc = NPCData(npc_data.get("name"), npc_data.get("codename"), npc_data.get("url"), npc_data.get("memory"), npcprops)
+
+            # 寻找人物关系
+            mentioned_npcs: Set[str] = set()
+            mentioned_npcs_str = npc_data.get("mentioned_npcs")
+            if len(mentioned_npcs_str) > 0:
+                 mentioned_npcs = (mentioned_npcs_str.split(';'))
+
+            # 最后的创建
+            npc = NPCData(npc_data.get("name"), 
+                          npc_data.get("codename"), 
+                          npc_data.get("url"), 
+                          npc_data.get("memory"), 
+                          npcprops, 
+                          mentioned_npcs)
+            
             self.npcs.append(npc)
 
 ########################################################################################################################

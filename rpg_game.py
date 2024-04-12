@@ -38,7 +38,7 @@ from systems.post_planning_system import PostPlanningSystem
 from systems.pre_action_system import PreActionSystem
 from systems.post_action_system import PostActionSystem
 from systems.post_fight_system import PostFightSystem
-from systems.relationship_system import RelationshipSystem
+from systems.known_information_system import KnownInformationSystem
 
 ## 控制流程和数据创建
 class RPGGame:
@@ -63,9 +63,7 @@ class RPGGame:
         
         #初始化系统########################
         processors.add(InitSystem(context))
-        #更新关系网
-        processors.add(RelationshipSystem(context))
-        
+        processors.add(KnownInformationSystem(context))#更新关系网
         
         #规划逻辑########################
         processors.add(PrePlanningSystem(context)) ######## 在所有规划之前
@@ -140,7 +138,6 @@ class RPGGame:
 
         ## 混沌系统，准备测试
         chaos_engineering_system.on_post_create_world(context, worlddata)
-
 ###############################################################################################################################################
     def execute(self) -> None:
         #顺序不要动！！！！！！！！！
@@ -360,7 +357,6 @@ class RPGGame:
             codecompclass = code_name_component_system.get_component_class_by_name(npccomp.name)
             if codecompclass is not None:
                 entity.add(codecompclass, npccomp.name)
-        #
 ###############################################################################################################################################
     def add_code_name_component_stages_when_build(self) -> None:
         context = self.extendedcontext

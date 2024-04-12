@@ -40,6 +40,19 @@ class KnownNPCFile(BaseFile):
     def __str__(self) -> str:
         return f"{self.npcsname}"
 ############################################################################################################
+## 表达一个Stage的档案
+class KnownStageFile(BaseFile):
+    def __init__(self, name: str, ownersname: str, stagename: str) -> None:
+        super().__init__(name, ownersname)
+        self.stagename = stagename
+
+    def content(self) -> str:
+        jsonstr = f"{self.stagename}: I know {self.stagename}"
+        return json.dumps(jsonstr, ensure_ascii = False)
+    
+    def __str__(self) -> str:
+        return f"{self.stagename}"
+############################################################################################################
 class FileSystem:
 
     def __init__(self, name: str) -> None:
@@ -50,7 +63,8 @@ class FileSystem:
         self.propfiles: Dict[str, List[PropFile]] = {}
 
         # 知晓的NPC 
-        self.knownnpcfiles: Dict[str, List[KnownNPCFile]] = {}
+        self.known_npc_files: Dict[str, List[KnownNPCFile]] = {}
+        self.known_stage_files: Dict[str, List[KnownStageFile]] = {}
     ############################################################################################################
     ### 必须设置根部的执行路行
     def set_root_path(self, rootpath: str) -> None:
@@ -138,7 +152,7 @@ class FileSystem:
     ################################################################################################################
     ## 添加一个你知道的NPC
     def add_known_npc_file(self, known_npc_file: KnownNPCFile) -> None:
-        npclist = self.knownnpcfiles.setdefault(known_npc_file.ownersname, [])
+        npclist = self.known_npc_files.setdefault(known_npc_file.ownersname, [])
         for file in npclist:
             if file.npcsname == known_npc_file.npcsname:
                 # 名字匹配，先返回，不添加。后续可以复杂一些
@@ -152,4 +166,23 @@ class FileSystem:
         self.deletefile(known_npc_file.ownersname, known_npc_file.name)
         content = known_npc_file.content()
         self.writlefile(known_npc_file.ownersname, known_npc_file.name, content)
+    ################################################################################################################
+
+
+
+    ################################################################################################################
+    def add_known_stage_file(self, known_stage_file: KnownStageFile) -> None:
+        stagelist = self.known_stage_files.setdefault(known_stage_file.ownersname, [])
+        for file in stagelist:
+            if file.stagename == known_stage_file.stagename:
+                # 名字匹配，先返回，不添加。后续可以复杂一些
+                return
+        stagelist.append(known_stage_file)
+        self.write_known_stage_file(known_stage_file)
+    ################################################################################################################
+    def write_known_stage_file(self, known_stage_file: KnownStageFile) -> None:
+        ## 测试
+        self.deletefile(known_stage_file.ownersname, known_stage_file.name)
+        content = known_stage_file.content()
+        self.writlefile(known_stage_file.ownersname, known_stage_file.name, content)
     ################################################################################################################

@@ -71,7 +71,7 @@ class StageBuilder:
         res: set[NPCData] = set()
         for obj in npcs_data:
             # 表达场景NPC的数据，其实需要的数据很少。主要是name
-            npc = NPCData(obj.get("name"), obj.get("codename"), obj.get("url"), obj.get("memory"), set(), set())
+            npc = NPCData(obj.get("name"), obj.get("codename"), obj.get("url"), obj.get("memory"), set(), set(), set())
             res.add(npc)
         return res
     #
@@ -131,9 +131,15 @@ class NPCBuilder:
 
             # 寻找人物关系
             mentioned_npcs: Set[str] = set()
-            mentioned_npcs_str = npc_data.get("mentioned_npcs")
+            mentioned_npcs_str: str = npc_data.get("mentioned_npcs")
             if len(mentioned_npcs_str) > 0:
                  mentioned_npcs = set(mentioned_npcs_str.split(';'))
+
+             # 寻找人物与场景的关系关系
+            mentioned_stages: Set[str] = set()
+            mentioned_stages_str: str = npc_data.get("mentioned_stages")
+            if len(mentioned_stages_str) > 0:
+                 mentioned_stages = set(mentioned_stages_str.split(';'))
 
             # 最后的创建
             npc = NPCData(npc_data.get("name"), 
@@ -141,7 +147,8 @@ class NPCBuilder:
                           npc_data.get("url"), 
                           npc_data.get("memory"), 
                           npcprops, 
-                          mentioned_npcs)
+                          mentioned_npcs,
+                          mentioned_stages)
             
             self.npcs.append(npc)
 

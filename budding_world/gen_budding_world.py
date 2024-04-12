@@ -4,7 +4,7 @@ import os
 from loguru import logger
 from pandas.core.frame import DataFrame
 import json
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, cast
 
 ##全局的，方便，不封装了，反正当工具用.....
 # 核心设置
@@ -72,6 +72,7 @@ class ExcelDataNPC:
         self.worldview: str = worldview
         self.desc_and_history: str = f"""{self.description} {self.history}"""
         self.mentioned_npcs: List[str] = []
+        self.mentioned_stages: List[str] = []
         self.mentioned_props: List[str] = []
 
         self.sysprompt: str = ""
@@ -138,6 +139,14 @@ class ExcelDataNPC:
             return True
         if name in self.desc_and_history:
             self.mentioned_npcs.append(name)
+            return True
+        return False
+    
+    def add_mentioned_stage(self, stagename: str) -> bool:
+        if stagename in self.mentioned_stages:
+            return True
+        if stagename in self.desc_and_history:
+            self.mentioned_stages.append(stagename)
             return True
         return False
     
@@ -303,24 +312,27 @@ def analyze_npc_relationship_graph() -> None:
     for npc in all_npcs_data.values():
         npc.mentioned_npcs.clear()
         for other_npc in all_npcs_data.values():
-            if npc.add_mentioned_npc(other_npc.name):
-                pass
-                #logger.info(f"{npc.name} mentioned {other_npc.name}")
+            npc.add_mentioned_npc(other_npc.name)
 
     #再检查
     for npc in all_npcs_data.values():
         for other_npc in all_npcs_data.values():
             if npc.check_mentioned_npc(other_npc.name) and not other_npc.check_mentioned_npc(npc.name):
                 logger.warning(f"{npc.name} mentioned {other_npc.name}, but {other_npc.name} did not mention {npc.name}")
+
+############################################################################################################
+def analyze_stage_relationship_graph() -> None:
+    for stagename, stagedata in all_stages_data.items():
+        for npc in all_npcs_data.values():
+            npc.mentioned_stages.clear()
+            npc.add_mentioned_stage(stagename)
 ################################################################################################################
 def analyze_relationship_graph_between_npcs_and_props() -> None:
     #先构建
     for npc in all_npcs_data.values():
         npc.mentioned_props.clear()
         for other_prop in all_props_data.values():
-            if npc.add_mentioned_prop(other_prop.name):
-                pass
-                #logger.info(f"{npc.name} mentioned {other_prop.name}")
+            npc.add_mentioned_prop(other_prop.name)
     #再检查
     for npc in all_npcs_data.values():
         if len(npc.mentioned_props) > 0:
@@ -371,6 +383,7 @@ class ExcelEditorNPC:
         dict['url'] = target.localhost_api()
         dict['memory'] = self.initialization_memory
         dict['mentioned_npcs'] = ";".join(target.mentioned_npcs)
+        dict['mentioned_stages'] = ";".join(target.mentioned_stages)
         return dict
     
     def make_props_list(self, excelprops: List[ExcelDataProp]) -> List[Dict[str, str]]:
@@ -660,6 +673,7 @@ def main() -> None:
     gen_props_data()
     #尝试分析之间的关系并做一定的自我检查，这里是例子，实际应用中，可以根据需求做更多的检查
     analyze_npc_relationship_graph()
+    analyze_stage_relationship_graph()
     analyze_relationship_graph_between_npcs_and_props()
     #测试这个世界编辑，未完成?
     world_name = input("输入要创建的World的名字(必须对应excel中的sheet名):")

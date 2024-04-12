@@ -22,13 +22,20 @@ class PropData:
         return f"{self.name}"
 
 class NPCData:
-    def __init__(self, name: str, codename: str, url: str, memory: str, props: Set[PropData], mentioned_npcs: Set[str]) -> None:
+    def __init__(self, name: str, 
+                 codename: str, 
+                 url: str, 
+                 memory: str, 
+                 props: Set[PropData], 
+                 mentioned_npcs: Set[str], 
+                 mentioned_stages: Set[str]) -> None:
         self.name = name
         self.codename = codename
         self.url = url
         self.memory = memory
         self.props: Set[PropData] = props
         self.mentioned_npcs: Set[str] = mentioned_npcs
+        self.mentioned_stages: Set[str] = mentioned_stages
 
 class StageData:
     def __init__(self, name: str, codename: str, description: str, url: str, memory: str, entry_conditions: list[StageConditionData], exit_conditions: list[StageConditionData], npcs: set[NPCData], props: set[PropData]) -> None:

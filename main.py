@@ -86,7 +86,7 @@ def main() -> None:
     logger.add(f"logs/{log_start_time}.log", level="DEBUG")
 
     # 读取世界资源文件
-    worldname = input("请输入要进入的世界名称(必须与自动化创建的名字一致):")
+    worldname = "World2"#input("请输入要进入的世界名称(必须与自动化创建的名字一致):")
     worlddata = read_world_data(worldname)
     if worlddata is None:
         logger.error("create_world_data_builder 失败。")

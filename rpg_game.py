@@ -29,7 +29,7 @@ from systems.whisper_action_system import WhisperActionSystem
 from systems.search_action_system import SearchActionSystem
 from systems.mind_voice_action_system import MindVoiceActionSystem
 from director_component import DirectorComponent
-from auxiliary.file_system import PropFile
+from auxiliary.file_system import PropFile, KnownNPCFile
 from systems.begin_system import BeginSystem
 from systems.end_system import EndSystem
 import shutil
@@ -164,6 +164,8 @@ class RPGGame:
         agent_connect_system = context.agent_connect_system
         memory_system = context.memory_system
         code_name_component_system = context.code_name_component_system
+        file_system = context.file_system
+
         res: List[Entity] = []
         
         if npcbuilder.datalist is None:
@@ -180,11 +182,13 @@ class RPGGame:
 
             #重构
             agent_connect_system.register_actor_agent(builddata.name, builddata.url)
-            memory_system.readmemory(builddata.name, builddata.memory)
+            memory_system.initmemory(builddata.name, builddata.memory)
             code_name_component_system.register_code_name_component_class(builddata.name, builddata.codename)
 
-            # 最后构建关系网，因为可能需要初始化的记忆
-            memory_system.initrelationship(builddata.name, builddata.mentioned_npcs)
+            # 最后构建关系网
+            for knownnpc in builddata.mentioned_npcs:
+                create_known_npc_file = KnownNPCFile(knownnpc, builddata.name, knownnpc)
+                file_system.add_known_npc_file(create_known_npc_file)
             
         return res
 ###############################################################################################################################################
@@ -213,16 +217,20 @@ class RPGGame:
             
             #重构
             agent_connect_system.register_actor_agent(builddata.name, builddata.url)
-            memory_system.readmemory(builddata.name, builddata.memory)
+            memory_system.initmemory(builddata.name, builddata.memory)
             code_name_component_system.register_code_name_component_class(builddata.name, builddata.codename)
-            # 最后构建关系网，因为可能需要初始化的记忆
-            memory_system.initrelationship(builddata.name, builddata.mentioned_npcs)
-
+           
+            # 添加道具
             for prop in builddata.props:
                 ## 重构
                 createpropfile = PropFile(prop.name, builddata.name, prop)
                 file_system.add_prop_file(createpropfile)
                 code_name_component_system.register_code_name_component_class(prop.name, prop.codename)
+
+            # 最后构建关系网
+            for knownnpc in builddata.mentioned_npcs:
+                create_known_npc_file = KnownNPCFile(knownnpc, builddata.name, knownnpc)
+                file_system.add_known_npc_file(create_known_npc_file)
 
         return res
 ###############################################################################################################################################
@@ -250,16 +258,20 @@ class RPGGame:
        
             #重构
             agent_connect_system.register_actor_agent(builddata.name, builddata.url)
-            memory_system.readmemory(builddata.name, builddata.memory)
+            memory_system.initmemory(builddata.name, builddata.memory)
             code_name_component_system.register_code_name_component_class(builddata.name, builddata.codename)
-            # 最后构建关系网，因为可能需要初始化的记忆
-            memory_system.initrelationship(builddata.name, builddata.mentioned_npcs)
-
+            
+            # 添加道具
             for prop in builddata.props:
                 ## 重构
                 createpropfile = PropFile(prop.name, builddata.name, prop)
                 file_system.add_prop_file(createpropfile)
                 code_name_component_system.register_code_name_component_class(prop.name, prop.codename)
+
+            # 最后构建关系网
+            for knownnpc in builddata.mentioned_npcs:
+                create_known_npc_file = KnownNPCFile(knownnpc, builddata.name, knownnpc)
+                file_system.add_known_npc_file(create_known_npc_file)
 
         return res
 ###############################################################################################################################################
@@ -323,7 +335,7 @@ class RPGGame:
 
             #重构
             agent_connect_system.register_actor_agent(builddata.name, builddata.url)
-            memory_system.readmemory(builddata.name, builddata.memory)
+            memory_system.initmemory(builddata.name, builddata.memory)
             code_name_component_system.register_code_name_component_class(builddata.name, builddata.codename)
             code_name_component_system.register_stage_tag_component_class(builddata.name, builddata.codename)
 

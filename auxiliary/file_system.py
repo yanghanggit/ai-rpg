@@ -1,8 +1,8 @@
-from auxiliary.base_data import PropData
+from auxiliary.base_data import PropData, NPCData
 from loguru import logger
 import os
 import json
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Set
 
 ############################################################################################################
 class BaseFile:
@@ -25,15 +25,32 @@ class PropFile(BaseFile):
     
     def __str__(self) -> str:
         return f"{self.prop}"
-############################################################################################################
     
-### yh modified!!!!
+############################################################################################################
+## 表达一个NPC档案
+class KnownNPCFile(BaseFile):
+    def __init__(self, name: str, ownersname: str, npcname: str) -> None:
+        super().__init__(name, ownersname)
+        self.npcsname = npcname
+
+    def content(self) -> str:
+        jsonstr = f"{self.npcsname}: I know {self.npcsname}"
+        return json.dumps(jsonstr, ensure_ascii = False)
+    
+    def __str__(self) -> str:
+        return f"{self.npcsname}"
+############################################################################################################
 class FileSystem:
 
     def __init__(self, name: str) -> None:
         self.name = name
         self.rootpath = ""
+
+        # 拥有的道具
         self.propfiles: Dict[str, List[PropFile]] = {}
+
+        # 知晓的NPC 
+        self.knownnpcfiles: Dict[str, List[KnownNPCFile]] = {}
     ############################################################################################################
     ### 必须设置根部的执行路行
     def set_root_path(self, rootpath: str) -> None:
@@ -44,7 +61,7 @@ class FileSystem:
     ############################################################################################################
     ## 测试的名字
     def filename(self, ownersname: str, filename: str) -> str:
-        return f"{self.rootpath}{ownersname}/{filename}.json"
+        return f"{self.rootpath}{ownersname}/files/{filename}.json"
     ############################################################################################################
     ### 删除
     def deletefile(self, ownersname: str, filename: str) -> None:
@@ -112,4 +129,27 @@ class FileSystem:
         self.add_prop_file(PropFile(propname, to_owner, findownersfile.prop))
     ################################################################################################################
        
-        
+
+
+
+
+
+
+    ################################################################################################################
+    ## 添加一个你知道的NPC
+    def add_known_npc_file(self, known_npc_file: KnownNPCFile) -> None:
+        npclist = self.knownnpcfiles.setdefault(known_npc_file.ownersname, [])
+        for file in npclist:
+            if file.npcsname == known_npc_file.npcsname:
+                # 名字匹配，先返回，不添加。后续可以复杂一些
+                return
+        npclist.append(known_npc_file)
+        self.write_known_npc_file(known_npc_file) 
+    ################################################################################################################
+    ## 写一个道具的文件
+    def write_known_npc_file(self, known_npc_file: KnownNPCFile) -> None:
+        ## 测试
+        self.deletefile(known_npc_file.ownersname, known_npc_file.name)
+        content = known_npc_file.content()
+        self.writlefile(known_npc_file.ownersname, known_npc_file.name, content)
+    ################################################################################################################

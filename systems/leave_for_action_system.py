@@ -7,8 +7,8 @@ from auxiliary.actor_action import ActorAction
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.print_in_color import Color
 from loguru import logger
-from director_component import DirectorComponent
-from director_event import NPCLeaveForStageEvent, NPCEnterStageEvent, NPCFailEnterStageEvent, NPCFailExitStageEvent
+from auxiliary.director_component import DirectorComponent
+from auxiliary.director_event import NPCLeaveForStageEvent, NPCEnterStageEvent, NPCFailEnterStageEvent, NPCFailExitStageEvent
 from typing import cast
 
 

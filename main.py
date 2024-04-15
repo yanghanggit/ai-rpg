@@ -5,9 +5,9 @@ import datetime
 from auxiliary.dialogue_rule import pre_command, parse_target_and_message
 from auxiliary.builders import WorldDataBuilder
 from rpg_game import RPGGame 
-from player_proxy import PlayerProxy
-from gm_input import GMCommandPush, GMCommandAsk, GMCommandLogChatHistory
-from player_input import (PlayerCommandCtrlNPC, 
+from auxiliary.player_proxy import PlayerProxy
+from auxiliary.gm_input import GMCommandPush, GMCommandAsk, GMCommandLogChatHistory
+from auxiliary.player_input import (PlayerCommandCtrlNPC, 
                           PlayerCommandAttack, 
                           PlayerCommandLeaveFor, 
                           PlayerCommandBroadcast, 
@@ -94,8 +94,8 @@ def main() -> None:
         return
     
     # 创建游戏 + 专门的混沌工程系统
-    chaos_engineering_system = ChaosBuddingWorld("ChaosBuddingWorld")
-    #chaos_engineering_system: Optional[IChaosEngineering] = None
+    # chaos_engineering_system = ChaosBuddingWorld("ChaosBuddingWorld")
+    chaos_engineering_system: Optional[IChaosEngineering] = None
     rpggame = create_rpg_game(worldname, chaos_engineering_system)
     if rpggame is None:
         logger.error("create_rpg_game 失败。")

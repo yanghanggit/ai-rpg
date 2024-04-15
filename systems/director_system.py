@@ -2,7 +2,7 @@ from entitas import Entity, Matcher, ExecuteProcessor #type: ignore
 from auxiliary.components import StageComponent, NPCComponent
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
-from director_component import DirectorComponent
+from auxiliary.director_component import DirectorComponent
 
 class DirectorSystem(ExecuteProcessor):
 

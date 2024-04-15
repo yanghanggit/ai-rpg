@@ -3,10 +3,8 @@ from entitas import ExecuteProcessor, Matcher #type: ignore
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.components import (StageComponent, 
-                        NPCComponent)
-
-from auxiliary.agent_connect_system import AgentConnectSystem
-from auxiliary.file_system import FileSystem
+                        NPCComponent,
+                        WorldComponent)
 import json
 from typing import Dict
    
@@ -17,12 +15,20 @@ class EndSystem(ExecuteProcessor):
 ############################################################################################################
     def execute(self) -> None:
         logger.debug("<<<<<<<<<<<<<  EndSystem  >>>>>>>>>>>>>>>>>")
+        # 打印所有的世界信息
+        self.showworld()
         # 打印一下所有的场景信息
         self.showstages()
         # 打印一下所有的agent信息
         self.make_agent_chat_history_dump()
         # 打印所有的道具归属
         self.make_prop_files_dump()
+############################################################################################################
+    def showworld(self) -> None:
+        worldentities = self.context.get_group(Matcher(WorldComponent)).entities
+        for entity in worldentities:
+            worldcomp: WorldComponent = entity.get(WorldComponent)
+            logger.debug(f"/showworld: {worldcomp.name}")
 ############################################################################################################
     def showstages(self) -> None:
         infomap = self.information_about_all_stages_and_npcs()

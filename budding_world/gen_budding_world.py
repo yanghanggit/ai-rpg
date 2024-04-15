@@ -345,7 +345,7 @@ class ExcelEditorNPC:
         self.excelprops: List[ExcelDataProp] = []
         self.initialization_memory: str = ""
 
-        if self.data["type"] not in ["AdminNPC", "PlayerNPC", "NPC"]:
+        if self.data["type"] not in ["WorldNPC", "PlayerNPC", "NPC"]:
             logger.error(f"Invalid NPC type: {self.data['type']}")
             return
         
@@ -573,19 +573,19 @@ class ExcelEditorWorld:
         self.name: str = worldname
         self.data: List[Any] = data
         #笨一点，先留着吧。。。
-        self.raw_adminnpcs: List[Any] = []
+        self.raw_worldnpcs: List[Any] = []
         self.raw_playernpcs: List[Any] = []
         self.raw_npcs: List[Any] = []
         self.raw_stages: List[Any] = []
         #真正的构建数据
-        self.editor_adminnpcs: List[ExcelEditorNPC] = []
+        self.editor_worldnpcs: List[ExcelEditorNPC] = []
         self.editor_playernpcs: List[ExcelEditorNPC] = []
         self.editor_npcs: List[ExcelEditorNPC] = []
         self.editor_stages: List[ExcelEditorStage] = []
         ##把数据分类
         self.categorizedata()
         ##根据分类各种处理。。。
-        self.create_editor_adminnpcs()
+        self.create_editor_worldnpcs()
         self.create_editor_playernpcs()
         self.create_editor_npcs()
         self.create_editor_stages()
@@ -593,8 +593,8 @@ class ExcelEditorWorld:
     #先将数据分类
     def categorizedata(self) -> None:
         for item in self.data:
-            if item["type"] == "AdminNPC":
-                self.raw_adminnpcs.append(item)
+            if item["type"] == "WorldNPC":
+                self.raw_worldnpcs.append(item)
             elif item["type"] == "PlayerNPC":
                 self.raw_playernpcs.append(item)
             elif item["type"] == "NPC":
@@ -602,10 +602,10 @@ class ExcelEditorWorld:
             elif item["type"] == "Stage":
                 self.raw_stages.append(item)
 
-    def create_editor_adminnpcs(self) -> None:
-        for item in self.raw_adminnpcs:
+    def create_editor_worldnpcs(self) -> None:
+        for item in self.raw_worldnpcs:
             editor_npc = ExcelEditorNPC(item)
-            self.editor_adminnpcs.append(editor_npc)
+            self.editor_worldnpcs.append(editor_npc)
             logger.info(editor_npc)
 
     def create_editor_playernpcs(self) -> None:
@@ -633,7 +633,7 @@ class ExcelEditorWorld:
     def makedict(self) -> Dict[str, Any]:
         logger.warning("Building world..., 需要检查，例如NPC里出现了，但是场景中没有出现，那就是错误。一顿关联，最后生成JSON文件")
         dict: Dict[str, Any] = {}
-        dict["adminnpcs"] = [editor_npc.makedict() for editor_npc in self.editor_adminnpcs]
+        dict["worldnpcs"] = [editor_npc.makedict() for editor_npc in self.editor_worldnpcs]
         dict["playernpcs"] = [editor_npc.makedict() for editor_npc in self.editor_playernpcs]
         dict["npcs"] = [editor_npc.makedict() for editor_npc in self.editor_npcs]
         dict["stages"] = [editor_stage.makedict() for editor_stage in self.editor_stages]

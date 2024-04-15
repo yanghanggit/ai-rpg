@@ -135,7 +135,7 @@ class RPGGame:
         context.file_system.set_root_path(runtime_dir_for_world)
 
         ### 第二步 创建实体
-        self.create_admin_npc_entities(worlddata.admin_npc_builder)
+        self.create_world_npc_entities(worlddata.world_npc_builder)
         self.create_player_npc_entities(worlddata.player_npc_builder)
         self.create_npc_entities(worlddata.npc_buidler)
         self.add_code_name_component_to_world_and_npcs_when_build()
@@ -165,7 +165,7 @@ class RPGGame:
         self.processors.tear_down()
         logger.info(f"{self.name}, game over")
 ###############################################################################################################################################
-    def create_admin_npc_entities(self, npcbuilder: NPCBuilder) -> List[Entity]:
+    def create_world_npc_entities(self, npcbuilder: NPCBuilder) -> List[Entity]:
 
         context = self.extendedcontext
         agent_connect_system = context.agent_connect_system
@@ -176,7 +176,7 @@ class RPGGame:
         res: List[Entity] = []
         
         if npcbuilder.datalist is None:
-            raise ValueError("没有AdminNPCBuilder数据，请检查World.json配置。")
+            raise ValueError("没有WorldNPCBuilder数据，请检查World.json配置。")
             return res
         
         for builddata in npcbuilder.npcs:
@@ -186,6 +186,8 @@ class RPGGame:
 
             #必要组件
             worldentity.add(WorldComponent, builddata.name)
+
+            #故意不加NPC组件！！
 
             #重构
             agent_connect_system.register_actor_agent(builddata.name, builddata.url)

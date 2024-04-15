@@ -14,7 +14,7 @@ class WorldDataBuilder:
         self.version = version
         #####
         self.data: dict[str, Any] = dict()
-        self.admin_npc_builder = NPCBuilder("adminnpcs")
+        self.world_npc_builder = NPCBuilder("worldnpcs")
         self.player_npc_builder = NPCBuilder("playernpcs")
         self.npc_buidler = NPCBuilder("npcs")
         self.stage_builder = StageBuilder()
@@ -36,7 +36,7 @@ class WorldDataBuilder:
             return False
 
     def build(self) -> None:
-        self.admin_npc_builder.build(self.data)
+        self.world_npc_builder.build(self.data)
         self.player_npc_builder.build(self.data)
         self.npc_buidler.build(self.data)
         self.stage_builder.build(self.data)

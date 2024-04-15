@@ -1,5 +1,6 @@
 from auxiliary.base_data import PropData
 import json
+from typing import Dict
 
 ############################################################################################################
 class BaseFile:
@@ -36,8 +37,9 @@ class KnownNPCFile(BaseFile):
         self.npcsname = npcname
 
     def content(self) -> str:
-        jsonstr = f"{self.npcsname}: I know {self.npcsname}"
-        return json.dumps(jsonstr, ensure_ascii = False)
+        makedict: Dict[str, str] = {}
+        makedict.setdefault(self.npcsname, f"Having this file means you know this NPC")
+        return json.dumps(makedict, ensure_ascii = False)
     
     def __str__(self) -> str:
         return f"{self.npcsname}"
@@ -49,8 +51,9 @@ class KnownStageFile(BaseFile):
         self.stagename = stagename
 
     def content(self) -> str:
-        jsonstr = f"{self.stagename}: I know {self.stagename}"
-        return json.dumps(jsonstr, ensure_ascii = False)
+        makedict: Dict[str, str] = {}
+        makedict.setdefault(self.stagename,  f"Having this file means you know this stage")
+        return json.dumps(makedict, ensure_ascii = False)
     
     def __str__(self) -> str:
         return f"{self.stagename}"

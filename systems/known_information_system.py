@@ -14,7 +14,7 @@ class KnownInformationSystem(InitializeProcessor, ExecuteProcessor):
         self.context: ExtendedContext = context
 ############################################################################################################
     def initialize(self) -> None:
-        logger.debug("<<<<<<<<<<<<<  KnownInformationSystem init   >>>>>>>>>>>>>>>>>")
+        logger.debug("<<<<<<<<<<<<<  KnownInformationSystem.init   >>>>>>>>>>>>>>>>>")
         #建立NPC的关系图谱
         self.init_known_npc()
         #建立知道的Stage的关系图谱
@@ -39,6 +39,16 @@ class KnownInformationSystem(InitializeProcessor, ExecuteProcessor):
             merge = whereyouknow1 | whereyouknow2
             self.add_known_stage_file(npccomp.name, merge)
 ############################################################################################################
+    def execute_known_stage(self) -> None:
+        agent_connect_system = self.context.agent_connect_system
+        allstagenames = self.all_stage_names()
+        npcentities = self.context.get_group(Matcher(NPCComponent)).entities
+        for npc in npcentities:
+            npccomp: NPCComponent = npc.get(NPCComponent)
+            chathistory = agent_connect_system.get_chat_history(npccomp.name)
+            whereyouknow2 = self.where_you_know_in_chat_history(chathistory, allstagenames)
+            self.add_known_stage_file(npccomp.name, whereyouknow2)
+############################################################################################################
     def init_known_npc(self) -> None:
         memory_system = self.context.memory_system
         agent_connect_system = self.context.agent_connect_system
@@ -57,6 +67,16 @@ class KnownInformationSystem(InitializeProcessor, ExecuteProcessor):
             # 最后关系网的网，更新进去
             merge = whoyouknow1 | whoyouknow2
             self.add_known_npc_file(npccomp.name, merge)    
+############################################################################################################
+    def execute_known_npc(self) -> None:
+        agent_connect_system = self.context.agent_connect_system
+        allnpcsname = self.all_npc_names()
+        npcentities = self.context.get_group(Matcher(NPCComponent)).entities
+        for npc in npcentities:
+            npccomp: NPCComponent = npc.get(NPCComponent)
+            chathistory = agent_connect_system.get_chat_history(npccomp.name)
+            whoyouknow2 = self.who_you_know_in_chat_history(chathistory, allnpcsname)
+            self.add_known_npc_file(npccomp.name, whoyouknow2)  
 ############################################################################################################
     def all_npc_names(self) -> Set[str]:
         npcentities = self.context.get_group(Matcher(NPCComponent)).entities
@@ -120,6 +140,10 @@ class KnownInformationSystem(InitializeProcessor, ExecuteProcessor):
         return result
 ############################################################################################################
     def execute(self) -> None:
-        logger.debug("<<<<<<<<<<<<<  RelationshipSystem execute >>>>>>>>>>>>>>>>>")
+        logger.debug("<<<<<<<<<<<<<  RelationshipSystem.execute >>>>>>>>>>>>>>>>>")
+        #建立NPC的关系图谱
+        self.execute_known_npc()
+        #建立知道的Stage的关系图谱
+        self.execute_known_stage()
 ############################################################################################################
     

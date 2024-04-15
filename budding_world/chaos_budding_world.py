@@ -7,21 +7,18 @@ from typing import Any, Optional
 error_repeat = f"""{{"RememberActionComponent": ["测试的字符串"]}}{{"WhisperActionComponent": ["测试的字符串"]}}"""
 
 ## 有额外的字符串
-error_extra_string_added = f"""{{"LeaveForActionComponent": ["悠扬林谷"]}}一个测试的字符串，不应该出现在这里"""
+error_extra_string_added = f"""{{"LeaveForActionComponent": ["禁言者之棺"]}}一个测试的字符串，不应该出现在这里"""
 
 ## SpeakActionComponent的格式，value格式就不对。应该是"@目标名字>对话内容"
 error_speak_format = f"""{{"SpeakActionComponent": ["这是一个错误的格式"]}}"""
-error_speak_target_is_invalid = f"""{{"SpeakActionComponent": ["@黑暗君王索隆>你是魔戒里的人物吧？"]}}"""
+error_speak_target_is_invalid = f"""{{"SpeakActionComponent": ["@教宗>你在读书吗？？"]}}"""
 
 ## value必须以[]形式出现
-error_value_is_not_array = f"""{{"LeaveForActionComponent": "悠扬林谷"}}"""
-
-
-##{'老猎人隐居的小木屋': ['卡斯帕·艾伦德', '断剑', '坏运气先生'], '悠扬林谷': ['无名旅人'], '地下城': ['暗影巨龙']}
+error_value_is_not_array = f"""{{"LeaveForActionComponent": "禁言者之棺"}}"""
 
 ## 运行中的测试系统, 空的混沌工程系统
 class ChaosBuddingWorld(IChaosEngineering):
-    
+
     ##
     def __init__(self, name: str) -> None:
         self.name: str = name
@@ -40,25 +37,22 @@ class ChaosBuddingWorld(IChaosEngineering):
     def on_read_memory_failed(self, extended_context: Any, name: str, readarchprompt: str) -> None:
         from auxiliary.extended_context import ExtendedContext
         context: ExtendedContext = extended_context
-        #logger.error(f"{self.name}: on_read_memory_failed {name} = {readarchprompt}")
+
         agent_connect_system = context.agent_connect_system
         agent_connect_system._add_human_message_to_chat_history_(name, readarchprompt)
         agent_connect_system._add_ai_message_to_chat_history_(name, f"确认回忆")
 
     ##
     def on_stage_planning_system_excute(self, extended_context: Any) -> None:
-        #logger.debug(f"{self.name}: on_stage_planning_system_excute")
         self.on_stage_system_excute_count += 1
 
     ##
     def on_npc_planning_system_execute(self, extended_context: Any) -> None:
-        #logger.debug(f"{self.name}: on_npc_planning_system_execute")
         self.on_npc_system_excute_count += 1
 
     ##
     def hack_stage_planning(self, extended_context: Any, stagename: str, planprompt: str) -> Optional[str]:
         from auxiliary.extended_context import ExtendedContext
-        #logger.debug(f"{self.name}: hack_stage_planning {stagename} {planprompt}")
         context: ExtendedContext = extended_context
 
         ### 测试代码，故意返回错误的格式，并填入chat_history
@@ -73,11 +67,9 @@ class ChaosBuddingWorld(IChaosEngineering):
     ##
     def hack_npc_planning(self, extended_context: Any, npcname: str, planprompt: str) -> Optional[str]:
         from auxiliary.extended_context import ExtendedContext
-        #logger.debug(f"{self.name}: hack_npc_planning {npcname} {planprompt}")
         context: ExtendedContext = extended_context
 
         ##{'老猎人隐居的小木屋': ['卡斯帕·艾伦德', '断剑', '坏运气先生'], '悠扬林谷': ['无名旅人'], '地下城': ['暗影巨龙']}
-
         ### 测试代码，故意返回错误的格式，并填入chat_history
         # if npcname == "坏运气先生":
         #     agent_connect_system = context.agent_connect_system

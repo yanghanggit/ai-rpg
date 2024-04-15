@@ -106,7 +106,7 @@ def main() -> None:
     
     # 测试的代码，上来就控制一个NPC目标，先写死"无名旅人"
     playproxy = PlayerProxy("yanghang")
-    playerstartcmd = PlayerCommandLogin("/player-login", rpggame, playproxy, "无名旅人")
+    playerstartcmd = PlayerCommandLogin("/player-login", rpggame, playproxy, "无名的复活者")
     playerstartcmd.execute()
 
     # 直接执行一次先

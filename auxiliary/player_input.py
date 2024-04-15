@@ -40,24 +40,24 @@ class PlayerCommandLogin(PlayerInput):
         npcentity = context.getnpc(name)
         if npcentity is None:
             # 扮演的角色，本身就不存在于这个世界
-            logger.warning(f"{self.inputname}, npc is None, login failed")
+            logger.error(f"{self.inputname}, npc is None, login failed")
             return
 
         playerentity = context.getplayer(playername)
         if playerentity is not None:
             # 已经登陆完成
-            logger.debug(f"{self.inputname}, already login")
+            logger.error(f"{self.inputname}, already login")
             return
         
         playercomp: PlayerComponent = npcentity.get(PlayerComponent)
         if playercomp is None:
             # 扮演的角色不是设定的玩家可控制NPC
-            logger.warning(f"{self.inputname}, npc is not player ctrl npc, login failed")
+            logger.error(f"{self.inputname}, npc is not player ctrl npc, login failed")
             return
         
         if playercomp.name != "" and playercomp.name != playername:
             # 已经有人控制了，但不是你
-            logger.warning(f"{self.inputname}, player already ctrl by some player, login failed")
+            logger.error(f"{self.inputname}, player already ctrl by some player, login failed")
             return
         
         npccomp: NPCComponent = npcentity.get(NPCComponent)

@@ -94,8 +94,8 @@ class FileSystem:
         try:
             if os.path.exists(filepath):
                 os.remove(filepath)
-            else:
-                logger.error(f"[{filepath}]的文件不存在。")
+            # else:
+            #     logger.error(f"[{filepath}]的文件不存在。")
         except Exception as e:
             logger.error(f"[{filepath}]的文件删除失败。")
             return

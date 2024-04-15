@@ -93,8 +93,8 @@ def main() -> None:
         return
     
     # 创建游戏 + 专门的混沌工程系统
-    #chaos_engineering_system = ChaosBuddingWorld("ChaosBuddingWorld")
-    chaos_engineering_system: Optional[IChaosEngineering] = None
+    chaos_engineering_system = ChaosBuddingWorld("ChaosBuddingWorld")
+    #chaos_engineering_system: Optional[IChaosEngineering] = None
     rpggame = create_rpg_game(worldname, chaos_engineering_system)
     if rpggame is None:
         logger.error("create_rpg_game 失败。")

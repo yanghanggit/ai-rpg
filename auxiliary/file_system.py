@@ -25,7 +25,6 @@ class PropFile(BaseFile):
     
     def __str__(self) -> str:
         return f"{self.prop}"
-    
 ############################################################################################################
 ## 表达一个NPC档案
 class KnownNPCFile(BaseFile):
@@ -77,20 +76,31 @@ class FileSystem:
     def filename(self, ownersname: str, filename: str) -> str:
         return f"{self.rootpath}{ownersname}/files/{filename}.json"
     ############################################################################################################
+    ## 测试的名字
+    def prop_file_name(self, ownersname: str, filename: str) -> str:
+        return f"{self.rootpath}{ownersname}/props/{filename}.json"
+    ############################################################################################################
+    ## 测试的名字
+    def npc_file_name(self, ownersname: str, filename: str) -> str:
+        return f"{self.rootpath}{ownersname}/npcs/{filename}.json"
+    ############################################################################################################
+    ## 测试的名字
+    def stage_file_name(self, ownersname: str, filename: str) -> str:
+        return f"{self.rootpath}{ownersname}/stages/{filename}.json"
+    ############################################################################################################
     ### 删除
-    def deletefile(self, ownersname: str, filename: str) -> None:
-        filepath = self.filename(ownersname, filename)
+    def deletefile(self, filepath: str) -> None:
+        #filepath = self.filename(ownersname, filename)
         try:
             if os.path.exists(filepath):
                 os.remove(filepath)
+            else:
+                logger.error(f"[{filepath}]的文件不存在。")
         except Exception as e:
-            logger.error(f"[{ownersname}]的文件{filename}删除失败。")
+            logger.error(f"[{filepath}]的文件删除失败。")
             return
-    ############################################################################################################   
-    ## 写文件
-    def writlefile(self, ownersname: str, filename: str, content: str) -> None:
-        filepath = self.filename(ownersname, filename)
-        logger.debug(f"[{ownersname}]的文件路径为 = [{filepath}]")
+    ################################################################################################################
+    def writefile(self, filepath: str, content: str) -> None:
         try:
             # 没有就先创建一个！
             if not os.path.exists(filepath):
@@ -100,18 +110,17 @@ class FileSystem:
                 f.write(content)
 
         except FileNotFoundError as e:
-            logger.error(f"[{ownersname}]的文件不存在。")
+            logger.error(f"[{filepath}]的文件不存在。")
             return
         except Exception as e:
-            logger.error(f"[{ownersname}]的文件写入失败。")
+            logger.error(f"[{filepath}]的文件写入失败。")
             return
     ################################################################################################################
     ## 写一个道具的文件
     def write_prop_file(self, propfile: PropFile) -> None:
-        ## 测试
-        self.deletefile(propfile.ownersname, propfile.name)
+        self.deletefile(self.prop_file_name(propfile.ownersname, propfile.name))
         content = propfile.content()
-        self.writlefile(propfile.ownersname, propfile.name, content)
+        self.writefile(self.prop_file_name(propfile.ownersname, propfile.name), content)
     ################################################################################################################
     ## 添加一个道具文件
     def add_prop_file(self, propfile: PropFile) -> None:
@@ -139,7 +148,7 @@ class FileSystem:
         # 文件得从管理数据结构中移除掉
         self.propfiles[from_owner].remove(findownersfile)
         # 文件重新写入
-        self.deletefile(from_owner, propname)
+        self.deletefile(self.prop_file_name(from_owner, propname))
         self.add_prop_file(PropFile(propname, to_owner, findownersfile.prop))
     ################################################################################################################
        
@@ -163,9 +172,9 @@ class FileSystem:
     ## 写一个道具的文件
     def write_known_npc_file(self, known_npc_file: KnownNPCFile) -> None:
         ## 测试
-        self.deletefile(known_npc_file.ownersname, known_npc_file.name)
+        self.deletefile(self.npc_file_name(known_npc_file.ownersname, known_npc_file.name))
         content = known_npc_file.content()
-        self.writlefile(known_npc_file.ownersname, known_npc_file.name, content)
+        self.writefile(self.npc_file_name(known_npc_file.ownersname, known_npc_file.name), content)
     ################################################################################################################
 
 
@@ -182,9 +191,9 @@ class FileSystem:
     ################################################################################################################
     def write_known_stage_file(self, known_stage_file: KnownStageFile) -> None:
         ## 测试
-        self.deletefile(known_stage_file.ownersname, known_stage_file.name)
+        self.deletefile(self.stage_file_name(known_stage_file.ownersname, known_stage_file.name))
         content = known_stage_file.content()
-        self.writlefile(known_stage_file.ownersname, known_stage_file.name, content)
+        self.writefile(self.stage_file_name(known_stage_file.ownersname, known_stage_file.name), content)
     ################################################################################################################
     def get_known_stage_file(self, ownersname: str, stagename: str) -> Optional[KnownStageFile]:
         stagelist = self.known_stage_files.get(ownersname, [])

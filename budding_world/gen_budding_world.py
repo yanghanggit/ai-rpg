@@ -439,6 +439,7 @@ class ExcelEditorStage:
         self.props_in_stage: List[ExcelDataProp] = []
         self.npcs_in_stage: List[ExcelDataNPC] = []
         self.initialization_memory: str = ""
+        self.connect_to_stage: str = ""
 
         if self.data["type"] not in ["Stage"]:
             logger.error(f"Invalid Stage type: {self.data['type']}")
@@ -450,6 +451,7 @@ class ExcelEditorStage:
         self.parse_props_in_stage()
         self.parse_npcs_in_stage()
         self.parse_initialization_memory()
+        self.parse_connect_to_stage()
 
     def parse_stage_entry_conditions(self) -> None:
         stage_entry_conditions: Optional[str] = self.data["stage_entry_conditions"]
@@ -501,6 +503,11 @@ class ExcelEditorStage:
             return
         self.initialization_memory = str(initialization_memory)
 
+    def parse_connect_to_stage(self) -> None:
+        attrname = "connect_to_stage"
+        if attrname in self.data and self.data[attrname] is not None:
+           self.connect_to_stage = str(self.data[attrname])
+        
     def __str__(self) -> str:
         propsstr = ', '.join(str(prop) for prop in self.props_in_stage)
         npcsstr = ', '.join(str(npc) for npc in self.npcs_in_stage)
@@ -526,14 +533,12 @@ class ExcelEditorStage:
             list.append(dict)
         return list
     
+    ## 这里只做NPC引用，所以导出名字即可
     def make_stage_npcs_list(self, npcs: List[ExcelDataNPC]) -> List[Dict[str, str]]:
         list: List[Dict[str, str]] = []
         for npc in npcs:
-            dict: Dict[str, str] = {}
-            dict['name'] = npc.name
-            dict['codename'] = npc.codename
-            dict['url'] = npc.localhost_api()
-            dict['memory'] = self.initialization_memory
+            dict: Dict[str, str] = {} 
+            dict['name'] = npc.name  ## 这里只做NPC引用，所以导出名字即可
             list.append(dict)
         return list
      
@@ -545,6 +550,7 @@ class ExcelEditorStage:
         dict["description"] = data_stage.description
         dict["url"] = data_stage.localhost_api()
         dict["memory"] = self.initialization_memory
+        dict["connect_to_stage"] = self.connect_to_stage
         
         entry_conditions = self.make_stage_conditions_list(self.stage_entry_conditions)
         exit_conditions = self.make_stage_conditions_list(self.stage_exit_conditions)

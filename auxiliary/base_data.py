@@ -1,5 +1,5 @@
 ##干净与基础的数据结构
-from typing import List, Set
+from typing import List, Set, Any
 
 class StageConditionData:
     def __init__(self, name: str, type: str, prop_name: str) -> None:
@@ -38,7 +38,15 @@ class NPCData:
         self.mentioned_stages: Set[str] = mentioned_stages
 
 class StageData:
-    def __init__(self, name: str, codename: str, description: str, url: str, memory: str, entry_conditions: list[StageConditionData], exit_conditions: list[StageConditionData], npcs: set[NPCData], props: set[PropData]) -> None:
+    def __init__(self, name: str, 
+                 codename: str, 
+                 description: str, 
+                 url: str, 
+                 memory: str, 
+                 entry_conditions: list[StageConditionData], 
+                 exit_conditions: list[StageConditionData], 
+                 npcs: set[NPCData], 
+                 props: set[PropData]) -> None:
         self.name = name
         self.codename = codename
         self.description = description
@@ -48,6 +56,11 @@ class StageData:
         self.exit_conditions: list[StageConditionData] = exit_conditions
         self.npcs: set[NPCData] = npcs
         self.props: set[PropData] = props
+        self.connect_to_stage: set[StageData] = set()
+
+    ###
+    def connectstage(self, stage: 'StageData') -> None:
+        self.connect_to_stage.add(stage)
 
 
 

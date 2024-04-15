@@ -44,7 +44,7 @@ class BroadcastActionSystem(ReactiveProcessor):
             ## 原始处理
             broadcast_say = broadcast_action_prompt(action.name, stagecomp.name, value, self.context)
             logger.info(f"{Color.HEADER}{broadcast_say}{Color.ENDC}")
-            stagecomp.directorscripts.append(broadcast_say)
+            #stagecomp.directorscripts.append(broadcast_say)
             ## 重构处理
             event = BroadcastEvent(action.name, stagecomp.name, value)
             directorcomp.addevent(event)

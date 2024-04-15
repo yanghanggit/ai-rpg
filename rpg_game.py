@@ -40,6 +40,7 @@ from systems.pre_action_system import PreActionSystem
 from systems.post_action_system import PostActionSystem
 from systems.post_fight_system import PostFightSystem
 from systems.known_information_system import KnownInformationSystem
+from systems.prison_break_action_system import PrisonBreakActionSystem
 
 ## 控制流程和数据创建
 class RPGGame:
@@ -75,6 +76,7 @@ class RPGGame:
 
         #行动逻辑########################
         processors.add(PreActionSystem(context)) ######## 在所有行动之前
+        processors.add(PrisonBreakActionSystem(context)) ######## 在所有行动之前
         processors.add(TagActionSystem(context))
         processors.add(MindVoiceActionSystem(context))
         processors.add(WhisperActionSystem(context))
@@ -298,10 +300,10 @@ class RPGGame:
             stageentity = context.create_entity()
 
             #必要组件
-            stageentity.add(StageComponent, builddata.name, [])
+            stageentity.add(StageComponent, builddata.name)
             stageentity.add(DirectorComponent, builddata.name) ###
             stageentity.add(SimpleRPGRoleComponent, builddata.name, 10000, 10000, 1)
-            
+    
             ## 重新设置npc和stage的关系
             for npc in builddata.npcs:
                 npcname = npc.name

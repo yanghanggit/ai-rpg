@@ -4,7 +4,8 @@ from collections import namedtuple
 ###核心组件
 ###############################################################################################################################################
 WorldComponent = namedtuple('WorldComponent', 'name')
-StageComponent = namedtuple('StageComponent', 'name directorscripts')
+StageComponent = namedtuple('StageComponent', 'name')
+ConnectToStageComponent = namedtuple('ConnectToStageComponent', 'name')
 NPCComponent = namedtuple('NPCComponent', 'name current_stage')
 PlayerComponent = namedtuple('PlayerComponent', 'name')
 StageEntryConditionComponent = namedtuple('StageEntryConditionComponent', 'conditions')
@@ -23,6 +24,7 @@ LeaveForActionComponent = namedtuple('LeaveForActionComponent', 'action')
 TagActionComponent = namedtuple('TagActionComponent', 'action')
 DeadActionComponent = namedtuple('DeadActionComponent', 'action')
 SearchActionComponent = namedtuple('SearchActionComponent', 'action')
+PrisonBreakActionComponent = namedtuple('PrisonBreakActionComponent', 'action')
 ###############################################################################################################################################
 ###游戏业务组件
 SimpleRPGRoleComponent = namedtuple('SimpleRPGRoleComponent', 'name maxhp hp attack')
@@ -42,7 +44,6 @@ stage_dialogue_actions_register = [SpeakActionComponent, MindVoiceActionComponen
 
 
 #注册一下方便使用
-
 npc_available_actions_register = [FightActionComponent, 
                          LeaveForActionComponent, 
                          SpeakActionComponent, 
@@ -51,7 +52,8 @@ npc_available_actions_register = [FightActionComponent,
                          MindVoiceActionComponent, 
                          BroadcastActionComponent,
                          WhisperActionComponent,
-                         SearchActionComponent]
+                         SearchActionComponent, 
+                         PrisonBreakActionComponent]
 
 npc_dialogue_actions_register = [SpeakActionComponent, MindVoiceActionComponent, WhisperActionComponent]
-npc_interactive_actions_register = [SearchActionComponent, LeaveForActionComponent]
+npc_interactive_actions_register = [SearchActionComponent, LeaveForActionComponent, PrisonBreakActionComponent]

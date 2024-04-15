@@ -71,7 +71,7 @@ class StageBuilder:
         res: set[NPCData] = set()
         for obj in npcs_data:
             # 表达场景NPC的数据，其实需要的数据很少。主要是name
-            npc = NPCData(obj.get("name"), obj.get("codename"), obj.get("url"), obj.get("memory"), set(), set(), set())
+            npc = NPCData(obj.get("name"), "", "", "", set(), set(), set())
             res.add(npc)
         return res
     #
@@ -97,7 +97,15 @@ class StageBuilder:
                             npcsinstage, 
                             propsinstage)
             self.stages.append(stage)
-            
+
+        
+        # 做连接关系
+        for data in self.datalist:
+            stagedata = data.get("stage")  
+            connect_to_stage: str = stagedata.get("connect_to_stage")
+            if len(connect_to_stage) > 0:
+                logger.debug(f"StageBuilder: {stagedata.get('name')} connect to {connect_to_stage}")
+                       
 ########################################################################################################################
 ########################################################################################################################
 ########################################################################################################################

@@ -40,14 +40,14 @@ class AgentConnectSystem:
         return False
 
     ##
-    def _request_(self, name: str, prompt: str) -> Optional[str]:
+    def request(self, name: str, prompt: str) -> Optional[str]:
         if name in self.memorydict:
             return self.memorydict[name].request(prompt)
         logger.error(f"request: {name} is not registered.")
         return None
 
     ##
-    def _add_human_message_to_chat_history_(self, name: str, chat: str) -> None:
+    def add_human_message_to_chat_history(self, name: str, chat: str) -> None:
         if name in self.memorydict:
             self.memorydict[name].add_human_message_to_chat_history(chat)
             #logger.debug(f"add_chat_history: {name} is added chat history.")
@@ -55,7 +55,7 @@ class AgentConnectSystem:
             logger.error(f"add_chat_history: {name} is not registered.")
 
     ##
-    def _add_ai_message_to_chat_history_(self, name: str, chat: str) -> None:
+    def add_ai_message_to_chat_history(self, name: str, chat: str) -> None:
         if name in self.memorydict:
             self.memorydict[name].add_ai_message_to_chat_history(chat)
             #logger.debug(f"add_chat_history: {name} is added chat history.")

@@ -39,8 +39,8 @@ class ChaosBuddingWorld(IChaosEngineering):
         context: ExtendedContext = extended_context
 
         agent_connect_system = context.agent_connect_system
-        agent_connect_system._add_human_message_to_chat_history_(name, readarchprompt)
-        agent_connect_system._add_ai_message_to_chat_history_(name, f"确认回忆")
+        agent_connect_system.add_human_message_to_chat_history(name, readarchprompt)
+        agent_connect_system.add_ai_message_to_chat_history(name, f"确认回忆")
 
     ##
     def on_stage_planning_system_excute(self, extended_context: Any) -> None:

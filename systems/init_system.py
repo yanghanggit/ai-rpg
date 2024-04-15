@@ -71,7 +71,7 @@ class InitSystem(InitializeProcessor):
                 logger.error(f"worldmemory is empty: {worldcomp.name}")
                 continue
             readarchprompt = read_archives_when_system_init_prompt(worldmemory, world, context)
-            response = agent_connect_system._request_(worldcomp.name, readarchprompt)
+            response = agent_connect_system.request(worldcomp.name, readarchprompt)
             if response is None:
                 chaos_engineering_system.on_read_memory_failed(context, worldcomp.name, readarchprompt)
             
@@ -84,7 +84,7 @@ class InitSystem(InitializeProcessor):
                 logger.error(f"stagememory is empty: {stagecomp.name}")
                 continue
             readarchprompt = read_archives_when_system_init_prompt(stagememory, stage, context)
-            response = agent_connect_system._request_(stagecomp.name, readarchprompt)
+            response = agent_connect_system.request(stagecomp.name, readarchprompt)
             if response is None:
                 chaos_engineering_system.on_read_memory_failed(context, stagecomp.name, readarchprompt)
         ##
@@ -96,7 +96,7 @@ class InitSystem(InitializeProcessor):
                 logger.error(f"npcmemory is empty: {npccomp.name}")
                 continue
             readarchprompt = read_archives_when_system_init_prompt(npcmemory, npc, context)
-            response = agent_connect_system._request_(npccomp.name, readarchprompt)
+            response = agent_connect_system.request(npccomp.name, readarchprompt)
             if response is None:
                 chaos_engineering_system.on_read_memory_failed(context, npccomp.name, readarchprompt)
 ###############################################################################################################################################

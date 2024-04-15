@@ -52,7 +52,7 @@ class StagePlanningSystem(ExecuteProcessor):
         # 可以先走混沌工程系统
         response = chaos_engineering_system.hack_stage_planning(context, stagename, prompt)
         if response is None:
-            response = self.context.agent_connect_system._request_(stagename, prompt)
+            response = self.context.agent_connect_system.request(stagename, prompt)
 
         return response
 ####################################################################################################

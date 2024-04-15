@@ -49,7 +49,7 @@ class DataSaveSystem(ExecuteProcessor, TearDownProcessor):
         for entity in entities:
             worldcomp: WorldComponent = entity.get(WorldComponent)
             archiveprompt = gen_world_archive_prompt(self.context)
-            genarchive = agent_connect_system._request_(worldcomp.name, archiveprompt)
+            genarchive = agent_connect_system.request(worldcomp.name, archiveprompt)
             if genarchive is not None:
                 memory_system.overwritememory(worldcomp.name, genarchive)
             else:
@@ -64,7 +64,7 @@ class DataSaveSystem(ExecuteProcessor, TearDownProcessor):
         for entity in entites:
             stagecomp: StageComponent = entity.get(StageComponent)
             archiveprompt = gen_stage_archive_prompt(self.context)
-            genarchive = agent_connect_system._request_(stagecomp.name, archiveprompt)
+            genarchive = agent_connect_system.request(stagecomp.name, archiveprompt)
             if genarchive is not None:
                 memory_system.overwritememory(stagecomp.name, genarchive)
             else:
@@ -79,7 +79,7 @@ class DataSaveSystem(ExecuteProcessor, TearDownProcessor):
         for entity in entities:
             npccomp: NPCComponent = entity.get(NPCComponent)
             archiveprompt = gen_npc_archive_prompt(self.context)
-            genarchive = agent_connect_system._request_(npccomp.name, archiveprompt)
+            genarchive = agent_connect_system.request(npccomp.name, archiveprompt)
             if genarchive is not None:
                 memory_system.overwritememory(npccomp.name, genarchive)
             else:

@@ -53,7 +53,7 @@ class NPCPlanningSystem(ExecuteProcessor):
         response = chaos_engineering_system.hack_npc_planning(context, npcname, prompt)
         # 可以先走混沌工程系统
         if response is None:
-           response = self.context.agent_connect_system._request_(npcname, prompt)
+           response = self.context.agent_connect_system.request(npcname, prompt)
             
         return response
 ####################################################################################################

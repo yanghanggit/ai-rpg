@@ -43,7 +43,7 @@ class SpeakActionSystem(ReactiveProcessor):
             if not check_speak_enable(self.context, entity, target):
                 # 加一个历史，让NPC在下一次的request中再仔细琢磨一下。
                 addchat = speak_action_system_invalid_target(target, message)
-                self.context.agent_connect_system._add_human_message_to_chat_history_(speak_action.name, addchat)
+                self.context.agent_connect_system.add_human_message_to_chat_history(speak_action.name, addchat)
                 continue
             
             ##拼接说话内容

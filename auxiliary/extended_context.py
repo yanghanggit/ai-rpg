@@ -101,11 +101,11 @@ class ExtendedContext(Context):
         agent_connect_system = self.agent_connect_system
         if entity.has(NPCComponent):
             npccomp: NPCComponent = entity.get(NPCComponent)
-            agent_connect_system._add_human_message_to_chat_history_(npccomp.name, messagecontent)
+            agent_connect_system.add_human_message_to_chat_history(npccomp.name, messagecontent)
             return True
         elif entity.has(StageComponent):
             stagecomp: StageComponent = entity.get(StageComponent)
-            agent_connect_system._add_human_message_to_chat_history_(stagecomp.name, messagecontent)
+            agent_connect_system.add_human_message_to_chat_history(stagecomp.name, messagecontent)
             return True
         raise ValueError("实体不是NPC或者Stage, 不能做添加")
         return False

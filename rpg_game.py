@@ -77,22 +77,21 @@ class RPGGame:
 
         #行动逻辑########################
         processors.add(PreActionSystem(context)) ######## 在所有行动之前
-        processors.add(PrisonBreakActionSystem(context)) ######## 在所有行动之前
-        processors.add(TagActionSystem(context))
+       
+        processors.add(TagActionSystem(context)) #### 说话类的行为
         processors.add(MindVoiceActionSystem(context))
         processors.add(WhisperActionSystem(context))
         processors.add(BroadcastActionSystem(context))
         processors.add(SpeakActionSystem(context))
 
-        processors.add(FightActionSystem(context))
+        processors.add(FightActionSystem(context)) #### 战斗类的行为
         processors.add(PostFightSystem(context))
-        
         processors.add(DeadActionSystem(context)) 
         
-        processors.add(SearchActionSystem(context))
-
-        processors.add(PreLeaveForSystem(context)) 
-        processors.add(LeaveForActionSystem(context))
+        processors.add(SearchActionSystem(context)) ## 交互类的行为，在死亡之后，因为死了就不能执行
+        processors.add(PrisonBreakActionSystem(context)) ## 必须在PreLeaveForSystem之前！
+        processors.add(PreLeaveForSystem(context)) ## 必须在LeaveForActionSystem之前！
+        processors.add(LeaveForActionSystem(context)) ## 离开场景与去往哪里的最终实现
 
         processors.add(PostActionSystem(context)) ####### 在所有行动之后
         #########################################

@@ -1,5 +1,5 @@
 
-from entitas import ExecuteProcessor, Matcher #type: ignore
+from entitas import ExecuteProcessor, Matcher, InitializeProcessor #type: ignore
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.components import (StageComponent, 
@@ -8,13 +8,16 @@ from auxiliary.components import (StageComponent,
 import json
 from typing import Dict
    
-class EndSystem(ExecuteProcessor):
+class EndSystem(InitializeProcessor, ExecuteProcessor):
 ############################################################################################################
     def __init__(self, context: ExtendedContext) -> None:
         self.context: ExtendedContext = context
 ############################################################################################################
+    def initialize(self) -> None:
+        logger.debug("<<<<<<<<<<<<<  EndSystem.initialize  >>>>>>>>>>>>>>>>>")
+############################################################################################################
     def execute(self) -> None:
-        logger.debug("<<<<<<<<<<<<<  EndSystem  >>>>>>>>>>>>>>>>>")
+        logger.debug("<<<<<<<<<<<<<  EndSystem.execute  >>>>>>>>>>>>>>>>>")
         # 打印所有的世界信息
         self.showworld()
         # 打印一下所有的场景信息

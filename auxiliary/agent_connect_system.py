@@ -94,12 +94,14 @@ class AgentConnectSystem:
 
     ### 目标文件
     def chat_history_dump(self, who: str) -> str:
-        return f"{self.rootpath}{who}/chat_history_dump.json"
+        return f"{self.rootpath}{who}/chat_history/dump.json"
     
     ### 所有的chathistory
     def all_agents_chat_history_dump(self) -> None:
         for who in self.memorydict.keys():
             chatlist = self.output_chat_history_dump(who)
+            if len(chatlist) == 0:
+                continue
             chat_json = json.dumps(chatlist, ensure_ascii = False)
             chat_string = str(chat_json)
             self.write_chat_history_dump(who, chat_string)

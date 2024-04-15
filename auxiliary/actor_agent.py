@@ -46,10 +46,12 @@ class ActorAgent:
         return None
 ################################################################################################################################################################################
     def add_human_message_to_chat_history(self, new_chat: str) -> None:
-        self.chat_history.extend([HumanMessage(content = new_chat)])
+        if len(new_chat) > 0:
+            self.chat_history.extend([HumanMessage(content = new_chat)])
 ################################################################################################################################################################################
     def add_ai_message_to_chat_history(self, new_chat: str) -> None:
-        self.chat_history.extend([AIMessage(content = new_chat)])
+        if len(new_chat) > 0:
+            self.chat_history.extend([AIMessage(content = new_chat)])
 ################################################################################################################################################################################
     def __str__(self) -> str:
         return f"ActorAgent({self.name}, {self.url})"

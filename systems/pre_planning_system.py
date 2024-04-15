@@ -45,7 +45,7 @@ class PrePlanningSystem(ExecuteProcessor):
         assert playerentity.has(PlayerComponent)
 
         context = self.context
-        stageentity = context.get_stage_entity_by_uncertain_entity(playerentity)
+        stageentity = context.safe_get_stage_entity(playerentity)
         if stageentity is None:
             logger.error("stage is None, player无所在场景是有问题的")
             return

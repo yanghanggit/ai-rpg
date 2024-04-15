@@ -43,7 +43,7 @@ class SpeakActionSystem(ReactiveProcessor):
             if not check_speak_enable(self.context, entity, target):
                 # 加一个历史，让NPC在下一次的request中再仔细琢磨一下。
                 addchat = speak_action_system_invalid_target(target, message)
-                self.context.agent_connect_system.add_human_message_to_chat_history(speak_action.name, addchat)
+                self.context.safe_add_human_message_to_entity(entity, addchat)
                 continue
             
             ##拼接说话内容
@@ -55,7 +55,7 @@ class SpeakActionSystem(ReactiveProcessor):
         if entity is None or not entity.has(NPCComponent):
             ##写死，只有NPC才能说话
             return
-        stageentity = self.context.get_stage_entity_by_uncertain_entity(entity)
+        stageentity = self.context.safe_get_stage_entity(entity)
         if stageentity is None or not stageentity.has(DirectorComponent):
             # 不带这个组件就不能继续
             return

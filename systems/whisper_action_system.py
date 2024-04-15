@@ -51,8 +51,8 @@ class WhisperActionSystem(ReactiveProcessor):
             #临时
             logger.info(f"{Color.HEADER}{whispercontent}{Color.ENDC}")
             #低语的双方添加记忆即可，别人不知道
-            self.context.add_human_message_to_entity(entity, whispercontent)
-            self.context.add_human_message_to_entity(whispertoentity, whispercontent)
+            self.context.safe_add_human_message_to_entity(entity, whispercontent)
+            self.context.safe_add_human_message_to_entity(whispertoentity, whispercontent)
 ####################################################################################################
         
             

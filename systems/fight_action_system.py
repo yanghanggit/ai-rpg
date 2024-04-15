@@ -89,7 +89,7 @@ class FightActionSystem(ReactiveProcessor):
         if entity is None or not entity.has(SimpleRPGRoleComponent):
             return
         ##添加导演事件
-        stageentity = self.context.get_stage_entity_by_uncertain_entity(entity)
+        stageentity = self.context.safe_get_stage_entity(entity)
         if stageentity is None or not stageentity.has(DirectorComponent):
             return
         #
@@ -105,7 +105,7 @@ class FightActionSystem(ReactiveProcessor):
         if entity is None or not entity.has(SimpleRPGRoleComponent):
             return
         ##添加导演事件
-        stageentity = self.context.get_stage_entity_by_uncertain_entity(entity)
+        stageentity = self.context.safe_get_stage_entity(entity)
         if stageentity is None or not stageentity.has(DirectorComponent):
             return
         #

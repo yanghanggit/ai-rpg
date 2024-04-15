@@ -150,7 +150,7 @@ class PlayerCommandLeaveFor(PlayerInput):
         newmemory = f"""{{
             "LeaveForActionComponent": ["{stagename}"]
         }}"""
-        context.add_human_message_to_entity(playerentity, newmemory)
+        context.safe_add_human_message_to_entity(playerentity, newmemory)
         logger.debug(f"debug_leave: {npc_comp.name} add {action}")
 
 ####################################################################################################################################
@@ -178,7 +178,7 @@ class PlayerCommandPrisonBreak(PlayerInput):
         action = ActorAction(npccomp.name, PrisonBreakActionComponent.__name__, [currentstagename])
         playerentity.add(LeaveForActionComponent, action)
         newmsg = f"""{{"{PrisonBreakActionComponent.__name__}": ["{currentstagename}"]}}"""
-        context.add_human_message_to_entity(playerentity, newmsg)
+        context.safe_add_human_message_to_entity(playerentity, newmsg)
         logger.debug(f"debug_leave: {npccomp.name} add {action}")
 ####################################################################################################################################
 ####################################################################################################################################
@@ -204,7 +204,7 @@ class PlayerCommandBroadcast(PlayerInput):
         newmemory = f"""{{
             "BroadcastActionComponent": ["{content}"]
         }}"""
-        context.add_human_message_to_entity(playerentity, newmemory)
+        context.safe_add_human_message_to_entity(playerentity, newmemory)
         logger.debug(f"debug_broadcast: {npc_comp.name} add {action}")
 ####################################################################################################################################
 ####################################################################################################################################
@@ -229,7 +229,7 @@ class PlayerCommandSpeak(PlayerInput):
         newmemory = f"""{{
             "SpeakActionComponent": ["{content}"]
         }}"""
-        context.add_human_message_to_entity(playerentity, newmemory)
+        context.safe_add_human_message_to_entity(playerentity, newmemory)
         logger.debug(f"debug_speak: {npc_comp.name} add {action}")
 ####################################################################################################################################
 ####################################################################################################################################
@@ -254,7 +254,7 @@ class PlayerCommandWhisper(PlayerInput):
         newmemory = f"""{{
             "WhisperActionComponent": ["{content}"]
         }}"""
-        context.add_human_message_to_entity(playerentity, newmemory)
+        context.safe_add_human_message_to_entity(playerentity, newmemory)
         logger.debug(f"debug_whisper: {npc_comp.name} add {action}")
 ####################################################################################################################################
 ####################################################################################################################################
@@ -279,7 +279,7 @@ class PlayerCommandSearch(PlayerInput):
         newmemory = f"""{{
             "SearchActionComponent": ["{content}"]
         }}"""
-        context.add_human_message_to_entity(playerentity, newmemory)
+        context.safe_add_human_message_to_entity(playerentity, newmemory)
         logger.debug(f"debug_search: {npc_comp.name} add {action}")
 ####################################################################################################################################
 ####################################################################################################################################

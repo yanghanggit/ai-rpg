@@ -33,7 +33,7 @@ class DirectorSystem(ExecuteProcessor):
         convertedevents2stage = directorcomp.tostage(stagecomp.name, self.context)         
         stagememlist = "\n".join(convertedevents2stage)
         if len(stagememlist) > 0:
-            self.context.add_human_message_to_entity(entitystage, stagememlist)
+            self.context.safe_add_human_message_to_entity(entitystage, stagememlist)
 ###################################################################################################################
     ### 重构用的。用新的Director类来处理，转化成NPC事件，加入到NPC的消息列表中
     def handle_npcs_in_this_stage(self, entitystage: Entity) -> None:
@@ -45,6 +45,6 @@ class DirectorSystem(ExecuteProcessor):
             convertedevents2npc = directorcomp.tonpc(npccomp.name, self.context)            
             npcmemlist = "\n".join(convertedevents2npc)
             if len(npcmemlist) > 0:
-                self.context.add_human_message_to_entity(npcentity, npcmemlist)
+                self.context.safe_add_human_message_to_entity(npcentity, npcmemlist)
 ###################################################################################################################
     

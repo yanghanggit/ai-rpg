@@ -12,7 +12,7 @@ def check_speak_enable(context: ExtendedContext, srcentity: Entity, destnpcname:
         logger.warning(f"不存在[{destnpcname}]，无法进行交谈。")
         return False
     
-    stageentity = context.get_stage_entity_by_uncertain_entity(srcentity)
+    stageentity = context.safe_get_stage_entity(srcentity)
     if stageentity is None:
         raise ValueError(f"未找到[{srcentity}]所在的场景。")
         return False

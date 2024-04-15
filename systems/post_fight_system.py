@@ -29,7 +29,7 @@ class PostFightSystem(ExecuteProcessor):
             npccomp: NPCComponent = entity.get(NPCComponent)
             # 添加记忆
             mem_before_death = npc_memory_before_death(self.context)
-            self.context.add_human_message_to_entity(entity, mem_before_death)
+            self.context.safe_add_human_message_to_entity(entity, mem_before_death)
             # 推理死亡，并且进行存档
             archiveprompt = gen_npc_archive_prompt(self.context)
             archive = agent_connect_system.request(npccomp.name, archiveprompt)

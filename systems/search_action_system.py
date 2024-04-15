@@ -36,7 +36,7 @@ class SearchActionSystem(ReactiveProcessor):
             ##写死，只有NPC才能搜寻失败
             return
         ##添加导演事件
-        stageentity = self.context.get_stage_entity_by_uncertain_entity(entity)
+        stageentity = self.context.safe_get_stage_entity(entity)
         if stageentity is None or not stageentity.has(DirectorComponent):
             return
         #
@@ -51,7 +51,7 @@ class SearchActionSystem(ReactiveProcessor):
             # 写死目前只有NPC能搜寻
             return
         
-        stageentity = self.context.get_stage_entity_by_uncertain_entity(whosearchentity)
+        stageentity = self.context.safe_get_stage_entity(whosearchentity)
         if stageentity is None:
             ## 没有场景的不能搜索
             return

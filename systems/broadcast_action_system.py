@@ -29,7 +29,7 @@ class BroadcastActionSystem(ReactiveProcessor):
     ## 目前的设定是场景与NPC都能广播，后续会调整与修改。
     def broadcast(self, entity: Entity) -> None:
         ## 没有场景不需要广播
-        stageentity = self.context.get_stage_entity_by_uncertain_entity(entity)
+        stageentity = self.context.safe_get_stage_entity(entity)
         if stageentity is None:
             logger.error(f"BroadcastActionSystem: stageentity is None!")
             return

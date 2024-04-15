@@ -33,6 +33,7 @@ class ExtendedContext(Context):
         self.agent_connect_system = agentconnectsys
         self.code_name_component_system = codenamecompsys
         self.chaos_engineering_system = chaossystem
+        self.savedata = False
 
         #        
         assert self.file_system is not None, "self.file_system is None"

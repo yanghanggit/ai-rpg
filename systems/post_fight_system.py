@@ -14,14 +14,15 @@ class PostFightSystem(ExecuteProcessor):
     def execute(self) -> None:
         logger.debug("<<<<<<<<<<<<<  PostFightActionSystem  >>>>>>>>>>>>>>>>>")
         # 如果死了先存档
-        self.dead_need_archived()
+        if self.context.savedata:
+            self.save_dead()
 ########################################################################################################################################################################
-    def dead_need_archived(self) -> None:
+    def save_dead(self) -> None:
          entities: set[Entity] = self.context.get_group(Matcher(DeadActionComponent)).entities
          for entity in entities:
-            self.savearchive(entity)
+            self.save_npc(entity)
 ########################################################################################################################################################################
-    def savearchive(self, entity: Entity) -> None:
+    def save_npc(self, entity: Entity) -> None:
         agent_connect_system = self.context.agent_connect_system
         memory_system = self.context.memory_system
         if entity.has(NPCComponent):

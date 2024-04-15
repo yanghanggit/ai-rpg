@@ -22,16 +22,21 @@ class DataSaveSystem(ExecuteProcessor, TearDownProcessor):
 ################################################################################################
     def execute(self) -> None:
         logger.debug("<<<<<<<<<<<<<  DataSaveSystem  >>>>>>>>>>>>>>>>>")
-
         ## 运行一定次数后自动保存
+        if self.context.savedata:
+            self.auto_save_all()
+################################################################################################
+    def tear_down(self) -> None:
+        if self.context.savedata:
+            self.saveall()
+################################################################################################
+    def auto_save_all(self) -> None:
         self.current_save_count += 1
         if self.current_save_count >= self.auto_save_count:
             self.current_save_count = 0
-            self.make_world_archive()
-            self.make_stage_archive()
-            self.make_npc_archive()
+            self.saveall()
 ################################################################################################
-    def tear_down(self) -> None:
+    def saveall(self) -> None:
         self.make_world_archive()
         self.make_stage_archive()
         self.make_npc_archive()

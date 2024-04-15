@@ -5,7 +5,7 @@ from loguru import logger
 from auxiliary.components import (NPCComponent, StageComponent)
 from typing import Set, List
 from langchain_core.messages import HumanMessage, AIMessage
-from auxiliary.file_system import KnownNPCFile, KnownStageFile
+from auxiliary.file_def import KnownNPCFile, KnownStageFile
 
 
 class KnownInformationSystem(InitializeProcessor, ExecuteProcessor):

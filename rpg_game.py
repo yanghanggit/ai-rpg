@@ -31,7 +31,7 @@ from systems.whisper_action_system import WhisperActionSystem
 from systems.search_action_system import SearchActionSystem
 from systems.mind_voice_action_system import MindVoiceActionSystem
 from auxiliary.director_component import DirectorComponent
-from auxiliary.file_system import PropFile, KnownNPCFile
+from auxiliary.file_def import PropFile, KnownNPCFile
 from systems.begin_system import BeginSystem
 from systems.end_system import EndSystem
 import shutil

@@ -9,7 +9,7 @@ from loguru import logger
 from auxiliary.director_component import DirectorComponent
 from auxiliary.director_event import NPCSearchFailedEvent
 from typing import List
-from auxiliary.file_system import PropFile
+from auxiliary.file_def import PropFile
 
 class SearchActionSystem(ReactiveProcessor):
 

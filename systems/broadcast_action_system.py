@@ -7,7 +7,7 @@ from auxiliary.print_in_color import Color
 from auxiliary.prompt_maker import broadcast_action_prompt
 from loguru import logger
 from director_component import DirectorComponent
-from director_event import BroadcastEvent
+from director_event import NPCBroadcastEvent
 
 class BroadcastActionSystem(ReactiveProcessor):
 
@@ -46,7 +46,7 @@ class BroadcastActionSystem(ReactiveProcessor):
             logger.info(f"{Color.HEADER}{broadcast_say}{Color.ENDC}")
             #stagecomp.directorscripts.append(broadcast_say)
             ## 重构处理
-            event = BroadcastEvent(action.name, stagecomp.name, value)
+            event = NPCBroadcastEvent(action.name, stagecomp.name, value)
             directorcomp.addevent(event)
             
         

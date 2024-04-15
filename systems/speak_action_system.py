@@ -7,7 +7,7 @@ from auxiliary.prompt_maker import speak_action_prompt, speak_action_system_inva
 from loguru import logger
 from auxiliary.dialogue_rule import check_speak_enable, parse_target_and_message
 from director_component import DirectorComponent
-from director_event import SpeakEvent
+from director_event import NPCSpeakEvent
 from typing import Optional
 
    
@@ -62,7 +62,7 @@ class SpeakActionSystem(ReactiveProcessor):
         #
         npccomp: NPCComponent = entity.get(NPCComponent)
         directorcomp: DirectorComponent = stageentity.get(DirectorComponent)
-        speakevent = SpeakEvent(npccomp.name, targetname, message)
+        speakevent = NPCSpeakEvent(npccomp.name, targetname, message)
         directorcomp.addevent(speakevent)
 ####################################################################################################
 

@@ -87,7 +87,8 @@ class StageBuilder:
             exit_conditions_in_stage: list[StageConditionData] = self.build_prop_conditions( stagedata.get("exit_conditions")) 
             propsinstage: set[PropData] = self.build_props_in_stage(stagedata.get("props"))
             npcsinstage: set[NPCData] = self.build_npcs_in_stage(stagedata.get("npcs"))
-            stage = StageData(  stagedata.get("name"), 
+            
+            stage = StageData(stagedata.get("name"), 
                             stagedata.get("codename"), 
                             stagedata.get("description"), 
                             stagedata.get("url"), 
@@ -96,16 +97,14 @@ class StageBuilder:
                             exit_conditions_in_stage, 
                             npcsinstage, 
                             propsinstage)
-            self.stages.append(stage)
+            
+             # 做连接关系 目前仅用名字
+            connect_to_stage_name: str = stagedata.get("connect_to_stage")
+            if len(connect_to_stage_name) > 0:
+                logger.debug(f"StageBuilder: {stage.name} connect to {connect_to_stage_name}")
+                stage.connect_stage_by_name(connect_to_stage_name)
 
-        
-        # 做连接关系
-        for data in self.datalist:
-            stagedata = data.get("stage")  
-            connect_to_stage: str = stagedata.get("connect_to_stage")
-            if len(connect_to_stage) > 0:
-                logger.debug(f"StageBuilder: {stagedata.get('name')} connect to {connect_to_stage}")
-                       
+            self.stages.append(stage)
 ########################################################################################################################
 ########################################################################################################################
 ########################################################################################################################

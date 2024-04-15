@@ -9,7 +9,8 @@ from auxiliary.components import (
     PlayerComponent, 
     LeaveForActionComponent, 
     WhisperActionComponent,
-    SearchActionComponent)
+    SearchActionComponent,
+    PrisonBreakActionComponent)
 from auxiliary.actor_action import ActorAction
 from player_proxy import PlayerProxy
 
@@ -151,6 +152,34 @@ class PlayerCommandLeaveFor(PlayerInput):
         }}"""
         context.add_human_message_to_entity(playerentity, newmemory)
         logger.debug(f"debug_leave: {npc_comp.name} add {action}")
+
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################     
+class PlayerCommandPrisonBreak(PlayerInput):
+
+    def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy) -> None:
+        super().__init__(name, game, playerproxy)
+
+    def execute(self) -> None:
+        context = self.game.extendedcontext
+        playerentity = context.getplayer(self.playerproxy.name)
+        if playerentity is None:
+            logger.warning("debug_leave: player is None")
+            return
+        
+        npccomp: NPCComponent = playerentity.get(NPCComponent)
+        currentstagename: str = npccomp.current_stage
+        stageentity = context.getstage(currentstagename)
+        if stageentity is None:
+            logger.error(f"PrisonBreakActionSystem: {currentstagename} is None")
+            return
+
+        action = ActorAction(npccomp.name, PrisonBreakActionComponent.__name__, [currentstagename])
+        playerentity.add(LeaveForActionComponent, action)
+        newmsg = f"""{{"{PrisonBreakActionComponent.__name__}": ["{currentstagename}"]}}"""
+        context.add_human_message_to_entity(playerentity, newmsg)
+        logger.debug(f"debug_leave: {npccomp.name} add {action}")
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################

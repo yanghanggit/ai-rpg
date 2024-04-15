@@ -5,6 +5,7 @@ from loguru import logger
 from auxiliary.components import (
     WorldComponent,
     StageComponent, 
+    ConnectToStageComponent,
     NPCComponent, 
     PlayerComponent, 
     SimpleRPGRoleComponent, 
@@ -309,7 +310,8 @@ class RPGGame:
                 npcname = npc.name
                 findnpcagain: Optional[Entity] = context.getnpc(npcname)
                 if findnpcagain is None:
-                    logger.error(f"没有找到npc：{npcname}")
+                    #logger.error(f"没有找到npc：{npcname}！！！！！！！！！")
+                    raise ValueError(f"没有找到npc：{npcname}！！！！！！！！！")
                     continue
 
                 ## 重新设置npc的stage，做覆盖处理
@@ -338,6 +340,12 @@ class RPGGame:
             if len(exit_condition_set) > 0:
                 stageentity.add(StageExitConditionComponent, set(exit_condition_set))
                 logger.debug(f"{builddata.name}的出口条件为：{exit_condition_set}")
+
+            ## 创建连接的场景用于PrisonBreakActionSystem
+            for connectstage in builddata.connect_to_stage:
+                stageentity.add(ConnectToStageComponent, connectstage.name)
+                logger.debug(f"{builddata.name}连接的场景为：{connectstage.name}, 用于PrisonBreakActionSystem使用。")
+                break ### 就用第一个
 
             #重构
             agent_connect_system.register_actor_agent(builddata.name, builddata.url)

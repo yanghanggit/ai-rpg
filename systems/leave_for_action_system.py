@@ -8,7 +8,7 @@ from auxiliary.extended_context import ExtendedContext
 from auxiliary.print_in_color import Color
 from loguru import logger
 from director_component import DirectorComponent
-from director_event import LeaveForStageEvent, EnterStageEvent, FailEnterStageEvent, FailExitStageEvent
+from director_event import NPCLeaveForStageEvent, NPCEnterStageEvent, NPCFailEnterStageEvent, NPCFailExitStageEvent
 from typing import cast
 
 
@@ -59,7 +59,7 @@ class LeaveForActionSystem(ReactiveProcessor):
             stagename = action.values[0]
             handle = LeaveActionHelper(self.context, entity, stagename)
             
-            #开始使用，简化代码
+            # #开始使用，简化代码
             if handle.target_stage is None:
                 logger.warning(f"{entity.get(NPCComponent).name}想要去往的场景是不存在的: {stagename} 不用往下进行了")
                 continue
@@ -72,13 +72,13 @@ class LeaveForActionSystem(ReactiveProcessor):
                 logger.info(f"{entity.get(NPCComponent).name}想要去往的场景是当前的场景{handle.current_stage_name}: {stagename} 不用往下进行了")
                 continue
 
-            if not self.check_current_stage_meets_conditions_for_leaving(handle):
-                logger.info(f"{entity.get(NPCComponent).name}当前场景{handle.current_stage_name}不满足离开条件，不能离开")
-                continue
+            # if not self.check_current_stage_meets_conditions_for_leaving(handle):
+            #     logger.info(f"{entity.get(NPCComponent).name}当前场景{handle.current_stage_name}不满足离开条件，不能离开")
+            #     continue
 
-            if not self.check_conditions_for_entering_target_stage(handle):
-                logger.info(f"{entity.get(NPCComponent).name}目标场景{handle.target_stage_name}不满足进入条件，不能进入")
-                continue
+            # if not self.check_conditions_for_entering_target_stage(handle):
+            #     logger.info(f"{entity.get(NPCComponent).name}目标场景{handle.target_stage_name}不满足进入条件，不能进入")
+            #     continue
             
             ##开始行动了，到了这里就不能终止，前面都是检查!!!!!!!
             if handle.currentstage is not None:
@@ -115,14 +115,11 @@ class LeaveForActionSystem(ReactiveProcessor):
 
         ##给目标场景添加剧本
         if current_stage_name != "":
-            #self.context.legacy_add_content_to_director_script_by_entity(target_stage_entity, npc_leave_for_stage(npccomp.name, current_stage_name, target_stage_name))
             self.add_leave_for_stage_event_director(target_stage_entity, npccomp.name, current_stage_name, target_stage_name)
             logger.info(f"{Color.GREEN}{npccomp.name} 离开了{current_stage_name}去了{target_stage_name}.{Color.ENDC}")
         else:
-            #self.context.legacy_add_content_to_director_script_by_entity(target_stage_entity, npc_enter_stage(npccomp.name, target_stage_name))
             self.add_enter_stage_event_director(target_stage_entity, npccomp.name, target_stage_name)
             logger.info(f"{Color.GREEN}{npccomp.name} 进入了{target_stage_name}.{Color.ENDC}")
-
     ###############################################################################################################################################
     def leave_stage(self, handle: LeaveActionHelper) -> None:
 
@@ -140,11 +137,8 @@ class LeaveForActionSystem(ReactiveProcessor):
         entity.replace(NPCComponent, replace_name, replace_current_stage)
         #更换场景的标记，置空
         self.context.change_stage_tag_component(entity, handle.current_stage_name, replace_current_stage)
-
         #给当前场景添加剧本，如果本次有导演就合进事件
-        #self.context.legacy_add_content_to_director_script_by_entity(currentstage, npc_leave_for_stage(npccomp.name, handle.current_stage_name, handle.target_stage_name))
         self.add_leave_for_stage_event_director(currentstage, npccomp.name, handle.current_stage_name, handle.target_stage_name)
-
     ###############################################################################################################################################
     def check_current_stage_meets_conditions_for_leaving(self, handle: LeaveActionHelper) -> bool:
         if handle.currentstage is None:
@@ -163,14 +157,10 @@ class LeaveForActionSystem(ReactiveProcessor):
             if self.context.file_system.has_prop_file(npccomp.name, condition):
                 #如果满足就放行
                 return True
-            # if condition in self.context.file_system.get_backpack_contents(handle.who_wana_leave.get(BackpackComponent)):
-            #     #如果满足就放行
-            #     return True
             else:
                 search_list += f"'{condition}' "
 
         logger.info(f"{Color.WARNING}{npccomp.name}背包中没有{search_list}，不能离开{handle.current_stage_name}.{Color.ENDC}")
-        #self.context.legacy_add_content_to_director_script_by_entity(handle.who_wana_leave, fail_to_exit_stage(npccomp.name, handle.current_stage_name, search_list))
         self.add_fail_exit_stage_event_director(handle.currentstage, npccomp.name, handle.current_stage_name, search_list)
         return False
     ###############################################################################################################################################
@@ -188,27 +178,22 @@ class LeaveForActionSystem(ReactiveProcessor):
         for condition in entry_condition_comp.conditions:
             if self.context.file_system.has_prop_file(npccomp.name, condition):
                 return True
-            # if condition in self.context.file_system.get_backpack_contents(handle.who_wana_leave.get(BackpackComponent)):
-            #     return True
             else:
                 search_list += f"'{condition}' "
         
         logger.info(f"{Color.WARNING}{handle.who_wana_leave.get(NPCComponent).name}背包中没有{search_list}，不能进入{handle.target_stage_name}.{Color.ENDC}")
-        #self.context.legacy_add_content_to_director_script_by_entity(handle.who_wana_leave, fail_to_enter_stage(handle.who_wana_leave.get(NPCComponent).name, handle.target_stage_name, search_list))
         
         ##重构的        
         if handle.currentstage is not None:
             self.add_fail_enter_stage_event_director(handle.currentstage, handle.who_wana_leave.get(NPCComponent).name, handle.target_stage_name, search_list)
         return False
-    
     ###############################################################################################################################################
     def add_leave_for_stage_event_director(self, stageentity: Entity, npcname: str, cur_stage_name: str, target_stage_name: str) -> None:
         if stageentity is None or not stageentity.has(DirectorComponent):
             return
         # ##添加导演事件
         directorcomp: DirectorComponent = stageentity.get(DirectorComponent)
-        #director: Director = directorcomp.director
-        leaveforstageevent = LeaveForStageEvent(npcname, cur_stage_name, target_stage_name)
+        leaveforstageevent = NPCLeaveForStageEvent(npcname, cur_stage_name, target_stage_name)
         directorcomp.addevent(leaveforstageevent)
     ###############################################################################################################################################
     def add_enter_stage_event_director(self, stageentity: Entity, npcname: str, target_stage_name: str) -> None:
@@ -216,8 +201,7 @@ class LeaveForActionSystem(ReactiveProcessor):
             return
         # ##添加导演事件
         directorcomp: DirectorComponent = stageentity.get(DirectorComponent)
-        #director: Director = directorcomp.director
-        enterstageevent = EnterStageEvent(npcname, target_stage_name)
+        enterstageevent = NPCEnterStageEvent(npcname, target_stage_name)
         directorcomp.addevent(enterstageevent)
     ###############################################################################################################################################
     def add_fail_enter_stage_event_director(self, stageentity: Entity, npcname: str, target_stage_name: str, search_list: str) -> None:
@@ -225,8 +209,7 @@ class LeaveForActionSystem(ReactiveProcessor):
             return
         # ##添加导演事件
         directorcomp: DirectorComponent = stageentity.get(DirectorComponent)
-        #director: Director = directorcomp.director
-        failevent = FailEnterStageEvent(npcname, target_stage_name, search_list)
+        failevent = NPCFailEnterStageEvent(npcname, target_stage_name, search_list)
         directorcomp.addevent(failevent)
     ###############################################################################################################################################
     def add_fail_exit_stage_event_director(self, stageentity: Entity, npcname: str, cur_stage_name: str, search_list: str) -> None:
@@ -234,7 +217,6 @@ class LeaveForActionSystem(ReactiveProcessor):
             return
         # ##添加导演事件
         directorcomp: DirectorComponent = stageentity.get(DirectorComponent)
-       # director: Director = directorcomp.director
-        failevent = FailExitStageEvent(npcname, cur_stage_name, search_list)
+        failevent = NPCFailExitStageEvent(npcname, cur_stage_name, search_list)
         directorcomp.addevent(failevent)
     ###############################################################################################################################################

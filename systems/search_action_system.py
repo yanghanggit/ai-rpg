@@ -7,7 +7,7 @@ from auxiliary.actor_action import ActorAction
 from auxiliary.print_in_color import Color
 from loguru import logger
 from director_component import DirectorComponent
-from director_event import SearchFailedEvent
+from director_event import NPCSearchFailedEvent
 from typing import List
 from auxiliary.file_system import PropFile
 
@@ -43,7 +43,7 @@ class SearchActionSystem(ReactiveProcessor):
         npccomp: NPCComponent = entity.get(NPCComponent)
         npcname: str = npccomp.name
         directorcomp: DirectorComponent = stageentity.get(DirectorComponent)
-        searchfailedevent = SearchFailedEvent(npcname, propname)
+        searchfailedevent = NPCSearchFailedEvent(npcname, propname)
         directorcomp.addevent(searchfailedevent)
 ###################################################################################################################
     def search(self, whosearchentity: Entity) -> None:

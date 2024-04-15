@@ -59,8 +59,9 @@ class StageData:
         self.connect_to_stage: set[StageData] = set()
 
     ###
-    def connectstage(self, stage: 'StageData') -> None:
-        self.connect_to_stage.add(stage)
+    def connect_stage_by_name(self, stagename: str) -> None:
+        stage_only_has_name = StageData(stagename, "", "", "", "", [], [], set(), set())
+        self.connect_to_stage.add(stage_only_has_name)
 
 
 

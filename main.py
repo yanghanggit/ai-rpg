@@ -14,7 +14,8 @@ from player_input import (PlayerCommandCtrlNPC,
                           PlayerCommandSpeak, 
                           PlayerCommandWhisper, 
                           PlayerCommandSearch,
-                          PlayerCommandLogin)
+                          PlayerCommandLogin, 
+                          PlayerCommandPrisonBreak)
 
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.file_system import FileSystem
@@ -244,6 +245,15 @@ def main() -> None:
             playercommandsearch = PlayerCommandSearch("/search", rpggame, playproxy, content)
             playercommandsearch.execute()
             ###
+            logger.debug(f"{'=' * 50}")
+
+        elif "/prisonbreak" in usr_input:
+            if not rpggame.started:
+                logger.warning("请先/run")
+                continue
+            command = "/prisonbreak"
+            playercommandprsionbreak = PlayerCommandPrisonBreak("/prisonbreak", rpggame, playproxy)
+            playercommandprsionbreak.execute()
             logger.debug(f"{'=' * 50}")
 
     rpggame.exit()

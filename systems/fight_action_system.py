@@ -4,7 +4,7 @@ from auxiliary.extended_context import ExtendedContext
 from auxiliary.actor_action import ActorAction
 from loguru import logger
 from director_component import DirectorComponent
-from director_event import KillSomeoneEvent, AttackSomeoneEvent
+from director_event import NPCKillSomeoneEvent, NPCAttackSomeoneEvent
 
 class FightActionSystem(ReactiveProcessor):
 
@@ -97,7 +97,7 @@ class FightActionSystem(ReactiveProcessor):
         rpgname: str = rpgcomp.name
         #
         directorcomp: DirectorComponent = stageentity.get(DirectorComponent)
-        killsomeoneevent = KillSomeoneEvent(rpgname, targetname)
+        killsomeoneevent = NPCKillSomeoneEvent(rpgname, targetname)
         directorcomp.addevent(killsomeoneevent)
 ######################################################################################################################################################
     ## 重构事件
@@ -113,7 +113,7 @@ class FightActionSystem(ReactiveProcessor):
         rpgname: str = rpgcomp.name
         #
         directorcomp: DirectorComponent = stageentity.get(DirectorComponent)
-        attacksomeoneevent = AttackSomeoneEvent(rpgname, targetname, damage, curhp, maxhp)
+        attacksomeoneevent = NPCAttackSomeoneEvent(rpgname, targetname, damage, curhp, maxhp)
         directorcomp.addevent(attacksomeoneevent)
 ######################################################################################################################################################
     ## 杀死对方就直接夺取唯一性道具。

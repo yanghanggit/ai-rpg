@@ -12,7 +12,7 @@ class DirectorSystem(ExecuteProcessor):
     def execute(self) -> None:
         logger.debug("<<<<<<<<<<<<<  DirectorSystem  >>>>>>>>>>>>>>>>>")
         self.handle()
-        self.must_clear_director_data()
+        self.directorclear()
 ###################################################################################################################
     def handle(self) -> None:
         entities = self.context.get_group(Matcher(all_of=[StageComponent, DirectorComponent])).entities
@@ -20,13 +20,12 @@ class DirectorSystem(ExecuteProcessor):
             self.handlestage(entity)
             self.handle_npcs_in_this_stage(entity)
 ###################################################################################################################   
-    def must_clear_director_data(self) -> None:
+    def directorclear(self) -> None:
         entities = self.context.get_group(Matcher(all_of=[StageComponent, DirectorComponent])).entities
         for entity in entities:
             directorcomp: DirectorComponent = entity.get(DirectorComponent)
             directorcomp.clear()
 ###################################################################################################################
-    ### 重构用的。用新的Director类来处理, 转化成场景事件，加入到场景的消息列表中
     def handlestage(self, entitystage: Entity) -> None:
         assert entitystage.has(StageComponent)
         stagecomp: StageComponent = entitystage.get(StageComponent)
@@ -36,7 +35,6 @@ class DirectorSystem(ExecuteProcessor):
         if len(newmsg) > 0:
             self.context.safe_add_human_message_to_entity(entitystage, newmsg)
 ###################################################################################################################
-    ### 重构用的。用新的Director类来处理，转化成NPC事件，加入到NPC的消息列表中
     def handle_npcs_in_this_stage(self, entitystage: Entity) -> None:
         assert entitystage.has(StageComponent)
         stagecomp: StageComponent = entitystage.get(StageComponent)

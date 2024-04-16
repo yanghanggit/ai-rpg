@@ -17,25 +17,22 @@ class DeadActionSystem(ExecuteProcessor):
     def execute(self) -> None:
         logger.debug("<<<<<<<<<<<<<  DeadActionSystem  >>>>>>>>>>>>>>>>>")
         # 然后处理剩下的事情，例如关闭一些行为与准备销毁组件
-        self.remove_npc_actions()
+        self.remove_npc_interactive_actions()
         # 最后销毁
-        self.must_destory()
+        self.destoryentity()
 ########################################################################################################################################################################    
-    def remove_npc_actions(self) -> None:
-        npcentities:set[Entity] = self.context.get_group(Matcher(all_of = [NPCComponent, DeadActionComponent])).entities.copy()
-        #核心处理，如果死了就要处理下面的组件
+    def remove_npc_interactive_actions(self) -> None:
+        npcentities:set[Entity] = self.context.get_group(Matcher(all_of = [NPCComponent, DeadActionComponent], any_of = npc_interactive_actions_register)).entities.copy()
         for entity in npcentities:
             for actionsclass in npc_interactive_actions_register:
                 if entity.has(actionsclass):
                     entity.remove(actionsclass)
 ########################################################################################################################################################################  
-    def must_destory(self) -> None:
-        entities:set[Entity] = self.context.get_group(Matcher(DeadActionComponent)).entities
-        #核心处理，如果死了就要处理下面的组件
+    def destoryentity(self) -> None:
+        entities: set[Entity] = self.context.get_group(Matcher(DeadActionComponent)).entities
         for entity in entities:
             deadcomp: DeadActionComponent = entity.get(DeadActionComponent)
             action: ActorAction = deadcomp.action
-            #死了的需要准备销毁
             if not entity.has(DestroyComponent):
                 entity.add(DestroyComponent, action.name) ### 这里只需要名字，不需要values，谁造成了你的死亡
 ########################################################################################################################################################################

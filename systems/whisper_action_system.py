@@ -1,12 +1,12 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
-from auxiliary.components import WhisperActionComponent, NPCComponent
+from auxiliary.components import WhisperActionComponent
 from auxiliary.actor_action import ActorAction
 from auxiliary.extended_context import ExtendedContext
 from typing import Optional
 from loguru import logger
 from auxiliary.dialogue_rule import parse_target_and_message, check_speak_enable
 from auxiliary.director_component import DirectorComponent
-from auxiliary.director_event import NPCWhisperEvent
+from auxiliary.director_event import WhisperEvent
 
 
 ####################################################################################################
@@ -48,16 +48,14 @@ class WhisperActionSystem(ReactiveProcessor):
             self.notifydirector(entity, targetname, message)
 ####################################################################################################
     def notifydirector(self, entity: Entity, targetname: str, message: str) -> None:
-        if not entity.has(NPCComponent):
-            return
-        
         stageentity = self.context.safe_get_stage_entity(entity)
         if stageentity is None or not stageentity.has(DirectorComponent):
             return
-        
-        npccomp: NPCComponent = entity.get(NPCComponent)
+        safename = self.context.safe_get_entity_name(entity)
+        if safename == "":
+            return
         directorcomp: DirectorComponent = stageentity.get(DirectorComponent)
-        directorcomp.addevent(NPCWhisperEvent(npccomp.name, targetname, message))
+        directorcomp.addevent(WhisperEvent(safename, targetname, message))
 ####################################################################################################
         
             

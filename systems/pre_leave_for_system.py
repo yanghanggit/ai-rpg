@@ -32,12 +32,12 @@ class PreLeaveForSystem(ReactiveProcessor):
     def __init__(self, context: ExtendedContext) -> None:
         super().__init__(context)
         self.context = context
-
+###############################################################################################################################################
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
         return {Matcher(LeaveForActionComponent): GroupEvent.ADDED}
-
+###############################################################################################################################################
     def filter(self, entity: Entity) -> bool:
-        return entity.has(LeaveForActionComponent)
+        return entity.has(LeaveForActionComponent) and entity.has(NPCComponent)
 ###############################################################################################################################################
     def react(self, entities: list[Entity]) -> None:
         logger.debug("<<<<<<<<<<<<<  PreLeaveForSystem  >>>>>>>>>>>>>>>>>")

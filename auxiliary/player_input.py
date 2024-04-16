@@ -27,43 +27,46 @@ class PlayerInput:
 ####################################################################################################################################
 class PlayerCommandLogin(PlayerInput):
 
-    def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, targetname: str) -> None:
+    def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, login_npc_name: str) -> None:
         super().__init__(name, game, playerproxy)
-        self.targetname = targetname
+        self.login_npc_name = login_npc_name
 
     def execute(self) -> None:
         context = self.game.extendedcontext
-        name = self.targetname
-        playername = self.playerproxy.name
-        logger.debug(f"{self.inputname}, player name: {playername}, target name: {name}")
+        login_npc_name = self.login_npc_name
+        myname = self.playerproxy.name
+        logger.debug(f"{self.inputname}, player name: {myname}, target name: {login_npc_name}")
 
-        npcentity = context.getnpc(name)
+        npcentity = context.getnpc(login_npc_name)
         if npcentity is None:
             # 扮演的角色，本身就不存在于这个世界
-            logger.error(f"{self.inputname}, npc is None, login failed")
+            logger.error(f"{login_npc_name}, npc is None, login failed")
             return
 
-        playerentity = context.getplayer(playername)
+        playerentity = context.getplayer(myname)
         if playerentity is not None:
             # 已经登陆完成
-            logger.error(f"{self.inputname}, already login")
+            logger.error(f"{myname}, already login")
             return
         
         playercomp: PlayerComponent = npcentity.get(PlayerComponent)
         if playercomp is None:
             # 扮演的角色不是设定的玩家可控制NPC
-            logger.error(f"{self.inputname}, npc is not player ctrl npc, login failed")
+            logger.error(f"{login_npc_name}, npc is not player ctrl npc, login failed")
             return
         
-        if playercomp.name != "" and playercomp.name != playername:
+        if playercomp.name != "" and playercomp.name != myname:
             # 已经有人控制了，但不是你
-            logger.error(f"{self.inputname}, player already ctrl by some player, login failed")
+            logger.error(f"{login_npc_name}, player already ctrl by some player {playercomp.name}, login failed")
             return
     
-        npcentity.replace(PlayerComponent, playername)
+        npcentity.replace(PlayerComponent, myname)
+        logger.info(f"login success! {myname} => {login_npc_name}")
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
+
+### 这个基本和GM指令差不多了，不允许随便用。基本在正常运行中不允许玩家使用。
 class PlayerCommandChangeCtrlNPC(PlayerInput):
     
     def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, npc_name_to_be_controlled: str) -> None:
@@ -98,7 +101,7 @@ class PlayerCommandChangeCtrlNPC(PlayerInput):
         logger.debug(f"{self.inputname}, player name: {myname}, target name: {target_npc_name}")
         my_player_entity = context.getplayer(myname)
         if my_player_entity is None:
-            # 你现在不控制任何人，就不能做更换，先登陆
+            # 你现在不控制任何人，就不能做更换，必须先登陆
             logger.warning(f"{myname}, player is None, can not change control target")
             return
         

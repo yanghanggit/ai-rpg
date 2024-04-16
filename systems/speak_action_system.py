@@ -1,11 +1,11 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
-from auxiliary.components import SpeakActionComponent, NPCComponent
+from auxiliary.components import SpeakActionComponent
 from auxiliary.actor_action import ActorAction
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.dialogue_rule import check_speak_enable, parse_target_and_message
 from auxiliary.director_component import DirectorComponent
-from auxiliary.director_event import NPCSpeakEvent
+from auxiliary.director_event import SpeakEvent
 from typing import Optional
 
    
@@ -19,11 +19,10 @@ class SpeakActionSystem(ReactiveProcessor):
         return {Matcher(SpeakActionComponent): GroupEvent.ADDED}
 ####################################################################################################
     def filter(self, entity: Entity) -> bool:
-        return entity.has(SpeakActionComponent) and entity.has(NPCComponent)
+        return entity.has(SpeakActionComponent)
 ####################################################################################################
     def react(self, entities: list[Entity]) -> None:
         logger.debug("<<<<<<<<<<<<<  SpeakActionSystem  >>>>>>>>>>>>>>>>>")
-        # 核心执行
         for entity in entities:
             self.speak(entity)  
 ####################################################################################################
@@ -49,16 +48,14 @@ class SpeakActionSystem(ReactiveProcessor):
             self.notifydirector(entity, targetname, message)
 ####################################################################################################
     def notifydirector(self, entity: Entity, targetname: str, message: str) -> None:
-        if not entity.has(NPCComponent):
-            return
-        
         stageentity = self.context.safe_get_stage_entity(entity)
         if stageentity is None or not stageentity.has(DirectorComponent):
             return
-        
-        npccomp: NPCComponent = entity.get(NPCComponent)
+        safename = self.context.safe_get_entity_name(entity)
+        if safename == "":
+            return
         directorcomp: DirectorComponent = stageentity.get(DirectorComponent)
-        directorcomp.addevent(NPCSpeakEvent(npccomp.name, targetname, message))
+        directorcomp.addevent(SpeakEvent(safename, targetname, message))
 ####################################################################################################
 
 

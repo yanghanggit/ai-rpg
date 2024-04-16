@@ -19,7 +19,6 @@ class MindVoiceActionSystem(ReactiveProcessor):
 ####################################################################################################
     def react(self, entities: list[Entity]) -> None:
         logger.debug("<<<<<<<<<<<<<  MindVoiceActionSystem  >>>>>>>>>>>>>>>>>")
-
         # 核心处理
         for entity in entities:
             self.mindvoice(entity)      
@@ -28,7 +27,7 @@ class MindVoiceActionSystem(ReactiveProcessor):
         mindvoicecomp: MindVoiceActionComponent = entity.get(MindVoiceActionComponent)
         action: ActorAction = mindvoicecomp.action
         for value in action.values:
-            what_to_said = f"{action.name},心里想到:{value}"
-            logger.info(f"{Color.BLUE}{what_to_said}{Color.ENDC}")
+            what_to_said = f"debug!! [mindvoice]:{action.name} = {value}"
+            logger.debug(f"{Color.BLUE}{what_to_said}{Color.ENDC}") #目前还是测试
  ####################################################################################################       
                 

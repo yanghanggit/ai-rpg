@@ -25,6 +25,9 @@ TagActionComponent = namedtuple('TagActionComponent', 'action')
 DeadActionComponent = namedtuple('DeadActionComponent', 'action')
 SearchActionComponent = namedtuple('SearchActionComponent', 'action')
 PrisonBreakActionComponent = namedtuple('PrisonBreakActionComponent', 'action')
+PerceptionActionComponent = namedtuple('PerceptionActionComponent', 'action')
+StealActionComponent = namedtuple('StealActionComponent', 'action')
+TradeActionComponent = namedtuple('TradeActionComponent', 'action')
 ###############################################################################################################################################
 ###游戏业务组件
 SimpleRPGRoleComponent = namedtuple('SimpleRPGRoleComponent', 'name maxhp hp attack')
@@ -53,7 +56,15 @@ NPC_AVAILABLE_ACTIONS_REGISTER = [FightActionComponent,
                          BroadcastActionComponent,
                          WhisperActionComponent,
                          SearchActionComponent, 
-                         PrisonBreakActionComponent]
+                         PrisonBreakActionComponent,
+                         PerceptionActionComponent,
+                         StealActionComponent,
+                         TradeActionComponent]
 
 NPC_DIALOGUE_ACTIONS_REGISTER = [SpeakActionComponent, MindVoiceActionComponent, WhisperActionComponent]
-NPC_INTERACTIVE_ACTIONS_REGISTER = [SearchActionComponent, LeaveForActionComponent, PrisonBreakActionComponent]
+NPC_INTERACTIVE_ACTIONS_REGISTER = [SearchActionComponent, 
+                                    LeaveForActionComponent, 
+                                    PrisonBreakActionComponent, 
+                                    PerceptionActionComponent,
+                                    StealActionComponent,
+                                    TradeActionComponent]

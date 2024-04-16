@@ -42,6 +42,9 @@ from systems.post_action_system import PostActionSystem
 from systems.post_fight_system import PostFightSystem
 from systems.known_information_system import KnownInformationSystem
 from systems.prison_break_action_system import PrisonBreakActionSystem
+from systems.perception_action_system import PerceptionActionSystem
+from systems.steal_action_system import StealActionSystem
+from systems.trade_action_system import TradeActionSystem
 
 ## 控制流程和数据创建
 class RPGGame:
@@ -66,8 +69,7 @@ class RPGGame:
         
         #初始化系统########################
         processors.add(InitSystem(context))
-        processors.add(KnownInformationSystem(context))#更新关系网
-        
+       
         #规划逻辑########################
         processors.add(PrePlanningSystem(context)) ######## 在所有规划之前
         processors.add(StagePlanningSystem(context))
@@ -88,7 +90,11 @@ class RPGGame:
         processors.add(PostFightSystem(context))
         processors.add(DeadActionSystem(context)) 
         
+        processors.add(PerceptionActionSystem(context)) ## 感知类的行为
         processors.add(SearchActionSystem(context)) ## 交互类的行为，在死亡之后，因为死了就不能执行
+        processors.add(StealActionSystem(context))
+        processors.add(TradeActionSystem(context))
+
         processors.add(PrisonBreakActionSystem(context)) ## 必须在PreLeaveForSystem之前！
         processors.add(PreLeaveForSystem(context)) ## 必须在LeaveForActionSystem之前！
         processors.add(LeaveForActionSystem(context)) ## 离开场景与去往哪里的最终实现
@@ -99,7 +105,7 @@ class RPGGame:
 
         #行动结束后导演
         processors.add(DirectorSystem(context))
-    
+        processors.add(KnownInformationSystem(context)) #更新关系网
         #########################################
         ###必须最后
         processors.add(DestroySystem(context))

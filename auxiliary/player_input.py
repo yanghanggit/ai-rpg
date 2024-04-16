@@ -59,100 +59,101 @@ class PlayerCommandLogin(PlayerInput):
             # 已经有人控制了，但不是你
             logger.error(f"{self.inputname}, player already ctrl by some player, login failed")
             return
-        
-        npccomp: NPCComponent = npcentity.get(NPCComponent)
+    
         npcentity.replace(PlayerComponent, playername)
-        logger.debug(f"{self.inputname}, [{npccomp.name}] is now controlled by the player [{playername}]")
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class PlayerCommandCtrlNPC(PlayerInput):
-
-    def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, targetname: str) -> None:
+class PlayerCommandChangeCtrlNPC(PlayerInput):
+    
+    def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, npc_name_to_be_controlled: str) -> None:
         super().__init__(name, game, playerproxy)
-        self.targetname = targetname
+        self.npc_name_to_be_controlled = npc_name_to_be_controlled
 
     def execute(self) -> None:
         context = self.game.extendedcontext
-        name = self.targetname
-        playername = self.playerproxy.name
-        logger.debug(f"{self.inputname}, player name: {playername}, target name: {name}")
+        target_npc_name = self.npc_name_to_be_controlled
+        myname = self.playerproxy.name
 
-        playerentity = context.getplayer(playername)
-        if playerentity is None:
-            logger.warning(f"{self.inputname}, player is None")
+        #寻找要控制的NPC
+        to_ctrl_npc_entity = context.getnpc(target_npc_name)
+        if to_ctrl_npc_entity is None:
+            logger.error(f"{target_npc_name}, npc is None")
             return
         
-        playercomp: PlayerComponent = playerentity.get(PlayerComponent)
-        logger.debug(f"{self.inputname}, current player name: {playercomp.name}")
-
-        ##停止控制当前的
-        playerentity.remove(PlayerComponent)
-
-        #准备控制新的
-        targetnpc = context.getnpc(name)
-        if targetnpc is not None:
-            npccomp: NPCComponent = targetnpc.get(NPCComponent)
-            logger.debug(f"{self.inputname}: [{npccomp.name}] is now controlled by the player [{playername}]")
-            targetnpc.add(PlayerComponent, playername)
+        if to_ctrl_npc_entity.has(PlayerComponent):
+            hisplayercomp: PlayerComponent = to_ctrl_npc_entity.get(PlayerComponent)
+            if hisplayercomp.name == myname:
+                # 不用继续了
+                logger.warning(f"{target_npc_name}, already control {hisplayercomp.name}")
+                return
+            else:
+                # 已经有人控制了，但不是你，你不能抢
+                logger.error(f"{target_npc_name}, already control by other player {hisplayercomp.name}")
+                return
         else:
-            logger.error(f"{self.inputname}, npc is None")
+            # 可以继续
+            logger.debug(f"{target_npc_name} is not controlled by any player")
+
+        logger.debug(f"{self.inputname}, player name: {myname}, target name: {target_npc_name}")
+        my_player_entity = context.getplayer(myname)
+        if my_player_entity is None:
+            # 你现在不控制任何人，就不能做更换，先登陆
+            logger.warning(f"{myname}, player is None, can not change control target")
+            return
+        
+        # 更换控制
+        my_player_entity.remove(PlayerComponent)
+        to_ctrl_npc_entity.add(PlayerComponent, myname)
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################     
 class PlayerCommandAttack(PlayerInput):
 
-    def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, targetname: str) -> None:
+    def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, attack_target_name: str) -> None:
         super().__init__(name, game, playerproxy)
-        self.targetname = targetname
+        self.attack_target_name = attack_target_name
 
     def execute(self) -> None:
         context = self.game.extendedcontext 
-        dest = self.targetname
+        attack_target_name = self.attack_target_name
         playerentity = context.getplayer(self.playerproxy.name)
         if playerentity is None:
             logger.warning("debug_attack: player is None")
             return
-        
+
         if playerentity.has(NPCComponent):
-            npc_comp: NPCComponent = playerentity.get(NPCComponent)
-            action = ActorAction(npc_comp.name, "FightActionComponent", [dest])
+            npccomp: NPCComponent = playerentity.get(NPCComponent)
+            action = ActorAction(npccomp.name, FightActionComponent.__name__, [attack_target_name])
             playerentity.add(FightActionComponent, action)
-            logger.debug(f"debug_attack: {npc_comp.name} add {action}")
-            return
-        
+
         elif playerentity.has(StageComponent):
-            stage_comp: StageComponent = playerentity.get(StageComponent)
-            action = ActorAction(stage_comp.name, "FightActionComponent", [dest])
+            stagecomp: StageComponent = playerentity.get(StageComponent)
+            action = ActorAction(stagecomp.name, FightActionComponent.__name__, [attack_target_name])
             playerentity.add(FightActionComponent, action)
-            logger.debug(f"debug_attack: {stage_comp.name} add {action}")
-            return
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################     
 class PlayerCommandLeaveFor(PlayerInput):
 
-    def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, stagename: str) -> None:
+    def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, target_stage_name: str) -> None:
         super().__init__(name, game, playerproxy)
-        self.stagename = stagename
+        self.target_stage_name = target_stage_name
 
     def execute(self) -> None:
         context = self.game.extendedcontext
-        stagename = self.stagename
+        target_stage_name = self.target_stage_name
         playerentity = context.getplayer(self.playerproxy.name)
         if playerentity is None:
             logger.warning("debug_leave: player is None")
             return
         
-        npc_comp: NPCComponent = playerentity.get(NPCComponent)
-        action = ActorAction(npc_comp.name, "LeaveForActionComponent", [stagename])
+        npccomp: NPCComponent = playerentity.get(NPCComponent)
+        action = ActorAction(npccomp.name, LeaveForActionComponent.__name__, [target_stage_name])
         playerentity.add(LeaveForActionComponent, action)
-        newmemory = f"""{{
-            "LeaveForActionComponent": ["{stagename}"]
-        }}"""
-        context.safe_add_human_message_to_entity(playerentity, newmemory)
-        logger.debug(f"debug_leave: {npc_comp.name} add {action}")
 
+        newmsg = f"""{{"{LeaveForActionComponent.__name__}": ["{target_stage_name}"]}}"""
+        context.safe_add_human_message_to_entity(playerentity, newmsg)
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################     
@@ -169,17 +170,17 @@ class PlayerCommandPrisonBreak(PlayerInput):
             return
         
         npccomp: NPCComponent = playerentity.get(NPCComponent)
-        currentstagename: str = npccomp.current_stage
-        stageentity = context.getstage(currentstagename)
+        current_stage_name: str = npccomp.current_stage
+        stageentity = context.getstage(current_stage_name)
         if stageentity is None:
-            logger.error(f"PrisonBreakActionSystem: {currentstagename} is None")
+            logger.error(f"PrisonBreakActionSystem: {current_stage_name} is None")
             return
 
-        action = ActorAction(npccomp.name, PrisonBreakActionComponent.__name__, [currentstagename])
+        action = ActorAction(npccomp.name, PrisonBreakActionComponent.__name__, [current_stage_name])
         playerentity.add(LeaveForActionComponent, action)
-        newmsg = f"""{{"{PrisonBreakActionComponent.__name__}": ["{currentstagename}"]}}"""
+        
+        newmsg = f"""{{"{PrisonBreakActionComponent.__name__}": ["{current_stage_name}"]}}"""
         context.safe_add_human_message_to_entity(playerentity, newmsg)
-        logger.debug(f"debug_leave: {npccomp.name} add {action}")
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
@@ -197,90 +198,81 @@ class PlayerCommandBroadcast(PlayerInput):
             logger.warning("debug_broadcast: player is None")
             return
         
-        npc_comp: NPCComponent = playerentity.get(NPCComponent)
-        action = ActorAction(npc_comp.name, "BroadcastActionComponent", [content])
+        npccomp: NPCComponent = playerentity.get(NPCComponent)
+        action = ActorAction(npccomp.name, BroadcastActionComponent.__name__, [content])
         playerentity.add(BroadcastActionComponent, action)
-        #playerentity.add(HumanInterferenceComponent, f'{npc_comp.name}大声说道：{content}')
-        newmemory = f"""{{
-            "BroadcastActionComponent": ["{content}"]
-        }}"""
-        context.safe_add_human_message_to_entity(playerentity, newmemory)
-        logger.debug(f"debug_broadcast: {npc_comp.name} add {action}")
+       
+        newmsg = f"""{{"{BroadcastActionComponent.__name__}": ["{content}"]}}"""
+        context.safe_add_human_message_to_entity(playerentity, newmsg)
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
 class PlayerCommandSpeak(PlayerInput):
 
-    def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, commandstr: str) -> None:
+    def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, speakcontent: str) -> None:
         super().__init__(name, game, playerproxy)
-        self.commandstr = commandstr
+        self.speakcontent = speakcontent
 
     def execute(self) -> None:
         context = self.game.extendedcontext
-        content = self.commandstr
+        speakcontent = self.speakcontent
         playerentity = context.getplayer(self.playerproxy.name)
         if playerentity is None:
             logger.warning("debug_speak: player is None")
             return
         
-        npc_comp: NPCComponent = playerentity.get(NPCComponent)
-        action = ActorAction(npc_comp.name, "SpeakActionComponent", [content])
+        npccomp: NPCComponent = playerentity.get(NPCComponent)
+        action = ActorAction(npccomp.name, SpeakActionComponent.__name__, [speakcontent])
         playerentity.add(SpeakActionComponent, action)
-        newmemory = f"""{{
-            "SpeakActionComponent": ["{content}"]
-        }}"""
-        context.safe_add_human_message_to_entity(playerentity, newmemory)
-        logger.debug(f"debug_speak: {npc_comp.name} add {action}")
+        
+        newmsg = f"""{{"{SpeakActionComponent.__name__}": ["{speakcontent}"]}}"""
+        context.safe_add_human_message_to_entity(playerentity, newmsg)
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
 class PlayerCommandWhisper(PlayerInput):
 
-    def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, commandstr: str) -> None:
+    def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, whispercontent: str) -> None:
         super().__init__(name, game, playerproxy)
-        self.commandstr = commandstr
+        self.whispercontent = whispercontent
 
     def execute(self) -> None:
         context = self.game.extendedcontext
-        content = self.commandstr
+        whispercontent = self.whispercontent
         playerentity = context.getplayer(self.playerproxy.name)
         if playerentity is None:
             logger.warning("debug_whisper: player is None")
             return
         
-        npc_comp: NPCComponent = playerentity.get(NPCComponent)
-        action = ActorAction(npc_comp.name, "WhisperActionComponent", [content])
+        npccomp: NPCComponent = playerentity.get(NPCComponent)
+        action = ActorAction(npccomp.name, WhisperActionComponent.__name__, [whispercontent])
         playerentity.add(WhisperActionComponent, action)
-        newmemory = f"""{{
-            "WhisperActionComponent": ["{content}"]
-        }}"""
+
+        newmemory = f"""{{"{WhisperActionComponent.__name__}": ["{whispercontent}"]}}"""
         context.safe_add_human_message_to_entity(playerentity, newmemory)
-        logger.debug(f"debug_whisper: {npc_comp.name} add {action}")
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
 class PlayerCommandSearch(PlayerInput):
 
-    def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, targetname: str) -> None:
+    def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, search_target_prop_name: str) -> None:
         super().__init__(name, game, playerproxy)
-        self.targetname = targetname
+        self.search_target_prop_name = search_target_prop_name
 
     def execute(self) -> None:
         context = self.game.extendedcontext
-        content = self.targetname
+        search_target_prop_name = self.search_target_prop_name
         playerentity = context.getplayer(self.playerproxy.name)
         if playerentity is None:
             logger.warning("debug_search: player is None")
             return
         
-        npc_comp: NPCComponent = playerentity.get(NPCComponent)
-        action = ActorAction(npc_comp.name, "SearchActionComponent", [content])
+        npccomp: NPCComponent = playerentity.get(NPCComponent)
+        action = ActorAction(npccomp.name, SearchActionComponent.__name__, [search_target_prop_name])
         playerentity.add(SearchActionComponent, action)
-        newmemory = f"""{{
-            "SearchActionComponent": ["{content}"]
-        }}"""
+
+        newmemory = f"""{{"{SearchActionComponent.__name__}": ["{search_target_prop_name}"]}}"""
         context.safe_add_human_message_to_entity(playerentity, newmemory)
-        logger.debug(f"debug_search: {npc_comp.name} add {action}")
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################

@@ -28,23 +28,25 @@ class DirectorSystem(ExecuteProcessor):
 ###################################################################################################################
     ### 重构用的。用新的Director类来处理, 转化成场景事件，加入到场景的消息列表中
     def handlestage(self, entitystage: Entity) -> None:
+        assert entitystage.has(StageComponent)
         stagecomp: StageComponent = entitystage.get(StageComponent)
         directorcomp: DirectorComponent = entitystage.get(DirectorComponent)
-        convertedevents2stage = directorcomp.tostage(stagecomp.name, self.context)         
-        stagememlist = "\n".join(convertedevents2stage)
-        if len(stagememlist) > 0:
-            self.context.safe_add_human_message_to_entity(entitystage, stagememlist)
+        events2stage = directorcomp.tostage(stagecomp.name, self.context)         
+        newmsg = "\n".join(events2stage)
+        if len(newmsg) > 0:
+            self.context.safe_add_human_message_to_entity(entitystage, newmsg)
 ###################################################################################################################
     ### 重构用的。用新的Director类来处理，转化成NPC事件，加入到NPC的消息列表中
     def handle_npcs_in_this_stage(self, entitystage: Entity) -> None:
+        assert entitystage.has(StageComponent)
         stagecomp: StageComponent = entitystage.get(StageComponent)
         allnpcsinthestage = self.context.npcs_in_this_stage(stagecomp.name)
         directorcomp: DirectorComponent = entitystage.get(DirectorComponent)
         for npcentity in allnpcsinthestage:
             npccomp: NPCComponent = npcentity.get(NPCComponent)
-            convertedevents2npc = directorcomp.tonpc(npccomp.name, self.context)            
-            npcmemlist = "\n".join(convertedevents2npc)
-            if len(npcmemlist) > 0:
-                self.context.safe_add_human_message_to_entity(npcentity, npcmemlist)
+            events2npc = directorcomp.tonpc(npccomp.name, self.context)            
+            newmsg = "\n".join(events2npc)
+            if len(newmsg) > 0:
+                self.context.safe_add_human_message_to_entity(npcentity, newmsg)
 ###################################################################################################################
     

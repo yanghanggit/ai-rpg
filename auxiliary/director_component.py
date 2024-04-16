@@ -18,13 +18,17 @@ class DirectorComponent(DirectorComponentPrototype):
     def tonpc(self, target_npc_name: str, extended_context: ExtendedContext) -> List[str]:
         batch: List[str] = []
         for event in self.events:
-            batch.append(event.tonpc(target_npc_name, extended_context))
+            res = event.tonpc(target_npc_name, extended_context)
+            if res != "":
+                batch.append(res)
         return batch
     
     def tostage(self, target_stage_name: str, extended_context: ExtendedContext) -> List[str]:
         batch: List[str] = []
         for event in self.events:
-            batch.append(event.tostage(target_stage_name, extended_context))
+            res = event.tostage(target_stage_name, extended_context)
+            if res != "":
+                batch.append(res)
         return batch
 
     def clear(self) -> None:

@@ -11,6 +11,7 @@ fail_to_enter_stage)
 from loguru import logger
 from auxiliary.print_in_color import Color
 from abc import ABC, abstractmethod
+from auxiliary.prompt_maker import whisper_action_prompt
 
 ####################################################################################################################################
 ####################################################################################################################################
@@ -50,20 +51,19 @@ class NPCBroadcastEvent(IDirectorEvent):
 ####################################################################################################################################
 ####################################################################################################################################
 class NPCSpeakEvent(IDirectorEvent):
-    def __init__(self, whospeak: str, target: str, message: str) -> None:
-        self.whospeak = whospeak
-        self.target = target
+
+    def __init__(self, who_is_speaking: str, who_is_target: str, message: str) -> None:
+        self.who_is_speaking = who_is_speaking
+        self.who_is_target = who_is_target
         self.message = message
 
     def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
-        if npcname != self.whospeak:
-            logger.error(f"NPCSpeakEvent => {npcname} vs {self.whospeak}")
-        speakcontent: str = speak_action_prompt(self.whospeak, self.target, self.message, extended_context)
+        speakcontent: str = speak_action_prompt(self.who_is_speaking, self.who_is_target, self.message, extended_context)
         logger.info(f"{Color.HEADER}{speakcontent}{Color.ENDC}")
         return speakcontent
     
     def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
-        speakcontent: str = speak_action_prompt(self.whospeak, self.target, self.message, extended_context)
+        speakcontent: str = speak_action_prompt(self.who_is_speaking, self.who_is_target, self.message, extended_context)
         logger.info(f"{Color.HEADER}{speakcontent}{Color.ENDC}")
         return speakcontent
 ####################################################################################################################################
@@ -207,6 +207,25 @@ class NPCFailEnterStageEvent(IDirectorEvent):
         event = fail_to_enter_stage(self.npc_name, self.stage_name, self.enter_condition)
         logger.info(event)
         return event
+####################################################################################################################################
+####################################################################################################################################
+#################################################################################################################################### 
+class NPCWhisperEvent(IDirectorEvent):
+    def __init__(self, who_is_whispering: str, who_is_target: str, message: str) -> None:
+        self.who_is_whispering = who_is_whispering
+        self.who_is_target = who_is_target
+        self.message = message
+
+    def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
+        if npcname != self.who_is_whispering or npcname != self.who_is_target:
+            # 只有这2个人才能听到
+            return ""
+        whispercontent = whisper_action_prompt(self.who_is_whispering, self.who_is_target, self.message, extended_context)
+        return whispercontent
+    
+    def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
+        ## 场景应该是彻底听不到
+        return ""
 ####################################################################################################################################
 ####################################################################################################################################
 #################################################################################################################################### 

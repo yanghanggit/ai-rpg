@@ -7,7 +7,7 @@ from auxiliary.builders import WorldDataBuilder
 from rpg_game import RPGGame 
 from auxiliary.player_proxy import PlayerProxy
 from auxiliary.gm_input import GMCommandPush, GMCommandAsk, GMCommandLogChatHistory
-from auxiliary.player_input import (PlayerCommandCtrlNPC, 
+from auxiliary.player_input import (PlayerCommandChangeCtrlNPC, 
                           PlayerCommandAttack, 
                           PlayerCommandLeaveFor, 
                           PlayerCommandBroadcast, 
@@ -158,7 +158,7 @@ def main() -> None:
             command = "/who"
             who = pre_command(usr_input, command)
             ###
-            playercommandbewho = PlayerCommandCtrlNPC("/who", rpggame, playproxy, who)
+            playercommandbewho = PlayerCommandChangeCtrlNPC("/who", rpggame, playproxy, who)
             playercommandbewho.execute()
             ###            
             logger.debug(f"{'=' * 50}")

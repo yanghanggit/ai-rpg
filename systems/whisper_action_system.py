@@ -1,12 +1,13 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
-from auxiliary.components import WhisperActionComponent
+from auxiliary.components import WhisperActionComponent, NPCComponent
 from auxiliary.actor_action import ActorAction
 from auxiliary.extended_context import ExtendedContext
-from auxiliary.print_in_color import Color
-from auxiliary.prompt_maker import whisper_action_prompt
 from typing import Optional
 from loguru import logger
 from auxiliary.dialogue_rule import parse_target_and_message, check_speak_enable
+from auxiliary.director_component import DirectorComponent
+from auxiliary.director_event import NPCWhisperEvent
+
 
 ####################################################################################################
 class WhisperActionSystem(ReactiveProcessor):
@@ -26,33 +27,37 @@ class WhisperActionSystem(ReactiveProcessor):
             self.whisper(entity)  # 核心处理 
 ####################################################################################################
     def whisper(self, entity: Entity) -> None:
-
         whispercomp: WhisperActionComponent = entity.get(WhisperActionComponent)
         action: ActorAction = whispercomp.action
-
         for value in action.values:
-            target_message_pair = parse_target_and_message(value)
-            targetname: Optional[str] = target_message_pair[0]
-            message: Optional[str] = target_message_pair[1]
+
+            parse = parse_target_and_message(value)
+            targetname: Optional[str] = parse[0]
+            message: Optional[str] = parse[1]
+            
             if targetname is None or message is None:
-                logger.warning(f"WhisperActionSystem: targetname or message is None.")
+                logger.warning(f"目标{targetname}不存在，无法进行交谈。")
                 continue
 
             if not check_speak_enable(self.context, entity, targetname):
                 # 如果检查不过就能继续
+                logger.error("check_speak_enable 检查失败")
                 continue
 
-            whispertoentity: Optional[Entity] = self.context.getnpc(targetname)
-            if whispertoentity is None:
-                # 这里基本是可能发生，如果出了问题就是check_speak_enable放过去了。
-                raise ValueError(f"WhisperActionSystem: whispertoentity {targetname} is None!")
-                continue
-            whispercontent = whisper_action_prompt(action.name, targetname, message, self.context)
-            #临时
-            logger.info(f"{Color.HEADER}{whispercontent}{Color.ENDC}")
-            #低语的双方添加记忆即可，别人不知道
-            self.context.safe_add_human_message_to_entity(entity, whispercontent)
-            self.context.safe_add_human_message_to_entity(whispertoentity, whispercontent)
+            # 通知导演
+            self.notifydirector(entity, targetname, message)
+####################################################################################################
+    def notifydirector(self, entity: Entity, targetname: str, message: str) -> None:
+        if not entity.has(NPCComponent):
+            return
+        
+        stageentity = self.context.safe_get_stage_entity(entity)
+        if stageentity is None or not stageentity.has(DirectorComponent):
+            return
+        
+        npccomp: NPCComponent = entity.get(NPCComponent)
+        directorcomp: DirectorComponent = stageentity.get(DirectorComponent)
+        directorcomp.addevent(NPCWhisperEvent(npccomp.name, targetname, message))
 ####################################################################################################
         
             

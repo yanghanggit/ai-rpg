@@ -106,6 +106,9 @@ class ExtendedContext(Context):
 ############################################################################################################
     ##给一个实体添加记忆，尽量统一走这个方法, add_human_message_to_entity
     def safe_add_human_message_to_entity(self, entity: Entity, messagecontent: str) -> bool:
+        if messagecontent == "":
+            logger.warning("消息内容为空，无法添加记忆")
+            return False
         name = self.safe_get_entity_name(entity)
         if name == "":
             logger.error("实体没有名字，无法添加记忆")

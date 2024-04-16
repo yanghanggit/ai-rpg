@@ -146,3 +146,8 @@ def steal_action_prompt(whosteal: str, targetname: str, propname: str, stealres:
     if not stealres:
         return f"{whosteal}从{targetname}盗取{propname}, 失败了"
     return f"{whosteal}从{targetname}成功盗取了{propname}"
+
+def trade_action_prompt(fromwho: str, towho: str, propname: str, traderes: bool) -> str:
+    if not traderes:
+        return f"{fromwho}向{towho}交换{propname}, 失败了"
+    return f"{fromwho}向{towho}成功交换了{propname}"

@@ -6,10 +6,9 @@ kill_someone,
 attack_someone,
 npc_leave_for_stage, 
 npc_enter_stage, 
-fail_to_exit_stage,
-fail_to_enter_stage,
 perception_action_prompt,
-steal_action_prompt)
+steal_action_prompt,
+trade_action_prompt)
 from loguru import logger
 from auxiliary.print_in_color import Color
 from abc import ABC, abstractmethod
@@ -203,11 +202,34 @@ class NPCStealEvent(IDirectorEvent):
     def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
         if npcname != self.whosteal or npcname != self.targetname:
             return ""
+        
         if npcname == self.targetname and random.random() < 0.5:
-            # 有一定几率发现不了
+            # 测试：有一定几率发现不了
+            logger.warning(f"NPCStealEvent: {npcname} failed to steal {self.propname}")
             return ""
+        
         stealcontent = steal_action_prompt(self.whosteal, self.targetname, self.propname, self.stealres)
         return stealcontent
+    
+    def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
+        return ""
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
+class NPCTradeEvent(IDirectorEvent):
+
+    def __init__(self, fromwho: str, towho: str, propname: str, traderes: bool) -> None:
+        self.fromwho = fromwho
+        self.towho = towho
+        self.propname = propname
+        self.traderes = traderes
+
+    def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
+        if npcname != self.fromwho or npcname != self.towho:
+            return ""
+        
+        tradecontent = trade_action_prompt(self.fromwho, self.towho, self.propname, self.traderes)
+        return tradecontent
     
     def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
         return ""

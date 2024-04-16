@@ -45,6 +45,7 @@ from systems.prison_break_action_system import PrisonBreakActionSystem
 from systems.perception_action_system import PerceptionActionSystem
 from systems.steal_action_system import StealActionSystem
 from systems.trade_action_system import TradeActionSystem
+from systems.check_status_action_system import CheckStatusActionSystem
 
 ## 控制流程和数据创建
 class RPGGame:
@@ -90,6 +91,7 @@ class RPGGame:
         processors.add(PostFightSystem(context))
         processors.add(DeadActionSystem(context)) 
         
+        processors.add(CheckStatusActionSystem(context)) ## 检查状态类的行为
         processors.add(PerceptionActionSystem(context)) ## 感知类的行为
         processors.add(SearchActionSystem(context)) ## 交互类的行为，在死亡之后，因为死了就不能执行
         processors.add(StealActionSystem(context))

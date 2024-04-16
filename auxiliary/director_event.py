@@ -8,7 +8,8 @@ npc_leave_for_stage,
 npc_enter_stage, 
 perception_action_prompt,
 steal_action_prompt,
-trade_action_prompt)
+trade_action_prompt,
+check_status_action_prompt)
 from loguru import logger
 from auxiliary.print_in_color import Color
 from abc import ABC, abstractmethod
@@ -236,3 +237,26 @@ class NPCTradeEvent(IDirectorEvent):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
+class NPCCheckStatusEvent(IDirectorEvent):
+
+    def __init__(self, who: str, propnames: List[str]) -> None:
+        self.who = who
+        self.propnames = propnames
+
+    def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
+        if npcname != self.who:
+            # 只有自己知道
+            return ""
+        propnames = ",".join(self.propnames)
+        checkstatuscontent = check_status_action_prompt(self.who, propnames)
+        return checkstatuscontent
+    
+    def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
+        return ""
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
+
+
+
+

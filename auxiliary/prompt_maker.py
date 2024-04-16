@@ -151,3 +151,6 @@ def trade_action_prompt(fromwho: str, towho: str, propname: str, traderes: bool)
     if not traderes:
         return f"{fromwho}向{towho}交换{propname}, 失败了"
     return f"{fromwho}向{towho}成功交换了{propname}"
+
+def check_status_action_prompt(who: str, propnames: str) -> str:
+    return f"{who}正在检查状态, 发现了这些道具{propnames}"

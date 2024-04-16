@@ -7,11 +7,13 @@ attack_someone,
 npc_leave_for_stage, 
 npc_enter_stage, 
 fail_to_exit_stage,
-fail_to_enter_stage)
+fail_to_enter_stage,
+perception_action_prompt)
 from loguru import logger
 from auxiliary.print_in_color import Color
 from abc import ABC, abstractmethod
 from auxiliary.prompt_maker import whisper_action_prompt
+from typing import List
 
 ####################################################################################################################################
 ####################################################################################################################################
@@ -168,3 +170,23 @@ class WhisperEvent(IDirectorEvent):
 ####################################################################################################################################
 ####################################################################################################################################
 #################################################################################################################################### 
+class PerceptionEvent(IDirectorEvent):
+
+    def __init__(self, whoperception: str, npcs_in_stage: List[str], props_in_stage: List[str]) -> None:
+        self.whoperception = whoperception
+        self.npcs_in_stage = npcs_in_stage
+        self.props_in_stage = props_in_stage
+    
+    def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
+        if npcname != self.whoperception:
+            return ""
+        npcnames = ",".join(self.npcs_in_stage)
+        propnames = ",".join(self.props_in_stage)
+        perceptioncontent = perception_action_prompt(npcnames, propnames)
+        return perceptioncontent
+    
+    def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
+        return ""
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################

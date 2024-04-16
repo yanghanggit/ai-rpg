@@ -139,3 +139,6 @@ def attack_someone(attacker_name: str, target_name: str, damage: int, target_cur
 def speak_action_system_invalid_target(target_name: str, speakcontent: str) -> str:
     return f"[{target_name}]在你所在场景内无法找到，所以你不能对其说如下的内容：{speakcontent}"
 
+def perception_action_prompt(npcnames: str, propnames: str) -> str:
+    return f"你感知到了场景中有这些角色{npcnames}, 场景中有这些道具{propnames}"
+

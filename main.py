@@ -112,12 +112,6 @@ def main() -> None:
     
     # 创建世界
     rpggame.createworld(worlddata)
-    
-    # 测试的代码，上来就控制一个NPC目标，先写死"无名旅人"
-    playproxy = PlayerProxy("yanghang")
-    playerstartcmd = PlayerCommandLogin("/player-login", rpggame, playproxy, "无名的复活者")
-    playerstartcmd.execute()
-
     # 直接执行一次先
     rpggame.execute()
 
@@ -126,8 +120,13 @@ def main() -> None:
         if "/quit" in usr_input:
             break
 
+        elif "/login" in usr_input:
+            # 测试的代码，上来就控制一个NPC目标，先写死
+            playproxy = PlayerProxy("yanghang")
+            playerstartcmd = PlayerCommandLogin("/player-login", rpggame, playproxy, "无名的复活者")
+            playerstartcmd.execute()
+
         elif "/run" in usr_input:
-            #顺序不要动！！！！！！！！！
             rpggame.execute()
 
         elif "/push" in usr_input:

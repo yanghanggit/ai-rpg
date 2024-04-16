@@ -32,7 +32,7 @@ SimpleRPGRoleComponent = namedtuple('SimpleRPGRoleComponent', 'name maxhp hp att
 
 
 #注册一下方便使用
-stage_available_actions_register = [ FightActionComponent, 
+STAGE_AVAILABLE_ACTIONS_REGISTER = [ FightActionComponent, 
                             SpeakActionComponent, 
                             TagActionComponent, 
                             RememberActionComponent,
@@ -40,11 +40,11 @@ stage_available_actions_register = [ FightActionComponent,
                             BroadcastActionComponent,
                             WhisperActionComponent]
 
-stage_dialogue_actions_register = [SpeakActionComponent, MindVoiceActionComponent, WhisperActionComponent]
+STAGE_DIALOGUE_ACTIONS_REGISTER = [SpeakActionComponent, MindVoiceActionComponent, WhisperActionComponent]
 
 
 #注册一下方便使用
-npc_available_actions_register = [FightActionComponent, 
+NPC_AVAILABLE_ACTIONS_REGISTER = [FightActionComponent, 
                          LeaveForActionComponent, 
                          SpeakActionComponent, 
                          TagActionComponent, 
@@ -55,5 +55,5 @@ npc_available_actions_register = [FightActionComponent,
                          SearchActionComponent, 
                          PrisonBreakActionComponent]
 
-npc_dialogue_actions_register = [SpeakActionComponent, MindVoiceActionComponent, WhisperActionComponent]
-npc_interactive_actions_register = [SearchActionComponent, LeaveForActionComponent, PrisonBreakActionComponent]
+NPC_DIALOGUE_ACTIONS_REGISTER = [SpeakActionComponent, MindVoiceActionComponent, WhisperActionComponent]
+NPC_INTERACTIVE_ACTIONS_REGISTER = [SearchActionComponent, LeaveForActionComponent, PrisonBreakActionComponent]

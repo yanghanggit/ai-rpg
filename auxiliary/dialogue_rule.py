@@ -1,33 +1,33 @@
 from typing import Optional
-from loguru import logger
 from entitas.entity import Entity
-from auxiliary.components import StageComponent, NPCComponent
 from auxiliary.extended_context import ExtendedContext
 from typing import Optional
+from enum import Enum
+
 ####################################################################################################
-def check_speak_enable(context: ExtendedContext, srcentity: Entity, destnpcname: str) -> bool:
-    
-    destnpcentity: Optional[Entity] = context.getnpc(destnpcname)
-    if destnpcentity is None:
-        logger.warning(f"不存在[{destnpcname}]，无法进行交谈。")
-        return False
+# 错误代码
+class ErrorDialogueEnable(Enum):
+    VALID = 0
+    TARGET_DOES_NOT_EXIST = 1
+    WITHOUT_BEING_IN_STAGE = 2
+    NOT_IN_THE_SAME_STAGE = 3
+
+def dialogue_enable(context: ExtendedContext, srcentity: Entity, npcname: str) -> ErrorDialogueEnable:
+
+    target_npc_entity: Optional[Entity] = context.getnpc(npcname)
+    if target_npc_entity is None:
+        # 只能对NPC说话
+        return ErrorDialogueEnable.TARGET_DOES_NOT_EXIST
     
     stageentity = context.safe_get_stage_entity(srcentity)
     if stageentity is None:
-        raise ValueError(f"未找到[{srcentity}]所在的场景。")
-        return False
+        return ErrorDialogueEnable.WITHOUT_BEING_IN_STAGE
     
-    stagecomp: StageComponent = stageentity.get(StageComponent)       
-    destnpccomp: NPCComponent = destnpcentity.get(NPCComponent)
-    if stagecomp.name != destnpccomp.current_stage:
-        if srcentity.has(NPCComponent):
-            srcnpccomp: NPCComponent = srcentity.get(NPCComponent)
-            logger.warning(f"{srcnpccomp.name}在{stagecomp.name},不能与在{destnpccomp.current_stage}的{destnpcname}交谈。")
-        else:
-            logger.warning(f"{stagecomp.name}不能与在{destnpccomp.current_stage}的{destnpcname}交谈。")
-        return False
-        
-    return True
+    target_stage = context.safe_get_stage_entity(target_npc_entity)
+    if target_stage is None or target_stage != stageentity:
+        return ErrorDialogueEnable.NOT_IN_THE_SAME_STAGE
+    
+    return ErrorDialogueEnable.VALID
 ####################################################################################################
 def parse_target_and_message(content: str) -> tuple[Optional[str], Optional[str]]:
     # 检查是否包含'@'和'>'符号
@@ -53,9 +53,4 @@ def parse_target_and_message(content: str) -> tuple[Optional[str], Optional[str]
     except Exception as e:
         # 如果有任何异常，返回原始内容和异常提示
         return None, content
-####################################################################################################
-def pre_command(input_val: str, split_str: str)-> str:
-    if split_str in input_val:
-        return input_val.split(split_str)[1].strip()
-    return input_val
 ####################################################################################################

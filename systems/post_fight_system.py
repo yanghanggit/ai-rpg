@@ -2,7 +2,7 @@
 from entitas import ExecuteProcessor, Matcher, Entity #type: ignore
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
-from auxiliary.components import DeadActionComponent
+from auxiliary.components import DeadActionComponent, NPC_INTERACTIVE_ACTIONS_REGISTER, NPCComponent
 from auxiliary.prompt_maker import gen_npc_archive_prompt, died_in_fight
 
 # 战斗后处理，入股哦死了就死亡存档
@@ -13,7 +13,9 @@ class PostFightSystem(ExecuteProcessor):
 ############################################################################################################
     def execute(self) -> None:
         logger.debug("<<<<<<<<<<<<<  PostFightActionSystem  >>>>>>>>>>>>>>>>>")
-        # 如果死了先存档
+        # 移除后续动作
+        self.remove_npc_interactive_actions()
+        #可以存档
         if self.context.savedata:
             self.save_dead()
 ########################################################################################################################################################################
@@ -40,6 +42,13 @@ class PostFightSystem(ExecuteProcessor):
             memory_system.overwritememory(safename, archive)    # 存档!    
         else:
             logger.error(f"存档失败:{safename}")    
+########################################################################################################################################################################
+    def remove_npc_interactive_actions(self) -> None:
+        npcentities:set[Entity] = self.context.get_group(Matcher(all_of = [NPCComponent, DeadActionComponent], any_of = NPC_INTERACTIVE_ACTIONS_REGISTER)).entities.copy()
+        for entity in npcentities:
+            for actionsclass in NPC_INTERACTIVE_ACTIONS_REGISTER:
+                if entity.has(actionsclass):
+                    entity.remove(actionsclass)
 ########################################################################################################################################################################
 
             

@@ -1,8 +1,8 @@
 from entitas import Entity, Matcher, ExecuteProcessor #type: ignore
 from auxiliary.components import (StageComponent, 
                         AutoPlanningComponent,
-                        stage_available_actions_register,
-                        stage_dialogue_actions_register)
+                        STAGE_AVAILABLE_ACTIONS_REGISTER,
+                        STAGE_DIALOGUE_ACTIONS_REGISTER)
 from auxiliary.actor_action import ActorPlan, ActorAction
 from auxiliary.prompt_maker import stage_plan_prompt
 from auxiliary.extended_context import ExtendedContext
@@ -72,13 +72,13 @@ class StagePlanningSystem(ExecuteProcessor):
         return True
 ####################################################################################################
     def check_available(self, action: ActorAction) -> bool:
-        return self.context.check_component_register(action.actionname, stage_available_actions_register) is not None
+        return self.context.check_component_register(action.actionname, STAGE_AVAILABLE_ACTIONS_REGISTER) is not None
 ####################################################################################################
     def check_dialogue(self, action: ActorAction) -> bool:
-        return self.context.check_dialogue_action(action.actionname, action.values, stage_dialogue_actions_register)
+        return self.context.check_dialogue_action(action.actionname, action.values, STAGE_DIALOGUE_ACTIONS_REGISTER)
 ####################################################################################################
     def add_action_component(self, entity: Entity, action: ActorAction) -> None:
-        compclass = self.context.check_component_register(action.actionname, stage_available_actions_register)
+        compclass = self.context.check_component_register(action.actionname, STAGE_AVAILABLE_ACTIONS_REGISTER)
         if compclass is None:
             return
         if not entity.has(compclass):

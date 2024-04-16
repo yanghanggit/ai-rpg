@@ -3,7 +3,7 @@ from auxiliary.components import SpeakActionComponent
 from auxiliary.actor_action import ActorAction
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
-from auxiliary.dialogue_rule import check_speak_enable, parse_target_and_message
+from auxiliary.dialogue_rule import dialogue_enable, parse_target_and_message, ErrorDialogueEnable
 from auxiliary.director_component import DirectorComponent
 from auxiliary.director_event import SpeakEvent
 from typing import Optional
@@ -38,13 +38,10 @@ class SpeakActionSystem(ReactiveProcessor):
             if targetname is None or message is None:
                 logger.warning(f"目标{targetname}不存在，无法进行交谈。")
                 continue
-            
-            ##如果检查不过就能继续
-            if not check_speak_enable(self.context, entity, targetname):
-                logger.error("check_speak_enable 检查失败")
+    
+            if dialogue_enable(self.context, entity, targetname) != ErrorDialogueEnable.VALID:
                 continue
             
-            # 通知导演
             self.notifydirector(entity, targetname, message)
 ####################################################################################################
     def notifydirector(self, entity: Entity, targetname: str, message: str) -> None:

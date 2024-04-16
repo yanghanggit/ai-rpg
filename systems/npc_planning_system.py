@@ -1,8 +1,8 @@
 from entitas import Entity, Matcher, ExecuteProcessor #type: ignore
 from auxiliary.components import (NPCComponent, 
                         AutoPlanningComponent,
-                        npc_dialogue_actions_register, 
-                        npc_available_actions_register)
+                        NPC_DIALOGUE_ACTIONS_REGISTER, 
+                        NPC_AVAILABLE_ACTIONS_REGISTER)
 from auxiliary.actor_action import ActorPlan, ActorAction
 from auxiliary.prompt_maker import npc_plan_prompt
 from auxiliary.extended_context import ExtendedContext
@@ -73,13 +73,13 @@ class NPCPlanningSystem(ExecuteProcessor):
         return True
 ####################################################################################################
     def check_available(self, action: ActorAction) -> bool:
-        return self.context.check_component_register(action.actionname, npc_available_actions_register) is not None
+        return self.context.check_component_register(action.actionname, NPC_AVAILABLE_ACTIONS_REGISTER) is not None
 ####################################################################################################
     def check_dialogue(self, action: ActorAction) -> bool:
-        return self.context.check_dialogue_action(action.actionname, action.values, npc_dialogue_actions_register)
+        return self.context.check_dialogue_action(action.actionname, action.values, NPC_DIALOGUE_ACTIONS_REGISTER)
 ####################################################################################################
     def add_action_component(self, entity: Entity, action: ActorAction) -> None:
-        compclass = self.context.check_component_register(action.actionname, npc_available_actions_register)
+        compclass = self.context.check_component_register(action.actionname, NPC_AVAILABLE_ACTIONS_REGISTER)
         if compclass is None:
             return
         if not entity.has(compclass):

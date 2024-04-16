@@ -4,7 +4,7 @@ from auxiliary.actor_action import ActorAction
 from auxiliary.extended_context import ExtendedContext
 from typing import Optional
 from loguru import logger
-from auxiliary.dialogue_rule import parse_target_and_message, check_speak_enable
+from auxiliary.dialogue_rule import parse_target_and_message, dialogue_enable, ErrorDialogueEnable
 from auxiliary.director_component import DirectorComponent
 from auxiliary.director_event import WhisperEvent
 
@@ -24,7 +24,7 @@ class WhisperActionSystem(ReactiveProcessor):
     def react(self, entities: list[Entity]) -> None:
         logger.debug("<<<<<<<<<<<<<  WhisperActionSystem  >>>>>>>>>>>>>>>>>")
         for entity in entities:
-            self.whisper(entity)  # 核心处理 
+            self.whisper(entity) 
 ####################################################################################################
     def whisper(self, entity: Entity) -> None:
         whispercomp: WhisperActionComponent = entity.get(WhisperActionComponent)
@@ -36,15 +36,11 @@ class WhisperActionSystem(ReactiveProcessor):
             message: Optional[str] = parse[1]
             
             if targetname is None or message is None:
-                logger.warning(f"目标{targetname}不存在，无法进行交谈。")
                 continue
 
-            if not check_speak_enable(self.context, entity, targetname):
-                # 如果检查不过就能继续
-                logger.error("check_speak_enable 检查失败")
+            if dialogue_enable(self.context, entity, targetname) != ErrorDialogueEnable.VALID:
                 continue
 
-            # 通知导演
             self.notifydirector(entity, targetname, message)
 ####################################################################################################
     def notifydirector(self, entity: Entity, targetname: str, message: str) -> None:

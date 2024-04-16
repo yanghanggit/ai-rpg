@@ -104,6 +104,10 @@ class StageBuilder:
                 logger.debug(f"StageBuilder: {stage.name} connect to {connect_to_stage_name}")
                 stage.connect_stage_by_name(connect_to_stage_name)
 
+            # 设置属性
+            stage.buildattributes(stagedata.get("attributes"))
+
+            #
             self.stages.append(stage)
 ########################################################################################################################
 ########################################################################################################################
@@ -124,6 +128,7 @@ class NPCBuilder:
         if self.datalist is None:
             logger.error(f"NPCBuilder2: {self.dataname} data is None.")
             return
+        
         for datablock in self.datalist:
             #yh 先不用做严格检查，因为自动化部分会做严格检查，比如第二阶段的自检过程，如果需要检查，可以单独开一个函数，就先检查一遍，这里就是集中行动
             npcprops: set[PropData] = set()
@@ -132,31 +137,34 @@ class NPCBuilder:
                 prop = PropData(propdata.get("name"), propdata.get("codename"),  propdata.get("description"), propdata.get("isunique"))
                 npcprops.add(prop)
 
-
             # NPC核心数据
-            npc_data = datablock.get("npc")
+            npcdata = datablock.get("npc")
 
             # 寻找人物关系
             mentioned_npcs: Set[str] = set()
-            mentioned_npcs_str: str = npc_data.get("mentioned_npcs")
+            mentioned_npcs_str: str = npcdata.get("mentioned_npcs")
             if len(mentioned_npcs_str) > 0:
                  mentioned_npcs = set(mentioned_npcs_str.split(';'))
 
              # 寻找人物与场景的关系关系
             mentioned_stages: Set[str] = set()
-            mentioned_stages_str: str = npc_data.get("mentioned_stages")
+            mentioned_stages_str: str = npcdata.get("mentioned_stages")
             if len(mentioned_stages_str) > 0:
                  mentioned_stages = set(mentioned_stages_str.split(';'))
 
-            # 最后的创建
-            npc = NPCData(npc_data.get("name"), 
-                          npc_data.get("codename"), 
-                          npc_data.get("url"), 
-                          npc_data.get("memory"), 
+            # 创建
+            npc = NPCData(npcdata.get("name"), 
+                          npcdata.get("codename"), 
+                          npcdata.get("url"), 
+                          npcdata.get("memory"), 
                           npcprops, 
                           mentioned_npcs,
                           mentioned_stages)
             
+            ## 设置属性
+            npc.buildattributes(npcdata.get("attributes"))
+            
+            ###
             self.npcs.append(npc)
 
 ########################################################################################################################

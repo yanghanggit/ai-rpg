@@ -36,6 +36,10 @@ class NPCData:
         self.props: Set[PropData] = props
         self.mentioned_npcs: Set[str] = mentioned_npcs
         self.mentioned_stages: Set[str] = mentioned_stages
+        self.attributes: List[int] = []
+
+    def buildattributes(self, attributes: str) -> None:
+        self.attributes = [int(attr) for attr in attributes.split(',')]
 
 class StageData:
     def __init__(self, name: str, 
@@ -57,11 +61,16 @@ class StageData:
         self.npcs: set[NPCData] = npcs
         self.props: set[PropData] = props
         self.connect_to_stage: set[StageData] = set()
+        self.attributes: List[int] = []
 
     ###
     def connect_stage_by_name(self, stagename: str) -> None:
         stage_only_has_name = StageData(stagename, "", "", "", "", [], [], set(), set())
         self.connect_to_stage.add(stage_only_has_name)
+
+    ###
+    def buildattributes(self, attributes: str) -> None:
+        self.attributes = [int(attr) for attr in attributes.split(',')]
 
 
 

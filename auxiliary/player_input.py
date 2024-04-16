@@ -10,7 +10,11 @@ from auxiliary.components import (
     LeaveForActionComponent, 
     WhisperActionComponent,
     SearchActionComponent,
-    PrisonBreakActionComponent)
+    PrisonBreakActionComponent,
+    PerceptionActionComponent,
+    StealActionComponent,
+    TradeActionComponent, 
+    CheckStatusActionComponent)
 from auxiliary.actor_action import ActorAction
 from auxiliary.player_proxy import PlayerProxy
 
@@ -279,8 +283,88 @@ class PlayerCommandSearch(PlayerInput):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
+class PlayerCommandPerception(PlayerInput):
 
+    def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy) -> None:
+        super().__init__(name, game, playerproxy)
+        
 
+    def execute(self) -> None:
+        context = self.game.extendedcontext
+        playerentity = context.getplayer(self.playerproxy.name)
+        if playerentity is None:
+            return
+        
+        npccomp: NPCComponent = playerentity.get(NPCComponent)
+        action = ActorAction(npccomp.name, PerceptionActionComponent.__name__, [npccomp.current_stage])
+        playerentity.add(PerceptionActionComponent, action)
 
+        newmemory = f"""{{"{PerceptionActionComponent.__name__}": ["{npccomp.current_stage}"]}}"""
+        context.safe_add_human_message_to_entity(playerentity, newmemory)
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
+class PlayerCommandSteal(PlayerInput):
 
-            
+    def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, command: str) -> None:
+        super().__init__(name, game, playerproxy)
+        # "@要偷的人>偷他的啥东西"
+        self.command = command
+
+    def execute(self) -> None:
+        context = self.game.extendedcontext
+        playerentity = context.getplayer(self.playerproxy.name)
+        if playerentity is None:
+            return
+        
+        npccomp: NPCComponent = playerentity.get(NPCComponent)
+        action = ActorAction(npccomp.name, StealActionComponent.__name__, [self.command])
+        playerentity.add(StealActionComponent, action)
+
+        newmemory = f"""{{"{StealActionComponent.__name__}": ["{self.command}"]}}"""
+        context.safe_add_human_message_to_entity(playerentity, newmemory)
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
+class PlayerCommandTrade(PlayerInput):
+
+    def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, command: str) -> None:
+        super().__init__(name, game, playerproxy)
+        # "@交易的对象>我的啥东西"
+        self.command = command
+
+    def execute(self) -> None:
+        context = self.game.extendedcontext
+        playerentity = context.getplayer(self.playerproxy.name)
+        if playerentity is None:
+            return
+        
+        npccomp: NPCComponent = playerentity.get(NPCComponent)
+        action = ActorAction(npccomp.name, TradeActionComponent.__name__, [self.command])
+        playerentity.add(TradeActionComponent, action)
+
+        newmemory = f"""{{"{TradeActionComponent.__name__}": ["{self.command}"]}}"""
+        context.safe_add_human_message_to_entity(playerentity, newmemory)
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
+class PlayerCommandCheckStatus(PlayerInput):
+
+    def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy) -> None:
+        super().__init__(name, game, playerproxy)
+
+    def execute(self) -> None:
+        context = self.game.extendedcontext
+        playerentity = context.getplayer(self.playerproxy.name)
+        if playerentity is None:
+            return
+        
+        npccomp: NPCComponent = playerentity.get(NPCComponent)
+        action = ActorAction(npccomp.name, CheckStatusActionComponent.__name__, [npccomp.name])
+        playerentity.add(CheckStatusActionComponent, action)
+
+        newmemory = f"""{{"{CheckStatusActionComponent.__name__}": ["{npccomp.name}"]}}"""
+        context.safe_add_human_message_to_entity(playerentity, newmemory)
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################

@@ -15,7 +15,11 @@ from auxiliary.player_input import (PlayerCommandChangeCtrlNPC,
                           PlayerCommandWhisper, 
                           PlayerCommandSearch,
                           PlayerCommandLogin, 
-                          PlayerCommandPrisonBreak)
+                          PlayerCommandPrisonBreak,
+                          PlayerCommandPerception,
+                          PlayerCommandSteal,
+                          PlayerCommandTrade,
+                          PlayerCommandCheckStatus)
 
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.file_system import FileSystem
@@ -259,6 +263,39 @@ def main() -> None:
             command = "/prisonbreak"
             playercommandprsionbreak = PlayerCommandPrisonBreak("/prisonbreak", rpggame, playproxy)
             playercommandprsionbreak.execute()
+            logger.debug(f"{'=' * 50}")
+
+
+        elif "/perception" in usr_input:
+            if not rpggame.started:
+                logger.warning("请先/run")
+                continue
+            PlayerCommandPerception("/perception", rpggame, playproxy).execute()
+            logger.debug(f"{'=' * 50}")
+
+        elif "/steal" in usr_input:
+            if not rpggame.started:
+                logger.warning("请先/run")
+                continue
+            command = "/steal"
+            content = user_input_pre_command(usr_input, command)
+            PlayerCommandSteal("/steal", rpggame, playproxy, content).execute()
+            logger.debug(f"{'=' * 50}")
+
+        elif "/trade" in usr_input:
+            if not rpggame.started:
+                logger.warning("请先/run")
+                continue
+            command = "/trade"
+            content = user_input_pre_command(usr_input, command)
+            PlayerCommandTrade("/trade", rpggame, playproxy, content).execute()
+            logger.debug(f"{'=' * 50}")
+
+        elif "/checkstatus" in usr_input:
+            if not rpggame.started:
+                logger.warning("请先/run")
+                continue
+            PlayerCommandCheckStatus("/checkstatus", rpggame, playproxy).execute()
             logger.debug(f"{'=' * 50}")
 
     rpggame.exit()

@@ -27,16 +27,15 @@ class SpeakActionSystem(ReactiveProcessor):
             self.speak(entity)  
 ####################################################################################################
     def speak(self, entity: Entity) -> None:
-        speak_comp: SpeakActionComponent = entity.get(SpeakActionComponent)
-        speak_action: ActorAction = speak_comp.action
-        for value in speak_action.values:
+        speakcomp: SpeakActionComponent = entity.get(SpeakActionComponent)
+        speakaction: ActorAction = speakcomp.action
+        for value in speakaction.values:
 
             parse = parse_target_and_message(value)
             targetname: Optional[str] = parse[0]
             message: Optional[str] = parse[1]
             
             if targetname is None or message is None:
-                logger.warning(f"目标{targetname}不存在，无法进行交谈。")
                 continue
     
             if dialogue_enable(self.context, entity, targetname) != ErrorDialogueEnable.VALID:

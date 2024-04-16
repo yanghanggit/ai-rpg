@@ -8,12 +8,14 @@ npc_leave_for_stage,
 npc_enter_stage, 
 fail_to_exit_stage,
 fail_to_enter_stage,
-perception_action_prompt)
+perception_action_prompt,
+steal_action_prompt)
 from loguru import logger
 from auxiliary.print_in_color import Color
 from abc import ABC, abstractmethod
 from auxiliary.prompt_maker import whisper_action_prompt
 from typing import List
+import random
 
 ####################################################################################################################################
 ####################################################################################################################################
@@ -184,6 +186,28 @@ class PerceptionEvent(IDirectorEvent):
         propnames = ",".join(self.props_in_stage)
         perceptioncontent = perception_action_prompt(npcnames, propnames)
         return perceptioncontent
+    
+    def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
+        return ""
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
+class NPCStealEvent(IDirectorEvent):
+
+    def __init__(self, whosteal: str, targetname: str, propname: str, stealres: bool) -> None:
+        self.whosteal = whosteal
+        self.targetname = targetname
+        self.propname = propname
+        self.stealres = stealres
+       
+    def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
+        if npcname != self.whosteal or npcname != self.targetname:
+            return ""
+        if npcname == self.targetname and random.random() < 0.5:
+            # 有一定几率发现不了
+            return ""
+        stealcontent = steal_action_prompt(self.whosteal, self.targetname, self.propname, self.stealres)
+        return stealcontent
     
     def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
         return ""

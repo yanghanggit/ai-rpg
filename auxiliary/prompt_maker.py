@@ -142,3 +142,7 @@ def speak_action_system_invalid_target(target_name: str, speakcontent: str) -> s
 def perception_action_prompt(npcnames: str, propnames: str) -> str:
     return f"你感知到了场景中有这些角色{npcnames}, 场景中有这些道具{propnames}"
 
+def steal_action_prompt(whosteal: str, targetname: str, propname: str, stealres: bool) -> str:
+    if not stealres:
+        return f"{whosteal}从{targetname}盗取{propname}, 失败了"
+    return f"{whosteal}从{targetname}成功盗取了{propname}"

@@ -66,8 +66,9 @@ NPC_AVAILABLE_ACTIONS_REGISTER = [FightActionComponent,
                          CheckStatusActionComponent]
 
 NPC_DIALOGUE_ACTIONS_REGISTER = [SpeakActionComponent, 
-                                MindVoiceActionComponent, 
+                                BroadcastActionComponent,
                                 WhisperActionComponent]
+
 NPC_INTERACTIVE_ACTIONS_REGISTER = [SearchActionComponent, 
                                     LeaveForActionComponent, 
                                     PrisonBreakActionComponent, 

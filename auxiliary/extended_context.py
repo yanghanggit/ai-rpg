@@ -141,25 +141,29 @@ class ExtendedContext(Context):
 ############################################################################################################
     def check_component_register(self, classname: str, actions_register: List[Any]) -> Any:
         for component in actions_register:
-            if component.__name__ == classname:
+            if classname == component.__name__:
                 return component
+        logger.warning(f"{classname}不在{actions_register}中")
         return None
 ############################################################################################################
     def check_dialogue_action(self, actionname: str, actionvalues: List[str], actions_register: List[Any]) -> bool:
         from auxiliary.dialogue_rule import parse_target_and_message
+        from auxiliary.dialogue_rule import check_target_message_pair_format
 
         if actionname not in [component.__name__ for component in actions_register]:
-            # 不是一个对话类型
-            return False
-    
+            # 不是一个对话类型,不用检查
+            return True
+        
+        # 检查带@target>message类型的Action有无错误内容
         for value in actionvalues:
-            pair = parse_target_and_message(value)
-            target: Optional[str] = pair[0]
-            message: Optional[str] = pair[1]
-            if target is None or message is None:
-                logger.error(f"target is None: {value}")
-                return False
-        #可以过
+            if check_target_message_pair_format(value):
+                pair = parse_target_and_message(value)
+                target: Optional[str] = pair[0]
+                message: Optional[str] = pair[1]
+                if target is None or message is None:
+                    logger.error(f"target is None: {value}")
+                    return False
+        # 是一个对话类型，检查完成
         return True
 ############################################################################################################
 

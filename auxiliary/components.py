@@ -29,6 +29,7 @@ PerceptionActionComponent = namedtuple('PerceptionActionComponent', 'action')
 StealActionComponent = namedtuple('StealActionComponent', 'action')
 TradeActionComponent = namedtuple('TradeActionComponent', 'action')
 CheckStatusActionComponent = namedtuple('CheckStatusActionComponent', 'action')
+EnviroNarrateActionComponent = namedtuple('EnviroNarrateActionComponent', 'action')
 ###############################################################################################################################################
 ###游戏业务组件
 SimpleRPGRoleComponent = namedtuple('SimpleRPGRoleComponent', 'name maxhp hp attack')
@@ -36,15 +37,16 @@ SimpleRPGRoleComponent = namedtuple('SimpleRPGRoleComponent', 'name maxhp hp att
 
 
 #注册一下方便使用
-STAGE_AVAILABLE_ACTIONS_REGISTER = [ FightActionComponent, 
-                            SpeakActionComponent, 
-                            TagActionComponent, 
-                            RememberActionComponent,
-                            MindVoiceActionComponent,
-                            BroadcastActionComponent,
-                            WhisperActionComponent]
+STAGE_AVAILABLE_ACTIONS_REGISTER = [RememberActionComponent,
+                                    FightActionComponent,
+                                    TagActionComponent, 
+                                    MindVoiceActionComponent,
+                                    WhisperActionComponent,
+                                    EnviroNarrateActionComponent]
 
-STAGE_DIALOGUE_ACTIONS_REGISTER = [SpeakActionComponent, MindVoiceActionComponent, WhisperActionComponent]
+STAGE_DIALOGUE_ACTIONS_REGISTER = [SpeakActionComponent,
+                                MindVoiceActionComponent,
+                                WhisperActionComponent]
 
 
 #注册一下方便使用
@@ -63,7 +65,9 @@ NPC_AVAILABLE_ACTIONS_REGISTER = [FightActionComponent,
                          TradeActionComponent,
                          CheckStatusActionComponent]
 
-NPC_DIALOGUE_ACTIONS_REGISTER = [SpeakActionComponent, MindVoiceActionComponent, WhisperActionComponent]
+NPC_DIALOGUE_ACTIONS_REGISTER = [SpeakActionComponent, 
+                                MindVoiceActionComponent, 
+                                WhisperActionComponent]
 NPC_INTERACTIVE_ACTIONS_REGISTER = [SearchActionComponent, 
                                     LeaveForActionComponent, 
                                     PrisonBreakActionComponent, 

@@ -54,3 +54,7 @@ def parse_target_and_message(content: str) -> tuple[Optional[str], Optional[str]
         # 如果有任何异常，返回原始内容和异常提示
         return None, content
 ####################################################################################################
+def check_target_message_pair_format(content: str) -> bool:
+    if "@" not in content or ">" not in content:
+        return False
+    return True

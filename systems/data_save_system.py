@@ -51,10 +51,10 @@ class DataSaveSystem(ExecuteProcessor, TearDownProcessor):
             archiveprompt = gen_world_archive_prompt(self.context)
             genarchive = agent_connect_system.request(worldcomp.name, archiveprompt)
             if genarchive is not None:
-                memory_system.overwritememory(worldcomp.name, genarchive)
+                memory_system.set_and_write_memory(worldcomp.name, genarchive)
             else:
                 chat_history = agent_connect_system.get_chat_history(worldcomp.name)
-                memory_system.overwritememory(worldcomp.name, self.archive_chat_history(chat_history))
+                memory_system.set_and_write_memory(worldcomp.name, self.archive_chat_history(chat_history))
 ################################################################################################
     def make_stage_archive(self) -> None:
         agent_connect_system = self.context.agent_connect_system
@@ -66,10 +66,10 @@ class DataSaveSystem(ExecuteProcessor, TearDownProcessor):
             archiveprompt = gen_stage_archive_prompt(self.context)
             genarchive = agent_connect_system.request(stagecomp.name, archiveprompt)
             if genarchive is not None:
-                memory_system.overwritememory(stagecomp.name, genarchive)
+                memory_system.set_and_write_memory(stagecomp.name, genarchive)
             else:
                 chat_history = agent_connect_system.get_chat_history(stagecomp.name)
-                memory_system.overwritememory(stagecomp.name, self.archive_chat_history(chat_history))
+                memory_system.set_and_write_memory(stagecomp.name, self.archive_chat_history(chat_history))
 ################################################################################################
     def make_npc_archive(self) -> None:
         agent_connect_system = self.context.agent_connect_system
@@ -81,10 +81,10 @@ class DataSaveSystem(ExecuteProcessor, TearDownProcessor):
             archiveprompt = gen_npc_archive_prompt(self.context)
             genarchive = agent_connect_system.request(npccomp.name, archiveprompt)
             if genarchive is not None:
-                memory_system.overwritememory(npccomp.name, genarchive)
+                memory_system.set_and_write_memory(npccomp.name, genarchive)
             else:
                 chat_history = agent_connect_system.get_chat_history(npccomp.name)
-                memory_system.overwritememory(npccomp.name, self.archive_chat_history(chat_history))
+                memory_system.set_and_write_memory(npccomp.name, self.archive_chat_history(chat_history))
 ################################################################################################
     def archive_chat_history(self, chat_history: List[Union[HumanMessage, AIMessage]]) -> str:
         if len(chat_history) == 0:

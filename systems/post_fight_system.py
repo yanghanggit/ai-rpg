@@ -39,7 +39,7 @@ class PostFightSystem(ExecuteProcessor):
         archiveprompt = gen_npc_archive_prompt(self.context)
         archive = agent_connect_system.request(safename, archiveprompt)
         if archive is not None:
-            memory_system.overwritememory(safename, archive)    # 存档!    
+            memory_system.set_and_write_memory(safename, archive)    # 存档!    
         else:
             logger.error(f"存档失败:{safename}")    
 ########################################################################################################################################################################

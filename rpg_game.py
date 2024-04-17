@@ -187,7 +187,7 @@ class RPGGame:
             return res
         
         for builddata in npcbuilder.npcs:
-            logger.debug(f"创建World Entity = {builddata.name}")
+            #logger.debug(f"创建World Entity = {builddata.name}")
             worldentity = context.create_entity()
             res.append(worldentity)
 
@@ -222,7 +222,7 @@ class RPGGame:
             return res
         
         for builddata in npcbuilder.npcs:
-            logger.debug(f"创建Player npc：{builddata.name}")
+            #logger.debug(f"创建Player npc：{builddata.name}")
             playernpcentity = context.create_entity()
             res.append(playernpcentity)
 
@@ -264,7 +264,7 @@ class RPGGame:
             return res
         
         for builddata in npcbuilder.npcs:
-            logger.debug(f"创建npc：{builddata.name}")
+            #logger.debug(f"创建npc：{builddata.name}")
             npcentity = context.create_entity()
             res.append(npcentity)
 
@@ -306,7 +306,7 @@ class RPGGame:
         
         # 创建stage相关配置
         for builddata in stagebuilder.stages:
-            logger.debug(f"创建Stage：{builddata.name}")
+            #logger.debug(f"创建Stage：{builddata.name}")
             stageentity = context.create_entity()
 
             #必要组件
@@ -325,7 +325,7 @@ class RPGGame:
 
                 ## 重新设置npc的stage，做覆盖处理
                 findnpcagain.replace(NPCComponent, npcname, builddata.name)
-                logger.debug(f"重新设置npc：{npcname}的stage为：{builddata.name}")
+                #logger.debug(f"重新设置npc：{npcname}的stage为：{builddata.name}")
                     
             # 场景内添加道具
             for propinstage in builddata.props:
@@ -340,7 +340,7 @@ class RPGGame:
                 enter_condition_set.add(enter_condition.name)
             if len(enter_condition_set) > 0:
                 stageentity.add(StageEntryConditionComponent, enter_condition_set)
-                logger.debug(f"{builddata.name}的入口条件为：{enter_condition_set}")
+                #logger.debug(f"{builddata.name}的入口条件为：{enter_condition_set}")
 
             ## 创建出口条件
             exit_condition_set = set()
@@ -348,12 +348,12 @@ class RPGGame:
                 exit_condition_set.add(exit_condition.name)
             if len(exit_condition_set) > 0:
                 stageentity.add(StageExitConditionComponent, set(exit_condition_set))
-                logger.debug(f"{builddata.name}的出口条件为：{exit_condition_set}")
+                #logger.debug(f"{builddata.name}的出口条件为：{exit_condition_set}")
 
             ## 创建连接的场景用于PrisonBreakActionSystem
             for connectstage in builddata.connect_to_stage:
                 stageentity.add(ConnectToStageComponent, connectstage.name)
-                logger.debug(f"{builddata.name}连接的场景为：{connectstage.name}, 用于PrisonBreakActionSystem使用。")
+                #logger.debug(f"{builddata.name}连接的场景为：{connectstage.name}, 用于PrisonBreakActionSystem使用。")
                 break ### 就用第一个
 
             #重构

@@ -122,7 +122,7 @@ class ExtendedContext(Context):
             return
         
         npccomp: NPCComponent = entity.get(NPCComponent)
-        logger.debug(f"change_stage_tag:{npccomp.name}: {from_stagename} -> {to_stagename}")
+        #logger.debug(f"change_stage_tag:{npccomp.name}: {from_stagename} -> {to_stagename}")
 
         # 查看一下，如果一样基本就是错误
         if from_stagename == to_stagename:

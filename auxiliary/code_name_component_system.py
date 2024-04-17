@@ -35,7 +35,7 @@ class CodeNameComponentSystem:
     #
     def register_stage_tag_component_class(self, stagename: str, stagecodename: str) -> None:
         stagetag = f"stagetag_{stagecodename}"
-        logger.warning(f"[{self.name}]注册了一个stagetag组件，stagename={stagename}, stagetag={stagetag}")
+        #logger.warning(f"[{self.name}]注册了一个stagetag组件，stagename={stagename}, stagetag={stagetag}")
         self.name2stagetag[stagename] = stagetag
         self.stagetag2component[stagetag] = namedtuple(stagetag, 'name')
 

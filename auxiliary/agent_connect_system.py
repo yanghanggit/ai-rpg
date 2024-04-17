@@ -19,11 +19,11 @@ class AgentConnectSystem:
         if self.rootpath != "":
             raise Exception(f"[filesystem]已经设置了根路径，不能重复设置。")
         self.rootpath = rootpath
-        logger.debug(f"[filesystem]设置了根路径为{rootpath}")
+        #logger.debug(f"[filesystem]设置了根路径为{rootpath}")
 ############################################################################################################
     def register_actor_agent(self, name: str, url: str) -> None:
         self.memorydict[name] = ActorAgent(name, url)
-        logger.debug(f"register_actor_agent: {name} is registered. url = {url}")
+        #logger.debug(f"register_actor_agent: {name} is registered. url = {url}")
 ############################################################################################################
     def debug_show_all_agents(self) -> None:
         logger.debug(f"AgentConnectSystem: {self.name} has {len(self.memorydict)} actor agents.")

@@ -101,7 +101,7 @@ class StageBuilder:
              # 做连接关系 目前仅用名字
             connect_to_stage_name: str = stagedata.get("connect_to_stage")
             if len(connect_to_stage_name) > 0:
-                logger.debug(f"StageBuilder: {stage.name} connect to {connect_to_stage_name}")
+                #logger.debug(f"StageBuilder: {stage.name} connect to {connect_to_stage_name}")
                 stage.connect_stage_by_name(connect_to_stage_name)
 
             # 设置属性

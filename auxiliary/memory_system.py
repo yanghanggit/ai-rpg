@@ -15,7 +15,7 @@ class MemorySystem:
         if self.rootpath != "":
             raise Exception(f"[{self.name}]已经设置了根路径，不能重复设置。")
         self.rootpath = rootpath
-        logger.debug(f"[{self.name}]设置了根路径为{rootpath}")
+        #logger.debug(f"[{self.name}]设置了根路径为{rootpath}")
 ####################################################################################################################################
     def memorymdfile(self, who: str) -> str:
         return f"{self.rootpath}{who}/mems/memory.md"

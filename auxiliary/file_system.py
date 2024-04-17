@@ -20,7 +20,7 @@ class FileSystem:
         if self.rootpath != "":
             raise Exception(f"[filesystem]已经设置了根路径，不能重复设置。")
         self.rootpath = rootpath
-        logger.debug(f"[filesystem]设置了根路径为{rootpath}")
+        #logger.debug(f"[filesystem]设置了根路径为{rootpath}")
 ################################################################################################################
     ### 删除
     def deletefile(self, filepath: str) -> None:

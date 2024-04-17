@@ -17,14 +17,14 @@ class PostFightSystem(ExecuteProcessor):
         self.remove_npc_interactive_actions()
         #可以存档
         if self.context.savedata:
-            self.save_dead()
+            self.savedead()
 ########################################################################################################################################################################
-    def save_dead(self) -> None:
+    def savedead(self) -> None:
          entities: set[Entity] = self.context.get_group(Matcher(DeadActionComponent)).entities
          for entity in entities:
-            self.save_npc(entity)
+            self.savenpc(entity)
 ########################################################################################################################################################################
-    def save_npc(self, entity: Entity) -> None:
+    def savenpc(self, entity: Entity) -> None:
         agent_connect_system = self.context.agent_connect_system
         memory_system = self.context.memory_system
         safename = self.context.safe_get_entity_name(entity)

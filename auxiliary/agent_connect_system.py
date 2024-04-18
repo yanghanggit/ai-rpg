@@ -132,7 +132,7 @@ class AgentConnectSystem:
             response = await self.memorydict[name].async_request(prompt)
             return (name, response)
         logger.error(f"async_requet: {name} is not registered.")
-        return None
+        return (name, None)
 ############################################################################################################
     async def async_gather(self) -> list[tuple[str, Optional[str]]]:
         tasks = [self.async_requet(name, prompt) for name, prompt in self.async_request_tasks.items()]

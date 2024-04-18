@@ -122,7 +122,7 @@ class AgentConnectSystem:
             logger.error(f"[{who}]写入chat history dump失败。")
             return
 ############################################################################################################
-    # 向self.queue中添加一个任务，可以在同步线程中调用，参数是两个str
+    # 每个Agent需要异步请求调用的时候，需要先添加任务，然后全部异步任务添加完毕后，再调用run_async_requet_tasks
     def add_async_requet_task(self, name: str, prompt: str) -> None:
         logger.debug(f"{name}添加异步请求任务:{prompt}")
         self.async_request_tasks[name] = prompt
@@ -140,7 +140,8 @@ class AgentConnectSystem:
         response = await asyncio.gather(*tasks)
         
         return response
-
+############################################################################################################
+    # 当确定全部异步请求任务添加完毕后，调用这个方法，等待所有任务完成，并拿到任务结果
     def run_async_requet_tasks(self) -> dict[str, Optional[str]]:
 
         # 调用async_gather，等待所有任务完成，并拿到任务结果

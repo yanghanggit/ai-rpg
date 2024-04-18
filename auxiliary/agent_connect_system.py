@@ -4,6 +4,7 @@ from typing import Dict,  List, Union, Optional
 from auxiliary.actor_agent import ActorAgent
 from langchain_core.messages import HumanMessage, AIMessage
 import json
+import asyncio
 
 ## 单独封装一个系统，用于连接actor agent
 class AgentConnectSystem:
@@ -13,6 +14,7 @@ class AgentConnectSystem:
         self.name: str = name
         self.memorydict: Dict[str, ActorAgent] = {}
         self.rootpath = ""
+        self.async_request_tasks: Dict[str, str] = {}
 ############################################################################################################
     ### 必须设置根部的执行路行
     def set_root_path(self, rootpath: str) -> None:
@@ -120,3 +122,38 @@ class AgentConnectSystem:
             logger.error(f"[{who}]写入chat history dump失败。")
             return
 ############################################################################################################
+    # 向self.queue中添加一个任务，可以在同步线程中调用，参数是两个str
+    def add_async_requet_task(self, name: str, prompt: str) -> None:
+        logger.debug(f"{name}添加异步请求任务:{prompt}")
+        self.async_request_tasks[name] = prompt
+############################################################################################################
+    async def async_requet(self, name: str, prompt: str) -> tuple[str, Optional[str]]:
+        if name in self.memorydict:
+            response = await self.memorydict[name].async_request(prompt)
+            return (name, response)
+        logger.error(f"async_requet: {name} is not registered.")
+        return None
+############################################################################################################
+    async def async_gather(self) -> list[tuple[str, Optional[str]]]:
+        tasks = [self.async_requet(name, prompt) for name, prompt in self.async_request_tasks.items()]
+
+        response = await asyncio.gather(*tasks)
+        
+        return response
+
+    def run_async_requet_tasks(self) -> dict[str, Optional[str]]:
+
+        # 调用async_gather，等待所有任务完成，并拿到任务结果
+        loop = asyncio.get_event_loop()
+        async_results: list[tuple[str, Optional[str]]] = loop.run_until_complete(self.async_gather())
+
+        response_dict: dict[str, Optional[str]] = {}
+
+        for result in async_results:
+            response_dict[result[0]] = result[1]
+
+        self.async_request_tasks.clear()
+        return response_dict
+        
+
+

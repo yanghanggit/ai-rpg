@@ -1,3 +1,4 @@
+from typing import Optional
 from entitas import Entity, Matcher, InitializeProcessor # type: ignore
 from auxiliary.components import WorldComponent, StageComponent, NPCComponent, PlayerComponent
 from auxiliary.prompt_maker import read_archives_when_system_init_prompt
@@ -67,10 +68,11 @@ class InitSystem(InitializeProcessor):
                 logger.error(f"worldmemory is empty: {worldcomp.name}")
                 continue
             readarchprompt = read_archives_when_system_init_prompt(worldmemory, world, context)
-            response = agent_connect_system.request(worldcomp.name, readarchprompt)
-            if response is None:
-                chaos_engineering_system.on_read_memory_failed(context, worldcomp.name, readarchprompt)
-            
+            # response = agent_connect_system.request(worldcomp.name, readarchprompt)
+            # if response is None:
+            #     chaos_engineering_system.on_read_memory_failed(context, worldcomp.name, readarchprompt)
+            agent_connect_system.add_async_requet_task(worldcomp.name, readarchprompt)
+
         ##
         stages: set[Entity] = context.get_group(Matcher(StageComponent)).entities
         for stage in stages:
@@ -80,9 +82,11 @@ class InitSystem(InitializeProcessor):
                 logger.error(f"stagememory is empty: {stagecomp.name}")
                 continue
             readarchprompt = read_archives_when_system_init_prompt(stagememory, stage, context)
-            response = agent_connect_system.request(stagecomp.name, readarchprompt)
-            if response is None:
-                chaos_engineering_system.on_read_memory_failed(context, stagecomp.name, readarchprompt)
+            # response = agent_connect_system.request(stagecomp.name, readarchprompt)
+            # if response is None:
+            #     chaos_engineering_system.on_read_memory_failed(context, stagecomp.name, readarchprompt)
+            agent_connect_system.add_async_requet_task(stagecomp.name, readarchprompt)
+
         ##
         npcs: set[Entity] = context.get_group(Matcher(all_of=[NPCComponent], none_of=[PlayerComponent])).entities
         for npc in npcs:
@@ -92,7 +96,12 @@ class InitSystem(InitializeProcessor):
                 logger.error(f"npcmemory is empty: {npccomp.name}")
                 continue
             readarchprompt = read_archives_when_system_init_prompt(npcmemory, npc, context)
-            response = agent_connect_system.request(npccomp.name, readarchprompt)
-            if response is None:
-                chaos_engineering_system.on_read_memory_failed(context, npccomp.name, readarchprompt)
+            # response = agent_connect_system.request(npccomp.name, readarchprompt)
+            # if response is None:
+            #     chaos_engineering_system.on_read_memory_failed(context, npccomp.name, readarchprompt)
+            agent_connect_system.add_async_requet_task(npccomp.name, readarchprompt)
+
+        ##
+        agent_connect_system.run_async_requet_tasks()
+
 ###############################################################################################################################################

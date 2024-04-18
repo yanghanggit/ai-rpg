@@ -18,27 +18,31 @@ class StagePlanningSystem(ExecuteProcessor):
         logger.debug("<<<<<<<<<<<<<  StagePlanningSystem  >>>>>>>>>>>>>>>>>")
         #记录事件
         self.context.chaos_engineering_system.on_stage_planning_system_excute(self.context)
+        # 并行执行requests
+        all_response: dict[str, Optional[str]] = self.context.agent_connect_system.run_async_requet_tasks()
         #正常流程
         entities = self.context.get_group(Matcher(all_of=[StageComponent, AutoPlanningComponent])).entities
         for entity in entities:
             ## 开始处理场景的行为与计划
-            self.handle(entity)
+            self.handle(entity, all_response)
 ####################################################################################################
-    def handle(self, entity: Entity) -> None:
+    def handle(self, entity: Entity,  all_response: dict[str, Optional[str]]) -> None:
         
-        prompt = stage_plan_prompt(entity, self.context)
-        stagecomp: StageComponent = entity.get(StageComponent)
+        # prompt = stage_plan_prompt(entity, self.context)
+        stage_comp: StageComponent = entity.get(StageComponent)
 
-        response = self.requestplanning(stagecomp.name, prompt)
+        # response = self.requestplanning(stagecomp.name, prompt)
+        response = all_response.get(stage_comp.name, None)
+        
         if response is None:
             logger.warning(f"StagePlanningSystem: response is None or empty, so we can't get the planning.")
             return
         
-        stageplanning = ActorPlan(stagecomp.name, response)
+        stageplanning = ActorPlan(stage_comp.name, response)
         if not self.check_plan(entity, stageplanning):
             logger.warning(f"StagePlanningSystem: check_plan failed, {stageplanning}")
             ## 需要失忆!
-            self.context.agent_connect_system.remove_last_conversation_between_human_and_ai(stagecomp.name)
+            self.context.agent_connect_system.remove_last_conversation_between_human_and_ai(stage_comp.name)
             return
         
         ## 不能停了，只能一直继续

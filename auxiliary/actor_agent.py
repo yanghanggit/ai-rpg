@@ -56,3 +56,17 @@ class ActorAgent:
     def __str__(self) -> str:
         return f"ActorAgent({self.name}, {self.url})"
 ################################################################################################################################################################################
+    async def async_request(self, prompt: str) -> Optional[str]:
+        if self.agent is None:
+            logger.error(f"async_request: {self.name} have no agent.请确认是默认玩家，否则检查game_settings.json中配置。")
+            return None
+        try:
+            response = await self.agent.ainvoke({"input": prompt, "chat_history": self.chat_history})
+            response_content = cast(str, response.get('output', ''))
+            self.chat_history.extend([HumanMessage(content = prompt), AIMessage(content = response_content)])
+            logger.debug(f"\n{'=' * 50}\n{self.name} request result:\n{response_content}\n{'=' * 50}")
+            return response_content
+        except Exception as e:
+            logger.error(f"{self.name}: request error: {e}")
+            return None
+        return None

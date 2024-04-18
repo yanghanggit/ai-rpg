@@ -19,31 +19,34 @@ class NPCPlanningSystem(ExecuteProcessor):
         logger.debug("<<<<<<<<<<<<<  NPCPlanningSystem  >>>>>>>>>>>>>>>>>")
         #记录事件
         self.context.chaos_engineering_system.on_npc_planning_system_execute(self.context)
+        # 并行执行requests
+        all_response: dict[str, Optional[str]] = self.context.agent_connect_system.run_async_requet_tasks()
         #正常流程
         entities = self.context.get_group(Matcher(all_of=[NPCComponent, AutoPlanningComponent])).entities
         for entity in entities:
             #开始处理NPC的行为计划
-            self.handle(entity)
+            self.handle(entity, all_response)
 ####################################################################################################
-    def handle(self, entity: Entity) -> None:
+    def handle(self, entity: Entity, all_reponse: dict[str, Optional[str]]) -> None:
 
-        prompt = npc_plan_prompt(entity, self.context)
-        npccomp: NPCComponent = entity.get(NPCComponent)
+        # prompt = npc_plan_prompt(entity, self.context)
+        npc_comp: NPCComponent = entity.get(NPCComponent)
 
-        response = self.requestplanning(npccomp.name, prompt)
+        # response = self.requestplanning(npccomp.name, prompt)
+        response = all_reponse.get(npc_comp.name, None)
         if response is None:
             logger.warning(f"NPCPlanningSystem: response is None or empty, so we can't get the planning.")
             return
         
-        npcplanning = ActorPlan(npccomp.name, response)
-        if not self.check_plan(entity, npcplanning):
-            logger.warning(f"NPCPlanningSystem: check_plan failed, {npcplanning}")
+        npc_planning = ActorPlan(npc_comp.name, response)
+        if not self.check_plan(entity, npc_planning):
+            logger.warning(f"NPCPlanningSystem: check_plan failed, {npc_planning}")
             ## 需要失忆!
-            self.context.agent_connect_system.remove_last_conversation_between_human_and_ai(npccomp.name)
+            self.context.agent_connect_system.remove_last_conversation_between_human_and_ai(npc_comp.name)
             return
         
         ## 不能停了，只能一直继续
-        for action in npcplanning.actions:
+        for action in npc_planning.actions:
             self.add_action_component(entity, action)
 ####################################################################################################
     def requestplanning(self, npcname: str, prompt: str) -> Optional[str]:

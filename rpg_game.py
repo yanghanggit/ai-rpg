@@ -15,6 +15,7 @@ from auxiliary.extended_context import ExtendedContext
 from auxiliary.builders import WorldDataBuilder, StageBuilder, NPCBuilder
 from entitas.entity import Entity
 from systems.init_system import InitSystem
+from systems.npc_ready_for_planning_system import NPCReadyForPlanningSystem
 from systems.stage_planning_system import StagePlanningSystem
 from systems.npc_planning_system import NPCPlanningSystem
 from systems.speak_action_system import SpeakActionSystem
@@ -24,6 +25,7 @@ from systems.pre_leave_for_system import PreLeaveForSystem
 from systems.director_system import DirectorSystem
 from systems.dead_action_system import DeadActionSystem
 from systems.destroy_system import DestroySystem
+from systems.stage_ready_for_planning_system import StageReadyForPlanningSystem
 from systems.tag_action_system import TagActionSystem
 from systems.data_save_system import DataSaveSystem
 from systems.broadcast_action_system import BroadcastActionSystem  
@@ -73,7 +75,9 @@ class RPGGame:
        
         #规划逻辑########################
         processors.add(PrePlanningSystem(context)) ######## 在所有规划之前
+        processors.add(StageReadyForPlanningSystem(context))
         processors.add(StagePlanningSystem(context))
+        processors.add(NPCReadyForPlanningSystem(context))
         processors.add(NPCPlanningSystem(context))
         processors.add(PostPlanningSystem(context)) ####### 在所有规划之后
 

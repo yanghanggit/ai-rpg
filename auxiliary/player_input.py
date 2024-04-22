@@ -1,7 +1,10 @@
+from typing import Optional
+from entitas.entity import Entity
 from rpg_game import RPGGame
 from loguru import logger
 from auxiliary.components import (
-    BroadcastActionComponent, 
+    BroadcastActionComponent,
+    ConnectToStageComponent, 
     SpeakActionComponent, 
     StageComponent, 
     NPCComponent, 
@@ -190,17 +193,12 @@ class PlayerCommandPrisonBreak(PlayerInput):
             return
         
         npccomp: NPCComponent = playerentity.get(NPCComponent)
-        current_stage_name: str = npccomp.current_stage
-        stageentity = context.getstage(current_stage_name)
-        if stageentity is None:
-            logger.error(f"PrisonBreakActionSystem: {current_stage_name} is None")
-            return
+        npc_in_stage_entity: Optional[Entity] = context.safe_get_stage_entity(playerentity)
+        if npc_in_stage_entity.has(ConnectToStageComponent):
+            connect_stage_comp: ConnectToStageComponent = npc_in_stage_entity.get(ConnectToStageComponent)
 
-        action = ActorAction(npccomp.name, PrisonBreakActionComponent.__name__, [current_stage_name])
-        playerentity.add(LeaveForActionComponent, action)
-        
-        newmsg = f"""{{"{PrisonBreakActionComponent.__name__}": ["{current_stage_name}"]}}"""
-        context.safe_add_human_message_to_entity(playerentity, newmsg)
+            newmsg = f"""{{"{PrisonBreakActionComponent.__name__}": ["{connect_stage_comp.name}"]}}"""
+            context.safe_add_human_message_to_entity(playerentity, newmsg)
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
@@ -277,10 +275,12 @@ class PlayerCommandSearch(PlayerInput):
 
     def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, search_target_prop_name: str) -> None:
         super().__init__(name, game, playerproxy)
+        # todo: 这里search_target_prop_name需要判断是否为合理道具，现在会全部进行寻找。
         self.search_target_prop_name = search_target_prop_name
 
     def execute(self) -> None:
         context = self.game.extendedcontext
+        # todo:道具如果是唯一性，怎么检测？
         search_target_prop_name = self.search_target_prop_name
         playerentity = context.getplayer(self.playerproxy.name)
         if playerentity is None:

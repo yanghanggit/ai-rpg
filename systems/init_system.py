@@ -1,4 +1,3 @@
-from typing import Optional
 from entitas import Entity, Matcher, InitializeProcessor # type: ignore
 from auxiliary.components import WorldComponent, StageComponent, NPCComponent, PlayerComponent
 from auxiliary.prompt_maker import read_archives_when_system_init_prompt

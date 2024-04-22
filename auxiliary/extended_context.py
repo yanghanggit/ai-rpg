@@ -69,13 +69,13 @@ class ExtendedContext(Context):
         return None
 ############################################################################################################
     def getstage(self, stagename: str) -> Optional[Entity]:
-        entity: Entity = self.get_by_code_name_component(stagename)
+        entity: Optional[Entity] = self.get_by_code_name_component(stagename)
         if entity is not None and entity.has(StageComponent):
             return entity
         return None
 ############################################################################################################
     def getnpc(self, npcname: str) -> Optional[Entity]:
-        entity: Entity = self.get_by_code_name_component(npcname)
+        entity: Optional[Entity] = self.get_by_code_name_component(npcname)
         if entity is not None and entity.has(NPCComponent):
             return entity
         return None

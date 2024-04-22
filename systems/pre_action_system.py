@@ -1,5 +1,5 @@
 
-from entitas import ExecuteProcessor, Matcher, Entity #type: ignore
+from entitas import ExecuteProcessor #type: ignore
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.components import AutoPlanningComponent, StageComponent, NPCComponent, PlayerComponent

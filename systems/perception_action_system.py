@@ -4,7 +4,7 @@ from auxiliary.components import (  PerceptionActionComponent,
                                     StageComponent,
                                     NPCComponent)
 from loguru import logger
-from typing import Optional, List
+from typing import List
 from auxiliary.director_component import DirectorComponent
 from auxiliary.director_event import PerceptionEvent
 

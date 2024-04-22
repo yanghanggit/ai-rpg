@@ -4,7 +4,6 @@ from auxiliary.components import (StageComponent,
                         STAGE_AVAILABLE_ACTIONS_REGISTER,
                         STAGE_DIALOGUE_ACTIONS_REGISTER)
 from auxiliary.actor_action import ActorPlan, ActorAction
-from auxiliary.prompt_maker import stage_plan_prompt
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger 
 from typing import Optional

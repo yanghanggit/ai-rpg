@@ -193,12 +193,18 @@ class PlayerCommandPrisonBreak(PlayerInput):
             return
         
         npccomp: NPCComponent = playerentity.get(NPCComponent)
-        npc_in_stage_entity: Optional[Entity] = context.safe_get_stage_entity(playerentity)
-        if npc_in_stage_entity.has(ConnectToStageComponent):
-            connect_stage_comp: ConnectToStageComponent = npc_in_stage_entity.get(ConnectToStageComponent)
+        current_stage_name: str = npccomp.current_stage
+        stageentity = context.getstage(current_stage_name)
+        if stageentity is None:
+            logger.error(f"PrisonBreakActionSystem: {current_stage_name} is None")
+            return
 
-            newmsg = f"""{{"{PrisonBreakActionComponent.__name__}": ["{connect_stage_comp.name}"]}}"""
-            context.safe_add_human_message_to_entity(playerentity, newmsg)
+        action = ActorAction(npccomp.name, PrisonBreakActionComponent.__name__, [current_stage_name])
+        playerentity.add(PrisonBreakActionComponent, action)
+        
+        newmsg = f"""{{"{PrisonBreakActionComponent.__name__}": ["{current_stage_name}"]}}"""
+        context.safe_add_human_message_to_entity(playerentity, newmsg)
+
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################

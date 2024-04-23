@@ -38,4 +38,5 @@
   "BroadcastActionComponent": ["要公开说的内容"],
   "WhisperActionComponent": ["@角色名字>你想私下说的内容","@角色名字>你想私下说的内容",...],
   "SearchActionComponent": ["想要搜索的物品名称"]
+  "TradeActionComponent": ["@交换角色名字>交换道具名称"]
 }}

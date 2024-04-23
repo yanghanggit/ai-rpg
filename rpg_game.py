@@ -48,27 +48,11 @@ from systems.perception_action_system import PerceptionActionSystem
 from systems.steal_action_system import StealActionSystem
 from systems.trade_action_system import TradeActionSystem
 from systems.check_status_action_system import CheckStatusActionSystem
-from systems.player_input_system import PlayerInputSystem
-from abc import ABC, abstractmethod
-
-### 这一步处理可以达到每个人看到的事件有不同的陈述，而不是全局唯一的陈述
-class IGame(ABC):
-
-    def __init__(self, name: str) -> None:
-        self.name = name
-        self.started: bool = False
-        self.inited: bool = False
-         
-    @abstractmethod
-    def execute(self) -> None:
-        pass
-
-    @abstractmethod
-    def exit(self) -> None:
-        pass
+#from systems.player_input_system import PlayerInputSystem
+from base_game import BaseGame
 
 ## 控制流程和数据创建
-class RPGGame(IGame):
+class RPGGame(BaseGame):
 
     def __init__(self, name: str, context: ExtendedContext) -> None:
         super().__init__(name)
@@ -125,10 +109,10 @@ class RPGGame(IGame):
         processors.add(PostActionSystem(context)) ####### 在所有行动之后
         #########################################
 
-
         #行动结束后导演
         processors.add(DirectorSystem(context))
-        processors.add(KnownInformationSystem(context)) #更新关系网
+        #行动结束后更新关系网
+        processors.add(KnownInformationSystem(context))
         #########################################
         ###必须最后
         processors.add(DestroySystem(context))

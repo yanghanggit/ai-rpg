@@ -105,7 +105,7 @@ def died_in_fight(context: ExtendedContext) -> str:
 
 # 重构用
 def __unique_prop_taken_away__(npcname: str, prop_name:str) -> str:
-    return f"{npcname}找到了{prop_name},{prop_name}只存在唯一一份，其他人无法再搜到了。"
+    return f"{npcname}试图寻找{prop_name}，但{prop_name}在场景中不存在或者被其他人拿走了,需要再重新考虑目标。"
 
 
 def unique_prop_taken_away(entity: Entity, prop_name:str) -> str:

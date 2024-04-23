@@ -47,9 +47,11 @@ class SearchActionSystem(ReactiveProcessor):
             ## 不在同一个场景就不能被搜寻，这个场景不具备这个道具，就无法搜寻
             if not self.check_stage_has_the_prop(targetpropname, propfiles):
                 self.notify_director_search_failed(entity, targetpropname)
+                logger.debug(f"search failed, {targetpropname} not in {stagecomp.name}")
                 continue
             # 交换文件，即交换道具文件即可
             self.stage_exchanges_prop_to_npc(stagecomp.name, action.name, targetpropname)
+            logger.debug(f"search success, {targetpropname} in {stagecomp.name}")
 ###################################################################################################################
     def check_stage_has_the_prop(self, targetname: str, curstagepropfiles: List[PropFile]) -> bool:
         for propfile in curstagepropfiles:

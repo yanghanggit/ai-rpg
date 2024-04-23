@@ -1,6 +1,5 @@
 from auxiliary.extended_context import ExtendedContext
 from typing import List
-from loguru import logger
 from collections import namedtuple
 from auxiliary.director_event import IDirectorEvent
 
@@ -10,7 +9,6 @@ class DirectorComponent(DirectorComponentPrototype):
 
     def __init__(self) -> None:
         self.events: list[IDirectorEvent] = []
-        #logger.debug(f"DirectorComponent({self.name})")
 
     def addevent(self, event: IDirectorEvent) -> None:
         self.events.append(event)

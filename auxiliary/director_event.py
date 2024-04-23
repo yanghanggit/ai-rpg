@@ -11,7 +11,6 @@ steal_action_prompt,
 trade_action_prompt,
 check_status_action_prompt)
 from loguru import logger
-from auxiliary.print_in_color import Color
 from abc import ABC, abstractmethod
 from auxiliary.prompt_maker import whisper_action_prompt
 from typing import List

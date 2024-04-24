@@ -1,9 +1,4 @@
-<<<<<<< HEAD
-from typing import Optional
-from entitas.entity import Entity
-=======
 from entitas import Entity #type: ignore
->>>>>>> 03976f8179563aef952a943220bcd1736ea46431
 from rpg_game import RPGGame
 from loguru import logger
 from auxiliary.components import (
@@ -172,12 +167,7 @@ class PlayerCommandPrisonBreak(PlayerCommand):
         playerentity.add(PrisonBreakActionComponent, action)
         
         newmsg = f"""{{"{PrisonBreakActionComponent.__name__}": ["{current_stage_name}"]}}"""
-<<<<<<< HEAD
-        context.safe_add_human_message_to_entity(playerentity, newmsg)
-
-=======
         self.add_human_message(playerentity, newmsg)
->>>>>>> 03976f8179563aef952a943220bcd1736ea46431
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################

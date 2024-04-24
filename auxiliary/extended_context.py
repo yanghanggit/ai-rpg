@@ -127,7 +127,7 @@ class ExtendedContext(Context):
             logger.error("实体不是NPC, 目前场景标记只给NPC")
             return
         
-        npccomp: NPCComponent = entity.get(NPCComponent)
+        #npccomp: NPCComponent = entity.get(NPCComponent)
         #logger.debug(f"change_stage_tag:{npccomp.name}: {from_stagename} -> {to_stagename}")
 
         # 查看一下，如果一样基本就是错误

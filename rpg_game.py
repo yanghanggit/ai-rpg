@@ -48,25 +48,23 @@ from systems.perception_action_system import PerceptionActionSystem
 from systems.steal_action_system import StealActionSystem
 from systems.trade_action_system import TradeActionSystem
 from systems.check_status_action_system import CheckStatusActionSystem
+from base_game import BaseGame
 
 ## 控制流程和数据创建
-class RPGGame:
+class RPGGame(BaseGame):
 
     def __init__(self, name: str, context: ExtendedContext) -> None:
-        self.name = name
+        super().__init__(name)
         self.extendedcontext: ExtendedContext = context
-        self.processors: Processors = Processors()
-        self.started: bool = False
-        self.inited: bool = False
         self.worlddata: Optional[WorldDataBuilder] = None
         self.auto_save_count: int = 1000000
         ### 做一些初始化
-        self.createprocessors()
+        self.processors: Processors = self.createprocessors(self.extendedcontext)
 ###############################################################################################################################################
-    def createprocessors(self) -> None:
-        processors = self.processors
-        context = self.extendedcontext
+    def createprocessors(self, context: ExtendedContext) -> Processors:
 
+        processors = Processors()
+       
         ##调试用的系统。监视进入运行之前的状态###############################################################################################################################################
         processors.add(BeginSystem(context))
         
@@ -81,6 +79,9 @@ class RPGGame:
         processors.add(NPCPlanningSystem(context))
         processors.add(PostPlanningSystem(context)) ####### 在所有规划之后
 
+        #拿到相关的信息，等待用户输入!!!!!!!
+        #from systems.test_player_input_system import TestPlayerInputSystem ### 防止循环引用
+        #processors.add(TestPlayerInputSystem(context, self)) ####### 在所有规划之后
 
         #行动逻辑########################
         processors.add(PreActionSystem(context)) ######## 在所有行动之前
@@ -108,10 +109,10 @@ class RPGGame:
         processors.add(PostActionSystem(context)) ####### 在所有行动之后
         #########################################
 
-
         #行动结束后导演
         processors.add(DirectorSystem(context))
-        processors.add(KnownInformationSystem(context)) #更新关系网
+        #行动结束后更新关系网
+        processors.add(KnownInformationSystem(context))
         #########################################
         ###必须最后
         processors.add(DestroySystem(context))
@@ -119,7 +120,8 @@ class RPGGame:
 
          ##调试用的系统。监视进入运行之后的状态###############################################################################################################################################
         processors.add(EndSystem(context))
-        
+
+        return processors
 ###############################################################################################################################################
     def createworld(self, worlddata: WorldDataBuilder) -> None:
         if worlddata is None or worlddata.data is None:

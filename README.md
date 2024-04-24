@@ -46,12 +46,13 @@ pip install langchain_core langserve fastapi langchain_openai sse_starlette fais
 - /run
 
 ## 系统消息
-### 强制推送记忆(给NPC的chat history中加入输入的内容，但移除AI的回答)
+### GM调试指令，发生了完整的request，同时对话结果会进入chat history。相当于强制给agent添加了一段“记忆”。
 - /push @npc_name>你现在需要xxx。
+- 结果：“npc_name”的NPC可能就会因为上下文的改变而改变策略，需要谨慎调用
 
-### 询问推理逻辑(询问NPC的推理逻辑,不会讲提问和AI的回答加入chat history)
+### GM调试指令，发生了request，但是会移除本次chat history。相当于在不干扰"上下文"的基础上做了一次调试
 - /ask @npc_name>为什么你没有xxx?
-
+- 结果：“npc_name”的NPC，做一次回答之后，就会忘掉本次的对话，不会产生任何相关的后续策略与计划
 
 ## 控制npc
 - /who 卡斯帕·艾伦德

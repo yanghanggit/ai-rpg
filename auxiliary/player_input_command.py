@@ -24,7 +24,7 @@ from auxiliary.player_proxy import PlayerProxy
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class PlayerInput:
+class PlayerCommand:
     def __init__(self, inputname: str, game: RPGGame, playerproxy: PlayerProxy) -> None:
         self.inputname: str = inputname
         self.game: RPGGame = game
@@ -32,7 +32,7 @@ class PlayerInput:
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class PlayerCommandLogin(PlayerInput):
+class PlayerCommandLogin(PlayerCommand):
 
     def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, login_npc_name: str) -> None:
         super().__init__(name, game, playerproxy)
@@ -87,7 +87,7 @@ class PlayerCommandLogin(PlayerInput):
 ####################################################################################################################################
 
 ### 这个基本和GM指令差不多了，不允许随便用。基本在正常运行中不允许玩家使用。
-class PlayerCommandChangeCtrlNPC(PlayerInput):
+class PlayerCommandChangeCtrlNPC(PlayerCommand):
     
     def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, npc_name_to_be_controlled: str) -> None:
         super().__init__(name, game, playerproxy)
@@ -131,7 +131,7 @@ class PlayerCommandChangeCtrlNPC(PlayerInput):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################     
-class PlayerCommandAttack(PlayerInput):
+class PlayerCommandAttack(PlayerCommand):
 
     def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, attack_target_name: str) -> None:
         super().__init__(name, game, playerproxy)
@@ -157,7 +157,7 @@ class PlayerCommandAttack(PlayerInput):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################     
-class PlayerCommandLeaveFor(PlayerInput):
+class PlayerCommandLeaveFor(PlayerCommand):
 
     def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, target_stage_name: str) -> None:
         super().__init__(name, game, playerproxy)
@@ -180,7 +180,7 @@ class PlayerCommandLeaveFor(PlayerInput):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################     
-class PlayerCommandPrisonBreak(PlayerInput):
+class PlayerCommandPrisonBreak(PlayerCommand):
 
     def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy) -> None:
         super().__init__(name, game, playerproxy)
@@ -208,7 +208,7 @@ class PlayerCommandPrisonBreak(PlayerInput):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class PlayerCommandBroadcast(PlayerInput):
+class PlayerCommandBroadcast(PlayerCommand):
 
     def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, content: str) -> None:
         super().__init__(name, game, playerproxy)
@@ -231,7 +231,7 @@ class PlayerCommandBroadcast(PlayerInput):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class PlayerCommandSpeak(PlayerInput):
+class PlayerCommandSpeak(PlayerCommand):
 
     def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, speakcontent: str) -> None:
         super().__init__(name, game, playerproxy)
@@ -254,7 +254,7 @@ class PlayerCommandSpeak(PlayerInput):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class PlayerCommandWhisper(PlayerInput):
+class PlayerCommandWhisper(PlayerCommand):
 
     def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, whispercontent: str) -> None:
         super().__init__(name, game, playerproxy)
@@ -277,7 +277,7 @@ class PlayerCommandWhisper(PlayerInput):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class PlayerCommandSearch(PlayerInput):
+class PlayerCommandSearch(PlayerCommand):
 
     def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, search_target_prop_name: str) -> None:
         super().__init__(name, game, playerproxy)
@@ -302,7 +302,7 @@ class PlayerCommandSearch(PlayerInput):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class PlayerCommandPerception(PlayerInput):
+class PlayerCommandPerception(PlayerCommand):
 
     def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy) -> None:
         super().__init__(name, game, playerproxy)
@@ -323,7 +323,7 @@ class PlayerCommandPerception(PlayerInput):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class PlayerCommandSteal(PlayerInput):
+class PlayerCommandSteal(PlayerCommand):
 
     def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, command: str) -> None:
         super().__init__(name, game, playerproxy)
@@ -345,7 +345,7 @@ class PlayerCommandSteal(PlayerInput):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class PlayerCommandTrade(PlayerInput):
+class PlayerCommandTrade(PlayerCommand):
 
     def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, command: str) -> None:
         super().__init__(name, game, playerproxy)
@@ -367,7 +367,7 @@ class PlayerCommandTrade(PlayerInput):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class PlayerCommandCheckStatus(PlayerInput):
+class PlayerCommandCheckStatus(PlayerCommand):
 
     def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy) -> None:
         super().__init__(name, game, playerproxy)

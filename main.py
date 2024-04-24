@@ -1,13 +1,13 @@
 import os
-from typing import Optional
+from typing import Optional, cast
 from loguru import logger
 import datetime
 from auxiliary.dialogue_rule import parse_target_and_message
 from auxiliary.builders import WorldDataBuilder
 from rpg_game import RPGGame 
-from auxiliary.player_proxy import PlayerProxy
-from auxiliary.gm_input import GMCommandPush, GMCommandAsk, GMCommandLogChatHistory
-from auxiliary.player_input import (PlayerCommandChangeCtrlNPC, 
+from auxiliary.player_proxy import create_player_proxy, get_player_proxy, TEST_PLAYER_NAME
+from auxiliary.gm_input_command import GMCommandSimulateRequest, GMCommandSimulateRequestThenRemoveConversation
+from auxiliary.player_input_command import (PlayerCommandChangeCtrlNPC, 
                           PlayerCommandAttack, 
                           PlayerCommandLeaveFor, 
                           PlayerCommandBroadcast, 
@@ -30,6 +30,7 @@ from auxiliary.code_name_component_system import CodeNameComponentSystem
 from auxiliary.chaos_engineering_system import EmptyChaosEngineeringSystem, IChaosEngineering
 ### 专门的混沌工程系统
 from budding_world.chaos_budding_world import ChaosBuddingWorld
+
 
 
 def user_input_pre_command(input_val: str, split_str: str)-> str:
@@ -112,7 +113,7 @@ def main() -> None:
     
     # 创建世界
     rpggame.createworld(worlddata)
-    # 直接执行一次先
+    # 先直接执行一次
     rpggame.execute()
 
     while True:
@@ -120,10 +121,13 @@ def main() -> None:
         if "/quit" in usr_input:
             break
 
+        #cast(PlayerProxy, get_player_proxy(playername))
         elif "/login" in usr_input:
             # 测试的代码，上来就控制一个NPC目标，先写死
-            playproxy = PlayerProxy("yanghang")
-            playerstartcmd = PlayerCommandLogin("/player-login", rpggame, playproxy, "无名的复活者")
+            create_player_proxy(TEST_PLAYER_NAME)
+            playerproxy = get_player_proxy(TEST_PLAYER_NAME)
+            assert playerproxy is not None
+            playerstartcmd = PlayerCommandLogin("/player-login", rpggame, playerproxy, "无名的复活者")
             playerstartcmd.execute()
 
         elif "/run" in usr_input:
@@ -138,7 +142,7 @@ def main() -> None:
 
             logger.debug(f"</force push command to {push_command_parse_res[0]}>:", input_content)
             ###
-            gmcommandpush = GMCommandPush("/push", rpggame, push_command_parse_res[0], push_command_parse_res[1])
+            gmcommandpush = GMCommandSimulateRequest("/push", rpggame, push_command_parse_res[0], push_command_parse_res[1])
             gmcommandpush.execute()
             ###
             logger.debug(f"{'=' * 50}")
@@ -154,7 +158,7 @@ def main() -> None:
                 continue
             logger.debug(f"</ask command to {ask_command_parse_res[0]}>:", input_content)
             ###
-            gmcommandask = GMCommandAsk("/ask", rpggame, ask_command_parse_res[0], ask_command_parse_res[1])
+            gmcommandask = GMCommandSimulateRequestThenRemoveConversation("/ask", rpggame, ask_command_parse_res[0], ask_command_parse_res[1])
             gmcommandask.execute()
             ###
             logger.debug(f"{'=' * 50}")
@@ -166,7 +170,9 @@ def main() -> None:
             command = "/who"
             who = user_input_pre_command(usr_input, command)
             ###
-            playercommandbewho = PlayerCommandChangeCtrlNPC("/who", rpggame, playproxy, who)
+            playerproxy = get_player_proxy(TEST_PLAYER_NAME)
+            assert playerproxy is not None
+            playercommandbewho = PlayerCommandChangeCtrlNPC("/who", rpggame, playerproxy, who)
             playercommandbewho.execute()
             ###            
             logger.debug(f"{'=' * 50}")
@@ -178,22 +184,24 @@ def main() -> None:
             command = "/attack"
             target_name = user_input_pre_command(usr_input, command)    
             ###
-            playercommandattack = PlayerCommandAttack("/attack", rpggame, playproxy, target_name)
+            playerproxy = get_player_proxy(TEST_PLAYER_NAME)
+            assert playerproxy is not None
+            playercommandattack = PlayerCommandAttack("/attack", rpggame, playerproxy, target_name)
             playercommandattack.execute()
             ###
             logger.debug(f"{'=' * 50}")
         
-        elif "/mem" in usr_input:
-            if not rpggame.started:
-                logger.warning("请先/run")
-                continue
-            command = "/mem"
-            target_name = user_input_pre_command(usr_input, command)
-            ###
-            gmcommandlogchathistory = GMCommandLogChatHistory("/mem", rpggame, target_name)
-            gmcommandlogchathistory.execute()
-            ###
-            logger.debug(f"{'=' * 50}")
+        # elif "/mem" in usr_input:
+        #     if not rpggame.started:
+        #         logger.warning("请先/run")
+        #         continue
+        #     command = "/mem"
+        #     target_name = user_input_pre_command(usr_input, command)
+        #     ###
+        #     gmcommandlogchathistory = GMCommandLogChatHistory("/mem", rpggame, target_name)
+        #     gmcommandlogchathistory.execute()
+        #     ###
+        #     logger.debug(f"{'=' * 50}")
         
         elif "/leave" in usr_input:
             if not rpggame.started:
@@ -202,7 +210,9 @@ def main() -> None:
             command = "/leave"
             target_name = user_input_pre_command(usr_input, command)
             ###
-            playercommandleavefor = PlayerCommandLeaveFor("/leave", rpggame, playproxy, target_name)
+            playerproxy = get_player_proxy(TEST_PLAYER_NAME)
+            assert playerproxy is not None
+            playercommandleavefor = PlayerCommandLeaveFor("/leave", rpggame, playerproxy, target_name)
             playercommandleavefor.execute()
             ###
             logger.debug(f"{'=' * 50}")
@@ -214,7 +224,9 @@ def main() -> None:
             command = "/broadcast"
             content = user_input_pre_command(usr_input, command)
             ###
-            playercommandbroadcast = PlayerCommandBroadcast("/broadcast", rpggame, playproxy, content)
+            playerproxy = get_player_proxy(TEST_PLAYER_NAME)
+            assert playerproxy is not None
+            playercommandbroadcast = PlayerCommandBroadcast("/broadcast", rpggame, playerproxy, content)
             playercommandbroadcast.execute()
             ###
             logger.debug(f"{'=' * 50}")
@@ -226,7 +238,9 @@ def main() -> None:
             command = "/speak"
             content = user_input_pre_command(usr_input, command)
             ###
-            playercommandspeak = PlayerCommandSpeak("/speak", rpggame, playproxy, content)
+            playerproxy = get_player_proxy(TEST_PLAYER_NAME)
+            assert playerproxy is not None
+            playercommandspeak = PlayerCommandSpeak("/speak", rpggame, playerproxy, content)
             playercommandspeak.execute()
             ###
             logger.debug(f"{'=' * 50}")
@@ -238,7 +252,9 @@ def main() -> None:
             command = "/whisper"
             content = user_input_pre_command(usr_input, command)
             ###
-            playercommandwhisper = PlayerCommandWhisper("/whisper", rpggame, playproxy, content)
+            playerproxy = get_player_proxy(TEST_PLAYER_NAME)
+            assert playerproxy is not None
+            playercommandwhisper = PlayerCommandWhisper("/whisper", rpggame,playerproxy, content)
             playercommandwhisper.execute()
             ###
             logger.debug(f"{'=' * 50}")
@@ -250,7 +266,9 @@ def main() -> None:
             command = "/search"
             content = user_input_pre_command(usr_input, command)
             ###
-            playercommandsearch = PlayerCommandSearch("/search", rpggame, playproxy, content)
+            playerproxy = get_player_proxy(TEST_PLAYER_NAME)
+            assert playerproxy is not None
+            playercommandsearch = PlayerCommandSearch("/search", rpggame, playerproxy, content)
             playercommandsearch.execute()
             ###
             logger.debug(f"{'=' * 50}")
@@ -260,7 +278,9 @@ def main() -> None:
                 logger.warning("请先/run")
                 continue
             command = "/prisonbreak"
-            playercommandprsionbreak = PlayerCommandPrisonBreak("/prisonbreak", rpggame, playproxy)
+            playerproxy = get_player_proxy(TEST_PLAYER_NAME)
+            assert playerproxy is not None
+            playercommandprsionbreak = PlayerCommandPrisonBreak("/prisonbreak", rpggame, playerproxy)
             playercommandprsionbreak.execute()
             logger.debug(f"{'=' * 50}")
 
@@ -269,7 +289,9 @@ def main() -> None:
             if not rpggame.started:
                 logger.warning("请先/run")
                 continue
-            PlayerCommandPerception("/perception", rpggame, playproxy).execute()
+            playerproxy = get_player_proxy(TEST_PLAYER_NAME)
+            assert playerproxy is not None
+            PlayerCommandPerception("/perception", rpggame, playerproxy).execute()
             logger.debug(f"{'=' * 50}")
 
         elif "/steal" in usr_input:
@@ -278,7 +300,9 @@ def main() -> None:
                 continue
             command = "/steal"
             content = user_input_pre_command(usr_input, command)
-            PlayerCommandSteal("/steal", rpggame, playproxy, content).execute()
+            playerproxy = get_player_proxy(TEST_PLAYER_NAME)
+            assert playerproxy is not None
+            PlayerCommandSteal("/steal", rpggame, playerproxy, content).execute()
             logger.debug(f"{'=' * 50}")
 
         elif "/trade" in usr_input:
@@ -287,14 +311,18 @@ def main() -> None:
                 continue
             command = "/trade"
             content = user_input_pre_command(usr_input, command)
-            PlayerCommandTrade("/trade", rpggame, playproxy, content).execute()
+            playerproxy = get_player_proxy(TEST_PLAYER_NAME)
+            assert playerproxy is not None
+            PlayerCommandTrade("/trade", rpggame, playerproxy, content).execute()
             logger.debug(f"{'=' * 50}")
 
         elif "/checkstatus" in usr_input:
             if not rpggame.started:
                 logger.warning("请先/run")
                 continue
-            PlayerCommandCheckStatus("/checkstatus", rpggame, playproxy).execute()
+            playerproxy = get_player_proxy(TEST_PLAYER_NAME)
+            assert playerproxy is not None
+            PlayerCommandCheckStatus("/checkstatus", rpggame, playerproxy).execute()
             logger.debug(f"{'=' * 50}")
 
     rpggame.exit()

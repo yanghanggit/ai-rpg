@@ -1,3 +1,4 @@
+from entitas import Entity #type: ignore
 from rpg_game import RPGGame
 from loguru import logger
 from auxiliary.components import (
@@ -32,6 +33,11 @@ class PlayerCommand(ABC):
     @abstractmethod
     def execute(self) -> None:
         pass
+
+    # 为了方便，直接在这里添加消息，不然每个子类都要写一遍
+    def add_human_message(self, entity: Entity, newmsg: str) -> None:
+        context = self.game.extendedcontext
+        context.safe_add_human_message_to_entity(entity, newmsg)
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
@@ -133,7 +139,7 @@ class PlayerCommandLeaveFor(PlayerCommand):
         playerentity.add(LeaveForActionComponent, action)
 
         newmsg = f"""{{"{LeaveForActionComponent.__name__}": ["{target_stage_name}"]}}"""
-        context.safe_add_human_message_to_entity(playerentity, newmsg)
+        self.add_human_message(playerentity, newmsg)
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################     
@@ -160,7 +166,7 @@ class PlayerCommandPrisonBreak(PlayerCommand):
         playerentity.add(LeaveForActionComponent, action)
         
         newmsg = f"""{{"{PrisonBreakActionComponent.__name__}": ["{current_stage_name}"]}}"""
-        context.safe_add_human_message_to_entity(playerentity, newmsg)
+        self.add_human_message(playerentity, newmsg)
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
@@ -183,7 +189,7 @@ class PlayerCommandBroadcast(PlayerCommand):
         playerentity.add(BroadcastActionComponent, action)
        
         newmsg = f"""{{"{BroadcastActionComponent.__name__}": ["{content}"]}}"""
-        context.safe_add_human_message_to_entity(playerentity, newmsg)
+        self.add_human_message(playerentity, newmsg)
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
@@ -206,7 +212,7 @@ class PlayerCommandSpeak(PlayerCommand):
         playerentity.add(SpeakActionComponent, action)
         
         newmsg = f"""{{"{SpeakActionComponent.__name__}": ["{speakcontent}"]}}"""
-        context.safe_add_human_message_to_entity(playerentity, newmsg)
+        self.add_human_message(playerentity, newmsg)
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
@@ -229,7 +235,7 @@ class PlayerCommandWhisper(PlayerCommand):
         playerentity.add(WhisperActionComponent, action)
 
         newmemory = f"""{{"{WhisperActionComponent.__name__}": ["{whispercontent}"]}}"""
-        context.safe_add_human_message_to_entity(playerentity, newmemory)
+        self.add_human_message(playerentity, newmemory)
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
@@ -252,7 +258,7 @@ class PlayerCommandSearch(PlayerCommand):
         playerentity.add(SearchActionComponent, action)
 
         newmemory = f"""{{"{SearchActionComponent.__name__}": ["{search_target_prop_name}"]}}"""
-        context.safe_add_human_message_to_entity(playerentity, newmemory)
+        self.add_human_message(playerentity, newmemory)
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
@@ -273,7 +279,7 @@ class PlayerCommandPerception(PlayerCommand):
         playerentity.add(PerceptionActionComponent, action)
 
         newmemory = f"""{{"{PerceptionActionComponent.__name__}": ["{npccomp.current_stage}"]}}"""
-        context.safe_add_human_message_to_entity(playerentity, newmemory)
+        self.add_human_message(playerentity, newmemory)
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
@@ -295,7 +301,7 @@ class PlayerCommandSteal(PlayerCommand):
         playerentity.add(StealActionComponent, action)
 
         newmemory = f"""{{"{StealActionComponent.__name__}": ["{self.command}"]}}"""
-        context.safe_add_human_message_to_entity(playerentity, newmemory)
+        self.add_human_message(playerentity, newmemory)
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
@@ -317,7 +323,7 @@ class PlayerCommandTrade(PlayerCommand):
         playerentity.add(TradeActionComponent, action)
 
         newmemory = f"""{{"{TradeActionComponent.__name__}": ["{self.command}"]}}"""
-        context.safe_add_human_message_to_entity(playerentity, newmemory)
+        self.add_human_message(playerentity, newmemory)
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
@@ -337,7 +343,7 @@ class PlayerCommandCheckStatus(PlayerCommand):
         playerentity.add(CheckStatusActionComponent, action)
 
         newmemory = f"""{{"{CheckStatusActionComponent.__name__}": ["{npccomp.name}"]}}"""
-        context.safe_add_human_message_to_entity(playerentity, newmemory)
+        self.add_human_message(playerentity, newmemory)
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################

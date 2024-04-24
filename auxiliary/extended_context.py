@@ -34,6 +34,7 @@ class ExtendedContext(Context):
         self.code_name_component_system = codenamecompsys
         self.chaos_engineering_system = chaossystem
         self.savedata = False
+        self.executecount = 0
         #        
         assert self.file_system is not None, "self.file_system is None"
         assert self.memory_system is not None, "self.memory_system is None"

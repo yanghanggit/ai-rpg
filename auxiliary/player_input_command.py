@@ -74,11 +74,11 @@ class PlayerCommandLogin(PlayerCommand):
         logger.info(f"login success! {myname} => {login_npc_name}")
         
         ####
-        clientmessage = self.clientmessage()
-        logger.error(f"{myname} 登陆了游戏, 游戏提示如下: {clientmessage}，可以开始游戏了")
+        clientmessage = self.test_client_message_after_login_success()
+        logger.warning(f"{myname} 登陆了游戏, 游戏提示如下: {clientmessage}，可以开始游戏了")
 
     ## 登录之后，客户端需要看到的消息
-    def clientmessage(self) -> str:
+    def test_client_message_after_login_success(self) -> str:
         context = self.game.extendedcontext
         memory_system = context.memory_system
         npcentity = context.getnpc(self.login_npc_name)

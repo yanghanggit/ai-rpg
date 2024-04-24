@@ -7,13 +7,13 @@ from auxiliary.components import NPCComponent, StageComponent
 def npc_plan_prompt(entity: Entity, context: ExtendedContext) -> str:
     if not entity.has(NPCComponent):
         raise ValueError("npc_plan_prompt, entity has no NPCComponent")
-    prompt = f"根据‘计划制定指南’作出你的计划。要求：输出结果格式要遵循‘输出格式指南’"
+    prompt = f"根据‘计划制定指南’作出你的计划。要求：输出结果格式要遵循‘输出格式指南’,请确保给出的响应符合规范。"
     return prompt
 
 def stage_plan_prompt(entity: Entity, context: ExtendedContext) -> str:
     if not entity.has(StageComponent):
         raise ValueError("stage_plan_prompt, entity has no StageComponent")
-    prompt = f"根据‘计划制定指南’作出你的计划。要求：输出结果格式要遵循‘输出格式指南’"
+    prompt = f"根据‘计划制定指南’作出你的计划。要求：输出结果格式要遵循‘输出格式指南’,请确保给出的响应符合规范。"
     return prompt
 
 def read_archives_when_system_init_prompt(archives: str, entity: Entity, context: ExtendedContext) -> str:

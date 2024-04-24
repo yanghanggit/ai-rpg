@@ -2,7 +2,7 @@
 from entitas import ExecuteProcessor, Matcher #type: ignore
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
-from auxiliary.components import STAGE_AVAILABLE_ACTIONS_REGISTER, NPC_AVAILABLE_ACTIONS_REGISTER, StageComponent, NPCComponent
+from auxiliary.components import STAGE_AVAILABLE_ACTIONS_REGISTER, NPC_AVAILABLE_ACTIONS_REGISTER, WorldComponent, StageComponent, NPCComponent
    
 class PostActionSystem(ExecuteProcessor):
 ############################################################################################################
@@ -12,9 +12,17 @@ class PostActionSystem(ExecuteProcessor):
     def execute(self) -> None:
         logger.debug("<<<<<<<<<<<<<  PostActionSystem  >>>>>>>>>>>>>>>>>")
         # 在这里清除所有的行动
+        self.remove_world_actions() # 因为world和npc的actions，目前是一样的
         self.remove_npc_actions()
         self.remove_stage_actions()
         self.test()
+############################################################################################################
+    def remove_world_actions(self) -> None:
+        entities = self.context.get_group(Matcher(all_of = [WorldComponent], any_of = NPC_AVAILABLE_ACTIONS_REGISTER)).entities.copy()
+        for entity in entities:
+            for actionsclass in NPC_AVAILABLE_ACTIONS_REGISTER:
+                if entity.has(actionsclass):
+                    entity.remove(actionsclass)
 ############################################################################################################
     def remove_stage_actions(self) -> None:
         entities = self.context.get_group(Matcher(all_of = [StageComponent], any_of = STAGE_AVAILABLE_ACTIONS_REGISTER)).entities.copy()

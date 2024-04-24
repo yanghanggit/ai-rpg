@@ -34,6 +34,7 @@ class ExtendedContext(Context):
         self.code_name_component_system = codenamecompsys
         self.chaos_engineering_system = chaossystem
         self.savedata = False
+        self.executecount = 0
         #        
         assert self.file_system is not None, "self.file_system is None"
         assert self.memory_system is not None, "self.memory_system is None"
@@ -127,9 +128,6 @@ class ExtendedContext(Context):
             logger.error("实体不是NPC, 目前场景标记只给NPC")
             return
         
-        #npccomp: NPCComponent = entity.get(NPCComponent)
-        #logger.debug(f"change_stage_tag:{npccomp.name}: {from_stagename} -> {to_stagename}")
-
         # 查看一下，如果一样基本就是错误
         if from_stagename == to_stagename:
             logger.error(f"stagename相同，无需修改: {from_stagename}")
@@ -143,7 +141,6 @@ class ExtendedContext(Context):
         to_stagetag_comp_class = self.code_name_component_system.get_stage_tag_component_class_by_name(to_stagename)
         if to_stagetag_comp_class is not None and not entity.has(to_stagetag_comp_class):
             entity.add(to_stagetag_comp_class, to_stagename)
-        
 ############################################################################################################
     def check_component_register(self, classname: str, actions_register: List[Any]) -> Any:
         for component in actions_register:

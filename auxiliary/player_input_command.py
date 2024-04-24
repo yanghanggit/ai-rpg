@@ -1,5 +1,9 @@
+<<<<<<< HEAD
 from typing import Optional
 from entitas.entity import Entity
+=======
+from entitas import Entity #type: ignore
+>>>>>>> 03976f8179563aef952a943220bcd1736ea46431
 from rpg_game import RPGGame
 from loguru import logger
 from auxiliary.components import (
@@ -20,15 +24,26 @@ from auxiliary.components import (
     CheckStatusActionComponent)
 from auxiliary.actor_action import ActorAction
 from auxiliary.player_proxy import PlayerProxy
+from abc import ABC, abstractmethod
 
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class PlayerCommand:
+class PlayerCommand(ABC):
+
     def __init__(self, inputname: str, game: RPGGame, playerproxy: PlayerProxy) -> None:
         self.inputname: str = inputname
         self.game: RPGGame = game
         self.playerproxy: PlayerProxy = playerproxy
+
+    @abstractmethod
+    def execute(self) -> None:
+        pass
+
+    # 为了方便，直接在这里添加消息，不然每个子类都要写一遍
+    def add_human_message(self, entity: Entity, newmsg: str) -> None:
+        context = self.game.extendedcontext
+        context.safe_add_human_message_to_entity(entity, newmsg)
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
@@ -71,63 +86,17 @@ class PlayerCommandLogin(PlayerCommand):
         logger.info(f"login success! {myname} => {login_npc_name}")
         
         ####
-        clientmessage = self.clientmessage()
-        logger.error(f"{myname} 登陆了游戏, 游戏提示如下: {clientmessage}，可以开始游戏了")
+        clientmessage = self.test_client_message_after_login_success()
+        logger.warning(f"{myname} 登陆了游戏, 游戏提示如下: {clientmessage}，可以开始游戏了")
 
     ## 登录之后，客户端需要看到的消息
-    def clientmessage(self) -> str:
+    def test_client_message_after_login_success(self) -> str:
         context = self.game.extendedcontext
         memory_system = context.memory_system
         npcentity = context.getnpc(self.login_npc_name)
         assert npcentity is not None
         safename = context.safe_get_entity_name(npcentity)
         return memory_system.getmemory(safename)
-####################################################################################################################################
-####################################################################################################################################
-####################################################################################################################################
-
-### 这个基本和GM指令差不多了，不允许随便用。基本在正常运行中不允许玩家使用。
-class PlayerCommandChangeCtrlNPC(PlayerCommand):
-    
-    def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, npc_name_to_be_controlled: str) -> None:
-        super().__init__(name, game, playerproxy)
-        self.npc_name_to_be_controlled = npc_name_to_be_controlled
-
-    def execute(self) -> None:
-        context = self.game.extendedcontext
-        target_npc_name = self.npc_name_to_be_controlled
-        myname = self.playerproxy.name
-
-        #寻找要控制的NPC
-        to_ctrl_npc_entity = context.getnpc(target_npc_name)
-        if to_ctrl_npc_entity is None:
-            logger.error(f"{target_npc_name}, npc is None")
-            return
-        
-        if to_ctrl_npc_entity.has(PlayerComponent):
-            hisplayercomp: PlayerComponent = to_ctrl_npc_entity.get(PlayerComponent)
-            if hisplayercomp.name == myname:
-                # 不用继续了
-                logger.warning(f"{target_npc_name}, already control {hisplayercomp.name}")
-                return
-            else:
-                # 已经有人控制了，但不是你，你不能抢
-                logger.error(f"{target_npc_name}, already control by other player {hisplayercomp.name}")
-                return
-        else:
-            # 可以继续
-            logger.debug(f"{target_npc_name} is not controlled by any player")
-
-        logger.debug(f"{self.inputname}, player name: {myname}, target name: {target_npc_name}")
-        my_player_entity = context.getplayer(myname)
-        if my_player_entity is None:
-            # 你现在不控制任何人，就不能做更换，必须先登陆
-            logger.warning(f"{myname}, player is None, can not change control target")
-            return
-        
-        # 更换控制
-        my_player_entity.remove(PlayerComponent)
-        to_ctrl_npc_entity.add(PlayerComponent, myname)
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################     
@@ -176,7 +145,7 @@ class PlayerCommandLeaveFor(PlayerCommand):
         playerentity.add(LeaveForActionComponent, action)
 
         newmsg = f"""{{"{LeaveForActionComponent.__name__}": ["{target_stage_name}"]}}"""
-        context.safe_add_human_message_to_entity(playerentity, newmsg)
+        self.add_human_message(playerentity, newmsg)
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################     
@@ -203,8 +172,12 @@ class PlayerCommandPrisonBreak(PlayerCommand):
         playerentity.add(PrisonBreakActionComponent, action)
         
         newmsg = f"""{{"{PrisonBreakActionComponent.__name__}": ["{current_stage_name}"]}}"""
+<<<<<<< HEAD
         context.safe_add_human_message_to_entity(playerentity, newmsg)
 
+=======
+        self.add_human_message(playerentity, newmsg)
+>>>>>>> 03976f8179563aef952a943220bcd1736ea46431
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
@@ -227,7 +200,7 @@ class PlayerCommandBroadcast(PlayerCommand):
         playerentity.add(BroadcastActionComponent, action)
        
         newmsg = f"""{{"{BroadcastActionComponent.__name__}": ["{content}"]}}"""
-        context.safe_add_human_message_to_entity(playerentity, newmsg)
+        self.add_human_message(playerentity, newmsg)
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
@@ -250,7 +223,7 @@ class PlayerCommandSpeak(PlayerCommand):
         playerentity.add(SpeakActionComponent, action)
         
         newmsg = f"""{{"{SpeakActionComponent.__name__}": ["{speakcontent}"]}}"""
-        context.safe_add_human_message_to_entity(playerentity, newmsg)
+        self.add_human_message(playerentity, newmsg)
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
@@ -273,7 +246,7 @@ class PlayerCommandWhisper(PlayerCommand):
         playerentity.add(WhisperActionComponent, action)
 
         newmemory = f"""{{"{WhisperActionComponent.__name__}": ["{whispercontent}"]}}"""
-        context.safe_add_human_message_to_entity(playerentity, newmemory)
+        self.add_human_message(playerentity, newmemory)
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
@@ -298,7 +271,7 @@ class PlayerCommandSearch(PlayerCommand):
         playerentity.add(SearchActionComponent, action)
 
         newmemory = f"""{{"{SearchActionComponent.__name__}": ["{search_target_prop_name}"]}}"""
-        context.safe_add_human_message_to_entity(playerentity, newmemory)
+        self.add_human_message(playerentity, newmemory)
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
@@ -319,7 +292,7 @@ class PlayerCommandPerception(PlayerCommand):
         playerentity.add(PerceptionActionComponent, action)
 
         newmemory = f"""{{"{PerceptionActionComponent.__name__}": ["{npccomp.current_stage}"]}}"""
-        context.safe_add_human_message_to_entity(playerentity, newmemory)
+        self.add_human_message(playerentity, newmemory)
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
@@ -341,7 +314,7 @@ class PlayerCommandSteal(PlayerCommand):
         playerentity.add(StealActionComponent, action)
 
         newmemory = f"""{{"{StealActionComponent.__name__}": ["{self.command}"]}}"""
-        context.safe_add_human_message_to_entity(playerentity, newmemory)
+        self.add_human_message(playerentity, newmemory)
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
@@ -363,7 +336,7 @@ class PlayerCommandTrade(PlayerCommand):
         playerentity.add(TradeActionComponent, action)
 
         newmemory = f"""{{"{TradeActionComponent.__name__}": ["{self.command}"]}}"""
-        context.safe_add_human_message_to_entity(playerentity, newmemory)
+        self.add_human_message(playerentity, newmemory)
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
@@ -383,7 +356,7 @@ class PlayerCommandCheckStatus(PlayerCommand):
         playerentity.add(CheckStatusActionComponent, action)
 
         newmemory = f"""{{"{CheckStatusActionComponent.__name__}": ["{npccomp.name}"]}}"""
-        context.safe_add_human_message_to_entity(playerentity, newmemory)
+        self.add_human_message(playerentity, newmemory)
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################

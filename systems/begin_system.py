@@ -13,5 +13,7 @@ class BeginSystem(InitializeProcessor, ExecuteProcessor):
 ############################################################################################################
     def execute(self) -> None:
         logger.debug("<<<<<<<<<<<<<  BeginSystem.execute  >>>>>>>>>>>>>>>>>")
+        self.context.executecount += 1
+        logger.debug(f"current execute count = {self.context.executecount}")
 ############################################################################################################
 

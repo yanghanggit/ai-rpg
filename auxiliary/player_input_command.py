@@ -17,15 +17,21 @@ from auxiliary.components import (
     CheckStatusActionComponent)
 from auxiliary.actor_action import ActorAction
 from auxiliary.player_proxy import PlayerProxy
+from abc import ABC, abstractmethod
 
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class PlayerCommand:
+class PlayerCommand(ABC):
+
     def __init__(self, inputname: str, game: RPGGame, playerproxy: PlayerProxy) -> None:
         self.inputname: str = inputname
         self.game: RPGGame = game
         self.playerproxy: PlayerProxy = playerproxy
+
+    @abstractmethod
+    def execute(self) -> None:
+        pass
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
@@ -79,52 +85,6 @@ class PlayerCommandLogin(PlayerCommand):
         assert npcentity is not None
         safename = context.safe_get_entity_name(npcentity)
         return memory_system.getmemory(safename)
-####################################################################################################################################
-####################################################################################################################################
-####################################################################################################################################
-
-### 这个基本和GM指令差不多了，不允许随便用。基本在正常运行中不允许玩家使用。
-class PlayerCommandChangeCtrlNPC(PlayerCommand):
-    
-    def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, npc_name_to_be_controlled: str) -> None:
-        super().__init__(name, game, playerproxy)
-        self.npc_name_to_be_controlled = npc_name_to_be_controlled
-
-    def execute(self) -> None:
-        context = self.game.extendedcontext
-        target_npc_name = self.npc_name_to_be_controlled
-        myname = self.playerproxy.name
-
-        #寻找要控制的NPC
-        to_ctrl_npc_entity = context.getnpc(target_npc_name)
-        if to_ctrl_npc_entity is None:
-            logger.error(f"{target_npc_name}, npc is None")
-            return
-        
-        if to_ctrl_npc_entity.has(PlayerComponent):
-            hisplayercomp: PlayerComponent = to_ctrl_npc_entity.get(PlayerComponent)
-            if hisplayercomp.name == myname:
-                # 不用继续了
-                logger.warning(f"{target_npc_name}, already control {hisplayercomp.name}")
-                return
-            else:
-                # 已经有人控制了，但不是你，你不能抢
-                logger.error(f"{target_npc_name}, already control by other player {hisplayercomp.name}")
-                return
-        else:
-            # 可以继续
-            logger.debug(f"{target_npc_name} is not controlled by any player")
-
-        logger.debug(f"{self.inputname}, player name: {myname}, target name: {target_npc_name}")
-        my_player_entity = context.getplayer(myname)
-        if my_player_entity is None:
-            # 你现在不控制任何人，就不能做更换，必须先登陆
-            logger.warning(f"{myname}, player is None, can not change control target")
-            return
-        
-        # 更换控制
-        my_player_entity.remove(PlayerComponent)
-        to_ctrl_npc_entity.add(PlayerComponent, myname)
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################     

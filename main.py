@@ -6,8 +6,8 @@ from auxiliary.dialogue_rule import parse_target_and_message
 from auxiliary.builders import WorldDataBuilder
 from rpg_game import RPGGame 
 from auxiliary.player_proxy import create_player_proxy, get_player_proxy, TEST_PLAYER_NAME
-from auxiliary.gm_input_command import GMCommandSimulateRequest, GMCommandSimulateRequestThenRemoveConversation
-from auxiliary.player_input_command import (PlayerCommandChangeCtrlNPC, 
+from auxiliary.gm_input_command import GMCommandSimulateRequest, GMCommandSimulateRequestThenRemoveConversation, GMCommandPlayerCtrlAnyNPC
+from auxiliary.player_input_command import ( 
                           PlayerCommandAttack, 
                           PlayerCommandLeaveFor, 
                           PlayerCommandBroadcast, 
@@ -168,11 +168,11 @@ def main() -> None:
                 logger.warning("请先/run")
                 continue
             command = "/who"
-            who = user_input_pre_command(usr_input, command)
+            bewho = user_input_pre_command(usr_input, command)
             ###
             playerproxy = get_player_proxy(TEST_PLAYER_NAME)
             assert playerproxy is not None
-            playercommandbewho = PlayerCommandChangeCtrlNPC("/who", rpggame, playerproxy, who)
+            playercommandbewho = GMCommandPlayerCtrlAnyNPC(command, rpggame, playerproxy, bewho)
             playercommandbewho.execute()
             ###            
             logger.debug(f"{'=' * 50}")

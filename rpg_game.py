@@ -48,7 +48,6 @@ from systems.perception_action_system import PerceptionActionSystem
 from systems.steal_action_system import StealActionSystem
 from systems.trade_action_system import TradeActionSystem
 from systems.check_status_action_system import CheckStatusActionSystem
-#from systems.player_input_system import PlayerInputSystem
 from base_game import BaseGame
 
 ## 控制流程和数据创建
@@ -81,7 +80,8 @@ class RPGGame(BaseGame):
         processors.add(PostPlanningSystem(context)) ####### 在所有规划之后
 
         #拿到相关的信息，等待用户输入!!!!!!!
-        #processors.add(PlayerInputSystem(context, self)) ####### 在所有规划之后
+        #from systems.test_player_input_system import TestPlayerInputSystem ### 防止循环引用
+        #processors.add(TestPlayerInputSystem(context, self)) ####### 在所有规划之后
 
         #行动逻辑########################
         processors.add(PreActionSystem(context)) ######## 在所有行动之前

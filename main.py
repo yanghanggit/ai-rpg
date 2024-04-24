@@ -6,8 +6,8 @@ from auxiliary.dialogue_rule import parse_target_and_message
 from auxiliary.builders import WorldDataBuilder
 from rpg_game import RPGGame 
 from auxiliary.player_proxy import create_player_proxy, get_player_proxy, TEST_PLAYER_NAME
-from auxiliary.gm_input import GMCommandPush, GMCommandAsk, GMCommandLogChatHistory
-from auxiliary.player_input import (PlayerCommandChangeCtrlNPC, 
+from auxiliary.gm_input_command import GMCommandSimulateRequest, GMCommandSimulateRequestThenRemoveConversation
+from auxiliary.player_input_command import (PlayerCommandChangeCtrlNPC, 
                           PlayerCommandAttack, 
                           PlayerCommandLeaveFor, 
                           PlayerCommandBroadcast, 
@@ -142,7 +142,7 @@ def main() -> None:
 
             logger.debug(f"</force push command to {push_command_parse_res[0]}>:", input_content)
             ###
-            gmcommandpush = GMCommandPush("/push", rpggame, push_command_parse_res[0], push_command_parse_res[1])
+            gmcommandpush = GMCommandSimulateRequest("/push", rpggame, push_command_parse_res[0], push_command_parse_res[1])
             gmcommandpush.execute()
             ###
             logger.debug(f"{'=' * 50}")
@@ -158,7 +158,7 @@ def main() -> None:
                 continue
             logger.debug(f"</ask command to {ask_command_parse_res[0]}>:", input_content)
             ###
-            gmcommandask = GMCommandAsk("/ask", rpggame, ask_command_parse_res[0], ask_command_parse_res[1])
+            gmcommandask = GMCommandSimulateRequestThenRemoveConversation("/ask", rpggame, ask_command_parse_res[0], ask_command_parse_res[1])
             gmcommandask.execute()
             ###
             logger.debug(f"{'=' * 50}")
@@ -191,17 +191,17 @@ def main() -> None:
             ###
             logger.debug(f"{'=' * 50}")
         
-        elif "/mem" in usr_input:
-            if not rpggame.started:
-                logger.warning("请先/run")
-                continue
-            command = "/mem"
-            target_name = user_input_pre_command(usr_input, command)
-            ###
-            gmcommandlogchathistory = GMCommandLogChatHistory("/mem", rpggame, target_name)
-            gmcommandlogchathistory.execute()
-            ###
-            logger.debug(f"{'=' * 50}")
+        # elif "/mem" in usr_input:
+        #     if not rpggame.started:
+        #         logger.warning("请先/run")
+        #         continue
+        #     command = "/mem"
+        #     target_name = user_input_pre_command(usr_input, command)
+        #     ###
+        #     gmcommandlogchathistory = GMCommandLogChatHistory("/mem", rpggame, target_name)
+        #     gmcommandlogchathistory.execute()
+        #     ###
+        #     logger.debug(f"{'=' * 50}")
         
         elif "/leave" in usr_input:
             if not rpggame.started:

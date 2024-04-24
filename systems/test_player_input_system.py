@@ -3,7 +3,7 @@ from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from rpg_game import RPGGame 
 from auxiliary.player_proxy import PlayerProxy, get_player_proxy, TEST_PLAYER_NAME
-from auxiliary.player_input import (
+from auxiliary.player_input_command import (
                           PlayerCommandAttack, 
                           PlayerCommandLeaveFor, 
                           PlayerCommandBroadcast, 
@@ -17,15 +17,15 @@ from auxiliary.player_input import (
                           PlayerCommandCheckStatus)
 
 from auxiliary.extended_context import ExtendedContext
-from rpg_game import RPGGame 
+#from rpg_game import RPGGame 
 
 def split_command(input_val: str, split_str: str)-> str:
     if split_str in input_val:
         return input_val.split(split_str)[1].strip()
     return input_val
 
-class PlayerInputSystem(ExecuteProcessor):
-    def __init__(self, context: ExtendedContext, rpggame: RPGGame) -> None:
+class TestPlayerInputSystem(ExecuteProcessor):
+    def __init__(self, context: ExtendedContext, rpggame: 'RPGGame') -> None:
         self.context: ExtendedContext = context
         self.rpggame = rpggame
 ############################################################################################################

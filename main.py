@@ -1,5 +1,5 @@
 import os
-from typing import Optional, cast
+from typing import Optional
 from loguru import logger
 import datetime
 from auxiliary.dialogue_rule import parse_target_and_message
@@ -7,20 +7,7 @@ from auxiliary.builders import WorldDataBuilder
 from rpg_game import RPGGame 
 from auxiliary.player_proxy import create_player_proxy, get_player_proxy, TEST_PLAYER_NAME
 from auxiliary.gm_input_command import GMCommandSimulateRequest, GMCommandSimulateRequestThenRemoveConversation, GMCommandPlayerCtrlAnyNPC
-from auxiliary.player_input_command import ( 
-                          PlayerCommandAttack, 
-                          PlayerCommandLeaveFor, 
-                          PlayerCommandBroadcast, 
-                          PlayerCommandSpeak, 
-                          PlayerCommandWhisper, 
-                          PlayerCommandSearch,
-                          PlayerCommandLogin, 
-                          PlayerCommandPrisonBreak,
-                          PlayerCommandPerception,
-                          PlayerCommandSteal,
-                          PlayerCommandTrade,
-                          PlayerCommandCheckStatus)
-
+from auxiliary.player_input_command import (PlayerCommandLogin)
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.file_system import FileSystem
 from auxiliary.memory_system import MemorySystem
@@ -30,7 +17,6 @@ from auxiliary.code_name_component_system import CodeNameComponentSystem
 from auxiliary.chaos_engineering_system import EmptyChaosEngineeringSystem, IChaosEngineering
 ### 专门的混沌工程系统
 from budding_world.chaos_budding_world import ChaosBuddingWorld
-
 
 
 def user_input_pre_command(input_val: str, split_str: str)-> str:
@@ -179,154 +165,6 @@ def main() -> None:
             ###            
             logger.debug(f"{'=' * 50}")
            
-        # elif "/attack" in usr_input:
-        #     if not rpggame.started:
-        #         logger.warning("请先/run")
-        #         continue
-        #     command = "/attack"
-        #     target_name = user_input_pre_command(usr_input, command)    
-        #     ###
-        #     playerproxy = get_player_proxy(TEST_PLAYER_NAME)
-        #     assert playerproxy is not None
-        #     playercommandattack = PlayerCommandAttack("/attack", rpggame, playerproxy, target_name)
-        #     playercommandattack.execute()
-        #     ###
-        #     logger.debug(f"{'=' * 50}")
-        
-        # elif "/mem" in usr_input:
-        #     if not rpggame.started:
-        #         logger.warning("请先/run")
-        #         continue
-        #     command = "/mem"
-        #     target_name = user_input_pre_command(usr_input, command)
-        #     ###
-        #     gmcommandlogchathistory = GMCommandLogChatHistory("/mem", rpggame, target_name)
-        #     gmcommandlogchathistory.execute()
-        #     ###
-        #     logger.debug(f"{'=' * 50}")
-        
-        # elif "/leave" in usr_input:
-        #     if not rpggame.started:
-        #         logger.warning("请先/run")
-        #         continue
-        #     command = "/leave"
-        #     target_name = user_input_pre_command(usr_input, command)
-        #     ###
-        #     playerproxy = get_player_proxy(TEST_PLAYER_NAME)
-        #     assert playerproxy is not None
-        #     playercommandleavefor = PlayerCommandLeaveFor("/leave", rpggame, playerproxy, target_name)
-        #     playercommandleavefor.execute()
-        #     ###
-        #     logger.debug(f"{'=' * 50}")
-        
-        # elif "/broadcast" in usr_input:
-        #     if not rpggame.started:
-        #         logger.warning("请先/run")
-        #         continue
-        #     command = "/broadcast"
-        #     content = user_input_pre_command(usr_input, command)
-        #     ###
-        #     playerproxy = get_player_proxy(TEST_PLAYER_NAME)
-        #     assert playerproxy is not None
-        #     playercommandbroadcast = PlayerCommandBroadcast("/broadcast", rpggame, playerproxy, content)
-        #     playercommandbroadcast.execute()
-        #     ###
-        #     logger.debug(f"{'=' * 50}")
-            
-        # elif "/speak" in usr_input:
-        #     if not rpggame.started:
-        #         logger.warning("请先/run")
-        #         continue
-        #     command = "/speak"
-        #     content = user_input_pre_command(usr_input, command)
-        #     ###
-        #     playerproxy = get_player_proxy(TEST_PLAYER_NAME)
-        #     assert playerproxy is not None
-        #     playercommandspeak = PlayerCommandSpeak("/speak", rpggame, playerproxy, content)
-        #     playercommandspeak.execute()
-        #     ###
-        #     logger.debug(f"{'=' * 50}")
-
-        # elif "/whisper" in usr_input:
-        #     if not rpggame.started:
-        #         logger.warning("请先/run")
-        #         continue
-        #     command = "/whisper"
-        #     content = user_input_pre_command(usr_input, command)
-        #     ###
-        #     playerproxy = get_player_proxy(TEST_PLAYER_NAME)
-        #     assert playerproxy is not None
-        #     playercommandwhisper = PlayerCommandWhisper("/whisper", rpggame,playerproxy, content)
-        #     playercommandwhisper.execute()
-        #     ###
-        #     logger.debug(f"{'=' * 50}")
-        
-        # elif "/search" in usr_input:
-        #     if not rpggame.started:
-        #         logger.warning("请先/run")
-        #         continue
-        #     command = "/search"
-        #     content = user_input_pre_command(usr_input, command)
-        #     ###
-        #     playerproxy = get_player_proxy(TEST_PLAYER_NAME)
-        #     assert playerproxy is not None
-        #     playercommandsearch = PlayerCommandSearch("/search", rpggame, playerproxy, content)
-        #     playercommandsearch.execute()
-        #     ###
-        #     logger.debug(f"{'=' * 50}")
-
-        # elif "/prisonbreak" in usr_input:
-        #     if not rpggame.started:
-        #         logger.warning("请先/run")
-        #         continue
-        #     command = "/prisonbreak"
-        #     playerproxy = get_player_proxy(TEST_PLAYER_NAME)
-        #     assert playerproxy is not None
-        #     playercommandprsionbreak = PlayerCommandPrisonBreak("/prisonbreak", rpggame, playerproxy)
-        #     playercommandprsionbreak.execute()
-        #     logger.debug(f"{'=' * 50}")
-
-
-        # elif "/perception" in usr_input:
-        #     if not rpggame.started:
-        #         logger.warning("请先/run")
-        #         continue
-        #     playerproxy = get_player_proxy(TEST_PLAYER_NAME)
-        #     assert playerproxy is not None
-        #     PlayerCommandPerception("/perception", rpggame, playerproxy).execute()
-        #     logger.debug(f"{'=' * 50}")
-
-        # elif "/steal" in usr_input:
-        #     if not rpggame.started:
-        #         logger.warning("请先/run")
-        #         continue
-        #     command = "/steal"
-        #     content = user_input_pre_command(usr_input, command)
-        #     playerproxy = get_player_proxy(TEST_PLAYER_NAME)
-        #     assert playerproxy is not None
-        #     PlayerCommandSteal("/steal", rpggame, playerproxy, content).execute()
-        #     logger.debug(f"{'=' * 50}")
-
-        # elif "/trade" in usr_input:
-        #     if not rpggame.started:
-        #         logger.warning("请先/run")
-        #         continue
-        #     command = "/trade"
-        #     content = user_input_pre_command(usr_input, command)
-        #     playerproxy = get_player_proxy(TEST_PLAYER_NAME)
-        #     assert playerproxy is not None
-        #     PlayerCommandTrade("/trade", rpggame, playerproxy, content).execute()
-        #     logger.debug(f"{'=' * 50}")
-
-        # elif "/checkstatus" in usr_input:
-        #     if not rpggame.started:
-        #         logger.warning("请先/run")
-        #         continue
-        #     playerproxy = get_player_proxy(TEST_PLAYER_NAME)
-        #     assert playerproxy is not None
-        #     PlayerCommandCheckStatus("/checkstatus", rpggame, playerproxy).execute()
-        #     logger.debug(f"{'=' * 50}")
-
     rpggame.exit()
 
 

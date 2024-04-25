@@ -38,7 +38,7 @@ class PreLeaveForSystem(ReactiveProcessor):
         return {Matcher(LeaveForActionComponent): GroupEvent.ADDED}
 ###############################################################################################################################################
     def filter(self, entity: Entity) -> bool:
-        return entity.has(LeaveForActionComponent) and entity.has(NPCComponent) and not entity.has(PrisonBreakActionComponent)
+        return entity.has(LeaveForActionComponent) and entity.has(NPCComponent)
 ###############################################################################################################################################
     def react(self, entities: list[Entity]) -> None:
         logger.debug("<<<<<<<<<<<<<  PreLeaveForSystem  >>>>>>>>>>>>>>>>>")
@@ -94,11 +94,16 @@ class PreLeaveForSystem(ReactiveProcessor):
         if targetstagename == npccomp.current_stage:
             logger.error(f"{npccomp.name} 已经在这个场景: {targetstagename}")
             return ErrorCheckTargetStage.ALREADY_IN_THIS_STAGE
+        
         #
         knownstagefile = file_system.get_known_stage_file(npccomp.name, targetstagename)
         if knownstagefile is None:
-            logger.error(f"{npccomp.name} 不知道这个场景: {targetstagename}")
-            return ErrorCheckTargetStage.DONT_KNOW_STAGE
+            # 我不认识该怎么办？
+            if entity.has(PrisonBreakActionComponent):
+                logger.info(f"{npccomp.name} 逃狱了，但不知道这个场景: {targetstagename}。没关系只要目标场景是合理的，系统可以放过去")
+            else:
+                logger.error(f"{npccomp.name} 不知道这个场景: {targetstagename}，而且不是逃狱。就是不能去")
+                return ErrorCheckTargetStage.DONT_KNOW_STAGE
         #
         return ErrorCheckTargetStage.VALID
 ###############################################################################################################################################

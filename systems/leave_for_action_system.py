@@ -1,11 +1,19 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
-from auxiliary.components import (LeaveForActionComponent, 
-                        NPCComponent)
+from auxiliary.components import (
+    LeaveForActionComponent, 
+    NPCComponent,
+    FightActionComponent,
+    SimpleRPGRoleComponent
+    )
 from auxiliary.actor_action import ActorAction
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.director_component import DirectorComponent
-from auxiliary.director_event import NPCLeaveForStageEvent, NPCEnterStageEvent
+from auxiliary.director_event import (
+    NPCLeaveForStageEvent, 
+    NPCEnterStageEvent,
+    NPCAttackSomeoneEvent
+    )
 from typing import cast
 
 
@@ -73,11 +81,10 @@ class LeaveForActionSystem(ReactiveProcessor):
         entity.replace(NPCComponent, replace_name, replace_current_stage)
         self.context.change_stage_tag_component(entity, current_stage_name, replace_current_stage)
 
-        # if current_stage_name != "":
-        #     self.notify_director_leave_for_stage(target_stage_entity, npccomp.name, current_stage_name, target_stage_name)
-        # else:
-        #     self.notify_director_enter_stage(target_stage_entity, npccomp.name, target_stage_name)
         self.notify_director_enter_stage(target_stage_entity, npccomp.name, target_stage_name)
+
+        # 处理在离开时被攻击的对象
+        self.npc_leaving_but_attacked(entity, target_stage_entity)
     ###############################################################################################################################################
     def leave_stage(self, handle: LeaveActionHelper) -> None:
         entity: Entity = handle.who_wana_leave
@@ -106,4 +113,16 @@ class LeaveForActionSystem(ReactiveProcessor):
         enterstageevent = NPCEnterStageEvent(npcname, target_stage_name)
         directorcomp.addevent(enterstageevent)
     ###############################################################################################################################################
-    
+    def npc_leaving_but_attacked(self, attacked_entity: Entity, target_stage_entity: Entity) -> None:
+        attacker_entities: set[Entity] = self.context.get_group(Matcher(all_of=[FightActionComponent])).entities
+        for attacker_entity in attacker_entities:
+            attacker_fight_action_comp: FightActionComponent = attacker_entity.get(FightActionComponent)
+            attacker_fight_action: ActorAction = attacker_fight_action_comp.action
+            for attacked in attacker_fight_action.values:
+                attacker_rpg_comp: SimpleRPGRoleComponent = attacker_entity.get(SimpleRPGRoleComponent)
+                attacked_rpg_comp: SimpleRPGRoleComponent = attacked_entity.get(SimpleRPGRoleComponent)
+                if attacked == attacked_rpg_comp.name:
+                    attacked_event = NPCAttackSomeoneEvent(attacker_rpg_comp.name, attacked_rpg_comp.name, attacked_rpg_comp.attack, attacked_rpg_comp.hp + attacked_rpg_comp.attack, attacked_rpg_comp.maxhp)
+                    target_stage_director: DirectorComponent = target_stage_entity.get(DirectorComponent)
+                    target_stage_director.addevent(attacked_event)
+         

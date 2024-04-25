@@ -17,13 +17,13 @@ from auxiliary.player_input_command import (
                           PlayerCommandCheckStatus)
 
 from auxiliary.extended_context import ExtendedContext
-#from rpg_game import RPGGame 
 
-def split_command(input_val: str, split_str: str)-> str:
+############################################################################################################
+def splitcommand(input_val: str, split_str: str)-> str:
     if split_str in input_val:
         return input_val.split(split_str)[1].strip()
     return input_val
-
+############################################################################################################
 class TestPlayerInputSystem(ExecuteProcessor):
     def __init__(self, context: ExtendedContext, rpggame: 'RPGGame') -> None:
         self.context: ExtendedContext = context
@@ -40,126 +40,80 @@ class TestPlayerInputSystem(ExecuteProcessor):
             usrinput = input(f"[{playername}]:")
             rpggame = self.rpggame
             self.handle_player_input(rpggame, playerproxy, usrinput)
+            logger.debug(f"{'=' * 50}")
             break
 ############################################################################################################
     #测试的先写死
     def current_input_player(self) -> str:
         return TEST_PLAYER_NAME
 ############################################################################################################
-    def handle_player_input(self, rpggame: RPGGame, playerproxy: PlayerProxy, usr_input: str) -> None:
+    def handle_player_input(self, rpggame: RPGGame, playerproxy: PlayerProxy, usrinput: str) -> None:
+        
         assert playerproxy is not None
         assert rpggame is not None
-        if "/attack" in usr_input:
-            if not rpggame.started:
-                logger.warning("请先/run")
-                return
+
+        if not rpggame.started:
+            logger.warning("请先/run")
+            return
+        
+        if "/attack" in usrinput:
             command = "/attack"
-            target_name = split_command(usr_input, command)    
-            ###            
-            playercommandattack = PlayerCommandAttack("/attack", rpggame, playerproxy, target_name)
+            target_name = splitcommand(usrinput, command)           
+            playercommandattack = PlayerCommandAttack(command, rpggame, playerproxy, target_name)
             playercommandattack.execute()
-            ###
-            logger.debug(f"{'=' * 50}")
-            
-        elif "/leave" in usr_input:
-            if not rpggame.started:
-                logger.warning("请先/run")
-                return
+                        
+        elif "/leave" in usrinput:
             command = "/leave"
-            target_name = split_command(usr_input, command)
-            ###
-            playercommandleavefor = PlayerCommandLeaveFor("/leave", rpggame, playerproxy, target_name)
+            target_name = splitcommand(usrinput, command)
+            playercommandleavefor = PlayerCommandLeaveFor(command, rpggame, playerproxy, target_name)
             playercommandleavefor.execute()
-            ###
-            logger.debug(f"{'=' * 50}")
-        
-        elif "/broadcast" in usr_input:
-            if not rpggame.started:
-                logger.warning("请先/run")
-                return
+  
+        elif "/broadcast" in usrinput:
             command = "/broadcast"
-            content = split_command(usr_input, command)
-            ###
-            playercommandbroadcast = PlayerCommandBroadcast("/broadcast", rpggame, playerproxy, content)
+            content = splitcommand(usrinput, command)
+            playercommandbroadcast = PlayerCommandBroadcast(command, rpggame, playerproxy, content)
             playercommandbroadcast.execute()
-            ###
-            logger.debug(f"{'=' * 50}")
             
-        elif "/speak" in usr_input:
-            if not rpggame.started:
-                logger.warning("请先/run")
-                return
+        elif "/speak" in usrinput:
             command = "/speak"
-            content = split_command(usr_input, command)
-            ###
-            playercommandspeak = PlayerCommandSpeak("/speak", rpggame, playerproxy, content)
+            content = splitcommand(usrinput, command)
+            playercommandspeak = PlayerCommandSpeak(command, rpggame, playerproxy, content)
             playercommandspeak.execute()
-            ###
-            logger.debug(f"{'=' * 50}")
 
-        elif "/whisper" in usr_input:
-            if not rpggame.started:
-                logger.warning("请先/run")
-                return
+        elif "/whisper" in usrinput:
             command = "/whisper"
-            content = split_command(usr_input, command)
-            ###
-            playercommandwhisper = PlayerCommandWhisper("/whisper", rpggame,playerproxy, content)
+            content = splitcommand(usrinput, command)
+            playercommandwhisper = PlayerCommandWhisper(command, rpggame,playerproxy, content)
             playercommandwhisper.execute()
-            ###
-            logger.debug(f"{'=' * 50}")
-        
-        elif "/search" in usr_input:
-            if not rpggame.started:
-                logger.warning("请先/run")
-                return
+
+        elif "/search" in usrinput:
             command = "/search"
-            content = split_command(usr_input, command)
-            ###
-            playercommandsearch = PlayerCommandSearch("/search", rpggame, playerproxy, content)
+            content = splitcommand(usrinput, command)
+            playercommandsearch = PlayerCommandSearch(command, rpggame, playerproxy, content)
             playercommandsearch.execute()
-            ###
-            logger.debug(f"{'=' * 50}")
 
-        elif "/prisonbreak" in usr_input:
-            if not rpggame.started:
-                logger.warning("请先/run")
-                return
+        elif "/prisonbreak" in usrinput:
             command = "/prisonbreak"
-            playercommandprsionbreak = PlayerCommandPrisonBreak("/prisonbreak", rpggame, playerproxy)
+            playercommandprsionbreak = PlayerCommandPrisonBreak(command, rpggame, playerproxy)
             playercommandprsionbreak.execute()
+
+        elif "/perception" in usrinput:
+            command = "/perception"
+            PlayerCommandPerception(command, rpggame, playerproxy).execute()
             logger.debug(f"{'=' * 50}")
 
-        elif "/perception" in usr_input:
-            if not rpggame.started:
-                logger.warning("请先/run")
-                return
-            PlayerCommandPerception("/perception", rpggame, playerproxy).execute()
-            logger.debug(f"{'=' * 50}")
-
-        elif "/steal" in usr_input:
-            if not rpggame.started:
-                logger.warning("请先/run")
-                return
+        elif "/steal" in usrinput:
             command = "/steal"
-            content = split_command(usr_input, command)
-            PlayerCommandSteal("/steal", rpggame, playerproxy, content).execute()
-            logger.debug(f"{'=' * 50}")
+            content = splitcommand(usrinput, command)
+            PlayerCommandSteal(command, rpggame, playerproxy, content).execute()
 
-        elif "/trade" in usr_input:
-            if not rpggame.started:
-                logger.warning("请先/run")
-                return
+        elif "/trade" in usrinput:
             command = "/trade"
-            content = split_command(usr_input, command)
-            PlayerCommandTrade("/trade", rpggame, playerproxy, content).execute()
-            logger.debug(f"{'=' * 50}")
+            content = splitcommand(usrinput, command)
+            PlayerCommandTrade(command, rpggame, playerproxy, content).execute()
 
-        elif "/checkstatus" in usr_input:
-            if not rpggame.started:
-                logger.warning("请先/run")
-                return
-            PlayerCommandCheckStatus("/checkstatus", rpggame, playerproxy).execute()
-            logger.debug(f"{'=' * 50}")
+        elif "/checkstatus" in usrinput:
+            command = "/checkstatus"
+            PlayerCommandCheckStatus(command, rpggame, playerproxy).execute()
 ############################################################################################################
 

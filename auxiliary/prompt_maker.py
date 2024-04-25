@@ -127,7 +127,7 @@ def npc_enter_stage(npc_name: str, stage_name: str) -> str:
     return f"{npc_name}进入了{stage_name} 场景。"
 
 def npc_leave_for_stage(npc_name: str, current_stage_name: str, leave_for_stage_name: str) -> str:
-    return f"{npc_name}离开了{current_stage_name} 场景，前往{leave_for_stage_name} 场景。"
+    return f"{npc_name}离开了{current_stage_name} 场景。"
 
 def kill_someone(attacker_name: str, target_name: str) -> str:
     return f"{attacker_name}对{target_name}发动了一次攻击,造成了{target_name}死亡。"

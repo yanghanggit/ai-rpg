@@ -2,7 +2,8 @@ from entitas import Entity #type: ignore
 from rpg_game import RPGGame
 from loguru import logger
 from auxiliary.components import (
-    BroadcastActionComponent, 
+    BroadcastActionComponent,
+    ConnectToStageComponent, 
     SpeakActionComponent, 
     StageComponent, 
     NPCComponent, 
@@ -163,7 +164,7 @@ class PlayerCommandPrisonBreak(PlayerCommand):
             return
 
         action = ActorAction(npccomp.name, PrisonBreakActionComponent.__name__, [current_stage_name])
-        playerentity.add(LeaveForActionComponent, action)
+        playerentity.add(PrisonBreakActionComponent, action)
         
         newmsg = f"""{{"{PrisonBreakActionComponent.__name__}": ["{current_stage_name}"]}}"""
         self.add_human_message(playerentity, newmsg)
@@ -243,10 +244,12 @@ class PlayerCommandSearch(PlayerCommand):
 
     def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, search_target_prop_name: str) -> None:
         super().__init__(name, game, playerproxy)
+        # todo: 这里search_target_prop_name需要判断是否为合理道具，现在会全部进行寻找。
         self.search_target_prop_name = search_target_prop_name
 
     def execute(self) -> None:
         context = self.game.extendedcontext
+        # todo:道具如果是唯一性，怎么检测？
         search_target_prop_name = self.search_target_prop_name
         playerentity = context.getplayer(self.playerproxy.name)
         if playerentity is None:

@@ -73,10 +73,11 @@ class LeaveForActionSystem(ReactiveProcessor):
         entity.replace(NPCComponent, replace_name, replace_current_stage)
         self.context.change_stage_tag_component(entity, current_stage_name, replace_current_stage)
 
-        if current_stage_name != "":
-            self.notify_director_leave_for_stage(target_stage_entity, npccomp.name, current_stage_name, target_stage_name)
-        else:
-            self.notify_director_enter_stage(target_stage_entity, npccomp.name, target_stage_name)
+        # if current_stage_name != "":
+        #     self.notify_director_leave_for_stage(target_stage_entity, npccomp.name, current_stage_name, target_stage_name)
+        # else:
+        #     self.notify_director_enter_stage(target_stage_entity, npccomp.name, target_stage_name)
+        self.notify_director_enter_stage(target_stage_entity, npccomp.name, target_stage_name)
     ###############################################################################################################################################
     def leave_stage(self, handle: LeaveActionHelper) -> None:
         entity: Entity = handle.who_wana_leave

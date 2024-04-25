@@ -79,8 +79,8 @@ class RPGGame(BaseGame):
         processors.add(PostPlanningSystem(context)) ####### 在所有规划之后
 
         #拿到相关的信息，等待用户输入!!!!!!!
-        # from systems.test_player_input_system import TestPlayerInputSystem ### 防止循环引用
-        # processors.add(TestPlayerInputSystem(context, self)) ####### 在所有规划之后
+        from systems.test_player_input_system import TestPlayerInputSystem ### 防止循环引用
+        processors.add(TestPlayerInputSystem(context, self)) ####### 在所有规划之后
 
         #行动逻辑########################
         processors.add(PreActionSystem(context)) ######## 在所有行动之前

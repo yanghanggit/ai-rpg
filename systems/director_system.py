@@ -46,5 +46,6 @@ class DirectorSystem(ExecuteProcessor):
             newmsg = "\n".join(events2npc)
             if len(newmsg) > 0:
                 self.context.safe_add_human_message_to_entity(npcentity, newmsg)
+                logger.debug(f"{npccomp.name}=>{newmsg}")
 ###################################################################################################################
     

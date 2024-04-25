@@ -2,7 +2,8 @@ from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignor
 from auxiliary.components import (LeaveForActionComponent, 
                         NPCComponent, 
                         StageEntryConditionComponent,
-                        StageExitConditionComponent)
+                        StageExitConditionComponent,
+                        PrisonBreakActionComponent)
 from auxiliary.actor_action import ActorAction
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
@@ -37,7 +38,7 @@ class PreLeaveForSystem(ReactiveProcessor):
         return {Matcher(LeaveForActionComponent): GroupEvent.ADDED}
 ###############################################################################################################################################
     def filter(self, entity: Entity) -> bool:
-        return entity.has(LeaveForActionComponent) and entity.has(NPCComponent)
+        return entity.has(LeaveForActionComponent) and entity.has(NPCComponent) and not entity.has(PrisonBreakActionComponent)
 ###############################################################################################################################################
     def react(self, entities: list[Entity]) -> None:
         logger.debug("<<<<<<<<<<<<<  PreLeaveForSystem  >>>>>>>>>>>>>>>>>")

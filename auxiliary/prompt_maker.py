@@ -7,13 +7,13 @@ from auxiliary.components import NPCComponent, StageComponent
 def npc_plan_prompt(entity: Entity, context: ExtendedContext) -> str:
     if not entity.has(NPCComponent):
         raise ValueError("npc_plan_prompt, entity has no NPCComponent")
-    prompt = f"根据‘计划制定指南’作出你的计划。要求：输出结果格式要遵循‘输出格式指南’"
+    prompt = f"根据‘计划制定指南’作出你的计划。要求：输出结果格式要遵循‘输出格式指南’,请确保给出的响应符合规范。"
     return prompt
 
 def stage_plan_prompt(entity: Entity, context: ExtendedContext) -> str:
     if not entity.has(StageComponent):
         raise ValueError("stage_plan_prompt, entity has no StageComponent")
-    prompt = f"根据‘计划制定指南’作出你的计划。要求：输出结果格式要遵循‘输出格式指南’"
+    prompt = f"根据‘计划制定指南’作出你的计划。要求：输出结果格式要遵循‘输出格式指南’,请确保给出的响应符合规范。"
     return prompt
 
 def read_archives_when_system_init_prompt(archives: str, entity: Entity, context: ExtendedContext) -> str:
@@ -105,7 +105,7 @@ def died_in_fight(context: ExtendedContext) -> str:
 
 # 重构用
 def __unique_prop_taken_away__(npcname: str, prop_name:str) -> str:
-    return f"{npcname}找到了{prop_name},{prop_name}只存在唯一一份，其他人无法再搜到了。"
+    return f"{npcname}试图寻找{prop_name}，但{prop_name}在场景中不存在或者被其他人拿走了,需要再重新考虑目标。"
 
 
 def unique_prop_taken_away(entity: Entity, prop_name:str) -> str:
@@ -127,7 +127,7 @@ def npc_enter_stage(npc_name: str, stage_name: str) -> str:
     return f"{npc_name}进入了{stage_name} 场景。"
 
 def npc_leave_for_stage(npc_name: str, current_stage_name: str, leave_for_stage_name: str) -> str:
-    return f"{npc_name}离开了{current_stage_name} 场景，前往{leave_for_stage_name} 场景。"
+    return f"{npc_name}离开了{current_stage_name} 场景。"
 
 def kill_someone(attacker_name: str, target_name: str) -> str:
     return f"{attacker_name}对{target_name}发动了一次攻击,造成了{target_name}死亡。"

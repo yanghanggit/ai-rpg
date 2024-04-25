@@ -26,6 +26,8 @@ class EndSystem(InitializeProcessor, ExecuteProcessor):
         self.make_agent_chat_history_dump()
         # 打印所有的道具归属
         self.make_prop_files_dump()
+        # 打印所有的实体信息
+        self.print_all_entities()
 ############################################################################################################
     def showworld(self) -> None:
         worldentities = self.context.get_group(Matcher(WorldComponent)).entities
@@ -68,4 +70,11 @@ class EndSystem(InitializeProcessor, ExecuteProcessor):
             dumpdict[ownername] = liststr
 
         logger.debug(f"{json.dumps(dumpdict, ensure_ascii = False)}")
+############################################################################################################
+    def print_all_entities(self) -> None:
+        context = self.context
+        allentities = context.entities
+        logger.debug(f"{'=' * 100}")
+        for entity in allentities:
+            logger.debug(f"{entity}")
 ############################################################################################################

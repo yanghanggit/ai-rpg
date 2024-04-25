@@ -58,44 +58,37 @@ class TestPlayerInputSystem(ExecuteProcessor):
         
         if "/attack" in usrinput:
             command = "/attack"
-            target_name = splitcommand(usrinput, command)           
-            playercommandattack = PlayerCommandAttack(command, rpggame, playerproxy, target_name)
-            playercommandattack.execute()
+            targetname = splitcommand(usrinput, command)           
+            PlayerCommandAttack(command, rpggame, playerproxy, targetname).execute()
                         
         elif "/leave" in usrinput:
             command = "/leave"
-            target_name = splitcommand(usrinput, command)
-            playercommandleavefor = PlayerCommandLeaveFor(command, rpggame, playerproxy, target_name)
-            playercommandleavefor.execute()
+            stagename = splitcommand(usrinput, command)
+            PlayerCommandLeaveFor(command, rpggame, playerproxy, stagename).execute()
   
         elif "/broadcast" in usrinput:
             command = "/broadcast"
             content = splitcommand(usrinput, command)
-            playercommandbroadcast = PlayerCommandBroadcast(command, rpggame, playerproxy, content)
-            playercommandbroadcast.execute()
+            PlayerCommandBroadcast(command, rpggame, playerproxy, content).execute()
             
         elif "/speak" in usrinput:
             command = "/speak"
             content = splitcommand(usrinput, command)
-            playercommandspeak = PlayerCommandSpeak(command, rpggame, playerproxy, content)
-            playercommandspeak.execute()
+            PlayerCommandSpeak(command, rpggame, playerproxy, content).execute()
 
         elif "/whisper" in usrinput:
             command = "/whisper"
             content = splitcommand(usrinput, command)
-            playercommandwhisper = PlayerCommandWhisper(command, rpggame,playerproxy, content)
-            playercommandwhisper.execute()
+            PlayerCommandWhisper(command, rpggame,playerproxy, content).execute()
 
         elif "/search" in usrinput:
             command = "/search"
-            content = splitcommand(usrinput, command)
-            playercommandsearch = PlayerCommandSearch(command, rpggame, playerproxy, content)
-            playercommandsearch.execute()
+            propname = splitcommand(usrinput, command)
+            PlayerCommandSearch(command, rpggame, playerproxy, propname).execute()
 
         elif "/prisonbreak" in usrinput:
             command = "/prisonbreak"
-            playercommandprsionbreak = PlayerCommandPrisonBreak(command, rpggame, playerproxy)
-            playercommandprsionbreak.execute()
+            PlayerCommandPrisonBreak(command, rpggame, playerproxy).execute()
 
         elif "/perception" in usrinput:
             command = "/perception"
@@ -104,13 +97,13 @@ class TestPlayerInputSystem(ExecuteProcessor):
 
         elif "/steal" in usrinput:
             command = "/steal"
-            content = splitcommand(usrinput, command)
-            PlayerCommandSteal(command, rpggame, playerproxy, content).execute()
+            propname = splitcommand(usrinput, command)
+            PlayerCommandSteal(command, rpggame, playerproxy, propname).execute()
 
         elif "/trade" in usrinput:
             command = "/trade"
-            content = splitcommand(usrinput, command)
-            PlayerCommandTrade(command, rpggame, playerproxy, content).execute()
+            propname = splitcommand(usrinput, command)
+            PlayerCommandTrade(command, rpggame, playerproxy, propname).execute()
 
         elif "/checkstatus" in usrinput:
             command = "/checkstatus"

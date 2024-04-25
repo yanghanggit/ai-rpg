@@ -16,7 +16,7 @@ class PostFightSystem(ExecuteProcessor):
         # 移除后续动作
         self.remove_npc_interactive_actions()
         #可以存档
-        if self.context.savedata:
+        if self.context.save_data_enable:
             self.savedead()
 ########################################################################################################################################################################
     def savedead(self) -> None:

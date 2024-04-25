@@ -81,7 +81,9 @@ def create_rpg_game(worldname: str, chaosengineering: Optional[IChaosEngineering
                               memory_system, 
                               agent_connect_system, 
                               code_name_component_system, 
-                              chaos_engineering_system)
+                              chaos_engineering_system, 
+                              False,
+                              10000000)
 
     # 创建游戏
     rpggame = RPGGame(worldname, context)

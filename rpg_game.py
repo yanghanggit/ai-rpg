@@ -55,10 +55,9 @@ class RPGGame(BaseGame):
 
     def __init__(self, name: str, context: ExtendedContext) -> None:
         super().__init__(name)
+        # 不要再加东西了，Game就只管上下文，创建世界的数据，和Processors。其中上下文可以做运行中的全局数据管理者
         self.extendedcontext: ExtendedContext = context
         self.worlddata: Optional[WorldDataBuilder] = None
-        self.auto_save_count: int = 1000000
-        ### 做一些初始化
         self.processors: Processors = self.createprocessors(self.extendedcontext)
 ###############################################################################################################################################
     def createprocessors(self, context: ExtendedContext) -> Processors:
@@ -116,7 +115,7 @@ class RPGGame(BaseGame):
         #########################################
         ###必须最后
         processors.add(DestroySystem(context))
-        processors.add(DataSaveSystem(context, self.auto_save_count))
+        processors.add(DataSaveSystem(context))
 
          ##调试用的系统。监视进入运行之后的状态###############################################################################################################################################
         processors.add(EndSystem(context))

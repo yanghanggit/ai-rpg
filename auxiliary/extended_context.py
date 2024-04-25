@@ -22,7 +22,9 @@ class ExtendedContext(Context):
                  memorysystem: MemorySystem, 
                  agentconnectsys: AgentConnectSystem, 
                  codenamecompsys: CodeNameComponentSystem, 
-                 chaossystem: IChaosEngineering) -> None:
+                 chaossystem: IChaosEngineering, 
+                 save_data_enable: bool,
+                 auto_save_trigger_count: int) -> None:
         
         #
         super().__init__()
@@ -33,8 +35,14 @@ class ExtendedContext(Context):
         self.agent_connect_system = agentconnectsys
         self.code_name_component_system = codenamecompsys
         self.chaos_engineering_system = chaossystem
-        self.savedata = False
+        
+        # 控制一下自动存档
+        self.save_data_enable = save_data_enable
+        self.auto_save_trigger_count = auto_save_trigger_count
+        
+        # 暂时没用
         self.executecount = 0
+        
         #        
         assert self.file_system is not None, "self.file_system is None"
         assert self.memory_system is not None, "self.memory_system is None"

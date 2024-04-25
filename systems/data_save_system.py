@@ -13,26 +13,25 @@ from loguru import logger
 ################################################################################################
 class DataSaveSystem(ExecuteProcessor, TearDownProcessor):
 
-    def __init__(self, context: ExtendedContext, auto_save_count: int) -> None:
+    def __init__(self, context: ExtendedContext) -> None:
         super().__init__()
         self.context = context
         self.current_save_count = 0
-        self.auto_save_count = auto_save_count
-        assert self.auto_save_count > 0
 ################################################################################################
     def execute(self) -> None:
         logger.debug("<<<<<<<<<<<<<  DataSaveSystem  >>>>>>>>>>>>>>>>>")
         ## 运行一定次数后自动保存
-        if self.context.savedata:
-            self.auto_save_all()
+        if self.context.save_data_enable:
+            self.auto_save_all(self.context.auto_save_trigger_count)
 ################################################################################################
     def tear_down(self) -> None:
-        if self.context.savedata:
+        if self.context.save_data_enable:
             self.saveall()
 ################################################################################################
-    def auto_save_all(self) -> None:
+    def auto_save_all(self, auto_save_trigger_count: int) -> None:
+        assert auto_save_trigger_count > 0
         self.current_save_count += 1
-        if self.current_save_count >= self.auto_save_count:
+        if self.current_save_count >= auto_save_trigger_count:
             self.current_save_count = 0
             self.saveall()
 ################################################################################################

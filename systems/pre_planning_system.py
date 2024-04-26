@@ -1,8 +1,9 @@
 from entitas import ExecuteProcessor, Matcher, Entity #type: ignore
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
-from auxiliary.components import AutoPlanningComponent, StageComponent, NPCComponent, PlayerComponent
+from auxiliary.components import AutoPlanningComponent, StageComponent, NPCComponent, PlayerComponent, STAGE_AVAILABLE_ACTIONS_REGISTER, NPC_AVAILABLE_ACTIONS_REGISTER
 from enum import Enum
+from typing import Set
 
 
 # 规划的策略
@@ -18,6 +19,8 @@ class PrePlanningSystem(ExecuteProcessor):
 ############################################################################################################
     def execute(self) -> None:
         logger.debug("<<<<<<<<<<<<<  PrePlanningSystem  >>>>>>>>>>>>>>>>>")
+        ## 测试
+        self.test()
         ## player不允许做规划
         self.remove_all_players_auto_planning()
         ## 通过策略来做计划
@@ -81,5 +84,13 @@ class PrePlanningSystem(ExecuteProcessor):
             npccomp: NPCComponent = npcentity.get(NPCComponent)
             if not npcentity.has(AutoPlanningComponent):
                 npcentity.add(AutoPlanningComponent, npccomp.name)
+############################################################################################################
+    ## 自我测试，这个调用点就是不允许再这个阶段有任何action
+    def test(self) -> None:
+        stageentities: Set[Entity] = self.context.get_group(Matcher(any_of = STAGE_AVAILABLE_ACTIONS_REGISTER)).entities
+        assert len(stageentities) == 0, f"Stage entities with actions: {stageentities}"
+
+        npcentities: Set[Entity]  = self.context.get_group(Matcher(any_of = NPC_AVAILABLE_ACTIONS_REGISTER)).entities
+        assert len(npcentities) == 0, f"NPC entities with actions: {npcentities}"
 ############################################################################################################
 

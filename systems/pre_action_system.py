@@ -1,8 +1,7 @@
-
 from entitas import ExecuteProcessor, Matcher, Entity #type: ignore
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
-from auxiliary.components import AutoPlanningComponent, STAGE_AVAILABLE_ACTIONS_REGISTER, NPC_AVAILABLE_ACTIONS_REGISTER
+from auxiliary.components import AutoPlanningComponent
 from typing import Set
    
 class PreActionSystem(ExecuteProcessor):
@@ -12,15 +11,9 @@ class PreActionSystem(ExecuteProcessor):
 ############################################################################################################
     def execute(self) -> None:
         logger.debug("<<<<<<<<<<<<<  PreActionSystem  >>>>>>>>>>>>>>>>>")
-
+        ## 自我测试，这个阶段不允许有任何的planning
         planningentities: Set[Entity] = self.context.get_group(Matcher(AutoPlanningComponent)).entities
         assert len(planningentities) == 0, "AutoPlanningComponent should be removed in PostPlanningSystem"
-
-        stageentities = self.context.get_group(Matcher(any_of = STAGE_AVAILABLE_ACTIONS_REGISTER)).entities
-        assert len(stageentities) == 0, f"Stage entities with actions: {stageentities}"
-
-        npcentities = self.context.get_group(Matcher(any_of = NPC_AVAILABLE_ACTIONS_REGISTER)).entities
-        assert len(npcentities) == 0, f"NPC entities with actions: {npcentities}"
 ############################################################################################################
    
 

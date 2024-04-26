@@ -19,7 +19,7 @@ class PostActionSystem(ExecuteProcessor):
     def remove_world_actions(self) -> None:
         entities = self.context.get_group(Matcher(all_of = [WorldComponent], any_of = NPC_AVAILABLE_ACTIONS_REGISTER)).entities.copy()
         for entity in entities:
-            logger.debug(f"remove_world_actions: {entity}")
+            #logger.debug(f"remove_world_actions: {entity}")
             for actionsclass in NPC_AVAILABLE_ACTIONS_REGISTER:
                 if entity.has(actionsclass):
                     entity.remove(actionsclass)
@@ -27,7 +27,7 @@ class PostActionSystem(ExecuteProcessor):
     def remove_stage_actions(self) -> None:
         entities = self.context.get_group(Matcher(all_of = [StageComponent], any_of = STAGE_AVAILABLE_ACTIONS_REGISTER)).entities.copy()
         for entity in entities:
-            logger.debug(f"remove_stage_actions: {entity}")
+            #logger.debug(f"remove_stage_actions: {entity}")
             for actionsclass in STAGE_AVAILABLE_ACTIONS_REGISTER:
                 if entity.has(actionsclass):
                     entity.remove(actionsclass)
@@ -35,7 +35,7 @@ class PostActionSystem(ExecuteProcessor):
     def remove_npc_actions(self) -> None:
         entities = self.context.get_group(Matcher(all_of = [NPCComponent], any_of = NPC_AVAILABLE_ACTIONS_REGISTER)).entities.copy()
         for entity in entities:
-            logger.debug(f"remove_npc_actions: {entity}")
+            #logger.debug(f"remove_npc_actions: {entity}")
             for actionsclass in NPC_AVAILABLE_ACTIONS_REGISTER:
                 if entity.has(actionsclass):
                     entity.remove(actionsclass)

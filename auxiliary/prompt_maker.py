@@ -18,10 +18,10 @@ def stage_plan_prompt(entity: Entity, context: ExtendedContext) -> str:
 
 def read_archives_when_system_init_prompt(archives: str, entity: Entity, context: ExtendedContext) -> str:
     prompt = f"""
-    # 你需要按着如下步骤进行:
-    - 第1步: 你回忆起了如下信息: {archives}.
-    - 第2步: 理解其中的信息（尤其是关于你的）.
-    - 第3步: 根据‘计划制定指南’作出你的计划。要求：输出结果格式要遵循‘输出格式指南’
+    # 你回忆起了如下信息:
+    {archives}
+    ## 请理解其中的信息并更新的你的状态。
+    ## 遵循‘输出格式指南’，仅返回‘RememberActionComponent’及相关内容即可。
     """
     return prompt
 
@@ -103,18 +103,21 @@ def died_in_fight(context: ExtendedContext) -> str:
     return f"你已经死亡（在战斗中受到了致命的攻击）"
 
 
-# 重构用
-def __unique_prop_taken_away__(npcname: str, prop_name:str) -> str:
-    return f"{npcname}试图寻找{prop_name}，但{prop_name}在场景中不存在或者被其他人拿走了,需要再重新考虑目标。"
+# 重构用 摩尔=>摩尔试图寻找奇异的声响，但奇异的声响在场景中不存在或者被其他人拿走了,需要再重新考虑目标。
+def search_failed_prompt(npcname: str, prop_name:str) -> str:
+    return f"""{npcname}试图在场景内搜索"{prop_name}"，但失败了。原因可能如下:
+    1. "{prop_name}"并非是一个道具。'SearchActionComponent'只能支持搜索道具的行为与计划
+    2. 或者其此时不在本场景中（有可能被其他角色搜索并获取了）。
+    所以{npcname}需要再重新考虑搜索目标。"""
 
 
-def unique_prop_taken_away(entity: Entity, prop_name:str) -> str:
-    if entity.has(NPCComponent):
-        npc_name: str = entity.get(NPCComponent).name
-        return __unique_prop_taken_away__(npc_name, prop_name)
-        #return f"{npc_name}找到了{prop_name},{prop_name}只存在唯一一份，其他人无法再搜到了。"
-    #else:
-    return ""
+# def unique_prop_taken_away(entity: Entity, prop_name:str) -> str:
+#     if entity.has(NPCComponent):
+#         npc_name: str = entity.get(NPCComponent).name
+#         return __unique_prop_taken_away__(npc_name, prop_name)
+#         #return f"{npc_name}找到了{prop_name},{prop_name}只存在唯一一份，其他人无法再搜到了。"
+#     #else:
+#     return ""
 
     
 def fail_to_enter_stage(npc_name: str, stage_name: str, enter_condition: str) -> str:
@@ -154,3 +157,10 @@ def trade_action_prompt(fromwho: str, towho: str, propname: str, traderes: bool)
 
 def check_status_action_prompt(who: str, propnames: str) -> str:
     return f"{who}正在检查状态, 发现了这些道具{propnames}"
+
+def leave_for_stage_is_invalid_prompt(npcname: str, stagename: str) -> str:
+    return f"""#{npcname}不能离开本场景并去往{stagename}，原因可能如下:
+    1. {stagename}目前并不是一个有效的场景，游戏可能尚未开放或者已经关闭。
+    2. {stagename}的内容格式不对，例如：‘{stagename}的深处/边缘/附近/其他区域’，其中xxx是合理的场景名，加上后面的词后就变成了一个“无效的场景名”（在游戏机制上不能去往）。
+    3. {npcname} 目前并不知道{stagename}的存在。
+    ## 所以 {npcname} 需要重新考虑目标"""

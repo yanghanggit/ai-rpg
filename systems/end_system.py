@@ -27,7 +27,7 @@ class EndSystem(InitializeProcessor, ExecuteProcessor):
         # 打印所有的道具归属
         self.make_prop_files_dump()
         # 打印所有的实体信息
-        self.print_all_entities()
+        #self.print_all_entities()
 ############################################################################################################
     def showworld(self) -> None:
         worldentities = self.context.get_group(Matcher(WorldComponent)).entities

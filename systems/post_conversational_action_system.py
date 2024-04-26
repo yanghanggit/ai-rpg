@@ -35,9 +35,10 @@ class PostConversationalActionSystem(ReactiveProcessor):
         name = self.context.safe_get_entity_name(entity)
         logger.debug(f"log_conversational_action: {name}, {'=' * 50}")
         actions = self.union_stage_and_npc_dialogue_action_register()
-        for action in actions:
-            if entity.has(action):
-                logger.debug(f"{action}")
+        for actioncomp in actions:
+            if entity.has(actioncomp):
+                comp = entity.get(actioncomp)
+                logger.debug(f"{comp}")
         logger.debug(f"{'=' * 100}")
         pass
 ####################################################################################################       

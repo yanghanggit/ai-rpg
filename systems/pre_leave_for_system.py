@@ -162,11 +162,11 @@ class PreLeaveForSystem(ReactiveProcessor):
         
         ### 检查条件
         for cond in conditions:
-            if not file_system.has_prop_file(npccomp.name, cond):
-                # 没有这个道具
-                return ErrorCheckEnterStageConditions.NO_ENTRY_CONDITIONS_MATCH
-        ##
-        return ErrorCheckEnterStageConditions.VALID
+            if file_system.has_prop_file(npccomp.name, cond):
+                return ErrorCheckEnterStageConditions.VALID
+        
+        # 没有这个道具
+        return ErrorCheckEnterStageConditions.NO_ENTRY_CONDITIONS_MATCH
 ###############################################################################################################################################
     def handle_enter_stage_conditions_invalid(self, entity: Entity, error: ErrorCheckEnterStageConditions) -> None:
         entity.remove(LeaveForActionComponent) # 停止离开！

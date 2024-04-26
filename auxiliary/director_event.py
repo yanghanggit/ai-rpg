@@ -1,7 +1,7 @@
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.prompt_maker import ( broadcast_action_prompt, 
 speak_action_prompt,
-__unique_prop_taken_away__, 
+search_failed_prompt, 
 kill_someone,
 attack_someone,
 npc_leave_for_stage, 
@@ -9,7 +9,8 @@ npc_enter_stage,
 perception_action_prompt,
 steal_action_prompt,
 trade_action_prompt,
-check_status_action_prompt)
+check_status_action_prompt,
+leave_for_stage_is_invalid_prompt)
 from loguru import logger
 from abc import ABC, abstractmethod
 from auxiliary.prompt_maker import whisper_action_prompt
@@ -73,12 +74,15 @@ class NPCSearchFailedEvent(IDirectorEvent):
 
     #
     def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
-        event = __unique_prop_taken_away__(self.who_search_failed, self.target)
+        if npcname != self.who_search_failed:
+            ## 只有自己知道
+            return ""
+        event = search_failed_prompt(self.who_search_failed, self.target)
         return event
     
     #
     def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
-        event = __unique_prop_taken_away__(self.who_search_failed, self.target)
+        event = search_failed_prompt(self.who_search_failed, self.target)
         return event
 ####################################################################################################################################
 ####################################################################################################################################
@@ -255,6 +259,24 @@ class NPCCheckStatusEvent(IDirectorEvent):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
+class NPCLeaveForFailedBecauseStageIsInvalidEvent(IDirectorEvent):
+
+    def __init__(self, npcname: str, stagename: str) -> None:
+        self.npcname = npcname
+        self.stagename = stagename
+
+    def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
+        if npcname != self.npcname:
+            # 跟你无关不用关注
+            return ""
+        leave_for_stage_is_invalid_event = leave_for_stage_is_invalid_prompt(self.npcname, self.stagename)
+        return leave_for_stage_is_invalid_event
+    
+    def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
+        return ""
+
+
+
 
 
 

@@ -8,6 +8,8 @@ from auxiliary.actor_action import ActorAction
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from enum import Enum
+from auxiliary.director_component import DirectorComponent
+from auxiliary.director_event import NPCLeaveForFailedBecauseStageIsInvalidEvent
 
 # 错误代码
 class ErrorCheckTargetStage(Enum):
@@ -108,8 +110,29 @@ class PreLeaveForSystem(ReactiveProcessor):
         return ErrorCheckTargetStage.VALID
 ###############################################################################################################################################
     def handle_target_stage_invalid(self, entity: Entity, error: ErrorCheckTargetStage) -> None:
+        # step1 加入通知事件，更新记忆，如果出了问题可以在这个环节做矫正
+        if error == ErrorCheckTargetStage.STAGE_CANNOT_BE_FOUND:
+            self.notify_director_stage_is_invalid(entity)
+        elif error == ErrorCheckTargetStage.ALREADY_IN_THIS_STAGE:
+            pass
+
+        # step2 最后删除
         entity.remove(LeaveForActionComponent) # 停止离开！
-        pass
+###############################################################################################################################################
+    def notify_director_stage_is_invalid(self, entity: Entity) -> None:
+        stageentity = self.context.safe_get_stage_entity(entity)
+        if stageentity is None or not stageentity.has(DirectorComponent):
+            return
+
+        directorcomp: DirectorComponent = stageentity.get(DirectorComponent)
+        npcname = self.context.safe_get_entity_name(entity)
+
+        leavecomp: LeaveForActionComponent = entity.get(LeaveForActionComponent)
+        action: ActorAction = leavecomp.action
+        invalid_stage_name = action.values[0]
+
+        event = NPCLeaveForFailedBecauseStageIsInvalidEvent(npcname, invalid_stage_name)
+        directorcomp.addevent(event)
 ###############################################################################################################################################
     def check_exit_stage_conditions(self, entity: Entity) -> ErrorCheckExitStageConditions:
         #

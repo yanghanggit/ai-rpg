@@ -28,6 +28,6 @@ class MindVoiceActionSystem(ReactiveProcessor):
         action: ActorAction = mindvoicecomp.action
         for value in action.values:
             what_to_said = f"debug!! [mindvoice]:{action.name} = {value}"
-            logger.debug(f"{Color.BLUE}{what_to_said}{Color.ENDC}") #目前还是测试
+            #logger.debug(f"{Color.BLUE}{what_to_said}{Color.ENDC}") #目前还是测试
  ####################################################################################################       
                 

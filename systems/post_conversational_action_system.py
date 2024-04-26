@@ -23,8 +23,8 @@ class PostConversationalActionSystem(ReactiveProcessor):
 ####################################################################################################
     def react(self, entities: list[Entity]) -> None:
         logger.debug("<<<<<<<<<<<<<  PostConversationalActionSystem  >>>>>>>>>>>>>>>>>")
-        for entity in entities:
-            self.log_conversational_action(entity)
+        # for entity in entities:
+        #     self.log_conversational_action(entity)
 ####################################################################################################
     def union_stage_and_npc_dialogue_action_register(self) -> List[Any]:
          unionactions = list(set(NPC_DIALOGUE_ACTIONS_REGISTER) | set(STAGE_DIALOGUE_ACTIONS_REGISTER))
@@ -40,5 +40,4 @@ class PostConversationalActionSystem(ReactiveProcessor):
                 comp = entity.get(actioncomp)
                 logger.debug(f"{comp}")
         logger.debug(f"{'=' * 100}")
-        pass
 ####################################################################################################       

@@ -27,7 +27,7 @@ class PostConversationalActionSystem(ReactiveProcessor):
             self.log_conversational_action(entity)
 ####################################################################################################
     def union_stage_and_npc_dialogue_action_register(self) -> List[Any]:
-         unionactions = List(Set(NPC_DIALOGUE_ACTIONS_REGISTER) | Set(STAGE_DIALOGUE_ACTIONS_REGISTER))
+         unionactions = list(set(NPC_DIALOGUE_ACTIONS_REGISTER) | set(STAGE_DIALOGUE_ACTIONS_REGISTER))
          return unionactions    
 ####################################################################################################
     # 只关注对话行为，并打印出来

@@ -23,11 +23,22 @@ class PostConversationalActionSystem(ReactiveProcessor):
 ####################################################################################################
     def react(self, entities: list[Entity]) -> None:
         logger.debug("<<<<<<<<<<<<<  PostConversationalActionSystem  >>>>>>>>>>>>>>>>>")
-        # 发生对话类行为的人
         for entity in entities:
-            logger.debug(f"react: {entity}")
+            self.log_conversational_action(entity)
 ####################################################################################################
     def union_stage_and_npc_dialogue_action_register(self) -> List[Any]:
-         unionactions = List(Set(NPC_DIALOGUE_ACTIONS_REGISTER) | Set(STAGE_DIALOGUE_ACTIONS_REGISTER))
-         return unionactions
+         unionactions = list(set(NPC_DIALOGUE_ACTIONS_REGISTER) | set(STAGE_DIALOGUE_ACTIONS_REGISTER))
+         return unionactions    
+####################################################################################################
+    # 只关注对话行为，并打印出来
+    def log_conversational_action(self, entity: Entity) -> None:
+        name = self.context.safe_get_entity_name(entity)
+        logger.debug(f"log_conversational_action: {name}, {'=' * 50}")
+        actions = self.union_stage_and_npc_dialogue_action_register()
+        for actioncomp in actions:
+            if entity.has(actioncomp):
+                comp = entity.get(actioncomp)
+                logger.debug(f"{comp}")
+        logger.debug(f"{'=' * 100}")
+        pass
 ####################################################################################################       

@@ -14,7 +14,9 @@ class ActorAction:
 
     def __str__(self) -> str:
         return f"ActorAction({self.name}, {self.actionname}, {self.values})"
-
+    
+    def __repr__(self) -> str:
+        return f"ActorAction({self.name}, {self.actionname}, {self.values})"
 
 class ActorPlan:
 
@@ -52,4 +54,7 @@ class ActorPlan:
             self.actions.append(action)
 
     def __str__(self) -> str:
+        return f"ActorPlan({self.name}, {self.jsonstr})"
+    
+    def __repr__(self) -> str:
         return f"ActorPlan({self.name}, {self.jsonstr})"

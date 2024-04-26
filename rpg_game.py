@@ -49,6 +49,7 @@ from systems.steal_action_system import StealActionSystem
 from systems.trade_action_system import TradeActionSystem
 from systems.check_status_action_system import CheckStatusActionSystem
 from base_game import BaseGame
+from systems.post_conversational_action_system import PostConversationalActionSystem
 
 ## 控制流程和数据创建
 class RPGGame(BaseGame):
@@ -90,6 +91,7 @@ class RPGGame(BaseGame):
         processors.add(WhisperActionSystem(context))
         processors.add(BroadcastActionSystem(context))
         processors.add(SpeakActionSystem(context))
+        processors.add(PostConversationalActionSystem(context)) ### 所有对话类行为之后，目前就是做一些检查的事，后续再说
 
         processors.add(FightActionSystem(context)) #### 战斗类的行为
         processors.add(PostFightSystem(context))

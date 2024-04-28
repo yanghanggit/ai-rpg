@@ -28,7 +28,7 @@ def get_player_proxy(playername: str) -> Optional[PlayerProxy]:
     return None
 
 ### 单人游戏，临时的名字
-TEST_PLAYER_NAME = "yanghang"
+TEST_PLAYER_NAME = "北京柏林互动科技有限公司"
     
 
 

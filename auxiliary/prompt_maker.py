@@ -102,10 +102,10 @@ def died_in_fight_prompt(context: ExtendedContext) -> str:
 
 # 重构用 摩尔=>摩尔试图寻找奇异的声响，但奇异的声响在场景中不存在或者被其他人拿走了,需要再重新考虑目标。
 def search_failed_prompt(npcname: str, prop_name:str) -> str:
-    return f"""{npcname}试图在场景内搜索"{prop_name}"，但失败了。原因可能如下:
-1. "{prop_name}"并非是一个道具。'SearchActionComponent'只能支持搜索道具的行为与计划
-2. 或者其此时不在本场景中（有可能被其他角色搜索并获取了）。
-所以{npcname}需要再重新考虑搜索目标。"""
+    return f"""{npcname}试图在场景内搜索"{prop_name}"这个道具，但失败了。原因可能如下:
+1. "{prop_name}"可能并非是一个道具。'SearchActionComponent'只能支持搜索道具的行为与计划
+2. 或者这个道具此时已不在本场景中（可能被其他角色搜索并获取了）。
+所以{npcname}需要再重新考虑搜索目标。可以使用PerceptionActionComponent来感知场景内的道具，并确认合理目标。"""
 
 
 # def unique_prop_taken_away(entity: Entity, prop_name:str) -> str:
@@ -158,7 +158,7 @@ def perception_action_prompt(stagename: str, npcnames: str, propnames: str) -> s
     if len(propnames) > 0:
         res += f"{stagename}中有这些道具:{propnames}。"
     if len(res) == 0:
-        return f"你感知到了你所在的场景——{stagename}中没有他的角色和道具。"
+        return f"你感知到了你所在的场景——{stagename}中没有其他的角色。也没有任何道具。"
     return res
 
 def check_status_action_prompt(who: str, propnames: str, props_and_desc: str) -> str:

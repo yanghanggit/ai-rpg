@@ -98,7 +98,7 @@ class KnownInformationSystem(InitializeProcessor, ExecuteProcessor):
         file_system = self.context.file_system
         for npcname in allnames:
             if filesowner == npcname:
-                logger.warning(f"who == npcname: {filesowner} == {npcname}") ## 自己就不要添加了，自己认识自己？
+                #logger.warning(f"who == npcname: {filesowner} == {npcname}") ## 自己就不要添加了，自己认识自己？
                 continue
             file = KnownNPCFile(npcname, filesowner, npcname)
             file_system.add_known_npc_file(file)
@@ -107,7 +107,7 @@ class KnownInformationSystem(InitializeProcessor, ExecuteProcessor):
         file_system = self.context.file_system
         for stagename in allnames:
             if filesowner == stagename:
-                logger.warning(f"where == stagename: {filesowner} == {stagename}") ## 自己就不要添加了，自己认识自己？
+                #logger.warning(f"where == stagename: {filesowner} == {stagename}") ## 自己就不要添加了，自己认识自己？
                 continue
             file = KnownStageFile(stagename, filesowner, stagename)
             file_system.add_known_stage_file(file)

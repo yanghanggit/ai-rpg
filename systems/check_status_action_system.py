@@ -28,15 +28,24 @@ class CheckStatusActionSystem(ReactiveProcessor):
         safename = self.context.safe_get_entity_name(entity)
         logger.debug(f"{safename} is checking status")
         filesystem = self.context.file_system
+
         props = filesystem.get_prop_files(safename)
         if len(props) == 0:
             return
+        
+        ## 后续可以优化掉，这个是多余的
         propnames: List[str] = []
         for prop in props:
             propnames.append(prop.name)
-        self.notifydirector(entity, propnames)
+
+        ## 关键
+        prop_and_desc: List[str] = []
+        for prop in props:
+            prop_and_desc.append(f"{prop.name}:{prop.prop.description}")
+        
+        self.notifydirector(entity, propnames, prop_and_desc)
 ####################################################################################################
-    def notifydirector(self, entity: Entity, propnames: List[str]) -> None:
+    def notifydirector(self, entity: Entity, propnames: List[str], prop_and_desc: List[str]) -> None:
         stageentity = self.context.safe_get_stage_entity(entity)
         if stageentity is None or not stageentity.has(DirectorComponent):
             return
@@ -44,6 +53,6 @@ class CheckStatusActionSystem(ReactiveProcessor):
         if safename == "":
             return
         directorcomp: DirectorComponent = stageentity.get(DirectorComponent)
-        directorcomp.addevent(NPCCheckStatusEvent(safename, propnames))
+        directorcomp.addevent(NPCCheckStatusEvent(safename, propnames, prop_and_desc))
 ###################################################################################################################
     

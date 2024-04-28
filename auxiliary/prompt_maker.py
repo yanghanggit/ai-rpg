@@ -5,13 +5,13 @@ from auxiliary.components import NPCComponent, StageComponent
 def npc_plan_prompt(entity: Entity, context: ExtendedContext) -> str:
     if not entity.has(NPCComponent):
         raise ValueError("npc_plan_prompt, entity has no NPCComponent")
-    prompt = f"根据‘计划制定指南’作出你的计划。要求：输出结果格式要遵循‘输出格式指南’,请确保给出的响应符合规范。"
+    prompt = f"根据‘计划制定指南’作出你的计划。要求：输出结果格式要遵循‘输出格式指南’,请确保给出的响应符合规范。结果中需要附带TagActionComponent"
     return prompt
 
 def stage_plan_prompt(entity: Entity, context: ExtendedContext) -> str:
     if not entity.has(StageComponent):
         raise ValueError("stage_plan_prompt, entity has no StageComponent")
-    prompt = f"根据‘计划制定指南’作出你的计划。要求：输出结果格式要遵循‘输出格式指南’,请确保给出的响应符合规范。结果中需要有EnviroNarrateActionComponent。"
+    prompt = f"根据‘计划制定指南’作出你的计划。要求：输出结果格式要遵循‘输出格式指南’,请确保给出的响应符合规范。结果中需要有EnviroNarrateActionComponent，并附带TagActionComponent。"
     return prompt
 
 def read_archives_when_system_init_prompt(archives: str, entity: Entity, context: ExtendedContext) -> str:
@@ -139,8 +139,7 @@ def attack_someone_prompt(attacker_name: str, target_name: str, damage: int, tar
 # def speak_action_system_invalid_target(target_name: str, speakcontent: str) -> str:
 #     return f"[{target_name}]在你所在场景内无法找到，所以你不能对其说如下的内容：{speakcontent}"
 
-def perception_action_prompt(npcnames: str, propnames: str) -> str:
-    return f"你感知到了场景中有这些角色{npcnames}, 场景中有这些道具{propnames}"
+
 
 def steal_action_prompt(whosteal: str, targetname: str, propname: str, stealres: bool) -> str:
     if not stealres:
@@ -152,12 +151,33 @@ def trade_action_prompt(fromwho: str, towho: str, propname: str, traderes: bool)
         return f"{fromwho}向{towho}交换{propname}, 失败了"
     return f"{fromwho}向{towho}成功交换了{propname}"
 
-def check_status_action_prompt(who: str, propnames: str) -> str:
-    return f"{who}正在检查状态, 发现了这些道具{propnames}"
+def perception_action_prompt(stagename: str, npcnames: str, propnames: str) -> str:
+    res = ""
+    if len(npcnames) > 0:
+        res += f"你感知到了你所在的场景——{stagename}内有这些角色:{npcnames}。"
+    if len(propnames) > 0:
+        res += f"{stagename}中有这些道具:{propnames}。"
+    if len(res) == 0:
+        return f"你感知到了你所在的场景——{stagename}中没有他的角色和道具。"
+    return res
 
-def leave_for_stage_is_invalid_prompt(npcname: str, stagename: str) -> str:
+def check_status_action_prompt(who: str, propnames: str, props_and_desc: str) -> str:
+    if len(propnames) == 0:
+        return f"你({who})目前没有任何道具。"
+    
+    res = ""
+    if len(propnames) > 0:
+        res += f"你({who})目前拥有这些道具: {propnames}。"
+
+    res += "道具的信息如下:\n"
+    res += props_and_desc
+    return res
+
+def leave_for_stage_failed_because_stage_is_invalid_prompt(npcname: str, stagename: str) -> str:
     return f"""#{npcname}不能离开本场景并去往{stagename}，原因可能如下:
-1. {stagename}目前并不是一个有效的场景，游戏可能尚未开放或者已经关闭。
-2. {stagename}的内容格式不对，例如下面的表达：‘xxx的深处/北部/边缘/附近/其他区域’，其中xxx可能是合理的场景名，但加上后面的词后，就变成了一个“无效的场景名”（在游戏机制上不能去往）。
-3. {npcname} 目前并不知道{stagename}的存在。
+1. {stagename}目前对于{npcname}并不是一个有效场景。游戏可能尚未对其开放，或者已经关闭。
+2. {stagename}的内容格式不对，例如下面的表达：‘xxx的深处/北部/边缘/附近/其他区域’，其中xxx可能是合理场景名，但加上后面的词后则变成了“无效场景名”（在游戏机制上无法正确检索与匹配）。
 ## 所以 {npcname} 请参考以上的原因，需要重新考虑去往的目的地。"""
+
+def leave_for_stage_failed_because_already_in_stage_prompt(npcname: str, stagename: str) -> str:
+    return f"你({npcname})已经在{stagename}场景中了。需要重新考虑去往的目的地。'LeaveForActionComponent'行动类型意图是离开当前场景并去往某地。"

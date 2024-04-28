@@ -34,6 +34,7 @@ class DirectorSystem(ExecuteProcessor):
         newmsg = "\n".join(events2stage)
         if len(newmsg) > 0:
             self.context.safe_add_human_message_to_entity(entitystage, newmsg)
+            logger.debug(f"{stagecomp.name} => {newmsg}")
 ###################################################################################################################
     def handle_npcs_in_this_stage(self, entitystage: Entity) -> None:
         assert entitystage.has(StageComponent)
@@ -46,6 +47,6 @@ class DirectorSystem(ExecuteProcessor):
             newmsg = "\n".join(events2npc)
             if len(newmsg) > 0:
                 self.context.safe_add_human_message_to_entity(npcentity, newmsg)
-                logger.debug(f"{npccomp.name}=>{newmsg}")
+                logger.debug(f"{npccomp.name} => {newmsg}")
 ###################################################################################################################
     

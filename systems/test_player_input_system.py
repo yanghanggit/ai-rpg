@@ -17,7 +17,7 @@ from auxiliary.player_input_command import (
                           PlayerCommandCheckStatus)
 
 from auxiliary.extended_context import ExtendedContext
-from auxiliary.components import AwakeActionComponent, EnviroNarrateActionComponent
+from auxiliary.components import PlayerAwakeActionComponent, EnviroNarrateActionComponent
 from auxiliary.actor_action import ActorAction
 from typing import Optional
 
@@ -82,9 +82,9 @@ class TestPlayerInputSystem(ExecuteProcessor):
         logger.warning(displaymsg)
 ############################################################################################################
     def awakemessage(self, playerentity: Entity) -> str:
-        if not playerentity.has(AwakeActionComponent):
+        if not playerentity.has(PlayerAwakeActionComponent):
             return ""
-        awakecomp: AwakeActionComponent = playerentity.get(AwakeActionComponent)
+        awakecomp: PlayerAwakeActionComponent = playerentity.get(PlayerAwakeActionComponent)
         action: ActorAction = awakecomp.action
         if len(action.values) == 0:
             return ""

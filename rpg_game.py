@@ -65,7 +65,7 @@ class RPGGame(BaseGame):
 
         processors = Processors()
        
-        ##调试用的系统。监视进入运行之前的状态###############################################################################################################################################
+        ##调试用的系统。监视进入运行之前的状态
         processors.add(BeginSystem(context))
         
         #初始化系统########################
@@ -79,35 +79,41 @@ class RPGGame(BaseGame):
         processors.add(NPCPlanningSystem(context))
         processors.add(PostPlanningSystem(context)) ####### 在所有规划之后
 
-        #拿到相关的信息，等待用户输入!!!!!!!
-        from systems.test_player_input_system import TestPlayerInputSystem ### 防止循环引用
-        processors.add(TestPlayerInputSystem(context, self)) ####### 在所有规划之后
+        #用户拿到相关的信息，并开始操作与输入!!!!!!!
+        from systems.test_player_input_system import TestPlayerInputSystem ### 不这样就循环引用
+        processors.add(TestPlayerInputSystem(context, self)) 
 
         #行动逻辑########################
-        processors.add(PreActionSystem(context)) ######## 在所有行动之前
-       
-        processors.add(TagActionSystem(context)) #### 说话类的行为
+        processors.add(PreActionSystem(context)) ######## 在所有行动之前 #########################################
+
+        #获取状态与查找信息类的行为
+        processors.add(CheckStatusActionSystem(context))
+        processors.add(PerceptionActionSystem(context))
+
+        #交流（与说话类）的行为
+        processors.add(TagActionSystem(context))
         processors.add(MindVoiceActionSystem(context))
         processors.add(WhisperActionSystem(context))
         processors.add(BroadcastActionSystem(context))
         processors.add(SpeakActionSystem(context))
-        processors.add(PostConversationalActionSystem(context)) ### 所有对话类行为之后，目前就是做一些检查的事，后续再说
+        processors.add(PostConversationalActionSystem(context))
 
-        processors.add(FightActionSystem(context)) #### 战斗类的行为
+        #战斗类的行为
+        processors.add(FightActionSystem(context)) 
         processors.add(PostFightSystem(context))
         processors.add(DeadActionSystem(context)) 
         
-        processors.add(CheckStatusActionSystem(context)) ## 检查状态类的行为
-        processors.add(PerceptionActionSystem(context)) ## 感知类的行为
-        processors.add(SearchActionSystem(context)) ## 交互类的行为，在死亡之后，因为死了就不能执行
+        #交互类的行为，在死亡之后，因为死了就不能执行
+        processors.add(SearchActionSystem(context)) 
         processors.add(StealActionSystem(context))
         processors.add(TradeActionSystem(context))
 
-        processors.add(PrisonBreakActionSystem(context)) ## 必须在PreLeaveForSystem之前！
-        processors.add(PreLeaveForSystem(context)) ## 必须在LeaveForActionSystem之前！
-        processors.add(LeaveForActionSystem(context)) ## 离开场景与去往哪里的最终实现
+        #场景切换类行为，非常重要而且必须在最后
+        processors.add(PrisonBreakActionSystem(context)) 
+        processors.add(PreLeaveForSystem(context)) 
+        processors.add(LeaveForActionSystem(context))
 
-        processors.add(PostActionSystem(context)) ####### 在所有行动之后
+        processors.add(PostActionSystem(context)) ####### 在所有行动之后 #########################################
         #########################################
 
         #行动结束后导演
@@ -115,11 +121,12 @@ class RPGGame(BaseGame):
         #行动结束后更新关系网
         processors.add(KnownInformationSystem(context))
         #########################################
-        ###必须最后
+
+        ###最后删除entity与存储数据
         processors.add(DestroySystem(context))
         processors.add(DataSaveSystem(context))
 
-         ##调试用的系统。监视进入运行之后的状态###############################################################################################################################################
+         ##调试用的系统。监视进入运行之后的状态
         processors.add(EndSystem(context))
 
         return processors

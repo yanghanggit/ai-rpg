@@ -3,7 +3,7 @@ from rpg_game import RPGGame
 from loguru import logger
 from auxiliary.components import (
     BroadcastActionComponent,
-    AwakeActionComponent,
+    PlayerAwakeActionComponent,
     SpeakActionComponent, 
     StageComponent, 
     NPCComponent, 
@@ -85,11 +85,12 @@ class PlayerCommandLogin(PlayerCommand):
         logger.warning(f"{myname} 登陆了游戏")
 
         ## 登录之后，客户端需要看到的消息
-        if npcentity.has(AwakeActionComponent):
+        if npcentity.has(PlayerAwakeActionComponent):
             logger.error(f"{login_npc_name} already has AwakeActionComponent?")
-            npcentity.remove(AwakeActionComponent)
-        action = ActorAction(login_npc_name, AwakeActionComponent.__name__, [f"{clientmessage}"])
-        npcentity.add(AwakeActionComponent, action)
+            npcentity.remove(PlayerAwakeActionComponent)
+        #
+        action = ActorAction(login_npc_name, PlayerAwakeActionComponent.__name__, [f"{clientmessage}"])
+        npcentity.add(PlayerAwakeActionComponent, action)
         
     ##这是一个测试的方法，目前登陆成功后，就是把memory给到，后续可以做的复杂一些
     def test_client_message_after_login_success(self) -> str:
@@ -347,6 +348,9 @@ class PlayerCommandCheckStatus(PlayerCommand):
         playerentity = context.getplayer(self.playerproxy.name)
         if playerentity is None:
             return
+        
+        if playerentity.has(CheckStatusActionComponent):
+            playerentity.remove(CheckStatusActionComponent)
         
         npccomp: NPCComponent = playerentity.get(NPCComponent)
         action = ActorAction(npccomp.name, CheckStatusActionComponent.__name__, [npccomp.name])

@@ -105,7 +105,7 @@ def main() -> None:
     rpggame.execute()
 
     while True:
-        usr_input = input("[user input]: ")
+        usr_input = input("[system input]: ")
         if "/quit" in usr_input:
             break
         

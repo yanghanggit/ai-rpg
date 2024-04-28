@@ -42,3 +42,4 @@
   "PerceptionActionComponent":["你所在的场景的名字（即你意图查看场景人物与道具的状态）"],
   "CheckStatusActionComponent":["你的名字（即你意图查看你拥有哪些道具及道具的信息）"]
 }}
+- 注意！不要以ASCII编码输出内容

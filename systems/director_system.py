@@ -3,6 +3,7 @@ from auxiliary.components import StageComponent, NPCComponent
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.director_component import DirectorComponent
+from auxiliary.prompt_maker import direct_stage_events_prompt, direct_npc_events_prompt
 
 class DirectorSystem(ExecuteProcessor):
 
@@ -33,8 +34,9 @@ class DirectorSystem(ExecuteProcessor):
         events2stage = directorcomp.tostage(stagecomp.name, self.context)         
         newmsg = "\n".join(events2stage)
         if len(newmsg) > 0:
-            self.context.safe_add_human_message_to_entity(entitystage, newmsg)
-            logger.debug(f"{stagecomp.name} => {newmsg}")
+            prompt = direct_stage_events_prompt(newmsg, self.context)
+            logger.debug(f"{stagecomp.name} => {prompt}")
+            self.context.safe_add_human_message_to_entity(entitystage, prompt)
 ###################################################################################################################
     def handle_npcs_in_this_stage(self, entitystage: Entity) -> None:
         assert entitystage.has(StageComponent)
@@ -46,7 +48,8 @@ class DirectorSystem(ExecuteProcessor):
             events2npc = directorcomp.tonpc(npccomp.name, self.context)            
             newmsg = "\n".join(events2npc)
             if len(newmsg) > 0:
-                self.context.safe_add_human_message_to_entity(npcentity, newmsg)
-                logger.debug(f"{npccomp.name} => {newmsg}")
+                prompt = direct_npc_events_prompt(newmsg, self.context)
+                logger.debug(f"{npccomp.name} => {prompt}")
+                self.context.safe_add_human_message_to_entity(npcentity, prompt)
 ###################################################################################################################
     

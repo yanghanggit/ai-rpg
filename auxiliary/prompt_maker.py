@@ -22,16 +22,6 @@ def read_archives_when_system_init_prompt(archives: str, entity: Entity, context
 ## 遵循‘输出格式指南’，仅返回‘RememberActionComponent’及相关内容即可。"""
     return prompt
 
-# def confirm_everything_after_director_add_new_memories_prompt(allevents: list[str], npcs_names: str, stagename: str, context: ExtendedContext) -> str:
-#     prompt = f"""
-#     # 下面是已经发生的事情,你目睹或者参与了这一切，并更新了你的记忆,如果与你记忆不相符则按照下面内容强行更新你的记忆:
-#     - {allevents}
-#     # 你能确认
-#     - {npcs_names} 都还在此 {stagename} 场景中。
-#     - 你需要更新你的状态并以此作为做后续计划的基础。
-#     """
-#     return prompt
-
 def whisper_action_prompt(srcname: str, destname: str, content: str, context: ExtendedContext) -> str:
     prompt = f"{srcname}对{destname}低语道:{content}"   
     return prompt
@@ -167,7 +157,7 @@ def check_status_action_prompt(who: str, propnames: str, props_and_desc: str) ->
     
     res = ""
     if len(propnames) > 0:
-        res += f"你({who})目前拥有这些道具: {propnames}。"
+        res += f"通过检查，你({who})目前拥有这些道具: {propnames}。"
 
     res += "道具的信息如下:\n"
     res += props_and_desc
@@ -181,3 +171,17 @@ def leave_for_stage_failed_because_stage_is_invalid_prompt(npcname: str, stagena
 
 def leave_for_stage_failed_because_already_in_stage_prompt(npcname: str, stagename: str) -> str:
     return f"你({npcname})已经在{stagename}场景中了。需要重新考虑去往的目的地。'LeaveForActionComponent'行动类型意图是离开当前场景并去往某地。"
+
+def direct_stage_events_prompt(message: str, context: ExtendedContext) -> str:
+    prompt = f"""
+# 场景内发生了如下事件：
+{message}
+# 根据以上更新你的状态。并以此作为做后续计划的基础。"""
+    return prompt
+
+def direct_npc_events_prompt(message: str, context: ExtendedContext) -> str:
+    prompt = f"""
+# 场景内发生了如下事件(有些是你参与的，有些是你目睹或感知到的)：
+{message}
+# 根据以上更新你的状态。并以此作为做后续计划的基础。"""
+    return prompt

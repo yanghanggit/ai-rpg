@@ -1,4 +1,4 @@
-from entitas import ExecuteProcessor #type: ignore
+from entitas import ExecuteProcessor, Entity #type: ignore
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from rpg_game import RPGGame 
@@ -17,6 +17,9 @@ from auxiliary.player_input_command import (
                           PlayerCommandCheckStatus)
 
 from auxiliary.extended_context import ExtendedContext
+from auxiliary.components import AwakeActionComponent, EnviroNarrateActionComponent
+from auxiliary.actor_action import ActorAction
+from typing import Optional
 
 ############################################################################################################
 def splitcommand(input_val: str, split_str: str)-> str:
@@ -32,20 +35,75 @@ class TestPlayerInputSystem(ExecuteProcessor):
     def execute(self) -> None:
         logger.debug("<<<<<<<<<<<<<  PlayerInputSystem  >>>>>>>>>>>>>>>>>")
         while True:
+
             playername = self.current_input_player()
             playerproxy = get_player_proxy(playername)
             if playerproxy is None:
                 logger.warning("玩家不存在，或者玩家未加入游戏")
                 break
+
+            # 客户端应该看到的
+            self.clientdisplay(playerproxy)
+
+            # 测试的客户端反馈
             usrinput = input(f"[{playername}]:")
-            rpggame = self.rpggame
-            self.handle_player_input(rpggame, playerproxy, usrinput)
+            self.handle_player_input(self.rpggame, playerproxy, usrinput)
             logger.debug(f"{'=' * 50}")
             break
 ############################################################################################################
     #测试的先写死
     def current_input_player(self) -> str:
         return TEST_PLAYER_NAME
+############################################################################################################ 
+    def clientdisplay(self, playerproxy: PlayerProxy) -> None:
+        playername = playerproxy.name
+        playerentity = self.context.getplayer(playername)
+        if playerentity is None:
+            logger.error(f"showclient, 玩家不存在{playername}")
+            return
+        
+        displaymsg = f"<<<<<<<<<<<<<<<<<< {playername} >>>>>>>>>>>>>>>>>>"
+        
+        # 常规的显示场景描述
+        stagemsg = self.stagemessage(playerentity)
+        if len(stagemsg) > 0:
+            stageentity: Optional[Entity] = self.context.safe_get_stage_entity(playerentity)
+            assert stageentity is not None
+            stagename = self.context.safe_get_entity_name(stageentity)
+            displaymsg += f"\n[{stagename}]=>{stagemsg}"
+
+        # 如果是login，需要把login进入后的打印出来
+        awakemsg = self.awakemessage(playerentity)     
+        if len(awakemsg) > 0:
+            npcname = self.context.safe_get_entity_name(playerentity)
+            displaymsg += f"\n{'-' * 50}\n[{npcname}]=>{awakemsg}"
+            
+        #
+        logger.warning(displaymsg)
+############################################################################################################
+    def awakemessage(self, playerentity: Entity) -> str:
+        if not playerentity.has(AwakeActionComponent):
+            return ""
+        awakecomp: AwakeActionComponent = playerentity.get(AwakeActionComponent)
+        action: ActorAction = awakecomp.action
+        if len(action.values) == 0:
+            return ""
+        message = action.values[0]
+        return message
+############################################################################################################
+    def stagemessage(self, playerentity: Entity) -> str:
+        stage = self.context.safe_get_stage_entity(playerentity)
+        if stage is None:
+            return ""
+        if not stage.has(EnviroNarrateActionComponent):
+            return ""
+
+        envirocomp: EnviroNarrateActionComponent = stage.get(EnviroNarrateActionComponent)
+        action: ActorAction = envirocomp.action
+        if len(action.values) == 0:
+            return ""
+        message = action.values[0]
+        return message
 ############################################################################################################
     def handle_player_input(self, rpggame: RPGGame, playerproxy: PlayerProxy, usrinput: str) -> None:
         

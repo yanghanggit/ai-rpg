@@ -1,5 +1,3 @@
-
-
 from entitas import Entity # type: ignore
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.components import NPCComponent, StageComponent
@@ -13,16 +11,15 @@ def npc_plan_prompt(entity: Entity, context: ExtendedContext) -> str:
 def stage_plan_prompt(entity: Entity, context: ExtendedContext) -> str:
     if not entity.has(StageComponent):
         raise ValueError("stage_plan_prompt, entity has no StageComponent")
-    prompt = f"根据‘计划制定指南’作出你的计划。要求：输出结果格式要遵循‘输出格式指南’,请确保给出的响应符合规范。"
+    prompt = f"根据‘计划制定指南’作出你的计划。要求：输出结果格式要遵循‘输出格式指南’,请确保给出的响应符合规范。结果中需要有EnviroNarrateActionComponent。"
     return prompt
 
 def read_archives_when_system_init_prompt(archives: str, entity: Entity, context: ExtendedContext) -> str:
     prompt = f"""
-    # 你回忆起了如下信息:
-    {archives}
-    ## 请理解其中的信息并更新的你的状态。
-    ## 遵循‘输出格式指南’，仅返回‘RememberActionComponent’及相关内容即可。
-    """
+# 你回忆起了如下信息:
+{archives}
+## 请理解其中的信息并更新的你的状态。
+## 遵循‘输出格式指南’，仅返回‘RememberActionComponent’及相关内容即可。"""
     return prompt
 
 # def confirm_everything_after_director_add_new_memories_prompt(allevents: list[str], npcs_names: str, stagename: str, context: ExtendedContext) -> str:
@@ -99,16 +96,16 @@ def gen_world_archive_prompt(context: ExtendedContext) -> str:
 """
      return prompt
 
-def died_in_fight(context: ExtendedContext) -> str:
+def died_in_fight_prompt(context: ExtendedContext) -> str:
     return f"你已经死亡（在战斗中受到了致命的攻击）"
 
 
 # 重构用 摩尔=>摩尔试图寻找奇异的声响，但奇异的声响在场景中不存在或者被其他人拿走了,需要再重新考虑目标。
 def search_failed_prompt(npcname: str, prop_name:str) -> str:
     return f"""{npcname}试图在场景内搜索"{prop_name}"，但失败了。原因可能如下:
-    1. "{prop_name}"并非是一个道具。'SearchActionComponent'只能支持搜索道具的行为与计划
-    2. 或者其此时不在本场景中（有可能被其他角色搜索并获取了）。
-    所以{npcname}需要再重新考虑搜索目标。"""
+1. "{prop_name}"并非是一个道具。'SearchActionComponent'只能支持搜索道具的行为与计划
+2. 或者其此时不在本场景中（有可能被其他角色搜索并获取了）。
+所以{npcname}需要再重新考虑搜索目标。"""
 
 
 # def unique_prop_taken_away(entity: Entity, prop_name:str) -> str:
@@ -126,16 +123,16 @@ def search_failed_prompt(npcname: str, prop_name:str) -> str:
 # def fail_to_exit_stage(npc_name: str, stage_name: str, exit_condition: str) -> str:
 #     return f"{npc_name}试图离开{stage_name} 但背包中没有{exit_condition}，不能离开，或许{npc_name}需要尝试搜索一下'{exit_condition}'."
 
-def npc_enter_stage(npc_name: str, stage_name: str) -> str:
+def npc_enter_stage_prompt(npc_name: str, stage_name: str) -> str:
     return f"{npc_name}进入了{stage_name} 场景。"
 
-def npc_leave_for_stage(npc_name: str, current_stage_name: str, leave_for_stage_name: str) -> str:
+def npc_leave_for_stage_prompt(npc_name: str, current_stage_name: str, leave_for_stage_name: str) -> str:
     return f"{npc_name}离开了{current_stage_name} 场景。"
 
 def kill_someone(attacker_name: str, target_name: str) -> str:
     return f"{attacker_name}对{target_name}发动了一次攻击,造成了{target_name}死亡。"
 
-def attack_someone(attacker_name: str, target_name: str, damage: int, target_current_hp: int ,target_max_hp: int) -> str:
+def attack_someone_prompt(attacker_name: str, target_name: str, damage: int, target_current_hp: int ,target_max_hp: int) -> str:
     health_percent = (target_current_hp - damage) / target_max_hp * 100
     return f"{attacker_name}对{target_name}发动了一次攻击,造成了{damage}点伤害,当前{target_name}的生命值剩余{health_percent}%。"
 
@@ -160,7 +157,7 @@ def check_status_action_prompt(who: str, propnames: str) -> str:
 
 def leave_for_stage_is_invalid_prompt(npcname: str, stagename: str) -> str:
     return f"""#{npcname}不能离开本场景并去往{stagename}，原因可能如下:
-    1. {stagename}目前并不是一个有效的场景，游戏可能尚未开放或者已经关闭。
-    2. {stagename}的内容格式不对，例如：‘{stagename}的深处/边缘/附近/其他区域’，其中xxx是合理的场景名，加上后面的词后就变成了一个“无效的场景名”（在游戏机制上不能去往）。
-    3. {npcname} 目前并不知道{stagename}的存在。
-    ## 所以 {npcname} 需要重新考虑目标"""
+1. {stagename}目前并不是一个有效的场景，游戏可能尚未开放或者已经关闭。
+2. {stagename}的内容格式不对，例如下面的表达：‘xxx的深处/北部/边缘/附近/其他区域’，其中xxx可能是合理的场景名，但加上后面的词后，就变成了一个“无效的场景名”（在游戏机制上不能去往）。
+3. {npcname} 目前并不知道{stagename}的存在。
+## 所以 {npcname} 请参考以上的原因，需要重新考虑去往的目的地。"""

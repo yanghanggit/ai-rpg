@@ -3,7 +3,7 @@ from entitas import ExecuteProcessor, Matcher, Entity #type: ignore
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.components import DeadActionComponent, NPC_INTERACTIVE_ACTIONS_REGISTER, NPCComponent
-from auxiliary.prompt_maker import gen_npc_archive_prompt, died_in_fight
+from auxiliary.prompt_maker import gen_npc_archive_prompt, died_in_fight_prompt
 
 # 战斗后处理，入股哦死了就死亡存档
 class PostFightSystem(ExecuteProcessor):
@@ -32,7 +32,7 @@ class PostFightSystem(ExecuteProcessor):
             return
 
         # 添加记忆
-        newmsg = died_in_fight(self.context)
+        newmsg = died_in_fight_prompt(self.context)
         self.context.safe_add_human_message_to_entity(entity, newmsg)
 
         # 推理死亡，并且进行存档

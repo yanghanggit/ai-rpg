@@ -15,7 +15,7 @@ class PrePlanningSystem(ExecuteProcessor):
 
     def __init__(self, context: ExtendedContext) -> None:
         self.context: ExtendedContext = context
-        self.strategy: PlanningStrategy = PlanningStrategy.STRATEGY_ALL
+        self.strategy: PlanningStrategy = PlanningStrategy.STRATEGY_ONLY_PLAYERS_STAGE
 ############################################################################################################
     def execute(self) -> None:
         logger.debug("<<<<<<<<<<<<<  PrePlanningSystem  >>>>>>>>>>>>>>>>>")
@@ -28,13 +28,13 @@ class PrePlanningSystem(ExecuteProcessor):
 ############################################################################################################
     def make_planning_by_strategy(self, strategy: PlanningStrategy) -> None:
         if strategy == PlanningStrategy.STRATEGY_ONLY_PLAYERS_STAGE:
-            # 选择比较省的策略。
+            logger.debug("STRATEGY_ONLY_PLAYERS_STAGE, 选择比较省的策略, 只规划player所在场景和npcs")
             playerentities = self.context.get_group(Matcher(PlayerComponent)).entities
             for playerentity in playerentities:
                 # 如果有多个player在同一个stage，这里会多次执行, 但是没关系，因为这里是做防守的
                 self.strategy1_only_the_stage_where_player_is_located_and_the_npcs_in_it_allowed_make_plans(playerentity)
         elif strategy == PlanningStrategy.STRATEGY_ALL:
-            ## 选择比较费的策略，全都更新
+            logger.debug("STRATEGY_ALL, 选择比较费的策略，全都更新")
             self.strategy2_all_stages_and_npcs_except_player_allow_auto_planning()   
 ############################################################################################################
     def remove_all_players_auto_planning(self) -> None:

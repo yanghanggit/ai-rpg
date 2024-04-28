@@ -34,6 +34,9 @@ EnviroNarrateActionComponent = namedtuple('EnviroNarrateActionComponent', 'actio
 ###游戏业务组件
 SimpleRPGRoleComponent = namedtuple('SimpleRPGRoleComponent', 'name maxhp hp attack')
 ###############################################################################################################################################
+# 暂时测试用的
+AwakeActionComponent = namedtuple('AwakeActionComponent', 'action')
+###############################################################################################################################################
 
 
 #注册一下方便使用
@@ -75,4 +78,5 @@ NPC_INTERACTIVE_ACTIONS_REGISTER = [SearchActionComponent,
                                     PerceptionActionComponent,
                                     StealActionComponent,
                                     TradeActionComponent,
-                                    CheckStatusActionComponent]
+                                    CheckStatusActionComponent,
+                                    AwakeActionComponent]

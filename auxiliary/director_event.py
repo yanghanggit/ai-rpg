@@ -3,9 +3,9 @@ from auxiliary.prompt_maker import ( broadcast_action_prompt,
 speak_action_prompt,
 search_failed_prompt, 
 kill_someone,
-attack_someone,
-npc_leave_for_stage, 
-npc_enter_stage, 
+attack_someone_prompt,
+npc_leave_for_stage_prompt, 
+npc_enter_stage_prompt, 
 perception_action_prompt,
 steal_action_prompt,
 trade_action_prompt,
@@ -113,11 +113,11 @@ class NPCAttackSomeoneEvent(IDirectorEvent):
         self.maxhp = maxhp
 
     def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
-        event = attack_someone(self.attacker, self.target, self.damage, self.curhp, self.maxhp)
+        event = attack_someone_prompt(self.attacker, self.target, self.damage, self.curhp, self.maxhp)
         return event
     
     def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
-        event = attack_someone(self.attacker, self.target, self.damage, self.curhp, self.maxhp)
+        event = attack_someone_prompt(self.attacker, self.target, self.damage, self.curhp, self.maxhp)
         return event
 ####################################################################################################################################
 ####################################################################################################################################
@@ -130,11 +130,11 @@ class NPCLeaveForStageEvent(IDirectorEvent):
         self.leave_for_stage_name = leave_for_stage_name
 
     def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
-        event = npc_leave_for_stage(self.npc_name, self.current_stage_name, self.leave_for_stage_name)
+        event = npc_leave_for_stage_prompt(self.npc_name, self.current_stage_name, self.leave_for_stage_name)
         return event
     
     def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
-        event = npc_leave_for_stage(self.npc_name, self.current_stage_name, self.leave_for_stage_name)
+        event = npc_leave_for_stage_prompt(self.npc_name, self.current_stage_name, self.leave_for_stage_name)
         return event
 ####################################################################################################################################
 ####################################################################################################################################
@@ -146,11 +146,11 @@ class NPCEnterStageEvent(IDirectorEvent):
         self.stage_name = stage_name
 
     def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
-        event = npc_enter_stage(self.npc_name, self.stage_name)
+        event = npc_enter_stage_prompt(self.npc_name, self.stage_name)
         return event
     
     def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
-        event = npc_enter_stage(self.npc_name, self.stage_name)
+        event = npc_enter_stage_prompt(self.npc_name, self.stage_name)
         return event
 ####################################################################################################################################
 ####################################################################################################################################

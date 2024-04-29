@@ -186,7 +186,8 @@ class InitSystem(InitializeProcessor):
             whereyouknow2 = self.where_you_know_in_chat_history(chathistory, allstagenames)
             merge_where_you_know = whereyouknow0 | whereyouknow1 | whereyouknow2 
             self.add_known_stage_file(npccomp.name, merge_where_you_know)
-
+            # where you can leave for
+            merge_where_you_know.discard(npccomp.current_stage)
             # init memory
             npcmemory = memory_system.getmemory(npccomp.name)
             if npcmemory == "":

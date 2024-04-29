@@ -2,6 +2,7 @@ from auxiliary.extended_context import ExtendedContext
 from typing import List
 from collections import namedtuple
 from auxiliary.director_event import IDirectorEvent
+from auxiliary.prompt_maker import replace_all_mentions_of_your_name_with_you
 
 ## yh 第一个 扩展型组件，用于处理导演系统的事件
 DirectorComponentPrototype = namedtuple('DirectorComponentPrototype', 'name')
@@ -18,6 +19,7 @@ class DirectorComponent(DirectorComponentPrototype):
         for event in self.events:
             res = event.tonpc(target_npc_name, extended_context)
             if res != "":
+                res = replace_all_mentions_of_your_name_with_you(res, target_npc_name)
                 batch.append(res)
         return batch
     
@@ -26,6 +28,7 @@ class DirectorComponent(DirectorComponentPrototype):
         for event in self.events:
             res = event.tostage(target_stage_name, extended_context)
             if res != "":
+                res = replace_all_mentions_of_your_name_with_you(res, target_stage_name)
                 batch.append(res)
         return batch
 

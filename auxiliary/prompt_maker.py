@@ -153,11 +153,11 @@ def perception_action_prompt(stagename: str, npcnames: str, propnames: str) -> s
 
 def check_status_action_prompt(who: str, propnames: str, props_and_desc: str) -> str:
     if len(propnames) == 0:
-        return f"你({who})目前没有任何道具。"
+        return f"你目前没有任何道具。"
     
     res = ""
     if len(propnames) > 0:
-        res += f"通过检查，你({who})目前拥有这些道具: {propnames}。"
+        res += f"通过检查，你目前拥有这些道具: {propnames}。"
 
     res += "道具的信息如下:\n"
     res += props_and_desc
@@ -170,7 +170,7 @@ def leave_for_stage_failed_because_stage_is_invalid_prompt(npcname: str, stagena
 ## 所以 {npcname} 请参考以上的原因，需要重新考虑去往的目的地。"""
 
 def leave_for_stage_failed_because_already_in_stage_prompt(npcname: str, stagename: str) -> str:
-    return f"你({npcname})已经在{stagename}场景中了。需要重新考虑去往的目的地。'LeaveForActionComponent'行动类型意图是离开当前场景并去往某地。"
+    return f"你已经在{stagename}场景中了。需要重新考虑去往的目的地。'LeaveForActionComponent'行动类型意图是离开当前场景并去往某地。"
 
 def direct_stage_events_prompt(message: str, context: ExtendedContext) -> str:
     prompt = f"""
@@ -185,3 +185,8 @@ def direct_npc_events_prompt(message: str, context: ExtendedContext) -> str:
 {message}
 # 根据以上更新你的状态。并以此作为做后续计划的基础。"""
     return prompt
+
+def replace_all_mentions_of_your_name_with_you(content: str, your_name: str) -> str:
+    if len(content) == 0 or your_name not in content:
+        return content
+    return content.replace(your_name, "你")

@@ -57,7 +57,7 @@ class InitSystem(InitializeProcessor):
         context = self.context
         memory_system = context.memory_system
         agent_connect_system = context.agent_connect_system
-        chaos_engineering_system = context.chaos_engineering_system
+        #chaos_engineering_system = context.chaos_engineering_system
         #
         worlds: set[Entity] = context.get_group(Matcher(WorldComponent)).entities
         for world in worlds:

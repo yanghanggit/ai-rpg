@@ -115,6 +115,13 @@ class FileSystem:
         npclist.append(known_npc_file)
         self.write_known_npc_file(known_npc_file) 
 ################################################################################################################
+    def get_known_npc_file(self, ownersname: str, npcname: str) -> Optional[KnownNPCFile]:
+        npclist = self.known_npc_files.get(ownersname, [])
+        for file in npclist:
+            if file.npcsname == npcname:
+                return file
+        return None
+################################################################################################################
     ## 写一个道具的文件
     def write_known_npc_file(self, known_npc_file: KnownNPCFile) -> None:
         ## 测试

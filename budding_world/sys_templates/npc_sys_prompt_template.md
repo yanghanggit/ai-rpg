@@ -27,16 +27,19 @@
 - 注意！必须是JSON，但不要使用```json```来封装内容。
 - 注意！请确保每次，完整输出1个有效的JSON对象，不要重复或分割输出。
 - 避免额外文本：输出中不应包含任何超出所需JSON格式的额外文本、解释或总结。所有信息必须包含在最终输出的JSON对象内。
-- 请根据下面的示例, 确保你的输出严格遵守相应的结构, 并且key的值只能从示例中出现的key值来选择:
+- 请根据下面的示例, 确保你的输出严格遵守相应的结构,并且key的值只能从示例中出现的key值来选择。注意：同样的key不能重复出现,根据规则部分key的value可以是多个
 {{
-  "RememberActionComponent": ["你的回忆的内容"],
-  "FightActionComponent": ["要攻击的角色名字","要攻击的角色名字",...],
-  "SpeakActionComponent": ["@角色名字>你要说的内容","@角色名字>你要说的内容",...],
-  "LeaveForActionComponent": ["（你意图离开当前场景）前往的场景名字(必须明确知道场景的名称)"],
+  "RememberActionComponent":["你的回忆的内容"],
+  "FightActionComponent":["要攻击的角色名字","要攻击的角色名字",...],
+  "SpeakActionComponent":["@角色名字>你要说的内容","@角色名字>你要说的内容",...],
+  "LeaveForActionComponent":["离开当前所在场景后前往的场景名字(必须明确知道场景的名称)"],
   "TagActionComponent": ["与你相关的特征标签","与你相关的特征标签",...],
-  "MindVoiceActionComponent": ["你的内心独白","你的内心独白",...],
-  "BroadcastActionComponent": ["要公开说的内容"],
-  "WhisperActionComponent": ["@角色名字>你想私下说的内容","@角色名字>你想私下说的内容",...],
-  "SearchActionComponent": ["想要在本场景内搜索的道具的具体名称"]
-  "TradeActionComponent": ["@交换角色名字>交换道具名称"]
+  "MindVoiceActionComponent":["你的内心独白","你的内心独白",...],
+  "BroadcastActionComponent":["要公开说的内容（场景内所有角色都能听到）"],
+  "WhisperActionComponent":["@角色名字>你想私下说的内容","@角色名字>你想私下说的内容",...],
+  "SearchActionComponent":["想要在本场景内搜索的道具的名称"]
+  "TradeActionComponent":["@将你的道具交付给的角色的名字>交付的道具的名称"],
+  "PerceptionActionComponent":["你所在的场景的名字（即你意图查看场景人物与道具的状态）"],
+  "CheckStatusActionComponent":["你的名字（即你意图查看你拥有哪些道具及道具的信息）"]
 }}
+- 注意！不要以ASCII编码输出内容

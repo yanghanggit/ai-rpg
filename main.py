@@ -105,11 +105,10 @@ def main() -> None:
     rpggame.execute()
 
     while True:
-        usr_input = input("[user input]: ")
+        usr_input = input("[system input]: ")
         if "/quit" in usr_input:
             break
-
-        #cast(PlayerProxy, get_player_proxy(playername))
+        
         elif "/login" in usr_input:
             # 测试的代码，上来就控制一个NPC目标，先写死
             create_player_proxy(TEST_PLAYER_NAME)
@@ -117,6 +116,7 @@ def main() -> None:
             assert playerproxy is not None
             playerstartcmd = PlayerCommandLogin("/player-login", rpggame, playerproxy, "无名的复活者")
             playerstartcmd.execute()
+            rpggame.execute() # 测试 直接跑一次
 
         elif "/run" in usr_input:
             rpggame.execute()

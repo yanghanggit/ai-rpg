@@ -42,10 +42,26 @@ class PerceptionActionSystem(ReactiveProcessor):
         if safestage is None:
             return res
         stagecomp: StageComponent = safestage.get(StageComponent)
+
+
+        file_system = self.context.file_system
+        selfname = self.context.safe_get_entity_name(entity)
         npcs = self.context.npcs_in_this_stage(stagecomp.name)
         for npc in npcs:
-            if npc != entity:
-                res.append(self.context.safe_get_entity_name(npc))
+
+            if npc == entity:
+                #过滤掉自己
+                continue
+
+            hisname = self.context.safe_get_entity_name(npc)
+            I_known_this_npc = file_system.get_known_npc_file(selfname, hisname)
+            if I_known_this_npc is None:
+                #过滤掉不认识的NPC
+                logger.warning(f"{selfname}不认识{hisname}, 无法感知。后续可以加入形象系统")
+                continue
+
+            res.append(self.context.safe_get_entity_name(npc))
+    
         return res
 ###################################################################################################################
     def perception_props_in_stage(self, entity: Entity) -> List[str]:
@@ -68,5 +84,6 @@ class PerceptionActionSystem(ReactiveProcessor):
         if safename == "":
             return
         directorcomp: DirectorComponent = stageentity.get(DirectorComponent)
-        directorcomp.addevent(PerceptionEvent(safename, npcs_in_stage, props_in_stage))
+        stagename = self.context.safe_get_entity_name(stageentity)
+        directorcomp.addevent(PerceptionEvent(safename, stagename, npcs_in_stage, props_in_stage))
 ###################################################################################################################

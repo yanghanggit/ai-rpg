@@ -94,16 +94,22 @@ class KnownInformationSystem(InitializeProcessor, ExecuteProcessor):
             allstagesname.add(stagecomp.name)
         return allstagesname
 ############################################################################################################
-    def add_known_npc_file(self, who: str, allnames: Set[str]) -> None:
+    def add_known_npc_file(self, filesowner: str, allnames: Set[str]) -> None:
         file_system = self.context.file_system
         for npcname in allnames:
-            file = KnownNPCFile(npcname, who, npcname)
+            if filesowner == npcname:
+                #logger.warning(f"who == npcname: {filesowner} == {npcname}") ## 自己就不要添加了，自己认识自己？
+                continue
+            file = KnownNPCFile(npcname, filesowner, npcname)
             file_system.add_known_npc_file(file)
 ############################################################################################################
-    def add_known_stage_file(self, who: str, allnames: Set[str]) -> None:
+    def add_known_stage_file(self, filesowner: str, allnames: Set[str]) -> None:
         file_system = self.context.file_system
-        for npcname in allnames:
-            file = KnownStageFile(npcname, who, npcname)
+        for stagename in allnames:
+            if filesowner == stagename:
+                #logger.warning(f"where == stagename: {filesowner} == {stagename}") ## 自己就不要添加了，自己认识自己？
+                continue
+            file = KnownStageFile(stagename, filesowner, stagename)
             file_system.add_known_stage_file(file)
 ############################################################################################################
     def who_you_know_in_memory(self, yourmemory: str, allnames: Set[str]) -> Set[str]:

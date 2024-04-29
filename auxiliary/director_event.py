@@ -3,17 +3,18 @@ from auxiliary.prompt_maker import ( broadcast_action_prompt,
 speak_action_prompt,
 search_failed_prompt, 
 kill_someone,
-attack_someone,
-npc_leave_for_stage, 
-npc_enter_stage, 
+attack_someone_prompt,
+npc_leave_for_stage_prompt, 
+npc_enter_stage_prompt, 
 perception_action_prompt,
 steal_action_prompt,
 trade_action_prompt,
 check_status_action_prompt,
-leave_for_stage_is_invalid_prompt)
+leave_for_stage_failed_because_stage_is_invalid_prompt,
+leave_for_stage_failed_because_already_in_stage_prompt,
+whisper_action_prompt)
 from loguru import logger
 from abc import ABC, abstractmethod
-from auxiliary.prompt_maker import whisper_action_prompt
 from typing import List
 import random
 
@@ -113,11 +114,11 @@ class NPCAttackSomeoneEvent(IDirectorEvent):
         self.maxhp = maxhp
 
     def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
-        event = attack_someone(self.attacker, self.target, self.damage, self.curhp, self.maxhp)
+        event = attack_someone_prompt(self.attacker, self.target, self.damage, self.curhp, self.maxhp)
         return event
     
     def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
-        event = attack_someone(self.attacker, self.target, self.damage, self.curhp, self.maxhp)
+        event = attack_someone_prompt(self.attacker, self.target, self.damage, self.curhp, self.maxhp)
         return event
 ####################################################################################################################################
 ####################################################################################################################################
@@ -130,11 +131,11 @@ class NPCLeaveForStageEvent(IDirectorEvent):
         self.leave_for_stage_name = leave_for_stage_name
 
     def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
-        event = npc_leave_for_stage(self.npc_name, self.current_stage_name, self.leave_for_stage_name)
+        event = npc_leave_for_stage_prompt(self.npc_name, self.current_stage_name, self.leave_for_stage_name)
         return event
     
     def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
-        event = npc_leave_for_stage(self.npc_name, self.current_stage_name, self.leave_for_stage_name)
+        event = npc_leave_for_stage_prompt(self.npc_name, self.current_stage_name, self.leave_for_stage_name)
         return event
 ####################################################################################################################################
 ####################################################################################################################################
@@ -146,11 +147,11 @@ class NPCEnterStageEvent(IDirectorEvent):
         self.stage_name = stage_name
 
     def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
-        event = npc_enter_stage(self.npc_name, self.stage_name)
+        event = npc_enter_stage_prompt(self.npc_name, self.stage_name)
         return event
     
     def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
-        event = npc_enter_stage(self.npc_name, self.stage_name)
+        event = npc_enter_stage_prompt(self.npc_name, self.stage_name)
         return event
 ####################################################################################################################################
 ####################################################################################################################################
@@ -177,8 +178,9 @@ class WhisperEvent(IDirectorEvent):
 #################################################################################################################################### 
 class PerceptionEvent(IDirectorEvent):
 
-    def __init__(self, whoperception: str, npcs_in_stage: List[str], props_in_stage: List[str]) -> None:
+    def __init__(self, whoperception: str, stagename: str, npcs_in_stage: List[str], props_in_stage: List[str]) -> None:
         self.whoperception = whoperception
+        self.stagename = stagename
         self.npcs_in_stage = npcs_in_stage
         self.props_in_stage = props_in_stage
     
@@ -187,7 +189,7 @@ class PerceptionEvent(IDirectorEvent):
             return ""
         npcnames = ",".join(self.npcs_in_stage)
         propnames = ",".join(self.props_in_stage)
-        perceptioncontent = perception_action_prompt(npcnames, propnames)
+        perceptioncontent = perception_action_prompt(self.stagename, npcnames, propnames)
         return perceptioncontent
     
     def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
@@ -242,16 +244,18 @@ class NPCTradeEvent(IDirectorEvent):
 ####################################################################################################################################
 class NPCCheckStatusEvent(IDirectorEvent):
 
-    def __init__(self, who: str, propnames: List[str]) -> None:
+    def __init__(self, who: str, propnames: List[str], props_and_desc: List[str]) -> None:
         self.who = who
         self.propnames = propnames
+        self.props_and_desc = props_and_desc
 
     def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
         if npcname != self.who:
             # 只有自己知道
             return ""
         propnames = ",".join(self.propnames)
-        checkstatuscontent = check_status_action_prompt(self.who, propnames)
+        props_and_desc = "\n".join(self.props_and_desc)
+        checkstatuscontent = check_status_action_prompt(self.who, propnames, props_and_desc)
         return checkstatuscontent
     
     def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
@@ -269,13 +273,30 @@ class NPCLeaveForFailedBecauseStageIsInvalidEvent(IDirectorEvent):
         if npcname != self.npcname:
             # 跟你无关不用关注
             return ""
-        leave_for_stage_is_invalid_event = leave_for_stage_is_invalid_prompt(self.npcname, self.stagename)
+        leave_for_stage_is_invalid_event = leave_for_stage_failed_because_stage_is_invalid_prompt(self.npcname, self.stagename)
         return leave_for_stage_is_invalid_event
     
     def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
         return ""
 
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
+class NPCLeaveForFailedBecauseAlreadyInStage(IDirectorEvent):
 
+    def __init__(self, npcname: str, stagename: str) -> None:
+        self.npcname = npcname
+        self.stagename = stagename
+
+    def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
+        if npcname != self.npcname:
+            # 跟你无关不用关注
+            return ""
+        already_in_stage_event = leave_for_stage_failed_because_already_in_stage_prompt(self.npcname, self.stagename)
+        return already_in_stage_event
+    
+    def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
+        return ""
 
 
 

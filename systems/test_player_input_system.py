@@ -62,24 +62,39 @@ class TestPlayerInputSystem(ExecuteProcessor):
             logger.error(f"showclient, 玩家不存在{playername}")
             return
         
-        displaymsg = f"<<<<<<<<<<<<<<<<<< {playername} >>>>>>>>>>>>>>>>>>"
-        
+        aboutgame = self.about_game_message(playerentity)
+        if len(aboutgame) > 0:
+            logger.error(f"<<<<<<<<<<<<<<<<<< [一个测试的游戏，模拟登陆的时候看到] >>>>>>>>>>>>>>>>>>")
+            logger.error(f"{aboutgame}") 
+
+        displaymsg = f"<<<<<<<<<<<<<<<<<< 你是玩家[{playername}] >>>>>>>>>>>>>>>>>>"
         # 常规的显示场景描述
         stagemsg = self.stagemessage(playerentity)
         if len(stagemsg) > 0:
             stageentity: Optional[Entity] = self.context.safe_get_stage_entity(playerentity)
             assert stageentity is not None
             stagename = self.context.safe_get_entity_name(stageentity)
-            displaymsg += f"\n[{stagename}]=>{stagemsg}"
+            displaymsg += f"\n[{stagename}]=>{stagemsg}\n{'-' * 100}"
 
         # 如果是login，需要把login进入后的打印出来
         awakemsg = self.awakemessage(playerentity)     
         if len(awakemsg) > 0:
             npcname = self.context.safe_get_entity_name(playerentity)
-            displaymsg += f"\n{'-' * 50}\n[{npcname}]=>{awakemsg}"
+            displaymsg += f"\n[{npcname}]=>{awakemsg}\n{'-' * 100}"
             
         #
         logger.warning(displaymsg)
+
+############################################################################################################
+    def about_game_message(self, playerentity: Entity) -> str:
+        if not playerentity.has(PlayerAwakeActionComponent):
+            return ""
+        awakecomp: PlayerAwakeActionComponent = playerentity.get(PlayerAwakeActionComponent)
+        action: ActorAction = awakecomp.action
+        if len(action.values) == 0:
+            return ""
+        message = action.values[1]
+        return message
 ############################################################################################################
     def awakemessage(self, playerentity: Entity) -> str:
         if not playerentity.has(PlayerAwakeActionComponent):

@@ -105,11 +105,11 @@ def main() -> None:
     rpggame.execute()
 
     while True:
-        usr_input = input("[system input]: ")
-        if "/quit" in usr_input:
+        systeminput = input("[system input]:")
+        if "/quit" in systeminput:
             break
         
-        elif "/login" in usr_input:
+        elif "/login" in systeminput:
             # 测试的代码，上来就控制一个NPC目标，先写死
             create_player_proxy(TEST_PLAYER_NAME)
             playerproxy = get_player_proxy(TEST_PLAYER_NAME)
@@ -118,12 +118,12 @@ def main() -> None:
             playerstartcmd.execute()
             rpggame.execute() # 测试 直接跑一次
 
-        elif "/run" in usr_input:
+        elif "/run" in systeminput:
             rpggame.execute()
 
-        elif "/push" in usr_input:
+        elif "/push" in systeminput:
             command = "/push"
-            input_content = user_input_pre_command(usr_input, command) 
+            input_content = user_input_pre_command(systeminput, command) 
             push_command_parse_res: tuple[Optional[str], Optional[str]] = parse_target_and_message(input_content)
             if push_command_parse_res[0] is None or push_command_parse_res[1] is None:
                 continue
@@ -135,12 +135,12 @@ def main() -> None:
             ###
             logger.debug(f"{'=' * 50}")
 
-        elif "/ask" in usr_input:
+        elif "/ask" in systeminput:
             if not rpggame.started:
                 logger.warning("请先/run")
                 continue
             command = "/ask"
-            input_content = user_input_pre_command(usr_input, command)
+            input_content = user_input_pre_command(systeminput, command)
             ask_command_parse_res: tuple[Optional[str], Optional[str]] = parse_target_and_message(input_content)
             if ask_command_parse_res[0] is None or ask_command_parse_res[1] is None:
                 continue
@@ -151,12 +151,12 @@ def main() -> None:
             ###
             logger.debug(f"{'=' * 50}")
 
-        elif "/who" in usr_input:
+        elif "/who" in systeminput:
             if not rpggame.started:
                 logger.warning("请先/run")
                 continue
             command = "/who"
-            bewho = user_input_pre_command(usr_input, command)
+            bewho = user_input_pre_command(systeminput, command)
             ###
             playerproxy = get_player_proxy(TEST_PLAYER_NAME)
             assert playerproxy is not None

@@ -18,8 +18,11 @@ from auxiliary.components import (
     TradeActionComponent, 
     CheckStatusActionComponent)
 from auxiliary.actor_action import ActorAction
-from auxiliary.player_proxy import PlayerProxy
+from auxiliary.player_proxy import PlayerProxy, TEST_GAME_INSTRUCTIONS_WHEN_LOGIN_SUCCESS_FOR_FIRST_TIME
 from abc import ABC, abstractmethod
+
+
+
 
 ####################################################################################################################################
 ####################################################################################################################################
@@ -89,7 +92,7 @@ class PlayerCommandLogin(PlayerCommand):
             logger.error(f"{login_npc_name} already has AwakeActionComponent?")
             npcentity.remove(PlayerAwakeActionComponent)
         #
-        action = ActorAction(login_npc_name, PlayerAwakeActionComponent.__name__, [f"{clientmessage}"])
+        action = ActorAction(login_npc_name, PlayerAwakeActionComponent.__name__, [f"{clientmessage}", TEST_GAME_INSTRUCTIONS_WHEN_LOGIN_SUCCESS_FOR_FIRST_TIME])
         npcentity.add(PlayerAwakeActionComponent, action)
         
     ##这是一个测试的方法，目前登陆成功后，就是把memory给到，后续可以做的复杂一些

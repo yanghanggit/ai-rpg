@@ -74,7 +74,7 @@ class TestPlayerInputSystem(ExecuteProcessor):
             stageentity: Optional[Entity] = self.context.safe_get_stage_entity(playerentity)
             assert stageentity is not None
             stagename = self.context.safe_get_entity_name(stageentity)
-            displaymsg += f"[{stagename}]=>{stagemsg}\n{'-' * 100}"
+            displaymsg += f"\n[{stagename}]=>{stagemsg}\n{'-' * 100}"
 
         # 如果是login，需要把login进入后的打印出来
         awakemsg = self.awakemessage(playerentity)     

@@ -29,6 +29,10 @@ def get_player_proxy(playername: str) -> Optional[PlayerProxy]:
 
 ### 单人游戏，临时的名字
 TEST_PLAYER_NAME = "北京柏林互动科技有限公司"
+
+TEST_GAME_INSTRUCTIONS_WHEN_LOGIN_SUCCESS_FOR_FIRST_TIME = """
+这是一个demo。xxxxxxxx..
+"""
     
 
 

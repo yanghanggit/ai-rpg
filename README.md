@@ -19,6 +19,12 @@ pip install langchain_core langserve fastapi langchain_openai sse_starlette fais
 3. 然后运行main.py进行对话,先输入第1步创建的世界名,然后可以输入`/run`推进世界进程。
 4. 或者通过'/login'命令通过玩家身份登陆游戏游玩。
 
+## 启动所有agents（方便复制粘贴）
+```shell
+pm2 start budding_world/gen_agent/coffin_of_the_silent_one_agent.py budding_world/gen_agent/gray_chapel_agent.py budding_world/gen_agent/nameless_resurrector_agent.py budding_world/gen_agent/rat_king_agent.py budding_world/gen_agent/elias_gray_agent.py budding_world/gen_agent/moore_dog_agent.py budding_world/gen_agent/papal_emissary_agent.py budding_world/gen_agent/the_incinerator_agent.py budding_world/gen_agent/gray_cemetery_agent.py budding_world/gen_agent/mr_lucky_agent.py budding_world/gen_agent/rancid_cellar_agent.py
+```
+
+
 ## “系统输入环节”的可用的命令, [system input]
 ```shell
 # 退出游戏
@@ -41,8 +47,8 @@ pip install langchain_core langserve fastapi langchain_openai sse_starlette fais
 /attack ‘Name?’
 # 离开当前场景，去往Name?的场景
 /leave ‘Name?’
-# 在当前场景内广播内容。
-/broadcast
+# 在当前场景内广播内容。场景内所有NPC都能听见
+/broadcast ‘说的内容’
 # 对当前场景内的目标说话
 /speak ‘@对谁>说话内容’
 # 对当前场景内的目标低语
@@ -60,17 +66,3 @@ pip install langchain_core langserve fastapi langchain_openai sse_starlette fais
 # 查看我身上有哪些道具？
 /checkstatus
 ```
-
-## World2的设计意图：
-1. 过关条件：操作‘无名的复活者’，从‘埃利亚斯·格雷’身上获取‘断指钥匙’，并进入‘灰颜礼拜堂’
-2. 初期需要离开‘禁言者之棺’。进入‘灰颜墓地’
-3. 通过和‘埃利亚斯·格雷’的对话来逐步解锁更多信息和可以去的地方。
-4. 如果发生敌意行为——玩家攻击‘埃利亚斯·格雷’意图夺取钥匙或偷盗被发现，‘摩尔’可能会发起攻击，‘摩尔’的目的就是测试一种‘保护者&随从’的类型。
-4. ‘好运气先生’会根据场景情况，去惊醒‘鼠王’。这个主要是测试其推理与泛化能力。‘好运气先生’是‘条件触发者’的类型，只不过目前条件些的很隐晦。
-5. ‘鼠王’如果被惊醒，就会在所有场景中寻找主角并攻击，玩家必死无疑。‘鼠王’是‘追击者’的类型。’鼠王‘苏醒就是变成‘鬼抓人’的游戏。
-6. 唯一克制鼠王的办法是到‘焚化炉‘获取’炉钩‘。
-
-
-
-
-

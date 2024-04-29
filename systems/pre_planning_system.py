@@ -106,7 +106,7 @@ class PrePlanningSystem(InitializeProcessor, ExecuteProcessor):
 ############################################################################################################
     def all_npc_except_player_first_planning_action_check_self_status(self) -> None:
         context = self.context
-        npcs: set[Entity] = context.get_group(Matcher(all_of=[NPCComponent])).entities
+        npcs: set[Entity] = context.get_group(Matcher(all_of=[NPCComponent], none_of=[PlayerComponent])).entities
         for npc in npcs:
             npccomp: NPCComponent = npc.get(NPCComponent)
             action = ActorAction(npccomp.name, CheckStatusActionComponent.__name__, [f"{npccomp.name}"])

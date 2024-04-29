@@ -22,6 +22,41 @@ def read_archives_when_system_init_prompt(archives: str, entity: Entity, context
 ## 遵循‘输出格式指南’，仅返回‘RememberActionComponent’及相关内容即可。"""
     return prompt
 
+def read_all_neccesary_info_when_system_init_prompt(
+        init_memory: str, 
+        prop_and_desc: str, 
+        current_stage: str, 
+        where_you_know: str, 
+        who_you_know: str) -> str:
+    
+    prop_and_desc_prompt = f""" 
+# 你有如下道具和其描述:
+{prop_and_desc}"""
+    if len(prop_and_desc) == 0:
+        prop_and_desc_prompt = ""
+    
+    who_you_know_prompt = f"""
+# 你认识的人有:
+{who_you_know}.
+"""
+    if len(who_you_know) == 0:
+        who_you_know_prompt = ""
+    
+    where_you_know_prompt = f"""如果你想前往其他场景，你只能从{where_you_know}中选择你的目的地."""
+    if where_you_know is None or len(where_you_know) == 0:
+        where_you_know_prompt = ""
+
+    prompt = f"""
+# 你回忆起了如下信息:
+{init_memory}
+{prop_and_desc_prompt}
+# 你所在的场景是:{current_stage}.
+{where_you_know_prompt}
+{who_you_know_prompt}
+## 请理解其中的信息并更新的你的状态。
+## 遵循‘输出格式指南’，仅返回‘RememberActionComponent’及相关内容即可。"""
+    return prompt
+
 def whisper_action_prompt(srcname: str, destname: str, content: str, context: ExtendedContext) -> str:
     prompt = f"{srcname}对{destname}低语道:{content}"   
     return prompt

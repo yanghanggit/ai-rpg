@@ -1,5 +1,5 @@
 from auxiliary.extended_context import ExtendedContext
-from auxiliary.prompt_maker import ( broadcast_action_prompt, 
+from auxiliary.cn_builtin_prompt import ( broadcast_action_prompt, 
 speak_action_prompt,
 search_failed_prompt, 
 kill_someone,

@@ -1,4 +1,4 @@
-from auxiliary.prompt_maker import npc_plan_prompt
+from auxiliary.cn_builtin_prompt import npc_plan_prompt
 from entitas import Entity, Matcher, ExecuteProcessor #type: ignore
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.components import (NPCComponent,

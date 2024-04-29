@@ -3,7 +3,7 @@ from auxiliary.components import StageComponent, NPCComponent
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.director_component import DirectorComponent
-from auxiliary.prompt_maker import direct_stage_events_prompt, direct_npc_events_prompt
+from auxiliary.cn_builtin_prompt import direct_stage_events_prompt, direct_npc_events_prompt
 
 class DirectorSystem(ExecuteProcessor):
 

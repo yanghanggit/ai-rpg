@@ -22,7 +22,7 @@ class PrePlanningSystem(InitializeProcessor, ExecuteProcessor):
     def initialize(self) -> None:
         logger.debug("<<<<<<<<<<<<<  PrePlanningSystem.initialize  >>>>>>>>>>>>>>>>>")
         ##所有npc进行第一次计划
-        self.all_npc_except_player_first_planning_action_check_self_status()
+        # self.all_npc_except_player_first_planning_action_check_self_status()
 ############################################################################################################
     def execute(self) -> None:
         logger.debug("<<<<<<<<<<<<<  PrePlanningSystem.execute  >>>>>>>>>>>>>>>>>")

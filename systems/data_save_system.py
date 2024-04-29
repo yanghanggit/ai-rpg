@@ -6,7 +6,7 @@ from auxiliary.components import (
     StageComponent,
     WorldComponent,
 )
-from auxiliary.prompt_maker import gen_npc_archive_prompt, gen_stage_archive_prompt, gen_world_archive_prompt
+from auxiliary.cn_builtin_prompt import gen_npc_archive_prompt, gen_stage_archive_prompt, gen_world_archive_prompt
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 

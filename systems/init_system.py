@@ -213,14 +213,27 @@ class InitSystem(InitializeProcessor):
             #     logger.error(f"npcmemory is empty: {npccomp.name}")
             #     continue
             
+
+            #切成字符串，给read_all_neccesary_info_when_system_init_prompt            
+            props_info_prompt = ""
+            listinfo = known_info_helper.get_npcs_with_props_info(npccomp.name)
+            if len(listinfo) > 0:
+                props_info_prompt = "\n".join(listinfo)
             
-            
+            where_you_can_go_prompt = ""
+            if len(where_you_can_go) > 0:
+                where_you_can_go_prompt = ",".join(where_you_can_go)
+
+            who_do_you_know_prompt = ""
+            if len(who_do_you_know) > 0:
+                who_do_you_know_prompt = ",".join(who_do_you_know)
+
             #readarchprompt = read_all_neccesary_info_when_system_init_prompt(npcsmem, prop_and_desc, npccomp.current_stage, merge_where_you_know, merge_who_you_know)
             readarchprompt = read_all_neccesary_info_when_system_init_prompt(memory_system.getmemory(npccomp.name), 
-                                                                             str(known_info_helper.get_npcs_with_props_info(npccomp.name)), 
+                                                                             props_info_prompt, 
                                                                              npccomp.current_stage, 
-                                                                             str(where_you_can_go), 
-                                                                             str(who_do_you_know))
+                                                                             where_you_can_go_prompt, 
+                                                                             who_do_you_know_prompt)
 
             
             

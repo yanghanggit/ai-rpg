@@ -30,22 +30,26 @@ class KnownInformationSystem(ExecuteProcessor):
         npccomp: NPCComponent = npcentity.get(NPCComponent)
         who_do_you_know: set[str] = helper.who_do_you_know(npccomp.name)
         if len(who_do_you_know) == 0:
+            logger.warning(f"{npccomp.name} has no who do you know??!!")
             return
         # 写文件
         self.add_known_npc_file(npccomp.name, who_do_you_know)
         # 更新chat history
-        newmsg = known_information_update_who_you_know_prompt(npccomp.name, str(who_do_you_know))
+        who_do_you_know_promt = ",".join(who_do_you_know)
+        newmsg = known_information_update_who_you_know_prompt(npccomp.name, who_do_you_know_promt)
         self.context.safe_add_human_message_to_entity(npcentity, newmsg)
 ############################################################################################################
     def update_where_you_know(self, npcentity: Entity, helper: KnownInformationHelper) -> None:
         npccomp: NPCComponent = npcentity.get(NPCComponent)
         where_do_you_know: set[str] = helper.where_do_you_know(npccomp.name)
         if len(where_do_you_know) == 0:
+            logger.warning(f"{npccomp.name} has no where do you know??!!")
             return
         # 写文件
         self.add_known_stage_file(npccomp.name, where_do_you_know)
         # 更新chat history
-        newmsg = known_information_update_where_you_know_prompt(npccomp.name, str(where_do_you_know))
+        where_do_you_know_promt = ",".join(where_do_you_know)
+        newmsg = known_information_update_where_you_know_prompt(npccomp.name, where_do_you_know_promt)
         self.context.safe_add_human_message_to_entity(npcentity, newmsg)
 ############################################################################################################
     def add_known_npc_file(self, filesowner: str, allnames: Set[str]) -> None:

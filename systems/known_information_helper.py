@@ -122,6 +122,7 @@ class KnownInformationHelper:
         mentioned_in_chat_history = self.name_mentioned_in_chat_history(need_check_names, npcname)
         #取并集
         finalres = mentioned_in_prop_description | mentioned_in_memory | mentioned_in_chat_history
+        finalres.discard(npcname) ##去掉自己，没必要认识自己
         return finalres
 ###############################################################################################################################################
     def name_mentioned_in_prop_description(self, checknames: Set[str], npcname: str) -> Set[str]:

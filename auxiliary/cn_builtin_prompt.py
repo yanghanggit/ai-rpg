@@ -225,3 +225,15 @@ def replace_all_mentions_of_your_name_with_you(content: str, your_name: str) -> 
     if len(content) == 0 or your_name not in content:
         return content
     return content.replace(your_name, "你")
+
+###
+def known_information_update_who_you_know_prompt(npcname: str, who_you_know: str) -> str:
+    if len(who_you_know) == 0:
+        return f"# 你更新了记忆，你目前没有认识的角色。"
+    return f"# 你更新了记忆，你所认识的角色目前有: {who_you_know}"
+
+### 
+def known_information_update_where_you_know_prompt(npcname: str, where_you_know: str) -> str:
+    if len(where_you_know) == 0:
+        return f"# 你更新了记忆，你目前没有认识的场景。你不能去任何地方。"
+    return f"# 你更新了记忆，你所知道的场景有: {where_you_know}。如果你想前往其他场景，你只能从这些场景中选择你的目的地。"

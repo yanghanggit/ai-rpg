@@ -2,11 +2,9 @@ from entitas import InitializeProcessor, ExecuteProcessor, Matcher, Entity #type
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.components import ( AutoPlanningComponent, StageComponent, NPCComponent, PlayerComponent, 
-                                  STAGE_AVAILABLE_ACTIONS_REGISTER, NPC_AVAILABLE_ACTIONS_REGISTER,
-                                  CheckStatusActionComponent)
+                                  STAGE_AVAILABLE_ACTIONS_REGISTER, NPC_AVAILABLE_ACTIONS_REGISTER)
 from enum import Enum
 from typing import Set
-from auxiliary.actor_action import ActorAction
 
 # 规划的策略
 class PlanningStrategy(Enum):
@@ -21,8 +19,6 @@ class PrePlanningSystem(InitializeProcessor, ExecuteProcessor):
 ############################################################################################################
     def initialize(self) -> None:
         logger.debug("<<<<<<<<<<<<<  PrePlanningSystem.initialize  >>>>>>>>>>>>>>>>>")
-        ##所有npc进行第一次计划
-        # self.all_npc_except_player_first_planning_action_check_self_status()
 ############################################################################################################
     def execute(self) -> None:
         logger.debug("<<<<<<<<<<<<<  PrePlanningSystem.execute  >>>>>>>>>>>>>>>>>")
@@ -94,22 +90,8 @@ class PrePlanningSystem(InitializeProcessor, ExecuteProcessor):
 ############################################################################################################
     ## 自我测试，这个调用点就是不允许再这个阶段有任何action
     def test(self) -> None:
-
         stageentities: Set[Entity] = self.context.get_group(Matcher(any_of = STAGE_AVAILABLE_ACTIONS_REGISTER)).entities
         assert len(stageentities) == 0, f"Stage entities with actions: {stageentities}"
-
-        if self.context.executecount > 1:
-            # 第一次可能会有默认的行动all_npc_except_player_first_planning_action_check_self_status
-            # 如果player登陆成功，可能会有
-            npcentities: Set[Entity]  = self.context.get_group(Matcher(any_of = NPC_AVAILABLE_ACTIONS_REGISTER, none_of=[PlayerComponent])).entities
-            assert len(npcentities) == 0, f"NPC entities with actions: {npcentities}"
-############################################################################################################
-    def all_npc_except_player_first_planning_action_check_self_status(self) -> None:
-        context = self.context
-        npcs: set[Entity] = context.get_group(Matcher(all_of=[NPCComponent], none_of=[PlayerComponent])).entities
-        for npc in npcs:
-            npccomp: NPCComponent = npc.get(NPCComponent)
-            action = ActorAction(npccomp.name, CheckStatusActionComponent.__name__, [f"{npccomp.name}"])
-            if not npc.has(CheckStatusActionComponent):
-                npc.add(CheckStatusActionComponent, action)
+        npcentities: Set[Entity]  = self.context.get_group(Matcher(any_of = NPC_AVAILABLE_ACTIONS_REGISTER)).entities
+        assert len(npcentities) == 0, f"NPC entities with actions: {npcentities}"
 ############################################################################################################

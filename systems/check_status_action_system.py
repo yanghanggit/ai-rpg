@@ -8,18 +8,20 @@ from typing import List
 
 
 class CheckStatusActionHelper:
-    def __init__(self, context: ExtendedContext, entity: Entity):
+    def __init__(self, context: ExtendedContext):
         self.context = context
-        self.entity = entity
         self.propnames: List[str] = []
         self.prop_and_desc: List[str] = []
 
-    def check_status(self) -> None:
-        # 先清空
+    def clear(self) -> None:
         self.propnames.clear()
         self.prop_and_desc.clear()
+
+    def handle(self, entity: Entity) -> None:
+        # 先清空
+        self.clear()
         # 再检查
-        safename = self.context.safe_get_entity_name(self.entity)
+        safename = self.context.safe_get_entity_name(entity)
         logger.debug(f"{safename} is checking status")
         filesystem = self.context.file_system
         props = filesystem.get_prop_files(safename)
@@ -53,8 +55,8 @@ class CheckStatusActionSystem(ReactiveProcessor):
         safename = self.context.safe_get_entity_name(entity)
         logger.debug(f"{safename} is checking status")
         #
-        helper = CheckStatusActionHelper(self.context, entity)
-        helper.check_status()
+        helper = CheckStatusActionHelper(self.context)
+        helper.handle(entity)
         propnames = helper.propnames
         prop_and_desc = helper.prop_and_desc
         #

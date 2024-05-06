@@ -193,7 +193,7 @@ class TestPlayerInputSystem(ExecuteProcessor):
         if playerentity is None:
             return
         #
-        helper = PerceptionActionHelper(self.context, playerentity)
+        helper = PerceptionActionHelper(self.context)
         npcs_in_stage = helper.perception_npcs_in_stage(playerentity)
         props_in_stage = helper.perception_props_in_stage(playerentity)
         #
@@ -212,8 +212,8 @@ class TestPlayerInputSystem(ExecuteProcessor):
         if playerentity is None:
             return
         #
-        helper = CheckStatusActionHelper(self.context, playerentity)
-        helper.check_status()
+        helper = CheckStatusActionHelper(self.context)
+        helper.handle(playerentity)
         propnames = helper.propnames
         prop_and_desc = helper.prop_and_desc
         safename = self.context.safe_get_entity_name(playerentity)

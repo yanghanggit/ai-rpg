@@ -12,10 +12,8 @@ from auxiliary.director_event import NPCPerceptionEvent
 
 class PerceptionActionHelper:
 
-    def __init__(self, context: ExtendedContext, entity: Entity):
+    def __init__(self, context: ExtendedContext):
         self.context = context
-        self.entity = entity
-
 ###################################################################################################################
     def perception_npcs_in_stage(self, entity: Entity) -> List[str]:
         res: List[str] = []
@@ -78,7 +76,7 @@ class PerceptionActionSystem(ReactiveProcessor):
         logger.debug(f"PerceptionActionSystem: {safename} is perceiving")
 
         #
-        helper = PerceptionActionHelper(self.context, entity)
+        helper = PerceptionActionHelper(self.context)
         ## 场景里有哪些人？
         npcs_in_stage = helper.perception_npcs_in_stage(entity)
         ## 场景里有哪些物品？

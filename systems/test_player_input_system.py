@@ -2,7 +2,7 @@ from entitas import ExecuteProcessor, Entity #type: ignore
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from rpg_game import RPGGame 
-from auxiliary.player_proxy import PlayerProxy, get_player_proxy, TEST_PLAYER_NAME, TEST_GAME_INSTRUCTIONS_WHEN_LOGIN_SUCCESS_FOR_FIRST_TIME
+from auxiliary.player_proxy import PlayerProxy, get_player_proxy, TEST_PLAYER_NAME, TEST_GAME_INSTRUCTIONS_WHEN_LOGIN_SUCCESS_FOR_FIRST_TIME, TEST_LOGIN_INFORMATION
 from auxiliary.player_input_command import (
                           PlayerCommandAttack, 
                           PlayerCommandLeaveFor, 
@@ -17,7 +17,7 @@ from auxiliary.player_input_command import (
                           PlayerCommandCheckStatus)
 
 from auxiliary.extended_context import ExtendedContext
-from auxiliary.components import PlayerLoginActionComponent, EnviroNarrateActionComponent, PlayerComponent, NPCComponent
+from auxiliary.components import PlayerLoginActionComponent, EnviroNarrateActionComponent
 from auxiliary.actor_action import ActorAction
 from typing import Optional
 
@@ -34,68 +34,77 @@ class TestPlayerInputSystem(ExecuteProcessor):
 ############################################################################################################
     def execute(self) -> None:
         logger.debug("<<<<<<<<<<<<<  PlayerInputSystem  >>>>>>>>>>>>>>>>>")
-        while True:
-
-            playername = self.current_input_player()
-            playerproxy = get_player_proxy(playername)
-            if playerproxy is None:
-                logger.warning("玩家不存在，或者玩家未加入游戏")
-                break
-
-            # 客户端应该看到的
-            self.clientdisplay(playerproxy)
-
-            # 测试的客户端反馈
-            usrinput = input(f"[{playername}]:")
-            self.handle_player_input(self.rpggame, playerproxy, usrinput)
-            logger.debug(f"{'=' * 50}")
-            break
+        playername = self.current_input_player()
+        self.handlelogin(playername)
+        self.handleinput(playername)
 ############################################################################################################
     #测试的先写死
     def current_input_player(self) -> str:
         return TEST_PLAYER_NAME
-############################################################################################################ 
-    def clientdisplay(self, playerproxy: PlayerProxy) -> None:
-        playername = playerproxy.name
+############################################################################################################
+    def handlelogin(self, playername: str) -> None:
+        #
+        context = self.context
+        memory_system = context.memory_system
+        #
         playerentity = self.context.getplayer(playername)
         if playerentity is None:
-            logger.error(f"showclient, 玩家不存在{playername}")
+            logger.error(f"handlelogin, 玩家不存在{playername}")
             return
         
-        aboutgame = self.about_game_message(playerentity)
-        if len(aboutgame) > 0:
-            logger.error(f"<<<<<<<<<<<<<<<<<< [一个测试的游戏，模拟登陆的时候看到] >>>>>>>>>>>>>>>>>>")
-            logger.error(f"{aboutgame}") 
+        if not playerentity.has(PlayerLoginActionComponent):
+            # 不需要处理
+            return
+        
+        playerproxy = get_player_proxy(playername)
+        if playerproxy is None:
+            logger.error(f"handlelogin, 玩家代理不存在{playername}")
+            return
+        
+        #登陆的消息
+        playerproxy.add_system_message(TEST_LOGIN_INFORMATION)
+        
+        #打印关于游戏的信息
+        playerproxy.add_system_message(TEST_GAME_INSTRUCTIONS_WHEN_LOGIN_SUCCESS_FOR_FIRST_TIME)
 
-        displaymsg = f"<<<<<<<<<<<<<<<<<< 你是玩家[{playername}] >>>>>>>>>>>>>>>>>>"
-        # 常规的显示场景描述
+        #初始化的NPC记忆
+        safename = context.safe_get_entity_name(playerentity)
+        initmemory =  memory_system.getmemory(safename)
+        playerproxy.add_npc_message(safename, initmemory)
+            
+        #此时场景的描述
         stagemsg = self.stagemessage(playerentity)
         if len(stagemsg) > 0:
             stageentity: Optional[Entity] = self.context.safe_get_stage_entity(playerentity)
             assert stageentity is not None
             stagename = self.context.safe_get_entity_name(stageentity)
-            displaymsg += f"\n[{stagename}]=>{stagemsg}\n{'-' * 100}"
+            playerproxy.add_stage_message(stagename, stagemsg)
 
-        # 如果是login，需要把login进入后的打印出来
-        awakemsg = self.first_show_message_as_npc_init_memory(playerentity)     
-        if len(awakemsg) > 0:
-            npcname = self.context.safe_get_entity_name(playerentity)
-            displaymsg += f"\n[{npcname}]=>{awakemsg}\n{'-' * 100}"
-        #
-        logger.warning(displaymsg)
+        #登陆成功后，需要删除这个组件
+        playerentity.remove(PlayerLoginActionComponent)
+        logger.debug(f"handlelogin {playername} success")
 ############################################################################################################
-    def about_game_message(self, playerentity: Entity) -> str:
-        if not playerentity.has(PlayerLoginActionComponent):
-            return ""
-        return TEST_GAME_INSTRUCTIONS_WHEN_LOGIN_SUCCESS_FOR_FIRST_TIME
-############################################################################################################
-    def first_show_message_as_npc_init_memory(self, playerentity: Entity) -> str:
-        if not playerentity.has(PlayerLoginActionComponent):
-            return ""
-        context = self.context
-        memory_system = context.memory_system
-        safename = context.safe_get_entity_name(playerentity)
-        return memory_system.getmemory(safename)
+    def handleinput(self, playername: str) -> None:
+        playerproxy = get_player_proxy(playername)
+        if playerproxy is None:
+            logger.warning("玩家不存在，或者玩家未加入游戏")
+            return
+        # 客户端应该看到的
+        self.client_display_messages(playerproxy, 50)
+        ##
+        while True:
+            # 测试的客户端反馈
+            usrinput = input(f"[{playername}]:")
+            self.player_input(self.rpggame, playerproxy, usrinput)
+            logger.debug(f"{'=' * 50}")
+            break
+############################################################################################################ 
+    def client_display_messages(self, playerproxy: PlayerProxy, display_messages_count: int) -> None:
+        clientmessages = playerproxy.clientmessages
+        for message in clientmessages[-display_messages_count:]:
+            tag = message[0]
+            content = message[1]
+            logger.warning(f"{tag}=>{content}")
 ############################################################################################################
     def stagemessage(self, playerentity: Entity) -> str:
         stage = self.context.safe_get_stage_entity(playerentity)
@@ -111,7 +120,7 @@ class TestPlayerInputSystem(ExecuteProcessor):
         message = action.values[0]
         return message
 ############################################################################################################
-    def handle_player_input(self, rpggame: RPGGame, playerproxy: PlayerProxy, usrinput: str) -> None:
+    def player_input(self, rpggame: RPGGame, playerproxy: PlayerProxy, usrinput: str) -> None:
         
         assert playerproxy is not None
         assert rpggame is not None

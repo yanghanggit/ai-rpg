@@ -1,10 +1,21 @@
 #pip install pandas openpyxl
+#
+import sys
+from pathlib import Path
+# 将项目根目录添加到sys.path
+root_dir = Path(__file__).resolve().parent.parent
+sys.path.append(str(root_dir))
+
+
 import pandas as pd
 import os
 from loguru import logger
 from pandas.core.frame import DataFrame
 import json
-from typing import List, Dict, Any, Optional, cast
+from typing import List, Dict, Any, Optional
+#
+from auxiliary.format_of_complex_stage_entry_and_exit_conditions import parse_complex_stage_condition
+
 
 ##全局的，方便，不封装了，反正当工具用.....
 # 核心设置
@@ -433,7 +444,8 @@ class ExcelEditorStageCondition:
 
     def parsecondition(self) -> None:
         if self.type == "Prop":
-            self.exceldataprop = all_props_data[self.name]
+            self.exceldataprop = all_props_data.get(self.name, None)
+            #self.exceldataprop = all_props_data[self.name]
         else:
             logger.error(f"Invalid condition type: {self.type}")
         
@@ -442,10 +454,19 @@ class ExcelEditorStageCondition:
     
     def self_dict(self) -> Dict[str, str]:
         dict: Dict[str, str] = {}
-        dict['name'] = self.name
-        dict['type'] = self.type
         if self.exceldataprop is not None:
+            logger.debug(f"这是一个普通的场景条件: {self.name}")
+            dict['name'] = self.name
+            dict['type'] = self.type
             dict['propname'] = self.exceldataprop.name
+        else:
+            logger.warning(f"这是一个复杂的场景条件: {self.name}")
+            res = parse_complex_stage_condition(self.name)
+            parsename = res[0]
+            parsecondition = str(self.name)
+            dict['name'] = parsename
+            dict['type'] = self.type
+            dict['propname'] = parsecondition
         return dict
 ################################################################################################################
 class ExcelEditorStage:
@@ -457,7 +478,7 @@ class ExcelEditorStage:
         self.props_in_stage: List[ExcelDataProp] = []
         self.npcs_in_stage: List[ExcelDataNPC] = []
         self.initialization_memory: str = ""
-        self.connect_to_stage: str = ""
+        self.exit_of_prison: str = ""
 
         if self.data["type"] not in ["Stage"]:
             logger.error(f"Invalid Stage type: {self.data['type']}")
@@ -469,7 +490,7 @@ class ExcelEditorStage:
         self.parse_props_in_stage()
         self.parse_npcs_in_stage()
         self.parse_initialization_memory()
-        self.parse_connect_to_stage()
+        self.parse_exit_of_prison()
 
     def parse_stage_entry_conditions(self) -> None:
         stage_entry_conditions: Optional[str] = self.data["stage_entry_conditions"]
@@ -483,16 +504,17 @@ class ExcelEditorStage:
                 logger.error(f"Invalid condition: {condition}")
 
     def parse_stage_exit_conditions(self) -> None:
+        
         stage_exit_conditions = self.data["stage_exit_conditions"]
         if stage_exit_conditions is None:
             return
+        
         list_stage_exit_conditions = stage_exit_conditions.split(";")
         for condition in list_stage_exit_conditions:
-            if condition in all_props_data:
-                self.stage_exit_conditions.append(ExcelEditorStageCondition(condition, "Prop"))
-            else:
-                logger.error(f"Invalid condition: {condition}")
-
+            if condition not in all_props_data:
+                logger.warning(f"无法直接匹配道具名字，可能是是一个复杂条件: {condition}")
+            self.stage_exit_conditions.append(ExcelEditorStageCondition(condition, "Prop"))
+    #
     def parse_props_in_stage(self) -> None:
         props_in_stage: Optional[str] = self.data["props_in_stage"]
         if props_in_stage is None:
@@ -521,10 +543,10 @@ class ExcelEditorStage:
             return
         self.initialization_memory = str(initialization_memory)
 
-    def parse_connect_to_stage(self) -> None:
-        attrname = "connect_to_stage"
+    def parse_exit_of_prison(self) -> None:
+        attrname = "exit_of_prison"
         if attrname in self.data and self.data[attrname] is not None:
-           self.connect_to_stage = str(self.data[attrname])
+           self.exit_of_prison = str(self.data[attrname])
         
     def __str__(self) -> str:
         propsstr = ', '.join(str(prop) for prop in self.props_in_stage)
@@ -565,7 +587,7 @@ class ExcelEditorStage:
         dict["description"] = data_stage.description
         dict["url"] = data_stage.localhost_api()
         dict["memory"] = self.initialization_memory
-        dict["connect_to_stage"] = self.connect_to_stage
+        dict["exit_of_prison"] = self.exit_of_prison
         
         entry_conditions = self.stage_conditions_list(self.stage_entry_conditions)
         exit_conditions = self.stage_conditions_list(self.stage_exit_conditions)

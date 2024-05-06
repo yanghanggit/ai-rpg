@@ -1,3 +1,10 @@
+#
+import sys
+from pathlib import Path
+# 将项目根目录添加到sys.path
+root_dir = Path(__file__).resolve().parent.parent
+sys.path.append(str(root_dir))
+
 from auxiliary.chaos_engineering_system import IChaosEngineering
 from loguru import logger
 from auxiliary.builders import WorldDataBuilder

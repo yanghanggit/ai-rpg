@@ -12,7 +12,8 @@ trade_action_prompt,
 check_status_action_prompt,
 leave_for_stage_failed_because_stage_is_invalid_prompt,
 leave_for_stage_failed_because_already_in_stage_prompt,
-whisper_action_prompt)
+whisper_action_prompt,
+leave_for_stage_failed_because_no_exit_condition_match_prompt)
 from loguru import logger
 from abc import ABC, abstractmethod
 from typing import List
@@ -297,6 +298,30 @@ class NPCLeaveForFailedBecauseAlreadyInStage(IDirectorEvent):
     
     def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
         return ""
+
+
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
+class NPCLeaveForFailedBecauseNoExitConditionMatch(IDirectorEvent):
+
+    def __init__(self, npcname: str, stagename: str, tips: str) -> None:
+        self.npcname = npcname
+        self.stagename = stagename
+        self.tips = tips
+
+    def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
+        if npcname != self.npcname:
+            # 跟你无关不用关注
+            return ""
+        no_exit_condition_match_event = leave_for_stage_failed_because_no_exit_condition_match_prompt(self.npcname, self.stagename, self.tips)
+        return no_exit_condition_match_event
+    
+    def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
+        return ""
+
+
+
 
 
 

@@ -99,10 +99,9 @@ class StageBuilder:
                             propsinstage)
             
              # 做连接关系 目前仅用名字
-            connect_to_stage_name: str = stagedata.get("connect_to_stage")
-            if len(connect_to_stage_name) > 0:
-                #logger.debug(f"StageBuilder: {stage.name} connect to {connect_to_stage_name}")
-                stage.connect_stage_by_name(connect_to_stage_name)
+            exit_of_prison_and_goto_stagename: str = stagedata.get("exit_of_prison")
+            if len(exit_of_prison_and_goto_stagename) > 0:
+                stage.connect_stage_by_name(exit_of_prison_and_goto_stagename)
 
             # 设置属性
             stage.buildattributes(stagedata.get("attributes"))

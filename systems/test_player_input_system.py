@@ -49,7 +49,7 @@ class TestPlayerInputSystem(ExecuteProcessor):
         #
         playerentity = self.context.getplayer(playername)
         if playerentity is None:
-            logger.error(f"handlelogin, 玩家不存在{playername}")
+            #logger.error(f"handlelogin, 玩家不存在{playername}")
             return
         
         if not playerentity.has(PlayerLoginActionComponent):

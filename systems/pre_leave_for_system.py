@@ -9,7 +9,9 @@ from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from enum import Enum
 from auxiliary.director_component import DirectorComponent
-from auxiliary.director_event import NPCLeaveForFailedBecauseStageIsInvalidEvent, NPCLeaveForFailedBecauseAlreadyInStage
+from auxiliary.director_event import NPCLeaveForFailedBecauseStageIsInvalidEvent, NPCLeaveForFailedBecauseAlreadyInStage, NPCLeaveForFailedBecauseNoExitConditionMatch
+from auxiliary.format_of_complex_stage_entry_and_exit_conditions import is_complex_stage_condition, parse_complex_stage_condition
+from typing import cast
 
 # 错误代码
 class ErrorCheckTargetStage(Enum):
@@ -23,6 +25,7 @@ class ErrorCheckTargetStage(Enum):
 class ErrorCheckExitStageConditions(Enum):
     VALID = 0
     NO_EXIT_CONDITIONS_MATCH = 1
+    DESCRIPTION_OF_COMPLEX_CONDITION_IS_WRONG_FORMAT = 2
 
 # 错误代码
 class ErrorCheckEnterStageConditions(Enum):
@@ -157,27 +160,88 @@ class PreLeaveForSystem(ReactiveProcessor):
         current_stage: str = npccomp.current_stage
         stageentity = self.context.getstage(current_stage)
         assert stageentity is not None
-        # 没有离开条件
+
+        # 没有离开条件，无需讨论
         if not stageentity.has(StageExitConditionComponent):
             return ErrorCheckExitStageConditions.VALID
         
         #有检查条件
         exit_condition_comp: StageExitConditionComponent = stageentity.get(StageExitConditionComponent)
-        conditions = exit_condition_comp.conditions
+        conditions: set[str] = exit_condition_comp.conditions
         if len(conditions) == 0:
+            #空的，就过
             return ErrorCheckExitStageConditions.VALID
         
         ### 检查条件
         for cond in conditions:
-            if not file_system.has_prop_file(npccomp.name, cond):
+            # 如果是复杂型条件的文本
+            if is_complex_stage_condition(cond):
+                res = parse_complex_stage_condition(cond)
+                if len(res) != 2:
+                    logger.error(f"复杂条件的描述格式错误: {cond}")
+                    return ErrorCheckExitStageConditions.DESCRIPTION_OF_COMPLEX_CONDITION_IS_WRONG_FORMAT
+                
+                propname = res[0]
+                tips = res[1]
+                if not file_system.has_prop_file(npccomp.name, propname):
+                    # 没有这个道具
+                    logger.info(f"{npccomp.name} 没有这个道具: {propname}。提示: {tips}")
+                    return ErrorCheckExitStageConditions.NO_EXIT_CONDITIONS_MATCH
+
+            elif not file_system.has_prop_file(npccomp.name, cond):
                 # 没有这个道具
                 return ErrorCheckExitStageConditions.NO_EXIT_CONDITIONS_MATCH
         ##
         return ErrorCheckExitStageConditions.VALID
 ###############################################################################################################################################
     def handle_exit_stage_conditions_invalid(self, entity: Entity, error: ErrorCheckExitStageConditions) -> None:
+        if error == ErrorCheckExitStageConditions.NO_EXIT_CONDITIONS_MATCH:
+            self.notify_director_no_exit_conditions_match(entity)
+        elif error == ErrorCheckExitStageConditions.DESCRIPTION_OF_COMPLEX_CONDITION_IS_WRONG_FORMAT:
+            logger.error("复杂条件的描述格式错误，估计就是表格填错了")
+            pass
+
+        # 最后必须停止离开
         entity.remove(LeaveForActionComponent) # 停止离开！
-        pass
+###############################################################################################################################################
+    def notify_director_no_exit_conditions_match(self, entity: Entity) -> None:
+
+        file_system = self.context.file_system
+
+        stageentity = self.context.safe_get_stage_entity(entity)
+        if stageentity is None or not stageentity.has(DirectorComponent):
+            return
+
+        #
+        directorcomp: DirectorComponent = stageentity.get(DirectorComponent)
+        exit_condition_comp: StageExitConditionComponent = stageentity.get(StageExitConditionComponent)
+
+        #
+        npcname = self.context.safe_get_entity_name(entity)
+        leavecomp: LeaveForActionComponent = entity.get(LeaveForActionComponent)
+        action: ActorAction = leavecomp.action
+        stagename = action.values[0]
+        
+        conditions: set[str] = exit_condition_comp.conditions
+        assert len(conditions) > 0
+        for cond in conditions:
+            # 如果是复杂型条件的文本
+            if is_complex_stage_condition(cond):
+                res = parse_complex_stage_condition(cond)
+                assert len(res) == 2
+                propname = res[0]
+                tips = res[1]
+                if not file_system.has_prop_file(npcname, propname):
+                    # 没有这个道具
+                    logger.info(f"{npcname} 没有这个道具: {propname}。提示: {tips}")
+                    event = NPCLeaveForFailedBecauseNoExitConditionMatch(npcname, stagename, tips)
+                    directorcomp.addevent(event)
+                    break
+
+            elif not file_system.has_prop_file(npcname, cond):
+                event = NPCLeaveForFailedBecauseNoExitConditionMatch(npcname, stagename, "")
+                directorcomp.addevent(event)
+                break
 ###############################################################################################################################################
     def check_enter_stage_conditions(self, entity: Entity) -> ErrorCheckEnterStageConditions:
         #

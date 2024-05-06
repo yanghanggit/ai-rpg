@@ -28,7 +28,6 @@ class DirectorComponent(DirectorComponentPrototype):
         for event in self.events:
             res = event.tostage(target_stage_name, extended_context)
             if res != "":
-                res = replace_all_mentions_of_your_name_with_you(res, target_stage_name)
                 batch.append(res)
         return batch
 

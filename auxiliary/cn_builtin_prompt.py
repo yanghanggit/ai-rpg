@@ -237,3 +237,9 @@ def known_information_update_where_you_know_prompt(npcname: str, where_you_know:
     if len(where_you_know) == 0:
         return f"# 你更新了记忆，你目前没有认识的场景。你不能去任何地方。"
     return f"# 你更新了记忆，你所知道的场景有: {where_you_know}。如果你想前往其他场景，你只能从这些场景中选择你的目的地。"
+
+##
+def leave_for_stage_failed_because_no_exit_condition_match_prompt(npcname: str, stagename: str, tips: str) -> str:
+    if tips == "":
+        return f"""#{npcname}不能离开本场景并去往{stagename},可能当前不满足离开的条件。可以通过CheckStatusActionComponent查看自己拥有的道具，或者通过PerceptionActionComponent感知场景内的道具，找到离开的条件。"""
+    return f"""{npcname}不能离开本场景并去往{stagename}。\n提示:{tips}"""

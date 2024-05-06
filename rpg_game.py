@@ -5,7 +5,7 @@ from loguru import logger
 from auxiliary.components import (
     WorldComponent,
     StageComponent, 
-    ConnectToStageComponent,
+    ExitOfPrisonComponent,
     NPCComponent, 
     PlayerComponent, 
     SimpleRPGRoleComponent, 
@@ -353,24 +353,24 @@ class RPGGame(BaseGame):
             ## 创建入口条件
             enter_condition_set = set()
             for enter_condition in builddata.entry_conditions:
-                enter_condition_set.add(enter_condition.name)
+                enter_condition_set.add(enter_condition.condition())
             if len(enter_condition_set) > 0:
                 stageentity.add(StageEntryConditionComponent, enter_condition_set)
                 #logger.debug(f"{builddata.name}的入口条件为：{enter_condition_set}")
 
             ## 创建出口条件
-            exit_condition_set = set()
+            exit_condition_set: set[str] = set()
             for exit_condition in builddata.exit_conditions:
-                exit_condition_set.add(exit_condition.name)
+                exit_condition_set.add(exit_condition.condition())
             if len(exit_condition_set) > 0:
                 stageentity.add(StageExitConditionComponent, set(exit_condition_set))
                 #logger.debug(f"{builddata.name}的出口条件为：{exit_condition_set}")
 
-            ## 创建连接的场景用于PrisonBreakActionSystem
-            for connectstage in builddata.connect_to_stage:
-                stageentity.add(ConnectToStageComponent, connectstage.name)
-                #logger.debug(f"{builddata.name}连接的场景为：{connectstage.name}, 用于PrisonBreakActionSystem使用。")
-                break ### 就用第一个
+            ## 创建连接的场景用于PrisonBreakActionSystem, 目前如果添加就只能添加一个
+            assert len(builddata.exit_of_prison) <= 1
+            if  len(builddata.exit_of_prison) > 0:
+                exit_prison_and_goto_stage =  next(iter(builddata.exit_of_prison))
+                stageentity.add(ExitOfPrisonComponent, exit_prison_and_goto_stage.name)
 
             #重构
             agent_connect_system.register_actor_agent(builddata.name, builddata.url)

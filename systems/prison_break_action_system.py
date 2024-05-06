@@ -1,7 +1,7 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
 from auxiliary.components import (LeaveForActionComponent, PrisonBreakActionComponent,
                         NPCComponent, 
-                        ConnectToStageComponent,)
+                        ExitOfPrisonComponent,)
 from auxiliary.actor_action import ActorAction
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
@@ -45,13 +45,13 @@ class PrisonBreakActionSystem(ReactiveProcessor):
             # 取出当前场景！
             stageentity = self.context.getstage(stagename)
             assert stageentity is not None, f"PrisonBreakActionSystem: {stagename} is None"
-            if not stageentity.has(ConnectToStageComponent):
+            if not stageentity.has(ExitOfPrisonComponent):
                 # 该场景没有连接到任何场景，所以不能"盲目"的离开
                 logger.error(f"PrisonBreakActionSystem: {npccomp.name} 想要离开的场景是: {stagename}, 该场景没有连接到任何场景")
                 continue
             
             # 取出数据，并准备沿用LeaveForActionComponent
-            conncectstagecomp: ConnectToStageComponent = stageentity.get(ConnectToStageComponent)
+            conncectstagecomp: ExitOfPrisonComponent = stageentity.get(ExitOfPrisonComponent)
             logger.debug(f"PrisonBreakActionSystem: {npccomp.name} 想要离开的场景是: {stagename}, 该场景可以连接的场景有: {conncectstagecomp.name}")
             connect_stage_entity = self.context.getstage(conncectstagecomp.name)
             if connect_stage_entity is None:

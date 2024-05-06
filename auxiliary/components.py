@@ -5,7 +5,7 @@ from collections import namedtuple
 ###############################################################################################################################################
 WorldComponent = namedtuple('WorldComponent', 'name')
 StageComponent = namedtuple('StageComponent', 'name')
-ConnectToStageComponent = namedtuple('ConnectToStageComponent', 'name')
+ExitOfPrisonComponent = namedtuple('ExitOfPrisonComponent', 'name')
 NPCComponent = namedtuple('NPCComponent', 'name current_stage')
 PlayerComponent = namedtuple('PlayerComponent', 'name')
 StageEntryConditionComponent = namedtuple('StageEntryConditionComponent', 'conditions')

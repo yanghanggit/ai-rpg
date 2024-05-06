@@ -30,7 +30,7 @@ class KnownInformationSystem(ExecuteProcessor):
         npccomp: NPCComponent = npcentity.get(NPCComponent)
         who_do_you_know: set[str] = helper.who_do_you_know(npccomp.name)
         if len(who_do_you_know) == 0:
-            logger.warning(f"{npccomp.name} has no who do you know??!!")
+            logger.warning(f"{npccomp.name} 什么人都不认识，这个合理么？")
             return
         # 写文件
         self.add_known_npc_file(npccomp.name, who_do_you_know)
@@ -43,7 +43,7 @@ class KnownInformationSystem(ExecuteProcessor):
         npccomp: NPCComponent = npcentity.get(NPCComponent)
         where_do_you_know: set[str] = helper.where_do_you_know(npccomp.name)
         if len(where_do_you_know) == 0:
-            logger.warning(f"{npccomp.name} has no where do you know??!!")
+            logger.warning(f"{npccomp.name} 什么地点都不知道，这个合理么？")
             return
         # 写文件
         self.add_known_stage_file(npccomp.name, where_do_you_know)

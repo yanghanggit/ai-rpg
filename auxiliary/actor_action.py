@@ -4,7 +4,7 @@ import json
 from typing import Any
 from loguru import logger
 
-
+############################################################################################################
 class ActorAction:
 
     def __init__(self, name: str = "", actionname: str = "", values: List[str] = []) -> None:
@@ -17,7 +17,10 @@ class ActorAction:
     
     def __repr__(self) -> str:
         return f"ActorAction({self.name}, {self.actionname}, {self.values})"
-
+    
+    def combine_all_string_values_to_output(self) -> str:
+        return " ".join(self.values)
+############################################################################################################
 class ActorPlan:
 
     def __init__(self, name: str, jsonstr: str) -> None:
@@ -58,3 +61,4 @@ class ActorPlan:
     
     def __repr__(self) -> str:
         return f"ActorPlan({self.name}, {self.jsonstr})"
+############################################################################################################

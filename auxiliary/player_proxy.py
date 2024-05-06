@@ -30,6 +30,8 @@ def get_player_proxy(playername: str) -> Optional[PlayerProxy]:
 ### 单人游戏，临时的名字
 TEST_PLAYER_NAME = "北京柏林互动科技有限公司"
 
+TEST_LOGIN_INFORMATION = f"""这是一个测试的登陆信息，比如服务器xxx，上次登陆时间xxx，等等"""
+
 TEST_GAME_INSTRUCTIONS_WHEN_LOGIN_SUCCESS_FOR_FIRST_TIME = f"""
 # 这是一个Demo，叫World2, 设计意图：
 1. 过关条件：操作‘无名的复活者’，从‘埃利亚斯·格雷’身上获取‘断指钥匙’，并进入‘灰颜礼拜堂’。

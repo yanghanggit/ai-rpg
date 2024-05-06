@@ -2,7 +2,7 @@ from entitas import ExecuteProcessor, Entity #type: ignore
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from rpg_game import RPGGame 
-from auxiliary.player_proxy import PlayerProxy, get_player_proxy, TEST_PLAYER_NAME
+from auxiliary.player_proxy import PlayerProxy, get_player_proxy, TEST_PLAYER_NAME, TEST_GAME_INSTRUCTIONS_WHEN_LOGIN_SUCCESS_FOR_FIRST_TIME
 from auxiliary.player_input_command import (
                           PlayerCommandAttack, 
                           PlayerCommandLeaveFor, 
@@ -17,7 +17,7 @@ from auxiliary.player_input_command import (
                           PlayerCommandCheckStatus)
 
 from auxiliary.extended_context import ExtendedContext
-from auxiliary.components import PlayerAwakeActionComponent, EnviroNarrateActionComponent
+from auxiliary.components import PlayerLoginActionComponent, EnviroNarrateActionComponent, PlayerComponent, NPCComponent
 from auxiliary.actor_action import ActorAction
 from typing import Optional
 
@@ -77,34 +77,25 @@ class TestPlayerInputSystem(ExecuteProcessor):
             displaymsg += f"\n[{stagename}]=>{stagemsg}\n{'-' * 100}"
 
         # 如果是login，需要把login进入后的打印出来
-        awakemsg = self.awakemessage(playerentity)     
+        awakemsg = self.first_show_message_as_npc_init_memory(playerentity)     
         if len(awakemsg) > 0:
             npcname = self.context.safe_get_entity_name(playerentity)
             displaymsg += f"\n[{npcname}]=>{awakemsg}\n{'-' * 100}"
-            
         #
         logger.warning(displaymsg)
-
 ############################################################################################################
     def about_game_message(self, playerentity: Entity) -> str:
-        if not playerentity.has(PlayerAwakeActionComponent):
+        if not playerentity.has(PlayerLoginActionComponent):
             return ""
-        awakecomp: PlayerAwakeActionComponent = playerentity.get(PlayerAwakeActionComponent)
-        action: ActorAction = awakecomp.action
-        if len(action.values) == 0:
-            return ""
-        message = action.values[1]
-        return message
+        return TEST_GAME_INSTRUCTIONS_WHEN_LOGIN_SUCCESS_FOR_FIRST_TIME
 ############################################################################################################
-    def awakemessage(self, playerentity: Entity) -> str:
-        if not playerentity.has(PlayerAwakeActionComponent):
+    def first_show_message_as_npc_init_memory(self, playerentity: Entity) -> str:
+        if not playerentity.has(PlayerLoginActionComponent):
             return ""
-        awakecomp: PlayerAwakeActionComponent = playerentity.get(PlayerAwakeActionComponent)
-        action: ActorAction = awakecomp.action
-        if len(action.values) == 0:
-            return ""
-        message = action.values[0]
-        return message
+        context = self.context
+        memory_system = context.memory_system
+        safename = context.safe_get_entity_name(playerentity)
+        return memory_system.getmemory(safename)
 ############################################################################################################
     def stagemessage(self, playerentity: Entity) -> str:
         stage = self.context.safe_get_stage_entity(playerentity)

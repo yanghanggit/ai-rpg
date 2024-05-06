@@ -3,7 +3,7 @@ from rpg_game import RPGGame
 from loguru import logger
 from auxiliary.components import (
     BroadcastActionComponent,
-    PlayerAwakeActionComponent,
+    PlayerLoginActionComponent,
     SpeakActionComponent, 
     StageComponent, 
     NPCComponent, 
@@ -18,7 +18,7 @@ from auxiliary.components import (
     TradeActionComponent, 
     CheckStatusActionComponent)
 from auxiliary.actor_action import ActorAction
-from auxiliary.player_proxy import PlayerProxy, TEST_GAME_INSTRUCTIONS_WHEN_LOGIN_SUCCESS_FOR_FIRST_TIME
+from auxiliary.player_proxy import PlayerProxy, TEST_GAME_INSTRUCTIONS_WHEN_LOGIN_SUCCESS_FOR_FIRST_TIME, TEST_LOGIN_INFORMATION
 from abc import ABC, abstractmethod
 
 
@@ -83,26 +83,16 @@ class PlayerCommandLogin(PlayerCommand):
         npcentity.replace(PlayerComponent, myname)
         logger.info(f"login success! {myname} => {login_npc_name}")
         
-        ####
-        clientmessage = self.test_client_message_after_login_success()
+        ###
         logger.warning(f"{myname} 登陆了游戏")
 
-        ## 登录之后，客户端需要看到的消息
-        if npcentity.has(PlayerAwakeActionComponent):
+        ## 加一个行动，用于标记
+        if npcentity.has(PlayerLoginActionComponent):
             logger.error(f"{login_npc_name} already has AwakeActionComponent?")
-            npcentity.remove(PlayerAwakeActionComponent)
+            npcentity.remove(PlayerLoginActionComponent)
         #
-        action = ActorAction(login_npc_name, PlayerAwakeActionComponent.__name__, [f"{clientmessage}", TEST_GAME_INSTRUCTIONS_WHEN_LOGIN_SUCCESS_FOR_FIRST_TIME])
-        npcentity.add(PlayerAwakeActionComponent, action)
-        
-    ##这是一个测试的方法，目前登陆成功后，就是把memory给到，后续可以做的复杂一些
-    def test_client_message_after_login_success(self) -> str:
-        context = self.game.extendedcontext
-        memory_system = context.memory_system
-        npcentity = context.getnpc(self.login_npc_name)
-        assert npcentity is not None
-        safename = context.safe_get_entity_name(npcentity)
-        return memory_system.getmemory(safename)
+        action = ActorAction(login_npc_name, PlayerLoginActionComponent.__name__, [])
+        npcentity.add(PlayerLoginActionComponent, action)
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################     

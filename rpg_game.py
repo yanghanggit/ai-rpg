@@ -14,7 +14,7 @@ from auxiliary.components import (
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.builders import WorldDataBuilder, StageBuilder, NPCBuilder
 from entitas.entity import Entity
-from systems.init_system import InitSystem
+from systems.init_memory_system import InitMemorySystem
 from systems.npc_ready_for_planning_system import NPCReadyForPlanningSystem
 from systems.stage_planning_system import StagePlanningSystem
 from systems.npc_planning_system import NPCPlanningSystem
@@ -50,6 +50,7 @@ from systems.trade_action_system import TradeActionSystem
 from systems.check_status_action_system import CheckStatusActionSystem
 from base_game import BaseGame
 from systems.post_conversational_action_system import PostConversationalActionSystem
+from systems.init_agents_system import InitAgentsSystem
 
 ## 控制流程和数据创建
 class RPGGame(BaseGame):
@@ -69,7 +70,8 @@ class RPGGame(BaseGame):
         processors.add(BeginSystem(context))
         
         #初始化系统########################
-        processors.add(InitSystem(context))
+        processors.add(InitAgentsSystem(context)) ### 连接所有agent
+        processors.add(InitMemorySystem(context)) ### 第一次读状态, initmemory
        
         #规划逻辑########################
         processors.add(PrePlanningSystem(context)) ######## 在所有规划之前

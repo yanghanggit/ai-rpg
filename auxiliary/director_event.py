@@ -235,10 +235,10 @@ class NPCStealEvent(IDirectorEvent):
         if npcname != self.whosteal or npcname != self.targetname:
             return ""
         
-        if npcname == self.targetname and random.random() < 0.5:
-            # 测试：有一定几率发现不了
-            logger.warning(f"NPCStealEvent: {npcname} failed to steal {self.propname}")
-            return ""
+        # if npcname == self.targetname and random.random() < 0.5:
+        #     # 测试：有一定几率发现不了
+        #     logger.warning(f"NPCStealEvent: {npcname} failed to steal {self.propname}")
+        #     return ""
         
         stealcontent = steal_action_prompt(self.whosteal, self.targetname, self.propname, self.stealres)
         return stealcontent

@@ -6,35 +6,16 @@ from auxiliary.components import (  PerceptionActionComponent,
 from loguru import logger
 from typing import List
 from auxiliary.director_component import DirectorComponent
-from auxiliary.director_event import PerceptionEvent
+from auxiliary.director_event import NPCPerceptionEvent
 
 
-class PerceptionActionSystem(ReactiveProcessor):
 
-    def __init__(self, context: ExtendedContext):
-        super().__init__(context)
+class PerceptionActionHelper:
+
+    def __init__(self, context: ExtendedContext, entity: Entity):
         self.context = context
-###################################################################################################################
-    def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return { Matcher(PerceptionActionComponent): GroupEvent.ADDED }
-###################################################################################################################
-    def filter(self, entity: Entity) -> bool:
-        return entity.has(PerceptionActionComponent) and entity.has(NPCComponent)
-###################################################################################################################
-    def react(self, entities: list[Entity]) -> None:
-        logger.debug("<<<<<<<<<<<<<  PerceptionActionSystem  >>>>>>>>>>>>>>>>>")
-        for entity in entities:
-            self.perception(entity)
-###################################################################################################################
-    def perception(self, entity: Entity) -> None:
-        safename = self.context.safe_get_entity_name(entity)
-        logger.debug(f"PerceptionActionSystem: {safename} is perceiving")
-        ## 场景里有哪些人？
-        npcs_in_stage = self.perception_npcs_in_stage(entity)
-        ## 场景里有哪些物品？
-        props_in_stage = self.perception_props_in_stage(entity)
-        ## 通知导演
-        self.notifydirector(entity, npcs_in_stage, props_in_stage)
+        self.entity = entity
+
 ###################################################################################################################
     def perception_npcs_in_stage(self, entity: Entity) -> List[str]:
         res: List[str] = []
@@ -72,6 +53,39 @@ class PerceptionActionSystem(ReactiveProcessor):
             res.append(prop.name)
         return res
 ###################################################################################################################
+
+
+
+class PerceptionActionSystem(ReactiveProcessor):
+
+    def __init__(self, context: ExtendedContext):
+        super().__init__(context)
+        self.context = context
+###################################################################################################################
+    def get_trigger(self) -> dict[Matcher, GroupEvent]:
+        return { Matcher(PerceptionActionComponent): GroupEvent.ADDED }
+###################################################################################################################
+    def filter(self, entity: Entity) -> bool:
+        return entity.has(PerceptionActionComponent) and entity.has(NPCComponent)
+###################################################################################################################
+    def react(self, entities: list[Entity]) -> None:
+        logger.debug("<<<<<<<<<<<<<  PerceptionActionSystem  >>>>>>>>>>>>>>>>>")
+        for entity in entities:
+            self.perception(entity)
+###################################################################################################################
+    def perception(self, entity: Entity) -> None:
+        safename = self.context.safe_get_entity_name(entity)
+        logger.debug(f"PerceptionActionSystem: {safename} is perceiving")
+
+        #
+        helper = PerceptionActionHelper(self.context, entity)
+        ## 场景里有哪些人？
+        npcs_in_stage = helper.perception_npcs_in_stage(entity)
+        ## 场景里有哪些物品？
+        props_in_stage = helper.perception_props_in_stage(entity)
+        ## 通知导演
+        self.notifydirector(entity, npcs_in_stage, props_in_stage)
+###################################################################################################################
     def notifydirector(self, entity: Entity, npcs_in_stage: List[str], props_in_stage: List[str]) -> None:
         stageentity = self.context.safe_get_stage_entity(entity)
         if stageentity is None or not stageentity.has(DirectorComponent):
@@ -81,5 +95,5 @@ class PerceptionActionSystem(ReactiveProcessor):
             return
         directorcomp: DirectorComponent = stageentity.get(DirectorComponent)
         stagename = self.context.safe_get_entity_name(stageentity)
-        directorcomp.addevent(PerceptionEvent(safename, stagename, npcs_in_stage, props_in_stage))
+        directorcomp.addevent(NPCPerceptionEvent(safename, stagename, npcs_in_stage, props_in_stage))
 ###################################################################################################################

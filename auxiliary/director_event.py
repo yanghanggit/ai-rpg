@@ -202,7 +202,7 @@ class WhisperEvent(IDirectorEvent):
 ####################################################################################################################################
 ####################################################################################################################################
 #################################################################################################################################### 
-class PerceptionEvent(IDirectorEvent):
+class NPCPerceptionEvent(IDirectorEvent):
 
     def __init__(self, whoperception: str, stagename: str, npcs_in_stage: List[str], props_in_stage: List[str]) -> None:
         self.whoperception = whoperception

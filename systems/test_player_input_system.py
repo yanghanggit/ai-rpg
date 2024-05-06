@@ -20,6 +20,9 @@ from auxiliary.extended_context import ExtendedContext
 from auxiliary.components import PlayerLoginEventComponent, EnviroNarrateActionComponent
 from auxiliary.actor_action import ActorAction
 from typing import Optional
+from systems.check_status_action_system import CheckStatusActionHelper
+from systems.perception_action_system import PerceptionActionHelper
+from auxiliary.director_event import NPCPerceptionEvent, NPCCheckStatusEvent
 
 ############################################################################################################
 def splitcommand(input_val: str, split_str: str)-> str:
@@ -89,15 +92,20 @@ class TestPlayerInputSystem(ExecuteProcessor):
         if playerproxy is None:
             logger.warning("玩家不存在，或者玩家未加入游戏")
             return
-        # 客户端应该看到的
-        self.client_display_messages(playerproxy, 50)
-        ##
+
         while True:
+            if not self.rpggame.started:
+                logger.warning("请先/run")
+                break
+            
+            # 客户端应该看到的
+            self.client_display_messages(playerproxy, 10)
+            
             # 测试的客户端反馈
             usrinput = input(f"[{playername}]:")
-            self.player_input(self.rpggame, playerproxy, usrinput)
-            logger.debug(f"{'=' * 50}")
-            break
+            if self.playerinput(self.rpggame, playerproxy, usrinput):
+                logger.debug(f"{'=' * 50}")
+                break
 ############################################################################################################ 
     def client_display_messages(self, playerproxy: PlayerProxy, display_messages_count: int) -> None:
         clientmessages = playerproxy.clientmessages
@@ -120,14 +128,7 @@ class TestPlayerInputSystem(ExecuteProcessor):
         message = action.values[0]
         return message
 ############################################################################################################
-    def player_input(self, rpggame: RPGGame, playerproxy: PlayerProxy, usrinput: str) -> None:
-        
-        assert playerproxy is not None
-        assert rpggame is not None
-
-        if not rpggame.started:
-            logger.warning("请先/run")
-            return
+    def playerinput(self, rpggame: RPGGame, playerproxy: PlayerProxy, usrinput: str) -> bool:
         
         if "/attack" in usrinput:
             command = "/attack"
@@ -163,11 +164,6 @@ class TestPlayerInputSystem(ExecuteProcessor):
             command = "/prisonbreak"
             PlayerCommandPrisonBreak(command, rpggame, playerproxy).execute()
 
-        elif "/perception" in usrinput:
-            command = "/perception"
-            PlayerCommandPerception(command, rpggame, playerproxy).execute()
-            logger.debug(f"{'=' * 50}")
-
         elif "/steal" in usrinput:
             command = "/steal"
             propname = splitcommand(usrinput, command)
@@ -178,8 +174,52 @@ class TestPlayerInputSystem(ExecuteProcessor):
             propname = splitcommand(usrinput, command)
             PlayerCommandTrade(command, rpggame, playerproxy, propname).execute()
 
+        elif "/perception" in usrinput:
+            command = "/perception"
+            self.imme_handle_perception(playerproxy)
+            #PlayerCommandPerception(command, rpggame, playerproxy).execute()
+            return False
+
         elif "/checkstatus" in usrinput:
             command = "/checkstatus"
-            PlayerCommandCheckStatus(command, rpggame, playerproxy).execute()
+            self.imme_handle_check_status(playerproxy)
+            #PlayerCommandCheckStatus(command, rpggame, playerproxy).execute()
+            return False
+
+        return True
+############################################################################################################
+    def imme_handle_perception(self, playerproxy: PlayerProxy) -> None:
+        playerentity = self.context.getplayer(playerproxy.name)
+        if playerentity is None:
+            return
+        #
+        helper = PerceptionActionHelper(self.context, playerentity)
+        npcs_in_stage = helper.perception_npcs_in_stage(playerentity)
+        props_in_stage = helper.perception_props_in_stage(playerentity)
+        #
+        safe_npc_name = self.context.safe_get_entity_name(playerentity)
+        stageentity = self.context.safe_get_stage_entity(playerentity)
+        assert stageentity is not None
+        safe_stage_name = self.context.safe_get_entity_name(stageentity)
+        #
+        event = NPCPerceptionEvent(safe_npc_name, safe_stage_name, npcs_in_stage, props_in_stage)
+        message = event.tonpc(safe_npc_name, self.context)
+        #
+        playerproxy.add_npc_message(safe_npc_name, message)
+############################################################################################################
+    def imme_handle_check_status(self, playerproxy: PlayerProxy) -> None:
+        playerentity = self.context.getplayer(playerproxy.name)
+        if playerentity is None:
+            return
+        #
+        helper = CheckStatusActionHelper(self.context, playerentity)
+        helper.check_status()
+        propnames = helper.propnames
+        prop_and_desc = helper.prop_and_desc
+        safename = self.context.safe_get_entity_name(playerentity)
+        #
+        event = NPCCheckStatusEvent(safename, propnames, prop_and_desc)
+        message = event.tonpc(safename, self.context)
+        playerproxy.add_npc_message(safename, message)
 ############################################################################################################
 

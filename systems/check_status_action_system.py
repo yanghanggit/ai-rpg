@@ -6,6 +6,31 @@ from auxiliary.director_component import DirectorComponent
 from auxiliary.director_event import NPCCheckStatusEvent
 from typing import List
 
+
+class CheckStatusActionHelper:
+    def __init__(self, context: ExtendedContext, entity: Entity):
+        self.context = context
+        self.entity = entity
+        self.propnames: List[str] = []
+        self.prop_and_desc: List[str] = []
+
+    def check_status(self) -> None:
+        # 先清空
+        self.propnames.clear()
+        self.prop_and_desc.clear()
+        # 再检查
+        safename = self.context.safe_get_entity_name(self.entity)
+        logger.debug(f"{safename} is checking status")
+        filesystem = self.context.file_system
+        props = filesystem.get_prop_files(safename)
+        for prop in props:
+            self.propnames.append(prop.name)
+            self.prop_and_desc.append(f"{prop.name}:{prop.prop.description}")
+###################################################################################################################       
+
+
+
+
 class CheckStatusActionSystem(ReactiveProcessor):
 
     def __init__(self, context: ExtendedContext):
@@ -27,22 +52,12 @@ class CheckStatusActionSystem(ReactiveProcessor):
     def check_status(self, entity: Entity) -> None:
         safename = self.context.safe_get_entity_name(entity)
         logger.debug(f"{safename} is checking status")
-        filesystem = self.context.file_system
-
-        props = filesystem.get_prop_files(safename)
-        if len(props) == 0:
-            return
-        
-        ## 后续可以优化掉，这个是多余的
-        propnames: List[str] = []
-        for prop in props:
-            propnames.append(prop.name)
-
-        ## 关键
-        prop_and_desc: List[str] = []
-        for prop in props:
-            prop_and_desc.append(f"{prop.name}:{prop.prop.description}")
-        
+        #
+        helper = CheckStatusActionHelper(self.context, entity)
+        helper.check_status()
+        propnames = helper.propnames
+        prop_and_desc = helper.prop_and_desc
+        #
         self.notifydirector(entity, propnames, prop_and_desc)
 ####################################################################################################
     def notifydirector(self, entity: Entity, propnames: List[str], prop_and_desc: List[str]) -> None:

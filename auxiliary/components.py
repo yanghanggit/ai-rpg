@@ -35,7 +35,7 @@ EnviroNarrateActionComponent = namedtuple('EnviroNarrateActionComponent', 'actio
 SimpleRPGRoleComponent = namedtuple('SimpleRPGRoleComponent', 'name maxhp hp attack')
 ###############################################################################################################################################
 # 特殊组件，Player专用
-PlayerLoginActionComponent = namedtuple('PlayerLoginActionComponent', 'action')
+PlayerLoginEventComponent = namedtuple('PlayerLoginEventComponent', 'name npcname')
 ###############################################################################################################################################
 
 

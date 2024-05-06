@@ -3,7 +3,7 @@ from rpg_game import RPGGame
 from loguru import logger
 from auxiliary.components import (
     BroadcastActionComponent,
-    PlayerLoginActionComponent,
+    PlayerLoginEventComponent,
     SpeakActionComponent, 
     StageComponent, 
     NPCComponent, 
@@ -87,12 +87,11 @@ class PlayerCommandLogin(PlayerCommand):
         logger.warning(f"{myname} 登陆了游戏")
 
         ## 加一个行动，用于标记
-        if npcentity.has(PlayerLoginActionComponent):
+        if npcentity.has(PlayerLoginEventComponent):
             logger.error(f"{login_npc_name} already has AwakeActionComponent?")
-            npcentity.remove(PlayerLoginActionComponent)
-        #
-        action = ActorAction(login_npc_name, PlayerLoginActionComponent.__name__, [])
-        npcentity.add(PlayerLoginActionComponent, action)
+            npcentity.remove(PlayerLoginEventComponent)
+        ##
+        npcentity.add(PlayerLoginEventComponent, myname, login_npc_name)
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################     

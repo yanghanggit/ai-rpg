@@ -17,7 +17,7 @@ from auxiliary.player_input_command import (
                           PlayerCommandCheckStatus)
 
 from auxiliary.extended_context import ExtendedContext
-from auxiliary.components import PlayerLoginActionComponent, EnviroNarrateActionComponent
+from auxiliary.components import PlayerLoginEventComponent, EnviroNarrateActionComponent
 from auxiliary.actor_action import ActorAction
 from typing import Optional
 
@@ -52,7 +52,7 @@ class TestPlayerInputSystem(ExecuteProcessor):
             #logger.error(f"handlelogin, 玩家不存在{playername}")
             return
         
-        if not playerentity.has(PlayerLoginActionComponent):
+        if not playerentity.has(PlayerLoginEventComponent):
             # 不需要处理
             return
         
@@ -81,7 +81,7 @@ class TestPlayerInputSystem(ExecuteProcessor):
             playerproxy.add_stage_message(stagename, stagemsg)
 
         #登陆成功后，需要删除这个组件
-        playerentity.remove(PlayerLoginActionComponent)
+        playerentity.remove(PlayerLoginEventComponent)
         logger.debug(f"handlelogin {playername} success")
 ############################################################################################################
     def handleinput(self, playername: str) -> None:

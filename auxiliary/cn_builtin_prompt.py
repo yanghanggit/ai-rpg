@@ -132,6 +132,8 @@ def search_failed_prompt(npcname: str, prop_name:str) -> str:
 2. 或者这个道具此时已不在本场景中（可能被其他角色搜索并获取了）。
 所以{npcname}需要再重新考虑搜索目标。可以使用PerceptionActionComponent来感知场景内的道具，并确认合理目标。"""
 
+def search_success_prompt(npcname: str, prop_name:str, stagename: str) -> str:
+    return f"{npcname}从{stagename}场景内成功找到并获取了道具:{prop_name}。{stagename}中不再存在这个道具。"
 
 # def unique_prop_taken_away(entity: Entity, prop_name:str) -> str:
 #     if entity.has(NPCComponent):

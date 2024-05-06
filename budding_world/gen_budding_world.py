@@ -377,7 +377,7 @@ class ExcelEditorNPC:
         self.excelprops: List[ExcelDataProp] = []
         self.initialization_memory: str = ""
 
-        if self.data["type"] not in ["WorldNPC", "PlayerNPC", "NPC"]:
+        if self.data["type"] not in ["World", "Player", "NPC"]:
             logger.error(f"Invalid NPC type: {self.data['type']}")
             return
         
@@ -386,11 +386,11 @@ class ExcelEditorNPC:
         self.parse_initialization_memory()
         
     def parsefiles(self) -> None:
-        filesdata: str = self.data["files"]
-        if filesdata is None:
+        data: str = self.data["props_on_npc"]
+        if data is None:
             return        
-        files = filesdata.split(";")
-        for file in files:
+        propfiles = data.split(";")
+        for file in propfiles:
             if file in all_props_data:
                 self.excelprops.append(all_props_data[file])
             else:
@@ -631,9 +631,9 @@ class ExcelEditorWorld:
     #先将数据分类
     def categorizedata(self) -> None:
         for item in self.data:
-            if item["type"] == "WorldNPC":
+            if item["type"] == "World":
                 self.raw_worldnpcs.append(item)
-            elif item["type"] == "PlayerNPC":
+            elif item["type"] == "Player":
                 self.raw_playernpcs.append(item)
             elif item["type"] == "NPC":
                 self.raw_npcs.append(item)

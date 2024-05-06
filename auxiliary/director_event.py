@@ -13,7 +13,8 @@ check_status_action_prompt,
 leave_for_stage_failed_because_stage_is_invalid_prompt,
 leave_for_stage_failed_because_already_in_stage_prompt,
 whisper_action_prompt,
-leave_for_stage_failed_because_no_exit_condition_match_prompt)
+leave_for_stage_failed_because_no_exit_condition_match_prompt,
+search_success_prompt)
 from loguru import logger
 from abc import ABC, abstractmethod
 from typing import List
@@ -85,6 +86,30 @@ class NPCSearchFailedEvent(IDirectorEvent):
     #
     def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
         event = search_failed_prompt(self.who_search_failed, self.target)
+        return event
+    
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################     
+class NPCSearchSuccessEvent(IDirectorEvent):
+
+    #
+    def __init__(self, who_search_success: str, target: str, stagename: str) -> None:
+        self.who_search_success = who_search_success
+        self.target = target
+        self.stagename = stagename
+
+    #
+    def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
+        if npcname != self.who_search_success:
+            ## 只有自己知道
+            return ""
+        event = search_success_prompt(self.who_search_success, self.target, self.stagename)
+        return event
+    
+    #
+    def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
+        event = search_success_prompt(self.who_search_success, self.target, self.stagename)
         return event
 ####################################################################################################################################
 ####################################################################################################################################

@@ -152,11 +152,11 @@ def search_success_prompt(npcname: str, prop_name:str, stagename: str) -> str:
 
 #
 def notify_all_already_in_target_stage_that_someone_enter_stage_prompt(some_ones_name: str, target_stage_name: str, last_stage_name: str) -> str:
-    return f"{some_ones_name}进入了{target_stage_name}场景。"
+    return f"{some_ones_name}进入了场景——{target_stage_name}。"
 
 #
 def notify_myself_leave_for_from_prompt(some_ones_name: str, target_stage_name: str, last_stage_name: str) -> str:
-    return f"{some_ones_name}离开了{last_stage_name}场景, 进入了{target_stage_name}场景。"
+    return f"{some_ones_name}离开了{last_stage_name}, 进入了{target_stage_name}。"
 
 
 def npc_leave_for_stage_prompt(npc_name: str, current_stage_name: str, leave_for_stage_name: str) -> str:

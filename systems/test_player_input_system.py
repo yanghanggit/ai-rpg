@@ -38,8 +38,20 @@ class TestPlayerInputSystem(ExecuteProcessor):
     def execute(self) -> None:
         logger.debug("<<<<<<<<<<<<<  PlayerInputSystem  >>>>>>>>>>>>>>>>>")
         playername = self.current_input_player()
-        self.handlelogin(playername)
-        self.handleinput(playername)
+        self.handlelogin(playername) ## 只有登陆的时候特殊处理
+        self.handlenormal(playername) ## 日常的处理
+        self.handleinput(playername) ## 核心输入，while循环
+        self.postexecute(playername) ## 最后的处理，会删掉PlayerLoginEventComponent
+############################################################################################################
+    def postexecute(self, playername: str) -> None:
+        playerentity = self.context.getplayer(playername)
+        if playerentity is None:
+            #logger.error(f"handlelogin, 玩家不存在{playername}")
+            return
+        #登陆成功后，需要删除这个组件
+        if playerentity.has(PlayerLoginEventComponent):
+            playerentity.remove(PlayerLoginEventComponent)
+            logger.debug(f"handlelogin {playername} success")
 ############################################################################################################
     #测试的先写死
     def current_input_player(self) -> str:
@@ -82,10 +94,30 @@ class TestPlayerInputSystem(ExecuteProcessor):
             assert stageentity is not None
             stagename = self.context.safe_get_entity_name(stageentity)
             playerproxy.add_stage_message(stagename, stagemsg)
-
-        #登陆成功后，需要删除这个组件
-        playerentity.remove(PlayerLoginEventComponent)
-        logger.debug(f"handlelogin {playername} success")
+############################################################################################################
+    def handlenormal(self, playername: str) -> None:
+        #
+        playerentity = self.context.getplayer(playername)
+        if playerentity is None:
+            #logger.error(f"handlelogin, 玩家不存在{playername}")
+            return
+        
+        if playerentity.has(PlayerLoginEventComponent):
+            # 不需要处理
+            return
+    
+        playerproxy = get_player_proxy(playername)
+        if playerproxy is None:
+            logger.error(f"handlelogin, 玩家代理不存在{playername}")
+            return
+            
+        #此时场景的描述
+        stagemsg = self.stagemessage(playerentity)
+        if len(stagemsg) > 0:
+            stageentity: Optional[Entity] = self.context.safe_get_stage_entity(playerentity)
+            assert stageentity is not None
+            stagename = self.context.safe_get_entity_name(stageentity)
+            playerproxy.add_stage_message(stagename, stagemsg)
 ############################################################################################################
     def handleinput(self, playername: str) -> None:
         playerproxy = get_player_proxy(playername)

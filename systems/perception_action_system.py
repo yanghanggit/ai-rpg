@@ -5,7 +5,7 @@ from auxiliary.components import (  PerceptionActionComponent,
                                     NPCComponent)
 from loguru import logger
 from typing import List
-from auxiliary.director_component import DirectorComponent
+from auxiliary.director_component import notify_stage_director
 from auxiliary.director_event import NPCPerceptionEvent
 
 
@@ -72,8 +72,8 @@ class PerceptionActionSystem(ReactiveProcessor):
             self.perception(entity)
 ###################################################################################################################
     def perception(self, entity: Entity) -> None:
-        safename = self.context.safe_get_entity_name(entity)
-        logger.debug(f"PerceptionActionSystem: {safename} is perceiving")
+        safe_npc_name = self.context.safe_get_entity_name(entity)
+        logger.debug(f"PerceptionActionSystem: {safe_npc_name} is perceiving")
 
         #
         helper = PerceptionActionHelper(self.context)
@@ -82,16 +82,20 @@ class PerceptionActionSystem(ReactiveProcessor):
         ## 场景里有哪些物品？
         props_in_stage = helper.perception_props_in_stage(entity)
         ## 通知导演
-        self.notifydirector(entity, npcs_in_stage, props_in_stage)
-###################################################################################################################
-    def notifydirector(self, entity: Entity, npcs_in_stage: List[str], props_in_stage: List[str]) -> None:
+        #self.notifydirector(entity, npcs_in_stage, props_in_stage)
         stageentity = self.context.safe_get_stage_entity(entity)
-        if stageentity is None or not stageentity.has(DirectorComponent):
-            return
-        safename = self.context.safe_get_entity_name(entity)
-        if safename == "":
-            return
-        directorcomp: DirectorComponent = stageentity.get(DirectorComponent)
-        stagename = self.context.safe_get_entity_name(stageentity)
-        directorcomp.addevent(NPCPerceptionEvent(safename, stagename, npcs_in_stage, props_in_stage))
+        assert stageentity is not None
+        safe_stage_name = self.context.safe_get_entity_name(stageentity)   
+        notify_stage_director(self.context, entity, NPCPerceptionEvent(safe_npc_name, safe_stage_name, npcs_in_stage, props_in_stage))
+###################################################################################################################
+    # def notifydirector(self, entity: Entity, npcs_in_stage: List[str], props_in_stage: List[str]) -> None:
+    #     stageentity = self.context.safe_get_stage_entity(entity)
+    #     if stageentity is None or not stageentity.has(StageDirectorComponent):
+    #         return
+    #     safename = self.context.safe_get_entity_name(entity)
+    #     if safename == "":
+    #         return
+    #     directorcomp: StageDirectorComponent = stageentity.get(StageDirectorComponent)
+    #     stagename = self.context.safe_get_entity_name(stageentity)
+    #     directorcomp.addevent(NPCPerceptionEvent(safename, stagename, npcs_in_stage, props_in_stage))
 ###################################################################################################################

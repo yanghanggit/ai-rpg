@@ -8,7 +8,7 @@ from auxiliary.actor_action import ActorAction
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from enum import Enum
-from auxiliary.director_component import DirectorComponent
+from auxiliary.director_component import notify_stage_director
 from auxiliary.director_event import NPCLeaveForFailedBecauseStageIsInvalidEvent, NPCLeaveForFailedBecauseAlreadyInStage, NPCLeaveForFailedBecauseNoExitConditionMatch
 from auxiliary.format_of_complex_stage_entry_and_exit_conditions import is_complex_stage_condition, parse_complex_stage_condition
 from typing import cast
@@ -113,45 +113,51 @@ class PreLeaveForSystem(ReactiveProcessor):
         return ErrorCheckTargetStage.VALID
 ###############################################################################################################################################
     def handle_target_stage_invalid(self, entity: Entity, error: ErrorCheckTargetStage) -> None:
+
+        leavecomp: LeaveForActionComponent = entity.get(LeaveForActionComponent)
+        action: ActorAction = leavecomp.action
+        safe_npc_name = self.context.safe_get_entity_name(entity)
         
         # step1 加入通知事件，更新记忆，如果出了问题可以在这个环节做矫正
         if error == ErrorCheckTargetStage.STAGE_CANNOT_BE_FOUND:
-            self.notify_director_stage_is_invalid(entity)
+            #self.notify_director_stage_is_invalid(entity)
+            notify_stage_director(self.context, entity, NPCLeaveForFailedBecauseStageIsInvalidEvent(safe_npc_name, action.values[0]))
         elif error == ErrorCheckTargetStage.ALREADY_IN_THIS_STAGE:
-            self.notify_director_already_in_this_stage(entity)
+            #self.notify_director_already_in_this_stage(entity)
+            notify_stage_director(self.context, entity, NPCLeaveForFailedBecauseAlreadyInStage(safe_npc_name, action.values[0]))
 
         # step2 最后删除
         entity.remove(LeaveForActionComponent) # 停止离开！
 ###############################################################################################################################################
-    def notify_director_stage_is_invalid(self, entity: Entity) -> None:
-        stageentity = self.context.safe_get_stage_entity(entity)
-        if stageentity is None or not stageentity.has(DirectorComponent):
-            return
+    # def notify_director_stage_is_invalid(self, entity: Entity) -> None:
+    #     stageentity = self.context.safe_get_stage_entity(entity)
+    #     if stageentity is None or not stageentity.has(StageDirectorComponent):
+    #         return
 
-        directorcomp: DirectorComponent = stageentity.get(DirectorComponent)
-        npcname = self.context.safe_get_entity_name(entity)
+    #     directorcomp: StageDirectorComponent = stageentity.get(StageDirectorComponent)
+    #     npcname = self.context.safe_get_entity_name(entity)
 
-        leavecomp: LeaveForActionComponent = entity.get(LeaveForActionComponent)
-        action: ActorAction = leavecomp.action
-        invalid_stage_name = action.values[0]
+    #     leavecomp: LeaveForActionComponent = entity.get(LeaveForActionComponent)
+    #     action: ActorAction = leavecomp.action
+    #     invalid_stage_name = action.values[0]
 
-        event = NPCLeaveForFailedBecauseStageIsInvalidEvent(npcname, invalid_stage_name)
-        directorcomp.addevent(event)
+    #     event = NPCLeaveForFailedBecauseStageIsInvalidEvent(npcname, invalid_stage_name)
+    #     directorcomp.addevent(event)
 ###############################################################################################################################################
-    def notify_director_already_in_this_stage(self, entity: Entity) -> None:
-        stageentity = self.context.safe_get_stage_entity(entity)
-        if stageentity is None or not stageentity.has(DirectorComponent):
-            return
+    # def notify_director_already_in_this_stage(self, entity: Entity) -> None:
+    #     stageentity = self.context.safe_get_stage_entity(entity)
+    #     if stageentity is None or not stageentity.has(StageDirectorComponent):
+    #         return
 
-        directorcomp: DirectorComponent = stageentity.get(DirectorComponent)
-        npcname = self.context.safe_get_entity_name(entity)
+    #     directorcomp: StageDirectorComponent = stageentity.get(StageDirectorComponent)
+    #     npcname = self.context.safe_get_entity_name(entity)
 
-        leavecomp: LeaveForActionComponent = entity.get(LeaveForActionComponent)
-        action: ActorAction = leavecomp.action
-        stagename = action.values[0]
+    #     leavecomp: LeaveForActionComponent = entity.get(LeaveForActionComponent)
+    #     action: ActorAction = leavecomp.action
+    #     stagename = action.values[0]
 
-        event = NPCLeaveForFailedBecauseAlreadyInStage(npcname, stagename)
-        directorcomp.addevent(event)
+    #     event = NPCLeaveForFailedBecauseAlreadyInStage(npcname, stagename)
+    #     directorcomp.addevent(event)
 ###############################################################################################################################################
     def check_exit_stage_conditions(self, entity: Entity) -> ErrorCheckExitStageConditions:
         #
@@ -205,19 +211,17 @@ class PreLeaveForSystem(ReactiveProcessor):
         entity.remove(LeaveForActionComponent) # 停止离开！
 ###############################################################################################################################################
     def notify_director_no_exit_conditions_match(self, entity: Entity) -> None:
-
         file_system = self.context.file_system
-
         stageentity = self.context.safe_get_stage_entity(entity)
-        if stageentity is None or not stageentity.has(DirectorComponent):
+        if stageentity is None:
             return
 
         #
-        directorcomp: DirectorComponent = stageentity.get(DirectorComponent)
+        #directorcomp: StageDirectorComponent = stageentity.get(StageDirectorComponent)
         exit_condition_comp: StageExitConditionComponent = stageentity.get(StageExitConditionComponent)
 
         #
-        npcname = self.context.safe_get_entity_name(entity)
+        safe_npc_name = self.context.safe_get_entity_name(entity)
         leavecomp: LeaveForActionComponent = entity.get(LeaveForActionComponent)
         action: ActorAction = leavecomp.action
         stagename = action.values[0]
@@ -231,16 +235,18 @@ class PreLeaveForSystem(ReactiveProcessor):
                 assert len(res) == 2
                 propname = res[0]
                 tips = res[1]
-                if not file_system.has_prop_file(npcname, propname):
+                if not file_system.has_prop_file(safe_npc_name, propname):
                     # 没有这个道具
-                    logger.info(f"{npcname} 没有这个道具: {propname}。提示: {tips}")
-                    event = NPCLeaveForFailedBecauseNoExitConditionMatch(npcname, stagename, tips)
-                    directorcomp.addevent(event)
+                    logger.info(f"{safe_npc_name} 没有这个道具: {propname}。提示: {tips}")
+                    notify_stage_director(self.context, stageentity, NPCLeaveForFailedBecauseNoExitConditionMatch(safe_npc_name, stagename, tips))
+                    #event = NPCLeaveForFailedBecauseNoExitConditionMatch(npcname, stagename, tips)
+                    #directorcomp.addevent(event)
                     break
 
-            elif not file_system.has_prop_file(npcname, cond):
-                event = NPCLeaveForFailedBecauseNoExitConditionMatch(npcname, stagename, "")
-                directorcomp.addevent(event)
+            elif not file_system.has_prop_file(safe_npc_name, cond):
+                notify_stage_director(self.context, stageentity, NPCLeaveForFailedBecauseNoExitConditionMatch(safe_npc_name, stagename, ""))
+                #event = NPCLeaveForFailedBecauseNoExitConditionMatch(npcname, stagename, "")
+                #directorcomp.addevent(event)
                 break
 ###############################################################################################################################################
     def check_enter_stage_conditions(self, entity: Entity) -> ErrorCheckEnterStageConditions:

@@ -2,7 +2,7 @@ from entitas import Entity, Matcher, ExecuteProcessor #type: ignore
 from auxiliary.components import StageComponent, NPCComponent, PlayerComponent
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
-from auxiliary.director_component import DirectorComponent
+from auxiliary.director_component import StageDirectorComponent
 from auxiliary.cn_builtin_prompt import direct_stage_events_prompt, direct_npc_events_prompt
 from typing import List
 from auxiliary.player_proxy import PlayerProxy, get_player_proxy
@@ -18,21 +18,21 @@ class DirectorSystem(ExecuteProcessor):
         self.directorclear()
 ###################################################################################################################
     def handle(self) -> None:
-        entities = self.context.get_group(Matcher(all_of=[StageComponent, DirectorComponent])).entities
+        entities = self.context.get_group(Matcher(all_of=[StageComponent, StageDirectorComponent])).entities
         for entity in entities:
             self.handlestage(entity)
             self.handle_npcs_in_this_stage(entity)
 ###################################################################################################################   
     def directorclear(self) -> None:
-        entities = self.context.get_group(Matcher(all_of=[StageComponent, DirectorComponent])).entities
+        entities = self.context.get_group(Matcher(all_of=[StageComponent, StageDirectorComponent])).entities
         for entity in entities:
-            directorcomp: DirectorComponent = entity.get(DirectorComponent)
+            directorcomp: StageDirectorComponent = entity.get(StageDirectorComponent)
             directorcomp.clear()
 ###################################################################################################################
     def handlestage(self, entitystage: Entity) -> None:
         assert entitystage.has(StageComponent)
         stagecomp: StageComponent = entitystage.get(StageComponent)
-        directorcomp: DirectorComponent = entitystage.get(DirectorComponent)
+        directorcomp: StageDirectorComponent = entitystage.get(StageDirectorComponent)
         events2stage = directorcomp.tostage(stagecomp.name, self.context)         
         newmsg = "\n".join(events2stage)
         if len(newmsg) > 0:
@@ -44,7 +44,7 @@ class DirectorSystem(ExecuteProcessor):
         assert entitystage.has(StageComponent)
         stagecomp: StageComponent = entitystage.get(StageComponent)
         allnpcsinthestage = self.context.npcs_in_this_stage(stagecomp.name)
-        directorcomp: DirectorComponent = entitystage.get(DirectorComponent)
+        directorcomp: StageDirectorComponent = entitystage.get(StageDirectorComponent)
         for npcentity in allnpcsinthestage:
             npccomp: NPCComponent = npcentity.get(NPCComponent)
             events2npc = directorcomp.tonpc(npccomp.name, self.context)            

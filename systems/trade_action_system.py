@@ -6,7 +6,7 @@ from loguru import logger
 from auxiliary.actor_action import ActorAction
 from auxiliary.dialogue_rule import dialogue_enable, parse_target_and_message, ErrorDialogueEnable
 from typing import Optional
-from auxiliary.director_component import DirectorComponent
+from auxiliary.director_component import notify_stage_director
 from auxiliary.director_event import NPCTradeEvent
 
 
@@ -28,8 +28,8 @@ class TradeActionSystem(ReactiveProcessor):
             self.trade(entity)
 ###################################################################################################################
     def trade(self, entity: Entity) -> None:
-        safename = self.context.safe_get_entity_name(entity)
-        logger.debug(f"TradeActionSystem: {safename} is trading")
+        safe_npc_name = self.context.safe_get_entity_name(entity)
+        logger.debug(f"TradeActionSystem: {safe_npc_name} is trading")
 
         tradecomp: TradeActionComponent = entity.get(TradeActionComponent)
         tradeaction: ActorAction = tradecomp.action
@@ -49,7 +49,8 @@ class TradeActionSystem(ReactiveProcessor):
             ##
             propname = message
             traderes = self._trade_(entity, targetname, propname)
-            self.notifydirector(entity, targetname, propname, traderes)
+            notify_stage_director(self.context, entity, NPCTradeEvent(safe_npc_name, targetname, propname, traderes))
+            #self.notifydirector(entity, targetname, propname, traderes)
 ###################################################################################################################
     def _trade_(self, entity: Entity, target_npc_name: str, mypropname: str) -> bool:
         filesystem = self.context.file_system
@@ -60,13 +61,13 @@ class TradeActionSystem(ReactiveProcessor):
         filesystem.exchange_prop_file(safename, target_npc_name, mypropname)
         return True
 ###################################################################################################################
-    def notifydirector(self, entity: Entity, targetname: str, mypropname: str, success: bool) -> None:
-        stageentity = self.context.safe_get_stage_entity(entity)
-        if stageentity is None or not stageentity.has(DirectorComponent):
-            return
-        safename = self.context.safe_get_entity_name(entity)
-        if safename == "":
-            return
-        directorcomp: DirectorComponent = stageentity.get(DirectorComponent)
-        directorcomp.addevent(NPCTradeEvent(safename, targetname, mypropname, success))
+    # def notifydirector(self, entity: Entity, targetname: str, mypropname: str, success: bool) -> None:
+    #     stageentity = self.context.safe_get_stage_entity(entity)
+    #     if stageentity is None or not stageentity.has(StageDirectorComponent):
+    #         return
+    #     safename = self.context.safe_get_entity_name(entity)
+    #     if safename == "":
+    #         return
+    #     directorcomp: StageDirectorComponent = stageentity.get(StageDirectorComponent)
+    #     directorcomp.addevent(NPCTradeEvent(safename, targetname, mypropname, success))
 ###################################################################################################################

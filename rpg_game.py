@@ -32,7 +32,7 @@ from systems.broadcast_action_system import BroadcastActionSystem
 from systems.whisper_action_system import WhisperActionSystem 
 from systems.search_action_system import SearchActionSystem
 from systems.mind_voice_action_system import MindVoiceActionSystem
-from auxiliary.director_component import DirectorComponent
+from auxiliary.director_component import StageDirectorComponent
 from auxiliary.file_def import PropFile, KnownNPCFile
 from systems.begin_system import BeginSystem
 from systems.end_system import EndSystem
@@ -327,7 +327,7 @@ class RPGGame(BaseGame):
 
             #必要组件
             stageentity.add(StageComponent, builddata.name)
-            stageentity.add(DirectorComponent, builddata.name) ###
+            stageentity.add(StageDirectorComponent, builddata.name) ###
             stageentity.add(SimpleRPGRoleComponent, builddata.name, builddata.attributes[0], builddata.attributes[1], builddata.attributes[2])
     
             ## 重新设置npc和stage的关系

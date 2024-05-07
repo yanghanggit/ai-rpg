@@ -6,7 +6,7 @@ from loguru import logger
 from auxiliary.actor_action import ActorAction
 from auxiliary.dialogue_rule import dialogue_enable, parse_target_and_message, ErrorDialogueEnable
 from typing import Optional
-from auxiliary.director_component import DirectorComponent
+from auxiliary.director_component import notify_stage_director
 from auxiliary.director_event import NPCStealEvent
 
 
@@ -49,7 +49,8 @@ class StealActionSystem(ReactiveProcessor):
         
             propname = message
             stealres = self._steal_(entity, targetname, propname)
-            self.notifydirector(entity, targetname, propname, stealres)
+            notify_stage_director(self.context, entity, NPCStealEvent(safename, targetname, propname, stealres))
+            #self.notifydirector(entity, targetname, propname, stealres)
 ###################################################################################################################
     def _steal_(self, entity: Entity, target_npc_name: str, propname: str) -> bool:
         filesystem = self.context.file_system
@@ -60,13 +61,13 @@ class StealActionSystem(ReactiveProcessor):
         filesystem.exchange_prop_file(target_npc_name, safename, propname)
         return True
 ####################################################################################################
-    def notifydirector(self, entity: Entity, targetname: str, steal_prop_name: str, success: bool) -> None:
-        stageentity = self.context.safe_get_stage_entity(entity)
-        if stageentity is None or not stageentity.has(DirectorComponent):
-            return
-        safename = self.context.safe_get_entity_name(entity)
-        if safename == "":
-            return
-        directorcomp: DirectorComponent = stageentity.get(DirectorComponent)
-        directorcomp.addevent(NPCStealEvent(safename, targetname, steal_prop_name, success))
+    # def notifydirector(self, entity: Entity, targetname: str, steal_prop_name: str, success: bool) -> None:
+    #     stageentity = self.context.safe_get_stage_entity(entity)
+    #     if stageentity is None or not stageentity.has(StageDirectorComponent):
+    #         return
+    #     safename = self.context.safe_get_entity_name(entity)
+    #     if safename == "":
+    #         return
+    #     directorcomp: StageDirectorComponent = stageentity.get(StageDirectorComponent)
+    #     directorcomp.addevent(NPCStealEvent(safename, targetname, steal_prop_name, success))
 ###################################################################################################################

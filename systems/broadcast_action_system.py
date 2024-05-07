@@ -4,7 +4,7 @@ from auxiliary.components import BroadcastActionComponent, StageComponent
 from auxiliary.actor_action import ActorAction
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
-from auxiliary.director_component import DirectorComponent
+from auxiliary.director_component import notify_stage_director
 from auxiliary.director_event import BroadcastEvent
 
 class BroadcastActionSystem(ReactiveProcessor):
@@ -33,12 +33,14 @@ class BroadcastActionSystem(ReactiveProcessor):
         #
         broadcastcomp: BroadcastActionComponent = entity.get(BroadcastActionComponent)
         stagecomp: StageComponent = stageentity.get(StageComponent)
-        directorcomp: DirectorComponent = stageentity.get(DirectorComponent)
+        #directorcomp: StageDirectorComponent = stageentity.get(StageDirectorComponent)
         #
         action: ActorAction = broadcastcomp.action
-        for value in action.values:
-            event = BroadcastEvent(action.name, stagecomp.name, value)
-            directorcomp.addevent(event)
+        combine = action.combine_all_string_values_to_output()
+        notify_stage_director(self.context, stageentity, BroadcastEvent(action.name, stagecomp.name, combine))
+        # for value in action.values:
+        #     event = BroadcastEvent(action.name, stagecomp.name, value)
+        #     directorcomp.addevent(event)
 ####################################################################################################          
         
                 

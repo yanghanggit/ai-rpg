@@ -5,7 +5,7 @@ search_failed_prompt,
 kill_someone,
 attack_someone_prompt,
 npc_leave_for_stage_prompt, 
-npc_enter_stage_prompt, 
+notify_all_already_in_target_stage_that_someone_enter_stage_prompt, 
 perception_action_prompt,
 steal_action_prompt,
 trade_action_prompt,
@@ -14,7 +14,8 @@ leave_for_stage_failed_because_stage_is_invalid_prompt,
 leave_for_stage_failed_because_already_in_stage_prompt,
 whisper_action_prompt,
 leave_for_stage_failed_because_no_exit_condition_match_prompt,
-search_success_prompt)
+search_success_prompt,
+notify_myself_leave_for_from_prompt)
 from loguru import logger
 from abc import ABC, abstractmethod
 from typing import List
@@ -168,16 +169,21 @@ class NPCLeaveForStageEvent(IDirectorEvent):
 ####################################################################################################################################
 class NPCEnterStageEvent(IDirectorEvent):
 
-    def __init__(self, npc_name: str, stage_name: str) -> None:
+    def __init__(self, npc_name: str, stage_name: str, last_stage_name: str) -> None:
         self.npc_name = npc_name
         self.stage_name = stage_name
+        self.last_stage_name = last_stage_name
 
     def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
-        event = npc_enter_stage_prompt(self.npc_name, self.stage_name)
-        return event
+        if npcname != self.npc_name:
+            # 目标场景内的一切听到的是这个:"xxx进入了场景"
+            return notify_all_already_in_target_stage_that_someone_enter_stage_prompt(self.npc_name, self.stage_name, self.last_stage_name)
+            
+        #通知我自己，我从哪里去往了哪里。这样prompt更加清晰一些
+        return notify_myself_leave_for_from_prompt(self.npc_name, self.stage_name, self.last_stage_name)
     
     def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
-        event = npc_enter_stage_prompt(self.npc_name, self.stage_name)
+        event = notify_all_already_in_target_stage_that_someone_enter_stage_prompt(self.npc_name, self.stage_name, self.last_stage_name)
         return event
 ####################################################################################################################################
 ####################################################################################################################################

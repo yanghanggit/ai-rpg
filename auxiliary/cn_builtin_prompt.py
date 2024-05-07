@@ -150,8 +150,14 @@ def search_success_prompt(npcname: str, prop_name:str, stagename: str) -> str:
 # def fail_to_exit_stage(npc_name: str, stage_name: str, exit_condition: str) -> str:
 #     return f"{npc_name}试图离开{stage_name} 但背包中没有{exit_condition}，不能离开，或许{npc_name}需要尝试搜索一下'{exit_condition}'."
 
-def npc_enter_stage_prompt(npc_name: str, stage_name: str) -> str:
-    return f"{npc_name}进入了{stage_name} 场景。"
+#
+def notify_all_already_in_target_stage_that_someone_enter_stage_prompt(some_ones_name: str, target_stage_name: str, last_stage_name: str) -> str:
+    return f"{some_ones_name}进入了{target_stage_name}场景。"
+
+#
+def notify_myself_leave_for_from_prompt(some_ones_name: str, target_stage_name: str, last_stage_name: str) -> str:
+    return f"{some_ones_name}离开了{last_stage_name}场景, 进入了{target_stage_name}场景。"
+
 
 def npc_leave_for_stage_prompt(npc_name: str, current_stage_name: str, leave_for_stage_name: str) -> str:
     return f"{npc_name}离开了{current_stage_name} 场景。"
@@ -245,3 +251,11 @@ def leave_for_stage_failed_because_no_exit_condition_match_prompt(npcname: str, 
     if tips == "":
         return f"""#{npcname}不能离开本场景并去往{stagename},可能当前不满足离开的条件。可以通过CheckStatusActionComponent查看自己拥有的道具，或者通过PerceptionActionComponent感知场景内的道具，找到离开的条件。"""
     return f"""{npcname}不能离开本场景并去往{stagename}。\n提示:{tips}"""
+
+##
+def force_direct_npc_events_before_leave_stage_prompt(message: str, current_stage_name: str, context: ExtendedContext) -> str:
+    prompt = f"""
+# 在你准备离开{current_stage_name}之前，{current_stage_name}内发生了如下事件(有些是你参与的，有些是你目睹或感知到的)：
+{message}
+# 你记录了这些事件，并更新了你的状态。"""
+    return prompt

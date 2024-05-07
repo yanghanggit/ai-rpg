@@ -1,5 +1,7 @@
 from loguru import logger
 from typing import List, Optional
+from entitas import Entity, Matcher, ExecuteProcessor #type: ignore
+from auxiliary.components import StageComponent, NPCComponent, PlayerComponent
 
 ### 目前啥也不干，但留着有用的时候再用
 class PlayerProxy:
@@ -42,6 +44,22 @@ def get_player_proxy(playername: str) -> Optional[PlayerProxy]:
             return player
     return None
 
+###################################################################################################################
+def notify_player_proxy(npcentity: Entity, batchmessage: str, messages: List[str]) -> None:
+    if not npcentity.has(PlayerComponent):
+        return
+
+    playercomp: PlayerComponent = npcentity.get(PlayerComponent)
+    playername: str = playercomp.name
+    playerproxy = get_player_proxy(playername)
+    if playerproxy is None:
+        logger.error(f"notify_player_client, 玩家代理不存在{playername}???")
+        return
+
+    #登陆的消息
+    npccomp: NPCComponent = npcentity.get(NPCComponent)
+    playerproxy.add_npc_message(npccomp.name, batchmessage)
+###################################################################################################################
 ### 单人游戏，临时的名字
 TEST_PLAYER_NAME = "北京柏林互动科技有限公司"
 

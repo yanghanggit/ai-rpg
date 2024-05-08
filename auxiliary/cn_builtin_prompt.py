@@ -259,3 +259,6 @@ def force_direct_npc_events_before_leave_stage_prompt(message: str, current_stag
 {message}
 # 你记录了这些事件，并更新了你的状态。"""
     return prompt
+
+def use_item_action_success_prompt(who_use: str, targetname: str, itemname: str) -> str:
+    return f"{who_use}对{targetname}使用了{itemname},顺利打开了{targetname}"

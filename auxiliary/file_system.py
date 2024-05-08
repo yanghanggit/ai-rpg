@@ -1,7 +1,7 @@
 from loguru import logger
 import os
 from typing import Dict, List, Optional
-from auxiliary.file_def import PropFile, KnownNPCFile, KnownStageFile
+from auxiliary.file_def import PropFile, KnownNPCFile, KnownStageFile, UseItemFile
 
 class FileSystem:
 
@@ -14,6 +14,8 @@ class FileSystem:
         self.known_npc_files: Dict[str, List[KnownNPCFile]] = {}
         # 知晓的Stage
         self.known_stage_files: Dict[str, List[KnownStageFile]] = {}
+        # 由使用道具而产生的新文件
+        self.use_item_files: Dict[str, List[UseItemFile]] = {}
 ################################################################################################################
     ### 必须设置根部的执行路行
     def set_root_path(self, rootpath: str) -> None:
@@ -161,3 +163,27 @@ class FileSystem:
                 return file
         return None
 ################################################################################################################
+    def use_item_to_target_file_name(self, ownersname: str, filename: str) -> str:
+        return f"{self.rootpath}{ownersname}/items/{filename}.json"
+    
+    def has_item_to_target_file(self, ownersname: str, itemname: str) -> bool:
+        return self.get_item_to_target_file(ownersname, itemname) is not None
+    
+    def get_item_to_target_files(self, ownersname: str) -> list[UseItemFile]:
+        return self.use_item_files.get(ownersname, [])
+    
+    def get_item_to_target_file(self, ownersname: str, itemname: str) -> Optional[UseItemFile]:
+        for file in self.get_item_to_target_files(ownersname):
+            if file.name == itemname:
+                return file
+        return None
+    
+    def write_use_item_to_target_file(self, use_item_file: UseItemFile) -> None:
+        self.deletefile(self.use_item_to_target_file_name(use_item_file.ownersname, use_item_file.name))
+        content = use_item_file.content()
+        self.writefile(self.use_item_to_target_file_name(use_item_file.ownersname, use_item_file.name), content)
+
+    def add_use_item_to_target_file(self, use_item_file: UseItemFile) -> None:
+        uselist = self.use_item_files.setdefault(use_item_file.ownersname, [])
+        uselist.append(use_item_file)
+        self.write_use_item_to_target_file(use_item_file)

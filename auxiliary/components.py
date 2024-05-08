@@ -30,6 +30,7 @@ StealActionComponent = namedtuple('StealActionComponent', 'action')
 TradeActionComponent = namedtuple('TradeActionComponent', 'action')
 CheckStatusActionComponent = namedtuple('CheckStatusActionComponent', 'action')
 EnviroNarrateActionComponent = namedtuple('EnviroNarrateActionComponent', 'action')
+UseItemActionComponent = namedtuple('UseItemActionComponent', 'action')
 ###############################################################################################################################################
 ###游戏业务组件
 SimpleRPGRoleComponent = namedtuple('SimpleRPGRoleComponent', 'name maxhp hp attack')
@@ -66,7 +67,8 @@ NPC_AVAILABLE_ACTIONS_REGISTER = [FightActionComponent,
                          PerceptionActionComponent,
                          StealActionComponent,
                          TradeActionComponent,
-                         CheckStatusActionComponent]
+                         CheckStatusActionComponent,
+                         UseItemActionComponent]
 
 NPC_DIALOGUE_ACTIONS_REGISTER = [SpeakActionComponent, 
                                 BroadcastActionComponent,
@@ -78,4 +80,5 @@ NPC_INTERACTIVE_ACTIONS_REGISTER = [SearchActionComponent,
                                     PerceptionActionComponent,
                                     StealActionComponent,
                                     TradeActionComponent,
-                                    CheckStatusActionComponent]
+                                    CheckStatusActionComponent,
+                                    UseItemActionComponent]

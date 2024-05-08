@@ -158,6 +158,10 @@ class PreLeaveForSystem(ReactiveProcessor):
 
     #     event = NPCLeaveForFailedBecauseAlreadyInStage(npcname, stagename)
     #     directorcomp.addevent(event)
+
+###############################################################################################################################################
+    def check_npc_file_valid(self, ownername: str, filename: str) -> bool:
+        return self.context.file_system.has_prop_file(ownername, filename) or self.context.file_system.has_item_to_target_file(ownername, filename)
 ###############################################################################################################################################
     def check_exit_stage_conditions(self, entity: Entity) -> ErrorCheckExitStageConditions:
         #
@@ -189,12 +193,12 @@ class PreLeaveForSystem(ReactiveProcessor):
                 
                 propname = res[0]
                 tips = res[1]
-                if not file_system.has_prop_file(npccomp.name, propname):
+                if not self.check_npc_file_valid(npccomp.name, propname):
                     # 没有这个道具
                     logger.info(f"{npccomp.name} 没有这个道具: {propname}。提示: {tips}")
                     return ErrorCheckExitStageConditions.NO_EXIT_CONDITIONS_MATCH
 
-            elif not file_system.has_prop_file(npccomp.name, cond):
+            elif not self.check_npc_file_valid(npccomp.name, propname):
                 # 没有这个道具
                 return ErrorCheckExitStageConditions.NO_EXIT_CONDITIONS_MATCH
         ##

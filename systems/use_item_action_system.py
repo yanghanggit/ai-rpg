@@ -63,14 +63,15 @@ class UseItemActionSystem(ReactiveProcessor):
     
     def check_target_with_item(self, target_name: str, item_name: str) -> str:
         # 暂时在这里对于道具和作用对象的产物进行定义
-        target_with_item = { "禁言者之棺": "腐朽的匕首" }
+        target_with_item = { "禁言者之棺": ["腐朽的匕首"] }
         target_prompts = { "禁言者之棺": "的棺材盖" }
         item_prompts = { "腐朽的匕首": "撬开" }
 
-        for target, item in target_with_item.items():
-            if target == target_name and item == item_name:
-                return item_prompts[item] + target_prompts[target]
-        
+        for target, items in target_with_item.items():
+            if target == target_name:
+                for item in items:
+                    if item == item_name:
+                        return item_prompts[item] + target_prompts[target]
         return None
 
         

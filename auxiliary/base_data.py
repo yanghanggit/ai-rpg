@@ -46,7 +46,8 @@ class NPCData:
                  memory: str, 
                  props: Set[PropData], 
                  mentioned_npcs: Set[str], 
-                 mentioned_stages: Set[str]) -> None:
+                 mentioned_stages: Set[str],
+                 roleappearance: str) -> None:
         self.name = name
         self.codename = codename
         self.url = url
@@ -55,6 +56,7 @@ class NPCData:
         self.mentioned_npcs: Set[str] = mentioned_npcs
         self.mentioned_stages: Set[str] = mentioned_stages
         self.attributes: List[int] = []
+        self.roleappearance: str = roleappearance
 
     def buildattributes(self, attributes: str) -> None:
         self.attributes = [int(attr) for attr in attributes.split(',')]

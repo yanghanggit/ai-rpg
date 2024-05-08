@@ -71,7 +71,7 @@ class StageBuilder:
         res: set[NPCData] = set()
         for obj in npcs_data:
             # 表达场景NPC的数据，其实需要的数据很少。主要是name
-            npc = NPCData(obj.get("name"), "", "", "", set(), set(), set())
+            npc = NPCData(obj.get("name"), "", "", "", set(), set(), set(), "")
             res.add(npc)
         return res
     #
@@ -158,7 +158,8 @@ class NPCBuilder:
                           npcdata.get("memory"), 
                           npcprops, 
                           mentioned_npcs,
-                          mentioned_stages)
+                          mentioned_stages,
+                          npcdata.get("role_appearance"))
             
             ## 设置属性
             npc.buildattributes(npcdata.get("attributes"))

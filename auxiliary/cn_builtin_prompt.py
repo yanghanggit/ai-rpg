@@ -1,6 +1,7 @@
 from entitas import Entity # type: ignore
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.components import NPCComponent, StageComponent
+from typing import Dict
 
 def npc_plan_prompt(entity: Entity, context: ExtendedContext) -> str:
     if not entity.has(NPCComponent):
@@ -253,7 +254,7 @@ def leave_for_stage_failed_because_no_exit_condition_match_prompt(npcname: str, 
     return f"""{npcname}不能离开本场景并去往{stagename}。\n提示:{tips}"""
 
 ##
-def force_direct_npc_events_before_leave_stage_prompt(message: str, current_stage_name: str, context: ExtendedContext) -> str:
+def direct_npc_events_before_leave_stage_prompt(message: str, current_stage_name: str, context: ExtendedContext) -> str:
     prompt = f"""
 # 在你准备离开{current_stage_name}之前，{current_stage_name}内发生了如下事件(有些是你参与的，有些是你目睹或感知到的)：
 {message}
@@ -307,3 +308,13 @@ def notify_game_start_prompt(npcname: str, context: ExtendedContext) -> str:
     return f"""# 现在世界开始运转，你——{npcname}，已经准备好了。你需要将自己完全带入你的角色设定并开始游戏。
 请遵循输出格式指南，仅通过返回RememberActionComponent及相关内容来确认你的状态。"""
 ################################################################################################################################################
+def someone_came_into_my_stage_his_appearance_prompt(someone: str, hisappearance: str) -> str:
+    return f"""你发现{someone}进入了场景，其外貌信息如下：{hisappearance}"""
+################################################################################################################################################
+def npc_appearance_in_this_stage_prompt(myname: str, npc_appearance_in_stage: Dict[str, str]) -> str:
+    batch = ""
+    for npcname, appearance in npc_appearance_in_stage.items():
+        batch += f"{npcname}，{appearance}\n"
+    return f"""你观察到了你所在场景内的角色外貌信息如下:\n{batch}"""
+################################################################################################################################################
+

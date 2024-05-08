@@ -9,7 +9,7 @@ from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.director_component import notify_stage_director, StageDirectorComponent
 from auxiliary.director_event import (
-    NPCLeaveForStageEvent, 
+    NPCLeaveStageEvent, 
     NPCEnterStageEvent)
 from typing import cast
 from auxiliary.player_proxy import notify_player_proxy
@@ -126,7 +126,7 @@ class LeaveForActionSystem(ReactiveProcessor):
         
         self.context.change_stage_tag_component(entity, helper.current_stage_name, replace_current_stage)
 
-        notify_stage_director(self.context, entity, NPCLeaveForStageEvent(npccomp.name, helper.current_stage_name, helper.target_stage_name))
+        notify_stage_director(self.context, entity, NPCLeaveStageEvent(npccomp.name, helper.current_stage_name, helper.target_stage_name))
         #self.notify_director_leave_for_stage(currentstage, npccomp.name, handle.current_stage_name, handle.target_stage_name)
     ###############################################################################################################################################
     # def notify_director_leave_for_stage(self, stageentity: Entity, npcname: str, cur_stage_name: str, target_stage_name: str) -> None:

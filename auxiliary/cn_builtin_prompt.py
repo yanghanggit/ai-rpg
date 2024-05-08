@@ -159,7 +159,7 @@ def notify_myself_leave_for_from_prompt(some_ones_name: str, target_stage_name: 
     return f"{some_ones_name}离开了{last_stage_name}, 进入了{target_stage_name}。"
 
 
-def npc_leave_for_stage_prompt(npc_name: str, current_stage_name: str, leave_for_stage_name: str) -> str:
+def npc_leave_stage_prompt(npc_name: str, current_stage_name: str, leave_for_stage_name: str) -> str:
     return f"{npc_name}离开了{current_stage_name} 场景。"
 
 def kill_someone(attacker_name: str, target_name: str) -> str:

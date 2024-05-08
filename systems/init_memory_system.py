@@ -1,6 +1,6 @@
 from auxiliary.file_def import KnownNPCFile, KnownStageFile
 from entitas import Entity, Matcher, InitializeProcessor # type: ignore
-from auxiliary.components import WorldComponent, StageComponent, NPCComponent
+from auxiliary.components import WorldComponent, StageComponent, NPCComponent, RoleAppearanceComponent
 from auxiliary.cn_builtin_prompt import (read_archives_when_system_init_prompt,
                                     read_all_neccesary_info_when_system_init_prompt,
                                     remember_begin_before_game_start_prompt,
@@ -13,7 +13,7 @@ from auxiliary.cn_builtin_prompt import (read_archives_when_system_init_prompt,
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from systems.known_information_helper import KnownInformationHelper
-from typing import cast
+from typing import cast, Set
 
 
 ###############################################################################################################################################
@@ -115,6 +115,7 @@ class InitMemorySystem(InitializeProcessor):
                 self.batch_message_check_status(npcentity, npcname, str_props_info)
                 self.batch_message_stages(npcentity, npcname, cast(str, npccomp.current_stage), str_where_you_can_go)
                 self.batch_message_npc_archive(npcentity, npcname, str_who_you_know)
+                self.batch_message_npc_appearance_in_stage(npcentity, npcname, info_who_you_know) 
                 self.batch_message_remember_end(npcentity, npcname)
                 request_prompt = notify_game_start_prompt(npcname, context)
                 #
@@ -148,6 +149,28 @@ class InitMemorySystem(InitializeProcessor):
         #其他场景
         stages_prompt = confirm_stages_before_game_start_prompt(npcname, stages_names, self.context)
         self.context.safe_add_human_message_to_entity(entity, stages_prompt)
+###############################################################################################################################################
+    def batch_message_npc_appearance_in_stage(self, entity: Entity, npcname: str, info_who_you_know: Set[str]) -> None:
+
+        stageentity = self.context.safe_get_stage_entity(entity)
+        assert stageentity is not None
+
+        safe_stage_name = self.context.safe_get_entity_name(stageentity)
+        npcs_in_this_stage = self.context.npcs_in_this_stage(safe_stage_name)
+        for npcentity in npcs_in_this_stage:
+            if npcentity == entity or not npcentity.has(RoleAppearanceComponent):
+                continue
+            #
+            npccomp: NPCComponent = npcentity.get(NPCComponent)
+            if not npccomp.name in info_who_you_know:
+                logger.error(f"{npcname}不认识{npccomp.name}, 无法感知。后续可以加入形象系统")
+                continue
+            #
+            roleappearancecomp: RoleAppearanceComponent = npcentity.get(RoleAppearanceComponent)
+            appearance: str = roleappearancecomp.appearance
+            #
+            appearance_prompt = f"当前场景内，你看到了{npccomp.name}，{appearance}"
+            self.context.safe_add_human_message_to_entity(entity, appearance_prompt)
 ###############################################################################################################################################
     def batch_message_remember_end(self, entity: Entity, npcname: str) -> None:
         prompt = remember_end_before_game_start_prompt(npcname, self.context)

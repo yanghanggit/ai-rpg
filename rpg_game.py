@@ -1,5 +1,5 @@
 import os
-from typing import List, Optional
+from typing import List, Optional, Dict
 from entitas import Processors, Matcher #type: ignore
 from loguru import logger
 from auxiliary.components import (
@@ -10,7 +10,8 @@ from auxiliary.components import (
     PlayerComponent, 
     SimpleRPGRoleComponent, 
     StageEntryConditionComponent,
-    StageExitConditionComponent)
+    StageExitConditionComponent,
+    RoleAppearanceComponent)
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.builders import WorldDataBuilder, StageBuilder, NPCBuilder
 from entitas.entity import Entity
@@ -170,6 +171,9 @@ class RPGGame(BaseGame):
         
         ## 第四步，最后处理因为需要上一阶段的注册流程
         self.add_code_name_component_stages_when_build()
+
+        ## 添加一个测试阶段, 这个阶段是为了测试的，尝试外貌的系统引入
+        self.test_add_role_appearance_component()
 
         ## 混沌系统，准备测试
         chaos_engineering_system.on_post_create_world(context, worlddata)
@@ -419,4 +423,22 @@ class RPGGame(BaseGame):
             codecompclass = code_name_component_system.get_component_class_by_name(stagecomp.name)
             if codecompclass is not None:
                 entity.add(codecompclass, stagecomp.name)
+###############################################################################################################################################
+    def test_add_role_appearance_component(self) -> None:
+        ## 测试数据
+        testdata: Dict[str, str] = {}
+        testdata["教廷密使"] = "一个人类，无法看清性别，个子高大，身着黑色长袍与斗篷，斗篷遮住了脸看不清面容。"
+        testdata["鼠王"] = "一只体型巨大的老鼠，身躯庞大而畸形，肌肉膨胀，毛发稀疏。头部过于庞大，不成比例，长满了锋利而不规则的牙齿。而且有一条很长的尾巴"
+        testdata["好运气先生"] = "一只瘦小的老鼠，拥有着细长的身体和闪烁着恐惧光芒的小眼睛。毛色是暗淡的灰色"
+        testdata["埃利亚斯·格雷"] = "一个男性人类，个子中等，身着守墓人式样的衣服，看上去阴郁而畸形。戴着一张粗糙、刻着奇异符号的面具"
+        testdata["摩尔"] = "一只外形可怖的狗。皮肤在某些地方因长期接触腐败的尸体而出现溃烂，其毛发稀疏，露出的皮肤带有不自然的灰白色"
+        testdata["无名的复活者"] = "一个男性人类，个子中等。身上的衣服已经破烂不堪。肤色是一种不自然的灰色，双眼和普通人不同——是稀有的紫色"
+        ## 添加外貌组件
+        context = self.extendedcontext
+        world_or_npc: set[Entity] = context.get_group(Matcher(any_of=[NPCComponent, WorldComponent])).entities
+        for entity in world_or_npc:
+            safename = context.safe_get_entity_name(entity)
+            if not entity.has(RoleAppearanceComponent):
+                logger.debug(f"测试添加外貌组件：{safename}, {testdata.get(safename, '没有外貌数据')}")
+                entity.add(RoleAppearanceComponent, testdata[safename])
 ###############################################################################################################################################

@@ -12,6 +12,7 @@ StageEntryConditionComponent = namedtuple('StageEntryConditionComponent', 'condi
 StageExitConditionComponent = namedtuple('StageExitConditionComponent', 'conditions')
 DestroyComponent = namedtuple('DestroyComponent', 'name')
 AutoPlanningComponent = namedtuple('AutoPlanningComponent', 'name')
+RoleAppearanceComponent = namedtuple('RoleAppearanceComponent', 'appearance')
 ###############################################################################################################################################
 ###动作类的组件
 RememberActionComponent = namedtuple('RememberActionComponent', 'action')

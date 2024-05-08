@@ -259,3 +259,50 @@ def force_direct_npc_events_before_leave_stage_prompt(message: str, current_stag
 {message}
 # 你记录了这些事件，并更新了你的状态。"""
     return prompt
+
+
+
+
+
+
+################################################################################################################################################
+def remember_begin_before_game_start_prompt(npcname: str, memorycontent: str, context: ExtendedContext) -> str:
+    if memorycontent == "":
+        return f"""# 世界即将开始运行。你开始回忆关于你的信息与设定。目前你没有任何记忆。"""
+
+    return f"""# 世界即将开始运行。在这之前，你需要先开始回忆关于你的信息与设定。
+## 你最后的记忆是这样的:\n{memorycontent}"""
+################################################################################################################################################          
+def check_status_before_game_start_prompt(npcname: str, propsinfo: str, context: ExtendedContext) -> str:
+    if propsinfo == "":
+        return f"""# 你检查了自身的状态与持有的道具。目前你没有任何道具。"""
+    
+    return f"""# 你开始检查自身的状态与持有的道具。
+## 目前已经拥有的道具如下:\n{propsinfo}"""
+################################################################################################################################################
+def remember_npc_archives_before_game_start_prompt(npcname: str, who_you_know: str, context: ExtendedContext) -> str:
+    if who_you_know == "":
+        return f"""# 你试图回顾你认识的角色。目前你并没有认识任何人。"""
+    
+    return f"""# 你试图回顾你认识的角色。
+## 目前你认识的角色有:\n{who_you_know}"""
+################################################################################################################################################
+def confirm_current_stage_before_game_start_prompt(npcname: str, current_stage_name: str, context: ExtendedContext) -> str:
+    if current_stage_name == "":
+        return f"""# 你当前并不在任何场景中。"""
+    
+    return f"""# 目前你所在的场景是:{current_stage_name}"""
+################################################################################################################################################
+def confirm_stages_before_game_start_prompt(npcname: str, stages_names: str, context: ExtendedContext) -> str:
+    if stages_names == "":
+        return f"""# 目前你并不认识任何场景，根据游戏机制，也没有任何可以前往的场景。"""
+        
+    return f"""# 目前，你认识的场景有:{stages_names}。
+## 根据游戏机制你可以前往这些场景。目前你只能从{stages_names}中选择你的目的地，随着你认识的场景更新，你可以去的场景也会增加。"""
+################################################################################################################################################
+def remember_end_before_game_start_prompt(npcname: str, context: ExtendedContext) -> str:
+    return f"""# 你回顾了以上的信息，包括最后的记忆，自身状态，拥有道具及其信息，认识的角色，所处场景与认识的场景。更新了你的状态"""
+################################################################################################################################################
+def notify_game_start_prompt(npcname: str, context: ExtendedContext) -> str:
+    return f"""# 现在世界开始运转，你——{npcname}，已经准备好了。你需要将自己完全带入你的角色设定，并以你最后的状态为起点开始游戏"""
+################################################################################################################################################

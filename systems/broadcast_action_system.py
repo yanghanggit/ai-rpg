@@ -36,7 +36,7 @@ class BroadcastActionSystem(ReactiveProcessor):
         #directorcomp: StageDirectorComponent = stageentity.get(StageDirectorComponent)
         #
         action: ActorAction = broadcastcomp.action
-        combine = action.combine_all_string_values_to_output()
+        combine = action.combinevalues()
         notify_stage_director(self.context, stageentity, BroadcastEvent(action.name, stagecomp.name, combine))
         # for value in action.values:
         #     event = BroadcastEvent(action.name, stagecomp.name, value)

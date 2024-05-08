@@ -18,7 +18,7 @@ class ActorAction:
     def __repr__(self) -> str:
         return f"ActorAction({self.name}, {self.actionname}, {self.values})"
     
-    def combine_all_string_values_to_output(self) -> str:
+    def combinevalues(self) -> str:
         return " ".join(self.values)
 ############################################################################################################
 class ActorPlan:

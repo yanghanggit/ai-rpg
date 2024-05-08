@@ -51,6 +51,7 @@ from systems.check_status_action_system import CheckStatusActionSystem
 from base_game import BaseGame
 from systems.post_conversational_action_system import PostConversationalActionSystem
 from systems.init_agents_system import InitAgentsSystem
+from systems.remember_action_system import RememberActionSystem
 
 ## 控制流程和数据创建
 class RPGGame(BaseGame):
@@ -89,6 +90,7 @@ class RPGGame(BaseGame):
         processors.add(PreActionSystem(context)) ######## 在所有行动之前 #########################################
 
         #获取状态与查找信息类的行为
+        processors.add(RememberActionSystem(context))
         processors.add(CheckStatusActionSystem(context))
         processors.add(PerceptionActionSystem(context))
 
@@ -418,5 +420,3 @@ class RPGGame(BaseGame):
             if codecompclass is not None:
                 entity.add(codecompclass, stagecomp.name)
 ###############################################################################################################################################
-        
-

@@ -101,7 +101,7 @@ class StageBuilder:
              # 做连接关系 目前仅用名字
             exit_of_prison_and_goto_stagename: str = stagedata.get("exit_of_prison")
             if len(exit_of_prison_and_goto_stagename) > 0:
-                stage.connect_stage_by_name(exit_of_prison_and_goto_stagename)
+                stage.stage_as_exit_of_prison(exit_of_prison_and_goto_stagename)
 
             # 设置属性
             stage.buildattributes(stagedata.get("attributes"))

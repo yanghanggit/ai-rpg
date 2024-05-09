@@ -354,7 +354,7 @@ class PlayerCommandCheckStatus(PlayerCommand):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class PlayerCommandInteractiveProp(PlayerCommand):
+class PlayerCommandUseInteractiveProp(PlayerCommand):
     def __init__(self, inputname: str, game: RPGGame, playerproxy: PlayerProxy, command: str) -> None:
         super().__init__(inputname, game, playerproxy)
         # "@使用道具对象>道具名"
@@ -370,5 +370,5 @@ class PlayerCommandInteractiveProp(PlayerCommand):
         action = ActorAction(npccomp.name, UseInteractivePropActionComponent.__name__, [self.command])
         playerentity.add(UseInteractivePropActionComponent, action)
 
-        newmemory = f"""{{"{StealActionComponent.__name__}": ["{self.command}"]}}"""
+        newmemory = f"""{{"{UseInteractivePropActionComponent.__name__}": ["{self.command}"]}}"""
         self.add_human_message(playerentity, newmemory)

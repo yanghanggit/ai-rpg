@@ -5,7 +5,7 @@ from auxiliary.components import InteractivePropActionComponent
 from auxiliary.dialogue_rule import parse_target_and_message
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.file_def import InteractivePropFile
-from entitas import Entity, Matcher, ReactiveProcessor
+from entitas import Entity, Matcher, ReactiveProcessor # type: ignore
 from auxiliary.director_component import notify_stage_director
 from entitas.group import GroupEvent
 from auxiliary.director_event import NPCInteractivePropEvent
@@ -32,7 +32,9 @@ class InteractivePropActionSystem(ReactiveProcessor):
         for value in interactive_prop_action.values:
             parse = parse_target_and_message(value)
             targetname: Optional[str] = parse[0]
+            assert targetname is not None
             propname: Optional[str] = parse[1]
+            assert propname is not None
             if self._interactive_prop_(entity, targetname, propname): 
                 logger.debug(f"InteractivePropActionSystem: {targetname} is using {propname}")
                 user_name = self.context.safe_get_entity_name(entity)
@@ -51,7 +53,7 @@ class InteractivePropActionSystem(ReactiveProcessor):
             logger.warning(f"{targetname}与{propname}之间的关系未定义，请检查。")
             return False
         
-        if not filesystem.has_interactivepropfile(username, interactivepropresult):
+        if not filesystem.has_interactive_prop_file(username, interactivepropresult):
             createpropfile = InteractivePropFile(username, targetname, interactivepropresult)
             filesystem.add_interactive_prop_to_target_file(createpropfile)
         else:
@@ -61,7 +63,7 @@ class InteractivePropActionSystem(ReactiveProcessor):
         return True
         
     
-    def check_target_with_prop(self, targetname: str, propname: str) -> str:
+    def check_target_with_prop(self, targetname: str, propname: str) -> Optional[str]:
         # 暂时在这里对于道具和作用对象的产物进行定义
         target_with_prop = { "禁言者之棺": ["腐朽的匕首"] }
         target_prompts = { "禁言者之棺": "的棺材盖" }

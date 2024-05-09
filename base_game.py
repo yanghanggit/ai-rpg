@@ -7,6 +7,7 @@ class BaseGame(ABC):
         self.name = name
         self.started: bool = False
         self.inited: bool = False
+        self.exited: bool = False
          
     @abstractmethod
     def execute(self) -> None:

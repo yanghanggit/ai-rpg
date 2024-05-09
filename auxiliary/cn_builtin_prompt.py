@@ -301,8 +301,11 @@ def confirm_stages_before_game_start_prompt(npcname: str, stages_names: str, con
     return f"""# 目前，你认识的场景有:{stages_names}。
 ## 根据游戏机制你可以前往这些场景。目前你只能从{stages_names}中选择你的目的地，随着你认识的场景更新，你可以去的场景也会增加。"""
 ################################################################################################################################################
+def current_stage_you_saw_someone_appearance_prompt(safe_stage_name: str, npcname: str, appearance:str, context: ExtendedContext) -> str:
+    return f"当前场景——{safe_stage_name}内，你看到了{npcname}，{appearance}"
+################################################################################################################################################
 def remember_end_before_game_start_prompt(npcname: str, context: ExtendedContext) -> str:
-    return f"""# 你回顾了以上的信息，包括最后的记忆，自身状态，拥有道具及其信息，认识的角色，所处场景与认识的场景。更新了你的状态"""
+    return f"""# 你回顾了以上的信息，包括最后的记忆，自身状态(拥有道具及其信息)，认识的角色，所处场景(及场景的角色)与认识的场景。"""
 ################################################################################################################################################
 def notify_game_start_prompt(npcname: str, context: ExtendedContext) -> str:
     return f"""# 现在世界开始运转，你——{npcname}，已经准备好了。你需要将自己完全带入你的角色设定并开始游戏。

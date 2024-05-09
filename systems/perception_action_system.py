@@ -21,22 +21,12 @@ class PerceptionActionHelper:
         if safestage is None:
             return res
         stagecomp: StageComponent = safestage.get(StageComponent)
-
-        file_system = self.context.file_system
-        selfname = self.context.safe_get_entity_name(entity)
         npcs = self.context.npcs_in_this_stage(stagecomp.name)
         for npc in npcs:
             if npc == entity:
                 #过滤掉自己
                 continue
-            hisname = self.context.safe_get_entity_name(npc)
-            I_known_this_npc = file_system.get_known_npc_file(selfname, hisname)
-            if I_known_this_npc is None:
-                #过滤掉不认识的NPC
-                logger.error(f"{selfname}不认识{hisname}, 无法感知。后续可以加入形象系统")
-                continue
             res.append(self.context.safe_get_entity_name(npc))
-
         return res
 ###################################################################################################################
     def perception_props_in_stage(self, entity: Entity) -> List[str]:

@@ -9,7 +9,8 @@ from auxiliary.cn_builtin_prompt import (read_archives_when_system_init_prompt,
                                     confirm_current_stage_before_game_start_prompt,
                                     confirm_stages_before_game_start_prompt,
                                     remember_end_before_game_start_prompt,
-                                    notify_game_start_prompt)
+                                    notify_game_start_prompt,
+                                    current_stage_you_saw_someone_appearance_prompt)
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from systems.known_information_helper import KnownInformationHelper
@@ -72,7 +73,7 @@ class InitMemorySystem(InitializeProcessor):
         agent_connect_system = context.agent_connect_system
 
         #测试用
-        batch_by_step_then_request = True
+        batch_messages_by_step_then_request = True
 
         # 初始化npc的
         npcs: set[Entity] = context.get_group(Matcher(all_of=[NPCComponent])).entities
@@ -109,8 +110,8 @@ class InitMemorySystem(InitializeProcessor):
             #
             str_init_memory = memory_system.getmemory(npcname)
 
-            ## 测试的分值，可以逐条压入history，然后最后request
-            if batch_by_step_then_request:
+            ## 测试的代码，试验逐条压入history，然后最后request。没什么质的飞跃，就是写起来逻辑清晰和简单
+            if batch_messages_by_step_then_request:
                 self.batch_message_remember_begin(npcentity, npcname, str_init_memory)
                 self.batch_message_check_status(npcentity, npcname, str_props_info)
                 self.batch_message_stages(npcentity, npcname, cast(str, npccomp.current_stage), str_where_you_can_go)
@@ -162,14 +163,10 @@ class InitMemorySystem(InitializeProcessor):
                 continue
             #
             npccomp: NPCComponent = npcentity.get(NPCComponent)
-            if not npccomp.name in info_who_you_know:
-                logger.error(f"{npcname}不认识{npccomp.name}, 无法感知。后续可以加入形象系统")
-                continue
-            #
             roleappearancecomp: RoleAppearanceComponent = npcentity.get(RoleAppearanceComponent)
             appearance: str = roleappearancecomp.appearance
             #
-            appearance_prompt = f"当前场景内，你看到了{npccomp.name}，{appearance}"
+            appearance_prompt = current_stage_you_saw_someone_appearance_prompt(npcname, npccomp.name, appearance, self.context)
             self.context.safe_add_human_message_to_entity(entity, appearance_prompt)
 ###############################################################################################################################################
     def batch_message_remember_end(self, entity: Entity, npcname: str) -> None:

@@ -1,5 +1,5 @@
 import os
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Set
 from entitas import Processors, Matcher #type: ignore
 from loguru import logger
 from auxiliary.components import (
@@ -35,7 +35,7 @@ from systems.whisper_action_system import WhisperActionSystem
 from systems.search_action_system import SearchActionSystem
 from systems.mind_voice_action_system import MindVoiceActionSystem
 from auxiliary.director_component import StageDirectorComponent
-from auxiliary.file_def import PropFile, KnownNPCFile
+from auxiliary.file_def import PropFile, NPCArchiveFile
 from systems.begin_system import BeginSystem
 from systems.end_system import EndSystem
 import shutil
@@ -193,6 +193,15 @@ class RPGGame(BaseGame):
         self.processors.tear_down()
         logger.info(f"{self.name}, game over")
 ###############################################################################################################################################
+    def create_npc_archive_file_by_mentioned_names(self, ownername: str, npc_archive_names: Set[str]) -> None:
+        context = self.extendedcontext
+        file_system = context.file_system
+        for _name_ in npc_archive_names:
+            if _name_ == ownername:
+                continue
+            npcarchive = NPCArchiveFile(_name_, ownername, _name_)
+            file_system.add_npc_archive(npcarchive)
+###############################################################################################################################################
     def create_world_npc_entities(self, npcbuilder: NPCBuilder) -> List[Entity]:
 
         context = self.extendedcontext
@@ -222,10 +231,8 @@ class RPGGame(BaseGame):
             memory_system.initmemory(builddata.name, builddata.memory)
             code_name_component_system.register_code_name_component_class(builddata.name, builddata.codename)
 
-            # 最后构建关系网
-            for knownnpc in builddata.mentioned_npcs:
-                create_known_npc_file = KnownNPCFile(knownnpc, builddata.name, knownnpc)
-                file_system.add_known_npc_file(create_known_npc_file)
+            # 初步建立关系网（在编辑文本中提到的NPC名字）
+            self.create_npc_archive_file_by_mentioned_names(builddata.name, builddata.mentioned_npcs)
             
         return res
 ###############################################################################################################################################
@@ -265,10 +272,8 @@ class RPGGame(BaseGame):
                 file_system.add_prop_file(createpropfile)
                 code_name_component_system.register_code_name_component_class(prop.name, prop.codename)
 
-            # 最后构建关系网
-            for knownnpc in builddata.mentioned_npcs:
-                create_known_npc_file = KnownNPCFile(knownnpc, builddata.name, knownnpc)
-                file_system.add_known_npc_file(create_known_npc_file)
+            # 初步建立关系网（在编辑文本中提到的NPC名字）
+            self.create_npc_archive_file_by_mentioned_names(builddata.name, builddata.mentioned_npcs)
 
         return res
 ###############################################################################################################################################
@@ -307,10 +312,8 @@ class RPGGame(BaseGame):
                 file_system.add_prop_file(createpropfile)
                 code_name_component_system.register_code_name_component_class(prop.name, prop.codename)
 
-            # 最后构建关系网
-            for knownnpc in builddata.mentioned_npcs:
-                create_known_npc_file = KnownNPCFile(knownnpc, builddata.name, knownnpc)
-                file_system.add_known_npc_file(create_known_npc_file)
+            # 初步建立关系网（在编辑文本中提到的NPC名字）
+            self.create_npc_archive_file_by_mentioned_names(builddata.name, builddata.mentioned_npcs)
 
         return res
 ###############################################################################################################################################

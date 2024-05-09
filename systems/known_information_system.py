@@ -3,7 +3,7 @@ from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.components import (NPCComponent)
 from typing import Set
-from auxiliary.file_def import KnownNPCFile, KnownStageFile
+from auxiliary.file_def import NPCArchiveFile, KnownStageFile
 from systems.known_information_helper import KnownInformationHelper
 from auxiliary.cn_builtin_prompt import known_information_update_who_you_know_prompt, known_information_update_where_you_know_prompt
 
@@ -33,7 +33,7 @@ class KnownInformationSystem(ExecuteProcessor):
             logger.warning(f"{npccomp.name} 什么人都不认识，这个合理么？")
             return
         # 写文件
-        self.add_known_npc_file(npccomp.name, who_do_you_know)
+        self.update_npc_archive_file(npccomp.name, who_do_you_know)
         # 更新chat history
         who_do_you_know_promt = ",".join(who_do_you_know)
         newmsg = known_information_update_who_you_know_prompt(npccomp.name, who_do_you_know_promt)
@@ -52,13 +52,15 @@ class KnownInformationSystem(ExecuteProcessor):
         newmsg = known_information_update_where_you_know_prompt(npccomp.name, where_do_you_know_promt)
         self.context.safe_add_human_message_to_entity(npcentity, newmsg)
 ############################################################################################################
-    def add_known_npc_file(self, filesowner: str, allnames: Set[str]) -> None:
+    def update_npc_archive_file(self, filesowner: str, allnames: Set[str]) -> None:
         file_system = self.context.file_system
         for npcname in allnames:
             if filesowner == npcname:
                 continue
-            file = KnownNPCFile(npcname, filesowner, npcname)
-            file_system.add_known_npc_file(file)
+            if file_system.get_npc_archive(filesowner, npcname) is not None:
+                continue
+            file = NPCArchiveFile(npcname, filesowner, npcname)
+            file_system.add_npc_archive(file)
 ############################################################################################################
     def add_known_stage_file(self, filesowner: str, allnames: Set[str]) -> None:
         file_system = self.context.file_system

@@ -192,6 +192,8 @@ class ExtendedContext(Context):
                 npccomp: NPCComponent = npc.get(NPCComponent)
                 appearancecomp: RoleAppearanceComponent = npc.get(RoleAppearanceComponent)
                 res[npccomp.name] = appearancecomp.appearance
+            else:
+                logger.error(f"{npccomp.name}没有RoleAppearanceComponent?!")
 
         return res
 ############################################################################################################

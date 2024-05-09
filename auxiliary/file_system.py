@@ -1,7 +1,7 @@
 from loguru import logger
 import os
 from typing import Dict, List, Optional
-from auxiliary.file_def import PropFile, KnownNPCFile, KnownStageFile, UseItemFile
+from auxiliary.file_def import PropFile, NPCArchiveFile, KnownStageFile, UseItemFile
 
 class FileSystem:
 
@@ -11,7 +11,7 @@ class FileSystem:
         # 拥有的道具
         self.propfiles: Dict[str, List[PropFile]] = {}
         # 知晓的NPC 
-        self.known_npc_files: Dict[str, List[KnownNPCFile]] = {}
+        self.npc_archive_files: Dict[str, List[NPCArchiveFile]] = {}
         # 知晓的Stage
         self.known_stage_files: Dict[str, List[KnownStageFile]] = {}
         # 由使用道具而产生的新文件
@@ -104,32 +104,32 @@ class FileSystem:
     """
     知道的NPC相关的处理!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     """
-    def npc_file_name(self, ownersname: str, filename: str) -> str:
+    def npc_archive_file_name(self, ownersname: str, filename: str) -> str:
         return f"{self.rootpath}{ownersname}/npcs/{filename}.json"
 ################################################################################################################
     ## 添加一个你知道的NPC
-    def add_known_npc_file(self, known_npc_file: KnownNPCFile) -> None:
-        npclist = self.known_npc_files.setdefault(known_npc_file.ownersname, [])
-        for file in npclist:
-            if file.npcsname == known_npc_file.npcsname:
+    def add_npc_archive(self, npcarchive: NPCArchiveFile) -> None:
+        files = self.npc_archive_files.setdefault(npcarchive.ownersname, [])
+        for file in files:
+            if file.npcname == npcarchive.npcname:
                 # 名字匹配，先返回，不添加。后续可以复杂一些
                 return
-        npclist.append(known_npc_file)
-        self.write_known_npc_file(known_npc_file) 
+        files.append(npcarchive)
+        self.write_npc_archive(npcarchive) 
 ################################################################################################################
-    def get_known_npc_file(self, ownersname: str, npcname: str) -> Optional[KnownNPCFile]:
-        npclist = self.known_npc_files.get(ownersname, [])
-        for file in npclist:
-            if file.npcsname == npcname:
+    def get_npc_archive(self, ownersname: str, npcname: str) -> Optional[NPCArchiveFile]:
+        files = self.npc_archive_files.get(ownersname, [])
+        for file in files:
+            if file.npcname == npcname:
                 return file
         return None
 ################################################################################################################
     ## 写一个道具的文件
-    def write_known_npc_file(self, known_npc_file: KnownNPCFile) -> None:
+    def write_npc_archive(self, npcarchive: NPCArchiveFile) -> None:
         ## 测试
-        self.deletefile(self.npc_file_name(known_npc_file.ownersname, known_npc_file.name))
-        content = known_npc_file.content()
-        self.writefile(self.npc_file_name(known_npc_file.ownersname, known_npc_file.name), content)
+        self.deletefile(self.npc_archive_file_name(npcarchive.ownersname, npcarchive.name))
+        content = npcarchive.content()
+        self.writefile(self.npc_archive_file_name(npcarchive.ownersname, npcarchive.name), content)
 ################################################################################################################
 
 

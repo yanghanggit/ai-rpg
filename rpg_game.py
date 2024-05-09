@@ -29,7 +29,7 @@ from systems.stage_ready_for_planning_system import StageReadyForPlanningSystem
 from systems.tag_action_system import TagActionSystem
 from systems.data_save_system import DataSaveSystem
 from systems.broadcast_action_system import BroadcastActionSystem  
-from systems.use_item_action_system import UsePropActionSystem
+from systems.interactive_prop_action_system import InteractivePropActionSystem
 from systems.whisper_action_system import WhisperActionSystem 
 from systems.search_action_system import SearchActionSystem
 from systems.mind_voice_action_system import MindVoiceActionSystem
@@ -110,7 +110,7 @@ class RPGGame(BaseGame):
         processors.add(SearchActionSystem(context)) 
         processors.add(StealActionSystem(context))
         processors.add(TradeActionSystem(context))
-        processors.add(UsePropActionSystem(context))
+        processors.add(InteractivePropActionSystem(context))
 
         #场景切换类行为，非常重要而且必须在最后
         processors.add(PrisonBreakActionSystem(context)) 

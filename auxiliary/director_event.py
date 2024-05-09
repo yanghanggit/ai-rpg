@@ -16,7 +16,7 @@ whisper_action_prompt,
 leave_for_stage_failed_because_no_exit_condition_match_prompt,
 search_success_prompt,
 notify_myself_leave_for_from_prompt,
-use_item_action_success_prompt)
+interactive_prop_action_success_prompt)
 from loguru import logger
 from abc import ABC, abstractmethod
 from typing import List
@@ -354,18 +354,18 @@ class NPCLeaveForFailedBecauseNoExitConditionMatch(IDirectorEvent):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class NPCUsePropEvent(IDirectorEvent):
+class NPCInteractivePropEvent(IDirectorEvent):
 
-    def __init__(self, npcname: str, targetname: str, itemname: str) -> None:
+    def __init__(self, npcname: str, targetname: str, propname: str) -> None:
         self.npcname = npcname
         self.targetname = targetname
-        self.itemname = itemname
+        self.propname = propname
 
     def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
-        return use_item_action_success_prompt(self.npcname, self.targetname, self.itemname)
+        return interactive_prop_action_success_prompt(self.npcname, self.targetname, self.propname)
     
     def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
-        return use_item_action_success_prompt(self.npcname, self.targetname, self.itemname)
+        return interactive_prop_action_success_prompt(self.npcname, self.targetname, self.propname)
 
 
 

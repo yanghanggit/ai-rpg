@@ -59,9 +59,9 @@ class KnownStageFile(BaseFile):
         return f"{self.stagename}"
 ############################################################################################################
 ###
-class UsePropFile(BaseFile):
-    def __init__(self, ownersname: str, targetname: str, itemname: str) -> None:
-        super().__init__(itemname, ownersname)
+class InteractivePropFile(BaseFile):
+    def __init__(self, ownersname: str, targetname: str, propname: str) -> None:
+        super().__init__(propname, ownersname)
         self.targetname = targetname
 
     def content(self) -> str:

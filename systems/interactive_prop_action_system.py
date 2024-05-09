@@ -1,7 +1,7 @@
 from typing import Optional
 from loguru import logger
 from auxiliary.actor_action import ActorAction
-from auxiliary.components import InteractivePropActionComponent
+from auxiliary.components import InteractivePropActionComponent, UseInteractivePropActionComponent
 from auxiliary.dialogue_rule import parse_target_and_message
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.file_def import InteractivePropFile
@@ -9,6 +9,7 @@ from entitas import Entity, Matcher, ReactiveProcessor
 from auxiliary.director_component import notify_stage_director
 from entitas.group import GroupEvent
 from auxiliary.director_event import NPCInteractivePropEvent
+from auxiliary.format_of_complex_intertactive_props import parse_complex_interactive_props
 
 class InteractivePropActionSystem(ReactiveProcessor):
     def __init__(self, context: ExtendedContext):
@@ -16,10 +17,10 @@ class InteractivePropActionSystem(ReactiveProcessor):
         self.context = context
 
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return { Matcher(InteractivePropActionComponent): GroupEvent.ADDED }
+        return { Matcher(UseInteractivePropActionComponent): GroupEvent.ADDED }
     
     def filter(self, entity: Entity) -> bool:
-        return entity.has(InteractivePropActionComponent)
+        return entity.has(UseInteractivePropActionComponent)
     
     def react(self, entities: list[Entity]) -> None:
         logger.debug("<<<<<<<<<<<<<  InteractivePropActionSystem  >>>>>>>>>>>>>>>>>")
@@ -27,7 +28,7 @@ class InteractivePropActionSystem(ReactiveProcessor):
             self.useprop(entity)
 
     def useprop(self, entity: Entity) -> None:
-        interactive_prop_comp: InteractivePropActionComponent = entity.get(InteractivePropActionComponent)
+        interactive_prop_comp: UseInteractivePropActionComponent = entity.get(UseInteractivePropActionComponent)
         interactive_prop_action: ActorAction = interactive_prop_comp.action
         for value in interactive_prop_action.values:
             parse = parse_target_and_message(value)
@@ -51,7 +52,7 @@ class InteractivePropActionSystem(ReactiveProcessor):
             logger.warning(f"{targetname}与{propname}之间的关系未定义，请检查。")
             return False
         
-        if not filesystem.has_interactivepropfile(username, interactivepropresult):
+        if not filesystem.has_interactive_prop_file(username, interactivepropresult):
             createpropfile = InteractivePropFile(username, targetname, interactivepropresult)
             filesystem.add_interactive_prop_to_target_file(createpropfile)
         else:
@@ -62,16 +63,14 @@ class InteractivePropActionSystem(ReactiveProcessor):
         
     
     def check_target_with_prop(self, targetname: str, propname: str) -> str:
-        # 暂时在这里对于道具和作用对象的产物进行定义
-        target_with_prop = { "禁言者之棺": ["腐朽的匕首"] }
-        target_prompts = { "禁言者之棺": "的棺材盖" }
-        prop_prompts = { "腐朽的匕首": "撬开" }
+        stage_entity: Optional[Entity] = self.context.getstage(targetname)
+        if stage_entity is not None and stage_entity.has(InteractivePropActionComponent):
+            stage_interative_prop_comp: InteractivePropActionComponent = stage_entity.get(InteractivePropActionComponent)
+            stage_interative_props: str = stage_interative_prop_comp.interactive_props
+            interactive_props: list[str] = parse_complex_interactive_props(stage_interative_props)
+            if propname == interactive_props[0]:
+                return interactive_props[1]
 
-        for target, props in target_with_prop.items():
-            if target == targetname:
-                for prop in props:
-                    if prop == propname:
-                        return prop_prompts[prop] + target_prompts[target]
         return None
 
         

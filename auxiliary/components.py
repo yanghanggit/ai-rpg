@@ -12,6 +12,7 @@ StageEntryConditionComponent = namedtuple('StageEntryConditionComponent', 'condi
 StageExitConditionComponent = namedtuple('StageExitConditionComponent', 'conditions')
 DestroyComponent = namedtuple('DestroyComponent', 'name')
 AutoPlanningComponent = namedtuple('AutoPlanningComponent', 'name')
+InteractivePropActionComponent = namedtuple('InteractivePropActionComponent', 'interactive_props')
 ###############################################################################################################################################
 ###动作类的组件
 RememberActionComponent = namedtuple('RememberActionComponent', 'action')
@@ -30,7 +31,7 @@ StealActionComponent = namedtuple('StealActionComponent', 'action')
 TradeActionComponent = namedtuple('TradeActionComponent', 'action')
 CheckStatusActionComponent = namedtuple('CheckStatusActionComponent', 'action')
 EnviroNarrateActionComponent = namedtuple('EnviroNarrateActionComponent', 'action')
-InteractivePropActionComponent = namedtuple('InteractivePropActionComponent', 'action')
+UseInteractivePropActionComponent = namedtuple('UseInteractivePropActionComponent', 'action')
 ###############################################################################################################################################
 ###游戏业务组件
 SimpleRPGRoleComponent = namedtuple('SimpleRPGRoleComponent', 'name maxhp hp attack')
@@ -68,7 +69,7 @@ NPC_AVAILABLE_ACTIONS_REGISTER = [FightActionComponent,
                          StealActionComponent,
                          TradeActionComponent,
                          CheckStatusActionComponent,
-                         InteractivePropActionComponent]
+                         UseInteractivePropActionComponent]
 
 NPC_DIALOGUE_ACTIONS_REGISTER = [SpeakActionComponent, 
                                 BroadcastActionComponent,
@@ -81,4 +82,4 @@ NPC_INTERACTIVE_ACTIONS_REGISTER = [SearchActionComponent,
                                     StealActionComponent,
                                     TradeActionComponent,
                                     CheckStatusActionComponent,
-                                    InteractivePropActionComponent]
+                                    UseInteractivePropActionComponent]

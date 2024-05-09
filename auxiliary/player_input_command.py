@@ -10,7 +10,7 @@ from auxiliary.components import (
     FightActionComponent, 
     PlayerComponent, 
     LeaveForActionComponent,
-    InteractivePropActionComponent, 
+    UseInteractivePropActionComponent, 
     WhisperActionComponent,
     SearchActionComponent,
     PrisonBreakActionComponent,
@@ -367,8 +367,8 @@ class PlayerCommandInteractiveProp(PlayerCommand):
             return
         
         npccomp: NPCComponent = playerentity.get(NPCComponent)
-        action = ActorAction(npccomp.name, InteractivePropActionComponent.__name__, [self.command])
-        playerentity.add(InteractivePropActionComponent, action)
+        action = ActorAction(npccomp.name, UseInteractivePropActionComponent.__name__, [self.command])
+        playerentity.add(UseInteractivePropActionComponent, action)
 
         newmemory = f"""{{"{StealActionComponent.__name__}": ["{self.command}"]}}"""
         self.add_human_message(playerentity, newmemory)

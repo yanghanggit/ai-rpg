@@ -3,6 +3,7 @@ from typing import List, Optional
 from entitas import Processors, Matcher #type: ignore
 from loguru import logger
 from auxiliary.components import (
+    InteractivePropActionComponent,
     WorldComponent,
     StageComponent, 
     ExitOfPrisonComponent,
@@ -367,6 +368,10 @@ class RPGGame(BaseGame):
             if len(exit_condition_set) > 0:
                 stageentity.add(StageExitConditionComponent, set(exit_condition_set))
                 #logger.debug(f"{builddata.name}的出口条件为：{exit_condition_set}")
+
+            ## 添加交互道具组件
+            if len(builddata.interactiveprops) > 0:
+                stageentity.add(InteractivePropActionComponent, builddata.interactiveprops)
 
             ## 创建连接的场景用于PrisonBreakActionSystem, 目前如果添加就只能添加一个
             assert len(builddata.exit_of_prison) <= 1

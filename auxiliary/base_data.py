@@ -68,7 +68,8 @@ class StageData:
                  entry_conditions: list[StageConditionData], 
                  exit_conditions: list[StageConditionData], 
                  npcs: set[NPCData], 
-                 props: set[PropData]) -> None:
+                 props: set[PropData],
+                 interactiveprops: str) -> None:
         self.name = name
         self.codename = codename
         self.description = description
@@ -80,10 +81,11 @@ class StageData:
         self.props: set[PropData] = props
         self.exit_of_prison: set[StageData] = set()
         self.attributes: List[int] = []
+        self.interactiveprops: str = interactiveprops
 
     ###
     def connect_stage_by_name(self, stagename: str) -> None:
-        stage_only_has_name = StageData(stagename, "", "", "", "", [], [], set(), set())
+        stage_only_has_name = StageData(stagename, "", "", "", "", [], [], set(), set(), "")
         self.exit_of_prison.add(stage_only_has_name)
 
     ###

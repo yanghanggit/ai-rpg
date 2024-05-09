@@ -96,7 +96,8 @@ class StageBuilder:
                             entry_conditions_in_stage, 
                             exit_conditions_in_stage, 
                             npcsinstage, 
-                            propsinstage)
+                            propsinstage,
+                            stagedata.get('interactive_props'))
             
              # 做连接关系 目前仅用名字
             exit_of_prison_and_goto_stagename: str = stagedata.get("exit_of_prison")

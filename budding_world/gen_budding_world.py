@@ -479,6 +479,7 @@ class ExcelEditorStage:
         self.npcs_in_stage: List[ExcelDataNPC] = []
         self.initialization_memory: str = ""
         self.exit_of_prison: str = ""
+        self.interactive_props: str = ""
 
         if self.data["type"] not in ["Stage"]:
             logger.error(f"Invalid Stage type: {self.data['type']}")
@@ -491,6 +492,7 @@ class ExcelEditorStage:
         self.parse_npcs_in_stage()
         self.parse_initialization_memory()
         self.parse_exit_of_prison()
+        self.parse_interactive_props()
 
     def parse_stage_entry_conditions(self) -> None:
         stage_entry_conditions: Optional[str] = self.data["stage_entry_conditions"]
@@ -547,6 +549,11 @@ class ExcelEditorStage:
         attrname = "exit_of_prison"
         if attrname in self.data and self.data[attrname] is not None:
            self.exit_of_prison = str(self.data[attrname])
+
+    def parse_interactive_props(self) -> None:
+        attrname = "interactive_props"
+        if attrname in self.data and self.data[attrname] is not None:
+            self.interactive_props = str(self.data[attrname])
         
     def __str__(self) -> str:
         propsstr = ', '.join(str(prop) for prop in self.props_in_stage)
@@ -588,6 +595,7 @@ class ExcelEditorStage:
         dict["url"] = data_stage.localhost_api()
         dict["memory"] = self.initialization_memory
         dict["exit_of_prison"] = self.exit_of_prison
+        dict["interactive_props"] = self.interactive_props
         
         entry_conditions = self.stage_conditions_list(self.stage_entry_conditions)
         exit_conditions = self.stage_conditions_list(self.stage_exit_conditions)

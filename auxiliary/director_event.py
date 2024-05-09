@@ -354,7 +354,7 @@ class NPCLeaveForFailedBecauseNoExitConditionMatch(IDirectorEvent):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class NPCUseItemEvent(IDirectorEvent):
+class NPCUsePropEvent(IDirectorEvent):
 
     def __init__(self, npcname: str, targetname: str, itemname: str) -> None:
         self.npcname = npcname

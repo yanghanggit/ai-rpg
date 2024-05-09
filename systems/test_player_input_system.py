@@ -8,7 +8,7 @@ from auxiliary.player_input_command import (
                           PlayerCommandLeaveFor, 
                           PlayerCommandBroadcast, 
                           PlayerCommandSpeak,
-                          PlayerCommandUseItem, 
+                          PlayerCommandUseProp, 
                           PlayerCommandWhisper, 
                           PlayerCommandSearch,
                           PlayerCommandPrisonBreak,
@@ -219,10 +219,10 @@ class TestPlayerInputSystem(ExecuteProcessor):
             #PlayerCommandCheckStatus(command, rpggame, playerproxy).execute()
             return False
         
-        elif "/useitem" in usrinput:
-            command = "/useitem"
+        elif "/useprop" in usrinput:
+            command = "/useprop"
             content = splitcommand(usrinput, command)
-            PlayerCommandUseItem(command, rpggame, playerproxy, content).execute()
+            PlayerCommandUseProp(command, rpggame, playerproxy, content).execute()
             return False
 
         return True

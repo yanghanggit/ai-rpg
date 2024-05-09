@@ -10,7 +10,7 @@ from auxiliary.components import (
     FightActionComponent, 
     PlayerComponent, 
     LeaveForActionComponent,
-    UseItemActionComponent, 
+    UsePropActionComponent, 
     WhisperActionComponent,
     SearchActionComponent,
     PrisonBreakActionComponent,
@@ -354,7 +354,7 @@ class PlayerCommandCheckStatus(PlayerCommand):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class PlayerCommandUseItem(PlayerCommand):
+class PlayerCommandUseProp(PlayerCommand):
     def __init__(self, inputname: str, game: RPGGame, playerproxy: PlayerProxy, command: str) -> None:
         super().__init__(inputname, game, playerproxy)
         # "@使用道具对象>道具名"
@@ -367,8 +367,8 @@ class PlayerCommandUseItem(PlayerCommand):
             return
         
         npccomp: NPCComponent = playerentity.get(NPCComponent)
-        action = ActorAction(npccomp.name, UseItemActionComponent.__name__, [self.command])
-        playerentity.add(UseItemActionComponent, action)
+        action = ActorAction(npccomp.name, UsePropActionComponent.__name__, [self.command])
+        playerentity.add(UsePropActionComponent, action)
 
         newmemory = f"""{{"{StealActionComponent.__name__}": ["{self.command}"]}}"""
         self.add_human_message(playerentity, newmemory)

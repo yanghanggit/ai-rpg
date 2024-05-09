@@ -1,42 +1,42 @@
 from typing import Optional
 from loguru import logger
 from auxiliary.actor_action import ActorAction
-from auxiliary.components import UseItemActionComponent
+from auxiliary.components import UsePropActionComponent
 from auxiliary.dialogue_rule import parse_target_and_message
 from auxiliary.extended_context import ExtendedContext
-from auxiliary.file_def import UseItemFile
+from auxiliary.file_def import UsePropFile
 from entitas import Entity, Matcher, ReactiveProcessor
 from auxiliary.director_component import notify_stage_director
 from entitas.group import GroupEvent
-from auxiliary.director_event import NPCUseItemEvent
+from auxiliary.director_event import NPCUsePropEvent
 
-class UseItemActionSystem(ReactiveProcessor):
+class UsePropActionSystem(ReactiveProcessor):
     def __init__(self, context: ExtendedContext):
         super().__init__(context)
         self.context = context
 
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return { Matcher(UseItemActionComponent): GroupEvent.ADDED }
+        return { Matcher(UsePropActionComponent): GroupEvent.ADDED }
     
     def filter(self, entity: Entity) -> bool:
-        return entity.has(UseItemActionComponent)
+        return entity.has(UsePropActionComponent)
     
     def react(self, entities: list[Entity]) -> None:
-        logger.debug("<<<<<<<<<<<<<  UseItemActionSystem  >>>>>>>>>>>>>>>>>")
+        logger.debug("<<<<<<<<<<<<<  UsePropActionSystem  >>>>>>>>>>>>>>>>>")
         for entity in entities:
-            self.useitem(entity)
+            self.useprop(entity)
 
-    def useitem(self, entity: Entity) -> None:
-        use_item_comp: UseItemActionComponent = entity.get(UseItemActionComponent)
+    def useprop(self, entity: Entity) -> None:
+        use_item_comp: UsePropActionComponent = entity.get(UsePropActionComponent)
         use_item_action: ActorAction = use_item_comp.action
         for value in use_item_action.values:
             parse = parse_target_and_message(value)
             target_name: Optional[str] = parse[0]
             item_name: Optional[str] = parse[1]
             if self._use_item_(entity, target_name, item_name): 
-                logger.debug(f"UseItemActionSystem: {target_name} is using {item_name}")
+                logger.debug(f"UsePropActionSystem: {target_name} is using {item_name}")
                 user_name = self.context.safe_get_entity_name(entity)
-                notify_stage_director(self.context, entity, NPCUseItemEvent(user_name, target_name, item_name))
+                notify_stage_director(self.context, entity, NPCUsePropEvent(user_name, target_name, item_name))
 
     def _use_item_(self, entity: Entity, target_name: str, item_name: str) -> bool:
         filesystem = self.context.file_system
@@ -52,7 +52,7 @@ class UseItemActionSystem(ReactiveProcessor):
             return False
         
         if not filesystem.has_item_to_target_file(user_name, use_item_result):
-            createitemfile = UseItemFile(user_name, target_name, use_item_result)
+            createitemfile = UsePropFile(user_name, target_name, use_item_result)
             filesystem.add_use_item_to_target_file(createitemfile)
         else:
             logger.error(f"{user_name}已经达成{use_item_result},请检查结果是否正确。")

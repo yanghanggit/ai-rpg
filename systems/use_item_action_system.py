@@ -1,3 +1,4 @@
+from entitas import Entity, Matcher, ReactiveProcessor # type: ignore
 from typing import Optional
 from loguru import logger
 from auxiliary.actor_action import ActorAction
@@ -5,7 +6,6 @@ from auxiliary.components import UseItemActionComponent
 from auxiliary.dialogue_rule import parse_target_and_message
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.file_def import UseItemFile
-from entitas import Entity, Matcher, ReactiveProcessor
 from auxiliary.director_component import notify_stage_director
 from entitas.group import GroupEvent
 from auxiliary.director_event import NPCUseItemEvent
@@ -32,7 +32,9 @@ class UseItemActionSystem(ReactiveProcessor):
         for value in use_item_action.values:
             parse = parse_target_and_message(value)
             target_name: Optional[str] = parse[0]
+            assert target_name is not None
             item_name: Optional[str] = parse[1]
+            assert item_name is not None
             if self._use_item_(entity, target_name, item_name): 
                 logger.debug(f"UseItemActionSystem: {target_name} is using {item_name}")
                 user_name = self.context.safe_get_entity_name(entity)
@@ -61,7 +63,7 @@ class UseItemActionSystem(ReactiveProcessor):
         return True
         
     
-    def check_target_with_item(self, target_name: str, item_name: str) -> str:
+    def check_target_with_item(self, target_name: str, item_name: str) -> Optional[str]:
         # 暂时在这里对于道具和作用对象的产物进行定义
         target_with_item = { "禁言者之棺": ["腐朽的匕首"] }
         target_prompts = { "禁言者之棺": "的棺材盖" }

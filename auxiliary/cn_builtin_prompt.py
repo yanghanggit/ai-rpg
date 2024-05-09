@@ -323,3 +323,5 @@ def npc_appearance_in_this_stage_prompt(myname: str, npc_appearance_in_stage: Di
 ################################################################################################################################################
 
 
+def interactive_prop_action_success_prompt(who_use: str, targetname: str, propname: str) -> str:
+    return f"{who_use}对{targetname}使用了{propname},顺利打开了{targetname}"

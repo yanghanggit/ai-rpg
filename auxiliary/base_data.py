@@ -85,8 +85,8 @@ class StageData:
         self.attributes: List[int] = []
         self.interactiveprops: str = interactiveprops
 
-    ###
-    def connect_stage_by_name(self, stagename: str) -> None:
+    ### stage_as_exit_of_prison
+    def stage_as_exit_of_prison(self, stagename: str) -> None:
         stage_only_has_name = StageData(stagename, "", "", "", "", [], [], set(), set(), "")
         self.exit_of_prison.add(stage_only_has_name)
 

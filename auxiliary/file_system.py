@@ -108,16 +108,18 @@ class FileSystem:
         return f"{self.rootpath}{ownersname}/npcs/{filename}.json"
 ################################################################################################################
     ## 添加一个你知道的NPC
-    def add_npc_archive(self, npcarchive: NPCArchiveFile) -> None:
+    def add_npc_archive_file(self, npcarchive: NPCArchiveFile) -> None:
         files = self.npc_archive_files.setdefault(npcarchive.ownersname, [])
         for file in files:
             if file.npcname == npcarchive.npcname:
                 # 名字匹配，先返回，不添加。后续可以复杂一些
                 return
         files.append(npcarchive)
-        self.write_npc_archive(npcarchive) 
 ################################################################################################################
-    def get_npc_archive(self, ownersname: str, npcname: str) -> Optional[NPCArchiveFile]:
+    def has_npc_archive_file(self, ownersname: str, npcname: str) -> bool:
+        return self.get_npc_archive_file(ownersname, npcname) is not None
+################################################################################################################
+    def get_npc_archive_file(self, ownersname: str, npcname: str) -> Optional[NPCArchiveFile]:
         files = self.npc_archive_files.get(ownersname, [])
         for file in files:
             if file.npcname == npcname:
@@ -125,7 +127,7 @@ class FileSystem:
         return None
 ################################################################################################################
     ## 写一个道具的文件
-    def write_npc_archive(self, npcarchive: NPCArchiveFile) -> None:
+    def write_npc_archive_file(self, npcarchive: NPCArchiveFile) -> None:
         ## 测试
         self.deletefile(self.npc_archive_file_name(npcarchive.ownersname, npcarchive.name))
         content = npcarchive.content()

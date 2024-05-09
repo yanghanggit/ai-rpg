@@ -15,6 +15,7 @@ from auxiliary.director_event import (
 from typing import cast, Dict
 from auxiliary.player_proxy import notify_player_proxy
 from auxiliary.cn_builtin_prompt import direct_npc_events_before_leave_stage_prompt
+from auxiliary.file_system_helper import create_npc_archive_files, update_npc_archive_file
 
 
 ###############################################################################################################################################
@@ -90,8 +91,17 @@ class LeaveForActionSystem(ReactiveProcessor):
         notify_stage_director(self.context, entity, NPCEnterStageEvent(npccomp.name, target_stage_name, current_stage_name))
 
         #通知一下外貌的信息
-        appearancedata: Dict[str, str] = self.context.npc_appearance_in_this_stage(entity)
+        appearancedata: Dict[str, str] = self.context.npcs_appearances_in_this_stage(entity)
         if len(appearancedata) > 0:
+
+            #添加并更新文件
+            for _name_, _appearance_ in appearancedata.items():
+                if _name_ == npccomp.name:
+                    continue
+                create_npc_archive_files(self.context.file_system, npccomp.name, { _name_ })
+                update_npc_archive_file(self.context.file_system, npccomp.name, _name_, _appearance_)
+            
+            #通知导演
             notify_stage_director(self.context, entity, ObserveOtherNPCAppearanceAfterEnterStageEvent(npccomp.name, target_stage_name, appearancedata))
 ###############################################################################################################################################
     def before_leave_stage(self, helper: LeaveActionHelper) -> None:

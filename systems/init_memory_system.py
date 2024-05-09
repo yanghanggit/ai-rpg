@@ -1,4 +1,4 @@
-from auxiliary.file_def import NPCArchiveFile, KnownStageFile
+from auxiliary.file_def import KnownStageFile
 from entitas import Entity, Matcher, InitializeProcessor # type: ignore
 from auxiliary.components import WorldComponent, StageComponent, NPCComponent
 from auxiliary.cn_builtin_prompt import (read_archives_when_system_init_prompt,
@@ -15,6 +15,7 @@ from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from systems.known_information_helper import KnownInformationHelper
 from typing import cast, Dict
+from auxiliary.file_system_helper import create_npc_archive_files, update_npc_archive_file
 
 
 ###############################################################################################################################################
@@ -81,11 +82,12 @@ class InitMemorySystem(InitializeProcessor):
             npccomp: NPCComponent = npcentity.get(NPCComponent)
             npcname: str = npccomp.name
 
-            npc_appearance_in_this_stage = self.context.npc_appearance_in_this_stage(npcentity)
+            npc_appearance_in_this_stage = self.context.npcs_appearances_in_this_stage(npcentity)
            
             # 知道的npc
             info_who_you_know = helper.who_do_you_know(npccomp.name)
-            self.add_npc_archive_file_when_init_memory(npccomp.name, info_who_you_know)
+            create_npc_archive_files(context.file_system, npccomp.name, info_who_you_know)
+            self.update_npc_archive_file_when_init_memory(npccomp.name, npc_appearance_in_this_stage)
 
             # 知道的舞台
             info_where_you_know = helper.where_do_you_know(npccomp.name)
@@ -157,7 +159,6 @@ class InitMemorySystem(InitializeProcessor):
         stageentity = self.context.safe_get_stage_entity(entity)
         assert stageentity is not None
         safe_stage_name = self.context.safe_get_entity_name(stageentity)
-        #appearance_data = self.context.npc_appearance_in_this_stage(entity)
         for _npcname_, _appearance_ in appearance_data.items():
             if _npcname_ == npcname:
                 continue
@@ -176,11 +177,9 @@ class InitMemorySystem(InitializeProcessor):
             file = KnownStageFile(stagename, filesowner, stagename)
             file_system.add_known_stage_file(file)
 ###############################################################################################################################################
-    def add_npc_archive_file_when_init_memory(self, filesowner: str, allnames: set[str]) -> None:
-        file_system = self.context.file_system
-        for npcname in allnames:
-            if filesowner == npcname:
+    def update_npc_archive_file_when_init_memory(self, filesowner: str, npc_appearance_in_stage: Dict[str, str]) -> None:
+        for npcname, appearance in npc_appearance_in_stage.items():
+            if npcname == filesowner:
                 continue
-            file = NPCArchiveFile(npcname, filesowner, npcname)
-            file_system.add_npc_archive(file)
+            update_npc_archive_file(self.context.file_system, filesowner, npcname, appearance)
 ###############################################################################################################################################

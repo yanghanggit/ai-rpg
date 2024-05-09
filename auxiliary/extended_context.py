@@ -5,14 +5,15 @@ from entitas import (Entity, # type: ignore
 from auxiliary.components import (WorldComponent, 
                         StageComponent, 
                         NPCComponent, 
-                        PlayerComponent)
+                        PlayerComponent, 
+                        RoleAppearanceComponent)
 from auxiliary.file_system import FileSystem
 from auxiliary.memory_system import MemorySystem
 from typing import Optional
 from auxiliary.agent_connect_system import AgentConnectSystem
 from auxiliary.code_name_component_system import CodeNameComponentSystem
 from auxiliary.chaos_engineering_system import IChaosEngineering
-from typing import List, Any, Optional
+from typing import List, Any, Optional, Dict
 
 
 class ExtendedContext(Context):
@@ -177,6 +178,24 @@ class ExtendedContext(Context):
         # 是一个对话类型，检查完成
         return True
 ############################################################################################################
+    def npcs_appearances_in_this_stage(self, entity: Entity) -> Dict[str, str]:
+        #
+        res: Dict[str, str] = {}
+        stageentity = self.safe_get_stage_entity(entity)
+        if stageentity is None:
+            return res
+        #
+        safe_stage_name = self.safe_get_entity_name(stageentity)
+        npcs_in_this_stage: list[Entity] = self.npcs_in_this_stage(safe_stage_name)
+        for npc in npcs_in_this_stage:
+            if npc.has(RoleAppearanceComponent):
+                npccomp: NPCComponent = npc.get(NPCComponent)
+                appearancecomp: RoleAppearanceComponent = npc.get(RoleAppearanceComponent)
+                res[npccomp.name] = appearancecomp.appearance
+            else:
+                logger.error(f"{npccomp.name}没有RoleAppearanceComponent?!")
 
+        return res
+############################################################################################################
 
         

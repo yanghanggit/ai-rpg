@@ -376,16 +376,18 @@ class ExcelEditorNPC:
         self.excelnpc: Optional[ExcelDataNPC] = None
         self.excelprops: List[ExcelDataProp] = []
         self.initialization_memory: str = ""
+        self.npc_role_appearance: str = ""
 
         if self.data["type"] not in ["World", "Player", "NPC"]:
             logger.error(f"Invalid NPC type: {self.data['type']}")
             return
         
         self.excelnpc = all_npcs_data[self.data["name"]]
-        self.parsefiles()
+        self.parse_props_on_npc()
         self.parse_initialization_memory()
+        self.parse_npc_role_appearance()
         
-    def parsefiles(self) -> None:
+    def parse_props_on_npc(self) -> None:
         data: str = self.data["props_on_npc"]
         if data is None:
             return        
@@ -401,6 +403,12 @@ class ExcelEditorNPC:
         if initialization_memory is None:
             return
         self.initialization_memory = str(initialization_memory)
+    
+    def parse_npc_role_appearance(self) -> None:
+        npc_role_appearance = self.data["npc_role_appearance"]
+        if npc_role_appearance is None:
+            return
+        self.npc_role_appearance = str(npc_role_appearance)
 
     def __str__(self) -> str:
         propsstr = ', '.join(str(prop) for prop in self.excelprops)
@@ -414,6 +422,7 @@ class ExcelEditorNPC:
         dict['codename'] = target.codename
         dict['url'] = target.localhost_api()
         dict['memory'] = self.initialization_memory
+        dict['role_appearance'] = self.npc_role_appearance
         dict['mentioned_npcs'] = ";".join(target.mentioned_npcs)
         dict['mentioned_stages'] = ";".join(target.mentioned_stages)
         dict['attributes'] = target.attributes

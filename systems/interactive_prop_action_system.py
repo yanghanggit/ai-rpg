@@ -5,7 +5,7 @@ from auxiliary.components import InteractivePropActionComponent, UseInteractiveP
 from auxiliary.dialogue_rule import parse_target_and_message
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.file_def import InteractivePropFile
-from entitas import Entity, Matcher, ReactiveProcessor
+from entitas import Entity, Matcher, ReactiveProcessor # type: ignore
 from auxiliary.director_component import notify_stage_director
 from entitas.group import GroupEvent
 from auxiliary.director_event import NPCInteractivePropEvent
@@ -33,7 +33,9 @@ class InteractivePropActionSystem(ReactiveProcessor):
         for value in interactive_prop_action.values:
             parse = parse_target_and_message(value)
             targetname: Optional[str] = parse[0]
+            assert targetname is not None
             propname: Optional[str] = parse[1]
+            assert propname is not None
             if self._interactive_prop_(entity, targetname, propname): 
                 logger.debug(f"InteractivePropActionSystem: {targetname} is using {propname}")
                 user_name = self.context.safe_get_entity_name(entity)

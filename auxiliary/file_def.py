@@ -31,18 +31,19 @@ class PropFile(BaseFile):
         return f"{self.prop}"
 ############################################################################################################
 ## 表达一个NPC档案，有这个档案说明你认识这个NPC
-class KnownNPCFile(BaseFile):
+class NPCArchiveFile(BaseFile):
     def __init__(self, name: str, ownersname: str, npcname: str) -> None:
         super().__init__(name, ownersname)
-        self.npcsname = npcname
+        self.npcname = npcname
+        self.last_appearance = ""
 
     def content(self) -> str:
         makedict: Dict[str, str] = {}
-        makedict.setdefault(self.npcsname, f"Having this file means you know this NPC")
+        makedict.setdefault(self.npcname, self.last_appearance)
         return json.dumps(makedict, ensure_ascii = False)
     
     def __str__(self) -> str:
-        return f"{self.npcsname}"
+        return f"{self.npcname}"
 ############################################################################################################
 ## 表达一个Stage的档案，有这个档案说明你知道这个Stage
 class KnownStageFile(BaseFile):

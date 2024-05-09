@@ -4,7 +4,7 @@ speak_action_prompt,
 search_failed_prompt, 
 kill_someone,
 attack_someone_prompt,
-npc_leave_for_stage_prompt, 
+npc_leave_stage_prompt, 
 notify_all_already_in_target_stage_that_someone_enter_stage_prompt, 
 perception_action_prompt,
 steal_action_prompt,
@@ -16,11 +16,13 @@ whisper_action_prompt,
 leave_for_stage_failed_because_no_exit_condition_match_prompt,
 search_success_prompt,
 notify_myself_leave_for_from_prompt,
+someone_came_into_my_stage_his_appearance_prompt,
+npc_appearance_in_this_stage_prompt,
+use_item_action_success_prompt,
 interactive_prop_action_success_prompt)
 from loguru import logger
 from abc import ABC, abstractmethod
-from typing import List
-import random
+from typing import List, Dict
 
 ####################################################################################################################################
 ####################################################################################################################################
@@ -89,7 +91,6 @@ class NPCSearchFailedEvent(IDirectorEvent):
     def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
         event = search_failed_prompt(self.who_search_failed, self.target)
         return event
-    
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################     
@@ -151,7 +152,7 @@ class NPCAttackSomeoneEvent(IDirectorEvent):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class NPCLeaveForStageEvent(IDirectorEvent):
+class NPCLeaveStageEvent(IDirectorEvent):
 
     def __init__(self, npc_name: str, current_stage_name: str, leave_for_stage_name: str) -> None:
         self.npc_name = npc_name
@@ -159,11 +160,11 @@ class NPCLeaveForStageEvent(IDirectorEvent):
         self.leave_for_stage_name = leave_for_stage_name
 
     def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
-        event = npc_leave_for_stage_prompt(self.npc_name, self.current_stage_name, self.leave_for_stage_name)
+        event = npc_leave_stage_prompt(self.npc_name, self.current_stage_name, self.leave_for_stage_name)
         return event
     
     def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
-        event = npc_leave_for_stage_prompt(self.npc_name, self.current_stage_name, self.leave_for_stage_name)
+        event = npc_leave_stage_prompt(self.npc_name, self.current_stage_name, self.leave_for_stage_name)
         return event
 ####################################################################################################################################
 ####################################################################################################################################
@@ -185,7 +186,31 @@ class NPCEnterStageEvent(IDirectorEvent):
     
     def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
         event = notify_all_already_in_target_stage_that_someone_enter_stage_prompt(self.npc_name, self.stage_name, self.last_stage_name)
-        return event
+        return event    
+####################################################################################################################################
+####################################################################################################################################
+#################################################################################################################################### 
+class ObserveOtherNPCAppearanceAfterEnterStageEvent(IDirectorEvent):
+
+    def __init__(self, who_enter_stage: str, enter_stage_name: str, all_appearance_data: Dict[str, str]) -> None:
+        self.who_enter_stage = who_enter_stage
+        self.enter_stage_name = enter_stage_name
+        self.all_appearance_data = all_appearance_data
+        #
+        self.npc_appearance_in_stage = all_appearance_data.copy()
+        self.npc_appearance_in_stage.pop(who_enter_stage)
+
+    def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
+        if npcname != self.who_enter_stage:
+            # 已经在场景里的人看到的是进来的人的外貌
+            appearance = self.all_appearance_data.get(self.who_enter_stage, "")
+            return someone_came_into_my_stage_his_appearance_prompt(self.who_enter_stage, appearance)
+
+        ## 进入场景的人看到的是场景里的人的外貌
+        return npc_appearance_in_this_stage_prompt(self.who_enter_stage, self.npc_appearance_in_stage)
+    
+    def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
+        return ""
 ####################################################################################################################################
 ####################################################################################################################################
 #################################################################################################################################### 
@@ -241,11 +266,6 @@ class NPCStealEvent(IDirectorEvent):
     def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
         if npcname != self.whosteal or npcname != self.targetname:
             return ""
-        
-        # if npcname == self.targetname and random.random() < 0.5:
-        #     # 测试：有一定几率发现不了
-        #     logger.warning(f"NPCStealEvent: {npcname} failed to steal {self.propname}")
-        #     return ""
         
         stealcontent = steal_action_prompt(self.whosteal, self.targetname, self.propname, self.stealres)
         return stealcontent
@@ -304,14 +324,13 @@ class NPCLeaveForFailedBecauseStageIsInvalidEvent(IDirectorEvent):
 
     def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
         if npcname != self.npcname:
-            # 跟你无关不用关注
+            # 跟你无关不用关注，原因类的东西，是失败后矫正用，所以只有自己知道即可
             return ""
         leave_for_stage_is_invalid_event = leave_for_stage_failed_because_stage_is_invalid_prompt(self.npcname, self.stagename)
         return leave_for_stage_is_invalid_event
     
     def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
         return ""
-
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
@@ -323,15 +342,13 @@ class NPCLeaveForFailedBecauseAlreadyInStage(IDirectorEvent):
 
     def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
         if npcname != self.npcname:
-            # 跟你无关不用关注
+            # 跟你无关不用关注，原因类的东西，是失败后矫正用，所以只有自己知道即可
             return ""
         already_in_stage_event = leave_for_stage_failed_because_already_in_stage_prompt(self.npcname, self.stagename)
         return already_in_stage_event
     
     def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
         return ""
-
-
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
@@ -344,7 +361,7 @@ class NPCLeaveForFailedBecauseNoExitConditionMatch(IDirectorEvent):
 
     def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
         if npcname != self.npcname:
-            # 跟你无关不用关注
+            # 跟你无关不用关注，原因类的东西，是失败后矫正用，所以只有自己知道即可
             return ""
         no_exit_condition_match_event = leave_for_stage_failed_because_no_exit_condition_match_prompt(self.npcname, self.stagename, self.tips)
         return no_exit_condition_match_event

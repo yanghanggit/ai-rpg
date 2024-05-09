@@ -71,7 +71,7 @@ class StageBuilder:
         res: set[NPCData] = set()
         for obj in npcs_data:
             # 表达场景NPC的数据，其实需要的数据很少。主要是name
-            npc = NPCData(obj.get("name"), "", "", "", set(), set(), set())
+            npc = NPCData(obj.get("name"), "", "", "", set(), set(), set(), "")
             res.add(npc)
         return res
     #
@@ -102,7 +102,7 @@ class StageBuilder:
              # 做连接关系 目前仅用名字
             exit_of_prison_and_goto_stagename: str = stagedata.get("exit_of_prison")
             if len(exit_of_prison_and_goto_stagename) > 0:
-                stage.connect_stage_by_name(exit_of_prison_and_goto_stagename)
+                stage.stage_as_exit_of_prison(exit_of_prison_and_goto_stagename)
 
             # 设置属性
             stage.buildattributes(stagedata.get("attributes"))
@@ -159,7 +159,8 @@ class NPCBuilder:
                           npcdata.get("memory"), 
                           npcprops, 
                           mentioned_npcs,
-                          mentioned_stages)
+                          mentioned_stages,
+                          npcdata.get("role_appearance"))
             
             ## 设置属性
             npc.buildattributes(npcdata.get("attributes"))

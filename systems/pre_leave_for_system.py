@@ -127,37 +127,6 @@ class PreLeaveForSystem(ReactiveProcessor):
         # step2 最后删除
         entity.remove(LeaveForActionComponent) # 停止离开！
 ###############################################################################################################################################
-    # def notify_director_stage_is_invalid(self, entity: Entity) -> None:
-    #     stageentity = self.context.safe_get_stage_entity(entity)
-    #     if stageentity is None or not stageentity.has(StageDirectorComponent):
-    #         return
-
-    #     directorcomp: StageDirectorComponent = stageentity.get(StageDirectorComponent)
-    #     npcname = self.context.safe_get_entity_name(entity)
-
-    #     leavecomp: LeaveForActionComponent = entity.get(LeaveForActionComponent)
-    #     action: ActorAction = leavecomp.action
-    #     invalid_stage_name = action.values[0]
-
-    #     event = NPCLeaveForFailedBecauseStageIsInvalidEvent(npcname, invalid_stage_name)
-    #     directorcomp.addevent(event)
-###############################################################################################################################################
-    # def notify_director_already_in_this_stage(self, entity: Entity) -> None:
-    #     stageentity = self.context.safe_get_stage_entity(entity)
-    #     if stageentity is None or not stageentity.has(StageDirectorComponent):
-    #         return
-
-    #     directorcomp: StageDirectorComponent = stageentity.get(StageDirectorComponent)
-    #     npcname = self.context.safe_get_entity_name(entity)
-
-    #     leavecomp: LeaveForActionComponent = entity.get(LeaveForActionComponent)
-    #     action: ActorAction = leavecomp.action
-    #     stagename = action.values[0]
-
-    #     event = NPCLeaveForFailedBecauseAlreadyInStage(npcname, stagename)
-    #     directorcomp.addevent(event)
-
-###############################################################################################################################################
     def check_npc_file_valid(self, ownername: str, filename: str) -> bool:
         return self.context.file_system.has_prop_file(ownername, filename) or self.context.file_system.has_interactive_prop_file(ownername, filename)
 ###############################################################################################################################################

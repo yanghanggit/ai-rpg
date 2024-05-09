@@ -128,7 +128,7 @@ class PreLeaveForSystem(ReactiveProcessor):
         entity.remove(LeaveForActionComponent) # 停止离开！
 ###############################################################################################################################################
     def check_npc_file_valid(self, ownername: str, filename: str) -> bool:
-        return self.context.file_system.has_prop_file(ownername, filename) or self.context.file_system.has_interactive_prop_file(ownername, filename)
+        return self.context.file_system.has_prop_file(ownername, filename) or self.context.file_system.has_prop_file(ownername, filename)
 ###############################################################################################################################################
     def check_exit_stage_conditions(self, entity: Entity) -> ErrorCheckExitStageConditions:
         #

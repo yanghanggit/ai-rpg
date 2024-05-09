@@ -2,7 +2,7 @@ from loguru import logger
 import os
 from typing import Dict, List, Optional
 #from auxiliary.file_def import PropFile, NPCArchiveFile, KnownStageFile, UseItemFile
-from auxiliary.file_def import PropFile, NPCArchiveFile, KnownStageFile, InteractivePropFile
+from auxiliary.file_def import PropFile, NPCArchiveFile, KnownStageFile
 
 class FileSystem:
 
@@ -15,8 +15,6 @@ class FileSystem:
         self.npc_archive_files: Dict[str, List[NPCArchiveFile]] = {}
         # 知晓的Stage
         self.known_stage_files: Dict[str, List[KnownStageFile]] = {}
-        # 由使用道具而产生的新文件
-        self.interactivepropfiles: Dict[str, List[InteractivePropFile]] = {}
 ################################################################################################################
     ### 必须设置根部的执行路行
     def set_root_path(self, rootpath: str) -> None:
@@ -166,27 +164,3 @@ class FileSystem:
                 return file
         return None
 ################################################################################################################
-    def interactive_prop_file_name(self, ownersname: str, filename: str) -> str:
-        return f"{self.rootpath}{ownersname}/interactive/{filename}.json"
-    
-    def has_interactive_prop_file(self, ownersname: str, propname: str) -> bool:
-        return self.get_interactive_prop_file(ownersname, propname) is not None
-    
-    def get_interactive_prop_files(self, ownersname: str) -> list[InteractivePropFile]:
-        return self.interactivepropfiles.get(ownersname, [])
-    
-    def get_interactive_prop_file(self, ownersname: str, propname: str) -> Optional[InteractivePropFile]:
-        for file in self.get_interactive_prop_files(ownersname):
-            if file.name == propname:
-                return file
-        return None
-    
-    def write_interactivepropfile(self, interactivepropfile: InteractivePropFile) -> None:
-        self.deletefile(self.interactive_prop_file_name(interactivepropfile.ownersname, interactivepropfile.name))
-        content = interactivepropfile.content()
-        self.writefile(self.interactive_prop_file_name(interactivepropfile.ownersname, interactivepropfile.name), content)
-
-    def add_interactive_prop_to_target_file(self, interactivepropfile: InteractivePropFile) -> None:
-        uselist = self.interactivepropfiles.setdefault(interactivepropfile.ownersname, [])
-        uselist.append(interactivepropfile)
-        self.write_interactivepropfile(interactivepropfile)

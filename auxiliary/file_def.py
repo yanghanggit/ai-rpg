@@ -59,16 +59,3 @@ class KnownStageFile(BaseFile):
     def __str__(self) -> str:
         return f"{self.stagename}"
 ############################################################################################################
-###
-class InteractivePropFile(BaseFile):
-    def __init__(self, ownersname: str, targetname: str, propname: str) -> None:
-        super().__init__(propname, ownersname)
-        self.targetname = targetname
-
-    def content(self) -> str:
-        makedict: Dict[str, str] = {}
-        makedict.setdefault(self.targetname, f"Had this file means you use {self.name} on {self.targetname}.")
-        return json.dumps(makedict, ensure_ascii = False)
-    
-    def __str__(self) -> str:
-        return f"{self.targetname} use {self.name}"

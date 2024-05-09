@@ -105,7 +105,7 @@ class FileSystem:
     """
     知道的NPC相关的处理!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     """
-    def npc_archive_file_name(self, ownersname: str, filename: str) -> str:
+    def npc_archive_file_path(self, ownersname: str, filename: str) -> str:
         return f"{self.rootpath}{ownersname}/npcs/{filename}.json"
 ################################################################################################################
     ## 添加一个你知道的NPC
@@ -130,9 +130,9 @@ class FileSystem:
     ## 写一个道具的文件
     def write_npc_archive_file(self, npcarchive: NPCArchiveFile) -> None:
         ## 测试
-        self.deletefile(self.npc_archive_file_name(npcarchive.ownersname, npcarchive.name))
+        self.deletefile(self.npc_archive_file_path(npcarchive.ownersname, npcarchive.name))
         content = npcarchive.content()
-        self.writefile(self.npc_archive_file_name(npcarchive.ownersname, npcarchive.name), content)
+        self.writefile(self.npc_archive_file_path(npcarchive.ownersname, npcarchive.name), content)
 ################################################################################################################
 
 

@@ -7,7 +7,8 @@ from auxiliary.player_input_command import (
                           PlayerCommandAttack, 
                           PlayerCommandLeaveFor, 
                           PlayerCommandBroadcast, 
-                          PlayerCommandSpeak, 
+                          PlayerCommandSpeak,
+                          PlayerCommandUseItem, 
                           PlayerCommandWhisper, 
                           PlayerCommandSearch,
                           PlayerCommandPrisonBreak,
@@ -216,6 +217,12 @@ class TestPlayerInputSystem(ExecuteProcessor):
             command = "/checkstatus"
             self.imme_handle_check_status(playerproxy)
             #PlayerCommandCheckStatus(command, rpggame, playerproxy).execute()
+            return False
+        
+        elif "/useitem" in usrinput:
+            command = "/useitem"
+            content = splitcommand(usrinput, command)
+            PlayerCommandUseItem(command, rpggame, playerproxy, content).execute()
             return False
 
         return True

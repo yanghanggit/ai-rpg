@@ -17,7 +17,9 @@ leave_for_stage_failed_because_no_exit_condition_match_prompt,
 search_success_prompt,
 notify_myself_leave_for_from_prompt,
 someone_came_into_my_stage_his_appearance_prompt,
-npc_appearance_in_this_stage_prompt)
+npc_appearance_in_this_stage_prompt,
+use_item_action_success_prompt)
+from loguru import logger
 from abc import ABC, abstractmethod
 from typing import List, Dict
 
@@ -368,8 +370,21 @@ class NPCLeaveForFailedBecauseNoExitConditionMatch(IDirectorEvent):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
+class NPCUseItemEvent(IDirectorEvent):
 
+    def __init__(self, npcname: str, targetname: str, itemname: str) -> None:
+        self.npcname = npcname
+        self.targetname = targetname
+        self.itemname = itemname
 
+    def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
+        return use_item_action_success_prompt(self.npcname, self.targetname, self.itemname)
+    
+    def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
+        return use_item_action_success_prompt(self.npcname, self.targetname, self.itemname)
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
 
 
 

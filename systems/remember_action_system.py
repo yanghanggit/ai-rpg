@@ -24,6 +24,6 @@ class RememberActionSystem(ReactiveProcessor):
     def remember(self, entity: Entity) -> None:
         remembercomp: RememberActionComponent = entity.get(RememberActionComponent)
         action: ActorAction = remembercomp.action
-        combine = action.combinevalues()
+        combine = action.single_value()
         logger.debug(f"debug!! [remember]:{action.name} = {combine}")
 ###################################################################################################################

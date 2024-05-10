@@ -117,4 +117,13 @@ def main() -> None:
     rpggame.exit()
 
 if __name__ == "__main__":
+
+    # val = f"""```json
+    # {{
+    # "RememberActionComponent": ["埃利亚斯·格雷是墓地的管理员，正在进行日常巡视。他的小狗摩尔陪伴在他身边。一只小老鼠好运气先生隐藏在角落里监视着他们。"]
+    # }}
+    # ```"""
+    # from auxiliary.actor_action import ActorPlan
+    # actorplan = ActorPlan("test", val)
+    # print(actorplan)
     main()

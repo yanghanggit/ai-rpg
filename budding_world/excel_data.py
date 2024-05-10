@@ -1,13 +1,14 @@
 import sys
 from pathlib import Path
-# 将项目根目录添加到sys.path
 root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 import os
 from loguru import logger
 from typing import List
-from budding_world.gen_config import WORLD_NAME, OUT_PUT_NPC_SYS_PROMPT, OUT_PUT_STAGE_SYS_PROMPT, OUT_PUT_AGENT
+from budding_world.configuration import GAME_NAME, OUT_PUT_NPC_SYS_PROMPT_DIR, OUT_PUT_STAGE_SYS_PROMPT_DIR, OUT_PUT_AGENT_DIR
 
+############################################################################################################
+############################################################################################################
 ############################################################################################################
 class ExcelDataNPC:
 
@@ -56,8 +57,8 @@ class ExcelDataNPC:
     
     def gen_agentpy(self, agent_py_template: str) -> str:
         agentpy = str(agent_py_template)
-        agentpy = agentpy.replace("<%RAG_MD_PATH>", f"""/{WORLD_NAME}/{self.worldview}""")
-        agentpy = agentpy.replace("<%SYS_PROMPT_MD_PATH>", f"""/{WORLD_NAME}/{OUT_PUT_NPC_SYS_PROMPT}/{self.codename}_sys_prompt.md""")
+        agentpy = agentpy.replace("<%RAG_MD_PATH>", f"""/{GAME_NAME}/{self.worldview}""")
+        agentpy = agentpy.replace("<%SYS_PROMPT_MD_PATH>", f"""/{GAME_NAME}/{OUT_PUT_NPC_SYS_PROMPT_DIR}/{self.codename}_sys_prompt.md""")
         agentpy = agentpy.replace("<%GPT_MODEL>", self.gptmodel)
         agentpy = agentpy.replace("<%PORT>", str(self.port))
         agentpy = agentpy.replace("<%API>", self.api)
@@ -69,7 +70,7 @@ class ExcelDataNPC:
     
     def write_sys_prompt(self) -> None: 
         try:
-            directory = f"{WORLD_NAME}/{OUT_PUT_NPC_SYS_PROMPT}"
+            directory = f"{GAME_NAME}/{OUT_PUT_NPC_SYS_PROMPT_DIR}"
             filename = f"{self.codename}_sys_prompt.md"
             path = os.path.join(directory, filename)
             # 确保目录存在
@@ -82,7 +83,7 @@ class ExcelDataNPC:
 
     def write_agentpy(self) -> None:
         try:
-            directory = f"{WORLD_NAME}/{OUT_PUT_AGENT}"
+            directory = f"{GAME_NAME}/{OUT_PUT_AGENT_DIR}"
             filename = f"{self.codename}_agent.py"
             path = os.path.join(directory, filename)
             # 确保目录存在
@@ -129,6 +130,8 @@ class ExcelDataNPC:
             return True
         return False
 ############################################################################################################
+############################################################################################################
+############################################################################################################
 class ExcelDataStage:
 
     def __init__(self, name: str, codename: str, description: str, gptmodel: str, port: int, api: str, worldview: str, attributes: str) -> None:
@@ -144,7 +147,6 @@ class ExcelDataStage:
         self.agentpy: str = ""
 
         logger.info(self.localhost_api())
-
         self.attributes: str = attributes
 
     def __str__(self) -> str:
@@ -162,8 +164,8 @@ class ExcelDataStage:
     
     def gen_agentpy(self, agent_py_template: str) -> str:
         agentpy = str(agent_py_template)
-        agentpy = agentpy.replace("<%RAG_MD_PATH>", f"""/{WORLD_NAME}/{self.worldview}""")
-        agentpy = agentpy.replace("<%SYS_PROMPT_MD_PATH>", f"""/{WORLD_NAME}/{OUT_PUT_STAGE_SYS_PROMPT}/{self.codename}_sys_prompt.md""")
+        agentpy = agentpy.replace("<%RAG_MD_PATH>", f"""/{GAME_NAME}/{self.worldview}""")
+        agentpy = agentpy.replace("<%SYS_PROMPT_MD_PATH>", f"""/{GAME_NAME}/{OUT_PUT_STAGE_SYS_PROMPT_DIR}/{self.codename}_sys_prompt.md""")
         agentpy = agentpy.replace("<%GPT_MODEL>", self.gptmodel)
         agentpy = agentpy.replace("<%PORT>", str(self.port))
         agentpy = agentpy.replace("<%API>", self.api)
@@ -175,7 +177,7 @@ class ExcelDataStage:
     
     def write_sys_prompt(self) -> None: 
         try:
-            directory = f"{WORLD_NAME}/{OUT_PUT_STAGE_SYS_PROMPT}"
+            directory = f"{GAME_NAME}/{OUT_PUT_STAGE_SYS_PROMPT_DIR}"
             filename = f"{self.codename}_sys_prompt.md"
             path = os.path.join(directory, filename)
             # 确保目录存在
@@ -188,7 +190,7 @@ class ExcelDataStage:
 
     def write_agentpy(self) -> None:
         try:
-            directory = f"{WORLD_NAME}/{OUT_PUT_AGENT}"
+            directory = f"{GAME_NAME}/{OUT_PUT_AGENT_DIR}"
             filename = f"{self.codename}_agent.py"
             path = os.path.join(directory, filename)
             # 确保目录存在
@@ -198,6 +200,8 @@ class ExcelDataStage:
                 file.write("\n\n\n")
         except Exception as e:
             logger.error(f"An error occurred: {e}") 
+############################################################################################################
+############################################################################################################
 ############################################################################################################
 class ExcelDataProp:
     
@@ -213,4 +217,4 @@ class ExcelDataProp:
         
     def isvalid(self) -> bool:
         return True
-############################################################################################################
+

@@ -2,11 +2,9 @@ import os
 from typing import Optional
 from loguru import logger
 import datetime
-from auxiliary.dialogue_rule import parse_target_and_message
 from auxiliary.builders import WorldDataBuilder
 from rpg_game import RPGGame 
 from auxiliary.player_proxy import create_player_proxy, get_player_proxy, TEST_PLAYER_NAME
-from auxiliary.gm_input_command import GMCommandSimulateRequest, GMCommandSimulateRequestThenRemoveConversation, GMCommandPlayerCtrlAnyNPC
 from auxiliary.player_input_command import (PlayerCommandLogin)
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.file_system import FileSystem
@@ -15,7 +13,6 @@ from typing import Optional
 from auxiliary.agent_connect_system import AgentConnectSystem
 from auxiliary.code_name_component_system import CodeNameComponentSystem
 from auxiliary.chaos_engineering_system import EmptyChaosEngineeringSystem, IChaosEngineering
-### 专门的混沌工程系统
 from budding_world.chaos_budding_world import ChaosBuddingWorld
 
 

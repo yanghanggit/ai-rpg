@@ -9,6 +9,7 @@ from typing import List, Dict, Any
 from budding_world.excel_data import ExcelDataNPC, ExcelDataStage, ExcelDataProp
 from budding_world.npc_editor import ExcelEditorNPC
 from budding_world.stage_editor import ExcelEditorStage
+from budding_world.utils import serialization_prop
 
 EDITOR_WORLD_TYPE = "World"
 EDITOR_PLAYER_TYPE = "Player"
@@ -36,6 +37,7 @@ class ExcelEditorWorld:
         self.editor_players: List[ExcelEditorNPC] = []
         self.editor_npcs: List[ExcelEditorNPC] = []
         self.editor_stages: List[ExcelEditorStage] = []
+        self.editor_props: List[ExcelDataProp] = []
 
         ##把数据分类
         self.classify_data(self.worlds, self.players, self.npcs, self.stages)
@@ -44,6 +46,33 @@ class ExcelEditorWorld:
         self.editor_players = self.create_players(self.players)
         self.editor_npcs = self.create_npcs(self.npcs)
         self.editor_stages = self.create_stages(self.stages)
+
+        ##提取全部的道具。
+        self.editor_props = self.parse_props_from_npc(self.editor_worlds) + self.parse_props_from_npc(self.editor_players) + self.parse_props_from_npc(self.editor_npcs) + self.parse_props_from_stage(self.editor_stages)
+        logger.debug(f"World: {self.name} has {len(self.editor_props)} props.")
+
+
+    def parse_props_from_npc(self, npcs: List[ExcelEditorNPC]) -> List[ExcelDataProp]:
+        res = []
+        for npc in npcs:
+            for prop in npc.excelprops:
+                if prop not in res:
+                    res.append(prop)
+        return res
+    
+    def parse_props_from_stage(self, stages: List[ExcelEditorStage]) -> List[ExcelDataProp]:
+        res = []
+        for stage in stages:
+
+            for prop in stage.props_in_stage:
+                if prop not in res:
+                    res.append(prop)
+            
+            for prop in stage.interactive_props:
+                if prop not in res:
+                    res.append(prop)
+
+        return res
 
     #先将数据分类
     def classify_data(self, out_worlds: List[Any], out_players: List[Any], out_npcs: List[Any], out_stages: List[Any]) -> None:
@@ -85,19 +114,30 @@ class ExcelEditorWorld:
 
     #最后生成JSON
     def serialization(self) -> Dict[str, Any]:
-        dict: Dict[str, Any] = {}
-        dict["worlds"] = [editor_npc.serialization() for editor_npc in self.editor_worlds]
-        dict["players"] = [editor_npc.serialization() for editor_npc in self.editor_players]
-        dict["npcs"] = [editor_npc.serialization() for editor_npc in self.editor_npcs]
-        dict["stages"] = [editor_stage.serialization() for editor_stage in self.editor_stages]
+        output: Dict[str, Any] = {}
+        output["worlds"] = [editor_npc.serialization() for editor_npc in self.editor_worlds]
+        output["players"] = [editor_npc.serialization() for editor_npc in self.editor_players]
+        output["npcs"] = [editor_npc.serialization() for editor_npc in self.editor_npcs]
+        output["stages"] = [editor_stage.serialization() for editor_stage in self.editor_stages]
+        output["database"] = self.data_base()
 
         version_sign = input("请输入版本号:")
         if version_sign == "":
             version_sign = "ewan"
             logger.warning(f"使用默认的版本号: {version_sign}")
         
-        dict["version"] = version_sign
-        return dict
+        output["version"] = version_sign
+        return output
+    
+    def data_base(self) -> Dict[str, Any]:
+        output: Dict[str, Any] = {}
+        npc_data_base = self.editor_worlds + self.editor_players + self.editor_npcs
+        output["npcs"] = [data.serialization() for data in npc_data_base]
+        output["stages"] = [data.serialization() for data in self.editor_stages]
+        output["props"] = []
+        for prop in self.editor_props:
+            output["props"].append(serialization_prop(prop))
+        return output
     
     def write(self, directory: str) -> bool:
         builddata = self.serialization()    

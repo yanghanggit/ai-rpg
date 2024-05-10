@@ -63,7 +63,8 @@ class ExcelEditorStage:
         self.npcs_in_stage: List[ExcelDataNPC] = []
         self.initialization_memory: str = ""
         self.exit_of_prison: str = ""
-        self.interactive_props: str = ""
+        self.raw_interactive_props_data: str = ""
+        self.interactive_props: List[ExcelDataProp] = []
 
         if self.data["type"] not in ["Stage"]:
             logger.error(f"Invalid Stage type: {self.data['type']}")
@@ -136,8 +137,34 @@ class ExcelEditorStage:
 
     def parse_interactive_props(self) -> None:
         attrname = "interactive_props"
-        if attrname in self.data and self.data[attrname] is not None:
-            self.interactive_props = str(self.data[attrname])
+        if attrname not in self.data and self.data[attrname] is None:
+            return
+        self.raw_interactive_props_data = str(self.data[attrname])
+        if self.raw_interactive_props_data == "None":
+            #空的不用继续了
+            return
+        
+        raw_data = self.raw_interactive_props_data
+        
+        ###写点啥
+        parse_res = parse_complex_stage_condition(raw_data)
+        if len(parse_res) != 2:
+            logger.error(f"复杂条件: {raw_data}")
+            return
+        
+        propname1 = parse_res[0]
+        prop1 = self.prop_data_base.get(propname1, None)
+        if prop1 is not None:
+            self.interactive_props.append(prop1)
+        else:
+            logger.error(f"Invalid prop: {propname1}")
+        
+        propname2 = parse_res[1]
+        prop2 = self.prop_data_base.get(propname2, None)
+        if prop2 is not None:
+            self.interactive_props.append(prop2)
+        else:
+            logger.error(f"Invalid prop: {propname2}")
         
     def __str__(self) -> str:
         propsstr = ', '.join(str(prop) for prop in self.props_in_stage)
@@ -178,7 +205,7 @@ class ExcelEditorStage:
         dict["url"] = data_stage.localhost_api()
         dict["memory"] = self.initialization_memory
         dict["exit_of_prison"] = self.exit_of_prison
-        dict["interactive_props"] = self.interactive_props
+        dict["interactive_props"] = self.raw_interactive_props_data
         
         entry_conditions = self.serialization_stage_conditions(self.stage_entry_conditions)
         exit_conditions = self.serialization_stage_conditions(self.stage_exit_conditions)

@@ -155,12 +155,13 @@ class InitMemorySystem(InitializeProcessor):
     def batch_message_npc_appearance_in_stage(self, entity: Entity, npcname: str, appearance_data: Dict[str, str]) -> None:
         stageentity = self.context.safe_get_stage_entity(entity)
         assert stageentity is not None
+        
         safe_stage_name = self.context.safe_get_entity_name(stageentity)
-        for _npcname_, _appearance_ in appearance_data.items():
-            if _npcname_ == npcname:
+        for other_name, other_appearance in appearance_data.items():
+            if other_name == npcname:
                 continue
-            appearance_prompt = current_stage_you_saw_someone_appearance_prompt(safe_stage_name, npcname, _appearance_, self.context)
-            self.context.safe_add_human_message_to_entity(entity, appearance_prompt)
+            prompt = current_stage_you_saw_someone_appearance_prompt(safe_stage_name, other_name, other_appearance, self.context)
+            self.context.safe_add_human_message_to_entity(entity, prompt)
 ###############################################################################################################################################
     def batch_message_remember_end(self, entity: Entity, npcname: str) -> None:
         prompt = remember_end_before_game_start_prompt(npcname, self.context)

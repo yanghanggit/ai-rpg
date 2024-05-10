@@ -1,14 +1,13 @@
-##干净与基础的数据结构
 from typing import List, Set, Dict
 from auxiliary.format_of_complex_stage_entry_and_exit_conditions import is_complex_stage_condition
 from enum import Enum
+from loguru import logger
 
 
 ########################################################################################################################
 ########################################################################################################################
 ########################################################################################################################
 class StageConditionData:
-    
     #
     def __init__(self, name: str, type: str, prop_name: str) -> None:
         self.name = name
@@ -25,10 +24,6 @@ class StageConditionData:
         if self.complexconditions != "":
             return self.complexconditions
         return self.prop_name
-
-
-
-
 ########################################################################################################################
 ########################################################################################################################
 ########################################################################################################################
@@ -96,6 +91,10 @@ class PropData:
     
     def __str__(self) -> str:
         return f"{self.name}"
+    
+def PropDataProxy(name: str) -> PropData:
+    logger.info(f"PropDataProxy: {name}")
+    return PropData(name, "", "", "", "")
 ########################################################################################################################
 ########################################################################################################################
 ########################################################################################################################
@@ -120,6 +119,10 @@ class NPCData:
 
     def build_attributes(self, attributes: str) -> None:
         self.attributes = [int(attr) for attr in attributes.split(',')]
+
+def NPCDataProxy(name: str) -> NPCData:
+    logger.info(f"NPCDataProxy: {name}")
+    return NPCData(name, "", "", "", set(), set(), set(), "")
 ########################################################################################################################
 ########################################################################################################################
 ########################################################################################################################
@@ -149,12 +152,17 @@ class StageData:
 
     ###
     def stage_as_exit_of_prison(self, stagename: str) -> None:
-        stage_only_has_name = StageData(stagename, "", "", "", "", [], [], set(), set(), "")
-        self.exit_of_prison.add(stage_only_has_name)
+        stage_proxy = StageDataProxy(stagename)
+        self.exit_of_prison.add(stage_proxy)
 
     ###
     def build_attributes(self, attributes: str) -> None:
         self.attributes = [int(attr) for attr in attributes.split(',')]
+
+
+def StageDataProxy(name: str) -> StageData:
+    logger.info(f"StageDataProxy: {name}")
+    return StageData(name, "", "", "", "", [], [], set(), set(), "")
 ########################################################################################################################
 ########################################################################################################################
 ########################################################################################################################

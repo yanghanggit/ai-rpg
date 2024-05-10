@@ -1,7 +1,7 @@
 from typing import Optional
 from loguru import logger
 from auxiliary.actor_action import ActorAction
-from auxiliary.base_data import PropData
+from auxiliary.base_data import PropDataProxy
 from auxiliary.components import InteractivePropActionComponent, UseInteractivePropActionComponent
 from auxiliary.dialogue_rule import parse_target_and_message
 from auxiliary.extended_context import ExtendedContext
@@ -51,7 +51,7 @@ class InteractivePropActionSystem(ReactiveProcessor):
         
         interactivepropresult = self.check_target_with_prop(targetname, propname)
         assert interactivepropresult is not None
-        propdata = PropData(interactivepropresult, "", "", "", "")
+        propdata = PropDataProxy(interactivepropresult)
         if interactivepropresult is None:
             logger.warning(f"{targetname}与{propname}之间的关系未定义，请检查。")
             return False

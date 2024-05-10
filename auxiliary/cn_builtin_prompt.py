@@ -236,16 +236,16 @@ def replace_all_mentions_of_your_name_with_you(content: str, your_name: str) -> 
     return content.replace(your_name, "你")
 
 ###
-def known_information_update_who_you_know_prompt(npcname: str, who_you_know: str) -> str:
+def updated_information_on_WhoDoYouKnow_prompt(npcname: str, who_you_know: str) -> str:
     if len(who_you_know) == 0:
-        return f"# 你更新了记忆，你目前没有认识的角色。"
-    return f"# 你更新了记忆，你所认识的角色目前有: {who_you_know}"
+        return f"# 你更新了关于‘你都认识哪些角色’的信息，目前你没有认识的角色。"
+    return f"# 你更新了关于‘你都认识哪些角色’的信息，目前你所认识的角色有: {who_you_know}"
 
 ### 
-def known_information_update_where_you_know_prompt(npcname: str, where_you_know: str) -> str:
+def updated_information_about_StagesYouKnow_prompt(npcname: str, where_you_know: str) -> str:
     if len(where_you_know) == 0:
-        return f"# 你更新了记忆，你目前没有认识的场景。你不能去任何地方。"
-    return f"# 你更新了记忆，你所知道的场景有: {where_you_know}。如果你想前往其他场景，你只能从这些场景中选择你的目的地。"
+        return f"# 你更新了关于‘你都认知哪些场景’的信息，目前你没有认识的场景。你不能去任何地方。"
+    return f"# 你更新了关于‘你都认知哪些场景’的信息，目前你所知道的场景有: {where_you_know}。如果你意图离开本场景并去往其他场景，你只能从这些场景中选择你的目的地。"
 
 ##
 def leave_for_stage_failed_because_no_exit_condition_match_prompt(npcname: str, stagename: str, tips: str) -> str:

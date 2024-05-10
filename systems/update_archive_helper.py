@@ -9,7 +9,7 @@ from typing import List, Dict, Set
 
 #### 一次处理过程的封装
 ###############################################################################################################################################
-class KnownInformationHelper:
+class UpdareArchiveHelper:
     def __init__(self, context: ExtendedContext) -> None:
         ##我的参数
         self.context = context
@@ -18,17 +18,17 @@ class KnownInformationHelper:
         self._npc_chat_history: Dict[str, str] = {}
         self._npcs_with_props_info: Dict[str, List[str]] = {}
 ###############################################################################################################################################
-    def build(self) -> None:
+    def prepare(self) -> None:
         ##step1: 所有拥有初始化记忆的场景拿出来
-        self.build_stage_names()
+        self.prepare_stage_names()
         ##step2: 所有拥有初始化记忆的NPC拿出来
-        self.build_npc_names()
+        self.prepare_npc_names()
         ##step3: 打包NPC的对话历史，方便后续查找
-        self.build_npc_chat_history()
+        self.prepare_npc_chat_history()
         ##step4: 所有拥有初始化记忆的NPC的道具信息拿出来
-        self.build_npc_with_props_info()
+        self.prepare_npc_with_props_info()
 ###############################################################################################################################################
-    def build_stage_names(self) -> None:
+    def prepare_stage_names(self) -> None:
         self._stagenames.clear()
         #
         context = self.context
@@ -42,7 +42,7 @@ class KnownInformationHelper:
             else:
                 logger.error(f"stage {stagecomp.name} has no init memory?")
 ###############################################################################################################################################
-    def build_npc_names(self) -> None:
+    def prepare_npc_names(self) -> None:
         self._npcnames.clear()
         #
         context = self.context
@@ -56,7 +56,7 @@ class KnownInformationHelper:
             else:
                 logger.error(f"npc {npccomp.name} has no init memory?")
 ###############################################################################################################################################           
-    def build_npc_chat_history(self) -> None:
+    def prepare_npc_chat_history(self) -> None:
         self._npc_chat_history.clear()
         #
         context = self.context
@@ -73,7 +73,7 @@ class KnownInformationHelper:
                     packmsg += str(chat.content)
             self._npc_chat_history[npccomp.name] = packmsg
 ###############################################################################################################################################
-    def build_npc_with_props_info(self) ->  None:
+    def prepare_npc_with_props_info(self) ->  None:
         self._npcs_with_props_info.clear()
         #
         context = self.context
@@ -98,7 +98,7 @@ class KnownInformationHelper:
     def get_npcs_with_props_info(self, npcname: str) -> List[str]:
         return self._npcs_with_props_info.get(npcname, [])
 ###############################################################################################################################################
-    def where_do_you_know(self, npcname: str) -> Set[str]:
+    def stages_you_know(self, npcname: str) -> Set[str]:
         #需要检查的场景名
         need_check_names = self.stagenames
         #人身上道具提到的

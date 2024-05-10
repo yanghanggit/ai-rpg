@@ -14,8 +14,6 @@ class BaseFile:
 ############################################################################################################
 
 
-
-
 ############################################################################################################
 ## 表达一个道具，有这个档案说明你有这个道具
 class PropFile(BaseFile):
@@ -30,23 +28,30 @@ class PropFile(BaseFile):
     def __str__(self) -> str:
         return f"{self.prop}"
 ############################################################################################################
+
+
+############################################################################################################
 ## 表达一个NPC档案，有这个档案说明你认识这个NPC
 class NPCArchiveFile(BaseFile):
-    def __init__(self, name: str, ownersname: str, npcname: str) -> None:
+    def __init__(self, name: str, ownersname: str, npcname: str, appearance: str) -> None:
         super().__init__(name, ownersname)
         self.npcname = npcname
-        self.last_appearance = ""
+        self.appearance = appearance
 
     def content(self) -> str:
         makedict: Dict[str, str] = {}
-        makedict.setdefault(self.npcname, self.last_appearance)
+        makedict.setdefault(self.npcname, self.appearance)
         return json.dumps(makedict, ensure_ascii = False)
     
     def __str__(self) -> str:
         return f"{self.npcname}"
 ############################################################################################################
+
+
+
+############################################################################################################
 ## 表达一个Stage的档案，有这个档案说明你知道这个Stage
-class KnownStageFile(BaseFile):
+class StageArchiveFile(BaseFile):
     def __init__(self, name: str, ownersname: str, stagename: str) -> None:
         super().__init__(name, ownersname)
         self.stagename = stagename

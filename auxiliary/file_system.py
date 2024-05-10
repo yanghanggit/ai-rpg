@@ -2,7 +2,7 @@ from loguru import logger
 import os
 from typing import Dict, List, Optional
 #from auxiliary.file_def import PropFile, NPCArchiveFile, KnownStageFile, UseItemFile
-from auxiliary.file_def import PropFile, NPCArchiveFile, KnownStageFile
+from auxiliary.file_def import PropFile, NPCArchiveFile, StageArchiveFile
 
 class FileSystem:
 
@@ -14,7 +14,7 @@ class FileSystem:
         # 知晓的NPC 
         self.npc_archive_files: Dict[str, List[NPCArchiveFile]] = {}
         # 知晓的Stage
-        self.known_stage_files: Dict[str, List[KnownStageFile]] = {}
+        self.known_stage_files: Dict[str, List[StageArchiveFile]] = {}
 ################################################################################################################
     ### 必须设置根部的执行路行
     def set_root_path(self, rootpath: str) -> None:
@@ -107,13 +107,14 @@ class FileSystem:
         return f"{self.rootpath}{ownersname}/npcs/{filename}.json"
 ################################################################################################################
     ## 添加一个你知道的NPC
-    def add_npc_archive_file(self, npcarchive: NPCArchiveFile) -> None:
+    def add_npc_archive_file(self, npcarchive: NPCArchiveFile) -> Optional[NPCArchiveFile]:
         files = self.npc_archive_files.setdefault(npcarchive.ownersname, [])
         for file in files:
             if file.npcname == npcarchive.npcname:
                 # 名字匹配，先返回，不添加。后续可以复杂一些
-                return
+                return None
         files.append(npcarchive)
+        return npcarchive
 ################################################################################################################
     def has_npc_archive_file(self, ownersname: str, npcname: str) -> bool:
         return self.get_npc_archive_file(ownersname, npcname) is not None
@@ -139,25 +140,24 @@ class FileSystem:
     """
     知道的Stage相关的处理!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     """
-    def stage_file_name(self, ownersname: str, filename: str) -> str:
+    def stage_archive_file_path(self, ownersname: str, filename: str) -> str:
         return f"{self.rootpath}{ownersname}/stages/{filename}.json"
 ################################################################################################################
-    def add_known_stage_file(self, known_stage_file: KnownStageFile) -> None:
-        stagelist = self.known_stage_files.setdefault(known_stage_file.ownersname, [])
-        for file in stagelist:
-            if file.stagename == known_stage_file.stagename:
+    def add_stage_archive_file(self, stage_archive: StageArchiveFile) -> None:
+        files = self.known_stage_files.setdefault(stage_archive.ownersname, [])
+        for file in files:
+            if file.stagename == stage_archive.stagename:
                 # 名字匹配，先返回，不添加。后续可以复杂一些
                 return
-        stagelist.append(known_stage_file)
-        self.write_known_stage_file(known_stage_file)
+        files.append(stage_archive)
 ################################################################################################################
-    def write_known_stage_file(self, known_stage_file: KnownStageFile) -> None:
+    def write_stage_archive_file(self, known_stage_file: StageArchiveFile) -> None:
         ## 测试
-        self.deletefile(self.stage_file_name(known_stage_file.ownersname, known_stage_file.name))
+        self.deletefile(self.stage_archive_file_path(known_stage_file.ownersname, known_stage_file.name))
         content = known_stage_file.content()
-        self.writefile(self.stage_file_name(known_stage_file.ownersname, known_stage_file.name), content)
+        self.writefile(self.stage_archive_file_path(known_stage_file.ownersname, known_stage_file.name), content)
 ################################################################################################################
-    def get_known_stage_file(self, ownersname: str, stagename: str) -> Optional[KnownStageFile]:
+    def get_stage_archive_file(self, ownersname: str, stagename: str) -> Optional[StageArchiveFile]:
         stagelist = self.known_stage_files.get(ownersname, [])
         for file in stagelist:
             if file.stagename == stagename:

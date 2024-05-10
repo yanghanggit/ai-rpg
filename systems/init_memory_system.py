@@ -1,4 +1,3 @@
-from auxiliary.file_def import KnownStageFile
 from entitas import Entity, Matcher, InitializeProcessor # type: ignore
 from auxiliary.components import WorldComponent, StageComponent, NPCComponent
 from auxiliary.cn_builtin_prompt import (read_archives_when_system_init_prompt,
@@ -13,9 +12,9 @@ from auxiliary.cn_builtin_prompt import (read_archives_when_system_init_prompt,
                                     current_stage_you_saw_someone_appearance_prompt)
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
-from systems.known_information_helper import KnownInformationHelper
+from systems.update_archive_helper import UpdareArchiveHelper
 from typing import cast, Dict
-from auxiliary.file_system_helper import create_npc_archive_files, update_npc_archive_file
+from auxiliary.file_system_helper import add_npc_archive_files, add_stage_archive_files
 
 
 ###############################################################################################################################################
@@ -30,8 +29,8 @@ class InitMemorySystem(InitializeProcessor):
     def initmemory(self) -> None:
         #
         context = self.context
-        helper = KnownInformationHelper(context)
-        helper.build()
+        helper = UpdareArchiveHelper(context)
+        helper.prepare()
         #分段处理
         self.handleworld(helper)
         self.handlestages(helper)
@@ -39,7 +38,7 @@ class InitMemorySystem(InitializeProcessor):
         ##最后并发执行
         context.agent_connect_system.run_async_requet_tasks()
 ###############################################################################################################################################
-    def handleworld(self, helper: KnownInformationHelper) -> None:
+    def handleworld(self, helper: UpdareArchiveHelper) -> None:
         context = self.context
         memory_system = context.memory_system
         agent_connect_system = context.agent_connect_system
@@ -53,7 +52,7 @@ class InitMemorySystem(InitializeProcessor):
             readarchprompt = read_archives_when_system_init_prompt(worldmemory, world, context)
             agent_connect_system.add_async_requet_task(worldcomp.name, readarchprompt)
 ###############################################################################################################################################
-    def handlestages(self, helper: KnownInformationHelper) -> None:
+    def handlestages(self, helper: UpdareArchiveHelper) -> None:
         context = self.context
         memory_system = context.memory_system
         agent_connect_system = context.agent_connect_system
@@ -67,7 +66,7 @@ class InitMemorySystem(InitializeProcessor):
             readarchprompt = read_archives_when_system_init_prompt(stagememory, stage, context)
             agent_connect_system.add_async_requet_task(stagecomp.name, readarchprompt)
 ###############################################################################################################################################
-    def handlenpcs(self, helper: KnownInformationHelper) -> None:
+    def handlenpcs(self, helper: UpdareArchiveHelper) -> None:
         #
         context = self.context
         memory_system = context.memory_system
@@ -82,16 +81,15 @@ class InitMemorySystem(InitializeProcessor):
             npccomp: NPCComponent = npcentity.get(NPCComponent)
             npcname: str = npccomp.name
 
-            npc_appearance_in_this_stage = self.context.npcs_appearances_in_this_stage(npcentity)
+            appearance_data = self.context.npc_appearance_in_the_stage(npcentity)
            
-            # 知道的npc
+            # 再次添加知道的npc，有可能加不进去。会被过滤掉
             info_who_you_know = helper.who_do_you_know(npccomp.name)
-            create_npc_archive_files(context.file_system, npccomp.name, info_who_you_know)
-            self.update_npc_archive_file_when_init_memory(npccomp.name, npc_appearance_in_this_stage)
+            add_npc_archive_files(context.file_system, npccomp.name, info_who_you_know)
 
             # 知道的舞台
-            info_where_you_know = helper.where_do_you_know(npccomp.name)
-            self.add_known_stage_file(npccomp.name, info_where_you_know)
+            info_where_you_know = helper.stages_you_know(npccomp.name)
+            add_stage_archive_files(context.file_system, npccomp.name, info_where_you_know)
 
             # 可以去的舞台
             info_where_you_can_go = info_where_you_know.copy()
@@ -120,7 +118,7 @@ class InitMemorySystem(InitializeProcessor):
                 self.batch_message_check_status(npcentity, npcname, str_props_info)
                 self.batch_message_stages(npcentity, npcname, cast(str, npccomp.current_stage), str_where_you_can_go)
                 self.batch_message_npc_archive(npcentity, npcname, str_who_you_know)
-                self.batch_message_npc_appearance_in_stage(npcentity, npcname, npc_appearance_in_this_stage) 
+                self.batch_message_npc_appearance_in_stage(npcentity, npcname, appearance_data) 
                 self.batch_message_remember_end(npcentity, npcname)
                 request_prompt = notify_game_start_prompt(npcname, context)
                 #
@@ -168,18 +166,4 @@ class InitMemorySystem(InitializeProcessor):
     def batch_message_remember_end(self, entity: Entity, npcname: str) -> None:
         prompt = remember_end_before_game_start_prompt(npcname, self.context)
         self.context.safe_add_human_message_to_entity(entity, prompt)
-###############################################################################################################################################
-    def add_known_stage_file(self, filesowner: str, allnames: set[str]) -> None:
-        file_system = self.context.file_system
-        for stagename in allnames:
-            if filesowner == stagename:
-                continue
-            file = KnownStageFile(stagename, filesowner, stagename)
-            file_system.add_known_stage_file(file)
-###############################################################################################################################################
-    def update_npc_archive_file_when_init_memory(self, filesowner: str, npc_appearance_in_stage: Dict[str, str]) -> None:
-        for npcname, appearance in npc_appearance_in_stage.items():
-            if npcname == filesowner:
-                continue
-            update_npc_archive_file(self.context.file_system, filesowner, npcname, appearance)
 ###############################################################################################################################################

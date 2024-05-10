@@ -101,7 +101,7 @@ class PreLeaveForSystem(ReactiveProcessor):
             return ErrorCheckTargetStage.ALREADY_IN_THIS_STAGE
         
         #
-        knownstagefile = file_system.get_known_stage_file(npccomp.name, targetstagename)
+        knownstagefile = file_system.get_stage_archive_file(npccomp.name, targetstagename)
         if knownstagefile is None:
             # 我不认识该怎么办？
             if entity.has(PrisonBreakActionComponent):

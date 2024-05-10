@@ -178,7 +178,7 @@ class ExtendedContext(Context):
         # 是一个对话类型，检查完成
         return True
 ############################################################################################################
-    def npcs_appearances_in_this_stage(self, entity: Entity) -> Dict[str, str]:
+    def npc_appearance_in_the_stage(self, entity: Entity) -> Dict[str, str]:
         #
         res: Dict[str, str] = {}
         stageentity = self.safe_get_stage_entity(entity)

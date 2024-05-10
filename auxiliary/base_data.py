@@ -53,10 +53,10 @@ class NPCData:
         self.url = url
         self.memory = memory
         self.props: Set[PropData] = props
-        self.mentioned_npcs: Set[str] = mentioned_npcs
-        self.mentioned_stages: Set[str] = mentioned_stages
+        self.npc_names_mentioned_during_editing_or_for_agent: Set[str] = mentioned_npcs 
+        self.stage_names_mentioned_during_editing_or_for_agent: Set[str] = mentioned_stages
         self.attributes: List[int] = []
-        self.roleappearance: str = roleappearance
+        self.role_appearance: str = roleappearance
 
     def buildattributes(self, attributes: str) -> None:
         self.attributes = [int(attr) for attr in attributes.split(',')]
@@ -85,7 +85,7 @@ class StageData:
         self.attributes: List[int] = []
         self.interactiveprops: str = interactiveprops
 
-    ### stage_as_exit_of_prison
+    ###
     def stage_as_exit_of_prison(self, stagename: str) -> None:
         stage_only_has_name = StageData(stagename, "", "", "", "", [], [], set(), set(), "")
         self.exit_of_prison.add(stage_only_has_name)

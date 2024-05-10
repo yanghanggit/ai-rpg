@@ -45,7 +45,7 @@ from systems.post_planning_system import PostPlanningSystem
 from systems.pre_action_system import PreActionSystem
 from systems.post_action_system import PostActionSystem
 from systems.post_fight_system import PostFightSystem
-from systems.update_archive_information_system import UpdateArchiveInformationSystem
+from systems.update_archive_system import UpdateArchiveSystem
 from systems.prison_break_action_system import PrisonBreakActionSystem
 from systems.perception_action_system import PerceptionActionSystem
 from systems.steal_action_system import StealActionSystem
@@ -55,7 +55,7 @@ from base_game import BaseGame
 from systems.post_conversational_action_system import PostConversationalActionSystem
 from systems.init_agents_system import InitAgentsSystem
 from systems.remember_action_system import RememberActionSystem
-from auxiliary.file_system_helper import create_npc_archive_files
+from auxiliary.file_system_helper import add_npc_archive_files
 
 ## 控制流程和数据创建
 class RPGGame(BaseGame):
@@ -127,8 +127,8 @@ class RPGGame(BaseGame):
 
         #行动结束后导演
         processors.add(DirectorSystem(context))
-        #行动结束后更新关系网
-        processors.add(UpdateArchiveInformationSystem(context))
+        #行动结束后更新关系网，因为依赖Director所以必须在后面
+        processors.add(UpdateArchiveSystem(context))
         #########################################
 
         ###最后删除entity与存储数据
@@ -234,7 +234,7 @@ class RPGGame(BaseGame):
             code_name_component_system.register_code_name_component_class(builddata.name, builddata.codename)
 
             # 初步建立关系网（在编辑文本中提到的NPC名字）
-            create_npc_archive_files(file_system, builddata.name, builddata.mentioned_npcs)
+            add_npc_archive_files(file_system, builddata.name, builddata.npc_names_mentioned_during_editing_or_for_agent)
             
         return res
 ###############################################################################################################################################
@@ -260,7 +260,7 @@ class RPGGame(BaseGame):
             playernpcentity.add(PlayerComponent, "") ##此时没有被玩家控制
             playernpcentity.add(SimpleRPGRoleComponent, builddata.name, builddata.attributes[0], builddata.attributes[1], builddata.attributes[2])
             playernpcentity.add(NPCComponent, builddata.name, "")
-            playernpcentity.add(RoleAppearanceComponent, builddata.roleappearance)
+            playernpcentity.add(RoleAppearanceComponent, builddata.role_appearance)
             
             #重构
             agent_connect_system.register_actor_agent(builddata.name, builddata.url)
@@ -275,7 +275,7 @@ class RPGGame(BaseGame):
                 code_name_component_system.register_code_name_component_class(prop.name, prop.codename)
 
             # 初步建立关系网（在编辑文本中提到的NPC名字）
-            create_npc_archive_files(file_system, builddata.name, builddata.mentioned_npcs)
+            add_npc_archive_files(file_system, builddata.name, builddata.npc_names_mentioned_during_editing_or_for_agent)
 
         return res
 ###############################################################################################################################################
@@ -300,7 +300,7 @@ class RPGGame(BaseGame):
             # 必要组件
             npcentity.add(NPCComponent, builddata.name, "")
             npcentity.add(SimpleRPGRoleComponent, builddata.name, builddata.attributes[0], builddata.attributes[1], builddata.attributes[2])
-            npcentity.add(RoleAppearanceComponent, builddata.roleappearance)
+            npcentity.add(RoleAppearanceComponent, builddata.role_appearance)
 
             #重构
             agent_connect_system.register_actor_agent(builddata.name, builddata.url)
@@ -315,7 +315,7 @@ class RPGGame(BaseGame):
                 code_name_component_system.register_code_name_component_class(prop.name, prop.codename)
 
             # 初步建立关系网（在编辑文本中提到的NPC名字）
-            create_npc_archive_files(file_system, builddata.name, builddata.mentioned_npcs)
+            add_npc_archive_files(file_system, builddata.name, builddata.npc_names_mentioned_during_editing_or_for_agent)
 
         return res
 ###############################################################################################################################################

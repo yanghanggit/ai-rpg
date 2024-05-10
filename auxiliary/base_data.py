@@ -1,7 +1,12 @@
 ##干净与基础的数据结构
-from typing import List, Set
+from typing import List, Set, Dict
 from auxiliary.format_of_complex_stage_entry_and_exit_conditions import is_complex_stage_condition
+from enum import Enum
 
+
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
 class StageConditionData:
     
     #
@@ -15,30 +20,85 @@ class StageConditionData:
         if is_complex_stage_condition(prop_name):
             self.complexconditions = str(prop_name)
 
-    #
-    # def analyze_is_complex_condition(self, propname: str) -> bool:
-    #     #下面是例子：输入 = “(内容A|内容B)” 。如果输入符合这种格式，那么就是复杂条件。否则就不是
-    #     return propname.startswith("(") and propname.endswith(")") and "|" in propname
-
     # 默认是给名字
     def condition(self) -> str:
         if self.complexconditions != "":
             return self.complexconditions
         return self.prop_name
 
+
+
+
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
+#
+class PropType(Enum):
+    INVALID = 0,
+    ROLE_COMPONENT = 1
+    WEAPON = 2
+    CLOTHES = 3
+    NON_CONSUMABLE_ITEM = 4
+    EVENT = 5
+
 class PropData:
-    def __init__(self, name: str, codename: str, description: str, is_unique: str) -> None:
+    def __init__(self, name: str, codename: str, description: str, is_unique: str, type: str) -> None:
         self.name = name
         self.codename = codename
         self.description = description
         self.is_unique = is_unique
+        self.type = type
+        self.em_type = PropType.INVALID
+
+        self.parse_type()
+        print(f"PropData: {self.name} {self.em_type}")
 
     def isunique(self) -> bool:
         return self.is_unique == "Yes"
     
+    def parse_type(self) -> None:
+        if self.is_role_component():
+            self.em_type = PropType.ROLE_COMPONENT
+        elif self.is_weapon():
+            self.em_type = PropType.WEAPON
+        elif self.is_clothes():
+            self.em_type = PropType.CLOTHES
+        elif self.is_non_consumable_item():
+            self.em_type = PropType.NON_CONSUMABLE_ITEM
+        elif self.is_event():
+            self.em_type = PropType.EVENT
+        else:
+            self.em_type = PropType.INVALID
+    
+    def is_role_component(self) -> bool:
+        return self.type == "RoleComponent"
+    
+    def is_weapon(self) -> bool:
+        return self.type == "Weapon"
+    
+    def is_clothes(self) -> bool:
+        return self.type == "Clothes"
+    
+    def is_non_consumable_item(self) -> bool:
+        return self.type == "NonConsumableItem"
+    
+    def is_event(self) -> bool:
+        return self.type == "Event"
+    
+    def serialization(self) -> Dict[str, str]:
+        return {
+            "name": self.name,
+            "codename": self.codename,
+            "description": self.description,
+            "is_unique": self.is_unique,
+            "type": self.type
+        }
+    
     def __str__(self) -> str:
         return f"{self.name}"
-
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
 class NPCData:
     def __init__(self, name: str, 
                  codename: str, 
@@ -58,9 +118,11 @@ class NPCData:
         self.attributes: List[int] = []
         self.role_appearance: str = roleappearance
 
-    def buildattributes(self, attributes: str) -> None:
+    def build_attributes(self, attributes: str) -> None:
         self.attributes = [int(attr) for attr in attributes.split(',')]
-
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
 class StageData:
     def __init__(self, name: str, 
                  codename: str, 
@@ -91,8 +153,11 @@ class StageData:
         self.exit_of_prison.add(stage_only_has_name)
 
     ###
-    def buildattributes(self, attributes: str) -> None:
+    def build_attributes(self, attributes: str) -> None:
         self.attributes = [int(attr) for attr in attributes.split(',')]
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
 
 
 

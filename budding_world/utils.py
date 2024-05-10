@@ -83,10 +83,7 @@ def gen_all_props(sheet: DataFrame, output: Dict[str, ExcelDataProp]) -> None:
     for index, row in sheet.iterrows():
         if pd.isna(row["name"]):
             continue
-        excelprop = ExcelDataProp(row["name"], row["codename"], row["isunique"], row["description"], RAG_FILE)
-        if not excelprop.isvalid():
-            #(f"Invalid row: {excelprop}")
-            continue
+        excelprop = ExcelDataProp(row["name"], row["codename"], row["isunique"], row["description"], RAG_FILE, row["type"])
         output[excelprop.name] = excelprop
 ############################################################################################################
 def analyze_npc_relationship(analyze_data: Dict[str, ExcelDataNPC]) -> None:
@@ -125,5 +122,6 @@ def serialization_prop(prop: ExcelDataProp) -> Dict[str, str]:
     dict['codename'] = prop.codename
     dict['description'] = prop.description
     dict['isunique'] = prop.isunique
+    dict['type'] = prop.type
     return dict       
 ################################################################################################################

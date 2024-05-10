@@ -51,7 +51,7 @@ class InteractivePropActionSystem(ReactiveProcessor):
         
         interactivepropresult = self.check_target_with_prop(targetname, propname)
         assert interactivepropresult is not None
-        propdata = PropData(interactivepropresult, "", "", "")
+        propdata = PropData(interactivepropresult, "", "", "", "")
         if interactivepropresult is None:
             logger.warning(f"{targetname}与{propname}之间的关系未定义，请检查。")
             return False

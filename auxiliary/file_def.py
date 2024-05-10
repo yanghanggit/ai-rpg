@@ -22,7 +22,8 @@ class PropFile(BaseFile):
         self.prop = prop
 
     def content(self) -> str:
-        prop_json = json.dumps(self.prop.__dict__, ensure_ascii = False)
+        seri = self.prop.serialization()
+        prop_json = json.dumps(seri, ensure_ascii = False)
         return prop_json
     
     def __str__(self) -> str:

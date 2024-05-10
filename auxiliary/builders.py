@@ -63,7 +63,7 @@ class StageBuilder:
     def build_props_in_stage(self, props_data: List[Any]) -> set[PropData]:
         res: set[PropData] = set()
         for obj in props_data:
-            prop = PropData(obj.get("name"), obj.get("codename"), obj.get("description"), obj.get("isunique"))
+            prop = PropData(obj.get("name"), obj.get("codename"), obj.get("description"), obj.get("isunique"), obj.get("type"))
             res.add(prop)
         return res
     #
@@ -105,7 +105,7 @@ class StageBuilder:
                 stage.stage_as_exit_of_prison(exit_of_prison_and_goto_stagename)
 
             # 设置属性
-            stage.buildattributes(stagedata.get("attributes"))
+            stage.build_attributes(stagedata.get("attributes"))
 
             #
             self.stages.append(stage)
@@ -134,7 +134,7 @@ class NPCBuilder:
             npcprops: set[PropData] = set()
             propdata = datablock.get("props")
             for propdata in propdata:
-                prop = PropData(propdata.get("name"), propdata.get("codename"),  propdata.get("description"), propdata.get("isunique"))
+                prop = PropData(propdata.get("name"), propdata.get("codename"),  propdata.get("description"), propdata.get("isunique"), propdata.get("type"))
                 npcprops.add(prop)
 
             # NPC核心数据
@@ -163,7 +163,7 @@ class NPCBuilder:
                           npcdata.get("role_appearance"))
             
             ## 设置属性
-            npc.buildattributes(npcdata.get("attributes"))
+            npc.build_attributes(npcdata.get("attributes"))
             
             ###
             self.npcs.append(npc)

@@ -205,16 +205,13 @@ class ExcelDataStage:
 ############################################################################################################
 class ExcelDataProp:
     
-    def __init__(self, name: str, codename: str, isunique: str, description: str, worldview: str) -> None:
+    def __init__(self, name: str, codename: str, isunique: str, description: str, worldview: str, type: str) -> None:
         self.name: str = name
         self.codename: str = codename
         self.description: str = description
         self.isunique: str = isunique
         self.worldview: str = worldview
+        self.type: str = type
 
     def __str__(self) -> str:
-        return f"ExcelDataProp({self.name}, {self.codename}, {self.isunique})"
-        
-    def isvalid(self) -> bool:
-        return True
-
+        return f"ExcelDataProp({self.name}, {self.codename}, {self.isunique}, {self.type})"

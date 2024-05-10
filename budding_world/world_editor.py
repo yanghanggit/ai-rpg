@@ -1,6 +1,5 @@
 import sys
 from pathlib import Path
-# 将项目根目录添加到sys.path
 root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 import os
@@ -11,6 +10,10 @@ from budding_world.excel_data import ExcelDataNPC, ExcelDataStage, ExcelDataProp
 from budding_world.npc_editor import ExcelEditorNPC
 from budding_world.stage_editor import ExcelEditorStage
 
+EDITOR_WORLD_TYPE = "World"
+EDITOR_PLAYER_TYPE = "Player"
+EDITOR_NPC_TYPE = "NPC"
+EDITOR_STAGE_TYPE = "Stage"
 
 ################################################################################################################
 class ExcelEditorWorld:
@@ -23,74 +26,76 @@ class ExcelEditorWorld:
         self.stage_data_base = stage_data_base
 
         #笨一点，先留着吧。。。
-        self.raw_worldnpcs: List[Any] = []
-        self.raw_playernpcs: List[Any] = []
-        self.raw_npcs: List[Any] = []
-        self.raw_stages: List[Any] = []
+        self.worlds: List[Any] = []
+        self.players: List[Any] = []
+        self.npcs: List[Any] = []
+        self.stages: List[Any] = []
+
         #真正的构建数据
-        self.editor_worldnpcs: List[ExcelEditorNPC] = []
-        self.editor_playernpcs: List[ExcelEditorNPC] = []
+        self.editor_worlds: List[ExcelEditorNPC] = []
+        self.editor_players: List[ExcelEditorNPC] = []
         self.editor_npcs: List[ExcelEditorNPC] = []
         self.editor_stages: List[ExcelEditorStage] = []
+
         ##把数据分类
-        self.categorizedata()
+        self.classify_data(self.worlds, self.players, self.npcs, self.stages)
         ##根据分类各种处理。。。
-        self.create_editor_worldnpcs()
-        self.create_editor_playernpcs()
-        self.create_editor_npcs()
-        self.create_editor_stages()
+        self.editor_worlds = self.create_worlds(self.worlds)
+        self.editor_players = self.create_players(self.players)
+        self.editor_npcs = self.create_npcs(self.npcs)
+        self.editor_stages = self.create_stages(self.stages)
 
     #先将数据分类
-    def categorizedata(self) -> None:
+    def classify_data(self, out_worlds: List[Any], out_players: List[Any], out_npcs: List[Any], out_stages: List[Any]) -> None:
+        #
+        out_worlds.clear()
+        out_players.clear()
+        out_npcs.clear()
+        out_stages.clear()
+        #
         for item in self.data:
-            if item["type"] == "World":
-                self.raw_worldnpcs.append(item)
-            elif item["type"] == "Player":
-                self.raw_playernpcs.append(item)
-            elif item["type"] == "NPC":
-                self.raw_npcs.append(item)
-            elif item["type"] == "Stage":
-                self.raw_stages.append(item)
+            if item["type"] == EDITOR_WORLD_TYPE:
+                out_worlds.append(item)
+            elif item["type"] == EDITOR_PLAYER_TYPE:
+                out_players.append(item)
+            elif item["type"] == EDITOR_NPC_TYPE:
+                out_npcs.append(item)
+            elif item["type"] == EDITOR_STAGE_TYPE:
+                out_stages.append(item)
 
-    def create_editor_worldnpcs(self) -> None:
-        for item in self.raw_worldnpcs:
-            editor_npc = ExcelEditorNPC(item, self.npc_data_base, self.prop_data_base)
-            self.editor_worldnpcs.append(editor_npc)
-            logger.info(editor_npc)
+    def create_worlds(self, worlds: List[Any]) -> List[ExcelEditorNPC]:
+        return self.create_npcs(worlds)
 
-    def create_editor_playernpcs(self) -> None:
-        for item in self.raw_playernpcs:
-            editor_npc = ExcelEditorNPC(item, self.npc_data_base, self.prop_data_base)
-            self.editor_playernpcs.append(editor_npc)
-            logger.info(editor_npc)
+    def create_players(self, players: List[Any]) -> List[ExcelEditorNPC]:
+        return self.create_npcs(players)
        
-    def create_editor_npcs(self) -> None:
-        for item in self.raw_npcs:
+    def create_npcs(self, npcs: List[Any]) -> List[ExcelEditorNPC]:
+        res: List[ExcelEditorNPC] = []
+        for item in npcs:
             editor_npc = ExcelEditorNPC(item, self.npc_data_base, self.prop_data_base)
-            self.editor_npcs.append(editor_npc)
-            logger.info(editor_npc)
+            res.append(editor_npc)
+        return res
 
-    def create_editor_stages(self) -> None:
-        for item in self.raw_stages:
+    def create_stages(self, stages: List[Any]) -> List[ExcelEditorStage]:
+        res: List[ExcelEditorStage] = []
+        for item in stages:
             editor_stage = ExcelEditorStage(item, self.npc_data_base, self.prop_data_base, self.stage_data_base)
-            self.editor_stages.append(editor_stage)
-            logger.info(editor_stage)
-
-    def __str__(self) -> str:
-        return f"ExcelEditorWorld({self.name})"
+            res.append(editor_stage)
+        return res
 
     #最后生成JSON
     def serialization(self) -> Dict[str, Any]:
-        logger.warning("Building world..., 需要检查，例如NPC里出现了，但是场景中没有出现，那就是错误。一顿关联，最后生成JSON文件")
         dict: Dict[str, Any] = {}
-        dict["worldnpcs"] = [editor_npc.serialization() for editor_npc in self.editor_worldnpcs]
-        dict["playernpcs"] = [editor_npc.serialization() for editor_npc in self.editor_playernpcs]
+        dict["worlds"] = [editor_npc.serialization() for editor_npc in self.editor_worlds]
+        dict["players"] = [editor_npc.serialization() for editor_npc in self.editor_players]
         dict["npcs"] = [editor_npc.serialization() for editor_npc in self.editor_npcs]
         dict["stages"] = [editor_stage.serialization() for editor_stage in self.editor_stages]
+
         version_sign = input("请输入版本号:")
         if version_sign == "":
             version_sign = "ewan"
             logger.warning(f"使用默认的版本号: {version_sign}")
+        
         dict["version"] = version_sign
         return dict
     

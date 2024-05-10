@@ -14,8 +14,8 @@ class WorldDataBuilder:
         self.version = version
         #####
         self.data: dict[str, Any] = dict()
-        self.world_npc_builder = NPCBuilder("worldnpcs")
-        self.player_npc_builder = NPCBuilder("playernpcs")
+        self.world_npc_builder = NPCBuilder("worlds")
+        self.player_npc_builder = NPCBuilder("players")
         self.npc_buidler = NPCBuilder("npcs")
         self.stage_builder = StageBuilder()
 

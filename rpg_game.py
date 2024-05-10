@@ -56,6 +56,7 @@ from systems.post_conversational_action_system import PostConversationalActionSy
 from systems.init_agents_system import InitAgentsSystem
 from systems.remember_action_system import RememberActionSystem
 from auxiliary.file_system_helper import add_npc_archive_files
+from systems.my_processors import MyProcessors
 
 ## 控制流程和数据创建
 class RPGGame(BaseGame):
@@ -65,11 +66,11 @@ class RPGGame(BaseGame):
         # 不要再加东西了，Game就只管上下文，创建世界的数据，和Processors。其中上下文可以做运行中的全局数据管理者
         self.extendedcontext: ExtendedContext = context
         self.worlddata: Optional[WorldDataBuilder] = None
-        self.processors: Processors = self.createprocessors(self.extendedcontext)
+        self.processors: MyProcessors = self.createprocessors(self.extendedcontext)
 ###############################################################################################################################################
-    def createprocessors(self, context: ExtendedContext) -> Processors:
+    def createprocessors(self, context: ExtendedContext) -> MyProcessors:
 
-        processors = Processors()
+        processors = MyProcessors()
        
         ##调试用的系统。监视进入运行之前的状态
         processors.add(BeginSystem(context))

@@ -37,7 +37,6 @@ class TestPlayerInputSystem(ExecuteProcessor):
         self.rpggame = rpggame
 ############################################################################################################
     def execute(self) -> None:
-        logger.debug("<<<<<<<<<<<<<  PlayerInputSystem  >>>>>>>>>>>>>>>>>")
         playername = self.current_input_player()
         self.handlelogin(playername) ## 只有登陆的时候特殊处理
         self.handlenormal(playername) ## 日常的处理
@@ -162,8 +161,11 @@ class TestPlayerInputSystem(ExecuteProcessor):
         return message
 ############################################################################################################
     def playerinput(self, rpggame: RPGGame, playerproxy: PlayerProxy, usrinput: str) -> bool:
+
+        if "/quit" in usrinput:
+            rpggame.exited = True
         
-        if "/attack" in usrinput:
+        elif "/attack" in usrinput:
             command = "/attack"
             targetname = splitcommand(usrinput, command)           
             PlayerCommandAttack(command, rpggame, playerproxy, targetname).execute()

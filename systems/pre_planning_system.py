@@ -18,10 +18,9 @@ class PrePlanningSystem(InitializeProcessor, ExecuteProcessor):
         self.strategy: PlanningStrategy = PlanningStrategy.STRATEGY_ONLY_PLAYERS_STAGE
 ############################################################################################################
     def initialize(self) -> None:
-        logger.debug("<<<<<<<<<<<<<  PrePlanningSystem.initialize  >>>>>>>>>>>>>>>>>")
+        pass
 ############################################################################################################
     def execute(self) -> None:
-        logger.debug("<<<<<<<<<<<<<  PrePlanningSystem.execute  >>>>>>>>>>>>>>>>>")
         ## 测试
         self.test()
         ## player不允许做规划

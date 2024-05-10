@@ -19,7 +19,6 @@ class DataSaveSystem(ExecuteProcessor, TearDownProcessor):
         self.current_save_count = 0
 ################################################################################################
     def execute(self) -> None:
-        logger.debug("<<<<<<<<<<<<<  DataSaveSystem  >>>>>>>>>>>>>>>>>")
         ## 运行一定次数后自动保存
         if self.context.save_data_enable:
             self.auto_save_all(self.context.auto_save_trigger_count)

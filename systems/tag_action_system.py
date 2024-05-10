@@ -17,5 +17,5 @@ class TagActionSystem(ReactiveProcessor):
         return entity.has(TagActionComponent)
 ####################################################################################################
     def react(self, entities: list[Entity]) -> None:
-        logger.debug("<<<<<<<<<<<<<  TagActionSystem  >>>>>>>>>>>>>>>>>")
+        pass
 ####################################################################################################

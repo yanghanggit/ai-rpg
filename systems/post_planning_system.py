@@ -10,7 +10,6 @@ class PostPlanningSystem(ExecuteProcessor):
         self.context: ExtendedContext = context
 ############################################################################################################
     def execute(self) -> None:
-        logger.debug("<<<<<<<<<<<<<  PostPlanningSystem  >>>>>>>>>>>>>>>>>")
         entities: Set[Entity] = self.context.get_group(Matcher(AutoPlanningComponent)).entities.copy()
         for entity in entities.copy():
             entity.remove(AutoPlanningComponent)

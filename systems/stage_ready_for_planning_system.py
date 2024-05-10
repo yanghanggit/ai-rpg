@@ -11,7 +11,6 @@ class StageReadyForPlanningSystem(ExecuteProcessor):
         self.context = context
         
     def execute(self) -> None:
-        logger.debug("<<<<<<<<<<<<<  StageReadyForPlanningSystem  >>>>>>>>>>>>>>>>>")
         # todo: ChaosSystem接入
         entities = self.context.get_group(Matcher(all_of=[StageComponent, AutoPlanningComponent])).entities
         for entity in entities:

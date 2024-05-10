@@ -18,7 +18,6 @@ class MindVoiceActionSystem(ReactiveProcessor):
         return entity.has(MindVoiceActionComponent)
 ####################################################################################################
     def react(self, entities: list[Entity]) -> None:
-        logger.debug("<<<<<<<<<<<<<  MindVoiceActionSystem  >>>>>>>>>>>>>>>>>")
         # 核心处理
         for entity in entities:
             self.mindvoice(entity)      

@@ -10,7 +10,6 @@ class PreActionSystem(ExecuteProcessor):
         self.context: ExtendedContext = context
 ############################################################################################################
     def execute(self) -> None:
-        logger.debug("<<<<<<<<<<<<<  PreActionSystem  >>>>>>>>>>>>>>>>>")
         ## 自我测试，这个阶段不允许有任何的planning
         planningentities: Set[Entity] = self.context.get_group(Matcher(AutoPlanningComponent)).entities
         assert len(planningentities) == 0, "AutoPlanningComponent should be removed in PostPlanningSystem"

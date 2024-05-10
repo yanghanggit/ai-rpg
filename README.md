@@ -4,7 +4,7 @@
 ```python
 conda create -n first_seed python=3.10 
 
-pip install langchain_core langserve fastapi langchain_openai sse_starlette faiss-cpu loguru mypy pandas openpyxl
+pip install langchain_core langserve fastapi langchain_openai sse_starlette faiss-cpu loguru mypy pandas openpyxl overrides
 ```
 
 ## 注意点
@@ -43,6 +43,8 @@ pm2 start budding_world/gen_agent/coffin_of_the_silent_one_agent.py budding_worl
 
 ## “玩家输入环节”的可用的命令
 ```shell
+# 直接停掉整个游戏
+/quit
 # 攻击目标NPC, 名字为Name?
 /attack ‘Name?’
 # 离开当前场景，去往Name?的场景

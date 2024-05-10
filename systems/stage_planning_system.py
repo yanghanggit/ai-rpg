@@ -14,7 +14,7 @@ class StagePlanningSystem(ExecuteProcessor):
         self.context = context
 ####################################################################################################
     def execute(self) -> None:
-        logger.debug("<<<<<<<<<<<<<  StagePlanningSystem  >>>>>>>>>>>>>>>>>")
+        
         #记录事件
         self.context.chaos_engineering_system.on_stage_planning_system_excute(self.context)
         # 并行执行requests

@@ -23,7 +23,6 @@ class InitMemorySystem(InitializeProcessor):
         self.context: ExtendedContext = context
 ###############################################################################################################################################
     def initialize(self) -> None:
-        logger.debug("<<<<<<<<<<<<<  InitMemorySystem  >>>>>>>>>>>>>>>>>")
         self.initmemory()
 ###############################################################################################################################################
     def initmemory(self) -> None:

@@ -11,7 +11,6 @@ class UpdateArchiveSystem(ExecuteProcessor):
         self.context: ExtendedContext = context
 ############################################################################################################
     def execute(self) -> None:
-        logger.debug("<<<<<<<<<<<<<  KnownInformationSystem.execute >>>>>>>>>>>>>>>>>")
         self.update_archive()
 ############################################################################################################
     def update_archive(self) -> None:

@@ -11,7 +11,6 @@ class DestroySystem(ExecuteProcessor):
         self.context: ExtendedContext = context
 
     def execute(self) -> None:
-        logger.debug("<<<<<<<<<<<<<  DestroySystem  >>>>>>>>>>>>>>>>>")
         self.handledestroy()
 
     def handledestroy(self) -> None:

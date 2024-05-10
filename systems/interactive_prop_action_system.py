@@ -24,7 +24,6 @@ class InteractivePropActionSystem(ReactiveProcessor):
         return entity.has(UseInteractivePropActionComponent)
     
     def react(self, entities: list[Entity]) -> None:
-        logger.debug("<<<<<<<<<<<<<  InteractivePropActionSystem  >>>>>>>>>>>>>>>>>")
         for entity in entities:
             self.useprop(entity)
 

@@ -23,7 +23,6 @@ class TradeActionSystem(ReactiveProcessor):
         return entity.has(TradeActionComponent) and entity.has(NPCComponent)
 ###################################################################################################################
     def react(self, entities: list[Entity]) -> None:
-        logger.debug("<<<<<<<<<<<<<  TradeActionSystem  >>>>>>>>>>>>>>>>>")
         for entity in entities:
             self.trade(entity)
 ###################################################################################################################
@@ -50,7 +49,6 @@ class TradeActionSystem(ReactiveProcessor):
             propname = message
             traderes = self._trade_(entity, targetname, propname)
             notify_stage_director(self.context, entity, NPCTradeEvent(safe_npc_name, targetname, propname, traderes))
-            #self.notifydirector(entity, targetname, propname, traderes)
 ###################################################################################################################
     def _trade_(self, entity: Entity, target_npc_name: str, mypropname: str) -> bool:
         filesystem = self.context.file_system
@@ -60,14 +58,4 @@ class TradeActionSystem(ReactiveProcessor):
             return False
         filesystem.exchange_prop_file(safename, target_npc_name, mypropname)
         return True
-###################################################################################################################
-    # def notifydirector(self, entity: Entity, targetname: str, mypropname: str, success: bool) -> None:
-    #     stageentity = self.context.safe_get_stage_entity(entity)
-    #     if stageentity is None or not stageentity.has(StageDirectorComponent):
-    #         return
-    #     safename = self.context.safe_get_entity_name(entity)
-    #     if safename == "":
-    #         return
-    #     directorcomp: StageDirectorComponent = stageentity.get(StageDirectorComponent)
-    #     directorcomp.addevent(NPCTradeEvent(safename, targetname, mypropname, success))
 ###################################################################################################################

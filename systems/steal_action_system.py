@@ -23,7 +23,6 @@ class StealActionSystem(ReactiveProcessor):
         return entity.has(StealActionComponent) and entity.has(NPCComponent)
 ###################################################################################################################
     def react(self, entities: list[Entity]) -> None:
-        logger.debug("<<<<<<<<<<<<<  StealActionSystem  >>>>>>>>>>>>>>>>>")
         for entity in entities:
             self.steal(entity)
 ###################################################################################################################
@@ -50,7 +49,6 @@ class StealActionSystem(ReactiveProcessor):
             propname = message
             stealres = self._steal_(entity, targetname, propname)
             notify_stage_director(self.context, entity, NPCStealEvent(safename, targetname, propname, stealres))
-            #self.notifydirector(entity, targetname, propname, stealres)
 ###################################################################################################################
     def _steal_(self, entity: Entity, target_npc_name: str, propname: str) -> bool:
         filesystem = self.context.file_system
@@ -60,14 +58,4 @@ class StealActionSystem(ReactiveProcessor):
         safename = self.context.safe_get_entity_name(entity)
         filesystem.exchange_prop_file(target_npc_name, safename, propname)
         return True
-####################################################################################################
-    # def notifydirector(self, entity: Entity, targetname: str, steal_prop_name: str, success: bool) -> None:
-    #     stageentity = self.context.safe_get_stage_entity(entity)
-    #     if stageentity is None or not stageentity.has(StageDirectorComponent):
-    #         return
-    #     safename = self.context.safe_get_entity_name(entity)
-    #     if safename == "":
-    #         return
-    #     directorcomp: StageDirectorComponent = stageentity.get(StageDirectorComponent)
-    #     directorcomp.addevent(NPCStealEvent(safename, targetname, steal_prop_name, success))
-###################################################################################################################
+#####################################################################################################################

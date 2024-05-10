@@ -57,7 +57,6 @@ class PerceptionActionSystem(ReactiveProcessor):
         return entity.has(PerceptionActionComponent) and entity.has(NPCComponent)
 ###################################################################################################################
     def react(self, entities: list[Entity]) -> None:
-        logger.debug("<<<<<<<<<<<<<  PerceptionActionSystem  >>>>>>>>>>>>>>>>>")
         for entity in entities:
             self.perception(entity)
 ###################################################################################################################
@@ -77,15 +76,4 @@ class PerceptionActionSystem(ReactiveProcessor):
         assert stageentity is not None
         safe_stage_name = self.context.safe_get_entity_name(stageentity)   
         notify_stage_director(self.context, entity, NPCPerceptionEvent(safe_npc_name, safe_stage_name, npcs_in_stage, props_in_stage))
-###################################################################################################################
-    # def notifydirector(self, entity: Entity, npcs_in_stage: List[str], props_in_stage: List[str]) -> None:
-    #     stageentity = self.context.safe_get_stage_entity(entity)
-    #     if stageentity is None or not stageentity.has(StageDirectorComponent):
-    #         return
-    #     safename = self.context.safe_get_entity_name(entity)
-    #     if safename == "":
-    #         return
-    #     directorcomp: StageDirectorComponent = stageentity.get(StageDirectorComponent)
-    #     stagename = self.context.safe_get_entity_name(stageentity)
-    #     directorcomp.addevent(NPCPerceptionEvent(safename, stagename, npcs_in_stage, props_in_stage))
 ###################################################################################################################

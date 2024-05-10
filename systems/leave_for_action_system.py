@@ -42,7 +42,6 @@ class LeaveForActionSystem(ReactiveProcessor):
         return entity.has(LeaveForActionComponent) and entity.has(NPCComponent)
 
     def react(self, entities: list[Entity]) -> None:
-        logger.debug("<<<<<<<<<<<<<  LeaveForActionSystem  >>>>>>>>>>>>>>>>>")
         self.leavefor(entities)
 
 ###############################################################################################################################################

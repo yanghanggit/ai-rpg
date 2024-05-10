@@ -9,7 +9,6 @@ class PostActionSystem(ExecuteProcessor):
         self.context: ExtendedContext = context
 ############################################################################################################
     def execute(self) -> None:
-        logger.debug("<<<<<<<<<<<<<  PostActionSystem  >>>>>>>>>>>>>>>>>")
         # 在这里清除所有的行动
         self.remove_world_actions() # 因为world和npc的actions，目前是一样的
         self.remove_npc_actions()
@@ -19,7 +18,6 @@ class PostActionSystem(ExecuteProcessor):
     def remove_world_actions(self) -> None:
         entities = self.context.get_group(Matcher(all_of = [WorldComponent], any_of = NPC_AVAILABLE_ACTIONS_REGISTER)).entities.copy()
         for entity in entities:
-            #logger.debug(f"remove_world_actions: {entity}")
             for actionsclass in NPC_AVAILABLE_ACTIONS_REGISTER:
                 if entity.has(actionsclass):
                     entity.remove(actionsclass)

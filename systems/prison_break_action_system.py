@@ -21,7 +21,6 @@ class PrisonBreakActionSystem(ReactiveProcessor):
         return entity.has(PrisonBreakActionComponent) and entity.has(NPCComponent)
 ###############################################################################################################################################
     def react(self, entities: list[Entity]) -> None:
-        logger.debug("<<<<<<<<<<<<<  PrisonBreakActionSystem  >>>>>>>>>>>>>>>>>")
         self.prisonbreak(entities)
 ###############################################################################################################################################
     def prisonbreak(self, entities: list[Entity]) -> None:

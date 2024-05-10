@@ -4,8 +4,7 @@ from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.director_component import StageDirectorComponent
 from auxiliary.cn_builtin_prompt import direct_stage_events_prompt, direct_npc_events_prompt
-from typing import List
-from auxiliary.player_proxy import PlayerProxy, get_player_proxy, notify_player_proxy
+from auxiliary.player_proxy import notify_player_proxy
 
 class DirectorSystem(ExecuteProcessor):
 
@@ -13,7 +12,6 @@ class DirectorSystem(ExecuteProcessor):
         self.context = context
 ###################################################################################################################
     def execute(self) -> None:
-        logger.debug("<<<<<<<<<<<<<  DirectorSystem  >>>>>>>>>>>>>>>>>")
         self.handle()
         self.directorclear()
 ###################################################################################################################
@@ -56,7 +54,6 @@ class DirectorSystem(ExecuteProcessor):
                 
                 #如果是player npc就再补充这个方法，通知调用客户端
                 if npcentity.has(PlayerComponent):
-                    #self.notify_player_proxy(npcentity, newmsg, events2npc)
                     notify_player_proxy(npcentity, newmsg, events2npc)
 ###################################################################################################################
     

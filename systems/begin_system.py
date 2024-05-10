@@ -9,11 +9,10 @@ class BeginSystem(InitializeProcessor, ExecuteProcessor):
         self.context: ExtendedContext = context
 ############################################################################################################
     def initialize(self) -> None:
-        logger.debug("<<<<<<<<<<<<<  BeginSystem.initialize  >>>>>>>>>>>>>>>>>")
+        pass
 ############################################################################################################
     def execute(self) -> None:
-        logger.debug("<<<<<<<<<<<<<  BeginSystem.execute  >>>>>>>>>>>>>>>>>")
         self.context.executecount += 1
-        logger.debug(f"current execute count = {self.context.executecount}")
+        logger.debug(f"世界执行次数：{self.context.executecount}")
 ############################################################################################################
 

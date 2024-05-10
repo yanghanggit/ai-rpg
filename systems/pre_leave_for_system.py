@@ -46,7 +46,6 @@ class PreLeaveForSystem(ReactiveProcessor):
         return entity.has(LeaveForActionComponent) and entity.has(NPCComponent)
 ###############################################################################################################################################
     def react(self, entities: list[Entity]) -> None:
-        logger.debug("<<<<<<<<<<<<<  PreLeaveForSystem  >>>>>>>>>>>>>>>>>")
         for entity in entities:
             if not self.check_current_stage_valid(entity):
                 #logger.error("场景有问题")

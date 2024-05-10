@@ -20,7 +20,6 @@ class BroadcastActionSystem(ReactiveProcessor):
         return entity.has(BroadcastActionComponent)
 ####################################################################################################
     def react(self, entities: list[Entity]) -> None:
-        logger.debug("<<<<<<<<<<<<<  BroadcastActionSystem  >>>>>>>>>>>>>>>>>")
         for entity in entities:
             self.broadcast(entity)  # 核心处理
 ####################################################################################################
@@ -33,14 +32,7 @@ class BroadcastActionSystem(ReactiveProcessor):
         #
         broadcastcomp: BroadcastActionComponent = entity.get(BroadcastActionComponent)
         stagecomp: StageComponent = stageentity.get(StageComponent)
-        #directorcomp: StageDirectorComponent = stageentity.get(StageDirectorComponent)
         #
         action: ActorAction = broadcastcomp.action
         combine = action.combinevalues()
         notify_stage_director(self.context, stageentity, BroadcastEvent(action.name, stagecomp.name, combine))
-        # for value in action.values:
-        #     event = BroadcastEvent(action.name, stagecomp.name, value)
-        #     directorcomp.addevent(event)
-####################################################################################################          
-        
-                

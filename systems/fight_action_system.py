@@ -19,7 +19,6 @@ class FightActionSystem(ReactiveProcessor):
         return entity.has(FightActionComponent) and entity.has(SimpleRPGRoleComponent)
 ######################################################################################################################################################
     def react(self, entities: list[Entity]) -> None:
-        logger.debug("<<<<<<<<<<<<<  FightActionSystem  >>>>>>>>>>>>>>>>>")
         for entity in entities:
             self.fight(entity)
  ######################################################################################################################################################   
@@ -72,36 +71,8 @@ class FightActionSystem(ReactiveProcessor):
             ## 导演系统，单独处理，有旧的代码
             if isdead:
                 notify_stage_director(context, entity, NPCKillSomeoneEvent(rpgcomp.name, value))
-                #self.notify_director_kill_event(entity, value)
             else:
                 notify_stage_director(context, entity, NPCAttackSomeoneEvent(rpgcomp.name, value, damage, lefthp, targetsrpgcomp.maxhp))
-                #self.notify_director_attack_event(entity, value, rpgcomp.attack, targetsrpgcomp.hp, targetsrpgcomp.maxhp)
-                
-######################################################################################################################################################
-    ## 重构事件
-    # def notify_director_kill_event(self, entity: Entity, targetname: str) -> None:
-    #     stageentity = self.context.safe_get_stage_entity(entity)
-    #     if stageentity is None or not stageentity.has(StageDirectorComponent):
-    #         return
-    #     safename = self.context.safe_get_entity_name(entity)
-    #     if safename == "":
-    #         return
-    #     directorcomp: StageDirectorComponent = stageentity.get(StageDirectorComponent)
-    #     killsomeoneevent = NPCKillSomeoneEvent(safename, targetname)
-    #     directorcomp.addevent(killsomeoneevent)
-######################################################################################################################################################
-    ## 重构事件
-    # def notify_director_attack_event(self, entity: Entity, targetname: str, damage: int, curhp: int, maxhp: int) -> None:
-    #     ##添加导演事件
-    #     stageentity = self.context.safe_get_stage_entity(entity)
-    #     if stageentity is None or not stageentity.has(StageDirectorComponent):
-    #         return
-    #     safename = self.context.safe_get_entity_name(entity)
-    #     if safename == "":
-    #         return
-    #     directorcomp: StageDirectorComponent = stageentity.get(StageDirectorComponent)
-    #     attacksomeoneevent = NPCAttackSomeoneEvent(safename, targetname, damage, curhp, maxhp)
-    #     directorcomp.addevent(attacksomeoneevent)
 ######################################################################################################################################################
     ## 杀死对方就直接夺取唯一性道具。
     def unique_prop_be_taken_away(self, thekiller: Entity, whoiskilled: Entity) -> None:

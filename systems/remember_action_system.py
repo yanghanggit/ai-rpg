@@ -18,7 +18,6 @@ class RememberActionSystem(ReactiveProcessor):
         return entity.has(RememberActionComponent)
 ###################################################################################################################
     def react(self, entities: list[Entity]) -> None:
-        logger.debug("<<<<<<<<<<<<<  RememberActionSystem  >>>>>>>>>>>>>>>>>")
         for entity in entities:
             self.remember(entity)
 ###################################################################################################################

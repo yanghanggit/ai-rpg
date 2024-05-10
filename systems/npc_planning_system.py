@@ -15,7 +15,7 @@ class NPCPlanningSystem(ExecuteProcessor):
         self.context = context
 ####################################################################################################
     def execute(self) -> None:
-        logger.debug("<<<<<<<<<<<<<  NPCPlanningSystem  >>>>>>>>>>>>>>>>>")
+        
         #记录事件
         self.context.chaos_engineering_system.on_npc_planning_system_execute(self.context)
         # 并行执行requests

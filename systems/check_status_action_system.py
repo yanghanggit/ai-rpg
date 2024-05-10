@@ -46,7 +46,6 @@ class CheckStatusActionSystem(ReactiveProcessor):
         return entity.has(CheckStatusActionComponent)
 ###################################################################################################################
     def react(self, entities: list[Entity]) -> None:
-        logger.debug("<<<<<<<<<<<<<  CheckStatusActionSystem  >>>>>>>>>>>>>>>>>")
         for entity in entities:
             self.check_status(entity)
 ###################################################################################################################
@@ -62,17 +61,5 @@ class CheckStatusActionSystem(ReactiveProcessor):
 
         #
         notify_stage_director(self.context, entity, NPCCheckStatusEvent(safe_npc_name, propnames, prop_and_desc))
-        #
-        #self.notifydirector(entity, propnames, prop_and_desc)
-####################################################################################################
-    # def notifydirector(self, entity: Entity, propnames: List[str], prop_and_desc: List[str]) -> None:
-    #     stageentity = self.context.safe_get_stage_entity(entity)
-    #     if stageentity is None or not stageentity.has(StageDirectorComponent):
-    #         return
-    #     safename = self.context.safe_get_entity_name(entity)
-    #     if safename == "":
-    #         return
-    #     directorcomp: StageDirectorComponent = stageentity.get(StageDirectorComponent)
-    #     directorcomp.addevent(NPCCheckStatusEvent(safename, propnames, prop_and_desc))
 ###################################################################################################################
     

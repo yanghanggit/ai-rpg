@@ -1,8 +1,6 @@
 from entitas import Entity, Matcher, InitializeProcessor # type: ignore
 from auxiliary.components import WorldComponent, StageComponent, NPCComponent, PlayerComponent
 from auxiliary.extended_context import ExtendedContext
-from loguru import logger
-
 
 ###############################################################################################################################################
 ###############################################################################################################################################
@@ -16,7 +14,6 @@ class InitAgentsSystem(InitializeProcessor):
 ###############################################################################################################################################
 ###############################################################################################################################################
     def initialize(self) -> None:
-        logger.debug("<<<<<<<<<<<<<  InitAgentsSystem  >>>>>>>>>>>>>>>>>")
         self.connect_world_agents()
         self.connect_stage_agents()
         self.connect_npc_agents()

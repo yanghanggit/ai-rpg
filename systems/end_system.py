@@ -14,10 +14,9 @@ class EndSystem(InitializeProcessor, ExecuteProcessor):
         self.context: ExtendedContext = context
 ############################################################################################################
     def initialize(self) -> None:
-        logger.debug("<<<<<<<<<<<<<  EndSystem.initialize  >>>>>>>>>>>>>>>>>")
+        pass
 ############################################################################################################
     def execute(self) -> None:
-        logger.debug("<<<<<<<<<<<<<  EndSystem.execute  >>>>>>>>>>>>>>>>>")
         # 打印所有的世界信息
         self.showworld()
         # 打印一下所有的场景信息

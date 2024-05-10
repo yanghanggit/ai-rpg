@@ -22,9 +22,9 @@ class PostConversationalActionSystem(ReactiveProcessor):
         return entity.has(WorldComponent) or entity.has(NPCComponent) or entity.has(StageComponent)
 ####################################################################################################
     def react(self, entities: list[Entity]) -> None:
-        logger.debug("<<<<<<<<<<<<<  PostConversationalActionSystem  >>>>>>>>>>>>>>>>>")
         # for entity in entities:
         #     self.log_conversational_action(entity)
+        pass
 ####################################################################################################
     def union_stage_and_npc_dialogue_action_register(self) -> List[Any]:
          unionactions = list(set(NPC_DIALOGUE_ACTIONS_REGISTER) | set(STAGE_DIALOGUE_ACTIONS_REGISTER))

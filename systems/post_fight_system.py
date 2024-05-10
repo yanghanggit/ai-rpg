@@ -12,7 +12,6 @@ class PostFightSystem(ExecuteProcessor):
         self.context: ExtendedContext = context
 ############################################################################################################
     def execute(self) -> None:
-        logger.debug("<<<<<<<<<<<<<  PostFightActionSystem  >>>>>>>>>>>>>>>>>")
         # 移除后续动作
         self.remove_npc_interactive_actions()
         #可以存档

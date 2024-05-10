@@ -22,7 +22,6 @@ class WhisperActionSystem(ReactiveProcessor):
         return entity.has(WhisperActionComponent)
 ####################################################################################################
     def react(self, entities: list[Entity]) -> None:
-        logger.debug("<<<<<<<<<<<<<  WhisperActionSystem  >>>>>>>>>>>>>>>>>")
         for entity in entities:
             self.whisper(entity) 
 ####################################################################################################
@@ -42,21 +41,6 @@ class WhisperActionSystem(ReactiveProcessor):
 
             if dialogue_enable(self.context, entity, targetname) != ErrorDialogueEnable.VALID:
                 continue
-
-            #self.notifydirector(entity, targetname, message)
+            
             notify_stage_director(self.context, entity, WhisperEvent(safe_npc_name, targetname, message))
 ####################################################################################################
-    # def notifydirector(self, entity: Entity, targetname: str, message: str) -> None:
-    #     stageentity = self.context.safe_get_stage_entity(entity)
-    #     if stageentity is None or not stageentity.has(StageDirectorComponent):
-    #         return
-    #     safename = self.context.safe_get_entity_name(entity)
-    #     if safename == "":
-    #         return
-    #     directorcomp: StageDirectorComponent = stageentity.get(StageDirectorComponent)
-    #     directorcomp.addevent(WhisperEvent(safename, targetname, message))
-####################################################################################################
-        
-            
-        
-                

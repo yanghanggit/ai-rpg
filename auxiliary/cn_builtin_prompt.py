@@ -248,11 +248,16 @@ def updated_information_about_StagesYouKnow_prompt(npcname: str, where_you_know:
     return f"# 你更新了关于‘你都认知哪些场景’的信息，目前你所知道的场景有: {where_you_know}。如果你意图离开本场景并去往其他场景，你只能从这些场景中选择你的目的地。"
 
 ##
-def leave_for_stage_failed_because_no_exit_condition_match_prompt(npcname: str, stagename: str, tips: str) -> str:
-    if tips == "":
-        return f"""#{npcname}不能离开本场景并去往{stagename},可能当前不满足离开的条件。可以通过CheckStatusActionComponent查看自己拥有的道具，或者通过PerceptionActionComponent感知场景内的道具，找到离开的条件。"""
-    return f"""{npcname}不能离开本场景并去往{stagename}。\n提示:{tips}"""
-
+def leave_for_stage_failed_because_no_exit_condition_match_prompt(npcname: str, stagename: str, tips: str, is_prison_break: bool) -> str:
+    if is_prison_break:
+        if tips == "":
+            return f"""#{npcname}不能离开本场景,可能当前不满足离开的条件。可以通过CheckStatusActionComponent查看自己拥有的道具，或者通过PerceptionActionComponent感知场景内的道具，找到离开的条件。"""
+        return f"""{npcname}不能离开本场景。\n提示:{tips}"""
+    else:
+        if tips == "":
+            return f"""#{npcname}不能离开本场景并去往{stagename},可能当前不满足离开的条件。可以通过CheckStatusActionComponent查看自己拥有的道具，或者通过PerceptionActionComponent感知场景内的道具，找到离开的条件。"""
+        return f"""{npcname}不能离开本场景并去往{stagename}。\n提示:{tips}"""
+    
 ##
 def direct_npc_events_before_leave_stage_prompt(message: str, current_stage_name: str, context: ExtendedContext) -> str:
     prompt = f"""

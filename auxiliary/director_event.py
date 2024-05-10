@@ -354,16 +354,17 @@ class NPCLeaveForFailedBecauseAlreadyInStage(IDirectorEvent):
 ####################################################################################################################################
 class NPCLeaveForFailedBecauseNoExitConditionMatch(IDirectorEvent):
 
-    def __init__(self, npcname: str, stagename: str, tips: str) -> None:
+    def __init__(self, npcname: str, stagename: str, tips: str, is_prison_break: bool) -> None:
         self.npcname = npcname
         self.stagename = stagename
         self.tips = tips
+        self.is_prison_break = is_prison_break
 
     def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
         if npcname != self.npcname:
             # 跟你无关不用关注，原因类的东西，是失败后矫正用，所以只有自己知道即可
             return ""
-        no_exit_condition_match_event = leave_for_stage_failed_because_no_exit_condition_match_prompt(self.npcname, self.stagename, self.tips)
+        no_exit_condition_match_event = leave_for_stage_failed_because_no_exit_condition_match_prompt(self.npcname, self.stagename, self.tips, self.is_prison_break)
         return no_exit_condition_match_event
     
     def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:

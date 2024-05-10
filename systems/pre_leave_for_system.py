@@ -194,6 +194,10 @@ class PreLeaveForSystem(ReactiveProcessor):
         
         conditions: set[str] = exit_condition_comp.conditions
         assert len(conditions) > 0
+
+        # 如果越狱，在提示词里要隐藏掉去往的地名
+        is_prison_break = entity.has(PrisonBreakActionComponent)
+
         for cond in conditions:
             # 如果是复杂型条件的文本
             if is_complex_stage_condition(cond):
@@ -204,11 +208,11 @@ class PreLeaveForSystem(ReactiveProcessor):
                 if not file_system.has_prop_file(safe_npc_name, propname):
                     # 没有这个道具
                     logger.info(f"{safe_npc_name} 没有这个道具: {propname}。提示: {tips}")
-                    notify_stage_director(self.context, stageentity, NPCLeaveForFailedBecauseNoExitConditionMatch(safe_npc_name, stagename, tips))
+                    notify_stage_director(self.context, stageentity, NPCLeaveForFailedBecauseNoExitConditionMatch(safe_npc_name, stagename, tips, is_prison_break))
                     break
 
             elif not file_system.has_prop_file(safe_npc_name, cond):
-                notify_stage_director(self.context, stageentity, NPCLeaveForFailedBecauseNoExitConditionMatch(safe_npc_name, stagename, ""))
+                notify_stage_director(self.context, stageentity, NPCLeaveForFailedBecauseNoExitConditionMatch(safe_npc_name, stagename, "", is_prison_break))
                 break
 ###############################################################################################################################################
     def check_enter_stage_conditions(self, entity: Entity) -> ErrorCheckEnterStageConditions:

@@ -196,15 +196,6 @@ class RPGGame(BaseGame):
         self.processors.tear_down()
         logger.info(f"{self.name}, game over")
 ###############################################################################################################################################
-    # def create_npc_archive_file_by_mentioned_names(self, ownername: str, npc_archive_names: Set[str]) -> None:
-    #     context = self.extendedcontext
-    #     file_system = context.file_system
-    #     for _name_ in npc_archive_names:
-    #         if _name_ == ownername:
-    #             continue
-    #         npcarchive = NPCArchiveFile(_name_, ownername, _name_)
-    #         file_system.add_npc_archive_file(npcarchive)
-###############################################################################################################################################
     def create_world_npc_entities(self, npcbuilder: NPCBuilder) -> List[Entity]:
 
         context = self.extendedcontext

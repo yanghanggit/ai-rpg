@@ -1,10 +1,11 @@
 from typing import Optional
 from loguru import logger
 from auxiliary.actor_action import ActorAction
+from auxiliary.base_data import PropData
 from auxiliary.components import InteractivePropActionComponent, UseInteractivePropActionComponent
 from auxiliary.dialogue_rule import parse_target_and_message
 from auxiliary.extended_context import ExtendedContext
-from auxiliary.file_def import InteractivePropFile
+from auxiliary.file_def import PropFile
 from entitas import Entity, Matcher, ReactiveProcessor # type: ignore
 from auxiliary.director_component import notify_stage_director
 from entitas.group import GroupEvent
@@ -50,13 +51,14 @@ class InteractivePropActionSystem(ReactiveProcessor):
             return False
         
         interactivepropresult = self.check_target_with_prop(targetname, propname)
+        propdata = PropData(interactivepropresult, "", "", "")
         if interactivepropresult is None:
             logger.warning(f"{targetname}与{propname}之间的关系未定义，请检查。")
             return False
         
-        if not filesystem.has_interactive_prop_file(username, interactivepropresult):
-            createpropfile = InteractivePropFile(username, targetname, interactivepropresult)
-            filesystem.add_interactive_prop_to_target_file(createpropfile)
+        if not filesystem.has_prop_file(username, interactivepropresult):
+            createpropfile = PropFile(interactivepropresult, username, propdata)
+            filesystem.add_prop_file(createpropfile)
         else:
             logger.error(f"{username}已经达成{interactivepropresult},请检查结果是否正确。")
             return False

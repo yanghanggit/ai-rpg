@@ -14,13 +14,20 @@ class PerceptionActionHelper:
 
     def __init__(self, context: ExtendedContext):
         self.context = context
+        self.npcs_in_stage: List[str] = []
+        self.props_in_stage: List[str] = []
 ###################################################################################################################
-    def perception_npcs_in_stage(self, entity: Entity) -> List[str]:
-        res: List[str] = []
+    def perception(self, entity: Entity) -> None:
         safestage = self.context.safe_get_stage_entity(entity)
         if safestage is None:
-            return res
-        stagecomp: StageComponent = safestage.get(StageComponent)
+            logger.error(f"PerceptionActionHelper: {self.context.safe_get_entity_name(entity)} can't find the stage")
+            return
+        self.npcs_in_stage = self.perception_npcs_in_stage(entity, safestage)
+        self.props_in_stage = self.perception_props_in_stage(entity, safestage)
+###################################################################################################################
+    def perception_npcs_in_stage(self, entity: Entity, stageentity: Entity) -> List[str]:
+        res: List[str] = []
+        stagecomp: StageComponent = stageentity.get(StageComponent)
         npcs = self.context.npcs_in_this_stage(stagecomp.name)
         for npc in npcs:
             if npc == entity:
@@ -29,14 +36,10 @@ class PerceptionActionHelper:
             res.append(self.context.safe_get_entity_name(npc))
         return res
 ###################################################################################################################
-    def perception_props_in_stage(self, entity: Entity) -> List[str]:
+    def perception_props_in_stage(self, entity: Entity, stageentity: Entity) -> List[str]:
         res: List[str] = []
-        safestage = self.context.safe_get_stage_entity(entity)
-        if safestage is None:
-            return res
-        stagecomp: StageComponent = safestage.get(StageComponent)
-        file_system = self.context.file_system
-        props_in_stage = file_system.get_prop_files(stagecomp.name)
+        stagecomp: StageComponent = stageentity.get(StageComponent)
+        props_in_stage = self.context.file_system.get_prop_files(stagecomp.name)
         for prop in props_in_stage:
             res.append(prop.name)
         return res
@@ -63,17 +66,12 @@ class PerceptionActionSystem(ReactiveProcessor):
     def perception(self, entity: Entity) -> None:
         safe_npc_name = self.context.safe_get_entity_name(entity)
         logger.debug(f"PerceptionActionSystem: {safe_npc_name} is perceiving")
-
         #
         helper = PerceptionActionHelper(self.context)
-        ## 场景里有哪些人？
-        npcs_in_stage = helper.perception_npcs_in_stage(entity)
-        ## 场景里有哪些物品？
-        props_in_stage = helper.perception_props_in_stage(entity)
-        ## 通知导演
-        #self.notifydirector(entity, npcs_in_stage, props_in_stage)
+        helper.perception(entity)
+        #
         stageentity = self.context.safe_get_stage_entity(entity)
         assert stageentity is not None
         safe_stage_name = self.context.safe_get_entity_name(stageentity)   
-        notify_stage_director(self.context, entity, NPCPerceptionEvent(safe_npc_name, safe_stage_name, npcs_in_stage, props_in_stage))
+        notify_stage_director(self.context, entity, NPCPerceptionEvent(safe_npc_name, safe_stage_name, helper.npcs_in_stage, helper.props_in_stage))
 ###################################################################################################################

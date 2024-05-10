@@ -235,15 +235,14 @@ class TestPlayerInputSystem(ExecuteProcessor):
             return
         #
         helper = PerceptionActionHelper(self.context)
-        npcs_in_stage = helper.perception_npcs_in_stage(playerentity)
-        props_in_stage = helper.perception_props_in_stage(playerentity)
+        helper.perception(playerentity)
         #
         safe_npc_name = self.context.safe_get_entity_name(playerentity)
         stageentity = self.context.safe_get_stage_entity(playerentity)
         assert stageentity is not None
         safe_stage_name = self.context.safe_get_entity_name(stageentity)
         #
-        event = NPCPerceptionEvent(safe_npc_name, safe_stage_name, npcs_in_stage, props_in_stage)
+        event = NPCPerceptionEvent(safe_npc_name, safe_stage_name, helper.npcs_in_stage, helper.props_in_stage)
         message = event.tonpc(safe_npc_name, self.context)
         #
         playerproxy.add_npc_message(safe_npc_name, message)

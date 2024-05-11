@@ -220,7 +220,7 @@ class TestPlayerInputSystem(ExecuteProcessor):
             command = "/useprop"
             content = splitcommand(usrinput, command)
             PlayerCommandUseInteractiveProp(command, rpggame, playerproxy, content).execute()
-            return False
+            #return False
 
         return True
 ############################################################################################################

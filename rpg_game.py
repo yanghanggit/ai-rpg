@@ -58,6 +58,7 @@ from systems.remember_action_system import RememberActionSystem
 from auxiliary.file_system_helper import add_npc_archive_files
 from systems.my_processors import MyProcessors
 from systems.awake_action_system import AwakeActionSystem
+from systems.simple_rpg_role_pre_fight_system import SimpleRPGRolePreFightSystem
 
 ## 控制流程和数据创建
 class RPGGame(BaseGame):
@@ -110,6 +111,7 @@ class RPGGame(BaseGame):
         processors.add(PostConversationalActionSystem(context))
 
         #战斗类的行为
+        processors.add(SimpleRPGRolePreFightSystem(context)) #战斗之前需要更新装备
         processors.add(FightActionSystem(context)) 
         processors.add(PostFightSystem(context))
         processors.add(DeadActionSystem(context)) 

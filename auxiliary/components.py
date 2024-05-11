@@ -37,6 +37,8 @@ AwakeActionComponent = namedtuple('AwakeActionComponent', 'action')
 ###############################################################################################################################################
 ###游戏业务组件
 SimpleRPGRoleComponent = namedtuple('SimpleRPGRoleComponent', 'name maxhp hp attack defense')
+SimpleRPGRoleWeaponComponent = namedtuple('SimpleRPGRoleWeaponComponent', 'name weaponname maxhp attack defense')
+SimpleRPGRoleArmorComponent = namedtuple('SimpleRPGRoleArmorComponent', 'name armorname maxhp attack defense')
 ###############################################################################################################################################
 # 特殊组件，Player专用
 PlayerLoginEventComponent = namedtuple('PlayerLoginEventComponent', 'name npcname')

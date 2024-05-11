@@ -1,10 +1,11 @@
 from entitas import Matcher, ReactiveProcessor, GroupEvent, Entity # type: ignore
-from auxiliary.components import FightActionComponent, SimpleRPGRoleComponent, DeadActionComponent
+from auxiliary.components import FightActionComponent, SimpleRPGRoleComponent, DeadActionComponent, SimpleRPGRoleWeaponComponent, SimpleRPGRoleArmorComponent
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.actor_action import ActorAction
 from loguru import logger
 from auxiliary.director_component import notify_stage_director
 from auxiliary.director_event import NPCKillSomeoneEvent, NPCAttackSomeoneEvent
+from typing import cast
 
 class FightActionSystem(ReactiveProcessor):
 
@@ -43,11 +44,12 @@ class FightActionSystem(ReactiveProcessor):
 
             #简单的战斗计算，简单的血减掉伤害
             hp = targetsrpgcomp.hp
-            damage = rpgcomp.attack
+            damage = self.final_attack_val(entity) #rpgcomp.attack
             # 必须控制在0和最大值之间
-            damage = damage - targetsrpgcomp.defense
+            damage = damage - self.final_defense_val(findtarget) #targetsrpgcomp.defense
             if damage < 0:
                 damage = 0
+            
             lefthp = hp - damage
             lefthp = max(0, min(lefthp, targetsrpgcomp.maxhp))
 
@@ -93,4 +95,33 @@ class FightActionSystem(ReactiveProcessor):
             # 交换文件，即交换道具文件即可
             file_system.exchange_prop_file(be_killed_one_rpg_comp.name, killer_rpg_comp.name, propfile.name)        
 ######################################################################################################################################################
-       
+    def final_attack_val(self, entity: Entity) -> int:
+        # 最后的攻击力
+        final: int = 0
+
+        #基础的伤害
+        rpgcomp: SimpleRPGRoleComponent = entity.get(SimpleRPGRoleComponent)
+        final += cast(int, rpgcomp.attack)
+
+        #计算武器带来的伤害
+        if entity.has(SimpleRPGRoleWeaponComponent):
+            weaponcomp: SimpleRPGRoleWeaponComponent = entity.get(SimpleRPGRoleWeaponComponent)
+            final += cast(int, weaponcomp.attack)
+
+        return final
+######################################################################################################################################################
+    def final_defense_val(self, entity: Entity) -> int:
+        # 最后的防御力
+        final: int = 0
+
+        #基础防御力
+        rpgcomp: SimpleRPGRoleComponent = entity.get(SimpleRPGRoleComponent)
+        final += cast(int, rpgcomp.defense)
+
+        #计算衣服带来的防御力
+        if entity.has(SimpleRPGRoleArmorComponent):
+            armorcomp: SimpleRPGRoleArmorComponent = entity.get(SimpleRPGRoleArmorComponent)
+            final += cast(int, armorcomp.defense)
+
+        return final
+######################################################################################################################################################

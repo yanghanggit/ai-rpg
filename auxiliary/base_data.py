@@ -49,8 +49,10 @@ class PropData:
         self.parse_type()
         print(f"PropData: {self.name} {self.em_type}")
 
-        self.attributes: List[int] = []
+        #默认值，如果不是武器或者衣服，就是0
+        self.attributes: List[int] = [0, 0, 0]
         if attributes != "":
+            #是武器或者衣服，就进行构建
             self.build_attributes(attributes)
 
     def isunique(self) -> bool:

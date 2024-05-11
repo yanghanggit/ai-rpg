@@ -1,5 +1,6 @@
 import os
 from typing import List, Optional
+from auxiliary.base_data import PropData
 from entitas import Processors, Matcher #type: ignore
 from loguru import logger
 from auxiliary.components import (
@@ -180,6 +181,8 @@ class RPGGame(BaseGame):
         
         ## 第四步，最后处理因为需要上一阶段的注册流程
         self.add_code_name_component_stages_when_build()
+
+        self.add_all_props(worlddata)
 
         ## 混沌系统，准备测试
         chaos_engineering_system.on_post_create_world(context, worlddata)
@@ -430,3 +433,19 @@ class RPGGame(BaseGame):
             if codecompclass is not None:
                 entity.add(codecompclass, stagecomp.name)
 ###############################################################################################################################################
+    def add_all_props(self, worlddata: WorldDataBuilder) -> None:
+        context = self.extendedcontext
+        file_system = context.file_system
+
+        database = worlddata.data.get('database', None)
+        if database is None:
+            logger.error("没有数据库(database)，请检查World.json配置。")
+            return
+
+        props = database.get('props', None)
+        if props is None:
+            logger.error("没有道具数据内容(props)，请检查World.json配置。")
+            return
+
+        for prop in props:
+            file_system.add_prop_data(PropData(prop.get('name'), prop.get('codename'), prop.get('description'), prop.get('isunique'), prop.get('type'), prop.get('attributes')))

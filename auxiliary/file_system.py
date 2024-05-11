@@ -2,6 +2,7 @@ from loguru import logger
 import os
 from typing import Dict, List, Optional
 #from auxiliary.file_def import PropFile, NPCArchiveFile, KnownStageFile, UseItemFile
+from auxiliary.base_data import PropData
 from auxiliary.file_def import PropFile, NPCArchiveFile, StageArchiveFile
 
 class FileSystem:
@@ -15,6 +16,8 @@ class FileSystem:
         self.npc_archive_files: Dict[str, List[NPCArchiveFile]] = {}
         # 知晓的Stage
         self.known_stage_files: Dict[str, List[StageArchiveFile]] = {}
+        # 全部的道具文件
+        self.all_prop_files: List[PropData] = []
 ################################################################################################################
     ### 必须设置根部的执行路行
     def set_root_path(self, rootpath: str) -> None:
@@ -135,8 +138,6 @@ class FileSystem:
 ################################################################################################################
 
 
-
-
     """
     知道的Stage相关的处理!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     """
@@ -164,3 +165,16 @@ class FileSystem:
                 return file
         return None
 ################################################################################################################
+
+    # 处理道具文件
+    def get_prop_data(self, propname: str) -> Optional[PropData]:
+        for prop in self.all_prop_files:
+            if prop.name == propname:
+                return prop
+        return None
+    
+    def has_prop_data(self, propname: str) -> bool:
+        return self.get_prop_data(propname) is not None
+    
+    def add_prop_data(self, propdata: PropData) -> None:
+        self.all_prop_files.append(propdata)

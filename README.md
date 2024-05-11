@@ -67,4 +67,6 @@ pm2 start budding_world/gen_agent/coffin_of_the_silent_one_agent.py budding_worl
 /trade ‘@对谁>我的道具的名字’
 # 查看我身上有哪些道具？
 /checkstatus
+# 对谁使用某个道具
+/useprop @谁>xx
 ```

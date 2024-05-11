@@ -1,7 +1,7 @@
 from typing import Optional
 from loguru import logger
 from auxiliary.actor_action import ActorAction
-from auxiliary.base_data import PropDataProxy
+from auxiliary.base_data import PropData, PropDataProxy
 from auxiliary.components import InteractivePropActionComponent, UseInteractivePropActionComponent
 from auxiliary.dialogue_rule import parse_target_and_message
 from auxiliary.extended_context import ExtendedContext
@@ -50,11 +50,14 @@ class InteractivePropActionSystem(ReactiveProcessor):
             return False
         
         interactivepropresult = self.check_target_with_prop(targetname, propname)
-        assert interactivepropresult is not None
-        propdata = PropDataProxy(interactivepropresult)
         if interactivepropresult is None:
             logger.warning(f"{targetname}与{propname}之间的关系未定义，请检查。")
             return False
+        if not filesystem.has_prop_data(interactivepropresult):
+            logger.error(f"prop数据库不存在{interactivepropresult}，请检查。")
+            return False
+        propdata = filesystem.get_prop_data(interactivepropresult)
+        assert propdata is not None
         
         if not filesystem.has_prop_file(username, interactivepropresult):
             createpropfile = PropFile(interactivepropresult, username, propdata)

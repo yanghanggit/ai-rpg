@@ -33,6 +33,7 @@ TradeActionComponent = namedtuple('TradeActionComponent', 'action')
 CheckStatusActionComponent = namedtuple('CheckStatusActionComponent', 'action')
 EnviroNarrateActionComponent = namedtuple('EnviroNarrateActionComponent', 'action')
 UseInteractivePropActionComponent = namedtuple('UseInteractivePropActionComponent', 'action')
+AwakeActionComponent = namedtuple('AwakeActionComponent', 'action')
 ###############################################################################################################################################
 ###游戏业务组件
 SimpleRPGRoleComponent = namedtuple('SimpleRPGRoleComponent', 'name maxhp hp attack')

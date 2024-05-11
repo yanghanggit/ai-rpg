@@ -330,3 +330,22 @@ def npc_appearance_in_this_stage_prompt(myname: str, npc_appearance_in_stage: Di
 
 def interactive_prop_action_success_prompt(who_use: str, targetname: str, propname: str) -> str:
     return f"{who_use}对{targetname}使用了{propname},顺利打开了{targetname}"
+
+
+
+
+
+
+
+
+
+
+
+
+################################################################################################################################################
+def npc_in_the_stage_wakes_up_prompt(npcname: str, stagesname: str, remembered_content: str, context: ExtendedContext) -> str:
+    return f"{npcname}在{stagesname}中醒来。你能听见他（她/它）心中的独白和他此时的状态。内容如下: {remembered_content}。你在理解了以上信息之后，更新你的状态。"
+################################################################################################################################################
+def notify_planning_to_prison_break_prompt(npcname: str, stagesname: str, context: ExtendedContext) -> str:
+    return f"{npcname}想要离开{stagesname}"
+################################################################################################################################################

@@ -57,6 +57,7 @@ from systems.init_agents_system import InitAgentsSystem
 from systems.remember_action_system import RememberActionSystem
 from auxiliary.file_system_helper import add_npc_archive_files
 from systems.my_processors import MyProcessors
+from systems.awake_action_system import AwakeActionSystem
 
 ## 控制流程和数据创建
 class RPGGame(BaseGame):
@@ -95,6 +96,7 @@ class RPGGame(BaseGame):
         processors.add(PreActionSystem(context)) ######## 在所有行动之前 #########################################
 
         #获取状态与查找信息类的行为
+        processors.add(AwakeActionSystem(context))
         processors.add(RememberActionSystem(context))
         processors.add(CheckStatusActionSystem(context))
         processors.add(PerceptionActionSystem(context))

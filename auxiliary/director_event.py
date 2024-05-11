@@ -368,6 +368,9 @@ class NPCLeaveForFailedBecauseNoExitConditionMatch(IDirectorEvent):
         return no_exit_condition_match_event
     
     def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
+        if self.is_prison_break:
+            #如果是越狱的行动，也让场景知道，提高场景的上下文。
+            return leave_for_stage_failed_because_no_exit_condition_match_prompt(self.npcname, self.stagename, self.tips, self.is_prison_break)
         return ""
 ####################################################################################################################################
 ####################################################################################################################################

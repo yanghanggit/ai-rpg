@@ -12,13 +12,11 @@ from auxiliary.player_input_command import (
                           PlayerCommandWhisper, 
                           PlayerCommandSearch,
                           PlayerCommandPrisonBreak,
-                          PlayerCommandPerception,
                           PlayerCommandSteal,
-                          PlayerCommandTrade,
-                          PlayerCommandCheckStatus)
+                          PlayerCommandTrade)
 
 from auxiliary.extended_context import ExtendedContext
-from auxiliary.components import PlayerLoginEventComponent, EnviroNarrateActionComponent
+from auxiliary.components import PlayerLoginEventComponent, EnviroNarrateActionComponent, AwakeActionComponent, NPCComponent
 from auxiliary.actor_action import ActorAction
 from typing import Optional
 from systems.check_status_action_system import CheckStatusActionHelper
@@ -86,14 +84,11 @@ class TestPlayerInputSystem(ExecuteProcessor):
         safename = context.safe_get_entity_name(playerentity)
         initmemory =  memory_system.getmemory(safename)
         playerproxy.add_npc_message(safename, initmemory)
-            
-        #此时场景的描述
-        stagemsg = self.stagemessage(playerentity)
-        if len(stagemsg) > 0:
-            stageentity: Optional[Entity] = self.context.safe_get_stage_entity(playerentity)
-            assert stageentity is not None
-            stagename = self.context.safe_get_entity_name(stageentity)
-            playerproxy.add_stage_message(stagename, stagemsg)
+
+        if not playerentity.has(AwakeActionComponent):
+            npccomp: NPCComponent = playerentity.get(NPCComponent)
+            action = ActorAction(npccomp.name, AwakeActionComponent.__name__, [initmemory])
+            playerentity.add(AwakeActionComponent, action)
 ############################################################################################################
     def handlenormal(self, playername: str) -> None:
         #

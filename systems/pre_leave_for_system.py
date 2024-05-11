@@ -11,7 +11,7 @@ from enum import Enum
 from auxiliary.director_component import notify_stage_director
 from auxiliary.director_event import NPCLeaveForFailedBecauseStageIsInvalidEvent, NPCLeaveForFailedBecauseAlreadyInStage, NPCLeaveForFailedBecauseNoExitConditionMatch
 from auxiliary.format_of_complex_stage_entry_and_exit_conditions import is_complex_stage_condition, parse_complex_stage_condition
-#from typing import cast
+
 
 # 错误代码
 class ErrorCheckTargetStage(Enum):

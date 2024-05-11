@@ -23,8 +23,6 @@ class PrePlanningSystem(InitializeProcessor, ExecuteProcessor):
     def execute(self) -> None:
         ## 测试
         self.test()
-        ## player不允许做规划
-        self.remove_all_players_auto_planning()
         ## 通过策略来做计划
         self.make_planning_by_strategy(self.strategy)
 ############################################################################################################
@@ -39,12 +37,6 @@ class PrePlanningSystem(InitializeProcessor, ExecuteProcessor):
             logger.debug("STRATEGY_ALL, 选择比较费的策略，全都更新")
             self.strategy2_all_stages_and_npcs_except_player_allow_auto_planning()   
 ############################################################################################################
-    def remove_all_players_auto_planning(self) -> None:
-        playerentities = self.context.get_group(Matcher(PlayerComponent)).entities
-        for playerentity in playerentities:
-            if playerentity.has(AutoPlanningComponent):
-                playerentity.remove(AutoPlanningComponent)
-############################################################################################################
     def strategy1_only_the_stage_where_player_is_located_and_the_npcs_in_it_allowed_make_plans(self, playerentity: Entity) -> None:
         assert playerentity is not None
         assert playerentity.has(PlayerComponent)
@@ -57,11 +49,16 @@ class PrePlanningSystem(InitializeProcessor, ExecuteProcessor):
         
         ##player所在场景可以规划
         stagecomp: StageComponent = stageentity.get(StageComponent)
-        if not stageentity.has(AutoPlanningComponent):
-            stageentity.add(AutoPlanningComponent, stagecomp.name)
         
         ###player所在场景的npcs可以规划
         npcsentities = context.npcs_in_this_stage(stagecomp.name)
+        if len(npcsentities) == 0:
+            logger.debug(f"Stage: {stagecomp.name} has no npcs, so no need to plan.")
+            return
+        
+        if not stageentity.has(AutoPlanningComponent):
+            stageentity.add(AutoPlanningComponent, stagecomp.name)
+        
         for npcentity in npcsentities:
             if npcentity.has(PlayerComponent):
                 ## 挡掉
@@ -75,6 +72,10 @@ class PrePlanningSystem(InitializeProcessor, ExecuteProcessor):
         stageentities = context.get_group(Matcher(StageComponent)).entities
         for stageentity in stageentities:
             stagecomp: StageComponent = stageentity.get(StageComponent)
+            npcs_in_stage = context.npcs_in_this_stage(stagecomp.name)
+            if len(npcs_in_stage) == 0:
+                logger.debug(f"Stage: {stagecomp.name} has no npcs, so no need to plan.")
+                continue
             if not stageentity.has(AutoPlanningComponent):
                 stageentity.add(AutoPlanningComponent, stagecomp.name)
         
@@ -89,6 +90,8 @@ class PrePlanningSystem(InitializeProcessor, ExecuteProcessor):
 ############################################################################################################
     ## 自我测试，这个调用点就是不允许再这个阶段有任何action
     def test(self) -> None:
+        auto_planning_entities: Set[Entity] = self.context.get_group(Matcher(AutoPlanningComponent)).entities
+        assert len(auto_planning_entities) == 0, f"AutoPlanningComponent should be removed in PostPlanningSystem"
         stageentities: Set[Entity] = self.context.get_group(Matcher(any_of = STAGE_AVAILABLE_ACTIONS_REGISTER)).entities
         assert len(stageentities) == 0, f"Stage entities with actions: {stageentities}"
         npcentities: Set[Entity]  = self.context.get_group(Matcher(any_of = NPC_AVAILABLE_ACTIONS_REGISTER)).entities

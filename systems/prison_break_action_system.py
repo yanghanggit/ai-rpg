@@ -5,6 +5,21 @@ from auxiliary.components import (LeaveForActionComponent, PrisonBreakActionComp
 from auxiliary.actor_action import ActorAction
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
+from auxiliary.director_event import IDirectorEvent
+from auxiliary.director_component import notify_stage_director
+from auxiliary.cn_builtin_prompt import notify_planning_to_prison_break_prompt
+
+class NotifyNPCIsPlanningToPrisonBreakEvent(IDirectorEvent):
+
+    def __init__(self, who_is_planning_prison_break: str, stagename: str) -> None:
+        self.who_is_planning_prison_break = who_is_planning_prison_break
+        self.stagename = stagename
+    
+    def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
+        return notify_planning_to_prison_break_prompt(self.who_is_planning_prison_break, self.stagename, extended_context)
+    
+    def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
+        return notify_planning_to_prison_break_prompt(self.who_is_planning_prison_break, self.stagename, extended_context)
 
 ###############################################################################################################################################
 class PrisonBreakActionSystem(ReactiveProcessor):
@@ -21,47 +36,50 @@ class PrisonBreakActionSystem(ReactiveProcessor):
         return entity.has(PrisonBreakActionComponent) and entity.has(NPCComponent)
 ###############################################################################################################################################
     def react(self, entities: list[Entity]) -> None:
-        self.prisonbreak(entities)
+         for npcentity in entities:
+            self.prisonbreak(npcentity)
 ###############################################################################################################################################
-    def prisonbreak(self, entities: list[Entity]) -> None:
-        for npcentity in entities:
-            npccomp: NPCComponent = npcentity.get(NPCComponent)
-            prisonbreakcomp: PrisonBreakActionComponent = npcentity.get(PrisonBreakActionComponent)
-            action: ActorAction = prisonbreakcomp.action
-            if len(action.values) == 0:
-               logger.error(f"PrisonBreakActionSystem: {action} has no action values")
-               continue
-            
-            #
-            # logger.debug(f"PrisonBreakActionSystem: {action}")
-            stagename = action.values[0]
-            logger.debug(f"PrisonBreakActionSystem: {npccomp.name} 想要离开的场景是: {stagename}")
-            if stagename != npccomp.current_stage:
-                # 只能脱离当前场景
-                logger.error(f"PrisonBreakActionSystem: {npccomp.name} 只能脱离当前场景 {npccomp.current_stage}, 但是action里的场景对不上 {stagename}")
-                continue
+    def prisonbreak(self, npcentity: Entity) -> None:
+        
+        npccomp: NPCComponent = npcentity.get(NPCComponent)
+        prisonbreakcomp: PrisonBreakActionComponent = npcentity.get(PrisonBreakActionComponent)
+        action: ActorAction = prisonbreakcomp.action
+        if len(action.values) == 0:
+            logger.error(f"PrisonBreakActionSystem: {action} has no action values")
+            return
+        #
+        # logger.debug(f"PrisonBreakActionSystem: {action}")
+        stagename = action.values[0]
+        logger.debug(f"PrisonBreakActionSystem: {npccomp.name} 想要离开的场景是: {stagename}")
+        if stagename != npccomp.current_stage:
+            # 只能脱离当前场景
+            logger.error(f"PrisonBreakActionSystem: {npccomp.name} 只能脱离当前场景 {npccomp.current_stage}, 但是action里的场景对不上 {stagename}")
+            return
 
-            # 取出当前场景！
-            stageentity = self.context.getstage(stagename)
-            assert stageentity is not None, f"PrisonBreakActionSystem: {stagename} is None"
-            if not stageentity.has(ExitOfPrisonComponent):
-                # 该场景没有连接到任何场景，所以不能"盲目"的离开
-                logger.error(f"PrisonBreakActionSystem: {npccomp.name} 想要离开的场景是: {stagename}, 该场景没有连接到任何场景")
-                continue
-            
-            # 取出数据，并准备沿用LeaveForActionComponent
-            conncectstagecomp: ExitOfPrisonComponent = stageentity.get(ExitOfPrisonComponent)
-            logger.debug(f"PrisonBreakActionSystem: {npccomp.name} 想要离开的场景是: {stagename}, 该场景可以连接的场景有: {conncectstagecomp.name}")
-            connect_stage_entity = self.context.getstage(conncectstagecomp.name)
-            if connect_stage_entity is None:
-                logger.error(f"PrisonBreakActionSystem: {npccomp.name} 想要离开的场景是: {stagename}, 该场景可以连接的场景有: {conncectstagecomp.name}, 但是该场景不存在")
-                continue
+        # 取出当前场景！
+        stageentity = self.context.getstage(stagename)
+        assert stageentity is not None, f"PrisonBreakActionSystem: {stagename} is None"
+        if not stageentity.has(ExitOfPrisonComponent):
+            # 该场景没有连接到任何场景，所以不能"盲目"的离开
+            logger.error(f"PrisonBreakActionSystem: {npccomp.name} 想要离开的场景是: {stagename}, 该场景没有连接到任何场景")
+            return
+        
+        # 取出数据，并准备沿用LeaveForActionComponent
+        conncectstagecomp: ExitOfPrisonComponent = stageentity.get(ExitOfPrisonComponent)
+        logger.debug(f"PrisonBreakActionSystem: {npccomp.name} 想要离开的场景是: {stagename}, 该场景可以连接的场景有: {conncectstagecomp.name}")
+        connect_stage_entity = self.context.getstage(conncectstagecomp.name)
+        if connect_stage_entity is None:
+            logger.error(f"PrisonBreakActionSystem: {npccomp.name} 想要离开的场景是: {stagename}, 该场景可以连接的场景有: {conncectstagecomp.name}, 但是该场景不存在")
+            return
+        
+        logger.debug(f"{conncectstagecomp.name}允许{npccomp.name}前往")
+        
+        # 这里先提示，如果后续因为场景条件而被打断，到时候再提示
+        notify_stage_director(self.context, stageentity, NotifyNPCIsPlanningToPrisonBreakEvent(npccomp.name, stagename))
 
-            logger.debug(f"{conncectstagecomp.name}允许{npccomp.name}前往")
-
-            # 生成离开当前场景的动作
-            action = ActorAction(npccomp.name, LeaveForActionComponent.__name__, [conncectstagecomp.name])
-            npcentity.add(LeaveForActionComponent, action)
+        # 生成离开当前场景的动作
+        action = ActorAction(npccomp.name, LeaveForActionComponent.__name__, [conncectstagecomp.name])
+        npcentity.add(LeaveForActionComponent, action)
 ###############################################################################################################################################       
 
             

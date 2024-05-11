@@ -63,7 +63,7 @@ class StageBuilder:
     def build_props_in_stage(self, props_data: List[Any]) -> set[PropData]:
         res: set[PropData] = set()
         for obj in props_data:
-            prop = PropData(obj.get("name"), obj.get("codename"), obj.get("description"), obj.get("isunique"), obj.get("type"))
+            prop = PropData(obj.get("name"), obj.get("codename"), obj.get("description"), obj.get("isunique"), obj.get("type"), obj.get("attributes"))
             res.add(prop)
         return res
     #
@@ -134,7 +134,7 @@ class NPCBuilder:
             npcprops: set[PropData] = set()
             propdata = datablock.get("props")
             for propdata in propdata:
-                prop = PropData(propdata.get("name"), propdata.get("codename"),  propdata.get("description"), propdata.get("isunique"), propdata.get("type"))
+                prop = PropData(propdata.get("name"), propdata.get("codename"),  propdata.get("description"), propdata.get("isunique"), propdata.get("type"), propdata.get("attributes"))
                 npcprops.add(prop)
 
             # NPC核心数据

@@ -83,7 +83,7 @@ def gen_all_props(sheet: DataFrame, output: Dict[str, ExcelDataProp]) -> None:
     for index, row in sheet.iterrows():
         if pd.isna(row["name"]):
             continue
-        excelprop = ExcelDataProp(row["name"], row["codename"], row["isunique"], row["description"], RAG_FILE, row["type"])
+        excelprop = ExcelDataProp(row["name"], row["codename"], row["isunique"], row["description"], RAG_FILE, row["type"], str(row["attributes"]))
         output[excelprop.name] = excelprop
 ############################################################################################################
 def analyze_npc_relationship(analyze_data: Dict[str, ExcelDataNPC]) -> None:
@@ -117,11 +117,12 @@ def analyze_relationship_between_npcs_and_props(analyze_props_data: Dict[str, Ex
             logger.warning(f"{npc.name}: {npc.mentioned_props}")
 ################################################################################################################
 def serialization_prop(prop: ExcelDataProp) -> Dict[str, str]:
-    dict: Dict[str, str] = {}
-    dict['name'] = prop.name
-    dict['codename'] = prop.codename
-    dict['description'] = prop.description
-    dict['isunique'] = prop.isunique
-    dict['type'] = prop.type
-    return dict       
+    output: Dict[str, str] = {}
+    output['name'] = prop.name
+    output['codename'] = prop.codename
+    output['description'] = prop.description
+    output['isunique'] = prop.isunique
+    output['type'] = prop.type
+    output['attributes'] = prop.raw_attributes
+    return output       
 ################################################################################################################

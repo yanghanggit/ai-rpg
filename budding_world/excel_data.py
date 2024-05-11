@@ -205,7 +205,7 @@ class ExcelDataStage:
 ############################################################################################################
 class ExcelDataProp:
     
-    def __init__(self, name: str, codename: str, isunique: str, description: str, worldview: str, type: str) -> None:
+    def __init__(self, name: str, codename: str, isunique: str, description: str, worldview: str, type: str, raw_attributes: str) -> None:
         self.name: str = name
         self.codename: str = codename
         self.description: str = description
@@ -213,5 +213,10 @@ class ExcelDataProp:
         self.worldview: str = worldview
         self.type: str = type
 
+        ## 这里特殊处理吧～ 有些是nan
+        self.raw_attributes: str = raw_attributes
+        if self.raw_attributes == "nan":
+            self.raw_attributes = ""
+
     def __str__(self) -> str:
-        return f"ExcelDataProp({self.name}, {self.codename}, {self.isunique}, {self.type})"
+        return f"ExcelDataProp({self.name}, {self.codename}, {self.isunique}, {self.type}, {self.raw_attributes})"

@@ -37,16 +37,21 @@ class PropType(Enum):
     EVENT = 5
 
 class PropData:
-    def __init__(self, name: str, codename: str, description: str, is_unique: str, type: str) -> None:
+    def __init__(self, name: str, codename: str, description: str, is_unique: str, type: str, attributes: str) -> None:
         self.name = name
         self.codename = codename
         self.description = description
         self.is_unique = is_unique
+
+
         self.type = type
         self.em_type = PropType.INVALID
-
         self.parse_type()
         print(f"PropData: {self.name} {self.em_type}")
+
+        self.attributes: List[int] = []
+        if attributes != "":
+            self.build_attributes(attributes)
 
     def isunique(self) -> bool:
         return self.is_unique == "Yes"
@@ -92,9 +97,25 @@ class PropData:
     def __str__(self) -> str:
         return f"{self.name}"
     
+    def build_attributes(self, attributes: str) -> None:
+        self.attributes = [int(attr) for attr in attributes.split(',')]
+        assert len(self.attributes) == 3
+
+    @property
+    def maxhp(self) -> int:
+        return self.attributes[0]
+    
+    @property
+    def attack(self) -> int:
+        return self.attributes[1]
+    
+    @property
+    def defense(self) -> int:
+        return self.attributes[2]
+    
 def PropDataProxy(name: str) -> PropData:
     logger.info(f"PropDataProxy: {name}")
-    return PropData(name, "", "", "", "")
+    return PropData(name, "", "", "", "", "")
 ########################################################################################################################
 ########################################################################################################################
 ########################################################################################################################

@@ -73,7 +73,8 @@ NPC_AVAILABLE_ACTIONS_REGISTER = [FightActionComponent,
                          StealActionComponent,
                          TradeActionComponent,
                          CheckStatusActionComponent,
-                         UseInteractivePropActionComponent]
+                         UseInteractivePropActionComponent,
+                         AwakeActionComponent]
 
 NPC_DIALOGUE_ACTIONS_REGISTER = [SpeakActionComponent, 
                                 BroadcastActionComponent,

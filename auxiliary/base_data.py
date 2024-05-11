@@ -119,6 +119,7 @@ class NPCData:
 
     def build_attributes(self, attributes: str) -> None:
         self.attributes = [int(attr) for attr in attributes.split(',')]
+        assert len(self.attributes) == 4
 
 def NPCDataProxy(name: str) -> NPCData:
     logger.info(f"NPCDataProxy: {name}")

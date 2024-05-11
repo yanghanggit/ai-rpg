@@ -252,7 +252,7 @@ class RPGGame(BaseGame):
 
             #必要组件
             playernpcentity.add(PlayerComponent, "") ##此时没有被玩家控制
-            playernpcentity.add(SimpleRPGRoleComponent, builddata.name, builddata.attributes[0], builddata.attributes[1], builddata.attributes[2])
+            playernpcentity.add(SimpleRPGRoleComponent, builddata.name, builddata.attributes[0], builddata.attributes[1], builddata.attributes[2], builddata.attributes[3])
             playernpcentity.add(NPCComponent, builddata.name, "")
             playernpcentity.add(RoleAppearanceComponent, builddata.role_appearance)
             
@@ -293,7 +293,7 @@ class RPGGame(BaseGame):
 
             # 必要组件
             npcentity.add(NPCComponent, builddata.name, "")
-            npcentity.add(SimpleRPGRoleComponent, builddata.name, builddata.attributes[0], builddata.attributes[1], builddata.attributes[2])
+            npcentity.add(SimpleRPGRoleComponent, builddata.name, builddata.attributes[0], builddata.attributes[1], builddata.attributes[2], builddata.attributes[3])
             npcentity.add(RoleAppearanceComponent, builddata.role_appearance)
 
             #重构
@@ -334,7 +334,7 @@ class RPGGame(BaseGame):
             #必要组件
             stageentity.add(StageComponent, builddata.name)
             stageentity.add(StageDirectorComponent, builddata.name) ###
-            stageentity.add(SimpleRPGRoleComponent, builddata.name, builddata.attributes[0], builddata.attributes[1], builddata.attributes[2])
+            stageentity.add(SimpleRPGRoleComponent, builddata.name, builddata.attributes[0], builddata.attributes[1], builddata.attributes[2], builddata.attributes[3])
     
             ## 重新设置npc和stage的关系
             for npc in builddata.npcs:

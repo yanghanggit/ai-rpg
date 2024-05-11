@@ -45,11 +45,14 @@ class FightActionSystem(ReactiveProcessor):
             hp = targetsrpgcomp.hp
             damage = rpgcomp.attack
             # 必须控制在0和最大值之间
+            damage = damage - targetsrpgcomp.defense
+            if damage < 0:
+                damage = 0
             lefthp = hp - damage
             lefthp = max(0, min(lefthp, targetsrpgcomp.maxhp))
 
             #结果修改
-            findtarget.replace(SimpleRPGRoleComponent, targetsrpgcomp.name, targetsrpgcomp.maxhp, lefthp, targetsrpgcomp.attack)
+            findtarget.replace(SimpleRPGRoleComponent, targetsrpgcomp.name, targetsrpgcomp.maxhp, lefthp, targetsrpgcomp.attack, targetsrpgcomp.defense)
 
             ##死亡是关键
             isdead = (lefthp <= 0)

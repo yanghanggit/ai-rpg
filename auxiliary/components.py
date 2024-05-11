@@ -36,7 +36,7 @@ UseInteractivePropActionComponent = namedtuple('UseInteractivePropActionComponen
 AwakeActionComponent = namedtuple('AwakeActionComponent', 'action')
 ###############################################################################################################################################
 ###游戏业务组件
-SimpleRPGRoleComponent = namedtuple('SimpleRPGRoleComponent', 'name maxhp hp attack')
+SimpleRPGRoleComponent = namedtuple('SimpleRPGRoleComponent', 'name maxhp hp attack defense')
 ###############################################################################################################################################
 # 特殊组件，Player专用
 PlayerLoginEventComponent = namedtuple('PlayerLoginEventComponent', 'name npcname')

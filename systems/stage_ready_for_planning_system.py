@@ -4,6 +4,8 @@ from auxiliary.extended_context import ExtendedContext
 from auxiliary.components import (StageComponent,
                                 AutoPlanningComponent)
 from loguru import logger
+from auxiliary.base_data import PropData
+from typing import List
 
 ####################################################################################################################################
 class StageReadyForPlanningSystem(ExecuteProcessor):
@@ -19,6 +21,16 @@ class StageReadyForPlanningSystem(ExecuteProcessor):
     def handle(self, entity: Entity) -> None:
         stage_comp: StageComponent = entity.get(StageComponent)
         logger.info(f"StageReadyForPlanningSystem: {stage_comp.name} is ready for planning.")
-        prompt = stage_plan_prompt(entity, self.context)
+        props_in_stage: List[PropData] = self.get_props_in_stage(entity)
+        prompt = stage_plan_prompt(props_in_stage, self.context)
         self.context.agent_connect_system.add_async_requet_task(stage_comp.name, prompt)
+####################################################################################################################################
+    def get_props_in_stage(self, entity: Entity) -> List[PropData]:
+        res: List[PropData] = []
+        filesystem = self.context.file_system
+        safe_stage_name = self.context.safe_get_entity_name(entity)
+        files = filesystem.get_prop_files(safe_stage_name)
+        for file in files:
+            res.append(file.prop)
+        return res
 ####################################################################################################################################

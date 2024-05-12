@@ -14,28 +14,59 @@ def init_memory_system_prompt(init_memory: str, entity: Entity, context: Extende
 ## 请遵循输出格式指南,仅通过返回MindVoiceActionComponent及相关内容来确认你的状态。"""
     return prompt
 ###############################################################################################################################################
-def npc_plan_prompt(entity: Entity, context: ExtendedContext) -> str:
-    if not entity.has(NPCComponent):
-        raise ValueError("npc_plan_prompt, entity has no NPCComponent")
+def npc_plan_prompt(current_stage: str, stage_enviro_narrate: str, context: ExtendedContext) -> str:
     
-    prompt = f"# 根据计划制定指南作出你的计划。要求:输出结果格式要遵循输出格式指南。结果中需要附带TagActionComponent"
-    return prompt
-###############################################################################################################################################
-def first_time_npc_plan_prompt(entity: Entity, context: ExtendedContext) -> str:
-    if not entity.has(NPCComponent):
-        raise ValueError("npc_plan_prompt, entity has no NPCComponent")
-    
+    current_stage_prompt = "未知"
+    if current_stage != "":
+        current_stage_prompt = current_stage
+
+    current_stage_enviro_narrate_prompt = "无"
+    if stage_enviro_narrate != "":
+        current_stage_enviro_narrate_prompt = stage_enviro_narrate
+
     prompt = f"""# 根据计划制定指南作出你的计划。
-## 要求:输出结果格式要遵循输出格式指南。
-## 输出要求:
-- 本次是你第一次制定计划,所以需要有PerceptionActionComponent与CheckStatusActionComponent,用于感知场景内的道具与确认自身状态。
-- 结果还需要需要附带TagActionComponent"""
+## 你当前所在的场景是{current_stage_prompt}。
+## 场景的环境描述如下:
+- {current_stage_enviro_narrate_prompt}
+## 要求:输出结果格式要遵循输出格式指南。结果中需要附带TagActionComponent。"""
     return prompt
 ###############################################################################################################################################
-def stage_plan_prompt(entity: Entity, context: ExtendedContext) -> str:
-    if not entity.has(StageComponent):
-        raise ValueError("stage_plan_prompt, entity has no StageComponent")
-    prompt = f"根据‘计划制定指南’作出你的计划。要求：输出结果格式要遵循‘输出格式指南’,请确保给出的响应符合规范。结果中需要有EnviroNarrateActionComponent，并附带TagActionComponent。"
+def first_time_npc_plan_prompt(current_stage: str, stage_enviro_narrate: str, context: ExtendedContext) -> str:
+
+    current_stage_prompt = "未知"
+    if current_stage != "":
+        current_stage_prompt = current_stage
+
+    current_stage_enviro_narrate_prompt = "无"
+    if stage_enviro_narrate != "":
+        current_stage_enviro_narrate_prompt = stage_enviro_narrate
+
+    prompt = f"""# 根据计划制定指南作出你的计划。
+## 你当前所在的场景是{current_stage_prompt}。
+## 场景的环境描述如下:
+- {current_stage_enviro_narrate_prompt}
+## 要求:
+- 输出结果格式要遵循输出格式指南。
+- 本次是你第一次制定计划,所以需要有PerceptionActionComponent与CheckStatusActionComponent,用于感知场景内的道具与确认自身状态。
+- 结果还需要需要附带TagActionComponent。"""
+    return prompt
+###############################################################################################################################################
+def stage_plan_prompt(props_in_stage: List[PropData], context: ExtendedContext) -> str:
+
+    ## 场景内道具
+    prompt_of_props = ""
+    if len(props_in_stage) > 0:
+        for prop in props_in_stage:
+            prompt_of_props += prop_info_prompt(prop)
+    else:
+        prompt_of_props = "- 无任何道具。"
+
+    prompt = f"""请根据‘计划制定指南’作出你的计划。
+## 场景内道具:
+{prompt_of_props}
+## 要求：
+- 输出结果格式要遵循‘输出格式指南’。
+- 结果中需要有EnviroNarrateActionComponent,并附带TagActionComponent。"""
     return prompt
 ###############################################################################################################################################
 def perception_action_prompt(who_perception: str, current_stage: str, ressult_npc_names: Dict[str, str], result_props_names: List[str]) -> str:

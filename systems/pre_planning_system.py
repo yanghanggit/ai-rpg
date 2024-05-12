@@ -25,7 +25,7 @@ class PrePlanningSystem(InitializeProcessor, ExecuteProcessor):
         self.test()
         ## 通过策略来做计划
         strategy: PlanningStrategy = self.strategy
-        if self.context.execute_count == 1:
+        if self.context.world_execute_rounds == 1:
             # 第一次执行必须全部更新一遍
             strategy = PlanningStrategy.STRATEGY_ALL
 

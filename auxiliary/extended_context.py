@@ -41,8 +41,8 @@ class ExtendedContext(Context):
         self.save_data_enable = save_data_enable
         self.auto_save_trigger_count = auto_save_trigger_count
         
-        # 暂时没用
-        self.execute_count = 0
+        # 世界运行的回合数
+        self.world_execute_rounds = 0
         
         #        
         assert self.file_system is not None, "self.file_system is None"

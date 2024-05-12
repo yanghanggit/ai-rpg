@@ -12,7 +12,7 @@ class BeginSystem(InitializeProcessor, ExecuteProcessor):
         pass
 ############################################################################################################
     def execute(self) -> None:
-        self.context.execute_count += 1
-        logger.debug(f"世界执行次数：{self.context.execute_count}")
+        self.context.world_execute_rounds += 1
+        logger.debug(f"世界运行的回合数：{self.context.world_execute_rounds}")
 ############################################################################################################
 

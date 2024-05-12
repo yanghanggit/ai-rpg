@@ -53,11 +53,13 @@ from systems.steal_action_system import StealActionSystem
 from systems.trade_action_system import TradeActionSystem
 from systems.check_status_action_system import CheckStatusActionSystem
 from base_game import BaseGame
-from systems.post_conversational_action_system import PostConversationalActionSystem
+#from systems.post_conversational_action_system import PostConversationalActionSystem
 from systems.init_agents_system import InitAgentsSystem
 from auxiliary.file_system_helper import add_npc_archive_files
 from systems.my_processors import MyProcessors
 from systems.simple_rpg_role_pre_fight_system import SimpleRPGRolePreFightSystem
+from systems.test_player_update_client_message_system import TestPlayerUpdateClientMessageSystem
+from systems.test_player_post_display_client_message_system import TestPlayerPostDisplayClientMessageSystem
 
 ## 控制流程和数据创建
 class RPGGame(BaseGame):
@@ -88,6 +90,9 @@ class RPGGame(BaseGame):
         processors.add(NPCPlanningSystem(context))
         processors.add(PostPlanningSystem(context)) ####### 在所有规划之后
 
+        ## 第一次抓可以被player看到的信息
+        processors.add(TestPlayerUpdateClientMessageSystem(context)) 
+
         #用户拿到相关的信息，并开始操作与输入!!!!!!!
         from systems.test_player_input_system import TestPlayerInputSystem ### 不这样就循环引用
         processors.add(TestPlayerInputSystem(context, self)) 
@@ -105,7 +110,7 @@ class RPGGame(BaseGame):
         processors.add(WhisperActionSystem(context))
         processors.add(BroadcastActionSystem(context))
         processors.add(SpeakActionSystem(context))
-        processors.add(PostConversationalActionSystem(context))
+        #processors.add(PostConversationalActionSystem(context))
 
         #战斗类的行为
         processors.add(SimpleRPGRolePreFightSystem(context)) #战斗之前需要更新装备
@@ -131,6 +136,8 @@ class RPGGame(BaseGame):
         processors.add(DirectorSystem(context))
         #行动结束后更新关系网，因为依赖Director所以必须在后面
         processors.add(UpdateArchiveSystem(context))
+        #
+        processors.add(TestPlayerPostDisplayClientMessageSystem(context))
         #########################################
 
         ###最后删除entity与存储数据

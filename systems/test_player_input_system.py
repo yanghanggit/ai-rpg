@@ -34,31 +34,29 @@ class TestPlayerInputSystem(ExecuteProcessor):
         self.rpggame = rpggame
 ############################################################################################################
     def execute(self) -> None:
-        playername = TEST_PLAYER_NAME#self.current_input_player()
-        #self.handlelogin(playername) ## 只有登陆的时候特殊处理
-        self.add_player_client_message(playername) ## 日常的处理
+        playername = TEST_PLAYER_NAME
+        #self.add_player_client_message(playername) ## 日常的处理
         self.handleinput(playername) ## 核心输入，while循环
-        #self.postexecute(playername) ## 最后的处理，会删掉PlayerLoginEventComponent
 ############################################################################################################
-    def add_player_client_message(self, playername: str) -> None:
-        #
-        playerentity = self.context.getplayer(playername)
-        if playerentity is None:
-            #logger.error(f"handlelogin, 玩家不存在{playername}")
-            return
+    # def add_player_client_message(self, playername: str) -> None:
+    #     #
+    #     playerentity = self.context.getplayer(playername)
+    #     if playerentity is None:
+    #         #logger.error(f"handlelogin, 玩家不存在{playername}")
+    #         return
 
-        playerproxy = get_player_proxy(playername)
-        if playerproxy is None:
-            logger.error(f"handlelogin, 玩家代理不存在{playername}")
-            return
+    #     playerproxy = get_player_proxy(playername)
+    #     if playerproxy is None:
+    #         logger.error(f"handlelogin, 玩家代理不存在{playername}")
+    #         return
             
-        #此时场景的描述
-        stagemsg = self.current_stage_message(playerentity)
-        if len(stagemsg) > 0:
-            stageentity: Optional[Entity] = self.context.safe_get_stage_entity(playerentity)
-            assert stageentity is not None
-            stagename = self.context.safe_get_entity_name(stageentity)
-            playerproxy.add_stage_message(stagename, stagemsg)
+    #     #此时场景的描述
+    #     stagemsg = self.current_stage_message(playerentity)
+    #     if len(stagemsg) > 0:
+    #         stageentity: Optional[Entity] = self.context.safe_get_stage_entity(playerentity)
+    #         assert stageentity is not None
+    #         stagename = self.context.safe_get_entity_name(stageentity)
+    #         playerproxy.add_stage_message(stagename, stagemsg)
 ############################################################################################################
     def handleinput(self, playername: str) -> None:
         playerproxy = get_player_proxy(playername)
@@ -88,19 +86,19 @@ class TestPlayerInputSystem(ExecuteProcessor):
             content = message[1]
             logger.warning(f"{tag}=>{content}")
 ############################################################################################################
-    def current_stage_message(self, playerentity: Entity) -> str:
-        stage = self.context.safe_get_stage_entity(playerentity)
-        if stage is None:
-            return ""
-        if not stage.has(EnviroNarrateActionComponent):
-            return ""
+    # def current_stage_message(self, playerentity: Entity) -> str:
+    #     stage = self.context.safe_get_stage_entity(playerentity)
+    #     if stage is None:
+    #         return ""
+    #     if not stage.has(EnviroNarrateActionComponent):
+    #         return ""
 
-        envirocomp: EnviroNarrateActionComponent = stage.get(EnviroNarrateActionComponent)
-        action: ActorAction = envirocomp.action
-        if len(action.values) == 0:
-            return ""
-        message = action.values[0]
-        return message
+    #     envirocomp: EnviroNarrateActionComponent = stage.get(EnviroNarrateActionComponent)
+    #     action: ActorAction = envirocomp.action
+    #     if len(action.values) == 0:
+    #         return ""
+    #     message = action.values[0]
+    #     return message
 ############################################################################################################
     def playerinput(self, rpggame: RPGGame, playerproxy: PlayerProxy, usrinput: str) -> bool:
 

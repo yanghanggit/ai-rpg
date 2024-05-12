@@ -203,13 +203,9 @@ def observe_appearance_after_entering_stage_prompt(myname: str, stagename: str, 
     if len(npc_appearance_in_stage) > 0:
         for other_name, other_appearance in npc_appearance_in_stage.items():
             prompt_of_npc += f"""### {other_name}\n- 外貌信息:{other_appearance}\n"""
-
-    batch = ""
-    for npcname, appearance in npc_appearance_in_stage.items():
-        batch += f"{npcname}，{appearance}\n"
     return f"""# {myname}进入{stagename}之后观察场景内的角色。
 ## 外貌信息如下:
-{batch}"""
+{prompt_of_npc}"""
 ################################################################################################################################################
 def enter_stage_prompt1(some_ones_name: str, target_stage_name: str) -> str:
     return f"{some_ones_name}进入了场景——{target_stage_name}。"

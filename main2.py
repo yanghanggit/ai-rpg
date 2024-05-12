@@ -99,7 +99,7 @@ def main() -> None:
     # 创建世界
     rpggame.createworld(worlddata)
     # 先直接执行一次
-    rpggame.execute()
+    #rpggame.execute()
 
     #测试的代码，上来就控制一个NPC目标，先写死
     create_player_proxy(TEST_PLAYER_NAME)

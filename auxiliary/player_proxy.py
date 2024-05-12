@@ -18,13 +18,13 @@ class PlayerProxy:
         #logger.debug(f"PlayerProxy({self.name}).add_message({sender}, {message})")
 
     def add_system_message(self, message: str) -> None:
-        self.addmessage(f"<{self.name}>[system]", message)
+        self.addmessage(f"[system]", message)
 
     def add_npc_message(self, npcname: str, message: str) -> None:
-        self.addmessage(f"<{self.name}>[{npcname}]", message)
+        self.addmessage(f"[{npcname}]", message)
 
     def add_stage_message(self, stagename: str, message: str) -> None:
-        self.addmessage(f"<{self.name}>[{stagename}]", message)
+        self.addmessage(f"[{stagename}]", message)
 
 ### 目前啥也不干，但留着有用的时候再用
 PLAYERS: List[PlayerProxy] = []

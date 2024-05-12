@@ -65,9 +65,9 @@ class TestPlayerInputSystem(ExecuteProcessor):
             return
 
         while True:
-            if not self.rpggame.started:
-                logger.warning("请先/run")
-                break
+            # if not self.rpggame.started:
+            #     logger.warning("请先/run")
+            #     break
             
             # 客户端应该看到的
             self.display_player_client_messages(playerproxy, 10)

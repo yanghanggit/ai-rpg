@@ -1,7 +1,5 @@
 from entitas import ExecuteProcessor, Entity, Matcher #type: ignore
 from auxiliary.extended_context import ExtendedContext
-from loguru import logger
-from rpg_game import RPGGame 
 from auxiliary.player_proxy import PlayerProxy, get_player_proxy, TEST_PLAYER_NAME
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.components import WhisperActionComponent, SpeakActionComponent, BroadcastActionComponent, EnviroNarrateActionComponent
@@ -68,7 +66,7 @@ class TestPlayerUpdateClientMessageSystem(ExecuteProcessor):
                     continue
 
                 #最后添加
-                playerproxy.add_npc_message(action.name, message)
+                playerproxy.add_npc_message(action.name, value)
 ############################################################################################################
     def broadcast_action_2_message(self, playerproxy: PlayerProxy, player_npc_entity: Entity) -> None:
         player_npc_entity_stage = self.context.safe_get_stage_entity(player_npc_entity)
@@ -114,6 +112,6 @@ class TestPlayerUpdateClientMessageSystem(ExecuteProcessor):
                 if dialogue_enable(self.context, entity, targetname) != ErrorDialogueEnable.VALID:
                     continue
       
-                playerproxy.add_npc_message(action.name, message)
+                playerproxy.add_npc_message(action.name, value)
 ############################################################################################################
     

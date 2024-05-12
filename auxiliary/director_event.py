@@ -18,7 +18,7 @@ search_success_prompt,
 notify_myself_leave_for_from_prompt,
 someone_came_into_my_stage_his_appearance_prompt,
 npc_appearance_in_this_stage_prompt,
-use_item_action_success_prompt,
+#use_item_action_success_prompt,
 interactive_prop_action_success_prompt)
 from loguru import logger
 from abc import ABC, abstractmethod

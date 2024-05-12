@@ -1,7 +1,7 @@
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.cn_builtin_prompt import ( broadcast_action_prompt, 
 speak_action_prompt,
-search_failed_prompt, 
+search_action_failed_prompt, 
 kill_someone,
 attack_someone_prompt,
 npc_leave_stage_prompt, 
@@ -11,8 +11,7 @@ trade_action_prompt,
 leave_for_stage_failed_because_stage_is_invalid_prompt,
 leave_for_stage_failed_because_already_in_stage_prompt,
 whisper_action_prompt,
-leave_for_stage_failed_because_no_exit_condition_match_prompt,
-search_success_prompt,
+search_action_success_prompt,
 notify_myself_leave_for_from_prompt,
 someone_came_into_my_stage_his_appearance_prompt,
 npc_appearance_in_this_stage_prompt,
@@ -82,12 +81,12 @@ class NPCSearchFailedEvent(IDirectorEvent):
         if npcname != self.who_search_failed:
             ## 只有自己知道
             return ""
-        event = search_failed_prompt(self.who_search_failed, self.target)
+        event = search_action_failed_prompt(self.who_search_failed, self.target)
         return event
     
     #
     def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
-        event = search_failed_prompt(self.who_search_failed, self.target)
+        event = search_action_failed_prompt(self.who_search_failed, self.target)
         return event
 ####################################################################################################################################
 ####################################################################################################################################
@@ -105,12 +104,12 @@ class NPCSearchSuccessEvent(IDirectorEvent):
         if npcname != self.who_search_success:
             ## 只有自己知道
             return ""
-        event = search_success_prompt(self.who_search_success, self.target, self.stagename)
+        event = search_action_success_prompt(self.who_search_success, self.target, self.stagename)
         return event
     
     #
     def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
-        event = search_success_prompt(self.who_search_success, self.target, self.stagename)
+        event = search_action_success_prompt(self.who_search_success, self.target, self.stagename)
         return event
 ####################################################################################################################################
 ####################################################################################################################################
@@ -306,29 +305,6 @@ class NPCLeaveForFailedBecauseAlreadyInStage(IDirectorEvent):
         return already_in_stage_event
     
     def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
-        return ""
-####################################################################################################################################
-####################################################################################################################################
-####################################################################################################################################
-class NPCLeaveForFailedBecauseNoExitConditionMatch(IDirectorEvent):
-
-    def __init__(self, npcname: str, stagename: str, tips: str, is_prison_break: bool) -> None:
-        self.npcname = npcname
-        self.stagename = stagename
-        self.tips = tips
-        self.is_prison_break = is_prison_break
-
-    def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
-        if npcname != self.npcname:
-            # 跟你无关不用关注，原因类的东西，是失败后矫正用，所以只有自己知道即可
-            return ""
-        no_exit_condition_match_event = leave_for_stage_failed_because_no_exit_condition_match_prompt(self.npcname, self.stagename, self.tips, self.is_prison_break)
-        return no_exit_condition_match_event
-    
-    def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
-        if self.is_prison_break:
-            #如果是越狱的行动，也让场景知道，提高场景的上下文。
-            return leave_for_stage_failed_because_no_exit_condition_match_prompt(self.npcname, self.stagename, self.tips, self.is_prison_break)
         return ""
 ####################################################################################################################################
 ####################################################################################################################################

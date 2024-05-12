@@ -8,7 +8,7 @@ from loguru import logger
 from typing import List, Dict
 from auxiliary.director_component import notify_stage_director
 from auxiliary.director_event import IDirectorEvent
-from auxiliary.cn_builtin_prompt import result_of_perception_action_prompt
+from auxiliary.cn_builtin_prompt import perception_action_prompt
 
 ####################################################################################################################################
 ####################################################################################################################################
@@ -61,7 +61,7 @@ class NPCPerceptionEvent(IDirectorEvent):
     def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
         if npcname != self.who_perception:
             return ""
-        return result_of_perception_action_prompt(self.who_perception, self.stagename, self.result_npcs_in_stage, self.result_props_in_stage)
+        return perception_action_prompt(self.who_perception, self.stagename, self.result_npcs_in_stage, self.result_props_in_stage)
     
     def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
         return ""

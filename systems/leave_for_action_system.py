@@ -13,8 +13,8 @@ from auxiliary.director_event import (
     NPCEnterStageEvent,
     ObserveOtherNPCAppearanceAfterEnterStageEvent)
 from typing import cast, Dict
-#from auxiliary.player_proxy import notify_player_proxy
-from auxiliary.cn_builtin_prompt import direct_npc_events_before_leave_stage_prompt
+from auxiliary.player_proxy import add_player_client_message
+
 
 
 ###############################################################################################################################################
@@ -27,6 +27,11 @@ class LeaveActionHelper:
         self.current_stage_entity = self.context.getstage(self.current_stage_name)
         self.target_stage_name = target_stage_name
         self.target_stage_entity = self.context.getstage(target_stage_name)
+
+
+
+
+
 
 ###############################################################################################################################################
 class LeaveForActionSystem(ReactiveProcessor):
@@ -99,24 +104,19 @@ class LeaveForActionSystem(ReactiveProcessor):
         self.direct_before_leave(helper)
 ###############################################################################################################################################
     def direct_before_leave(self, helper: LeaveActionHelper) -> None:
-         #
+        #
         current_stage_entity = helper.current_stage_entity
         assert current_stage_entity is not None
-
         #
         directorcomp: StageDirectorComponent = current_stage_entity.get(StageDirectorComponent)
         safe_npc_name = self.context.safe_get_entity_name(helper.who_wana_leave_entity)
         #
-        events2npc = directorcomp.tonpc(safe_npc_name, self.context)            
-        newmsg = "\n".join(events2npc)
-        if len(newmsg) > 0:
-            #添加history
-            prompt = direct_npc_events_before_leave_stage_prompt(newmsg, helper.current_stage_name, self.context)
-            self.context.safe_add_human_message_to_entity(helper.who_wana_leave_entity, prompt)
-                
-            #如果是player npc就再补充这个方法，通知调用客户端
-            # if helper.who_wana_leave_entity.has(PlayerComponent):
-            #     notify_player_proxy(helper.who_wana_leave_entity, newmsg, events2npc)
+        events2npc = directorcomp.tonpc(safe_npc_name, self.context)   
+        for event in events2npc:
+            logger.debug(f"{safe_npc_name} => {event}")
+            self.context.safe_add_human_message_to_entity(helper.who_wana_leave_entity, event)  
+            if helper.who_wana_leave_entity.has(PlayerComponent):
+                add_player_client_message(helper.who_wana_leave_entity, event)       
     ###############################################################################################################################################
     def leave_stage(self, helper: LeaveActionHelper) -> None:
         entity: Entity = helper.who_wana_leave_entity

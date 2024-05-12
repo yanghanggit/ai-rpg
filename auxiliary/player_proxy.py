@@ -45,20 +45,20 @@ def get_player_proxy(playername: str) -> Optional[PlayerProxy]:
     return None
 
 ###################################################################################################################
-# def notify_player_proxy(npcentity: Entity, batchmessage: str, messages: List[str]) -> None:
-#     if not npcentity.has(PlayerComponent):
-#         return
+def add_player_client_message(npcentity: Entity, message: str) -> None:
+    if not npcentity.has(PlayerComponent):
+        return
 
-#     playercomp: PlayerComponent = npcentity.get(PlayerComponent)
-#     playername: str = playercomp.name
-#     playerproxy = get_player_proxy(playername)
-#     if playerproxy is None:
-#         logger.error(f"notify_player_client, 玩家代理不存在{playername}???")
-#         return
+    playercomp: PlayerComponent = npcentity.get(PlayerComponent)
+    playername: str = playercomp.name
+    playerproxy = get_player_proxy(playername)
+    if playerproxy is None:
+        logger.error(f"notify_player_client, 玩家代理不存在{playername}???")
+        return
 
-#     #登陆的消息
-#     npccomp: NPCComponent = npcentity.get(NPCComponent)
-#     playerproxy.add_npc_message(npccomp.name, batchmessage)
+    #登陆的消息
+    npccomp: NPCComponent = npcentity.get(NPCComponent)
+    playerproxy.add_npc_message(npccomp.name, message)
 ###################################################################################################################
 ### 单人游戏，临时的名字
 TEST_PLAYER_NAME = "北京柏林互动科技有限公司"

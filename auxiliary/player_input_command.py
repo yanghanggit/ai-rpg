@@ -87,33 +87,7 @@ class PlayerCommandLogin(PlayerCommand):
         ###
         logger.warning(f"{myname} 登陆了游戏")
 
-
-
-        # #
-        # context = self.context
-        # memory_system = context.memory_system
-        # #
-        # playerentity = self.context.getplayer(playername)
-        # if playerentity is None:
-        #     #logger.error(f"handlelogin, 玩家不存在{playername}")
-        #     return
-        
-        # if not playerentity.has(PlayerLoginEventComponent):
-        #     # 不需要处理
-        #     return
-        
-        # playerproxy = get_player_proxy(playername)
-        # if playerproxy is None:
-        #     logger.error(f"handlelogin, 玩家代理不存在{playername}")
-        #     return
-        
-        # #登陆的消息
-        # playerproxy.add_system_message(TEST_LOGIN_INFORMATION)
-        
-        # #打印关于游戏的信息
-        # playerproxy.add_system_message(TEST_GAME_INSTRUCTIONS_WHEN_LOGIN_SUCCESS_FOR_FIRST_TIME)
-
-          #登陆的消息
+        #登陆的消息
         self.playerproxy.add_system_message(TEST_LOGIN_INFORMATION)
         
         #打印关于游戏的信息
@@ -124,19 +98,6 @@ class PlayerCommandLogin(PlayerCommand):
         memory_system = context.memory_system
         initmemory =  memory_system.getmemory(self.login_npc_name)
         self.playerproxy.add_npc_message(self.login_npc_name, initmemory)
-
-
-
-
-
-
-
-        # ## 加一个行动，用于标记
-        # if npcentity.has(PlayerLoginEventComponent):
-        #     logger.error(f"{login_npc_name} already has AwakeActionComponent?")
-        #     npcentity.remove(PlayerLoginEventComponent)
-        # ##
-        # npcentity.add(PlayerLoginEventComponent, myname, login_npc_name)
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################     

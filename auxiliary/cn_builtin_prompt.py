@@ -4,14 +4,23 @@ from auxiliary.components import NPCComponent, StageComponent
 from typing import Dict, List
 from auxiliary.base_data import PropData
 
+
+###############################################################################################################################################
+def init_memory_system_prompt(init_memory: str, entity: Entity, context: ExtendedContext) -> str:
+    prompt = f"""# 世界即将开始运行。你需要做初始状态的设定。
+## 你初始的设定状态如下: 
+{init_memory}。
+## 你需要将自己完全带入你的角色设定并开始游戏。
+## 请遵循输出格式指南,仅通过返回MindVoiceActionComponent及相关内容来确认你的状态。"""
+    return prompt
+###############################################################################################################################################
 def npc_plan_prompt(entity: Entity, context: ExtendedContext) -> str:
     if not entity.has(NPCComponent):
         raise ValueError("npc_plan_prompt, entity has no NPCComponent")
     
     prompt = f"# 根据计划制定指南作出你的计划。要求:输出结果格式要遵循输出格式指南。结果中需要附带TagActionComponent"
     return prompt
-
-
+###############################################################################################################################################
 def first_time_npc_plan_prompt(entity: Entity, context: ExtendedContext) -> str:
     if not entity.has(NPCComponent):
         raise ValueError("npc_plan_prompt, entity has no NPCComponent")
@@ -22,23 +31,137 @@ def first_time_npc_plan_prompt(entity: Entity, context: ExtendedContext) -> str:
 - 本次是你第一次制定计划,所以需要有PerceptionActionComponent与CheckStatusActionComponent,用于感知场景内的道具与确认自身状态。
 - 结果还需要需要附带TagActionComponent"""
     return prompt
-
-
-
+###############################################################################################################################################
 def stage_plan_prompt(entity: Entity, context: ExtendedContext) -> str:
     if not entity.has(StageComponent):
         raise ValueError("stage_plan_prompt, entity has no StageComponent")
     prompt = f"根据‘计划制定指南’作出你的计划。要求：输出结果格式要遵循‘输出格式指南’,请确保给出的响应符合规范。结果中需要有EnviroNarrateActionComponent，并附带TagActionComponent。"
     return prompt
+###############################################################################################################################################
+def perception_action_prompt(who_perception: str, current_stage: str, ressult_npc_names: Dict[str, str], result_props_names: List[str]) -> str:
 
-def init_memory_system_prompt(init_memory: str, entity: Entity, context: ExtendedContext) -> str:
-    prompt = f"""# 世界即将开始运行。你需要做初始状态的设定。
-## 你初始的设定状态如下: 
-{init_memory}。
-## 你需要将自己完全带入你的角色设定并开始游戏。
-## 请遵循输出格式指南,仅通过返回MindVoiceActionComponent及相关内容来确认你的状态。"""
+    prompt_of_npc = ""
+    if len(ressult_npc_names) > 0:
+        for other_name, other_appearance in ressult_npc_names.items():
+            prompt_of_npc += f"""### {other_name}\n- 外貌信息:{other_appearance}\n"""
+    else:
+        prompt_of_npc = "- 目前场景内没有其他角色。"
+
+    prompt_of_props = ""
+    if len(result_props_names) > 0:
+        for propname in result_props_names:
+            prompt_of_props += f"- {propname}\n"
+    else:
+        prompt_of_props = "- 无任何道具。"
+
+    final_prompt = f"""# {who_perception}当前在场景{current_stage}中。{who_perception}对{current_stage}执行PerceptionActionComponent,即使发起感知行为,结果如下:
+## 场景内人物:
+{prompt_of_npc}
+## 场景内道具:
+{prompt_of_props}
+"""
+    return final_prompt
+###############################################################################################################################################
+def prop_type_prompt(prop: PropData) -> str:
+    _type = "未知"
+    if prop.is_weapon():
+        _type = "武器"
+    elif prop.is_clothes():
+        _type = "衣服"
+    elif prop.is_non_consumable_item():
+        _type = "非消耗品"
+    elif prop.is_role_component():
+        _type = "特殊记忆与能力"
+    return _type
+###############################################################################################################################################
+def prop_info_prompt(prop: PropData) -> str:
+    proptype = prop_type_prompt(prop)
+    prompt = f"""### {prop.name}
+- 类型:{proptype}
+- 描述:{prop.description}
+"""
     return prompt
- 
+###############################################################################################################################################
+def role_component_info_prompt(prop: PropData) -> str:
+    prompt = f"""### {prop.name}
+- {prop.description}
+"""
+    return prompt
+###############################################################################################################################################
+def check_status_action_prompt(who: str, props: List[PropData], health: float, role_components: List[PropData], events: List[PropData]) -> str:
+    #百分比的
+    health *= 100
+    prompt_of_npc = f"生命值: {health:.2f}%"
+
+    prompt_of_props = ""
+    if len(props) > 0:
+        for prop in props:
+            prompt_of_props += prop_info_prompt(prop)
+    else:
+        prompt_of_props = "- 无任何道具。"
+
+    prompt_of_role_components = ""
+    if len(role_components) > 0:
+        for role in role_components:
+            prompt_of_role_components += role_component_info_prompt(role)
+    else:
+        prompt_of_role_components = "- 无任何特殊记忆与能力。"
+
+    final_prompt = f"""# {who}对自身执行CheckStatusActionComponent,即对自身状态进行检查,结果如下:
+## 健康状态:
+{prompt_of_npc}
+## 持有道具:
+{prompt_of_props}
+## 特殊记忆与能力:
+{prompt_of_role_components}
+"""
+    return final_prompt
+###############################################################################################################################################
+# 重构用 摩尔=>摩尔试图寻找奇异的声响，但奇异的声响在场景中不存在或者被其他人拿走了,需要再重新考虑目标。
+def search_action_failed_prompt(npcname: str, prop_name:str) -> str:
+    return f"""# {npcname}试图在场景内搜索"{prop_name}",但失败了。
+## 原因可能如下:
+1. "{prop_name}"可能并非是一个道具。'SearchActionComponent'只能支持搜索道具的行为与计划
+2. 或者这个道具此时已不在本场景中（可能被其他角色搜索并获取了）。
+## 建议与提示:
+- {npcname}需重新考虑搜索目标。
+- 可使用PerceptionActionComponent来感知场景内的道具,并确认合理目标。"""
+###############################################################################################################################################
+def search_action_success_prompt(npcname: str, prop_name:str, stagename: str) -> str:
+    return f"""# {npcname}从{stagename}场景内成功找到并获取了道具:{prop_name}。
+## 导致结果:
+- {stagename}不再存在这个道具。"""
+###############################################################################################################################################
+def prison_break_action_begin_prompt(npcname: str, stagesname: str, context: ExtendedContext) -> str:
+    return f"""# {npcname}意图离开{stagesname}
+## 附加说明:
+- {npcname}无法确认是否能够成功离开{stagesname}。可能会因为某些原因而失败。
+- {npcname}无法确认将要前往的目的地。"""
+################################################################################################################################################
+def leave_for_target_stage_failed_because_no_exit_condition_match_prompt(npcname: str, stagename: str, tips: str, is_prison_break: bool) -> str:
+    if is_prison_break:
+        if tips == "":
+            return f"""# {npcname}不能离开本场景。原因:当前不满足离开的条件。
+## 建议:
+- 可以通过CheckStatusActionComponent查看自己拥有的道具。
+- 或者通过PerceptionActionComponent感知场景内的道具，找到离开的条件。"""
+        
+        return f"""# {npcname}不能离开本场景。
+## 提示:
+- {tips}"""
+    
+    else:
+        if tips == "":
+            return f"""# {npcname}不能离开本场景并去往{stagename}。原因：可能当前不满足离开的条件。
+## 建议:
+- 可以通过CheckStatusActionComponent查看自己拥有的道具，
+- 或者通过PerceptionActionComponent感知场景内的道具，找到离开的条件。"""
+        
+        return f"""{npcname}不能离开本场景并去往{stagename}。
+## 提示:
+- {tips}"""
+################################################################################################################################################
+
 
 def whisper_action_prompt(srcname: str, destname: str, content: str, context: ExtendedContext) -> str:
     prompt = f"{srcname}对{destname}低语道:{content}"   
@@ -108,15 +231,6 @@ def died_in_fight_prompt(context: ExtendedContext) -> str:
     return f"你已经死亡（在战斗中受到了致命的攻击）"
 
 
-# 重构用 摩尔=>摩尔试图寻找奇异的声响，但奇异的声响在场景中不存在或者被其他人拿走了,需要再重新考虑目标。
-def search_failed_prompt(npcname: str, prop_name:str) -> str:
-    return f"""{npcname}试图在场景内搜索"{prop_name}"这个道具，但失败了。原因可能如下:
-1. "{prop_name}"可能并非是一个道具。'SearchActionComponent'只能支持搜索道具的行为与计划
-2. 或者这个道具此时已不在本场景中（可能被其他角色搜索并获取了）。
-所以{npcname}需要再重新考虑搜索目标。可以使用PerceptionActionComponent来感知场景内的道具，并确认合理目标。"""
-
-def search_success_prompt(npcname: str, prop_name:str, stagename: str) -> str:
-    return f"{npcname}从{stagename}场景内成功找到并获取了道具:{prop_name}。{stagename}中不再存在这个道具。"
 
 
 #
@@ -154,89 +268,6 @@ def trade_action_prompt(fromwho: str, towho: str, propname: str, traderes: bool)
     return f"{fromwho}向{towho}成功交换了{propname}"
 
 
-def result_of_perception_action_prompt(who_perception: str, stagename: str, ressult_npc_names: Dict[str, str], result_props_names: List[str]) -> str:
-
-    prompt_of_npc = ""
-    if len(ressult_npc_names) > 0:
-        for other_name, other_appearance in ressult_npc_names.items():
-            prompt_of_npc += f"""### {other_name}\n- 外貌信息:{other_appearance}\n"""
-    else:
-        prompt_of_npc = "- 目前场景内没有其他角色。"
-
-    prompt_of_props = ""
-    if len(result_props_names) > 0:
-        for propname in result_props_names:
-            prompt_of_props += f"- {propname}\n"
-    else:
-        prompt_of_props = "- 无任何道具。"
-
-
-    final_prompt = f"""# {who_perception}当前在场景{stagename}中。{who_perception}对{stagename}执行PerceptionActionComponent,即使发起感知行为,结果如下:
-## 场景内人物:
-{prompt_of_npc}
-## 场景内道具:
-{prompt_of_props}
-"""
-    return final_prompt
-
-
-def prop_type_prompt(prop: PropData) -> str:
-    _type = "未知"
-    if prop.is_weapon():
-        _type = "武器"
-    elif prop.is_clothes():
-        _type = "衣服"
-    elif prop.is_non_consumable_item():
-        _type = "非消耗品"
-    elif prop.is_role_component():
-        _type = "特殊记忆与能力"
-    return _type
-
-def prop_info_prompt(prop: PropData) -> str:
-    proptype = prop_type_prompt(prop)
-    prompt = f"""### {prop.name}
-- 类型:{proptype}
-- 描述:{prop.description}
-"""
-    return prompt
-
-def role_component_info_prompt(prop: PropData) -> str:
-    prompt = f"""### {prop.name}
-- {prop.description}
-"""
-    return prompt
-
-def check_status_action_prompt(who: str, props: List[PropData], health: float, role_components: List[PropData], events: List[PropData]) -> str:
-    
-    #百分比的
-    health *= 100
-    prompt_of_npc = f"生命值: {health:.2f}%"
-
-    prompt_of_props = ""
-    if len(props) > 0:
-        for prop in props:
-            prompt_of_props += prop_info_prompt(prop)
-    else:
-        prompt_of_props = "- 无任何道具。"
-
-
-    prompt_of_role_components = ""
-    if len(role_components) > 0:
-        for role in role_components:
-            prompt_of_role_components += role_component_info_prompt(role)
-    else:
-        prompt_of_role_components = "- 无任何特殊记忆与能力。"
-
-
-    final_prompt = f"""# {who}对自身执行CheckStatusActionComponent,即对自身状态进行检查,结果如下:
-## 健康状态:
-{prompt_of_npc}
-## 持有道具:
-{prompt_of_props}
-## 特殊记忆与能力:
-{prompt_of_role_components}
-"""
-    return final_prompt
 
 def leave_for_stage_failed_because_stage_is_invalid_prompt(npcname: str, stagename: str) -> str:
     return f"""#{npcname}不能离开本场景并去往{stagename}，原因可能如下:
@@ -264,26 +295,8 @@ def updated_information_about_StagesYouKnow_prompt(npcname: str, where_you_know:
         return f"# 你更新了关于‘你都认知哪些场景’的信息，目前你没有认识的场景。你不能去任何地方。"
     return f"# 你更新了关于‘你都认知哪些场景’的信息，目前你所知道的场景有: {where_you_know}。如果你意图离开本场景并去往其他场景，你只能从这些场景中选择你的目的地。"
 
-##
-def leave_for_stage_failed_because_no_exit_condition_match_prompt(npcname: str, stagename: str, tips: str, is_prison_break: bool) -> str:
-    if is_prison_break:
-        if tips == "":
-            return f"""#{npcname}不能离开本场景,可能当前不满足离开的条件。可以通过CheckStatusActionComponent查看自己拥有的道具，或者通过PerceptionActionComponent感知场景内的道具，找到离开的条件。"""
-        return f"""{npcname}不能离开本场景。\n提示:{tips}"""
-    else:
-        if tips == "":
-            return f"""#{npcname}不能离开本场景并去往{stagename},可能当前不满足离开的条件。可以通过CheckStatusActionComponent查看自己拥有的道具，或者通过PerceptionActionComponent感知场景内的道具，找到离开的条件。"""
-        return f"""{npcname}不能离开本场景并去往{stagename}。\n提示:{tips}"""
+
     
-##
-def direct_npc_events_before_leave_stage_prompt(message: str, current_stage_name: str, context: ExtendedContext) -> str:
-    prompt = f"""
-# 在你准备离开{current_stage_name}之前，{current_stage_name}内发生了如下事件(有些是你参与的，有些是你目睹或感知到的)：
-{message}
-# 你记录了这些事件，并更新了你的状态。"""
-    return prompt
-
-
 ################################################################################################################################################
 def someone_came_into_my_stage_his_appearance_prompt(someone: str, hisappearance: str) -> str:
     return f"""你发现{someone}进入了场景，其外貌信息如下：{hisappearance}"""
@@ -313,7 +326,4 @@ def interactive_prop_action_success_prompt(who_use: str, targetname: str, propna
 ################################################################################################################################################
 def npc_in_the_stage_wakes_up_prompt(npcname: str, stagesname: str, remembered_content: str, context: ExtendedContext) -> str:
     return f"{npcname}在{stagesname}中醒来。你能听见他（她/它）心中的独白和他此时的状态。内容如下: {remembered_content}。你在理解了以上信息之后，更新你的状态。"
-################################################################################################################################################
-def notify_planning_to_prison_break_prompt(npcname: str, stagesname: str, context: ExtendedContext) -> str:
-    return f"{npcname}想要离开{stagesname}"
 ################################################################################################################################################

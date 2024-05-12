@@ -3,8 +3,8 @@ from auxiliary.components import StageComponent, NPCComponent, PlayerComponent
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.director_component import StageDirectorComponent
-#from auxiliary.cn_builtin_prompt import direct_stage_events_prompt, direct_npc_events_prompt
-#from auxiliary.player_proxy import notify_player_proxy
+from auxiliary.player_proxy import add_player_client_message
+
 
 class DirectorSystem(ExecuteProcessor):
 
@@ -35,11 +35,6 @@ class DirectorSystem(ExecuteProcessor):
         for event in events2stage:
             logger.debug(f"{stagecomp.name} => {event}")
             self.context.safe_add_human_message_to_entity(entitystage, event)       
-        # newmsg = "\n".join(events2stage)
-        # if len(newmsg) > 0:
-        #     #prompt = direct_stage_events_prompt(newmsg, self.context)
-        #     logger.debug(f"{stagecomp.name} => {newmsg}")
-        #     self.context.safe_add_human_message_to_entity(entitystage, newmsg)
 ###################################################################################################################
     def handle_npcs_in_this_stage(self, entitystage: Entity) -> None:
         assert entitystage.has(StageComponent)
@@ -52,18 +47,7 @@ class DirectorSystem(ExecuteProcessor):
             for event in events2npc:
                 logger.debug(f"{npccomp.name} => {event}")
                 self.context.safe_add_human_message_to_entity(npcentity, event)
-
-
-
-
-            # newmsg = "\n".join(events2npc)
-            # if len(newmsg) > 0:
-            #     #prompt = direct_npc_events_prompt(newmsg, self.context)
-            #     logger.debug(f"{npccomp.name} => {newmsg}")
-            #     self.context.safe_add_human_message_to_entity(npcentity, newmsg)
-                
-                # #如果是player npc就再补充这个方法，通知调用客户端
-                # if npcentity.has(PlayerComponent):
-                #     notify_player_proxy(npcentity, newmsg, events2npc)
+                if npcentity.has(PlayerComponent):
+                    add_player_client_message(npcentity, event)
 ###################################################################################################################
     

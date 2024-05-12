@@ -40,66 +40,13 @@ class TestPlayerInputSystem(ExecuteProcessor):
         self.handleinput(playername) ## 核心输入，while循环
         #self.postexecute(playername) ## 最后的处理，会删掉PlayerLoginEventComponent
 ############################################################################################################
-    # def postexecute(self, playername: str) -> None:
-    #     playerentity = self.context.getplayer(playername)
-    #     if playerentity is None:
-    #         #logger.error(f"handlelogin, 玩家不存在{playername}")
-    #         return
-    #     #登陆成功后，需要删除这个组件
-    #     # if playerentity.has(PlayerLoginEventComponent):
-    #     #     playerentity.remove(PlayerLoginEventComponent)
-    #     #     logger.debug(f"handlelogin {playername} success")
-############################################################################################################
-    # #测试的先写死
-    # def current_input_player(self) -> str:
-    #     return TEST_PLAYER_NAME
-############################################################################################################
-    # def handlelogin(self, playername: str) -> None:
-    #     #
-    #     context = self.context
-    #     memory_system = context.memory_system
-    #     #
-    #     playerentity = self.context.getplayer(playername)
-    #     if playerentity is None:
-    #         #logger.error(f"handlelogin, 玩家不存在{playername}")
-    #         return
-        
-    #     if not playerentity.has(PlayerLoginEventComponent):
-    #         # 不需要处理
-    #         return
-        
-    #     playerproxy = get_player_proxy(playername)
-    #     if playerproxy is None:
-    #         logger.error(f"handlelogin, 玩家代理不存在{playername}")
-    #         return
-        
-    #     #登陆的消息
-    #     playerproxy.add_system_message(TEST_LOGIN_INFORMATION)
-        
-    #     #打印关于游戏的信息
-    #     playerproxy.add_system_message(TEST_GAME_INSTRUCTIONS_WHEN_LOGIN_SUCCESS_FOR_FIRST_TIME)
-
-    #     #初始化的NPC记忆
-    #     safename = context.safe_get_entity_name(playerentity)
-    #     initmemory =  memory_system.getmemory(safename)
-    #     playerproxy.add_npc_message(safename, initmemory)
-
-    #     if not playerentity.has(AwakeActionComponent):
-    #         npccomp: NPCComponent = playerentity.get(NPCComponent)
-    #         action = ActorAction(npccomp.name, AwakeActionComponent.__name__, [initmemory])
-    #         playerentity.add(AwakeActionComponent, action)
-############################################################################################################
     def add_player_client_message(self, playername: str) -> None:
         #
         playerentity = self.context.getplayer(playername)
         if playerentity is None:
             #logger.error(f"handlelogin, 玩家不存在{playername}")
             return
-        
-        # if playerentity.has(PlayerLoginEventComponent):
-        #     # 不需要处理
-        #     return
-    
+
         playerproxy = get_player_proxy(playername)
         if playerproxy is None:
             logger.error(f"handlelogin, 玩家代理不存在{playername}")

@@ -15,7 +15,7 @@ class PlayerProxy:
     
     def addmessage(self, sender: str, message: str) -> None:
         self.clientmessages.append((sender, message))
-        logger.debug(f"PlayerProxy({self.name}).add_message({sender}, {message})")
+        #logger.debug(f"PlayerProxy({self.name}).add_message({sender}, {message})")
 
     def add_system_message(self, message: str) -> None:
         self.addmessage(f"<{self.name}>[system]", message)

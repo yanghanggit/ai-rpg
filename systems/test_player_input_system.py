@@ -76,6 +76,7 @@ class TestPlayerInputSystem(ExecuteProcessor):
             
             # 测试的客户端反馈
             usrinput = input(f"[{playername}]:")
+            playerproxy.add_system_message(usrinput)
             if self.playerinput(self.rpggame, playerproxy, usrinput):
                 logger.debug(f"{'=' * 50}")
                 break

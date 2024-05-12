@@ -24,7 +24,13 @@ class PrePlanningSystem(InitializeProcessor, ExecuteProcessor):
         ## 测试
         self.test()
         ## 通过策略来做计划
-        self.make_planning_by_strategy(self.strategy)
+        strategy: PlanningStrategy = self.strategy
+        if self.context.execute_count == 1:
+            # 第一次执行必须全部更新一遍
+            strategy = PlanningStrategy.STRATEGY_ALL
+
+        # 第一次以上则随意
+        self.make_planning_by_strategy(strategy)
 ############################################################################################################
     def make_planning_by_strategy(self, strategy: PlanningStrategy) -> None:
         if strategy == PlanningStrategy.STRATEGY_ONLY_PLAYERS_STAGE:

@@ -8,13 +8,13 @@ from auxiliary.actor_action import ActorAction
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.director_component import notify_stage_director, StageDirectorComponent
-from auxiliary.director_event import (
-    NPCLeaveStageEvent, 
-    NPCEnterStageEvent,
-    ObserveOtherNPCAppearanceAfterEnterStageEvent)
 from typing import cast, Dict
 from auxiliary.player_proxy import add_player_client_message
-
+from auxiliary.director_event import IDirectorEvent
+from auxiliary.cn_builtin_prompt import (someone_entered_my_stage_observed_his_appearance_prompt,
+                                          observe_appearance_after_entering_stage_prompt, leave_stage_prompt,
+                                          enter_stage_prompt1,
+                                          enter_stage_prompt2)
 
 
 ###############################################################################################################################################
@@ -27,13 +27,71 @@ class LeaveActionHelper:
         self.current_stage_entity = self.context.getstage(self.current_stage_name)
         self.target_stage_name = target_stage_name
         self.target_stage_entity = self.context.getstage(target_stage_name)
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
+class NPCLeaveStageEvent(IDirectorEvent):
 
+    def __init__(self, npc_name: str, current_stage_name: str, leave_for_stage_name: str) -> None:
+        self.npc_name = npc_name
+        self.current_stage_name = current_stage_name
+        self.leave_for_stage_name = leave_for_stage_name
 
+    def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
+        event = leave_stage_prompt(self.npc_name, self.current_stage_name, self.leave_for_stage_name)
+        return event
+    
+    def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
+        event = leave_stage_prompt(self.npc_name, self.current_stage_name, self.leave_for_stage_name)
+        return event
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
+class NPCEnterStageEvent(IDirectorEvent):
 
+    def __init__(self, npc_name: str, stage_name: str, last_stage_name: str) -> None:
+        self.npc_name = npc_name
+        self.stage_name = stage_name
+        self.last_stage_name = last_stage_name
 
+    def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
+        if npcname != self.npc_name:
+            # 目标场景内的一切听到的是这个:"xxx进入了场景"
+            return enter_stage_prompt1(self.npc_name, self.stage_name)
+            
+        #通知我自己，我从哪里去往了哪里。这样prompt更加清晰一些
+        return enter_stage_prompt2(self.npc_name, self.stage_name, self.last_stage_name)
+    
+    def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
+        event = enter_stage_prompt1(self.npc_name, self.stage_name)
+        return event    
+####################################################################################################################################
+####################################################################################################################################
+#################################################################################################################################### 
+class NPCObserveAppearanceAfterEnterStageEvent(IDirectorEvent):
 
+    def __init__(self, who_enter_stage: str, enter_stage_name: str, all_appearance_data: Dict[str, str]) -> None:
+        self.who_enter_stage = who_enter_stage
+        self.enter_stage_name = enter_stage_name
+        self.all_appearance_data = all_appearance_data
+        #
+        self.npc_appearance_in_stage = all_appearance_data.copy()
+        self.npc_appearance_in_stage.pop(who_enter_stage)
 
-###############################################################################################################################################
+    def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
+        if npcname != self.who_enter_stage:
+            # 已经在场景里的人看到的是进来的人的外貌
+            appearance = self.all_appearance_data.get(self.who_enter_stage, "")
+            return someone_entered_my_stage_observed_his_appearance_prompt(self.who_enter_stage, appearance)
+
+        ## 进入场景的人看到的是场景里的人的外貌
+        return observe_appearance_after_entering_stage_prompt(self.who_enter_stage, self.enter_stage_name, self.npc_appearance_in_stage)
+    
+    def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
+        return ""
+####################################################################################################################################
+####################################################################################################################################
+#################################################################################################################################### 
 class LeaveForActionSystem(ReactiveProcessor):
 
     def __init__(self, context: ExtendedContext) -> None:
@@ -95,9 +153,9 @@ class LeaveForActionSystem(ReactiveProcessor):
 
         #通知一下外貌的信息
         appearancedata: Dict[str, str] = self.context.npc_appearance_in_the_stage(entity)
-        if len(appearancedata) > 0:
+        if len(appearancedata) > len([entity]):
             #通知导演
-            notify_stage_director(self.context, entity, ObserveOtherNPCAppearanceAfterEnterStageEvent(npccomp.name, target_stage_name, appearancedata))
+            notify_stage_director(self.context, entity, NPCObserveAppearanceAfterEnterStageEvent(npccomp.name, target_stage_name, appearancedata))
 ###############################################################################################################################################
     def before_leave_stage(self, helper: LeaveActionHelper) -> None:
         #目前就是强行刷一下history

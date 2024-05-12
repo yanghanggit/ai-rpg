@@ -130,7 +130,7 @@ def search_action_failed_prompt(npcname: str, prop_name:str) -> str:
 def search_action_success_prompt(npcname: str, prop_name:str, stagename: str) -> str:
     return f"""# {npcname}从{stagename}场景内成功找到并获取了道具:{prop_name}。
 ## 导致结果:
-- {stagename}不再存在这个道具。"""
+- {stagename}不再持有这个道具。"""
 ###############################################################################################################################################
 def prison_break_action_begin_prompt(npcname: str, stagesname: str, context: ExtendedContext) -> str:
     return f"""# {npcname}意图离开{stagesname}
@@ -161,6 +161,39 @@ def leave_for_target_stage_failed_because_no_exit_condition_match_prompt(npcname
 ## 提示:
 - {tips}"""
 ################################################################################################################################################
+def someone_entered_my_stage_observed_his_appearance_prompt(someone: str, his_appearance: str) -> str:
+    return f"""# 你所在场景发生如下事件：{someone}进入了场景。
+## {someone}的外貌信息如下：
+- {his_appearance}"""
+################################################################################################################################################
+def observe_appearance_after_entering_stage_prompt(myname: str, stagename: str, npc_appearance_in_stage: Dict[str, str]) -> str:
+    prompt_of_npc = "无任何外貌信息。"
+    assert len(npc_appearance_in_stage) > 0
+    if len(npc_appearance_in_stage) > 0:
+        for other_name, other_appearance in npc_appearance_in_stage.items():
+            prompt_of_npc += f"""### {other_name}\n- 外貌信息:{other_appearance}\n"""
+
+    batch = ""
+    for npcname, appearance in npc_appearance_in_stage.items():
+        batch += f"{npcname}，{appearance}\n"
+    return f"""# {myname}进入{stagename}之后观察场景内的角色。
+## 外貌信息如下:
+{batch}"""
+################################################################################################################################################
+def enter_stage_prompt1(some_ones_name: str, target_stage_name: str) -> str:
+    return f"{some_ones_name}进入了场景——{target_stage_name}。"
+################################################################################################################################################
+def enter_stage_prompt2(some_ones_name: str, target_stage_name: str, last_stage_name: str) -> str:
+    return f"{some_ones_name}离开了{last_stage_name}, 进入了{target_stage_name}。"
+################################################################################################################################################
+def leave_stage_prompt(npc_name: str, current_stage_name: str, leave_for_stage_name: str) -> str:
+    return f"{npc_name}离开了{current_stage_name} 场景。"
+################################################################################################################################################
+
+
+
+
+
 
 
 def whisper_action_prompt(srcname: str, destname: str, content: str, context: ExtendedContext) -> str:
@@ -233,17 +266,7 @@ def died_in_fight_prompt(context: ExtendedContext) -> str:
 
 
 
-#
-def notify_all_already_in_target_stage_that_someone_enter_stage_prompt(some_ones_name: str, target_stage_name: str, last_stage_name: str) -> str:
-    return f"{some_ones_name}进入了场景——{target_stage_name}。"
 
-#
-def notify_myself_leave_for_from_prompt(some_ones_name: str, target_stage_name: str, last_stage_name: str) -> str:
-    return f"{some_ones_name}离开了{last_stage_name}, 进入了{target_stage_name}。"
-
-
-def npc_leave_stage_prompt(npc_name: str, current_stage_name: str, leave_for_stage_name: str) -> str:
-    return f"{npc_name}离开了{current_stage_name} 场景。"
 
 def kill_someone(attacker_name: str, target_name: str) -> str:
     return f"{attacker_name}对{target_name}发动了一次攻击,造成了{target_name}死亡。"
@@ -297,16 +320,7 @@ def updated_information_about_StagesYouKnow_prompt(npcname: str, where_you_know:
 
 
     
-################################################################################################################################################
-def someone_came_into_my_stage_his_appearance_prompt(someone: str, hisappearance: str) -> str:
-    return f"""你发现{someone}进入了场景，其外貌信息如下：{hisappearance}"""
-################################################################################################################################################
-def npc_appearance_in_this_stage_prompt(myname: str, npc_appearance_in_stage: Dict[str, str]) -> str:
-    batch = ""
-    for npcname, appearance in npc_appearance_in_stage.items():
-        batch += f"{npcname}，{appearance}\n"
-    return f"""你观察到了你所在场景内的角色外貌信息如下:\n{batch}"""
-################################################################################################################################################
+
 
 
 def interactive_prop_action_success_prompt(who_use: str, targetname: str, propname: str) -> str:

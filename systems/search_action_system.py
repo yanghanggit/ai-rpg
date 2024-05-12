@@ -6,9 +6,57 @@ from auxiliary.components import (  SearchActionComponent,
 from auxiliary.actor_action import ActorAction
 from loguru import logger
 from auxiliary.director_component import notify_stage_director
-from auxiliary.director_event import NPCSearchFailedEvent, NPCSearchSuccessEvent
 from typing import List
 from auxiliary.file_def import PropFile
+
+from auxiliary.director_event import IDirectorEvent
+from auxiliary.cn_builtin_prompt import search_action_failed_prompt, search_action_success_prompt
+
+
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################     
+class NPCSearchFailedEvent(IDirectorEvent):
+
+    def __init__(self, who_search_failed: str, target: str) -> None:
+        self.who_search_failed = who_search_failed
+        self.target = target
+
+    #
+    def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
+        if npcname != self.who_search_failed:
+            ## 只有自己知道
+            return ""
+        event = search_action_failed_prompt(self.who_search_failed, self.target)
+        return event
+    
+    #
+    def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
+        event = search_action_failed_prompt(self.who_search_failed, self.target)
+        return event
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################     
+class NPCSearchSuccessEvent(IDirectorEvent):
+
+    #
+    def __init__(self, who_search_success: str, target: str, stagename: str) -> None:
+        self.who_search_success = who_search_success
+        self.target = target
+        self.stagename = stagename
+
+    #
+    def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
+        if npcname != self.who_search_success:
+            ## 只有自己知道
+            return ""
+        event = search_action_success_prompt(self.who_search_success, self.target, self.stagename)
+        return event
+    
+    #
+    def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
+        event = search_action_success_prompt(self.who_search_success, self.target, self.stagename)
+        return event
 
 class SearchActionSystem(ReactiveProcessor):
 

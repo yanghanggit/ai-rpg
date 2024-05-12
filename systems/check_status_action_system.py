@@ -3,11 +3,14 @@ from auxiliary.extended_context import ExtendedContext
 from auxiliary.components import (CheckStatusActionComponent, SimpleRPGRoleComponent)
 from loguru import logger
 from auxiliary.director_component import notify_stage_director
-from auxiliary.director_event import NPCCheckStatusEvent
 from typing import List
 from auxiliary.base_data import PropData
+from auxiliary.cn_builtin_prompt import check_status_action_prompt
+from auxiliary.director_event import IDirectorEvent
 
-
+####################################################################################################################################
+####################################################################################################################################
+#################################################################################################################################### 
 class CheckStatusActionHelper:
     def __init__(self, context: ExtendedContext):
         self.context = context
@@ -53,11 +56,29 @@ class CheckStatusActionHelper:
     @property
     def health(self) -> float:
         return self.hp / self.maxhp
-###################################################################################################################       
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################        
+class NPCCheckStatusEvent(IDirectorEvent):
 
+    def __init__(self, who: str, props: List[PropData], health: float, role_components: List[PropData], events: List[PropData]) -> None:
+        self.who = who
+        self.props = props
+        self.health = health
+        self.role_comps = role_components
+        self.events = events
 
-
-
+    def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
+        if npcname != self.who:
+            # 只有自己知道
+            return ""
+        return check_status_action_prompt(self.who, self.props, self.health, self.role_comps, self.events)
+    
+    def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
+        return ""
+####################################################################################################################################
+####################################################################################################################################
+#################################################################################################################################### 
 class CheckStatusActionSystem(ReactiveProcessor):
 
     def __init__(self, context: ExtendedContext):

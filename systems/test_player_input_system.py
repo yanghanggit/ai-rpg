@@ -2,7 +2,7 @@ from entitas import ExecuteProcessor, Entity #type: ignore
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from rpg_game import RPGGame 
-from auxiliary.player_proxy import PlayerProxy, get_player_proxy, TEST_PLAYER_NAME, TEST_GAME_INSTRUCTIONS_WHEN_LOGIN_SUCCESS_FOR_FIRST_TIME, TEST_LOGIN_INFORMATION
+from auxiliary.player_proxy import PlayerProxy, get_player_proxy, TEST_PLAYER_NAME
 from auxiliary.player_input_command import (
                           PlayerCommandAttack, 
                           PlayerCommandLeaveFor, 
@@ -16,12 +16,11 @@ from auxiliary.player_input_command import (
                           PlayerCommandTrade)
 
 from auxiliary.extended_context import ExtendedContext
-from auxiliary.components import EnviroNarrateActionComponent, NPCComponent
+from auxiliary.components import EnviroNarrateActionComponent
 from auxiliary.actor_action import ActorAction
 from typing import Optional
-from systems.check_status_action_system import CheckStatusActionHelper
-from systems.perception_action_system import PerceptionActionHelper
-from auxiliary.director_event import NPCPerceptionEvent, NPCCheckStatusEvent
+from systems.check_status_action_system import CheckStatusActionHelper, NPCCheckStatusEvent
+from systems.perception_action_system import PerceptionActionHelper, NPCPerceptionEvent
 
 ############################################################################################################
 def splitcommand(input_val: str, split_str: str)-> str:

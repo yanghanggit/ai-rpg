@@ -7,17 +7,17 @@ from auxiliary.components import (  PerceptionActionComponent,
 from loguru import logger
 from typing import List, Dict
 from auxiliary.director_component import notify_stage_director
-from auxiliary.director_event import NPCPerceptionEvent
+from auxiliary.director_event import IDirectorEvent
+from auxiliary.cn_builtin_prompt import result_of_perception_action_prompt
 
-
-
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
 class PerceptionActionHelper:
 
     def __init__(self, context: ExtendedContext):
         self.context = context
-        #self.npcs_in_stage: List[str] = []
         self.props_in_stage: List[str] = []
-
         self.npcs_in_stage: Dict[str, str] = {}
 ###################################################################################################################
     def perception(self, entity: Entity) -> None:
@@ -47,10 +47,27 @@ class PerceptionActionHelper:
         for prop in props_in_stage:
             res.append(prop.name)
         return res
-###################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
+#################################################################################################################################### 
+class NPCPerceptionEvent(IDirectorEvent):
 
-
-
+    def __init__(self, who_perception: str, stagename: str, result_npcs_in_stage: Dict[str, str], result_props_in_stage: List[str]) -> None:
+        self.who_perception = who_perception
+        self.stagename = stagename
+        self.result_npcs_in_stage = result_npcs_in_stage
+        self.result_props_in_stage = result_props_in_stage
+    
+    def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
+        if npcname != self.who_perception:
+            return ""
+        return result_of_perception_action_prompt(self.who_perception, self.stagename, self.result_npcs_in_stage, self.result_props_in_stage)
+    
+    def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
+        return ""
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
 class PerceptionActionSystem(ReactiveProcessor):
 
     def __init__(self, context: ExtendedContext):

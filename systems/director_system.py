@@ -31,12 +31,15 @@ class DirectorSystem(ExecuteProcessor):
         assert entitystage.has(StageComponent)
         stagecomp: StageComponent = entitystage.get(StageComponent)
         directorcomp: StageDirectorComponent = entitystage.get(StageDirectorComponent)
-        events2stage = directorcomp.tostage(stagecomp.name, self.context)         
-        newmsg = "\n".join(events2stage)
-        if len(newmsg) > 0:
-            #prompt = direct_stage_events_prompt(newmsg, self.context)
-            logger.debug(f"{stagecomp.name} => {newmsg}")
-            self.context.safe_add_human_message_to_entity(entitystage, newmsg)
+        events2stage = directorcomp.tostage(stagecomp.name, self.context)  
+        for event in events2stage:
+            logger.debug(f"{stagecomp.name} => {event}")
+            self.context.safe_add_human_message_to_entity(entitystage, event)       
+        # newmsg = "\n".join(events2stage)
+        # if len(newmsg) > 0:
+        #     #prompt = direct_stage_events_prompt(newmsg, self.context)
+        #     logger.debug(f"{stagecomp.name} => {newmsg}")
+        #     self.context.safe_add_human_message_to_entity(entitystage, newmsg)
 ###################################################################################################################
     def handle_npcs_in_this_stage(self, entitystage: Entity) -> None:
         assert entitystage.has(StageComponent)
@@ -45,12 +48,19 @@ class DirectorSystem(ExecuteProcessor):
         directorcomp: StageDirectorComponent = entitystage.get(StageDirectorComponent)
         for npcentity in allnpcsinthestage:
             npccomp: NPCComponent = npcentity.get(NPCComponent)
-            events2npc = directorcomp.tonpc(npccomp.name, self.context)            
-            newmsg = "\n".join(events2npc)
-            if len(newmsg) > 0:
-                #prompt = direct_npc_events_prompt(newmsg, self.context)
-                logger.debug(f"{npccomp.name} => {newmsg}")
-                self.context.safe_add_human_message_to_entity(npcentity, newmsg)
+            events2npc = directorcomp.tonpc(npccomp.name, self.context)     
+            for event in events2npc:
+                logger.debug(f"{npccomp.name} => {event}")
+                self.context.safe_add_human_message_to_entity(npcentity, event)
+
+
+
+
+            # newmsg = "\n".join(events2npc)
+            # if len(newmsg) > 0:
+            #     #prompt = direct_npc_events_prompt(newmsg, self.context)
+            #     logger.debug(f"{npccomp.name} => {newmsg}")
+            #     self.context.safe_add_human_message_to_entity(npcentity, newmsg)
                 
                 # #如果是player npc就再补充这个方法，通知调用客户端
                 # if npcentity.has(PlayerComponent):

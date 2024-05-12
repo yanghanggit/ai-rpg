@@ -31,48 +31,14 @@ def stage_plan_prompt(entity: Entity, context: ExtendedContext) -> str:
     prompt = f"根据‘计划制定指南’作出你的计划。要求：输出结果格式要遵循‘输出格式指南’,请确保给出的响应符合规范。结果中需要有EnviroNarrateActionComponent，并附带TagActionComponent。"
     return prompt
 
-def read_archives_when_system_init_prompt(archives: str, entity: Entity, context: ExtendedContext) -> str:
-    prompt = f"""
-# 你回忆起了如下信息:
-{archives}
-## 请理解其中的信息并更新的你的状态。
-## 遵循输出格式指南,仅返回MindVoiceActionComponent及相关内容即可。"""
+def init_memory_system_prompt(init_memory: str, entity: Entity, context: ExtendedContext) -> str:
+    prompt = f"""# 世界即将开始运行。你需要做初始状态的设定。
+## 你初始的设定状态如下: 
+{init_memory}。
+## 你需要将自己完全带入你的角色设定并开始游戏。
+## 请遵循输出格式指南,仅通过返回MindVoiceActionComponent及相关内容来确认你的状态。"""
     return prompt
-
-def read_all_neccesary_info_when_system_init_prompt(
-        init_memory: str, 
-        prop_and_desc: str, 
-        current_stage: str, 
-        where_you_know: str, 
-        who_you_know: str) -> str:
-    
-    prop_and_desc_prompt = f""" 
-# 你有如下道具和其描述:
-{prop_and_desc}"""
-    if len(prop_and_desc) == 0:
-        prop_and_desc_prompt = ""
-    
-    who_you_know_prompt = f"""
-# 你认识的人有:
-{who_you_know}.
-"""
-    if len(who_you_know) == 0:
-        who_you_know_prompt = ""
-    
-    where_you_know_prompt = f"""如果你想前往其他场景，你只能从{where_you_know}中选择你的目的地."""
-    if where_you_know is None or len(where_you_know) == 0:
-        where_you_know_prompt = ""
-
-    prompt = f"""
-# 你回忆起了如下信息:
-{init_memory}
-{prop_and_desc_prompt}
-# 你所在的场景是:{current_stage}.
-{where_you_know_prompt}
-{who_you_know_prompt}
-## 请理解其中的信息并更新的你的状态。
-## 遵循输出格式指南,仅返回MindVoiceActionComponent及相关内容即可。"""
-    return prompt
+ 
 
 def whisper_action_prompt(srcname: str, destname: str, content: str, context: ExtendedContext) -> str:
     prompt = f"{srcname}对{destname}低语道:{content}"   
@@ -152,20 +118,6 @@ def search_failed_prompt(npcname: str, prop_name:str) -> str:
 def search_success_prompt(npcname: str, prop_name:str, stagename: str) -> str:
     return f"{npcname}从{stagename}场景内成功找到并获取了道具:{prop_name}。{stagename}中不再存在这个道具。"
 
-# def unique_prop_taken_away(entity: Entity, prop_name:str) -> str:
-#     if entity.has(NPCComponent):
-#         npc_name: str = entity.get(NPCComponent).name
-#         return __unique_prop_taken_away__(npc_name, prop_name)
-#         #return f"{npc_name}找到了{prop_name},{prop_name}只存在唯一一份，其他人无法再搜到了。"
-#     #else:
-#     return ""
-
-    
-# def fail_to_enter_stage(npc_name: str, stage_name: str, enter_condition: str) -> str:
-#     return f"{npc_name}试图进入{stage_name} 但背包中没有{enter_condition}，不能进入，或许{npc_name}需要尝试搜索一下'{enter_condition}'."
-
-# def fail_to_exit_stage(npc_name: str, stage_name: str, exit_condition: str) -> str:
-#     return f"{npc_name}试图离开{stage_name} 但背包中没有{exit_condition}，不能离开，或许{npc_name}需要尝试搜索一下'{exit_condition}'."
 
 #
 def notify_all_already_in_target_stage_that_someone_enter_stage_prompt(some_ones_name: str, target_stage_name: str, last_stage_name: str) -> str:
@@ -201,22 +153,13 @@ def trade_action_prompt(fromwho: str, towho: str, propname: str, traderes: bool)
         return f"{fromwho}向{towho}交换{propname}, 失败了"
     return f"{fromwho}向{towho}成功交换了{propname}"
 
-# def perception_action_prompt(stagename: str, npcnames: str, propnames: str) -> str:
-#     res = ""
-#     if len(npcnames) > 0:
-#         res += f"你感知到了你所在的场景——{stagename}内有这些角色:{npcnames}。"
-#     if len(propnames) > 0:
-#         res += f"{stagename}中有这些道具:{propnames}。"
-#     if len(res) == 0:
-#         return f"你感知到了你所在的场景——{stagename}中没有其他的角色。也没有任何道具。"
-#     return res
 
-def result_of_perception_action_prompt2(npcname: str, stagename: str, ressult_npc_names: Dict[str, str], result_props_names: List[str]) -> str:
+def result_of_perception_action_prompt(who_perception: str, stagename: str, ressult_npc_names: Dict[str, str], result_props_names: List[str]) -> str:
 
     prompt_of_npc = ""
     if len(ressult_npc_names) > 0:
-        for npcname, appearance in ressult_npc_names.items():
-            prompt_of_npc += f"""### {npcname}\n- 外貌信息:{appearance}\n"""
+        for other_name, other_appearance in ressult_npc_names.items():
+            prompt_of_npc += f"""### {other_name}\n- 外貌信息:{other_appearance}\n"""
     else:
         prompt_of_npc = "- 目前场景内没有其他角色。"
 
@@ -228,7 +171,7 @@ def result_of_perception_action_prompt2(npcname: str, stagename: str, ressult_np
         prompt_of_props = "- 无任何道具。"
 
 
-    final_prompt = f"""# {npcname}当前在场景{stagename}中。{npcname}对{stagename}发起了感知行为，结果如下:
+    final_prompt = f"""# {who_perception}当前在场景{stagename}中。{who_perception}对{stagename}执行PerceptionActionComponent,即使发起感知行为,结果如下:
 ## 场景内人物:
 {prompt_of_npc}
 ## 场景内道具:
@@ -264,7 +207,9 @@ def role_component_info_prompt(prop: PropData) -> str:
     return prompt
 
 def check_status_action_prompt(who: str, props: List[PropData], health: float, role_components: List[PropData], events: List[PropData]) -> str:
-        
+    
+    #百分比的
+    health *= 100
     prompt_of_npc = f"生命值: {health:.2f}%"
 
     prompt_of_props = ""
@@ -283,7 +228,7 @@ def check_status_action_prompt(who: str, props: List[PropData], health: float, r
         prompt_of_role_components = "- 无任何特殊记忆与能力。"
 
 
-    final_prompt = f"""# {who}对自身进行检查，结果如下:
+    final_prompt = f"""# {who}对自身执行CheckStatusActionComponent,即对自身状态进行检查,结果如下:
 ## 健康状态:
 {prompt_of_npc}
 ## 持有道具:
@@ -301,20 +246,6 @@ def leave_for_stage_failed_because_stage_is_invalid_prompt(npcname: str, stagena
 
 def leave_for_stage_failed_because_already_in_stage_prompt(npcname: str, stagename: str) -> str:
     return f"你已经在{stagename}场景中了。需要重新考虑去往的目的地。'LeaveForActionComponent'行动类型意图是离开当前场景并去往某地。"
-
-# def direct_stage_events_prompt(message: str, context: ExtendedContext) -> str:
-#     prompt = f"""
-# # 场景内发生了如下事件：
-# {message}
-# # 根据以上更新你的状态。并以此作为做后续计划的基础。"""
-#     return prompt
-
-# def direct_npc_events_prompt(message: str, context: ExtendedContext) -> str:
-#     prompt = f"""
-# # 场景内发生了如下事件(有些是你参与的，有些是你目睹或感知到的)：
-# {message}
-# # 根据以上更新你的状态。并以此作为做后续计划的基础。"""
-#     return prompt
 
 def replace_all_mentions_of_your_name_with_you(content: str, your_name: str) -> str:
     if len(content) == 0 or your_name not in content:
@@ -353,49 +284,6 @@ def direct_npc_events_before_leave_stage_prompt(message: str, current_stage_name
     return prompt
 
 
-################################################################################################################################################
-def remember_begin_before_game_start_prompt(npcname: str, memorycontent: str, context: ExtendedContext) -> str:
-    if memorycontent == "":
-        raise ValueError("remember_begin_before_game_start_prompt, memorycontent is empty")
-
-    return f"""# 世界即将开始运行。你初始的设定状态如下: {memorycontent}"""
-################################################################################################################################################          
-def check_status_before_game_start_prompt(npcname: str, propsinfo: str, context: ExtendedContext) -> str:
-    if propsinfo == "":
-        return f"""# 你检查了自身的状态与持有的道具。目前你没有任何道具。"""
-    
-    return f"""# 你开始检查自身的状态与持有的道具。
-## 目前已经拥有的道具如下:\n{propsinfo}"""
-################################################################################################################################################
-def remember_npc_archives_before_game_start_prompt(npcname: str, who_you_know: str, context: ExtendedContext) -> str:
-    if who_you_know == "":
-        return f"""# 你试图回顾你认识的角色。目前你并没有认识任何人。"""
-    
-    return f"""# 你试图回顾你认识的角色。
-## 目前你认识的角色有:\n{who_you_know}"""
-################################################################################################################################################
-def confirm_current_stage_before_game_start_prompt(npcname: str, current_stage_name: str, context: ExtendedContext) -> str:
-    if current_stage_name == "":
-        return f"""# 你当前并不在任何场景中。"""
-    
-    return f"""# 目前你所在的场景是:{current_stage_name}"""
-################################################################################################################################################
-def confirm_stages_before_game_start_prompt(npcname: str, stages_names: str, context: ExtendedContext) -> str:
-    if stages_names == "":
-        return f"""# 目前你并不认识任何场景，根据游戏机制，也没有任何可以前往的场景。"""
-        
-    return f"""# 目前，你认识的场景有:{stages_names}。
-## 根据游戏机制你可以前往这些场景。目前你只能从{stages_names}中选择你的目的地，随着你认识的场景更新，你可以去的场景也会增加。"""
-################################################################################################################################################
-def current_stage_you_saw_someone_appearance_prompt(safe_stage_name: str, npcname: str, appearance:str, context: ExtendedContext) -> str:
-    return f"当前场景——{safe_stage_name}内，你看到了{npcname}，{appearance}"
-################################################################################################################################################
-def remember_end_before_game_start_prompt(npcname: str, context: ExtendedContext) -> str:
-    return f"""# 你回顾了以上的信息，包括最后的记忆，自身状态(拥有道具及其信息)，认识的角色，所处场景(及场景的角色)与认识的场景。"""
-################################################################################################################################################
-def notify_game_start_prompt(npcname: str, context: ExtendedContext) -> str:
-    return f"""# 现在世界开始运转，你——{npcname}，已经准备好了。你需要将自己完全带入你的角色设定并开始游戏。
-请遵循输出格式指南,仅通过返回MindVoiceActionComponent及相关内容来确认你的状态。"""
 ################################################################################################################################################
 def someone_came_into_my_stage_his_appearance_prompt(someone: str, hisappearance: str) -> str:
     return f"""你发现{someone}进入了场景，其外貌信息如下：{hisappearance}"""

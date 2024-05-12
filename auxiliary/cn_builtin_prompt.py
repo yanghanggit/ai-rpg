@@ -65,9 +65,9 @@ def perception_action_prompt(who_perception: str, current_stage: str, ressult_np
 def prop_type_prompt(prop: PropData) -> str:
     _type = "未知"
     if prop.is_weapon():
-        _type = "武器"
+        _type = "武器(提高攻击力)"
     elif prop.is_clothes():
-        _type = "衣服"
+        _type = "衣服(提高防御力)"
     elif prop.is_non_consumable_item():
         _type = "非消耗品"
     elif prop.is_role_component():

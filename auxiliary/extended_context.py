@@ -42,7 +42,7 @@ class ExtendedContext(Context):
         self.auto_save_trigger_count = auto_save_trigger_count
         
         # 暂时没用
-        self.executecount = 0
+        self.execute_count = 0
         
         #        
         assert self.file_system is not None, "self.file_system is None"

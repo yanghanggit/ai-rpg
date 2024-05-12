@@ -36,7 +36,7 @@
   "WhisperActionComponent":["@角色名字>你想私下说的内容","@角色名字>你想私下说的内容",...],
   "SearchActionComponent":["想要在本场景内搜索的道具的名称"]
   "TradeActionComponent":["@将你的道具交付给的角色的名字>交付的道具的名称"],
-  "PerceptionActionComponent":["你所在的场景的名字（即你意图查看场景人物与道具的状态）"],
+  "PerceptionActionComponent":["你所在的场景的名字（即你意图对所在场景做感知行为，来查看场景内人物与道具的信息）"],
   "CheckStatusActionComponent":["你的名字（即你意图查看你拥有哪些道具及道具的信息）"]
 }}
 

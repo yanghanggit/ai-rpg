@@ -13,7 +13,7 @@ from auxiliary.director_event import (
     NPCEnterStageEvent,
     ObserveOtherNPCAppearanceAfterEnterStageEvent)
 from typing import cast, Dict
-from auxiliary.player_proxy import notify_player_proxy
+#from auxiliary.player_proxy import notify_player_proxy
 from auxiliary.cn_builtin_prompt import direct_npc_events_before_leave_stage_prompt
 
 
@@ -115,8 +115,8 @@ class LeaveForActionSystem(ReactiveProcessor):
             self.context.safe_add_human_message_to_entity(helper.who_wana_leave_entity, prompt)
                 
             #如果是player npc就再补充这个方法，通知调用客户端
-            if helper.who_wana_leave_entity.has(PlayerComponent):
-                notify_player_proxy(helper.who_wana_leave_entity, newmsg, events2npc)
+            # if helper.who_wana_leave_entity.has(PlayerComponent):
+            #     notify_player_proxy(helper.who_wana_leave_entity, newmsg, events2npc)
     ###############################################################################################################################################
     def leave_stage(self, helper: LeaveActionHelper) -> None:
         entity: Entity = helper.who_wana_leave_entity

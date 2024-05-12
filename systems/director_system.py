@@ -3,8 +3,8 @@ from auxiliary.components import StageComponent, NPCComponent, PlayerComponent
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.director_component import StageDirectorComponent
-from auxiliary.cn_builtin_prompt import direct_stage_events_prompt, direct_npc_events_prompt
-from auxiliary.player_proxy import notify_player_proxy
+#from auxiliary.cn_builtin_prompt import direct_stage_events_prompt, direct_npc_events_prompt
+#from auxiliary.player_proxy import notify_player_proxy
 
 class DirectorSystem(ExecuteProcessor):
 
@@ -34,9 +34,9 @@ class DirectorSystem(ExecuteProcessor):
         events2stage = directorcomp.tostage(stagecomp.name, self.context)         
         newmsg = "\n".join(events2stage)
         if len(newmsg) > 0:
-            prompt = direct_stage_events_prompt(newmsg, self.context)
-            logger.debug(f"{stagecomp.name} => {prompt}")
-            self.context.safe_add_human_message_to_entity(entitystage, prompt)
+            #prompt = direct_stage_events_prompt(newmsg, self.context)
+            logger.debug(f"{stagecomp.name} => {newmsg}")
+            self.context.safe_add_human_message_to_entity(entitystage, newmsg)
 ###################################################################################################################
     def handle_npcs_in_this_stage(self, entitystage: Entity) -> None:
         assert entitystage.has(StageComponent)
@@ -48,12 +48,12 @@ class DirectorSystem(ExecuteProcessor):
             events2npc = directorcomp.tonpc(npccomp.name, self.context)            
             newmsg = "\n".join(events2npc)
             if len(newmsg) > 0:
-                prompt = direct_npc_events_prompt(newmsg, self.context)
-                logger.debug(f"{npccomp.name} => {prompt}")
-                self.context.safe_add_human_message_to_entity(npcentity, prompt)
+                #prompt = direct_npc_events_prompt(newmsg, self.context)
+                logger.debug(f"{npccomp.name} => {newmsg}")
+                self.context.safe_add_human_message_to_entity(npcentity, newmsg)
                 
-                #如果是player npc就再补充这个方法，通知调用客户端
-                if npcentity.has(PlayerComponent):
-                    notify_player_proxy(npcentity, newmsg, events2npc)
+                # #如果是player npc就再补充这个方法，通知调用客户端
+                # if npcentity.has(PlayerComponent):
+                #     notify_player_proxy(npcentity, newmsg, events2npc)
 ###################################################################################################################
     

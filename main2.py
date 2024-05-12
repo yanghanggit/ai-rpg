@@ -102,17 +102,17 @@ def main() -> None:
     rpggame.execute()
 
     # 测试的代码，上来就控制一个NPC目标，先写死
-    create_player_proxy(TEST_PLAYER_NAME)
-    playerproxy = get_player_proxy(TEST_PLAYER_NAME)
-    assert playerproxy is not None
-    playerstartcmd = PlayerCommandLogin("/player-login", rpggame, playerproxy, "无名的复活者")
-    playerstartcmd.execute()
+    # create_player_proxy(TEST_PLAYER_NAME)
+    # playerproxy = get_player_proxy(TEST_PLAYER_NAME)
+    # assert playerproxy is not None
+    # playerstartcmd = PlayerCommandLogin("/player-login", rpggame, playerproxy, "无名的复活者")
+    # playerstartcmd.execute()
 
-    #
-    while True:
-        if rpggame.exited:
-            break
-        rpggame.execute()
+    # #
+    # while True:
+    #     if rpggame.exited:
+    #         break
+    #     rpggame.execute()
     #
     rpggame.exit()
 

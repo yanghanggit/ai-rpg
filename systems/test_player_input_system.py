@@ -248,12 +248,11 @@ class TestPlayerInputSystem(ExecuteProcessor):
             return
         #
         helper = CheckStatusActionHelper(self.context)
-        helper.handle(playerentity)
-        propnames = helper.propnames
-        prop_and_desc = helper.prop_and_desc
+        helper.check_status(playerentity)
+        #
         safename = self.context.safe_get_entity_name(playerentity)
         #
-        event = NPCCheckStatusEvent(safename, propnames, prop_and_desc)
+        event = NPCCheckStatusEvent(safename, helper.props, helper.health, helper.role_components, helper.events)
         message = event.tonpc(safename, self.context)
         playerproxy.add_npc_message(safename, message)
 ############################################################################################################

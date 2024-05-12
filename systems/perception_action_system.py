@@ -2,9 +2,10 @@ from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity #type: ignore
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.components import (  PerceptionActionComponent,
                                     StageComponent,
+                                    RoleAppearanceComponent,
                                     NPCComponent)
 from loguru import logger
-from typing import List
+from typing import List, Dict
 from auxiliary.director_component import notify_stage_director
 from auxiliary.director_event import NPCPerceptionEvent
 
@@ -14,8 +15,10 @@ class PerceptionActionHelper:
 
     def __init__(self, context: ExtendedContext):
         self.context = context
-        self.npcs_in_stage: List[str] = []
+        #self.npcs_in_stage: List[str] = []
         self.props_in_stage: List[str] = []
+
+        self.npcs_in_stage: Dict[str, str] = {}
 ###################################################################################################################
     def perception(self, entity: Entity) -> None:
         safestage = self.context.safe_get_stage_entity(entity)
@@ -25,15 +28,16 @@ class PerceptionActionHelper:
         self.npcs_in_stage = self.perception_npcs_in_stage(entity, safestage)
         self.props_in_stage = self.perception_props_in_stage(entity, safestage)
 ###################################################################################################################
-    def perception_npcs_in_stage(self, entity: Entity, stageentity: Entity) -> List[str]:
-        res: List[str] = []
+    def perception_npcs_in_stage(self, entity: Entity, stageentity: Entity) -> Dict[str, str]:
+        res: Dict[str, str] = {}
         stagecomp: StageComponent = stageentity.get(StageComponent)
         npcs = self.context.npcs_in_this_stage(stagecomp.name)
         for npc in npcs:
             if npc == entity:
-                #过滤掉自己
                 continue
-            res.append(self.context.safe_get_entity_name(npc))
+            npccomp: NPCComponent = npc.get(NPCComponent)
+            appearance_comp: RoleAppearanceComponent  = npc.get(RoleAppearanceComponent)
+            res[npccomp.name] = appearance_comp.appearance
         return res
 ###################################################################################################################
     def perception_props_in_stage(self, entity: Entity, stageentity: Entity) -> List[str]:

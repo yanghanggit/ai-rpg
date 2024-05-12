@@ -6,7 +6,7 @@ kill_someone,
 attack_someone_prompt,
 npc_leave_stage_prompt, 
 notify_all_already_in_target_stage_that_someone_enter_stage_prompt, 
-perception_action_prompt,
+#perception_action_prompt,
 steal_action_prompt,
 trade_action_prompt,
 check_status_action_prompt,
@@ -19,10 +19,12 @@ notify_myself_leave_for_from_prompt,
 someone_came_into_my_stage_his_appearance_prompt,
 npc_appearance_in_this_stage_prompt,
 #use_item_action_success_prompt,
-interactive_prop_action_success_prompt)
+interactive_prop_action_success_prompt,
+result_of_perception_action_prompt2)
 from loguru import logger
 from abc import ABC, abstractmethod
 from typing import List, Dict
+from auxiliary.base_data import PropData
 
 ####################################################################################################################################
 ####################################################################################################################################
@@ -236,19 +238,22 @@ class WhisperEvent(IDirectorEvent):
 #################################################################################################################################### 
 class NPCPerceptionEvent(IDirectorEvent):
 
-    def __init__(self, whoperception: str, stagename: str, npcs_in_stage: List[str], props_in_stage: List[str]) -> None:
-        self.whoperception = whoperception
+    def __init__(self, who_perception: str, stagename: str, result_npcs_in_stage: Dict[str, str], result_props_in_stage: List[str]) -> None:
+        self.who_perception = who_perception
         self.stagename = stagename
-        self.npcs_in_stage = npcs_in_stage
-        self.props_in_stage = props_in_stage
+        self.result_npcs_in_stage = result_npcs_in_stage
+        #self.result_npcs_appearance_in_stage = result_npcs_in_stage
+        self.result_props_in_stage = result_props_in_stage
     
     def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
-        if npcname != self.whoperception:
+        if npcname != self.who_perception:
             return ""
-        npcnames = ",".join(self.npcs_in_stage)
-        propnames = ",".join(self.props_in_stage)
-        perceptioncontent = perception_action_prompt(self.stagename, npcnames, propnames)
-        return perceptioncontent
+        # npcnames = ",".join(self.npcs_in_stage)
+        # propnames = ",".join(self.props_in_stage)
+        # perceptioncontent = perception_action_prompt(self.stagename, npcnames, propnames)
+        # return perceptioncontent
+    
+        return result_of_perception_action_prompt2(self.who_perception, self.stagename, self.result_npcs_in_stage, self.result_props_in_stage)
     
     def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
         return ""
@@ -297,19 +302,18 @@ class NPCTradeEvent(IDirectorEvent):
 ####################################################################################################################################
 class NPCCheckStatusEvent(IDirectorEvent):
 
-    def __init__(self, who: str, propnames: List[str], props_and_desc: List[str]) -> None:
+    def __init__(self, who: str, props: List[PropData], health: float, role_components: List[PropData], events: List[PropData]) -> None:
         self.who = who
-        self.propnames = propnames
-        self.props_and_desc = props_and_desc
+        self.props = props
+        self.health = health
+        self.role_comps = role_components
+        self.events = events
 
     def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
         if npcname != self.who:
             # 只有自己知道
             return ""
-        propnames = ",".join(self.propnames)
-        props_and_desc = "\n".join(self.props_and_desc)
-        checkstatuscontent = check_status_action_prompt(self.who, propnames, props_and_desc)
-        return checkstatuscontent
+        return check_status_action_prompt(self.who, self.props, self.health, self.role_comps, self.events)
     
     def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
         return ""

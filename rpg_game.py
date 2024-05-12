@@ -22,7 +22,7 @@ from systems.npc_ready_for_planning_system import NPCReadyForPlanningSystem
 from systems.stage_planning_system import StagePlanningSystem
 from systems.npc_planning_system import NPCPlanningSystem
 from systems.speak_action_system import SpeakActionSystem
-from systems.fight_action_system import FightActionSystem
+from systems.attack_action_system import AttackActionSystem
 from systems.leave_for_action_system import LeaveForActionSystem
 from systems.pre_leave_for_system import PreLeaveForSystem
 from systems.director_system import DirectorSystem
@@ -55,10 +55,8 @@ from systems.check_status_action_system import CheckStatusActionSystem
 from base_game import BaseGame
 from systems.post_conversational_action_system import PostConversationalActionSystem
 from systems.init_agents_system import InitAgentsSystem
-from systems.remember_action_system import RememberActionSystem
 from auxiliary.file_system_helper import add_npc_archive_files
 from systems.my_processors import MyProcessors
-from systems.awake_action_system import AwakeActionSystem
 from systems.simple_rpg_role_pre_fight_system import SimpleRPGRolePreFightSystem
 
 ## 控制流程和数据创建
@@ -98,8 +96,6 @@ class RPGGame(BaseGame):
         processors.add(PreActionSystem(context)) ######## 在所有行动之前 #########################################
 
         #获取状态与查找信息类的行为
-        processors.add(AwakeActionSystem(context))
-        processors.add(RememberActionSystem(context))
         processors.add(CheckStatusActionSystem(context))
         processors.add(PerceptionActionSystem(context))
 
@@ -113,7 +109,7 @@ class RPGGame(BaseGame):
 
         #战斗类的行为
         processors.add(SimpleRPGRolePreFightSystem(context)) #战斗之前需要更新装备
-        processors.add(FightActionSystem(context)) 
+        processors.add(AttackActionSystem(context)) 
         processors.add(PostFightSystem(context))
         processors.add(DeadActionSystem(context)) 
         

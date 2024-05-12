@@ -62,9 +62,8 @@ def notify_player_proxy(npcentity: Entity, batchmessage: str, messages: List[str
 ###################################################################################################################
 ### 单人游戏，临时的名字
 TEST_PLAYER_NAME = "北京柏林互动科技有限公司"
-
-#
-TEST_LOGIN_INFORMATION = f"""这是一个测试的游戏，这是测试的的登陆信息，比如服务器xxx，上次登陆时间xxx，等等"""
+TEST_LOGIN_INFORMATION = f"""测试的游戏登陆信息"""
+TEST_GAME_INSTRUCTIONS_WHEN_LOGIN_SUCCESS_FOR_FIRST_TIME = f"""测试的游戏介绍"""
 
 # f"""
 # # 这是一个Demo，叫World2, 规则与要验证的系统如下：
@@ -76,7 +75,7 @@ TEST_LOGIN_INFORMATION = f"""这是一个测试的游戏，这是测试的的登
 # 6. ‘鼠王’如被惊醒，就会在所有场景中寻找主角并攻击，玩家则必死无疑。‘鼠王’是‘追击者’的类型。’鼠王‘苏醒就会变成‘鬼抓人’的游戏。
 # 7. 唯一克制鼠王的办法是去‘焚化炉‘获取’炉钩‘。"""
     
-TEST_GAME_INSTRUCTIONS_WHEN_LOGIN_SUCCESS_FOR_FIRST_TIME = f"""这是一个Demo，叫World2"""
+
     
 
 

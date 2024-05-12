@@ -25,8 +25,7 @@
 
 ### 请根据下面的示例, 确保你的输出严格遵守相应的结构。
 {{
-  "RememberActionComponent": ["你确认的回忆的内容"],
-  "FightActionComponent": ["要攻击的角色名字","要攻击的角色名字",...],
+  "AttackActionComponent": ["要攻击的角色名字","要攻击的角色名字",...],
   "TagActionComponent": ["与你相关的特征标签","与你相关的特征标签",...],
   "MindVoiceActionComponent": ["你的内心独白","你的内心独白",...],
   "WhisperActionComponent": ["@角色名字>你想私下说的内容","@角色名字>你想私下说的内容",...],

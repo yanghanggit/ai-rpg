@@ -1,5 +1,5 @@
 from entitas import Matcher, ReactiveProcessor, GroupEvent, Entity # type: ignore
-from auxiliary.components import FightActionComponent, SimpleRPGRoleComponent, DeadActionComponent, SimpleRPGRoleWeaponComponent, SimpleRPGRoleArmorComponent
+from auxiliary.components import AttackActionComponent, SimpleRPGRoleComponent, DeadActionComponent, SimpleRPGRoleWeaponComponent, SimpleRPGRoleArmorComponent
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.actor_action import ActorAction
 from loguru import logger
@@ -7,17 +7,17 @@ from auxiliary.director_component import notify_stage_director
 from auxiliary.director_event import NPCKillSomeoneEvent, NPCAttackSomeoneEvent
 from typing import cast
 
-class FightActionSystem(ReactiveProcessor):
+class AttackActionSystem(ReactiveProcessor):
 
     def __init__(self, context: ExtendedContext) -> None:
         super().__init__(context)
         self.context = context
 ######################################################################################################################################################
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(FightActionComponent): GroupEvent.ADDED}
+        return {Matcher(AttackActionComponent): GroupEvent.ADDED}
 ######################################################################################################################################################
     def filter(self, entity: Entity) -> bool:
-        return entity.has(FightActionComponent) and entity.has(SimpleRPGRoleComponent)
+        return entity.has(AttackActionComponent) and entity.has(SimpleRPGRoleComponent)
 ######################################################################################################################################################
     def react(self, entities: list[Entity]) -> None:
         for entity in entities:
@@ -26,7 +26,7 @@ class FightActionSystem(ReactiveProcessor):
     def fight(self, entity: Entity) -> None:
         context = self.context
         rpgcomp: SimpleRPGRoleComponent = entity.get(SimpleRPGRoleComponent)
-        fightcomp: FightActionComponent = entity.get(FightActionComponent)
+        fightcomp: AttackActionComponent = entity.get(AttackActionComponent)
         action: ActorAction = fightcomp.action
         for value in action.values:
 

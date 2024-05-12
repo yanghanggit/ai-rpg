@@ -27,8 +27,7 @@
 
 ### 请根据下面的示例, 确保你的输出严格遵守相应的结构。
 {{
-  "RememberActionComponent":["你确认的回忆的内容"],
-  "FightActionComponent":["要攻击的角色名字","要攻击的角色名字",...],
+  "AttackActionComponent":["要攻击的角色名字","要攻击的角色名字",...],
   "SpeakActionComponent":["@角色名字>你要说的内容","@角色名字>你要说的内容",...],
   "LeaveForActionComponent":["离开当前所在场景后前往的场景名字(必须明确知道场景的名称)"],
   "TagActionComponent": ["与你相关的特征标签","与你相关的特征标签",...],

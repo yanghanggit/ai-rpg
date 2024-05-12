@@ -20,7 +20,7 @@ def read_archives_when_system_init_prompt(archives: str, entity: Entity, context
 # 你回忆起了如下信息:
 {archives}
 ## 请理解其中的信息并更新的你的状态。
-## 遵循‘输出格式指南’，仅返回‘RememberActionComponent’及相关内容即可。"""
+## 遵循输出格式指南,仅返回MindVoiceActionComponent及相关内容即可。"""
     return prompt
 
 def read_all_neccesary_info_when_system_init_prompt(
@@ -55,7 +55,7 @@ def read_all_neccesary_info_when_system_init_prompt(
 {where_you_know_prompt}
 {who_you_know_prompt}
 ## 请理解其中的信息并更新的你的状态。
-## 遵循‘输出格式指南’，仅返回‘RememberActionComponent’及相关内容即可。"""
+## 遵循输出格式指南,仅返回MindVoiceActionComponent及相关内容即可。"""
     return prompt
 
 def whisper_action_prompt(srcname: str, destname: str, content: str, context: ExtendedContext) -> str:
@@ -315,7 +315,7 @@ def remember_end_before_game_start_prompt(npcname: str, context: ExtendedContext
 ################################################################################################################################################
 def notify_game_start_prompt(npcname: str, context: ExtendedContext) -> str:
     return f"""# 现在世界开始运转，你——{npcname}，已经准备好了。你需要将自己完全带入你的角色设定并开始游戏。
-请遵循输出格式指南，仅通过返回RememberActionComponent及相关内容来确认你的状态。"""
+请遵循输出格式指南,仅通过返回MindVoiceActionComponent及相关内容来确认你的状态。"""
 ################################################################################################################################################
 def someone_came_into_my_stage_his_appearance_prompt(someone: str, hisappearance: str) -> str:
     return f"""你发现{someone}进入了场景，其外貌信息如下：{hisappearance}"""

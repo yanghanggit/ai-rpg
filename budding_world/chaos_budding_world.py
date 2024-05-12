@@ -11,7 +11,7 @@ from auxiliary.builders import WorldDataBuilder
 from typing import Any, Optional
 
 ## 测试重复的json内容，应该是load不出来才对
-error_repeat = f"""{{"RememberActionComponent": ["测试的字符串"]}}{{"WhisperActionComponent": ["测试的字符串"]}}"""
+error_repeat = f"""{{"MindVoiceActionComponent": ["测试的字符串"]}}{{"WhisperActionComponent": ["测试的字符串"]}}"""
 
 ## 有额外的字符串
 error_extra_string_added = f"""{{"LeaveForActionComponent": ["禁言者之棺"]}}一个测试的字符串，不应该出现在这里"""

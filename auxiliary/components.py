@@ -16,12 +16,11 @@ InteractivePropActionComponent = namedtuple('InteractivePropActionComponent', 'i
 RoleAppearanceComponent = namedtuple('RoleAppearanceComponent', 'appearance')
 ###############################################################################################################################################
 ###动作类的组件
-RememberActionComponent = namedtuple('RememberActionComponent', 'action')
 MindVoiceActionComponent = namedtuple('MindVoiceActionComponent', 'action')
 BroadcastActionComponent = namedtuple('BroadcastActionComponent', 'action')
 WhisperActionComponent = namedtuple('WhisperActionComponent', 'action')
 SpeakActionComponent = namedtuple('SpeakActionComponent', 'action')
-FightActionComponent = namedtuple('FightActionComponent', 'action')
+AttackActionComponent = namedtuple('AttackActionComponent', 'action')
 LeaveForActionComponent = namedtuple('LeaveForActionComponent', 'action')
 TagActionComponent = namedtuple('TagActionComponent', 'action')
 DeadActionComponent = namedtuple('DeadActionComponent', 'action')
@@ -33,7 +32,7 @@ TradeActionComponent = namedtuple('TradeActionComponent', 'action')
 CheckStatusActionComponent = namedtuple('CheckStatusActionComponent', 'action')
 EnviroNarrateActionComponent = namedtuple('EnviroNarrateActionComponent', 'action')
 UseInteractivePropActionComponent = namedtuple('UseInteractivePropActionComponent', 'action')
-AwakeActionComponent = namedtuple('AwakeActionComponent', 'action')
+#AwakeActionComponent = namedtuple('AwakeActionComponent', 'action')
 ###############################################################################################################################################
 ###游戏业务组件
 SimpleRPGRoleComponent = namedtuple('SimpleRPGRoleComponent', 'name maxhp hp attack defense')
@@ -41,13 +40,13 @@ SimpleRPGRoleWeaponComponent = namedtuple('SimpleRPGRoleWeaponComponent', 'name 
 SimpleRPGRoleArmorComponent = namedtuple('SimpleRPGRoleArmorComponent', 'name armorname maxhp attack defense')
 ###############################################################################################################################################
 # 特殊组件，Player专用
-PlayerLoginEventComponent = namedtuple('PlayerLoginEventComponent', 'name npcname')
+#PlayerLoginEventComponent = namedtuple('PlayerLoginEventComponent', 'name npcname')
 ###############################################################################################################################################
 
 
 #注册一下方便使用
-STAGE_AVAILABLE_ACTIONS_REGISTER = [RememberActionComponent,
-                                    FightActionComponent,
+STAGE_AVAILABLE_ACTIONS_REGISTER = [
+                                    AttackActionComponent,
                                     TagActionComponent, 
                                     MindVoiceActionComponent,
                                     WhisperActionComponent,
@@ -59,11 +58,10 @@ STAGE_DIALOGUE_ACTIONS_REGISTER = [SpeakActionComponent,
 
 
 #注册一下方便使用
-NPC_AVAILABLE_ACTIONS_REGISTER = [FightActionComponent, 
+NPC_AVAILABLE_ACTIONS_REGISTER = [AttackActionComponent, 
                          LeaveForActionComponent, 
                          SpeakActionComponent, 
                          TagActionComponent, 
-                         RememberActionComponent, 
                          MindVoiceActionComponent, 
                          BroadcastActionComponent,
                          WhisperActionComponent,
@@ -73,8 +71,7 @@ NPC_AVAILABLE_ACTIONS_REGISTER = [FightActionComponent,
                          StealActionComponent,
                          TradeActionComponent,
                          CheckStatusActionComponent,
-                         UseInteractivePropActionComponent,
-                         AwakeActionComponent]
+                         UseInteractivePropActionComponent]
 
 NPC_DIALOGUE_ACTIONS_REGISTER = [SpeakActionComponent, 
                                 BroadcastActionComponent,

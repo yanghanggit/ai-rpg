@@ -267,11 +267,6 @@ def direct_npc_events_before_leave_stage_prompt(message: str, current_stage_name
     return prompt
 
 
-def use_item_action_success_prompt(who_use: str, targetname: str, itemname: str) -> str:
-    return f"{who_use}对{targetname}使用了{itemname},顺利打开了{targetname}"
-
-
-
 ################################################################################################################################################
 def remember_begin_before_game_start_prompt(npcname: str, memorycontent: str, context: ExtendedContext) -> str:
     if memorycontent == "":

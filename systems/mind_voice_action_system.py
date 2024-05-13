@@ -26,6 +26,6 @@ class MindVoiceActionSystem(ReactiveProcessor):
         mindvoicecomp: MindVoiceActionComponent = entity.get(MindVoiceActionComponent)
         action: ActorAction = mindvoicecomp.action
         combine = action.single_value()
-        logger.debug(f"debug!! [mindvoice]:{action.name} = {combine}")
+        #logger.debug(f"debug!! [mindvoice]:{action.name} = {combine}")
  ####################################################################################################       
                 

@@ -148,7 +148,6 @@ def check_status_action_prompt(who: str, props: List[PropData], health: float, r
 """
     return final_prompt
 ###############################################################################################################################################
-# 重构用 摩尔=>摩尔试图寻找奇异的声响，但奇异的声响在场景中不存在或者被其他人拿走了,需要再重新考虑目标。
 def search_action_failed_prompt(npcname: str, prop_name:str) -> str:
     return f"""# {npcname}试图在场景内搜索"{prop_name}",但失败了。
 ## 原因可能如下:

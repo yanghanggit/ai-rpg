@@ -191,6 +191,8 @@ class RPGGame(BaseGame):
         chaos_engineering_system.on_post_create_world(context, worlddata)
 ###############################################################################################################################################
     def execute(self) -> None:
+        self.started = True
+
         #顺序不要动！！！！！！！！！
         if not self.inited:
             self.inited = True
@@ -199,7 +201,6 @@ class RPGGame(BaseGame):
         
         self.processors.execute()
         self.processors.cleanup()
-        self.started = True
 ###############################################################################################################################################
     def exit(self) -> None:
         self.processors.clear_reactive_processors()

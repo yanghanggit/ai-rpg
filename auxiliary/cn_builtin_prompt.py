@@ -347,12 +347,9 @@ def updated_information_about_StagesYouKnow_prompt(npcname: str, where_you_know:
     return f"# 你更新了关于‘你都认知哪些场景’的信息，目前你所知道的场景有: {where_you_know}。如果你意图离开本场景并去往其他场景，你只能从这些场景中选择你的目的地。"
 
 
-    
 
-
-
-def interactive_prop_action_success_prompt(who_use: str, targetname: str, propname: str) -> str:
-    return f"{who_use}对{targetname}使用了{propname},顺利打开了{targetname}"
+def interactive_prop_action_success_prompt(who_use: str, targetname: str, propname: str, interactiveaction: str, interactiveresult: str) -> str:
+    return f"{who_use}拿着{propname}{interactiveaction}了{targetname}造成了{interactiveresult}"
 
 
 

@@ -165,3 +165,6 @@ class FileSystem:
                 return file
         return None
 ################################################################################################################
+    def has_stage_archive_file(self, ownersname: str, stagename: str) -> bool:
+        return self.get_stage_archive_file(ownersname, stagename) is not None
+################################################################################################################

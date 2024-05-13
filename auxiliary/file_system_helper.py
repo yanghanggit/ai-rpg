@@ -33,7 +33,7 @@ def add_stage_archive_files(file_system: FileSystem, myname: str, stage_names: S
     res: List[StageArchiveFile] = []
 
     for stagename in stage_names:
-        if myname == stagename:
+        if myname == stagename or file_system.has_stage_archive_file(myname, stagename):
             continue
         file = StageArchiveFile(stagename, myname, stagename)
         file_system.add_stage_archive_file(file)

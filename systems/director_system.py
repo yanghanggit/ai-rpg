@@ -46,6 +46,7 @@ class DirectorSystem(ExecuteProcessor):
             #
             events2npc = directorcomp.tonpc(npccomp.name, self.context)     
             for event in events2npc:
+                logger.debug(f"{npccomp.name} => {event}")
                 self.context.safe_add_human_message_to_entity(npcentity, event)
             #
             if npcentity.has(PlayerComponent):

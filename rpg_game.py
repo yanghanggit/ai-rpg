@@ -1,6 +1,6 @@
 import os
 from typing import List, Optional
-from auxiliary.base_data import PropData
+from auxiliary.base_data import NPCData, PropData, StageData
 from entitas import Processors, Matcher #type: ignore
 from loguru import logger
 from auxiliary.components import (
@@ -185,7 +185,7 @@ class RPGGame(BaseGame):
         ## 第四步，最后处理因为需要上一阶段的注册流程
         self.add_code_name_component_stages_when_build()
 
-        self.add_all_props(worlddata)
+        self.create_data_base_system(worlddata)
 
         ## 混沌系统，准备测试
         chaos_engineering_system.on_post_create_world(context, worlddata)
@@ -437,19 +437,72 @@ class RPGGame(BaseGame):
             if codecompclass is not None:
                 entity.add(codecompclass, stagecomp.name)
 ###############################################################################################################################################
-    def add_all_props(self, worlddata: WorldDataBuilder) -> None:
+    def create_data_base_system(self, worlddata: WorldDataBuilder) -> None:
         context = self.extendedcontext
-        file_system = context.file_system
+        data_base_system = context.data_base_system
 
         database = worlddata.data.get('database', None)
         if database is None:
             logger.error("没有数据库(database)，请检查World.json配置。")
             return
+        
+        npcs = database.get('npcs', None)
+        if npcs is None:
+            logger.error("没有NPC数据内容(npcs)，请检查World.json配置。")
+            return
+        
+        for npc in npcs:
+            npc_data = npc.get('npc', None)
+            assert npc_data is not None
+
+            data_base_system.add_npc(npc_data.get('name'), NPCData(
+                npc_data.get('name'), 
+                npc_data.get('codename'), 
+                npc_data.get('description'), 
+                npc_data.get('memory'), 
+                npc_data.get('url'), 
+                npc_data.get('attributes'), 
+                npc_data.get('role_appearance'), 
+                npc_data.get('npc_names_mentioned_during_editing_or_for_agent')
+            ))
+
+        stages = database.get('stages', None)
+        if stages is None:
+            logger.error("没有场景数据内容(stages)，请检查World.json配置。")
+            return
+        
+        for stage in stages:
+            print(stage)
+            stage_data = stage.get('stage', None)
+            assert stage_data is not None
+
+            data_base_system.add_stage(stage_data.get('name'), StageData(
+                stage_data.get('name'), 
+                stage_data.get('codename'), 
+                stage_data.get('description'), 
+                stage_data.get('url'), 
+                stage_data.get('memory'), 
+                stage_data.get('entry_conditions'), 
+                stage_data.get('exit_conditions'), 
+                stage_data.get('npcs'), 
+                stage_data.get('props'), 
+                stage_data.get('interactiveprops')
+            ))
 
         props = database.get('props', None)
         if props is None:
             logger.error("没有道具数据内容(props)，请检查World.json配置。")
             return
 
-        for prop in props:
-            file_system.add_prop_data(PropData(prop.get('name'), prop.get('codename'), prop.get('description'), prop.get('isunique'), prop.get('type'), prop.get('attributes')))
+        for prop_data in props:
+            data_base_system.add_prop(prop_data.get('name'), PropData(
+                prop_data.get('name'), 
+                prop_data.get('codename'), 
+                prop_data.get('description'), 
+                prop_data.get('isunique'), 
+                prop_data.get('type'), 
+                prop_data.get('attributes')))
+            
+        logger.info("创建数据库成功。")
+            
+###############################################################################################################################################

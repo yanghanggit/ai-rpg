@@ -42,6 +42,7 @@ class InteractivePropActionSystem(ReactiveProcessor):
                 notify_stage_director(self.context, entity, NPCInteractivePropEvent(user_name, targetname, propname))
 
     def _interactive_prop_(self, entity: Entity, targetname: str, propname: str) -> bool:
+        databasesystem = self.context.data_base_system
         filesystem = self.context.file_system
         username = self.context.safe_get_entity_name(entity)
 
@@ -53,13 +54,14 @@ class InteractivePropActionSystem(ReactiveProcessor):
         if interactivepropresult is None:
             logger.warning(f"{targetname}与{propname}之间的关系未定义，请检查。")
             return False
-        if not filesystem.has_prop_data(interactivepropresult):
-            logger.error(f"prop数据库不存在{interactivepropresult}，请检查。")
-            return False
-        propdata = filesystem.get_prop_data(interactivepropresult)
-        assert propdata is not None
         
+        if databasesystem.get_prop(interactivepropresult) is None:
+            logger.error(f"数据库不存在{interactivepropresult}，请检查。")
+            return False
+    
         if not filesystem.has_prop_file(username, interactivepropresult):
+            propdata = databasesystem.get_prop(interactivepropresult)
+            assert propdata is not None
             createpropfile = PropFile(interactivepropresult, username, propdata)
             filesystem.add_prop_file(createpropfile)
         else:

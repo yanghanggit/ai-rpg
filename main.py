@@ -2,6 +2,7 @@ import os
 from typing import Optional
 from loguru import logger
 import datetime
+from auxiliary.data_base_system import DataBaseSystem
 from auxiliary.dialogue_rule import parse_target_and_message
 from auxiliary.builders import WorldDataBuilder
 from rpg_game import RPGGame 
@@ -55,6 +56,7 @@ def create_rpg_game(worldname: str, chaosengineering: Optional[IChaosEngineering
     memory_system = MemorySystem("memorey_system， Because it involves IO operations, an independent system is more convenient.")
     agent_connect_system = AgentConnectSystem("agent_connect_system， Because it involves net operations, an independent system is more convenient.")
     code_name_component_system = CodeNameComponentSystem("Build components by codename for special purposes")
+    data_base_system = DataBaseSystem("data_base_system，it is a system that stores all the origin data from the settings.")
     
     ### 混沌工程系统
     if chaosengineering is not None:
@@ -66,8 +68,9 @@ def create_rpg_game(worldname: str, chaosengineering: Optional[IChaosEngineering
     context = ExtendedContext(file_system, 
                               memory_system, 
                               agent_connect_system, 
-                              code_name_component_system, 
-                              chaos_engineering_system, 
+                              code_name_component_system,  
+                              data_base_system,
+                              chaos_engineering_system,
                               False,
                               10000000)
 

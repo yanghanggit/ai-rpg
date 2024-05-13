@@ -1,4 +1,5 @@
 from loguru import logger
+from auxiliary.data_base_system import DataBaseSystem
 from entitas import (Entity, # type: ignore
                     Matcher, 
                     Context)
@@ -22,7 +23,8 @@ class ExtendedContext(Context):
                  filesystem: FileSystem, 
                  memorysystem: MemorySystem, 
                  agentconnectsys: AgentConnectSystem, 
-                 codenamecompsys: CodeNameComponentSystem, 
+                 codenamecompsys: CodeNameComponentSystem,
+                 databasesys: DataBaseSystem, 
                  chaossystem: IChaosEngineering, 
                  save_data_enable: bool,
                  auto_save_trigger_count: int) -> None:
@@ -35,6 +37,7 @@ class ExtendedContext(Context):
         self.memory_system = memorysystem
         self.agent_connect_system = agentconnectsys
         self.code_name_component_system = codenamecompsys
+        self.data_base_system = databasesys
         self.chaos_engineering_system = chaossystem
         
         # 控制一下自动存档
@@ -49,6 +52,7 @@ class ExtendedContext(Context):
         assert self.memory_system is not None, "self.memory_system is None"
         assert self.agent_connect_system is not None, "self.agent_connect_system is None"
         assert self.code_name_component_system is not None, "self.code_name_component_system is None"
+        assert self.data_base_system is not None, "self.data_base_system is None"
         assert self.chaos_engineering_system is not None, "self.chaos_engineering_system is None"
 ############################################################################################################
     #世界基本就一个（或者及其少的数量），所以就遍历一下得了。

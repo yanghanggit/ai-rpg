@@ -165,16 +165,3 @@ class FileSystem:
                 return file
         return None
 ################################################################################################################
-
-    # 处理道具文件
-    def get_prop_data(self, propname: str) -> Optional[PropData]:
-        for prop in self.all_prop_files:
-            if prop.name == propname:
-                return prop
-        return None
-    
-    def has_prop_data(self, propname: str) -> bool:
-        return self.get_prop_data(propname) is not None
-    
-    def add_prop_data(self, propdata: PropData) -> None:
-        self.all_prop_files.append(propdata)

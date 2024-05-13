@@ -26,7 +26,7 @@ def npc_plan_prompt(current_stage: str, stage_enviro_narrate: str, context: Exte
 
     prompt = f"""# 根据计划制定指南作出你的计划。
 ## 你当前所在的场景是{current_stage_prompt}。
-## 场景的环境描述如下:
+## 场景的环境描述如下(可以用于做参考信息):
 - {current_stage_enviro_narrate_prompt}
 ## 要求:输出结果格式要遵循输出格式指南。结果中需要附带TagActionComponent。"""
     return prompt
@@ -43,7 +43,7 @@ def first_time_npc_plan_prompt(current_stage: str, stage_enviro_narrate: str, co
 
     prompt = f"""# 根据计划制定指南作出你的计划。
 ## 你当前所在的场景是{current_stage_prompt}。
-## 场景的环境描述如下:
+## 场景的环境描述如下(可以用于做参考信息):
 - {current_stage_enviro_narrate_prompt}
 ## 要求:
 - 输出结果格式要遵循输出格式指南。
@@ -359,12 +359,3 @@ def interactive_prop_action_success_prompt(who_use: str, targetname: str, propna
 
 
 
-
-
-
-
-
-################################################################################################################################################
-def npc_in_the_stage_wakes_up_prompt(npcname: str, stagesname: str, remembered_content: str, context: ExtendedContext) -> str:
-    return f"{npcname}在{stagesname}中醒来。你能听见他（她/它）心中的独白和他此时的状态。内容如下: {remembered_content}。你在理解了以上信息之后，更新你的状态。"
-################################################################################################################################################

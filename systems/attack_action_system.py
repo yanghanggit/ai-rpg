@@ -5,7 +5,8 @@ from auxiliary.actor_action import ActorAction
 from loguru import logger
 from auxiliary.director_component import notify_stage_director
 from auxiliary.director_event import NPCKillSomeoneEvent, NPCAttackSomeoneEvent
-from typing import cast
+from typing import cast, Optional
+from auxiliary.dialogue_rule import dialogue_enable, parse_target_and_message, ErrorDialogueEnable
 
 class AttackActionSystem(ReactiveProcessor):
 
@@ -37,6 +38,11 @@ class AttackActionSystem(ReactiveProcessor):
 
             if not findtarget.has(SimpleRPGRoleComponent):
                 logger.warning(f"攻击者{action.name}意图攻击的对象{value}没有SimpleRPGRoleComponent,本次攻击无效.")
+                continue
+
+            if dialogue_enable(self.context, entity, value) != ErrorDialogueEnable.VALID:
+                # 不能说话的就是不能打
+                logger.error(f"攻击者{action.name}意图攻击的对象{value}不能被攻击，因为不能对话，本次攻击无效.")
                 continue
             
             #目标拿出来

@@ -203,9 +203,11 @@ def observe_appearance_after_entering_stage_prompt(myname: str, stagename: str, 
             prompt_of_npc += f"""### {other_name}\n- 外貌信息:{other_appearance}\n"""
     else:
         prompt_of_npc = "- 无任何外貌信息。"
-    return f"""# {myname}进入{stagename}之后观察场景内的角色。
+    return f"""# {myname}进入{stagename}之后观察场景内的角色.
 ## 外貌信息如下:
-{prompt_of_npc}"""
+{prompt_of_npc}
+## 提示:
+- 你可以和这些角色产生互动了(因为是在同一场景内)"""
 ################################################################################################################################################
 def enter_stage_prompt1(some_ones_name: str, target_stage_name: str) -> str:
     return f"{some_ones_name}进入了场景——{target_stage_name}。"

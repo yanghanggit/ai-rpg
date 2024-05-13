@@ -15,16 +15,12 @@ class TestPlayerPostDisplayClientMessageSystem(ExecuteProcessor):
         player_npc_entity = self.context.getplayer(playername)
         if player_npc_entity is None or playerproxy is None:
             return
-        
         #
         self.display_player_client_messages(playerproxy, 10)
-
         #
         while True:
-            # 客户端应该看到的
-            self.display_player_client_messages(playerproxy, 10)
             # 测试的客户端反馈
-            usrinput = input(f"[{playername}]:")
+            usrinput = input(f"[{playername}]:回车继续")
             break   
 ############################################################################################################ 
     def display_player_client_messages(self, playerproxy: PlayerProxy, display_messages_count: int) -> None:

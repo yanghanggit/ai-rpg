@@ -82,7 +82,7 @@ class PlayerCommandLogin(PlayerCommand):
             return
     
         npcentity.replace(PlayerComponent, myname)
-        logger.info(f"login success! {myname} => {login_npc_name}")
+        #logger.info(f"login success! {myname} => {login_npc_name}")
         
         ###
         logger.warning(f"{myname} 登陆了游戏")

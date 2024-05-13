@@ -15,7 +15,7 @@ class PrePlanningSystem(InitializeProcessor, ExecuteProcessor):
 
     def __init__(self, context: ExtendedContext) -> None:
         self.context: ExtendedContext = context
-        self.strategy: PlanningStrategy = PlanningStrategy.STRATEGY_ONLY_PLAYERS_STAGE
+        self.strategy: PlanningStrategy = PlanningStrategy.STRATEGY_ALL
 ############################################################################################################
     def initialize(self) -> None:
         pass

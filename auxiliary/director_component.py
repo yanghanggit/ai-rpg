@@ -36,6 +36,25 @@ class StageDirectorComponent(DirectorComponentPrototype):
     def clear(self) -> None:
         self.events.clear()
 
+
+    def player_client_message(self, target_npc_name: str, extended_context: ExtendedContext) -> List[str]:
+        # 哭，循环引用，临时就这么写吧
+        from auxiliary.director_event import WhisperEvent
+        from auxiliary.director_event import SpeakEvent
+        from auxiliary.director_event import BroadcastEvent
+
+        batch: List[str] = []
+        for event in self.events:
+            check = isinstance(event, WhisperEvent) or isinstance(event, SpeakEvent) or isinstance(event, BroadcastEvent)
+            if check:
+                # 这3种在TestPlayerUpdateClientMessageSystem会特殊处理，这里不用再导出了。
+                continue
+            res = event.tonpc(target_npc_name, extended_context)
+            if res != "":
+                res = replace_all_mentions_of_your_name_with_you(res, target_npc_name)
+                batch.append(res)
+        return batch
+
 #
 def notify_stage_director(context: ExtendedContext, entity: Entity, directevent: IDirectorEvent) -> bool:
     stageentity = context.safe_get_stage_entity(entity)

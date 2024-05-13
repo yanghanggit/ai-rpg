@@ -33,7 +33,7 @@ class DirectorSystem(ExecuteProcessor):
         directorcomp: StageDirectorComponent = entitystage.get(StageDirectorComponent)
         events2stage = directorcomp.tostage(stagecomp.name, self.context)  
         for event in events2stage:
-            logger.debug(f"{stagecomp.name} => {event}")
+            #logger.debug(f"{stagecomp.name} => {event}")
             self.context.safe_add_human_message_to_entity(entitystage, event)       
 ###################################################################################################################
     def handle_npcs_in_this_stage(self, entitystage: Entity) -> None:
@@ -43,11 +43,14 @@ class DirectorSystem(ExecuteProcessor):
         directorcomp: StageDirectorComponent = entitystage.get(StageDirectorComponent)
         for npcentity in allnpcsinthestage:
             npccomp: NPCComponent = npcentity.get(NPCComponent)
+            #
             events2npc = directorcomp.tonpc(npccomp.name, self.context)     
             for event in events2npc:
-                logger.debug(f"{npccomp.name} => {event}")
                 self.context.safe_add_human_message_to_entity(npcentity, event)
-                if npcentity.has(PlayerComponent):
+            #
+            if npcentity.has(PlayerComponent):
+                events2player = directorcomp.player_client_message(npccomp.name, self.context)
+                for event in events2player:
                     add_player_client_message(npcentity, event)
 ###################################################################################################################
     

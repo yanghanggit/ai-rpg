@@ -1,3 +1,4 @@
+import re
 from typing import Optional
 from loguru import logger
 from auxiliary.actor_action import ActorAction
@@ -38,8 +39,6 @@ class InteractivePropActionSystem(ReactiveProcessor):
             assert propname is not None
             if self._interactive_prop_(entity, targetname, propname): 
                 logger.debug(f"InteractivePropActionSystem: {targetname} is using {propname}")
-                user_name = self.context.safe_get_entity_name(entity)
-                notify_stage_director(self.context, entity, NPCInteractivePropEvent(user_name, targetname, propname))
 
     def _interactive_prop_(self, entity: Entity, targetname: str, propname: str) -> bool:
         databasesystem = self.context.data_base_system
@@ -67,8 +66,25 @@ class InteractivePropActionSystem(ReactiveProcessor):
         else:
             logger.error(f"{username}已经达成{interactivepropresult},请检查结果是否正确。")
             return False
+        
+        interactiveaction = self.parse_interactive_prop_action(propdata, propname, targetname)
+        if interactiveaction is None:
+            logger.error(f"解析交互道具{propname}与{targetname}之间的关系失败，请检查。")
+            return False
+        notify_stage_director(self.context, entity, NPCInteractivePropEvent(username, targetname, propname, interactiveaction, interactivepropresult))
 
         return True
+    
+
+    def parse_interactive_prop_action(self, propdata: PropData, interactivepropname: str, targetname: str) -> Optional[str]:
+        description = propdata.description
+        pattern = rf"{interactivepropname}(.*?){targetname}"
+        matchresult = re.search(pattern, description)
+        if matchresult:
+            return matchresult.group(1).strip()
+        else:
+            return None
+
         
     
     def check_target_with_prop(self, targetname: str, propname: str) -> Optional[str]:

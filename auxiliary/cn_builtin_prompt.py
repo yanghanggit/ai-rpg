@@ -20,14 +20,14 @@ def npc_plan_prompt(current_stage: str, stage_enviro_narrate: str, context: Exte
     if current_stage != "":
         current_stage_prompt = current_stage
 
-    current_stage_enviro_narrate_prompt = "无"
-    if stage_enviro_narrate != "":
-        current_stage_enviro_narrate_prompt = stage_enviro_narrate
+#     current_stage_enviro_narrate_prompt = "无"
+#     if stage_enviro_narrate != "":
+#         current_stage_enviro_narrate_prompt = stage_enviro_narrate
+#         ## 场景的环境描述如下(可以用于做参考信息):
+# - {current_stage_enviro_narrate_prompt}
 
     prompt = f"""# 根据计划制定指南作出你的计划。
-## 你当前所在的场景是{current_stage_prompt}。
-## 场景的环境描述如下(可以用于做参考信息):
-- {current_stage_enviro_narrate_prompt}
+## 你当前所在的场景:{current_stage_prompt}。
 ## 要求:输出结果格式要遵循输出格式指南。结果中需要附带TagActionComponent。"""
     return prompt
 ###############################################################################################################################################
@@ -37,14 +37,14 @@ def first_time_npc_plan_prompt(current_stage: str, stage_enviro_narrate: str, co
     if current_stage != "":
         current_stage_prompt = current_stage
 
-    current_stage_enviro_narrate_prompt = "无"
-    if stage_enviro_narrate != "":
-        current_stage_enviro_narrate_prompt = stage_enviro_narrate
+#     current_stage_enviro_narrate_prompt = "和上次相比没有变化"
+#     if stage_enviro_narrate != "":
+#         current_stage_enviro_narrate_prompt = stage_enviro_narrate
+#         ## 场景的环境描述如下(可以用于做参考信息):
+# - {current_stage_enviro_narrate_prompt}
 
     prompt = f"""# 根据计划制定指南作出你的计划。
-## 你当前所在的场景是{current_stage_prompt}。
-## 场景的环境描述如下(可以用于做参考信息):
-- {current_stage_enviro_narrate_prompt}
+## 你当前所在的场景:{current_stage_prompt}。
 ## 要求:
 - 输出结果格式要遵循输出格式指南。
 - 本次是你第一次制定计划,所以需要有PerceptionActionComponent与CheckStatusActionComponent,用于感知场景内的道具与确认自身状态。
@@ -197,11 +197,13 @@ def someone_entered_my_stage_observed_his_appearance_prompt(someone: str, his_ap
 - {his_appearance}"""
 ################################################################################################################################################
 def observe_appearance_after_entering_stage_prompt(myname: str, stagename: str, npc_appearance_in_stage: Dict[str, str]) -> str:
-    prompt_of_npc = "无任何外貌信息。"
+    prompt_of_npc = ""
     assert len(npc_appearance_in_stage) > 0
     if len(npc_appearance_in_stage) > 0:
         for other_name, other_appearance in npc_appearance_in_stage.items():
             prompt_of_npc += f"""### {other_name}\n- 外貌信息:{other_appearance}\n"""
+    else:
+        prompt_of_npc = "- 无任何外貌信息。"
     return f"""# {myname}进入{stagename}之后观察场景内的角色。
 ## 外貌信息如下:
 {prompt_of_npc}"""

@@ -171,10 +171,12 @@ class LeaveForActionSystem(ReactiveProcessor):
         #
         events2npc = directorcomp.tonpc(safe_npc_name, self.context)   
         for event in events2npc:
-            #logger.debug(f"{safe_npc_name} => {event}")
-            self.context.safe_add_human_message_to_entity(helper.who_wana_leave_entity, event)  
-            if helper.who_wana_leave_entity.has(PlayerComponent):
-                add_player_client_message(helper.who_wana_leave_entity, event)       
+            self.context.safe_add_human_message_to_entity(helper.who_wana_leave_entity, event)    
+        ##
+        if helper.who_wana_leave_entity.has(PlayerComponent):
+            events2player = directorcomp.player_client_message(safe_npc_name, self.context)
+            for event in events2player:
+                add_player_client_message(helper.who_wana_leave_entity, event)
     ###############################################################################################################################################
     def leave_stage(self, helper: LeaveActionHelper) -> None:
         entity: Entity = helper.who_wana_leave_entity

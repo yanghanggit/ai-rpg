@@ -28,9 +28,9 @@ class NPCReadyForPlanningSystem(ExecuteProcessor):
         
         tp = self.get_stage_enviro_narrate(entity)
         stagename = tp[0]
-        assert stagename != ""
+        #assert stagename != ""
         stage_enviro_narrate = tp[1]
-        assert stage_enviro_narrate != ""
+        #assert stage_enviro_narrate != ""
 
         prompt = ""
         if self.context.world_execute_rounds == 1:

@@ -2,7 +2,7 @@ from entitas import ExecuteProcessor, Entity, Matcher #type: ignore
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.player_proxy import PlayerProxy, get_player_proxy, TEST_PLAYER_NAME
 from auxiliary.extended_context import ExtendedContext
-from auxiliary.components import WhisperActionComponent, SpeakActionComponent, BroadcastActionComponent, EnviroNarrateActionComponent
+from auxiliary.components import MindVoiceActionComponent, WhisperActionComponent, SpeakActionComponent, BroadcastActionComponent, EnviroNarrateActionComponent
 from auxiliary.actor_action import ActorAction
 from typing import Optional
 from auxiliary.dialogue_rule import parse_target_and_message, dialogue_enable, ErrorDialogueEnable
@@ -22,6 +22,7 @@ class TestPlayerUpdateClientMessageSystem(ExecuteProcessor):
         self.whisper_action_2_message(playerproxy, player_npc_entity)
         self.broadcast_action_2_message(playerproxy, player_npc_entity)
         self.speak_action_2_message(playerproxy, player_npc_entity)
+        self.mind_voice_action_2_message(playerproxy, player_npc_entity)
 ############################################################################################################
     def stage_enviro_narrate_action_2_message(self, playerproxy: PlayerProxy, player_npc_entity: Entity) -> None:
         stage = self.context.safe_get_stage_entity(player_npc_entity)
@@ -114,4 +115,21 @@ class TestPlayerUpdateClientMessageSystem(ExecuteProcessor):
       
                 playerproxy.add_npc_message(action.name, value)
 ############################################################################################################
-    
+    def mind_voice_action_2_message(self, playerproxy: PlayerProxy, player_npc_entity: Entity) -> None:
+        player_npc_entity_stage = self.context.safe_get_stage_entity(player_npc_entity)
+        entities = self.context.get_group(Matcher(MindVoiceActionComponent)).entities
+        for entity in entities:
+
+            if entity == player_npc_entity:
+                #自己没有mindvoice
+                continue
+            
+            his_stage_entity = self.context.safe_get_stage_entity(entity)
+            if his_stage_entity != player_npc_entity_stage:
+                #只添加同一个场景的mindvoice
+                continue
+
+            mind_voice_action_component: MindVoiceActionComponent = entity.get(MindVoiceActionComponent)
+            action: ActorAction = mind_voice_action_component.action
+            for value in action.values:
+                playerproxy.add_npc_message(action.name, value)

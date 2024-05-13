@@ -20,14 +20,14 @@ def npc_plan_prompt(current_stage: str, stage_enviro_narrate: str, context: Exte
     if current_stage != "":
         current_stage_prompt = current_stage
 
-#     current_stage_enviro_narrate_prompt = "无"
-#     if stage_enviro_narrate != "":
-#         current_stage_enviro_narrate_prompt = stage_enviro_narrate
-#         ## 场景的环境描述如下(可以用于做参考信息):
-# - {current_stage_enviro_narrate_prompt}
+    current_stage_enviro_narrate_prompt = ""
+    if stage_enviro_narrate != "":
+        current_stage_enviro_narrate_prompt = f"""## 场景的环境描述已经更新(请用于参考来更新的状态):\n- {stage_enviro_narrate}"""
+
 
     prompt = f"""# 根据计划制定指南作出你的计划。
 ## 你当前所在的场景:{current_stage_prompt}。
+{current_stage_enviro_narrate_prompt}
 ## 要求:输出结果格式要遵循输出格式指南。结果中需要附带TagActionComponent。"""
     return prompt
 ###############################################################################################################################################
@@ -37,14 +37,13 @@ def first_time_npc_plan_prompt(current_stage: str, stage_enviro_narrate: str, co
     if current_stage != "":
         current_stage_prompt = current_stage
 
-#     current_stage_enviro_narrate_prompt = "和上次相比没有变化"
-#     if stage_enviro_narrate != "":
-#         current_stage_enviro_narrate_prompt = stage_enviro_narrate
-#         ## 场景的环境描述如下(可以用于做参考信息):
-# - {current_stage_enviro_narrate_prompt}
+    current_stage_enviro_narrate_prompt = ""
+    if stage_enviro_narrate != "":
+        current_stage_enviro_narrate_prompt = f"""## 场景的环境描述已经更新(请用于参考来更新的状态):\n- {stage_enviro_narrate}"""
 
     prompt = f"""# 根据计划制定指南作出你的计划。
 ## 你当前所在的场景:{current_stage_prompt}。
+{current_stage_enviro_narrate_prompt}
 ## 要求:
 - 输出结果格式要遵循输出格式指南。
 - 本次是你第一次制定计划,所以需要有PerceptionActionComponent与CheckStatusActionComponent,用于感知场景内的道具与确认自身状态。

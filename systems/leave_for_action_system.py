@@ -173,7 +173,7 @@ class LeaveForActionSystem(ReactiveProcessor):
 
         #
         if len(events2npc) > 0:
-            self.context.safe_add_human_message_to_entity(helper.who_wana_leave_entity, f"""# 如下是场景内发生的事件。""")
+            self.context.safe_add_human_message_to_entity(helper.who_wana_leave_entity, f"""# 如下是{directorcomp.name}场景内发生的事件。""")
 
         #
         for event in events2npc:
@@ -182,7 +182,7 @@ class LeaveForActionSystem(ReactiveProcessor):
 
         #
         if len(events2npc) > 0:
-            self.context.safe_add_human_message_to_entity(helper.who_wana_leave_entity, f"""# 以上是场景内发生的事件，请注意。""")
+            self.context.safe_add_human_message_to_entity(helper.who_wana_leave_entity, f"""# 以上是{directorcomp.name}场景内近期发生的事件。请注意。""")
 
         ##
         if helper.who_wana_leave_entity.has(PlayerComponent):

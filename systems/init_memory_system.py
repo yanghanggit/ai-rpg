@@ -1,5 +1,5 @@
 from entitas import Entity, Matcher, InitializeProcessor # type: ignore
-from auxiliary.components import WorldComponent, StageComponent, NPCComponent
+from auxiliary.components import WorldComponent, StageComponent, NPCComponent, MindVoiceActionComponent
 from auxiliary.cn_builtin_prompt import (init_memory_system_prompt)
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
@@ -69,4 +69,9 @@ class InitMemorySystem(InitializeProcessor):
                 continue
             prompt = init_memory_system_prompt(str_init_memory)
             agent_connect_system.add_async_requet_task(npcname, prompt)
+###############################################################################################################################################
+    def simu_request_message(self, context: ExtendedContext, name: str, prompt: str) -> None:
+        message = f"""{{"{MindVoiceActionComponent.__name__}": ["{prompt}"]}}"""
+        agent_connect_system = context.agent_connect_system
+        agent_connect_system.add_ai_message_to_chat_history(name, message)
 ###############################################################################################################################################

@@ -63,7 +63,8 @@ def stage_plan_prompt(props_in_stage: List[PropData], context: ExtendedContext) 
 {prompt_of_props}
 ## 要求：
 - 输出结果格式要遵循‘输出格式指南’。
-- 结果中需要有EnviroNarrateActionComponent,并附带TagActionComponent。"""
+- 结果中需要有EnviroNarrateActionComponent,并附带TagActionComponent。
+- 注意：在EnviroNarrateActionComponent中，仅根据已经发生的事件更新状态并表述。不要添加未发生的事件，不要推断场景内角色下一步将要做什么。"""
     return prompt
 ###############################################################################################################################################
 def perception_action_prompt(who_perception: str, current_stage: str, ressult_npc_names: Dict[str, str], result_props_names: List[str]) -> str:
@@ -211,10 +212,10 @@ def enter_stage_prompt1(some_ones_name: str, target_stage_name: str) -> str:
     return f"{some_ones_name}进入了场景——{target_stage_name}。"
 ################################################################################################################################################
 def enter_stage_prompt2(some_ones_name: str, target_stage_name: str, last_stage_name: str) -> str:
-    return f"{some_ones_name}离开了{last_stage_name}, 进入了{target_stage_name}。"
+    return f"# {some_ones_name}离开了{last_stage_name}, 进入了{target_stage_name}。"
 ################################################################################################################################################
 def leave_stage_prompt(npc_name: str, current_stage_name: str, leave_for_stage_name: str) -> str:
-    return f"{npc_name}离开了{current_stage_name} 场景。"
+    return f"# {npc_name}离开了{current_stage_name} 场景。"
 ################################################################################################################################################
 
 

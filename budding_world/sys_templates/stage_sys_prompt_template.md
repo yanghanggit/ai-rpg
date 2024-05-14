@@ -19,7 +19,7 @@
   "TagActionComponent": ["与你相关的特征标签","与你相关的特征标签",...],
   "MindVoiceActionComponent": ["你的内心独白","你的内心独白",...],
   "WhisperActionComponent": ["@角色名字>你想私下说的内容","@角色名字>你想私下说的内容",...],
-  "EnviroNarrateActionComponent": ["仅以第3人称描述你自身和场景内道具的状态，不要提及场景内角色"]
+  "EnviroNarrateActionComponent": ["描述你的当前状态"]
 }}
 
 ### 注意事项

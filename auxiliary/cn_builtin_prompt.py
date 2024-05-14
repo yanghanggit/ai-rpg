@@ -1,5 +1,5 @@
 from auxiliary.extended_context import ExtendedContext
-from typing import Dict, List
+from typing import Dict, List, Set
 from auxiliary.base_data import PropData
 
 
@@ -20,13 +20,15 @@ def npc_plan_prompt(current_stage: str, stage_enviro_narrate: str, context: Exte
 
     current_stage_enviro_narrate_prompt = ""
     if stage_enviro_narrate != "":
-        current_stage_enviro_narrate_prompt = f"""## 场景的环境描述已经更新(请用于参考来更新的状态):\n- {stage_enviro_narrate}"""
+        current_stage_enviro_narrate_prompt = f"""## 当前场景的环境信息(可以作为计划的参考信息):\n- {stage_enviro_narrate}"""
 
 
     prompt = f"""# 请做出你的计划，决定你将要做什么。
 ## 你当前所在的场景:{current_stage_prompt}。
 {current_stage_enviro_narrate_prompt}
-## 要求:输出结果格式要遵循输出格式指南。结果中需要附带TagActionComponent。"""
+## 要求:
+- 输出结果格式要遵循输出格式指南。
+- 结果中要附带TagActionComponent。"""
     return prompt
 ###############################################################################################################################################
 def first_time_npc_plan_prompt(current_stage: str, stage_enviro_narrate: str, context: ExtendedContext) -> str:
@@ -37,7 +39,7 @@ def first_time_npc_plan_prompt(current_stage: str, stage_enviro_narrate: str, co
 
     current_stage_enviro_narrate_prompt = ""
     if stage_enviro_narrate != "":
-        current_stage_enviro_narrate_prompt = f"""## 场景的环境描述已经更新(请用于参考来更新的状态):\n- {stage_enviro_narrate}"""
+        current_stage_enviro_narrate_prompt = f"""## 当前场景的环境信息(可以作为计划的参考信息):\n- {stage_enviro_narrate}"""
 
     prompt = f"""# 请做出你的计划，决定你将要做什么。
 ## 你当前所在的场景:{current_stage_prompt}。
@@ -45,10 +47,10 @@ def first_time_npc_plan_prompt(current_stage: str, stage_enviro_narrate: str, co
 ## 要求:
 - 输出结果格式要遵循输出格式指南。
 - 本次是你第一次制定计划,所以需要有PerceptionActionComponent与CheckStatusActionComponent,用于感知场景内的道具与确认自身状态。
-- 结果还需要需要附带TagActionComponent。"""
+- 结果中需要附带TagActionComponent。"""
     return prompt
 ###############################################################################################################################################
-def stage_plan_prompt(props_in_stage: List[PropData], context: ExtendedContext) -> str:
+def stage_plan_prompt(props_in_stage: List[PropData], npc_in_stage: Set[str], context: ExtendedContext) -> str:
 
     ## 场景内道具
     prompt_of_props = ""
@@ -58,13 +60,25 @@ def stage_plan_prompt(props_in_stage: List[PropData], context: ExtendedContext) 
     else:
         prompt_of_props = "- 无任何道具。"
 
-    prompt = f"""# 请更新你的状态，决定你将要做什么。
+
+    prompt_of_npc = ""
+    if len(npc_in_stage) > 0:
+        for npc in npc_in_stage:
+            prompt_of_npc += f"- {npc}\n"
+    else:
+        prompt_of_npc = "- 无任何角色。"
+
+
+    prompt = f"""# 请更新你的状态，描述你的当前状态。
 ## 场景内道具:
 {prompt_of_props}
+## 场景内角色:
+{prompt_of_npc}
 ## 要求：
 - 输出结果格式要遵循‘输出格式指南’。
 - 结果中需要有EnviroNarrateActionComponent,并附带TagActionComponent。
-- 注意：在EnviroNarrateActionComponent中，仅根据已经发生的事件更新状态并表述。不要添加未发生的事件，不要推断场景内角色下一步将要做什么。"""
+- 关于'场景内道具'与'场景内角色'，仅根据已经发生的事件更新状态并表述。不要添加未发生的事件。不要自行推理‘场景内角色’的可能行为（仅描述其已经发生的行为即可）。
+- 关于你自己作为一个场景的状态和受到了什么事件的影响，你可以做出合理的推理与表述。"""
     return prompt
 ###############################################################################################################################################
 def perception_action_prompt(who_perception: str, current_stage: str, ressult_npc_names: Dict[str, str], result_props_names: List[str]) -> str:

@@ -86,7 +86,7 @@ class TestPlayerUpdateClientMessageSystem(ExecuteProcessor):
             broadcast_action_component: BroadcastActionComponent = entity.get(BroadcastActionComponent)
             action: ActorAction = broadcast_action_component.action
             single_val = action.single_value()
-            playerproxy.add_npc_message(action.name, single_val)
+            playerproxy.add_npc_message(action.name, f"""<@all>{single_val}""")
 ############################################################################################################
     def speak_action_2_message(self, playerproxy: PlayerProxy, player_npc_entity: Entity) -> None:
         player_npc_entity_stage = self.context.safe_get_stage_entity(player_npc_entity)
@@ -131,5 +131,6 @@ class TestPlayerUpdateClientMessageSystem(ExecuteProcessor):
 
             mind_voice_action_component: MindVoiceActionComponent = entity.get(MindVoiceActionComponent)
             action: ActorAction = mind_voice_action_component.action
-            for value in action.values:
-                playerproxy.add_npc_message(action.name, value)
+            single_value = action.single_value()
+            playerproxy.add_npc_message(action.name, f"""<心理活动>{single_value}""")
+############################################################################################################

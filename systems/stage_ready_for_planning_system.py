@@ -1,11 +1,11 @@
 from auxiliary.cn_builtin_prompt import stage_plan_prompt
 from entitas import Entity, Matcher, ExecuteProcessor #type: ignore
 from auxiliary.extended_context import ExtendedContext
-from auxiliary.components import (StageComponent,
+from auxiliary.components import (StageComponent, NPCComponent,
                                 AutoPlanningComponent)
 from loguru import logger
 from auxiliary.base_data import PropData
-from typing import List
+from typing import List, Set
 
 ####################################################################################################################################
 class StageReadyForPlanningSystem(ExecuteProcessor):
@@ -22,7 +22,16 @@ class StageReadyForPlanningSystem(ExecuteProcessor):
         stage_comp: StageComponent = entity.get(StageComponent)
         logger.info(f"StageReadyForPlanningSystem: {stage_comp.name} is ready for planning.")
         props_in_stage: List[PropData] = self.get_props_in_stage(entity)
-        prompt = stage_plan_prompt(props_in_stage, self.context)
+
+        npcs_in_stage = self.context.npcs_in_this_stage(stage_comp.name)
+        npcnames: Set[str] = set()
+        for npc in npcs_in_stage:
+            npccomp: NPCComponent = npc.get(NPCComponent)
+            npcnames.add(npccomp.name)
+            #npcnames.add(npc.name)
+
+
+        prompt = stage_plan_prompt(props_in_stage, npcnames, self.context)
         self.context.agent_connect_system.add_async_requet_task(stage_comp.name, prompt)
 ####################################################################################################################################
     def get_props_in_stage(self, entity: Entity) -> List[PropData]:

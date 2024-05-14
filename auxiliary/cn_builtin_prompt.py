@@ -1,17 +1,15 @@
-from entitas import Entity # type: ignore
 from auxiliary.extended_context import ExtendedContext
-from auxiliary.components import NPCComponent, StageComponent
 from typing import Dict, List
 from auxiliary.base_data import PropData
 
 
 ###############################################################################################################################################
-def init_memory_system_prompt(init_memory: str, entity: Entity, context: ExtendedContext) -> str:
-    prompt = f"""# 世界即将开始运行。你需要做初始状态的设定。
-## 你初始的设定状态如下: 
+def init_memory_system_prompt(init_memory: str) -> str:
+    prompt = f"""# 世界即将开始运行。你需要做初始状态的设定与更新。
+## 你的当前状态如下(即初始状态): 
 {init_memory}。
-## 你需要将自己完全带入你的角色设定并开始游戏。
-## 请遵循输出格式指南,仅通过返回MindVoiceActionComponent及相关内容来确认你的状态。"""
+## 请结合你的角色设定,更新你的状态。
+## 请遵循输出格式指南,仅返回MindVoiceActionComponent。"""
     return prompt
 ###############################################################################################################################################
 def npc_plan_prompt(current_stage: str, stage_enviro_narrate: str, context: ExtendedContext) -> str:
@@ -25,7 +23,7 @@ def npc_plan_prompt(current_stage: str, stage_enviro_narrate: str, context: Exte
         current_stage_enviro_narrate_prompt = f"""## 场景的环境描述已经更新(请用于参考来更新的状态):\n- {stage_enviro_narrate}"""
 
 
-    prompt = f"""# 根据计划制定指南作出你的计划。
+    prompt = f"""# 请做出你的计划，决定你将要做什么。
 ## 你当前所在的场景:{current_stage_prompt}。
 {current_stage_enviro_narrate_prompt}
 ## 要求:输出结果格式要遵循输出格式指南。结果中需要附带TagActionComponent。"""
@@ -41,7 +39,7 @@ def first_time_npc_plan_prompt(current_stage: str, stage_enviro_narrate: str, co
     if stage_enviro_narrate != "":
         current_stage_enviro_narrate_prompt = f"""## 场景的环境描述已经更新(请用于参考来更新的状态):\n- {stage_enviro_narrate}"""
 
-    prompt = f"""# 根据计划制定指南作出你的计划。
+    prompt = f"""# 请做出你的计划，决定你将要做什么。
 ## 你当前所在的场景:{current_stage_prompt}。
 {current_stage_enviro_narrate_prompt}
 ## 要求:
@@ -60,7 +58,7 @@ def stage_plan_prompt(props_in_stage: List[PropData], context: ExtendedContext) 
     else:
         prompt_of_props = "- 无任何道具。"
 
-    prompt = f"""请根据‘计划制定指南’作出你的计划。
+    prompt = f"""# 请更新你的状态，决定你将要做什么。
 ## 场景内道具:
 {prompt_of_props}
 ## 要求：
@@ -85,7 +83,7 @@ def perception_action_prompt(who_perception: str, current_stage: str, ressult_np
         prompt_of_props = "- 无任何道具。"
 
     final_prompt = f"""# {who_perception}当前在场景{current_stage}中。{who_perception}对{current_stage}执行PerceptionActionComponent,即使发起感知行为,结果如下:
-## 场景内人物:
+## 场景内角色:
 {prompt_of_npc}
 ## 场景内道具:
 {prompt_of_props}

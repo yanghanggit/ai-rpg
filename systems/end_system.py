@@ -42,7 +42,7 @@ class EndSystem(InitializeProcessor, ExecuteProcessor):
             logger.debug("/showstages: No stages and npcs now")
 ############################################################################################################
     def make_agent_chat_history_dump(self) -> None:
-        self.context.agent_connect_system.all_agents_chat_history_dump()
+        self.context.agent_connect_system.dump_all_agents_chat_history()
 ############################################################################################################
     def information_about_all_stages_and_npcs(self) -> dict[str, list[str]]:
         stagesentities = self.context.get_group(Matcher(StageComponent)).entities

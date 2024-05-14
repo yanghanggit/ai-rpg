@@ -140,13 +140,13 @@ class NPCBuilder:
             # NPC核心数据
             npcdata = datablock.get("npc")
 
-            # 寻找人物关系
+            # 寻找角色关系
             mentioned_npcs: Set[str] = set()
             mentioned_npcs_str: str = npcdata.get("mentioned_npcs")
             if len(mentioned_npcs_str) > 0:
                  mentioned_npcs = set(mentioned_npcs_str.split(';'))
 
-             # 寻找人物与场景的关系关系
+             # 寻找角色与场景的关系关系
             mentioned_stages: Set[str] = set()
             mentioned_stages_str: str = npcdata.get("mentioned_stages")
             if len(mentioned_stages_str) > 0:

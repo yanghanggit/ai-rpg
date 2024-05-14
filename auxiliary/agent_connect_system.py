@@ -90,7 +90,7 @@ class AgentConnectSystem:
         return f"{self.rootpath}{who}/chat_history/dump.json"
 ############################################################################################################  
     ### 所有的chathistory
-    def all_agents_chat_history_dump(self) -> None:
+    def dump_all_agents_chat_history(self) -> None:
         for who in self.memorydict.keys():
             chatlist = self.output_chat_history_dump(who)
             if len(chatlist) == 0:
@@ -155,6 +155,10 @@ class AgentConnectSystem:
 
         self.async_request_tasks.clear()
         return response_dict
-        
-
-
+############################################################################################################
+    def exclude_chat_history(self, name: str, excluded_content: str) -> None:
+        if not name in self.memorydict:
+            return
+        chat_history = self.memorydict[name].chat_history
+        self.memorydict[name].chat_history = [message for message in chat_history if message.content != excluded_content]
+############################################################################################################

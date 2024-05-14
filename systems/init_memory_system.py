@@ -37,7 +37,7 @@ class InitMemorySystem(InitializeProcessor):
             if worldmemory == "":
                 logger.error(f"worldmemory is empty: {worldcomp.name}")
                 continue
-            readarchprompt = init_memory_system_prompt(worldmemory, world, context)
+            readarchprompt = init_memory_system_prompt(worldmemory)
             agent_connect_system.add_async_requet_task(worldcomp.name, readarchprompt)
 ###############################################################################################################################################
     def handlestages(self, helper: UpdareArchiveHelper) -> None:
@@ -51,7 +51,7 @@ class InitMemorySystem(InitializeProcessor):
             if stagememory == "":
                 logger.error(f"stagememory is empty: {stagecomp.name}")
                 continue
-            readarchprompt = init_memory_system_prompt(stagememory, stage, context)
+            readarchprompt = init_memory_system_prompt(stagememory)
             agent_connect_system.add_async_requet_task(stagecomp.name, readarchprompt)
 ###############################################################################################################################################
     def handlenpcs(self, helper: UpdareArchiveHelper) -> None:
@@ -67,6 +67,6 @@ class InitMemorySystem(InitializeProcessor):
             if str_init_memory == "":
                 logger.error(f"npcmemory is empty: {npcname}")
                 continue
-            prompt = init_memory_system_prompt(str_init_memory, npcentity, context)
+            prompt = init_memory_system_prompt(str_init_memory)
             agent_connect_system.add_async_requet_task(npcname, prompt)
 ###############################################################################################################################################

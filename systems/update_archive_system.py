@@ -47,6 +47,7 @@ class UpdateArchiveSystem(ExecuteProcessor):
         # 更新chat history
         who_do_you_know_promt = ",".join(who_do_you_know)
         message = updated_information_on_WhoDoYouKnow_prompt(npccomp.name, who_do_you_know_promt)
+        self.context.agent_connect_system.exclude_chat_history(npccomp.name, message)
         self.context.safe_add_human_message_to_entity(npcentity, message)
 ############################################################################################################
     def update_stage_archive(self, npcentity: Entity, helper: UpdareArchiveHelper) -> None:
@@ -62,6 +63,7 @@ class UpdateArchiveSystem(ExecuteProcessor):
         # 更新chat history
         _stages_you_know_prompt = ",".join(_stages_you_know)
         message = updated_information_about_StagesYouKnow_prompt(npccomp.name, _stages_you_know_prompt)
+        self.context.agent_connect_system.exclude_chat_history(npccomp.name, message)
         self.context.safe_add_human_message_to_entity(npcentity, message)
 ############################################################################################################
     

@@ -1,4 +1,3 @@
-
 from collections import namedtuple
 
 ###核心组件
@@ -32,21 +31,16 @@ TradeActionComponent = namedtuple('TradeActionComponent', 'action')
 CheckStatusActionComponent = namedtuple('CheckStatusActionComponent', 'action')
 EnviroNarrateActionComponent = namedtuple('EnviroNarrateActionComponent', 'action')
 UseInteractivePropActionComponent = namedtuple('UseInteractivePropActionComponent', 'action')
-#AwakeActionComponent = namedtuple('AwakeActionComponent', 'action')
 ###############################################################################################################################################
 ###游戏业务组件
 SimpleRPGRoleComponent = namedtuple('SimpleRPGRoleComponent', 'name maxhp hp attack defense')
 SimpleRPGRoleWeaponComponent = namedtuple('SimpleRPGRoleWeaponComponent', 'name weaponname maxhp attack defense')
 SimpleRPGRoleArmorComponent = namedtuple('SimpleRPGRoleArmorComponent', 'name armorname maxhp attack defense')
 ###############################################################################################################################################
-# 特殊组件，Player专用
-#PlayerLoginEventComponent = namedtuple('PlayerLoginEventComponent', 'name npcname')
-###############################################################################################################################################
 
 
 #注册一下方便使用
-STAGE_AVAILABLE_ACTIONS_REGISTER = [
-                                    AttackActionComponent,
+STAGE_AVAILABLE_ACTIONS_REGISTER = [AttackActionComponent,
                                     TagActionComponent, 
                                     MindVoiceActionComponent,
                                     WhisperActionComponent,

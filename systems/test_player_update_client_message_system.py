@@ -19,10 +19,10 @@ class TestPlayerUpdateClientMessageSystem(ExecuteProcessor):
             return
         
         self.stage_enviro_narrate_action_2_message(playerproxy, player_npc_entity)
+        self.mind_voice_action_2_message(playerproxy, player_npc_entity)
         self.whisper_action_2_message(playerproxy, player_npc_entity)
         self.broadcast_action_2_message(playerproxy, player_npc_entity)
         self.speak_action_2_message(playerproxy, player_npc_entity)
-        self.mind_voice_action_2_message(playerproxy, player_npc_entity)
 ############################################################################################################
     def stage_enviro_narrate_action_2_message(self, playerproxy: PlayerProxy, player_npc_entity: Entity) -> None:
         stage = self.context.safe_get_stage_entity(player_npc_entity)

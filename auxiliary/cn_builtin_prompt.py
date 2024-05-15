@@ -69,15 +69,15 @@ def stage_plan_prompt(props_in_stage: List[PropData], npc_in_stage: Set[str], co
         prompt_of_npc = "- 无任何角色。"
 
 
-    prompt = f"""# <%场景计划>请输出你的当前描述和你的计划
+    prompt = f"""# <%场景计划>请输出'你的当前描述'和'你的计划'
 ## 附加信息：场景内道具:
 {prompt_of_props}
 ## 附加信息：场景内角色:
 {prompt_of_npc}
 ## 你的当前描述:
 - 仅根据'你确定知道的信息'和'你确定已发生的事件'。来更新你的描述。
-- 不要添加未发生的事件与信息，不要自行推理与润色。尤其不要自行推理‘场景内角色’的可能行为（如对话内容与行为反应）。
-- 这部分输出内容作为EnviroNarrateActionComponent的值。
+- 不要添加未发生的事件与信息，尤其不要自行推理‘场景内角色’的可能行为（如对话内容与行为反应）。
+- 将这部分输出内容作为EnviroNarrateActionComponent的值。
 ## 你的计划:
 - 关于你自己作为一个场景受到了什么事件的影响，你可以做出合理的推理。
 ## 输出要求:

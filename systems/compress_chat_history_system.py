@@ -11,7 +11,7 @@ class CompressChatHistorySystem(ExecuteProcessor):
     def execute(self) -> None:
         context = self.context
         agent_connect_system = context.agent_connect_system
-        tags: Set[str] = {"<%角色与场景初始化>", "<%角色计划>", "<%场景计划>"}
+        tags: Set[str] = {"<%这是角色计划>", "<%这是场景计划>"}
         entities: set[Entity] = context.get_group(Matcher(any_of=[NPCComponent, StageComponent])).entities
         for entity in entities:
             safename = context.safe_get_entity_name(entity)

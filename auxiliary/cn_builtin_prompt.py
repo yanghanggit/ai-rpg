@@ -5,7 +5,7 @@ from auxiliary.base_data import PropData
 
 ###############################################################################################################################################
 def init_memory_system_prompt(init_memory: str) -> str:
-    prompt = f"""# <%角色与场景初始化>世界即将开始运行。你需要做初始状态的设定与更新。
+    prompt = f"""# <%这是角色与场景初始化>世界即将开始运行。你需要做初始状态的设定与更新。
 ## 你的当前状态如下(即初始状态): 
 {init_memory}。
 ## 请结合你的角色设定,更新你的状态。
@@ -23,7 +23,7 @@ def npc_plan_prompt(current_stage: str, stage_enviro_narrate: str, context: Exte
         current_stage_enviro_narrate_prompt = f"""## 当前场景的环境信息(用于你做参考):\n- {stage_enviro_narrate}"""
 
 
-    prompt = f"""# <%角色计划>请做出你的计划，决定你将要做什么。
+    prompt = f"""# <%这是角色计划>请做出你的计划，决定你将要做什么。
 ## 你当前所在的场景:{current_stage_prompt}。
 {current_stage_enviro_narrate_prompt}
 ## 要求:
@@ -41,7 +41,7 @@ def first_time_npc_plan_prompt(current_stage: str, stage_enviro_narrate: str, co
     if stage_enviro_narrate != "":
         current_stage_enviro_narrate_prompt = f"""## 当前场景的环境信息(用于你做参考):\n- {stage_enviro_narrate}"""
 
-    prompt = f"""# <%角色计划>请做出你的计划，决定你将要做什么。
+    prompt = f"""# <%这是角色计划>请做出你的计划，决定你将要做什么。
 ## 你当前所在的场景:{current_stage_prompt}。
 {current_stage_enviro_narrate_prompt}
 ## 要求:
@@ -69,7 +69,7 @@ def stage_plan_prompt(props_in_stage: List[PropData], npc_in_stage: Set[str], co
         prompt_of_npc = "- 无任何角色。"
 
 
-    prompt = f"""# <%场景计划>请输出'你的当前描述'和'你的计划'
+    prompt = f"""# <%这是场景计划>请输出'你的当前描述'和'你的计划'
 ## 附加信息：场景内道具:
 {prompt_of_props}
 ## 附加信息：场景内角色:

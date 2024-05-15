@@ -5,6 +5,7 @@ from auxiliary.components import (NPCComponent)
 from systems.update_archive_helper import UpdareArchiveHelper
 from auxiliary.cn_builtin_prompt import updated_information_on_WhoDoYouKnow_prompt, updated_information_about_StagesYouKnow_prompt
 from auxiliary.file_system_helper import add_npc_archive_files, update_npc_archive_file, add_stage_archive_files
+from typing import Set
 
 class UpdateArchiveSystem(ExecuteProcessor):
     def __init__(self, context: ExtendedContext) -> None:
@@ -47,7 +48,10 @@ class UpdateArchiveSystem(ExecuteProcessor):
         # 更新chat history
         who_do_you_know_promt = ",".join(who_do_you_know)
         message = updated_information_on_WhoDoYouKnow_prompt(npccomp.name, who_do_you_know_promt)
-        self.context.agent_connect_system.exclude_chat_history(npccomp.name, set(message))
+
+        exclude_chat_history: Set[str] = set()
+        exclude_chat_history.add(message)
+        self.context.agent_connect_system.exclude_chat_history(npccomp.name, exclude_chat_history)
         self.context.safe_add_human_message_to_entity(npcentity, message)
 ############################################################################################################
     def update_stage_archive(self, npcentity: Entity, helper: UpdareArchiveHelper) -> None:
@@ -63,7 +67,10 @@ class UpdateArchiveSystem(ExecuteProcessor):
         # 更新chat history
         _stages_you_know_prompt = ",".join(_stages_you_know)
         message = updated_information_about_StagesYouKnow_prompt(npccomp.name, _stages_you_know_prompt)
-        self.context.agent_connect_system.exclude_chat_history(npccomp.name, set(message))
+
+        exclude_chat_history: Set[str] = set()
+        exclude_chat_history.add(message)
+        self.context.agent_connect_system.exclude_chat_history(npccomp.name, exclude_chat_history)
         self.context.safe_add_human_message_to_entity(npcentity, message)
 ############################################################################################################
     

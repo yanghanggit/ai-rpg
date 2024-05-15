@@ -60,6 +60,7 @@ from systems.my_processors import MyProcessors
 from systems.simple_rpg_role_pre_fight_system import SimpleRPGRolePreFightSystem
 from systems.test_player_update_client_message_system import TestPlayerUpdateClientMessageSystem
 from systems.test_player_post_display_client_message_system import TestPlayerPostDisplayClientMessageSystem
+from systems.compress_chat_history_system import CompressChatHistorySystem
 
 ## 控制流程和数据创建
 class RPGGame(BaseGame):
@@ -143,9 +144,11 @@ class RPGGame(BaseGame):
         ###最后删除entity与存储数据
         processors.add(DestroySystem(context))
         processors.add(DataSaveSystem(context))
-
-         ##调试用的系统。监视进入运行之后的状态
+        
+        ##调试用的系统。监视进入运行之后的状态
         processors.add(EndSystem(context))
+        ##测试的系统
+        processors.add(CompressChatHistorySystem(context))
 
         return processors
 ###############################################################################################################################################

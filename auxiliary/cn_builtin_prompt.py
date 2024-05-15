@@ -5,7 +5,7 @@ from auxiliary.base_data import PropData
 
 ###############################################################################################################################################
 def init_memory_system_prompt(init_memory: str) -> str:
-    prompt = f"""# 世界即将开始运行。你需要做初始状态的设定与更新。
+    prompt = f"""# <%角色与场景初始化>世界即将开始运行。你需要做初始状态的设定与更新。
 ## 你的当前状态如下(即初始状态): 
 {init_memory}。
 ## 请结合你的角色设定,更新你的状态。
@@ -20,10 +20,10 @@ def npc_plan_prompt(current_stage: str, stage_enviro_narrate: str, context: Exte
 
     current_stage_enviro_narrate_prompt = ""
     if stage_enviro_narrate != "":
-        current_stage_enviro_narrate_prompt = f"""## 当前场景的环境信息(可以作为计划的参考信息):\n- {stage_enviro_narrate}"""
+        current_stage_enviro_narrate_prompt = f"""## 当前场景的环境信息(用于你做参考):\n- {stage_enviro_narrate}"""
 
 
-    prompt = f"""# 请做出你的计划，决定你将要做什么。
+    prompt = f"""# <%角色计划>请做出你的计划，决定你将要做什么。
 ## 你当前所在的场景:{current_stage_prompt}。
 {current_stage_enviro_narrate_prompt}
 ## 要求:
@@ -39,9 +39,9 @@ def first_time_npc_plan_prompt(current_stage: str, stage_enviro_narrate: str, co
 
     current_stage_enviro_narrate_prompt = ""
     if stage_enviro_narrate != "":
-        current_stage_enviro_narrate_prompt = f"""## 当前场景的环境信息(可以作为计划的参考信息):\n- {stage_enviro_narrate}"""
+        current_stage_enviro_narrate_prompt = f"""## 当前场景的环境信息(用于你做参考):\n- {stage_enviro_narrate}"""
 
-    prompt = f"""# 请做出你的计划，决定你将要做什么。
+    prompt = f"""# <%角色计划>请做出你的计划，决定你将要做什么。
 ## 你当前所在的场景:{current_stage_prompt}。
 {current_stage_enviro_narrate_prompt}
 ## 要求:
@@ -69,16 +69,20 @@ def stage_plan_prompt(props_in_stage: List[PropData], npc_in_stage: Set[str], co
         prompt_of_npc = "- 无任何角色。"
 
 
-    prompt = f"""# 请更新你的状态，描述你的当前状态。
-## 场景内道具:
+    prompt = f"""# <%场景计划>请输出你的当前描述和你的计划
+## 附加信息：场景内道具:
 {prompt_of_props}
-## 场景内角色:
+## 附加信息：场景内角色:
 {prompt_of_npc}
-## 要求：
+## 你的当前描述:
+- 仅根据'你确定知道的信息'和'你确定已发生的事件'。来更新你的描述。
+- 不要添加未发生的事件与信息，不要自行推理与润色。尤其不要自行推理‘场景内角色’的可能行为（如对话内容与行为反应）。
+- 这部分输出内容作为EnviroNarrateActionComponent的值。
+## 你的计划:
+- 关于你自己作为一个场景受到了什么事件的影响，你可以做出合理的推理。
+## 输出要求:
 - 输出结果格式要遵循‘输出格式指南’。
-- 结果中需要有EnviroNarrateActionComponent,并附带TagActionComponent。
-- 关于'场景内道具'与'场景内角色'，仅根据已经发生的事件更新状态并表述。不要添加未发生的事件。不要自行推理‘场景内角色’的可能行为（仅描述其已经发生的行为即可）。
-- 关于你自己作为一个场景的状态和受到了什么事件的影响，你可以做出合理的推理与表述。"""
+- 结果中需要有EnviroNarrateActionComponent,并附带TagActionComponent。"""
     return prompt
 ###############################################################################################################################################
 def perception_action_prompt(who_perception: str, current_stage: str, ressult_npc_names: Dict[str, str], result_props_names: List[str]) -> str:
@@ -108,9 +112,9 @@ def perception_action_prompt(who_perception: str, current_stage: str, ressult_np
 def prop_type_prompt(prop: PropData) -> str:
     _type = "未知"
     if prop.is_weapon():
-        _type = "武器(提高攻击力)"
+        _type = "武器(用于提高攻击力)"
     elif prop.is_clothes():
-        _type = "衣服(提高防御力)"
+        _type = "衣服(用于提高防御力)"
     elif prop.is_non_consumable_item():
         _type = "非消耗品"
     elif prop.is_role_component():

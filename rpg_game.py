@@ -144,11 +144,13 @@ class RPGGame(BaseGame):
         ###最后删除entity与存储数据
         processors.add(DestroySystem(context))
         processors.add(DataSaveSystem(context))
+
+        ##测试的系统，移除掉不太重要的提示词，例如一些上行命令的。
+        processors.add(CompressChatHistorySystem(context))
         
         ##调试用的系统。监视进入运行之后的状态
         processors.add(EndSystem(context))
-        ##测试的系统
-        processors.add(CompressChatHistorySystem(context))
+        
 
         return processors
 ###############################################################################################################################################

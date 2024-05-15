@@ -1,6 +1,6 @@
 import os
 from loguru import logger
-from typing import Dict,  List, Union, Optional, Set
+from typing import Dict,  List, Union, Optional, Set, cast
 from auxiliary.actor_agent import ActorAgent
 from langchain_core.messages import HumanMessage, AIMessage
 import json
@@ -160,5 +160,17 @@ class AgentConnectSystem:
         if not name in self.memorydict:
             return
         chat_history = self.memorydict[name].chat_history
-        self.memorydict[name].chat_history = [message for message in chat_history if message.content not in excluded_content]
+
+        rebuild_chat_history: List[HumanMessage | AIMessage] = []
+        for message in chat_history:
+            if not self.has_exclude_content(cast(str, message.content), excluded_content):
+                rebuild_chat_history.append(message)
+
+        self.memorydict[name].chat_history = rebuild_chat_history
+############################################################################################################
+    def has_exclude_content(self, check_message: str, excluded_content: Set[str]) -> bool:
+        for tag in excluded_content:
+            if tag in check_message:
+                return True
+        return False
 ############################################################################################################

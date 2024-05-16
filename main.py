@@ -167,7 +167,10 @@ def main() -> None:
             playercommandbewho.execute()
             ###            
             logger.debug(f"{'=' * 50}")
-           
+
+        if rpggame.exited:
+            break
+        
     rpggame.exit()
 
 

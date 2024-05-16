@@ -4,7 +4,7 @@ root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 from loguru import logger
 from typing import List, Dict, Any, Optional
-from budding_world.utils import (serialization_prop)
+from budding_world.utils import (serialization_prop, proxy_prop)
 from budding_world.excel_data import ExcelDataNPC, ExcelDataProp
 
 
@@ -71,18 +71,24 @@ class ExcelEditorNPC:
         dict['attributes'] = target.attributes
         return dict
     
-    def serialization_my_props(self, excelprops: List[ExcelDataProp]) -> List[Dict[str, str]]:
-        props: List[Dict[str, str]] = []
-        for prop in excelprops:
-            dict = serialization_prop(prop)
-            props.append(dict)
-        return props
-
     # 核心函数！！！
     def serialization(self) -> Dict[str, Any]:
         npc = self.serialization_core(self.excelnpc)
-        props = self.serialization_my_props(self.excelprops)
         dict: Dict[str, Any] = {}
         dict["npc"] = npc
-        dict["props"] = props
         return dict
+    
+    def proxy(self) -> Dict[str, Any]:
+        output: Dict[str, Any] = {}
+        #
+        npc_proxy: Dict[str, str] = {}
+        assert self.excelnpc is not None
+        npc_proxy['name'] = self.excelnpc.name
+        #
+        props_proxy: List[Dict[str, str]] = []
+        for prop in self.excelprops:
+            props_proxy.append(proxy_prop(prop))#代理即可
+        #
+        output["npc"] = npc_proxy
+        output["props"] = props_proxy
+        return output

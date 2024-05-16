@@ -6,7 +6,7 @@ sys.path.append(str(root_dir))
 from loguru import logger
 from typing import List, Dict, Any, Optional
 from auxiliary.format_of_complex_stage_entry_and_exit_conditions import parse_complex_stage_condition
-from budding_world.utils import (serialization_prop)
+from budding_world.utils import (proxy_prop)
 from budding_world.excel_data import ExcelDataNPC, ExcelDataProp, ExcelDataStage
 
 
@@ -179,15 +179,15 @@ class ExcelEditorStage:
             list.append(condition.serialization())
         return list
     
-    def serialization_stage_props(self, props: List[ExcelDataProp]) -> List[Dict[str, str]]:
+    def stage_props_proxy(self, props: List[ExcelDataProp]) -> List[Dict[str, str]]:
         list: List[Dict[str, str]] = []
         for prop in props:
-            dict = serialization_prop(prop)
+            dict = proxy_prop(prop) #代理即可
             list.append(dict)
         return list
     
     ## 这里只做NPC引用，所以导出名字即可
-    def serialization_stage_npcs(self, npcs: List[ExcelDataNPC]) -> List[Dict[str, str]]:
+    def stage_npcs_proxy(self, npcs: List[ExcelDataNPC]) -> List[Dict[str, str]]:
         list: List[Dict[str, str]] = []
         for npc in npcs:
             dict: Dict[str, str] = {} 
@@ -209,15 +209,23 @@ class ExcelEditorStage:
         
         entry_conditions = self.serialization_stage_conditions(self.stage_entry_conditions)
         exit_conditions = self.serialization_stage_conditions(self.stage_exit_conditions)
-        props = self.serialization_stage_props(self.props_in_stage)
-        npcs = self.serialization_stage_npcs(self.npcs_in_stage)
 
         dict["entry_conditions"] = entry_conditions
         dict["exit_conditions"] = exit_conditions
-        dict["props"] = props
-        dict["npcs"] = npcs
         dict['attributes'] = data_stage.attributes
 
+        output_dict: Dict[str, Any] = {}
+        output_dict["stage"] = dict
+        return output_dict
+
+    def proxy(self) -> Dict[str, Any]:
+        data_stage: ExcelDataStage = self.stage_data_base[self.data["name"]]
+        dict: Dict[str, Any] = {}
+        dict["name"] = data_stage.name
+        props = self.stage_props_proxy(self.props_in_stage)
+        npcs = self.stage_npcs_proxy(self.npcs_in_stage)
+        dict["props"] = props
+        dict["npcs"] = npcs
         output_dict: Dict[str, Any] = {}
         output_dict["stage"] = dict
         return output_dict

@@ -126,3 +126,8 @@ def serialization_prop(prop: ExcelDataProp) -> Dict[str, str]:
     output['attributes'] = prop.raw_attributes
     return output       
 ################################################################################################################
+def proxy_prop(prop: ExcelDataProp) -> Dict[str, str]:
+    output: Dict[str, str] = {}
+    output['name'] = prop.name
+    return output       
+################################################################################################################

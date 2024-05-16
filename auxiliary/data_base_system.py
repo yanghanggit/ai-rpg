@@ -1,8 +1,5 @@
-
-
 from typing import Optional
 from auxiliary.base_data import NPCData, PropData, StageData
-
 
 class DataBaseSystem:
 

@@ -9,7 +9,7 @@ from typing import List, Dict, Any
 from budding_world.excel_data import ExcelDataNPC, ExcelDataStage, ExcelDataProp
 from budding_world.npc_editor import ExcelEditorNPC
 from budding_world.stage_editor import ExcelEditorStage
-from budding_world.utils import serialization_prop
+from budding_world.utils import serialization_prop, proxy_prop
 
 EDITOR_WORLD_TYPE = "World"
 EDITOR_PLAYER_TYPE = "Player"
@@ -115,10 +115,10 @@ class ExcelEditorWorld:
     #最后生成JSON
     def serialization(self) -> Dict[str, Any]:
         output: Dict[str, Any] = {}
-        output["worlds"] = [editor_npc.serialization() for editor_npc in self.editor_worlds]
-        output["players"] = [editor_npc.serialization() for editor_npc in self.editor_players]
-        output["npcs"] = [editor_npc.serialization() for editor_npc in self.editor_npcs]
-        output["stages"] = [editor_stage.serialization() for editor_stage in self.editor_stages]
+        output["worlds"] = [editor_npc.proxy() for editor_npc in self.editor_worlds]
+        output["players"] = [editor_npc.proxy() for editor_npc in self.editor_players]
+        output["npcs"] = [editor_npc.proxy() for editor_npc in self.editor_npcs]
+        output["stages"] = [editor_stage.proxy() for editor_stage in self.editor_stages]
         output["database"] = self.data_base()
 
         version_sign = input("请输入版本号:")
@@ -136,7 +136,7 @@ class ExcelEditorWorld:
         output["stages"] = [data.serialization() for data in self.editor_stages]
         output["props"] = []
         for prop in self.editor_props:
-            output["props"].append(serialization_prop(prop))
+            output["props"].append(serialization_prop(prop)) #要全的道具数据
         return output
     
     def write(self, directory: str) -> bool:

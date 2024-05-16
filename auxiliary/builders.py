@@ -226,12 +226,7 @@ class NPCBuilder:
             # NPC核心数据
             npcblock = datablock.get("npc")
             npcname = npcblock.get("name")
-            ls = data_base_system.get_npc(npcname)
-            if ls is None or len(ls) == 0:
-                logger.error(f"NPCBuilder2: {npcname} not found in database.")
-                continue
-            ## 取第一个
-            npcdata = ls[0]
+            npcdata = data_base_system.get_npc(npcname)
             if npcdata is None:
                 logger.error(f"NPCBuilder2: {npcname} not found in database.")
                 continue

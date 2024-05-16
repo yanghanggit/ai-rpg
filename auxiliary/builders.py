@@ -162,14 +162,14 @@ class StageBuilder:
             res.append(createcondition)
         return res
     #
-    def build_props_in_stage(self, props_data: List[Any]) -> set[PropData]:
+    def props_proxy_in_stage(self, props_data: List[Any]) -> set[PropData]:
         res: set[PropData] = set()
         for obj in props_data:
             prop = PropDataProxy(obj.get("name"))
             res.add(prop)
         return res
     #
-    def build_npcs_in_stage(self, npcs_data: List[Any]) -> set[NPCData]:
+    def npcs_proxy_in_stage(self, npcs_data: List[Any]) -> set[NPCData]:
         res: set[NPCData] = set()
         for obj in npcs_data:
             npc = NPCDataProxy(obj.get("name"))
@@ -189,10 +189,10 @@ class StageBuilder:
             stage = data_base_system.get_stage(stagedata.get('name'))
             assert stage is not None
             #连接
-            propsinstage: set[PropData] = self.build_props_in_stage(stagedata.get("props"))
+            propsinstage: set[PropData] = self.props_proxy_in_stage(stagedata.get("props"))
             stage.props = propsinstage
             #连接
-            npcsinstage: set[NPCData] = self.build_npcs_in_stage(stagedata.get("npcs"))
+            npcsinstage: set[NPCData] = self.npcs_proxy_in_stage(stagedata.get("npcs"))
             stage.npcs = npcsinstage
             #
             self.stages.append(stage)

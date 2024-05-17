@@ -89,8 +89,8 @@ class InitMemorySystem(InitializeProcessor):
                 continue
             prompt = init_memory_system_prompt(str_init_memory)
             agent_connect_system.add_human_message_to_chat_history(npcname, prompt)
-            self.simu_mind_voice_response_message(npcname, context)
-            #agent_connect_system.add_async_requet_task(npcname, prompt)
+            # self.simu_mind_voice_response_message(npcname, context)
+            agent_connect_system.add_async_requet_task(npcname, prompt)
 ###############################################################################################################################################
     def simu_mind_voice_response_message(self, name: str, context: ExtendedContext) -> None:
         simu_mind_voice = ""

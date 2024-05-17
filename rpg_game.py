@@ -465,6 +465,7 @@ class RPGGame(BaseGame):
                 npc_data.get('name'), 
                 npc_data.get('codename'), 
                 npc_data.get('description'), 
+                # npc_data.get('conversation_example'),
                 npc_data.get('memory'), 
                 npc_data.get('url'), 
                 npc_data.get('attributes'), 

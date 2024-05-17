@@ -16,6 +16,7 @@ class ExcelDataNPC:
                  codename: str, 
                  description: str, 
                  history: str, 
+                 conversation_example: str,
                  gptmodel: str, 
                  port: int, 
                  api: str, 
@@ -26,6 +27,7 @@ class ExcelDataNPC:
         self.codename: str = codename
         self.description: str = description
         self.history: str = history
+        self.converation_example = conversation_example
         self.gptmodel: str = gptmodel
         self.port: int = port
         self.api: str = api
@@ -52,6 +54,7 @@ class ExcelDataNPC:
         genprompt = genprompt.replace("<%name>", self.name)
         genprompt = genprompt.replace("<%description>", self.description)
         genprompt = genprompt.replace("<%history>", self.history)
+        genprompt = genprompt.replace("<%conversation_example>", self.converation_example)
         self.sysprompt = genprompt
         return self.sysprompt
     

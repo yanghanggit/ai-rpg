@@ -5,6 +5,7 @@ from auxiliary.actor_agent import ActorAgent
 from langchain_core.messages import HumanMessage, AIMessage
 import json
 import asyncio
+import time
 
 ## 单独封装一个系统，用于连接actor agent
 class AgentConnectSystem:
@@ -142,7 +143,9 @@ class AgentConnectSystem:
         return response
 ############################################################################################################
     # 当确定全部异步请求任务添加完毕后，调用这个方法，等待所有任务完成，并拿到任务结果
-    def run_async_requet_tasks(self) -> dict[str, Optional[str]]:
+    def run_async_requet_tasks(self, tag: str = "") -> dict[str, Optional[str]]:
+
+        start_time = time.time()
 
         # 调用async_gather，等待所有任务完成，并拿到任务结果
         loop = asyncio.get_event_loop()
@@ -154,6 +157,11 @@ class AgentConnectSystem:
             response_dict[result[0]] = result[1]
 
         self.async_request_tasks.clear()
+
+        end_time = time.time()
+        execution_time = end_time - start_time
+        logger.debug(f"{tag} run_async_requet_tasks time: {execution_time:.2f} seconds")
+
         return response_dict
 ############################################################################################################
     def exclude_chat_history(self, name: str, excluded_content: Set[str]) -> None:

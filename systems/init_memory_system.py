@@ -40,7 +40,7 @@ class InitMemorySystem(InitializeProcessor):
         self.handlestages(helper)
         self.handlenpcs(helper)
         ##最后并发执行
-        context.agent_connect_system.run_async_requet_tasks()
+        context.agent_connect_system.run_async_requet_tasks("InitMemorySystem")
 ###############################################################################################################################################
     def handleworld(self, helper: UpdareArchiveHelper) -> None:
         context = self.context

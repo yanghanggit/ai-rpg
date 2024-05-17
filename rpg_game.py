@@ -25,7 +25,6 @@ from systems.attack_action_system import AttackActionSystem
 from systems.leave_for_action_system import LeaveForActionSystem
 from systems.pre_leave_for_system import PreLeaveForSystem
 from systems.director_system import DirectorSystem
-from systems.dead_action_system import DeadActionSystem
 from systems.destroy_system import DestroySystem
 from systems.stage_ready_for_planning_system import StageReadyForPlanningSystem
 from systems.tag_action_system import TagActionSystem
@@ -115,7 +114,9 @@ class RPGGame(BaseGame):
         processors.add(SimpleRPGRolePreFightSystem(context)) #战斗之前需要更新装备
         processors.add(AttackActionSystem(context)) 
         processors.add(PostFightSystem(context))
-        processors.add(DeadActionSystem(context)) 
+
+        from systems.dead_action_system import DeadActionSystem
+        processors.add(DeadActionSystem(context, self)) 
         
         #交互类的行为，在死亡之后，因为死了就不能执行
         processors.add(SearchActionSystem(context)) 

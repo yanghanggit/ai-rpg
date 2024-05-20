@@ -20,6 +20,7 @@ class PropFile(BaseFile):
     def __init__(self, name: str, ownersname: str, prop: PropData) -> None:
         super().__init__(name, ownersname)
         self.prop = prop
+        assert self.prop.codename != ""
 
     def content(self) -> str:
         seri = self.prop.serialization()

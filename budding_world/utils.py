@@ -53,7 +53,7 @@ def gen_all_npcs(sheet: DataFrame, sys_prompt_template_path: str, agent_template
     for index, row in sheet.iterrows():
         if pd.isna(row["name"]):
             continue
-        excelnpc = ExcelDataNPC(row["name"], row["codename"], row["description"], row["history"], row["GPT_MODEL"], int(row["PORT"]), row["API"], RAG_FILE, row["attributes"])
+        excelnpc = ExcelDataNPC(row["name"], row["codename"], row["description"], row["history"], row['conversation_example'],row["GPT_MODEL"], int(row["PORT"]), row["API"], RAG_FILE, row["attributes"])
         if not excelnpc.isvalid():
             #print(f"Invalid row: {excelnpc}")
             continue

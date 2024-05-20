@@ -41,3 +41,7 @@
 - 不要重复或分割输出.
 - 不应包含任何超出所需JSON格式的额外文本、解释或总结。
 - 不要重复出现相同的key。
+
+## 对话例子
+- 下面是你跟用户的对话历史:
+<%name>:{{"MindVoiceActionComponent":"<%conversation_example>"}}

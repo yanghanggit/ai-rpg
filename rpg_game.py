@@ -377,7 +377,7 @@ class RPGGame(BaseGame):
                 if prop_data_from_data_base is None:
                     logger.error(f"没有从数据库找到道具：{prop_proxy_in_stage.name}！！！！！！！！！")
                     continue
-                create_prop_file = PropFile(prop_proxy_in_stage.name, builddata.name, prop_proxy_in_stage)
+                create_prop_file = PropFile(prop_proxy_in_stage.name, builddata.name, prop_data_from_data_base)
                 file_system.add_prop_file(create_prop_file)
                 code_name_component_system.register_code_name_component_class(prop_data_from_data_base.name, prop_data_from_data_base.codename)
 

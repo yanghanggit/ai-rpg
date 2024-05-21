@@ -63,11 +63,10 @@ class InitMemorySystem(InitializeProcessor):
         for npcentity in npcs:
             npccomp: NPCComponent = npcentity.get(NPCComponent)
             npcname: str = npccomp.name
-            str_init_memory = memory_system.getmemory(npcname)
-            if str_init_memory == "":
+            npcmemory = memory_system.getmemory(npcname)
+            if npcmemory == "":
                 logger.error(f"npcmemory is empty: {npcname}")
                 continue
-            prompt = init_memory_system_prompt(str_init_memory)
-            agent_connect_system.add_human_message_to_chat_history(npcname, prompt)
+            prompt = init_memory_system_prompt(npcmemory)
             agent_connect_system.add_async_requet_task(npcname, prompt)
 ###############################################################################################################################################

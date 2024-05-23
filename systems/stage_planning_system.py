@@ -6,7 +6,7 @@ from auxiliary.components import (StageComponent,
 from auxiliary.actor_action import ActorPlan, ActorAction
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger 
-from typing import Optional
+from typing import Coroutine, Optional
 
 ####################################################################################################    
 class StagePlanningSystem(ExecuteProcessor):
@@ -14,16 +14,20 @@ class StagePlanningSystem(ExecuteProcessor):
         self.context = context
 ####################################################################################################
     def execute(self) -> None:
+        pass
+####################################################################################################
+    async def async_execute(self):
         
         #记录事件
         self.context.chaos_engineering_system.on_stage_planning_system_excute(self.context)
         # 并行执行requests
-        all_response: dict[str, Optional[str]] = self.context.agent_connect_system.run_async_requet_tasks("StagePlanningSystem")
+        all_response: dict[str, Optional[str]] = await self.context.agent_connect_system.run_async_requet_tasks("StagePlanningSystem")
         #正常流程
         entities = self.context.get_group(Matcher(all_of=[StageComponent, AutoPlanningComponent])).entities
         for entity in entities:
             ## 开始处理场景的行为与计划
             self.handle(entity, all_response)
+        return 
 ####################################################################################################
     def handle(self, entity: Entity,  all_response: dict[str, Optional[str]]) -> None:
         

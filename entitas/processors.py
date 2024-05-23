@@ -18,6 +18,9 @@ class ExecuteProcessor(metaclass=ABCMeta):
     @abstractmethod
     def execute(self) -> None:
         pass
+    
+    async def async_execute(self) -> None:
+        pass
 
 
 class CleanupProcessor(metaclass=ABCMeta):

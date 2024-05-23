@@ -6,7 +6,7 @@ from auxiliary.components import (NPCComponent,
 from auxiliary.actor_action import ActorPlan, ActorAction
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
-from typing import Optional
+from typing import Coroutine, Optional
 
 
 class NPCPlanningSystem(ExecuteProcessor):
@@ -15,11 +15,13 @@ class NPCPlanningSystem(ExecuteProcessor):
         self.context = context
 ####################################################################################################
     def execute(self) -> None:
-        
+        pass
+####################################################################################################
+    async def async_execute(self):
         #记录事件
         self.context.chaos_engineering_system.on_npc_planning_system_execute(self.context)
         # 并行执行requests
-        all_response: dict[str, Optional[str]] = self.context.agent_connect_system.run_async_requet_tasks("NPCPlanningSystem")
+        all_response: dict[str, Optional[str]] = await self.context.agent_connect_system.run_async_requet_tasks("NPCPlanningSystem")
         #正常流程
         entities = self.context.get_group(Matcher(all_of=[NPCComponent, AutoPlanningComponent])).entities
         for entity in entities:

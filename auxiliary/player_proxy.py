@@ -9,6 +9,7 @@ class PlayerProxy:
     def __init__(self, name: str) -> None:
         self.name = name
         self.clientmessages: List[tuple[str, str]] = []
+        self.commands: List[str] = []
 
     def __str__(self) -> str:
         return f'PlayerProxy({self.name})'

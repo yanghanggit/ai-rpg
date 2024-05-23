@@ -1,0 +1,27 @@
+<!-- index.html -->  
+<!DOCTYPE html>  
+<html lang="en">  
+<head>  
+    <meta charset="UTF-8">  
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+    <title>柏林互动科技有限公司</title>  
+</head>  
+<body>  
+    <h1>First Seed</h1>  
+    <p>Current command: {{ command }}</p>  
+  
+    <!-- 显示messages列表 -->  
+    <h2>Messages</h2>  
+    <ul>  
+        {% for message in messages %}  
+            <li>{{ message.who }} => {{ message.what }}</li>  
+        {% endfor %}  
+    </ul>  
+  
+    <form id="submit_form" action="/submit" method="post">  
+        <label for="user_text_input">Enter Text:</label>  
+        <input type="text" id="user_text_input" name="text_input">  
+        <button type="submit" id="submit_button">Submit</button>  
+    </form>  
+</body>  
+</html>  

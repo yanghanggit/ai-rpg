@@ -18,10 +18,10 @@ class TestPlayerPostDisplayClientMessageSystem(ExecuteProcessor):
         #
         self.display_player_client_messages(playerproxy, 10)
         #
-        while True:
-            # 测试的客户端反馈
-            usrinput = input(f"[{playername}]:回车继续")
-            break   
+        # while True:
+        #     # 测试的客户端反馈
+        #     usrinput = input(f"[{playername}]:回车继续")
+        #     break   
 ############################################################################################################ 
     def display_player_client_messages(self, playerproxy: PlayerProxy, display_messages_count: int) -> None:
         clientmessages = playerproxy.clientmessages

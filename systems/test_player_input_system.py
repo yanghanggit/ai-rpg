@@ -39,18 +39,33 @@ class TestPlayerInputSystem(ExecuteProcessor):
         if playerproxy is None:
             logger.warning("玩家不存在，或者玩家未加入游戏")
             return
-
-        while True:
-            
-            # 客户端应该看到的
-            self.display_player_client_messages(playerproxy, 10)
-            
-            # 测试的客户端反馈
-            usrinput = input(f"[{playername}]:")
-            playerproxy.add_system_message(usrinput)
-            if self.playerinput(self.rpggame, playerproxy, usrinput):
+        
+        self.display_player_client_messages(playerproxy, 10)
+        for command in playerproxy.commands:
+            playerproxy.add_system_message(command)
+            if self.playerinput(self.rpggame, playerproxy, command):
                 logger.debug(f"{'=' * 50}")
-                break
+            break
+
+        playerproxy.commands.clear()
+
+
+        # while True:
+            
+        #     # 客户端应该看到的
+        #     self.display_player_client_messages(playerproxy, 10)
+        #     for command in playerproxy.commands:
+        #         playerproxy.add_system_message(command)
+        #         if self.playerinput(self.rpggame, playerproxy, usrinput):
+        #             logger.debug(f"{'=' * 50}")
+        #         break
+            
+        #     # 测试的客户端反馈
+        #     usrinput = input(f"[{playername}]:")
+        #     playerproxy.add_system_message(usrinput)
+        #     if self.playerinput(self.rpggame, playerproxy, usrinput):
+        #         logger.debug(f"{'=' * 50}")
+        #         break
 ############################################################################################################ 
     def display_player_client_messages(self, playerproxy: PlayerProxy, display_messages_count: int) -> None:
         clientmessages = playerproxy.clientmessages

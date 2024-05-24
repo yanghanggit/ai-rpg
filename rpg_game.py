@@ -203,6 +203,18 @@ class RPGGame(BaseGame):
         
         self.processors.execute()
         self.processors.cleanup()
+
+    async def async_execute(self):
+        self.started = True
+
+        #顺序不要动！！！！！！！！！
+        if not self.inited:
+            self.inited = True
+            self.processors.activate_reactive_processors()
+            self.processors.initialize()
+        
+        await self.processors.async_execute()
+        self.processors.cleanup()
 ###############################################################################################################################################
     def exit(self) -> None:
         self.processors.clear_reactive_processors()

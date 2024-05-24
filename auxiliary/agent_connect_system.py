@@ -143,13 +143,12 @@ class AgentConnectSystem:
         return response
 ############################################################################################################
     # 当确定全部异步请求任务添加完毕后，调用这个方法，等待所有任务完成，并拿到任务结果
-    def run_async_requet_tasks(self, tag: str = "") -> dict[str, Optional[str]]:
+    async def run_async_requet_tasks(self, tag: str = "") -> dict[str, Optional[str]]:
 
         start_time = time.time()
 
         # 调用async_gather，等待所有任务完成，并拿到任务结果
-        loop = asyncio.get_event_loop()
-        async_results: list[tuple[str, Optional[str]]] = loop.run_until_complete(self.async_gather())
+        async_results: list[tuple[str, Optional[str]]] = await self.async_gather()
 
         response_dict: dict[str, Optional[str]] = {}
 

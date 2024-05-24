@@ -1,9 +1,10 @@
 import datetime
 from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from loguru import logger
 from pydantic import BaseModel
-
 from auxiliary.player_input_command import PlayerCommandLogin
 from auxiliary.player_proxy import TEST_PLAYER_NAME, create_player_proxy, get_player_proxy
 from main_utils import create_rpg_game_then_build
@@ -18,6 +19,8 @@ class TupleModel(BaseModel):
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
+app.mount("/static", StaticFiles(directory="static"), name="static") 
+
 rpggame: RPGGame = None
 
 async def start():
@@ -82,11 +85,12 @@ async def read_root(request: Request):
 
 @app.post("/submit")
 async def submit_form(request: Request):
-    form_data = await request.form()
-    input_data: TextInput = TextInput(text_input=form_data.get('text_input'))
+    json_data = await request.json()
+    input_data: TextInput = TextInput(**json_data) 
     user_command: str = str(input_data.text_input)
-    result = await main(user_command)
-    return templates.TemplateResponse("index.html", { "request": request, "command": user_command, "messages": result})
+    results = await main(user_command)
+    messages = [message_model.dict() for message_model in results]
+    return JSONResponse(content={"command": user_command, "messages": messages})  
 
 if __name__ == "__main__":
     import uvicorn

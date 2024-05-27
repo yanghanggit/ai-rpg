@@ -45,6 +45,9 @@ def get_player_proxy(playername: str) -> Optional[PlayerProxy]:
             return player
     return None
 
+def remove_player_proxy(playerproxy: PlayerProxy):
+    PLAYERS.remove(playerproxy)
+
 ###################################################################################################################
 def add_player_client_message(npcentity: Entity, message: str) -> None:
     if not npcentity.has(PlayerComponent):

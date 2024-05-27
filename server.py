@@ -6,7 +6,7 @@ from fastapi.templating import Jinja2Templates
 from loguru import logger
 from pydantic import BaseModel
 from auxiliary.player_input_command import PlayerCommandLogin
-from auxiliary.player_proxy import create_player_proxy, get_player_proxy
+from auxiliary.player_proxy import create_player_proxy, get_player_proxy, remove_player_proxy
 from main_utils import create_rpg_game_then_build
 from rpg_game import RPGGame
 
@@ -60,6 +60,8 @@ async def quitgame(clientip: str):
     quitclient = rpggame.pop(clientip, None)
     if quitclient is not None:
         logger.debug(f"User IP:{clientip} quit a game.")
+        proxy = get_player_proxy(clientip)
+        remove_player_proxy(proxy)
         quitclient.exited = True
         quitclient.exit()
 

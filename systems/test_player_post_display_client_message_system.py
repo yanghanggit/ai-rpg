@@ -1,7 +1,7 @@
 from entitas import ExecuteProcessor #type: ignore
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
-from auxiliary.player_proxy import PlayerProxy, get_player_proxy, TEST_PLAYER_NAME, PLAYER_INPUT_MODE, determine_player_input_mode
+from auxiliary.player_proxy import PlayerProxy, get_player_proxy, TEST_TERMINAL_NAME, PLAYER_INPUT_MODE, determine_player_input_mode
 from auxiliary.extended_context import ExtendedContext
 
 
@@ -13,8 +13,6 @@ class TestPlayerPostDisplayClientMessageSystem(ExecuteProcessor):
         playername = self.context.user_ip
         input_mode = determine_player_input_mode(playername)
         if input_mode == PLAYER_INPUT_MODE.WEB:
-            
-            playername = TEST_PLAYER_NAME
             playerproxy = get_player_proxy(playername)
             player_npc_entity = self.context.getplayer(playername)
             if player_npc_entity is None or playerproxy is None:
@@ -22,10 +20,9 @@ class TestPlayerPostDisplayClientMessageSystem(ExecuteProcessor):
             self.display_player_client_messages(playerproxy, 10)
             
         elif input_mode == PLAYER_INPUT_MODE.TERMINAL:
-            playername = TEST_PLAYER_NAME
             while True:
                 # 测试的客户端反馈
-                input(f"[{playername}]:回车继续")
+                input(f"[{TEST_TERMINAL_NAME}]:回车继续")
                 break   
         else:
             logger.error("未知的输入模式")

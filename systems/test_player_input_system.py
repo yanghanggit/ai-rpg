@@ -2,7 +2,7 @@ from entitas import ExecuteProcessor#type: ignore
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from rpg_game import RPGGame 
-from auxiliary.player_proxy import PlayerProxy, get_player_proxy, TEST_PLAYER_NAME, PLAYER_INPUT_MODE, determine_player_input_mode
+from auxiliary.player_proxy import PlayerProxy, get_player_proxy, TEST_TERMINAL_NAME, PLAYER_INPUT_MODE, determine_player_input_mode
 from auxiliary.player_input_command import (
                           PlayerCommandAttack, 
                           PlayerCommandLeaveFor, 
@@ -38,11 +38,9 @@ class TestPlayerInputSystem(ExecuteProcessor):
 
         input_mode = determine_player_input_mode(playername)
         if input_mode == PLAYER_INPUT_MODE.WEB:
-            playername = TEST_PLAYER_NAME
             self.play_via_client_and_handle_player_input(playername)
         elif input_mode == PLAYER_INPUT_MODE.TERMINAL:
-            playername = TEST_PLAYER_NAME
-            self.play_via_terminal_and_handle_player_input(playername)
+            self.play_via_terminal_and_handle_player_input(TEST_TERMINAL_NAME)
         else:
             logger.error("未知的输入模式")
 ############################################################################################################
@@ -52,13 +50,12 @@ class TestPlayerInputSystem(ExecuteProcessor):
             logger.warning("玩家不存在，或者玩家未加入游戏")
             return
         
-        self.display_player_client_messages(playerproxy, 10)
         for command in playerproxy.commands:
-            playerproxy.add_system_message(command)
+            playerproxy.addmessage("[无名的复活者]", command)
             if self.playerinput(self.rpggame, playerproxy, command):
                 logger.debug(f"{'=' * 50}")
             break
-
+                  
         playerproxy.commands.clear()
 ############################################################################################################
     def play_via_terminal_and_handle_player_input(self, playername: str) -> None:

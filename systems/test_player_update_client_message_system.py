@@ -1,6 +1,6 @@
 from entitas import ExecuteProcessor, Entity, Matcher #type: ignore
 from auxiliary.extended_context import ExtendedContext
-from auxiliary.player_proxy import PlayerProxy, get_player_proxy, TEST_PLAYER_NAME, determine_player_input_mode, PLAYER_INPUT_MODE
+from auxiliary.player_proxy import PlayerProxy, get_player_proxy, TEST_TERMINAL_NAME, determine_player_input_mode, PLAYER_INPUT_MODE
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.components import MindVoiceActionComponent, WhisperActionComponent, SpeakActionComponent, BroadcastActionComponent, EnviroNarrateActionComponent
 from auxiliary.actor_action import ActorAction
@@ -13,13 +13,13 @@ class TestPlayerUpdateClientMessageSystem(ExecuteProcessor):
         self.context: ExtendedContext = context
 ############################################################################################################
     def execute(self) -> None:
-        playername = self.context.user_ip
+        playername = str(self.context.user_ip)
 
         input_mode = determine_player_input_mode(playername)
         if input_mode == PLAYER_INPUT_MODE.WEB:
-            playername = TEST_PLAYER_NAME
+            pass
         elif input_mode == PLAYER_INPUT_MODE.TERMINAL:
-            playername = TEST_PLAYER_NAME
+            playername = TEST_TERMINAL_NAME
         else:
             logger.error("未知的输入模式!!!!!") 
             return

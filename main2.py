@@ -1,6 +1,6 @@
 from loguru import logger
 import datetime
-from auxiliary.player_proxy import create_player_proxy, get_player_proxy, TEST_PLAYER_NAME
+from auxiliary.player_proxy import create_player_proxy, get_player_proxy, TEST_TERMINAL_NAME
 from auxiliary.player_input_command import (PlayerCommandLogin)
 from main_utils import create_rpg_game_then_build
 
@@ -18,8 +18,8 @@ async def asyn_main() -> None:
         return
 
     #测试的代码，上来就控制一个NPC目标，先写死
-    create_player_proxy(TEST_PLAYER_NAME)
-    playerproxy = get_player_proxy(TEST_PLAYER_NAME)
+    create_player_proxy(TEST_TERMINAL_NAME)
+    playerproxy = get_player_proxy(TEST_TERMINAL_NAME)
     assert playerproxy is not None
     playerstartcmd = PlayerCommandLogin("/player-login", rpggame, playerproxy, "无名的复活者")
     playerstartcmd.execute()

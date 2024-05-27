@@ -80,16 +80,16 @@ class RPGGame(BaseGame):
         processors.add(InitAgentsSystem(context)) ### 连接所有agent
         processors.add(InitMemorySystem(context)) ### 第一次读状态, initmemory
        
-        #规划逻辑########################
-        processors.add(PrePlanningSystem(context)) ######## 在所有规划之前
-        processors.add(StageReadyForPlanningSystem(context))
-        processors.add(StagePlanningSystem(context))
-        processors.add(NPCReadyForPlanningSystem(context))
-        processors.add(NPCPlanningSystem(context))
-        processors.add(PostPlanningSystem(context)) ####### 在所有规划之后
+        # #规划逻辑########################
+        # processors.add(PrePlanningSystem(context)) ######## 在所有规划之前
+        # processors.add(StageReadyForPlanningSystem(context))
+        # processors.add(StagePlanningSystem(context))
+        # processors.add(NPCReadyForPlanningSystem(context))
+        # processors.add(NPCPlanningSystem(context))
+        # processors.add(PostPlanningSystem(context)) ####### 在所有规划之后
 
-        ## 第一次抓可以被player看到的信息
-        processors.add(TestPlayerUpdateClientMessageSystem(context)) 
+        # ## 第一次抓可以被player看到的信息
+        # processors.add(TestPlayerUpdateClientMessageSystem(context)) 
 
         #用户拿到相关的信息，并开始操作与输入!!!!!!!
         from systems.test_player_input_system import TestPlayerInputSystem ### 不这样就循环引用
@@ -149,8 +149,18 @@ class RPGGame(BaseGame):
         
         ##调试用的系统。监视进入运行之后的状态
         processors.add(EndSystem(context))
-        
 
+        #规划逻辑########################
+        processors.add(PrePlanningSystem(context)) ######## 在所有规划之前
+        processors.add(StageReadyForPlanningSystem(context))
+        processors.add(StagePlanningSystem(context))
+        processors.add(NPCReadyForPlanningSystem(context))
+        processors.add(NPCPlanningSystem(context))
+        processors.add(PostPlanningSystem(context)) ####### 在所有规划之后
+
+        ## 第一次抓可以被player看到的信息
+        processors.add(TestPlayerUpdateClientMessageSystem(context)) 
+        
         return processors
 ###############################################################################################################################################
     def createworld(self, worlddata: WorldDataBuilder) -> None:

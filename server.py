@@ -32,6 +32,7 @@ async def start(clientip: str):
     if game is not None:
         global rpggame
         rpggame[clientip] = game
+        rpggame[clientip].extendedcontext.user_ip = clientip
         logger.debug(f"User IP:{clientip} start a game.")
 
     await rpggame[clientip].async_execute()

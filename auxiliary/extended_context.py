@@ -31,6 +31,7 @@ class ExtendedContext(Context):
         
         #
         super().__init__()
+        self.user_ip = '127.0.0.1'
         
         #
         self.file_system = filesystem

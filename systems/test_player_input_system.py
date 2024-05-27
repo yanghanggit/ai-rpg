@@ -31,7 +31,9 @@ class TestPlayerInputSystem(ExecuteProcessor):
         self.rpggame = rpggame
 ############################################################################################################
     def execute(self) -> None:
-        playername = TEST_PLAYER_NAME
+        playername = self.context.user_ip
+        if '127.0.0.1' in playername:
+            playername = TEST_PLAYER_NAME
         self.handleinput(playername) ## 核心输入，while循环
 ############################################################################################################
     def handleinput(self, playername: str) -> None:

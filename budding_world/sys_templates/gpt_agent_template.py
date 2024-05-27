@@ -55,8 +55,8 @@ print(f'endpoint:{os.getenv("AZURE_OPENAI_ENDPOINT")}\n key:{os.getenv("AZURE_OP
 llm = AzureChatOpenAI(
     azure_endpoint= os.getenv("AZURE_OPENAI_ENDPOINT"),
     api_key= os.getenv("AZURE_OPENAI_API_KEY"),
-    azure_deployment="gpt-4-turbo-0125",
-    api_version="2024-02-15-preview"
+    azure_deployment="gpt-4o",
+    api_version="2024-02-01"
 )
 
 @tool

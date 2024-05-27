@@ -1,15 +1,11 @@
 from loguru import logger
 import datetime
-from auxiliary.player_proxy import create_player_proxy, get_player_proxy, TEST_PLAYER_NAME
+from auxiliary.player_proxy import create_player_proxy, get_player_proxy, TEST_TERMINAL_NAME
 from auxiliary.player_input_command import (PlayerCommandLogin)
 from main_utils import create_rpg_game_then_build
 
 
-###############################################################################################################################################
-###############################################################################################################################################
-###############################################################################################################################################
-############################################################################################################################################### 
-def main() -> None:
+async def asyn_main() -> None:
 
     log_start_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     logger.add(f"logs/{log_start_time}.log", level="DEBUG")
@@ -22,19 +18,24 @@ def main() -> None:
         return
 
     #测试的代码，上来就控制一个NPC目标，先写死
-    create_player_proxy(TEST_PLAYER_NAME)
-    playerproxy = get_player_proxy(TEST_PLAYER_NAME)
+    create_player_proxy(TEST_TERMINAL_NAME)
+    playerproxy = get_player_proxy(TEST_TERMINAL_NAME)
     assert playerproxy is not None
     playerstartcmd = PlayerCommandLogin("/player-login", rpggame, playerproxy, "无名的复活者")
     playerstartcmd.execute()
+
+    ## 临时 强行改成服务器终端模式，只要这个写死为空。后面的逻辑就会跟上。
+    rpggame.extendedcontext.user_ip = ""
 
     #
     while True:
         if rpggame.exited:
             break
-        rpggame.execute()
+        await rpggame.async_execute()
+        logger.debug("async_execute done.")
     #
     rpggame.exit()
 
 if __name__ == "__main__":
-    main()
+    import asyncio
+    asyncio.run(asyn_main())

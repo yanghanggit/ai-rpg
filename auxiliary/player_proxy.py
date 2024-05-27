@@ -2,6 +2,17 @@ from loguru import logger
 from typing import List, Optional
 from entitas import Entity, Matcher, ExecuteProcessor #type: ignore
 from auxiliary.components import StageComponent, NPCComponent, PlayerComponent
+from enum import Enum
+
+class PLAYER_INPUT_MODE(Enum):
+    INVALID = 0,
+    WEB = 1
+    TERMINAL = 2
+
+def determine_player_input_mode(playername: str) -> PLAYER_INPUT_MODE:
+    if '127.0.0.1' in playername:
+        return PLAYER_INPUT_MODE.WEB
+    return PLAYER_INPUT_MODE.TERMINAL
 
 ### 目前啥也不干，但留着有用的时候再用
 class PlayerProxy:
@@ -49,11 +60,11 @@ def remove_player_proxy(playerproxy: PlayerProxy):
     PLAYERS.remove(playerproxy)
 
 ###################################################################################################################
-def add_player_client_message(npcentity: Entity, message: str) -> None:
-    if not npcentity.has(PlayerComponent):
+def add_player_client_npc_message(entity: Entity, message: str) -> None:
+    if not entity.has(PlayerComponent):
         return
 
-    playercomp: PlayerComponent = npcentity.get(PlayerComponent)
+    playercomp: PlayerComponent = entity.get(PlayerComponent)
     playername: str = playercomp.name
     playerproxy = get_player_proxy(playername)
     if playerproxy is None:
@@ -61,13 +72,13 @@ def add_player_client_message(npcentity: Entity, message: str) -> None:
         return
 
     #登陆的消息
-    npccomp: NPCComponent = npcentity.get(NPCComponent)
+    npccomp: NPCComponent = entity.get(NPCComponent)
     playerproxy.add_npc_message(npccomp.name, message)
 ###################################################################################################################
 ### 单人游戏，临时的名字
 TEST_LOGIN_INFORMATION = f"""测试的游戏登陆信息"""
 TEST_GAME_INSTRUCTIONS_WHEN_LOGIN_SUCCESS_FOR_FIRST_TIME = f"""测试的游戏介绍"""
-
+TEST_TERMINAL_NAME = "北京柏林互动科技有限公司"
 # f"""
 # # 这是一个Demo，叫World2, 规则与要验证的系统如下：
 # 1. 过关条件：操作‘无名的复活者’，从‘格雷’身上获取‘断指钥匙’，并进入‘灰颜礼拜堂’。

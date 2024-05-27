@@ -203,8 +203,8 @@ class RPGGame(BaseGame):
         
         self.processors.execute()
         self.processors.cleanup()
-
-    async def async_execute(self):
+###############################################################################################################################################
+    async def async_execute(self) -> None:
         self.started = True
 
         #顺序不要动！！！！！！！！！
@@ -465,3 +465,5 @@ class RPGGame(BaseGame):
             if codecompclass is not None:
                 entity.add(codecompclass, stagecomp.name)
 ###############################################################################################################################################
+    def on_exit(self) -> None:
+        logger.debug(f"{self.name} on_exit")

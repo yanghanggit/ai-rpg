@@ -1,31 +1,54 @@
-from entitas import Entity, Matcher, InitializeProcessor # type: ignore
+from entitas import Entity, Matcher, InitializeProcessor, ExecuteProcessor # type: ignore
 from auxiliary.components import WorldComponent, StageComponent, NPCComponent
 from auxiliary.cn_builtin_prompt import (init_memory_system_prompt)
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from systems.update_archive_helper import UpdareArchiveHelper
+from typing import Dict
 
 ###############################################################################################################################################
-class InitMemorySystem(InitializeProcessor):
+class InitMemorySystem(InitializeProcessor, ExecuteProcessor):
     def __init__(self, context: ExtendedContext) -> None:
         self.context: ExtendedContext = context
+        self.tasks: Dict[str, str] = {}
 ###############################################################################################################################################
     def initialize(self) -> None:
-        self.initmemory()
-###############################################################################################################################################
-    def initmemory(self) -> None:
-        #
         context = self.context
         helper = UpdareArchiveHelper(context)
         helper.prepare()
         #分段处理
-        self.handleworld(helper)
-        self.handlestages(helper)
-        self.handlenpcs(helper)
-        ##最后并发执行
-        context.agent_connect_system.run_async_requet_tasks("InitMemorySystem")
+        self.tasks.clear()
+        world_tasks = self.create_world_init_memory_tasks(helper)
+        stage_tasks = self.create_stage_init_memory_tasks(helper)
+        npc_tasks = self.create_npc_init_memory_tasks(helper)
+        #
+        self.tasks.update(world_tasks)
+        self.tasks.update(stage_tasks)
+        self.tasks.update(npc_tasks)
+        #
+        logger.info(f"InitMemorySystem tasks: {self.tasks}")
 ###############################################################################################################################################
-    def handleworld(self, helper: UpdareArchiveHelper) -> None:
+    def execute(self) -> None:
+        pass
+####################################################################################################
+    async def async_execute(self) -> None:
+        context = self.context
+        agent_connect_system = context.agent_connect_system
+        if len(self.tasks) == 0:
+            logger.error("InitMemorySystem tasks is empty.")
+            return
+        
+        for name, prompt in self.tasks.items():
+            agent_connect_system.add_async_requet_task(name, prompt)
+
+        await context.agent_connect_system.run_async_requet_tasks("InitMemorySystem")
+        self.tasks.clear() # 这句必须得走！！！
+        logger.info("InitMemorySystem done.")
+###############################################################################################################################################
+    def create_world_init_memory_tasks(self, helper: UpdareArchiveHelper) -> Dict[str, str]:
+
+        result: Dict[str, str] = {}
+
         context = self.context
         memory_system = context.memory_system
         agent_connect_system = context.agent_connect_system
@@ -37,10 +60,15 @@ class InitMemorySystem(InitializeProcessor):
                 logger.error(f"worldmemory is empty: {worldcomp.name}")
                 continue
             prompt = init_memory_system_prompt(worldmemory)
-            agent_connect_system.add_human_message_to_chat_history(worldcomp.name, prompt)
             agent_connect_system.add_async_requet_task(worldcomp.name, prompt)
+            result[worldcomp.name] = prompt
+        
+        return result
 ###############################################################################################################################################
-    def handlestages(self, helper: UpdareArchiveHelper) -> None:
+    def create_stage_init_memory_tasks(self, helper: UpdareArchiveHelper) -> Dict[str, str]:
+
+        result: Dict[str, str] = {}
+
         context = self.context
         memory_system = context.memory_system
         agent_connect_system = context.agent_connect_system
@@ -53,8 +81,14 @@ class InitMemorySystem(InitializeProcessor):
                 continue
             prompt = init_memory_system_prompt(stagememory)
             agent_connect_system.add_async_requet_task(stagecomp.name, prompt)
+            result[stagecomp.name] = prompt
+        
+        return result
 ###############################################################################################################################################
-    def handlenpcs(self, helper: UpdareArchiveHelper) -> None:
+    def create_npc_init_memory_tasks(self, helper: UpdareArchiveHelper) -> Dict[str, str]:
+
+        result: Dict[str, str] = {}
+
         #
         context = self.context
         memory_system = context.memory_system
@@ -69,4 +103,7 @@ class InitMemorySystem(InitializeProcessor):
                 continue
             prompt = init_memory_system_prompt(npcmemory)
             agent_connect_system.add_async_requet_task(npcname, prompt)
+            result[npcname] = prompt
+
+        return result
 ###############################################################################################################################################

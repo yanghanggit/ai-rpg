@@ -1,10 +1,11 @@
 from entitas import ExecuteProcessor, Entity, Matcher #type: ignore
 from auxiliary.extended_context import ExtendedContext
-from auxiliary.player_proxy import PlayerProxy, get_player_proxy
+from auxiliary.player_proxy import PlayerProxy, get_player_proxy, TEST_TERMINAL_NAME, determine_player_input_mode, PLAYER_INPUT_MODE
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.components import MindVoiceActionComponent, WhisperActionComponent, SpeakActionComponent, BroadcastActionComponent, EnviroNarrateActionComponent
 from auxiliary.actor_action import ActorAction
 from typing import Optional
+from loguru import logger
 from auxiliary.dialogue_rule import parse_target_and_message, dialogue_enable, ErrorDialogueEnable
 
 class TestPlayerUpdateClientMessageSystem(ExecuteProcessor):
@@ -12,7 +13,17 @@ class TestPlayerUpdateClientMessageSystem(ExecuteProcessor):
         self.context: ExtendedContext = context
 ############################################################################################################
     def execute(self) -> None:
-        playername = self.context.user_ip
+        playername = str(self.context.user_ip)
+
+        input_mode = determine_player_input_mode(playername)
+        if input_mode == PLAYER_INPUT_MODE.WEB:
+            pass
+        elif input_mode == PLAYER_INPUT_MODE.TERMINAL:
+            playername = TEST_TERMINAL_NAME
+        else:
+            logger.error("未知的输入模式!!!!!") 
+            return
+        
         playerproxy = get_player_proxy(playername)
         player_npc_entity = self.context.getplayer(playername)
         if player_npc_entity is None or playerproxy is None:
@@ -35,7 +46,7 @@ class TestPlayerUpdateClientMessageSystem(ExecuteProcessor):
         if len(action.values) == 0:
             return
         message = action.single_value()
-        playerproxy.add_npc_message(action.name, message)
+        playerproxy.add_stage_message(action.name, message)
 ############################################################################################################
     def whisper_action_2_message(self, playerproxy: PlayerProxy, player_npc_entity: Entity) -> None:
         player_npc_entity_stage = self.context.safe_get_stage_entity(player_npc_entity)

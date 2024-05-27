@@ -17,4 +17,12 @@ class BaseGame(ABC):
     def exit(self) -> None:
         pass
 
+    @abstractmethod
+    async def async_execute(self) -> None:
+        pass
+
+    @abstractmethod
+    def on_exit(self) -> None:
+        pass
+
 

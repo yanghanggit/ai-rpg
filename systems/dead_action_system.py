@@ -26,7 +26,10 @@ class DeadActionSystem(ExecuteProcessor):
             if not entity.has(DestroyComponent):
                 entity.add(DestroyComponent, action.name) ### 这里只需要名字，不需要values，谁造成了你的死亡
 
-                if self.context.getplayer(TEST_PLAYER_NAME) is entity:
+                playername = self.context.user_ip
+                if '127.0.0.1' in playername:
+                    playername = TEST_PLAYER_NAME
+                if self.context.getplayer(playername) is entity:
                     self.rpggame.exited = True
 ########################################################################################################################################################################
             

@@ -12,7 +12,9 @@ class TestPlayerUpdateClientMessageSystem(ExecuteProcessor):
         self.context: ExtendedContext = context
 ############################################################################################################
     def execute(self) -> None:
-        playername = TEST_PLAYER_NAME
+        playername = self.context.user_ip
+        if '127.0.0.1' in playername:
+            playername = TEST_PLAYER_NAME
         playerproxy = get_player_proxy(playername)
         player_npc_entity = self.context.getplayer(playername)
         if player_npc_entity is None or playerproxy is None:

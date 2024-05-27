@@ -9,7 +9,7 @@ from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.director_component import notify_stage_director, StageDirectorComponent
 from typing import cast, Dict
-from auxiliary.player_proxy import add_player_client_message
+from auxiliary.player_proxy import add_player_client_npc_message
 from auxiliary.director_event import IDirectorEvent
 from auxiliary.cn_builtin_prompt import (someone_entered_my_stage_observed_his_appearance_prompt,
                                           observe_appearance_after_entering_stage_prompt, leave_stage_prompt,
@@ -188,7 +188,7 @@ class LeaveForActionSystem(ReactiveProcessor):
         if helper.who_wana_leave_entity.has(PlayerComponent):
             events2player = directorcomp.player_client_message(safe_npc_name, self.context)
             for event in events2player:
-                add_player_client_message(helper.who_wana_leave_entity, event)
+                add_player_client_npc_message(helper.who_wana_leave_entity, event)
     ###############################################################################################################################################
     def leave_stage(self, helper: LeaveActionHelper) -> None:
         entity: Entity = helper.who_wana_leave_entity

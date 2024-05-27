@@ -5,11 +5,7 @@ from auxiliary.player_input_command import (PlayerCommandLogin)
 from main_utils import create_rpg_game_then_build
 
 
-###############################################################################################################################################
-###############################################################################################################################################
-###############################################################################################################################################
-############################################################################################################################################### 
-def main() -> None:
+async def asyn_main() -> None:
 
     log_start_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     logger.add(f"logs/{log_start_time}.log", level="DEBUG")
@@ -28,13 +24,18 @@ def main() -> None:
     playerstartcmd = PlayerCommandLogin("/player-login", rpggame, playerproxy, "无名的复活者")
     playerstartcmd.execute()
 
+    ## 临时 强行改成服务器终端模式，只要这个写死为空。后面的逻辑就会跟上。
+    rpggame.extendedcontext.user_ip = ""
+
     #
     while True:
         if rpggame.exited:
             break
-        rpggame.execute()
+        await rpggame.async_execute()
+        logger.debug("async_execute done.")
     #
     rpggame.exit()
 
 if __name__ == "__main__":
-    main()
+    import asyncio
+    asyncio.run(asyn_main())

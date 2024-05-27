@@ -22,7 +22,7 @@ class MyProcessors(Processors):
             execution_time = end_time - start_time
             logger.debug(f"{processor.__class__.__name__} initialize time: {execution_time:.2f} seconds")
     @override
-    async def async_execute(self):
+    async def async_execute(self) -> None:
         for processor in self._execute_processors:
             if hasattr(processor, 'async_execute'):
                 await processor.async_execute()

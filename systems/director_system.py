@@ -3,7 +3,7 @@ from auxiliary.components import StageComponent, NPCComponent, PlayerComponent
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.director_component import StageDirectorComponent
-from auxiliary.player_proxy import add_player_client_message
+from auxiliary.player_proxy import add_player_client_npc_message
 
 
 class DirectorSystem(ExecuteProcessor):
@@ -64,6 +64,6 @@ class DirectorSystem(ExecuteProcessor):
             if npcentity.has(PlayerComponent):
                 events2player = directorcomp.player_client_message(npccomp.name, self.context)
                 for event in events2player:
-                    add_player_client_message(npcentity, event)
+                    add_player_client_npc_message(npcentity, event)
 ###################################################################################################################
     

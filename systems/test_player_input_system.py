@@ -2,7 +2,7 @@ from entitas import ExecuteProcessor#type: ignore
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from rpg_game import RPGGame 
-from auxiliary.player_proxy import PlayerProxy, get_player_proxy, TEST_PLAYER_NAME
+from auxiliary.player_proxy import PlayerProxy, get_player_proxy, TEST_PLAYER_NAME, PLAYER_INPUT_MODE, determine_player_input_mode
 from auxiliary.player_input_command import (
                           PlayerCommandAttack, 
                           PlayerCommandLeaveFor, 
@@ -19,6 +19,7 @@ from auxiliary.extended_context import ExtendedContext
 from systems.check_status_action_system import CheckStatusActionHelper, NPCCheckStatusEvent
 from systems.perception_action_system import PerceptionActionHelper, NPCPerceptionEvent
 
+
 ############################################################################################################
 def splitcommand(input_val: str, split_str: str)-> str:
     if split_str in input_val:
@@ -31,12 +32,21 @@ class TestPlayerInputSystem(ExecuteProcessor):
         self.rpggame = rpggame
 ############################################################################################################
     def execute(self) -> None:
+
+        # 临时的设置，通过IP地址来判断是不是测试的客户端
         playername = self.context.user_ip
-        if '127.0.0.1' in playername:
+
+        input_mode = determine_player_input_mode(playername)
+        if input_mode == PLAYER_INPUT_MODE.WEB:
             playername = TEST_PLAYER_NAME
-        self.handleinput(playername) ## 核心输入，while循环
+            self.play_via_client_and_handle_player_input(playername)
+        elif input_mode == PLAYER_INPUT_MODE.TERMINAL:
+            playername = TEST_PLAYER_NAME
+            self.play_via_terminal_and_handle_player_input(playername)
+        else:
+            logger.error("未知的输入模式")
 ############################################################################################################
-    def handleinput(self, playername: str) -> None:
+    def play_via_client_and_handle_player_input(self, playername: str) -> None:
         playerproxy = get_player_proxy(playername)
         if playerproxy is None:
             logger.warning("玩家不存在，或者玩家未加入游戏")
@@ -50,24 +60,21 @@ class TestPlayerInputSystem(ExecuteProcessor):
             break
 
         playerproxy.commands.clear()
-
-
-        # while True:
-            
-        #     # 客户端应该看到的
-        #     self.display_player_client_messages(playerproxy, 10)
-        #     for command in playerproxy.commands:
-        #         playerproxy.add_system_message(command)
-        #         if self.playerinput(self.rpggame, playerproxy, usrinput):
-        #             logger.debug(f"{'=' * 50}")
-        #         break
-            
-        #     # 测试的客户端反馈
-        #     usrinput = input(f"[{playername}]:")
-        #     playerproxy.add_system_message(usrinput)
-        #     if self.playerinput(self.rpggame, playerproxy, usrinput):
-        #         logger.debug(f"{'=' * 50}")
-        #         break
+############################################################################################################
+    def play_via_terminal_and_handle_player_input(self, playername: str) -> None:
+        playerproxy = get_player_proxy(playername)
+        if playerproxy is None:
+            logger.warning("玩家不存在，或者玩家未加入游戏")
+            return
+        while True:
+            # 客户端应该看到的
+            self.display_player_client_messages(playerproxy, 10)    
+            # 测试的客户端反馈
+            usrinput = input(f"[{playername}]:")
+            playerproxy.add_system_message(usrinput)
+            if self.playerinput(self.rpggame, playerproxy, usrinput):
+                logger.debug(f"{'=' * 50}")
+                break
 ############################################################################################################ 
     def display_player_client_messages(self, playerproxy: PlayerProxy, display_messages_count: int) -> None:
         clientmessages = playerproxy.clientmessages

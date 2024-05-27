@@ -40,15 +40,14 @@ class TestPlayerInputSystem(ExecuteProcessor):
             logger.warning("玩家不存在，或者玩家未加入游戏")
             return
         
-        self.display_player_client_messages(playerproxy, 10)
         for command in playerproxy.commands:
-            playerproxy.add_system_message(command)
+            playerproxy.addmessage("[无名的复活者]", command)
             if self.playerinput(self.rpggame, playerproxy, command):
                 logger.debug(f"{'=' * 50}")
             break
-
+                  
         playerproxy.commands.clear()
-
+        self.display_player_client_messages(playerproxy, 10)
 
         # while True:
             

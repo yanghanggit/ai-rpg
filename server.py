@@ -6,7 +6,7 @@ from fastapi.templating import Jinja2Templates
 from loguru import logger
 from pydantic import BaseModel
 from auxiliary.player_input_command import PlayerCommandLogin
-from auxiliary.player_proxy import TEST_PLAYER_NAME, create_player_proxy, get_player_proxy
+from auxiliary.player_proxy import create_player_proxy, get_player_proxy
 from main_utils import create_rpg_game_then_build
 from rpg_game import RPGGame
 
@@ -37,13 +37,13 @@ async def start(clientip: str):
     await rpggame[clientip].async_execute()
 
     messages: list[TupleModel] = []
-    messages.append(TupleModel(who=TEST_PLAYER_NAME, what="Start Success"))
+    messages.append(TupleModel(who=clientip, what="Start Success"))
 
     return messages
 
 async def login(clientip: str):
-    create_player_proxy(TEST_PLAYER_NAME)
-    playerproxy = get_player_proxy(TEST_PLAYER_NAME)
+    create_player_proxy(clientip)
+    playerproxy = get_player_proxy(clientip)
     assert playerproxy is not None
     playerstartcmd = PlayerCommandLogin("/player-login", rpggame[clientip], playerproxy, "无名的复活者")
     playerstartcmd.execute()
@@ -63,7 +63,7 @@ async def quitgame(clientip: str):
         quitclient.exit()
 
     messages: list[TupleModel] = []
-    messages.append(TupleModel(who=TEST_PLAYER_NAME, what="Quit Success"))
+    messages.append(TupleModel(who=clientip, what="Quit Success"))
 
     return messages
 
@@ -71,7 +71,7 @@ async def quitgame(clientip: str):
 #     await rpggame.async_execute()
 
 async def playerinput(clientip: str, command: str):
-    playerproxy = get_player_proxy(TEST_PLAYER_NAME)
+    playerproxy = get_player_proxy(clientip)
     assert playerproxy is not None
     playerproxy.commands.append(command)
     await rpggame[clientip].async_execute()

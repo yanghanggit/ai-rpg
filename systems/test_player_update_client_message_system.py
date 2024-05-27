@@ -1,6 +1,6 @@
 from entitas import ExecuteProcessor, Entity, Matcher #type: ignore
 from auxiliary.extended_context import ExtendedContext
-from auxiliary.player_proxy import PlayerProxy, get_player_proxy, TEST_PLAYER_NAME
+from auxiliary.player_proxy import PlayerProxy, get_player_proxy
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.components import MindVoiceActionComponent, WhisperActionComponent, SpeakActionComponent, BroadcastActionComponent, EnviroNarrateActionComponent
 from auxiliary.actor_action import ActorAction
@@ -13,8 +13,6 @@ class TestPlayerUpdateClientMessageSystem(ExecuteProcessor):
 ############################################################################################################
     def execute(self) -> None:
         playername = self.context.user_ip
-        if '127.0.0.1' in playername:
-            playername = TEST_PLAYER_NAME
         playerproxy = get_player_proxy(playername)
         player_npc_entity = self.context.getplayer(playername)
         if player_npc_entity is None or playerproxy is None:

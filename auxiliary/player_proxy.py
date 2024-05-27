@@ -62,7 +62,6 @@ def add_player_client_message(npcentity: Entity, message: str) -> None:
     playerproxy.add_npc_message(npccomp.name, message)
 ###################################################################################################################
 ### 单人游戏，临时的名字
-TEST_PLAYER_NAME = "北京柏林互动科技有限公司"
 TEST_LOGIN_INFORMATION = f"""测试的游戏登陆信息"""
 TEST_GAME_INSTRUCTIONS_WHEN_LOGIN_SUCCESS_FOR_FIRST_TIME = f"""测试的游戏介绍"""
 

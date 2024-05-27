@@ -2,7 +2,7 @@ from entitas import ExecuteProcessor#type: ignore
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from rpg_game import RPGGame 
-from auxiliary.player_proxy import PlayerProxy, get_player_proxy, TEST_PLAYER_NAME
+from auxiliary.player_proxy import PlayerProxy, get_player_proxy
 from auxiliary.player_input_command import (
                           PlayerCommandAttack, 
                           PlayerCommandLeaveFor, 
@@ -32,8 +32,6 @@ class TestPlayerInputSystem(ExecuteProcessor):
 ############################################################################################################
     def execute(self) -> None:
         playername = self.context.user_ip
-        if '127.0.0.1' in playername:
-            playername = TEST_PLAYER_NAME
         self.handleinput(playername) ## 核心输入，while循环
 ############################################################################################################
     def handleinput(self, playername: str) -> None:

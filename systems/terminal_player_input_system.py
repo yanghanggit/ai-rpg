@@ -34,7 +34,10 @@ class TerminalPlayerInputSystem(ExecuteProcessor):
            
             # 测试的客户端反馈
             usrinput = input(f"[{playername}]:")
-            playerproxy.add_system_message(usrinput)
+            # single_player = self.context.getplayer(playername)
+            # assert single_player is not None
+            # safename = self.context.safe_get_entity_name(single_player)
+            # playerproxy.add_npc_message(safename, usrinput)
 
             # 处理玩家的输入
             self.handle_input(self.rpggame, playerproxy, usrinput)

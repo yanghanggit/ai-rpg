@@ -50,12 +50,11 @@ class HandlePlayerInputSystem(ExecuteProcessor):
         
         for command in playerproxy.commands:
             #todo
-            singleplayer = self.context.get_single_player()
+            singleplayer = self.context.getplayer(playername)
             assert singleplayer is not None
             #
             safename = self.context.safe_get_entity_name(singleplayer)
-            logger.error("todo 通过客户端的输入，来处理玩家的命令, 目前是写死的，多人条件下就不行了。")
-            playerproxy.addmessage(f"[{safename}]", command)
+            playerproxy.add_npc_message(safename, command)
             
             ## 处理玩家的输入
             create_any_player_command_by_input = self.handle_input(self.rpggame, playerproxy, command)

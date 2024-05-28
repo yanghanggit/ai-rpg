@@ -6,6 +6,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">  
     <title>柏林互动科技有限公司</title>  
     <style>  
+            body {  
+            position: relative;  
+            margin: 0;  
+            padding: 0;  
+            min-height: 100vh;  
+            background-color: #444444; /* 设置背景颜色，在图片加载前显示 */  
+            color: #ffffff; /* 设置字体颜色为白色 */  
+        } 
+        body:before {  
+                content: '';  
+                position: absolute;  
+                top: 0;  
+                left: 0;  
+                width: 100%;  
+                height: 100%; 
+                background-image: url('/static/pic/bg.webp'); /* 背景图片的路径 */  
+                background-size: cover; /* 调整图片大小以覆盖整个背景 */  
+                background-repeat: no-repeat; /* 防止图片重复 */  
+                background-attachment: scroll;  
+                background-position: center center; /* 背景图片居中显示 */  
+                opacity: 0.5; /* 调整透明度，0.5表示50%透明度 */  
+                z-index: -1; /* 确保背景图片在所有内容的后面 */  
+            } 
         #user_text_input {  
             width: 400px; /* 调整输入框的宽度 */  
         }  

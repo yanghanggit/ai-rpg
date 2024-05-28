@@ -21,6 +21,7 @@ class MyProcessors(Processors):
             end_time = time.time()
             execution_time = end_time - start_time
             logger.debug(f"{processor.__class__.__name__} initialize time: {execution_time:.2f} seconds")
+            
     @override
     async def async_execute(self) -> None:
         for processor in self._execute_processors:

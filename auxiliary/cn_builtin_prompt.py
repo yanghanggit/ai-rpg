@@ -235,11 +235,12 @@ def enter_stage_prompt2(some_ones_name: str, target_stage_name: str, last_stage_
 def leave_stage_prompt(npc_name: str, current_stage_name: str, leave_for_stage_name: str) -> str:
     return f"# {npc_name}离开了{current_stage_name} 场景。"
 ################################################################################################################################################
-
-
-
-
-
+def stage_director_begin_prompt(stage_name: str) -> str:
+    return f"""# 如下是{stage_name}场景内发生的事件。"""
+################################################################################################################################################
+def stage_director_end_prompt(stage_name: str) -> str:
+    return f"""# 以上是{stage_name}场景内近期发生的事件。请注意。"""
+################################################################################################################################################
 
 
 def whisper_action_prompt(srcname: str, destname: str, content: str, context: ExtendedContext) -> str:

@@ -73,6 +73,13 @@ class ExtendedContext(Context):
             if playercomp.name == playername:
                 return entity
         return None
+
+############################################################################################################
+    def get_single_player(self) -> Optional[Entity]:
+        entities: set[Entity] = self.get_group(Matcher(all_of=[PlayerComponent, NPCComponent])).entities
+        if len(entities) > 0:
+            return next(iter(entities))
+        return None
 ############################################################################################################
     def get_by_code_name_component(self, name: str) -> Optional[Entity]:
         compclass = self.code_name_component_system.get_component_class_by_name(name)

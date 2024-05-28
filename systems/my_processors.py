@@ -25,9 +25,7 @@ class MyProcessors(Processors):
     @override
     async def async_execute(self) -> None:
         for processor in self._execute_processors:
-            if hasattr(processor, 'async_execute'):
-                await processor.async_execute()
-
+            await processor.async_execute()
             processor.execute()
             
     @override

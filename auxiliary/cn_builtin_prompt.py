@@ -70,9 +70,9 @@ def stage_plan_prompt(props_in_stage: List[PropData], npc_in_stage: Set[str], co
 
 
     prompt = f"""# <%这是场景计划>请输出'你的当前描述'和'你的计划'
-## 附加信息：场景内道具:
+## 场景内道具:
 {prompt_of_props}
-## 附加信息：场景内角色:
+## 场景内角色:
 {prompt_of_npc}
 ## 你的当前描述:
 - 仅根据'你确定知道的信息'和'你确定已发生的事件'。来更新你的描述。

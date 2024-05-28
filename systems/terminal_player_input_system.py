@@ -53,54 +53,54 @@ class TerminalPlayerInputSystem(ExecuteProcessor):
             from rpg_game import RPGGame 
             cast(RPGGame, rpggame).exit()
 
-        elif "/perception" in usrinput:
-            # player 执行立即模式
-            command = "/perception"
-            self.imme_handle_perception(playerproxy)
-            #PlayerCommandPerception(command, rpggame, playerproxy).execute()
-            return False
+        # elif "/perception" in usrinput:
+        #     # player 执行立即模式
+        #     command = "/perception"
+        #     self.imme_handle_perception(playerproxy)
+        #     #PlayerCommandPerception(command, rpggame, playerproxy).execute()
+        #     return False
 
-        elif "/checkstatus" in usrinput:
-            # player 执行立即模式
-            command = "/checkstatus"
-            self.imme_handle_check_status(playerproxy)
-            #PlayerCommandCheckStatus(command, rpggame, playerproxy).execute()
-            return False
+        # elif "/checkstatus" in usrinput:
+        #     # player 执行立即模式
+        #     command = "/checkstatus"
+        #     self.imme_handle_check_status(playerproxy)
+        #     #PlayerCommandCheckStatus(command, rpggame, playerproxy).execute()
+        #     return False
         else:
             playerproxy.commands.append(str(usrinput))
             
         return True
 ############################################################################################################
-    def imme_handle_perception(self, playerproxy: PlayerProxy) -> None:
-        playerentity = self.context.getplayer(playerproxy.name)
-        if playerentity is None:
-            return
-        #
-        helper = PerceptionActionHelper(self.context)
-        helper.perception(playerentity)
-        #
-        safe_npc_name = self.context.safe_get_entity_name(playerentity)
-        stageentity = self.context.safe_get_stage_entity(playerentity)
-        assert stageentity is not None
-        safe_stage_name = self.context.safe_get_entity_name(stageentity)
-        #
-        event = NPCPerceptionEvent(safe_npc_name, safe_stage_name, helper.npcs_in_stage, helper.props_in_stage)
-        message = event.tonpc(safe_npc_name, self.context)
-        #
-        playerproxy.add_npc_message(safe_npc_name, message)
-############################################################################################################
-    def imme_handle_check_status(self, playerproxy: PlayerProxy) -> None:
-        playerentity = self.context.getplayer(playerproxy.name)
-        if playerentity is None:
-            return
-        #
-        helper = CheckStatusActionHelper(self.context)
-        helper.check_status(playerentity)
-        #
-        safename = self.context.safe_get_entity_name(playerentity)
-        #
-        event = NPCCheckStatusEvent(safename, helper.props, helper.health, helper.role_components, helper.events)
-        message = event.tonpc(safename, self.context)
-        playerproxy.add_npc_message(safename, message)
+#     def imme_handle_perception(self, playerproxy: PlayerProxy) -> None:
+#         playerentity = self.context.getplayer(playerproxy.name)
+#         if playerentity is None:
+#             return
+#         #
+#         helper = PerceptionActionHelper(self.context)
+#         helper.perception(playerentity)
+#         #
+#         safe_npc_name = self.context.safe_get_entity_name(playerentity)
+#         stageentity = self.context.safe_get_stage_entity(playerentity)
+#         assert stageentity is not None
+#         safe_stage_name = self.context.safe_get_entity_name(stageentity)
+#         #
+#         event = NPCPerceptionEvent(safe_npc_name, safe_stage_name, helper.npcs_in_stage, helper.props_in_stage)
+#         message = event.tonpc(safe_npc_name, self.context)
+#         #
+#         playerproxy.add_npc_message(safe_npc_name, message)
+# ############################################################################################################
+#     def imme_handle_check_status(self, playerproxy: PlayerProxy) -> None:
+#         playerentity = self.context.getplayer(playerproxy.name)
+#         if playerentity is None:
+#             return
+#         #
+#         helper = CheckStatusActionHelper(self.context)
+#         helper.check_status(playerentity)
+#         #
+#         safename = self.context.safe_get_entity_name(playerentity)
+#         #
+#         event = NPCCheckStatusEvent(safename, helper.props, helper.health, helper.role_components, helper.events)
+#         message = event.tonpc(safename, self.context)
+#         playerproxy.add_npc_message(safename, message)
 ############################################################################################################
 

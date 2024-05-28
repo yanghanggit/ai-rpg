@@ -20,7 +20,7 @@ class TerminalPlayerInterruptAndWaitSystem(ExecuteProcessor):
             self.display_client_messages(playerproxy, 10)
             while True:
                 # 测试的客户端反馈
-                input(f"[{TEST_TERMINAL_NAME}]:回车继续")
+                input(f"[{TEST_TERMINAL_NAME}]:当前为中断等待，请任意键继续")
                 break   
         else:
             logger.debug("只处理终端的输入")

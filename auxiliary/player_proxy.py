@@ -7,7 +7,7 @@ import re
 
 class PLAYER_INPUT_MODE(Enum):
     INVALID = 0,
-    WEB = 1
+    WEB_HTTP_REQUEST = 1
     TERMINAL = 2
 
 def is_valid_ipv4(ip: str) -> bool:
@@ -16,7 +16,7 @@ def is_valid_ipv4(ip: str) -> bool:
 
 def determine_player_input_mode(playername: str) -> PLAYER_INPUT_MODE:
     if is_valid_ipv4(playername):
-        return PLAYER_INPUT_MODE.WEB
+        return PLAYER_INPUT_MODE.WEB_HTTP_REQUEST
     return PLAYER_INPUT_MODE.TERMINAL
 
 ### 目前啥也不干，但留着有用的时候再用

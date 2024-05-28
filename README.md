@@ -4,7 +4,7 @@
 ```python
 conda create -n first_seed python=3.10 
 
-pip install langchain langchain_core langserve fastapi langchain_openai sse_starlette faiss-cpu loguru mypy pandas openpyxl overrides
+pip install langchain langchain_core langserve fastapi langchain_openai sse_starlette faiss-cpu loguru mypy pandas openpyxl overrides Jinja2
 ```
 
 ## 注意点

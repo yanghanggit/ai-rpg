@@ -35,7 +35,7 @@ class InitMemorySystem(InitializeProcessor, ExecuteProcessor):
         context = self.context
         agent_connect_system = context.agent_connect_system
         if len(self.tasks) == 0:
-            logger.error("InitMemorySystem tasks is empty.")
+            #logger.error("InitMemorySystem tasks is empty.")
             return
         
         for name, prompt in self.tasks.items():

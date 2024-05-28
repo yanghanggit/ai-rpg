@@ -108,7 +108,6 @@ class RPGGame(BaseGame):
         processors.add(WhisperActionSystem(context))
         processors.add(BroadcastActionSystem(context))
         processors.add(SpeakActionSystem(context))
-        #processors.add(PostConversationalActionSystem(context))
 
         #战斗类的行为
         processors.add(SimpleRPGRolePreFightSystem(context)) #战斗之前需要更新装备
@@ -136,9 +135,7 @@ class RPGGame(BaseGame):
         processors.add(DirectorSystem(context))
         #行动结束后更新关系网，因为依赖Director所以必须在后面
         processors.add(UpdateArchiveSystem(context))
-        #
-        processors.add(TestPlayerPostDisplayClientMessageSystem(context))
-        #########################################
+       
 
         ###最后删除entity与存储数据
         processors.add(DestroySystem(context))
@@ -149,6 +146,10 @@ class RPGGame(BaseGame):
         
         ##调试用的系统。监视进入运行之后的状态
         processors.add(EndSystem(context))
+
+        #
+        processors.add(TestPlayerPostDisplayClientMessageSystem(context))
+        #########################################
 
         #规划逻辑########################
         processors.add(PrePlanningSystem(context)) ######## 在所有规划之前

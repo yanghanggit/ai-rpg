@@ -51,7 +51,7 @@ class TestPlayerInputSystem(ExecuteProcessor):
             return
         
         for command in playerproxy.commands:
-            playerproxy.addmessage("[无名的复活者]", command)
+            playerproxy.addmessage("[无名的复活者]", command) #todo
             if self.playerinput(self.rpggame, playerproxy, command):
                 logger.debug(f"{'=' * 50}")
             break

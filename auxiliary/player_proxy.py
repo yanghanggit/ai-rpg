@@ -10,7 +10,7 @@ class PLAYER_INPUT_MODE(Enum):
     WEB = 1
     TERMINAL = 2
 
-def is_valid_ipv4(ip):  
+def is_valid_ipv4(ip: str) -> bool:
     ipv4_pattern = re.compile(r'^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$')  
     return ipv4_pattern.match(ip) is not None
 
@@ -61,7 +61,7 @@ def get_player_proxy(playername: str) -> Optional[PlayerProxy]:
             return player
     return None
 
-def remove_player_proxy(playerproxy: PlayerProxy):
+def remove_player_proxy(playerproxy: PlayerProxy) -> None:
     PLAYERS.remove(playerproxy)
 
 ###################################################################################################################

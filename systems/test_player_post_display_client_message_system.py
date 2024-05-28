@@ -21,12 +21,11 @@ class TestPlayerPostDisplayClientMessageSystem(ExecuteProcessor):
             # self.display_player_client_messages(playerproxy, 10)
             
         elif input_mode == PLAYER_INPUT_MODE.TERMINAL:
-
+            #就是展示一下并点击继续，没什么用
             playerproxy = get_player_proxy(TEST_TERMINAL_NAME)
-            player_npc_entity = self.context.getplayer(playername)
+            player_npc_entity = self.context.getplayer(TEST_TERMINAL_NAME)
             if player_npc_entity is None or playerproxy is None:
                 return
-            
             self.display_client_messages(playerproxy, 10)
             while True:
                 # 测试的客户端反馈

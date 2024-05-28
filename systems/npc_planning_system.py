@@ -1,3 +1,4 @@
+from overrides import override
 from entitas import Entity, Matcher, ExecuteProcessor #type: ignore
 from auxiliary.components import (NPCComponent, 
                         AutoPlanningComponent,
@@ -17,6 +18,7 @@ class NPCPlanningSystem(ExecuteProcessor):
     def execute(self) -> None:
         pass
 ####################################################################################################
+    @override
     async def async_execute(self) -> None:
         #记录事件
         self.context.chaos_engineering_system.on_npc_planning_system_execute(self.context)

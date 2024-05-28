@@ -101,6 +101,9 @@ class ExcelEditorWorld:
     def create_npcs(self, npcs: List[Any]) -> List[ExcelEditorNPC]:
         res: List[ExcelEditorNPC] = []
         for item in npcs:
+            if item['name'] not in self.npc_data_base:
+                logger.error(f"Invalid NPC name: {item['name']}")
+                continue
             editor_npc = ExcelEditorNPC(item, self.npc_data_base, self.prop_data_base)
             res.append(editor_npc)
         return res
@@ -108,6 +111,9 @@ class ExcelEditorWorld:
     def create_stages(self, stages: List[Any]) -> List[ExcelEditorStage]:
         res: List[ExcelEditorStage] = []
         for item in stages:
+            if item['name'] not in self.stage_data_base:
+                logger.error(f"Invalid Stage name: {item['name']}")
+                continue
             editor_stage = ExcelEditorStage(item, self.npc_data_base, self.prop_data_base, self.stage_data_base)
             res.append(editor_stage)
         return res

@@ -26,21 +26,19 @@ def splitcommand(input_val: str, split_str: str)-> str:
         return input_val.split(split_str)[1].strip()
     return input_val
 ############################################################################################################
-class TestPlayerInputSystem(ExecuteProcessor):
+class HandlePlayerInputSystem(ExecuteProcessor):
     def __init__(self, context: ExtendedContext, rpggame: 'RPGGame') -> None:
         self.context: ExtendedContext = context
         self.rpggame = rpggame
 ############################################################################################################
     def execute(self) -> None:
-
         # 临时的设置，通过IP地址来判断是不是测试的客户端
         playername = self.context.user_ip
-
         input_mode = determine_player_input_mode(playername)
-        if input_mode == PLAYER_INPUT_MODE.WEB:
+        if input_mode == PLAYER_INPUT_MODE.WEB_HTTP_REQUEST:
             self.play_via_client_and_handle_player_input(playername)
         elif input_mode == PLAYER_INPUT_MODE.TERMINAL:
-            self.play_via_terminal_and_handle_player_input(TEST_TERMINAL_NAME)
+            self.play_via_client_and_handle_player_input(TEST_TERMINAL_NAME)
         else:
             logger.error("未知的输入模式")
 ############################################################################################################
@@ -51,36 +49,50 @@ class TestPlayerInputSystem(ExecuteProcessor):
             return
         
         for command in playerproxy.commands:
-            playerproxy.addmessage("[无名的复活者]", command)
-            if self.playerinput(self.rpggame, playerproxy, command):
-                logger.debug(f"{'=' * 50}")
+            #todo
+            singleplayer = self.context.get_single_player()
+            assert singleplayer is not None
+            #
+            safename = self.context.safe_get_entity_name(singleplayer)
+            logger.error("todo 通过客户端的输入，来处理玩家的命令, 目前是写死的，多人条件下就不行了。")
+            playerproxy.addmessage(f"[{safename}]", command)
+            
+            ## 处理玩家的输入
+            create_any_player_command_by_input = self.handle_input(self.rpggame, playerproxy, command)
+            logger.debug(f"{'=' * 50}")
+
+            if not create_any_player_command_by_input:
+                ## 是立即模式，显示一下客户端的消息
+                logger.debug("立即模式的input = " + command)     
+
+            ## 总之要跳出循环 
             break
                   
         playerproxy.commands.clear()
 ############################################################################################################
-    def play_via_terminal_and_handle_player_input(self, playername: str) -> None:
-        playerproxy = get_player_proxy(playername)
-        if playerproxy is None:
-            logger.warning("玩家不存在，或者玩家未加入游戏")
-            return
-        while True:
-            # 客户端应该看到的
-            self.display_player_client_messages(playerproxy, 10)    
-            # 测试的客户端反馈
-            usrinput = input(f"[{playername}]:")
-            playerproxy.add_system_message(usrinput)
-            if self.playerinput(self.rpggame, playerproxy, usrinput):
-                logger.debug(f"{'=' * 50}")
-                break
+    # def play_via_terminal_and_handle_player_input(self, playername: str) -> None:
+    #     playerproxy = get_player_proxy(playername)
+    #     if playerproxy is None:
+    #         logger.warning("玩家不存在，或者玩家未加入游戏")
+    #         return
+    #     while True:
+    #         # 客户端应该看到的
+    #         self.display_player_client_messages(playerproxy, 10)    
+    #         # 测试的客户端反馈
+    #         usrinput = input(f"[{playername}]:")
+    #         playerproxy.add_system_message(usrinput)
+    #         if self.playerinput(self.rpggame, playerproxy, usrinput):
+    #             logger.debug(f"{'=' * 50}")
+    #             break
 ############################################################################################################ 
-    def display_player_client_messages(self, playerproxy: PlayerProxy, display_messages_count: int) -> None:
-        clientmessages = playerproxy.clientmessages
-        for message in clientmessages[-display_messages_count:]:
-            tag = message[0]
-            content = message[1]
-            logger.warning(f"{tag}=>{content}")
+    # def display_client_messages(self, playerproxy: PlayerProxy, display_messages_count: int) -> None:
+    #     clientmessages = playerproxy.clientmessages
+    #     for message in clientmessages[-display_messages_count:]:
+    #         tag = message[0]
+    #         content = message[1]
+    #         logger.warning(f"{tag}=>{content}")
 ############################################################################################################
-    def playerinput(self, rpggame: RPGGame, playerproxy: PlayerProxy, usrinput: str) -> bool:
+    def handle_input(self, rpggame: RPGGame, playerproxy: PlayerProxy, usrinput: str) -> bool:
 
         if "/quit" in usrinput:
             rpggame.exited = True
@@ -145,7 +157,6 @@ class TestPlayerInputSystem(ExecuteProcessor):
             command = "/useprop"
             content = splitcommand(usrinput, command)
             PlayerCommandUseInteractiveProp(command, rpggame, playerproxy, content).execute()
-            #return False
 
         return True
 ############################################################################################################

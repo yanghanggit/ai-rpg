@@ -1,3 +1,4 @@
+from overrides import override
 from entitas import Entity, Matcher, ExecuteProcessor #type: ignore
 from auxiliary.components import (StageComponent, 
                         AutoPlanningComponent,
@@ -16,6 +17,7 @@ class StagePlanningSystem(ExecuteProcessor):
     def execute(self) -> None:
         pass
 ####################################################################################################
+    @override
     async def async_execute(self) -> None:
         
         #记录事件

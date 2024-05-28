@@ -5,7 +5,7 @@ from auxiliary.player_input_command import (PlayerCommandLogin)
 from main_utils import create_rpg_game_then_build
 
 
-async def asyn_main() -> None:
+async def main() -> None:
 
     log_start_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     logger.add(f"logs/{log_start_time}.log", level="DEBUG")
@@ -16,6 +16,12 @@ async def asyn_main() -> None:
     if rpggame is None:
         logger.error("create_rpg_game 失败。")
         return
+    
+    ## 临时 强行改成服务器终端模式，只要这个写死为空。后面的逻辑就会跟上。
+    rpggame.extendedcontext.user_ip = ""
+
+    ## 第一次空执行，让所有NPC可以做一些初始化的动作。
+    await rpggame.async_execute()
 
     #测试的代码，上来就控制一个NPC目标，先写死
     create_player_proxy(TEST_TERMINAL_NAME)
@@ -23,9 +29,6 @@ async def asyn_main() -> None:
     assert playerproxy is not None
     playerstartcmd = PlayerCommandLogin("/player-login", rpggame, playerproxy, "无名的复活者")
     playerstartcmd.execute()
-
-    ## 临时 强行改成服务器终端模式，只要这个写死为空。后面的逻辑就会跟上。
-    rpggame.extendedcontext.user_ip = ""
 
     #
     while True:
@@ -38,4 +41,4 @@ async def asyn_main() -> None:
 
 if __name__ == "__main__":
     import asyncio
-    asyncio.run(asyn_main())
+    asyncio.run(main())

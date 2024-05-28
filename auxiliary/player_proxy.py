@@ -7,16 +7,16 @@ import re
 
 class PLAYER_INPUT_MODE(Enum):
     INVALID = 0,
-    WEB = 1
+    WEB_HTTP_REQUEST = 1
     TERMINAL = 2
 
-def is_valid_ipv4(ip):  
+def is_valid_ipv4(ip: str) -> bool:
     ipv4_pattern = re.compile(r'^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$')  
     return ipv4_pattern.match(ip) is not None
 
 def determine_player_input_mode(playername: str) -> PLAYER_INPUT_MODE:
     if is_valid_ipv4(playername):
-        return PLAYER_INPUT_MODE.WEB
+        return PLAYER_INPUT_MODE.WEB_HTTP_REQUEST
     return PLAYER_INPUT_MODE.TERMINAL
 
 ### 目前啥也不干，但留着有用的时候再用
@@ -61,7 +61,7 @@ def get_player_proxy(playername: str) -> Optional[PlayerProxy]:
             return player
     return None
 
-def remove_player_proxy(playerproxy: PlayerProxy):
+def remove_player_proxy(playerproxy: PlayerProxy) -> None:
     PLAYERS.remove(playerproxy)
 
 ###################################################################################################################

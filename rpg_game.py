@@ -55,9 +55,10 @@ from systems.init_agents_system import InitAgentsSystem
 from auxiliary.file_system_helper import add_npc_archive_files
 from systems.my_processors import MyProcessors
 from systems.simple_rpg_role_pre_fight_system import SimpleRPGRolePreFightSystem
-from systems.test_player_update_client_message_system import TestPlayerUpdateClientMessageSystem
-from systems.test_player_post_display_client_message_system import TestPlayerPostDisplayClientMessageSystem
+from systems.update_client_message_system import UpdateClientMessageSystem
+from systems.terminal_player_interrupt_and_wait_system import TerminalPlayerInterruptAndWaitSystem
 from systems.compress_chat_history_system import CompressChatHistorySystem
+from systems.terminal_player_input_system import TerminalPlayerInputSystem
 
 ## 控制流程和数据创建
 class RPGGame(BaseGame):
@@ -92,8 +93,8 @@ class RPGGame(BaseGame):
         # processors.add(TestPlayerUpdateClientMessageSystem(context)) 
 
         #用户拿到相关的信息，并开始操作与输入!!!!!!!
-        from systems.test_player_input_system import TestPlayerInputSystem ### 不这样就循环引用
-        processors.add(TestPlayerInputSystem(context, self)) 
+        from systems.handle_player_input_system import HandlePlayerInputSystem ### 不这样就循环引用
+        processors.add(HandlePlayerInputSystem(context, self)) 
 
         #行动逻辑########################
         processors.add(PreActionSystem(context)) ######## 在所有行动之前 #########################################
@@ -108,7 +109,6 @@ class RPGGame(BaseGame):
         processors.add(WhisperActionSystem(context))
         processors.add(BroadcastActionSystem(context))
         processors.add(SpeakActionSystem(context))
-        #processors.add(PostConversationalActionSystem(context))
 
         #战斗类的行为
         processors.add(SimpleRPGRolePreFightSystem(context)) #战斗之前需要更新装备
@@ -136,9 +136,7 @@ class RPGGame(BaseGame):
         processors.add(DirectorSystem(context))
         #行动结束后更新关系网，因为依赖Director所以必须在后面
         processors.add(UpdateArchiveSystem(context))
-        #
-        processors.add(TestPlayerPostDisplayClientMessageSystem(context))
-        #########################################
+       
 
         ###最后删除entity与存储数据
         processors.add(DestroySystem(context))
@@ -150,6 +148,10 @@ class RPGGame(BaseGame):
         ##调试用的系统。监视进入运行之后的状态
         processors.add(EndSystem(context))
 
+        #
+        processors.add(TerminalPlayerInterruptAndWaitSystem(context))
+        #########################################
+
         #规划逻辑########################
         processors.add(PrePlanningSystem(context)) ######## 在所有规划之前
         processors.add(StageReadyForPlanningSystem(context))
@@ -159,7 +161,10 @@ class RPGGame(BaseGame):
         processors.add(PostPlanningSystem(context)) ####### 在所有规划之后
 
         ## 第一次抓可以被player看到的信息
-        processors.add(TestPlayerUpdateClientMessageSystem(context)) 
+        processors.add(UpdateClientMessageSystem(context)) 
+
+        ## 只有terminal情况下起效
+        processors.add(TerminalPlayerInputSystem(context, self))
         
         return processors
 ###############################################################################################################################################

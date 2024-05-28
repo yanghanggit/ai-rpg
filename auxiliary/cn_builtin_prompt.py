@@ -70,9 +70,9 @@ def stage_plan_prompt(props_in_stage: List[PropData], npc_in_stage: Set[str], co
 
 
     prompt = f"""# <%这是场景计划>请输出'你的当前描述'和'你的计划'
-## 附加信息：场景内道具:
+## 场景内道具:
 {prompt_of_props}
-## 附加信息：场景内角色:
+## 场景内角色:
 {prompt_of_npc}
 ## 你的当前描述:
 - 仅根据'你确定知道的信息'和'你确定已发生的事件'。来更新你的描述。
@@ -235,11 +235,12 @@ def enter_stage_prompt2(some_ones_name: str, target_stage_name: str, last_stage_
 def leave_stage_prompt(npc_name: str, current_stage_name: str, leave_for_stage_name: str) -> str:
     return f"# {npc_name}离开了{current_stage_name} 场景。"
 ################################################################################################################################################
-
-
-
-
-
+def stage_director_begin_prompt(stage_name: str) -> str:
+    return f"""# 如下是{stage_name}场景内发生的事件。"""
+################################################################################################################################################
+def stage_director_end_prompt(stage_name: str) -> str:
+    return f"""# 以上是{stage_name}场景内近期发生的事件。请注意。"""
+################################################################################################################################################
 
 
 def whisper_action_prompt(srcname: str, destname: str, content: str, context: ExtendedContext) -> str:

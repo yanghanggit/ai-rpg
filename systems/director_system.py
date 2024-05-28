@@ -4,6 +4,7 @@ from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.director_component import StageDirectorComponent
 from auxiliary.player_proxy import add_player_client_npc_message
+from auxiliary.cn_builtin_prompt import stage_director_begin_prompt, stage_director_end_prompt
 
 
 class DirectorSystem(ExecuteProcessor):
@@ -49,7 +50,7 @@ class DirectorSystem(ExecuteProcessor):
             events2npc = directorcomp.tonpc(npccomp.name, self.context)     
             #
             if len(events2npc) > 0:
-                self.context.safe_add_human_message_to_entity(npcentity, f"""# 如下是{stagecomp.name}场景内发生的事件。""")
+                self.context.safe_add_human_message_to_entity(npcentity, stage_director_begin_prompt(stagecomp.name))
 
             #
             for event in events2npc:
@@ -58,7 +59,7 @@ class DirectorSystem(ExecuteProcessor):
 
             #
             if len(events2npc) > 0:
-                self.context.safe_add_human_message_to_entity(npcentity, f"""# 以上是{stagecomp.name}场景内近期发生的事件。请注意。""")
+                self.context.safe_add_human_message_to_entity(npcentity, stage_director_end_prompt(stagecomp.name))
 
             #
             if npcentity.has(PlayerComponent):

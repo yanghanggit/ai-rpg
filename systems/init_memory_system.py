@@ -1,3 +1,4 @@
+from overrides import override
 from entitas import Entity, Matcher, InitializeProcessor, ExecuteProcessor # type: ignore
 from auxiliary.components import WorldComponent, StageComponent, NPCComponent
 from auxiliary.cn_builtin_prompt import (init_memory_system_prompt)
@@ -31,11 +32,12 @@ class InitMemorySystem(InitializeProcessor, ExecuteProcessor):
     def execute(self) -> None:
         pass
 ####################################################################################################
+    @override
     async def async_execute(self) -> None:
         context = self.context
         agent_connect_system = context.agent_connect_system
         if len(self.tasks) == 0:
-            logger.error("InitMemorySystem tasks is empty.")
+            #logger.error("InitMemorySystem tasks is empty.")
             return
         
         for name, prompt in self.tasks.items():

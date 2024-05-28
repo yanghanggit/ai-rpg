@@ -8,7 +8,7 @@ from typing import Optional
 from loguru import logger
 from auxiliary.dialogue_rule import parse_target_and_message, dialogue_enable, ErrorDialogueEnable
 
-class TestPlayerUpdateClientMessageSystem(ExecuteProcessor):
+class UpdateClientMessageSystem(ExecuteProcessor):
     def __init__(self, context: ExtendedContext) -> None:
         self.context: ExtendedContext = context
 ############################################################################################################
@@ -16,7 +16,7 @@ class TestPlayerUpdateClientMessageSystem(ExecuteProcessor):
         playername = str(self.context.user_ip)
 
         input_mode = determine_player_input_mode(playername)
-        if input_mode == PLAYER_INPUT_MODE.WEB:
+        if input_mode == PLAYER_INPUT_MODE.WEB_HTTP_REQUEST:
             pass
         elif input_mode == PLAYER_INPUT_MODE.TERMINAL:
             playername = TEST_TERMINAL_NAME

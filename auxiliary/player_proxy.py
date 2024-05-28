@@ -3,14 +3,19 @@ from typing import List, Optional
 from entitas import Entity, Matcher, ExecuteProcessor #type: ignore
 from auxiliary.components import StageComponent, NPCComponent, PlayerComponent
 from enum import Enum
+import re
 
 class PLAYER_INPUT_MODE(Enum):
     INVALID = 0,
     WEB = 1
     TERMINAL = 2
 
+def is_valid_ipv4(ip):  
+    ipv4_pattern = re.compile(r'^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$')  
+    return ipv4_pattern.match(ip) is not None
+
 def determine_player_input_mode(playername: str) -> PLAYER_INPUT_MODE:
-    if '127.0.0.1' in playername:
+    if is_valid_ipv4(playername):
         return PLAYER_INPUT_MODE.WEB
     return PLAYER_INPUT_MODE.TERMINAL
 

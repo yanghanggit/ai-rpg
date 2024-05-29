@@ -1,4 +1,5 @@
-from auxiliary.cn_builtin_prompt import npc_plan_prompt, first_time_npc_plan_prompt
+from overrides import override
+from auxiliary.cn_builtin_prompt import npc_plan_prompt
 from entitas import Entity, Matcher, ExecuteProcessor #type: ignore
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.components import (NPCComponent,
@@ -12,7 +13,8 @@ from auxiliary.actor_action import ActorAction
 class NPCReadyForPlanningSystem(ExecuteProcessor):
     def __init__(self, context: ExtendedContext) -> None:
         self.context = context
-####################################################################################################################################       
+####################################################################################################################################
+    @override       
     def execute(self) -> None:
         # todo: ChaosSystem接入
         entities = self.context.get_group(Matcher(all_of=[NPCComponent, AutoPlanningComponent])).entities
@@ -23,21 +25,14 @@ class NPCReadyForPlanningSystem(ExecuteProcessor):
         
         npccomp: NPCComponent = entity.get(NPCComponent)
         logger.info(f"NPCReadyForPlanningSystem: {npccomp.name} is ready for planning.")
-        
-        #stageentity = self.context.safe_get_stage_entity(entity)
-        
+                
         tp = self.get_stage_enviro_narrate(entity)
         stagename = tp[0]
         #assert stagename != ""
         stage_enviro_narrate = tp[1]
         #assert stage_enviro_narrate != ""
-
-        prompt = ""
-        if self.context.world_execute_rounds == 1:
-            prompt = first_time_npc_plan_prompt(stagename, stage_enviro_narrate, self.context)
-        else:
-            prompt = npc_plan_prompt(stagename, stage_enviro_narrate, self.context)
-
+        
+        prompt = npc_plan_prompt(stagename, stage_enviro_narrate, self.context)
         self.context.agent_connect_system.add_async_requet_task(npccomp.name, prompt)
 ####################################################################################################################################
     def get_stage_enviro_narrate(self, entity: Entity) -> tuple[str, str]:
@@ -56,3 +51,4 @@ class NPCReadyForPlanningSystem(ExecuteProcessor):
                 stage_enviro_narrate = action.single_value()
 
         return stagename, stage_enviro_narrate
+####################################################################################################################################

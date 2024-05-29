@@ -1,3 +1,4 @@
+from overrides import override
 from entitas import InitializeProcessor, ExecuteProcessor, Matcher, Entity #type: ignore
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
@@ -8,6 +9,7 @@ from typing import Set
 
 # 规划的策略
 class PlanningStrategy(Enum):
+    INVALID = 0
     STRATEGY_ONLY_PLAYERS_STAGE = 1000
     STRATEGY_ALL = 2000
 
@@ -16,21 +18,28 @@ class PrePlanningSystem(InitializeProcessor, ExecuteProcessor):
     def __init__(self, context: ExtendedContext) -> None:
         self.context: ExtendedContext = context
         self.strategy: PlanningStrategy = PlanningStrategy.STRATEGY_ALL
+        self.execute_count: int = 0
 ############################################################################################################
+    @override
     def initialize(self) -> None:
         pass
 ############################################################################################################
+    @override
     def execute(self) -> None:
+        ## 计数
+        self.execute_count += 1
         ## 测试
         self.test()
         ## 通过策略来做计划
-        strategy: PlanningStrategy = self.strategy
-        if self.context.world_execute_rounds == 1:
-            # 第一次执行必须全部更新一遍
-            strategy = PlanningStrategy.STRATEGY_ALL
-
-        # 第一次以上则随意
+        strategy: PlanningStrategy = self.decide_strategy(self.strategy, self.execute_count)
+        ## 制定更新策略
         self.make_planning_by_strategy(strategy)
+############################################################################################################
+    def decide_strategy(self, strategy: PlanningStrategy, current_execute_count: int) -> PlanningStrategy:
+        if current_execute_count == 1:
+            # 第一次执行必须全部更新一遍
+            return PlanningStrategy.STRATEGY_ALL
+        return strategy
 ############################################################################################################
     def make_planning_by_strategy(self, strategy: PlanningStrategy) -> None:
         if strategy == PlanningStrategy.STRATEGY_ONLY_PLAYERS_STAGE:

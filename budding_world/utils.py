@@ -53,7 +53,7 @@ def gen_all_npcs(sheet: DataFrame, sys_prompt_template_path: str, agent_template
     for index, row in sheet.iterrows():
         if pd.isna(row["name"]):
             continue
-        excelnpc = ExcelDataNPC(row["name"], row["codename"], row["description"], row["history"], row['conversation_example'],row["GPT_MODEL"], int(row["PORT"]), row["API"], RAG_FILE, row["attributes"])
+        excelnpc = ExcelDataNPC(row["name"], row["codename"], row["description"], row["history"], row['conversation_example'],row["GPT_MODEL"], int(row["PORT"]), row["API"], row["RAG"], row["attributes"])
         if not excelnpc.isvalid():
             #print(f"Invalid row: {excelnpc}")
             continue
@@ -68,7 +68,7 @@ def gen_all_stages(sheet: DataFrame, sys_prompt_template_path: str, agent_templa
     for index, row in sheet.iterrows():
         if pd.isna(row["name"]):
             continue
-        excelstage = ExcelDataStage(row["name"], row["codename"], row["description"], row["GPT_MODEL"], int(row["PORT"]), row["API"], RAG_FILE, row["attributes"])
+        excelstage = ExcelDataStage(row["name"], row["codename"], row["description"], row["GPT_MODEL"], int(row["PORT"]), row["API"], row["RAG"], row["attributes"])
         if not excelstage.isvalid():
             #print(f"Invalid row: {excelstage}")
             continue
@@ -83,7 +83,7 @@ def gen_all_props(sheet: DataFrame, output: Dict[str, ExcelDataProp]) -> None:
     for index, row in sheet.iterrows():
         if pd.isna(row["name"]):
             continue
-        excelprop = ExcelDataProp(row["name"], row["codename"], row["isunique"], row["description"], RAG_FILE, row["type"], str(row["attributes"]))
+        excelprop = ExcelDataProp(row["name"], row["codename"], row["isunique"], row["description"], row["RAG"], row["type"], str(row["attributes"]))
         output[excelprop.name] = excelprop
 ############################################################################################################
 def analyze_npc_relationship(analyze_data: Dict[str, ExcelDataNPC]) -> None:

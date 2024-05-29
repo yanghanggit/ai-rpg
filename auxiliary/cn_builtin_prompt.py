@@ -31,25 +31,6 @@ def npc_plan_prompt(current_stage: str, stage_enviro_narrate: str, context: Exte
 - 结果中要附带TagActionComponent。"""
     return prompt
 ###############################################################################################################################################
-def first_time_npc_plan_prompt(current_stage: str, stage_enviro_narrate: str, context: ExtendedContext) -> str:
-
-    current_stage_prompt = "未知"
-    if current_stage != "":
-        current_stage_prompt = current_stage
-
-    current_stage_enviro_narrate_prompt = ""
-    if stage_enviro_narrate != "":
-        current_stage_enviro_narrate_prompt = f"""## 当前场景的环境信息(用于你做参考):\n- {stage_enviro_narrate}"""
-
-    prompt = f"""# <%这是角色计划>请做出你的计划，决定你将要做什么。
-## 你当前所在的场景:{current_stage_prompt}。
-{current_stage_enviro_narrate_prompt}
-## 要求:
-- 输出结果格式要遵循输出格式指南。
-- 本次是你第一次制定计划,所以需要有PerceptionActionComponent与CheckStatusActionComponent,用于感知场景内的道具与确认自身状态。
-- 结果中需要附带TagActionComponent。"""
-    return prompt
-###############################################################################################################################################
 def stage_plan_prompt(props_in_stage: List[PropData], npc_in_stage: Set[str], context: ExtendedContext) -> str:
 
     ## 场景内道具

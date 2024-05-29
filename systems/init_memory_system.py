@@ -1,11 +1,12 @@
 from overrides import override
 from entitas import Entity, Matcher, InitializeProcessor, ExecuteProcessor # type: ignore
-from auxiliary.components import WorldComponent, StageComponent, NPCComponent
+from auxiliary.components import WorldComponent, StageComponent, NPCComponent, PlayerComponent, PerceptionActionComponent, CheckStatusActionComponent
 from auxiliary.cn_builtin_prompt import (init_memory_system_prompt)
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from systems.update_archive_helper import UpdareArchiveHelper
 from typing import Dict
+from auxiliary.actor_action import ActorAction
 
 ###############################################################################################################################################
 class InitMemorySystem(InitializeProcessor, ExecuteProcessor):
@@ -13,6 +14,7 @@ class InitMemorySystem(InitializeProcessor, ExecuteProcessor):
         self.context: ExtendedContext = context
         self.tasks: Dict[str, str] = {}
 ###############################################################################################################################################
+    @override
     def initialize(self) -> None:
         context = self.context
         helper = UpdareArchiveHelper(context)
@@ -27,10 +29,20 @@ class InitMemorySystem(InitializeProcessor, ExecuteProcessor):
         self.tasks.update(stage_tasks)
         self.tasks.update(npc_tasks)
         #
-        logger.info(f"InitMemorySystem tasks: {self.tasks}")
+        #logger.info(f"InitMemorySystem tasks: {self.tasks}")
 ###############################################################################################################################################
+    @override
     def execute(self) -> None:
-        pass
+        context = self.context
+        entities: set[Entity] = context.get_group(Matcher(all_of=[NPCComponent], none_of=[PlayerComponent])).entities
+        for entity in entities:
+            npccomp: NPCComponent = entity.get(NPCComponent)
+            #
+            perception_action = ActorAction(npccomp.name, PerceptionActionComponent.__name__, [npccomp.current_stage])
+            entity.add(PerceptionActionComponent, perception_action)
+            #
+            check_status_action = ActorAction(npccomp.name, CheckStatusActionComponent.__name__, [npccomp.name])
+            entity.add(CheckStatusActionComponent, check_status_action)
 ####################################################################################################
     @override
     async def async_execute(self) -> None:

@@ -85,7 +85,7 @@ TEST_LOGIN_INFORMATION = f"""测试的游戏登陆信息"""
 TEST_GAME_INSTRUCTIONS_WHEN_LOGIN_SUCCESS_FOR_FIRST_TIME = f"""测试的游戏介绍"""
 TEST_TERMINAL_NAME = "北京柏林互动科技有限公司的Terminal"
 ###################################################################################################################
-TEST_CLIENT_SHOW_MESSAGE_COUNT = 10
+TEST_CLIENT_SHOW_MESSAGE_COUNT = 20
 
 
 

@@ -21,7 +21,7 @@ async def main() -> None:
     rpggame.extendedcontext.user_ip = ""
 
     ## 第一次空执行，让所有NPC可以做一些初始化的动作。
-    await rpggame.async_execute()
+    #await rpggame.async_execute()
 
     #测试的代码，上来就控制一个NPC目标，先写死
     create_player_proxy(TEST_TERMINAL_NAME)

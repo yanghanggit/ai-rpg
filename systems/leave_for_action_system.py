@@ -206,12 +206,13 @@ class LeaveForActionSystem(ReactiveProcessor):
         npccomp: NPCComponent = entity.get(NPCComponent)
         assert helper.current_stage_entity is not None
 
+        # 必须在场景信息还有效的时刻做通知
+        notify_stage_director(self.context, entity, NPCLeaveStageEvent(npccomp.name, helper.current_stage_name, helper.target_stage_name))
+
+        # 离开场景 设置成空
         replace_name = npccomp.name
         replace_current_stage = "" #设置空！！！！！
         entity.replace(NPCComponent, replace_name, replace_current_stage)
-        
         self.context.change_stage_tag_component(entity, helper.current_stage_name, replace_current_stage)
-
-        notify_stage_director(self.context, entity, NPCLeaveStageEvent(npccomp.name, helper.current_stage_name, helper.target_stage_name))
     ###############################################################################################################################################
          

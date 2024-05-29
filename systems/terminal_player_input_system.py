@@ -15,7 +15,7 @@ class TerminalPlayerInputSystem(ExecuteProcessor):
     def execute(self) -> None:
         # 临时的设置，通过IP地址来判断是不是测试的客户端
         if determine_player_input_mode(self.context.user_ip) != PLAYER_INPUT_MODE.TERMINAL:
-            logger.debug("只处理终端的输入")
+            #logger.debug("只处理终端的输入")
             return
         # 通过终端输入
         self.play_via_terminal_and_handle_player_input(TEST_TERMINAL_NAME)

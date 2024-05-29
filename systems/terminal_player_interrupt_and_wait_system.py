@@ -22,8 +22,8 @@ class TerminalPlayerInterruptAndWaitSystem(ExecuteProcessor):
                 # 测试的客户端反馈
                 input(f"[{TEST_TERMINAL_NAME}]:当前为中断等待，请任意键继续")
                 break   
-        else:
-            logger.debug("只处理终端的输入")
+        #else:
+            #logger.debug("只处理终端的输入")
 ############################################################################################################ 
     def display_client_messages(self, playerproxy: PlayerProxy, display_messages_count: int) -> None:
         clientmessages = playerproxy.clientmessages

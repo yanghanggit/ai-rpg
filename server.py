@@ -35,7 +35,7 @@ async def start(clientip: str):
         rpggame[clientip].extendedcontext.user_ip = clientip
         logger.debug(f"User IP:{clientip} start a game.")
 
-    await rpggame[clientip].async_execute()
+    #await rpggame[clientip].async_execute()
 
     messages: list[TupleModel] = []
     messages.append(TupleModel(who=clientip, what="Start Success"))

@@ -2,7 +2,9 @@ from entitas import ExecuteProcessor, Entity, Matcher #type: ignore
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.player_proxy import PlayerProxy, get_player_proxy, TEST_TERMINAL_NAME, determine_player_input_mode, PLAYER_INPUT_MODE
 from auxiliary.extended_context import ExtendedContext
-from auxiliary.components import MindVoiceActionComponent, WhisperActionComponent, SpeakActionComponent, BroadcastActionComponent, EnviroNarrateActionComponent
+from auxiliary.components import MindVoiceActionComponent, WhisperActionComponent, SpeakActionComponent, \
+    BroadcastActionComponent, EnviroNarrateActionComponent, \
+    AttackActionComponent, LeaveForActionComponent
 from auxiliary.actor_action import ActorAction
 from typing import Optional
 from loguru import logger
@@ -34,6 +36,8 @@ class UpdateClientMessageSystem(ExecuteProcessor):
         self.whisper_action_2_message(playerproxy, player_npc_entity)
         self.broadcast_action_2_message(playerproxy, player_npc_entity)
         self.speak_action_2_message(playerproxy, player_npc_entity)
+        self.attack_action_2_message(playerproxy, player_npc_entity)
+        self.leave_for_action_2_message(playerproxy, player_npc_entity)
 ############################################################################################################
     def stage_enviro_narrate_action_2_message(self, playerproxy: PlayerProxy, player_npc_entity: Entity) -> None:
         stage = self.context.safe_get_stage_entity(player_npc_entity)
@@ -144,4 +148,46 @@ class UpdateClientMessageSystem(ExecuteProcessor):
             action: ActorAction = mind_voice_action_component.action
             single_value = action.single_value()
             playerproxy.add_npc_message(action.name, f"""<心理活动>{single_value}""") #todo
+############################################################################################################
+    def attack_action_2_message(self, playerproxy: PlayerProxy, player_npc_entity: Entity) -> None:
+        player_npc_entity_stage = self.context.safe_get_stage_entity(player_npc_entity)
+        entities = self.context.get_group(Matcher(AttackActionComponent)).entities
+        for entity in entities:
+
+            if entity == player_npc_entity:
+                continue
+            
+            his_stage_entity = self.context.safe_get_stage_entity(entity)
+            if his_stage_entity != player_npc_entity_stage:
+                continue
+
+            attack_action_component: AttackActionComponent = entity.get(AttackActionComponent)
+            action: ActorAction = attack_action_component.action
+            if len(action.values) == 0:
+                logger.error("attack_action_2_message error")
+                continue
+
+            targetname = action.values[0]
+            playerproxy.add_npc_message(action.name, f"""准备对{targetname}发起了攻击""") #todo
+############################################################################################################
+    def leave_for_action_2_message(self, playerproxy: PlayerProxy, player_npc_entity: Entity) -> None:
+        player_npc_entity_stage = self.context.safe_get_stage_entity(player_npc_entity)
+        entities = self.context.get_group(Matcher(LeaveForActionComponent)).entities
+        for entity in entities:
+
+            if entity == player_npc_entity:
+                continue
+            
+            his_stage_entity = self.context.safe_get_stage_entity(entity)
+            if his_stage_entity != player_npc_entity_stage:
+                continue
+
+            leave_for_component: LeaveForActionComponent = entity.get(LeaveForActionComponent)
+            action: ActorAction = leave_for_component.action
+            if len(action.values) == 0:
+                logger.error("leave_for_action_2_message error")
+                continue
+
+            stagename = action.values[0]
+            playerproxy.add_npc_message(action.name, f"""准备去往{stagename}""") #todo
 ############################################################################################################

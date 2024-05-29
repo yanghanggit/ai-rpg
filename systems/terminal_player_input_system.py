@@ -41,7 +41,7 @@ class TerminalPlayerInputSystem(ExecuteProcessor):
 
             # 处理玩家的输入
             self.handle_input(self.rpggame, playerproxy, usrinput)
-            logger.debug(f"{'=' * 50}")
+            #logger.debug(f"{'=' * 50}")
 
             ## 总之要跳出循环
             break

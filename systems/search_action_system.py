@@ -99,7 +99,7 @@ class SearchActionSystem(ReactiveProcessor):
                 continue
             # 交换文件，即交换道具文件即可
             self.stage_exchanges_prop_to_npc(stagecomp.name, action.name, targetpropname)
-            logger.debug(f"search success, {targetpropname} in {stagecomp.name}")
+            logger.info(f"search success, {targetpropname} in {stagecomp.name}")
             notify_stage_director(self.context, stageentity, NPCSearchSuccessEvent(safe_npc_name, targetpropname, stagecomp.name))
 ###################################################################################################################
     def check_stage_has_the_prop(self, targetname: str, curstagepropfiles: List[PropFile]) -> bool:

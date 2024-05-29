@@ -27,7 +27,7 @@ class CheckStatusActionHelper:
 
     def check_props(self, entity: Entity) -> None:
         safename = self.context.safe_get_entity_name(entity)
-        logger.debug(f"{safename} is checking status")
+        #logger.debug(f"{safename} is checking status")
         filesystem = self.context.file_system
         files = filesystem.get_prop_files(safename)
         for file in files:
@@ -98,7 +98,7 @@ class CheckStatusActionSystem(ReactiveProcessor):
     # 临时写成这样，就是检查自己有哪些道具
     def check_status(self, entity: Entity) -> None:
         safe_npc_name = self.context.safe_get_entity_name(entity)
-        logger.debug(f"{safe_npc_name} is checking status")
+        #logger.debug(f"{safe_npc_name} is checking status")
         #
         helper = CheckStatusActionHelper(self.context)
         helper.check_status(entity)

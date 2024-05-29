@@ -4,7 +4,7 @@ from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.director_component import StageDirectorComponent
 from auxiliary.player_proxy import add_player_client_npc_message
-from auxiliary.cn_builtin_prompt import stage_director_begin_prompt, stage_director_end_prompt
+from auxiliary.cn_builtin_prompt import stage_director_begin_prompt, stage_director_end_prompt, stage_director_event_wrap_prompt
 
 
 class DirectorSystem(ExecuteProcessor):
@@ -19,8 +19,11 @@ class DirectorSystem(ExecuteProcessor):
     def handle(self) -> None:
         entities = self.context.get_group(Matcher(all_of=[StageComponent, StageDirectorComponent])).entities
         for entity in entities:
+            logger.debug('=' *50)
             self.handlestage(entity)
+            logger.debug('=' *50)
             self.handle_npcs_in_this_stage(entity)
+            logger.debug('=' *50)
 ###################################################################################################################   
     def directorclear(self) -> None:
         entities = self.context.get_group(Matcher(all_of=[StageComponent, StageDirectorComponent])).entities
@@ -50,16 +53,21 @@ class DirectorSystem(ExecuteProcessor):
             events2npc = directorcomp.tonpc(npccomp.name, self.context)     
             #
             if len(events2npc) > 0:
-                self.context.safe_add_human_message_to_entity(npcentity, stage_director_begin_prompt(stagecomp.name))
+                self.context.safe_add_human_message_to_entity(npcentity, stage_director_begin_prompt(stagecomp.name, len(events2npc)))
 
             #
-            for event in events2npc:
+            # for event in events2npc:
+            #     logger.debug(f"{npccomp.name} => {event}")
+            #     self.context.safe_add_human_message_to_entity(npcentity, event)
+
+            for index, event in enumerate(events2npc):
+                wrap_prompt = stage_director_event_wrap_prompt(event, index)
                 logger.debug(f"{npccomp.name} => {event}")
-                self.context.safe_add_human_message_to_entity(npcentity, event)
+                self.context.safe_add_human_message_to_entity(npcentity, wrap_prompt)
 
             #
             if len(events2npc) > 0:
-                self.context.safe_add_human_message_to_entity(npcentity, stage_director_end_prompt(stagecomp.name))
+                self.context.safe_add_human_message_to_entity(npcentity, stage_director_end_prompt(stagecomp.name, len(events2npc)))
 
             #
             if npcentity.has(PlayerComponent):

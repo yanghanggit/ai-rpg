@@ -216,26 +216,28 @@ def enter_stage_prompt2(some_ones_name: str, target_stage_name: str, last_stage_
 def leave_stage_prompt(npc_name: str, current_stage_name: str, leave_for_stage_name: str) -> str:
     return f"# {npc_name}离开了{current_stage_name} 场景。"
 ################################################################################################################################################
-def stage_director_begin_prompt(stage_name: str) -> str:
-    return f"""# 如下是{stage_name}场景内发生的事件。"""
+def stage_director_event_wrap_prompt(event: str, event_index: int) -> str:
+    event_number = event_index + 1
+    return f"""# 事件{event_number}\n{event}"""
 ################################################################################################################################################
-def stage_director_end_prompt(stage_name: str) -> str:
-    return f"""# 以上是{stage_name}场景内近期发生的事件。请注意。"""
+def stage_director_begin_prompt(stage_name: str, events_count: int) -> str:
+    return f"""# 如下是{stage_name}场景内发生的事件，事件数量为{events_count}。如下(请注意):"""
 ################################################################################################################################################
-
-
+def stage_director_end_prompt(stage_name: str, events_count: int) -> str:
+    return f"""# 以上是{stage_name}场景内近期发生的{events_count}个事件。请注意。"""
+################################################################################################################################################
 def whisper_action_prompt(srcname: str, destname: str, content: str, context: ExtendedContext) -> str:
-    prompt = f"{srcname}对{destname}低语道:{content}"   
+    prompt = f"# {srcname}对{destname}低语道:{content}"   
     return prompt
-
+################################################################################################################################################
 def broadcast_action_prompt(srcname: str, destname: str, content: str, context: ExtendedContext) -> str:
-    prompt = f"{srcname}对{destname}里的所有人说:{content}"   
+    prompt = f"# {srcname}对{destname}里的所有人说:{content}"   
     return prompt
-
+################################################################################################################################################
 def speak_action_prompt(srcname: str, destname: str, content: str, context: ExtendedContext) -> str:
-    prompt = f"{srcname}对{destname}说:{content}"   
+    prompt = f"# {srcname}对{destname}说:{content}"   
     return prompt
-
+################################################################################################################################################
 def gen_npc_archive_prompt(context: ExtendedContext) -> str:
     prompt = """
 请根据上下文，对自己知道的事情进行梳理总结成markdown格式后输出,但不要生成```markdown xxx```的形式:

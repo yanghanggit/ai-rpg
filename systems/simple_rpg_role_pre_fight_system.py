@@ -38,7 +38,7 @@ class SimpleRPGRolePreFightSystem(ExecuteProcessor):
             highest_attack_weapon = self.get_weapon_with_highest_attack_power(entity)
             if highest_attack_weapon is not None:
                 entity.add(SimpleRPGRoleWeaponComponent, self.context.safe_get_entity_name(entity), highest_attack_weapon.name, highest_attack_weapon.maxhp, highest_attack_weapon.attack, highest_attack_weapon.defense)
-                logger.info(f"SimpleRPGRolePreFightSystem: {self.context.safe_get_entity_name(entity)} add weapon {highest_attack_weapon.name}")
+                #logger.info(f"SimpleRPGRolePreFightSystem: {self.context.safe_get_entity_name(entity)} add weapon {highest_attack_weapon.name}")
                 continue
 ######################################################################################################################################################
     def rebuild_armors_from_prop_files(self) -> None:
@@ -49,7 +49,7 @@ class SimpleRPGRolePreFightSystem(ExecuteProcessor):
             highest_defense_armor = self.get_armor_with_highest_defense_power(entity)
             if highest_defense_armor is not None:
                 entity.add(SimpleRPGRoleArmorComponent, self.context.safe_get_entity_name(entity), highest_defense_armor.name, highest_defense_armor.maxhp, highest_defense_armor.attack, highest_defense_armor.defense)
-                logger.info(f"SimpleRPGRolePreFightSystem: {self.context.safe_get_entity_name(entity)} add armor {highest_defense_armor.name}")
+                #logger.info(f"SimpleRPGRolePreFightSystem: {self.context.safe_get_entity_name(entity)} add armor {highest_defense_armor.name}")
                 continue
 ######################################################################################################################################################
     def get_weapon_with_highest_attack_power(self, entity: Entity) -> Optional[PropData]:

@@ -16,7 +16,8 @@ from auxiliary.cn_builtin_prompt import (someone_entered_my_stage_observed_his_a
                                           enter_stage_prompt1,
                                           enter_stage_prompt2,
                                           stage_director_begin_prompt, 
-                                          stage_director_end_prompt)
+                                          stage_director_end_prompt,
+                                          stage_director_event_wrap_prompt)
 
 
 ###############################################################################################################################################
@@ -175,16 +176,24 @@ class LeaveForActionSystem(ReactiveProcessor):
 
         #
         if len(events2npc) > 0:
-            self.context.safe_add_human_message_to_entity(helper.who_wana_leave_entity, stage_director_begin_prompt(directorcomp.name))
+            self.context.safe_add_human_message_to_entity(helper.who_wana_leave_entity, stage_director_begin_prompt(directorcomp.name, len(events2npc)))
 
         #
-        for event in events2npc:
+        # for event in events2npc:
+        #     logger.debug(f"{safe_npc_name} => {event}")
+        #     self.context.safe_add_human_message_to_entity(helper.who_wana_leave_entity, event)    
+
+        ## 我希望循环events2npc遍历出每一个event，而且知道event的index.
+        for index, event in enumerate(events2npc):
+            wrap_prompt = stage_director_event_wrap_prompt(event, index)
             logger.debug(f"{safe_npc_name} => {event}")
-            self.context.safe_add_human_message_to_entity(helper.who_wana_leave_entity, event)    
+            self.context.safe_add_human_message_to_entity(helper.who_wana_leave_entity, wrap_prompt)
+            #logger.debug(f"Event {index}: {event}")
+            # Your code here to handle each event
 
         #
         if len(events2npc) > 0:
-            self.context.safe_add_human_message_to_entity(helper.who_wana_leave_entity, stage_director_end_prompt(directorcomp.name))
+            self.context.safe_add_human_message_to_entity(helper.who_wana_leave_entity, stage_director_end_prompt(directorcomp.name, len(events2npc)))
 
         ##
         if helper.who_wana_leave_entity.has(PlayerComponent):

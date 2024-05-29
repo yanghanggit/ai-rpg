@@ -17,6 +17,9 @@ class EndSystem(InitializeProcessor, ExecuteProcessor):
         pass
 ############################################################################################################
     def execute(self) -> None:
+
+        logger.debug(f"{'=' * 100}") #方便看
+
         # 打印所有的世界信息
         self.showworld()
         # 打印一下所有的场景信息
@@ -27,6 +30,8 @@ class EndSystem(InitializeProcessor, ExecuteProcessor):
         self.make_prop_files_dump()
         # 打印所有的实体信息
         #self.print_all_entities()
+
+        logger.debug(f"{'=' * 100}")  #方便看
 ############################################################################################################
     def showworld(self) -> None:
         worldentities = self.context.get_group(Matcher(WorldComponent)).entities

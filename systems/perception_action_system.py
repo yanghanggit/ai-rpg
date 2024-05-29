@@ -86,7 +86,7 @@ class PerceptionActionSystem(ReactiveProcessor):
 ###################################################################################################################
     def perception(self, entity: Entity) -> None:
         safe_npc_name = self.context.safe_get_entity_name(entity)
-        logger.debug(f"PerceptionActionSystem: {safe_npc_name} is perceiving")
+        #logger.debug(f"PerceptionActionSystem: {safe_npc_name} is perceiving")
         #
         helper = PerceptionActionHelper(self.context)
         helper.perception(entity)

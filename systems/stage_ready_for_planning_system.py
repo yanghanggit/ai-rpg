@@ -20,7 +20,7 @@ class StageReadyForPlanningSystem(ExecuteProcessor):
 ####################################################################################################################################
     def handle(self, entity: Entity) -> None:
         stage_comp: StageComponent = entity.get(StageComponent)
-        logger.info(f"StageReadyForPlanningSystem: {stage_comp.name} is ready for planning.")
+        #logger.info(f"StageReadyForPlanningSystem: {stage_comp.name} is ready for planning.")
         props_in_stage: List[PropData] = self.get_props_in_stage(entity)
 
         npcs_in_stage = self.context.npcs_in_this_stage(stage_comp.name)

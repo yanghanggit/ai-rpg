@@ -35,7 +35,7 @@ async def main() -> None:
         if rpggame.exited:
             break
         await rpggame.async_execute()
-        logger.debug("async_execute done.")
+        #logger.debug("async_execute done.")
     #
     rpggame.exit()
 

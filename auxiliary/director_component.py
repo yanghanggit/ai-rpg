@@ -4,7 +4,8 @@ from typing import List
 from collections import namedtuple
 from auxiliary.director_event import IDirectorEvent
 from auxiliary.cn_builtin_prompt import replace_all_mentions_of_your_name_with_you
-from auxiliary.components import StageComponent
+#from auxiliary.components import StageComponent
+from loguru import logger
 
 ## yh 第一个 扩展型组件，用于处理导演系统的事件
 DirectorComponentPrototype = namedtuple('DirectorComponentPrototype', 'name')
@@ -59,6 +60,7 @@ class StageDirectorComponent(DirectorComponentPrototype):
 def notify_stage_director(context: ExtendedContext, entity: Entity, directevent: IDirectorEvent) -> bool:
     stageentity = context.safe_get_stage_entity(entity)
     if stageentity is None:
+        logger.error(f"StageDirectorComponent not found in entity:{entity}")
         return False
     directorcomp: StageDirectorComponent = stageentity.get(StageDirectorComponent)
     directorcomp.addevent(directevent)

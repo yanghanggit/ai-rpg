@@ -64,12 +64,13 @@ def stage_plan_prompt(props_in_stage: List[PropData], npc_in_stage: Set[str], co
 ## 场景内角色:
 {prompt_of_npc}
 ## 关于‘你的当前描述‘:
-这部分输出内容作为EnviroNarrateActionComponent的值。
-### 如果描述中提及到你自己
-- 输出你自己作为场景的最新状态。
+- 这部分输出内容作为EnviroNarrateActionComponent的值。
+- 仅输出你的最新状态，不要将过往EnviroNarrateActionComponent已经描述过的做复述。
 ### 如果描述中提及到‘场景内角色’
-- 输出你作为第3者观察到的，角色最后的动作与神态，不要将过往的行为做复述，也不要输出角色的对话内容。
-- 注意：不要添加未发生的事件与信息，尤其不要自行推理与猜测‘场景内角色’的可能行为（如对话内容与行为反应）。
+- 输出角色最新动作与神态，不要将过往EnviroNarrateActionComponent已经描述过的做复述。
+- 不要输出角色的对话内容。
+- 不要添加未发生的事件与信息
+- 不要自行推理与猜测‘场景内角色’的可能行为（如对话内容与行为反应）。
 ## 关于’你的计划‘:
 - 关于你自己作为场景，受到了什么事件的影响，你可以做出合理的推理和制定你的计划。
 ## 输出要求:

@@ -30,7 +30,7 @@ class PostFightSystem(ExecuteProcessor):
         if safename == "":
             return
 
-        # 添加记忆
+        # 
         newmsg = died_in_fight_prompt(self.context)
         self.context.safe_add_human_message_to_entity(entity, newmsg)
 

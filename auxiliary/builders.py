@@ -86,7 +86,7 @@ class WorldDataBuilder:
             return
         
         for stage in stages:
-            print(stage)
+            #print(stage)
             stagedata = stage.get('stage', None)
             assert stagedata is not None
 
@@ -137,7 +137,7 @@ class WorldDataBuilder:
         self.create_npc_data_base(database.get('npcs', None))
         self.create_stage_data_base(database.get('stages', None))
         self.create_prop_data_base(database.get('props', None))
-        logger.info("创建数据库成功。")
+        #logger.info("创建数据库成功。")
 ########################################################################################################################
     def build_prop_conditions(self, condition_data: List[Any]) -> list[StageConditionData]: 
         res: list[StageConditionData] = []

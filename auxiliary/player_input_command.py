@@ -93,8 +93,7 @@ class PlayerCommandLogin(PlayerCommand):
         #打印关于游戏的信息
         self.playerproxy.add_system_message(TEST_GAME_INSTRUCTIONS_WHEN_LOGIN_SUCCESS_FOR_FIRST_TIME)
 
-        # #初始化的NPC记忆
-        # safename = context.safe_get_entity_name(playerentity)
+        # 初始化的NPC记忆
         memory_system = context.memory_system
         initmemory =  memory_system.getmemory(self.login_npc_name)
         self.playerproxy.add_npc_message(self.login_npc_name, initmemory)

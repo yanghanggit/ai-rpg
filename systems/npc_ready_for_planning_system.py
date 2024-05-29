@@ -24,7 +24,7 @@ class NPCReadyForPlanningSystem(ExecuteProcessor):
     def handle(self, entity: Entity) -> None:
         
         npccomp: NPCComponent = entity.get(NPCComponent)
-        logger.info(f"NPCReadyForPlanningSystem: {npccomp.name} is ready for planning.")
+        #logger.info(f"NPCReadyForPlanningSystem: {npccomp.name} is ready for planning.")
                 
         tp = self.get_stage_enviro_narrate(entity)
         stagename = tp[0]

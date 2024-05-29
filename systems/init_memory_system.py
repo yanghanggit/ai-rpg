@@ -1,7 +1,7 @@
 from overrides import override
 from entitas import Entity, Matcher, InitializeProcessor, ExecuteProcessor # type: ignore
 from auxiliary.components import WorldComponent, StageComponent, NPCComponent, PlayerComponent, PerceptionActionComponent, CheckStatusActionComponent
-from auxiliary.cn_builtin_prompt import (init_memory_system_prompt)
+from auxiliary.cn_builtin_prompt import (init_memory_system_npc_prompt, init_memory_system_stage_prompt)
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from systems.update_archive_helper import UpdareArchiveHelper
@@ -79,7 +79,7 @@ class InitMemorySystem(InitializeProcessor, ExecuteProcessor):
             if worldmemory == "":
                 logger.error(f"worldmemory is empty: {worldcomp.name}")
                 continue
-            prompt = init_memory_system_prompt(worldmemory)
+            prompt = init_memory_system_npc_prompt(worldmemory)
             agent_connect_system.add_async_requet_task(worldcomp.name, prompt)
             result[worldcomp.name] = prompt
         
@@ -94,12 +94,14 @@ class InitMemorySystem(InitializeProcessor, ExecuteProcessor):
         agent_connect_system = context.agent_connect_system
         stages: set[Entity] = context.get_group(Matcher(StageComponent)).entities
         for stage in stages:
+
             stagecomp: StageComponent = stage.get(StageComponent)
             stagememory = memory_system.getmemory(stagecomp.name)
             if stagememory == "":
                 logger.error(f"stagememory is empty: {stagecomp.name}")
                 continue
-            prompt = init_memory_system_prompt(stagememory)
+
+            prompt = init_memory_system_stage_prompt(stagememory)
             agent_connect_system.add_async_requet_task(stagecomp.name, prompt)
             result[stagecomp.name] = prompt
         
@@ -121,7 +123,7 @@ class InitMemorySystem(InitializeProcessor, ExecuteProcessor):
             if npcmemory == "":
                 logger.error(f"npcmemory is empty: {npcname}")
                 continue
-            prompt = init_memory_system_prompt(npcmemory)
+            prompt = init_memory_system_npc_prompt(npcmemory)
             agent_connect_system.add_async_requet_task(npcname, prompt)
             result[npcname] = prompt
 

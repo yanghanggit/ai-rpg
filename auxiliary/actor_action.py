@@ -64,7 +64,7 @@ def is_repeat_error_json(errorjson: str) -> bool:
 ## 测试代码
 if is_repeat_error_json(TEST_ERROR_REPEAT_JSON):
     jjj = merge_json(TEST_ERROR_REPEAT_JSON)
-    logger.debug(jjj)
+    #logger.debug(jjj)
 
 ## 是否是
 def is_markdown_json_block(md_json_block: str) -> bool:

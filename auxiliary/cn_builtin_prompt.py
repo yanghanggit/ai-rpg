@@ -4,12 +4,20 @@ from auxiliary.base_data import PropData
 
 
 ###############################################################################################################################################
-def init_memory_system_prompt(init_memory: str) -> str:
+def init_memory_system_npc_prompt(init_memory: str) -> str:
     prompt = f"""# <%这是角色与场景初始化>世界即将开始运行。你需要做初始状态的设定与更新。
 ## 你的当前状态如下(即初始状态): 
 {init_memory}。
 ## 请结合你的角色设定,更新你的状态。
-## 请遵循输出格式指南,仅返回MindVoiceActionComponent。"""
+## 请遵循输出格式指南,返回结果仅带MindVoiceActionComponent这个key"""
+    return prompt
+###############################################################################################################################################
+def init_memory_system_stage_prompt(init_memory: str) -> str:
+    prompt = f"""# <%这是角色与场景初始化>世界即将开始运行。你需要做初始状态的设定与更新。
+## 你的当前状态如下(即初始状态): 
+{init_memory}。
+## 请结合你的角色设定,更新你的状态。
+## 请遵循输出格式指南,返回结果带EnviroNarrateActionComponent与MindVoiceActionComponent这2个key"""
     return prompt
 ###############################################################################################################################################
 def npc_plan_prompt(current_stage: str, stage_enviro_narrate: str, context: ExtendedContext) -> str:
@@ -99,7 +107,7 @@ def prop_type_prompt(prop: PropData) -> str:
     elif prop.is_non_consumable_item():
         _type = "非消耗品"
     elif prop.is_role_component():
-        _type = "特殊记忆与能力"
+        _type = "特殊能力"
     return _type
 ###############################################################################################################################################
 def prop_info_prompt(prop: PropData) -> str:
@@ -133,14 +141,14 @@ def check_status_action_prompt(who: str, props: List[PropData], health: float, r
         for role in role_components:
             prompt_of_role_components += role_component_info_prompt(role)
     else:
-        prompt_of_role_components = "- 无任何特殊记忆与能力。"
+        prompt_of_role_components = "- 无任何特殊能力。"
 
     final_prompt = f"""# {who}对自身执行CheckStatusActionComponent,即对自身状态进行检查,结果如下:
 ## 健康状态:
 {prompt_of_npc}
 ## 持有道具:
 {prompt_of_props}
-## 特殊记忆与能力:
+## 特殊能力:
 {prompt_of_role_components}
 """
     return final_prompt

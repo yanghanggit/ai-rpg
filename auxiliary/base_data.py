@@ -47,7 +47,7 @@ class PropData:
         self.type = type
         self.em_type = PropType.INVALID
         self.parse_type()
-        print(f"PropData: {self.name} {self.em_type}")
+        #print(f"PropData: {self.name} {self.em_type}")
 
         #默认值，如果不是武器或者衣服，就是0
         self.attributes: List[int] = [0, 0, 0]
@@ -116,7 +116,7 @@ class PropData:
         return self.attributes[2]
     
 def PropDataProxy(name: str) -> PropData:
-    logger.info(f"PropDataProxy: {name}")
+    #logger.info(f"PropDataProxy: {name}")
     return PropData(name, "", "", "", "", "")
 ########################################################################################################################
 ########################################################################################################################
@@ -145,7 +145,7 @@ class NPCData:
         assert len(self.attributes) == 4
 
 def NPCDataProxy(name: str) -> NPCData:
-    logger.info(f"NPCDataProxy: {name}")
+    #logger.info(f"NPCDataProxy: {name}")
     return NPCData(name, "", "", "", set(), set(), set(), "")
 ########################################################################################################################
 ########################################################################################################################
@@ -185,7 +185,7 @@ class StageData:
 
 
 def StageDataProxy(name: str) -> StageData:
-    logger.info(f"StageDataProxy: {name}")
+    #logger.info(f"StageDataProxy: {name}")
     return StageData(name, "", "", "", "", [], [], set(), set(), "")
 ########################################################################################################################
 ########################################################################################################################

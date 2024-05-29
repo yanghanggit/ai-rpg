@@ -1,7 +1,7 @@
 from entitas import ExecuteProcessor #type: ignore
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
-from auxiliary.player_proxy import PlayerProxy, get_player_proxy, TEST_TERMINAL_NAME, PLAYER_INPUT_MODE, determine_player_input_mode
+from auxiliary.player_proxy import PlayerProxy, get_player_proxy, TEST_TERMINAL_NAME, PLAYER_INPUT_MODE, determine_player_input_mode, TEST_CLIENT_SHOW_MESSAGE_COUNT
 from auxiliary.extended_context import ExtendedContext
 
 class TerminalPlayerInterruptAndWaitSystem(ExecuteProcessor):
@@ -17,7 +17,7 @@ class TerminalPlayerInterruptAndWaitSystem(ExecuteProcessor):
             player_npc_entity = self.context.getplayer(TEST_TERMINAL_NAME)
             if player_npc_entity is None or playerproxy is None:
                 return
-            self.display_client_messages(playerproxy, 10)
+            self.display_client_messages(playerproxy, TEST_CLIENT_SHOW_MESSAGE_COUNT)
             while True:
                 # 测试的客户端反馈
                 input(f"[{TEST_TERMINAL_NAME}]:当前为中断等待，请任意键继续")

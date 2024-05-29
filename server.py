@@ -6,7 +6,7 @@ from fastapi.templating import Jinja2Templates
 from loguru import logger
 from pydantic import BaseModel
 from auxiliary.player_input_command import PlayerCommandLogin
-from auxiliary.player_proxy import create_player_proxy, get_player_proxy, remove_player_proxy
+from auxiliary.player_proxy import create_player_proxy, get_player_proxy, remove_player_proxy, TEST_CLIENT_SHOW_MESSAGE_COUNT
 from main_utils import create_rpg_game_then_build
 from rpg_game import RPGGame
 
@@ -51,7 +51,7 @@ async def login(clientip: str):
     await rpggame[clientip].async_execute()
 
     messages: list[TupleModel] = []
-    for message in playerproxy.clientmessages[-10:]:
+    for message in playerproxy.clientmessages[-TEST_CLIENT_SHOW_MESSAGE_COUNT:]:
         messages.append(TupleModel(who=message[0], what=message[1]))
 
     return messages
@@ -80,7 +80,7 @@ async def playerinput(clientip: str, command: str):
     await rpggame[clientip].async_execute()
 
     messages: list[TupleModel] = []
-    for message in playerproxy.clientmessages[-10:]:
+    for message in playerproxy.clientmessages[-TEST_CLIENT_SHOW_MESSAGE_COUNT:]:
         messages.append(TupleModel(who=message[0], what=message[1]))
 
     return messages

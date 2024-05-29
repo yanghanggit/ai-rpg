@@ -1,7 +1,7 @@
 from entitas import ExecuteProcessor #type: ignore
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
-from auxiliary.player_proxy import PlayerProxy, get_player_proxy, TEST_TERMINAL_NAME, PLAYER_INPUT_MODE, determine_player_input_mode
+from auxiliary.player_proxy import PlayerProxy, get_player_proxy, TEST_TERMINAL_NAME, PLAYER_INPUT_MODE, determine_player_input_mode, TEST_CLIENT_SHOW_MESSAGE_COUNT
 from auxiliary.extended_context import ExtendedContext
 from typing import Any, cast
 
@@ -28,21 +28,12 @@ class TerminalPlayerInputSystem(ExecuteProcessor):
             return
         
         while True:
-           
             # 客户端应该看到的
-            self.display_client_messages(playerproxy, 10)    
-           
+            self.display_client_messages(playerproxy, TEST_CLIENT_SHOW_MESSAGE_COUNT)    
             # 测试的客户端反馈
             usrinput = input(f"[{playername}]:")
-            # single_player = self.context.getplayer(playername)
-            # assert single_player is not None
-            # safename = self.context.safe_get_entity_name(single_player)
-            # playerproxy.add_npc_message(safename, usrinput)
-
             # 处理玩家的输入
             self.handle_input(self.rpggame, playerproxy, usrinput)
-            #logger.debug(f"{'=' * 50}")
-
             ## 总之要跳出循环
             break
 ############################################################################################################ 

@@ -170,12 +170,21 @@ class AgentConnectSystem:
 
         rebuild_chat_history: List[HumanMessage | AIMessage] = []
         for message in chat_history:
-            if not self.has_exclude_content(cast(str, message.content), excluded_content):
+            if not self.has_tag_content(cast(str, message.content), excluded_content):
                 rebuild_chat_history.append(message)
 
         self.memorydict[name].chat_history = rebuild_chat_history
 ############################################################################################################
-    def has_exclude_content(self, check_message: str, excluded_content: Set[str]) -> bool:
+    def replace_chat_history(self, name: str, replace_data: Dict[str, str]) -> None:
+        if not name in self.memorydict:
+            return
+        chat_history = self.memorydict[name].chat_history
+        for message in chat_history:
+            for key, value in replace_data.items():
+                if key in cast(str, message.content):
+                    message.content = value
+############################################################################################################
+    def has_tag_content(self, check_message: str, excluded_content: Set[str]) -> bool:
         for tag in excluded_content:
             if tag in check_message:
                 return True

@@ -3,9 +3,15 @@ from typing import Dict, List, Set
 from auxiliary.base_data import PropData
 
 
+#全局的变量
+NPC_PLAN_PROMPT_TAG = "<%这是角色计划>"
+STAGE_PLAN_PROMPT_TAG = "<%这是场景计划>"
+COMPRESS_NPC_PLAN_PROMPT = "请做出你的计划，决定你将要做什么"
+COMPRESS_STAGE_PLAN_PROMPT = "请输出'你的当前描述'和'你的计划'"
+
 ###############################################################################################################################################
 def init_memory_system_npc_prompt(init_memory: str) -> str:
-    prompt = f"""# <%这是角色与场景初始化>世界即将开始运行。你需要做初始状态的设定与更新。
+    prompt = f"""# <%这是角色初始化>世界即将开始运行。你需要做初始状态的设定与更新。
 ## 你的当前状态如下(即初始状态): 
 {init_memory}。
 ## 请结合你的角色设定,更新你的状态。
@@ -13,7 +19,7 @@ def init_memory_system_npc_prompt(init_memory: str) -> str:
     return prompt
 ###############################################################################################################################################
 def init_memory_system_stage_prompt(init_memory: str) -> str:
-    prompt = f"""# <%这是角色与场景初始化>世界即将开始运行。你需要做初始状态的设定与更新。
+    prompt = f"""# <%这是场景初始化>世界即将开始运行。你需要做初始状态的设定与更新。
 ## 你的当前状态如下(即初始状态): 
 {init_memory}。
 ## 请结合你的角色设定,更新你的状态。
@@ -31,7 +37,7 @@ def npc_plan_prompt(current_stage: str, stage_enviro_narrate: str, context: Exte
         current_stage_enviro_narrate_prompt = f"""## 当前场景的环境信息(用于你做参考):\n- {stage_enviro_narrate}"""
 
 
-    prompt = f"""# <%这是角色计划>请做出你的计划，决定你将要做什么。
+    prompt = f"""# {NPC_PLAN_PROMPT_TAG}请做出你的计划，决定你将要做什么。
 ## 你当前所在的场景:{current_stage_prompt}。
 {current_stage_enviro_narrate_prompt}
 ## 要求:
@@ -58,7 +64,7 @@ def stage_plan_prompt(props_in_stage: List[PropData], npc_in_stage: Set[str], co
         prompt_of_npc = "- 无任何角色。"
 
 
-    prompt = f"""# <%这是场景计划>请输出'你的当前描述'和'你的计划'
+    prompt = f"""# {STAGE_PLAN_PROMPT_TAG}请输出'你的当前描述'和'你的计划'
 ## 场景内道具:
 {prompt_of_props}
 ## 场景内角色:
@@ -357,8 +363,8 @@ def updated_information_on_WhoDoYouKnow_prompt(npcname: str, who_you_know: str) 
 ### 
 def updated_information_about_StagesYouKnow_prompt(npcname: str, where_you_know: str) -> str:
     if len(where_you_know) == 0:
-        return f"# 你更新了关于‘你都认知哪些场景’的信息，目前你没有认识的场景。你不能去任何地方。"
-    return f"# 你更新了关于‘你都认知哪些场景’的信息，目前你所知道的场景有: {where_you_know}。如果你意图离开本场景并去往其他场景，你只能从这些场景中选择你的目的地。"
+        return f"# 你更新了关于‘你都认识哪些场景’的信息，目前你没有认识的场景。你不能去任何地方。"
+    return f"# 你更新了关于‘你都认识哪些场景’的信息，目前你所知道的场景有: {where_you_know}。如果你意图离开本场景并去往其他场景，你只能从这些场景中选择你的目的地。"
 
 
 

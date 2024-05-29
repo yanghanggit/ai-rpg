@@ -69,28 +69,6 @@ class HandlePlayerInputSystem(ExecuteProcessor):
                   
         playerproxy.commands.clear()
 ############################################################################################################
-    # def play_via_terminal_and_handle_player_input(self, playername: str) -> None:
-    #     playerproxy = get_player_proxy(playername)
-    #     if playerproxy is None:
-    #         logger.warning("玩家不存在，或者玩家未加入游戏")
-    #         return
-    #     while True:
-    #         # 客户端应该看到的
-    #         self.display_player_client_messages(playerproxy, 10)    
-    #         # 测试的客户端反馈
-    #         usrinput = input(f"[{playername}]:")
-    #         playerproxy.add_system_message(usrinput)
-    #         if self.playerinput(self.rpggame, playerproxy, usrinput):
-    #             logger.debug(f"{'=' * 50}")
-    #             break
-############################################################################################################ 
-    # def display_client_messages(self, playerproxy: PlayerProxy, display_messages_count: int) -> None:
-    #     clientmessages = playerproxy.clientmessages
-    #     for message in clientmessages[-display_messages_count:]:
-    #         tag = message[0]
-    #         content = message[1]
-    #         logger.warning(f"{tag}=>{content}")
-############################################################################################################
     def handle_input(self, rpggame: RPGGame, playerproxy: PlayerProxy, usrinput: str) -> bool:
 
         if "/quit" in usrinput:

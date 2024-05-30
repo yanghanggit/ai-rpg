@@ -1,6 +1,6 @@
 from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity #type: ignore
 from auxiliary.extended_context import ExtendedContext
-from auxiliary.components import (  StealActionComponent,
+from auxiliary.components import (  StealActionComponent, CheckStatusActionComponent,
                                     NPCComponent)
 from loguru import logger
 from auxiliary.actor_action import ActorAction
@@ -24,9 +24,13 @@ class StealActionSystem(ReactiveProcessor):
 ###################################################################################################################
     def react(self, entities: list[Entity]) -> None:
         for entity in entities:
-            self.steal(entity)
+            steal_any = self.steal(entity)
+            if steal_any:
+                self.after_steal_success(entity)
 ###################################################################################################################
-    def steal(self, entity: Entity) -> None:
+    def steal(self, entity: Entity) -> bool:
+
+        steal_any_success = False
         safename = self.context.safe_get_entity_name(entity)
         logger.debug(f"StealActionSystem: {safename} is stealing")
 
@@ -49,6 +53,10 @@ class StealActionSystem(ReactiveProcessor):
             propname = message
             stealres = self._steal_(entity, targetname, propname)
             notify_stage_director(self.context, entity, NPCStealEvent(safename, targetname, propname, stealres))
+            if stealres:
+                steal_any_success = True
+
+        return steal_any_success
 ###################################################################################################################
     def _steal_(self, entity: Entity, target_npc_name: str, propname: str) -> bool:
         filesystem = self.context.file_system
@@ -58,4 +66,11 @@ class StealActionSystem(ReactiveProcessor):
         safename = self.context.safe_get_entity_name(entity)
         filesystem.exchange_prop_file(target_npc_name, safename, propname)
         return True
+###################################################################################################################
+    def after_steal_success(self, entity: Entity) -> None:
+        if entity.has(CheckStatusActionComponent):
+            return
+        npccomp: NPCComponent = entity.get(NPCComponent)
+        action = ActorAction(npccomp.name, CheckStatusActionComponent.__name__, [npccomp.name])
+        entity.add(CheckStatusActionComponent, action)
 #####################################################################################################################

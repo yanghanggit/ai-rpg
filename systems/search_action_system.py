@@ -2,7 +2,8 @@ from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity #type: ignore
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.components import (  SearchActionComponent, 
                                     NPCComponent,
-                                    StageComponent)
+                                    StageComponent,
+                                    CheckStatusActionComponent)
 from auxiliary.actor_action import ActorAction
 from loguru import logger
 from auxiliary.director_component import notify_stage_director
@@ -72,18 +73,23 @@ class SearchActionSystem(ReactiveProcessor):
 ###################################################################################################################
     def react(self, entities: list[Entity]) -> None:
         for entity in entities:
-            self.search(entity)
+            search_any = self.search(entity)
+            if search_any:
+                self.after_search_success(entity)
 ###################################################################################################################
-    def search(self, entity: Entity) -> None:
+    def search(self, entity: Entity) -> bool:
+        # 
+        search_any_prop_success = False
         # 在本场景搜索
         file_system = self.context.file_system
         safe_npc_name = self.context.safe_get_entity_name(entity)
 
         stageentity = self.context.safe_get_stage_entity(entity)
         if stageentity is None:
-            return
+            logger.error(f"npc {safe_npc_name} not in any stage")
+            return search_any_prop_success
+        ##
         stagecomp: StageComponent = stageentity.get(StageComponent)
-
         # 场景有这些道具文件
         propfiles = file_system.get_prop_files(stagecomp.name)
         ###
@@ -101,6 +107,9 @@ class SearchActionSystem(ReactiveProcessor):
             self.stage_exchanges_prop_to_npc(stagecomp.name, action.name, targetpropname)
             logger.info(f"search success, {targetpropname} in {stagecomp.name}")
             notify_stage_director(self.context, stageentity, NPCSearchSuccessEvent(safe_npc_name, targetpropname, stagecomp.name))
+            search_any_prop_success = True
+
+        return search_any_prop_success
 ###################################################################################################################
     def check_stage_has_the_prop(self, targetname: str, curstagepropfiles: List[PropFile]) -> bool:
         for propfile in curstagepropfiles:
@@ -111,4 +120,11 @@ class SearchActionSystem(ReactiveProcessor):
     def stage_exchanges_prop_to_npc(self, stagename: str, npcname: str, propfilename: str) -> None:
         filesystem = self.context.file_system
         filesystem.exchange_prop_file(stagename, npcname, propfilename)
+###################################################################################################################
+    def after_search_success(self, entity: Entity) -> None:
+        if entity.has(CheckStatusActionComponent):
+            return
+        npccomp: NPCComponent = entity.get(NPCComponent)
+        action = ActorAction(npccomp.name, CheckStatusActionComponent.__name__, [npccomp.name])
+        entity.add(CheckStatusActionComponent, action)
 ###################################################################################################################

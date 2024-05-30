@@ -213,24 +213,24 @@ def leave_for_target_stage_failed_because_no_exit_condition_match_prompt(npcname
 ## 提示:
 - {tips}"""
 ################################################################################################################################################
-def someone_entered_my_stage_observed_his_appearance_prompt(someone: str, his_appearance: str) -> str:
-    return f"""# 你所在场景发生如下事件：{someone}进入了场景。
-## {someone}的外貌信息如下：
-- {his_appearance}"""
-################################################################################################################################################
-def observe_appearance_after_entering_stage_prompt(myname: str, stagename: str, npc_appearance_in_stage: Dict[str, str]) -> str:
-    prompt_of_npc = ""
-    assert len(npc_appearance_in_stage) > 0
-    if len(npc_appearance_in_stage) > 0:
-        for other_name, other_appearance in npc_appearance_in_stage.items():
-            prompt_of_npc += f"""### {other_name}\n- 外貌信息:{other_appearance}\n"""
-    else:
-        prompt_of_npc = "- 无任何外貌信息。"
-    return f"""# {myname}进入{stagename}之后观察场景内的角色.
-## 外貌信息如下:
-{prompt_of_npc}
-## 提示:
-- 你可以和这些角色产生互动了(因为是在同一场景内)"""
+# def someone_entered_my_stage_observed_his_appearance_prompt(someone: str, his_appearance: str) -> str:
+#     return f"""# 你所在场景发生如下事件：{someone}进入了场景。
+# ## {someone}的外貌信息如下：
+# - {his_appearance}"""
+# ################################################################################################################################################
+# def observe_appearance_after_entering_stage_prompt(myname: str, stagename: str, npc_appearance_in_stage: Dict[str, str]) -> str:
+#     prompt_of_npc = ""
+#     assert len(npc_appearance_in_stage) > 0
+#     if len(npc_appearance_in_stage) > 0:
+#         for other_name, other_appearance in npc_appearance_in_stage.items():
+#             prompt_of_npc += f"""### {other_name}\n- 外貌信息:{other_appearance}\n"""
+#     else:
+#         prompt_of_npc = "- 无任何外貌信息。"
+#     return f"""# {myname}进入{stagename}之后观察场景内的角色.
+# ## 外貌信息如下:
+# {prompt_of_npc}
+# ## 提示:
+# - 你可以和这些角色产生互动了(因为是在同一场景内)"""
 ################################################################################################################################################
 def enter_stage_prompt1(some_ones_name: str, target_stage_name: str) -> str:
     return f"{some_ones_name}进入了场景——{target_stage_name}。"

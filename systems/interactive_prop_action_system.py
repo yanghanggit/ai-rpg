@@ -3,7 +3,7 @@ from typing import Optional
 from loguru import logger
 from auxiliary.actor_action import ActorAction
 from auxiliary.base_data import PropData, PropDataProxy
-from auxiliary.components import InteractivePropActionComponent, UseInteractivePropActionComponent, CheckStatusActionComponent, NPCComponent
+from auxiliary.components import InteractivePropActionComponent, UseInteractivePropActionComponent, CheckStatusActionComponent, NPCComponent, PrisonBreakActionComponent, ExitOfPrisonComponent
 from auxiliary.dialogue_rule import parse_target_and_message
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.file_def import PropFile
@@ -12,6 +12,7 @@ from auxiliary.director_component import notify_stage_director
 from entitas.group import GroupEvent
 from auxiliary.director_event import NPCInteractivePropEvent
 from auxiliary.format_of_complex_intertactive_props import parse_complex_interactive_props
+from typing import List
 
 class InteractivePropActionSystem(ReactiveProcessor):
     def __init__(self, context: ExtendedContext):
@@ -27,12 +28,12 @@ class InteractivePropActionSystem(ReactiveProcessor):
     def react(self, entities: list[Entity]) -> None:
         for entity in entities:
             use_prop_result = self.useprop(entity)
-            if use_prop_result:
-                self.after_use_prop_success(entity)
+            if len(use_prop_result) > 0:
+                self.after_use_prop_success(entity, use_prop_result)
 
-    def useprop(self, entity: Entity) -> bool:
+    def useprop(self, entity: Entity) -> List[tuple[str, str]]:
 
-        use_prop_result = False
+        use_prop_result: List[tuple[str, str]] = []
 
         interactive_prop_comp: UseInteractivePropActionComponent = entity.get(UseInteractivePropActionComponent)
         interactive_prop_action: ActorAction = interactive_prop_comp.action
@@ -44,7 +45,7 @@ class InteractivePropActionSystem(ReactiveProcessor):
             assert propname is not None
             if self._interactive_prop_(entity, targetname, propname): 
                 logger.debug(f"InteractivePropActionSystem: {targetname} is using {propname}")
-                use_prop_result = True
+                use_prop_result.append((targetname, propname))
         
         return use_prop_result
 
@@ -108,10 +109,48 @@ class InteractivePropActionSystem(ReactiveProcessor):
 
         
 ###################################################################################################################
-    def after_use_prop_success(self, entity: Entity) -> None:
+    def after_use_prop_success(self, entity: Entity, use_prop_result_data: List[tuple[str, str]]) -> None:
+        self.add_check_status_action(entity)
+        self.imme_add_prison_break_action(entity, use_prop_result_data)
+###################################################################################################################
+    def add_check_status_action(self, entity: Entity) -> None:
         if entity.has(CheckStatusActionComponent):
             return
         npccomp: NPCComponent = entity.get(NPCComponent)
         action = ActorAction(npccomp.name, CheckStatusActionComponent.__name__, [npccomp.name])
         entity.add(CheckStatusActionComponent, action)
+###################################################################################################################
+    def imme_add_prison_break_action(self, entity: Entity, use_prop_result_data: List[tuple[str, str]]) -> None:
+        
+        if len(use_prop_result_data) == 0:
+            return
+        
+        for targetname, propname in use_prop_result_data:
+
+            stage_entity: Optional[Entity] = self.context.getstage(targetname)
+            if stage_entity is None:
+                continue
+
+            if not stage_entity.has(ExitOfPrisonComponent):
+                continue
+            
+            # 取出数据，并准备沿用LeaveForActionComponent
+            conncectstagecomp: ExitOfPrisonComponent = stage_entity.get(ExitOfPrisonComponent)
+            connect_stage_entity = self.context.getstage(conncectstagecomp.name)
+            if connect_stage_entity is None:
+                #assert False, f"{conncectstagecomp.name} is None"
+                continue
+
+            if entity.has(PrisonBreakActionComponent):
+                entity.remove(PrisonBreakActionComponent)
+            
+            # 生成离开当前场景的动作
+            npccomp: NPCComponent = entity.get(NPCComponent)
+            action = ActorAction(npccomp.name, PrisonBreakActionComponent.__name__, [npccomp.current_stage])
+            entity.add(PrisonBreakActionComponent, action)
+
+            # 必须跳出循环，因为只能离开一个场景
+            break
+        
+
 ###################################################################################################################

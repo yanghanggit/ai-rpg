@@ -86,9 +86,6 @@ def stage_plan_prompt(props_in_stage: List[PropData], npc_in_stage: Set[str], co
 ## 输出要求:
 - 输出结果格式要遵循‘输出格式指南’。
 - 结果中必须有EnviroNarrateActionComponent,并附带TagActionComponent。"""
-    
-    #不要将过往EnviroNarrateActionComponent已经描述过的做复述。
-    #- 第3步: 将作新的状态输出，作为EnviroNarrateActionComponent的值。
     return prompt
 ###############################################################################################################################################
 def perception_action_prompt(who_perception: str, current_stage: str, ressult_npc_names: Dict[str, str], result_props_names: List[str]) -> str:

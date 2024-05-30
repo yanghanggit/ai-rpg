@@ -15,18 +15,14 @@
 
 ### 请根据下面的示例, 确保你的输出严格遵守相应的结构。
 {{
-  "AttackActionComponent": ["要攻击的角色名字","要攻击的角色名字",...],
-  "TagActionComponent": ["与你相关的特征标签","与你相关的特征标签",...],
-  "MindVoiceActionComponent": ["你的内心独白","你的内心独白",...],
-  "WhisperActionComponent": ["@角色名字>你想私下说的内容","@角色名字>你想私下说的内容",...],
-  "EnviroNarrateActionComponent": ["描述你的状态(场景内发生了事件后，你的状态描述)"]
+  "AttackActionComponent":["要攻击的角色名字",...],
+  "TagActionComponent":["与你相关的特征标签",...],
+  "MindVoiceActionComponent":["你的内心独白",...],
+  "WhisperActionComponent":["@角色名字>你想私下说的内容",...],
+  "EnviroNarrateActionComponent":["第三人称视角描述你最新的状态"]
 }}
 
 ### 注意事项
-- 文本输出全部以第3人称。
-- 请确保每次完整输出1个有效的JSON对象，所有信息必须包含在最终输出的JSON对象内。
-- key的值只能从示例中出现的key值来选择。
+- 每个 JSON 对象必须包含上述键中的一个或多个，不得重复同一个键。
+- 输出不应包含任何超出所需 JSON 格式的额外文本、解释或总结。
 - 不要使用```json```来封装内容。
-- 不要重复或分割输出。
-- 不应包含任何超出所需JSON格式的额外文本、解释或总结。
-- 不要重复出现相同的key。

@@ -16,13 +16,13 @@
 <%description>
 <%history>
 
-## 你的说话习惯与口吻应符合如下例句的模式与特征
+## 说话风格与语气
 <%conversation_example>
 
 ## 输出格式指南
 ### 请根据下面的示例, 确保你的输出严格遵守相应的结构。
 {{
-  "AttackActionComponent":["要攻击的角色名字",...],
+  "AttackActionComponent":["要攻击的并且在本场景中的角色的名字",...],
   "SpeakActionComponent":["@角色名字>你要说的内容",...],
   "LeaveForActionComponent":["离开当前所在场景后前往的场景名字"],
   "TagActionComponent":["与你相关的特征标签",...],

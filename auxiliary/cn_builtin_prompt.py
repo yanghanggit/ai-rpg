@@ -27,7 +27,7 @@ def init_memory_system_stage_prompt(init_memory: str) -> str:
 ## 请结合你的场景设定,更新你的状态。
 ## 输出要求:
 - 请遵循'输出格式指南'。
-- 返回结果带EnviroNarrateActionComponent与MindVoiceActionComponent这2个key"""
+- 返回结果仅带EnviroNarrateActionComponent这个key"""
     return prompt
 ###############################################################################################################################################
 def npc_plan_prompt(current_stage: str, stage_enviro_narrate: str, context: ExtendedContext) -> str:
@@ -79,8 +79,9 @@ def stage_plan_prompt(props_in_stage: List[PropData], npc_in_stage: Set[str], co
 - 不要输出角色的对话内容。
 - 不要添加角色未发生的事件与信息。
 - 不要自行推理与猜测角色的可能行为（如对话内容与行为反应）。
-- 不要将过往EnviroNarrateActionComponent已经描述过的'角色状态'做复述。
-### 第3步: 将'场景状态'的内容与'角色状态'的内容合并,并作为EnviroNarrateActionComponent的值。
+- 不要将过往已经描述过的'角色状态'做复述。
+### 第3步: 将'场景状态'的内容与'角色状态'的2部分内容合并,并作为EnviroNarrateActionComponent的值——"场景状态的描述",
+- 参考‘输出格式指南’中的:"EnviroNarrateActionComponent":["场景状态的描述"]
 ## 关于’你的计划‘内容生成规则
 - 根据你作为场景受到了什么事件的影响，你可以制定计划，并决定下一步将要做什么。可根据‘输出格式指南’选择相应的行动。
 ## 输出要求:

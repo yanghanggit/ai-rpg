@@ -53,7 +53,14 @@ def gen_all_npcs(sheet: DataFrame, sys_prompt_template_path: str, agent_template
     for index, row in sheet.iterrows():
         if pd.isna(row["name"]):
             continue
-        excelnpc = ExcelDataNPC(row["name"], row["codename"], row["description"], row["history"], row['conversation_example'],row["GPT_MODEL"], int(row["PORT"]), row["API"], row["RAG"], row["attributes"])
+
+        ##row["history"] 有可能是nan, 应该如何处理呢？
+        history: str = ""
+        if not pd.isna(row["history"]):
+            history = row["history"]
+
+        #
+        excelnpc = ExcelDataNPC(row["name"], row["codename"], row["description"], history, row['conversation_example'],row["GPT_MODEL"], int(row["PORT"]), row["API"], row["RAG"], row["attributes"])
         if not excelnpc.isvalid():
             #print(f"Invalid row: {excelnpc}")
             continue

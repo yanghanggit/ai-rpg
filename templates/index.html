@@ -21,7 +21,7 @@
                 left: 0;  
                 width: 100%;  
                 height: 100%; 
-                background-image: url('/static/pic/bg.webp'); /* 背景图片的路径 */  
+                background-image: url('/static/pic/bg0.webp'); /* 背景图片的路径 */  
                 background-size: cover; /* 调整图片大小以覆盖整个背景 */  
                 background-repeat: no-repeat; /* 防止图片重复 */  
                 background-attachment: scroll;  
@@ -74,6 +74,8 @@
                     document.getElementById("submit_button").style.display = 'block'; // 显示提交按钮  
                 }  
             });  
+
+            changeBackgroundImage();
         }  
   
         function updateMessages(messages) {  
@@ -84,6 +86,43 @@
                 li.textContent = message.who + " => " + message.what;  
                 messagesList.appendChild(li);  
             });  
+        }  
+
+        var backgroundImages = [  
+                '/static/pic/bg0.webp',  
+                '/static/pic/bg1.webp',  
+                '/static/pic/bg2.webp',  
+                '/static/pic/bg3.webp',  
+                '/static/pic/bg4.webp',  
+                '/static/pic/bg5.webp',  
+                '/static/pic/bg6.webp',  
+                '/static/pic/bg7.webp',   
+                '/static/pic/bg8.webp',  
+                '/static/pic/bg9.webp',   
+                '/static/pic/bg10.webp',  
+                '/static/pic/bg11.webp',  
+                '/static/pic/bg12.webp'
+            ]; 
+
+         // 更换背景图片的函数  
+         function changeBackgroundImage() {  
+            var randomIndex = Math.floor(Math.random() * backgroundImages.length);  
+            var selectedBackgroundImage = backgroundImages[randomIndex];  
+  
+            var styleElement = document.createElement('style');  
+            styleElement.textContent = `  
+                body:before {  
+                    background-image: url('${selectedBackgroundImage}');  
+                }  
+            `;  
+            // 移除之前的背景样式（如果有）  
+            var previousStyleElement = document.querySelector('head style[data-bg]');  
+            if (previousStyleElement) {  
+                document.head.removeChild(previousStyleElement);  
+            }  
+            // 添加新的背景样式  
+            styleElement.setAttribute('data-bg', ''); // 用于标记背景样式  
+            document.head.appendChild(styleElement);  
         }  
     </script>  
 

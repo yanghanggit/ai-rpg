@@ -11,19 +11,23 @@ COMPRESS_STAGE_PLAN_PROMPT = "请输出'你的当前描述'和'你的计划'"
 
 ###############################################################################################################################################
 def init_memory_system_npc_prompt(init_memory: str) -> str:
-    prompt = f"""# <%这是角色初始化>世界即将开始运行。你需要做初始状态的设定与更新。
-## 你的当前状态如下(即初始状态): 
+    prompt = f"""# <%这是角色初始化>游戏世界即将开始运行。这是你的初始设定，你将以此为起点进行游戏
+## 初始设定如下: 
 {init_memory}。
 ## 请结合你的角色设定,更新你的状态。
-## 请遵循输出格式指南,返回结果仅带MindVoiceActionComponent这个key"""
+## 输出要求:
+- 请遵循'输出格式指南'。
+- 返回结果仅带MindVoiceActionComponent这个key"""
     return prompt
 ###############################################################################################################################################
 def init_memory_system_stage_prompt(init_memory: str) -> str:
-    prompt = f"""# <%这是场景初始化>世界即将开始运行。你需要做初始状态的设定与更新。
-## 你的当前状态如下(即初始状态): 
+    prompt = f"""# <%这是场景初始化>游戏世界即将开始运行。这是你的初始设定，你将以此为起点进行游戏
+## 初始设定如下: 
 {init_memory}。
-## 请结合你的角色设定,更新你的状态。
-## 请遵循输出格式指南,返回结果带EnviroNarrateActionComponent与MindVoiceActionComponent这2个key"""
+## 请结合你的场景设定,更新你的状态。
+## 输出要求:
+- 请遵循'输出格式指南'。
+- 返回结果带EnviroNarrateActionComponent与MindVoiceActionComponent这2个key"""
     return prompt
 ###############################################################################################################################################
 def npc_plan_prompt(current_stage: str, stage_enviro_narrate: str, context: ExtendedContext) -> str:
@@ -69,19 +73,22 @@ def stage_plan_prompt(props_in_stage: List[PropData], npc_in_stage: Set[str], co
 {prompt_of_props}
 ## 场景内角色:
 {prompt_of_npc}
-## 关于‘你的当前描述‘:
-- 这部分输出内容作为EnviroNarrateActionComponent的值。
-- 仅输出你的最新状态，不要将过往EnviroNarrateActionComponent已经描述过的做复述。
-### 如果描述中提及到‘场景内角色’
-- 输出角色最新动作与神态，不要将过往EnviroNarrateActionComponent已经描述过的做复述。
+## 关于‘你的当前描述‘内容生成规则
+### 第1步: 根据场景内发生的事件，场景内的道具的信息，将你的状态更新到‘最新’并以此作为‘场景状态’的内容。
+### 第2步: 根据角色‘最新’的动作与神态，作为‘角色状态’的内容。
 - 不要输出角色的对话内容。
-- 不要添加未发生的事件与信息
-- 不要自行推理与猜测‘场景内角色’的可能行为（如对话内容与行为反应）。
-## 关于’你的计划‘:
-- 关于你自己作为场景，受到了什么事件的影响，你可以做出合理的推理和制定你的计划。
+- 不要添加角色未发生的事件与信息。
+- 不要自行推理与猜测角色的可能行为（如对话内容与行为反应）。
+- 不要将过往EnviroNarrateActionComponent已经描述过的'角色状态'做复述。
+### 第3步: 将'场景状态'的内容与'角色状态'的内容合并,并作为EnviroNarrateActionComponent的值。
+## 关于’你的计划‘内容生成规则
+- 根据你作为场景受到了什么事件的影响，你可以制定计划，并决定下一步将要做什么。可根据‘输出格式指南’选择相应的行动。
 ## 输出要求:
 - 输出结果格式要遵循‘输出格式指南’。
-- 结果中需要有EnviroNarrateActionComponent,并附带TagActionComponent。"""
+- 结果中必须有EnviroNarrateActionComponent,并附带TagActionComponent。"""
+    
+    #不要将过往EnviroNarrateActionComponent已经描述过的做复述。
+    #- 第3步: 将作新的状态输出，作为EnviroNarrateActionComponent的值。
     return prompt
 ###############################################################################################################################################
 def perception_action_prompt(who_perception: str, current_stage: str, ressult_npc_names: Dict[str, str], result_props_names: List[str]) -> str:

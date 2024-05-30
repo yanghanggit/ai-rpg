@@ -100,8 +100,8 @@ class RPGGame(BaseGame):
         processors.add(PreActionSystem(context)) ######## 在所有行动之前 #########################################
 
         #获取状态与查找信息类的行为
-        processors.add(CheckStatusActionSystem(context))
-        processors.add(PerceptionActionSystem(context))
+        #processors.add(CheckStatusActionSystem(context))
+        #processors.add(PerceptionActionSystem(context))
 
         #交流（与说话类）的行为
         processors.add(TagActionSystem(context))
@@ -123,11 +123,13 @@ class RPGGame(BaseGame):
         processors.add(StealActionSystem(context))
         processors.add(TradeActionSystem(context))
         processors.add(InteractivePropActionSystem(context))
+        processors.add(CheckStatusActionSystem(context)) # 道具交互类行为之后，可以发起自检
 
         #场景切换类行为，非常重要而且必须在最后
         processors.add(PrisonBreakActionSystem(context)) 
         processors.add(PreLeaveForSystem(context)) 
         processors.add(LeaveForActionSystem(context))
+        processors.add(PerceptionActionSystem(context)) # 场景切换类行为之后可以发起感知
 
         processors.add(PostActionSystem(context)) ####### 在所有行动之后 #########################################
         #########################################

@@ -3,7 +3,7 @@ from typing import Optional
 from loguru import logger
 from auxiliary.actor_action import ActorAction
 from auxiliary.base_data import PropData, PropDataProxy
-from auxiliary.components import InteractivePropActionComponent, UseInteractivePropActionComponent
+from auxiliary.components import InteractivePropActionComponent, UseInteractivePropActionComponent, CheckStatusActionComponent, NPCComponent
 from auxiliary.dialogue_rule import parse_target_and_message
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.file_def import PropFile
@@ -26,9 +26,14 @@ class InteractivePropActionSystem(ReactiveProcessor):
     
     def react(self, entities: list[Entity]) -> None:
         for entity in entities:
-            self.useprop(entity)
+            use_prop_result = self.useprop(entity)
+            if use_prop_result:
+                self.after_use_prop_success(entity)
 
-    def useprop(self, entity: Entity) -> None:
+    def useprop(self, entity: Entity) -> bool:
+
+        use_prop_result = False
+
         interactive_prop_comp: UseInteractivePropActionComponent = entity.get(UseInteractivePropActionComponent)
         interactive_prop_action: ActorAction = interactive_prop_comp.action
         for value in interactive_prop_action.values:
@@ -39,6 +44,9 @@ class InteractivePropActionSystem(ReactiveProcessor):
             assert propname is not None
             if self._interactive_prop_(entity, targetname, propname): 
                 logger.debug(f"InteractivePropActionSystem: {targetname} is using {propname}")
+                use_prop_result = True
+        
+        return use_prop_result
 
     def _interactive_prop_(self, entity: Entity, targetname: str, propname: str) -> bool:
         databasesystem = self.context.data_base_system
@@ -99,3 +107,11 @@ class InteractivePropActionSystem(ReactiveProcessor):
         return None
 
         
+###################################################################################################################
+    def after_use_prop_success(self, entity: Entity) -> None:
+        if entity.has(CheckStatusActionComponent):
+            return
+        npccomp: NPCComponent = entity.get(NPCComponent)
+        action = ActorAction(npccomp.name, CheckStatusActionComponent.__name__, [npccomp.name])
+        entity.add(CheckStatusActionComponent, action)
+###################################################################################################################

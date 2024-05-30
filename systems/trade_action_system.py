@@ -1,11 +1,11 @@
 from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity #type: ignore
 from auxiliary.extended_context import ExtendedContext
-from auxiliary.components import (  TradeActionComponent,
+from auxiliary.components import (  TradeActionComponent,CheckStatusActionComponent,
                                     NPCComponent)
 from loguru import logger
 from auxiliary.actor_action import ActorAction
 from auxiliary.dialogue_rule import dialogue_enable, parse_target_and_message, ErrorDialogueEnable
-from typing import Optional
+from typing import Optional, List
 from auxiliary.director_component import notify_stage_director
 from auxiliary.director_event import NPCTradeEvent
 
@@ -24,9 +24,14 @@ class TradeActionSystem(ReactiveProcessor):
 ###################################################################################################################
     def react(self, entities: list[Entity]) -> None:
         for entity in entities:
-            self.trade(entity)
+            trade_success_target_names = self.trade(entity)
+            for name in trade_success_target_names:
+                pass #todo 可以不用？这样更好玩？比如你收到谁谁谁给了你啥，你需要自己自检一下看看是啥？
+                #self.after_trade_success(name)
 ###################################################################################################################
-    def trade(self, entity: Entity) -> None:
+    def trade(self, entity: Entity) -> List[str]:
+
+        trade_success_target_names: List[str] = []
         safe_npc_name = self.context.safe_get_entity_name(entity)
         logger.debug(f"TradeActionSystem: {safe_npc_name} is trading")
 
@@ -49,6 +54,9 @@ class TradeActionSystem(ReactiveProcessor):
             propname = message
             traderes = self._trade_(entity, targetname, propname)
             notify_stage_director(self.context, entity, NPCTradeEvent(safe_npc_name, targetname, propname, traderes))
+            trade_success_target_names.append(targetname)
+
+        return trade_success_target_names
 ###################################################################################################################
     def _trade_(self, entity: Entity, target_npc_name: str, mypropname: str) -> bool:
         filesystem = self.context.file_system
@@ -58,4 +66,15 @@ class TradeActionSystem(ReactiveProcessor):
             return False
         filesystem.exchange_prop_file(safename, target_npc_name, mypropname)
         return True
+###################################################################################################################
+    def after_trade_success(self, name: str) -> None:
+        entity = self.context.getnpc(name)
+        if entity is None:
+            logger.error(f"npc {name} not found")
+            return
+        if entity.has(CheckStatusActionComponent):
+            return
+        npccomp: NPCComponent = entity.get(NPCComponent)
+        action = ActorAction(npccomp.name, CheckStatusActionComponent.__name__, [npccomp.name])
+        entity.add(CheckStatusActionComponent, action)
 ###################################################################################################################

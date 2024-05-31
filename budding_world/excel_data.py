@@ -59,8 +59,7 @@ class ExcelDataNPC:
     def gen_agentpy(self, agent_py_template: str) -> str:
         agentpy = str(agent_py_template)
         agentpy = agentpy.replace("<%RAG_MD_PATH>", f"""/{GAME_NAME}/{self.worldview}""")
-        #agentpy = agentpy.replace("<%SYS_PROMPT_MD_PATH>", f"""/{GAME_NAME}/{OUT_PUT_NPC_SYS_PROMPT_DIR}/{self.codename}_sys_prompt.md""")
-        agentpy = agentpy.replace("<%SYS_PROMPT_MD_PATH>", self.npc_sys_prompt_template_path)
+        agentpy = agentpy.replace("<%SYS_PROMPT_MD_PATH>", f"""/{GAME_NAME}/{OUT_PUT_NPC_SYS_PROMPT_DIR}/{self.codename}_sys_prompt.md""")
         agentpy = agentpy.replace("<%GPT_MODEL>", self.gptmodel)
         agentpy = agentpy.replace("<%PORT>", str(self.port))
         agentpy = agentpy.replace("<%API>", self.api)
@@ -176,8 +175,7 @@ class ExcelDataStage:
     def gen_agentpy(self, agent_py_template: str) -> str:
         agentpy = str(agent_py_template)
         agentpy = agentpy.replace("<%RAG_MD_PATH>", f"""/{GAME_NAME}/{self.worldview}""")
-        #agentpy = agentpy.replace("<%SYS_PROMPT_MD_PATH>", f"""/{GAME_NAME}/{OUT_PUT_STAGE_SYS_PROMPT_DIR}/{self.codename}_sys_prompt.md""")
-        agentpy = agentpy.replace("<%SYS_PROMPT_MD_PATH>", self.stage_sys_prompt_template_path)
+        agentpy = agentpy.replace("<%SYS_PROMPT_MD_PATH>", f"""/{GAME_NAME}/{OUT_PUT_STAGE_SYS_PROMPT_DIR}/{self.codename}_sys_prompt.md""")
         agentpy = agentpy.replace("<%GPT_MODEL>", self.gptmodel)
         agentpy = agentpy.replace("<%PORT>", str(self.port))
         agentpy = agentpy.replace("<%API>", self.api)

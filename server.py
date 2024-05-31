@@ -6,7 +6,7 @@ from fastapi.templating import Jinja2Templates
 from loguru import logger
 from pydantic import BaseModel
 from auxiliary.player_input_command import PlayerCommandLogin
-from auxiliary.player_proxy import create_player_proxy, get_player_proxy, remove_player_proxy, TEST_CLIENT_SHOW_MESSAGE_COUNT
+from auxiliary.player_proxy import create_player_proxy, get_player_proxy, remove_player_proxy, TEST_CLIENT_SHOW_MESSAGE_COUNT, TEST_SINGLE_PLAYER_NPC_NAME
 from main_utils import create_rpg_game_then_build
 from rpg_game import RPGGame
 from auxiliary.player_proxy import PlayerProxy
@@ -49,7 +49,7 @@ async def login(clientip: str) -> list[TupleModel]:
     create_player_proxy(clientip)
     playerproxy = get_player_proxy(clientip)
     assert playerproxy is not None
-    playerstartcmd = PlayerCommandLogin("/player-login", rpggame[clientip], playerproxy, "无名的复活者")
+    playerstartcmd = PlayerCommandLogin("/player-login", rpggame[clientip], playerproxy, TEST_SINGLE_PLAYER_NPC_NAME)
     playerstartcmd.execute()
     await rpggame[clientip].async_execute()
 

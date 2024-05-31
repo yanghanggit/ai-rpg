@@ -29,7 +29,11 @@ class ExcelEditorNPC:
         self.parse_props_on_npc()
         self.parse_initialization_memory()
         self.parse_npc_role_appearance()
-        
+
+        ### 这里可以添加属性？？？
+        self.attributes: str = data.get("attributes", "")
+        logger.debug(f"Stage: {self.data['name']} has attributes: {self.attributes}")
+
     def parse_props_on_npc(self) -> None:
         data: str = self.data["props_on_npc"]
         if data is None:
@@ -68,7 +72,7 @@ class ExcelEditorNPC:
         dict['role_appearance'] = self.npc_role_appearance
         dict['mentioned_npcs'] = ";".join(target.mentioned_npcs)
         dict['mentioned_stages'] = ";".join(target.mentioned_stages)
-        dict['attributes'] = target.attributes
+        dict['attributes'] = self.attributes #target.attributes
         return dict
     
     # 核心函数！！！

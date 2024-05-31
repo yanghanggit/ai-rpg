@@ -79,6 +79,10 @@ class ExcelEditorStage:
         self.parse_exit_of_prison()
         self.parse_interactive_props()
 
+        ### 这里可以添加属性？？？
+        self.attributes: str = data.get("attributes", "")
+        logger.debug(f"Stage: {self.data['name']} has attributes: {self.attributes}")
+
     def parse_stage_entry_conditions(self) -> None:
         stage_entry_conditions: Optional[str] = self.data["stage_entry_conditions"]
         if stage_entry_conditions is None:
@@ -212,7 +216,7 @@ class ExcelEditorStage:
 
         dict["entry_conditions"] = entry_conditions
         dict["exit_conditions"] = exit_conditions
-        dict['attributes'] = data_stage.attributes
+        dict['attributes'] = self.attributes #data_stage.attributes
 
         output_dict: Dict[str, Any] = {}
         output_dict["stage"] = dict

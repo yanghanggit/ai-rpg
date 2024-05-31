@@ -21,7 +21,6 @@ class ExcelDataNPC:
                  port: int, 
                  api: str, 
                  worldview: str,
-                 attributes: str,
                  sys_prompt_template: str) -> None:
         
         self.name: str = name
@@ -42,7 +41,7 @@ class ExcelDataNPC:
         self.agentpy: str = ""
         logger.info(self.localhost_api())
 
-        self.attributes: str = attributes
+        #self.attributes: str = attributes
         self.npc_sys_prompt_template_path: str = sys_prompt_template
 
     def __str__(self) -> str:
@@ -140,7 +139,14 @@ class ExcelDataNPC:
 ############################################################################################################
 class ExcelDataStage:
 
-    def __init__(self, name: str, codename: str, description: str, gptmodel: str, port: int, api: str, worldview: str, attributes: str, sys_prompt_template: str) -> None:
+    def __init__(self, name: str, 
+                 codename: str, 
+                 description: str, 
+                 gptmodel: str, 
+                 port: int, 
+                 api: str, 
+                 worldview: str, 
+                 sys_prompt_template: str) -> None:
         self.name: str = name
         self.codename: str = codename
         self.description: str = description
@@ -153,7 +159,7 @@ class ExcelDataStage:
         self.agentpy: str = ""
 
         logger.info(self.localhost_api())
-        self.attributes: str = attributes
+        #self.attributes: str = attributes
 
         self.stage_sys_prompt_template_path: str = sys_prompt_template
 

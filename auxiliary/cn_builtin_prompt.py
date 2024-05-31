@@ -78,7 +78,7 @@ def stage_plan_prompt(props_in_stage: List[PropData], npc_in_stage: Set[str], co
 ### 第2步: 根据角色‘最新’的动作与神态，作为‘角色状态’的内容。
 - 不要输出角色的对话内容。
 - 不要添加角色未发生的事件与信息。
-- 不要自行推理与猜测角色的可能行为（如对话内容与行为反应）。
+- 不要自行推理与猜测角色的可能行为（如对话内容,行为反应与心理活动）。
 - 不要将过往已经描述过的'角色状态'做复述。
 ### 第3步: 将'场景状态'的内容与'角色状态'的2部分内容合并,并作为EnviroNarrateActionComponent的值——"场景状态的描述",
 - 参考‘输出格式指南’中的:"EnviroNarrateActionComponent":["场景状态的描述"]

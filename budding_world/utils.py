@@ -69,7 +69,6 @@ def gen_all_npcs(sheet: DataFrame, sys_prompt_template_path: str, agent_template
                                 int(row["PORT"]), 
                                 row["API"], 
                                 row["RAG"], 
-                                row["attributes"],
                                 row["sys_prompt_template"])
         
         if not excelnpc.isvalid():
@@ -93,7 +92,6 @@ def gen_all_stages(sheet: DataFrame, sys_prompt_template_path: str, agent_templa
                                     int(row["PORT"]), 
                                     row["API"], 
                                     row["RAG"], 
-                                    row["attributes"],
                                     row["sys_prompt_template"])
         
         if not excelstage.isvalid():

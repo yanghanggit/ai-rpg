@@ -21,6 +21,8 @@ class WorldDataBuilder:
         self.stage_builder = StageBuilder()
         ####依赖注入的方式，将数据库系统注入到这里
         self.data_base_system = data_base_system
+        ####
+        self.about_game: str = ""
 
     def check_version_valid(self, world_data_path: str) -> bool:
         try:
@@ -40,10 +42,14 @@ class WorldDataBuilder:
 ###############################################################################################################################################
     def build(self) -> None:
         self.create_data_base_system()
+        self.build_config(self.data)
         self.world_npc_builder.build(self.data, self.data_base_system)
         self.player_npc_builder.build(self.data, self.data_base_system)
         self.npc_buidler.build(self.data, self.data_base_system)
         self.stage_builder.build(self.data, self.data_base_system)
+###############################################################################################################################################
+    def build_config(self, data: dict[str, Any]) -> None:
+        self.about_game = data.get('about_game', "无关于游戏的信息。")
 ###############################################################################################################################################
     def create_npc_data_base(self, npcs: Any) -> None:
         if npcs is None:

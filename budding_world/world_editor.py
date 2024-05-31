@@ -9,12 +9,14 @@ from typing import List, Dict, Any
 from budding_world.excel_data import ExcelDataNPC, ExcelDataStage, ExcelDataProp
 from budding_world.npc_editor import ExcelEditorNPC
 from budding_world.stage_editor import ExcelEditorStage
-from budding_world.utils import serialization_prop, proxy_prop
+from budding_world.utils import serialization_prop
+import pandas as pd
 
 EDITOR_WORLD_TYPE = "World"
 EDITOR_PLAYER_TYPE = "Player"
 EDITOR_NPC_TYPE = "NPC"
 EDITOR_STAGE_TYPE = "Stage"
+EDITOR_CONFIG_TYPE = "Config"
 
 ################################################################################################################
 class ExcelEditorWorld:
@@ -31,6 +33,7 @@ class ExcelEditorWorld:
         self.players: List[Any] = []
         self.npcs: List[Any] = []
         self.stages: List[Any] = []
+        self._config: List[Any] = []
 
         #真正的构建数据
         self.editor_worlds: List[ExcelEditorNPC] = []
@@ -38,19 +41,31 @@ class ExcelEditorWorld:
         self.editor_npcs: List[ExcelEditorNPC] = []
         self.editor_stages: List[ExcelEditorStage] = []
         self.editor_props: List[ExcelDataProp] = []
+        
 
         ##把数据分类
-        self.classify_data(self.worlds, self.players, self.npcs, self.stages)
+        self.classify_data(self.worlds, self.players, self.npcs, self.stages, self._config)
         ##根据分类各种处理。。。
         self.editor_worlds = self.create_worlds(self.worlds)
         self.editor_players = self.create_players(self.players)
         self.editor_npcs = self.create_npcs(self.npcs)
         self.editor_stages = self.create_stages(self.stages)
 
+        #config = self.about_game()
+
         ##提取全部的道具。
         self.editor_props = self.parse_props_from_npc(self.editor_worlds) + self.parse_props_from_npc(self.editor_players) + self.parse_props_from_npc(self.editor_npcs) + self.parse_props_from_stage(self.editor_stages)
         logger.debug(f"World: {self.name} has {len(self.editor_props)} props.")
 
+    @property
+    def about_game(self) -> str:
+        if len(self._config) == 0:
+            return ""
+        data = self._config[0]
+        about_game: str = ""
+        if not pd.isna(data['description']):
+            about_game = data['description']
+        return about_game
 
     def parse_props_from_npc(self, npcs: List[ExcelEditorNPC]) -> List[ExcelDataProp]:
         res = []
@@ -75,7 +90,7 @@ class ExcelEditorWorld:
         return res
 
     #先将数据分类
-    def classify_data(self, out_worlds: List[Any], out_players: List[Any], out_npcs: List[Any], out_stages: List[Any]) -> None:
+    def classify_data(self, out_worlds: List[Any], out_players: List[Any], out_npcs: List[Any], out_stages: List[Any], out_config: List[Any]) -> None:
         #
         out_worlds.clear()
         out_players.clear()
@@ -91,6 +106,10 @@ class ExcelEditorWorld:
                 out_npcs.append(item)
             elif item["type"] == EDITOR_STAGE_TYPE:
                 out_stages.append(item)
+            elif item["type"] == EDITOR_CONFIG_TYPE:
+                out_config.append(item)
+            else:
+                logger.error(f"Invalid type: {item['type']}")
 
     def create_worlds(self, worlds: List[Any]) -> List[ExcelEditorNPC]:
         return self.create_npcs(worlds)
@@ -133,6 +152,7 @@ class ExcelEditorWorld:
             logger.warning(f"使用默认的版本号: {version_sign}")
         
         output["version"] = version_sign
+        output["about_game"] = self.about_game
         return output
     
     def data_base(self) -> Dict[str, Any]:

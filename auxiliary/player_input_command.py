@@ -19,10 +19,10 @@ from auxiliary.components import (
     TradeActionComponent, 
     CheckStatusActionComponent)
 from auxiliary.actor_action import ActorAction
-from auxiliary.player_proxy import PlayerProxy, TEST_GAME_INSTRUCTIONS_WHEN_LOGIN_SUCCESS_FOR_FIRST_TIME, TEST_LOGIN_INFORMATION
+from auxiliary.player_proxy import PlayerProxy
 from abc import ABC, abstractmethod
-
-
+#import time
+import datetime
 
 
 ####################################################################################################################################
@@ -85,13 +85,14 @@ class PlayerCommandLogin(PlayerCommand):
         #logger.info(f"login success! {myname} => {login_npc_name}")
         
         ###
-        logger.warning(f"{myname} 登陆了游戏")
+       #logger.warning(f"{myname} 登陆了游戏")
 
         #登陆的消息
-        self.playerproxy.add_system_message(TEST_LOGIN_INFORMATION)
+        self.playerproxy.add_system_message(self.game.about_game)
         
         #打印关于游戏的信息
-        self.playerproxy.add_system_message(TEST_GAME_INSTRUCTIONS_WHEN_LOGIN_SUCCESS_FOR_FIRST_TIME)
+        time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.playerproxy.add_system_message(f"login: {myname}, time = {time}")
 
         # 初始化的NPC记忆
         memory_system = context.memory_system

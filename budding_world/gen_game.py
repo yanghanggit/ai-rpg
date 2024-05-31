@@ -6,7 +6,7 @@ import pandas as pd
 from loguru import logger
 from pandas.core.frame import DataFrame
 import json
-from budding_world.configuration import WORLD_EDITOR_DIR, GAME_NAME, TEMPLATE_DIR, GPT_AGENT_TEMPLATE_FILE, NPC_SYS_PROMPT_TEMPLATE_FILE, STAGE_SYS_PROMPT_TEMPLATE_FILE, OUTPUT_RUNTIMES_DIR
+from budding_world.configuration import WORLD_EDITOR_DIR, GAME_NAME, TEMPLATE_DIR, GPT_AGENT_TEMPLATE_FILE, DEFAULT_NPC_SYS_PROMPT_TEMPLATE_FILE, DEFAULT_STAGE_SYS_PROMPT_TEMPLATE_FILE, OUTPUT_RUNTIMES_DIR
 from budding_world.utils import (readmd, readpy, gen_all_npcs, gen_all_stages, gen_all_props, analyze_npc_relationship, 
                                      analyze_stage_relationship, analyze_relationship_between_npcs_and_props)
 from budding_world.excel_data import ExcelDataNPC, ExcelDataStage, ExcelDataProp
@@ -28,8 +28,8 @@ def create_world_editor(sheet_name_as_world_name: str,
 def main() -> None:
 
     #
-    npc_sys_prompt_template_content: str = readmd(f"/{GAME_NAME}/{TEMPLATE_DIR}/{NPC_SYS_PROMPT_TEMPLATE_FILE}")
-    stage_sys_prompt_template_content: str = readmd(f"/{GAME_NAME}/{TEMPLATE_DIR}/{STAGE_SYS_PROMPT_TEMPLATE_FILE}")
+    npc_sys_prompt_template_content: str = readmd(f"/{GAME_NAME}/{TEMPLATE_DIR}/{DEFAULT_NPC_SYS_PROMPT_TEMPLATE_FILE}")
+    stage_sys_prompt_template_content: str = readmd(f"/{GAME_NAME}/{TEMPLATE_DIR}/{DEFAULT_STAGE_SYS_PROMPT_TEMPLATE_FILE}")
     gpt_agent_template_content: str = readpy(f"/{GAME_NAME}/{TEMPLATE_DIR}/{GPT_AGENT_TEMPLATE_FILE}")
 
     #

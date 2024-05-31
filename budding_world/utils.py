@@ -60,7 +60,18 @@ def gen_all_npcs(sheet: DataFrame, sys_prompt_template_path: str, agent_template
             history = row["history"]
 
         #
-        excelnpc = ExcelDataNPC(row["name"], row["codename"], row["description"], history, row['conversation_example'],row["GPT_MODEL"], int(row["PORT"]), row["API"], row["RAG"], row["attributes"])
+        excelnpc = ExcelDataNPC(row["name"], 
+                                row["codename"], 
+                                row["description"], 
+                                history, 
+                                row['conversation_example'],
+                                row["GPT_MODEL"], 
+                                int(row["PORT"]), 
+                                row["API"], 
+                                row["RAG"], 
+                                row["attributes"],
+                                row["sys_prompt_template"])
+        
         if not excelnpc.isvalid():
             #print(f"Invalid row: {excelnpc}")
             continue
@@ -75,7 +86,16 @@ def gen_all_stages(sheet: DataFrame, sys_prompt_template_path: str, agent_templa
     for index, row in sheet.iterrows():
         if pd.isna(row["name"]):
             continue
-        excelstage = ExcelDataStage(row["name"], row["codename"], row["description"], row["GPT_MODEL"], int(row["PORT"]), row["API"], row["RAG"], row["attributes"])
+        excelstage = ExcelDataStage(row["name"], 
+                                    row["codename"], 
+                                    row["description"], 
+                                    row["GPT_MODEL"], 
+                                    int(row["PORT"]), 
+                                    row["API"], 
+                                    row["RAG"], 
+                                    row["attributes"],
+                                    row["sys_prompt_template"])
+        
         if not excelstage.isvalid():
             #print(f"Invalid row: {excelstage}")
             continue

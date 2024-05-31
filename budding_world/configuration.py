@@ -8,8 +8,8 @@ GAME_NAME = "budding_world"
 #模版
 TEMPLATE_DIR = "sys_templates"
 GPT_AGENT_TEMPLATE_FILE = "gpt_agent_template.py"
-NPC_SYS_PROMPT_TEMPLATE_FILE = "npc_sys_prompt_template.md"
-STAGE_SYS_PROMPT_TEMPLATE_FILE = "stage_sys_prompt_template.md"
+DEFAULT_NPC_SYS_PROMPT_TEMPLATE_FILE = "npc_sys_prompt_template.md"
+DEFAULT_STAGE_SYS_PROMPT_TEMPLATE_FILE = "stage_sys_prompt_template.md"
 
 #默认rag
 RAG_FILE = "rag_libraries/rag2.md"

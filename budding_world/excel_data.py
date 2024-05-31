@@ -15,7 +15,6 @@ class ExcelDataNPC:
     def __init__(self, name: str, 
                  codename: str, 
                  description: str, 
-                 history: str, 
                  conversation_example: str,
                  gptmodel: str, 
                  port: int, 
@@ -26,13 +25,11 @@ class ExcelDataNPC:
         self.name: str = name
         self.codename: str = codename
         self.description: str = description
-        self.history: str = history
         self.converation_example = conversation_example
         self.gptmodel: str = gptmodel
         self.port: int = port
         self.api: str = api
         self.worldview: str = worldview
-        self.desc_and_history: str = f"""{self.description} {self.history}"""
         self.mentioned_npcs: List[str] = []
         self.mentioned_stages: List[str] = []
         self.mentioned_props: List[str] = []
@@ -54,7 +51,7 @@ class ExcelDataNPC:
         genprompt = str(sys_prompt_template)
         genprompt = genprompt.replace("<%name>", self.name)
         genprompt = genprompt.replace("<%description>", self.description)
-        genprompt = genprompt.replace("<%history>", self.history)
+        #genprompt = genprompt.replace("<%history>", self.history)
         genprompt = genprompt.replace("<%conversation_example>", self.converation_example)
         self.sysprompt = genprompt
         return self.sysprompt
@@ -104,7 +101,7 @@ class ExcelDataNPC:
             return False
         if name in self.mentioned_npcs:
             return True
-        if name in self.desc_and_history:
+        if name in self.description:
             self.mentioned_npcs.append(name)
             return True
         return False
@@ -112,7 +109,7 @@ class ExcelDataNPC:
     def add_mentioned_stage(self, stagename: str) -> bool:
         if stagename in self.mentioned_stages:
             return True
-        if stagename in self.desc_and_history:
+        if stagename in self.description:
             self.mentioned_stages.append(stagename)
             return True
         return False
@@ -125,7 +122,7 @@ class ExcelDataNPC:
     def add_mentioned_prop(self, name: str) -> bool:
         if name in self.mentioned_props:
             return True
-        if name in self.desc_and_history:
+        if name in self.description:
             self.mentioned_props.append(name)
             return True
         return False

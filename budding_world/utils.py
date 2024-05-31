@@ -54,16 +54,10 @@ def gen_all_npcs(sheet: DataFrame, sys_prompt_template_path: str, agent_template
         if pd.isna(row["name"]):
             continue
 
-        ##row["history"] 有可能是nan, 应该如何处理呢？
-        history: str = ""
-        if not pd.isna(row["history"]):
-            history = row["history"]
-
         #
         excelnpc = ExcelDataNPC(row["name"], 
                                 row["codename"], 
                                 row["description"], 
-                                history, 
                                 row['conversation_example'],
                                 row["GPT_MODEL"], 
                                 int(row["PORT"]), 

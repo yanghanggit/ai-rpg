@@ -2,7 +2,7 @@ import re
 from typing import Optional
 from loguru import logger
 from auxiliary.actor_action import ActorAction
-from auxiliary.base_data import PropData, PropDataProxy
+from auxiliary.base_data import PropData
 from auxiliary.components import InteractivePropActionComponent, UseInteractivePropActionComponent, CheckStatusActionComponent, NPCComponent, PrisonBreakActionComponent, ExitOfPrisonComponent
 from auxiliary.dialogue_rule import parse_target_and_message
 from auxiliary.extended_context import ExtendedContext
@@ -10,9 +10,30 @@ from auxiliary.file_def import PropFile
 from entitas import Entity, Matcher, ReactiveProcessor # type: ignore
 from auxiliary.director_component import notify_stage_director
 from entitas.group import GroupEvent
-from auxiliary.director_event import NPCInteractivePropEvent
+from auxiliary.director_event import IDirectorEvent
 from auxiliary.format_of_complex_intertactive_props import parse_complex_interactive_props
 from typing import List
+from auxiliary.cn_builtin_prompt import interactive_prop_action_success_prompt
+
+
+
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
+class NPCInteractivePropEvent(IDirectorEvent):
+
+    def __init__(self, npcname: str, targetname: str, propname: str, interactive_action: str, interactive_result: str) -> None:
+        self.npcname = npcname
+        self.targetname = targetname
+        self.propname = propname
+        self.interactive_action = interactive_action
+        self.interactive_result = interactive_result
+
+    def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
+        return interactive_prop_action_success_prompt(self.npcname, self.targetname, self.propname, self.interactive_action, self.interactive_result)
+    
+    def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
+        return interactive_prop_action_success_prompt(self.npcname, self.targetname, self.propname, self.interactive_action, self.interactive_result)
 
 class InteractivePropActionSystem(ReactiveProcessor):
     def __init__(self, context: ExtendedContext):

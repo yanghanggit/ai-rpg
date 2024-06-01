@@ -7,8 +7,30 @@ from auxiliary.actor_action import ActorAction
 from auxiliary.dialogue_rule import dialogue_enable, parse_target_and_message, ErrorDialogueEnable
 from typing import Optional
 from auxiliary.director_component import notify_stage_director
-from auxiliary.director_event import NPCStealEvent
+from auxiliary.director_event import IDirectorEvent
+from auxiliary.cn_builtin_prompt import steal_action_prompt
 
+
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
+class NPCStealEvent(IDirectorEvent):
+
+    def __init__(self, whosteal: str, targetname: str, propname: str, stealres: bool) -> None:
+        self.whosteal = whosteal
+        self.targetname = targetname
+        self.propname = propname
+        self.stealres = stealres
+       
+    def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
+        if npcname != self.whosteal or npcname != self.targetname:
+            return ""
+        
+        stealcontent = steal_action_prompt(self.whosteal, self.targetname, self.propname, self.stealres)
+        return stealcontent
+    
+    def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
+        return ""
 
 class StealActionSystem(ReactiveProcessor):
 

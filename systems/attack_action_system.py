@@ -4,9 +4,50 @@ from auxiliary.extended_context import ExtendedContext
 from auxiliary.actor_action import ActorAction
 from loguru import logger
 from auxiliary.director_component import notify_stage_director
-from auxiliary.director_event import NPCKillSomeoneEvent, NPCAttackSomeoneEvent
+from auxiliary.director_event import IDirectorEvent
 from typing import cast, Optional
-from auxiliary.dialogue_rule import dialogue_enable, parse_target_and_message, ErrorDialogueEnable
+from auxiliary.dialogue_rule import dialogue_enable, ErrorDialogueEnable
+from auxiliary.cn_builtin_prompt import kill_someone, attack_someone_prompt
+
+
+
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
+class NPCKillSomeoneEvent(IDirectorEvent):
+    
+    def __init__(self, attacker: str, target: str) -> None:
+        self.attacker = attacker
+        self.target = target
+
+    def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
+        event = kill_someone(self.attacker, self.target)
+        return event
+    
+    def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
+        event = kill_someone(self.attacker, self.target)
+        return event
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
+class NPCAttackSomeoneEvent(IDirectorEvent):
+
+    def __init__(self, attacker: str, target: str, damage: int, curhp: int, maxhp: int) -> None:
+        self.attacker = attacker
+        self.target = target
+        self.damage = damage
+        self.curhp = curhp
+        self.maxhp = maxhp
+
+    def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
+        event = attack_someone_prompt(self.attacker, self.target, self.damage, self.curhp, self.maxhp)
+        return event
+    
+    def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
+        event = attack_someone_prompt(self.attacker, self.target, self.damage, self.curhp, self.maxhp)
+        return event
+
+
 
 class AttackActionSystem(ReactiveProcessor):
 

@@ -1,11 +1,29 @@
-
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
 from auxiliary.components import BroadcastActionComponent, StageComponent
 from auxiliary.actor_action import ActorAction
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.director_component import notify_stage_director
-from auxiliary.director_event import BroadcastEvent
+from auxiliary.director_event import IDirectorEvent
+from auxiliary.cn_builtin_prompt import broadcast_action_prompt
+
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
+class BroadcastEvent(IDirectorEvent):
+
+    def __init__(self, whobroadcast: str, stagename: str, content: str) -> None:
+        self.whobroadcast = whobroadcast
+        self.stagename = stagename
+        self.content = content
+    
+    def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
+        broadcastcontent = broadcast_action_prompt(self.whobroadcast, self.stagename, self.content, extended_context)
+        return broadcastcontent
+    
+    def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
+        broadcastcontent = broadcast_action_prompt(self.whobroadcast, self.stagename, self.content, extended_context)
+        return broadcastcontent
 
 class BroadcastActionSystem(ReactiveProcessor):
 

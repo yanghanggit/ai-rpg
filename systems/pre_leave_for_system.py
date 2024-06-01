@@ -9,7 +9,7 @@ from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from enum import Enum
 from auxiliary.director_component import notify_stage_director
-from auxiliary.director_event import NPCLeaveForFailedBecauseStageIsInvalidEvent, NPCLeaveForFailedBecauseAlreadyInStage
+from systems.leave_for_action_system import NPCLeaveForFailedBecauseStageIsInvalidEvent, NPCLeaveForFailedBecauseAlreadyInStage
 from auxiliary.format_of_complex_stage_entry_and_exit_conditions import is_complex_stage_condition, parse_complex_stage_condition
 from auxiliary.director_event import IDirectorEvent
 from auxiliary.cn_builtin_prompt import leave_for_target_stage_failed_because_no_exit_condition_match_prompt
@@ -36,9 +36,9 @@ class NPCLeaveForFailedBecauseNoExitConditionMatch(IDirectorEvent):
             #如果是越狱的行动，也让场景知道，提高场景的上下文。
             return leave_for_target_stage_failed_because_no_exit_condition_match_prompt(self.npcname, self.stagename, self.tips, self.is_prison_break)
         return ""
-
-
-
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
 # 错误代码
 class ErrorCheckTargetStage(Enum):
     VALID = 0

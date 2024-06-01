@@ -40,9 +40,9 @@ class StageDirectorComponent(DirectorComponentPrototype):
 
     def player_client_message(self, target_npc_name: str, extended_context: ExtendedContext) -> List[str]:
         # 哭，循环引用，临时就这么写吧
-        from auxiliary.director_event import WhisperEvent
-        from auxiliary.director_event import SpeakEvent
-        from auxiliary.director_event import BroadcastEvent
+        from systems.whisper_action_system import WhisperEvent
+        from systems.speak_action_system import SpeakEvent
+        from systems.broadcast_action_system import BroadcastEvent
 
         batch: List[str] = []
         for event in self.events:

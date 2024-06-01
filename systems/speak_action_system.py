@@ -5,10 +5,29 @@ from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.dialogue_rule import dialogue_enable, parse_target_and_message, ErrorDialogueEnable
 from auxiliary.director_component import notify_stage_director
-from auxiliary.director_event import SpeakEvent
+from auxiliary.director_event import IDirectorEvent
 from typing import Optional
+from auxiliary.cn_builtin_prompt import speak_action_prompt
 
-   
+
+
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
+class SpeakEvent(IDirectorEvent):
+
+    def __init__(self, who_is_speaking: str, who_is_target: str, message: str) -> None:
+        self.who_is_speaking = who_is_speaking
+        self.who_is_target = who_is_target
+        self.message = message
+
+    def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
+        speakcontent: str = speak_action_prompt(self.who_is_speaking, self.who_is_target, self.message, extended_context)
+        return speakcontent
+    
+    def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
+        speakcontent: str = speak_action_prompt(self.who_is_speaking, self.who_is_target, self.message, extended_context)
+        return speakcontent
 ####################################################################################################
 class SpeakActionSystem(ReactiveProcessor):
     def __init__(self, context: ExtendedContext) -> None:

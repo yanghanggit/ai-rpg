@@ -17,7 +17,50 @@ from auxiliary.cn_builtin_prompt import ( leave_stage_prompt,
                                           enter_stage_prompt2,
                                           stage_director_begin_prompt, 
                                           stage_director_end_prompt,
-                                          stage_director_event_wrap_prompt)
+                                          stage_director_event_wrap_prompt,
+                                          leave_for_stage_failed_because_stage_is_invalid_prompt,
+                                          leave_for_stage_failed_because_already_in_stage_prompt)
+
+
+
+
+
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
+class NPCLeaveForFailedBecauseStageIsInvalidEvent(IDirectorEvent):
+
+    def __init__(self, npcname: str, stagename: str) -> None:
+        self.npcname = npcname
+        self.stagename = stagename
+
+    def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
+        if npcname != self.npcname:
+            # 跟你无关不用关注，原因类的东西，是失败后矫正用，所以只有自己知道即可
+            return ""
+        leave_for_stage_is_invalid_event = leave_for_stage_failed_because_stage_is_invalid_prompt(self.npcname, self.stagename)
+        return leave_for_stage_is_invalid_event
+    
+    def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
+        return ""
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
+class NPCLeaveForFailedBecauseAlreadyInStage(IDirectorEvent):
+
+    def __init__(self, npcname: str, stagename: str) -> None:
+        self.npcname = npcname
+        self.stagename = stagename
+
+    def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
+        if npcname != self.npcname:
+            # 跟你无关不用关注，原因类的东西，是失败后矫正用，所以只有自己知道即可
+            return ""
+        already_in_stage_event = leave_for_stage_failed_because_already_in_stage_prompt(self.npcname, self.stagename)
+        return already_in_stage_event
+    
+    def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
+        return ""
 
 
 ###############################################################################################################################################

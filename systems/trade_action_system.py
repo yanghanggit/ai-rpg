@@ -7,8 +7,30 @@ from auxiliary.actor_action import ActorAction
 from auxiliary.dialogue_rule import dialogue_enable, parse_target_and_message, ErrorDialogueEnable
 from typing import Optional, List
 from auxiliary.director_component import notify_stage_director
-from auxiliary.director_event import NPCTradeEvent
+from auxiliary.director_event import IDirectorEvent
+from auxiliary.cn_builtin_prompt import trade_action_prompt
 
+
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
+class NPCTradeEvent(IDirectorEvent):
+
+    def __init__(self, fromwho: str, towho: str, propname: str, traderes: bool) -> None:
+        self.fromwho = fromwho
+        self.towho = towho
+        self.propname = propname
+        self.traderes = traderes
+
+    def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
+        if npcname != self.fromwho or npcname != self.towho:
+            return ""
+        
+        tradecontent = trade_action_prompt(self.fromwho, self.towho, self.propname, self.traderes)
+        return tradecontent
+    
+    def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
+        return ""
 
 class TradeActionSystem(ReactiveProcessor):
 

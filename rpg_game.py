@@ -59,6 +59,7 @@ from systems.update_client_message_system import UpdateClientMessageSystem
 from systems.terminal_player_interrupt_and_wait_system import TerminalPlayerInterruptAndWaitSystem
 from systems.compress_chat_history_system import CompressChatHistorySystem
 from systems.terminal_player_input_system import TerminalPlayerInputSystem
+from systems.post_conversation_action_system import PostConversationActionSystem
 
 ## 控制流程和数据创建
 class RPGGame(BaseGame):
@@ -109,6 +110,9 @@ class RPGGame(BaseGame):
         processors.add(WhisperActionSystem(context))
         processors.add(BroadcastActionSystem(context))
         processors.add(SpeakActionSystem(context))
+
+        #This system is used to handle communication actions of player input
+        processors.add(PostConversationActionSystem(context))
 
         #战斗类的行为
         processors.add(SimpleRPGRolePreFightSystem(context)) #战斗之前需要更新装备

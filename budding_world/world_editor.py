@@ -5,7 +5,7 @@ sys.path.append(str(root_dir))
 import os
 from loguru import logger
 import json
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Set
 from budding_world.excel_data import ExcelDataNPC, ExcelDataStage, ExcelDataProp
 from budding_world.npc_editor import ExcelEditorNPC
 from budding_world.stage_editor import ExcelEditorStage
@@ -53,7 +53,13 @@ class ExcelEditorWorld:
         #config = self.about_game()
 
         ##提取全部的道具。
-        self.editor_props = self.parse_props_from_npc(self.editor_worlds) + self.parse_props_from_npc(self.editor_players) + self.parse_props_from_npc(self.editor_npcs) + self.parse_props_from_stage(self.editor_stages)
+        allprops = self.parse_props_from_npc(self.editor_worlds) + self.parse_props_from_npc(self.editor_players) + self.parse_props_from_npc(self.editor_npcs) + self.parse_props_from_stage(self.editor_stages)
+        globalnames: Set[str] = set()
+        self.editor_props.clear()
+        for prop in allprops:
+            if prop.name not in globalnames:
+                self.editor_props.append(prop)
+                globalnames.add(prop.name)
         logger.debug(f"World: {self.name} has {len(self.editor_props)} props.")
 ################################################################################################################
     @property

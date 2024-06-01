@@ -219,25 +219,6 @@ def leave_for_target_stage_failed_because_no_exit_condition_match_prompt(npcname
 ## 提示:
 - {tips}"""
 ################################################################################################################################################
-# def someone_entered_my_stage_observed_his_appearance_prompt(someone: str, his_appearance: str) -> str:
-#     return f"""# 你所在场景发生如下事件：{someone}进入了场景。
-# ## {someone}的外貌信息如下：
-# - {his_appearance}"""
-# ################################################################################################################################################
-# def observe_appearance_after_entering_stage_prompt(myname: str, stagename: str, npc_appearance_in_stage: Dict[str, str]) -> str:
-#     prompt_of_npc = ""
-#     assert len(npc_appearance_in_stage) > 0
-#     if len(npc_appearance_in_stage) > 0:
-#         for other_name, other_appearance in npc_appearance_in_stage.items():
-#             prompt_of_npc += f"""### {other_name}\n- 外貌信息:{other_appearance}\n"""
-#     else:
-#         prompt_of_npc = "- 无任何外貌信息。"
-#     return f"""# {myname}进入{stagename}之后观察场景内的角色.
-# ## 外貌信息如下:
-# {prompt_of_npc}
-# ## 提示:
-# - 你可以和这些角色产生互动了(因为是在同一场景内)"""
-################################################################################################################################################
 def enter_stage_prompt1(some_ones_name: str, target_stage_name: str) -> str:
     return f"{some_ones_name}进入了场景——{target_stage_name}。"
 ################################################################################################################################################
@@ -269,6 +250,62 @@ def speak_action_prompt(srcname: str, destname: str, content: str, context: Exte
     prompt = f"# {srcname}对{destname}说:{content}"   
     return prompt
 ################################################################################################################################################
+def steal_action_prompt(whosteal: str, targetname: str, propname: str, stealres: bool) -> str:
+    if not stealres:
+        return f"{whosteal}从{targetname}盗取{propname}, 失败了"
+    return f"{whosteal}从{targetname}成功盗取了{propname}"
+################################################################################################################################################
+def trade_action_prompt(fromwho: str, towho: str, propname: str, traderes: bool) -> str:
+    if not traderes:
+        return f"{fromwho}向{towho}交换{propname}, 失败了"
+    return f"{fromwho}向{towho}成功交换了{propname}"
+################################################################################################################################################
+def leave_for_stage_failed_because_stage_is_invalid_prompt(npcname: str, stagename: str) -> str:
+    return f"""#{npcname}不能离开本场景并去往{stagename}，原因可能如下:
+1. {stagename}目前对于{npcname}并不是一个有效场景。游戏可能尚未对其开放，或者已经关闭。
+2. {stagename}的内容格式不对，例如下面的表达：‘xxx的深处/北部/边缘/附近/其他区域’，其中xxx可能是合理场景名，但加上后面的词后则变成了“无效场景名”（在游戏机制上无法正确检索与匹配）。
+## 所以 {npcname} 请参考以上的原因，需要重新考虑去往的目的地。"""
+################################################################################################################################################
+def leave_for_stage_failed_because_already_in_stage_prompt(npcname: str, stagename: str) -> str:
+    return f"你已经在{stagename}场景中了。需要重新考虑去往的目的地。'LeaveForActionComponent'行动类型意图是离开当前场景并去往某地。"
+################################################################################################################################################
+def replace_all_mentions_of_your_name_with_you(content: str, your_name: str) -> str:
+    if len(content) == 0 or your_name not in content:
+        return content
+    return content.replace(your_name, "你")
+################################################################################################################################################
+def updated_information_on_WhoDoYouKnow_prompt(npcname: str, who_you_know: str) -> str:
+    if len(who_you_know) == 0:
+        return f"# 你更新了关于‘你都认识哪些角色’的信息，目前你没有认识的角色。"
+    return f"# 你更新了关于‘你都认识哪些角色’的信息，目前你所认识的角色有: {who_you_know}"
+################################################################################################################################################
+def updated_information_about_StagesYouKnow_prompt(npcname: str, where_you_know: str) -> str:
+    if len(where_you_know) == 0:
+        return f"# 你更新了关于‘你都认识哪些场景’的信息，目前你没有认识的场景。你不能去任何地方。"
+    return f"# 你更新了关于‘你都认识哪些场景’的信息，目前你所知道的场景有: {where_you_know}。如果你意图离开本场景并去往其他场景，你只能从这些场景中选择你的目的地。"
+################################################################################################################################################
+def kill_someone(attacker_name: str, target_name: str) -> str:
+    return f"{attacker_name}对{target_name}发动了一次攻击,造成了{target_name}死亡。"
+################################################################################################################################################
+def attack_someone_prompt(attacker_name: str, target_name: str, damage: int, target_current_hp: int ,target_max_hp: int) -> str:
+    health_percent = max(0, (target_current_hp - damage) / target_max_hp * 100)
+    return f"{attacker_name}对{target_name}发动了一次攻击,造成了{damage}点伤害,当前{target_name}的生命值剩余{health_percent}%。"
+################################################################################################################################################
+def interactive_prop_action_success_prompt(who_use: str, targetname: str, propname: str, interactiveaction: str, interactiveresult: str) -> str:
+    return f"{who_use}拿着{propname}{interactiveaction}了{targetname}造成了{interactiveresult}"
+################################################################################################################################################
+def died_in_fight_prompt(context: ExtendedContext) -> str:
+    return f"你已经死亡（在战斗中受到了致命的攻击）"
+################################################################################################################################################
+
+
+
+
+
+
+
+
+################################################################################################################################################
 def gen_npc_archive_prompt(context: ExtendedContext) -> str:
     prompt = """
 请根据上下文，对自己知道的事情进行梳理总结成markdown格式后输出,但不要生成```markdown xxx```的形式:
@@ -288,7 +325,7 @@ def gen_npc_archive_prompt(context: ExtendedContext) -> str:
 - xxxx
 """
     return prompt
-
+################################################################################################################################################
 def gen_stage_archive_prompt(context: ExtendedContext) -> str:
      prompt = """
 请根据上下文，对自己知道的事情进行梳理总结成markdown格式后输出,但不要生成```markdown xxx```的形式:
@@ -301,8 +338,7 @@ def gen_stage_archive_prompt(context: ExtendedContext) -> str:
 - xxxx
 """
      return prompt
-    
-
+################################################################################################################################################
 def gen_world_archive_prompt(context: ExtendedContext) -> str:
      prompt = """
 请根据上下文，对自己知道的事情进行梳理总结成markdown格式后输出,但不要生成```markdown xxx```的形式:
@@ -320,73 +356,4 @@ def gen_world_archive_prompt(context: ExtendedContext) -> str:
 - xxxx
 """
      return prompt
-
-def died_in_fight_prompt(context: ExtendedContext) -> str:
-    return f"你已经死亡（在战斗中受到了致命的攻击）"
-
-
-
-
-
-
-def kill_someone(attacker_name: str, target_name: str) -> str:
-    return f"{attacker_name}对{target_name}发动了一次攻击,造成了{target_name}死亡。"
-
-def attack_someone_prompt(attacker_name: str, target_name: str, damage: int, target_current_hp: int ,target_max_hp: int) -> str:
-    health_percent = max(0, (target_current_hp - damage) / target_max_hp * 100)
-    return f"{attacker_name}对{target_name}发动了一次攻击,造成了{damage}点伤害,当前{target_name}的生命值剩余{health_percent}%。"
-
-# def speak_action_system_invalid_target(target_name: str, speakcontent: str) -> str:
-#     return f"[{target_name}]在你所在场景内无法找到，所以你不能对其说如下的内容：{speakcontent}"
-
-
-
-def steal_action_prompt(whosteal: str, targetname: str, propname: str, stealres: bool) -> str:
-    if not stealres:
-        return f"{whosteal}从{targetname}盗取{propname}, 失败了"
-    return f"{whosteal}从{targetname}成功盗取了{propname}"
-
-def trade_action_prompt(fromwho: str, towho: str, propname: str, traderes: bool) -> str:
-    if not traderes:
-        return f"{fromwho}向{towho}交换{propname}, 失败了"
-    return f"{fromwho}向{towho}成功交换了{propname}"
-
-
-
-def leave_for_stage_failed_because_stage_is_invalid_prompt(npcname: str, stagename: str) -> str:
-    return f"""#{npcname}不能离开本场景并去往{stagename}，原因可能如下:
-1. {stagename}目前对于{npcname}并不是一个有效场景。游戏可能尚未对其开放，或者已经关闭。
-2. {stagename}的内容格式不对，例如下面的表达：‘xxx的深处/北部/边缘/附近/其他区域’，其中xxx可能是合理场景名，但加上后面的词后则变成了“无效场景名”（在游戏机制上无法正确检索与匹配）。
-## 所以 {npcname} 请参考以上的原因，需要重新考虑去往的目的地。"""
-
-def leave_for_stage_failed_because_already_in_stage_prompt(npcname: str, stagename: str) -> str:
-    return f"你已经在{stagename}场景中了。需要重新考虑去往的目的地。'LeaveForActionComponent'行动类型意图是离开当前场景并去往某地。"
-
-def replace_all_mentions_of_your_name_with_you(content: str, your_name: str) -> str:
-    if len(content) == 0 or your_name not in content:
-        return content
-    return content.replace(your_name, "你")
-
-###
-def updated_information_on_WhoDoYouKnow_prompt(npcname: str, who_you_know: str) -> str:
-    if len(who_you_know) == 0:
-        return f"# 你更新了关于‘你都认识哪些角色’的信息，目前你没有认识的角色。"
-    return f"# 你更新了关于‘你都认识哪些角色’的信息，目前你所认识的角色有: {who_you_know}"
-
-### 
-def updated_information_about_StagesYouKnow_prompt(npcname: str, where_you_know: str) -> str:
-    if len(where_you_know) == 0:
-        return f"# 你更新了关于‘你都认识哪些场景’的信息，目前你没有认识的场景。你不能去任何地方。"
-    return f"# 你更新了关于‘你都认识哪些场景’的信息，目前你所知道的场景有: {where_you_know}。如果你意图离开本场景并去往其他场景，你只能从这些场景中选择你的目的地。"
-
-
-
-def interactive_prop_action_success_prompt(who_use: str, targetname: str, propname: str, interactiveaction: str, interactiveresult: str) -> str:
-    return f"{who_use}拿着{propname}{interactiveaction}了{targetname}造成了{interactiveresult}"
-
-
-
-
-
-
-
+################################################################################################################################################

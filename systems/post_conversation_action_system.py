@@ -53,6 +53,10 @@ class PostConversationActionSystem(ReactiveProcessor):
             response = agent_connect_system.request(stage_director_comp.name, batch_events2stage)
             if response is None:
                 logger.error(f"handle: {stage_director_comp.name} request error.")
+            else:
+                # AI的回复不要，防止污染上下文
+                agent_connect_system.pop_last_ai_message_from_chat_history(stage_director_comp.name, response)
+
         except Exception as e:
             logger.error(f"handle: {stage_director_comp.name} request error.")
 
@@ -69,6 +73,9 @@ class PostConversationActionSystem(ReactiveProcessor):
                 response = agent_connect_system.request(npccomp.name, batch_events2npc)
                 if response is None:
                     logger.error(f"handle: {npccomp.name} request error.")
+                else:
+                    # AI的回复不要，防止污染上下文
+                    agent_connect_system.pop_last_ai_message_from_chat_history(npccomp.name, response)
             except Exception as e:
                 logger.error(f"handle: {npccomp.name} request error.")
 ####################################################################################################

@@ -190,3 +190,14 @@ class AgentConnectSystem:
                 return True
         return False
 ############################################################################################################
+    def pop_last_ai_message_from_chat_history(self, name: str, content: str) -> None:
+        if not name in self.memorydict:
+            return
+        chat_history = self.memorydict[name].chat_history
+        if len(chat_history) == 0:
+            return
+        last_message = chat_history[-1]
+        if isinstance(last_message, AIMessage):
+            assert content == last_message.content
+            chat_history.pop()
+############################################################################################################

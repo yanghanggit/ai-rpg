@@ -20,9 +20,6 @@ async def main() -> None:
     ## 临时 强行改成服务器终端模式，只要这个写死为空。后面的逻辑就会跟上。
     rpggame.extendedcontext.user_ip = ""
 
-    ## 第一次空执行，让所有NPC可以做一些初始化的动作。
-    #await rpggame.async_execute()
-
     #测试的代码，上来就控制一个NPC目标，先写死
     create_player_proxy(TEST_TERMINAL_NAME)
     playerproxy = get_player_proxy(TEST_TERMINAL_NAME)
@@ -35,7 +32,6 @@ async def main() -> None:
         if rpggame.exited:
             break
         await rpggame.async_execute()
-        #logger.debug("async_execute done.")
     #
     rpggame.exit()
 

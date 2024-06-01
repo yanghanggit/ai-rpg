@@ -2,22 +2,17 @@ from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignor
 from auxiliary.components import (
     LeaveForActionComponent, 
     NPCComponent,
-    PlayerComponent,
-    PerceptionActionComponent
-    )
+    PerceptionActionComponent)
 from auxiliary.actor_action import ActorAction
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
-from auxiliary.director_component import notify_stage_director, StageDirectorComponent
-from typing import cast, Dict
-from auxiliary.player_proxy import add_player_client_npc_message
+from auxiliary.director_component import notify_stage_director
+from typing import cast
 from auxiliary.director_event import IDirectorEvent
+from systems.director_system import director_events_to_npc
 from auxiliary.cn_builtin_prompt import ( leave_stage_prompt,
                                           enter_stage_prompt1,
                                           enter_stage_prompt2,
-                                          stage_director_begin_prompt, 
-                                          stage_director_end_prompt,
-                                          stage_director_event_wrap_prompt,
                                           leave_for_stage_failed_because_stage_is_invalid_prompt,
                                           leave_for_stage_failed_because_already_in_stage_prompt)
 
@@ -180,30 +175,7 @@ class LeaveForActionSystem(ReactiveProcessor):
         self.direct_before_leave(helper)
 ###############################################################################################################################################
     def direct_before_leave(self, helper: LeaveActionHelper) -> None:
-        #
-        current_stage_entity = helper.current_stage_entity
-        assert current_stage_entity is not None
-        #
-        directorcomp: StageDirectorComponent = current_stage_entity.get(StageDirectorComponent)
-        safe_npc_name = self.context.safe_get_entity_name(helper.who_wana_leave_entity)
-        #
-        events2npc = directorcomp.tonpc(safe_npc_name, self.context)   
-        if len(events2npc) > 0:
-
-            self.context.safe_add_human_message_to_entity(helper.who_wana_leave_entity, stage_director_begin_prompt(directorcomp.name, len(events2npc)))
-
-            for index, event in enumerate(events2npc):
-                wrap_prompt = stage_director_event_wrap_prompt(event, index)
-                logger.debug(f"{safe_npc_name} => {event}")
-                self.context.safe_add_human_message_to_entity(helper.who_wana_leave_entity, wrap_prompt)
-
-            self.context.safe_add_human_message_to_entity(helper.who_wana_leave_entity, stage_director_end_prompt(directorcomp.name, len(events2npc)))
-
-        ## todo 
-        if helper.who_wana_leave_entity.has(PlayerComponent):
-            events2player = directorcomp.player_client_message(safe_npc_name, self.context)
-            for event in events2player:
-                add_player_client_npc_message(helper.who_wana_leave_entity, event)
+        director_events_to_npc(self.context, helper.who_wana_leave_entity)
 ###############################################################################################################################################
     def leave_stage(self, helper: LeaveActionHelper) -> None:
         entity: Entity = helper.who_wana_leave_entity

@@ -6,7 +6,6 @@ from auxiliary.director_component import StageDirectorComponent
 from auxiliary.player_proxy import add_player_client_npc_message
 from auxiliary.cn_builtin_prompt import stage_director_begin_prompt, stage_director_end_prompt, stage_director_event_wrap_prompt
 
-
 class DirectorSystem(ExecuteProcessor):
 
     def __init__(self, context: ExtendedContext) -> None:
@@ -14,65 +13,67 @@ class DirectorSystem(ExecuteProcessor):
 ###################################################################################################################
     def execute(self) -> None:
         self.handle()
-        self.directorclear()
+        self.director_clear()
 ###################################################################################################################
     def handle(self) -> None:
         entities = self.context.get_group(Matcher(all_of=[StageComponent, StageDirectorComponent])).entities
         for entity in entities:
             logger.debug('=' *50)
-            self.handlestage(entity)
+            self.handle_stage(entity)
             logger.debug('=' *50)
             self.handle_npcs_in_this_stage(entity)
             logger.debug('=' *50)
 ###################################################################################################################   
-    def directorclear(self) -> None:
+    def director_clear(self) -> None:
         entities = self.context.get_group(Matcher(all_of=[StageComponent, StageDirectorComponent])).entities
         for entity in entities:
             directorcomp: StageDirectorComponent = entity.get(StageDirectorComponent)
             directorcomp.clear()
 ###################################################################################################################
-    def handlestage(self, entitystage: Entity) -> None:
+    def handle_stage(self, entitystage: Entity) -> None:
         assert entitystage.has(StageComponent)
         stagecomp: StageComponent = entitystage.get(StageComponent)
         directorcomp: StageDirectorComponent = entitystage.get(StageDirectorComponent)
         events2stage = directorcomp.tostage(stagecomp.name, self.context)  
         for event in events2stage:
-            #logger.debug(f"{stagecomp.name} => {event}")
+            logger.debug(f"director:{stagecomp.name}:{event}")
             self.context.safe_add_human_message_to_entity(entitystage, event)       
 ###################################################################################################################
     def handle_npcs_in_this_stage(self, entitystage: Entity) -> None:
         assert entitystage.has(StageComponent)
         stagecomp: StageComponent = entitystage.get(StageComponent)
-        allnpcsinthestage = self.context.npcs_in_this_stage(stagecomp.name)
-        directorcomp: StageDirectorComponent = entitystage.get(StageDirectorComponent)
-        for npcentity in allnpcsinthestage:
-            npccomp: NPCComponent = npcentity.get(NPCComponent)
+        npcs_int_this_stage = self.context.npcs_in_this_stage(stagecomp.name)
+        for npcentity in npcs_int_this_stage:
+            director_events_to_npc(self.context, npcentity)
+###################################################################################################################
+def director_events_to_npc(context: ExtendedContext, npc_entity: Entity) -> None:
+    stage_entity = context.safe_get_stage_entity(npc_entity)
+    if stage_entity is None:
+        return
+    stage_director_comp: StageDirectorComponent = stage_entity.get(StageDirectorComponent)
+    assert stage_director_comp is not None
 
-            
-            #
-            events2npc = directorcomp.tonpc(npccomp.name, self.context)     
-            #
-            if len(events2npc) > 0:
-                self.context.safe_add_human_message_to_entity(npcentity, stage_director_begin_prompt(stagecomp.name, len(events2npc)))
+    events2npc = stage_director_comp.tonpc(stage_director_comp.name, context)    
+    if len(events2npc) == 0:
+        return
 
-            #
-            # for event in events2npc:
-            #     logger.debug(f"{npccomp.name} => {event}")
-            #     self.context.safe_add_human_message_to_entity(npcentity, event)
+    ### 标记开始
+    context.safe_add_human_message_to_entity(npc_entity, stage_director_begin_prompt(stage_director_comp.name, len(events2npc)))
 
-            for index, event in enumerate(events2npc):
-                wrap_prompt = stage_director_event_wrap_prompt(event, index)
-                logger.debug(f"{npccomp.name} => {event}")
-                self.context.safe_add_human_message_to_entity(npcentity, wrap_prompt)
+    ### 添加消息！
+    npccomp: NPCComponent = npc_entity.get(NPCComponent)
+    for index, event in enumerate(events2npc):
+        wrap_prompt = stage_director_event_wrap_prompt(event, index)
+        logger.debug(f"director:{npccomp.name}:{event}")
+        context.safe_add_human_message_to_entity(npc_entity, wrap_prompt)
 
-            #
-            if len(events2npc) > 0:
-                self.context.safe_add_human_message_to_entity(npcentity, stage_director_end_prompt(stagecomp.name, len(events2npc)))
+    ## 标记结束
+    context.safe_add_human_message_to_entity(npc_entity, stage_director_end_prompt(stage_director_comp.name, len(events2npc)))
 
-            #
-            if npcentity.has(PlayerComponent):
-                events2player = directorcomp.player_client_message(npccomp.name, self.context)
-                for event in events2player:
-                    add_player_client_npc_message(npcentity, event)
+    # 通知客户端显示
+    if npc_entity.has(PlayerComponent):
+        events2player = stage_director_comp.player_client_message(npccomp.name, context)
+        for event in events2player:
+            add_player_client_npc_message(npc_entity, event)
 ###################################################################################################################
     

@@ -4,19 +4,19 @@ from typing import List
 from collections import namedtuple
 from auxiliary.director_event import IDirectorEvent
 from auxiliary.cn_builtin_prompt import replace_all_mentions_of_your_name_with_you
-#from auxiliary.components import StageComponent
 from loguru import logger
 
 ## yh 第一个 扩展型组件，用于处理导演系统的事件
+####################################################################################################
 DirectorComponentPrototype = namedtuple('DirectorComponentPrototype', 'name')
 class StageDirectorComponent(DirectorComponentPrototype):
 
     def __init__(self) -> None:
         self.events: list[IDirectorEvent] = []
-
+##########################################################################################################################
     def addevent(self, event: IDirectorEvent) -> None:
         self.events.append(event)
-
+##########################################################################################################################
     def tonpc(self, target_npc_name: str, extended_context: ExtendedContext) -> List[str]:
         batch: List[str] = []
         for event in self.events:
@@ -25,7 +25,7 @@ class StageDirectorComponent(DirectorComponentPrototype):
                 res = replace_all_mentions_of_your_name_with_you(res, target_npc_name)
                 batch.append(res)
         return batch
-    
+##########################################################################################################################
     def tostage(self, target_stage_name: str, extended_context: ExtendedContext) -> List[str]:
         batch: List[str] = []
         for event in self.events:
@@ -33,30 +33,33 @@ class StageDirectorComponent(DirectorComponentPrototype):
             if res != "":
                 batch.append(res)
         return batch
-
+##########################################################################################################################
     def clear(self) -> None:
         self.events.clear()
-
-
+##########################################################################################################################
     def player_client_message(self, target_npc_name: str, extended_context: ExtendedContext) -> List[str]:
-        # 哭，循环引用，临时就这么写吧
+        # 哭，循环引用，临时就这么写吧, 这些不用客户端显示
         from systems.whisper_action_system import WhisperEvent
         from systems.speak_action_system import SpeakEvent
         from systems.broadcast_action_system import BroadcastEvent
-
+        from systems.perception_action_system import NPCPerceptionEvent
+        from systems.check_status_action_system import NPCCheckStatusEvent
+        ###
         batch: List[str] = []
         for event in self.events:
-            check = isinstance(event, WhisperEvent) or isinstance(event, SpeakEvent) or isinstance(event, BroadcastEvent)
+            check = isinstance(event, WhisperEvent) \
+            or isinstance(event, SpeakEvent) \
+            or isinstance(event, BroadcastEvent) \
+            or isinstance(event, NPCPerceptionEvent) \
+            or isinstance(event, NPCCheckStatusEvent)
             if check:
-                # 这3种在TestPlayerUpdateClientMessageSystem会特殊处理，这里不用再导出了。
                 continue
             res = event.tonpc(target_npc_name, extended_context)
             if res != "":
                 res = replace_all_mentions_of_your_name_with_you(res, target_npc_name)
                 batch.append(res)
         return batch
-
-#
+##########################################################################################################################
 def notify_stage_director(context: ExtendedContext, entity: Entity, directevent: IDirectorEvent) -> bool:
     stageentity = context.safe_get_stage_entity(entity)
     if stageentity is None:
@@ -65,3 +68,4 @@ def notify_stage_director(context: ExtendedContext, entity: Entity, directevent:
     directorcomp: StageDirectorComponent = stageentity.get(StageDirectorComponent)
     directorcomp.addevent(directevent)
     return True
+##########################################################################################################################

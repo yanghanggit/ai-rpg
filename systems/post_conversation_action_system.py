@@ -35,7 +35,7 @@ class PostConversationActionSystem(ReactiveProcessor):
         if stage_entity is None:
             return
         stage_director_comp: StageDirectorComponent = stage_entity.get(StageDirectorComponent)
-        stage_director_comp.events.clear()
+        stage_director_comp.clear()
 ####################################################################################################
     def handle(self, entity: Entity) -> None:
         stage_entity = self.context.safe_get_stage_entity(entity)

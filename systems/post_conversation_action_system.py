@@ -75,9 +75,6 @@ class PostConversationActionSystem(ReactiveProcessor):
         ### 处理NPC的
         npcs_in_this_stage = self.context.npcs_in_this_stage(stage_director_comp.name)
         for npc_entity in npcs_in_this_stage:
-            if npc_entity == stage_entity:
-                continue
-            ###
             npccomp: NPCComponent = npc_entity.get(NPCComponent)
             raw_events2npc = stage_director_comp.tonpc(npccomp.name, self.context)     
             if len(raw_events2npc) > 0:

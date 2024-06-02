@@ -124,7 +124,7 @@ class AgentConnectSystem:
             return
 ############################################################################################################
     # 每个Agent需要异步请求调用的时候，需要先添加任务，然后全部异步任务添加完毕后，再调用run_async_requet_tasks
-    def add_async_requet_task(self, name: str, prompt: str) -> None:
+    def add_async_request_task(self, name: str, prompt: str) -> None:
         logger.debug(f"{name}添加异步请求任务:{prompt}")
         self.async_request_tasks[name] = prompt
 ############################################################################################################
@@ -137,9 +137,7 @@ class AgentConnectSystem:
 ############################################################################################################
     async def async_gather(self) -> list[tuple[str, Optional[str]]]:
         tasks = [self.async_requet(name, prompt) for name, prompt in self.async_request_tasks.items()]
-
         response = await asyncio.gather(*tasks)
-        
         return response
 ############################################################################################################
     # 当确定全部异步请求任务添加完毕后，调用这个方法，等待所有任务完成，并拿到任务结果

@@ -33,7 +33,7 @@ class NPCReadyForPlanningSystem(ExecuteProcessor):
         #assert stage_enviro_narrate != ""
         
         prompt = npc_plan_prompt(stagename, stage_enviro_narrate, self.context)
-        self.context.agent_connect_system.add_async_requet_task(npccomp.name, prompt)
+        self.context.agent_connect_system.add_async_request_task(npccomp.name, prompt)
 ####################################################################################################################################
     def get_stage_enviro_narrate(self, entity: Entity) -> tuple[str, str]:
 

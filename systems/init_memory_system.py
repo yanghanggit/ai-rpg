@@ -51,7 +51,7 @@ class InitMemorySystem(InitializeProcessor, ExecuteProcessor):
                 entity.add(CheckStatusActionComponent, check_status_action)
 ####################################################################################################
     @override
-    async def async_execute(self) -> None:
+    async def async_pre_execute(self) -> None:
         context = self.context
         agent_connect_system = context.agent_connect_system
         if len(self.tasks) == 0:
@@ -59,7 +59,7 @@ class InitMemorySystem(InitializeProcessor, ExecuteProcessor):
             return
         
         for name, prompt in self.tasks.items():
-            agent_connect_system.add_async_requet_task(name, prompt)
+            agent_connect_system.add_async_request_task(name, prompt)
 
         await context.agent_connect_system.run_async_requet_tasks("InitMemorySystem")
         self.tasks.clear() # 这句必须得走！！！
@@ -80,7 +80,7 @@ class InitMemorySystem(InitializeProcessor, ExecuteProcessor):
                 logger.error(f"worldmemory is empty: {worldcomp.name}")
                 continue
             prompt = init_memory_system_npc_prompt(worldmemory)
-            agent_connect_system.add_async_requet_task(worldcomp.name, prompt)
+            agent_connect_system.add_async_request_task(worldcomp.name, prompt)
             result[worldcomp.name] = prompt
         
         return result
@@ -102,7 +102,7 @@ class InitMemorySystem(InitializeProcessor, ExecuteProcessor):
                 continue
 
             prompt = init_memory_system_stage_prompt(stagememory)
-            agent_connect_system.add_async_requet_task(stagecomp.name, prompt)
+            agent_connect_system.add_async_request_task(stagecomp.name, prompt)
             result[stagecomp.name] = prompt
         
         return result
@@ -124,7 +124,7 @@ class InitMemorySystem(InitializeProcessor, ExecuteProcessor):
                 logger.error(f"npcmemory is empty: {npcname}")
                 continue
             prompt = init_memory_system_npc_prompt(npcmemory)
-            agent_connect_system.add_async_requet_task(npcname, prompt)
+            agent_connect_system.add_async_request_task(npcname, prompt)
             result[npcname] = prompt
 
         return result

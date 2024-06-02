@@ -32,7 +32,7 @@ class StageReadyForPlanningSystem(ExecuteProcessor):
 
 
         prompt = stage_plan_prompt(props_in_stage, npcnames, self.context)
-        self.context.agent_connect_system.add_async_requet_task(stage_comp.name, prompt)
+        self.context.agent_connect_system.add_async_request_task(stage_comp.name, prompt)
 ####################################################################################################################################
     def get_props_in_stage(self, entity: Entity) -> List[PropData]:
         res: List[PropData] = []

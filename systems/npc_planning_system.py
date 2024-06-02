@@ -19,7 +19,7 @@ class NPCPlanningSystem(ExecuteProcessor):
         pass
 ####################################################################################################
     @override
-    async def async_execute(self) -> None:
+    async def async_pre_execute(self) -> None:
         #记录事件
         self.context.chaos_engineering_system.on_npc_planning_system_execute(self.context)
         # 并行执行requests

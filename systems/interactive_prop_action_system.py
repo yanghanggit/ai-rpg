@@ -99,43 +99,42 @@ class InteractivePropActionSystem(ReactiveProcessor):
         return use_prop_result
 
     def _interactive_prop_(self, entity: Entity, targetname: str, propname: str) -> bool:
-        databasesystem = self.context.data_base_system
-        filesystem = self.context.file_system
-        username = self.context.safe_get_entity_name(entity)
+        # databasesystem = self.context.data_base_system
+        # filesystem = self.context.file_system
+        # username = self.context.safe_get_entity_name(entity)
 
-        if not filesystem.has_prop_file(username, propname):
-            logger.error(f"{username}身上没有{propname}，请检查。")
-            return False
+        # if not filesystem.has_prop_file(username, propname):
+        #     logger.error(f"{username}身上没有{propname}，请检查。")
+        #     return False
         
-        interactivepropresult = self.check_target_with_prop(targetname, propname)
-        if interactivepropresult is None:
-            logger.warning(f"{targetname}与{propname}之间的关系未定义，请检查。")
-            return False
+        # interactivepropresult = self.check_target_with_prop(targetname, propname)
+        # if interactivepropresult is None:
+        #     logger.warning(f"{targetname}与{propname}之间的关系未定义，请检查。")
+        #     return False
         
-        if databasesystem.get_prop(interactivepropresult) is None:
-            logger.error(f"数据库不存在{interactivepropresult}，请检查。")
-            return False
+        # if databasesystem.get_prop(interactivepropresult) is None:
+        #     logger.error(f"数据库不存在{interactivepropresult}，请检查。")
+        #     return False
     
-        if not filesystem.has_prop_file(username, interactivepropresult):
-            propdata = databasesystem.get_prop(interactivepropresult)
-            assert propdata is not None
-            createpropfile = PropFile(interactivepropresult, username, propdata)
-            filesystem.add_prop_file(createpropfile)
-        else:
-            logger.error(f"{username}已经达成{interactivepropresult},请检查结果是否正确。")
-            return False
+        # if not filesystem.has_prop_file(username, interactivepropresult):
+        #     propdata = databasesystem.get_prop(interactivepropresult)
+        #     assert propdata is not None
+        #     createpropfile = PropFile(interactivepropresult, username, propdata)
+        #     filesystem.add_prop_file(createpropfile)
+        # else:
+        #     logger.error(f"{username}已经达成{interactivepropresult},请检查结果是否正确。")
+        #     return False
         
-        interactiveaction = self.parse_interactive_prop_action(propdata, propname, targetname)
-        if interactiveaction is None:
-            logger.error(f"解析交互道具{propname}与{targetname}之间的关系失败，请检查。")
-            return False
-        notify_stage_director(self.context, entity, NPCInteractivePropEvent(username, targetname, propname, interactiveaction, interactivepropresult))
+        # interactiveaction = self.parse_interactive_prop_action(propdata, propname, targetname)
+        # if interactiveaction is None:
+        #     logger.error(f"解析交互道具{propname}与{targetname}之间的关系失败，请检查。")
+        #     return False
+        # notify_stage_director(self.context, entity, NPCInteractivePropEvent(username, targetname, propname, interactiveaction, interactivepropresult))
 
-        # todo
+        # todo 直接用大模型推理
         self.use_prop_to_stage(entity, targetname, propname)
         return True
     
-
     def parse_interactive_prop_action(self, propdata: PropData, interactivepropname: str, targetname: str) -> Optional[str]:
         description = propdata.description
         pattern = rf"{interactivepropname}(.*?){targetname}"
@@ -145,8 +144,6 @@ class InteractivePropActionSystem(ReactiveProcessor):
         else:
             return None
 
-        
-    
     def check_target_with_prop(self, targetname: str, propname: str) -> Optional[str]:
         stage_entity: Optional[Entity] = self.context.getstage(targetname)
         if stage_entity is not None and stage_entity.has(InteractivePropActionComponent):
@@ -157,8 +154,6 @@ class InteractivePropActionSystem(ReactiveProcessor):
                 return interactive_props[1]
 
         return None
-
-        
 ###################################################################################################################
     def after_use_prop_success(self, entity: Entity, use_prop_result_data: List[tuple[str, str]]) -> None:
         self.add_check_status_action(entity)
@@ -253,16 +248,17 @@ class InteractivePropActionSystem(ReactiveProcessor):
             logger.debug(f"InteractivePropActionSystem: {response}")
 
         tip = self.request_response_to_result_tip(targetname, response)
-        notify_stage_director(context, entity, NPCUsePropToStageEvent(username, targetname, propname, tip))
+        if tip != "":
+            notify_stage_director(context, entity, NPCUsePropToStageEvent(username, targetname, propname, tip))
         return True
 ###################################################################################################################
-    def request_response_to_result_tip(self, actorname: str, response: str) -> str:
+    def request_response_to_result_tip(self, actorname: str, response: Optional[str]) -> str:
+        if response is None:
+            return ""
         #
         temp_plan = ActorPlan(actorname, response)
         if len(temp_plan.actions) == 0:
-            #logger.error("可能出现格式错误")
             return ""
-        
         # 再次检查是否符合结果预期
         enviro_narrate_action: Optional[ActorAction] = None
         for action in temp_plan.actions:
@@ -270,7 +266,6 @@ class InteractivePropActionSystem(ReactiveProcessor):
                 enviro_narrate_action = action
         if enviro_narrate_action is None or len(enviro_narrate_action.values) == 0:
            return ""
-        
         single_vale = enviro_narrate_action.single_value()
         return single_vale
 ###################################################################################################################

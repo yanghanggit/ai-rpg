@@ -15,9 +15,7 @@ class UpdateClientMessageSystem(ExecuteProcessor):
         self.context: ExtendedContext = context
 ############################################################################################################
     def execute(self) -> None:
-        playername = str(self.context.user_ip)
-
-        input_mode = determine_player_input_mode(playername)
+        input_mode = determine_player_input_mode(self.context.user_ips)
         if input_mode == PLAYER_INPUT_MODE.WEB_HTTP_REQUEST:
             pass
         elif input_mode == PLAYER_INPUT_MODE.TERMINAL:
@@ -25,19 +23,22 @@ class UpdateClientMessageSystem(ExecuteProcessor):
         else:
             logger.error("未知的输入模式!!!!!") 
             return
-        
-        playerproxy = get_player_proxy(playername)
-        player_npc_entity = self.context.getplayer(playername)
-        if player_npc_entity is None or playerproxy is None:
-            return
-        
-        self.stage_enviro_narrate_action_2_message(playerproxy, player_npc_entity)
-        self.mind_voice_action_2_message(playerproxy, player_npc_entity)
-        self.whisper_action_2_message(playerproxy, player_npc_entity)
-        self.broadcast_action_2_message(playerproxy, player_npc_entity)
-        self.speak_action_2_message(playerproxy, player_npc_entity)
-        self.attack_action_2_message(playerproxy, player_npc_entity)
-        self.leave_for_action_2_message(playerproxy, player_npc_entity)
+            
+        for user_ip in self.context.user_ips:
+            playername = str(user_ip)
+
+            playerproxy = get_player_proxy(playername)
+            player_npc_entity = self.context.getplayer(playername)
+            if player_npc_entity is None or playerproxy is None:
+                return
+            
+            self.stage_enviro_narrate_action_2_message(playerproxy, player_npc_entity)
+            self.mind_voice_action_2_message(playerproxy, player_npc_entity)
+            self.whisper_action_2_message(playerproxy, player_npc_entity)
+            self.broadcast_action_2_message(playerproxy, player_npc_entity)
+            self.speak_action_2_message(playerproxy, player_npc_entity)
+            self.attack_action_2_message(playerproxy, player_npc_entity)
+            self.leave_for_action_2_message(playerproxy, player_npc_entity)
 ############################################################################################################
     def stage_enviro_narrate_action_2_message(self, playerproxy: PlayerProxy, player_npc_entity: Entity) -> None:
         stage = self.context.safe_get_stage_entity(player_npc_entity)

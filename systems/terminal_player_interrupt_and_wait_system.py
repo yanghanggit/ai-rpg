@@ -9,19 +9,20 @@ class TerminalPlayerInterruptAndWaitSystem(ExecuteProcessor):
         self.context: ExtendedContext = context
 ############################################################################################################
     def execute(self) -> None:
-        playername = self.context.user_ip
-        input_mode = determine_player_input_mode(playername)
-        if input_mode == PLAYER_INPUT_MODE.TERMINAL:
-            #就是展示一下并点击继续，没什么用
-            playerproxy = get_player_proxy(TEST_TERMINAL_NAME)
-            player_npc_entity = self.context.getplayer(TEST_TERMINAL_NAME)
-            if player_npc_entity is None or playerproxy is None:
-                return
-            self.display_client_messages(playerproxy, TEST_CLIENT_SHOW_MESSAGE_COUNT)
-            while True:
-                # 测试的客户端反馈
-                input(f"[{TEST_TERMINAL_NAME}]:当前为中断等待，请任意键继续")
-                break   
+        for user_ip in self.context.user_ips:
+            playername = user_ip
+            input_mode = determine_player_input_mode(playername)
+            if input_mode == PLAYER_INPUT_MODE.TERMINAL:
+                #就是展示一下并点击继续，没什么用
+                playerproxy = get_player_proxy(TEST_TERMINAL_NAME)
+                player_npc_entity = self.context.getplayer(TEST_TERMINAL_NAME)
+                if player_npc_entity is None or playerproxy is None:
+                    return
+                self.display_client_messages(playerproxy, TEST_CLIENT_SHOW_MESSAGE_COUNT)
+                while True:
+                    # 测试的客户端反馈
+                    input(f"[{TEST_TERMINAL_NAME}]:当前为中断等待，请任意键继续")
+                    break   
         #else:
             #logger.debug("只处理终端的输入")
 ############################################################################################################ 

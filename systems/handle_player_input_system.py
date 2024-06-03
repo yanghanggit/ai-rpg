@@ -35,10 +35,10 @@ class HandlePlayerInputSystem(ExecuteProcessor):
 ############################################################################################################
     def execute(self) -> None:
         # 临时的设置，通过IP地址来判断是不是测试的客户端
-        playername = self.context.user_ip
-        input_mode = determine_player_input_mode(playername)
+        input_mode = determine_player_input_mode(self.context.user_ips)
         if input_mode == PLAYER_INPUT_MODE.WEB_HTTP_REQUEST:
-            self.play_via_client_and_handle_player_input(playername)
+            for playername in self.context.user_ips:
+                self.play_via_client_and_handle_player_input(playername)
         elif input_mode == PLAYER_INPUT_MODE.TERMINAL:
             self.play_via_client_and_handle_player_input(TEST_TERMINAL_NAME)
         else:

@@ -14,7 +14,7 @@ class TerminalPlayerInputSystem(ExecuteProcessor):
 ############################################################################################################
     def execute(self) -> None:
         # 临时的设置，通过IP地址来判断是不是测试的客户端
-        if determine_player_input_mode(self.context.user_ip) != PLAYER_INPUT_MODE.TERMINAL:
+        if determine_player_input_mode(self.context.user_ips) != PLAYER_INPUT_MODE.TERMINAL:
             #logger.debug("只处理终端的输入")
             return
         # 通过终端输入
@@ -24,7 +24,7 @@ class TerminalPlayerInputSystem(ExecuteProcessor):
 
         playerproxy = get_player_proxy(playername)
         if playerproxy is None:
-            logger.warning("玩家不存在，或者玩家未加入游戏")
+            logger.warning(f"玩家{playername}不存在，或者玩家未加入游戏")
             return
         
         while True:

@@ -32,7 +32,7 @@ pm2 start budding_world/gen_agent/coffin_of_the_silent_one_agent.py budding_worl
 # 创建游戏房间
 /create
 # 选择角色
-/pickactor @无名复活者
+/pickactor @无名的复活者
 # 加入已经存在的房间
 /join @`房间ip`
 ```

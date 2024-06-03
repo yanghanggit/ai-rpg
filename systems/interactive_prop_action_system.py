@@ -3,7 +3,11 @@ from typing import Optional
 from loguru import logger
 from auxiliary.actor_action import ActorAction
 from auxiliary.base_data import PropData
-from auxiliary.components import InteractivePropActionComponent, UseInteractivePropActionComponent, CheckStatusActionComponent, NPCComponent, PrisonBreakActionComponent, ExitOfPrisonComponent
+from auxiliary.components import (  InteractivePropActionComponent, UseInteractivePropActionComponent, 
+                                    CheckStatusActionComponent, NPCComponent, PrisonBreakActionComponent, ExitOfPrisonComponent,
+                                    StageExitCondStatusComponent,
+                                    StageExitCondCheckRoleStatusComponent,
+                                    StageExitCondCheckRolePropsComponent)
 from auxiliary.dialogue_rule import parse_target_and_message
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.file_def import PropFile
@@ -13,7 +17,7 @@ from entitas.group import GroupEvent
 from auxiliary.director_event import IDirectorEvent
 from auxiliary.format_of_complex_intertactive_props import parse_complex_interactive_props
 from typing import List
-from auxiliary.cn_builtin_prompt import interactive_prop_action_success_prompt
+from auxiliary.cn_builtin_prompt import interactive_prop_action_success_prompt, prop_info_prompt
 
 
 
@@ -103,6 +107,8 @@ class InteractivePropActionSystem(ReactiveProcessor):
             return False
         notify_stage_director(self.context, entity, NPCInteractivePropEvent(username, targetname, propname, interactiveaction, interactivepropresult))
 
+        # todo
+        self.use_prop_to_stage(entity, targetname, propname)
         return True
     
 
@@ -142,6 +148,7 @@ class InteractivePropActionSystem(ReactiveProcessor):
         entity.add(CheckStatusActionComponent, action)
 ###################################################################################################################
     def imme_add_prison_break_action(self, entity: Entity, use_prop_result_data: List[tuple[str, str]]) -> None:
+        return
         
         if len(use_prop_result_data) == 0:
             return
@@ -172,6 +179,48 @@ class InteractivePropActionSystem(ReactiveProcessor):
 
             # 必须跳出循环，因为只能离开一个场景
             break
-        
-
 ###################################################################################################################
+    #todo
+    def use_prop_to_stage(self, entity: Entity, targetname: str, propname: str) -> bool:
+        context = self.context
+        stage_entity = context.getstage(targetname)
+        if stage_entity is None:
+            assert False, f"{targetname} is None"
+            return False
+        
+        exit_cond_status_prompt = "- 无"
+        if stage_entity.has(StageExitCondStatusComponent):
+            stage_exit_cond_status_comp: StageExitCondStatusComponent = stage_entity.get(StageExitCondStatusComponent)
+            exit_cond_status_prompt = stage_exit_cond_status_comp.condition
+
+        username = context.safe_get_entity_name(entity)
+        agent_connect_system = context.agent_connect_system
+        filesystem = context.file_system
+        prop_file = filesystem.get_prop_file(username, propname)
+        assert prop_file is not None
+
+        prop_prompt = prop_info_prompt(prop_file.prop)
+
+        final_prompt = f""" # {username} 对你使用了道具 {propname}。
+## {propname}的说明如下:
+{prop_prompt}
+## (补充信息)你的状态更新规则如下:
+{exit_cond_status_prompt}
+## 内容生成规则
+### 第1步:
+- 本次事件将你的状态更新到‘最新’并以此作为‘场景状态’的内容。
+- 不要输出角色的对话内容。
+- 不要添加角色未发生的事件与信息。
+- 不要自行推理与猜测角色的可能行为（如对话内容,行为反应与心理活动）。
+- 不要将过往已经描述过的'角色状态'做复述。
+### 第2步: 将'场景状态'的内容作为EnviroNarrateActionComponent的值——"场景状态的描述",
+- 参考‘输出格式指南’中的:"EnviroNarrateActionComponent":["场景状态的描述"]
+## 输出格式要求:
+- 输出结果格式要遵循‘输出格式指南’。
+- 结果中必须有EnviroNarrateActionComponent,并附带TagActionComponent。
+"""
+        logger.debug(f"InteractivePropActionSystem, {targetname}: {final_prompt}")
+        response = agent_connect_system.request(targetname, final_prompt)
+        if response is not None:
+            logger.debug(f"InteractivePropActionSystem: {response}")
+        return True

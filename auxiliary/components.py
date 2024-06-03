@@ -79,3 +79,13 @@ NPC_INTERACTIVE_ACTIONS_REGISTER = [SearchActionComponent,
                                     TradeActionComponent,
                                     CheckStatusActionComponent,
                                     UseInteractivePropActionComponent]
+
+
+
+
+
+# todo
+#StageEntryConditionComponent = namedtuple('StageEntryConditionComponent', 'conditions')
+StageExitCondStatusComponent = namedtuple('StageExitCondStatusComponent', 'condition')
+StageExitCondCheckRoleStatusComponent = namedtuple('StageExitCondCheckRoleStatusComponent', 'condition')
+StageExitCondCheckRolePropsComponent = namedtuple('StageExitCondCheckRolePropsComponent', 'condition')

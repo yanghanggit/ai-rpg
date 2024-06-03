@@ -9,6 +9,7 @@ STAGE_PLAN_PROMPT_TAG = "<%这是场景计划>"
 COMPRESS_NPC_PLAN_PROMPT = "请做出你的计划，决定你将要做什么"
 COMPRESS_STAGE_PLAN_PROMPT = "请输出'你的当前描述'和'你的计划'"
 NO_INFO_PROMPT = "- 无"
+NO_ROLE_PROPS_INFO_PROMPT = "- 无任何道具或者特殊技能"
 
 ###############################################################################################################################################
 def init_memory_system_npc_prompt(init_memory: str) -> str:
@@ -400,6 +401,12 @@ def exit_stage_failed_beacuse_stage_refuse_prompt(npc_name: str, current_stage_n
 def enter_stage_failed_beacuse_stage_refuse_prompt(npc_name: str, stagename: str, tips: str) -> str:
     return f"""# {npc_name} 想要进入场景:{stagename}，但是失败了。说明:{tips}。"""
 ################################################################################################################################################
+def role_status_info_when_pre_leave_prompt(safe_name: str, appearance_info:str) -> str:
+    return f"""### {safe_name}\n- 外貌信息:{appearance_info}\n"""
+################################################################################################################################################
+
+
+
 
 
 ################################################################################################################################################

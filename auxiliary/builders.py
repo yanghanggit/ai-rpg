@@ -98,6 +98,7 @@ class WorldDataBuilder:
 
             entry_conditions_in_stage: list[StageConditionData] = self.build_prop_conditions(stagedata.get("entry_conditions"))
             exit_conditions_in_stage: list[StageConditionData] = self.build_prop_conditions( stagedata.get("exit_conditions")) 
+
             
             stage = StageData(stagedata.get("name"), 
                             stagedata.get("codename"), 
@@ -108,7 +109,17 @@ class WorldDataBuilder:
                             exit_conditions_in_stage, 
                             set(), 
                             set(),
-                            stagedata.get('interactive_props'))
+                            stagedata.get('interactive_props'),
+
+                            stagedata.get('stage_entry_status'),
+                            stagedata.get('stage_entry_role_status'),
+                            stagedata.get('stage_entry_role_props'),
+                            
+                            
+                            stagedata.get('stage_exit_status'),
+                            stagedata.get('stage_exit_role_status'),
+                            stagedata.get('stage_exit_role_props'),
+                            )
             
              # 做连接关系 目前仅用名字
             exit_of_prison_and_goto_stagename: str = stagedata.get("exit_of_prison")
@@ -161,12 +172,12 @@ class StageBuilder:
         return f"StageBuilder: {self.datalist}"      
 
     #
-    def build_prop_conditions(self, condition_data: List[Any]) -> list[StageConditionData]: 
-        res: list[StageConditionData] = []
-        for data in condition_data:
-            createcondition: StageConditionData = StageConditionData(data.get("name"), data.get("type"), data.get("propname"))
-            res.append(createcondition)
-        return res
+    # def build_prop_conditions(self, condition_data: List[Any]) -> list[StageConditionData]: 
+    #     res: list[StageConditionData] = []
+    #     for data in condition_data:
+    #         createcondition: StageConditionData = StageConditionData(data.get("name"), data.get("type"), data.get("propname"))
+    #         res.append(createcondition)
+    #     return res
     #
     def props_proxy_in_stage(self, props_data: List[Any]) -> set[PropData]:
         res: set[PropData] = set()

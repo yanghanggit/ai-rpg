@@ -4,11 +4,11 @@ from pathlib import Path
 root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 from loguru import logger
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, cast
 from auxiliary.format_of_complex_stage_entry_and_exit_conditions import parse_complex_stage_condition
 from budding_world.utils import (proxy_prop)
 from budding_world.excel_data import ExcelDataNPC, ExcelDataProp, ExcelDataStage
-
+import pandas as pd
 
 
 class ExcelEditorStageCondition:
@@ -218,6 +218,16 @@ class ExcelEditorStage:
         dict["exit_conditions"] = exit_conditions
         dict['attributes'] = self.attributes #data_stage.attributes
 
+
+        # 添加新的场景限制条件
+        dict["stage_entry_status"] = self.stage_entry_status
+        dict["stage_entry_role_status"] = self.stage_entry_role_status
+        dict["stage_entry_role_props"] = self.stage_entry_role_props
+        dict["stage_exit_status"] = self.stage_exit_status
+        dict["stage_exit_role_status"] = self.stage_exit_role_status
+        dict["stage_exit_role_props"] = self.stage_exit_role_props
+
+
         output_dict: Dict[str, Any] = {}
         output_dict["stage"] = dict
         return output_dict
@@ -233,3 +243,34 @@ class ExcelEditorStage:
         output_dict: Dict[str, Any] = {}
         output_dict["stage"] = dict
         return output_dict
+    
+
+    ##
+    def safe_get_string(self, key: str) -> str:
+        if pd.isna(self.data[key]):
+            return ""
+        return cast(str, self.data[key]) 
+
+    @property
+    def stage_entry_status(self) -> str:
+        return self.safe_get_string("stage_entry_status")
+
+    @property
+    def stage_entry_role_status(self) -> str:
+        return self.safe_get_string("stage_entry_role_status")
+
+    @property
+    def stage_entry_role_props(self) -> str:
+        return self.safe_get_string("stage_entry_role_props")
+
+    @property
+    def stage_exit_status(self) -> str:
+        return self.safe_get_string("stage_exit_status")
+
+    @property
+    def stage_exit_role_status(self) -> str:
+        return self.safe_get_string("stage_exit_role_status")
+
+    @property
+    def stage_exit_role_props(self) -> str:
+        return self.safe_get_string("stage_exit_role_props")

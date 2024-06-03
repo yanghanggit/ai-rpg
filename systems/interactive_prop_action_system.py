@@ -5,7 +5,7 @@ from auxiliary.actor_action import ActorAction
 from auxiliary.base_data import PropData
 from auxiliary.components import (  InteractivePropActionComponent, UseInteractivePropActionComponent, 
                                     CheckStatusActionComponent, NPCComponent, PrisonBreakActionComponent, ExitOfPrisonComponent,
-                                    StageExitCondStatusComponent,
+                                    StageExitCondStatusComponent,EnviroNarrateActionComponent,
                                     StageExitCondCheckRoleStatusComponent,
                                     StageExitCondCheckRolePropsComponent)
 from auxiliary.dialogue_rule import parse_target_and_message
@@ -18,14 +18,13 @@ from auxiliary.director_event import IDirectorEvent
 from auxiliary.format_of_complex_intertactive_props import parse_complex_interactive_props
 from typing import List
 from auxiliary.cn_builtin_prompt import interactive_prop_action_success_prompt, prop_info_prompt
-
+from auxiliary.actor_action import ActorPlan
 
 
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
 class NPCInteractivePropEvent(IDirectorEvent):
-
     def __init__(self, npcname: str, targetname: str, propname: str, interactive_action: str, interactive_result: str) -> None:
         self.npcname = npcname
         self.targetname = targetname
@@ -39,6 +38,31 @@ class NPCInteractivePropEvent(IDirectorEvent):
     def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
         return interactive_prop_action_success_prompt(self.npcname, self.targetname, self.propname, self.interactive_action, self.interactive_result)
 
+
+
+
+
+
+#todo
+class NPCUsePropToStageEvent(IDirectorEvent):
+    def __init__(self, npcname: str, targetname: str, propname: str, result: str) -> None:
+        self.npcname = npcname
+        self.targetname = targetname
+        self.propname = propname
+        self.result = result
+
+    def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
+        if npcname != self.npcname:
+            return ""
+        return self.result
+    
+    def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
+        # 这里应该是不用了，因为是通过LLM推理过来的。
+        return ""
+
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
 class InteractivePropActionSystem(ReactiveProcessor):
     def __init__(self, context: ExtendedContext):
         super().__init__(context)
@@ -200,27 +224,72 @@ class InteractivePropActionSystem(ReactiveProcessor):
         assert prop_file is not None
 
         prop_prompt = prop_info_prompt(prop_file.prop)
-
-        final_prompt = f""" # {username} 对你使用了道具 {propname}。
-## {propname}的说明如下:
+        
+        #todo
+        final_prompt = f"""# {username} 使用道具 {propname} 对你造成影响。
+## 道具 {propname} 说明:
 {prop_prompt}
-## (补充信息)你的状态更新规则如下:
+
+## 状态更新规则:
 {exit_cond_status_prompt}
-## 内容生成规则
-### 第1步:
-- 本次事件将你的状态更新到‘最新’并以此作为‘场景状态’的内容。
-- 不要输出角色的对话内容。
-- 不要添加角色未发生的事件与信息。
-- 不要自行推理与猜测角色的可能行为（如对话内容,行为反应与心理活动）。
-- 不要将过往已经描述过的'角色状态'做复述。
-### 第2步: 将'场景状态'的内容作为EnviroNarrateActionComponent的值——"场景状态的描述",
-- 参考‘输出格式指南’中的:"EnviroNarrateActionComponent":["场景状态的描述"]
+
+## 内容生成指南:
+### 第1步: 更新并固定场景状态
+- 确保场景状态反映当前最新状态。
+- 避免包含任何角色对话、未发生的事件、角色的潜在行为或心理活动。
+- 不重复描述已经提及的角色状态。
+
+### 第2步: 根据场景状态填写输出内容
+- 将场景状态详细描述放入 'EnviroNarrateActionComponent'。
+  参考格式：'EnviroNarrateActionComponent': ['场景状态的描述']
+
 ## 输出格式要求:
-- 输出结果格式要遵循‘输出格式指南’。
-- 结果中必须有EnviroNarrateActionComponent,并附带TagActionComponent。
+- 严格遵循‘输出格式指南’。
+- 必须包含 'EnviroNarrateActionComponent' 和 'TagActionComponent'。
 """
         logger.debug(f"InteractivePropActionSystem, {targetname}: {final_prompt}")
         response = agent_connect_system.request(targetname, final_prompt)
         if response is not None:
             logger.debug(f"InteractivePropActionSystem: {response}")
+
+        tip = self.request_response_to_result_tip(targetname, response)
+        notify_stage_director(context, entity, NPCUsePropToStageEvent(username, targetname, propname, tip))
         return True
+###################################################################################################################
+    def request_response_to_result_tip(self, actorname: str, response: str) -> str:
+        #
+        temp_plan = ActorPlan(actorname, response)
+        if len(temp_plan.actions) == 0:
+            #logger.error("可能出现格式错误")
+            return ""
+        
+        # 再次检查是否符合结果预期
+        enviro_narrate_action: Optional[ActorAction] = None
+        for action in temp_plan.actions:
+            if action.actionname == EnviroNarrateActionComponent.__name__:
+                enviro_narrate_action = action
+        if enviro_narrate_action is None or len(enviro_narrate_action.values) == 0:
+           return ""
+        
+        single_vale = enviro_narrate_action.single_value()
+        return single_vale
+###################################################################################################################
+
+# {
+#   "EnviroNarrateActionComponent": [
+#     "无名的复活者拿着腐朽的匕首，利用它撬动禁言铁棺，造成了撬开的缝隙。",
+#     "棺材内侧的奇异图案和符号依旧散发着古老力量，但封印力量已逐渐减弱。",
+#     "昏暗的空间内，厚重的石墙和散落的古老文物依旧无声地诉说着岁月的流逝。",
+#     "空气中弥漫的不祥气息变得更加浓重，仿佛预示着某种危险的存在。",
+#     "无名的复活者看着撬开的缝隙，准备从中离开。"
+#   ],
+#   "TagActionComponent": [
+#     "无名的复活者",
+#     "撬开的缝隙",
+#     "封印力量减弱",
+#     "腐朽的匕首"
+#   ],
+#   "AttackActionComponent": [
+#     "无名的复活者"
+#   ]
+# }

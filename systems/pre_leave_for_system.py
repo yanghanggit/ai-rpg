@@ -3,6 +3,12 @@ from auxiliary.components import (LeaveForActionComponent,
                         NPCComponent, 
                         StageEntryConditionComponent,
                         StageExitConditionComponent,
+                        StageExitCondStatusComponent,
+                        StageExitCondCheckRoleStatusComponent,
+                        StageExitCondCheckRolePropsComponent,
+                        RoleAppearanceComponent,
+                        EnviroNarrateActionComponent,
+                        TagActionComponent,
                         PrisonBreakActionComponent)
 from auxiliary.actor_action import ActorAction
 from auxiliary.extended_context import ExtendedContext
@@ -12,7 +18,11 @@ from auxiliary.director_component import notify_stage_director
 from systems.leave_for_action_system import NPCLeaveForFailedBecauseStageIsInvalidEvent, NPCLeaveForFailedBecauseAlreadyInStage
 from auxiliary.format_of_complex_stage_entry_and_exit_conditions import is_complex_stage_condition, parse_complex_stage_condition
 from auxiliary.director_event import IDirectorEvent
-from auxiliary.cn_builtin_prompt import leave_for_target_stage_failed_because_no_exit_condition_match_prompt
+from auxiliary.cn_builtin_prompt import leave_for_target_stage_failed_because_no_exit_condition_match_prompt, prop_info_prompt
+from auxiliary.base_data import PropData
+from typing import List, Optional, cast, Any
+from systems.check_status_action_system import CheckStatusActionHelper
+from auxiliary.actor_action import ActorPlan
 
 ####################################################################################################################################
 ####################################################################################################################################
@@ -39,6 +49,25 @@ class NPCLeaveForFailedBecauseNoExitConditionMatch(IDirectorEvent):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
+#todo
+class NPCLeaveForFailedBecauseStageRefuse(IDirectorEvent):
+    def __init__(self, npcname: str, stagename: str, tips: str) -> None:
+        self.npcname = npcname
+        self.stagename = stagename
+        self.tips = tips
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
+    def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
+        if npcname != self.npcname:
+            # 跟你无关不用关注，原因类的东西，是失败后矫正用，所以只有自己知道即可
+            return ""
+        return f"""# {self.npcname} 想要离开 {self.stagename}，但是失败了。说明:{self.tips}。"""
+    def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
+        return ""
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
 # 错误代码
 class ErrorCheckTargetStage(Enum):
     VALID = 0
@@ -58,6 +87,37 @@ class ErrorCheckEnterStageConditions(Enum):
     VALID = 0
     NO_ENTRY_CONDITIONS_MATCH = 1
 
+
+# todo
+class StageConditionsHelper:
+     
+    def __init__(self, tig: str) -> None:
+        self.tips = tig
+        self.clear()
+###############################################################################################################################################
+    def clear(self) -> None:
+        self.stage_name = ""
+        self.stage_cond_status_prompt = "- 无"
+        self.cond_check_role_status_prompt = "- 无"
+        self.cond_check_role_props_prompt = "- 无"
+###############################################################################################################################################
+    def prepare_exit_cond(self, stage_entity: Entity, context: ExtendedContext) -> None:
+        self.clear()
+        self.stage_name = context.safe_get_entity_name(stage_entity)
+        # 准备好数据
+        if stage_entity.has(StageExitCondStatusComponent):
+            self.stage_cond_status_prompt = cast(StageExitCondStatusComponent, stage_entity.get(StageExitCondStatusComponent)).condition
+        # 准备好数据
+        if stage_entity.has(StageExitCondCheckRoleStatusComponent):
+            self.cond_check_role_status_prompt = cast(StageExitCondCheckRoleStatusComponent, stage_entity.get(StageExitCondCheckRoleStatusComponent)).condition
+        # 准备好数据
+        if stage_entity.has(StageExitCondCheckRolePropsComponent):
+            self.cond_check_role_props_prompt = cast(StageExitCondCheckRolePropsComponent, stage_entity.get(StageExitCondCheckRolePropsComponent)).condition
+
+
+
+
+
 ###############################################################################################################################################
 class PreLeaveForSystem(ReactiveProcessor):
 
@@ -72,6 +132,192 @@ class PreLeaveForSystem(ReactiveProcessor):
         return entity.has(LeaveForActionComponent) and entity.has(NPCComponent)
 ###############################################################################################################################################
     def react(self, entities: list[Entity]) -> None:
+        for entity in entities:
+            exit_result = self.handle_exit_stage(entity)
+            if not exit_result:
+                entity.remove(LeaveForActionComponent)  # 停止离开！
+                continue  #?
+###############################################################################################################################################
+    # todo!!
+    def handle_exit_stage(self, entity: Entity) -> bool:
+        #
+        current_stage_entity = self.context.safe_get_stage_entity(entity)
+        assert current_stage_entity is not None
+        #
+        npc_name = self.context.safe_get_entity_name(entity)
+        current_stage_name = self.context.safe_get_entity_name(current_stage_entity)
+        #
+        stage_exit_cond_helper = StageConditionsHelper(f"离开{current_stage_name}的检查所有条件")
+        stage_exit_cond_helper.prepare_exit_cond(current_stage_entity, self.context)
+
+
+
+        # # 准备好数据
+        # exit_cond_status_prompt = "- 无"
+        # if current_stage_entity.has(StageExitCondStatusComponent):
+        #     stage_exit_cond_status_comp: StageExitCondStatusComponent = current_stage_entity.get(StageExitCondStatusComponent)
+        #     exit_cond_status_prompt = stage_exit_cond_status_comp.condition
+        
+        # # 准备好数据
+        # exit_cond_check_role_status = "- 无"
+        # if current_stage_entity.has(StageExitCondCheckRoleStatusComponent):
+        #     stage_exit_cond_check_role_status_comp: StageExitCondCheckRoleStatusComponent = current_stage_entity.get(StageExitCondCheckRoleStatusComponent)
+        #     exit_cond_check_role_status = stage_exit_cond_check_role_status_comp.condition
+
+        # # 准备好数据
+        # exit_cond_check_role_props = "- 无"
+        # if current_stage_entity.has(StageExitCondCheckRolePropsComponent):
+        #     stage_exit_cond_check_role_props_comp: StageExitCondCheckRolePropsComponent = current_stage_entity.get(StageExitCondCheckRolePropsComponent)
+        #     exit_cond_check_role_props = stage_exit_cond_check_role_props_comp.condition
+
+        # 准备好数据
+        role_status_prompt = self.get_role_status_prompt(entity)
+        role_props_prompt = self.get_role_props_prompt(entity)
+
+        # 拼接提示词
+        final_prompt = f"""# {npc_name} 想要离开 {current_stage_name}。
+## 第1步: 根据当前‘你的状态’判断是否满足离开条件
+- 你的预设离开条件: {stage_exit_cond_helper.stage_cond_status_prompt}
+- 当前状态可能由于事件而变化，请仔细考虑。
+
+## 第2步: 检查{npc_name}的状态是否符合以下要求:
+- 必须满足的状态信息: {stage_exit_cond_helper.cond_check_role_status_prompt}
+- 当前角色状态: {role_status_prompt}
+
+## 第3步: 检查{npc_name}的道具(与拥有的特殊技能)是否符合以下要求:
+- 必须满足的道具与特殊技能信息: {stage_exit_cond_helper.cond_check_role_props_prompt}
+- 当前角色道具与特殊技能信息: {role_props_prompt}
+
+## 判断结果
+- 完成以上步骤后，决定是否允许 {npc_name} 离开 {current_stage_name}。
+
+## 本次输出结果格式要求（遵循‘输出格式指南’）:
+{{
+    EnviroNarrateActionComponent: ["描述'允许离开'或'不允许离开'的原因，使{npc_name}明白"],
+    TagActionComponent: ["Yes/No"]
+}}
+### 附注
+- 'EnviroNarrateActionComponent' 中请详细描述判断理由，注意如果不允许离开，就只说哪一条不符合要求，不要都说出来，否则会让{npc_name}迷惑。
+- Yes: 允许离开
+- No: 不允许离开
+"""
+        
+# 例子:
+#        {
+#   "EnviroNarrateActionComponent": [
+#     "昏暗的空间内，厚重的石墙上布满了岁月的痕迹。棺材被放置在中央，棺材内侧雕刻着精细而复杂的图案，仿佛在讲述着一段段未被揭露的历史。棺木的材质显得坚固而沉重，棺材表面的木材因年代久远而显得磨损。棺材盖内侧的文字闪烁着微弱的光芒，仿佛充满魔力。周围散落着古老文物和破碎的符文石块，整个空间静谧而充满了神秘的气息。",
+#     "无名的复活者在棺材内苏醒，双眼微微睁开。他的身体显得僵硬，似乎已经沉睡了无数岁月，但他的目光中却透露出一种坚定的使命感。",
+#     "无名的复活者使用了一把腐朽的匕首，刀身上布满了密密麻麻的符文与邪恶的图案。匕首锋利的刀刃划过棺材的表面，棺材立即产生了一道细微的缝隙。",
+#     "无名的复活者拿着腐朽的匕首撬动了禁言铁棺，造成了一个撬开的缝隙。",
+#     "无名的复活者符合离开禁言铁棺的条件：他是人类，并且拥有不死者印记。禁言铁棺已经因锋利物品的使用而产生了缝隙，允许内部角色离开。"
+#   ],
+#   "TagActionComponent": [
+#     "Yes"
+#   ]
+# }
+
+        logger.debug(final_prompt)
+
+        ## 让大模型去推断是否可以离开，分别检查stage自身，角色状态（例如长相），角色道具（拥有哪些道具与文件）
+        agent_connect_system = self.context.agent_connect_system
+        respones = agent_connect_system.request(current_stage_name, final_prompt)
+        if respones is None:
+            logger.error("没有回应！！！！！！！！！！！！！")
+            return False
+        
+        logger.debug(f"大模型推理后的结果: {respones}")
+        #
+        temp_plan = ActorPlan(current_stage_name, respones)
+        if len(temp_plan.actions) == 0:
+            logger.error("可能出现格式错误")
+            return False
+    
+        # 再次检查是否符合结果预期
+        enviro_narrate_action: Optional[ActorAction] = None
+        tag_action: Optional[ActorAction] = None
+        #
+        for action in temp_plan.actions:
+            if action.actionname == EnviroNarrateActionComponent.__name__:
+                enviro_narrate_action = action
+            elif action.actionname == TagActionComponent.__name__:
+                tag_action = action
+
+        if enviro_narrate_action is None or tag_action is None:
+            logger.error("大模型推理错误！！！！！！！！！！！！！")
+            return False
+        
+        #
+        result_from_tag = self.parse_tag_action(tag_action)
+        result_from_enviro_narrate = self.parse_enviro_narrate_action(enviro_narrate_action)
+        if not result_from_tag:
+            # 通知事件
+            notify_stage_director(self.context, 
+                                  current_stage_entity, 
+                                  NPCLeaveForFailedBecauseStageRefuse(npc_name, current_stage_name, result_from_enviro_narrate))
+            return False
+
+        logger.info(f"允许通过！说明如下: {result_from_enviro_narrate}")
+        ## 可以删除，允许通过！这个上下文就拿掉，不需要了。
+        agent_connect_system = self.context.agent_connect_system
+        agent_connect_system.remove_last_conversation_between_human_and_ai(current_stage_name)
+        return True
+###############################################################################################################################################
+    def parse_tag_action(self, tag_action: ActorAction) -> bool:
+        if len(tag_action.values) == 0:
+            logger.error(tag_action)
+            return False
+        first_tag_value_as_result = tag_action.values[0]
+        if first_tag_value_as_result.lower() == "yes":
+            return True
+        return False
+###############################################################################################################################################
+    def parse_enviro_narrate_action(self, action: ActorAction) -> str:
+        if len(action.values) == 0:
+            #logger.error("没有行动")
+            return "无可提示信息"
+        single_value = action.single_value()
+        return single_value
+###############################################################################################################################################
+    def get_role_status_prompt(self, entity: Entity) -> str:
+        safe_name = self.context.safe_get_entity_name(entity)
+        role_appearance_comp: RoleAppearanceComponent = entity.get(RoleAppearanceComponent)
+        appearance_info: str = role_appearance_comp.appearance
+        return f"""### {safe_name}\n- 外貌信息:{appearance_info}\n"""
+###############################################################################################################################################
+    def get_role_props_prompt(self, entity: Entity) -> str:
+        helper = CheckStatusActionHelper(self.context)
+        helper.check_status(entity)
+        props = helper.props + helper.role_components
+        prompt_of_props = ""
+        if len(props) > 0:
+            for prop in props:
+                prompt_of_props += prop_info_prompt(prop)
+        else:
+            prompt_of_props = "- 无任何道具或者特殊技能"
+        return prompt_of_props
+###############################################################################################################################################
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+#下面是旧的代码！！！！！！！！！
+###############################################################################################################################################
+###############################################################################################################################################
+###############################################################################################################################################
+###############################################################################################################################################
+###############################################################################################################################################
+###############################################################################################################################################
+###############################################################################################################################################
+###############################################################################################################################################
+###############################################################################################################################################
+    def old_handle_react(self, entities: list[Entity]) -> None:
         for entity in entities:
             if not self.check_current_stage_valid(entity):
                 #logger.error("场景有问题")

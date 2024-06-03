@@ -8,6 +8,7 @@ NPC_PLAN_PROMPT_TAG = "<%这是角色计划>"
 STAGE_PLAN_PROMPT_TAG = "<%这是场景计划>"
 COMPRESS_NPC_PLAN_PROMPT = "请做出你的计划，决定你将要做什么"
 COMPRESS_STAGE_PLAN_PROMPT = "请输出'你的当前描述'和'你的计划'"
+NO_INFO_PROMPT = "- 无"
 
 ###############################################################################################################################################
 def init_memory_system_npc_prompt(init_memory: str) -> str:
@@ -303,12 +304,102 @@ def batch_conversation_action_events_in_stage(stagename: str, events: List[str],
     joinstr: str = "\n".join(events)
     return  f""" # 当前场景 {stagename} 发生了如下对话类型事件，请注意:\n{joinstr}"""
 ################################################################################################################################################
+def use_prop_to_stage_prompt(username: str, propname: str, prop_prompt: str, exit_cond_status_prompt: str) -> str:
+    final_prompt = f"""# {username} 使用道具 {propname} 对你造成影响。
+## 道具 {propname} 说明:
+{prop_prompt}
 
+## 状态更新规则:
+{exit_cond_status_prompt}
 
+## 内容生成指南:
+### 第1步: 更新并固定场景状态
+- 确保场景状态反映当前最新状态。
+- 避免包含任何角色对话、未发生的事件、角色的潜在行为或心理活动。
+- 不重复描述已经提及的角色状态。
 
+### 第2步: 根据场景状态填写输出内容
+- 将场景状态详细描述放入 'EnviroNarrateActionComponent'。
+  参考格式：'EnviroNarrateActionComponent': ['场景状态的描述']
 
+## 输出格式要求:
+- 严格遵循‘输出格式指南’。
+- 必须包含 'EnviroNarrateActionComponent' 和 'TagActionComponent'。
+"""
+    return final_prompt
+################################################################################################################################################
+def stage_exit_conditions_check_promt(npc_name: str, current_stage_name: str, 
+                                      stage_cond_status_prompt: str, 
+                                      cond_check_role_status_prompt: str, role_status_prompt: str, 
+                                      cond_check_role_props_prompt: str, role_props_prompt: str) -> str:
+     # 拼接提示词
+    final_prompt = f"""# {npc_name} 想要离开场景: {current_stage_name}。
+## 第1步: 根据当前‘你的状态’判断是否满足离开条件
+- 你的预设离开条件: {stage_cond_status_prompt}
+- 当前状态可能由于事件而变化，请仔细考虑。
 
+## 第2步: 检查{npc_name}的状态是否符合以下要求:
+- 必须满足的状态信息: {cond_check_role_status_prompt}
+- 当前角色状态: {role_status_prompt}
 
+## 第3步: 检查{npc_name}的道具(与拥有的特殊技能)是否符合以下要求:
+- 必须满足的道具与特殊技能信息: {cond_check_role_props_prompt}
+- 当前角色道具与特殊技能信息: {role_props_prompt}
+
+## 判断结果
+- 完成以上步骤后，决定是否允许 {npc_name} 离开 {current_stage_name}。
+
+## 本次输出结果格式要求（遵循‘输出格式指南’）:
+{{
+    EnviroNarrateActionComponent: ["描述'允许离开'或'不允许离开'的原因，使{npc_name}明白"],
+    TagActionComponent: ["Yes/No"]
+}}
+### 附注
+- 'EnviroNarrateActionComponent' 中请详细描述判断理由，注意如果不允许离开，就只说哪一条不符合要求，不要都说出来，否则会让{npc_name}迷惑。
+- Yes: 允许离开
+- No: 不允许离开
+"""
+    return final_prompt
+################################################################################################################################################
+def stage_entry_conditions_check_promt(npc_name: str, current_stage_name: str, 
+                                      stage_cond_status_prompt: str, 
+                                      cond_check_role_status_prompt: str, role_status_prompt: str, 
+                                      cond_check_role_props_prompt: str, role_props_prompt: str) -> str:
+    # 拼接提示词
+    final_prompt = f"""# {npc_name} 想要进入场景: {current_stage_name}。
+## 第1步: 根据当前‘你的状态’判断是否满足进入条件
+- 你的预设进入条件: {stage_cond_status_prompt}
+- 当前状态可能由于事件而变化，请仔细考虑。
+
+## 第2步: 检查{npc_name}的状态是否符合以下要求:
+- 必须满足的状态信息: {cond_check_role_status_prompt}
+- 当前角色状态: {role_status_prompt}
+
+## 第3步: 检查{npc_name}的道具(与拥有的特殊技能)是否符合以下要求:
+- 必须满足的道具与特殊技能信息: {cond_check_role_props_prompt}
+- 当前角色道具与特殊技能信息: {role_props_prompt}
+
+## 判断结果
+- 完成以上步骤后，决定是否允许 {npc_name} 进入 {current_stage_name}。
+
+## 本次输出结果格式要求（遵循‘输出格式指南’）:
+{{
+    EnviroNarrateActionComponent: ["描述'允许进入'或'不允许进入'的原因，使{npc_name}明白"],
+    TagActionComponent: ["Yes/No"]
+}}
+### 附注
+- 'EnviroNarrateActionComponent' 中请详细描述判断理由，注意如果不允许进入，就只说哪一条不符合要求，不要都说出来，否则会让{npc_name}迷惑。
+- Yes: 允许进入
+- No: 不允许进入
+"""
+    return final_prompt
+################################################################################################################################################
+def exit_stage_failed_beacuse_stage_refuse_prompt(npc_name: str, current_stage_name: str, tips: str) -> str:
+     return f"""# {npc_name} 想要离开场景:{current_stage_name}，但是失败了。说明:{tips}。"""
+################################################################################################################################################
+def enter_stage_failed_beacuse_stage_refuse_prompt(npc_name: str, stagename: str, tips: str) -> str:
+    return f"""# {npc_name} 想要进入场景:{stagename}，但是失败了。说明:{tips}。"""
+################################################################################################################################################
 
 
 ################################################################################################################################################

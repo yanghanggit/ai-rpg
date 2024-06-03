@@ -17,7 +17,7 @@ from entitas.group import GroupEvent
 from auxiliary.director_event import IDirectorEvent
 from auxiliary.format_of_complex_intertactive_props import parse_complex_interactive_props
 from typing import List
-from auxiliary.cn_builtin_prompt import interactive_prop_action_success_prompt, prop_info_prompt
+from auxiliary.cn_builtin_prompt import interactive_prop_action_success_prompt, prop_info_prompt, use_prop_to_stage_prompt, NO_INFO_PROMPT
 from auxiliary.actor_action import ActorPlan
 
 
@@ -37,13 +37,9 @@ class NPCInteractivePropEvent(IDirectorEvent):
     
     def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
         return interactive_prop_action_success_prompt(self.npcname, self.targetname, self.propname, self.interactive_action, self.interactive_result)
-
-
-
-
-
-
-#todo
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
 class NPCUsePropToStageEvent(IDirectorEvent):
     def __init__(self, npcname: str, targetname: str, propname: str, result: str) -> None:
         self.npcname = npcname
@@ -59,7 +55,6 @@ class NPCUsePropToStageEvent(IDirectorEvent):
     def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
         # 这里应该是不用了，因为是通过LLM推理过来的。
         return ""
-
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
@@ -77,8 +72,8 @@ class InteractivePropActionSystem(ReactiveProcessor):
     def react(self, entities: list[Entity]) -> None:
         for entity in entities:
             use_prop_result = self.useprop(entity)
-            if len(use_prop_result) > 0:
-                self.after_use_prop_success(entity, use_prop_result)
+            # if len(use_prop_result) > 0:
+            #     self.after_use_prop_success(entity, use_prop_result)
 
     def useprop(self, entity: Entity) -> List[tuple[str, str]]:
 
@@ -155,101 +150,94 @@ class InteractivePropActionSystem(ReactiveProcessor):
 
         return None
 ###################################################################################################################
-    def after_use_prop_success(self, entity: Entity, use_prop_result_data: List[tuple[str, str]]) -> None:
-        self.add_check_status_action(entity)
-        self.imme_add_prison_break_action(entity, use_prop_result_data)
+    # def after_use_prop_success(self, entity: Entity, use_prop_result_data: List[tuple[str, str]]) -> None:
+    #     pass
+        #self.add_check_status_action(entity)
+        #self.imme_add_prison_break_action(entity, use_prop_result_data)
 ###################################################################################################################
-    def add_check_status_action(self, entity: Entity) -> None:
-        if entity.has(CheckStatusActionComponent):
-            return
-        npccomp: NPCComponent = entity.get(NPCComponent)
-        action = ActorAction(npccomp.name, CheckStatusActionComponent.__name__, [npccomp.name])
-        entity.add(CheckStatusActionComponent, action)
+    # def add_check_status_action(self, entity: Entity) -> None:
+    #     if entity.has(CheckStatusActionComponent):
+    #         return
+    #     npccomp: NPCComponent = entity.get(NPCComponent)
+    #     action = ActorAction(npccomp.name, CheckStatusActionComponent.__name__, [npccomp.name])
+    #     entity.add(CheckStatusActionComponent, action)
 ###################################################################################################################
-    def imme_add_prison_break_action(self, entity: Entity, use_prop_result_data: List[tuple[str, str]]) -> None:
-        return
+    # def imme_add_prison_break_action(self, entity: Entity, use_prop_result_data: List[tuple[str, str]]) -> None:
+    #     return
         
-        if len(use_prop_result_data) == 0:
-            return
+    #     if len(use_prop_result_data) == 0:
+    #         return
         
-        for targetname, propname in use_prop_result_data:
+    #     for targetname, propname in use_prop_result_data:
 
-            stage_entity: Optional[Entity] = self.context.getstage(targetname)
-            if stage_entity is None:
-                continue
+    #         stage_entity: Optional[Entity] = self.context.getstage(targetname)
+    #         if stage_entity is None:
+    #             continue
 
-            if not stage_entity.has(ExitOfPrisonComponent):
-                continue
+    #         if not stage_entity.has(ExitOfPrisonComponent):
+    #             continue
             
-            # 取出数据，并准备沿用LeaveForActionComponent
-            conncectstagecomp: ExitOfPrisonComponent = stage_entity.get(ExitOfPrisonComponent)
-            connect_stage_entity = self.context.getstage(conncectstagecomp.name)
-            if connect_stage_entity is None:
-                #assert False, f"{conncectstagecomp.name} is None"
-                continue
+    #         # 取出数据，并准备沿用LeaveForActionComponent
+    #         conncectstagecomp: ExitOfPrisonComponent = stage_entity.get(ExitOfPrisonComponent)
+    #         connect_stage_entity = self.context.getstage(conncectstagecomp.name)
+    #         if connect_stage_entity is None:
+    #             #assert False, f"{conncectstagecomp.name} is None"
+    #             continue
 
-            if entity.has(PrisonBreakActionComponent):
-                entity.remove(PrisonBreakActionComponent)
+    #         if entity.has(PrisonBreakActionComponent):
+    #             entity.remove(PrisonBreakActionComponent)
             
-            # 生成离开当前场景的动作
-            npccomp: NPCComponent = entity.get(NPCComponent)
-            action = ActorAction(npccomp.name, PrisonBreakActionComponent.__name__, [npccomp.current_stage])
-            entity.add(PrisonBreakActionComponent, action)
+    #         # 生成离开当前场景的动作
+    #         npccomp: NPCComponent = entity.get(NPCComponent)
+    #         action = ActorAction(npccomp.name, PrisonBreakActionComponent.__name__, [npccomp.current_stage])
+    #         entity.add(PrisonBreakActionComponent, action)
 
-            # 必须跳出循环，因为只能离开一个场景
-            break
+    #         # 必须跳出循环，因为只能离开一个场景
+    #         break
 ###################################################################################################################
-    #todo
     def use_prop_to_stage(self, entity: Entity, targetname: str, propname: str) -> bool:
         context = self.context
         stage_entity = context.getstage(targetname)
         if stage_entity is None:
-            assert False, f"{targetname} is None"
+            #assert False, f"{targetname} is None"
+            logger.warning(f"{targetname} 不是一个场景，当前版本暂不处理")
             return False
         
-        exit_cond_status_prompt = "- 无"
+        # 检查条件
+        exit_cond_status_prompt = str(NO_INFO_PROMPT)
         if stage_entity.has(StageExitCondStatusComponent):
             stage_exit_cond_status_comp: StageExitCondStatusComponent = stage_entity.get(StageExitCondStatusComponent)
             exit_cond_status_prompt = stage_exit_cond_status_comp.condition
 
         username = context.safe_get_entity_name(entity)
-        agent_connect_system = context.agent_connect_system
+        
+        # 获取道具
         filesystem = context.file_system
         prop_file = filesystem.get_prop_file(username, propname)
         assert prop_file is not None
 
+        # 道具的提示词
         prop_prompt = prop_info_prompt(prop_file.prop)
-        
-        #todo
-        final_prompt = f"""# {username} 使用道具 {propname} 对你造成影响。
-## 道具 {propname} 说明:
-{prop_prompt}
 
-## 状态更新规则:
-{exit_cond_status_prompt}
+        #包装的最终提示词
+        final_prompt = use_prop_to_stage_prompt(username, propname, prop_prompt, exit_cond_status_prompt)
 
-## 内容生成指南:
-### 第1步: 更新并固定场景状态
-- 确保场景状态反映当前最新状态。
-- 避免包含任何角色对话、未发生的事件、角色的潜在行为或心理活动。
-- 不重复描述已经提及的角色状态。
-
-### 第2步: 根据场景状态填写输出内容
-- 将场景状态详细描述放入 'EnviroNarrateActionComponent'。
-  参考格式：'EnviroNarrateActionComponent': ['场景状态的描述']
-
-## 输出格式要求:
-- 严格遵循‘输出格式指南’。
-- 必须包含 'EnviroNarrateActionComponent' 和 'TagActionComponent'。
-"""
+        # 准备提交请求
         logger.debug(f"InteractivePropActionSystem, {targetname}: {final_prompt}")
+        agent_connect_system = context.agent_connect_system
         response = agent_connect_system.request(targetname, final_prompt)
         if response is not None:
+            # 场景有反应
             logger.debug(f"InteractivePropActionSystem: {response}")
+        else:
+            logger.debug(f"InteractivePropActionSystem: 没有收到回复")
 
         tip = self.request_response_to_result_tip(targetname, response)
         if tip != "":
+            # 还是要做防守与通知导演
             notify_stage_director(context, entity, NPCUsePropToStageEvent(username, targetname, propname, tip))
+
+        # 最终返回
         return True
 ###################################################################################################################
     def request_response_to_result_tip(self, actorname: str, response: Optional[str]) -> str:

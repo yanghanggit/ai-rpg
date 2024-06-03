@@ -250,12 +250,10 @@ class PlayerCommandSearch(PlayerCommand):
 
     def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, search_target_prop_name: str) -> None:
         super().__init__(name, game, playerproxy)
-        # todo: 这里search_target_prop_name需要判断是否为合理道具，现在会全部进行寻找。
         self.search_target_prop_name = search_target_prop_name
 
     def execute(self) -> None:
         context = self.game.extendedcontext
-        # todo:道具如果是唯一性，怎么检测？
         search_target_prop_name = self.search_target_prop_name
         playerentity = context.getplayer(self.playerproxy.name)
         if playerentity is None:

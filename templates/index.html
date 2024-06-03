@@ -40,7 +40,7 @@
 </head>  
 <body>  
     <h1>First Seed</h1>  
-    <p>当前执行的指令: <span id="command_display"></span></p>  
+    <p>指令: <span id="command_display"></span> 执行完毕</p>  
   
     <h2>游戏信息</h2>  
     <ul id="messages_list">  
@@ -54,6 +54,26 @@
     </form>  
     <script src="/static/js/jquery.min.js"></script>  
     <script>  
+        function sendRunCommand() {  
+            $.ajax({  
+                url: '/submit',  
+                type: 'POST',  
+                contentType: 'application/json',  
+                data: JSON.stringify({ text_input: "/run" }), // 发送 /run 命令  
+                success: function(response) {  
+                    updateMessages(response.messages); // 假设返回的数据中有一个messages数组  
+                },  
+                error: function(xhr, status, error) {  
+                    console.error("Error: " + error);  
+                }  
+            });  
+        }  
+        
+        // 当页面加载完毕后开始每秒调用 sendRunCommand  
+        $(document).ready(function() {  
+            setInterval(sendRunCommand, 1000); // 每1000毫秒（即每秒）调用一次 sendRunCommand  
+        });  
+        
         function sendCommand() {  
             var userInput = document.getElementById("user_text_input").value;  
             document.getElementById("submit_button").style.display = 'none'; // 隐藏提交按钮  
@@ -65,7 +85,7 @@
                 data: JSON.stringify({ text_input: userInput }),  
                 success: function(response) {  
                     document.getElementById("command_display").textContent = userInput; // 显示指令  
-                    updateMessages(response.messages); // 假设返回的数据中有一个messages数组  
+                    // updateMessages(response.messages); // 假设返回的数据中有一个messages数组  
                 },  
                 error: function(xhr, status, error) {  
                     console.error("Error: " + error);  

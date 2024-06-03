@@ -1,10 +1,12 @@
 import datetime
+import re  
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from loguru import logger
 from pydantic import BaseModel
+from auxiliary.multi_players_game import MultiplayersGame
 from auxiliary.player_input_command import PlayerCommandLogin
 from auxiliary.player_proxy import create_player_proxy, get_player_proxy, remove_player_proxy, TEST_CLIENT_SHOW_MESSAGE_COUNT, TEST_SINGLE_PLAYER_NPC_NAME
 from main_utils import create_rpg_game_then_build
@@ -25,6 +27,79 @@ templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static") 
 
 rpggame: dict[str, RPGGame] = {}
+
+
+multiplayersgames: dict[str, MultiplayersGame] = {}
+
+async def create(clientip: str) -> list[TupleModel]:
+    log_start_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    logger.add(f"logs/{log_start_time}.log", level="DEBUG")
+
+    worldname = "World2"
+    game = MultiplayersGame(clientip, clientip, create_rpg_game_then_build(worldname))
+    if game is not None:
+        global multiplayersgames
+        multiplayersgames[clientip] = game
+        create_player_proxy(clientip)
+
+    messages: list[TupleModel] = []
+    messages.append(TupleModel(who=clientip, what=f"创建房间IP:{clientip}."))
+
+    return messages
+
+def parse_join_multi_game_params(command: str) -> str:
+    
+    # 使用正则表达式匹配@之后的内容  
+    # 这个正则表达式匹配@符号后面的非空白字符  
+    match = re.search(r'@(\S+)', command)  
+    
+    if match:  
+        content = match.group(1)  # 使用group(1)获取第一个括号中匹配的内容  
+        return content
+    else:  
+        logger.debug("在字符串中没有找到匹配的内容") 
+        return None
+
+async def join(clientip: str, hostip: str) -> list[TupleModel]:
+    messages: list[TupleModel] = []
+    for game in multiplayersgames.values():
+        if game.hostname == hostip:
+            client_game = MultiplayersGame(clientip, hostip, game.rpggame)
+            multiplayersgames[clientip] = client_game
+            messages.append(TupleModel(who=clientip, what=f"加入房间IP:{hostip}成功."))
+            create_player_proxy(clientip)
+
+    if len(messages) == 0:
+        messages.append(TupleModel(who=clientip, what=f"加入房间IP:{hostip}失败,请检查房间IP."))
+
+    return messages
+
+async def pick_actor(clientip: str, actorname: str) -> list[TupleModel]:
+    global multiplayersgames
+    playerproxy = get_player_proxy(clientip)
+    assert playerproxy is not None
+    playerstartcmd = PlayerCommandLogin("/player-login", multiplayersgames[clientip].rpggame, playerproxy, actorname)
+    playerstartcmd.execute()
+    await multiplayersgames[clientip].rpggame.async_execute()
+
+    messages: list[TupleModel] = []
+    messages.append(TupleModel(who=clientip, what=f"选择了角色:{actorname}"))
+
+    return messages
+
+
+async def request_game_messages(clientip: str) -> list[TupleModel]:
+    playerproxy = get_player_proxy(clientip)
+    messages: list[TupleModel] = []
+    if playerproxy is not None:
+        for message in playerproxy.clientmessages[-TEST_CLIENT_SHOW_MESSAGE_COUNT:]:
+            messages.append(TupleModel(who=message[0], what=message[1]))
+            # logger.debug(f"{message[0]} => {message[1]}")
+    else:
+        messages.append(TupleModel(who=clientip, what="请先创建游戏或加入游戏."))
+
+    return messages
+
 
 async def start(clientip: str) -> list[TupleModel]:
     log_start_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -60,14 +135,15 @@ async def login(clientip: str) -> list[TupleModel]:
     return messages
 
 async def quitgame(clientip: str) -> list[TupleModel]:
-    quitclient = rpggame.pop(clientip, None)
+    # quitclient = rpggame.pop(clientip, None)
+    quitclient = multiplayersgames.pop(clientip, None)
     if quitclient is not None:
         logger.debug(f"User IP:{clientip} quit a game.")
         proxy = get_player_proxy(clientip)
         assert proxy is not None
         remove_player_proxy(proxy)
-        quitclient.exited = True
-        quitclient.exit()
+        quitclient.rpggame.exited = True
+        quitclient.rpggame.exit()
 
     messages: list[TupleModel] = []
     messages.append(TupleModel(who=clientip, what="Quit Success"))
@@ -129,23 +205,31 @@ async def playerinput(clientip: str, command: str) -> list[TupleModel]:
         await imme_handle_perception(rpggame[clientip], playerproxy)
     else:
         playerproxy.commands.append(command)
-        await rpggame[clientip].async_execute()
+        await multiplayersgames[clientip].rpggame.async_execute()
 
     messages: list[TupleModel] = []
-    for message in playerproxy.clientmessages[-TEST_CLIENT_SHOW_MESSAGE_COUNT:]:
-        messages.append(TupleModel(who=message[0], what=message[1]))
+    # for message in playerproxy.clientmessages[-TEST_CLIENT_SHOW_MESSAGE_COUNT:]:
+    messages.append(TupleModel(who=clientip, what=f"发送 {command}"))
 
     return messages
 
 async def main(clientip: str , command: str) -> list[TupleModel]:
-    if "/start" in command:
-        return await start(clientip)
-    elif "/login" in command:
-        return await login(clientip)
-    elif "/quit" in command:
+    if "/quit" in command:
         return await quitgame(clientip)
-    # elif "/run" in command:
-    #     await run()
+    # elif "/start" in command:
+    #     return await start(clientip)
+    # elif "/login" in command:
+    #     return await login(clientip)
+    elif "/create" in command:
+        return await create(clientip)
+    elif "/join" in command:
+        hostip = parse_join_multi_game_params(command)
+        return await join(clientip, hostip)
+    elif "/pickactor" in command:
+        actorname = parse_join_multi_game_params(command)
+        return await pick_actor(clientip, actorname)
+    elif "/run" in command:
+        return await request_game_messages(clientip)
     else:
         return await playerinput(clientip, command)
 

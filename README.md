@@ -29,16 +29,12 @@ pm2 start budding_world/gen_agent/coffin_of_the_silent_one_agent.py budding_worl
 ```shell
 # 退出游戏
 /quit 
-# 登陆游戏，目前是测试的名字与控制对象
-/login
-# 以GM的身份，世界运行一回合
-/run
-# 以GM的身份，强行向一个Agent发送Request，而且会加入chat history
-/push
-# 以GM的身份，强行向一个Agent发送Request，然后删除chat history，可以做调试用途（因为不会‘污染’逻辑上下文，例如用GM身份问的问题NPC会忘掉）
-/ask
-# 在登陆之后，可以用此命令切换身份，控制任意NPC
-/who
+# 创建游戏房间
+/create
+# 选择角色
+/pickactor @无名复活者
+# 加入已经存在的房间
+/join @`房间ip`
 ```
 
 ## “玩家输入环节”的可用的命令

@@ -60,7 +60,7 @@ def parse_join_multi_game_params(command: str) -> str:
 
 async def join(clientip: str, hostip: str) -> list[TupleModel]:
     messages: list[TupleModel] = []
-    for userip, game in multiplayersgames.items():
+    for userip, game in multiplayersgames.copy().items():
         if game.hostname == hostip:
             client_game = MultiplayersGame(clientip, hostip, game.rpggame)
             multiplayersgames[clientip] = client_game

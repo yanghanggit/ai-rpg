@@ -11,7 +11,7 @@ from auxiliary.player_input_command import (
                           PlayerCommandUseInteractiveProp, 
                           PlayerCommandWhisper, 
                           PlayerCommandSearch,
-                          PlayerCommandPrisonBreak,
+                          PlayerCommandPortalStep,
                           PlayerCommandSteal,
                           PlayerCommandTrade, 
                           PlayerCommandPerception,
@@ -106,9 +106,9 @@ class HandlePlayerInputSystem(ExecuteProcessor):
             propname = splitcommand(usrinput, command)
             PlayerCommandSearch(command, rpggame, playerproxy, propname).execute()
 
-        elif "/prisonbreak" in usrinput:
-            command = "/prisonbreak"
-            PlayerCommandPrisonBreak(command, rpggame, playerproxy).execute()
+        elif "/portalstep" in usrinput:
+            command = "/portalstep"
+            PlayerCommandPortalStep(command, rpggame, playerproxy).execute()
 
         elif "/steal" in usrinput:
             command = "/steal"

@@ -13,7 +13,7 @@ from auxiliary.components import (
     UseInteractivePropActionComponent, 
     WhisperActionComponent,
     SearchActionComponent,
-    PrisonBreakActionComponent,
+    PortalStepActionComponent,
     PerceptionActionComponent,
     StealActionComponent,
     TradeActionComponent, 
@@ -150,7 +150,7 @@ class PlayerCommandLeaveFor(PlayerCommand):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################     
-class PlayerCommandPrisonBreak(PlayerCommand):
+class PlayerCommandPortalStep(PlayerCommand):
 
     def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy) -> None:
         super().__init__(name, game, playerproxy)
@@ -166,13 +166,13 @@ class PlayerCommandPrisonBreak(PlayerCommand):
         current_stage_name: str = npccomp.current_stage
         stageentity = context.getstage(current_stage_name)
         if stageentity is None:
-            logger.error(f"PrisonBreakActionSystem: {current_stage_name} is None")
+            logger.error(f"PortalStepActionSystem: {current_stage_name} is None")
             return
 
-        action = ActorAction(npccomp.name, PrisonBreakActionComponent.__name__, [current_stage_name])
-        playerentity.add(PrisonBreakActionComponent, action)
+        action = ActorAction(npccomp.name, PortalStepActionComponent.__name__, [current_stage_name])
+        playerentity.add(PortalStepActionComponent, action)
         
-        newmsg = f"""{{"{PrisonBreakActionComponent.__name__}": ["{current_stage_name}"]}}"""
+        newmsg = f"""{{"{PortalStepActionComponent.__name__}": ["{current_stage_name}"]}}"""
         self.add_human_message(playerentity, newmsg)
 ####################################################################################################################################
 ####################################################################################################################################

@@ -4,7 +4,7 @@ from collections import namedtuple
 ###############################################################################################################################################
 WorldComponent = namedtuple('WorldComponent', 'name')
 StageComponent = namedtuple('StageComponent', 'name')
-ExitOfPrisonComponent = namedtuple('ExitOfPrisonComponent', 'name')
+ExitOfPortalComponent = namedtuple('ExitOfPortalComponent', 'name')
 NPCComponent = namedtuple('NPCComponent', 'name current_stage')
 PlayerComponent = namedtuple('PlayerComponent', 'name')
 # StageEntryConditionComponent = namedtuple('StageEntryConditionComponent', 'conditions')
@@ -24,7 +24,7 @@ LeaveForActionComponent = namedtuple('LeaveForActionComponent', 'action')
 TagActionComponent = namedtuple('TagActionComponent', 'action')
 DeadActionComponent = namedtuple('DeadActionComponent', 'action')
 SearchActionComponent = namedtuple('SearchActionComponent', 'action')
-PrisonBreakActionComponent = namedtuple('PrisonBreakActionComponent', 'action')
+PortalStepActionComponent = namedtuple('PortalStepActionComponent', 'action')
 PerceptionActionComponent = namedtuple('PerceptionActionComponent', 'action')
 StealActionComponent = namedtuple('StealActionComponent', 'action')
 TradeActionComponent = namedtuple('TradeActionComponent', 'action')
@@ -60,7 +60,7 @@ NPC_AVAILABLE_ACTIONS_REGISTER = [AttackActionComponent,
                          BroadcastActionComponent,
                          WhisperActionComponent,
                          SearchActionComponent, 
-                         PrisonBreakActionComponent,
+                         PortalStepActionComponent,
                          PerceptionActionComponent,
                          StealActionComponent,
                          TradeActionComponent,
@@ -73,7 +73,7 @@ NPC_DIALOGUE_ACTIONS_REGISTER = [SpeakActionComponent,
 
 NPC_INTERACTIVE_ACTIONS_REGISTER = [SearchActionComponent, 
                                     LeaveForActionComponent, 
-                                    PrisonBreakActionComponent, 
+                                    PortalStepActionComponent, 
                                     PerceptionActionComponent,
                                     StealActionComponent,
                                     TradeActionComponent,

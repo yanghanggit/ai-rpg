@@ -6,7 +6,7 @@ from auxiliary.components import (
     InteractivePropActionComponent,
     WorldComponent,
     StageComponent, 
-    ExitOfPrisonComponent,
+    ExitOfPortalComponent,
     NPCComponent, 
     PlayerComponent, 
     SimpleRPGRoleComponent, 
@@ -53,7 +53,7 @@ from systems.pre_action_system import PreActionSystem
 from systems.post_action_system import PostActionSystem
 from systems.post_fight_system import PostFightSystem
 from systems.update_archive_system import UpdateArchiveSystem
-from systems.prison_break_action_system import PrisonBreakActionSystem
+from systems.portal_break_action_system import PortalStepActionSystem
 from systems.perception_action_system import PerceptionActionSystem
 from systems.steal_action_system import StealActionSystem
 from systems.trade_action_system import TradeActionSystem
@@ -145,7 +145,7 @@ class RPGGame(BaseGame):
         processors.add(CheckStatusActionSystem(context)) # 道具交互类行为之后，可以发起自检
 
         #场景切换类行为，非常重要而且必须在最后
-        processors.add(PrisonBreakActionSystem(context)) 
+        processors.add(PortalStepActionSystem(context)) 
         processors.add(PreLeaveForSystem(context)) 
         processors.add(LeaveForActionSystem(context))
         processors.add(PerceptionActionSystem(context)) # 场景切换类行为之后可以发起感知
@@ -453,11 +453,11 @@ class RPGGame(BaseGame):
             if len(builddata.interactiveprops) > 0:
                 stageentity.add(InteractivePropActionComponent, builddata.interactiveprops)
 
-            ## 创建连接的场景用于PrisonBreakActionSystem, 目前如果添加就只能添加一个
-            assert len(builddata.exit_of_prison) <= 1
-            if  len(builddata.exit_of_prison) > 0:
-                exit_prison_and_goto_stage =  next(iter(builddata.exit_of_prison))
-                stageentity.add(ExitOfPrisonComponent, exit_prison_and_goto_stage.name)
+            ## 创建连接的场景用于PortalStepActionSystem, 目前如果添加就只能添加一个
+            assert len(builddata.exit_of_portal) <= 1
+            if  len(builddata.exit_of_portal) > 0:
+                exit_portal_and_goto_stage =  next(iter(builddata.exit_of_portal))
+                stageentity.add(ExitOfPortalComponent, exit_portal_and_goto_stage.name)
 
             #重构
             agent_connect_system.register_actor_agent(builddata.name, builddata.url)

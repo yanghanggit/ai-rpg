@@ -122,9 +122,9 @@ class WorldDataBuilder:
                             )
             
              # 做连接关系 目前仅用名字
-            exit_of_prison_and_goto_stagename: str = stagedata.get("exit_of_prison")
-            if len(exit_of_prison_and_goto_stagename) > 0:
-                stage.stage_as_exit_of_prison(exit_of_prison_and_goto_stagename)
+            exit_of_portal_and_goto_stagename: str = stagedata.get("exit_of_portal")
+            if len(exit_of_portal_and_goto_stagename) > 0:
+                stage.stage_as_exit_of_portal(exit_of_portal_and_goto_stagename)
 
             # 设置属性
             stage.build_attributes(stagedata.get("attributes"))

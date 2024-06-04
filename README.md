@@ -55,7 +55,7 @@ pm2 start budding_world/gen_agent/coffin_of_the_silent_one_agent.py budding_worl
 # 在当前场景内搜索叫‘Name?’的道具
 /search ‘Name?’
 # 在不知道去往哪里的情况下，‘跳出’当前场景，如果当前场景没有连接场景则会失败。
-/prisonbreak
+/portalstep
 # 感知当前场景内有哪些人？事？道具？
 /perception
 # 盗取对当前场景内的目标的道具

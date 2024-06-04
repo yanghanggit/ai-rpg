@@ -40,7 +40,7 @@
 </head>  
 <body>  
     <h1>内部研发用测试网页</h1>  
-    <p>当前执行的指令: <span id="command_display"></span></p>  
+    <p>处理指令: <span id="command_display"></span></p>  
   
     <h2>游戏信息</h2>  
     <ul id="messages_list">  
@@ -148,10 +148,17 @@
 
     <h2>可用指令</h2>
     <p>
-        <br># 启动游戏</br>
-        <br>/start</br>
-        <br># 登陆游戏</br>
-        <br>/login</br>
+        <br># 退出游戏</br>
+        <br>/quit </br>
+        <br># 创建游戏房间</br>
+        <br>/create</br>
+        <br># 加入已经存在的房间</br>
+        <br>/join @127.0.0.1</br>
+        <br># 选择角色</br>
+        <br>/pickactor @无名的复活者</br>
+        <br>/pickactor @教廷密使</br>
+        <br># 对谁使用某个道具</br>
+        <br>/useprop @禁言铁棺>腐朽的匕首</br>
         <br># 攻击目标NPC, 名字为Name?</br>
         <br>/attack ‘Name?’</br>
         <br># 离开当前场景，去往Name?的场景</br>
@@ -165,7 +172,7 @@
         <br># 在当前场景内搜索叫‘Name?’的道具</br>
         <br>/search ‘Name?’</br>
         <br># 在不知道去往哪里的情况下，‘跳出’当前场景，如果当前场景没有连接场景则会失败。</br>
-        <br>/prisonbreak</br>
+        <br>/portalstep</br>
         <br># 感知当前场景内有哪些人？事？道具？</br>
         <br>/perception</br>
         <br># 盗取对当前场景内的目标的道具</br>
@@ -174,8 +181,6 @@
         <br>/trade ‘@对谁>我的道具的名字’</br>
         <br># 查看我身上有哪些道具？</br>
         <br>/checkstatus</br>
-        <br># 对谁使用某个道具</br>
-        <br>/useprop @禁言铁棺>腐朽的匕首</br>
     </p>
 </body>  
 </html>  

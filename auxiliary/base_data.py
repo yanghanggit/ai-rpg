@@ -184,7 +184,7 @@ class StageData:
         self.exit_conditions: list[StageConditionData] = exit_conditions
         self.npcs: set[NPCData] = npcs
         self.props: set[PropData] = props
-        self.exit_of_prison: set[StageData] = set()
+        self.exit_of_portal: set[StageData] = set()
         self.attributes: List[int] = []
         self.interactiveprops: str = interactiveprops
 
@@ -198,9 +198,9 @@ class StageData:
         self.stage_exit_role_props: str = stage_exit_role_props
 
     ###
-    def stage_as_exit_of_prison(self, stagename: str) -> None:
+    def stage_as_exit_of_portal(self, stagename: str) -> None:
         stage_proxy = StageDataProxy(stagename)
-        self.exit_of_prison.add(stage_proxy)
+        self.exit_of_portal.add(stage_proxy)
 
     ###
     def build_attributes(self, attributes: str) -> None:

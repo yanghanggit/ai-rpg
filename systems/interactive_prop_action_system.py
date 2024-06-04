@@ -4,7 +4,7 @@ from loguru import logger
 from auxiliary.actor_action import ActorAction
 from auxiliary.base_data import PropData
 from auxiliary.components import (  InteractivePropActionComponent, UseInteractivePropActionComponent, 
-                                    CheckStatusActionComponent, NPCComponent, PrisonBreakActionComponent, ExitOfPrisonComponent,
+                                    CheckStatusActionComponent, NPCComponent, PortalStepActionComponent, ExitOfPortalComponent,
                                     StageExitCondStatusComponent,EnviroNarrateActionComponent,
                                     StageExitCondCheckRoleStatusComponent,
                                     StageExitCondCheckRolePropsComponent)
@@ -153,7 +153,7 @@ class InteractivePropActionSystem(ReactiveProcessor):
     # def after_use_prop_success(self, entity: Entity, use_prop_result_data: List[tuple[str, str]]) -> None:
     #     pass
         #self.add_check_status_action(entity)
-        #self.imme_add_prison_break_action(entity, use_prop_result_data)
+        #self.imme_add_portal_break_action(entity, use_prop_result_data)
 ###################################################################################################################
     # def add_check_status_action(self, entity: Entity) -> None:
     #     if entity.has(CheckStatusActionComponent):
@@ -162,7 +162,7 @@ class InteractivePropActionSystem(ReactiveProcessor):
     #     action = ActorAction(npccomp.name, CheckStatusActionComponent.__name__, [npccomp.name])
     #     entity.add(CheckStatusActionComponent, action)
 ###################################################################################################################
-    # def imme_add_prison_break_action(self, entity: Entity, use_prop_result_data: List[tuple[str, str]]) -> None:
+    # def imme_add_portal_break_action(self, entity: Entity, use_prop_result_data: List[tuple[str, str]]) -> None:
     #     return
         
     #     if len(use_prop_result_data) == 0:
@@ -174,23 +174,23 @@ class InteractivePropActionSystem(ReactiveProcessor):
     #         if stage_entity is None:
     #             continue
 
-    #         if not stage_entity.has(ExitOfPrisonComponent):
+    #         if not stage_entity.has(ExitOfPortalComponent):
     #             continue
             
     #         # 取出数据，并准备沿用LeaveForActionComponent
-    #         conncectstagecomp: ExitOfPrisonComponent = stage_entity.get(ExitOfPrisonComponent)
+    #         conncectstagecomp: ExitOfPortalComponent = stage_entity.get(ExitOfPortalComponent)
     #         connect_stage_entity = self.context.getstage(conncectstagecomp.name)
     #         if connect_stage_entity is None:
     #             #assert False, f"{conncectstagecomp.name} is None"
     #             continue
 
-    #         if entity.has(PrisonBreakActionComponent):
-    #             entity.remove(PrisonBreakActionComponent)
+    #         if entity.has(PortalStepActionComponent):
+    #             entity.remove(PortalStepActionComponent)
             
     #         # 生成离开当前场景的动作
     #         npccomp: NPCComponent = entity.get(NPCComponent)
-    #         action = ActorAction(npccomp.name, PrisonBreakActionComponent.__name__, [npccomp.current_stage])
-    #         entity.add(PrisonBreakActionComponent, action)
+    #         action = ActorAction(npccomp.name, PortalStepActionComponent.__name__, [npccomp.current_stage])
+    #         entity.add(PortalStepActionComponent, action)
 
     #         # 必须跳出循环，因为只能离开一个场景
     #         break

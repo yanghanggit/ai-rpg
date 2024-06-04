@@ -62,7 +62,7 @@ class ExcelEditorStage:
         self.props_in_stage: List[ExcelDataProp] = []
         self.npcs_in_stage: List[ExcelDataNPC] = []
         self.initialization_memory: str = ""
-        self.exit_of_prison: str = ""
+        self.exit_of_portal: str = ""
         self.raw_interactive_props_data: str = ""
         self.interactive_props: List[ExcelDataProp] = []
 
@@ -76,7 +76,7 @@ class ExcelEditorStage:
         self.parse_props_in_stage()
         self.parse_npcs_in_stage()
         self.parse_initialization_memory()
-        self.parse_exit_of_prison()
+        self.parse_exit_of_portal()
         self.parse_interactive_props()
 
         ### 这里可以添加属性？？？
@@ -134,10 +134,10 @@ class ExcelEditorStage:
             return
         self.initialization_memory = str(initialization_memory)
 
-    def parse_exit_of_prison(self) -> None:
-        attrname = "exit_of_prison"
+    def parse_exit_of_portal(self) -> None:
+        attrname = "exit_of_portal"
         if attrname in self.data and self.data[attrname] is not None:
-           self.exit_of_prison = str(self.data[attrname])
+           self.exit_of_portal = str(self.data[attrname])
 
     def parse_interactive_props(self) -> None:
         attrname = "interactive_props"
@@ -208,7 +208,7 @@ class ExcelEditorStage:
         dict["description"] = data_stage.description
         dict["url"] = data_stage.localhost_api()
         dict["memory"] = self.initialization_memory
-        dict["exit_of_prison"] = self.exit_of_prison
+        dict["exit_of_portal"] = self.exit_of_portal
         dict["interactive_props"] = self.raw_interactive_props_data
         
         entry_conditions = self.serialization_stage_conditions(self.stage_entry_conditions)

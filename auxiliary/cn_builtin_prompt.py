@@ -192,14 +192,14 @@ def search_action_success_prompt(npcname: str, prop_name:str, stagename: str) ->
 ## 导致结果:
 - {stagename}不再持有这个道具。"""
 ###############################################################################################################################################
-def prison_break_action_begin_prompt(npcname: str, stagesname: str, context: ExtendedContext) -> str:
+def portal_break_action_begin_prompt(npcname: str, stagesname: str, context: ExtendedContext) -> str:
     return f"""# {npcname}意图离开{stagesname}
 ## 附加说明:
 - {npcname}无法确认是否能够成功离开{stagesname}。可能会因为某些原因而失败。
 - {npcname}无法确认将要前往的目的地。"""
 ################################################################################################################################################
-def leave_for_target_stage_failed_because_no_exit_condition_match_prompt(npcname: str, stagename: str, tips: str, is_prison_break: bool) -> str:
-    if is_prison_break:
+def leave_for_target_stage_failed_because_no_exit_condition_match_prompt(npcname: str, stagename: str, tips: str, is_portal_break: bool) -> str:
+    if is_portal_break:
         if tips == "":
             return f"""# {npcname}不能离开本场景。原因:当前不满足离开的条件。
 ## 建议:

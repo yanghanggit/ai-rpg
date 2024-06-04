@@ -53,7 +53,7 @@ from systems.pre_action_system import PreActionSystem
 from systems.post_action_system import PostActionSystem
 from systems.post_fight_system import PostFightSystem
 from systems.update_archive_system import UpdateArchiveSystem
-from systems.portal_break_action_system import PortalStepActionSystem
+from systems.portal_step_action_system import PortalStepActionSystem
 from systems.perception_action_system import PerceptionActionSystem
 from systems.steal_action_system import StealActionSystem
 from systems.trade_action_system import TradeActionSystem

@@ -60,11 +60,12 @@ def parse_join_multi_game_params(command: str) -> str:
 
 async def join(clientip: str, hostip: str) -> list[TupleModel]:
     messages: list[TupleModel] = []
-    for game in multiplayersgames.values():
+    for userip, game in multiplayersgames.items():
         if game.hostname == hostip:
             client_game = MultiplayersGame(clientip, hostip, game.rpggame)
             multiplayersgames[clientip] = client_game
             messages.append(TupleModel(who=clientip, what=f"加入房间IP:{hostip}成功."))
+            multiplayersgames[clientip].rpggame.extendedcontext.user_ips.append(clientip)
             create_player_proxy(clientip)
 
     if len(messages) == 0:
@@ -89,20 +90,14 @@ async def pick_actor(clientip: str, actorname: str) -> list[TupleModel]:
 
 async def request_game_messages(clientip: str) -> list[TupleModel]:
     messages: list[TupleModel] = []
-    if multiplayersgames.get(clientip, None) is not None:
-        for user_ip in multiplayersgames[clientip].rpggame.extendedcontext.user_ips:
-            playerproxy = get_player_proxy(user_ip)
-            if playerproxy is not None:
-                for message in playerproxy.clientmessages[-TEST_CLIENT_SHOW_MESSAGE_COUNT:]:
-                    messages.append(TupleModel(who=message[0], what=message[1]))
-
+    playerproxy = get_player_proxy(clientip)
+    if playerproxy is not None:
+        for message in playerproxy.clientmessages[-TEST_CLIENT_SHOW_MESSAGE_COUNT:]:
+            messages.append(TupleModel(who=message[0], what=message[1]))
     else:
         messages.append(TupleModel(who=clientip, what="请先创建游戏或加入游戏."))
 
-    for message in messages:
-        logger.error(f"|||{message}|||")
     return messages
-
 
 
 async def quitgame(clientip: str) -> list[TupleModel]:

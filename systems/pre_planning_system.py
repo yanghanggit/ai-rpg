@@ -29,7 +29,7 @@ class PrePlanningSystem(InitializeProcessor, ExecuteProcessor):
         ## 计数
         self.execute_count += 1
         ## 测试
-        self.test()
+        # self.test()
         ## 通过策略来做计划
         strategy: PlanningStrategy = self.decide_strategy(self.strategy, self.execute_count)
         ## 制定更新策略

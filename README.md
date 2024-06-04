@@ -33,8 +33,9 @@ pm2 start budding_world/gen_agent/coffin_of_the_silent_one_agent.py budding_worl
 /create
 # 选择角色
 /pickactor @无名的复活者
+/pickactor @教廷密使
 # 加入已经存在的房间
-/join @`房间ip`
+/join @127.0.0.1
 ```
 
 ## “玩家输入环节”的可用的命令
@@ -65,4 +66,19 @@ pm2 start budding_world/gen_agent/coffin_of_the_silent_one_agent.py budding_worl
 /checkstatus
 # 对谁使用某个道具
 /useprop @谁>xx
+```
+
+## 测试指令
+```shell
+# 退出游戏
+/quit 
+# 创建游戏房间
+/create
+# 选择角色
+/pickactor @无名的复活者
+/pickactor @教廷密使
+# 加入已经存在的房间
+/join @127.0.0.1
+# 无名的复活者使用道具离开禁言铁棺
+/useprop @禁言铁棺>腐朽的匕首
 ```

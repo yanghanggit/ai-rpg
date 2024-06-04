@@ -7,8 +7,8 @@ StageComponent = namedtuple('StageComponent', 'name')
 ExitOfPrisonComponent = namedtuple('ExitOfPrisonComponent', 'name')
 NPCComponent = namedtuple('NPCComponent', 'name current_stage')
 PlayerComponent = namedtuple('PlayerComponent', 'name')
-StageEntryConditionComponent = namedtuple('StageEntryConditionComponent', 'conditions')
-StageExitConditionComponent = namedtuple('StageExitConditionComponent', 'conditions')
+# StageEntryConditionComponent = namedtuple('StageEntryConditionComponent', 'conditions')
+# StageExitConditionComponent = namedtuple('StageExitConditionComponent', 'conditions')
 DestroyComponent = namedtuple('DestroyComponent', 'name')
 AutoPlanningComponent = namedtuple('AutoPlanningComponent', 'name')
 InteractivePropActionComponent = namedtuple('InteractivePropActionComponent', 'interactive_props')
@@ -79,3 +79,12 @@ NPC_INTERACTIVE_ACTIONS_REGISTER = [SearchActionComponent,
                                     TradeActionComponent,
                                     CheckStatusActionComponent,
                                     UseInteractivePropActionComponent]
+
+# todo 离开条件
+StageExitCondStatusComponent = namedtuple('StageExitCondStatusComponent', 'condition')
+StageExitCondCheckRoleStatusComponent = namedtuple('StageExitCondCheckRoleStatusComponent', 'condition')
+StageExitCondCheckRolePropsComponent = namedtuple('StageExitCondCheckRolePropsComponent', 'condition')
+# todo 进入条件
+StageEntryCondStatusComponent = namedtuple('StageEntryCondStatusComponent', 'condition')
+StageEntryCondCheckRoleStatusComponent = namedtuple('StageEntryCondCheckRoleStatusComponent', 'condition')
+StageEntryCondCheckRolePropsComponent = namedtuple('StageEntryCondCheckRolePropsComponent', 'condition')

@@ -26,11 +26,9 @@ class CompressChatHistorySystem(ExecuteProcessor):
                 continue
             agent_connect_system.exclude_chat_history(safename, tags)
 ############################################################################################################
-    #todo
     def handle_compress_chat_history(self) -> None:
         context = self.context
         agent_connect_system = context.agent_connect_system
-        #todo
         replace_data: Dict[str, str] = { NPC_PLAN_PROMPT_TAG : COMPRESS_NPC_PLAN_PROMPT, STAGE_PLAN_PROMPT_TAG : COMPRESS_STAGE_PLAN_PROMPT}
         entities: set[Entity] = context.get_group(Matcher(any_of=[NPCComponent, StageComponent])).entities
         for entity in entities:

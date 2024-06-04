@@ -10,9 +10,17 @@ from auxiliary.components import (
     NPCComponent, 
     PlayerComponent, 
     SimpleRPGRoleComponent, 
-    StageEntryConditionComponent,
-    StageExitConditionComponent,
-    RoleAppearanceComponent)
+    # StageEntryConditionComponent,
+    # StageExitConditionComponent,
+    RoleAppearanceComponent,
+
+    StageExitCondStatusComponent,
+    StageExitCondCheckRoleStatusComponent,
+    StageExitCondCheckRolePropsComponent,
+    StageEntryCondStatusComponent,
+    StageEntryCondCheckRoleStatusComponent,
+    StageEntryCondCheckRolePropsComponent,
+    )
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.builders import WorldDataBuilder, StageBuilder, NPCBuilder
 from entitas.entity import Entity
@@ -60,6 +68,13 @@ from systems.terminal_player_interrupt_and_wait_system import TerminalPlayerInte
 from systems.compress_chat_history_system import CompressChatHistorySystem
 from systems.terminal_player_input_system import TerminalPlayerInputSystem
 from systems.post_conversation_action_system import PostConversationActionSystem
+from auxiliary.base_data import StageData
+
+
+
+
+
+
 
 ## 控制流程和数据创建
 class RPGGame(BaseGame):
@@ -211,6 +226,9 @@ class RPGGame(BaseGame):
 
         ## 混沌系统，准备测试
         chaos_engineering_system.on_post_create_world(context, worlddata)
+
+        ## 测试的接口
+        #self._test()
 ###############################################################################################################################################
     def execute(self) -> None:
         self.started = True
@@ -414,20 +432,22 @@ class RPGGame(BaseGame):
                 code_name_component_system.register_code_name_component_class(prop_data_from_data_base.name, prop_data_from_data_base.codename)
 
             ## 创建入口条件
-            enter_condition_set = set()
-            for enter_condition in builddata.entry_conditions:
-                enter_condition_set.add(enter_condition.condition())
-            if len(enter_condition_set) > 0:
-                stageentity.add(StageEntryConditionComponent, enter_condition_set)
-                #logger.debug(f"{builddata.name}的入口条件为：{enter_condition_set}")
+            # enter_condition_set = set()
+            # for enter_condition in builddata.entry_conditions:
+            #     enter_condition_set.add(enter_condition.condition())
+            # if len(enter_condition_set) > 0:
+            #     stageentity.add(StageEntryConditionComponent, enter_condition_set)
+            #     #logger.debug(f"{builddata.name}的入口条件为：{enter_condition_set}")
 
-            ## 创建出口条件
-            exit_condition_set: set[str] = set()
-            for exit_condition in builddata.exit_conditions:
-                exit_condition_set.add(exit_condition.condition())
-            if len(exit_condition_set) > 0:
-                stageentity.add(StageExitConditionComponent, set(exit_condition_set))
+            # ## 创建出口条件
+            # exit_condition_set: set[str] = set()
+            # for exit_condition in builddata.exit_conditions:
+            #     exit_condition_set.add(exit_condition.condition())
+            # if len(exit_condition_set) > 0:
+            #     stageentity.add(StageExitConditionComponent, set(exit_condition_set))
                 #logger.debug(f"{builddata.name}的出口条件为：{exit_condition_set}")
+
+            self.add_stage_conditions(stageentity, builddata)
 
             ## 添加交互道具组件
             if len(builddata.interactiveprops) > 0:
@@ -446,6 +466,29 @@ class RPGGame(BaseGame):
             code_name_component_system.register_stage_tag_component_class(builddata.name, builddata.codename)
 
         return res
+###############################################################################################################################################
+    def add_stage_conditions(self, stageentity: Entity, builddata: StageData) -> None:
+
+        logger.debug(f"添加Stage条件：{builddata.name}")
+        if builddata.stage_entry_status != "":
+            stageentity.add(StageEntryCondStatusComponent, builddata.stage_entry_status)
+            logger.debug(f"如果进入场景，场景需要检查条件：{builddata.stage_entry_status}")
+        if builddata.stage_entry_role_status != "":
+            stageentity.add(StageEntryCondCheckRoleStatusComponent, builddata.stage_entry_role_status)
+            logger.debug(f"如果进入场景，需要检查角色符合条件：{builddata.stage_entry_role_status}")
+        if builddata.stage_entry_role_props != "":
+            stageentity.add(StageEntryCondCheckRolePropsComponent, builddata.stage_entry_role_props)
+            logger.debug(f"如果进入场景，需要检查角色拥有必要的道具：{builddata.stage_entry_role_props}")
+
+        if builddata.stage_exit_status != "":
+            stageentity.add(StageExitCondStatusComponent, builddata.stage_exit_status)
+            logger.debug(f"如果离开场景，场景需要检查条件：{builddata.stage_exit_status}")
+        if builddata.stage_exit_role_status != "":
+            stageentity.add(StageExitCondCheckRoleStatusComponent, builddata.stage_exit_role_status)
+            logger.debug(f"如果离开场景，需要检查角色符合条件：{builddata.stage_exit_role_status}")
+        if builddata.stage_exit_role_props != "":
+            stageentity.add(StageExitCondCheckRolePropsComponent, builddata.stage_exit_role_props)
+            logger.debug(f"如果离开场景，需要检查角色拥有必要的道具：{builddata.stage_exit_role_props}")
 ###############################################################################################################################################
     def add_code_name_component_to_world_and_npcs_when_build(self) -> None:
         context = self.extendedcontext
@@ -494,3 +537,20 @@ class RPGGame(BaseGame):
             return ""
         return self.worlddata.about_game
 ###############################################################################################################################################
+    # todo
+    # def _test(self) -> None:
+    #     testname = "禁言铁棺"
+    #     stage_entity = self.extendedcontext.getstage(testname)
+    #     if stage_entity is None:
+    #         logger.error(f"没有找到stage：{testname}")
+    #         return
+        
+    #     ### 添加出口条件
+    #     prompt1 = f"""在有角色对你使用了‘锋利和尖锐’的物品之后，你就会产生缝隙，这样你内部的角色才可以离开。否则就不允许任何在你之中的角色离开。"""
+    #     prompt2 = f"""要离开的角色必须是人类。"""
+    #     prompt3 = f"""要离开的角色身上必须具有‘不死者印记’。"""
+    #     stage_entity.add(StageExitCondStatusComponent, prompt1)
+    #     stage_entity.add(StageExitCondCheckRoleStatusComponent, prompt2)
+    #     stage_entity.add(StageExitCondCheckRolePropsComponent, prompt3)
+###############################################################################################################################################
+

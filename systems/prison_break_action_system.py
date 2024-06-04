@@ -9,18 +9,20 @@ from auxiliary.director_event import IDirectorEvent
 from auxiliary.director_component import notify_stage_director
 from auxiliary.cn_builtin_prompt import prison_break_action_begin_prompt
 
-class NPCPrisonBreakBeginEvent(IDirectorEvent):
+# class NPCPrisonBreakBeginEvent(IDirectorEvent):
 
-    def __init__(self, who_is_planning_prison_break: str, stagename: str) -> None:
-        self.who_is_planning_prison_break = who_is_planning_prison_break
-        self.stagename = stagename
+#     def __init__(self, who_is_planning_prison_break: str, stagename: str) -> None:
+#         self.who_is_planning_prison_break = who_is_planning_prison_break
+#         self.stagename = stagename
     
-    def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
-        return prison_break_action_begin_prompt(self.who_is_planning_prison_break, self.stagename, extended_context)
+#     def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
+#         return prison_break_action_begin_prompt(self.who_is_planning_prison_break, self.stagename, extended_context)
     
-    def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
-        return prison_break_action_begin_prompt(self.who_is_planning_prison_break, self.stagename, extended_context)
+#     def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
+#         return prison_break_action_begin_prompt(self.who_is_planning_prison_break, self.stagename, extended_context)
 
+
+#可以改成这个名字：PortalStepAction
 ###############################################################################################################################################
 class PrisonBreakActionSystem(ReactiveProcessor):
 
@@ -75,7 +77,7 @@ class PrisonBreakActionSystem(ReactiveProcessor):
         logger.debug(f"{conncectstagecomp.name}允许{npccomp.name}前往")
         
         # 这里先提示，如果后续因为场景条件而被打断，到时候再提示
-        notify_stage_director(self.context, stageentity, NPCPrisonBreakBeginEvent(npccomp.name, stagename))
+        #notify_stage_director(self.context, stageentity, NPCPrisonBreakBeginEvent(npccomp.name, stagename))
 
         # 生成离开当前场景的动作
         action = ActorAction(npccomp.name, LeaveForActionComponent.__name__, [conncectstagecomp.name])

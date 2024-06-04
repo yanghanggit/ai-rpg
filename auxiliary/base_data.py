@@ -160,7 +160,21 @@ class StageData:
                  exit_conditions: list[StageConditionData], 
                  npcs: set[NPCData], 
                  props: set[PropData],
-                 interactiveprops: str) -> None:
+                 interactiveprops: str,
+        
+                 stage_entry_status: str,
+                 stage_entry_role_status: str,
+                 stage_entry_role_props: str,
+                 stage_exit_status: str,
+                 stage_exit_role_status: str,
+                 stage_exit_role_props: str
+                 ) -> None:
+        
+        
+        
+        
+        
+        
         self.name = name
         self.codename = codename
         self.description = description
@@ -174,6 +188,15 @@ class StageData:
         self.attributes: List[int] = []
         self.interactiveprops: str = interactiveprops
 
+
+        # 新的限制条件
+        self.stage_entry_status: str = stage_entry_status
+        self.stage_entry_role_status: str = stage_entry_role_status
+        self.stage_entry_role_props: str = stage_entry_role_props
+        self.stage_exit_status: str = stage_exit_status
+        self.stage_exit_role_status: str = stage_exit_role_status
+        self.stage_exit_role_props: str = stage_exit_role_props
+
     ###
     def stage_as_exit_of_prison(self, stagename: str) -> None:
         stage_proxy = StageDataProxy(stagename)
@@ -186,7 +209,7 @@ class StageData:
 
 def StageDataProxy(name: str) -> StageData:
     #logger.info(f"StageDataProxy: {name}")
-    return StageData(name, "", "", "", "", [], [], set(), set(), "")
+    return StageData(name, "", "", "", "", [], [], set(), set(), "", "", "", "", "", "", "")
 ########################################################################################################################
 ########################################################################################################################
 ########################################################################################################################

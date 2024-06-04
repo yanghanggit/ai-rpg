@@ -197,5 +197,7 @@ class AgentConnectSystem:
         last_message = chat_history[-1]
         if isinstance(last_message, AIMessage):
             assert content == last_message.content
+            # tofix：出现过assert响的情况，加这个log用来下次出现时定位用
+            logger.debug(f"content:{content} and last_message:{last_message.content}")
             chat_history.pop()
 ############################################################################################################

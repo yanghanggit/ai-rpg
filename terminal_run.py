@@ -7,7 +7,7 @@ from main_utils import create_rpg_game_then_build
 
 async def main() -> None:
 
-    log_start_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    log_start_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     logger.add(f"logs/{log_start_time}.log", level="DEBUG")
 
     # 读取世界资源文件

@@ -29,7 +29,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 multiplayersgames: dict[str, MultiplayersGame] = {}
 
 async def create(clientip: str) -> list[TupleModel]:
-    log_start_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    log_start_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     logger.add(f"logs/{log_start_time}.log", level="DEBUG")
 
     worldname = "World2"

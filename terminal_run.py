@@ -18,7 +18,7 @@ async def main() -> None:
         return
     
     ## 临时 强行改成服务器终端模式，只要这个写死为空。后面的逻辑就会跟上。
-    rpggame.extendedcontext.user_ip = ""
+    rpggame.extendedcontext.user_ips = []
 
     #测试的代码，上来就控制一个NPC目标，先写死
     create_player_proxy(TEST_TERMINAL_NAME)

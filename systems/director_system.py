@@ -53,7 +53,8 @@ def director_events_to_npc(context: ExtendedContext, npc_entity: Entity) -> None
     stage_director_comp: StageDirectorComponent = stage_entity.get(StageDirectorComponent)
     assert stage_director_comp is not None
 
-    events2npc = stage_director_comp.tonpc(stage_director_comp.name, context)    
+    npccomp: NPCComponent = npc_entity.get(NPCComponent)
+    events2npc = stage_director_comp.tonpc(npccomp.name, context)    
     if len(events2npc) == 0:
         return
 
@@ -61,7 +62,6 @@ def director_events_to_npc(context: ExtendedContext, npc_entity: Entity) -> None
     context.safe_add_human_message_to_entity(npc_entity, stage_director_begin_prompt(stage_director_comp.name, len(events2npc)))
 
     ### 添加消息！
-    npccomp: NPCComponent = npc_entity.get(NPCComponent)
     for index, event in enumerate(events2npc):
         wrap_prompt = stage_director_event_wrap_prompt(event, index)
         logger.debug(f"director:{npccomp.name}:{event}")

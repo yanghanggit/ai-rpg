@@ -9,7 +9,7 @@ from auxiliary.components import (WorldComponent,
                         PlayerComponent, 
                         AppearanceComponent)
 from auxiliary.file_system import FileSystem
-from auxiliary.memory_system import MemorySystem
+from auxiliary.kick_off_memory_system import KickOffMemorySystem
 from typing import Optional
 from auxiliary.agent_connect_system import AgentConnectSystem
 from auxiliary.code_name_component_system import CodeNameComponentSystem
@@ -21,7 +21,7 @@ class ExtendedContext(Context):
     #
     def __init__(self, 
                  filesystem: FileSystem, 
-                 memorysystem: MemorySystem, 
+                 kick_off_memory_system: KickOffMemorySystem, 
                  agentconnectsys: AgentConnectSystem, 
                  codenamecompsys: CodeNameComponentSystem,
                  databasesys: DataBaseSystem, 
@@ -35,7 +35,7 @@ class ExtendedContext(Context):
         
         #
         self.file_system = filesystem
-        self.memory_system = memorysystem
+        self.kick_off_memory_system = kick_off_memory_system
         self.agent_connect_system = agentconnectsys
         self.code_name_component_system = codenamecompsys
         self.data_base_system = databasesys
@@ -50,7 +50,7 @@ class ExtendedContext(Context):
         
         #        
         assert self.file_system is not None, "self.file_system is None"
-        assert self.memory_system is not None, "self.memory_system is None"
+        assert self.kick_off_memory_system is not None, "self.memory_system is None"
         assert self.agent_connect_system is not None, "self.agent_connect_system is None"
         assert self.code_name_component_system is not None, "self.code_name_component_system is None"
         assert self.data_base_system is not None, "self.data_base_system is None"

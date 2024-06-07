@@ -70,12 +70,12 @@ class InitMemorySystem(InitializeProcessor, ExecuteProcessor):
         result: Dict[str, str] = {}
 
         context = self.context
-        memory_system = context.memory_system
+        memory_system = context.kick_off_memory_system
         agent_connect_system = context.agent_connect_system
         worlds: set[Entity] = context.get_group(Matcher(WorldComponent)).entities
         for world in worlds:
             worldcomp: WorldComponent = world.get(WorldComponent)
-            worldmemory = memory_system.getmemory(worldcomp.name)
+            worldmemory = memory_system.get_kick_off_memory(worldcomp.name)
             if worldmemory == "":
                 logger.error(f"worldmemory is empty: {worldcomp.name}")
                 continue
@@ -90,13 +90,13 @@ class InitMemorySystem(InitializeProcessor, ExecuteProcessor):
         result: Dict[str, str] = {}
 
         context = self.context
-        memory_system = context.memory_system
+        memory_system = context.kick_off_memory_system
         agent_connect_system = context.agent_connect_system
         stages: set[Entity] = context.get_group(Matcher(StageComponent)).entities
         for stage in stages:
 
             stagecomp: StageComponent = stage.get(StageComponent)
-            stagememory = memory_system.getmemory(stagecomp.name)
+            stagememory = memory_system.get_kick_off_memory(stagecomp.name)
             if stagememory == "":
                 logger.error(f"stagememory is empty: {stagecomp.name}")
                 continue
@@ -113,13 +113,13 @@ class InitMemorySystem(InitializeProcessor, ExecuteProcessor):
 
         #
         context = self.context
-        memory_system = context.memory_system
+        memory_system = context.kick_off_memory_system
         agent_connect_system = context.agent_connect_system
         npcs: set[Entity] = context.get_group(Matcher(all_of=[ActorComponent])).entities
         for npcentity in npcs:
             npccomp: ActorComponent = npcentity.get(ActorComponent)
             npcname: str = npccomp.name
-            npcmemory = memory_system.getmemory(npcname)
+            npcmemory = memory_system.get_kick_off_memory(npcname)
             if npcmemory == "":
                 logger.error(f"npcmemory is empty: {npcname}")
                 continue

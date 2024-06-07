@@ -25,7 +25,7 @@ class PostFightSystem(ExecuteProcessor):
 ########################################################################################################################################################################
     def savenpc(self, entity: Entity) -> None:
         agent_connect_system = self.context.agent_connect_system
-        memory_system = self.context.memory_system
+        memory_system = self.context.kick_off_memory_system
         safename = self.context.safe_get_entity_name(entity)
         if safename == "":
             return
@@ -38,7 +38,7 @@ class PostFightSystem(ExecuteProcessor):
         archiveprompt = gen_npc_archive_prompt(self.context)
         archive = agent_connect_system.request(safename, archiveprompt)
         if archive is not None:
-            memory_system.set_and_write_memory(safename, archive)    # 存档!    
+            memory_system.set_and_write(safename, archive)    # 存档!    
         else:
             logger.error(f"存档失败:{safename}")    
 ########################################################################################################################################################################

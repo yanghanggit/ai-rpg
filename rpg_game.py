@@ -34,7 +34,7 @@ from systems.director_system import DirectorSystem
 from systems.destroy_system import DestroySystem
 from systems.stage_ready_for_planning_system import StageReadyForPlanningSystem
 from systems.tag_action_system import TagActionSystem
-from systems.data_save_system import DataSaveSystem
+#from systems.data_save_system import DataSaveSystem
 from systems.broadcast_action_system import BroadcastActionSystem  
 from systems.use_prop_action_system import UsePropActionSystem
 from systems.whisper_action_system import WhisperActionSystem 
@@ -141,7 +141,7 @@ class RPGGame(BaseGame):
 
         ###最后删除entity与存储数据
         processors.add(DestroySystem(context))
-        processors.add(DataSaveSystem(context))
+        #processors.add(DataSaveSystem(context))
 
         ##测试的系统，移除掉不太重要的提示词，例如一些上行命令的。
         processors.add(CompressChatHistorySystem(context)) ## 测试的系统
@@ -191,7 +191,7 @@ class RPGGame(BaseGame):
         ## 第1步，设置根路径
         self.builder = worlddata
         context.agent_connect_system.set_root_path(runtime_dir_for_world)
-        context.memory_system.set_root_path(runtime_dir_for_world)
+        context.kick_off_memory_system.set_root_path(runtime_dir_for_world)
         context.file_system.set_root_path(runtime_dir_for_world)
 
         ## 第2步 创建管理员类型的角色，全局的AI
@@ -247,7 +247,7 @@ class RPGGame(BaseGame):
 
         context = self.extendedcontext
         agent_connect_system = context.agent_connect_system
-        memory_system = context.memory_system
+        memory_system = context.kick_off_memory_system
         code_name_component_system = context.code_name_component_system
         file_system = context.file_system
 
@@ -270,7 +270,7 @@ class RPGGame(BaseGame):
 
             #重构
             agent_connect_system.register_actor_agent(builddata.name, builddata.url)
-            memory_system.initmemory(builddata.name, builddata.memory)
+            memory_system.add_kick_off_memory(builddata.name, builddata.memory)
             code_name_component_system.register_code_name_component_class(builddata.name, builddata.codename)
 
             # 初步建立关系网（在编辑文本中提到的NPC名字）
@@ -291,7 +291,7 @@ class RPGGame(BaseGame):
 
         context = self.extendedcontext
         agent_connect_system = context.agent_connect_system
-        memory_system = context.memory_system
+        memory_system = context.kick_off_memory_system
         file_system = context.file_system
         code_name_component_system = context.code_name_component_system
         res: List[Entity] = []
@@ -312,7 +312,7 @@ class RPGGame(BaseGame):
 
             #重构
             agent_connect_system.register_actor_agent(builddata.name, builddata.url)
-            memory_system.initmemory(builddata.name, builddata.memory)
+            memory_system.add_kick_off_memory(builddata.name, builddata.memory)
             code_name_component_system.register_code_name_component_class(builddata.name, builddata.codename)
             
             # 添加道具
@@ -336,7 +336,7 @@ class RPGGame(BaseGame):
 
         context = self.extendedcontext
         agent_connect_system = context.agent_connect_system
-        memory_system = context.memory_system
+        memory_system = context.kick_off_memory_system
         file_system = context.file_system
         code_name_component_system = context.code_name_component_system
         res: List[Entity] = []
@@ -390,7 +390,7 @@ class RPGGame(BaseGame):
 
             #重构
             agent_connect_system.register_actor_agent(builddata.name, builddata.url)
-            memory_system.initmemory(builddata.name, builddata.memory)
+            memory_system.add_kick_off_memory(builddata.name, builddata.memory)
             code_name_component_system.register_code_name_component_class(builddata.name, builddata.codename)
             code_name_component_system.register_stage_tag_component_class(builddata.name, builddata.codename)
 

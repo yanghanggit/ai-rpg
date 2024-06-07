@@ -32,11 +32,11 @@ class UpdareArchiveHelper:
         self._stagenames.clear()
         #
         context = self.context
-        memory_system = context.memory_system
+        memory_system = context.kick_off_memory_system
         stages: set[Entity] = context.get_group(Matcher(StageComponent)).entities
         for stage in stages:
             stagecomp: StageComponent = stage.get(StageComponent)
-            stagememory = memory_system.getmemory(stagecomp.name)
+            stagememory = memory_system.get_kick_off_memory(stagecomp.name)
             if stagememory != "":
                 self._stagenames.add(stagecomp.name)
             else:
@@ -46,11 +46,11 @@ class UpdareArchiveHelper:
         self._npcnames.clear()
         #
         context = self.context
-        memory_system = context.memory_system
+        memory_system = context.kick_off_memory_system
         npcs: set[Entity] = context.get_group(Matcher(ActorComponent)).entities
         for npc in npcs:
             npccomp: ActorComponent = npc.get(ActorComponent)
-            npcmemory = memory_system.getmemory(npccomp.name)
+            npcmemory = memory_system.get_kick_off_memory(npccomp.name)
             if npcmemory != "":
                 self._npcnames.add(npccomp.name)
             else:
@@ -135,9 +135,9 @@ class UpdareArchiveHelper:
         return res
 ###############################################################################################################################################
     def name_mentioned_in_memory(self, checknames: Set[str], npcname: str) -> Set[str]:
-        memory_system = self.context.memory_system
+        memory_system = self.context.kick_off_memory_system
         result: set[str] = set()
-        npcmemory = memory_system.getmemory(npcname)
+        npcmemory = memory_system.get_kick_off_memory(npcname)
         for name in checknames:
             if name in npcmemory:
                 result.add(name)

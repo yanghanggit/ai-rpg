@@ -5,7 +5,7 @@ from auxiliary.builders import GameBuilder
 from rpg_game import RPGGame 
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.file_system import FileSystem
-from auxiliary.memory_system import MemorySystem
+from auxiliary.kick_off_memory_system import KickOffMemorySystem
 from typing import Optional
 from auxiliary.agent_connect_system import AgentConnectSystem
 from auxiliary.code_name_component_system import CodeNameComponentSystem
@@ -40,7 +40,7 @@ def _create_rpg_game(worldname: str, chaosengineering: Optional[IChaosEngineerin
 
     # 依赖注入的特殊系统
     file_system = FileSystem("file_system， Because it involves IO operations, an independent system is more convenient.")
-    memory_system = MemorySystem("memorey_system， Because it involves IO operations, an independent system is more convenient.")
+    memory_system = KickOffMemorySystem("memorey_system， Because it involves IO operations, an independent system is more convenient.")
     agent_connect_system = AgentConnectSystem("agent_connect_system， Because it involves net operations, an independent system is more convenient.")
     code_name_component_system = CodeNameComponentSystem("Build components by codename for special purposes")
     

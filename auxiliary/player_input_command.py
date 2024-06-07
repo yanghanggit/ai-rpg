@@ -95,8 +95,8 @@ class PlayerCommandLogin(PlayerCommand):
         self.playerproxy.add_system_message(f"login: {myname}, time = {time}")
 
         # 初始化的NPC记忆
-        memory_system = context.memory_system
-        initmemory =  memory_system.getmemory(self.login_npc_name)
+        memory_system = context.kick_off_memory_system
+        initmemory =  memory_system.get_kick_off_memory(self.login_npc_name)
         self.playerproxy.add_npc_message(self.login_npc_name, initmemory)
 ####################################################################################################################################
 ####################################################################################################################################

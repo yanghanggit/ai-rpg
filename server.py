@@ -33,7 +33,13 @@ async def create(clientip: str) -> list[TupleModel]:
     logger.add(f"logs/{log_start_time}.log", level="DEBUG")
 
     worldname = "World2"
-    game = MultiplayersGame(clientip, clientip, create_rpg_game_then_build(worldname))
+    rpg_game = create_rpg_game_then_build(worldname)
+    if rpg_game is None:
+        logger.error("create_rpg_game 失败。")
+        return []
+
+    #
+    game = MultiplayersGame(clientip, clientip, rpg_game)
     if game is not None:
         global multiplayersgames
         multiplayersgames[clientip] = game
@@ -56,7 +62,7 @@ def parse_join_multi_game_params(command: str) -> str:
         return content
     else:  
         logger.debug("在字符串中没有找到匹配的内容") 
-        return None
+        return ""
 
 async def join(clientip: str, hostip: str) -> list[TupleModel]:
     messages: list[TupleModel] = []

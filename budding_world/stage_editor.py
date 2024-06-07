@@ -5,7 +5,7 @@ root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 from loguru import logger
 from typing import List, Dict, Any, Optional, cast
-from auxiliary.format_of_complex_stage_entry_and_exit_conditions import parse_complex_stage_condition
+#from auxiliary.format_of_complex_stage_entry_and_exit_conditions import parse_complex_stage_condition
 from budding_world.utils import (proxy_prop)
 from budding_world.excel_data import ExcelDataNPC, ExcelDataProp, ExcelDataStage
 import pandas as pd
@@ -36,13 +36,14 @@ class ExcelEditorStageCondition:
             dict['type'] = self.type
             dict['propname'] = self.exceldataprop.name
         else:
-            logger.warning(f"这是一个复杂的场景条件: {self.name}")
-            res = parse_complex_stage_condition(self.name)
-            parsename = res[0]
-            parsecondition = str(self.name)
-            dict['name'] = parsename
-            dict['type'] = self.type
-            dict['propname'] = parsecondition
+            pass
+            # logger.warning(f"这是一个复杂的场景条件: {self.name}")
+            # res = parse_complex_stage_condition(self.name)
+            # parsename = res[0]
+            # parsecondition = str(self.name)
+            # dict['name'] = parsename
+            # dict['type'] = self.type
+            # dict['propname'] = parsecondition
         return dict
     
 
@@ -77,7 +78,7 @@ class ExcelEditorStage:
         self.parse_npcs_in_stage()
         self.parse_initialization_memory()
         self.parse_exit_of_portal()
-        self.parse_interactive_props()
+        #self.parse_interactive_props()
 
         ### 这里可以添加属性？？？
         self.attributes: str = data.get("attributes", "")
@@ -139,36 +140,36 @@ class ExcelEditorStage:
         if attrname in self.data and self.data[attrname] is not None:
            self.exit_of_portal = str(self.data[attrname])
 
-    def parse_interactive_props(self) -> None:
-        attrname = "interactive_props"
-        if attrname not in self.data and self.data[attrname] is None:
-            return
-        self.raw_interactive_props_data = str(self.data[attrname])
-        if self.raw_interactive_props_data == "None":
-            #空的不用继续了
-            return
+    # def parse_interactive_props(self) -> None:
+    #     attrname = "interactive_props"
+    #     if attrname not in self.data and self.data[attrname] is None:
+    #         return
+    #     self.raw_interactive_props_data = str(self.data[attrname])
+    #     if self.raw_interactive_props_data == "None":
+    #         #空的不用继续了
+    #         return
         
-        raw_data = self.raw_interactive_props_data
+    #     raw_data = self.raw_interactive_props_data
         
-        ###写点啥
-        parse_res = parse_complex_stage_condition(raw_data)
-        if len(parse_res) != 2:
-            logger.error(f"复杂条件: {raw_data}")
-            return
+    #     ###写点啥
+    #     parse_res = parse_complex_stage_condition(raw_data)
+    #     if len(parse_res) != 2:
+    #         logger.error(f"复杂条件: {raw_data}")
+    #         return
         
-        propname1 = parse_res[0]
-        prop1 = self.prop_data_base.get(propname1, None)
-        if prop1 is not None:
-            self.interactive_props.append(prop1)
-        else:
-            logger.error(f"Invalid prop: {propname1}")
+    #     propname1 = parse_res[0]
+    #     prop1 = self.prop_data_base.get(propname1, None)
+    #     if prop1 is not None:
+    #         self.interactive_props.append(prop1)
+    #     else:
+    #         logger.error(f"Invalid prop: {propname1}")
         
-        propname2 = parse_res[1]
-        prop2 = self.prop_data_base.get(propname2, None)
-        if prop2 is not None:
-            self.interactive_props.append(prop2)
-        else:
-            logger.error(f"Invalid prop: {propname2}")
+    #     propname2 = parse_res[1]
+    #     prop2 = self.prop_data_base.get(propname2, None)
+    #     if prop2 is not None:
+    #         self.interactive_props.append(prop2)
+    #     else:
+    #         logger.error(f"Invalid prop: {propname2}")
         
     def __str__(self) -> str:
         propsstr = ', '.join(str(prop) for prop in self.props_in_stage)

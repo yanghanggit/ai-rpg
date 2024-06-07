@@ -15,7 +15,7 @@ from entitas import Entity, Matcher, ReactiveProcessor # type: ignore
 from auxiliary.director_component import notify_stage_director
 from entitas.group import GroupEvent
 from auxiliary.director_event import IDirectorEvent
-from auxiliary.format_of_complex_intertactive_props import parse_complex_interactive_props
+#from auxiliary.format_of_complex_intertactive_props import parse_complex_interactive_props
 from typing import List
 from auxiliary.cn_builtin_prompt import interactive_prop_action_success_prompt, prop_info_prompt, use_prop_to_stage_prompt, NO_INFO_PROMPT
 from auxiliary.actor_action import ActorPlan
@@ -130,25 +130,25 @@ class InteractivePropActionSystem(ReactiveProcessor):
         self.use_prop_to_stage(entity, targetname, propname)
         return True
     
-    def parse_interactive_prop_action(self, propdata: PropData, interactivepropname: str, targetname: str) -> Optional[str]:
-        description = propdata.description
-        pattern = rf"{interactivepropname}(.*?){targetname}"
-        matchresult = re.search(pattern, description)
-        if matchresult:
-            return matchresult.group(1).strip()
-        else:
-            return None
+    # def parse_interactive_prop_action(self, propdata: PropData, interactivepropname: str, targetname: str) -> Optional[str]:
+    #     description = propdata.description
+    #     pattern = rf"{interactivepropname}(.*?){targetname}"
+    #     matchresult = re.search(pattern, description)
+    #     if matchresult:
+    #         return matchresult.group(1).strip()
+    #     else:
+    #         return None
 
-    def check_target_with_prop(self, targetname: str, propname: str) -> Optional[str]:
-        stage_entity: Optional[Entity] = self.context.getstage(targetname)
-        if stage_entity is not None and stage_entity.has(InteractivePropActionComponent):
-            stage_interative_prop_comp: InteractivePropActionComponent = stage_entity.get(InteractivePropActionComponent)
-            stage_interative_props: str = stage_interative_prop_comp.interactive_props
-            interactive_props: list[str] = parse_complex_interactive_props(stage_interative_props)
-            if propname == interactive_props[0]:
-                return interactive_props[1]
+    # def check_target_with_prop(self, targetname: str, propname: str) -> Optional[str]:
+    #     stage_entity: Optional[Entity] = self.context.getstage(targetname)
+    #     if stage_entity is not None and stage_entity.has(InteractivePropActionComponent):
+    #         stage_interative_prop_comp: InteractivePropActionComponent = stage_entity.get(InteractivePropActionComponent)
+    #         stage_interative_props: str = stage_interative_prop_comp.interactive_props
+    #         interactive_props: list[str] = parse_complex_interactive_props(stage_interative_props)
+    #         if propname == interactive_props[0]:
+    #             return interactive_props[1]
 
-        return None
+    #     return None
 ###################################################################################################################
     # def after_use_prop_success(self, entity: Entity, use_prop_result_data: List[tuple[str, str]]) -> None:
     #     pass

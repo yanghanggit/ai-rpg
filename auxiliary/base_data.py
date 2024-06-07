@@ -1,5 +1,5 @@
 from typing import List, Set, Dict
-from auxiliary.format_of_complex_stage_entry_and_exit_conditions import is_complex_stage_condition
+#from auxiliary.format_of_complex_stage_entry_and_exit_conditions import is_complex_stage_condition
 from enum import Enum
 from loguru import logger
 
@@ -13,17 +13,17 @@ class StageConditionData:
         self.name = name
         self.type = type
         self.prop_name = prop_name
-        self.complexconditions: str = ""
+        # self.complexconditions: str = ""
 
-        # 分析是否是复杂条件
-        if is_complex_stage_condition(prop_name):
-            self.complexconditions = str(prop_name)
+        # # 分析是否是复杂条件
+        # if is_complex_stage_condition(prop_name):
+        #     self.complexconditions = str(prop_name)
 
     # 默认是给名字
-    def condition(self) -> str:
-        if self.complexconditions != "":
-            return self.complexconditions
-        return self.prop_name
+    # def condition(self) -> str:
+    #     if self.complexconditions != "":
+    #         return self.complexconditions
+    #     return self.prop_name
 ########################################################################################################################
 ########################################################################################################################
 ########################################################################################################################

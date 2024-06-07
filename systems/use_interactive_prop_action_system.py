@@ -41,16 +41,11 @@ class UseInteractiveProResponsepHelper:
         logger.debug(f"UseInteractivePropHelper: {self._tips}")
 
     def _parse(self, plan: ActorPlan) -> str:
-        enviro_narrate_action: Optional[ActorAction] = None
-        for action in plan.actions:
-            if action.actionname == EnviroNarrateActionComponent.__name__:
-                enviro_narrate_action = action
-                break
+        enviro_narrate_action: Optional[ActorAction] = plan.get_action_by_key(EnviroNarrateActionComponent.__name__)
         if enviro_narrate_action is None or len(enviro_narrate_action.values) == 0:
            logger.error(f"InteractivePropActionSystem: {plan.raw_data} is not correct")
            return ""
-        single_vale = enviro_narrate_action.single_value()
-        return single_vale
+        return enviro_narrate_action.single_value()
     
     @property
     def tips(self) -> str:

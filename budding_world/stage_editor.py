@@ -72,8 +72,8 @@ class ExcelEditorStage:
             return
 
         #分析数据
-        self.parse_stage_entry_conditions()
-        self.parse_stage_exit_conditions()
+        # self.parse_stage_entry_conditions()
+        # self.parse_stage_exit_conditions()
         self.parse_props_in_stage()
         self.parse_npcs_in_stage()
         self.parse_initialization_memory()
@@ -84,28 +84,28 @@ class ExcelEditorStage:
         self.attributes: str = data.get("attributes", "")
         logger.debug(f"Stage: {self.data['name']} has attributes: {self.attributes}")
 
-    def parse_stage_entry_conditions(self) -> None:
-        stage_entry_conditions: Optional[str] = self.data["stage_entry_conditions"]
-        if stage_entry_conditions is None:
-            return        
-        list_stage_entry_conditions = stage_entry_conditions.split(";")
-        for condition in list_stage_entry_conditions:
-            if condition in self.prop_data_base:
-                self.stage_entry_conditions.append(ExcelEditorStageCondition(condition, "Prop", self.prop_data_base))
-            else:
-                logger.error(f"Invalid condition: {condition}")
+    # def parse_stage_entry_conditions(self) -> None:
+    #     stage_entry_conditions: Optional[str] = self.data["stage_entry_conditions"]
+    #     if stage_entry_conditions is None:
+    #         return        
+    #     list_stage_entry_conditions = stage_entry_conditions.split(";")
+    #     for condition in list_stage_entry_conditions:
+    #         if condition in self.prop_data_base:
+    #             self.stage_entry_conditions.append(ExcelEditorStageCondition(condition, "Prop", self.prop_data_base))
+    #         else:
+    #             logger.error(f"Invalid condition: {condition}")
 
-    def parse_stage_exit_conditions(self) -> None:
+    # def parse_stage_exit_conditions(self) -> None:
         
-        stage_exit_conditions = self.data["stage_exit_conditions"]
-        if stage_exit_conditions is None:
-            return
+    #     stage_exit_conditions = self.data["stage_exit_conditions"]
+    #     if stage_exit_conditions is None:
+    #         return
         
-        list_stage_exit_conditions = stage_exit_conditions.split(";")
-        for condition in list_stage_exit_conditions:
-            if condition not in self.prop_data_base:
-                logger.warning(f"无法直接匹配道具名字，可能是是一个复杂条件: {condition}")
-            self.stage_exit_conditions.append(ExcelEditorStageCondition(condition, "Prop", self.prop_data_base))
+    #     list_stage_exit_conditions = stage_exit_conditions.split(";")
+    #     for condition in list_stage_exit_conditions:
+    #         if condition not in self.prop_data_base:
+    #             logger.warning(f"无法直接匹配道具名字，可能是是一个复杂条件: {condition}")
+    #         self.stage_exit_conditions.append(ExcelEditorStageCondition(condition, "Prop", self.prop_data_base))
     #
     def parse_props_in_stage(self) -> None:
         props_in_stage: Optional[str] = self.data["props_in_stage"]

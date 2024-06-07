@@ -73,8 +73,6 @@ def create_rpg_game(worldname: str, chaosengineering: Optional[IChaosEngineering
 
 ##
 def create_rpg_game_then_build(worldname:str) -> Optional[RPGGame]:
-    # 读取世界资源文件
-    #worldname = "World2"#input("请输入要进入的世界名称(必须与自动化创建的名字一致):")
     # 通过依赖注入的方式创建数据系统
     data_base_system = DataBaseSystem("test!!! data_base_system，it is a system that stores all the origin data from the settings.")
     worlddata = read_world_data(worldname, data_base_system)

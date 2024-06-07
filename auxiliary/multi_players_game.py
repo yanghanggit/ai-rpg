@@ -1,6 +1,7 @@
 from rpg_game import RPGGame
 
 class MultiplayersGame():
+    
     playername: str
     hostname: str
     rpggame: RPGGame

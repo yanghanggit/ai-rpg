@@ -10,10 +10,7 @@ from auxiliary.components import (
     NPCComponent, 
     PlayerComponent, 
     SimpleRPGRoleComponent, 
-    # StageEntryConditionComponent,
-    # StageExitConditionComponent,
     RoleAppearanceComponent,
-
     StageExitCondStatusComponent,
     StageExitCondCheckRoleStatusComponent,
     StageExitCondCheckRolePropsComponent,
@@ -537,20 +534,3 @@ class RPGGame(BaseGame):
             return ""
         return self.worlddata.about_game
 ###############################################################################################################################################
-    # todo
-    # def _test(self) -> None:
-    #     testname = "禁言铁棺"
-    #     stage_entity = self.extendedcontext.getstage(testname)
-    #     if stage_entity is None:
-    #         logger.error(f"没有找到stage：{testname}")
-    #         return
-        
-    #     ### 添加出口条件
-    #     prompt1 = f"""在有角色对你使用了‘锋利和尖锐’的物品之后，你就会产生缝隙，这样你内部的角色才可以离开。否则就不允许任何在你之中的角色离开。"""
-    #     prompt2 = f"""要离开的角色必须是人类。"""
-    #     prompt3 = f"""要离开的角色身上必须具有‘不死者印记’。"""
-    #     stage_entity.add(StageExitCondStatusComponent, prompt1)
-    #     stage_entity.add(StageExitCondCheckRoleStatusComponent, prompt2)
-    #     stage_entity.add(StageExitCondCheckRolePropsComponent, prompt3)
-###############################################################################################################################################
-

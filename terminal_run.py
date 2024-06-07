@@ -11,7 +11,7 @@ async def main() -> None:
     logger.add(f"logs/{log_start_time}.log", level="DEBUG")
 
     # 读取世界资源文件
-    worldname = "World2"#input("请输入要进入的世界名称(必须与自动化创建的名字一致):")
+    worldname = input("请输入要进入的世界名称(必须与自动化创建的名字一致):")
     rpggame = create_rpg_game_then_build(worldname)
     if rpggame is None:
         logger.error("create_rpg_game 失败。")

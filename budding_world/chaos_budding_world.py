@@ -7,7 +7,7 @@ sys.path.append(str(root_dir))
 
 from auxiliary.chaos_engineering_system import IChaosEngineering
 from loguru import logger
-from auxiliary.builders import WorldDataBuilder
+from auxiliary.builders import GameBuilder
 from typing import Any, Optional
 
 ## 测试重复的json内容，应该是load不出来才对
@@ -33,11 +33,11 @@ class ChaosBuddingWorld(IChaosEngineering):
         self.on_npc_system_excute_count = 0
 
     ##
-    def on_pre_create_game(self, extended_context: Any, worlddata: WorldDataBuilder) -> None:
+    def on_pre_create_game(self, extended_context: Any, worlddata: GameBuilder) -> None:
         logger.warning(f" {self.name}: on_pre_create_world")
 
     ##
-    def on_post_create_game(self, extended_context: Any, worlddata: WorldDataBuilder) -> None:
+    def on_post_create_game(self, extended_context: Any, worlddata: GameBuilder) -> None:
         logger.warning(f" {self.name}: on_post_create_world")
     
     ##

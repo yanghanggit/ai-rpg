@@ -1,57 +1,66 @@
-from typing import Any, Optional, List, Set
+from typing import Any, Optional, List, Set, Dict
 from loguru import logger
 import json
-from auxiliary.base_data import StageConditionData, PropData, NPCData, StageData, NPCDataProxy, PropDataProxy
+from auxiliary.base_data import PropData, NPCData, StageData, NPCDataProxy, PropDataProxy
 from auxiliary.data_base_system import DataBaseSystem
 
 ########################################################################################################################
 ########################################################################################################################
 ########################################################################################################################
-class WorldDataBuilder:
+class GameBuilder:
+
     def __init__(self, name: str, version: str, runtimepath: str, data_base_system: DataBaseSystem) -> None:
-        # version必须与生成的world.json文件中的version一致
         self.name = name
         self.runtimepath = runtimepath
-        self.version = version
-        #####
-        self.data: dict[str, Any] = dict()
-        self.world_npc_builder = NPCBuilder("worlds")
-        self.player_npc_builder = NPCBuilder("players")
+        self.version = version # version必须与生成的world.json文件中的version一致
+        self._data: Any = None
+        self.world_builder = NPCBuilder("worlds")
+        self.player_builder = NPCBuilder("players")
         self.npc_buidler = NPCBuilder("npcs")
         self.stage_builder = StageBuilder()
-        ####依赖注入的方式，将数据库系统注入到这里
-        self.data_base_system = data_base_system
-        ####
+        self.data_base_system = data_base_system ## 依赖注入的方式，将数据库系统注入到这里
         self.about_game: str = ""
-
-    def check_version_valid(self, world_data_path: str) -> bool:
+###############################################################################################################################################
+    def loadfile(self, world_data_path: str, check_version: bool) -> bool:
         try:
             with open(world_data_path, 'r', encoding="utf-8") as file:
-                self.data = json.load(file)
-                world_data_version: str = self.data['version']
-            
+                self._data = json.load(file)
+                if self._data is None:
+                    logger.error(f"File {world_data_path} is empty.")
+                    return False
         except FileNotFoundError:
             logger.exception(f"File {world_data_path} not found.")
             return False
         
-        if self.version == world_data_version:
-            return True
-        else:
-            logger.error(f'游戏数据(World.json)与Builder版本不匹配，请检查。')
-            return False
+        if check_version:
+            game_data_version: str = self._data['version']
+            if self.version == game_data_version:
+                return True
+            else:
+                logger.error(f'游戏数据(World.json)与Builder版本不匹配，请检查。')
+                return False
+        return True
 ###############################################################################################################################################
     def build(self) -> None:
-        self.create_data_base_system()
-        self.build_config(self.data)
-        self.world_npc_builder.build(self.data, self.data_base_system)
-        self.player_npc_builder.build(self.data, self.data_base_system)
-        self.npc_buidler.build(self.data, self.data_base_system)
-        self.stage_builder.build(self.data, self.data_base_system)
+        if self._data is None:
+            logger.error("WorldDataBuilder: data is None.")
+            return
+        # 第一步，创建数据库
+        self._create_data_base_system()
+        # 第二步，创建配置
+        self._build_config(self._data)
+        # 第三步，创建世界级别的管理员
+        self.world_builder.build(self._data, self.data_base_system)
+        # 第四步，创建玩家与NPC
+        self.player_builder.build(self._data, self.data_base_system)
+        self.npc_buidler.build(self._data, self.data_base_system)
+        # 第五步，创建场景
+        self.stage_builder.build(self._data, self.data_base_system)
 ###############################################################################################################################################
-    def build_config(self, data: dict[str, Any]) -> None:
+    def _build_config(self, data: dict[str, Any]) -> None:
         self.about_game = data.get('about_game', "无关于游戏的信息。")
 ###############################################################################################################################################
-    def create_npc_data_base(self, npcs: Any) -> None:
+    def _create_npc_data_base(self, npcs: Any) -> None:
         if npcs is None:
             logger.error("没有NPC数据内容(npcs)，请检查World.json配置。")
             return
@@ -82,57 +91,52 @@ class WorldDataBuilder:
                           mentioned_stages,
                           npcdata.get("role_appearance"))
             
-            ## 设置属性
+            ## 设置（战斗）属性
             npc.build_attributes(npcdata.get("attributes"))
-            self.data_base_system.add_npc(npcdata.get('name'), npc)
+            self.data_base_system.add_npc(npc.name, npc)
 ###############################################################################################################################################
-    def create_stage_data_base(self, stages: Any) -> None:
+    def _create_stage_data_base(self, stages: Any) -> None:
         if stages is None:
             logger.error("没有场景数据内容(stages)，请检查World.json配置。")
             return
         
         for stage in stages:
             #print(stage)
-            stagedata = stage.get('stage', None)
-            assert stagedata is not None
+            core_data = stage.get('stage', None)
+            assert core_data is not None
 
-            entry_conditions_in_stage: list[StageConditionData] = self.build_prop_conditions(stagedata.get("entry_conditions"))
-            exit_conditions_in_stage: list[StageConditionData] = self.build_prop_conditions( stagedata.get("exit_conditions")) 
-
-            
-            stage = StageData(stagedata.get("name"), 
-                            stagedata.get("codename"), 
-                            stagedata.get("description"), 
-                            stagedata.get("url"), 
-                            stagedata.get("memory"), 
-                            entry_conditions_in_stage, 
-                            exit_conditions_in_stage, 
+            stage = StageData(core_data.get("name"), 
+                            core_data.get("codename"), 
+                            core_data.get("description"), 
+                            core_data.get("url"), 
+                            core_data.get("memory"), 
+                            "", 
+                            "", 
                             set(), 
                             set(),
                             "",
-
-                            stagedata.get('stage_entry_status'),
-                            stagedata.get('stage_entry_role_status'),
-                            stagedata.get('stage_entry_role_props'),
-                            
-                            
-                            stagedata.get('stage_exit_status'),
-                            stagedata.get('stage_exit_role_status'),
-                            stagedata.get('stage_exit_role_props'),
+                            core_data.get('stage_entry_status'),
+                            core_data.get('stage_entry_role_status'),
+                            core_data.get('stage_entry_role_props'),
+                            core_data.get('stage_exit_status'),
+                            core_data.get('stage_exit_role_status'),
+                            core_data.get('stage_exit_role_props'),
                             )
             
-             # 做连接关系 目前仅用名字
-            exit_of_portal_and_goto_stagename: str = stagedata.get("exit_of_portal")
-            if len(exit_of_portal_and_goto_stagename) > 0:
+            # 做连接关系 目前仅用名字
+            exit_of_portal_and_goto_stagename: str = core_data.get("exit_of_portal")
+            if exit_of_portal_and_goto_stagename != "":
                 stage.stage_as_exit_of_portal(exit_of_portal_and_goto_stagename)
+            else:
+                logger.debug(f"Stage {stage.name} has no exit_of_portal.")
 
-            # 设置属性
-            stage.build_attributes(stagedata.get("attributes"))
+            # 设置（战斗）属性
+            stage.build_attributes(core_data.get("attributes"))
 
-            # 添加
-            self.data_base_system.add_stage(stagedata.get('name'), stage)
+            # 添加到数据库
+            self.data_base_system.add_stage(stage.name, stage)
 ###############################################################################################################################################
-    def create_prop_data_base(self, props: Any) -> None:
+    def _create_prop_data_base(self, props: Any) -> None:
         if props is None:
             logger.error("没有道具数据内容(props)，请检查World.json配置。")
             return
@@ -146,22 +150,14 @@ class WorldDataBuilder:
                 prop_data.get('type'), 
                 prop_data.get('attributes')))
 ###############################################################################################################################################
-    def create_data_base_system(self) -> None:
-        database = self.data.get('database', None)
+    def _create_data_base_system(self) -> None:
+        database = self._data.get('database', None)
         if database is None:
             logger.error("没有数据库(database)，请检查World.json配置。")
             return
-        self.create_npc_data_base(database.get('npcs', None))
-        self.create_stage_data_base(database.get('stages', None))
-        self.create_prop_data_base(database.get('props', None))
-        #logger.info("创建数据库成功。")
-########################################################################################################################
-    def build_prop_conditions(self, condition_data: List[Any]) -> list[StageConditionData]: 
-        res: list[StageConditionData] = []
-        for data in condition_data:
-            createcondition: StageConditionData = StageConditionData(data.get("name"), data.get("type"), data.get("propname"))
-            res.append(createcondition)
-        return res
+        self._create_npc_data_base(database.get('npcs', None))
+        self._create_stage_data_base(database.get('stages', None))
+        self._create_prop_data_base(database.get('props', None))
 ########################################################################################################################
 class StageBuilder:
     def __init__(self) -> None:
@@ -171,14 +167,6 @@ class StageBuilder:
     def __str__(self) -> str:
         return f"StageBuilder: {self.datalist}"      
 
-    #
-    # def build_prop_conditions(self, condition_data: List[Any]) -> list[StageConditionData]: 
-    #     res: list[StageConditionData] = []
-    #     for data in condition_data:
-    #         createcondition: StageConditionData = StageConditionData(data.get("name"), data.get("type"), data.get("propname"))
-    #         res.append(createcondition)
-    #     return res
-    #
     def props_proxy_in_stage(self, props_data: List[Any]) -> set[PropData]:
         res: set[PropData] = set()
         for obj in props_data:
@@ -254,9 +242,3 @@ class NPCBuilder:
 ########################################################################################################################
 ########################################################################################################################
 ########################################################################################################################
-
-
-
-
-
-        

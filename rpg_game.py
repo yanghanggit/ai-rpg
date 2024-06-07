@@ -1,5 +1,7 @@
 import os
 from typing import List, Optional
+
+from overrides import override
 from entitas import Matcher #type: ignore
 from loguru import logger
 from auxiliary.components import (
@@ -18,7 +20,7 @@ from auxiliary.components import (
     StageEntryCondCheckRolePropsComponent,
     )
 from auxiliary.extended_context import ExtendedContext
-from auxiliary.builders import WorldDataBuilder, StageBuilder, NPCBuilder
+from auxiliary.builders import GameBuilder, StageBuilder, NPCBuilder
 from entitas.entity import Entity
 from systems.init_memory_system import InitMemorySystem
 from systems.npc_ready_for_planning_system import NPCReadyForPlanningSystem
@@ -75,10 +77,10 @@ class RPGGame(BaseGame):
         super().__init__(name)
         # 尽量不要再加东西了，Game就只管上下文，创建世界的数据，和Processors。其中上下文可以做运行中的全局数据管理者
         self.extendedcontext: ExtendedContext = context
-        self.builder: Optional[WorldDataBuilder] = None
-        self.processors: MyProcessors = self.createprocessors(self.extendedcontext)
+        self.builder: Optional[GameBuilder] = None
+        self.processors: MyProcessors = self.create_processors(self.extendedcontext)
 ###############################################################################################################################################
-    def createprocessors(self, context: ExtendedContext) -> MyProcessors:
+    def create_processors(self, context: ExtendedContext) -> MyProcessors:
 
         processors = MyProcessors()
        
@@ -166,10 +168,12 @@ class RPGGame(BaseGame):
         
         return processors
 ###############################################################################################################################################
-    def create_game(self, worlddata: WorldDataBuilder) -> None:
-        if worlddata is None or worlddata.data is None:
-            logger.error("没有WorldBuilder数据，请检查World.json配置。")
-            return
+    def create_game(self, worlddata: GameBuilder) -> None:
+        assert worlddata is not None
+        assert worlddata._data is not None
+        # if worlddata is None or worlddata._data is None:
+        #     logger.error("没有WorldBuilder数据，请检查World.json配置。")
+        #     return
         
         context = self.extendedcontext
         chaos_engineering_system = context.chaos_engineering_system
@@ -191,10 +195,10 @@ class RPGGame(BaseGame):
         context.file_system.set_root_path(runtime_dir_for_world)
 
         ## 第2步 创建管理员类型的角色，全局的AI
-        self.create_world_entities(worlddata.world_npc_builder)
+        self.create_world_entities(worlddata.world_builder)
 
         ## 第3步，创建NPC，player是特殊的NPC
-        self.create_player_npc_entities(worlddata.player_npc_builder)
+        self.create_player_entities(worlddata.player_builder)
         self.create_npc_entities(worlddata.npc_buidler)
         self.add_code_name_component_to_world_and_npcs()
 
@@ -207,6 +211,7 @@ class RPGGame(BaseGame):
         ## 最后！混沌系统，准备测试
         chaos_engineering_system.on_post_create_game(context, worlddata)
 ###############################################################################################################################################
+    @override
     def execute(self) -> None:
         self.started = True
 
@@ -219,6 +224,7 @@ class RPGGame(BaseGame):
         self.processors.execute()
         self.processors.cleanup()
 ###############################################################################################################################################
+    @override
     async def async_execute(self) -> None:
         self.started = True
 
@@ -231,6 +237,7 @@ class RPGGame(BaseGame):
         await self.processors.async_execute()
         self.processors.cleanup()
 ###############################################################################################################################################
+    @override
     def exit(self) -> None:
         self.processors.clear_reactive_processors()
         self.processors.tear_down()
@@ -271,10 +278,12 @@ class RPGGame(BaseGame):
             
         return res
 ###############################################################################################################################################
-    def create_player_npc_entities(self, npcbuilder: NPCBuilder) -> List[Entity]:
+    def create_player_entities(self, npcbuilder: NPCBuilder) -> List[Entity]:
         # 创建player 本质就是创建NPC
         create_result = self.create_npc_entities(npcbuilder)
         for entity in create_result:
+            npccomp: NPCComponent = entity.get(NPCComponent)
+            logger.info(f"创建Player Entity = {npccomp.name}")
             entity.add(PlayerComponent, "")
         return create_result
 ###############################################################################################################################################
@@ -448,6 +457,7 @@ class RPGGame(BaseGame):
             if codecompclass is not None:
                 entity.add(codecompclass, stagecomp.name)
 ###############################################################################################################################################
+    @override
     def on_exit(self) -> None:
         logger.debug(f"{self.name} on_exit")
 ###############################################################################################################################################

@@ -1,7 +1,7 @@
 import os
 from typing import Optional
 from loguru import logger
-from auxiliary.builders import WorldDataBuilder
+from auxiliary.builders import GameBuilder
 from rpg_game import RPGGame 
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.file_system import FileSystem
@@ -13,36 +13,30 @@ from auxiliary.chaos_engineering_system import EmptyChaosEngineeringSystem, ICha
 from auxiliary.data_base_system import DataBaseSystem
 from budding_world.chaos_budding_world import ChaosBuddingWorld
 
-def user_input_pre_command(input_val: str, split_str: str)-> str:
-    if split_str in input_val:
-        return input_val.split(split_str)[1].strip()
-    return input_val
-
-
-### 临时的，写死创建budding_world
-def read_world_data(worldname: str, data_base_system: DataBaseSystem) -> Optional[WorldDataBuilder]:
-    #先写死！！！！
+#######################################################################################################################################
+### （临时的）写死创建budding_world
+def _read_and_build_game_data(gamename: str, data_base_system: DataBaseSystem) -> Optional[GameBuilder]:
     version = 'ewan'
     runtimedir = f"./budding_world/gen_runtimes/"
-    worlddata: str = f"{runtimedir}{worldname}.json"
-    if not os.path.exists(worlddata):
+    game_data_path: str = f"{runtimedir}{gamename}.json"
+    if not os.path.exists(game_data_path):
         logger.error("未找到存档，请检查存档是否存在。")
         return None
 
-    worldbuilder: Optional[WorldDataBuilder] = WorldDataBuilder(worldname, version, runtimedir, data_base_system)
-    if worldbuilder is None:
+    game_builder: Optional[GameBuilder] = GameBuilder(gamename, version, runtimedir, data_base_system)
+    if game_builder is None:
         logger.error("WorldDataBuilder初始化失败。")
         return None
     
-    if not worldbuilder.check_version_valid(worlddata):
+    if not game_builder.loadfile(game_data_path, True):
         logger.error("World.json版本不匹配，请检查版本号。")
         return None
     
-    worldbuilder.build()
-    return worldbuilder
-
-##
-def create_rpg_game(worldname: str, chaosengineering: Optional[IChaosEngineering], data_base_system: DataBaseSystem) -> RPGGame:
+    game_builder.build()
+    return game_builder
+#######################################################################################################################################
+## 创建RPG Game
+def _create_rpg_game(worldname: str, chaosengineering: Optional[IChaosEngineering], data_base_system: DataBaseSystem) -> RPGGame:
 
     # 依赖注入的特殊系统
     file_system = FileSystem("file_system， Because it involves IO operations, an independent system is more convenient.")
@@ -69,26 +63,24 @@ def create_rpg_game(worldname: str, chaosengineering: Optional[IChaosEngineering
     # 创建游戏
     rpggame = RPGGame(worldname, context)
     return rpggame
-
-
-##
-def create_rpg_game_then_build(worldname:str) -> Optional[RPGGame]:
+#######################################################################################################################################
+## 创建RPG Game + 读取数据
+def create_rpg_game(gamename: str) -> Optional[RPGGame]:
     # 通过依赖注入的方式创建数据系统
     data_base_system = DataBaseSystem("test!!! data_base_system，it is a system that stores all the origin data from the settings.")
-    worlddata = read_world_data(worldname, data_base_system)
-    if worlddata is None:
+    game_builder = _read_and_build_game_data(gamename, data_base_system)
+    if game_builder is None:
         logger.error("create_world_data_builder 失败。")
         return None
     
     # 创建游戏 + 专门的混沌工程系统
     chaos_engineering_system = ChaosBuddingWorld("ChaosBuddingWorld")
-    #chaos_engineering_system = None
-    rpggame = create_rpg_game(worldname, chaos_engineering_system, worlddata.data_base_system)
+    rpggame = _create_rpg_game(gamename, chaos_engineering_system, game_builder.data_base_system)
     if rpggame is None:
-        logger.error("create_rpg_game 失败。")
+        logger.error("_create_rpg_game 失败。")
         return None
     
-    # 创建世界
-    rpggame.create_game(worlddata)
+    # 执行创建游戏的所有动作
+    rpggame.create_game(game_builder)
     return rpggame
-
+#######################################################################################################################################

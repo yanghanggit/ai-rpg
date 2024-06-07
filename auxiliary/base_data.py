@@ -1,4 +1,4 @@
-from typing import List, Set, Dict
+from typing import List, Set, Dict, Any
 #from auxiliary.format_of_complex_stage_entry_and_exit_conditions import is_complex_stage_condition
 from enum import Enum
 from loguru import logger
@@ -7,23 +7,23 @@ from loguru import logger
 ########################################################################################################################
 ########################################################################################################################
 ########################################################################################################################
-class StageConditionData:
-    #
-    def __init__(self, name: str, type: str, prop_name: str) -> None:
-        self.name = name
-        self.type = type
-        self.prop_name = prop_name
-        # self.complexconditions: str = ""
+# class StageConditionData:
+#     #
+#     def __init__(self, name: str, type: str, prop_name: str) -> None:
+#         self.name = name
+#         self.type = type
+#         self.prop_name = prop_name
+#         # self.complexconditions: str = ""
 
-        # # 分析是否是复杂条件
-        # if is_complex_stage_condition(prop_name):
-        #     self.complexconditions = str(prop_name)
+#         # # 分析是否是复杂条件
+#         # if is_complex_stage_condition(prop_name):
+#         #     self.complexconditions = str(prop_name)
 
-    # 默认是给名字
-    # def condition(self) -> str:
-    #     if self.complexconditions != "":
-    #         return self.complexconditions
-    #     return self.prop_name
+#     # 默认是给名字
+#     # def condition(self) -> str:
+#     #     if self.complexconditions != "":
+#     #         return self.complexconditions
+#     #     return self.prop_name
 ########################################################################################################################
 ########################################################################################################################
 ########################################################################################################################
@@ -156,12 +156,11 @@ class StageData:
                  description: str, 
                  url: str, 
                  memory: str, 
-                 entry_conditions: list[StageConditionData], 
-                 exit_conditions: list[StageConditionData], 
+                 foo1: Any, 
+                 foo2: Any, 
                  npcs: set[NPCData], 
                  props: set[PropData],
-                 interactiveprops: str,
-        
+                 foo3: Any,
                  stage_entry_status: str,
                  stage_entry_role_status: str,
                  stage_entry_role_props: str,
@@ -170,24 +169,18 @@ class StageData:
                  stage_exit_role_props: str
                  ) -> None:
         
-        
-        
-        
-        
-        
         self.name = name
         self.codename = codename
         self.description = description
         self.url = url
         self.memory = memory
-        self.entry_conditions: list[StageConditionData] = entry_conditions
-        self.exit_conditions: list[StageConditionData] = exit_conditions
+        # self.entry_conditions: list[StageConditionData] = entry_conditions
+        # self.exit_conditions: list[StageConditionData] = exit_conditions
         self.npcs: set[NPCData] = npcs
         self.props: set[PropData] = props
         self.exit_of_portal: set[StageData] = set()
         self.attributes: List[int] = []
-        self.interactiveprops: str = interactiveprops
-
+        #self.interactiveprops: str = interactiveprops
 
         # 新的限制条件
         self.stage_entry_status: str = stage_entry_status
@@ -209,7 +202,7 @@ class StageData:
 
 def StageDataProxy(name: str) -> StageData:
     #logger.info(f"StageDataProxy: {name}")
-    return StageData(name, "", "", "", "", [], [], set(), set(), "", "", "", "", "", "", "")
+    return StageData(name, "", "", "", "", "", "", set(), set(), "", "", "", "", "", "", "")
 ########################################################################################################################
 ########################################################################################################################
 ########################################################################################################################

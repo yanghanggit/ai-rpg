@@ -1,17 +1,17 @@
 from loguru import logger
 from abc import ABC, abstractmethod
-from auxiliary.builders import WorldDataBuilder
+from auxiliary.builders import GameBuilder
 from typing import Any, Optional
 
 ##Used for testing, can simulate extreme situations, and can also be used to test system stability at runtime
 class IChaosEngineering(ABC):
     #extended_context 不用Any会发生循环引用
     @abstractmethod
-    def on_pre_create_game(self, extended_context: Any, worlddata: WorldDataBuilder) -> None:
+    def on_pre_create_game(self, extended_context: Any, worlddata: GameBuilder) -> None:
         pass
 
     @abstractmethod
-    def on_post_create_game(self, extended_context: Any, worlddata: WorldDataBuilder) -> None:
+    def on_post_create_game(self, extended_context: Any, worlddata: GameBuilder) -> None:
         pass
 
     @abstractmethod  
@@ -42,11 +42,11 @@ class EmptyChaosEngineeringSystem(IChaosEngineering):
         self.name: str = name
 
     ##
-    def on_pre_create_game(self, extended_context: Any, worlddata: WorldDataBuilder) -> None:
+    def on_pre_create_game(self, extended_context: Any, worlddata: GameBuilder) -> None:
         logger.debug(f" {self.name}: on_pre_create_world")
 
     ##
-    def on_post_create_game(self, extended_context: Any, worlddata: WorldDataBuilder) -> None:
+    def on_post_create_game(self, extended_context: Any, worlddata: GameBuilder) -> None:
         logger.debug(f"{self.name}: on_post_create_world")
 
     ##

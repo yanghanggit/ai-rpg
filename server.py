@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from auxiliary.multi_players_game import MultiplayersGame
 from auxiliary.player_input_command import PlayerCommandLogin
 from auxiliary.player_proxy import create_player_proxy, get_player_proxy, remove_player_proxy, TEST_CLIENT_SHOW_MESSAGE_COUNT, TEST_SINGLE_PLAYER_NPC_NAME
-from main_utils import create_rpg_game_then_build
+from main_utils import create_rpg_game
 from rpg_game import RPGGame
 from auxiliary.player_proxy import PlayerProxy
 from systems.check_status_action_system import CheckStatusActionHelper, NPCCheckStatusEvent
@@ -33,7 +33,7 @@ async def create(clientip: str) -> list[TupleModel]:
     logger.add(f"logs/{log_start_time}.log", level="DEBUG")
 
     worldname = "World2"
-    rpg_game = create_rpg_game_then_build(worldname)
+    rpg_game = create_rpg_game(worldname)
     if rpg_game is None:
         logger.error("create_rpg_game 失败。")
         return []

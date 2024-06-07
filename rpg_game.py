@@ -20,9 +20,9 @@ from auxiliary.components import (
     StageEntryCondCheckRolePropsComponent,
     )
 from auxiliary.extended_context import ExtendedContext
-from auxiliary.builders import GameBuilder, StageBuilder, NPCBuilder
+from auxiliary.game_builders import GameBuilder, StageBuilder, NPCBuilder
 from entitas.entity import Entity
-from systems.init_memory_system import InitMemorySystem
+from systems.agents_kick_off_system import AgentsKickOffSystem
 from systems.npc_ready_for_planning_system import NPCReadyForPlanningSystem
 from systems.stage_planning_system import StagePlanningSystem
 from systems.npc_planning_system import NPCPlanningSystem
@@ -57,8 +57,8 @@ from systems.steal_action_system import StealActionSystem
 from systems.trade_action_system import TradeActionSystem
 from systems.check_status_action_system import CheckStatusActionSystem
 from base_game import BaseGame
-from systems.init_agents_system import InitAgentsSystem
-from auxiliary.file_system_helper import add_npc_archive_files
+from systems.agents_connect_system import AgentsConnectSystem
+from auxiliary.file_system_helper import add_actor_archive_files
 from systems.my_processors import MyProcessors
 from systems.simple_rpg_role_pre_fight_system import SimpleRPGRolePreFightSystem
 from systems.update_client_message_system import UpdateClientMessageSystem
@@ -88,8 +88,8 @@ class RPGGame(BaseGame):
         processors.add(BeginSystem(context))
         
         #初始化系统########################
-        processors.add(InitAgentsSystem(context)) ### 连接所有agent
-        processors.add(InitMemorySystem(context)) ### 第一次读状态, initmemory
+        processors.add(AgentsConnectSystem(context)) ### 连接所有agent
+        processors.add(AgentsKickOffSystem(context)) ### 第一次读状态, initmemory
         #########################################
 
         # 处理用户输入
@@ -269,12 +269,12 @@ class RPGGame(BaseGame):
             logger.info(f"创建World Entity = {builddata.name}, 故意不加NPC组件")
 
             #重构
-            agent_connect_system.register_actor_agent(builddata.name, builddata.url)
+            agent_connect_system.register_agent(builddata.name, builddata.url)
             memory_system.add_kick_off_memory(builddata.name, builddata.memory)
             code_name_component_system.register_code_name_component_class(builddata.name, builddata.codename)
 
             # 初步建立关系网（在编辑文本中提到的NPC名字）
-            add_npc_archive_files(file_system, builddata.name, builddata.npc_names_mentioned_during_editing_or_for_agent)
+            add_actor_archive_files(file_system, builddata.name, builddata.npc_names_mentioned_during_editing_or_for_agent)
             
         return res
 ###############################################################################################################################################
@@ -311,7 +311,7 @@ class RPGGame(BaseGame):
             npcentity.add(AppearanceComponent, builddata.role_appearance)
 
             #重构
-            agent_connect_system.register_actor_agent(builddata.name, builddata.url)
+            agent_connect_system.register_agent(builddata.name, builddata.url)
             memory_system.add_kick_off_memory(builddata.name, builddata.memory)
             code_name_component_system.register_code_name_component_class(builddata.name, builddata.codename)
             
@@ -328,7 +328,7 @@ class RPGGame(BaseGame):
                 code_name_component_system.register_code_name_component_class(prop_data_from_data_base.name, prop_data_from_data_base.codename)
 
             # 初步建立关系网（在编辑文本中提到的NPC名字）
-            add_npc_archive_files(file_system, builddata.name, builddata.npc_names_mentioned_during_editing_or_for_agent)
+            add_actor_archive_files(file_system, builddata.name, builddata.npc_names_mentioned_during_editing_or_for_agent)
 
         return res
 ###############################################################################################################################################
@@ -389,7 +389,7 @@ class RPGGame(BaseGame):
                 stageentity.add(ExitOfPortalComponent, exit_portal_and_goto_stage.name)
 
             #重构
-            agent_connect_system.register_actor_agent(builddata.name, builddata.url)
+            agent_connect_system.register_agent(builddata.name, builddata.url)
             memory_system.add_kick_off_memory(builddata.name, builddata.memory)
             code_name_component_system.register_code_name_component_class(builddata.name, builddata.codename)
             code_name_component_system.register_stage_tag_component_class(builddata.name, builddata.codename)

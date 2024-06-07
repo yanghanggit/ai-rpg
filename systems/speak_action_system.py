@@ -1,9 +1,9 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
 from auxiliary.components import SpeakActionComponent
-from auxiliary.actor_action import ActorAction
+from auxiliary.actor_plan_and_action import ActorAction
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
-from auxiliary.dialogue_rule import dialogue_enable, parse_target_and_message, ErrorDialogueEnable
+from auxiliary.target_and_message_format_handle import conversation_check, parse_target_and_message, ErrorConversationEnable
 from auxiliary.director_component import notify_stage_director
 from auxiliary.director_event import IDirectorEvent
 from typing import Optional
@@ -21,11 +21,11 @@ class SpeakEvent(IDirectorEvent):
         self.who_is_target = who_is_target
         self.message = message
 
-    def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
+    def to_actor(self, npcname: str, extended_context: ExtendedContext) -> str:
         speakcontent: str = speak_action_prompt(self.who_is_speaking, self.who_is_target, self.message, extended_context)
         return speakcontent
     
-    def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
+    def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
         speakcontent: str = speak_action_prompt(self.who_is_speaking, self.who_is_target, self.message, extended_context)
         return speakcontent
 ####################################################################################################
@@ -57,7 +57,7 @@ class SpeakActionSystem(ReactiveProcessor):
             if targetname is None or message is None:
                 continue
     
-            if dialogue_enable(self.context, entity, targetname) != ErrorDialogueEnable.VALID:
+            if conversation_check(self.context, entity, targetname) != ErrorConversationEnable.VALID:
                 continue
 
             notify_stage_director(self.context, entity, SpeakEvent(safe_npc_name, targetname, message))

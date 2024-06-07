@@ -59,7 +59,7 @@ class CheckStatusActionHelper:
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################        
-class NPCCheckStatusEvent(IDirectorEvent):
+class ActorCheckStatusEvent(IDirectorEvent):
 
     def __init__(self, who: str, props: List[PropData], health: float, role_components: List[PropData], events: List[PropData]) -> None:
         self.who = who
@@ -68,13 +68,13 @@ class NPCCheckStatusEvent(IDirectorEvent):
         self.role_comps = role_components
         self.events = events
 
-    def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
+    def to_actor(self, npcname: str, extended_context: ExtendedContext) -> str:
         if npcname != self.who:
             # 只有自己知道
             return ""
         return check_status_action_prompt(self.who, self.props, self.health, self.role_comps, self.events)
     
-    def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
+    def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
         return ""
 ####################################################################################################################################
 ####################################################################################################################################
@@ -103,6 +103,6 @@ class CheckStatusActionSystem(ReactiveProcessor):
         helper = CheckStatusActionHelper(self.context)
         helper.check_status(entity)
         #
-        notify_stage_director(self.context, entity, NPCCheckStatusEvent(safe_npc_name, helper.props, helper.health, helper.role_components, helper.events))
+        notify_stage_director(self.context, entity, ActorCheckStatusEvent(safe_npc_name, helper.props, helper.health, helper.role_components, helper.events))
 ###################################################################################################################
     

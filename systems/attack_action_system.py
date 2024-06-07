@@ -1,12 +1,12 @@
 from entitas import Matcher, ReactiveProcessor, GroupEvent, Entity # type: ignore
 from auxiliary.components import AttackActionComponent, SimpleRPGRoleComponent, DeadActionComponent, SimpleRPGRoleWeaponComponent, SimpleRPGRoleArmorComponent
 from auxiliary.extended_context import ExtendedContext
-from auxiliary.actor_action import ActorAction
+from auxiliary.actor_plan_and_action import ActorAction
 from loguru import logger
 from auxiliary.director_component import notify_stage_director
 from auxiliary.director_event import IDirectorEvent
 from typing import cast, Optional
-from auxiliary.dialogue_rule import dialogue_enable, ErrorDialogueEnable
+from auxiliary.target_and_message_format_handle import conversation_check, ErrorConversationEnable
 from auxiliary.cn_builtin_prompt import kill_someone, attack_someone_prompt
 
 
@@ -20,11 +20,11 @@ class NPCKillSomeoneEvent(IDirectorEvent):
         self.attacker = attacker
         self.target = target
 
-    def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
+    def to_actor(self, npcname: str, extended_context: ExtendedContext) -> str:
         event = kill_someone(self.attacker, self.target)
         return event
     
-    def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
+    def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
         event = kill_someone(self.attacker, self.target)
         return event
 ####################################################################################################################################
@@ -39,11 +39,11 @@ class NPCAttackSomeoneEvent(IDirectorEvent):
         self.curhp = curhp
         self.maxhp = maxhp
 
-    def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
+    def to_actor(self, npcname: str, extended_context: ExtendedContext) -> str:
         event = attack_someone_prompt(self.attacker, self.target, self.damage, self.curhp, self.maxhp)
         return event
     
-    def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
+    def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
         event = attack_someone_prompt(self.attacker, self.target, self.damage, self.curhp, self.maxhp)
         return event
 
@@ -81,7 +81,7 @@ class AttackActionSystem(ReactiveProcessor):
                 logger.warning(f"攻击者{action.name}意图攻击的对象{value}没有SimpleRPGRoleComponent,本次攻击无效.")
                 continue
 
-            if dialogue_enable(self.context, entity, value) != ErrorDialogueEnable.VALID:
+            if conversation_check(self.context, entity, value) != ErrorConversationEnable.VALID:
                 # 不能说话的就是不能打
                 logger.error(f"攻击者{action.name}意图攻击的对象{value}不能被攻击，因为不能对话，本次攻击无效.")
                 continue

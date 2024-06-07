@@ -4,7 +4,7 @@ from auxiliary.components import (StageComponent,
                         AutoPlanningComponent,
                         STAGE_AVAILABLE_ACTIONS_REGISTER,
                         STAGE_DIALOGUE_ACTIONS_REGISTER)
-from auxiliary.actor_action import ActorPlan, ActorAction
+from auxiliary.actor_plan_and_action import ActorPlan, ActorAction
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger 
 from typing import Coroutine, Optional
@@ -61,7 +61,7 @@ class StagePlanningSystem(ExecuteProcessor):
         # 可以先走混沌工程系统
         response = chaos_engineering_system.hack_stage_planning(context, stagename, prompt)
         if response is None:
-            response = self.context.agent_connect_system.request(stagename, prompt)
+            response = self.context.agent_connect_system.agent_request(stagename, prompt)
 
         return response
 ####################################################################################################

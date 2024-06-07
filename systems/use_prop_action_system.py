@@ -1,18 +1,18 @@
 from entitas import Entity, Matcher, ReactiveProcessor # type: ignore
 from typing import Optional
 from loguru import logger
-from auxiliary.actor_action import ActorAction
+from auxiliary.actor_plan_and_action import ActorAction
 from auxiliary.components import (UsePropActionComponent, StageExitCondStatusComponent, 
                                   EnviroNarrateActionComponent, StageComponent, ActorComponent,
                                   DeadActionComponent)
-from auxiliary.dialogue_rule import parse_target_and_message
+from auxiliary.target_and_message_format_handle import parse_target_and_message
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.director_component import notify_stage_director
 from entitas.group import GroupEvent
 from auxiliary.director_event import IDirectorEvent
 from auxiliary.cn_builtin_prompt import prop_info_prompt, use_prop_to_stage_prompt, NO_INFO_PROMPT, use_prop_no_response_prompt
-from auxiliary.actor_action import ActorPlan
-from auxiliary.dialogue_rule import use_prop_interactive_enable, ErrorUseInteractivePropEnable
+from auxiliary.actor_plan_and_action import ActorPlan
+from auxiliary.target_and_message_format_handle import use_prop_check, ErrorUsePropEnable
 from auxiliary.file_def import PropFile
 
 
@@ -24,12 +24,12 @@ class NPCUsePropToStageEvent(IDirectorEvent):
         self.propname = propname
         self.tips = tips
 
-    def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
+    def to_actor(self, npcname: str, extended_context: ExtendedContext) -> str:
         if npcname != self.npcname:
             return ""
         return self.tips
     
-    def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
+    def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
         return ""
 ####################################################################################################################################
 ####################################################################################################################################
@@ -45,7 +45,7 @@ class UsePropResponseHelper:
     def _parse(self, plan: ActorPlan) -> str:
         enviro_narrate_action: Optional[ActorAction] = plan.get_action_by_key(EnviroNarrateActionComponent.__name__)
         if enviro_narrate_action is None or len(enviro_narrate_action.values) == 0:
-           logger.error(f"InteractivePropActionSystem: {plan.raw_data} is not correct")
+           logger.error(f"InteractivePropActionSystem: {plan._raw} is not correct")
            return ""
         return enviro_narrate_action.single_value()
     
@@ -89,8 +89,8 @@ class UsePropActionSystem(ReactiveProcessor):
                 continue
 
             # 基本检查，是否发起与接受的对象是合理的，而且是否在一个场景里
-            error_code = use_prop_interactive_enable(context, entity, targetname)
-            if error_code != ErrorUseInteractivePropEnable.VALID:
+            error_code = use_prop_check(context, entity, targetname)
+            if error_code != ErrorUsePropEnable.VALID:
                 logger.error(f"检查场景关系失败，错误码：{error_code}")
                 continue
             
@@ -145,7 +145,7 @@ class UsePropActionSystem(ReactiveProcessor):
         logger.debug(f"InteractivePropActionSystem, {targetname}: {final_prompt}")
         agent_connect_system = context.agent_connect_system
         # 用同步的接口，这样能知道结果应该通知给谁。
-        response = agent_connect_system.request(targetname, final_prompt)
+        response = agent_connect_system.agent_request(targetname, final_prompt)
         if response is not None:
             # 场景有反应
             logger.debug(f"InteractivePropActionSystem: {response}")

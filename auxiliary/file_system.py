@@ -1,9 +1,7 @@
 from loguru import logger
 import os
 from typing import Dict, List, Optional
-#from auxiliary.file_def import PropFile, NPCArchiveFile, KnownStageFile, UseItemFile
-from auxiliary.base_data import PropData
-from auxiliary.file_def import PropFile, NPCArchiveFile, StageArchiveFile
+from auxiliary.file_def import PropFile, ActorArchiveFile, StageArchiveFile
 
 class FileSystem:
 
@@ -13,11 +11,9 @@ class FileSystem:
         # 拥有的道具
         self.propfiles: Dict[str, List[PropFile]] = {}
         # 知晓的NPC 
-        self.npc_archive_files: Dict[str, List[NPCArchiveFile]] = {}
+        self.actor_archives: Dict[str, List[ActorArchiveFile]] = {}
         # 知晓的Stage
-        self.known_stage_files: Dict[str, List[StageArchiveFile]] = {}
-        # 全部的道具文件
-        self.all_prop_files: List[PropData] = []
+        self.stage_archives: Dict[str, List[StageArchiveFile]] = {}
 ################################################################################################################
     ### 必须设置根部的执行路行
     def set_root_path(self, rootpath: str) -> None:
@@ -27,7 +23,7 @@ class FileSystem:
         #logger.debug(f"[filesystem]设置了根路径为{rootpath}")
 ################################################################################################################
     ### 删除
-    def deletefile(self, filepath: str) -> None:
+    def delete_file(self, filepath: str) -> None:
         try:
             if os.path.exists(filepath):
                 os.remove(filepath)
@@ -35,7 +31,7 @@ class FileSystem:
             logger.error(f"[{filepath}]的文件删除失败。")
             return
 ################################################################################################################
-    def writefile(self, filepath: str, content: str) -> None:
+    def write_file(self, filepath: str, content: str) -> None:
         try:
             if not os.path.exists(filepath):
                 os.makedirs(os.path.dirname(filepath), exist_ok=True) # 没有就先创建一个！
@@ -48,26 +44,14 @@ class FileSystem:
             logger.error(f"[{filepath}]的文件写入失败。")
             return
 ################################################################################################################
-
-
-
-
-
-
-
-
-
-    """
-    道具相关的处理!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    """
-    def prop_file_name(self, ownersname: str, filename: str) -> str:
+    def prop_file_path(self, ownersname: str, filename: str) -> str:
         return f"{self.rootpath}{ownersname}/props/{filename}.json"
 ################################################################################################################
     ## 写一个道具的文件
     def write_prop_file(self, propfile: PropFile) -> None:
-        self.deletefile(self.prop_file_name(propfile.ownersname, propfile.name))
+        self.delete_file(self.prop_file_path(propfile.ownersname, propfile.name))
         content = propfile.content()
-        self.writefile(self.prop_file_name(propfile.ownersname, propfile.name), content)
+        self.write_file(self.prop_file_path(propfile.ownersname, propfile.name), content)
 ################################################################################################################
     ## 添加一个道具文件
     def add_prop_file(self, propfile: PropFile) -> None:
@@ -95,23 +79,15 @@ class FileSystem:
         # 文件得从管理数据结构中移除掉
         self.propfiles[from_owner].remove(findownersfile)
         # 文件重新写入
-        self.deletefile(self.prop_file_name(from_owner, propname))
+        self.delete_file(self.prop_file_path(from_owner, propname))
         self.add_prop_file(PropFile(propname, to_owner, findownersfile.prop))
 ################################################################################################################
-       
-
-
-
-
-    """
-    知道的NPC相关的处理!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    """
-    def npc_archive_file_path(self, ownersname: str, filename: str) -> str:
+    def actor_archive_path(self, ownersname: str, filename: str) -> str:
         return f"{self.rootpath}{ownersname}/npcs/{filename}.json"
 ################################################################################################################
     ## 添加一个你知道的NPC
-    def add_npc_archive_file(self, npcarchive: NPCArchiveFile) -> Optional[NPCArchiveFile]:
-        files = self.npc_archive_files.setdefault(npcarchive.ownersname, [])
+    def add_actor_archive(self, npcarchive: ActorArchiveFile) -> Optional[ActorArchiveFile]:
+        files = self.actor_archives.setdefault(npcarchive.ownersname, [])
         for file in files:
             if file.npcname == npcarchive.npcname:
                 # 名字匹配，先返回，不添加。后续可以复杂一些
@@ -119,52 +95,47 @@ class FileSystem:
         files.append(npcarchive)
         return npcarchive
 ################################################################################################################
-    def has_npc_archive_file(self, ownersname: str, npcname: str) -> bool:
-        return self.get_npc_archive_file(ownersname, npcname) is not None
+    def has_actor_archive(self, ownersname: str, npcname: str) -> bool:
+        return self.get_actor_archive(ownersname, npcname) is not None
 ################################################################################################################
-    def get_npc_archive_file(self, ownersname: str, npcname: str) -> Optional[NPCArchiveFile]:
-        files = self.npc_archive_files.get(ownersname, [])
+    def get_actor_archive(self, ownersname: str, npcname: str) -> Optional[ActorArchiveFile]:
+        files = self.actor_archives.get(ownersname, [])
         for file in files:
             if file.npcname == npcname:
                 return file
         return None
 ################################################################################################################
     ## 写一个道具的文件
-    def write_npc_archive_file(self, npcarchive: NPCArchiveFile) -> None:
+    def write_actor_archive(self, npcarchive: ActorArchiveFile) -> None:
         ## 测试
-        self.deletefile(self.npc_archive_file_path(npcarchive.ownersname, npcarchive.name))
+        self.delete_file(self.actor_archive_path(npcarchive.ownersname, npcarchive.name))
         content = npcarchive.content()
-        self.writefile(self.npc_archive_file_path(npcarchive.ownersname, npcarchive.name), content)
+        self.write_file(self.actor_archive_path(npcarchive.ownersname, npcarchive.name), content)
 ################################################################################################################
-
-
-    """
-    知道的Stage相关的处理!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    """
-    def stage_archive_file_path(self, ownersname: str, filename: str) -> str:
+    def stage_archive_path(self, ownersname: str, filename: str) -> str:
         return f"{self.rootpath}{ownersname}/stages/{filename}.json"
 ################################################################################################################
-    def add_stage_archive_file(self, stage_archive: StageArchiveFile) -> None:
-        files = self.known_stage_files.setdefault(stage_archive.ownersname, [])
+    def add_stage_archive(self, stage_archive: StageArchiveFile) -> None:
+        files = self.stage_archives.setdefault(stage_archive.ownersname, [])
         for file in files:
             if file.stagename == stage_archive.stagename:
                 # 名字匹配，先返回，不添加。后续可以复杂一些
                 return
         files.append(stage_archive)
 ################################################################################################################
-    def write_stage_archive_file(self, known_stage_file: StageArchiveFile) -> None:
+    def write_stage_archive(self, known_stage_file: StageArchiveFile) -> None:
         ## 测试
-        self.deletefile(self.stage_archive_file_path(known_stage_file.ownersname, known_stage_file.name))
+        self.delete_file(self.stage_archive_path(known_stage_file.ownersname, known_stage_file.name))
         content = known_stage_file.content()
-        self.writefile(self.stage_archive_file_path(known_stage_file.ownersname, known_stage_file.name), content)
+        self.write_file(self.stage_archive_path(known_stage_file.ownersname, known_stage_file.name), content)
 ################################################################################################################
-    def get_stage_archive_file(self, ownersname: str, stagename: str) -> Optional[StageArchiveFile]:
-        stagelist = self.known_stage_files.get(ownersname, [])
+    def get_stage_archive(self, ownersname: str, stagename: str) -> Optional[StageArchiveFile]:
+        stagelist = self.stage_archives.get(ownersname, [])
         for file in stagelist:
             if file.stagename == stagename:
                 return file
         return None
 ################################################################################################################
-    def has_stage_archive_file(self, ownersname: str, stagename: str) -> bool:
-        return self.get_stage_archive_file(ownersname, stagename) is not None
+    def has_stage_archive(self, ownersname: str, stagename: str) -> bool:
+        return self.get_stage_archive(ownersname, stagename) is not None
 ################################################################################################################

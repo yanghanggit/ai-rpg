@@ -25,24 +25,24 @@ class PlayerProxy:
 
     def __init__(self, name: str) -> None:
         self.name = name
-        self.clientmessages: List[tuple[str, str]] = []
-        self.commands: List[str] = []
+        self.client_messages: List[tuple[str, str]] = []
+        self._inputs: List[str] = []
 
     def __str__(self) -> str:
         return f'PlayerProxy({self.name})'
     
-    def addmessage(self, sender: str, message: str) -> None:
-        self.clientmessages.append((sender, message))
+    def add_message(self, sender: str, message: str) -> None:
+        self.client_messages.append((sender, message))
         #logger.debug(f"PlayerProxy({self.name}).add_message({sender}, {message})")
 
     def add_system_message(self, message: str) -> None:
-        self.addmessage(f"[system]", message)
+        self.add_message(f"[system]", message)
 
-    def add_npc_message(self, npcname: str, message: str) -> None:
-        self.addmessage(f"[{npcname}]", message)
+    def add_actor_message(self, npcname: str, message: str) -> None:
+        self.add_message(f"[{npcname}]", message)
 
     def add_stage_message(self, stagename: str, message: str) -> None:
-        self.addmessage(f"[{stagename}]", message)
+        self.add_message(f"[{stagename}]", message)
 
 ### 目前啥也不干，但留着有用的时候再用
 PLAYERS: List[PlayerProxy] = []
@@ -66,7 +66,7 @@ def remove_player_proxy(playerproxy: PlayerProxy) -> None:
     PLAYERS.remove(playerproxy)
 
 ###################################################################################################################
-def add_player_client_npc_message(entity: Entity, message: str) -> None:
+def add_client_actor_message(entity: Entity, message: str) -> None:
     if not entity.has(PlayerComponent):
         return
 
@@ -79,12 +79,11 @@ def add_player_client_npc_message(entity: Entity, message: str) -> None:
 
     #登陆的消息
     npccomp: ActorComponent = entity.get(ActorComponent)
-    playerproxy.add_npc_message(npccomp.name, message)
+    playerproxy.add_actor_message(npccomp.name, message)
 ###################################################################################################################
 ### 单人游戏，临时的名字
 TEST_TERMINAL_NAME = "北京柏林互动科技有限公司"
 TEST_CLIENT_SHOW_MESSAGE_COUNT = 20
-TEST_SINGLE_PLAYER_NPC_NAME = "无名的复活者"
 ###################################################################################################################
 
     

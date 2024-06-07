@@ -5,7 +5,7 @@ from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.director_component import StageDirectorComponent
 from typing import List, Set, Optional, Dict
-from auxiliary.agent_connect_system import AgentConnectSystem
+from auxiliary.lang_serve_agent_system import LangServeAgentSystem
 from auxiliary.cn_builtin_prompt import batch_conversation_action_events_in_stage
 
 # 这个类就是故意打包将对话类事件先进行一次request，如果LLM发现有政策问题就会抛异常，不会将污染的message加入chat history，这样就不可能进入chat_history。
@@ -58,12 +58,12 @@ class PostConversationActionSystem(ReactiveProcessor):
 ####################################################################################################
     def handle(self, stage_entity: Entity, async_execute: bool) -> None:
         stage_director_comp: StageDirectorComponent = stage_entity.get(StageDirectorComponent)
-        if len(stage_director_comp.events) == 0:
+        if len(stage_director_comp._events) == 0:
             return
         ##
-        agent_connect_system: AgentConnectSystem = self.context.agent_connect_system
+        agent_connect_system: LangServeAgentSystem = self.context.agent_connect_system
         #处理场景的
-        raw_events2stage = stage_director_comp.tostage(stage_director_comp.name, self.context) 
+        raw_events2stage = stage_director_comp.to_stage(stage_director_comp.name, self.context) 
         if len(raw_events2stage) > 0:
             batch_events2stage_prompt = self.batch_stage_events(stage_director_comp.name, raw_events2stage) 
             logger.info(f"PostConversationActionSystem: {stage_director_comp.name} : {batch_events2stage_prompt}")
@@ -76,7 +76,7 @@ class PostConversationActionSystem(ReactiveProcessor):
         npcs_in_this_stage = self.context.npcs_in_this_stage(stage_director_comp.name)
         for npc_entity in npcs_in_this_stage:
             npccomp: ActorComponent = npc_entity.get(ActorComponent)
-            raw_events2npc = stage_director_comp.tonpc(npccomp.name, self.context)     
+            raw_events2npc = stage_director_comp.to_actor(npccomp.name, self.context)     
             if len(raw_events2npc) > 0:
                 batch_events2npc_prompt = self.batch_npc_events(stage_director_comp.name, raw_events2npc)
                 logger.info(f"PostConversationActionSystem: {npccomp.name} : {batch_events2npc_prompt}")
@@ -86,14 +86,14 @@ class PostConversationActionSystem(ReactiveProcessor):
                     self.imme_request(npccomp.name, batch_events2npc_prompt)
 ####################################################################################################
     def imme_request(self, name: str, prompt: str) -> None:
-        agent_connect_system: AgentConnectSystem = self.context.agent_connect_system
+        agent_connect_system: LangServeAgentSystem = self.context.agent_connect_system
         try:
-            response = agent_connect_system.request(name, prompt)
+            response = agent_connect_system.agent_request(name, prompt)
             if response is None:
                 logger.error(f"imme_request: {name} request error.")
             else:
                 # AI的回复不要，防止污染上下文
-                agent_connect_system.pop_last_ai_message_from_chat_history(name, response)
+                agent_connect_system.remove_ai_message_from_chat_history(name, response)
         except Exception as e:
                 logger.error(f"imme_request: {name} request error.")
 ####################################################################################################
@@ -117,7 +117,7 @@ class PostConversationActionSystem(ReactiveProcessor):
             else:
                 # AI的回复不要，防止污染上下文
                 logger.debug(f"PostConversationActionSystem: {name} response is {response}")
-                agent_connect_system.pop_last_ai_message_from_chat_history(name, response)
+                agent_connect_system.remove_ai_message_from_chat_history(name, response)
 
         logger.debug(f"PostConversationActionSystem async_post_execute end.")
 ####################################################################################################

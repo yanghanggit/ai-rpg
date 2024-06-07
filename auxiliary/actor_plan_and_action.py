@@ -1,7 +1,7 @@
 from typing import List, Dict, Any, Optional
 import json
 from loguru import logger
-from auxiliary.error_json_handle import merge_json, is_repeat_error_json, is_markdown_json_block, extract_markdown_json_block_content
+from auxiliary.error_json_handle import merge, is_repeat, is_markdown_json_block, extract_markdown_json_block
 
 
 ############################################################################################################
@@ -15,18 +15,21 @@ class MyJSONResponse:
 
     def extract_md_json_block(self) -> 'MyJSONResponse':
         if is_markdown_json_block(self._output):
-            self._output = extract_markdown_json_block_content(self._output)
+            self._output = extract_markdown_json_block(self._output)
         return self
     
     def merge_repeat_json(self) -> 'MyJSONResponse':
-        if is_repeat_error_json(self._output):
-            merge_res = merge_json(self._output)
+        if is_repeat(self._output):
+            merge_res = merge(self._output)
             if merge_res is not None:
                 self._output = json.dumps(merge_res)
         return self
 
     @property  
     def output(self) -> str:
+        return self._output
+    
+    def __str__(self) -> str:
         return self._output
 ############################################################################################################
 ############################################################################################################
@@ -55,28 +58,28 @@ class ActorPlan:
     def __init__(self, name: str, raw_data: str) -> None:
 
         self.name: str = name  
-        self.raw_data: str = raw_data
-        self.json_data: Dict[str, List[str]] = {}
+        self._raw: str = raw_data
+        self._json: Dict[str, List[str]] = {}
         self.actions: List[ActorAction] = []
         self.actions_dict: Dict[str, ActorAction] = {}
 
         # 处理特殊的情况, 例如出现了markdown json block与重复json的情况
         # GPT4 也有可能输出markdown json block。以防万一，我们检查一下。
         # GPT4 也有可能输出重复的json。我们合并一下。有可能上面的json block的错误也犯了，所以放到第二个步骤来做
-        self.json_content = MyJSONResponse(raw_data).extract_md_json_block().merge_repeat_json().output
+        self.json_string = MyJSONResponse(raw_data).extract_md_json_block().merge_repeat_json().output
 
         #核心执行
         self.load_then_build() 
 ############################################################################################################
     def load_then_build(self) -> None:
         try:
-            json_data = json.loads(self.json_content)
+            json_data = json.loads(self.json_string)
             if not self.check_data_format(json_data):
                 logger.error(f"[{self.name}] = ActorPlan, check_data_format error.")
                 return
             
-            self.json_data = json_data
-            self.build(self.json_data)
+            self._json = json_data
+            self.build(self._json)
 
         except Exception as e:
             logger.error(f"[{self.name}] = json.loads error.")
@@ -100,8 +103,8 @@ class ActorPlan:
         return self.actions_dict.get(actionname)
 ############################################################################################################
     def __str__(self) -> str:
-        return f"ActorPlan({self.name}, {self.raw_data})"
+        return f"ActorPlan({self.name}, {self._raw})"
 ############################################################################################################
     def __repr__(self) -> str:
-        return f"ActorPlan({self.name}, {self.raw_data})"
+        return f"ActorPlan({self.name}, {self._raw})"
 ############################################################################################################

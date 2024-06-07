@@ -5,7 +5,7 @@ from auxiliary.components import (  SearchActionComponent,
                                     StageComponent,
                                     DeadActionComponent,
                                     CheckStatusActionComponent)
-from auxiliary.actor_action import ActorAction
+from auxiliary.actor_plan_and_action import ActorAction
 from loguru import logger
 from auxiliary.director_component import notify_stage_director
 from typing import List
@@ -25,7 +25,7 @@ class NPCSearchFailedEvent(IDirectorEvent):
         self.target = target
 
     #
-    def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
+    def to_actor(self, npcname: str, extended_context: ExtendedContext) -> str:
         if npcname != self.who_search_failed:
             ## 只有自己知道
             return ""
@@ -33,7 +33,7 @@ class NPCSearchFailedEvent(IDirectorEvent):
         return event
     
     #
-    def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
+    def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
         event = search_action_failed_prompt(self.who_search_failed, self.target)
         return event
 ####################################################################################################################################
@@ -48,7 +48,7 @@ class NPCSearchSuccessEvent(IDirectorEvent):
         self.stagename = stagename
 
     #
-    def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
+    def to_actor(self, npcname: str, extended_context: ExtendedContext) -> str:
         if npcname != self.who_search_success:
             ## 只有自己知道
             return ""
@@ -56,7 +56,7 @@ class NPCSearchSuccessEvent(IDirectorEvent):
         return event
     
     #
-    def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
+    def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
         event = search_action_success_prompt(self.who_search_success, self.target, self.stagename)
         return event
 

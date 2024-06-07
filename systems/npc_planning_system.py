@@ -4,7 +4,7 @@ from auxiliary.components import (ActorComponent,
                         AutoPlanningComponent,
                         ACTOR_DIALOGUE_ACTIONS_REGISTER, 
                         ACTOR_AVAILABLE_ACTIONS_REGISTER)
-from auxiliary.actor_action import ActorPlan, ActorAction
+from auxiliary.actor_plan_and_action import ActorPlan, ActorAction
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from typing import Coroutine, Optional
@@ -59,7 +59,7 @@ class NPCPlanningSystem(ExecuteProcessor):
         response = chaos_engineering_system.hack_npc_planning(context, npcname, prompt)
         # 可以先走混沌工程系统
         if response is None:
-           response = self.context.agent_connect_system.request(npcname, prompt)
+           response = self.context.agent_connect_system.agent_request(npcname, prompt)
             
         return response
 ####################################################################################################

@@ -36,7 +36,7 @@ class PostFightSystem(ExecuteProcessor):
 
         # 推理死亡，并且进行存档
         archiveprompt = gen_npc_archive_prompt(self.context)
-        archive = agent_connect_system.request(safename, archiveprompt)
+        archive = agent_connect_system.agent_request(safename, archiveprompt)
         if archive is not None:
             memory_system.set_and_write(safename, archive)    # 存档!    
         else:

@@ -1,6 +1,6 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
 from auxiliary.components import BroadcastActionComponent, StageComponent
-from auxiliary.actor_action import ActorAction
+from auxiliary.actor_plan_and_action import ActorAction
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.director_component import notify_stage_director
@@ -17,11 +17,11 @@ class BroadcastEvent(IDirectorEvent):
         self.stagename = stagename
         self.content = content
     
-    def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
+    def to_actor(self, npcname: str, extended_context: ExtendedContext) -> str:
         broadcastcontent = broadcast_action_prompt(self.whobroadcast, self.stagename, self.content, extended_context)
         return broadcastcontent
     
-    def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
+    def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
         broadcastcontent = broadcast_action_prompt(self.whobroadcast, self.stagename, self.content, extended_context)
         return broadcastcontent
 

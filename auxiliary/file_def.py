@@ -34,7 +34,7 @@ class PropFile(BaseFile):
 
 ############################################################################################################
 ## 表达一个NPC档案，有这个档案说明你认识这个NPC
-class NPCArchiveFile(BaseFile):
+class ActorArchiveFile(BaseFile):
     def __init__(self, name: str, ownersname: str, npcname: str, appearance: str) -> None:
         super().__init__(name, ownersname)
         self.npcname = npcname

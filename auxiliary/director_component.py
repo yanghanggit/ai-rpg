@@ -12,49 +12,49 @@ DirectorComponentPrototype = namedtuple('DirectorComponentPrototype', 'name')
 class StageDirectorComponent(DirectorComponentPrototype):
 
     def __init__(self) -> None:
-        self.events: list[IDirectorEvent] = []
+        self._events: list[IDirectorEvent] = []
 ##########################################################################################################################
-    def addevent(self, event: IDirectorEvent) -> None:
-        self.events.append(event)
+    def add_event(self, event: IDirectorEvent) -> None:
+        self._events.append(event)
 ##########################################################################################################################
-    def tonpc(self, target_npc_name: str, extended_context: ExtendedContext) -> List[str]:
+    def to_actor(self, target_npc_name: str, extended_context: ExtendedContext) -> List[str]:
         batch: List[str] = []
-        for event in self.events:
-            res = event.tonpc(target_npc_name, extended_context)
+        for event in self._events:
+            res = event.to_actor(target_npc_name, extended_context)
             if res != "":
                 res = replace_all_mentions_of_your_name_with_you(res, target_npc_name)
                 batch.append(res)
         return batch
 ##########################################################################################################################
-    def tostage(self, target_stage_name: str, extended_context: ExtendedContext) -> List[str]:
+    def to_stage(self, target_stage_name: str, extended_context: ExtendedContext) -> List[str]:
         batch: List[str] = []
-        for event in self.events:
-            res = event.tostage(target_stage_name, extended_context)
+        for event in self._events:
+            res = event.to_stage(target_stage_name, extended_context)
             if res != "":
                 batch.append(res)
         return batch
 ##########################################################################################################################
     def clear(self) -> None:
-        self.events.clear()
+        self._events.clear()
 ##########################################################################################################################
-    def player_client_message(self, target_npc_name: str, extended_context: ExtendedContext) -> List[str]:
+    def to_player(self, target_npc_name: str, extended_context: ExtendedContext) -> List[str]:
         # 哭，循环引用，临时就这么写吧, 这些不用客户端显示
         from systems.whisper_action_system import WhisperEvent
         from systems.speak_action_system import SpeakEvent
         from systems.broadcast_action_system import BroadcastEvent
-        from systems.perception_action_system import NPCPerceptionEvent
-        from systems.check_status_action_system import NPCCheckStatusEvent
+        from systems.perception_action_system import ActorPerceptionEvent
+        from systems.check_status_action_system import ActorCheckStatusEvent
         ###
         batch: List[str] = []
-        for event in self.events:
+        for event in self._events:
             check = isinstance(event, WhisperEvent) \
             or isinstance(event, SpeakEvent) \
             or isinstance(event, BroadcastEvent) \
-            or isinstance(event, NPCPerceptionEvent) \
-            or isinstance(event, NPCCheckStatusEvent)
+            or isinstance(event, ActorPerceptionEvent) \
+            or isinstance(event, ActorCheckStatusEvent)
             if check:
                 continue
-            res = event.tonpc(target_npc_name, extended_context)
+            res = event.to_actor(target_npc_name, extended_context)
             if res != "":
                 res = replace_all_mentions_of_your_name_with_you(res, target_npc_name)
                 batch.append(res)
@@ -65,7 +65,8 @@ def notify_stage_director(context: ExtendedContext, entity: Entity, directevent:
     if stageentity is None:
         logger.error(f"StageDirectorComponent not found in entity:{entity}")
         return False
+    assert stageentity.has(StageDirectorComponent)
     directorcomp: StageDirectorComponent = stageentity.get(StageDirectorComponent)
-    directorcomp.addevent(directevent)
+    directorcomp.add_event(directevent)
     return True
 ##########################################################################################################################

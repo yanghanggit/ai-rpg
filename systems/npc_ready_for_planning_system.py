@@ -6,7 +6,7 @@ from auxiliary.components import (ActorComponent,
                                 AutoPlanningComponent,
                                 EnviroNarrateActionComponent)
 from loguru import logger
-from auxiliary.actor_action import ActorAction
+from auxiliary.actor_plan_and_action import ActorAction
 
 
 

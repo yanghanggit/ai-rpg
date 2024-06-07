@@ -7,13 +7,13 @@ from fastapi.templating import Jinja2Templates
 from loguru import logger
 from pydantic import BaseModel
 from auxiliary.multi_players_game import MultiplayersGame
-from auxiliary.player_input_command import PlayerCommandLogin
-from auxiliary.player_proxy import create_player_proxy, get_player_proxy, remove_player_proxy, TEST_CLIENT_SHOW_MESSAGE_COUNT, TEST_SINGLE_PLAYER_NPC_NAME
+from auxiliary.player_command import PlayerLogin
+from auxiliary.player_proxy import create_player_proxy, get_player_proxy, remove_player_proxy, TEST_CLIENT_SHOW_MESSAGE_COUNT
 from main_utils import create_rpg_game
 from rpg_game import RPGGame
 from auxiliary.player_proxy import PlayerProxy
-from systems.check_status_action_system import CheckStatusActionHelper, NPCCheckStatusEvent
-from systems.perception_action_system import PerceptionActionHelper, NPCPerceptionEvent
+from systems.check_status_action_system import CheckStatusActionHelper, ActorCheckStatusEvent
+from systems.perception_action_system import PerceptionActionHelper, ActorPerceptionEvent
 
 class TextInput(BaseModel):
     text_input: str
@@ -83,7 +83,7 @@ async def pick_actor(clientip: str, actorname: str) -> list[TupleModel]:
     global multiplayersgames
     playerproxy = get_player_proxy(clientip)
     assert playerproxy is not None
-    playerstartcmd = PlayerCommandLogin("/player-login", multiplayersgames[clientip].rpggame, playerproxy, actorname)
+    playerstartcmd = PlayerLogin("/player-login", multiplayersgames[clientip].rpggame, playerproxy, actorname)
     playerstartcmd.execute()
     await multiplayersgames[clientip].rpggame.async_execute()
     logger.debug(f"pick actor finish")
@@ -98,7 +98,7 @@ async def request_game_messages(clientip: str) -> list[TupleModel]:
     messages: list[TupleModel] = []
     playerproxy = get_player_proxy(clientip)
     if playerproxy is not None:
-        for message in playerproxy.clientmessages[-TEST_CLIENT_SHOW_MESSAGE_COUNT:]:
+        for message in playerproxy.client_messages[-TEST_CLIENT_SHOW_MESSAGE_COUNT:]:
             messages.append(TupleModel(who=message[0], what=message[1]))
     else:
         messages.append(TupleModel(who=clientip, what="请先创建游戏或加入游戏."))
@@ -137,10 +137,10 @@ async def imme_handle_perception(rpg_game: RPGGame, playerproxy: PlayerProxy) ->
     assert stageentity is not None
     safe_stage_name = context.safe_get_entity_name(stageentity)
     #
-    event = NPCPerceptionEvent(safe_npc_name, safe_stage_name, helper.npcs_in_stage, helper.props_in_stage)
-    message = event.tonpc(safe_npc_name, context)
+    event = ActorPerceptionEvent(safe_npc_name, safe_stage_name, helper.npcs_in_stage, helper.props_in_stage)
+    message = event.to_actor(safe_npc_name, context)
     #
-    playerproxy.add_npc_message(safe_npc_name, message)
+    playerproxy.add_actor_message(safe_npc_name, message)
 ############################################################################################################
 # player 可以是立即模式
 async def imme_handle_check_status(rpg_game: RPGGame, playerproxy: PlayerProxy) -> None:
@@ -155,16 +155,16 @@ async def imme_handle_check_status(rpg_game: RPGGame, playerproxy: PlayerProxy) 
     #
     safename = context.safe_get_entity_name(playerentity)
     #
-    event = NPCCheckStatusEvent(safename, helper.props, helper.health, helper.role_components, helper.events)
-    message = event.tonpc(safename, context)
-    playerproxy.add_npc_message(safename, message)
+    event = ActorCheckStatusEvent(safename, helper.props, helper.health, helper.role_components, helper.events)
+    message = event.to_actor(safename, context)
+    playerproxy.add_actor_message(safename, message)
 ############################################################################################################
 
 async def playerinput(clientip: str, command: str) -> list[TupleModel]:
     #
     playerproxy = get_player_proxy(clientip)
     assert playerproxy is not None
-    playerproxy.commands.append(command)
+    playerproxy._inputs.append(command)
     
     #
     if "/checkstatus" in command:

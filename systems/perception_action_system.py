@@ -51,7 +51,7 @@ class PerceptionActionHelper:
 ####################################################################################################################################
 ####################################################################################################################################
 #################################################################################################################################### 
-class NPCPerceptionEvent(IDirectorEvent):
+class ActorPerceptionEvent(IDirectorEvent):
 
     def __init__(self, who_perception: str, stagename: str, result_npcs_in_stage: Dict[str, str], result_props_in_stage: List[str]) -> None:
         self.who_perception = who_perception
@@ -59,12 +59,12 @@ class NPCPerceptionEvent(IDirectorEvent):
         self.result_npcs_in_stage = result_npcs_in_stage
         self.result_props_in_stage = result_props_in_stage
     
-    def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
+    def to_actor(self, npcname: str, extended_context: ExtendedContext) -> str:
         if npcname != self.who_perception:
             return ""
         return perception_action_prompt(self.who_perception, self.stagename, self.result_npcs_in_stage, self.result_props_in_stage)
     
-    def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
+    def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
         return ""
 ####################################################################################################################################
 ####################################################################################################################################
@@ -95,5 +95,5 @@ class PerceptionActionSystem(ReactiveProcessor):
         stageentity = self.context.safe_get_stage_entity(entity)
         assert stageentity is not None
         safe_stage_name = self.context.safe_get_entity_name(stageentity)   
-        notify_stage_director(self.context, entity, NPCPerceptionEvent(safe_npc_name, safe_stage_name, helper.npcs_in_stage, helper.props_in_stage))
+        notify_stage_director(self.context, entity, ActorPerceptionEvent(safe_npc_name, safe_stage_name, helper.npcs_in_stage, helper.props_in_stage))
 ###################################################################################################################

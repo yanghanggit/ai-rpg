@@ -4,7 +4,7 @@ from auxiliary.components import (DeadActionComponent, PlayerComponent,
                         DestroyComponent)
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
-from auxiliary.actor_action import ActorAction
+from auxiliary.actor_plan_and_action import ActorAction
 from rpg_game import RPGGame
 
 class DeadActionSystem(ExecuteProcessor):

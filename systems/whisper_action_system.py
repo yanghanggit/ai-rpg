@@ -1,10 +1,10 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
 from auxiliary.components import WhisperActionComponent
-from auxiliary.actor_action import ActorAction
+from auxiliary.actor_plan_and_action import ActorAction
 from auxiliary.extended_context import ExtendedContext
 from typing import Optional
 from loguru import logger
-from auxiliary.dialogue_rule import parse_target_and_message, dialogue_enable, ErrorDialogueEnable
+from auxiliary.target_and_message_format_handle import parse_target_and_message, conversation_check, ErrorConversationEnable
 from auxiliary.director_component import notify_stage_director
 from auxiliary.director_event import IDirectorEvent
 from auxiliary.cn_builtin_prompt import whisper_action_prompt
@@ -20,14 +20,14 @@ class WhisperEvent(IDirectorEvent):
         self.who_is_target = who_is_target
         self.message = message
 
-    def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
+    def to_actor(self, npcname: str, extended_context: ExtendedContext) -> str:
         if npcname != self.who_is_whispering or npcname != self.who_is_target:
             # 只有这2个人才能听到
             return ""
         whispercontent = whisper_action_prompt(self.who_is_whispering, self.who_is_target, self.message, extended_context)
         return whispercontent
     
-    def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
+    def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
         ## 场景应该是彻底听不到
         return ""
 ####################################################################################################
@@ -60,7 +60,7 @@ class WhisperActionSystem(ReactiveProcessor):
             if targetname is None or message is None:
                 continue
 
-            if dialogue_enable(self.context, entity, targetname) != ErrorDialogueEnable.VALID:
+            if conversation_check(self.context, entity, targetname) != ErrorConversationEnable.VALID:
                 continue
             
             notify_stage_director(self.context, entity, WhisperEvent(safe_npc_name, targetname, message))

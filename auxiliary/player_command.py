@@ -3,7 +3,6 @@ from rpg_game import RPGGame
 from loguru import logger
 from auxiliary.components import (
     BroadcastActionComponent,
-    #PlayerLoginEventComponent,
     SpeakActionComponent, 
     StageComponent, 
     ActorComponent, 
@@ -18,10 +17,9 @@ from auxiliary.components import (
     StealActionComponent,
     TradeActionComponent, 
     CheckStatusActionComponent)
-from auxiliary.actor_action import ActorAction
+from auxiliary.actor_plan_and_action import ActorAction
 from auxiliary.player_proxy import PlayerProxy
 from abc import ABC, abstractmethod
-#import time
 import datetime
 
 
@@ -46,7 +44,7 @@ class PlayerCommand(ABC):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class PlayerCommandLogin(PlayerCommand):
+class PlayerLogin(PlayerCommand):
 
     def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, login_npc_name: str) -> None:
         super().__init__(name, game, playerproxy)
@@ -97,11 +95,11 @@ class PlayerCommandLogin(PlayerCommand):
         # 初始化的NPC记忆
         memory_system = context.kick_off_memory_system
         initmemory =  memory_system.get_kick_off_memory(self.login_npc_name)
-        self.playerproxy.add_npc_message(self.login_npc_name, initmemory)
+        self.playerproxy.add_actor_message(self.login_npc_name, initmemory)
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################     
-class PlayerCommandAttack(PlayerCommand):
+class PlayerAttack(PlayerCommand):
 
     def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, attack_target_name: str) -> None:
         super().__init__(name, game, playerproxy)
@@ -127,7 +125,7 @@ class PlayerCommandAttack(PlayerCommand):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################     
-class PlayerCommandLeaveFor(PlayerCommand):
+class PlayerGoTo(PlayerCommand):
 
     def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, target_stage_name: str) -> None:
         super().__init__(name, game, playerproxy)
@@ -150,7 +148,7 @@ class PlayerCommandLeaveFor(PlayerCommand):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################     
-class PlayerCommandPortalStep(PlayerCommand):
+class PlayerPortalStep(PlayerCommand):
 
     def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy) -> None:
         super().__init__(name, game, playerproxy)
@@ -177,7 +175,7 @@ class PlayerCommandPortalStep(PlayerCommand):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class PlayerCommandBroadcast(PlayerCommand):
+class PlayerBroadcast(PlayerCommand):
 
     def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, content: str) -> None:
         super().__init__(name, game, playerproxy)
@@ -200,7 +198,7 @@ class PlayerCommandBroadcast(PlayerCommand):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class PlayerCommandSpeak(PlayerCommand):
+class PlayerSpeak(PlayerCommand):
 
     def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, speakcontent: str) -> None:
         super().__init__(name, game, playerproxy)
@@ -223,7 +221,7 @@ class PlayerCommandSpeak(PlayerCommand):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class PlayerCommandWhisper(PlayerCommand):
+class PlayerWhisper(PlayerCommand):
 
     def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, whispercontent: str) -> None:
         super().__init__(name, game, playerproxy)
@@ -246,7 +244,7 @@ class PlayerCommandWhisper(PlayerCommand):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class PlayerCommandSearch(PlayerCommand):
+class PlayerSearch(PlayerCommand):
 
     def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, search_target_prop_name: str) -> None:
         super().__init__(name, game, playerproxy)
@@ -269,7 +267,7 @@ class PlayerCommandSearch(PlayerCommand):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class PlayerCommandPerception(PlayerCommand):
+class PlayerPerception(PlayerCommand):
 
     def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy) -> None:
         super().__init__(name, game, playerproxy)
@@ -290,7 +288,7 @@ class PlayerCommandPerception(PlayerCommand):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class PlayerCommandSteal(PlayerCommand):
+class PlayerSteal(PlayerCommand):
 
     def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, command: str) -> None:
         super().__init__(name, game, playerproxy)
@@ -312,7 +310,7 @@ class PlayerCommandSteal(PlayerCommand):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class PlayerCommandTrade(PlayerCommand):
+class PlayerTrade(PlayerCommand):
 
     def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, command: str) -> None:
         super().__init__(name, game, playerproxy)
@@ -334,7 +332,7 @@ class PlayerCommandTrade(PlayerCommand):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class PlayerCommandCheckStatus(PlayerCommand):
+class PlayerCheckStatus(PlayerCommand):
 
     def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy) -> None:
         super().__init__(name, game, playerproxy)
@@ -357,7 +355,7 @@ class PlayerCommandCheckStatus(PlayerCommand):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class PlayerCommandUseInteractiveProp(PlayerCommand):
+class PlayerUseProp(PlayerCommand):
     def __init__(self, inputname: str, game: RPGGame, playerproxy: PlayerProxy, command: str) -> None:
         super().__init__(inputname, game, playerproxy)
         # "@使用道具对象>道具名"
@@ -375,3 +373,6 @@ class PlayerCommandUseInteractiveProp(PlayerCommand):
 
         newmemory = f"""{{"{UsePropActionComponent.__name__}": ["{self.command}"]}}"""
         self.add_human_message(playerentity, newmemory)
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################

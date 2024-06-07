@@ -38,7 +38,7 @@ class TerminalPlayerInputSystem(ExecuteProcessor):
             break
 ############################################################################################################ 
     def display_client_messages(self, playerproxy: PlayerProxy, display_messages_count: int) -> None:
-        clientmessages = playerproxy.clientmessages
+        clientmessages = playerproxy.client_messages
         for message in clientmessages[-display_messages_count:]:
             tag = message[0]
             content = message[1]
@@ -49,6 +49,6 @@ class TerminalPlayerInputSystem(ExecuteProcessor):
             from rpg_game import RPGGame 
             cast(RPGGame, rpggame).exit()
         else:
-            playerproxy.commands.append(str(usrinput))
+            playerproxy._inputs.append(str(usrinput))
 ############################################################################################################
 

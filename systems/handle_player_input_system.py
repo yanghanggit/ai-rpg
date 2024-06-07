@@ -1,26 +1,22 @@
-from entitas import ExecuteProcessor#type: ignore
+from entitas import ExecuteProcessor #type: ignore
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from rpg_game import RPGGame 
 from auxiliary.player_proxy import PlayerProxy, get_player_proxy, TEST_TERMINAL_NAME, PLAYER_INPUT_MODE, determine_player_input_mode
-from auxiliary.player_input_command import (
-                          PlayerCommandAttack, 
-                          PlayerCommandLeaveFor, 
-                          PlayerCommandBroadcast, 
-                          PlayerCommandSpeak,
-                          PlayerCommandUseInteractiveProp, 
-                          PlayerCommandWhisper, 
-                          PlayerCommandSearch,
-                          PlayerCommandPortalStep,
-                          PlayerCommandSteal,
-                          PlayerCommandTrade, 
-                          PlayerCommandPerception,
-                          PlayerCommandCheckStatus)
-
+from auxiliary.player_command import (
+                          PlayerAttack, 
+                          PlayerGoTo, 
+                          PlayerBroadcast, 
+                          PlayerSpeak,
+                          PlayerUseProp, 
+                          PlayerWhisper, 
+                          PlayerSearch,
+                          PlayerPortalStep,
+                          PlayerSteal,
+                          PlayerTrade, 
+                          PlayerPerception,
+                          PlayerCheckStatus)
 from auxiliary.extended_context import ExtendedContext
-# from systems.check_status_action_system import CheckStatusActionHelper, NPCCheckStatusEvent
-# from systems.perception_action_system import PerceptionActionHelper, NPCPerceptionEvent
-
 
 ############################################################################################################
 def splitcommand(input_val: str, split_str: str)-> str:
@@ -50,13 +46,13 @@ class HandlePlayerInputSystem(ExecuteProcessor):
             logger.warning("玩家不存在，或者玩家未加入游戏")
             return
         
-        for command in playerproxy.commands:
+        for command in playerproxy._inputs:
             #todo
             singleplayer = self.context.getplayer(playername)
             assert singleplayer is not None
             #
             safename = self.context.safe_get_entity_name(singleplayer)
-            playerproxy.add_npc_message(safename, command)
+            playerproxy.add_actor_message(safename, command)
             
             ## 处理玩家的输入
             create_any_player_command_by_input = self.handle_input(self.rpggame, playerproxy, command)
@@ -69,7 +65,7 @@ class HandlePlayerInputSystem(ExecuteProcessor):
             ## 总之要跳出循环 
             break
                   
-        playerproxy.commands.clear()
+        playerproxy._inputs.clear()
 ############################################################################################################
     def handle_input(self, rpggame: RPGGame, playerproxy: PlayerProxy, usrinput: str) -> bool:
 
@@ -79,96 +75,64 @@ class HandlePlayerInputSystem(ExecuteProcessor):
         elif "/attack" in usrinput:
             command = "/attack"
             targetname = splitcommand(usrinput, command)           
-            PlayerCommandAttack(command, rpggame, playerproxy, targetname).execute()
+            PlayerAttack(command, rpggame, playerproxy, targetname).execute()
                         
         elif "/leave" in usrinput:
             command = "/leave"
             stagename = splitcommand(usrinput, command)
-            PlayerCommandLeaveFor(command, rpggame, playerproxy, stagename).execute()
+            PlayerGoTo(command, rpggame, playerproxy, stagename).execute()
   
         elif "/broadcast" in usrinput:
             command = "/broadcast"
             content = splitcommand(usrinput, command)
-            PlayerCommandBroadcast(command, rpggame, playerproxy, content).execute()
+            PlayerBroadcast(command, rpggame, playerproxy, content).execute()
             
         elif "/speak" in usrinput:
             command = "/speak"
             content = splitcommand(usrinput, command)
-            PlayerCommandSpeak(command, rpggame, playerproxy, content).execute()
+            PlayerSpeak(command, rpggame, playerproxy, content).execute()
 
         elif "/whisper" in usrinput:
             command = "/whisper"
             content = splitcommand(usrinput, command)
-            PlayerCommandWhisper(command, rpggame,playerproxy, content).execute()
+            PlayerWhisper(command, rpggame,playerproxy, content).execute()
 
         elif "/search" in usrinput:
             command = "/search"
             propname = splitcommand(usrinput, command)
-            PlayerCommandSearch(command, rpggame, playerproxy, propname).execute()
+            PlayerSearch(command, rpggame, playerproxy, propname).execute()
 
         elif "/portalstep" in usrinput:
             command = "/portalstep"
-            PlayerCommandPortalStep(command, rpggame, playerproxy).execute()
+            PlayerPortalStep(command, rpggame, playerproxy).execute()
 
         elif "/steal" in usrinput:
             command = "/steal"
             propname = splitcommand(usrinput, command)
-            PlayerCommandSteal(command, rpggame, playerproxy, propname).execute()
+            PlayerSteal(command, rpggame, playerproxy, propname).execute()
 
         elif "/trade" in usrinput:
             command = "/trade"
             propname = splitcommand(usrinput, command)
-            PlayerCommandTrade(command, rpggame, playerproxy, propname).execute()
+            PlayerTrade(command, rpggame, playerproxy, propname).execute()
 
         elif "/perception" in usrinput:
             command = "/perception"
             #self.imme_handle_perception(playerproxy)
-            PlayerCommandPerception(command, rpggame, playerproxy).execute()
+            PlayerPerception(command, rpggame, playerproxy).execute()
             #return False
 
         elif "/checkstatus" in usrinput:
             command = "/checkstatus"
             #self.imme_handle_check_status(playerproxy)
-            PlayerCommandCheckStatus(command, rpggame, playerproxy).execute()
+            PlayerCheckStatus(command, rpggame, playerproxy).execute()
             #return False
         
         elif "/useprop" in usrinput:
             command = "/useprop"
             content = splitcommand(usrinput, command)
-            PlayerCommandUseInteractiveProp(command, rpggame, playerproxy, content).execute()
+            PlayerUseProp(command, rpggame, playerproxy, content).execute()
 
         return True
-############################################################################################################
-#     def imme_handle_perception(self, playerproxy: PlayerProxy) -> None:
-#         playerentity = self.context.getplayer(playerproxy.name)
-#         if playerentity is None:
-#             return
-#         #
-#         helper = PerceptionActionHelper(self.context)
-#         helper.perception(playerentity)
-#         #
-#         safe_npc_name = self.context.safe_get_entity_name(playerentity)
-#         stageentity = self.context.safe_get_stage_entity(playerentity)
-#         assert stageentity is not None
-#         safe_stage_name = self.context.safe_get_entity_name(stageentity)
-#         #
-#         event = NPCPerceptionEvent(safe_npc_name, safe_stage_name, helper.npcs_in_stage, helper.props_in_stage)
-#         message = event.tonpc(safe_npc_name, self.context)
-#         #
-#         playerproxy.add_npc_message(safe_npc_name, message)
-# ############################################################################################################
-#     def imme_handle_check_status(self, playerproxy: PlayerProxy) -> None:
-#         playerentity = self.context.getplayer(playerproxy.name)
-#         if playerentity is None:
-#             return
-#         #
-#         helper = CheckStatusActionHelper(self.context)
-#         helper.check_status(playerentity)
-#         #
-#         safename = self.context.safe_get_entity_name(playerentity)
-#         #
-#         event = NPCCheckStatusEvent(safename, helper.props, helper.health, helper.role_components, helper.events)
-#         message = event.tonpc(safename, self.context)
-#         playerproxy.add_npc_message(safename, message)
 ############################################################################################################
 

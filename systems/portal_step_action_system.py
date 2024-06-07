@@ -2,7 +2,7 @@ from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignor
 from auxiliary.components import (GoToActionComponent, PortalStepActionComponent, DeadActionComponent,
                         ActorComponent, 
                         ExitOfPortalComponent,)
-from auxiliary.actor_action import ActorAction
+from auxiliary.actor_plan_and_action import ActorAction
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 # from auxiliary.director_event import IDirectorEvent

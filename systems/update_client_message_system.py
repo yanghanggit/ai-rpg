@@ -5,10 +5,10 @@ from auxiliary.extended_context import ExtendedContext
 from auxiliary.components import MindVoiceActionComponent, WhisperActionComponent, SpeakActionComponent, \
     BroadcastActionComponent, EnviroNarrateActionComponent, \
     AttackActionComponent, GoToActionComponent
-from auxiliary.actor_action import ActorAction
+from auxiliary.actor_plan_and_action import ActorAction
 from typing import Optional
 from loguru import logger
-from auxiliary.dialogue_rule import parse_target_and_message, dialogue_enable, ErrorDialogueEnable
+from auxiliary.target_and_message_format_handle import parse_target_and_message, conversation_check, ErrorConversationEnable
 
 class UpdateClientMessageSystem(ExecuteProcessor):
     def __init__(self, context: ExtendedContext) -> None:
@@ -84,14 +84,14 @@ class UpdateClientMessageSystem(ExecuteProcessor):
                 message: Optional[str] = parse[1]
                 if targetname is None or message is None:
                     continue
-                if dialogue_enable(self.context, entity, targetname) != ErrorDialogueEnable.VALID:
+                if conversation_check(self.context, entity, targetname) != ErrorConversationEnable.VALID:
                     continue
                 if player_npc_entity_name != targetname:
                     # 不是对你说的不能看见
                     continue
 
                 #最后添加
-                playerproxy.add_npc_message(action.name, value)
+                playerproxy.add_actor_message(action.name, value)
 ############################################################################################################
     def broadcast_action_2_message(self, playerproxy: PlayerProxy, player_npc_entity: Entity) -> None:
         player_npc_entity_stage = self.context.safe_get_stage_entity(player_npc_entity)
@@ -110,7 +110,7 @@ class UpdateClientMessageSystem(ExecuteProcessor):
             broadcast_action_component: BroadcastActionComponent = entity.get(BroadcastActionComponent)
             action: ActorAction = broadcast_action_component.action
             single_val = action.single_value()
-            playerproxy.add_npc_message(action.name, f"""<@all>{single_val}""") #todo
+            playerproxy.add_actor_message(action.name, f"""<@all>{single_val}""") #todo
 ############################################################################################################
     def speak_action_2_message(self, playerproxy: PlayerProxy, player_npc_entity: Entity) -> None:
         player_npc_entity_stage = self.context.safe_get_stage_entity(player_npc_entity)
@@ -134,10 +134,10 @@ class UpdateClientMessageSystem(ExecuteProcessor):
                 message: Optional[str] = parse[1]
                 if targetname is None or message is None:
                     continue
-                if dialogue_enable(self.context, entity, targetname) != ErrorDialogueEnable.VALID:
+                if conversation_check(self.context, entity, targetname) != ErrorConversationEnable.VALID:
                     continue
       
-                playerproxy.add_npc_message(action.name, value)
+                playerproxy.add_actor_message(action.name, value)
 ############################################################################################################
     def mind_voice_action_2_message(self, playerproxy: PlayerProxy, player_npc_entity: Entity) -> None:
         player_npc_entity_stage = self.context.safe_get_stage_entity(player_npc_entity)
@@ -156,7 +156,7 @@ class UpdateClientMessageSystem(ExecuteProcessor):
             mind_voice_action_component: MindVoiceActionComponent = entity.get(MindVoiceActionComponent)
             action: ActorAction = mind_voice_action_component.action
             single_value = action.single_value()
-            playerproxy.add_npc_message(action.name, f"""<心理活动>{single_value}""") #todo
+            playerproxy.add_actor_message(action.name, f"""<心理活动>{single_value}""") #todo
 ############################################################################################################
     def attack_action_2_message(self, playerproxy: PlayerProxy, player_npc_entity: Entity) -> None:
         player_npc_entity_stage = self.context.safe_get_stage_entity(player_npc_entity)
@@ -177,7 +177,7 @@ class UpdateClientMessageSystem(ExecuteProcessor):
                 continue
 
             targetname = action.values[0]
-            playerproxy.add_npc_message(action.name, f"""准备对{targetname}发起了攻击""") #todo
+            playerproxy.add_actor_message(action.name, f"""准备对{targetname}发起了攻击""") #todo
 ############################################################################################################
     def leave_for_action_2_message(self, playerproxy: PlayerProxy, player_npc_entity: Entity) -> None:
         player_npc_entity_stage = self.context.safe_get_stage_entity(player_npc_entity)
@@ -198,5 +198,5 @@ class UpdateClientMessageSystem(ExecuteProcessor):
                 continue
 
             stagename = action.values[0]
-            playerproxy.add_npc_message(action.name, f"""准备去往{stagename}""") #todo
+            playerproxy.add_actor_message(action.name, f"""准备去往{stagename}""") #todo
 ############################################################################################################

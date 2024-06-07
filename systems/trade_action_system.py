@@ -3,8 +3,8 @@ from auxiliary.extended_context import ExtendedContext
 from auxiliary.components import (  TradeActionComponent,CheckStatusActionComponent, DeadActionComponent,
                                     ActorComponent)
 from loguru import logger
-from auxiliary.actor_action import ActorAction
-from auxiliary.dialogue_rule import dialogue_enable, parse_target_and_message, ErrorDialogueEnable
+from auxiliary.actor_plan_and_action import ActorAction
+from auxiliary.target_and_message_format_handle import conversation_check, parse_target_and_message, ErrorConversationEnable
 from typing import Optional, List
 from auxiliary.director_component import notify_stage_director
 from auxiliary.director_event import IDirectorEvent
@@ -22,14 +22,14 @@ class NPCTradeEvent(IDirectorEvent):
         self.propname = propname
         self.traderes = traderes
 
-    def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
+    def to_actor(self, npcname: str, extended_context: ExtendedContext) -> str:
         if npcname != self.fromwho or npcname != self.towho:
             return ""
         
         tradecontent = trade_action_prompt(self.fromwho, self.towho, self.propname, self.traderes)
         return tradecontent
     
-    def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
+    def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
         return ""
 
 class TradeActionSystem(ReactiveProcessor):
@@ -69,7 +69,7 @@ class TradeActionSystem(ReactiveProcessor):
                 # 不能交谈就是不能交换道具
                 continue
     
-            if dialogue_enable(self.context, entity, targetname) != ErrorDialogueEnable.VALID:
+            if conversation_check(self.context, entity, targetname) != ErrorConversationEnable.VALID:
                 # 不能交谈就是不能交换道具
                 continue
             ##

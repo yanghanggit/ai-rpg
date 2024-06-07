@@ -93,7 +93,7 @@ class GameBuilder:
             
             ## 设置（战斗）属性
             npc.build_attributes(npcdata.get("attributes"))
-            self.data_base_system.add_npc(npc.name, npc)
+            self.data_base_system.add_actor(npc.name, npc)
 ###############################################################################################################################################
     def _create_stage_data_base(self, stages: Any) -> None:
         if stages is None:
@@ -231,7 +231,7 @@ class NPCBuilder:
             # NPC核心数据
             npcblock = datablock.get("npc")
             npcname = npcblock.get("name")
-            npcdata = data_base_system.get_npc(npcname)
+            npcdata = data_base_system.get_actor(npcname)
             if npcdata is None:
                 logger.error(f"NPCBuilder2: {npcname} not found in database.")
                 continue

@@ -3,7 +3,7 @@ from auxiliary.components import StageComponent, ActorComponent, PlayerComponent
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.director_component import StageDirectorComponent
-from auxiliary.player_proxy import add_player_client_npc_message
+from auxiliary.player_proxy import add_client_actor_message
 from auxiliary.cn_builtin_prompt import stage_director_begin_prompt, stage_director_end_prompt, stage_director_event_wrap_prompt
 
 class DirectorSystem(ExecuteProcessor):
@@ -34,7 +34,7 @@ class DirectorSystem(ExecuteProcessor):
         assert entitystage.has(StageComponent)
         stagecomp: StageComponent = entitystage.get(StageComponent)
         directorcomp: StageDirectorComponent = entitystage.get(StageDirectorComponent)
-        events2stage = directorcomp.tostage(stagecomp.name, self.context)  
+        events2stage = directorcomp.to_stage(stagecomp.name, self.context)  
         for event in events2stage:
             logger.debug(f"director:{stagecomp.name}:{event}")
             self.context.safe_add_human_message_to_entity(entitystage, event)       
@@ -56,7 +56,7 @@ def director_events_to_npc(context: ExtendedContext, npc_entity: Entity) -> None
      ### 添加消息！
     npccomp: ActorComponent = npc_entity.get(ActorComponent)
 
-    events2npc = stage_director_comp.tonpc(npccomp.name, context)    
+    events2npc = stage_director_comp.to_actor(npccomp.name, context)    
     if len(events2npc) == 0:
         return
 
@@ -73,8 +73,8 @@ def director_events_to_npc(context: ExtendedContext, npc_entity: Entity) -> None
 
     # 通知客户端显示
     if npc_entity.has(PlayerComponent):
-        events2player = stage_director_comp.player_client_message(npccomp.name, context)
+        events2player = stage_director_comp.to_player(npccomp.name, context)
         for event in events2player:
-            add_player_client_npc_message(npc_entity, event)
+            add_client_actor_message(npc_entity, event)
 ###################################################################################################################
     

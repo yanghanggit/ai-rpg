@@ -6,10 +6,10 @@ from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from systems.update_archive_helper import UpdareArchiveHelper
 from typing import Dict
-from auxiliary.actor_action import ActorAction
+from auxiliary.actor_plan_and_action import ActorAction
 
 ###############################################################################################################################################
-class InitMemorySystem(InitializeProcessor, ExecuteProcessor):
+class AgentsKickOffSystem(InitializeProcessor, ExecuteProcessor):
     def __init__(self, context: ExtendedContext) -> None:
         self.context: ExtendedContext = context
         self.tasks: Dict[str, str] = {}
@@ -22,13 +22,13 @@ class InitMemorySystem(InitializeProcessor, ExecuteProcessor):
         helper.prepare()
         #分段处理
         self.tasks.clear()
-        world_tasks = self.create_world_init_memory_tasks(helper)
-        stage_tasks = self.create_stage_init_memory_tasks(helper)
-        npc_tasks = self.create_npc_init_memory_tasks(helper)
-        #
+        world_tasks = self.create_world_tasks(helper)
+        stage_tasks = self.create_stage_tasks(helper)
+        actor_tasks = self.create_actor_tasks(helper)
+        #填进去
         self.tasks.update(world_tasks)
         self.tasks.update(stage_tasks)
-        self.tasks.update(npc_tasks)
+        self.tasks.update(actor_tasks)
 ###############################################################################################################################################
     @override
     def execute(self) -> None:
@@ -65,7 +65,7 @@ class InitMemorySystem(InitializeProcessor, ExecuteProcessor):
         self.tasks.clear() # 这句必须得走！！！
         logger.info("InitMemorySystem done.")
 ###############################################################################################################################################
-    def create_world_init_memory_tasks(self, helper: UpdareArchiveHelper) -> Dict[str, str]:
+    def create_world_tasks(self, helper: UpdareArchiveHelper) -> Dict[str, str]:
 
         result: Dict[str, str] = {}
 
@@ -85,7 +85,7 @@ class InitMemorySystem(InitializeProcessor, ExecuteProcessor):
         
         return result
 ###############################################################################################################################################
-    def create_stage_init_memory_tasks(self, helper: UpdareArchiveHelper) -> Dict[str, str]:
+    def create_stage_tasks(self, helper: UpdareArchiveHelper) -> Dict[str, str]:
 
         result: Dict[str, str] = {}
 
@@ -107,7 +107,7 @@ class InitMemorySystem(InitializeProcessor, ExecuteProcessor):
         
         return result
 ###############################################################################################################################################
-    def create_npc_init_memory_tasks(self, helper: UpdareArchiveHelper) -> Dict[str, str]:
+    def create_actor_tasks(self, helper: UpdareArchiveHelper) -> Dict[str, str]:
 
         result: Dict[str, str] = {}
 

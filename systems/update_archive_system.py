@@ -4,7 +4,7 @@ from loguru import logger
 from auxiliary.components import (ActorComponent)
 from systems.update_archive_helper import UpdareArchiveHelper
 from auxiliary.cn_builtin_prompt import updated_information_on_WhoDoYouKnow_prompt, updated_information_about_StagesYouKnow_prompt
-from auxiliary.file_system_helper import add_npc_archive_files, update_npc_archive_file, add_stage_archive_files
+from auxiliary.file_system_helper import add_actor_archive_files, update_actor_archive_file, add_stage_archive_files
 from typing import Set
 
 class UpdateArchiveSystem(ExecuteProcessor):
@@ -36,14 +36,14 @@ class UpdateArchiveSystem(ExecuteProcessor):
             return
         
         # 补充文件，有可能是新的人，也有可能全是旧的人
-        add_npc_archive_files(self.context.file_system, npccomp.name, who_do_you_know)        
+        add_actor_archive_files(self.context.file_system, npccomp.name, who_do_you_know)        
 
         # 更新文件，只更新场景内我能看见的人
         appearance_data = self.context.npc_appearance_in_the_stage(npcentity)
         for name in who_do_you_know:
             appearance = appearance_data.get(name, "")
             if appearance != "":
-                update_npc_archive_file(self.context.file_system, npccomp.name, name, appearance)
+                update_actor_archive_file(self.context.file_system, npccomp.name, name, appearance)
 
         # 更新chat history
         who_do_you_know_promt = ",".join(who_do_you_know)

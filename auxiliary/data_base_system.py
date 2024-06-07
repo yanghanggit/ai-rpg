@@ -5,15 +5,15 @@ class DataBaseSystem:
 
     def __init__(self, description: str) -> None:
         self.description = description
-        self.npcs: dict[str, NPCData] = {}
+        self.actors: dict[str, NPCData] = {}
         self.stages: dict[str, StageData] = {}
         self.props: dict[str, PropData] = {}
 
-    def add_npc(self, npcname: str, npc: NPCData) -> None:
-        self.npcs.setdefault(npcname, npc)
+    def add_actor(self, npcname: str, npc: NPCData) -> None:
+        self.actors.setdefault(npcname, npc)
 
-    def get_npc(self, npcname: str) -> Optional[NPCData]:
-        return self.npcs.get(npcname, None)
+    def get_actor(self, npcname: str) -> Optional[NPCData]:
+        return self.actors.get(npcname, None)
 
     def add_stage(self, stagename: str, stage: StageData) -> None:
         self.stages.setdefault(stagename, stage)

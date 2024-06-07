@@ -11,7 +11,7 @@ from auxiliary.components import (GoToActionComponent,
                         StageEntryCondCheckRoleStatusComponent,
                         StageEntryCondCheckRolePropsComponent,
                         DeadActionComponent)
-from auxiliary.actor_action import ActorAction
+from auxiliary.actor_plan_and_action import ActorAction
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.director_component import notify_stage_director
@@ -26,7 +26,7 @@ from auxiliary.cn_builtin_prompt import \
             role_status_info_when_pre_leave_prompt
 from typing import Optional, cast
 from systems.check_status_action_system import CheckStatusActionHelper
-from auxiliary.actor_action import ActorPlan
+from auxiliary.actor_plan_and_action import ActorPlan
 
 
 ####################################################################################################################################
@@ -38,12 +38,12 @@ class NPCExitStageFailedBecauseStageRefuse(IDirectorEvent):
         self.stagename = stagename
         self.tips = tips
 
-    def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
+    def to_actor(self, npcname: str, extended_context: ExtendedContext) -> str:
         if npcname != self.npcname:
             return ""
         return exit_stage_failed_beacuse_stage_refuse_prompt(self.npcname, self.stagename, self.tips)
     
-    def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
+    def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
         return ""
 ####################################################################################################################################
 ####################################################################################################################################
@@ -54,12 +54,12 @@ class NPCEnterStageFailedBecauseStageRefuse(IDirectorEvent):
         self.stagename = stagename
         self.tips = tips
 
-    def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
+    def to_actor(self, npcname: str, extended_context: ExtendedContext) -> str:
         if npcname != self.npcname:
             return ""
         return enter_stage_failed_beacuse_stage_refuse_prompt(self.npcname, self.stagename, self.tips)
     
-    def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
+    def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
         return ""
 ####################################################################################################################################
 ####################################################################################################################################
@@ -236,7 +236,7 @@ class PreLeaveForSystem(ReactiveProcessor):
 
         ## 让大模型去推断是否可以离开，分别检查stage自身，角色状态（例如长相），角色道具（拥有哪些道具与文件）
         agent_connect_system = self.context.agent_connect_system
-        respones = agent_connect_system.request(current_stage_name, final_prompt)
+        respones = agent_connect_system.agent_request(current_stage_name, final_prompt)
         if respones is None:
             logger.error("没有回应！！！！！！！！！！！！！")
             return False
@@ -292,7 +292,7 @@ class PreLeaveForSystem(ReactiveProcessor):
 
         ## 让大模型去推断是否可以离开，分别检查stage自身，角色状态（例如长相），角色道具（拥有哪些道具与文件）
         agent_connect_system = self.context.agent_connect_system
-        respones = agent_connect_system.request(target_stage_name, final_prompt)
+        respones = agent_connect_system.agent_request(target_stage_name, final_prompt)
         if respones is None:
             logger.error("没有回应！！！！！！！！！！！！！")
             return False

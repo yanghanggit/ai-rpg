@@ -33,7 +33,7 @@ class TerminalPlayerInterruptAndWaitSystem(ExecuteProcessor):
     def display_client_messages(self, playerproxy: PlayerProxy, display_messages_count: int) -> None:
         if display_messages_count <= 0:
             return
-        clientmessages = playerproxy.clientmessages
+        clientmessages = playerproxy.client_messages
         for message in clientmessages[-display_messages_count:]:
             tag = message[0]
             content = message[1]

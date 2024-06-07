@@ -4,7 +4,7 @@ from auxiliary.components import (
     ActorComponent,
     DeadActionComponent,
     PerceptionActionComponent)
-from auxiliary.actor_action import ActorAction
+from auxiliary.actor_plan_and_action import ActorAction
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.director_component import notify_stage_director
@@ -30,14 +30,14 @@ class NPCLeaveForFailedBecauseStageIsInvalidEvent(IDirectorEvent):
         self.npcname = npcname
         self.stagename = stagename
 
-    def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
+    def to_actor(self, npcname: str, extended_context: ExtendedContext) -> str:
         if npcname != self.npcname:
             # 跟你无关不用关注，原因类的东西，是失败后矫正用，所以只有自己知道即可
             return ""
         leave_for_stage_is_invalid_event = leave_for_stage_failed_because_stage_is_invalid_prompt(self.npcname, self.stagename)
         return leave_for_stage_is_invalid_event
     
-    def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
+    def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
         return ""
 ####################################################################################################################################
 ####################################################################################################################################
@@ -48,14 +48,14 @@ class NPCLeaveForFailedBecauseAlreadyInStage(IDirectorEvent):
         self.npcname = npcname
         self.stagename = stagename
 
-    def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
+    def to_actor(self, npcname: str, extended_context: ExtendedContext) -> str:
         if npcname != self.npcname:
             # 跟你无关不用关注，原因类的东西，是失败后矫正用，所以只有自己知道即可
             return ""
         already_in_stage_event = leave_for_stage_failed_because_already_in_stage_prompt(self.npcname, self.stagename)
         return already_in_stage_event
     
-    def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
+    def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
         return ""
 
 
@@ -79,11 +79,11 @@ class NPCLeaveStageEvent(IDirectorEvent):
         self.current_stage_name = current_stage_name
         self.leave_for_stage_name = leave_for_stage_name
 
-    def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
+    def to_actor(self, npcname: str, extended_context: ExtendedContext) -> str:
         event = leave_stage_prompt(self.npc_name, self.current_stage_name, self.leave_for_stage_name)
         return event
     
-    def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
+    def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
         event = leave_stage_prompt(self.npc_name, self.current_stage_name, self.leave_for_stage_name)
         return event
 ####################################################################################################################################
@@ -96,7 +96,7 @@ class NPCEnterStageEvent(IDirectorEvent):
         self.stage_name = stage_name
         self.last_stage_name = last_stage_name
 
-    def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
+    def to_actor(self, npcname: str, extended_context: ExtendedContext) -> str:
         if npcname != self.npc_name:
             # 目标场景内的一切听到的是这个:"xxx进入了场景"
             return enter_stage_prompt1(self.npc_name, self.stage_name)
@@ -104,7 +104,7 @@ class NPCEnterStageEvent(IDirectorEvent):
         #通知我自己，我从哪里去往了哪里。这样prompt更加清晰一些
         return enter_stage_prompt2(self.npc_name, self.stage_name, self.last_stage_name)
     
-    def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
+    def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
         event = enter_stage_prompt1(self.npc_name, self.stage_name)
         return event    
 ####################################################################################################################################

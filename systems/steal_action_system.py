@@ -3,8 +3,8 @@ from auxiliary.extended_context import ExtendedContext
 from auxiliary.components import (  StealActionComponent, CheckStatusActionComponent, DeadActionComponent,
                                     ActorComponent)
 from loguru import logger
-from auxiliary.actor_action import ActorAction
-from auxiliary.dialogue_rule import dialogue_enable, parse_target_and_message, ErrorDialogueEnable
+from auxiliary.actor_plan_and_action import ActorAction
+from auxiliary.target_and_message_format_handle import conversation_check, parse_target_and_message, ErrorConversationEnable
 from typing import Optional
 from auxiliary.director_component import notify_stage_director
 from auxiliary.director_event import IDirectorEvent
@@ -22,14 +22,14 @@ class NPCStealEvent(IDirectorEvent):
         self.propname = propname
         self.stealres = stealres
        
-    def tonpc(self, npcname: str, extended_context: ExtendedContext) -> str:
+    def to_actor(self, npcname: str, extended_context: ExtendedContext) -> str:
         if npcname != self.whosteal or npcname != self.targetname:
             return ""
         
         stealcontent = steal_action_prompt(self.whosteal, self.targetname, self.propname, self.stealres)
         return stealcontent
     
-    def tostage(self, stagename: str, extended_context: ExtendedContext) -> str:
+    def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
         return ""
 
 class StealActionSystem(ReactiveProcessor):
@@ -68,7 +68,7 @@ class StealActionSystem(ReactiveProcessor):
                 # 不能交谈就是不能偷
                 continue
     
-            if dialogue_enable(self.context, entity, targetname) != ErrorDialogueEnable.VALID:
+            if conversation_check(self.context, entity, targetname) != ErrorConversationEnable.VALID:
                 # 不能交谈就是不能偷
                 continue
         

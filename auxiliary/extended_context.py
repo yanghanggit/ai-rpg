@@ -11,7 +11,7 @@ from auxiliary.components import (WorldComponent,
 from auxiliary.file_system import FileSystem
 from auxiliary.kick_off_memory_system import KickOffMemorySystem
 from typing import Optional
-from auxiliary.agent_connect_system import AgentConnectSystem
+from auxiliary.lang_serve_agent_system import LangServeAgentSystem
 from auxiliary.code_name_component_system import CodeNameComponentSystem
 from auxiliary.chaos_engineering_system import IChaosEngineering
 from typing import List, Any, Optional, Dict
@@ -22,7 +22,7 @@ class ExtendedContext(Context):
     def __init__(self, 
                  filesystem: FileSystem, 
                  kick_off_memory_system: KickOffMemorySystem, 
-                 agentconnectsys: AgentConnectSystem, 
+                 agentconnectsys: LangServeAgentSystem, 
                  codenamecompsys: CodeNameComponentSystem,
                  databasesys: DataBaseSystem, 
                  chaossystem: IChaosEngineering, 
@@ -164,8 +164,8 @@ class ExtendedContext(Context):
         return None
 ############################################################################################################
     def check_dialogue_action(self, actionname: str, actionvalues: List[str], actions_register: List[Any]) -> bool:
-        from auxiliary.dialogue_rule import parse_target_and_message
-        from auxiliary.dialogue_rule import check_target_message_pair_format
+        from auxiliary.target_and_message_format_handle import parse_target_and_message
+        from auxiliary.target_and_message_format_handle import check_target_and_message_format
 
         if actionname not in [component.__name__ for component in actions_register]:
             # 不是一个对话类型,不用检查
@@ -173,7 +173,7 @@ class ExtendedContext(Context):
         
         # 检查带@target>message类型的Action有无错误内容
         for value in actionvalues:
-            if check_target_message_pair_format(value):
+            if check_target_and_message_format(value):
                 pair = parse_target_and_message(value)
                 target: Optional[str] = pair[0]
                 message: Optional[str] = pair[1]

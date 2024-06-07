@@ -65,7 +65,7 @@ class UseInteractivePropActionSystem(ReactiveProcessor):
         return { Matcher(UseInteractivePropActionComponent): GroupEvent.ADDED }
 ####################################################################################################################################
     def filter(self, entity: Entity) -> bool:
-        return entity.has(UseInteractivePropActionComponent) and entity.has(NPCComponent)  and not entity.has(DeadActionComponent)
+        return entity.has(UseInteractivePropActionComponent) and entity.has(NPCComponent) and not entity.has(DeadActionComponent)
 ####################################################################################################################################
     def react(self, entities: list[Entity]) -> None:
         for entity in entities:

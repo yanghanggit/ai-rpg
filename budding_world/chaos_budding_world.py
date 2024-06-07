@@ -33,11 +33,11 @@ class ChaosBuddingWorld(IChaosEngineering):
         self.on_npc_system_excute_count = 0
 
     ##
-    def on_pre_create_world(self, extended_context: Any, worlddata: WorldDataBuilder) -> None:
+    def on_pre_create_game(self, extended_context: Any, worlddata: WorldDataBuilder) -> None:
         logger.warning(f" {self.name}: on_pre_create_world")
 
     ##
-    def on_post_create_world(self, extended_context: Any, worlddata: WorldDataBuilder) -> None:
+    def on_post_create_game(self, extended_context: Any, worlddata: WorldDataBuilder) -> None:
         logger.warning(f" {self.name}: on_post_create_world")
     
     ##

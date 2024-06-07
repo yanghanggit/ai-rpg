@@ -68,14 +68,14 @@ from auxiliary.base_data import StageData
 
 
 
-## 控制流程和数据创建
+## RPG 的测试类游戏
 class RPGGame(BaseGame):
 
     def __init__(self, name: str, context: ExtendedContext) -> None:
         super().__init__(name)
-        # 不要再加东西了，Game就只管上下文，创建世界的数据，和Processors。其中上下文可以做运行中的全局数据管理者
+        # 尽量不要再加东西了，Game就只管上下文，创建世界的数据，和Processors。其中上下文可以做运行中的全局数据管理者
         self.extendedcontext: ExtendedContext = context
-        self.worlddata: Optional[WorldDataBuilder] = None
+        self.builder: Optional[WorldDataBuilder] = None
         self.processors: MyProcessors = self.createprocessors(self.extendedcontext)
 ###############################################################################################################################################
     def createprocessors(self, context: ExtendedContext) -> MyProcessors:
@@ -166,7 +166,7 @@ class RPGGame(BaseGame):
         
         return processors
 ###############################################################################################################################################
-    def createworld(self, worlddata: WorldDataBuilder) -> None:
+    def create_game(self, worlddata: WorldDataBuilder) -> None:
         if worlddata is None or worlddata.data is None:
             logger.error("没有WorldBuilder数据，请检查World.json配置。")
             return
@@ -182,31 +182,30 @@ class RPGGame(BaseGame):
             shutil.rmtree(runtime_dir_for_world)
 
         # 混沌系统，准备测试
-        chaos_engineering_system.on_pre_create_world(context, worlddata)
+        chaos_engineering_system.on_pre_create_game(context, worlddata)
 
-        ## 第一步，设置根路径
-        self.worlddata = worlddata
+        ## 第1步，设置根路径
+        self.builder = worlddata
         context.agent_connect_system.set_root_path(runtime_dir_for_world)
         context.memory_system.set_root_path(runtime_dir_for_world)
         context.file_system.set_root_path(runtime_dir_for_world)
 
-        ### 第二步 创建实体
-        self.create_world_npc_entities(worlddata.world_npc_builder)
+        ## 第2步 创建管理员类型的角色，全局的AI
+        self.create_world_entities(worlddata.world_npc_builder)
+
+        ## 第3步，创建NPC，player是特殊的NPC
         self.create_player_npc_entities(worlddata.player_npc_builder)
         self.create_npc_entities(worlddata.npc_buidler)
-        self.add_code_name_component_to_world_and_npcs_when_build()
+        self.add_code_name_component_to_world_and_npcs()
 
-        ### 第三步，创建stage
+        ## 第4步，创建stage
         self.create_stage_entities(worlddata.stage_builder)
         
-        ## 第四步，最后处理因为需要上一阶段的注册流程
-        self.add_code_name_component_stages_when_build()
+        ## 第5步，最后处理因为需要上一阶段的注册流程
+        self.add_code_name_component_stages()
 
-        ## 混沌系统，准备测试
-        chaos_engineering_system.on_post_create_world(context, worlddata)
-
-        ## 测试的接口
-        #self._test()
+        ## 最后！混沌系统，准备测试
+        chaos_engineering_system.on_post_create_game(context, worlddata)
 ###############################################################################################################################################
     def execute(self) -> None:
         self.started = True
@@ -237,7 +236,7 @@ class RPGGame(BaseGame):
         self.processors.tear_down()
         logger.info(f"{self.name}, game over")
 ###############################################################################################################################################
-    def create_world_npc_entities(self, npcbuilder: NPCBuilder) -> List[Entity]:
+    def create_world_entities(self, npcbuilder: NPCBuilder) -> List[Entity]:
 
         context = self.extendedcontext
         agent_connect_system = context.agent_connect_system
@@ -273,49 +272,11 @@ class RPGGame(BaseGame):
         return res
 ###############################################################################################################################################
     def create_player_npc_entities(self, npcbuilder: NPCBuilder) -> List[Entity]:
-
-        context = self.extendedcontext
-        agent_connect_system = context.agent_connect_system
-        memory_system = context.memory_system
-        file_system = context.file_system
-        code_name_component_system = context.code_name_component_system
-        res: List[Entity] = []
-
-        if npcbuilder.datalist is None:
-            raise ValueError("没有PlayerNPCBuilder数据，请检查World.json配置。")
-            return res
-        
-        for builddata in npcbuilder.npcs:
-            #logger.debug(f"创建Player npc：{builddata.name}")
-            playernpcentity = context.create_entity()
-            res.append(playernpcentity)
-
-            #必要组件
-            playernpcentity.add(PlayerComponent, "") ##此时没有被玩家控制
-            playernpcentity.add(SimpleRPGRoleComponent, builddata.name, builddata.attributes[0], builddata.attributes[1], builddata.attributes[2], builddata.attributes[3])
-            playernpcentity.add(NPCComponent, builddata.name, "")
-            playernpcentity.add(RoleAppearanceComponent, builddata.role_appearance)
-            
-            #重构
-            agent_connect_system.register_actor_agent(builddata.name, builddata.url)
-            memory_system.initmemory(builddata.name, builddata.memory)
-            code_name_component_system.register_code_name_component_class(builddata.name, builddata.codename)
-           
-            # 添加道具
-            for prop_proxy in builddata.props:
-                ## 重构
-                prop_data_from_data_base = context.data_base_system.get_prop(prop_proxy.name)
-                if prop_data_from_data_base is None:
-                    logger.error(f"没有从数据库找到道具：{prop_proxy.name}！！！！！！！！！")
-                    continue
-                create_prop_file = PropFile(prop_proxy.name, builddata.name, prop_data_from_data_base)
-                file_system.add_prop_file(create_prop_file)
-                code_name_component_system.register_code_name_component_class(prop_data_from_data_base.name, prop_data_from_data_base.codename)
-
-            # 初步建立关系网（在编辑文本中提到的NPC名字）
-            add_npc_archive_files(file_system, builddata.name, builddata.npc_names_mentioned_during_editing_or_for_agent)
-
-        return res
+        # 创建player 本质就是创建NPC
+        create_result = self.create_npc_entities(npcbuilder)
+        for entity in create_result:
+            entity.add(PlayerComponent, "")
+        return create_result
 ###############################################################################################################################################
     def create_npc_entities(self, npcbuilder: NPCBuilder) -> List[Entity]:
 
@@ -409,6 +370,7 @@ class RPGGame(BaseGame):
                 file_system.add_prop_file(create_prop_file)
                 code_name_component_system.register_code_name_component_class(prop_data_from_data_base.name, prop_data_from_data_base.codename)
 
+            # 添加场景的条件：包括进入和离开的条件，自身变化条件等等
             self.add_stage_conditions(stageentity, builddata)
 
             ## 创建连接的场景用于PortalStepActionSystem, 目前如果添加就只能添加一个
@@ -448,7 +410,7 @@ class RPGGame(BaseGame):
             stageentity.add(StageExitCondCheckRolePropsComponent, builddata.stage_exit_role_props)
             logger.debug(f"如果离开场景，需要检查角色拥有必要的道具：{builddata.stage_exit_role_props}")
 ###############################################################################################################################################
-    def add_code_name_component_to_world_and_npcs_when_build(self) -> None:
+    def add_code_name_component_to_world_and_npcs(self) -> None:
         context = self.extendedcontext
         code_name_component_system = context.code_name_component_system
 
@@ -468,7 +430,7 @@ class RPGGame(BaseGame):
             if codecompclass is not None:
                 entity.add(codecompclass, npccomp.name)
 ###############################################################################################################################################
-    def add_code_name_component_stages_when_build(self) -> None:
+    def add_code_name_component_stages(self) -> None:
         context = self.extendedcontext
         code_name_component_system = context.code_name_component_system
 
@@ -491,7 +453,7 @@ class RPGGame(BaseGame):
 ###############################################################################################################################################
     @property
     def about_game(self) -> str:
-        if self.worlddata is None:
+        if self.builder is None:
             return ""
-        return self.worlddata.about_game
+        return self.builder.about_game
 ###############################################################################################################################################

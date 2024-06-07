@@ -89,6 +89,6 @@ def create_rpg_game_then_build(worldname:str) -> Optional[RPGGame]:
         return None
     
     # 创建世界
-    rpggame.createworld(worlddata)
+    rpggame.create_game(worlddata)
     return rpggame
 

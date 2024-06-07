@@ -3,6 +3,7 @@ from auxiliary.extended_context import ExtendedContext
 from auxiliary.components import (  PerceptionActionComponent,
                                     StageComponent,
                                     RoleAppearanceComponent,
+                                    DeadActionComponent,
                                     NPCComponent)
 from loguru import logger
 from typing import List, Dict
@@ -78,7 +79,7 @@ class PerceptionActionSystem(ReactiveProcessor):
         return { Matcher(PerceptionActionComponent): GroupEvent.ADDED }
 ###################################################################################################################
     def filter(self, entity: Entity) -> bool:
-        return entity.has(PerceptionActionComponent) and entity.has(NPCComponent)
+        return entity.has(PerceptionActionComponent) and entity.has(NPCComponent) and not entity.has(DeadActionComponent)
 ###################################################################################################################
     def react(self, entities: list[Entity]) -> None:
         for entity in entities:

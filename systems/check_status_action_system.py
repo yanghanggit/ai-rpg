@@ -1,6 +1,6 @@
 from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity #type: ignore
 from auxiliary.extended_context import ExtendedContext
-from auxiliary.components import (CheckStatusActionComponent, SimpleRPGRoleComponent)
+from auxiliary.components import (CheckStatusActionComponent, SimpleRPGRoleComponent, NPCComponent, DeadActionComponent)
 from loguru import logger
 from auxiliary.director_component import notify_stage_director
 from typing import List
@@ -89,7 +89,7 @@ class CheckStatusActionSystem(ReactiveProcessor):
         return { Matcher(CheckStatusActionComponent): GroupEvent.ADDED }
 ###################################################################################################################
     def filter(self, entity: Entity) -> bool:
-        return entity.has(CheckStatusActionComponent)
+        return entity.has(CheckStatusActionComponent) and entity.has(NPCComponent)  and not entity.has(DeadActionComponent)
 ###################################################################################################################
     def react(self, entities: list[Entity]) -> None:
         for entity in entities:

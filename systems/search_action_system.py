@@ -3,6 +3,7 @@ from auxiliary.extended_context import ExtendedContext
 from auxiliary.components import (  SearchActionComponent, 
                                     NPCComponent,
                                     StageComponent,
+                                    DeadActionComponent,
                                     CheckStatusActionComponent)
 from auxiliary.actor_action import ActorAction
 from loguru import logger
@@ -69,7 +70,7 @@ class SearchActionSystem(ReactiveProcessor):
         return { Matcher(SearchActionComponent): GroupEvent.ADDED }
 ###################################################################################################################
     def filter(self, entity: Entity) -> bool:
-        return entity.has(SearchActionComponent) and entity.has(NPCComponent)
+        return entity.has(SearchActionComponent) and entity.has(NPCComponent) and not entity.has(DeadActionComponent)
 ###################################################################################################################
     def react(self, entities: list[Entity]) -> None:
         for entity in entities:

@@ -2,7 +2,9 @@ from entitas import Entity, Matcher, ReactiveProcessor # type: ignore
 from typing import Optional
 from loguru import logger
 from auxiliary.actor_action import ActorAction
-from auxiliary.components import (UseInteractivePropActionComponent, StageExitCondStatusComponent, EnviroNarrateActionComponent, StageComponent, NPCComponent)
+from auxiliary.components import (UseInteractivePropActionComponent, StageExitCondStatusComponent, 
+                                  EnviroNarrateActionComponent, StageComponent, NPCComponent,
+                                  DeadActionComponent)
 from auxiliary.dialogue_rule import parse_target_and_message
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.director_component import notify_stage_director
@@ -63,7 +65,7 @@ class UseInteractivePropActionSystem(ReactiveProcessor):
         return { Matcher(UseInteractivePropActionComponent): GroupEvent.ADDED }
 ####################################################################################################################################
     def filter(self, entity: Entity) -> bool:
-        return entity.has(UseInteractivePropActionComponent)
+        return entity.has(UseInteractivePropActionComponent) and entity.has(NPCComponent)  and not entity.has(DeadActionComponent)
 ####################################################################################################################################
     def react(self, entities: list[Entity]) -> None:
         for entity in entities:

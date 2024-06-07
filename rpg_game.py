@@ -3,7 +3,6 @@ from typing import List, Optional
 from entitas import Matcher #type: ignore
 from loguru import logger
 from auxiliary.components import (
-    #InteractivePropActionComponent,
     WorldComponent,
     StageComponent, 
     ExitOfPortalComponent,
@@ -69,10 +68,6 @@ from auxiliary.base_data import StageData
 
 
 
-
-
-
-
 ## 控制流程和数据创建
 class RPGGame(BaseGame):
 
@@ -93,28 +88,14 @@ class RPGGame(BaseGame):
         #初始化系统########################
         processors.add(InitAgentsSystem(context)) ### 连接所有agent
         processors.add(InitMemorySystem(context)) ### 第一次读状态, initmemory
-       
-        # #规划逻辑########################
-        # processors.add(PrePlanningSystem(context)) ######## 在所有规划之前
-        # processors.add(StageReadyForPlanningSystem(context))
-        # processors.add(StagePlanningSystem(context))
-        # processors.add(NPCReadyForPlanningSystem(context))
-        # processors.add(NPCPlanningSystem(context))
-        # processors.add(PostPlanningSystem(context)) ####### 在所有规划之后
+        #########################################
 
-        # ## 第一次抓可以被player看到的信息
-        # processors.add(TestPlayerUpdateClientMessageSystem(context)) 
-
-        #用户拿到相关的信息，并开始操作与输入!!!!!!!
+        # 处理用户输入
         from systems.handle_player_input_system import HandlePlayerInputSystem ### 不这样就循环引用
         processors.add(HandlePlayerInputSystem(context, self)) 
 
-        #行动逻辑########################
+        # 行动逻辑################################################################################################
         processors.add(PreActionSystem(context)) ######## 在所有行动之前 #########################################
-
-        #获取状态与查找信息类的行为
-        #processors.add(CheckStatusActionSystem(context))
-        #processors.add(PerceptionActionSystem(context))
 
         #交流（与说话类）的行为
         processors.add(TagActionSystem(context))
@@ -123,25 +104,26 @@ class RPGGame(BaseGame):
         processors.add(BroadcastActionSystem(context))
         processors.add(SpeakActionSystem(context))
 
-        #This system is used to handle communication actions of player input
+        # 这里必须在所有对话之后，目前是防止用户用对话行为说出不符合政策的话
         processors.add(PostConversationActionSystem(context))
 
-        #战斗类的行为
+        #战斗类的行为 ##########
         processors.add(SimpleRPGRolePreFightSystem(context)) #战斗之前需要更新装备
         processors.add(AttackActionSystem(context)) 
         processors.add(PostFightSystem(context))
 
+        ## 战斗类行为产生结果可能有死亡，死亡之后，后面的行为都不可以做。
         from systems.dead_action_system import DeadActionSystem
         processors.add(DeadActionSystem(context, self)) 
         
-        #交互类的行为，在死亡之后，因为死了就不能执行
+        # 交互类的行为（交换数据），在死亡之后，因为死了就不能执行。。。
         processors.add(SearchActionSystem(context)) 
         processors.add(StealActionSystem(context))
         processors.add(TradeActionSystem(context))
         processors.add(UseInteractivePropActionSystem(context))
         processors.add(CheckStatusActionSystem(context)) # 道具交互类行为之后，可以发起自检
 
-        #场景切换类行为，非常重要而且必须在最后
+        # 场景切换类行为，非常重要而且必须在最后
         processors.add(PortalStepActionSystem(context)) 
         processors.add(PreLeaveForSystem(context)) 
         processors.add(LeaveForActionSystem(context))
@@ -154,7 +136,6 @@ class RPGGame(BaseGame):
         processors.add(DirectorSystem(context))
         #行动结束后更新关系网，因为依赖Director所以必须在后面
         processors.add(UpdateArchiveSystem(context))
-       
 
         ###最后删除entity与存储数据
         processors.add(DestroySystem(context))
@@ -165,7 +146,7 @@ class RPGGame(BaseGame):
         ##调试用的系统。监视进入运行之后的状态
         processors.add(EndSystem(context))
 
-        #
+        # 开发专用，网页版本不需要
         processors.add(TerminalPlayerInterruptAndWaitSystem(context))
         #########################################
 
@@ -180,7 +161,7 @@ class RPGGame(BaseGame):
         ## 第一次抓可以被player看到的信息
         processors.add(UpdateClientMessageSystem(context)) 
 
-        ## 只有terminal情况下起效
+        ## 开发专用，网页版本不需要
         processors.add(TerminalPlayerInputSystem(context, self))
         
         return processors
@@ -428,27 +409,7 @@ class RPGGame(BaseGame):
                 file_system.add_prop_file(create_prop_file)
                 code_name_component_system.register_code_name_component_class(prop_data_from_data_base.name, prop_data_from_data_base.codename)
 
-            ## 创建入口条件
-            # enter_condition_set = set()
-            # for enter_condition in builddata.entry_conditions:
-            #     enter_condition_set.add(enter_condition.condition())
-            # if len(enter_condition_set) > 0:
-            #     stageentity.add(StageEntryConditionComponent, enter_condition_set)
-            #     #logger.debug(f"{builddata.name}的入口条件为：{enter_condition_set}")
-
-            # ## 创建出口条件
-            # exit_condition_set: set[str] = set()
-            # for exit_condition in builddata.exit_conditions:
-            #     exit_condition_set.add(exit_condition.condition())
-            # if len(exit_condition_set) > 0:
-            #     stageentity.add(StageExitConditionComponent, set(exit_condition_set))
-                #logger.debug(f"{builddata.name}的出口条件为：{exit_condition_set}")
-
             self.add_stage_conditions(stageentity, builddata)
-
-            ## 添加交互道具组件
-            # if len(builddata.interactiveprops) > 0:
-            #     stageentity.add(InteractivePropActionComponent, builddata.interactiveprops)
 
             ## 创建连接的场景用于PortalStepActionSystem, 目前如果添加就只能添加一个
             assert len(builddata.exit_of_portal) <= 1

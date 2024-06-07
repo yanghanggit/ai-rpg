@@ -1,6 +1,6 @@
 from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity #type: ignore
 from auxiliary.extended_context import ExtendedContext
-from auxiliary.components import (  StealActionComponent, CheckStatusActionComponent,
+from auxiliary.components import (  StealActionComponent, CheckStatusActionComponent, DeadActionComponent,
                                     NPCComponent)
 from loguru import logger
 from auxiliary.actor_action import ActorAction
@@ -42,7 +42,7 @@ class StealActionSystem(ReactiveProcessor):
         return { Matcher(StealActionComponent): GroupEvent.ADDED }
 ###################################################################################################################
     def filter(self, entity: Entity) -> bool:
-        return entity.has(StealActionComponent) and entity.has(NPCComponent)
+        return entity.has(StealActionComponent) and entity.has(NPCComponent) and not entity.has(DeadActionComponent)
 ###################################################################################################################
     def react(self, entities: list[Entity]) -> None:
         for entity in entities:

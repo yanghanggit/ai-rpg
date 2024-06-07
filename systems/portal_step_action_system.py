@@ -1,13 +1,13 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
-from auxiliary.components import (LeaveForActionComponent, PortalStepActionComponent,
+from auxiliary.components import (LeaveForActionComponent, PortalStepActionComponent, DeadActionComponent,
                         NPCComponent, 
                         ExitOfPortalComponent,)
 from auxiliary.actor_action import ActorAction
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
-from auxiliary.director_event import IDirectorEvent
-from auxiliary.director_component import notify_stage_director
-from auxiliary.cn_builtin_prompt import portal_break_action_begin_prompt
+# from auxiliary.director_event import IDirectorEvent
+# from auxiliary.director_component import notify_stage_director
+# from auxiliary.cn_builtin_prompt import portal_break_action_begin_prompt
 
 # class NPCPortalStepBeginEvent(IDirectorEvent):
 
@@ -35,7 +35,7 @@ class PortalStepActionSystem(ReactiveProcessor):
 ###############################################################################################################################################
     def filter(self, entity: Entity) -> bool:
         # 只有NPC才能触发这个系统
-        return entity.has(PortalStepActionComponent) and entity.has(NPCComponent)
+        return entity.has(PortalStepActionComponent) and entity.has(NPCComponent) and not entity.has(DeadActionComponent)
 ###############################################################################################################################################
     def react(self, entities: list[Entity]) -> None:
          for npcentity in entities:

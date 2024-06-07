@@ -2,6 +2,7 @@ from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignor
 from auxiliary.components import (
     LeaveForActionComponent, 
     NPCComponent,
+    DeadActionComponent,
     PerceptionActionComponent)
 from auxiliary.actor_action import ActorAction
 from auxiliary.extended_context import ExtendedContext
@@ -119,7 +120,7 @@ class LeaveForActionSystem(ReactiveProcessor):
         return {Matcher(LeaveForActionComponent): GroupEvent.ADDED}
 
     def filter(self, entity: Entity) -> bool:
-        return entity.has(LeaveForActionComponent) and entity.has(NPCComponent)
+        return entity.has(LeaveForActionComponent) and entity.has(NPCComponent) and not entity.has(DeadActionComponent)
 
     def react(self, entities: list[Entity]) -> None:
         self.leavefor(entities)

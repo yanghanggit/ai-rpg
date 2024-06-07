@@ -1,7 +1,7 @@
 from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity #type: ignore
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.components import (  SearchActionComponent, 
-                                    NPCComponent,
+                                    ActorComponent,
                                     StageComponent,
                                     DeadActionComponent,
                                     CheckStatusActionComponent)
@@ -70,7 +70,7 @@ class SearchActionSystem(ReactiveProcessor):
         return { Matcher(SearchActionComponent): GroupEvent.ADDED }
 ###################################################################################################################
     def filter(self, entity: Entity) -> bool:
-        return entity.has(SearchActionComponent) and entity.has(NPCComponent) and not entity.has(DeadActionComponent)
+        return entity.has(SearchActionComponent) and entity.has(ActorComponent) and not entity.has(DeadActionComponent)
 ###################################################################################################################
     def react(self, entities: list[Entity]) -> None:
         for entity in entities:
@@ -125,7 +125,7 @@ class SearchActionSystem(ReactiveProcessor):
     def after_search_success(self, entity: Entity) -> None:
         if entity.has(CheckStatusActionComponent):
             return
-        npccomp: NPCComponent = entity.get(NPCComponent)
+        npccomp: ActorComponent = entity.get(ActorComponent)
         action = ActorAction(npccomp.name, CheckStatusActionComponent.__name__, [npccomp.name])
         entity.add(CheckStatusActionComponent, action)
 ###################################################################################################################

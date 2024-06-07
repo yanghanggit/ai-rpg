@@ -1,10 +1,10 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
-from auxiliary.components import (LeaveForActionComponent, 
-                        NPCComponent, 
+from auxiliary.components import (GoToActionComponent, 
+                        ActorComponent, 
                         StageExitCondStatusComponent,
                         StageExitCondCheckRoleStatusComponent,
                         StageExitCondCheckRolePropsComponent,
-                        RoleAppearanceComponent,
+                        AppearanceComponent,
                         EnviroNarrateActionComponent,
                         TagActionComponent,
                         StageEntryCondStatusComponent,
@@ -171,22 +171,22 @@ class PreLeaveForSystem(ReactiveProcessor):
         self.context = context
 ###############################################################################################################################################
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(LeaveForActionComponent): GroupEvent.ADDED}
+        return {Matcher(GoToActionComponent): GroupEvent.ADDED}
 ###############################################################################################################################################
     def filter(self, entity: Entity) -> bool:
-        return entity.has(LeaveForActionComponent) and entity.has(NPCComponent) and not entity.has(DeadActionComponent)
+        return entity.has(GoToActionComponent) and entity.has(ActorComponent) and not entity.has(DeadActionComponent)
 ###############################################################################################################################################
     def react(self, entities: list[Entity]) -> None:
         for entity in entities:
             
             exit_result = self.handle_exit_stage(entity)
             if not exit_result:
-                entity.remove(LeaveForActionComponent)  # 停止离开！
+                entity.remove(GoToActionComponent)  # 停止离开！
                 continue  #?
 
             enter_result = self.handle_enter_stage(entity)
             if not enter_result:
-                entity.remove(LeaveForActionComponent)  # 停止进入
+                entity.remove(GoToActionComponent)  # 停止进入
                 continue  #?        
 ###############################################################################################################################################
     def need_check_exit_cond(self, stage_entity: Entity) -> bool:
@@ -316,7 +316,7 @@ class PreLeaveForSystem(ReactiveProcessor):
         return True
 ###############################################################################################################################################
     def get_target_stage_entity(self, entity: Entity) -> Optional[Entity]:
-        leave_action_comp: LeaveForActionComponent = entity.get(LeaveForActionComponent)
+        leave_action_comp: GoToActionComponent = entity.get(GoToActionComponent)
         action: ActorAction = leave_action_comp.action
         if len(action.values) == 0:
             logger.error(leave_action_comp)
@@ -328,7 +328,7 @@ class PreLeaveForSystem(ReactiveProcessor):
 ###############################################################################################################################################
     def get_role_status_prompt(self, entity: Entity) -> str:
         safe_name = self.context.safe_get_entity_name(entity)
-        role_appearance_comp: RoleAppearanceComponent = entity.get(RoleAppearanceComponent)
+        role_appearance_comp: AppearanceComponent = entity.get(AppearanceComponent)
         appearance_info: str = role_appearance_comp.appearance
         return role_status_info_when_pre_leave_prompt(safe_name, appearance_info)
 ###############################################################################################################################################

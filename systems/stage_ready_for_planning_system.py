@@ -1,7 +1,7 @@
 from auxiliary.cn_builtin_prompt import stage_plan_prompt
 from entitas import Entity, Matcher, ExecuteProcessor #type: ignore
 from auxiliary.extended_context import ExtendedContext
-from auxiliary.components import (StageComponent, NPCComponent,
+from auxiliary.components import (StageComponent, ActorComponent,
                                 AutoPlanningComponent)
 from loguru import logger
 from auxiliary.base_data import PropData
@@ -26,7 +26,7 @@ class StageReadyForPlanningSystem(ExecuteProcessor):
         npcs_in_stage = self.context.npcs_in_this_stage(stage_comp.name)
         npcnames: Set[str] = set()
         for npc in npcs_in_stage:
-            npccomp: NPCComponent = npc.get(NPCComponent)
+            npccomp: ActorComponent = npc.get(ActorComponent)
             npcnames.add(npccomp.name)
             #npcnames.add(npc.name)
 

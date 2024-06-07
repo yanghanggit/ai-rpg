@@ -2,9 +2,9 @@ from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity #type: ignore
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.components import (  PerceptionActionComponent,
                                     StageComponent,
-                                    RoleAppearanceComponent,
+                                    AppearanceComponent,
                                     DeadActionComponent,
-                                    NPCComponent)
+                                    ActorComponent)
 from loguru import logger
 from typing import List, Dict
 from auxiliary.director_component import notify_stage_director
@@ -36,8 +36,8 @@ class PerceptionActionHelper:
         for npc in npcs:
             if npc == entity:
                 continue
-            npccomp: NPCComponent = npc.get(NPCComponent)
-            appearance_comp: RoleAppearanceComponent  = npc.get(RoleAppearanceComponent)
+            npccomp: ActorComponent = npc.get(ActorComponent)
+            appearance_comp: AppearanceComponent  = npc.get(AppearanceComponent)
             res[npccomp.name] = appearance_comp.appearance
         return res
 ###################################################################################################################
@@ -79,7 +79,7 @@ class PerceptionActionSystem(ReactiveProcessor):
         return { Matcher(PerceptionActionComponent): GroupEvent.ADDED }
 ###################################################################################################################
     def filter(self, entity: Entity) -> bool:
-        return entity.has(PerceptionActionComponent) and entity.has(NPCComponent) and not entity.has(DeadActionComponent)
+        return entity.has(PerceptionActionComponent) and entity.has(ActorComponent) and not entity.has(DeadActionComponent)
 ###################################################################################################################
     def react(self, entities: list[Entity]) -> None:
         for entity in entities:

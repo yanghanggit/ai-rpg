@@ -2,8 +2,8 @@ from overrides import override
 from entitas import InitializeProcessor, ExecuteProcessor, Matcher, Entity #type: ignore
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
-from auxiliary.components import ( AutoPlanningComponent, StageComponent, NPCComponent, PlayerComponent, 
-                                  STAGE_AVAILABLE_ACTIONS_REGISTER, NPC_AVAILABLE_ACTIONS_REGISTER)
+from auxiliary.components import ( AutoPlanningComponent, StageComponent, ActorComponent, PlayerComponent, 
+                                  STAGE_AVAILABLE_ACTIONS_REGISTER, ACTOR_AVAILABLE_ACTIONS_REGISTER)
 from enum import Enum
 from typing import Set
 
@@ -78,7 +78,7 @@ class PrePlanningSystem(InitializeProcessor, ExecuteProcessor):
             if npcentity.has(PlayerComponent):
                 ## 挡掉
                 continue
-            npccomp: NPCComponent = npcentity.get(NPCComponent)
+            npccomp: ActorComponent = npcentity.get(ActorComponent)
             if not npcentity.has(AutoPlanningComponent):
                 npcentity.add(AutoPlanningComponent, npccomp.name)
 ############################################################################################################
@@ -94,12 +94,12 @@ class PrePlanningSystem(InitializeProcessor, ExecuteProcessor):
             if not stageentity.has(AutoPlanningComponent):
                 stageentity.add(AutoPlanningComponent, stagecomp.name)
         
-        npcentities = context.get_group(Matcher(NPCComponent)).entities
+        npcentities = context.get_group(Matcher(ActorComponent)).entities
         for npcentity in npcentities:
             if npcentity.has(PlayerComponent):
                 ## player 就跳过
                 continue
-            npccomp: NPCComponent = npcentity.get(NPCComponent)
+            npccomp: ActorComponent = npcentity.get(ActorComponent)
             if not npcentity.has(AutoPlanningComponent):
                 npcentity.add(AutoPlanningComponent, npccomp.name)
 ############################################################################################################
@@ -109,6 +109,6 @@ class PrePlanningSystem(InitializeProcessor, ExecuteProcessor):
         assert len(auto_planning_entities) == 0, f"AutoPlanningComponent should be removed in PostPlanningSystem"
         stageentities: Set[Entity] = self.context.get_group(Matcher(any_of = STAGE_AVAILABLE_ACTIONS_REGISTER)).entities
         assert len(stageentities) == 0, f"Stage entities with actions: {stageentities}"
-        npcentities: Set[Entity]  = self.context.get_group(Matcher(any_of = NPC_AVAILABLE_ACTIONS_REGISTER)).entities
+        npcentities: Set[Entity]  = self.context.get_group(Matcher(any_of = ACTOR_AVAILABLE_ACTIONS_REGISTER)).entities
         assert len(npcentities) == 0, f"NPC entities with actions: {npcentities}"
 ############################################################################################################

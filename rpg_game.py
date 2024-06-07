@@ -8,10 +8,10 @@ from auxiliary.components import (
     WorldComponent,
     StageComponent, 
     ExitOfPortalComponent,
-    NPCComponent, 
+    ActorComponent, 
     PlayerComponent, 
     SimpleRPGRoleComponent, 
-    RoleAppearanceComponent,
+    AppearanceComponent,
     StageExitCondStatusComponent,
     StageExitCondCheckRoleStatusComponent,
     StageExitCondCheckRolePropsComponent,
@@ -36,7 +36,7 @@ from systems.stage_ready_for_planning_system import StageReadyForPlanningSystem
 from systems.tag_action_system import TagActionSystem
 from systems.data_save_system import DataSaveSystem
 from systems.broadcast_action_system import BroadcastActionSystem  
-from systems.use_interactive_prop_action_system import UseInteractivePropActionSystem
+from systems.use_prop_action_system import UsePropActionSystem
 from systems.whisper_action_system import WhisperActionSystem 
 from systems.search_action_system import SearchActionSystem
 from systems.mind_voice_action_system import MindVoiceActionSystem
@@ -71,11 +71,11 @@ from auxiliary.base_data import StageData
 
 
 ## RPG 的测试类游戏
+## 尽量不要再加东西了，Game就只管上下文，创建世界的数据，和Processors。其中上下文可以做运行中的全局数据管理者
 class RPGGame(BaseGame):
 
     def __init__(self, name: str, context: ExtendedContext) -> None:
         super().__init__(name)
-        # 尽量不要再加东西了，Game就只管上下文，创建世界的数据，和Processors。其中上下文可以做运行中的全局数据管理者
         self.extendedcontext: ExtendedContext = context
         self.builder: Optional[GameBuilder] = None
         self.processors: MyProcessors = self.create_processors(self.extendedcontext)
@@ -122,7 +122,7 @@ class RPGGame(BaseGame):
         processors.add(SearchActionSystem(context)) 
         processors.add(StealActionSystem(context))
         processors.add(TradeActionSystem(context))
-        processors.add(UseInteractivePropActionSystem(context))
+        processors.add(UsePropActionSystem(context))
         processors.add(CheckStatusActionSystem(context)) # 道具交互类行为之后，可以发起自检
 
         # 场景切换类行为，非常重要而且必须在最后
@@ -282,7 +282,7 @@ class RPGGame(BaseGame):
         # 创建player 本质就是创建NPC
         create_result = self.create_npc_entities(npcbuilder)
         for entity in create_result:
-            npccomp: NPCComponent = entity.get(NPCComponent)
+            npccomp: ActorComponent = entity.get(ActorComponent)
             logger.info(f"创建Player Entity = {npccomp.name}")
             entity.add(PlayerComponent, "")
         return create_result
@@ -306,9 +306,9 @@ class RPGGame(BaseGame):
             res.append(npcentity)
 
             # 必要组件
-            npcentity.add(NPCComponent, builddata.name, "")
+            npcentity.add(ActorComponent, builddata.name, "")
             npcentity.add(SimpleRPGRoleComponent, builddata.name, builddata.attributes[0], builddata.attributes[1], builddata.attributes[2], builddata.attributes[3])
-            npcentity.add(RoleAppearanceComponent, builddata.role_appearance)
+            npcentity.add(AppearanceComponent, builddata.role_appearance)
 
             #重构
             agent_connect_system.register_actor_agent(builddata.name, builddata.url)
@@ -365,7 +365,7 @@ class RPGGame(BaseGame):
                     continue
 
                 ## 重新设置npc的stage，做覆盖处理
-                findnpcagain.replace(NPCComponent, npcname, builddata.name)
+                findnpcagain.replace(ActorComponent, npcname, builddata.name)
                 #logger.debug(f"重新设置npc：{npcname}的stage为：{builddata.name}")
                     
             # 场景内添加道具
@@ -432,9 +432,9 @@ class RPGGame(BaseGame):
                 entity.add(codecompclass, worldcomp.name)
 
         #
-        npcsentities = context.get_group(Matcher(NPCComponent)).entities
+        npcsentities = context.get_group(Matcher(ActorComponent)).entities
         for entity in npcsentities:
-            npccomp: NPCComponent = entity.get(NPCComponent)
+            npccomp: ActorComponent = entity.get(ActorComponent)
             codecompclass = code_name_component_system.get_component_class_by_name(npccomp.name)
             if codecompclass is not None:
                 entity.add(codecompclass, npccomp.name)
@@ -444,9 +444,9 @@ class RPGGame(BaseGame):
         code_name_component_system = context.code_name_component_system
 
         ## 重新设置npc和stage的关系
-        npcsentities = context.get_group(Matcher(NPCComponent)).entities
+        npcsentities = context.get_group(Matcher(ActorComponent)).entities
         for entity in npcsentities:
-            npccomp: NPCComponent = entity.get(NPCComponent)
+            npccomp: ActorComponent = entity.get(ActorComponent)
             context.change_stage_tag_component(entity, "", npccomp.current_stage)
 
         ## 重新设置stage和stage的关系

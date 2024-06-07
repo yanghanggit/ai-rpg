@@ -3,7 +3,7 @@ from entitas import ExecuteProcessor, Matcher, InitializeProcessor #type: ignore
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.components import (StageComponent, 
-                        NPCComponent,
+                        ActorComponent,
                         WorldComponent)
 import json
 from typing import Dict
@@ -51,7 +51,7 @@ class EndSystem(InitializeProcessor, ExecuteProcessor):
 ############################################################################################################
     def information_about_all_stages_and_npcs(self) -> dict[str, list[str]]:
         stagesentities = self.context.get_group(Matcher(StageComponent)).entities
-        npcsentities = self.context.get_group(Matcher(NPCComponent)).entities
+        npcsentities = self.context.get_group(Matcher(ActorComponent)).entities
         map: dict[str, list[str]] = {}
         for entity in stagesentities:
             stagecomp: StageComponent = entity.get(StageComponent)
@@ -59,7 +59,7 @@ class EndSystem(InitializeProcessor, ExecuteProcessor):
             map[stagecomp.name] = ls
 
             for entity in npcsentities:
-                npccomp: NPCComponent = entity.get(NPCComponent)
+                npccomp: ActorComponent = entity.get(ActorComponent)
                 if npccomp.current_stage == stagecomp.name:
                     ls.append(npccomp.name)
         return map

@@ -25,7 +25,7 @@
 {{
   "AttackActionComponent":["要攻击的并且在本场景中的角色的名字",...],
   "SpeakActionComponent":["@角色名字>你要说的内容",...],
-  "LeaveForActionComponent":["离开当前所在场景后前往的场景名字"],
+  "GoToActionComponent":["离开当前所在场景后前往的场景名字"],
   "TagActionComponent":["与你相关的特征标签",...],
   "MindVoiceActionComponent":["你的内心独白",...],
   "BroadcastActionComponent":["要公开说的内容"],

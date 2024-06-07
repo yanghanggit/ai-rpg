@@ -270,7 +270,7 @@ def leave_for_stage_failed_because_stage_is_invalid_prompt(npcname: str, stagena
 ## 所以 {npcname} 请参考以上的原因，需要重新考虑去往的目的地。"""
 ################################################################################################################################################
 def leave_for_stage_failed_because_already_in_stage_prompt(npcname: str, stagename: str) -> str:
-    return f"你已经在{stagename}场景中了。需要重新考虑去往的目的地。'LeaveForActionComponent'行动类型意图是离开当前场景并去往某地。"
+    return f"你已经在{stagename}场景中了。需要重新考虑去往的目的地。'GoToActionComponent'行动类型意图是离开当前场景并去往某地。"
 ################################################################################################################################################
 def replace_all_mentions_of_your_name_with_you(content: str, your_name: str) -> str:
     if len(content) == 0 or your_name not in content:
@@ -338,16 +338,21 @@ def stage_exit_conditions_check_promt(npc_name: str, current_stage_name: str,
      # 拼接提示词
     final_prompt = f"""# {npc_name} 想要离开场景: {current_stage_name}。
 ## 第1步: 根据当前‘你的状态’判断是否满足离开条件
-- 你的预设离开条件: {stage_cond_status_prompt}
+- 你的预设离开条件: 
+{stage_cond_status_prompt}
 - 当前状态可能由于事件而变化，请仔细考虑。
 
 ## 第2步: 检查{npc_name}的状态是否符合以下要求:
-- 必须满足的状态信息: {cond_check_role_status_prompt}
-- 当前角色状态: {role_status_prompt}
+- 必须满足的状态信息: 
+{cond_check_role_status_prompt}
+- 当前角色状态: 
+{role_status_prompt}
 
 ## 第3步: 检查{npc_name}的道具(与拥有的特殊技能)是否符合以下要求:
-- 必须满足的道具与特殊技能信息: {cond_check_role_props_prompt}
-- 当前角色道具与特殊技能信息: {role_props_prompt}
+- 必须满足的道具与特殊技能信息: 
+{cond_check_role_props_prompt}
+- 当前角色道具与特殊技能信息: 
+{role_props_prompt}
 
 ## 判断结果
 - 完成以上步骤后，决定是否允许 {npc_name} 离开 {current_stage_name}。

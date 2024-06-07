@@ -6,11 +6,11 @@ from auxiliary.components import (
     #PlayerLoginEventComponent,
     SpeakActionComponent, 
     StageComponent, 
-    NPCComponent, 
+    ActorComponent, 
     AttackActionComponent, 
     PlayerComponent, 
-    LeaveForActionComponent,
-    UseInteractivePropActionComponent, 
+    GoToActionComponent,
+    UsePropActionComponent, 
     WhisperActionComponent,
     SearchActionComponent,
     PortalStepActionComponent,
@@ -115,8 +115,8 @@ class PlayerCommandAttack(PlayerCommand):
             logger.warning("debug_attack: player is None")
             return
 
-        if playerentity.has(NPCComponent):
-            npccomp: NPCComponent = playerentity.get(NPCComponent)
+        if playerentity.has(ActorComponent):
+            npccomp: ActorComponent = playerentity.get(ActorComponent)
             action = ActorAction(npccomp.name, AttackActionComponent.__name__, [attack_target_name])
             playerentity.add(AttackActionComponent, action)
 
@@ -141,11 +141,11 @@ class PlayerCommandLeaveFor(PlayerCommand):
             logger.warning("debug_leave: player is None")
             return
         
-        npccomp: NPCComponent = playerentity.get(NPCComponent)
-        action = ActorAction(npccomp.name, LeaveForActionComponent.__name__, [target_stage_name])
-        playerentity.add(LeaveForActionComponent, action)
+        npccomp: ActorComponent = playerentity.get(ActorComponent)
+        action = ActorAction(npccomp.name, GoToActionComponent.__name__, [target_stage_name])
+        playerentity.add(GoToActionComponent, action)
 
-        newmsg = f"""{{"{LeaveForActionComponent.__name__}": ["{target_stage_name}"]}}"""
+        newmsg = f"""{{"{GoToActionComponent.__name__}": ["{target_stage_name}"]}}"""
         self.add_human_message(playerentity, newmsg)
 ####################################################################################################################################
 ####################################################################################################################################
@@ -162,7 +162,7 @@ class PlayerCommandPortalStep(PlayerCommand):
             logger.warning("debug_leave: player is None")
             return
         
-        npccomp: NPCComponent = playerentity.get(NPCComponent)
+        npccomp: ActorComponent = playerentity.get(ActorComponent)
         current_stage_name: str = npccomp.current_stage
         stageentity = context.getstage(current_stage_name)
         if stageentity is None:
@@ -191,7 +191,7 @@ class PlayerCommandBroadcast(PlayerCommand):
             logger.warning("debug_broadcast: player is None")
             return
         
-        npccomp: NPCComponent = playerentity.get(NPCComponent)
+        npccomp: ActorComponent = playerentity.get(ActorComponent)
         action = ActorAction(npccomp.name, BroadcastActionComponent.__name__, [content])
         playerentity.add(BroadcastActionComponent, action)
        
@@ -214,7 +214,7 @@ class PlayerCommandSpeak(PlayerCommand):
             logger.warning("debug_speak: player is None")
             return
         
-        npccomp: NPCComponent = playerentity.get(NPCComponent)
+        npccomp: ActorComponent = playerentity.get(ActorComponent)
         action = ActorAction(npccomp.name, SpeakActionComponent.__name__, [speakcontent])
         playerentity.add(SpeakActionComponent, action)
         
@@ -237,7 +237,7 @@ class PlayerCommandWhisper(PlayerCommand):
             logger.warning("debug_whisper: player is None")
             return
         
-        npccomp: NPCComponent = playerentity.get(NPCComponent)
+        npccomp: ActorComponent = playerentity.get(ActorComponent)
         action = ActorAction(npccomp.name, WhisperActionComponent.__name__, [whispercontent])
         playerentity.add(WhisperActionComponent, action)
 
@@ -260,7 +260,7 @@ class PlayerCommandSearch(PlayerCommand):
             logger.warning("debug_search: player is None")
             return
         
-        npccomp: NPCComponent = playerentity.get(NPCComponent)
+        npccomp: ActorComponent = playerentity.get(ActorComponent)
         action = ActorAction(npccomp.name, SearchActionComponent.__name__, [search_target_prop_name])
         playerentity.add(SearchActionComponent, action)
 
@@ -281,7 +281,7 @@ class PlayerCommandPerception(PlayerCommand):
         if playerentity is None:
             return
         
-        npccomp: NPCComponent = playerentity.get(NPCComponent)
+        npccomp: ActorComponent = playerentity.get(ActorComponent)
         action = ActorAction(npccomp.name, PerceptionActionComponent.__name__, [npccomp.current_stage])
         playerentity.add(PerceptionActionComponent, action)
 
@@ -303,7 +303,7 @@ class PlayerCommandSteal(PlayerCommand):
         if playerentity is None:
             return
         
-        npccomp: NPCComponent = playerentity.get(NPCComponent)
+        npccomp: ActorComponent = playerentity.get(ActorComponent)
         action = ActorAction(npccomp.name, StealActionComponent.__name__, [self.command])
         playerentity.add(StealActionComponent, action)
 
@@ -325,7 +325,7 @@ class PlayerCommandTrade(PlayerCommand):
         if playerentity is None:
             return
         
-        npccomp: NPCComponent = playerentity.get(NPCComponent)
+        npccomp: ActorComponent = playerentity.get(ActorComponent)
         action = ActorAction(npccomp.name, TradeActionComponent.__name__, [self.command])
         playerentity.add(TradeActionComponent, action)
 
@@ -348,7 +348,7 @@ class PlayerCommandCheckStatus(PlayerCommand):
         if playerentity.has(CheckStatusActionComponent):
             playerentity.remove(CheckStatusActionComponent)
         
-        npccomp: NPCComponent = playerentity.get(NPCComponent)
+        npccomp: ActorComponent = playerentity.get(ActorComponent)
         action = ActorAction(npccomp.name, CheckStatusActionComponent.__name__, [npccomp.name])
         playerentity.add(CheckStatusActionComponent, action)
 
@@ -369,9 +369,9 @@ class PlayerCommandUseInteractiveProp(PlayerCommand):
         if playerentity is None:
             return
         
-        npccomp: NPCComponent = playerentity.get(NPCComponent)
-        action = ActorAction(npccomp.name, UseInteractivePropActionComponent.__name__, [self.command])
-        playerentity.add(UseInteractivePropActionComponent, action)
+        npccomp: ActorComponent = playerentity.get(ActorComponent)
+        action = ActorAction(npccomp.name, UsePropActionComponent.__name__, [self.command])
+        playerentity.add(UsePropActionComponent, action)
 
-        newmemory = f"""{{"{UseInteractivePropActionComponent.__name__}": ["{self.command}"]}}"""
+        newmemory = f"""{{"{UsePropActionComponent.__name__}": ["{self.command}"]}}"""
         self.add_human_message(playerentity, newmemory)

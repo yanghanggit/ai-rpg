@@ -1,7 +1,7 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
 from auxiliary.components import (
-    LeaveForActionComponent, 
-    NPCComponent,
+    GoToActionComponent, 
+    ActorComponent,
     DeadActionComponent,
     PerceptionActionComponent)
 from auxiliary.actor_action import ActorAction
@@ -65,7 +65,7 @@ class LeaveActionHelper:
     def __init__(self, context: ExtendedContext, who_wana_leave: Entity, target_stage_name: str) -> None:
         self.context = context
         self.who_wana_leave_entity = who_wana_leave
-        self.current_stage_name = cast(NPCComponent, who_wana_leave.get(NPCComponent)).current_stage
+        self.current_stage_name = cast(ActorComponent, who_wana_leave.get(ActorComponent)).current_stage
         self.current_stage_entity = self.context.getstage(self.current_stage_name)
         self.target_stage_name = target_stage_name
         self.target_stage_entity = self.context.getstage(target_stage_name)
@@ -117,10 +117,10 @@ class LeaveForActionSystem(ReactiveProcessor):
         self.context = context
 
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(LeaveForActionComponent): GroupEvent.ADDED}
+        return {Matcher(GoToActionComponent): GroupEvent.ADDED}
 
     def filter(self, entity: Entity) -> bool:
-        return entity.has(LeaveForActionComponent) and entity.has(NPCComponent) and not entity.has(DeadActionComponent)
+        return entity.has(GoToActionComponent) and entity.has(ActorComponent) and not entity.has(DeadActionComponent)
 
     def react(self, entities: list[Entity]) -> None:
         self.leavefor(entities)
@@ -129,11 +129,11 @@ class LeaveForActionSystem(ReactiveProcessor):
     def leavefor(self, entities: list[Entity]) -> None:
 
         for entity in entities:
-            if not entity.has(NPCComponent):
+            if not entity.has(ActorComponent):
                 logger.warning(f"LeaveForActionSystem: {entity} is not NPC?!")
                 continue
             
-            leavecomp: LeaveForActionComponent = entity.get(LeaveForActionComponent)
+            leavecomp: GoToActionComponent = entity.get(GoToActionComponent)
             action: ActorAction = leavecomp.action
             if len(action.values) == 0:
                continue
@@ -161,11 +161,11 @@ class LeaveForActionSystem(ReactiveProcessor):
         target_stage_name = helper.target_stage_name
         target_stage_entity = helper.target_stage_entity
         assert target_stage_entity is not None
-        npccomp: NPCComponent = entity.get(NPCComponent)
+        npccomp: ActorComponent = entity.get(ActorComponent)
 
         replace_name = npccomp.name
         replace_current_stage = target_stage_name
-        entity.replace(NPCComponent, replace_name, replace_current_stage)
+        entity.replace(ActorComponent, replace_name, replace_current_stage)
         self.context.change_stage_tag_component(entity, current_stage_name, replace_current_stage)
 
         #进入场景的事件需要通知相关的人
@@ -180,7 +180,7 @@ class LeaveForActionSystem(ReactiveProcessor):
 ###############################################################################################################################################
     def leave_stage(self, helper: LeaveActionHelper) -> None:
         entity: Entity = helper.who_wana_leave_entity
-        npccomp: NPCComponent = entity.get(NPCComponent)
+        npccomp: ActorComponent = entity.get(ActorComponent)
         assert helper.current_stage_entity is not None
 
         # 必须在场景信息还有效的时刻做通知
@@ -189,12 +189,12 @@ class LeaveForActionSystem(ReactiveProcessor):
         # 离开场景 设置成空
         replace_name = npccomp.name
         replace_current_stage = "" #设置空！！！！！
-        entity.replace(NPCComponent, replace_name, replace_current_stage)
+        entity.replace(ActorComponent, replace_name, replace_current_stage)
         self.context.change_stage_tag_component(entity, helper.current_stage_name, replace_current_stage)
 ###############################################################################################################################################
     def after_enter_stage(self, helper: LeaveActionHelper) -> None:
         entity: Entity = helper.who_wana_leave_entity
-        npccomp: NPCComponent = entity.get(NPCComponent)
+        npccomp: ActorComponent = entity.get(ActorComponent)
         stagename = npccomp.current_stage
         npcs = self.context.npcs_in_this_stage(stagename)
         for npc in npcs:

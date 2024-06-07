@@ -2,7 +2,7 @@ from typing import List, Union
 from langchain_core.messages import HumanMessage, AIMessage
 from entitas import (TearDownProcessor, Matcher, Entity, ExecuteProcessor) #type: ignore
 from auxiliary.components import (
-    NPCComponent,
+    ActorComponent,
     StageComponent,
     WorldComponent,
 )
@@ -73,9 +73,9 @@ class DataSaveSystem(ExecuteProcessor, TearDownProcessor):
         agent_connect_system = self.context.agent_connect_system
         memory_system = self.context.memory_system
 
-        entities: set[Entity] = self.context.get_group(Matcher(NPCComponent)).entities
+        entities: set[Entity] = self.context.get_group(Matcher(ActorComponent)).entities
         for entity in entities:
-            npccomp: NPCComponent = entity.get(NPCComponent)
+            npccomp: ActorComponent = entity.get(ActorComponent)
             archiveprompt = gen_npc_archive_prompt(self.context)
             genarchive = agent_connect_system.request(npccomp.name, archiveprompt)
             if genarchive is not None:

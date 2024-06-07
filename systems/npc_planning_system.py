@@ -1,9 +1,9 @@
 from overrides import override
 from entitas import Entity, Matcher, ExecuteProcessor #type: ignore
-from auxiliary.components import (NPCComponent, 
+from auxiliary.components import (ActorComponent, 
                         AutoPlanningComponent,
-                        NPC_DIALOGUE_ACTIONS_REGISTER, 
-                        NPC_AVAILABLE_ACTIONS_REGISTER)
+                        ACTOR_DIALOGUE_ACTIONS_REGISTER, 
+                        ACTOR_AVAILABLE_ACTIONS_REGISTER)
 from auxiliary.actor_action import ActorPlan, ActorAction
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
@@ -25,7 +25,7 @@ class NPCPlanningSystem(ExecuteProcessor):
         # 并行执行requests
         all_response: dict[str, Optional[str]] = await self.context.agent_connect_system.run_async_requet_tasks("NPCPlanningSystem")
         #正常流程
-        entities = self.context.get_group(Matcher(all_of=[NPCComponent, AutoPlanningComponent])).entities
+        entities = self.context.get_group(Matcher(all_of=[ActorComponent, AutoPlanningComponent])).entities
         for entity in entities:
             #开始处理NPC的行为计划
             self.handle(entity, all_response)
@@ -33,7 +33,7 @@ class NPCPlanningSystem(ExecuteProcessor):
     def handle(self, entity: Entity, all_reponse: dict[str, Optional[str]]) -> None:
 
         # prompt = npc_plan_prompt(entity, self.context)
-        npc_comp: NPCComponent = entity.get(NPCComponent)
+        npc_comp: ActorComponent = entity.get(ActorComponent)
 
         # response = self.requestplanning(npccomp.name, prompt)
         response = all_reponse.get(npc_comp.name, None)
@@ -79,13 +79,13 @@ class NPCPlanningSystem(ExecuteProcessor):
         return True
 ####################################################################################################
     def check_available(self, action: ActorAction) -> bool:
-        return self.context.check_component_register(action.actionname, NPC_AVAILABLE_ACTIONS_REGISTER) is not None
+        return self.context.check_component_register(action.actionname, ACTOR_AVAILABLE_ACTIONS_REGISTER) is not None
 ####################################################################################################
     def check_dialogue(self, action: ActorAction) -> bool:
-        return self.context.check_dialogue_action(action.actionname, action.values, NPC_DIALOGUE_ACTIONS_REGISTER)
+        return self.context.check_dialogue_action(action.actionname, action.values, ACTOR_DIALOGUE_ACTIONS_REGISTER)
 ####################################################################################################
     def add_action_component(self, entity: Entity, action: ActorAction) -> None:
-        compclass = self.context.check_component_register(action.actionname, NPC_AVAILABLE_ACTIONS_REGISTER)
+        compclass = self.context.check_component_register(action.actionname, ACTOR_AVAILABLE_ACTIONS_REGISTER)
         if compclass is None:
             return
         if not entity.has(compclass):

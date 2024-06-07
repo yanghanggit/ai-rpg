@@ -14,14 +14,14 @@ from typing import Any, Optional
 error_repeat = f"""{{"MindVoiceActionComponent": ["测试的字符串"]}}{{"WhisperActionComponent": ["测试的字符串"]}}"""
 
 ## 有额外的字符串
-error_extra_string_added = f"""{{"LeaveForActionComponent": ["禁言铁棺"]}}一个测试的字符串，不应该出现在这里"""
+error_extra_string_added = f"""{{"GoToActionComponent": ["禁言铁棺"]}}一个测试的字符串，不应该出现在这里"""
 
 ## SpeakActionComponent的格式，value格式就不对。应该是"@目标名字>对话内容"
 error_speak_format = f"""{{"SpeakActionComponent": ["这是一个错误的格式"]}}"""
 error_speak_target_is_invalid = f"""{{"SpeakActionComponent": ["@教宗>你在读书吗？？"]}}"""
 
 ## value必须以[]形式出现
-error_value_is_not_array = f"""{{"LeaveForActionComponent": "禁言铁棺"}}"""
+error_value_is_not_array = f"""{{"GoToActionComponent": "禁言铁棺"}}"""
 
 ## 运行中的测试系统, 空的混沌工程系统
 class ChaosBuddingWorld(IChaosEngineering):

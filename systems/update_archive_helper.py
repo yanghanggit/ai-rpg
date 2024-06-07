@@ -1,5 +1,5 @@
 from entitas import Entity, Matcher # type: ignore
-from auxiliary.components import StageComponent, NPCComponent
+from auxiliary.components import StageComponent, ActorComponent
 from auxiliary.extended_context import ExtendedContext
 from langchain_core.messages import (HumanMessage, 
                                     AIMessage)
@@ -47,9 +47,9 @@ class UpdareArchiveHelper:
         #
         context = self.context
         memory_system = context.memory_system
-        npcs: set[Entity] = context.get_group(Matcher(NPCComponent)).entities
+        npcs: set[Entity] = context.get_group(Matcher(ActorComponent)).entities
         for npc in npcs:
-            npccomp: NPCComponent = npc.get(NPCComponent)
+            npccomp: ActorComponent = npc.get(ActorComponent)
             npcmemory = memory_system.getmemory(npccomp.name)
             if npcmemory != "":
                 self._npcnames.add(npccomp.name)
@@ -61,9 +61,9 @@ class UpdareArchiveHelper:
         #
         context = self.context
         agent_connect_system = context.agent_connect_system
-        npcs: set[Entity] = context.get_group(Matcher(NPCComponent)).entities
+        npcs: set[Entity] = context.get_group(Matcher(ActorComponent)).entities
         for npc in npcs:
-            npccomp: NPCComponent = npc.get(NPCComponent)
+            npccomp: ActorComponent = npc.get(ActorComponent)
             chathistory = agent_connect_system.get_chat_history(npccomp.name)
             packmsg = ""
             for chat in chathistory:
@@ -78,9 +78,9 @@ class UpdareArchiveHelper:
         #
         context = self.context
         file_system = context.file_system
-        npcs: set[Entity] = context.get_group(Matcher(NPCComponent)).entities
+        npcs: set[Entity] = context.get_group(Matcher(ActorComponent)).entities
         for npc in npcs:
-            npccomp: NPCComponent = npc.get(NPCComponent)
+            npccomp: ActorComponent = npc.get(ActorComponent)
             propfiles = file_system.get_prop_files(npccomp.name)
             prop_and_desc: list[str] = []
             for file in propfiles:

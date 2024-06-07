@@ -5,9 +5,9 @@ from entitas import (Entity, # type: ignore
                     Context)
 from auxiliary.components import (WorldComponent, 
                         StageComponent, 
-                        NPCComponent, 
+                        ActorComponent, 
                         PlayerComponent, 
-                        RoleAppearanceComponent)
+                        AppearanceComponent)
 from auxiliary.file_system import FileSystem
 from auxiliary.memory_system import MemorySystem
 from typing import Optional
@@ -67,7 +67,7 @@ class ExtendedContext(Context):
 ############################################################################################################
     #玩家基本就一个（或者及其少的数量），所以就遍历一下得了，注意是playername，比如yanghang。
     def getplayer(self, playername: str) -> Optional[Entity]:
-        entities: set[Entity] = self.get_group(Matcher(all_of=[PlayerComponent, NPCComponent])).entities
+        entities: set[Entity] = self.get_group(Matcher(all_of=[PlayerComponent, ActorComponent])).entities
         for entity in entities:
             playercomp: PlayerComponent = entity.get(PlayerComponent)
             if playercomp.name == playername:
@@ -91,30 +91,30 @@ class ExtendedContext(Context):
 ############################################################################################################
     def getnpc(self, npcname: str) -> Optional[Entity]:
         entity: Optional[Entity] = self.get_by_code_name_component(npcname)
-        if entity is not None and entity.has(NPCComponent):
+        if entity is not None and entity.has(ActorComponent):
             return entity
         return None
 ############################################################################################################
     def npcs_in_this_stage(self, stagename: str) -> list[Entity]:   
         # 测试！！！
         stage_tag_component = self.code_name_component_system.get_stage_tag_component_class_by_name(stagename)
-        entities: set[Entity] =  self.get_group(Matcher(all_of=[NPCComponent, stage_tag_component])).entities
+        entities: set[Entity] =  self.get_group(Matcher(all_of=[ActorComponent, stage_tag_component])).entities
         return list(entities)
 ############################################################################################################
     def safe_get_stage_entity(self, entity: Entity) -> Optional[Entity]:
         if entity.has(StageComponent):
             # 我自己！！！
             return entity
-        elif entity.has(NPCComponent):
-            npccomp: NPCComponent = entity.get(NPCComponent)
+        elif entity.has(ActorComponent):
+            npccomp: ActorComponent = entity.get(ActorComponent)
             return self.getstage(npccomp.current_stage)
         #raise ValueError("实体不是NPC或者Stage")
         logger.error("实体不是NPC或者Stage")
         return None
 ############################################################################################################
     def safe_get_entity_name(self, entity: Entity) -> str:
-        if entity.has(NPCComponent):
-            npccomp: NPCComponent = entity.get(NPCComponent)
+        if entity.has(ActorComponent):
+            npccomp: ActorComponent = entity.get(ActorComponent)
             return str(npccomp.name)
         elif entity.has(StageComponent):
             stagecomp: StageComponent = entity.get(StageComponent)
@@ -138,7 +138,7 @@ class ExtendedContext(Context):
         return True
 ############################################################################################################
     def change_stage_tag_component(self, entity: Entity, from_stagename: str, to_stagename: str) -> None:
-        if not entity.has(NPCComponent):
+        if not entity.has(ActorComponent):
             logger.error("实体不是NPC, 目前场景标记只给NPC")
             return
         
@@ -193,9 +193,9 @@ class ExtendedContext(Context):
         safe_stage_name = self.safe_get_entity_name(stageentity)
         npcs_in_this_stage: list[Entity] = self.npcs_in_this_stage(safe_stage_name)
         for npc in npcs_in_this_stage:
-            if npc.has(RoleAppearanceComponent):
-                npccomp: NPCComponent = npc.get(NPCComponent)
-                appearancecomp: RoleAppearanceComponent = npc.get(RoleAppearanceComponent)
+            if npc.has(AppearanceComponent):
+                npccomp: ActorComponent = npc.get(ActorComponent)
+                appearancecomp: AppearanceComponent = npc.get(AppearanceComponent)
                 res[npccomp.name] = appearancecomp.appearance
             else:
                 logger.error(f"{npccomp.name}没有RoleAppearanceComponent?!")

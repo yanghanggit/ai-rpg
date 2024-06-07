@@ -1,7 +1,7 @@
 from entitas import ExecuteProcessor, Matcher, Entity #type: ignore
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
-from auxiliary.components import (NPCComponent)
+from auxiliary.components import (ActorComponent)
 from systems.update_archive_helper import UpdareArchiveHelper
 from auxiliary.cn_builtin_prompt import updated_information_on_WhoDoYouKnow_prompt, updated_information_about_StagesYouKnow_prompt
 from auxiliary.file_system_helper import add_npc_archive_files, update_npc_archive_file, add_stage_archive_files
@@ -20,7 +20,7 @@ class UpdateArchiveSystem(ExecuteProcessor):
         known_info_helper = UpdareArchiveHelper(self.context)
         known_info_helper.prepare()
         # 对NPC进行处理
-        npcs: set[Entity] = context.get_group(Matcher(all_of=[NPCComponent])).entities
+        npcs: set[Entity] = context.get_group(Matcher(all_of=[ActorComponent])).entities
         for npc in npcs:
             #更新NPC的NPC档案，可能更新了谁认识谁，还有如果在场景中，外观是什么
             self.update_npc_archive(npc, known_info_helper)
@@ -29,7 +29,7 @@ class UpdateArchiveSystem(ExecuteProcessor):
 ############################################################################################################
     def update_npc_archive(self, npcentity: Entity, helper: UpdareArchiveHelper) -> None:
         #
-        npccomp: NPCComponent = npcentity.get(NPCComponent)
+        npccomp: ActorComponent = npcentity.get(ActorComponent)
         who_do_you_know: set[str] = helper.who_do_you_know(npccomp.name)
         if len(who_do_you_know) == 0:
             logger.warning(f"{npccomp.name} 什么人都不认识，这个合理么？")
@@ -55,7 +55,7 @@ class UpdateArchiveSystem(ExecuteProcessor):
         self.context.safe_add_human_message_to_entity(npcentity, message)
 ############################################################################################################
     def update_stage_archive(self, npcentity: Entity, helper: UpdareArchiveHelper) -> None:
-        npccomp: NPCComponent = npcentity.get(NPCComponent)
+        npccomp: ActorComponent = npcentity.get(ActorComponent)
         _stages_you_know: set[str] = helper.stages_you_know(npccomp.name)
         if len(_stages_you_know) == 0:
             logger.warning(f"{npccomp.name} 什么地点都不知道，这个合理么？")

@@ -2,8 +2,8 @@ from entitas import Entity, Matcher, ReactiveProcessor # type: ignore
 from typing import Optional
 from loguru import logger
 from auxiliary.actor_action import ActorAction
-from auxiliary.components import (UseInteractivePropActionComponent, StageExitCondStatusComponent, 
-                                  EnviroNarrateActionComponent, StageComponent, NPCComponent,
+from auxiliary.components import (UsePropActionComponent, StageExitCondStatusComponent, 
+                                  EnviroNarrateActionComponent, StageComponent, ActorComponent,
                                   DeadActionComponent)
 from auxiliary.dialogue_rule import parse_target_and_message
 from auxiliary.extended_context import ExtendedContext
@@ -17,7 +17,7 @@ from auxiliary.file_def import PropFile
 
 
 # 通知导演的类
-class NPCUseInteractivePropToStageEvent(IDirectorEvent):
+class NPCUsePropToStageEvent(IDirectorEvent):
     def __init__(self, npcname: str, targetname: str, propname: str, tips: str) -> None:
         self.npcname = npcname
         self.targetname = targetname
@@ -35,7 +35,7 @@ class NPCUseInteractivePropToStageEvent(IDirectorEvent):
 ####################################################################################################################################
 ####################################################################################################################################
 # 帮助分析给用户的提示。因为提示是在一个动作里，所以这个类是一个辅助类
-class UseInteractiveProResponsepHelper:
+class UsePropResponseHelper:
 
     def __init__(self, plan: ActorPlan) -> None:
         self._plan = plan
@@ -56,16 +56,16 @@ class UseInteractiveProResponsepHelper:
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class UseInteractivePropActionSystem(ReactiveProcessor):
+class UsePropActionSystem(ReactiveProcessor):
     def __init__(self, context: ExtendedContext):
         super().__init__(context)
         self.context = context
 ####################################################################################################################################
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return { Matcher(UseInteractivePropActionComponent): GroupEvent.ADDED }
+        return { Matcher(UsePropActionComponent): GroupEvent.ADDED }
 ####################################################################################################################################
     def filter(self, entity: Entity) -> bool:
-        return entity.has(UseInteractivePropActionComponent) and entity.has(NPCComponent) and not entity.has(DeadActionComponent)
+        return entity.has(UsePropActionComponent) and entity.has(ActorComponent) and not entity.has(DeadActionComponent)
 ####################################################################################################################################
     def react(self, entities: list[Entity]) -> None:
         for entity in entities:
@@ -76,7 +76,7 @@ class UseInteractivePropActionSystem(ReactiveProcessor):
 
         context = self.context
         filesystem = context.file_system
-        use_interactive_prop_comp: UseInteractivePropActionComponent = entity.get(UseInteractivePropActionComponent)
+        use_interactive_prop_comp: UsePropActionComponent = entity.get(UsePropActionComponent)
         action: ActorAction = use_interactive_prop_comp.action
 
         for value in action.values:
@@ -114,7 +114,7 @@ class UseInteractivePropActionSystem(ReactiveProcessor):
     def use_prop_to_stage(self, entity: Entity, target_entity: Entity, prop_file: PropFile) -> bool:
         # 目前应该是这些！！
         assert prop_file.prop.is_weapon() or prop_file.prop.is_non_consumable_item()
-        assert entity.has(NPCComponent)
+        assert entity.has(ActorComponent)
         assert target_entity.has(StageComponent)
         
         context = self.context
@@ -129,7 +129,7 @@ class UseInteractivePropActionSystem(ReactiveProcessor):
             exit_cond_status_prompt = stage_exit_cond_status_comp.condition
         else:
             logger.warning(f"InteractivePropActionSystem: {targetname} 没有退出条件, 下面的不用走")
-            notify_stage_director(context, entity, NPCUseInteractivePropToStageEvent(username, 
+            notify_stage_director(context, entity, NPCUsePropToStageEvent(username, 
                                                                                      targetname, 
                                                                                      prop_file.name, 
                                                                                      use_prop_no_response_prompt(username, prop_file.name, targetname)))
@@ -151,10 +151,10 @@ class UseInteractivePropActionSystem(ReactiveProcessor):
             logger.debug(f"InteractivePropActionSystem: {response}")
             # 组织一下数据
             plan = ActorPlan(targetname, response)
-            helper = UseInteractiveProResponsepHelper(plan)
+            helper = UsePropResponseHelper(plan)
             if helper.tips != "":
                 # 还是要做防守与通知导演
-                notify_stage_director(context, entity, NPCUseInteractivePropToStageEvent(username, targetname, prop_file.name, helper.tips))
+                notify_stage_director(context, entity, NPCUsePropToStageEvent(username, targetname, prop_file.name, helper.tips))
             else:
                 logger.warning(f"是空的？怎么回事？")
         else:

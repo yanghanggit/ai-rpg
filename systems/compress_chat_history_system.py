@@ -1,7 +1,7 @@
 from entitas import ExecuteProcessor, Matcher, Entity #type: ignore
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
-from auxiliary.components import (NPCComponent, StageComponent)
+from auxiliary.components import (ActorComponent, StageComponent)
 from typing import Set, override, Dict
 from auxiliary.cn_builtin_prompt import NPC_PLAN_PROMPT_TAG, STAGE_PLAN_PROMPT_TAG, COMPRESS_NPC_PLAN_PROMPT, COMPRESS_STAGE_PLAN_PROMPT
 
@@ -19,7 +19,7 @@ class CompressChatHistorySystem(ExecuteProcessor):
         context = self.context
         agent_connect_system = context.agent_connect_system
         tags: Set[str] = {NPC_PLAN_PROMPT_TAG, STAGE_PLAN_PROMPT_TAG}
-        entities: set[Entity] = context.get_group(Matcher(any_of=[NPCComponent, StageComponent])).entities
+        entities: set[Entity] = context.get_group(Matcher(any_of=[ActorComponent, StageComponent])).entities
         for entity in entities:
             safename = context.safe_get_entity_name(entity)
             if safename == "":
@@ -30,7 +30,7 @@ class CompressChatHistorySystem(ExecuteProcessor):
         context = self.context
         agent_connect_system = context.agent_connect_system
         replace_data: Dict[str, str] = { NPC_PLAN_PROMPT_TAG : COMPRESS_NPC_PLAN_PROMPT, STAGE_PLAN_PROMPT_TAG : COMPRESS_STAGE_PLAN_PROMPT}
-        entities: set[Entity] = context.get_group(Matcher(any_of=[NPCComponent, StageComponent])).entities
+        entities: set[Entity] = context.get_group(Matcher(any_of=[ActorComponent, StageComponent])).entities
         for entity in entities:
             safename = context.safe_get_entity_name(entity)
             if safename == "":

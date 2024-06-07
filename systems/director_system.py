@@ -1,5 +1,5 @@
 from entitas import Entity, Matcher, ExecuteProcessor #type: ignore
-from auxiliary.components import StageComponent, NPCComponent, PlayerComponent
+from auxiliary.components import StageComponent, ActorComponent, PlayerComponent
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.director_component import StageDirectorComponent
@@ -54,7 +54,7 @@ def director_events_to_npc(context: ExtendedContext, npc_entity: Entity) -> None
     assert stage_director_comp is not None
 
      ### 添加消息！
-    npccomp: NPCComponent = npc_entity.get(NPCComponent)
+    npccomp: ActorComponent = npc_entity.get(ActorComponent)
 
     events2npc = stage_director_comp.tonpc(npccomp.name, context)    
     if len(events2npc) == 0:

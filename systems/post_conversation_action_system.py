@@ -1,6 +1,6 @@
 from overrides import override
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
-from auxiliary.components import SpeakActionComponent, BroadcastActionComponent, WhisperActionComponent, PlayerComponent, NPCComponent
+from auxiliary.components import SpeakActionComponent, BroadcastActionComponent, WhisperActionComponent, PlayerComponent, ActorComponent
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.director_component import StageDirectorComponent
@@ -25,7 +25,7 @@ class PostConversationActionSystem(ReactiveProcessor):
     def filter(self, entity: Entity) -> bool:
         # 如果去掉entity.has(PlayerComponent)。就是处理所有的NPC的对话事件，最保险的做法。
         # 有PlayerComponent就节省一些
-        return entity.has(PlayerComponent) and entity.has(NPCComponent)
+        return entity.has(PlayerComponent) and entity.has(ActorComponent)
 ####################################################################################################
     @override 
     def react(self, entities: list[Entity]) -> None:
@@ -75,7 +75,7 @@ class PostConversationActionSystem(ReactiveProcessor):
         ### 处理NPC的
         npcs_in_this_stage = self.context.npcs_in_this_stage(stage_director_comp.name)
         for npc_entity in npcs_in_this_stage:
-            npccomp: NPCComponent = npc_entity.get(NPCComponent)
+            npccomp: ActorComponent = npc_entity.get(ActorComponent)
             raw_events2npc = stage_director_comp.tonpc(npccomp.name, self.context)     
             if len(raw_events2npc) > 0:
                 batch_events2npc_prompt = self.batch_npc_events(stage_director_comp.name, raw_events2npc)

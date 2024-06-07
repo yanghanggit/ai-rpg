@@ -1,6 +1,6 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
-from auxiliary.components import (LeaveForActionComponent, PortalStepActionComponent, DeadActionComponent,
-                        NPCComponent, 
+from auxiliary.components import (GoToActionComponent, PortalStepActionComponent, DeadActionComponent,
+                        ActorComponent, 
                         ExitOfPortalComponent,)
 from auxiliary.actor_action import ActorAction
 from auxiliary.extended_context import ExtendedContext
@@ -35,7 +35,7 @@ class PortalStepActionSystem(ReactiveProcessor):
 ###############################################################################################################################################
     def filter(self, entity: Entity) -> bool:
         # 只有NPC才能触发这个系统
-        return entity.has(PortalStepActionComponent) and entity.has(NPCComponent) and not entity.has(DeadActionComponent)
+        return entity.has(PortalStepActionComponent) and entity.has(ActorComponent) and not entity.has(DeadActionComponent)
 ###############################################################################################################################################
     def react(self, entities: list[Entity]) -> None:
          for npcentity in entities:
@@ -43,7 +43,7 @@ class PortalStepActionSystem(ReactiveProcessor):
 ###############################################################################################################################################
     def portalstep(self, npcentity: Entity) -> None:
         
-        npccomp: NPCComponent = npcentity.get(NPCComponent)
+        npccomp: ActorComponent = npcentity.get(ActorComponent)
         portalstepcomp: PortalStepActionComponent = npcentity.get(PortalStepActionComponent)
         action: ActorAction = portalstepcomp.action
         if len(action.values) == 0:
@@ -80,8 +80,8 @@ class PortalStepActionSystem(ReactiveProcessor):
         #notify_stage_director(self.context, stageentity, NPCPortalStepBeginEvent(npccomp.name, stagename))
 
         # 生成离开当前场景的动作
-        action = ActorAction(npccomp.name, LeaveForActionComponent.__name__, [conncectstagecomp.name])
-        npcentity.add(LeaveForActionComponent, action)
+        action = ActorAction(npccomp.name, GoToActionComponent.__name__, [conncectstagecomp.name])
+        npcentity.add(GoToActionComponent, action)
 ###############################################################################################################################################       
 
             

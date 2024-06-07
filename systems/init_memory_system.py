@@ -1,6 +1,6 @@
 from overrides import override
 from entitas import Entity, Matcher, InitializeProcessor, ExecuteProcessor # type: ignore
-from auxiliary.components import WorldComponent, StageComponent, NPCComponent, PlayerComponent, PerceptionActionComponent, CheckStatusActionComponent
+from auxiliary.components import WorldComponent, StageComponent, ActorComponent, PlayerComponent, PerceptionActionComponent, CheckStatusActionComponent
 from auxiliary.cn_builtin_prompt import (init_memory_system_npc_prompt, init_memory_system_stage_prompt)
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
@@ -38,9 +38,9 @@ class InitMemorySystem(InitializeProcessor, ExecuteProcessor):
 ####################################################################################################
     def first_time_add_perception_and_check_status(self) -> None:
         context = self.context
-        entities: set[Entity] = context.get_group(Matcher(all_of=[NPCComponent], none_of=[PlayerComponent])).entities
+        entities: set[Entity] = context.get_group(Matcher(all_of=[ActorComponent], none_of=[PlayerComponent])).entities
         for entity in entities:
-            npccomp: NPCComponent = entity.get(NPCComponent)
+            npccomp: ActorComponent = entity.get(ActorComponent)
             #
             if not entity.has(PerceptionActionComponent):
                 perception_action = ActorAction(npccomp.name, PerceptionActionComponent.__name__, [npccomp.current_stage])
@@ -115,9 +115,9 @@ class InitMemorySystem(InitializeProcessor, ExecuteProcessor):
         context = self.context
         memory_system = context.memory_system
         agent_connect_system = context.agent_connect_system
-        npcs: set[Entity] = context.get_group(Matcher(all_of=[NPCComponent])).entities
+        npcs: set[Entity] = context.get_group(Matcher(all_of=[ActorComponent])).entities
         for npcentity in npcs:
-            npccomp: NPCComponent = npcentity.get(NPCComponent)
+            npccomp: ActorComponent = npcentity.get(ActorComponent)
             npcname: str = npccomp.name
             npcmemory = memory_system.getmemory(npcname)
             if npcmemory == "":

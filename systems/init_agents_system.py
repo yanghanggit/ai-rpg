@@ -1,5 +1,5 @@
 from entitas import Entity, Matcher, InitializeProcessor # type: ignore
-from auxiliary.components import WorldComponent, StageComponent, NPCComponent, PlayerComponent
+from auxiliary.components import WorldComponent, StageComponent, ActorComponent, PlayerComponent
 from auxiliary.extended_context import ExtendedContext
 
 ###############################################################################################################################################
@@ -43,9 +43,9 @@ class InitAgentsSystem(InitializeProcessor):
 ###############################################################################################################################################
     def connect_npc_agents(self) -> None:
         agent_connect_system = self.context.agent_connect_system
-        npcs: set[Entity] = self.context.get_group(Matcher(all_of=[NPCComponent], none_of=[PlayerComponent])).entities
+        npcs: set[Entity] = self.context.get_group(Matcher(all_of=[ActorComponent], none_of=[PlayerComponent])).entities
         for npc in npcs:
-            npccomp: NPCComponent = npc.get(NPCComponent)
+            npccomp: ActorComponent = npc.get(ActorComponent)
             agent_connect_system.connect_actor_agent(npccomp.name)
 ###############################################################################################################################################
 ###############################################################################################################################################

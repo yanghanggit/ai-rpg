@@ -2,7 +2,7 @@ from overrides import override
 from auxiliary.cn_builtin_prompt import npc_plan_prompt
 from entitas import Entity, Matcher, ExecuteProcessor #type: ignore
 from auxiliary.extended_context import ExtendedContext
-from auxiliary.components import (NPCComponent,
+from auxiliary.components import (ActorComponent,
                                 AutoPlanningComponent,
                                 EnviroNarrateActionComponent)
 from loguru import logger
@@ -17,13 +17,13 @@ class NPCReadyForPlanningSystem(ExecuteProcessor):
     @override       
     def execute(self) -> None:
         # todo: ChaosSystem接入
-        entities = self.context.get_group(Matcher(all_of=[NPCComponent, AutoPlanningComponent])).entities
+        entities = self.context.get_group(Matcher(all_of=[ActorComponent, AutoPlanningComponent])).entities
         for entity in entities:
             self.handle(entity)
 ####################################################################################################################################
     def handle(self, entity: Entity) -> None:
         
-        npccomp: NPCComponent = entity.get(NPCComponent)
+        npccomp: ActorComponent = entity.get(ActorComponent)
         #logger.info(f"NPCReadyForPlanningSystem: {npccomp.name} is ready for planning.")
                 
         tp = self.get_stage_enviro_narrate(entity)

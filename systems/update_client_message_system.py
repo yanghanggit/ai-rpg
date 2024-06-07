@@ -4,7 +4,7 @@ from auxiliary.player_proxy import PlayerProxy, get_player_proxy, TEST_TERMINAL_
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.components import MindVoiceActionComponent, WhisperActionComponent, SpeakActionComponent, \
     BroadcastActionComponent, EnviroNarrateActionComponent, \
-    AttackActionComponent, LeaveForActionComponent
+    AttackActionComponent, GoToActionComponent
 from auxiliary.actor_action import ActorAction
 from typing import Optional
 from loguru import logger
@@ -15,30 +15,38 @@ class UpdateClientMessageSystem(ExecuteProcessor):
         self.context: ExtendedContext = context
 ############################################################################################################
     def execute(self) -> None:
-        input_mode = determine_player_input_mode(self.context.user_ips)
-        if input_mode == PLAYER_INPUT_MODE.WEB_HTTP_REQUEST:
-            pass
-        elif input_mode == PLAYER_INPUT_MODE.TERMINAL:
-            playername = TEST_TERMINAL_NAME
-        else:
-            logger.error("未知的输入模式!!!!!") 
-            return
-            
-        for user_ip in self.context.user_ips:
-            playername = str(user_ip)
 
-            playerproxy = get_player_proxy(playername)
-            player_npc_entity = self.context.getplayer(playername)
+        input_mode = determine_player_input_mode(self.context.user_ips)
+        
+        if input_mode == PLAYER_INPUT_MODE.WEB_HTTP_REQUEST:
+        
+            for user_ip in self.context.user_ips:
+                playername = str(user_ip)
+                playerproxy = get_player_proxy(playername)
+                player_npc_entity = self.context.getplayer(playername)
+                if player_npc_entity is None or playerproxy is None:
+                    continue
+                self._add_message_to_player_proxy_(playerproxy, player_npc_entity)
+        
+        elif input_mode == PLAYER_INPUT_MODE.TERMINAL:
+        
+            playerproxy = get_player_proxy(TEST_TERMINAL_NAME)
+            player_npc_entity = self.context.getplayer(TEST_TERMINAL_NAME)
             if player_npc_entity is None or playerproxy is None:
-                return
-            
-            self.stage_enviro_narrate_action_2_message(playerproxy, player_npc_entity)
-            self.mind_voice_action_2_message(playerproxy, player_npc_entity)
-            self.whisper_action_2_message(playerproxy, player_npc_entity)
-            self.broadcast_action_2_message(playerproxy, player_npc_entity)
-            self.speak_action_2_message(playerproxy, player_npc_entity)
-            self.attack_action_2_message(playerproxy, player_npc_entity)
-            self.leave_for_action_2_message(playerproxy, player_npc_entity)
+                    return
+            self._add_message_to_player_proxy_(playerproxy, player_npc_entity)
+
+        else:
+            logger.error("未知的输入模式!!!!!")         
+############################################################################################################
+    def _add_message_to_player_proxy_(self, playerproxy: PlayerProxy, player_npc_entity: Entity) -> None:
+        self.stage_enviro_narrate_action_2_message(playerproxy, player_npc_entity)
+        self.mind_voice_action_2_message(playerproxy, player_npc_entity)
+        self.whisper_action_2_message(playerproxy, player_npc_entity)
+        self.broadcast_action_2_message(playerproxy, player_npc_entity)
+        self.speak_action_2_message(playerproxy, player_npc_entity)
+        self.attack_action_2_message(playerproxy, player_npc_entity)
+        self.leave_for_action_2_message(playerproxy, player_npc_entity)
 ############################################################################################################
     def stage_enviro_narrate_action_2_message(self, playerproxy: PlayerProxy, player_npc_entity: Entity) -> None:
         stage = self.context.safe_get_stage_entity(player_npc_entity)
@@ -173,7 +181,7 @@ class UpdateClientMessageSystem(ExecuteProcessor):
 ############################################################################################################
     def leave_for_action_2_message(self, playerproxy: PlayerProxy, player_npc_entity: Entity) -> None:
         player_npc_entity_stage = self.context.safe_get_stage_entity(player_npc_entity)
-        entities = self.context.get_group(Matcher(LeaveForActionComponent)).entities
+        entities = self.context.get_group(Matcher(GoToActionComponent)).entities
         for entity in entities:
 
             if entity == player_npc_entity:
@@ -183,7 +191,7 @@ class UpdateClientMessageSystem(ExecuteProcessor):
             if his_stage_entity != player_npc_entity_stage:
                 continue
 
-            leave_for_component: LeaveForActionComponent = entity.get(LeaveForActionComponent)
+            leave_for_component: GoToActionComponent = entity.get(GoToActionComponent)
             action: ActorAction = leave_for_component.action
             if len(action.values) == 0:
                 logger.error("leave_for_action_2_message error")

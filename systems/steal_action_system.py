@@ -1,7 +1,7 @@
 from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity #type: ignore
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.components import (  StealActionComponent, CheckStatusActionComponent, DeadActionComponent,
-                                    NPCComponent)
+                                    ActorComponent)
 from loguru import logger
 from auxiliary.actor_action import ActorAction
 from auxiliary.dialogue_rule import dialogue_enable, parse_target_and_message, ErrorDialogueEnable
@@ -42,7 +42,7 @@ class StealActionSystem(ReactiveProcessor):
         return { Matcher(StealActionComponent): GroupEvent.ADDED }
 ###################################################################################################################
     def filter(self, entity: Entity) -> bool:
-        return entity.has(StealActionComponent) and entity.has(NPCComponent) and not entity.has(DeadActionComponent)
+        return entity.has(StealActionComponent) and entity.has(ActorComponent) and not entity.has(DeadActionComponent)
 ###################################################################################################################
     def react(self, entities: list[Entity]) -> None:
         for entity in entities:
@@ -92,7 +92,7 @@ class StealActionSystem(ReactiveProcessor):
     def after_steal_success(self, entity: Entity) -> None:
         if entity.has(CheckStatusActionComponent):
             return
-        npccomp: NPCComponent = entity.get(NPCComponent)
+        npccomp: ActorComponent = entity.get(ActorComponent)
         action = ActorAction(npccomp.name, CheckStatusActionComponent.__name__, [npccomp.name])
         entity.add(CheckStatusActionComponent, action)
 #####################################################################################################################

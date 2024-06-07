@@ -1,7 +1,7 @@
 from loguru import logger
 from typing import List, Optional
 from entitas import Entity, Matcher, ExecuteProcessor #type: ignore
-from auxiliary.components import StageComponent, NPCComponent, PlayerComponent
+from auxiliary.components import StageComponent, ActorComponent, PlayerComponent
 from enum import Enum
 import re
 
@@ -78,7 +78,7 @@ def add_player_client_npc_message(entity: Entity, message: str) -> None:
         return
 
     #登陆的消息
-    npccomp: NPCComponent = entity.get(NPCComponent)
+    npccomp: ActorComponent = entity.get(ActorComponent)
     playerproxy.add_npc_message(npccomp.name, message)
 ###################################################################################################################
 ### 单人游戏，临时的名字

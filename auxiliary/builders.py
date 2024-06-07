@@ -26,7 +26,7 @@ class WorldDataBuilder:
 
     def check_version_valid(self, world_data_path: str) -> bool:
         try:
-            with open(world_data_path, 'r') as file:
+            with open(world_data_path, 'r', encoding="utf-8") as file:
                 self.data = json.load(file)
                 world_data_version: str = self.data['version']
             

@@ -63,6 +63,7 @@ def director_events_to_npc(context: ExtendedContext, npc_entity: Entity) -> None
     ### 标记开始
     context.safe_add_human_message_to_entity(npc_entity, stage_director_begin_prompt(stage_director_comp.name, len(events2npc)))
 
+    ### 添加消息！
     for index, event in enumerate(events2npc):
         wrap_prompt = stage_director_event_wrap_prompt(event, index)
         logger.debug(f"director:{npccomp.name}:{event}")

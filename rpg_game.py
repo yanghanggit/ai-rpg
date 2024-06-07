@@ -3,7 +3,7 @@ from typing import List, Optional
 from entitas import Matcher #type: ignore
 from loguru import logger
 from auxiliary.components import (
-    InteractivePropActionComponent,
+    #InteractivePropActionComponent,
     WorldComponent,
     StageComponent, 
     ExitOfPortalComponent,
@@ -35,7 +35,7 @@ from systems.stage_ready_for_planning_system import StageReadyForPlanningSystem
 from systems.tag_action_system import TagActionSystem
 from systems.data_save_system import DataSaveSystem
 from systems.broadcast_action_system import BroadcastActionSystem  
-from systems.interactive_prop_action_system import InteractivePropActionSystem
+from systems.use_interactive_prop_action_system import UseInteractivePropActionSystem
 from systems.whisper_action_system import WhisperActionSystem 
 from systems.search_action_system import SearchActionSystem
 from systems.mind_voice_action_system import MindVoiceActionSystem
@@ -138,7 +138,7 @@ class RPGGame(BaseGame):
         processors.add(SearchActionSystem(context)) 
         processors.add(StealActionSystem(context))
         processors.add(TradeActionSystem(context))
-        processors.add(InteractivePropActionSystem(context))
+        processors.add(UseInteractivePropActionSystem(context))
         processors.add(CheckStatusActionSystem(context)) # 道具交互类行为之后，可以发起自检
 
         #场景切换类行为，非常重要而且必须在最后
@@ -447,8 +447,8 @@ class RPGGame(BaseGame):
             self.add_stage_conditions(stageentity, builddata)
 
             ## 添加交互道具组件
-            if len(builddata.interactiveprops) > 0:
-                stageentity.add(InteractivePropActionComponent, builddata.interactiveprops)
+            # if len(builddata.interactiveprops) > 0:
+            #     stageentity.add(InteractivePropActionComponent, builddata.interactiveprops)
 
             ## 创建连接的场景用于PortalStepActionSystem, 目前如果添加就只能添加一个
             assert len(builddata.exit_of_portal) <= 1

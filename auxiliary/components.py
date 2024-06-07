@@ -11,7 +11,7 @@ PlayerComponent = namedtuple('PlayerComponent', 'name')
 # StageExitConditionComponent = namedtuple('StageExitConditionComponent', 'conditions')
 DestroyComponent = namedtuple('DestroyComponent', 'name')
 AutoPlanningComponent = namedtuple('AutoPlanningComponent', 'name')
-InteractivePropActionComponent = namedtuple('InteractivePropActionComponent', 'interactive_props')
+#InteractivePropActionComponent = namedtuple('InteractivePropActionComponent', 'interactive_props')
 RoleAppearanceComponent = namedtuple('RoleAppearanceComponent', 'appearance')
 ###############################################################################################################################################
 ###动作类的组件

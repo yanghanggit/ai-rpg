@@ -10,7 +10,8 @@ COMPRESS_NPC_PLAN_PROMPT = "请做出你的计划，决定你将要做什么"
 COMPRESS_STAGE_PLAN_PROMPT = "请输出'你的当前描述'和'你的计划'"
 NO_INFO_PROMPT = "- 无"
 NO_ROLE_PROPS_INFO_PROMPT = "- 无任何道具或者特殊技能"
-
+##
+USE_PROP_TO_STAGE_PROMPT_TAG = "<%这是角色对场景使用道具>"
 ###############################################################################################################################################
 def init_memory_system_npc_prompt(init_memory: str) -> str:
     prompt = f"""# <%这是角色初始化>游戏世界即将开始运行。这是你的初始设定，你将以此为起点进行游戏
@@ -293,8 +294,8 @@ def attack_someone_prompt(attacker_name: str, target_name: str, damage: int, tar
     health_percent = max(0, (target_current_hp - damage) / target_max_hp * 100)
     return f"{attacker_name}对{target_name}发动了一次攻击,造成了{damage}点伤害,当前{target_name}的生命值剩余{health_percent}%。"
 ################################################################################################################################################
-def interactive_prop_action_success_prompt(who_use: str, targetname: str, propname: str, interactiveaction: str, interactiveresult: str) -> str:
-    return f"{who_use}拿着{propname}{interactiveaction}了{targetname}造成了{interactiveresult}"
+# def interactive_prop_action_success_prompt(who_use: str, targetname: str, propname: str, interactiveaction: str, interactiveresult: str) -> str:
+#     return f"{who_use}拿着{propname}{interactiveaction}了{targetname}造成了{interactiveresult}"
 ################################################################################################################################################
 def died_in_fight_prompt(context: ExtendedContext) -> str:
     return f"你已经死亡（在战斗中受到了致命的攻击）"
@@ -306,7 +307,8 @@ def batch_conversation_action_events_in_stage(stagename: str, events: List[str],
     return  f""" # 当前场景 {stagename} 发生了如下对话类型事件，请注意:\n{joinstr}"""
 ################################################################################################################################################
 def use_prop_to_stage_prompt(username: str, propname: str, prop_prompt: str, exit_cond_status_prompt: str) -> str:
-    final_prompt = f"""# {username} 使用道具 {propname} 对你造成影响。
+    #USE_PROP_TO_STAGE_PROMPT_TAG 留着做标记与压缩
+    final_prompt = f"""# {USE_PROP_TO_STAGE_PROMPT_TAG} {username} 使用道具 {propname} 对你造成影响。
 ## 道具 {propname} 说明:
 {prop_prompt}
 
@@ -404,6 +406,11 @@ def enter_stage_failed_beacuse_stage_refuse_prompt(npc_name: str, stagename: str
 def role_status_info_when_pre_leave_prompt(safe_name: str, appearance_info:str) -> str:
     return f"""### {safe_name}\n- 外貌信息:{appearance_info}\n"""
 ################################################################################################################################################
+def use_prop_no_response_prompt(username: str, propname: str, targetname: str) -> str:
+    return f"# {username}对{targetname}使用道具{propname}，但没有任何反应"
+################################################################################################################################################
+
+
 
 
 

@@ -88,9 +88,9 @@ class ExcelEditorWorld:
                 if prop not in res:
                     res.append(prop)
             
-            for prop in stage.interactive_props:
-                if prop not in res:
-                    res.append(prop)
+            # for prop in stage.interactive_props:
+            #     if prop not in res:
+            #         res.append(prop)
 
         return res
 ################################################################################################################

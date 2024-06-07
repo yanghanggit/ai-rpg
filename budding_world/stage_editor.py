@@ -64,8 +64,8 @@ class ExcelEditorStage:
         self.npcs_in_stage: List[ExcelDataNPC] = []
         self.initialization_memory: str = ""
         self.exit_of_portal: str = ""
-        self.raw_interactive_props_data: str = ""
-        self.interactive_props: List[ExcelDataProp] = []
+        #self.raw_interactive_props_data: str = ""
+        #self.interactive_props: List[ExcelDataProp] = []
 
         if self.data["type"] not in ["Stage"]:
             logger.error(f"Invalid Stage type: {self.data['type']}")
@@ -210,7 +210,7 @@ class ExcelEditorStage:
         dict["url"] = data_stage.localhost_api()
         dict["memory"] = self.initialization_memory
         dict["exit_of_portal"] = self.exit_of_portal
-        dict["interactive_props"] = self.raw_interactive_props_data
+        #dict["interactive_props"] = self.raw_interactive_props_data
         
         entry_conditions = self.serialization_stage_conditions(self.stage_entry_conditions)
         exit_conditions = self.serialization_stage_conditions(self.stage_exit_conditions)

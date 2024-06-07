@@ -109,7 +109,7 @@ class WorldDataBuilder:
                             exit_conditions_in_stage, 
                             set(), 
                             set(),
-                            stagedata.get('interactive_props'),
+                            "",
 
                             stagedata.get('stage_entry_status'),
                             stagedata.get('stage_entry_role_status'),

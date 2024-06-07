@@ -93,6 +93,8 @@ class ActorAction:
         return f"ActorAction({self.name}, {self.actionname}, {self.values})"
 ############################################################################################################
     def single_value(self) -> str:
+        if len(self.values) == 0:
+            return ""
         return " ".join(self.values)
 ############################################################################################################
 

@@ -28,6 +28,39 @@ def dialogue_enable(context: ExtendedContext, srcentity: Entity, npcname: str) -
         return ErrorDialogueEnable.NOT_IN_THE_SAME_STAGE
     
     return ErrorDialogueEnable.VALID
+
+####################################################################################################
+
+# 错误代码
+class ErrorUseInteractivePropEnable(Enum):
+    VALID = 0
+    TARGET_DOES_NOT_EXIST = 1
+    WITHOUT_BEING_IN_STAGE = 2
+    NOT_IN_THE_SAME_STAGE = 3
+
+def use_prop_interactive_enable(context: ExtendedContext, srcentity: Entity, targetname: str) -> ErrorUseInteractivePropEnable:
+
+    src_stage = context.safe_get_stage_entity(srcentity)
+    if src_stage is None:
+        return ErrorUseInteractivePropEnable.WITHOUT_BEING_IN_STAGE
+
+    final_target_entity: Optional[Entity] = None
+    target_npc_entity: Optional[Entity] = context.getnpc(targetname)
+    target_stage_entity: Optional[Entity] = context.getstage(targetname)
+
+    if target_npc_entity is not None:
+        final_target_entity = target_npc_entity
+    elif target_stage_entity is not None:
+        final_target_entity = target_stage_entity
+
+    if final_target_entity is None:
+        return ErrorUseInteractivePropEnable.TARGET_DOES_NOT_EXIST
+
+    target_stage = context.safe_get_stage_entity(final_target_entity)
+    if target_stage is None or target_stage != src_stage:
+        return ErrorUseInteractivePropEnable.NOT_IN_THE_SAME_STAGE
+    
+    return ErrorUseInteractivePropEnable.VALID
 ####################################################################################################
 def parse_target_and_message(content: str) -> tuple[Optional[str], Optional[str]]:
     # 检查是否包含'@'和'>'符号

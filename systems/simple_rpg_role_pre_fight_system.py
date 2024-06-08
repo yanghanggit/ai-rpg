@@ -2,7 +2,7 @@ from entitas import Matcher, ExecuteProcessor,Entity #type: ignore
 from auxiliary.components import SimpleRPGRoleComponent, SimpleRPGRoleWeaponComponent, SimpleRPGRoleArmorComponent, StageComponent
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
-from typing import Set, Optional
+from typing import Set, Optional, override
 from auxiliary.base_data import PropData
 
 # 这是一个测试，将装备对战斗数值的影响先做一个初步的。
@@ -13,6 +13,7 @@ class SimpleRPGRolePreFightSystem(ExecuteProcessor):
     def __init__(self, context: ExtendedContext) -> None:
         self.context: ExtendedContext = context
 ######################################################################################################################################################
+    @override
     def execute(self) -> None:
         self.clear_weapons_and_armors()
         self.rebuild_weapons_from_prop_files()

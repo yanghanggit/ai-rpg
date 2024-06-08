@@ -6,16 +6,18 @@ from auxiliary.components import (StageComponent,
                         ActorComponent,
                         WorldComponent)
 import json
-from typing import Dict
+from typing import Dict, override
    
 class EndSystem(InitializeProcessor, ExecuteProcessor):
 ############################################################################################################
     def __init__(self, context: ExtendedContext) -> None:
         self.context: ExtendedContext = context
 ############################################################################################################
+    @override
     def initialize(self) -> None:
         pass
 ############################################################################################################
+    @override
     def execute(self) -> None:
 
         logger.debug(f"{'=' * 100}") #方便看

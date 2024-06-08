@@ -3,7 +3,7 @@ from auxiliary.extended_context import ExtendedContext
 from auxiliary.components import (CheckStatusActionComponent, SimpleRPGRoleComponent, ActorComponent, DeadActionComponent)
 from loguru import logger
 from auxiliary.director_component import notify_stage_director
-from typing import List
+from typing import List, override
 from auxiliary.base_data import PropData
 from auxiliary.cn_builtin_prompt import check_status_action_prompt
 from auxiliary.director_event import IDirectorEvent
@@ -85,12 +85,15 @@ class CheckStatusActionSystem(ReactiveProcessor):
         super().__init__(context)
         self.context = context
 ###################################################################################################################
+    @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
         return { Matcher(CheckStatusActionComponent): GroupEvent.ADDED }
 ###################################################################################################################
+    @override
     def filter(self, entity: Entity) -> bool:
         return entity.has(CheckStatusActionComponent) and entity.has(ActorComponent)  and not entity.has(DeadActionComponent)
 ###################################################################################################################
+    @override
     def react(self, entities: list[Entity]) -> None:
         for entity in entities:
             self.check_status(entity)

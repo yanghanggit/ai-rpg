@@ -1,3 +1,4 @@
+from typing import override
 from entitas import ExecuteProcessor, Matcher #type: ignore
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
@@ -8,6 +9,7 @@ class PostActionSystem(ExecuteProcessor):
     def __init__(self, context: ExtendedContext) -> None:
         self.context: ExtendedContext = context
 ############################################################################################################
+    @override
     def execute(self) -> None:
         # 在这里清除所有的行动
         self.remove_world_actions() # 因为world和npc的actions，目前是一样的

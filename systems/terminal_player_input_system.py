@@ -3,7 +3,7 @@ from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.player_proxy import PlayerProxy, get_player_proxy, TEST_TERMINAL_NAME, PLAYER_INPUT_MODE, determine_player_input_mode, TEST_CLIENT_SHOW_MESSAGE_COUNT
 from auxiliary.extended_context import ExtendedContext
-from typing import Any, cast
+from typing import Any, cast, override
 
 
 ############################################################################################################
@@ -12,6 +12,7 @@ class TerminalPlayerInputSystem(ExecuteProcessor):
         self.context: ExtendedContext = context
         self.rpggame = rpggame
 ############################################################################################################
+    @override
     def execute(self) -> None:
         # 临时的设置，通过IP地址来判断是不是测试的客户端
         if determine_player_input_mode(self.context.user_ips) != PLAYER_INPUT_MODE.TERMINAL:

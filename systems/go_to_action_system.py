@@ -8,7 +8,7 @@ from auxiliary.actor_plan_and_action import ActorAction
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.director_component import notify_stage_director
-from typing import cast
+from typing import cast, override
 from auxiliary.director_event import IDirectorEvent
 from systems.director_system import director_events_to_npc
 from auxiliary.cn_builtin_prompt import ( leave_stage_prompt,
@@ -16,15 +16,10 @@ from auxiliary.cn_builtin_prompt import ( leave_stage_prompt,
                                           enter_stage_prompt2,
                                           leave_for_stage_failed_because_stage_is_invalid_prompt,
                                           leave_for_stage_failed_because_already_in_stage_prompt)
-
-
-
-
-
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class NPCLeaveForFailedBecauseStageIsInvalidEvent(IDirectorEvent):
+class ActorGoToFailedBecauseStageIsInvalidEvent(IDirectorEvent):
 
     def __init__(self, npcname: str, stagename: str) -> None:
         self.npcname = npcname
@@ -42,7 +37,7 @@ class NPCLeaveForFailedBecauseStageIsInvalidEvent(IDirectorEvent):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class NPCLeaveForFailedBecauseAlreadyInStage(IDirectorEvent):
+class ActorGoToFailedBecauseAlreadyInStage(IDirectorEvent):
 
     def __init__(self, npcname: str, stagename: str) -> None:
         self.npcname = npcname
@@ -57,10 +52,8 @@ class NPCLeaveForFailedBecauseAlreadyInStage(IDirectorEvent):
     
     def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
         return ""
-
-
 ###############################################################################################################################################
-class LeaveActionHelper:
+class GoToActionHelper:
 
     def __init__(self, context: ExtendedContext, who_wana_leave: Entity, target_stage_name: str) -> None:
         self.context = context
@@ -72,7 +65,7 @@ class LeaveActionHelper:
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class NPCLeaveStageEvent(IDirectorEvent):
+class ActorLeaveStageEvent(IDirectorEvent):
 
     def __init__(self, npc_name: str, current_stage_name: str, leave_for_stage_name: str) -> None:
         self.npc_name = npc_name
@@ -89,7 +82,7 @@ class NPCLeaveStageEvent(IDirectorEvent):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class NPCEnterStageEvent(IDirectorEvent):
+class ActorEnterStageEvent(IDirectorEvent):
 
     def __init__(self, npc_name: str, stage_name: str, last_stage_name: str) -> None:
         self.npc_name = npc_name
@@ -110,23 +103,25 @@ class NPCEnterStageEvent(IDirectorEvent):
 ####################################################################################################################################
 ####################################################################################################################################
 #################################################################################################################################### 
-class LeaveForActionSystem(ReactiveProcessor):
+class GoToActionSystem(ReactiveProcessor):
 
     def __init__(self, context: ExtendedContext) -> None:
         super().__init__(context)
         self.context = context
-
+###############################################################################################################################################
+    @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
         return {Matcher(GoToActionComponent): GroupEvent.ADDED}
-
+###############################################################################################################################################
+    @override
     def filter(self, entity: Entity) -> bool:
         return entity.has(GoToActionComponent) and entity.has(ActorComponent) and not entity.has(DeadActionComponent)
-
-    def react(self, entities: list[Entity]) -> None:
-        self.leavefor(entities)
-
 ###############################################################################################################################################
-    def leavefor(self, entities: list[Entity]) -> None:
+    @override
+    def react(self, entities: list[Entity]) -> None:
+        self._handle(entities)
+###############################################################################################################################################
+    def _handle(self, entities: list[Entity]) -> None:
 
         for entity in entities:
             if not entity.has(ActorComponent):
@@ -139,7 +134,7 @@ class LeaveForActionSystem(ReactiveProcessor):
                continue
    
             stagename = action.values[0]
-            handle = LeaveActionHelper(self.context, entity, stagename)
+            handle = GoToActionHelper(self.context, entity, stagename)
             if handle.target_stage_entity is None or handle.current_stage_entity is None or handle.target_stage_entity == handle.current_stage_entity:
                 continue
 
@@ -154,7 +149,7 @@ class LeaveForActionSystem(ReactiveProcessor):
             #进入场景后的处理
             self.after_enter_stage(handle)
 ###############################################################################################################################################            
-    def enter_stage(self, helper: LeaveActionHelper) -> None:
+    def enter_stage(self, helper: GoToActionHelper) -> None:
 
         entity = helper.who_wana_leave_entity
         current_stage_name = helper.current_stage_name
@@ -169,22 +164,22 @@ class LeaveForActionSystem(ReactiveProcessor):
         self.context.change_stage_tag_component(entity, current_stage_name, replace_current_stage)
 
         #进入场景的事件需要通知相关的人
-        notify_stage_director(self.context, entity, NPCEnterStageEvent(npccomp.name, target_stage_name, current_stage_name))
+        notify_stage_director(self.context, entity, ActorEnterStageEvent(npccomp.name, target_stage_name, current_stage_name))
 ###############################################################################################################################################
-    def before_leave_stage(self, helper: LeaveActionHelper) -> None:
+    def before_leave_stage(self, helper: GoToActionHelper) -> None:
         #目前就是强行刷一下history
         self.direct_before_leave(helper)
 ###############################################################################################################################################
-    def direct_before_leave(self, helper: LeaveActionHelper) -> None:
+    def direct_before_leave(self, helper: GoToActionHelper) -> None:
         director_events_to_npc(self.context, helper.who_wana_leave_entity)
 ###############################################################################################################################################
-    def leave_stage(self, helper: LeaveActionHelper) -> None:
+    def leave_stage(self, helper: GoToActionHelper) -> None:
         entity: Entity = helper.who_wana_leave_entity
         npccomp: ActorComponent = entity.get(ActorComponent)
         assert helper.current_stage_entity is not None
 
         # 必须在场景信息还有效的时刻做通知
-        notify_stage_director(self.context, entity, NPCLeaveStageEvent(npccomp.name, helper.current_stage_name, helper.target_stage_name))
+        notify_stage_director(self.context, entity, ActorLeaveStageEvent(npccomp.name, helper.current_stage_name, helper.target_stage_name))
 
         # 离开场景 设置成空
         replace_name = npccomp.name
@@ -192,7 +187,7 @@ class LeaveForActionSystem(ReactiveProcessor):
         entity.replace(ActorComponent, replace_name, replace_current_stage)
         self.context.change_stage_tag_component(entity, helper.current_stage_name, replace_current_stage)
 ###############################################################################################################################################
-    def after_enter_stage(self, helper: LeaveActionHelper) -> None:
+    def after_enter_stage(self, helper: GoToActionHelper) -> None:
         entity: Entity = helper.who_wana_leave_entity
         npccomp: ActorComponent = entity.get(ActorComponent)
         stagename = npccomp.current_stage

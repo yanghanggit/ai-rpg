@@ -5,7 +5,7 @@ from auxiliary.actor_plan_and_action import ActorAction
 from loguru import logger
 from auxiliary.director_component import notify_stage_director
 from auxiliary.director_event import IDirectorEvent
-from typing import cast, Optional
+from typing import cast, override
 from auxiliary.target_and_message_format_handle import conversation_check, ErrorConversationEnable
 from auxiliary.cn_builtin_prompt import kill_someone, attack_someone_prompt
 
@@ -14,7 +14,7 @@ from auxiliary.cn_builtin_prompt import kill_someone, attack_someone_prompt
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class NPCKillSomeoneEvent(IDirectorEvent):
+class KillSomeoneEvent(IDirectorEvent):
     
     def __init__(self, attacker: str, target: str) -> None:
         self.attacker = attacker
@@ -30,7 +30,7 @@ class NPCKillSomeoneEvent(IDirectorEvent):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class NPCAttackSomeoneEvent(IDirectorEvent):
+class AttackSomeoneEvent(IDirectorEvent):
 
     def __init__(self, attacker: str, target: str, damage: int, curhp: int, maxhp: int) -> None:
         self.attacker = attacker
@@ -46,26 +46,29 @@ class NPCAttackSomeoneEvent(IDirectorEvent):
     def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
         event = attack_someone_prompt(self.attacker, self.target, self.damage, self.curhp, self.maxhp)
         return event
-
-
-
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
 class AttackActionSystem(ReactiveProcessor):
 
     def __init__(self, context: ExtendedContext) -> None:
         super().__init__(context)
         self.context = context
 ######################################################################################################################################################
+    @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
         return {Matcher(AttackActionComponent): GroupEvent.ADDED}
 ######################################################################################################################################################
+    @override
     def filter(self, entity: Entity) -> bool:
         return entity.has(AttackActionComponent) and entity.has(SimpleRPGRoleComponent)
 ######################################################################################################################################################
+    @override
     def react(self, entities: list[Entity]) -> None:
         for entity in entities:
-            self.fight(entity)
+            self._attack(entity)
  ######################################################################################################################################################   
-    def fight(self, entity: Entity) -> None:
+    def _attack(self, entity: Entity) -> None:
         context = self.context
         rpgcomp: SimpleRPGRoleComponent = entity.get(SimpleRPGRoleComponent)
         fightcomp: AttackActionComponent = entity.get(AttackActionComponent)
@@ -122,9 +125,9 @@ class AttackActionSystem(ReactiveProcessor):
 
             ## 导演系统，单独处理，有旧的代码
             if isdead:
-                notify_stage_director(context, entity, NPCKillSomeoneEvent(rpgcomp.name, value))
+                notify_stage_director(context, entity, KillSomeoneEvent(rpgcomp.name, value))
             else:
-                notify_stage_director(context, entity, NPCAttackSomeoneEvent(rpgcomp.name, value, damage, lefthp, targetsrpgcomp.maxhp))
+                notify_stage_director(context, entity, AttackSomeoneEvent(rpgcomp.name, value, damage, lefthp, targetsrpgcomp.maxhp))
 ######################################################################################################################################################
     ## 杀死对方就直接夺取唯一性道具。
     def unique_prop_be_taken_away(self, thekiller: Entity, whoiskilled: Entity) -> None:

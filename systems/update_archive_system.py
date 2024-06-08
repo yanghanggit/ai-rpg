@@ -5,12 +5,13 @@ from auxiliary.components import (ActorComponent)
 from systems.update_archive_helper import UpdareArchiveHelper
 from auxiliary.cn_builtin_prompt import updated_information_on_WhoDoYouKnow_prompt, updated_information_about_StagesYouKnow_prompt
 from auxiliary.file_system_helper import add_actor_archive_files, update_actor_archive_file, add_stage_archive_files
-from typing import Set
+from typing import Set, override
 
 class UpdateArchiveSystem(ExecuteProcessor):
     def __init__(self, context: ExtendedContext) -> None:
         self.context: ExtendedContext = context
 ############################################################################################################
+    @override
     def execute(self) -> None:
         self.update_archive()
 ############################################################################################################

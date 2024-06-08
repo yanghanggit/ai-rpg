@@ -5,7 +5,7 @@ from auxiliary.components import (  TradeActionComponent,CheckStatusActionCompon
 from loguru import logger
 from auxiliary.actor_plan_and_action import ActorAction
 from auxiliary.target_and_message_format_handle import conversation_check, parse_target_and_message, ErrorConversationEnable
-from typing import Optional, List
+from typing import Optional, List, override
 from auxiliary.director_component import notify_stage_director
 from auxiliary.director_event import IDirectorEvent
 from auxiliary.cn_builtin_prompt import trade_action_prompt
@@ -38,12 +38,15 @@ class TradeActionSystem(ReactiveProcessor):
         super().__init__(context)
         self.context = context
 ###################################################################################################################
+    @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
         return { Matcher(TradeActionComponent): GroupEvent.ADDED }
 ###################################################################################################################
+    @override
     def filter(self, entity: Entity) -> bool:
         return entity.has(TradeActionComponent) and entity.has(ActorComponent)  and not entity.has(DeadActionComponent)
 ###################################################################################################################
+    @override
     def react(self, entities: list[Entity]) -> None:
         for entity in entities:
             trade_success_target_names = self.trade(entity)

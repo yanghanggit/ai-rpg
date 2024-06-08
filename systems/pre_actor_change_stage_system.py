@@ -24,7 +24,7 @@ from auxiliary.cn_builtin_prompt import \
             NO_INFO_PROMPT,\
             NO_ROLE_PROPS_INFO_PROMPT, \
             role_status_info_when_pre_leave_prompt
-from typing import Optional, cast
+from typing import Optional, cast, override
 from systems.check_status_action_system import CheckStatusActionHelper
 from auxiliary.actor_plan_and_action import ActorPlan
 
@@ -32,7 +32,7 @@ from auxiliary.actor_plan_and_action import ActorPlan
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class NPCExitStageFailedBecauseStageRefuse(IDirectorEvent):
+class ActorExitStageFailedBecauseStageRefuse(IDirectorEvent):
     def __init__(self, npcname: str, stagename: str, tips: str) -> None:
         self.npcname = npcname
         self.stagename = stagename
@@ -48,7 +48,7 @@ class NPCExitStageFailedBecauseStageRefuse(IDirectorEvent):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class NPCEnterStageFailedBecauseStageRefuse(IDirectorEvent):
+class ActorEnterStageFailedBecauseStageRefuse(IDirectorEvent):
     def __init__(self, npcname: str, stagename: str, tips: str) -> None:
         self.npcname = npcname
         self.stagename = stagename
@@ -106,76 +106,69 @@ class StageConditionsHelper:
 ####################################################################################################################################
 
 class HandleStageConditionsResponseHelper:
-    def __init__(self, actorname: str, response: str) -> None:
-        self.actorname = actorname
-        self.response = response
-        self.result_from_tag = False
-        self.result_from_enviro_narrate = str(NO_INFO_PROMPT)
+    def __init__(self, plan: ActorPlan) -> None:
+        self._plan = plan
+        self._result = False
+        self._tips = str(NO_INFO_PROMPT)
+###############################################################################################################################################
+    @property
+    def result(self) -> bool:
+        return self._result
+###############################################################################################################################################
+    @property
+    def tips(self) -> str:
+        return self._tips
 ###############################################################################################################################################
     def handle(self) -> bool:
-        #
-        temp_plan = ActorPlan(self.actorname, self.response)
-        if len(temp_plan.actions) == 0:
-            logger.error("可能出现格式错误")
+        if self._plan is None:
             return False
-    
+        
         # 再次检查是否符合结果预期
-        enviro_narrate_action: Optional[ActorAction] = None
-        tag_action: Optional[ActorAction] = None
-        #
-        for action in temp_plan.actions:
-            if action.actionname == EnviroNarrateActionComponent.__name__:
-                enviro_narrate_action = action
-            elif action.actionname == TagActionComponent.__name__:
-                tag_action = action
-
+        enviro_narrate_action: Optional[ActorAction] = self._plan.get_action_by_key(EnviroNarrateActionComponent.__name__)
+        tag_action: Optional[ActorAction] = self._plan.get_action_by_key(TagActionComponent.__name__)
         if enviro_narrate_action is None or tag_action is None:
-            logger.error("大模型推理错误！！！！！！！！！！！！！")
+            logger.error(f"大模型推理错误 = {self._plan}")
             return False
         
         # 2个结果赋值
-        self.result_from_tag = self.parse_tag_action(tag_action)
-        self.result_from_enviro_narrate = self.parse_enviro_narrate_action(enviro_narrate_action)
+        self._result = self._parse_yes(tag_action)
+        self._tips = self._parse_tips(enviro_narrate_action)
         return True
 ###############################################################################################################################################
-    def parse_tag_action(self, tag_action: ActorAction) -> bool:
+    def _parse_yes(self, tag_action: ActorAction) -> bool:
+        assert tag_action.actionname == TagActionComponent.__name__
         if len(tag_action.values) == 0:
             logger.error(tag_action)
             return False
-        first_tag_value_as_result = tag_action.values[0]
-        if first_tag_value_as_result.lower() == "yes":
-            return True
-        return False
+        return tag_action.values[0].lower() == "yes"
 ###############################################################################################################################################
-    def parse_enviro_narrate_action(self, action: ActorAction) -> str:
-        if len(action.values) == 0:
-            #logger.error("没有行动")
-            return "无可提示信息"
-        single_value = action.single_value()
-        return single_value
+    def _parse_tips(self, enviro_narrate_action: ActorAction) -> str:
+        assert enviro_narrate_action.actionname == EnviroNarrateActionComponent.__name__
+        if len(enviro_narrate_action.values) == 0:
+            logger.error(enviro_narrate_action)
+            return str(NO_INFO_PROMPT)
+        return enviro_narrate_action.single_value()
 ###############################################################################################################################################
 
 
-
-
-
-
-
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class PreLeaveForSystem(ReactiveProcessor):
+class PreActorChangeStageSystem(ReactiveProcessor):
 
     def __init__(self, context: ExtendedContext) -> None:
         super().__init__(context)
         self.context = context
 ###############################################################################################################################################
+    @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
         return {Matcher(GoToActionComponent): GroupEvent.ADDED}
 ###############################################################################################################################################
+    @override
     def filter(self, entity: Entity) -> bool:
         return entity.has(GoToActionComponent) and entity.has(ActorComponent) and not entity.has(DeadActionComponent)
 ###############################################################################################################################################
+    @override
     def react(self, entities: list[Entity]) -> None:
         for entity in entities:
             
@@ -242,19 +235,20 @@ class PreLeaveForSystem(ReactiveProcessor):
             return False
         
         logger.debug(f"大模型推理后的结果: {respones}")
-        handle_response_helper = HandleStageConditionsResponseHelper(current_stage_name, respones)
+        plan = ActorPlan(current_stage_name, respones)
+        handle_response_helper = HandleStageConditionsResponseHelper(plan)
         if not handle_response_helper.handle():
             return False
         
         #
-        if not handle_response_helper.result_from_tag:
+        if not handle_response_helper.result:
             # 通知事件
             notify_stage_director(self.context, 
                                   current_stage_entity, 
-                                  NPCExitStageFailedBecauseStageRefuse(npc_name, current_stage_name, handle_response_helper.result_from_enviro_narrate))
+                                  ActorExitStageFailedBecauseStageRefuse(npc_name, current_stage_name, handle_response_helper.tips))
             return False
 
-        logger.info(f"允许通过！说明如下: {handle_response_helper.result_from_enviro_narrate}")
+        logger.info(f"允许通过！说明如下: {handle_response_helper._tips}")
         ## 可以删除，允许通过！这个上下文就拿掉，不需要了。
         agent_connect_system = self.context.agent_connect_system
         agent_connect_system.remove_last_conversation_between_human_and_ai(current_stage_name)
@@ -298,18 +292,19 @@ class PreLeaveForSystem(ReactiveProcessor):
             return False
         
         logger.debug(f"大模型推理后的结果: {respones}")
-        handle_response_helper = HandleStageConditionsResponseHelper(target_stage_name, respones)
+        plan = ActorPlan(target_stage_name, respones)
+        handle_response_helper = HandleStageConditionsResponseHelper(plan)
         if not handle_response_helper.handle():
             return False
         
-        if not handle_response_helper.result_from_tag:
+        if not handle_response_helper.result:
             # 通知事件
             notify_stage_director(self.context, 
                                   target_stage_entity, 
-                                  NPCEnterStageFailedBecauseStageRefuse(npc_name, target_stage_name, handle_response_helper.result_from_enviro_narrate))
+                                  ActorEnterStageFailedBecauseStageRefuse(npc_name, target_stage_name, handle_response_helper.tips))
             return False
 
-        logger.info(f"允许通过！说明如下: {handle_response_helper.result_from_enviro_narrate}")
+        logger.info(f"允许通过！说明如下: {handle_response_helper._tips}")
         ## 可以删除，允许通过！这个上下文就拿掉，不需要了。
         agent_connect_system = self.context.agent_connect_system
         agent_connect_system.remove_last_conversation_between_human_and_ai(target_stage_name)

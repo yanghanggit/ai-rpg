@@ -6,7 +6,7 @@ from auxiliary.components import MindVoiceActionComponent, WhisperActionComponen
     BroadcastActionComponent, EnviroNarrateActionComponent, \
     AttackActionComponent, GoToActionComponent
 from auxiliary.actor_plan_and_action import ActorAction
-from typing import Optional
+from typing import Optional, override
 from loguru import logger
 from auxiliary.target_and_message_format_handle import parse_target_and_message, conversation_check, ErrorConversationEnable
 
@@ -14,6 +14,7 @@ class UpdateClientMessageSystem(ExecuteProcessor):
     def __init__(self, context: ExtendedContext) -> None:
         self.context: ExtendedContext = context
 ############################################################################################################
+    @override
     def execute(self) -> None:
 
         input_mode = determine_player_input_mode(self.context.user_ips)

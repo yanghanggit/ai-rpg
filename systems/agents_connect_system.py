@@ -1,3 +1,4 @@
+from typing import override
 from entitas import Entity, Matcher, InitializeProcessor # type: ignore
 from auxiliary.components import WorldComponent, StageComponent, ActorComponent, PlayerComponent
 from auxiliary.extended_context import ExtendedContext
@@ -8,6 +9,7 @@ class AgentsConnectSystem(InitializeProcessor):
     def __init__(self, context: ExtendedContext) -> None:
         self.context: ExtendedContext = context
 ###############################################################################################################################################
+    @override
     def initialize(self) -> None:
         self.connect_world_agents()
         self.connect_stage_agents()

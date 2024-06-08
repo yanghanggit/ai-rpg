@@ -8,7 +8,7 @@ from auxiliary.components import (  SearchActionComponent,
 from auxiliary.actor_plan_and_action import ActorAction
 from loguru import logger
 from auxiliary.director_component import notify_stage_director
-from typing import List
+from typing import List, override
 from auxiliary.file_def import PropFile
 
 from auxiliary.director_event import IDirectorEvent
@@ -66,12 +66,15 @@ class SearchActionSystem(ReactiveProcessor):
         super().__init__(context)
         self.context = context
 ###################################################################################################################
+    @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
         return { Matcher(SearchActionComponent): GroupEvent.ADDED }
 ###################################################################################################################
+    @override
     def filter(self, entity: Entity) -> bool:
         return entity.has(SearchActionComponent) and entity.has(ActorComponent) and not entity.has(DeadActionComponent)
 ###################################################################################################################
+    @override
     def react(self, entities: list[Entity]) -> None:
         for entity in entities:
             search_any = self.search(entity)

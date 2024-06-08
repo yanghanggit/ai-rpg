@@ -1,3 +1,4 @@
+from typing import override
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
 from auxiliary.components import BroadcastActionComponent, StageComponent
 from auxiliary.actor_plan_and_action import ActorAction
@@ -24,19 +25,24 @@ class BroadcastEvent(IDirectorEvent):
     def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
         broadcastcontent = broadcast_action_prompt(self.whobroadcast, self.stagename, self.content, extended_context)
         return broadcastcontent
-
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
 class BroadcastActionSystem(ReactiveProcessor):
 
     def __init__(self, context: ExtendedContext) -> None:
         super().__init__(context)
         self.context = context
 ####################################################################################################
+    @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
         return {Matcher(BroadcastActionComponent): GroupEvent.ADDED}
 ####################################################################################################
+    @override
     def filter(self, entity: Entity) -> bool:
         return entity.has(BroadcastActionComponent)
 ####################################################################################################
+    @override
     def react(self, entities: list[Entity]) -> None:
         for entity in entities:
             self.broadcast(entity)  # 核心处理
@@ -54,3 +60,4 @@ class BroadcastActionSystem(ReactiveProcessor):
         action: ActorAction = broadcastcomp.action
         combine = action.single_value()
         notify_stage_director(self.context, stageentity, BroadcastEvent(action.name, stagecomp.name, combine))
+####################################################################################################

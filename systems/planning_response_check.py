@@ -1,7 +1,6 @@
 from loguru import logger
 from typing import List, Any, Optional
 
-# Conversation
 ############################################################################################################
 def check_component_register(classname: str, actions_register: List[Any]) -> Any:
     for component in actions_register:

@@ -6,7 +6,7 @@ from auxiliary.components import (  PerceptionActionComponent,
                                     DeadActionComponent,
                                     ActorComponent)
 from loguru import logger
-from typing import List, Dict
+from typing import List, Dict, override
 from auxiliary.director_component import notify_stage_director
 from auxiliary.director_event import IDirectorEvent
 from auxiliary.cn_builtin_prompt import perception_action_prompt
@@ -75,12 +75,15 @@ class PerceptionActionSystem(ReactiveProcessor):
         super().__init__(context)
         self.context = context
 ###################################################################################################################
+    @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
         return { Matcher(PerceptionActionComponent): GroupEvent.ADDED }
 ###################################################################################################################
+    @override
     def filter(self, entity: Entity) -> bool:
         return entity.has(PerceptionActionComponent) and entity.has(ActorComponent) and not entity.has(DeadActionComponent)
 ###################################################################################################################
+    @override
     def react(self, entities: list[Entity]) -> None:
         for entity in entities:
             self.perception(entity)

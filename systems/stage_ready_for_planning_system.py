@@ -5,13 +5,14 @@ from auxiliary.components import (StageComponent, ActorComponent,
                                 AutoPlanningComponent)
 from loguru import logger
 from auxiliary.base_data import PropData
-from typing import List, Set
+from typing import List, Set, override
 
 ####################################################################################################################################
 class StageReadyForPlanningSystem(ExecuteProcessor):
     def __init__(self, context: ExtendedContext) -> None:
         self.context = context
-        
+####################################################################################################################################
+    @override
     def execute(self) -> None:
         # todo: ChaosSystem接入
         entities = self.context.get_group(Matcher(all_of=[StageComponent, AutoPlanningComponent])).entities

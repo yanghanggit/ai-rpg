@@ -6,7 +6,7 @@ from loguru import logger
 from auxiliary.target_and_message_format_handle import conversation_check, parse_target_and_message, ErrorConversationEnable
 from auxiliary.director_component import notify_stage_director
 from auxiliary.director_event import IDirectorEvent
-from typing import Optional
+from typing import Optional, override
 from auxiliary.cn_builtin_prompt import speak_action_prompt
 
 
@@ -34,12 +34,15 @@ class SpeakActionSystem(ReactiveProcessor):
         super().__init__(context)
         self.context = context
 ####################################################################################################
+    @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
         return {Matcher(SpeakActionComponent): GroupEvent.ADDED}
 ####################################################################################################
+    @override
     def filter(self, entity: Entity) -> bool:
         return entity.has(SpeakActionComponent)
 ####################################################################################################
+    @override
     def react(self, entities: list[Entity]) -> None:
         for entity in entities:
             self.speak(entity)  

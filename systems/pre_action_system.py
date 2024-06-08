@@ -2,13 +2,14 @@ from entitas import ExecuteProcessor, Matcher, Entity #type: ignore
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.components import AutoPlanningComponent
-from typing import Set
+from typing import Set, override
    
 class PreActionSystem(ExecuteProcessor):
 ############################################################################################################
     def __init__(self, context: ExtendedContext) -> None:
         self.context: ExtendedContext = context
 ############################################################################################################
+    @override
     def execute(self) -> None:
         pass
         ## 自我测试，这个阶段不允许有任何的planning

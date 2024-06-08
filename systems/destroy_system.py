@@ -1,4 +1,5 @@
 
+from typing import override
 from entitas import Matcher, ExecuteProcessor, Group, Entity #type: ignore
 from auxiliary.components import DestroyComponent
 from auxiliary.extended_context import ExtendedContext
@@ -9,11 +10,12 @@ class DestroySystem(ExecuteProcessor):
     
     def __init__(self, context: ExtendedContext) -> None:
         self.context: ExtendedContext = context
-
+####################################################################################################################################
+    @override
     def execute(self) -> None:
-        self.handledestroy()
-
-    def handledestroy(self) -> None:
+        self._handle()
+####################################################################################################################################
+    def _handle(self) -> None:
         entityGroup: Group = self.context.get_group(Matcher(DestroyComponent))
         entities: set[Entity] = entityGroup.entities
         #不能够一边遍历一边删除，所以先复制一份
@@ -21,3 +23,4 @@ class DestroySystem(ExecuteProcessor):
         while len(entities_copy) > 0:
              destory_entity = entities_copy.pop() 
              self.context.destroy_entity(destory_entity)
+####################################################################################################################################

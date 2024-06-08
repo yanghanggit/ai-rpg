@@ -2,7 +2,7 @@ from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignor
 from auxiliary.components import WhisperActionComponent
 from auxiliary.actor_plan_and_action import ActorAction
 from auxiliary.extended_context import ExtendedContext
-from typing import Optional
+from typing import Optional, override
 from loguru import logger
 from auxiliary.target_and_message_format_handle import parse_target_and_message, conversation_check, ErrorConversationEnable
 from auxiliary.director_component import notify_stage_director
@@ -36,12 +36,15 @@ class WhisperActionSystem(ReactiveProcessor):
         super().__init__(context)
         self.context = context
 ####################################################################################################
+    @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
         return {Matcher(WhisperActionComponent): GroupEvent.ADDED}
 ####################################################################################################
+    @override
     def filter(self, entity: Entity) -> bool:
         return entity.has(WhisperActionComponent)
 ####################################################################################################
+    @override
     def react(self, entities: list[Entity]) -> None:
         for entity in entities:
             self.whisper(entity) 

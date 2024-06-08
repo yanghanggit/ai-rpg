@@ -1,3 +1,4 @@
+from typing import override
 from entitas import ExecuteProcessor #type: ignore
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
@@ -29,6 +30,7 @@ class HandlePlayerInputSystem(ExecuteProcessor):
         self.context: ExtendedContext = context
         self.rpggame = rpggame
 ############################################################################################################
+    @override
     def execute(self) -> None:
         # 临时的设置，通过IP地址来判断是不是测试的客户端
         input_mode = determine_player_input_mode(self.context.user_ips)

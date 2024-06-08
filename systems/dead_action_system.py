@@ -1,4 +1,5 @@
 
+from typing import override
 from entitas import Matcher, ExecuteProcessor, Entity #type: ignore
 from auxiliary.components import (DeadActionComponent, PlayerComponent,
                         DestroyComponent)
@@ -14,6 +15,7 @@ class DeadActionSystem(ExecuteProcessor):
         self.context = context
         self.rpggame = rpggame
 ########################################################################################################################################################################
+    @override
     def execute(self) -> None:
         # 玩家死亡就游戏结束
         self.is_player_dead_then_game_over()

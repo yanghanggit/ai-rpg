@@ -1,4 +1,5 @@
 
+from typing import override
 from entitas import ExecuteProcessor, Matcher, Entity #type: ignore
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
@@ -11,6 +12,7 @@ class PostFightSystem(ExecuteProcessor):
     def __init__(self, context: ExtendedContext) -> None:
         self.context: ExtendedContext = context
 ############################################################################################################
+    @override
     def execute(self) -> None:
         # 移除后续动作
         self.remove_npc_interactive_actions()

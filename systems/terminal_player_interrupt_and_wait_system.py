@@ -1,3 +1,4 @@
+from typing import override
 from entitas import ExecuteProcessor #type: ignore
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
@@ -13,6 +14,7 @@ class TerminalPlayerInterruptAndWaitSystem(ExecuteProcessor):
     def __init__(self, context: ExtendedContext) -> None:
         self.context: ExtendedContext = context
 ############################################################################################################
+    @override
     def execute(self) -> None:
         input_mode = determine_player_input_mode(self.context.user_ips)
         if input_mode != PLAYER_INPUT_MODE.TERMINAL:

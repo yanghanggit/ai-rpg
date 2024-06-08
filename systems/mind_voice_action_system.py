@@ -1,3 +1,4 @@
+from typing import override
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
 from auxiliary.components import MindVoiceActionComponent
 from auxiliary.actor_plan_and_action import ActorAction
@@ -11,12 +12,15 @@ class MindVoiceActionSystem(ReactiveProcessor):
         super().__init__(context)
         self.context = context
 ####################################################################################################
+    @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
         return {Matcher(MindVoiceActionComponent): GroupEvent.ADDED}
 ####################################################################################################
+    @override
     def filter(self, entity: Entity) -> bool:
         return entity.has(MindVoiceActionComponent)
 ####################################################################################################
+    @override
     def react(self, entities: list[Entity]) -> None:
         # 核心处理
         for entity in entities:

@@ -1,3 +1,4 @@
+from typing import override
 from entitas import Entity, Matcher, ExecuteProcessor #type: ignore
 from auxiliary.components import StageComponent, ActorComponent, PlayerComponent
 from auxiliary.extended_context import ExtendedContext
@@ -11,6 +12,7 @@ class DirectorSystem(ExecuteProcessor):
     def __init__(self, context: ExtendedContext) -> None:
         self.context = context
 ###################################################################################################################
+    @override
     def execute(self) -> None:
         self.handle()
         self.director_clear()

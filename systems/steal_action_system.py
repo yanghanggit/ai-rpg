@@ -5,7 +5,7 @@ from auxiliary.components import (  StealActionComponent, CheckStatusActionCompo
 from loguru import logger
 from auxiliary.actor_plan_and_action import ActorAction
 from auxiliary.target_and_message_format_handle import conversation_check, parse_target_and_message, ErrorConversationEnable
-from typing import Optional
+from typing import Optional, override
 from auxiliary.director_component import notify_stage_director
 from auxiliary.director_event import IDirectorEvent
 from auxiliary.cn_builtin_prompt import steal_action_prompt
@@ -38,12 +38,15 @@ class StealActionSystem(ReactiveProcessor):
         super().__init__(context)
         self.context = context
 ###################################################################################################################
+    @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
         return { Matcher(StealActionComponent): GroupEvent.ADDED }
 ###################################################################################################################
+    @override
     def filter(self, entity: Entity) -> bool:
         return entity.has(StealActionComponent) and entity.has(ActorComponent) and not entity.has(DeadActionComponent)
 ###################################################################################################################
+    @override
     def react(self, entities: list[Entity]) -> None:
         for entity in entities:
             steal_any = self.steal(entity)

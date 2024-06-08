@@ -1,5 +1,5 @@
 from entitas import Entity, Matcher, ReactiveProcessor # type: ignore
-from typing import Optional
+from typing import Optional, override
 from loguru import logger
 from auxiliary.actor_plan_and_action import ActorAction
 from auxiliary.components import (UsePropActionComponent, StageExitCondStatusComponent, 
@@ -61,12 +61,15 @@ class UsePropActionSystem(ReactiveProcessor):
         super().__init__(context)
         self.context = context
 ####################################################################################################################################
+    @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
         return { Matcher(UsePropActionComponent): GroupEvent.ADDED }
 ####################################################################################################################################
+    @override
     def filter(self, entity: Entity) -> bool:
         return entity.has(UsePropActionComponent) and entity.has(ActorComponent) and not entity.has(DeadActionComponent)
 ####################################################################################################################################
+    @override
     def react(self, entities: list[Entity]) -> None:
         for entity in entities:
             self.useprop(entity)

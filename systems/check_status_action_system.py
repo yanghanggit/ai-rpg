@@ -35,8 +35,8 @@ class CheckStatusActionHelper:
                 self.props.append(file.prop)
             elif file.prop.is_role_component():
                 self.role_components.append(file.prop)
-            elif file.prop.is_event():
-                self.events.append(file.prop)
+            # elif file.prop.is_event():
+            #     self.events.append(file.prop)
             
     def check_health(self, entity: Entity) -> None:
         if not entity.has(SimpleRPGRoleComponent):

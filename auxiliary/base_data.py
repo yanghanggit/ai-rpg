@@ -11,86 +11,92 @@ class PropType(Enum):
     WEAPON = 2
     CLOTHES = 3
     NON_CONSUMABLE_ITEM = 4
-    EVENT = 5
+    #EVENT = 5
 
 class PropData:
+
     def __init__(self, name: str, codename: str, description: str, is_unique: str, type: str, attributes: str) -> None:
-        self.name = name
-        self.codename = codename
-        self.description = description
-        self.is_unique = is_unique
-
-
-        self.type = type
-        self.em_type = PropType.INVALID
-        self.parse_type()
-        #print(f"PropData: {self.name} {self.em_type}")
+        self._name = name
+        self._codename = codename
+        self._description = description
+        self._is_unique = is_unique
+        self._type = type
+        self._attributes_string: str = attributes
 
         #默认值，如果不是武器或者衣服，就是0
-        self.attributes: List[int] = [0, 0, 0]
+        self._attributes: List[int] = [0, 0, 0]
         if attributes != "":
             #是武器或者衣服，就进行构建
-            self.build_attributes(attributes)
+            self._build_attributes(attributes)
 
     def isunique(self) -> bool:
-        return self.is_unique == "Yes"
+        return self._is_unique.lower() == "yes"
     
-    def parse_type(self) -> None:
+    @property
+    def e_type(self) -> PropType:
         if self.is_role_component():
-            self.em_type = PropType.ROLE_COMPONENT
+            return PropType.ROLE_COMPONENT
         elif self.is_weapon():
-            self.em_type = PropType.WEAPON
+            return PropType.WEAPON
         elif self.is_clothes():
-            self.em_type = PropType.CLOTHES
+            return PropType.CLOTHES
         elif self.is_non_consumable_item():
-            self.em_type = PropType.NON_CONSUMABLE_ITEM
-        elif self.is_event():
-            self.em_type = PropType.EVENT
-        else:
-            self.em_type = PropType.INVALID
+            return PropType.NON_CONSUMABLE_ITEM
+        # elif self.is_event():
+        #     self.em_type = PropType.EVENT
+        return PropType.INVALID
     
     def is_role_component(self) -> bool:
-        return self.type == "RoleComponent"
+        return self._type == "RoleComponent"
     
     def is_weapon(self) -> bool:
-        return self.type == "Weapon"
+        return self._type == "Weapon"
     
     def is_clothes(self) -> bool:
-        return self.type == "Clothes"
+        return self._type == "Clothes"
     
     def is_non_consumable_item(self) -> bool:
-        return self.type == "NonConsumableItem"
+        return self._type == "NonConsumableItem"
     
-    def is_event(self) -> bool:
-        return self.type == "Event"
-    
+    def reseialization(self, prop_data: Any) -> 'PropData':
+        self._name = prop_data.get('name')
+        self._codename = prop_data.get('codename')
+        self._description = prop_data.get('description')
+        self._is_unique = prop_data.get('is_unique')
+        self._type = prop_data.get('type')
+        self._build_attributes(prop_data.get('attributes'))
+        return self
+
     def serialization(self) -> Dict[str, str]:
         return {
-            "name": self.name,
-            "codename": self.codename,
-            "description": self.description,
-            "is_unique": self.is_unique,
-            "type": self.type
+            "name": self._name,
+            "codename": self._codename,
+            "description": self._description,
+            "is_unique": self._is_unique,
+            "type": self._type,
+            "attributes": ",".join([str(attr) for attr in self._attributes])
         }
     
     def __str__(self) -> str:
-        return f"{self.name}"
+        return f"{self._name}"
     
-    def build_attributes(self, attributes: str) -> None:
-        self.attributes = [int(attr) for attr in attributes.split(',')]
-        assert len(self.attributes) == 3
+    def _build_attributes(self, attributes_string: str) -> None:
+        if attributes_string == "":
+            return
+        self._attributes = [int(attr) for attr in attributes_string.split(',')]
+        assert len(self._attributes) == 3   
 
     @property
     def maxhp(self) -> int:
-        return self.attributes[0]
+        return self._attributes[0]
     
     @property
     def attack(self) -> int:
-        return self.attributes[1]
+        return self._attributes[1]
     
     @property
     def defense(self) -> int:
-        return self.attributes[2]
+        return self._attributes[2]
     
 def PropDataProxy(name: str) -> PropData:
     return PropData(name, "", "", "", "", "")

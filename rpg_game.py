@@ -318,14 +318,14 @@ class RPGGame(BaseGame):
             # 添加道具
             for prop_proxy in builddata.props:
                 ## 重构
-                prop_data_from_data_base = context.data_base_system.get_prop(prop_proxy.name)
+                prop_data_from_data_base = context.data_base_system.get_prop(prop_proxy._name)
                 if prop_data_from_data_base is None:
-                    logger.error(f"没有从数据库找到道具：{prop_proxy.name}！！！！！！！！！")
+                    logger.error(f"没有从数据库找到道具：{prop_proxy._name}！！！！！！！！！")
                     continue
             
-                create_prop_file = PropFile(prop_proxy.name, builddata.name, prop_data_from_data_base)
+                create_prop_file = PropFile(prop_proxy._name, builddata.name, prop_data_from_data_base)
                 file_system.add_prop_file(create_prop_file)
-                code_name_component_system.register_code_name_component_class(prop_data_from_data_base.name, prop_data_from_data_base.codename)
+                code_name_component_system.register_code_name_component_class(prop_data_from_data_base._name, prop_data_from_data_base._codename)
 
             # 初步建立关系网（在编辑文本中提到的NPC名字）
             add_actor_archive_files(file_system, builddata.name, builddata.npc_names_mentioned_during_editing_or_for_agent)
@@ -371,13 +371,13 @@ class RPGGame(BaseGame):
             # 场景内添加道具
             for prop_proxy_in_stage in builddata.props:
                 # 直接使用文件系统
-                prop_data_from_data_base = context.data_base_system.get_prop(prop_proxy_in_stage.name)
+                prop_data_from_data_base = context.data_base_system.get_prop(prop_proxy_in_stage._name)
                 if prop_data_from_data_base is None:
-                    logger.error(f"没有从数据库找到道具：{prop_proxy_in_stage.name}！！！！！！！！！")
+                    logger.error(f"没有从数据库找到道具：{prop_proxy_in_stage._name}！！！！！！！！！")
                     continue
-                create_prop_file = PropFile(prop_proxy_in_stage.name, builddata.name, prop_data_from_data_base)
+                create_prop_file = PropFile(prop_proxy_in_stage._name, builddata.name, prop_data_from_data_base)
                 file_system.add_prop_file(create_prop_file)
-                code_name_component_system.register_code_name_component_class(prop_data_from_data_base.name, prop_data_from_data_base.codename)
+                code_name_component_system.register_code_name_component_class(prop_data_from_data_base._name, prop_data_from_data_base._codename)
 
             # 添加场景的条件：包括进入和离开的条件，自身变化条件等等
             self.add_stage_conditions(stageentity, builddata)

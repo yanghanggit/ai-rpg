@@ -78,7 +78,7 @@ class UpdareArchiveHelper:
             propfiles = file_system.get_prop_files(npccomp.name)
             prop_and_desc: list[str] = []
             for file in propfiles:
-                prop_and_desc.append(f"{file.name}:{file.prop.description}")
+                prop_and_desc.append(f"{file.name}:{file.prop._description}")
             self._npcs_with_props_info[npccomp.name] = prop_and_desc
 ###############################################################################################################################################
     @property

@@ -138,15 +138,15 @@ def prop_type_prompt(prop: PropData) -> str:
 ###############################################################################################################################################
 def prop_info_prompt(prop: PropData) -> str:
     proptype = prop_type_prompt(prop)
-    prompt = f"""### {prop.name}
+    prompt = f"""### {prop._name}
 - 类型:{proptype}
-- 描述:{prop.description}
+- 描述:{prop._description}
 """
     return prompt
 ###############################################################################################################################################
 def role_component_info_prompt(prop: PropData) -> str:
-    prompt = f"""### {prop.name}
-- {prop.description}
+    prompt = f"""### {prop._name}
+- {prop._description}
 """
     return prompt
 ###############################################################################################################################################

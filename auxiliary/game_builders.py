@@ -142,8 +142,9 @@ class GameBuilder:
             return
 
         for prop_data in props:
-            self.data_base_system.add_prop(prop_data.get('name'), PropData(
-                prop_data.get('name'), 
+            propname = prop_data.get('name')
+            self.data_base_system.add_prop(propname, PropData(
+                propname, 
                 prop_data.get('codename'), 
                 prop_data.get('description'), 
                 prop_data.get('isunique'), 

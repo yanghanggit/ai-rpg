@@ -20,7 +20,7 @@ class TerminalPlayerInterruptAndWaitSystem(ExecuteProcessor):
             
         #就是展示一下并点击继续，没什么用
         playerproxy = get_player_proxy(TEST_TERMINAL_NAME)
-        player_npc_entity = self.context.getplayer(TEST_TERMINAL_NAME)
+        player_npc_entity = self.context.get_player_entity(TEST_TERMINAL_NAME)
         if player_npc_entity is None or playerproxy is None:
             return
         

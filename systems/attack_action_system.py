@@ -72,7 +72,7 @@ class AttackActionSystem(ReactiveProcessor):
         action: ActorAction = fightcomp.action
         for value in action.values:
 
-            findtarget = context.get_by_code_name_component(value)
+            findtarget = context.get_entity_by_code_name_component(value)
             if findtarget is None:
                 logger.warning(f"攻击者{action.name}意图攻击的对象{value}无法被找到,本次攻击无效.")
                 continue

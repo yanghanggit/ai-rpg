@@ -48,7 +48,7 @@ class HandlePlayerInputSystem(ExecuteProcessor):
         
         for command in playerproxy._inputs:
             #todo
-            singleplayer = self.context.getplayer(playername)
+            singleplayer = self.context.get_player_entity(playername)
             assert singleplayer is not None
             #
             safename = self.context.safe_get_entity_name(singleplayer)

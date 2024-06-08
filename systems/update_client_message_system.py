@@ -23,7 +23,7 @@ class UpdateClientMessageSystem(ExecuteProcessor):
             for user_ip in self.context.user_ips:
                 playername = str(user_ip)
                 playerproxy = get_player_proxy(playername)
-                player_npc_entity = self.context.getplayer(playername)
+                player_npc_entity = self.context.get_player_entity(playername)
                 if player_npc_entity is None or playerproxy is None:
                     continue
                 self._add_message_to_player_proxy_(playerproxy, player_npc_entity)
@@ -31,7 +31,7 @@ class UpdateClientMessageSystem(ExecuteProcessor):
         elif input_mode == PLAYER_INPUT_MODE.TERMINAL:
         
             playerproxy = get_player_proxy(TEST_TERMINAL_NAME)
-            player_npc_entity = self.context.getplayer(TEST_TERMINAL_NAME)
+            player_npc_entity = self.context.get_player_entity(TEST_TERMINAL_NAME)
             if player_npc_entity is None or playerproxy is None:
                     return
             self._add_message_to_player_proxy_(playerproxy, player_npc_entity)

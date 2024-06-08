@@ -73,7 +73,7 @@ class PostConversationActionSystem(ReactiveProcessor):
                 self.imme_request(stage_director_comp.name, batch_events2stage_prompt)
 
         ### 处理NPC的
-        npcs_in_this_stage = self.context.npcs_in_this_stage(stage_director_comp.name)
+        npcs_in_this_stage = self.context.actors_in_stage(stage_director_comp.name)
         for npc_entity in npcs_in_this_stage:
             npccomp: ActorComponent = npc_entity.get(ActorComponent)
             raw_events2npc = stage_director_comp.to_actor(npccomp.name, self.context)     

@@ -15,7 +15,7 @@ class ErrorConversationEnable(Enum):
 # 检查是否可以对话
 def conversation_check(context: ExtendedContext, srcentity: Entity, npcname: str) -> ErrorConversationEnable:
 
-    target_npc_entity: Optional[Entity] = context.getnpc(npcname)
+    target_npc_entity: Optional[Entity] = context.get_actor_entity(npcname)
     if target_npc_entity is None:
         # 只能对NPC说话
         return ErrorConversationEnable.TARGET_DOES_NOT_EXIST
@@ -45,8 +45,8 @@ def use_prop_check(context: ExtendedContext, srcentity: Entity, targetname: str)
         return ErrorUsePropEnable.WITHOUT_BEING_IN_STAGE
 
     final_target_entity: Optional[Entity] = None
-    target_npc_entity: Optional[Entity] = context.getnpc(targetname)
-    target_stage_entity: Optional[Entity] = context.getstage(targetname)
+    target_npc_entity: Optional[Entity] = context.get_actor_entity(targetname)
+    target_stage_entity: Optional[Entity] = context.get_stage_entity(targetname)
 
     if target_npc_entity is not None:
         final_target_entity = target_npc_entity

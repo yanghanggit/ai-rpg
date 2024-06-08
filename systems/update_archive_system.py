@@ -39,7 +39,7 @@ class UpdateArchiveSystem(ExecuteProcessor):
         add_actor_archive_files(self.context.file_system, npccomp.name, who_do_you_know)        
 
         # 更新文件，只更新场景内我能看见的人
-        appearance_data = self.context.npc_appearance_in_the_stage(npcentity)
+        appearance_data = self.context.appearance_in_stage(npcentity)
         for name in who_do_you_know:
             appearance = appearance_data.get(name, "")
             if appearance != "":

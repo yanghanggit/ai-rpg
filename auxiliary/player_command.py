@@ -56,13 +56,13 @@ class PlayerLogin(PlayerCommand):
         myname = self.playerproxy.name
         logger.debug(f"{self.inputname}, player name: {myname}, target name: {login_npc_name}")
 
-        npcentity = context.getnpc(login_npc_name)
+        npcentity = context.get_actor_entity(login_npc_name)
         if npcentity is None:
             # 扮演的角色，本身就不存在于这个世界
             logger.error(f"{login_npc_name}, npc is None, login failed")
             return
 
-        playerentity = context.getplayer(myname)
+        playerentity = context.get_player_entity(myname)
         if playerentity is not None:
             # 已经登陆完成
             logger.error(f"{myname}, already login")
@@ -108,7 +108,7 @@ class PlayerAttack(PlayerCommand):
     def execute(self) -> None:
         context = self.game.extendedcontext 
         attack_target_name = self.attack_target_name
-        playerentity = context.getplayer(self.playerproxy.name)
+        playerentity = context.get_player_entity(self.playerproxy.name)
         if playerentity is None:
             logger.warning("debug_attack: player is None")
             return
@@ -134,7 +134,7 @@ class PlayerGoTo(PlayerCommand):
     def execute(self) -> None:
         context = self.game.extendedcontext
         target_stage_name = self.target_stage_name
-        playerentity = context.getplayer(self.playerproxy.name)
+        playerentity = context.get_player_entity(self.playerproxy.name)
         if playerentity is None:
             logger.warning("debug_leave: player is None")
             return
@@ -155,14 +155,14 @@ class PlayerPortalStep(PlayerCommand):
 
     def execute(self) -> None:
         context = self.game.extendedcontext
-        playerentity = context.getplayer(self.playerproxy.name)
+        playerentity = context.get_player_entity(self.playerproxy.name)
         if playerentity is None:
             logger.warning("debug_leave: player is None")
             return
         
         npccomp: ActorComponent = playerentity.get(ActorComponent)
         current_stage_name: str = npccomp.current_stage
-        stageentity = context.getstage(current_stage_name)
+        stageentity = context.get_stage_entity(current_stage_name)
         if stageentity is None:
             logger.error(f"PortalStepActionSystem: {current_stage_name} is None")
             return
@@ -184,7 +184,7 @@ class PlayerBroadcast(PlayerCommand):
     def execute(self) -> None:
         context = self.game.extendedcontext
         content = self.content
-        playerentity = context.getplayer(self.playerproxy.name)
+        playerentity = context.get_player_entity(self.playerproxy.name)
         if playerentity is None:
             logger.warning("debug_broadcast: player is None")
             return
@@ -207,7 +207,7 @@ class PlayerSpeak(PlayerCommand):
     def execute(self) -> None:
         context = self.game.extendedcontext
         speakcontent = self.speakcontent
-        playerentity = context.getplayer(self.playerproxy.name)
+        playerentity = context.get_player_entity(self.playerproxy.name)
         if playerentity is None:
             logger.warning("debug_speak: player is None")
             return
@@ -230,7 +230,7 @@ class PlayerWhisper(PlayerCommand):
     def execute(self) -> None:
         context = self.game.extendedcontext
         whispercontent = self.whispercontent
-        playerentity = context.getplayer(self.playerproxy.name)
+        playerentity = context.get_player_entity(self.playerproxy.name)
         if playerentity is None:
             logger.warning("debug_whisper: player is None")
             return
@@ -253,7 +253,7 @@ class PlayerSearch(PlayerCommand):
     def execute(self) -> None:
         context = self.game.extendedcontext
         search_target_prop_name = self.search_target_prop_name
-        playerentity = context.getplayer(self.playerproxy.name)
+        playerentity = context.get_player_entity(self.playerproxy.name)
         if playerentity is None:
             logger.warning("debug_search: player is None")
             return
@@ -275,7 +275,7 @@ class PlayerPerception(PlayerCommand):
 
     def execute(self) -> None:
         context = self.game.extendedcontext
-        playerentity = context.getplayer(self.playerproxy.name)
+        playerentity = context.get_player_entity(self.playerproxy.name)
         if playerentity is None:
             return
         
@@ -297,7 +297,7 @@ class PlayerSteal(PlayerCommand):
 
     def execute(self) -> None:
         context = self.game.extendedcontext
-        playerentity = context.getplayer(self.playerproxy.name)
+        playerentity = context.get_player_entity(self.playerproxy.name)
         if playerentity is None:
             return
         
@@ -319,7 +319,7 @@ class PlayerTrade(PlayerCommand):
 
     def execute(self) -> None:
         context = self.game.extendedcontext
-        playerentity = context.getplayer(self.playerproxy.name)
+        playerentity = context.get_player_entity(self.playerproxy.name)
         if playerentity is None:
             return
         
@@ -339,7 +339,7 @@ class PlayerCheckStatus(PlayerCommand):
 
     def execute(self) -> None:
         context = self.game.extendedcontext
-        playerentity = context.getplayer(self.playerproxy.name)
+        playerentity = context.get_player_entity(self.playerproxy.name)
         if playerentity is None:
             return
         
@@ -363,7 +363,7 @@ class PlayerUseProp(PlayerCommand):
 
     def execute(self) -> None:
         context = self.game.extendedcontext
-        playerentity = context.getplayer(self.playerproxy.name)
+        playerentity = context.get_player_entity(self.playerproxy.name)
         if playerentity is None:
             return
         

@@ -42,7 +42,7 @@ class DirectorSystem(ExecuteProcessor):
     def handle_npcs_in_this_stage(self, entitystage: Entity) -> None:
         assert entitystage.has(StageComponent)
         stagecomp: StageComponent = entitystage.get(StageComponent)
-        npcs_int_this_stage = self.context.npcs_in_this_stage(stagecomp.name)
+        npcs_int_this_stage = self.context.actors_in_stage(stagecomp.name)
         for npcentity in npcs_int_this_stage:
             director_events_to_npc(self.context, npcentity)
 ###################################################################################################################

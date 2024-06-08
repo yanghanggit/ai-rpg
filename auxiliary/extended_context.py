@@ -57,7 +57,7 @@ class ExtendedContext(Context):
         assert self.chaos_engineering_system is not None, "self.chaos_engineering_system is None"
 ############################################################################################################
     #世界基本就一个（或者及其少的数量），所以就遍历一下得了。
-    def getworld(self, worldname: str) -> Optional[Entity]:
+    def get_world_entity(self, worldname: str) -> Optional[Entity]:
         entities: set[Entity] = self.get_group(Matcher(WorldComponent)).entities
         for entity in entities:
             worldcomp: WorldComponent = entity.get(WorldComponent)
@@ -66,7 +66,7 @@ class ExtendedContext(Context):
         return None
 ############################################################################################################
     #玩家基本就一个（或者及其少的数量），所以就遍历一下得了，注意是playername，比如yanghang。
-    def getplayer(self, playername: str) -> Optional[Entity]:
+    def get_player_entity(self, playername: str) -> Optional[Entity]:
         entities: set[Entity] = self.get_group(Matcher(all_of=[PlayerComponent, ActorComponent])).entities
         for entity in entities:
             playercomp: PlayerComponent = entity.get(PlayerComponent)
@@ -74,7 +74,7 @@ class ExtendedContext(Context):
                 return entity
         return None
 ############################################################################################################
-    def get_by_code_name_component(self, name: str) -> Optional[Entity]:
+    def get_entity_by_code_name_component(self, name: str) -> Optional[Entity]:
         compclass = self.code_name_component_system.get_component_class_by_name(name)
         if compclass is None:
             return None
@@ -83,19 +83,19 @@ class ExtendedContext(Context):
             return next(iter(findstages))
         return None
 ############################################################################################################
-    def getstage(self, stagename: str) -> Optional[Entity]:
-        entity: Optional[Entity] = self.get_by_code_name_component(stagename)
+    def get_stage_entity(self, stagename: str) -> Optional[Entity]:
+        entity: Optional[Entity] = self.get_entity_by_code_name_component(stagename)
         if entity is not None and entity.has(StageComponent):
             return entity
         return None
 ############################################################################################################
-    def getnpc(self, npcname: str) -> Optional[Entity]:
-        entity: Optional[Entity] = self.get_by_code_name_component(npcname)
+    def get_actor_entity(self, npcname: str) -> Optional[Entity]:
+        entity: Optional[Entity] = self.get_entity_by_code_name_component(npcname)
         if entity is not None and entity.has(ActorComponent):
             return entity
         return None
 ############################################################################################################
-    def npcs_in_this_stage(self, stagename: str) -> list[Entity]:   
+    def actors_in_stage(self, stagename: str) -> list[Entity]:   
         # 测试！！！
         stage_tag_component = self.code_name_component_system.get_stage_tag_component_class_by_name(stagename)
         entities: set[Entity] =  self.get_group(Matcher(all_of=[ActorComponent, stage_tag_component])).entities
@@ -107,7 +107,7 @@ class ExtendedContext(Context):
             return entity
         elif entity.has(ActorComponent):
             npccomp: ActorComponent = entity.get(ActorComponent)
-            return self.getstage(npccomp.current_stage)
+            return self.get_stage_entity(npccomp.current_stage)
         #raise ValueError("实体不是NPC或者Stage")
         logger.error("实体不是NPC或者Stage")
         return None
@@ -156,34 +156,7 @@ class ExtendedContext(Context):
         if to_stagetag_comp_class is not None and not entity.has(to_stagetag_comp_class):
             entity.add(to_stagetag_comp_class, to_stagename)
 ############################################################################################################
-    def check_component_register(self, classname: str, actions_register: List[Any]) -> Any:
-        for component in actions_register:
-            if classname == component.__name__:
-                return component
-        logger.warning(f"{classname}不在{actions_register}中")
-        return None
-############################################################################################################
-    def check_dialogue_action(self, actionname: str, actionvalues: List[str], actions_register: List[Any]) -> bool:
-        from auxiliary.target_and_message_format_handle import parse_target_and_message
-        from auxiliary.target_and_message_format_handle import check_target_and_message_format
-
-        if actionname not in [component.__name__ for component in actions_register]:
-            # 不是一个对话类型,不用检查
-            return True
-        
-        # 检查带@target>message类型的Action有无错误内容
-        for value in actionvalues:
-            if check_target_and_message_format(value):
-                pair = parse_target_and_message(value)
-                target: Optional[str] = pair[0]
-                message: Optional[str] = pair[1]
-                if target is None or message is None:
-                    logger.error(f"target is None: {value}")
-                    return False
-        # 是一个对话类型，检查完成
-        return True
-############################################################################################################
-    def npc_appearance_in_the_stage(self, entity: Entity) -> Dict[str, str]:
+    def appearance_in_stage(self, entity: Entity) -> Dict[str, str]:
         #
         res: Dict[str, str] = {}
         stageentity = self.safe_get_stage_entity(entity)
@@ -191,7 +164,7 @@ class ExtendedContext(Context):
             return res
         #
         safe_stage_name = self.safe_get_entity_name(stageentity)
-        npcs_in_this_stage: list[Entity] = self.npcs_in_this_stage(safe_stage_name)
+        npcs_in_this_stage: list[Entity] = self.actors_in_stage(safe_stage_name)
         for npc in npcs_in_this_stage:
             if npc.has(AppearanceComponent):
                 npccomp: ActorComponent = npc.get(ActorComponent)

@@ -32,7 +32,7 @@ class PerceptionActionHelper:
     def perception_npcs_in_stage(self, entity: Entity, stageentity: Entity) -> Dict[str, str]:
         res: Dict[str, str] = {}
         stagecomp: StageComponent = stageentity.get(StageComponent)
-        npcs = self.context.npcs_in_this_stage(stagecomp.name)
+        npcs = self.context.actors_in_stage(stagecomp.name)
         for npc in npcs:
             if npc == entity:
                 continue

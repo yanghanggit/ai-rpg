@@ -90,7 +90,7 @@ class TradeActionSystem(ReactiveProcessor):
         return True
 ###################################################################################################################
     def after_trade_success(self, name: str) -> None:
-        entity = self.context.getnpc(name)
+        entity = self.context.get_actor_entity(name)
         if entity is None:
             logger.error(f"npc {name} not found")
             return

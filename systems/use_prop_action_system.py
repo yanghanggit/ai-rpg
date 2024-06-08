@@ -101,7 +101,7 @@ class UsePropActionSystem(ReactiveProcessor):
                 continue
             
             # 目前只处理场景
-            is_stage_entity = context.getstage(targetname)
+            is_stage_entity = context.get_stage_entity(targetname)
             if is_stage_entity is not None:
                 assert is_stage_entity.has(StageComponent)
                 if not self.use_prop_to_stage(entity, is_stage_entity, prop_file):

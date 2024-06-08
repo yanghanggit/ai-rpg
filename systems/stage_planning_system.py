@@ -7,7 +7,9 @@ from auxiliary.components import (StageComponent,
 from auxiliary.actor_plan_and_action import ActorPlan, ActorAction
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger 
-from typing import Coroutine, Optional
+from typing import Optional
+from systems.planning_response_check import check_component_register, check_conversation_action
+
 
 ####################################################################################################    
 class StagePlanningSystem(ExecuteProcessor):
@@ -81,13 +83,13 @@ class StagePlanningSystem(ExecuteProcessor):
         return True
 ####################################################################################################
     def check_available(self, action: ActorAction) -> bool:
-        return self.context.check_component_register(action.actionname, STAGE_AVAILABLE_ACTIONS_REGISTER) is not None
+        return check_component_register(action.actionname, STAGE_AVAILABLE_ACTIONS_REGISTER) is not None
 ####################################################################################################
     def check_dialogue(self, action: ActorAction) -> bool:
-        return self.context.check_dialogue_action(action.actionname, action.values, STAGE_DIALOGUE_ACTIONS_REGISTER)
+        return check_conversation_action(action.actionname, action.values, STAGE_DIALOGUE_ACTIONS_REGISTER)
 ####################################################################################################
     def add_action_component(self, entity: Entity, action: ActorAction) -> None:
-        compclass = self.context.check_component_register(action.actionname, STAGE_AVAILABLE_ACTIONS_REGISTER)
+        compclass = check_component_register(action.actionname, STAGE_AVAILABLE_ACTIONS_REGISTER)
         if compclass is None:
             return
         if not entity.has(compclass):

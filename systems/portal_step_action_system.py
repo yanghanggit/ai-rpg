@@ -59,7 +59,7 @@ class PortalStepActionSystem(ReactiveProcessor):
             return
 
         # 取出当前场景！
-        stageentity = self.context.getstage(stagename)
+        stageentity = self.context.get_stage_entity(stagename)
         assert stageentity is not None, f"PortalStepActionSystem: {stagename} is None"
         if not stageentity.has(ExitOfPortalComponent):
             # 该场景没有连接到任何场景，所以不能"盲目"的离开
@@ -69,7 +69,7 @@ class PortalStepActionSystem(ReactiveProcessor):
         # 取出数据，并准备沿用LeaveForActionComponent
         conncectstagecomp: ExitOfPortalComponent = stageentity.get(ExitOfPortalComponent)
         logger.debug(f"PortalStepActionSystem: {npccomp.name} 想要离开的场景是: {stagename}, 该场景可以连接的场景有: {conncectstagecomp.name}")
-        connect_stage_entity = self.context.getstage(conncectstagecomp.name)
+        connect_stage_entity = self.context.get_stage_entity(conncectstagecomp.name)
         if connect_stage_entity is None:
             logger.error(f"PortalStepActionSystem: {npccomp.name} 想要离开的场景是: {stagename}, 该场景可以连接的场景有: {conncectstagecomp.name}, 但是该场景不存在")
             return

@@ -23,7 +23,7 @@ class StageReadyForPlanningSystem(ExecuteProcessor):
         #logger.info(f"StageReadyForPlanningSystem: {stage_comp.name} is ready for planning.")
         props_in_stage: List[PropData] = self.get_props_in_stage(entity)
 
-        npcs_in_stage = self.context.npcs_in_this_stage(stage_comp.name)
+        npcs_in_stage = self.context.actors_in_stage(stage_comp.name)
         npcnames: Set[str] = set()
         for npc in npcs_in_stage:
             npccomp: ActorComponent = npc.get(ActorComponent)

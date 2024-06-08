@@ -125,7 +125,7 @@ async def quitgame(clientip: str) -> list[TupleModel]:
 # player 可以是立即模式
 async def imme_handle_perception(rpg_game: RPGGame, playerproxy: PlayerProxy) -> None:
     context = rpg_game.extendedcontext
-    playerentity = context.getplayer(playerproxy.name)
+    playerentity = context.get_player_entity(playerproxy.name)
     if playerentity is None:
         return
     #
@@ -145,7 +145,7 @@ async def imme_handle_perception(rpg_game: RPGGame, playerproxy: PlayerProxy) ->
 # player 可以是立即模式
 async def imme_handle_check_status(rpg_game: RPGGame, playerproxy: PlayerProxy) -> None:
     context = rpg_game.extendedcontext
-    playerentity = context.getplayer(playerproxy.name)
+    playerentity = context.get_player_entity(playerproxy.name)
     if playerentity is None:
         return
     #

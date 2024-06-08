@@ -66,9 +66,9 @@ class LeaveActionHelper:
         self.context = context
         self.who_wana_leave_entity = who_wana_leave
         self.current_stage_name = cast(ActorComponent, who_wana_leave.get(ActorComponent)).current_stage
-        self.current_stage_entity = self.context.getstage(self.current_stage_name)
+        self.current_stage_entity = self.context.get_stage_entity(self.current_stage_name)
         self.target_stage_name = target_stage_name
-        self.target_stage_entity = self.context.getstage(target_stage_name)
+        self.target_stage_entity = self.context.get_stage_entity(target_stage_name)
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
@@ -196,7 +196,7 @@ class LeaveForActionSystem(ReactiveProcessor):
         entity: Entity = helper.who_wana_leave_entity
         npccomp: ActorComponent = entity.get(ActorComponent)
         stagename = npccomp.current_stage
-        npcs = self.context.npcs_in_this_stage(stagename)
+        npcs = self.context.actors_in_stage(stagename)
         for npc in npcs:
             if npc.has(PerceptionActionComponent):
                 continue

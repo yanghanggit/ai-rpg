@@ -66,7 +66,7 @@ class PrePlanningSystem(InitializeProcessor, ExecuteProcessor):
         stagecomp: StageComponent = stageentity.get(StageComponent)
         
         ###player所在场景的npcs可以规划
-        npcsentities = context.npcs_in_this_stage(stagecomp.name)
+        npcsentities = context.actors_in_stage(stagecomp.name)
         if len(npcsentities) == 0:
             #logger.debug(f"Stage: {stagecomp.name} has no npcs, so no need to plan.")
             return
@@ -87,7 +87,7 @@ class PrePlanningSystem(InitializeProcessor, ExecuteProcessor):
         stageentities = context.get_group(Matcher(StageComponent)).entities
         for stageentity in stageentities:
             stagecomp: StageComponent = stageentity.get(StageComponent)
-            npcs_in_stage = context.npcs_in_this_stage(stagecomp.name)
+            npcs_in_stage = context.actors_in_stage(stagecomp.name)
             if len(npcs_in_stage) == 0:
                 #logger.debug(f"Stage: {stagecomp.name} has no npcs, so no need to plan.")
                 continue

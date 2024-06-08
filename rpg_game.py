@@ -358,7 +358,7 @@ class RPGGame(BaseGame):
             ## 重新设置npc和stage的关系
             for npc in builddata.npcs:
                 npcname = npc.name
-                findnpcagain: Optional[Entity] = context.getnpc(npcname)
+                findnpcagain: Optional[Entity] = context.get_actor_entity(npcname)
                 if findnpcagain is None:
                     #logger.error(f"没有找到npc：{npcname}！！！！！！！！！")
                     raise ValueError(f"没有找到npc：{npcname}！！！！！！！！！")

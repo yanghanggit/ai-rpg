@@ -323,7 +323,7 @@ class PreLeaveForSystem(ReactiveProcessor):
             return None
         #
         target_stage_name = action.values[0]
-        stageentity = self.context.getstage(target_stage_name)
+        stageentity = self.context.get_stage_entity(target_stage_name)
         return stageentity
 ###############################################################################################################################################
     def get_role_status_prompt(self, entity: Entity) -> str:

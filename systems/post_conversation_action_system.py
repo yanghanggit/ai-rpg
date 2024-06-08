@@ -105,8 +105,9 @@ class PostConversationActionSystem(ReactiveProcessor):
         agent_connect_system = self.context.agent_connect_system
         if len(agent_connect_system.async_request_tasks) == 0:
             return
-        logger.debug(f"PostConversationActionSystem async_post_execute begin.")        
-        responses: Dict[str, Optional[str]] = await agent_connect_system.run_async_requet_tasks("PostConversationActionSystem")
+        logger.debug(f"PostConversationActionSystem async_post_execute begin.")     
+        request_result = await agent_connect_system.run_async_requet_tasks("PostConversationActionSystem")
+        responses: Dict[str, Optional[str]] = request_result[0]
         #正常流程
         for name, response in responses.items():
             if response is None:

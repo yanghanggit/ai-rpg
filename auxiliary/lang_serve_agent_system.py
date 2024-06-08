@@ -209,29 +209,32 @@ class LangServeAgentSystem:
         logger.debug(f"{name}添加异步请求任务:{prompt}")
         self.async_request_tasks[name] = (prompt, option)
 ############################################################################################################
-    async def async_agent_requet(self, name: str, prompt: str, option: AgentRequestOption = AgentRequestOption.ADD_RESPONSE_AND_PROMPT_TO_CHAT_HISTORY) -> tuple[str, Optional[str]]:
+    async def async_agent_requet(self, name: str, prompt: str, option: AgentRequestOption = AgentRequestOption.ADD_RESPONSE_AND_PROMPT_TO_CHAT_HISTORY) -> tuple[str, Optional[str], str]:
         if name in self._agents:
             response = await self._agents[name].a_request(prompt, option)
-            return (name, response)
+            return (name, response, prompt)
         logger.error(f"async_requet: {name} is not registered.")
-        return (name, None)
+        return (name, None, prompt)
 ############################################################################################################
-    async def async_gather(self) -> list[tuple[str, Optional[str]]]:
+    async def async_gather(self) -> list[tuple[str, Optional[str], str]]:
         tasks = [self.async_agent_requet(name, tp[0], tp[1]) for name, tp in self.async_request_tasks.items()]
-        response = await asyncio.gather(*tasks)
-        return response
+        future = await asyncio.gather(*tasks)
+        return future
 ############################################################################################################
     # 当确定全部异步请求任务添加完毕后，调用这个方法，等待所有任务完成，并拿到任务结果
-    async def run_async_requet_tasks(self, tag: str = "") -> dict[str, Optional[str]]:
+    async def run_async_requet_tasks(self, tag: str = "") -> tuple[dict[str, Optional[str]], dict[str, str]]:
 
         start_time = time.time()
 
         # 调用async_gather，等待所有任务完成，并拿到任务结果
-        async_results: list[tuple[str, Optional[str]]] = await self.async_gather()
+        async_results: list[tuple[str, Optional[str], str]] = await self.async_gather()
 
         response_dict: dict[str, Optional[str]] = {}
+        prompt_dict: dict[str, str] = {}
+
         for result in async_results:
             response_dict[result[0]] = result[1]
+            prompt_dict[result[0]] = result[2]
 
         self.async_request_tasks.clear()
 
@@ -239,7 +242,7 @@ class LangServeAgentSystem:
         execution_time = end_time - start_time
         logger.debug(f"{tag} run_async_requet_tasks time: {execution_time:.2f} seconds")
 
-        return response_dict
+        return (response_dict, prompt_dict)
 ############################################################################################################
     # 从chat history中排除指定的内容
     def exclude_chat_history(self, name: str, excluded_content: Set[str]) -> None:

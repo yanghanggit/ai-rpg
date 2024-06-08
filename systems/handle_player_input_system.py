@@ -79,8 +79,8 @@ class HandlePlayerInputSystem(ExecuteProcessor):
             targetname = splitcommand(usrinput, command)           
             PlayerAttack(command, rpggame, playerproxy, targetname).execute()
                         
-        elif "/leave" in usrinput:
-            command = "/leave"
+        elif "/goto" in usrinput:
+            command = "/goto"
             stagename = splitcommand(usrinput, command)
             PlayerGoTo(command, rpggame, playerproxy, stagename).execute()
   

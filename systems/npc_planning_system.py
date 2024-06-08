@@ -25,7 +25,8 @@ class NPCPlanningSystem(ExecuteProcessor):
         #记录事件
         self.context.chaos_engineering_system.on_npc_planning_system_execute(self.context)
         # 并行执行requests
-        all_response: dict[str, Optional[str]] = await self.context.agent_connect_system.run_async_requet_tasks("NPCPlanningSystem")
+        request_result = await self.context.agent_connect_system.run_async_requet_tasks("NPCPlanningSystem")
+        all_response: dict[str, Optional[str]] = request_result[0]
         #正常流程
         entities = self.context.get_group(Matcher(all_of=[ActorComponent, AutoPlanningComponent])).entities
         for entity in entities:

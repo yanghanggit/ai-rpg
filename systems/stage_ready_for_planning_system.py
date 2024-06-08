@@ -23,13 +23,13 @@ class StageReadyForPlanningSystem(ExecuteProcessor):
         stage_comp: StageComponent = entity.get(StageComponent)
         props_in_stage: List[PropData] = self.get_props_in_stage(entity)
 
-        npcs_in_stage = self.context.actors_in_stage(stage_comp.name)
-        npcnames: Set[str] = set()
-        for npc in npcs_in_stage:
-            npccomp: ActorComponent = npc.get(ActorComponent)
-            npcnames.add(npccomp.name)
+        actors_in_stage = self.context.actors_in_stage(stage_comp.name)
+        _names: Set[str] = set()
+        for _en in actors_in_stage:
+            actor_comp: ActorComponent = _en.get(ActorComponent)
+            _names.add(actor_comp.name)
 
-        prompt = stage_plan_prompt(props_in_stage, npcnames, self.context)
+        prompt = stage_plan_prompt(props_in_stage, _names, self.context)
         self.context.agent_connect_system.add_async_request_task(stage_comp.name, prompt)
 ####################################################################################################################################
     def get_props_in_stage(self, entity: Entity) -> List[PropData]:

@@ -22,20 +22,20 @@ class ActorReadyForPlanningSystem(ExecuteProcessor):
             self.handle(entity)
 ####################################################################################################################################
     def handle(self, entity: Entity) -> None:        
-        npccomp: ActorComponent = entity.get(ActorComponent)
+        actor_comp: ActorComponent = entity.get(ActorComponent)
                 
         tp = self.get_stage_enviro_narrate(entity)
         stagename = tp[0]
         stage_enviro_narrate = tp[1]
         
         prompt = actpr_plan_prompt(stagename, stage_enviro_narrate, self.context)
-        self.context.agent_connect_system.add_async_request_task(npccomp.name, prompt)
+        self.context.agent_connect_system.add_async_request_task(actor_comp.name, prompt)
 ####################################################################################################################################
     def get_stage_enviro_narrate(self, entity: Entity) -> tuple[str, str]:
 
         stageentity = self.context.safe_get_stage_entity(entity)
         if stageentity is None:
-            logger.error("stage is None, npc无所在场景是有问题的")
+            logger.error("stage is None, actor无所在场景是有问题的")
             return "", ""
         
         stagename = self.context.safe_get_entity_name(stageentity)

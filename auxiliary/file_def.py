@@ -33,20 +33,20 @@ class PropFile(BaseFile):
 
 
 ############################################################################################################
-## 表达一个NPC档案，有这个档案说明你认识这个NPC
+## 表达一个Actor档案，有这个档案说明你认识这个Actor
 class ActorArchiveFile(BaseFile):
-    def __init__(self, name: str, ownersname: str, npcname: str, appearance: str) -> None:
+    def __init__(self, name: str, ownersname: str, actorname: str, appearance: str) -> None:
         super().__init__(name, ownersname)
-        self.npcname = npcname
+        self.actorname = actorname
         self.appearance = appearance
 
     def content(self) -> str:
         makedict: Dict[str, str] = {}
-        makedict.setdefault(self.npcname, self.appearance)
+        makedict.setdefault(self.actorname, self.appearance)
         return json.dumps(makedict, ensure_ascii = False)
     
     def __str__(self) -> str:
-        return f"{self.npcname}"
+        return f"{self.actorname}"
 ############################################################################################################
 
 

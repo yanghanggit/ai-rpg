@@ -10,7 +10,7 @@ class FileSystem:
         self.rootpath = ""
         # 拥有的道具
         self.propfiles: Dict[str, List[PropFile]] = {}
-        # 知晓的NPC 
+        # 知晓的Actor
         self.actor_archives: Dict[str, List[ActorArchiveFile]] = {}
         # 知晓的Stage
         self.stage_archives: Dict[str, List[StageArchiveFile]] = {}
@@ -83,34 +83,34 @@ class FileSystem:
         self.add_prop_file(PropFile(propname, to_owner, findownersfile.prop))
 ################################################################################################################
     def actor_archive_path(self, ownersname: str, filename: str) -> str:
-        return f"{self.rootpath}{ownersname}/npcs/{filename}.json"
+        return f"{self.rootpath}{ownersname}/actors/{filename}.json"
 ################################################################################################################
-    ## 添加一个你知道的NPC
-    def add_actor_archive(self, npcarchive: ActorArchiveFile) -> Optional[ActorArchiveFile]:
-        files = self.actor_archives.setdefault(npcarchive.ownersname, [])
+    ## 添加一个你知道的Actor
+    def add_actor_archive(self, actor_archive: ActorArchiveFile) -> Optional[ActorArchiveFile]:
+        files = self.actor_archives.setdefault(actor_archive.ownersname, [])
         for file in files:
-            if file.npcname == npcarchive.npcname:
+            if file.actorname == actor_archive.actorname:
                 # 名字匹配，先返回，不添加。后续可以复杂一些
                 return None
-        files.append(npcarchive)
-        return npcarchive
+        files.append(actor_archive)
+        return actor_archive
 ################################################################################################################
-    def has_actor_archive(self, ownersname: str, npcname: str) -> bool:
-        return self.get_actor_archive(ownersname, npcname) is not None
+    def has_actor_archive(self, ownersname: str, actorname: str) -> bool:
+        return self.get_actor_archive(ownersname, actorname) is not None
 ################################################################################################################
-    def get_actor_archive(self, ownersname: str, npcname: str) -> Optional[ActorArchiveFile]:
+    def get_actor_archive(self, ownersname: str, actorname: str) -> Optional[ActorArchiveFile]:
         files = self.actor_archives.get(ownersname, [])
         for file in files:
-            if file.npcname == npcname:
+            if file.actorname == actorname:
                 return file
         return None
 ################################################################################################################
     ## 写一个道具的文件
-    def write_actor_archive(self, npcarchive: ActorArchiveFile) -> None:
+    def write_actor_archive(self, actor_archive: ActorArchiveFile) -> None:
         ## 测试
-        self.delete_file(self.actor_archive_path(npcarchive.ownersname, npcarchive.name))
-        content = npcarchive.content()
-        self.write_file(self.actor_archive_path(npcarchive.ownersname, npcarchive.name), content)
+        self.delete_file(self.actor_archive_path(actor_archive.ownersname, actor_archive.name))
+        content = actor_archive.content()
+        self.write_file(self.actor_archive_path(actor_archive.ownersname, actor_archive.name), content)
 ################################################################################################################
     def stage_archive_path(self, ownersname: str, filename: str) -> str:
         return f"{self.rootpath}{ownersname}/stages/{filename}.json"

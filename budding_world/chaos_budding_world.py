@@ -30,7 +30,7 @@ class ChaosBuddingWorld(IChaosEngineering):
     def __init__(self, name: str) -> None:
         self.name: str = name
         self.on_stage_system_excute_count = 0
-        self.on_npc_system_excute_count = 0
+        self.on_actor_system_excute_count = 0
 
     ##
     def on_pre_create_game(self, extended_context: Any, worlddata: GameBuilder) -> None:
@@ -55,47 +55,16 @@ class ChaosBuddingWorld(IChaosEngineering):
 
     ##
     def on_actor_planning_system_execute(self, extended_context: Any) -> None:
-        self.on_npc_system_excute_count += 1
+        self.on_actor_system_excute_count += 1
 
     ##
     def hack_stage_planning(self, extended_context: Any, stagename: str, planprompt: str) -> Optional[str]:
         from auxiliary.extended_context import ExtendedContext
         context: ExtendedContext = extended_context
-
-        ### 测试代码，故意返回错误的格式，并填入chat_history
-        # if stagename == "悠扬林谷" or stagename == "老猎人隐居的小木屋" or stagename == "地下城":
-        #     agent_connect_system = context.agent_connect_system
-        #     agent_connect_system._add_human_message_to_chat_history_(stagename, planprompt)
-        #     agent_connect_system._add_ai_message_to_chat_history_(stagename, error_repeat)
-        #     return error_repeat
-
         return None
 
     ##
-    def hack_actor_planning(self, extended_context: Any, npcname: str, planprompt: str) -> Optional[str]:
+    def hack_actor_planning(self, extended_context: Any, actor_name: str, planprompt: str) -> Optional[str]:
         from auxiliary.extended_context import ExtendedContext
         context: ExtendedContext = extended_context
-
-        ##{'老猎人隐居的小木屋': ['卡斯帕·艾伦德', '断剑', '坏运气先生'], '悠扬林谷': ['无名旅人'], '地下城': ['暗影巨龙']}
-        ### 测试代码，故意返回错误的格式，并填入chat_history
-        # if npcname == "坏运气先生":
-        #     agent_connect_system = context.agent_connect_system
-        #     agent_connect_system._add_human_message_to_chat_history_(npcname, planprompt)
-        #     agent_connect_system._add_ai_message_to_chat_history_(npcname, error_extra_string_added)
-        #     return error_extra_string_added
-        # elif npcname == "卡斯帕·艾伦德":
-        #     agent_connect_system = context.agent_connect_system
-        #     agent_connect_system._add_human_message_to_chat_history_(npcname, planprompt)
-        #     agent_connect_system._add_ai_message_to_chat_history_(npcname, error_speak_format)
-        #     return error_speak_format
-        # elif npcname == "断剑":
-        #     agent_connect_system = context.agent_connect_system
-        #     agent_connect_system._add_human_message_to_chat_history_(npcname, planprompt)
-        #     agent_connect_system._add_ai_message_to_chat_history_(npcname, error_value_is_not_array)
-        #     return error_value_is_not_array
-        # elif npcname == "暗影巨龙":
-        #     agent_connect_system = context.agent_connect_system
-        #     agent_connect_system._add_human_message_to_chat_history_(npcname, planprompt)
-        #     agent_connect_system._add_ai_message_to_chat_history_(npcname, error_speak_target_is_invalid)
-        #     return error_speak_target_is_invalid
         return None

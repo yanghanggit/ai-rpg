@@ -21,7 +21,7 @@ class SpeakEvent(IDirectorEvent):
         self.who_is_target = who_is_target
         self.message = message
 
-    def to_actor(self, npcname: str, extended_context: ExtendedContext) -> str:
+    def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
         speakcontent: str = speak_action_prompt(self.who_is_speaking, self.who_is_target, self.message, extended_context)
         return speakcontent
     
@@ -50,7 +50,7 @@ class SpeakActionSystem(ReactiveProcessor):
     def speak(self, entity: Entity) -> None:
         speakcomp: SpeakActionComponent = entity.get(SpeakActionComponent)
         speakaction: ActorAction = speakcomp.action
-        safe_npc_name = self.context.safe_get_entity_name(entity)
+        safe_name = self.context.safe_get_entity_name(entity)
         for value in speakaction.values:
 
             parse = parse_target_and_message(value)
@@ -63,5 +63,5 @@ class SpeakActionSystem(ReactiveProcessor):
             if conversation_check(self.context, entity, targetname) != ErrorConversationEnable.VALID:
                 continue
 
-            notify_stage_director(self.context, entity, SpeakEvent(safe_npc_name, targetname, message))
+            notify_stage_director(self.context, entity, SpeakEvent(safe_name, targetname, message))
 ####################################################################################################

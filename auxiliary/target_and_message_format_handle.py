@@ -13,18 +13,18 @@ class ErrorConversationEnable(Enum):
     NOT_IN_THE_SAME_STAGE = 3
 
 # 检查是否可以对话
-def conversation_check(context: ExtendedContext, srcentity: Entity, npcname: str) -> ErrorConversationEnable:
+def conversation_check(context: ExtendedContext, srcentity: Entity, target_name: str) -> ErrorConversationEnable:
 
-    target_npc_entity: Optional[Entity] = context.get_actor_entity(npcname)
-    if target_npc_entity is None:
-        # 只能对NPC说话
+    target_entity: Optional[Entity] = context.get_actor_entity(target_name)
+    if target_entity is None:
+        # 只能对Actor说话?
         return ErrorConversationEnable.TARGET_DOES_NOT_EXIST
     
     stageentity = context.safe_get_stage_entity(srcentity)
     if stageentity is None:
         return ErrorConversationEnable.WITHOUT_BEING_IN_STAGE
     
-    target_stage = context.safe_get_stage_entity(target_npc_entity)
+    target_stage = context.safe_get_stage_entity(target_entity)
     if target_stage is None or target_stage != stageentity:
         return ErrorConversationEnable.NOT_IN_THE_SAME_STAGE
     
@@ -45,11 +45,11 @@ def use_prop_check(context: ExtendedContext, srcentity: Entity, targetname: str)
         return ErrorUsePropEnable.WITHOUT_BEING_IN_STAGE
 
     final_target_entity: Optional[Entity] = None
-    target_npc_entity: Optional[Entity] = context.get_actor_entity(targetname)
+    target_actor_entity: Optional[Entity] = context.get_actor_entity(targetname)
     target_stage_entity: Optional[Entity] = context.get_stage_entity(targetname)
 
-    if target_npc_entity is not None:
-        final_target_entity = target_npc_entity
+    if target_actor_entity is not None:
+        final_target_entity = target_actor_entity
     elif target_stage_entity is not None:
         final_target_entity = target_stage_entity
 

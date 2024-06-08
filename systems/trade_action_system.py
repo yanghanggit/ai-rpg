@@ -14,7 +14,7 @@ from auxiliary.cn_builtin_prompt import trade_action_prompt
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class NPCTradeEvent(IDirectorEvent):
+class ActorTradeEvent(IDirectorEvent):
 
     def __init__(self, fromwho: str, towho: str, propname: str, traderes: bool) -> None:
         self.fromwho = fromwho
@@ -22,8 +22,8 @@ class NPCTradeEvent(IDirectorEvent):
         self.propname = propname
         self.traderes = traderes
 
-    def to_actor(self, npcname: str, extended_context: ExtendedContext) -> str:
-        if npcname != self.fromwho or npcname != self.towho:
+    def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
+        if actor_name != self.fromwho or actor_name != self.towho:
             return ""
         
         tradecontent = trade_action_prompt(self.fromwho, self.towho, self.propname, self.traderes)
@@ -57,8 +57,8 @@ class TradeActionSystem(ReactiveProcessor):
     def trade(self, entity: Entity) -> List[str]:
 
         trade_success_target_names: List[str] = []
-        safe_npc_name = self.context.safe_get_entity_name(entity)
-        logger.debug(f"TradeActionSystem: {safe_npc_name} is trading")
+        safe_name = self.context.safe_get_entity_name(entity)
+        logger.debug(f"TradeActionSystem: {safe_name} is trading")
 
         tradecomp: TradeActionComponent = entity.get(TradeActionComponent)
         tradeaction: ActorAction = tradecomp.action
@@ -78,28 +78,28 @@ class TradeActionSystem(ReactiveProcessor):
             ##
             propname = message
             traderes = self._trade_(entity, targetname, propname)
-            notify_stage_director(self.context, entity, NPCTradeEvent(safe_npc_name, targetname, propname, traderes))
+            notify_stage_director(self.context, entity, ActorTradeEvent(safe_name, targetname, propname, traderes))
             trade_success_target_names.append(targetname)
 
         return trade_success_target_names
 ###################################################################################################################
-    def _trade_(self, entity: Entity, target_npc_name: str, mypropname: str) -> bool:
+    def _trade_(self, entity: Entity, target_actor_name: str, mypropname: str) -> bool:
         filesystem = self.context.file_system
         safename = self.context.safe_get_entity_name(entity)
         myprop = filesystem.get_prop_file(safename, mypropname)
         if myprop is None:
             return False
-        filesystem.exchange_prop_file(safename, target_npc_name, mypropname)
+        filesystem.exchange_prop_file(safename, target_actor_name, mypropname)
         return True
 ###################################################################################################################
     def after_trade_success(self, name: str) -> None:
         entity = self.context.get_actor_entity(name)
         if entity is None:
-            logger.error(f"npc {name} not found")
+            logger.error(f"actor {name} not found")
             return
         if entity.has(CheckStatusActionComponent):
             return
-        npccomp: ActorComponent = entity.get(ActorComponent)
-        action = ActorAction(npccomp.name, CheckStatusActionComponent.__name__, [npccomp.name])
+        actor_comp: ActorComponent = entity.get(ActorComponent)
+        action = ActorAction(actor_comp.name, CheckStatusActionComponent.__name__, [actor_comp.name])
         entity.add(CheckStatusActionComponent, action)
 ###################################################################################################################

@@ -43,16 +43,16 @@ class PrePlanningSystem(InitializeProcessor, ExecuteProcessor):
 ############################################################################################################
     def make_planning_by_strategy(self, strategy: PlanningStrategy) -> None:
         if strategy == PlanningStrategy.STRATEGY_ONLY_PLAYERS_STAGE:
-            logger.warning("STRATEGY_ONLY_PLAYERS_STAGE, 选择比较省的策略, 只规划player所在场景和npcs")
+            logger.warning("STRATEGY_ONLY_PLAYERS_STAGE, 选择比较省的策略, 只规划player所在场景和actors")
             playerentities = self.context.get_group(Matcher(PlayerComponent)).entities
             for playerentity in playerentities:
                 # 如果有多个player在同一个stage，这里会多次执行, 但是没关系，因为这里是做防守的
-                self.strategy1_only_the_stage_where_player_is_located_and_the_npcs_in_it_allowed_make_plans(playerentity)
+                self.strategy1_only_the_stage_where_player_is_located_and_the_actors_in_it_allowed_make_plans(playerentity)
         elif strategy == PlanningStrategy.STRATEGY_ALL:
             logger.warning("STRATEGY_ALL, 选择比较费的策略，全都更新")
-            self.strategy2_all_stages_and_npcs_except_player_allow_auto_planning()   
+            self.strategy2_all_stages_and_actors_except_player_allow_auto_planning()   
 ############################################################################################################
-    def strategy1_only_the_stage_where_player_is_located_and_the_npcs_in_it_allowed_make_plans(self, playerentity: Entity) -> None:
+    def strategy1_only_the_stage_where_player_is_located_and_the_actors_in_it_allowed_make_plans(self, playerentity: Entity) -> None:
         assert playerentity is not None
         assert playerentity.has(PlayerComponent)
 
@@ -65,43 +65,43 @@ class PrePlanningSystem(InitializeProcessor, ExecuteProcessor):
         ##player所在场景可以规划
         stagecomp: StageComponent = stageentity.get(StageComponent)
         
-        ###player所在场景的npcs可以规划
-        npcsentities = context.actors_in_stage(stagecomp.name)
-        if len(npcsentities) == 0:
-            #logger.debug(f"Stage: {stagecomp.name} has no npcs, so no need to plan.")
+        ###player所在场景的actors可以规划
+        actor_entities = context.actors_in_stage(stagecomp.name)
+        if len(actor_entities) == 0:
+            #logger.debug(f"Stage: {stagecomp.name} has no actors, so no need to plan.")
             return
         
         if not stageentity.has(AutoPlanningComponent):
             stageentity.add(AutoPlanningComponent, stagecomp.name)
         
-        for npcentity in npcsentities:
-            if npcentity.has(PlayerComponent):
+        for _en in actor_entities:
+            if _en.has(PlayerComponent):
                 ## 挡掉
                 continue
-            npccomp: ActorComponent = npcentity.get(ActorComponent)
-            if not npcentity.has(AutoPlanningComponent):
-                npcentity.add(AutoPlanningComponent, npccomp.name)
+            actor_comp: ActorComponent = _en.get(ActorComponent)
+            if not _en.has(AutoPlanningComponent):
+                _en.add(AutoPlanningComponent, actor_comp.name)
 ############################################################################################################
-    def strategy2_all_stages_and_npcs_except_player_allow_auto_planning(self) -> None:
+    def strategy2_all_stages_and_actors_except_player_allow_auto_planning(self) -> None:
         context = self.context
         stageentities = context.get_group(Matcher(StageComponent)).entities
         for stageentity in stageentities:
             stagecomp: StageComponent = stageentity.get(StageComponent)
-            npcs_in_stage = context.actors_in_stage(stagecomp.name)
-            if len(npcs_in_stage) == 0:
-                #logger.debug(f"Stage: {stagecomp.name} has no npcs, so no need to plan.")
+            actors_in_stage = context.actors_in_stage(stagecomp.name)
+            if len(actors_in_stage) == 0:
+                #logger.debug(f"Stage: {stagecomp.name} has no actors, so no need to plan.")
                 continue
             if not stageentity.has(AutoPlanningComponent):
                 stageentity.add(AutoPlanningComponent, stagecomp.name)
         
-        npcentities = context.get_group(Matcher(ActorComponent)).entities
-        for npcentity in npcentities:
-            if npcentity.has(PlayerComponent):
+        actor_entities = context.get_group(Matcher(ActorComponent)).entities
+        for _en in actor_entities:
+            if _en.has(PlayerComponent):
                 ## player 就跳过
                 continue
-            npccomp: ActorComponent = npcentity.get(ActorComponent)
-            if not npcentity.has(AutoPlanningComponent):
-                npcentity.add(AutoPlanningComponent, npccomp.name)
+            actor_comp: ActorComponent = _en.get(ActorComponent)
+            if not _en.has(AutoPlanningComponent):
+                _en.add(AutoPlanningComponent, actor_comp.name)
 ############################################################################################################
     ## 自我测试，这个调用点就是不允许再这个阶段有任何action
     def test(self) -> None:
@@ -109,6 +109,6 @@ class PrePlanningSystem(InitializeProcessor, ExecuteProcessor):
         assert len(auto_planning_entities) == 0, f"AutoPlanningComponent should be removed in PostPlanningSystem"
         stageentities: Set[Entity] = self.context.get_group(Matcher(any_of = STAGE_AVAILABLE_ACTIONS_REGISTER)).entities
         assert len(stageentities) == 0, f"Stage entities with actions: {stageentities}"
-        npcentities: Set[Entity]  = self.context.get_group(Matcher(any_of = ACTOR_AVAILABLE_ACTIONS_REGISTER)).entities
-        assert len(npcentities) == 0, f"NPC entities with actions: {npcentities}"
+        actor_entities: Set[Entity]  = self.context.get_group(Matcher(any_of = ACTOR_AVAILABLE_ACTIONS_REGISTER)).entities
+        assert len(actor_entities) == 0, f"Actor entities with actions: {actor_entities}"
 ############################################################################################################

@@ -15,7 +15,7 @@ class PostFightSystem(ExecuteProcessor):
     @override
     def execute(self) -> None:
         # 移除后续动作
-        self.remove_npc_interactive_actions()
+        self.remove_actor_interactive_actions()
         #可以存档
         if self.context.save_data_enable:
             self.savedead()
@@ -23,9 +23,9 @@ class PostFightSystem(ExecuteProcessor):
     def savedead(self) -> None:
          entities: set[Entity] = self.context.get_group(Matcher(DeadActionComponent)).entities
          for entity in entities:
-            self.savenpc(entity)
+            self.save_actor(entity)
 ########################################################################################################################################################################
-    def savenpc(self, entity: Entity) -> None:
+    def save_actor(self, entity: Entity) -> None:
         agent_connect_system = self.context.agent_connect_system
         memory_system = self.context.kick_off_memory_system
         safename = self.context.safe_get_entity_name(entity)
@@ -44,9 +44,9 @@ class PostFightSystem(ExecuteProcessor):
         else:
             logger.error(f"存档失败:{safename}")    
 ########################################################################################################################################################################
-    def remove_npc_interactive_actions(self) -> None:
-        npcentities:set[Entity] = self.context.get_group(Matcher(all_of = [ActorComponent, DeadActionComponent], any_of = ACTOR_INTERACTIVE_ACTIONS_REGISTER)).entities.copy()
-        for entity in npcentities:
+    def remove_actor_interactive_actions(self) -> None:
+        actor_entities:set[Entity] = self.context.get_group(Matcher(all_of = [ActorComponent, DeadActionComponent], any_of = ACTOR_INTERACTIVE_ACTIONS_REGISTER)).entities.copy()
+        for entity in actor_entities:
             for actionsclass in ACTOR_INTERACTIVE_ACTIONS_REGISTER:
                 if entity.has(actionsclass):
                     entity.remove(actionsclass)

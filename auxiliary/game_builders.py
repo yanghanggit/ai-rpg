@@ -16,7 +16,7 @@ class GameBuilder:
         self._data: Any = None
         self.world_builder = ActorBuilder("worlds")
         self.player_builder = ActorBuilder("players")
-        self.actor_buidler = ActorBuilder("npcs")
+        self.actor_buidler = ActorBuilder("actors")
         self.stage_builder = StageBuilder()
         self.data_base_system = data_base_system ## 依赖注入的方式，将数据库系统注入到这里
         self.about_game: str = ""
@@ -51,7 +51,7 @@ class GameBuilder:
         self._build_config(self._data)
         # 第三步，创建世界级别的管理员
         self.world_builder.build(self._data, self.data_base_system)
-        # 第四步，创建玩家与NPC
+        # 第四步，创建玩家与Actor
         self.player_builder.build(self._data, self.data_base_system)
         self.actor_buidler.build(self._data, self.data_base_system)
         # 第五步，创建场景
@@ -60,40 +60,40 @@ class GameBuilder:
     def _build_config(self, data: dict[str, Any]) -> None:
         self.about_game = data.get('about_game', "无关于游戏的信息。")
 ###############################################################################################################################################
-    def _create_npc_data_base(self, npcs: Any) -> None:
-        if npcs is None:
-            logger.error("没有NPC数据内容(npcs)，请检查World.json配置。")
+    def _create_actor_data_base(self, actors: Any) -> None:
+        if actors is None:
+            logger.error("没有Actor数据内容，请检查World.json配置。")
             return
         
-        for npc in npcs:
-            npcdata = npc.get('npc', None)
-            assert npcdata is not None
+        for _actor in actors:
+            _data = _actor.get('actor', None)
+            assert _data is not None
 
             # 寻找角色关系
-            mentioned_npcs: Set[str] = set()
-            mentioned_npcs_str: str = npcdata.get("mentioned_npcs")
-            if len(mentioned_npcs_str) > 0:
-                 mentioned_npcs = set(mentioned_npcs_str.split(';'))
+            mentioned_actors: Set[str] = set()
+            mentioned_actors_str: str = _data.get("mentioned_actors")
+            if len(mentioned_actors_str) > 0:
+                 mentioned_actors = set(mentioned_actors_str.split(';'))
 
              # 寻找角色与场景的关系关系
             mentioned_stages: Set[str] = set()
-            mentioned_stages_str: str = npcdata.get("mentioned_stages")
+            mentioned_stages_str: str = _data.get("mentioned_stages")
             if len(mentioned_stages_str) > 0:
                  mentioned_stages = set(mentioned_stages_str.split(';'))
 
             # 创建
-            npc = ActorData(npcdata.get("name"), 
-                          npcdata.get("codename"), 
-                          npcdata.get("url"), 
-                          npcdata.get("memory"), 
+            _actor = ActorData(_data.get("name"), 
+                          _data.get("codename"), 
+                          _data.get("url"), 
+                          _data.get("memory"), 
                           set(), 
-                          mentioned_npcs,
+                          mentioned_actors,
                           mentioned_stages,
-                          npcdata.get("role_appearance"))
+                          _data.get("appearance"))
             
             ## 设置（战斗）属性
-            npc.build_attributes(npcdata.get("attributes"))
-            self.data_base_system.add_actor(npc.name, npc)
+            _actor.build_attributes(_data.get("attributes"))
+            self.data_base_system.add_actor(_actor.name, _actor)
 ###############################################################################################################################################
     def _create_stage_data_base(self, stages: Any) -> None:
         if stages is None:
@@ -156,7 +156,7 @@ class GameBuilder:
         if database is None:
             logger.error("没有数据库(database)，请检查World.json配置。")
             return
-        self._create_npc_data_base(database.get('npcs', None))
+        self._create_actor_data_base(database.get('actors', None))
         self._create_stage_data_base(database.get('stages', None))
         self._create_prop_data_base(database.get('props', None))
 ########################################################################################################################
@@ -175,11 +175,11 @@ class StageBuilder:
             res.add(prop)
         return res
     #
-    def npcs_proxy_in_stage(self, npcs_data: List[Any]) -> set[ActorData]:
+    def actors_proxy_in_stage(self, _data: List[Any]) -> set[ActorData]:
         res: set[ActorData] = set()
-        for obj in npcs_data:
-            npc = ActorDataProxy(obj.get("name"))
-            res.add(npc)
+        for obj in _data:
+            _d = ActorDataProxy(obj.get("name"))
+            res.add(_d)
         return res
     #
     def build(self, json_data: dict[str, Any], data_base_system: DataBaseSystem) -> None:
@@ -198,8 +198,8 @@ class StageBuilder:
             propsinstage: set[PropData] = self.props_proxy_in_stage(stagedata.get("props"))
             stage.props = propsinstage
             #连接
-            npcsinstage: set[ActorData] = self.npcs_proxy_in_stage(stagedata.get("npcs"))
-            stage.actors = npcsinstage
+            actors_in_stage: set[ActorData] = self.actors_proxy_in_stage(stagedata.get("actors"))
+            stage.actors = actors_in_stage
             #
             self.stages.append(stage)
 ########################################################################################################################
@@ -213,33 +213,33 @@ class ActorBuilder:
         self.dataname = dataname
 
     def __str__(self) -> str:
-        return f"NPCBuilder2: {self.datalist}"       
+        return f"ActorBuilder: {self.datalist}"       
 
     #
     def build(self, json_data: dict[str, Any], data_base_system: DataBaseSystem) -> None:
         self.datalist = json_data.get(self.dataname)
         if self.datalist is None:
-            logger.error(f"NPCBuilder2: {self.dataname} data is None.")
+            logger.error(f"ActorBuilder: {self.dataname} data is None.")
             return
         
         for datablock in self.datalist:
-            npcprops: set[PropData] = set()
+            _props: set[PropData] = set()
             propdata = datablock.get("props")
             for propdata in propdata:
                 prop = PropDataProxy(propdata.get("name"))
-                npcprops.add(prop)
+                _props.add(prop)
 
-            # NPC核心数据
-            npcblock = datablock.get("npc")
-            npcname = npcblock.get("name")
-            npcdata = data_base_system.get_actor(npcname)
-            if npcdata is None:
-                logger.error(f"NPCBuilder2: {npcname} not found in database.")
+            # Actor核心数据
+            _core_ = datablock.get("actor")
+            actor_name = _core_.get("name")
+            actor_data = data_base_system.get_actor(actor_name)
+            if actor_data is None:
+                logger.error(f"ActorBuilder: {actor_name} not found in database.")
                 continue
             # 连接
-            npcdata.props = npcprops
+            actor_data.props = _props
             #
-            self.actors.append(npcdata)
+            self.actors.append(actor_data)
 ########################################################################################################################
 ########################################################################################################################
 ########################################################################################################################

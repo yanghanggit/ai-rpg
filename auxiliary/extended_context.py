@@ -89,8 +89,8 @@ class ExtendedContext(Context):
             return entity
         return None
 ############################################################################################################
-    def get_actor_entity(self, npcname: str) -> Optional[Entity]:
-        entity: Optional[Entity] = self.get_entity_by_code_name_component(npcname)
+    def get_actor_entity(self, actorname: str) -> Optional[Entity]:
+        entity: Optional[Entity] = self.get_entity_by_code_name_component(actorname)
         if entity is not None and entity.has(ActorComponent):
             return entity
         return None
@@ -110,7 +110,7 @@ class ExtendedContext(Context):
         stagecomp: StageComponent = stage_entity.get(StageComponent)
         return self.actors_in_stage(stagecomp.name)
 ############################################################################################################
-     # 直接从实体中获取场景实体，如果是NPC，就获取当前场景，如果是场景，就是自己
+     # 直接从实体中获取场景实体，如果是Actor，就获取当前场景，如果是场景，就是自己
     def safe_get_stage_entity(self, entity: Entity) -> Optional[Entity]:
         if entity.has(StageComponent):
             # 我自己！！！
@@ -118,7 +118,7 @@ class ExtendedContext(Context):
         elif entity.has(ActorComponent):
             actor_comp: ActorComponent = entity.get(ActorComponent)
             return self.get_stage_entity(actor_comp.current_stage)
-        logger.error("实体不是NPC或者Stage")
+        logger.error("实体不是Actor或者Stage")
         return None
 ############################################################################################################
     # 特定的如下几种类型来获取名字
@@ -150,7 +150,7 @@ class ExtendedContext(Context):
     # 更改场景的标记组件
     def change_stage_tag_component(self, entity: Entity, from_stagename: str, to_stagename: str) -> None:
         if not entity.has(ActorComponent):
-            logger.error("实体不是NPC, 目前场景标记只给NPC")
+            logger.error("实体不是Actor, 目前场景标记只给Actor")
             return
         
         # 查看一下，如果一样基本就是错误

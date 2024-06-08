@@ -20,8 +20,8 @@ class WhisperEvent(IDirectorEvent):
         self.who_is_target = who_is_target
         self.message = message
 
-    def to_actor(self, npcname: str, extended_context: ExtendedContext) -> str:
-        if npcname != self.who_is_whispering or npcname != self.who_is_target:
+    def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
+        if actor_name != self.who_is_whispering or actor_name != self.who_is_target:
             # 只有这2个人才能听到
             return ""
         whispercontent = whisper_action_prompt(self.who_is_whispering, self.who_is_target, self.message, extended_context)
@@ -52,7 +52,7 @@ class WhisperActionSystem(ReactiveProcessor):
     def whisper(self, entity: Entity) -> None:
         whispercomp: WhisperActionComponent = entity.get(WhisperActionComponent)
         action: ActorAction = whispercomp.action
-        safe_npc_name = self.context.safe_get_entity_name(entity)
+        safe_name = self.context.safe_get_entity_name(entity)
 
         for value in action.values:
 
@@ -66,5 +66,5 @@ class WhisperActionSystem(ReactiveProcessor):
             if conversation_check(self.context, entity, targetname) != ErrorConversationEnable.VALID:
                 continue
             
-            notify_stage_director(self.context, entity, WhisperEvent(safe_npc_name, targetname, message))
+            notify_stage_director(self.context, entity, WhisperEvent(safe_name, targetname, message))
 ####################################################################################################

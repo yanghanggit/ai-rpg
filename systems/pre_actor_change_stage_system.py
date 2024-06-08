@@ -33,15 +33,15 @@ from auxiliary.actor_plan_and_action import ActorPlan
 ####################################################################################################################################
 ####################################################################################################################################
 class ActorExitStageFailedBecauseStageRefuse(IDirectorEvent):
-    def __init__(self, npcname: str, stagename: str, tips: str) -> None:
-        self.npcname = npcname
+    def __init__(self, actor_name: str, stagename: str, tips: str) -> None:
+        self.actor_name = actor_name
         self.stagename = stagename
         self.tips = tips
 
-    def to_actor(self, npcname: str, extended_context: ExtendedContext) -> str:
-        if npcname != self.npcname:
+    def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
+        if actor_name != self.actor_name:
             return ""
-        return exit_stage_failed_beacuse_stage_refuse_prompt(self.npcname, self.stagename, self.tips)
+        return exit_stage_failed_beacuse_stage_refuse_prompt(self.actor_name, self.stagename, self.tips)
     
     def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
         return ""
@@ -49,15 +49,15 @@ class ActorExitStageFailedBecauseStageRefuse(IDirectorEvent):
 ####################################################################################################################################
 ####################################################################################################################################
 class ActorEnterStageFailedBecauseStageRefuse(IDirectorEvent):
-    def __init__(self, npcname: str, stagename: str, tips: str) -> None:
-        self.npcname = npcname
+    def __init__(self, actor_name: str, stagename: str, tips: str) -> None:
+        self.actor_name = actor_name
         self.stagename = stagename
         self.tips = tips
 
-    def to_actor(self, npcname: str, extended_context: ExtendedContext) -> str:
-        if npcname != self.npcname:
+    def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
+        if actor_name != self.actor_name:
             return ""
-        return enter_stage_failed_beacuse_stage_refuse_prompt(self.npcname, self.stagename, self.tips)
+        return enter_stage_failed_beacuse_stage_refuse_prompt(self.actor_name, self.stagename, self.tips)
     
     def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
         return ""
@@ -210,7 +210,7 @@ class PreActorChangeStageSystem(ReactiveProcessor):
         if not self.need_check_exit_cond(current_stage_entity):
             return True
         #
-        npc_name = self.context.safe_get_entity_name(entity)
+        actor_name = self.context.safe_get_entity_name(entity)
         current_stage_name = self.context.safe_get_entity_name(current_stage_entity)
         #
         stage_exit_cond_helper = StageConditionsHelper(f"离开{current_stage_name}的检查所有条件")
@@ -220,7 +220,7 @@ class PreActorChangeStageSystem(ReactiveProcessor):
         current_role_props_prompt = self.get_role_props_prompt(entity)
         
         
-        final_prompt = stage_exit_conditions_check_promt(npc_name, 
+        final_prompt = stage_exit_conditions_check_promt(actor_name, 
                                                          current_stage_name, 
                                                          stage_exit_cond_helper.stage_cond_status_prompt, 
                                                          stage_exit_cond_helper.cond_check_role_status_prompt, 
@@ -248,7 +248,7 @@ class PreActorChangeStageSystem(ReactiveProcessor):
             # 通知事件
             notify_stage_director(self.context, 
                                   current_stage_entity, 
-                                  ActorExitStageFailedBecauseStageRefuse(npc_name, current_stage_name, handle_response_helper.tips))
+                                  ActorExitStageFailedBecauseStageRefuse(actor_name, current_stage_name, handle_response_helper.tips))
             return False
 
         logger.info(f"允许通过！说明如下: {handle_response_helper._tips}")
@@ -268,7 +268,7 @@ class PreActorChangeStageSystem(ReactiveProcessor):
             return True
         
         ##
-        npc_name = self.context.safe_get_entity_name(entity)
+        actor_name = self.context.safe_get_entity_name(entity)
         target_stage_name = self.context.safe_get_entity_name(target_stage_entity)
         #
         stage_exit_cond_helper = StageConditionsHelper(f"进入{target_stage_name}的检查所有条件")
@@ -277,7 +277,7 @@ class PreActorChangeStageSystem(ReactiveProcessor):
         current_role_status_prompt = self.get_role_status_prompt(entity)
         current_role_props_prompt = self.get_role_props_prompt(entity)
         # 最终提示词
-        final_prompt = stage_entry_conditions_check_promt(npc_name, 
+        final_prompt = stage_entry_conditions_check_promt(actor_name, 
                                                          target_stage_name, 
                                                          stage_exit_cond_helper.stage_cond_status_prompt, 
                                                          stage_exit_cond_helper.cond_check_role_status_prompt, 
@@ -306,7 +306,7 @@ class PreActorChangeStageSystem(ReactiveProcessor):
             assert current_stage_entity is not None
             notify_stage_director(self.context, 
                                   current_stage_entity, 
-                                  ActorEnterStageFailedBecauseStageRefuse(npc_name, target_stage_name, handle_response_helper.tips))
+                                  ActorEnterStageFailedBecauseStageRefuse(actor_name, target_stage_name, handle_response_helper.tips))
             return False
 
         logger.info(f"允许通过！说明如下: {handle_response_helper._tips}")

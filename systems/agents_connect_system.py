@@ -31,9 +31,9 @@ class AgentsConnectSystem(InitializeProcessor):
 ###############################################################################################################################################
     def connect_actor_agents(self) -> None:
         agent_connect_system = self.context.agent_connect_system
-        npcs: set[Entity] = self.context.get_group(Matcher(all_of=[ActorComponent], none_of=[PlayerComponent])).entities
-        for npc in npcs:
-            npccomp: ActorComponent = npc.get(ActorComponent)
-            agent_connect_system.connect_agent(npccomp.name)
+        actors: set[Entity] = self.context.get_group(Matcher(all_of=[ActorComponent], none_of=[PlayerComponent])).entities
+        for _entity in actors:
+            actor_comp: ActorComponent = _entity.get(ActorComponent)
+            agent_connect_system.connect_agent(actor_comp.name)
 ###############################################################################################################################################
     

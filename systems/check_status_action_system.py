@@ -68,8 +68,8 @@ class ActorCheckStatusEvent(IDirectorEvent):
         self.role_comps = role_components
         self.events = events
 
-    def to_actor(self, npcname: str, extended_context: ExtendedContext) -> str:
-        if npcname != self.who:
+    def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
+        if actor_name != self.who:
             # 只有自己知道
             return ""
         return check_status_action_prompt(self.who, self.props, self.health, self.role_comps, self.events)
@@ -100,12 +100,11 @@ class CheckStatusActionSystem(ReactiveProcessor):
 ###################################################################################################################
     # 临时写成这样，就是检查自己有哪些道具
     def check_status(self, entity: Entity) -> None:
-        safe_npc_name = self.context.safe_get_entity_name(entity)
-        #logger.debug(f"{safe_npc_name} is checking status")
+        safe_name = self.context.safe_get_entity_name(entity)
         #
         helper = CheckStatusActionHelper(self.context)
         helper.check_status(entity)
         #
-        notify_stage_director(self.context, entity, ActorCheckStatusEvent(safe_npc_name, helper.props, helper.health, helper.role_components, helper.events))
+        notify_stage_director(self.context, entity, ActorCheckStatusEvent(safe_name, helper.props, helper.health, helper.role_components, helper.events))
 ###################################################################################################################
     

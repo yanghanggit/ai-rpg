@@ -20,58 +20,58 @@ class UpdateArchiveSystem(ExecuteProcessor):
         context = self.context
         known_info_helper = UpdareArchiveHelper(self.context)
         known_info_helper.prepare()
-        # 对NPC进行处理
-        npcs: set[Entity] = context.get_group(Matcher(all_of=[ActorComponent])).entities
-        for npc in npcs:
-            #更新NPC的NPC档案，可能更新了谁认识谁，还有如果在场景中，外观是什么
-            self.update_npc_archive(npc, known_info_helper)
-            #更新NPC的场景档案，
-            self.update_stage_archive(npc, known_info_helper)
+        # 对Actor进行处理
+        actor_entities: set[Entity] = context.get_group(Matcher(all_of=[ActorComponent])).entities
+        for _en in actor_entities:
+            #更新Actor的Actor档案，可能更新了谁认识谁，还有如果在场景中，外观是什么
+            self.update_actor_archive(_en, known_info_helper)
+            #更新Actor的场景档案，
+            self.update_stage_archive(_en, known_info_helper)
 ############################################################################################################
-    def update_npc_archive(self, npcentity: Entity, helper: UpdareArchiveHelper) -> None:
+    def update_actor_archive(self, actor_entity: Entity, helper: UpdareArchiveHelper) -> None:
         #
-        npccomp: ActorComponent = npcentity.get(ActorComponent)
-        who_do_you_know: set[str] = helper.who_do_you_know(npccomp.name)
+        actor_comp: ActorComponent = actor_entity.get(ActorComponent)
+        who_do_you_know: set[str] = helper.who_do_you_know(actor_comp.name)
         if len(who_do_you_know) == 0:
-            logger.warning(f"{npccomp.name} 什么人都不认识，这个合理么？")
+            logger.warning(f"{actor_comp.name} 什么人都不认识，这个合理么？")
             return
         
         # 补充文件，有可能是新的人，也有可能全是旧的人
-        add_actor_archive_files(self.context.file_system, npccomp.name, who_do_you_know)        
+        add_actor_archive_files(self.context.file_system, actor_comp.name, who_do_you_know)        
 
         # 更新文件，只更新场景内我能看见的人
-        appearance_data = self.context.appearance_in_stage(npcentity)
+        appearance_data = self.context.appearance_in_stage(actor_entity)
         for name in who_do_you_know:
             appearance = appearance_data.get(name, "")
             if appearance != "":
-                update_actor_archive_file(self.context.file_system, npccomp.name, name, appearance)
+                update_actor_archive_file(self.context.file_system, actor_comp.name, name, appearance)
 
         # 更新chat history
         who_do_you_know_promt = ",".join(who_do_you_know)
-        message = updated_information_on_WhoDoYouKnow_prompt(npccomp.name, who_do_you_know_promt)
+        message = updated_information_on_WhoDoYouKnow_prompt(actor_comp.name, who_do_you_know_promt)
 
         exclude_chat_history: Set[str] = set()
         exclude_chat_history.add(message)
-        self.context.agent_connect_system.exclude_chat_history(npccomp.name, exclude_chat_history)
-        self.context.safe_add_human_message_to_entity(npcentity, message)
+        self.context.agent_connect_system.exclude_chat_history(actor_comp.name, exclude_chat_history)
+        self.context.safe_add_human_message_to_entity(actor_entity, message)
 ############################################################################################################
-    def update_stage_archive(self, npcentity: Entity, helper: UpdareArchiveHelper) -> None:
-        npccomp: ActorComponent = npcentity.get(ActorComponent)
-        _stages_you_know: set[str] = helper.stages_you_know(npccomp.name)
+    def update_stage_archive(self, actor_entity: Entity, helper: UpdareArchiveHelper) -> None:
+        actor_comp: ActorComponent = actor_entity.get(ActorComponent)
+        _stages_you_know: set[str] = helper.stages_you_know(actor_comp.name)
         if len(_stages_you_know) == 0:
-            logger.warning(f"{npccomp.name} 什么地点都不知道，这个合理么？")
+            logger.warning(f"{actor_comp.name} 什么地点都不知道，这个合理么？")
             return
         
         # 写文件
-        add_stage_archive_files(self.context.file_system, npccomp.name, _stages_you_know)
+        add_stage_archive_files(self.context.file_system, actor_comp.name, _stages_you_know)
 
         # 更新chat history
         _stages_you_know_prompt = ",".join(_stages_you_know)
-        message = updated_information_about_StagesYouKnow_prompt(npccomp.name, _stages_you_know_prompt)
+        message = updated_information_about_StagesYouKnow_prompt(actor_comp.name, _stages_you_know_prompt)
 
         exclude_chat_history: Set[str] = set()
         exclude_chat_history.add(message)
-        self.context.agent_connect_system.exclude_chat_history(npccomp.name, exclude_chat_history)
-        self.context.safe_add_human_message_to_entity(npcentity, message)
+        self.context.agent_connect_system.exclude_chat_history(actor_comp.name, exclude_chat_history)
+        self.context.safe_add_human_message_to_entity(actor_entity, message)
 ############################################################################################################
     

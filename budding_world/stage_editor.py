@@ -7,7 +7,7 @@ from loguru import logger
 from typing import List, Dict, Any, Optional, cast
 #from auxiliary.format_of_complex_stage_entry_and_exit_conditions import parse_complex_stage_condition
 from budding_world.utils import (proxy_prop)
-from budding_world.excel_data import ExcelDataNPC, ExcelDataProp, ExcelDataStage
+from budding_world.excel_data import ExcelDataActor, ExcelDataProp, ExcelDataStage
 import pandas as pd
 
 
@@ -51,9 +51,9 @@ class ExcelEditorStageCondition:
 
 class ExcelEditorStage:
 
-    def __init__(self, data: Any, npc_data_base: Dict[str, ExcelDataNPC], prop_data_base: Dict[str, ExcelDataProp], stage_data_base: Dict[str, ExcelDataStage]) -> None:
+    def __init__(self, data: Any, actor_data_base: Dict[str, ExcelDataActor], prop_data_base: Dict[str, ExcelDataProp], stage_data_base: Dict[str, ExcelDataStage]) -> None:
         self.data: Any = data
-        self.npc_data_base = npc_data_base
+        self.actor_data_base = actor_data_base
         self.prop_data_base = prop_data_base
         self.stage_data_base = stage_data_base
 
@@ -61,7 +61,7 @@ class ExcelEditorStage:
         self.stage_entry_conditions: List[ExcelEditorStageCondition] = []
         self.stage_exit_conditions: List[ExcelEditorStageCondition] = []
         self.props_in_stage: List[ExcelDataProp] = []
-        self.npcs_in_stage: List[ExcelDataNPC] = []
+        self.actors_in_stage: List[ExcelDataActor] = []
         self.initialization_memory: str = ""
         self.exit_of_portal: str = ""
         #self.raw_interactive_props_data: str = ""
@@ -75,7 +75,7 @@ class ExcelEditorStage:
         # self.parse_stage_entry_conditions()
         # self.parse_stage_exit_conditions()
         self.parse_props_in_stage()
-        self.parse_npcs_in_stage()
+        self.parse_actors_in_stage()
         self.parse_initialization_memory()
         self.parse_exit_of_portal()
         #self.parse_interactive_props()
@@ -118,16 +118,16 @@ class ExcelEditorStage:
             else:
                 logger.error(f"Invalid prop: {prop}")
 
-    def parse_npcs_in_stage(self) -> None:
-        npcs_in_stage: Optional[str] = self.data["npcs_in_stage"]
-        if npcs_in_stage is None:
+    def parse_actors_in_stage(self) -> None:
+        actors_in_stage: Optional[str] = self.data["actors_in_stage"]
+        if actors_in_stage is None:
             return
-        list_npcs_in_stage = npcs_in_stage.split(";")
-        for npc in list_npcs_in_stage:
-            if npc in self.npc_data_base:
-                self.npcs_in_stage.append(self.npc_data_base[npc])
+        list_actors_in_stage = actors_in_stage.split(";")
+        for actor in list_actors_in_stage:
+            if actor in self.actor_data_base:
+                self.actors_in_stage.append(self.actor_data_base[actor])
             else:
-                logger.error(f"Invalid npc: {npc}")
+                logger.error(f"Invalid actor: {actor}")
 
     def parse_initialization_memory(self) -> None:
         initialization_memory = self.data["initialization_memory"]
@@ -173,10 +173,10 @@ class ExcelEditorStage:
         
     def __str__(self) -> str:
         propsstr = ', '.join(str(prop) for prop in self.props_in_stage)
-        npcsstr = ', '.join(str(npc) for npc in self.npcs_in_stage)
+        actor_str = ', '.join(str(actor) for actor in self.actors_in_stage)
         entrystr = ', '.join(str(condition) for condition in self.stage_entry_conditions)
         exitstr = ', '.join(str(condition) for condition in self.stage_exit_conditions)
-        return "ExcelEditorStage({}, {}, stage_entry_conditions: {}, stage_exit_conditions: {}, props_in_stage: {}, npcs_in_stage: {})".format(self.data["name"], self.data["type"], entrystr, exitstr, propsstr, npcsstr)
+        return "ExcelEditorStage({}, {}, stage_entry_conditions: {}, stage_exit_conditions: {}, props_in_stage: {}, actors_in_stage: {})".format(self.data["name"], self.data["type"], entrystr, exitstr, propsstr, actor_str)
 
     def serialization_stage_conditions(self, conditions: List[ExcelEditorStageCondition]) -> List[Dict[str, str]]:
         list: List[Dict[str, str]] = []
@@ -191,12 +191,12 @@ class ExcelEditorStage:
             list.append(dict)
         return list
     
-    ## 这里只做NPC引用，所以导出名字即可
-    def stage_npcs_proxy(self, npcs: List[ExcelDataNPC]) -> List[Dict[str, str]]:
+    ## 这里只做Actor引用，所以导出名字即可
+    def stage_actors_proxy(self, actors: List[ExcelDataActor]) -> List[Dict[str, str]]:
         list: List[Dict[str, str]] = []
-        for npc in npcs:
+        for _d in actors:
             dict: Dict[str, str] = {} 
-            dict['name'] = npc.name  ## 这里只做NPC引用，所以导出名字即可
+            dict['name'] = _d.name  ## 这里只做引用，所以导出名字即可
             list.append(dict)
         return list
      
@@ -238,9 +238,9 @@ class ExcelEditorStage:
         dict: Dict[str, Any] = {}
         dict["name"] = data_stage.name
         props = self.stage_props_proxy(self.props_in_stage)
-        npcs = self.stage_npcs_proxy(self.npcs_in_stage)
+        actors = self.stage_actors_proxy(self.actors_in_stage)
         dict["props"] = props
-        dict["npcs"] = npcs
+        dict["actors"] = actors
         output_dict: Dict[str, Any] = {}
         output_dict["stage"] = dict
         return output_dict

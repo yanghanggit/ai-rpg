@@ -40,14 +40,14 @@ class AgentsKickOffSystem(InitializeProcessor, ExecuteProcessor):
         context = self.context
         entities: set[Entity] = context.get_group(Matcher(all_of=[ActorComponent], none_of=[PlayerComponent])).entities
         for entity in entities:
-            npccomp: ActorComponent = entity.get(ActorComponent)
+            actor_name: ActorComponent = entity.get(ActorComponent)
             #
             if not entity.has(PerceptionActionComponent):
-                perception_action = ActorAction(npccomp.name, PerceptionActionComponent.__name__, [npccomp.current_stage])
+                perception_action = ActorAction(actor_name.name, PerceptionActionComponent.__name__, [actor_name.current_stage])
                 entity.add(PerceptionActionComponent, perception_action)
             #
             if not entity.has(CheckStatusActionComponent):
-                check_status_action = ActorAction(npccomp.name, CheckStatusActionComponent.__name__, [npccomp.name])
+                check_status_action = ActorAction(actor_name.name, CheckStatusActionComponent.__name__, [actor_name.name])
                 entity.add(CheckStatusActionComponent, check_status_action)
 ####################################################################################################
     @override
@@ -115,17 +115,17 @@ class AgentsKickOffSystem(InitializeProcessor, ExecuteProcessor):
         context = self.context
         memory_system = context.kick_off_memory_system
         agent_connect_system = context.agent_connect_system
-        npcs: set[Entity] = context.get_group(Matcher(all_of=[ActorComponent])).entities
-        for npcentity in npcs:
-            npccomp: ActorComponent = npcentity.get(ActorComponent)
-            npcname: str = npccomp.name
-            npcmemory = memory_system.get_kick_off_memory(npcname)
-            if npcmemory == "":
-                logger.error(f"npcmemory is empty: {npcname}")
+        actor_entities: set[Entity] = context.get_group(Matcher(all_of=[ActorComponent])).entities
+        for _entity in actor_entities:
+            actor_comp: ActorComponent = _entity.get(ActorComponent)
+            _name: str = actor_comp.name
+            _kick_off_memory = memory_system.get_kick_off_memory(_name)
+            if _kick_off_memory == "":
+                logger.error(f"_kick_off_memory is empty: {_name}")
                 continue
-            prompt = kick_off_memory_actor_prompt(npcmemory)
-            agent_connect_system.add_async_request_task(npcname, prompt)
-            result[npcname] = prompt
+            prompt = kick_off_memory_actor_prompt(_kick_off_memory)
+            agent_connect_system.add_async_request_task(_name, prompt)
+            result[_name] = prompt
 
         return result
 ###############################################################################################################################################

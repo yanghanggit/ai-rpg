@@ -12,8 +12,8 @@ class PostActionSystem(ExecuteProcessor):
     @override
     def execute(self) -> None:
         # 在这里清除所有的行动
-        self.remove_world_actions() # 因为world和npc的actions，目前是一样的
-        self.remove_npc_actions()
+        self.remove_world_actions() # 因为world和actor的actions，目前是一样的
+        self.remove_actor_actions()
         self.remove_stage_actions()
         self.test()
 ############################################################################################################
@@ -32,10 +32,9 @@ class PostActionSystem(ExecuteProcessor):
                 if entity.has(actionsclass):
                     entity.remove(actionsclass)
 ############################################################################################################
-    def remove_npc_actions(self) -> None:
+    def remove_actor_actions(self) -> None:
         entities = self.context.get_group(Matcher(all_of = [ActorComponent], any_of = ACTOR_AVAILABLE_ACTIONS_REGISTER)).entities.copy()
         for entity in entities:
-            #logger.debug(f"remove_npc_actions: {entity}")
             for actionsclass in ACTOR_AVAILABLE_ACTIONS_REGISTER:
                 if entity.has(actionsclass):
                     entity.remove(actionsclass)
@@ -43,8 +42,8 @@ class PostActionSystem(ExecuteProcessor):
     def test(self) -> None:
         stageentities = self.context.get_group(Matcher(any_of = STAGE_AVAILABLE_ACTIONS_REGISTER)).entities
         assert len(stageentities) == 0, f"Stage entities with actions: {stageentities}"
-        npcentities = self.context.get_group(Matcher(any_of = ACTOR_AVAILABLE_ACTIONS_REGISTER)).entities
-        assert len(npcentities) == 0, f"NPC entities with actions: {npcentities}"
+        actor_entities = self.context.get_group(Matcher(any_of = ACTOR_AVAILABLE_ACTIONS_REGISTER)).entities
+        assert len(actor_entities) == 0, f"Actor entities with actions: {actor_entities}"
 ############################################################################################################
 
             

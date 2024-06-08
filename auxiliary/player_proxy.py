@@ -38,8 +38,8 @@ class PlayerProxy:
     def add_system_message(self, message: str) -> None:
         self.add_message(f"[system]", message)
 
-    def add_actor_message(self, npcname: str, message: str) -> None:
-        self.add_message(f"[{npcname}]", message)
+    def add_actor_message(self, actor_name: str, message: str) -> None:
+        self.add_message(f"[{actor_name}]", message)
 
     def add_stage_message(self, stagename: str, message: str) -> None:
         self.add_message(f"[{stagename}]", message)
@@ -78,8 +78,8 @@ def add_client_actor_message(entity: Entity, message: str) -> None:
         return
 
     #登陆的消息
-    npccomp: ActorComponent = entity.get(ActorComponent)
-    playerproxy.add_actor_message(npccomp.name, message)
+    actor_comp: ActorComponent = entity.get(ActorComponent)
+    playerproxy.add_actor_message(actor_comp.name, message)
 ###################################################################################################################
 ### 单人游戏，临时的名字
 TEST_TERMINAL_NAME = "北京柏林互动科技有限公司"

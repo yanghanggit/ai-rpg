@@ -42,28 +42,28 @@ class EndSystem(InitializeProcessor, ExecuteProcessor):
             logger.debug(f"/showworld: {worldcomp.name}")
 ############################################################################################################
     def showstages(self) -> None:
-        infomap = self.information_about_all_stages_and_npcs()
+        infomap = self.information_about_all_stages_and_actors()
         if len(infomap.keys()) > 0:
             logger.debug(f"/showstages: \n{infomap}")
         else:
-            logger.debug("/showstages: No stages and npcs now")
+            logger.debug("/showstages: No stages and actors now")
 ############################################################################################################
     def make_agent_chat_history_dump(self) -> None:
         self.context.agent_connect_system.dump_chat_history()
 ############################################################################################################
-    def information_about_all_stages_and_npcs(self) -> dict[str, list[str]]:
+    def information_about_all_stages_and_actors(self) -> dict[str, list[str]]:
         stagesentities = self.context.get_group(Matcher(StageComponent)).entities
-        npcsentities = self.context.get_group(Matcher(ActorComponent)).entities
+        actor_entities = self.context.get_group(Matcher(ActorComponent)).entities
         map: dict[str, list[str]] = {}
         for entity in stagesentities:
             stagecomp: StageComponent = entity.get(StageComponent)
             ls = map.get(stagecomp.name, [])
             map[stagecomp.name] = ls
 
-            for entity in npcsentities:
-                npccomp: ActorComponent = entity.get(ActorComponent)
-                if npccomp.current_stage == stagecomp.name:
-                    ls.append(npccomp.name)
+            for entity in actor_entities:
+                actor_comp: ActorComponent = entity.get(ActorComponent)
+                if actor_comp.current_stage == stagecomp.name:
+                    ls.append(actor_comp.name)
         return map
 ############################################################################################################
     def make_prop_files_dump(self) -> None:

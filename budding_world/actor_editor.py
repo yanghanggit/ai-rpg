@@ -5,37 +5,37 @@ sys.path.append(str(root_dir))
 from loguru import logger
 from typing import List, Dict, Any, Optional
 from budding_world.utils import (serialization_prop, proxy_prop)
-from budding_world.excel_data import ExcelDataNPC, ExcelDataProp
+from budding_world.excel_data import ExcelDataActor, ExcelDataProp
 
 
 ################################################################################################################   
-class ExcelEditorNPC:
-    def __init__(self, data: Any, npc_data_base: Dict[str, ExcelDataNPC], prop_data_base: Dict[str, ExcelDataProp]) -> None:
+class ExcelEditorActor:
+    def __init__(self, data: Any, actor_data_base: Dict[str, ExcelDataActor], prop_data_base: Dict[str, ExcelDataProp]) -> None:
         #
         self.data: Any = data
-        self.npc_data_base = npc_data_base
+        self.actor_data_base = actor_data_base
         self.prop_data_base = prop_data_base
         #
-        self.excelnpc: Optional[ExcelDataNPC] = None
+        self.excelactor: Optional[ExcelDataActor] = None
         self.excelprops: List[ExcelDataProp] = []
         self.initialization_memory: str = ""
-        self.npc_role_appearance: str = ""
+        self._appearance: str = ""
         #
-        if self.data["type"] not in ["World", "Player", "NPC"]:
-            logger.error(f"Invalid NPC type: {self.data['type']}")
+        if self.data["type"] not in ["World", "Player", "Actor"]:
+            logger.error(f"Invalid type: {self.data['type']}")
             return
         
-        self.excelnpc = self.npc_data_base[self.data["name"]]
-        self.parse_props_on_npc()
+        self.excelactor = self.actor_data_base[self.data["name"]]
+        self.parse_props_on_actor()
         self.parse_initialization_memory()
-        self.parse_npc_role_appearance()
+        self.parse_appearance()
 
         ### 这里可以添加属性？？？
         self.attributes: str = data.get("attributes", "")
         logger.debug(f"Stage: {self.data['name']} has attributes: {self.attributes}")
 
-    def parse_props_on_npc(self) -> None:
-        data: str = self.data["props_on_npc"]
+    def parse_props_on_actor(self) -> None:
+        data: str = self.data["props_on_actor"]
         if data is None:
             return        
         propfiles = data.split(";")
@@ -51,17 +51,17 @@ class ExcelEditorNPC:
             return
         self.initialization_memory = str(initialization_memory)
     
-    def parse_npc_role_appearance(self) -> None:
-        npc_role_appearance = self.data["npc_role_appearance"]
-        if npc_role_appearance is None:
+    def parse_appearance(self) -> None:
+        _appearance = self.data["appearance"]
+        if _appearance is None:
             return
-        self.npc_role_appearance = str(npc_role_appearance)
+        self._appearance = str(_appearance)
 
     def __str__(self) -> str:
         propsstr = ', '.join(str(prop) for prop in self.excelprops)
-        return f"ExcelEditorNPC({self.data['name']}, {self.data['type']}, files: {propsstr})"
+        return f"ExcelEditorActor({self.data['name']}, {self.data['type']}, files: {propsstr})"
     
-    def serialization_core(self, target: Optional[ExcelDataNPC]) -> Dict[str, str]:
+    def serialization_core(self, target: Optional[ExcelDataActor]) -> Dict[str, str]:
         if target is None:
             return {}
         dict: Dict[str, str] = {}
@@ -69,30 +69,29 @@ class ExcelEditorNPC:
         dict['codename'] = target.codename
         dict['url'] = target.localhost_api()
         dict['memory'] = self.initialization_memory
-        dict['role_appearance'] = self.npc_role_appearance
-        dict['mentioned_npcs'] = ";".join(target.mentioned_npcs)
+        dict['appearance'] = self._appearance
+        dict['mentioned_actors'] = ";".join(target.mentioned_actors)
         dict['mentioned_stages'] = ";".join(target.mentioned_stages)
         dict['attributes'] = self.attributes #target.attributes
         return dict
     
     # 核心函数！！！
     def serialization(self) -> Dict[str, Any]:
-        npc = self.serialization_core(self.excelnpc)
         dict: Dict[str, Any] = {}
-        dict["npc"] = npc
+        dict["actor"] = self.serialization_core(self.excelactor)
         return dict
     
     def proxy(self) -> Dict[str, Any]:
         output: Dict[str, Any] = {}
         #
-        npc_proxy: Dict[str, str] = {}
-        assert self.excelnpc is not None
-        npc_proxy['name'] = self.excelnpc.name
+        actor_proxy: Dict[str, str] = {}
+        assert self.excelactor is not None
+        actor_proxy['name'] = self.excelactor.name
         #
         props_proxy: List[Dict[str, str]] = []
         for prop in self.excelprops:
             props_proxy.append(proxy_prop(prop))#代理即可
         #
-        output["npc"] = npc_proxy
+        output["actor"] = actor_proxy
         output["props"] = props_proxy
         return output

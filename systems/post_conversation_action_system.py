@@ -23,7 +23,7 @@ class PostConversationActionSystem(ReactiveProcessor):
 ####################################################################################################
     @override 
     def filter(self, entity: Entity) -> bool:
-        # 如果去掉entity.has(PlayerComponent)。就是处理所有的NPC的对话事件，最保险的做法。
+        # 如果去掉entity.has(PlayerComponent)。就是处理所有的Actor的对话事件，最保险的做法。
         # 有PlayerComponent就节省一些
         return entity.has(PlayerComponent) and entity.has(ActorComponent)
 ####################################################################################################
@@ -72,18 +72,18 @@ class PostConversationActionSystem(ReactiveProcessor):
             else:
                 self.imme_request(stage_director_comp.name, batch_events2stage_prompt)
 
-        ### 处理NPC的
-        npcs_in_this_stage = self.context.actors_in_stage(stage_director_comp.name)
-        for npc_entity in npcs_in_this_stage:
-            npccomp: ActorComponent = npc_entity.get(ActorComponent)
-            raw_events2npc = stage_director_comp.to_actor(npccomp.name, self.context)     
-            if len(raw_events2npc) > 0:
-                batch_events2npc_prompt = self.batch_npc_events(stage_director_comp.name, raw_events2npc)
-                logger.info(f"PostConversationActionSystem: {npccomp.name} : {batch_events2npc_prompt}")
+        ### 处理Actor的
+        actors_in_this_stage = self.context.actors_in_stage(stage_director_comp.name)
+        for _entity in actors_in_this_stage:
+            actor_comp: ActorComponent = _entity.get(ActorComponent)
+            raw_events2actor = stage_director_comp.to_actor(actor_comp.name, self.context)     
+            if len(raw_events2actor) > 0:
+                batch_events2actor_prompt = self.batch_actor_events(stage_director_comp.name, raw_events2actor)
+                logger.info(f"PostConversationActionSystem: {actor_comp.name} : {batch_events2actor_prompt}")
                 if async_execute:
-                    agent_connect_system.add_async_request_task(npccomp.name, batch_events2npc_prompt, AgentRequestOption.ADD_PROMPT_TO_CHAT_HISTORY)
+                    agent_connect_system.add_async_request_task(actor_comp.name, batch_events2actor_prompt, AgentRequestOption.ADD_PROMPT_TO_CHAT_HISTORY)
                 else:
-                    self.imme_request(npccomp.name, batch_events2npc_prompt)
+                    self.imme_request(actor_comp.name, batch_events2actor_prompt)
 ####################################################################################################
     def imme_request(self, name: str, prompt: str) -> None:
         agent_connect_system: LangServeAgentSystem = self.context.agent_connect_system
@@ -97,8 +97,8 @@ class PostConversationActionSystem(ReactiveProcessor):
     def batch_stage_events(self, stagename: str, events2stage: List[str]) -> str:
         return batch_conversation_action_events_in_stage(stagename, events2stage, self.context)
 ####################################################################################################
-    def batch_npc_events(self, stagename: str, events2npc: List[str]) -> str:
-        return batch_conversation_action_events_in_stage(stagename, events2npc, self.context)
+    def batch_actor_events(self, stagename: str, events2actor: List[str]) -> str:
+        return batch_conversation_action_events_in_stage(stagename, events2actor, self.context)
 ####################################################################################################
     async def async_post_execute(self) -> None:
         # 并行执行requests

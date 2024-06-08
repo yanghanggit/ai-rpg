@@ -17,12 +17,12 @@ class StageDirectorComponent(DirectorComponentPrototype):
     def add_event(self, event: IDirectorEvent) -> None:
         self._events.append(event)
 ##########################################################################################################################
-    def to_actor(self, target_npc_name: str, extended_context: ExtendedContext) -> List[str]:
+    def to_actor(self, target_actor_name: str, extended_context: ExtendedContext) -> List[str]:
         batch: List[str] = []
         for event in self._events:
-            res = event.to_actor(target_npc_name, extended_context)
+            res = event.to_actor(target_actor_name, extended_context)
             if res != "":
-                res = replace_all_mentions_of_your_name_with_you(res, target_npc_name)
+                res = replace_all_mentions_of_your_name_with_you(res, target_actor_name)
                 batch.append(res)
         return batch
 ##########################################################################################################################
@@ -37,7 +37,7 @@ class StageDirectorComponent(DirectorComponentPrototype):
     def clear(self) -> None:
         self._events.clear()
 ##########################################################################################################################
-    def to_player(self, target_npc_name: str, extended_context: ExtendedContext) -> List[str]:
+    def to_player(self, target_actor_name: str, extended_context: ExtendedContext) -> List[str]:
         # 哭，循环引用，临时就这么写吧, 这些不用客户端显示
         from systems.whisper_action_system import WhisperEvent
         from systems.speak_action_system import SpeakEvent
@@ -54,9 +54,9 @@ class StageDirectorComponent(DirectorComponentPrototype):
             or isinstance(event, ActorCheckStatusEvent)
             if check:
                 continue
-            res = event.to_actor(target_npc_name, extended_context)
+            res = event.to_actor(target_actor_name, extended_context)
             if res != "":
-                res = replace_all_mentions_of_your_name_with_you(res, target_npc_name)
+                res = replace_all_mentions_of_your_name_with_you(res, target_actor_name)
                 batch.append(res)
         return batch
 ##########################################################################################################################

@@ -46,20 +46,20 @@ class PlayerCommand(ABC):
 ####################################################################################################################################
 class PlayerLogin(PlayerCommand):
 
-    def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, login_npc_name: str) -> None:
+    def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, login_actor_name: str) -> None:
         super().__init__(name, game, playerproxy)
-        self.login_npc_name = login_npc_name
+        self.login_actor_name = login_actor_name
 
     def execute(self) -> None:
         context = self.game.extendedcontext
-        login_npc_name = self.login_npc_name
+        login_name = self.login_actor_name
         myname = self.playerproxy.name
-        logger.debug(f"{self.inputname}, player name: {myname}, target name: {login_npc_name}")
+        logger.debug(f"{self.inputname}, player name: {myname}, target name: {login_name}")
 
-        npcentity = context.get_actor_entity(login_npc_name)
-        if npcentity is None:
+        _entity = context.get_actor_entity(login_name)
+        if _entity is None:
             # 扮演的角色，本身就不存在于这个世界
-            logger.error(f"{login_npc_name}, npc is None, login failed")
+            logger.error(f"{login_name}, actor is None, login failed")
             return
 
         playerentity = context.get_player_entity(myname)
@@ -68,18 +68,18 @@ class PlayerLogin(PlayerCommand):
             logger.error(f"{myname}, already login")
             return
         
-        playercomp: PlayerComponent = npcentity.get(PlayerComponent)
+        playercomp: PlayerComponent = _entity.get(PlayerComponent)
         if playercomp is None:
-            # 扮演的角色不是设定的玩家可控制NPC
-            logger.error(f"{login_npc_name}, npc is not player ctrl npc, login failed")
+            # 扮演的角色不是设定的玩家可控制Actor
+            logger.error(f"{login_name}, actor is not player ctrl actor, login failed")
             return
         
         if playercomp.name != "" and playercomp.name != myname:
             # 已经有人控制了，但不是你
-            logger.error(f"{login_npc_name}, player already ctrl by some player {playercomp.name}, login failed")
+            logger.error(f"{login_name}, player already ctrl by some player {playercomp.name}, login failed")
             return
     
-        npcentity.replace(PlayerComponent, myname)
+        _entity.replace(PlayerComponent, myname)
 
         #登陆的消息
         self.playerproxy.add_system_message(self.game.about_game)
@@ -88,10 +88,10 @@ class PlayerLogin(PlayerCommand):
         time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.playerproxy.add_system_message(f"login: {myname}, time = {time}")
 
-        # 初始化的NPC记忆
+        # 初始化的Actor记忆
         memory_system = context.kick_off_memory_system
-        initmemory =  memory_system.get_kick_off_memory(self.login_npc_name)
-        self.playerproxy.add_actor_message(self.login_npc_name, initmemory)
+        initmemory =  memory_system.get_kick_off_memory(self.login_actor_name)
+        self.playerproxy.add_actor_message(self.login_actor_name, initmemory)
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################     

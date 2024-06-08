@@ -6,54 +6,54 @@ import os
 from loguru import logger
 import json
 from typing import List, Dict, Any, Set
-from budding_world.excel_data import ExcelDataNPC, ExcelDataStage, ExcelDataProp
-from budding_world.npc_editor import ExcelEditorNPC
+from budding_world.excel_data import ExcelDataActor, ExcelDataStage, ExcelDataProp
+from budding_world.actor_editor import ExcelEditorActor
 from budding_world.stage_editor import ExcelEditorStage
 from budding_world.utils import serialization_prop
 import pandas as pd
 
 EDITOR_WORLD_TYPE = "World"
 EDITOR_PLAYER_TYPE = "Player"
-EDITOR_NPC_TYPE = "NPC"
+EDITOR_ACTOR_TYPE = "Actor"
 EDITOR_STAGE_TYPE = "Stage"
 EDITOR_CONFIG_TYPE = "Config"
 
 ################################################################################################################
 class ExcelEditorWorld:
-    def __init__(self, worldname: str, data: List[Any], npc_data_base: Dict[str, ExcelDataNPC], prop_data_base: Dict[str, ExcelDataProp], stage_data_base: Dict[str, ExcelDataStage]) -> None:
+    def __init__(self, worldname: str, data: List[Any], actor_data_base: Dict[str, ExcelDataActor], prop_data_base: Dict[str, ExcelDataProp], stage_data_base: Dict[str, ExcelDataStage]) -> None:
         # 根数据
         self.name: str = worldname
         self.data: List[Any] = data
-        self.npc_data_base = npc_data_base
+        self.actor_data_base = actor_data_base
         self.prop_data_base = prop_data_base
         self.stage_data_base = stage_data_base
 
         #笨一点，先留着吧。。。
         self.worlds: List[Any] = []
         self.players: List[Any] = []
-        self.npcs: List[Any] = []
+        self.actors: List[Any] = []
         self.stages: List[Any] = []
         self._config: List[Any] = []
 
         #真正的构建数据
-        self.editor_worlds: List[ExcelEditorNPC] = []
-        self.editor_players: List[ExcelEditorNPC] = []
-        self.editor_npcs: List[ExcelEditorNPC] = []
+        self.editor_worlds: List[ExcelEditorActor] = []
+        self.editor_players: List[ExcelEditorActor] = []
+        self.editor_actors: List[ExcelEditorActor] = []
         self.editor_stages: List[ExcelEditorStage] = []
         self.editor_props: List[ExcelDataProp] = []
         
         ##把数据分类
-        self.classify_data(self.worlds, self.players, self.npcs, self.stages, self._config)
+        self.classify_data(self.worlds, self.players, self.actors, self.stages, self._config)
         ##根据分类各种处理。。。
         self.editor_worlds = self.create_worlds(self.worlds)
         self.editor_players = self.create_players(self.players)
-        self.editor_npcs = self.create_npcs(self.npcs)
+        self.editor_actors = self.create_actors(self.actors)
         self.editor_stages = self.create_stages(self.stages)
 
         #config = self.about_game()
 
         ##提取全部的道具。
-        allprops = self.parse_props_from_npc(self.editor_worlds) + self.parse_props_from_npc(self.editor_players) + self.parse_props_from_npc(self.editor_npcs) + self.parse_props_from_stage(self.editor_stages)
+        allprops = self.parse_props_from_actor(self.editor_worlds) + self.parse_props_from_actor(self.editor_players) + self.parse_props_from_actor(self.editor_actors) + self.parse_props_from_stage(self.editor_stages)
         globalnames: Set[str] = set()
         self.editor_props.clear()
         for prop in allprops:
@@ -72,10 +72,10 @@ class ExcelEditorWorld:
             about_game = data['description']
         return about_game
 ################################################################################################################
-    def parse_props_from_npc(self, npcs: List[ExcelEditorNPC]) -> List[ExcelDataProp]:
+    def parse_props_from_actor(self, actors: List[ExcelEditorActor]) -> List[ExcelDataProp]:
         res = []
-        for npc in npcs:
-            for prop in npc.excelprops:
+        for _d in actors:
+            for prop in _d.excelprops:
                 if prop not in res:
                     res.append(prop)
         return res
@@ -95,11 +95,11 @@ class ExcelEditorWorld:
         return res
 ################################################################################################################
     #先将数据分类
-    def classify_data(self, out_worlds: List[Any], out_players: List[Any], out_npcs: List[Any], out_stages: List[Any], out_config: List[Any]) -> None:
+    def classify_data(self, out_worlds: List[Any], out_players: List[Any], out_actors: List[Any], out_stages: List[Any], out_config: List[Any]) -> None:
         #
         out_worlds.clear()
         out_players.clear()
-        out_npcs.clear()
+        out_actors.clear()
         out_stages.clear()
         #
         for item in self.data:
@@ -107,8 +107,8 @@ class ExcelEditorWorld:
                 out_worlds.append(item)
             elif item["type"] == EDITOR_PLAYER_TYPE:
                 out_players.append(item)
-            elif item["type"] == EDITOR_NPC_TYPE:
-                out_npcs.append(item)
+            elif item["type"] == EDITOR_ACTOR_TYPE:
+                out_actors.append(item)
             elif item["type"] == EDITOR_STAGE_TYPE:
                 out_stages.append(item)
             elif item["type"] == EDITOR_CONFIG_TYPE:
@@ -116,20 +116,20 @@ class ExcelEditorWorld:
             else:
                 logger.error(f"Invalid type: {item['type']}")
 ################################################################################################################
-    def create_worlds(self, worlds: List[Any]) -> List[ExcelEditorNPC]:
-        return self.create_npcs(worlds)
+    def create_worlds(self, worlds: List[Any]) -> List[ExcelEditorActor]:
+        return self.create_actors(worlds)
 ################################################################################################################
-    def create_players(self, players: List[Any]) -> List[ExcelEditorNPC]:
-        return self.create_npcs(players)
+    def create_players(self, players: List[Any]) -> List[ExcelEditorActor]:
+        return self.create_actors(players)
 ################################################################################################################
-    def create_npcs(self, npcs: List[Any]) -> List[ExcelEditorNPC]:
-        res: List[ExcelEditorNPC] = []
-        for item in npcs:
-            if item['name'] not in self.npc_data_base:
-                logger.error(f"Invalid NPC name: {item['name']}")
+    def create_actors(self, actors: List[Any]) -> List[ExcelEditorActor]:
+        res: List[ExcelEditorActor] = []
+        for item in actors:
+            if item['name'] not in self.actor_data_base:
+                logger.error(f"Invalid  name: {item['name']}")
                 continue
-            editor_npc = ExcelEditorNPC(item, self.npc_data_base, self.prop_data_base)
-            res.append(editor_npc)
+            editor_actor = ExcelEditorActor(item, self.actor_data_base, self.prop_data_base)
+            res.append(editor_actor)
         return res
 ################################################################################################################
     def create_stages(self, stages: List[Any]) -> List[ExcelEditorStage]:
@@ -138,16 +138,16 @@ class ExcelEditorWorld:
             if item['name'] not in self.stage_data_base:
                 logger.error(f"Invalid Stage name: {item['name']}")
                 continue
-            editor_stage = ExcelEditorStage(item, self.npc_data_base, self.prop_data_base, self.stage_data_base)
+            editor_stage = ExcelEditorStage(item, self.actor_data_base, self.prop_data_base, self.stage_data_base)
             res.append(editor_stage)
         return res
 
     #最后生成JSON
     def serialization(self) -> Dict[str, Any]:
         output: Dict[str, Any] = {}
-        output["worlds"] = [editor_npc.proxy() for editor_npc in self.editor_worlds]
-        output["players"] = [editor_npc.proxy() for editor_npc in self.editor_players]
-        output["npcs"] = [editor_npc.proxy() for editor_npc in self.editor_npcs]
+        output["worlds"] = [editor_actor.proxy() for editor_actor in self.editor_worlds]
+        output["players"] = [editor_actor.proxy() for editor_actor in self.editor_players]
+        output["actors"] = [editor_actor.proxy() for editor_actor in self.editor_actors]
         output["stages"] = [editor_stage.proxy() for editor_stage in self.editor_stages]
         output["database"] = self.data_base()
 
@@ -162,8 +162,8 @@ class ExcelEditorWorld:
     
     def data_base(self) -> Dict[str, Any]:
         output: Dict[str, Any] = {}
-        npc_data_base = self.editor_worlds + self.editor_players + self.editor_npcs
-        output["npcs"] = [data.serialization() for data in npc_data_base]
+        actor_data_base = self.editor_worlds + self.editor_players + self.editor_actors
+        output["actors"] = [data.serialization() for data in actor_data_base]
         output["stages"] = [data.serialization() for data in self.editor_stages]
         output["props"] = []
         for prop in self.editor_props:

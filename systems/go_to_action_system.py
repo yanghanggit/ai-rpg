@@ -10,7 +10,7 @@ from loguru import logger
 from auxiliary.director_component import notify_stage_director
 from typing import cast, override
 from auxiliary.director_event import IDirectorEvent
-from systems.director_system import director_events_to_npc
+from systems.director_system import director_events_to_actor
 from auxiliary.cn_builtin_prompt import ( leave_stage_prompt,
                                           enter_stage_prompt1,
                                           enter_stage_prompt2,
@@ -21,15 +21,15 @@ from auxiliary.cn_builtin_prompt import ( leave_stage_prompt,
 ####################################################################################################################################
 class ActorGoToFailedBecauseStageIsInvalidEvent(IDirectorEvent):
 
-    def __init__(self, npcname: str, stagename: str) -> None:
-        self.npcname = npcname
+    def __init__(self, actor_name: str, stagename: str) -> None:
+        self.actor_name = actor_name
         self.stagename = stagename
 
-    def to_actor(self, npcname: str, extended_context: ExtendedContext) -> str:
-        if npcname != self.npcname:
+    def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
+        if actor_name != self.actor_name:
             # 跟你无关不用关注，原因类的东西，是失败后矫正用，所以只有自己知道即可
             return ""
-        leave_for_stage_is_invalid_event = leave_for_stage_failed_because_stage_is_invalid_prompt(self.npcname, self.stagename)
+        leave_for_stage_is_invalid_event = leave_for_stage_failed_because_stage_is_invalid_prompt(self.actor_name, self.stagename)
         return leave_for_stage_is_invalid_event
     
     def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
@@ -39,15 +39,15 @@ class ActorGoToFailedBecauseStageIsInvalidEvent(IDirectorEvent):
 ####################################################################################################################################
 class ActorGoToFailedBecauseAlreadyInStage(IDirectorEvent):
 
-    def __init__(self, npcname: str, stagename: str) -> None:
-        self.npcname = npcname
+    def __init__(self, actor_name: str, stagename: str) -> None:
+        self.actor_name = actor_name
         self.stagename = stagename
 
-    def to_actor(self, npcname: str, extended_context: ExtendedContext) -> str:
-        if npcname != self.npcname:
+    def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
+        if actor_name != self.actor_name:
             # 跟你无关不用关注，原因类的东西，是失败后矫正用，所以只有自己知道即可
             return ""
-        already_in_stage_event = leave_for_stage_failed_because_already_in_stage_prompt(self.npcname, self.stagename)
+        already_in_stage_event = leave_for_stage_failed_because_already_in_stage_prompt(self.actor_name, self.stagename)
         return already_in_stage_event
     
     def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
@@ -67,38 +67,38 @@ class GoToActionHelper:
 ####################################################################################################################################
 class ActorLeaveStageEvent(IDirectorEvent):
 
-    def __init__(self, npc_name: str, current_stage_name: str, leave_for_stage_name: str) -> None:
-        self.npc_name = npc_name
+    def __init__(self, actor_name: str, current_stage_name: str, leave_for_stage_name: str) -> None:
+        self.actor_name = actor_name
         self.current_stage_name = current_stage_name
         self.leave_for_stage_name = leave_for_stage_name
 
-    def to_actor(self, npcname: str, extended_context: ExtendedContext) -> str:
-        event = leave_stage_prompt(self.npc_name, self.current_stage_name, self.leave_for_stage_name)
+    def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
+        event = leave_stage_prompt(self.actor_name, self.current_stage_name, self.leave_for_stage_name)
         return event
     
     def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
-        event = leave_stage_prompt(self.npc_name, self.current_stage_name, self.leave_for_stage_name)
+        event = leave_stage_prompt(self.actor_name, self.current_stage_name, self.leave_for_stage_name)
         return event
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
 class ActorEnterStageEvent(IDirectorEvent):
 
-    def __init__(self, npc_name: str, stage_name: str, last_stage_name: str) -> None:
-        self.npc_name = npc_name
+    def __init__(self, actor_name: str, stage_name: str, last_stage_name: str) -> None:
+        self.actor_name = actor_name
         self.stage_name = stage_name
         self.last_stage_name = last_stage_name
 
-    def to_actor(self, npcname: str, extended_context: ExtendedContext) -> str:
-        if npcname != self.npc_name:
+    def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
+        if actor_name != self.actor_name:
             # 目标场景内的一切听到的是这个:"xxx进入了场景"
-            return enter_stage_prompt1(self.npc_name, self.stage_name)
+            return enter_stage_prompt1(self.actor_name, self.stage_name)
             
         #通知我自己，我从哪里去往了哪里。这样prompt更加清晰一些
-        return enter_stage_prompt2(self.npc_name, self.stage_name, self.last_stage_name)
+        return enter_stage_prompt2(self.actor_name, self.stage_name, self.last_stage_name)
     
     def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
-        event = enter_stage_prompt1(self.npc_name, self.stage_name)
+        event = enter_stage_prompt1(self.actor_name, self.stage_name)
         return event    
 ####################################################################################################################################
 ####################################################################################################################################
@@ -125,7 +125,7 @@ class GoToActionSystem(ReactiveProcessor):
 
         for entity in entities:
             if not entity.has(ActorComponent):
-                logger.warning(f"LeaveForActionSystem: {entity} is not NPC?!")
+                logger.warning(f"GoToActionSystem: {entity} is not Actor?!")
                 continue
             
             leavecomp: GoToActionComponent = entity.get(GoToActionComponent)
@@ -156,47 +156,47 @@ class GoToActionSystem(ReactiveProcessor):
         target_stage_name = helper.target_stage_name
         target_stage_entity = helper.target_stage_entity
         assert target_stage_entity is not None
-        npccomp: ActorComponent = entity.get(ActorComponent)
+        actor_comp: ActorComponent = entity.get(ActorComponent)
 
-        replace_name = npccomp.name
+        replace_name = actor_comp.name
         replace_current_stage = target_stage_name
         entity.replace(ActorComponent, replace_name, replace_current_stage)
         self.context.change_stage_tag_component(entity, current_stage_name, replace_current_stage)
 
         #进入场景的事件需要通知相关的人
-        notify_stage_director(self.context, entity, ActorEnterStageEvent(npccomp.name, target_stage_name, current_stage_name))
+        notify_stage_director(self.context, entity, ActorEnterStageEvent(actor_comp.name, target_stage_name, current_stage_name))
 ###############################################################################################################################################
     def before_leave_stage(self, helper: GoToActionHelper) -> None:
         #目前就是强行刷一下history
         self.direct_before_leave(helper)
 ###############################################################################################################################################
     def direct_before_leave(self, helper: GoToActionHelper) -> None:
-        director_events_to_npc(self.context, helper.who_wana_leave_entity)
+        director_events_to_actor(self.context, helper.who_wana_leave_entity)
 ###############################################################################################################################################
     def leave_stage(self, helper: GoToActionHelper) -> None:
         entity: Entity = helper.who_wana_leave_entity
-        npccomp: ActorComponent = entity.get(ActorComponent)
+        actor_comp: ActorComponent = entity.get(ActorComponent)
         assert helper.current_stage_entity is not None
 
         # 必须在场景信息还有效的时刻做通知
-        notify_stage_director(self.context, entity, ActorLeaveStageEvent(npccomp.name, helper.current_stage_name, helper.target_stage_name))
+        notify_stage_director(self.context, entity, ActorLeaveStageEvent(actor_comp.name, helper.current_stage_name, helper.target_stage_name))
 
         # 离开场景 设置成空
-        replace_name = npccomp.name
+        replace_name = actor_comp.name
         replace_current_stage = "" #设置空！！！！！
         entity.replace(ActorComponent, replace_name, replace_current_stage)
         self.context.change_stage_tag_component(entity, helper.current_stage_name, replace_current_stage)
 ###############################################################################################################################################
     def after_enter_stage(self, helper: GoToActionHelper) -> None:
         entity: Entity = helper.who_wana_leave_entity
-        npccomp: ActorComponent = entity.get(ActorComponent)
-        stagename = npccomp.current_stage
-        npcs = self.context.actors_in_stage(stagename)
-        for npc in npcs:
-            if npc.has(PerceptionActionComponent):
+        actor_comp: ActorComponent = entity.get(ActorComponent)
+        stagename = actor_comp.current_stage
+        actor_entities = self.context.actors_in_stage(stagename)
+        for _entity in actor_entities:
+            if _entity.has(PerceptionActionComponent):
                 continue
             #进入新的场景之后，进入者与场景内所有人都加一次感知，这里会自动检查外貌信息
-            action = ActorAction(npccomp.name, PerceptionActionComponent.__name__, [stagename])
-            npc.add(PerceptionActionComponent, action)
+            action = ActorAction(actor_comp.name, PerceptionActionComponent.__name__, [stagename])
+            _entity.add(PerceptionActionComponent, action)
 ###############################################################################################################################################
 

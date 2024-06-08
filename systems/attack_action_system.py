@@ -20,7 +20,7 @@ class KillSomeoneEvent(IDirectorEvent):
         self.attacker = attacker
         self.target = target
 
-    def to_actor(self, npcname: str, extended_context: ExtendedContext) -> str:
+    def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
         event = kill_someone(self.attacker, self.target)
         return event
     
@@ -39,7 +39,7 @@ class AttackSomeoneEvent(IDirectorEvent):
         self.curhp = curhp
         self.maxhp = maxhp
 
-    def to_actor(self, npcname: str, extended_context: ExtendedContext) -> str:
+    def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
         event = attack_someone_prompt(self.attacker, self.target, self.damage, self.curhp, self.maxhp)
         return event
     

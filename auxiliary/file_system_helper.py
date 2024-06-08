@@ -3,7 +3,7 @@ from auxiliary.file_def import ActorArchiveFile, StageArchiveFile
 from auxiliary.file_system import FileSystem
 
 ####################################################################################################
-# 为一个NPC添加他认识的其他NPC的文件
+# 为一个Actor添加他认识的其他Actor的文件
 def add_actor_archive_files(file_system: FileSystem, myname: str, others_names: Set[str]) -> List[ActorArchiveFile]:
 
     res: List[ActorArchiveFile] = []
@@ -18,16 +18,16 @@ def add_actor_archive_files(file_system: FileSystem, myname: str, others_names: 
 
     return res
 ####################################################################################################
-# 更新一个NPC的档案文件
-def update_actor_archive_file(file_system: FileSystem, ownersname: str, npcname: str, appearance: str) -> Optional[ActorArchiveFile]:
-    file = file_system.get_actor_archive(ownersname, npcname)
+# 更新一个Actor的档案文件
+def update_actor_archive_file(file_system: FileSystem, ownersname: str, actorname: str, appearance: str) -> Optional[ActorArchiveFile]:
+    file = file_system.get_actor_archive(ownersname, actorname)
     if file is None:
         return None
     file.appearance = appearance
     file_system.write_actor_archive(file)
     return file
 ####################################################################################################
-## 为一个NPC添加他认识的Stage的文件
+## 为一个Actor添加他认识的Stage的文件
 def add_stage_archive_files(file_system: FileSystem, myname: str, stage_names: Set[str]) -> List[StageArchiveFile]:
     
     res: List[StageArchiveFile] = []

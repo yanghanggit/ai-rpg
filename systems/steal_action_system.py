@@ -14,7 +14,7 @@ from auxiliary.cn_builtin_prompt import steal_action_prompt
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class NPCStealEvent(IDirectorEvent):
+class ActorStealEvent(IDirectorEvent):
 
     def __init__(self, whosteal: str, targetname: str, propname: str, stealres: bool) -> None:
         self.whosteal = whosteal
@@ -22,8 +22,8 @@ class NPCStealEvent(IDirectorEvent):
         self.propname = propname
         self.stealres = stealres
        
-    def to_actor(self, npcname: str, extended_context: ExtendedContext) -> str:
-        if npcname != self.whosteal or npcname != self.targetname:
+    def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
+        if actor_name != self.whosteal or actor_name != self.targetname:
             return ""
         
         stealcontent = steal_action_prompt(self.whosteal, self.targetname, self.propname, self.stealres)
@@ -77,25 +77,25 @@ class StealActionSystem(ReactiveProcessor):
         
             propname = message
             stealres = self._steal_(entity, targetname, propname)
-            notify_stage_director(self.context, entity, NPCStealEvent(safename, targetname, propname, stealres))
+            notify_stage_director(self.context, entity, ActorStealEvent(safename, targetname, propname, stealres))
             if stealres:
                 steal_any_success = True
 
         return steal_any_success
 ###################################################################################################################
-    def _steal_(self, entity: Entity, target_npc_name: str, propname: str) -> bool:
+    def _steal_(self, entity: Entity, target_actor_name: str, propname: str) -> bool:
         filesystem = self.context.file_system
-        prop = filesystem.get_prop_file(target_npc_name, propname)
+        prop = filesystem.get_prop_file(target_actor_name, propname)
         if prop is None:
             return False
         safename = self.context.safe_get_entity_name(entity)
-        filesystem.exchange_prop_file(target_npc_name, safename, propname)
+        filesystem.exchange_prop_file(target_actor_name, safename, propname)
         return True
 ###################################################################################################################
     def after_steal_success(self, entity: Entity) -> None:
         if entity.has(CheckStatusActionComponent):
             return
-        npccomp: ActorComponent = entity.get(ActorComponent)
-        action = ActorAction(npccomp.name, CheckStatusActionComponent.__name__, [npccomp.name])
+        actor_comp: ActorComponent = entity.get(ActorComponent)
+        action = ActorAction(actor_comp.name, CheckStatusActionComponent.__name__, [actor_comp.name])
         entity.add(CheckStatusActionComponent, action)
 #####################################################################################################################

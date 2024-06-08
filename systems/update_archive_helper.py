@@ -14,19 +14,19 @@ class UpdareArchiveHelper:
         ##我的参数
         self.context = context
         self._stagenames: Set[str] = set()
-        self._npcnames: Set[str] = set()
-        self._npc_chat_history: Dict[str, str] = {}
-        self._npcs_with_props_info: Dict[str, List[str]] = {}
+        self._actor_names: Set[str] = set()
+        self._agent_chat_history: Dict[str, str] = {}
+        self._actors_with_props_info: Dict[str, List[str]] = {}
 ###############################################################################################################################################
     def prepare(self) -> None:
         ##step1: 所有拥有初始化记忆的场景拿出来
         self.prepare_stage_names()
-        ##step2: 所有拥有初始化记忆的NPC拿出来
-        self.prepare_npc_names()
-        ##step3: 打包NPC的对话历史，方便后续查找
-        self.prepare_npc_chat_history()
-        ##step4: 所有拥有初始化记忆的NPC的道具信息拿出来
-        self.prepare_npc_with_props_info()
+        ##step2: 所有拥有初始化记忆的Actor拿出来
+        self.prepare_actor_names()
+        ##step3: 打包Actor的对话历史，方便后续查找
+        self.prepare_agent_chat_history()
+        ##step4: 所有拥有初始化记忆的Actor的道具信息拿出来
+        self.prepare_actors_with_props_info()
 ###############################################################################################################################################
     def prepare_stage_names(self) -> None:
         self._stagenames.clear()
@@ -42,104 +42,104 @@ class UpdareArchiveHelper:
             else:
                 logger.error(f"stage {stagecomp.name} has no init memory?")
 ###############################################################################################################################################
-    def prepare_npc_names(self) -> None:
-        self._npcnames.clear()
+    def prepare_actor_names(self) -> None:
+        self._actor_names.clear()
         #
         context = self.context
         memory_system = context.kick_off_memory_system
-        npcs: set[Entity] = context.get_group(Matcher(ActorComponent)).entities
-        for npc in npcs:
-            npccomp: ActorComponent = npc.get(ActorComponent)
-            npcmemory = memory_system.get_kick_off_memory(npccomp.name)
-            if npcmemory != "":
-                self._npcnames.add(npccomp.name)
+        actor_entities: set[Entity] = context.get_group(Matcher(ActorComponent)).entities
+        for _en in actor_entities:
+            actor_comp: ActorComponent = _en.get(ActorComponent)
+            kick_off_memory = memory_system.get_kick_off_memory(actor_comp.name)
+            if kick_off_memory != "":
+                self._actor_names.add(actor_comp.name)
             else:
-                logger.error(f"npc {npccomp.name} has no init memory?")
+                logger.error(f"actor {actor_comp.name} has no init memory?")
 ###############################################################################################################################################           
-    def prepare_npc_chat_history(self) -> None:
-        self._npc_chat_history.clear()
+    def prepare_agent_chat_history(self) -> None:
+        self._agent_chat_history.clear()
         context = self.context
         agent_connect_system = context.agent_connect_system
-        npcs: set[Entity] = context.get_group(Matcher(ActorComponent)).entities
-        for npc in npcs:
-            npccomp: ActorComponent = npc.get(ActorComponent)
-            chathistory: List[str] = agent_connect_system.create_chat_history_dump(npccomp.name)
+        actor_entities: set[Entity] = context.get_group(Matcher(ActorComponent)).entities
+        for _en in actor_entities:
+            actor_comp: ActorComponent = _en.get(ActorComponent)
+            chathistory: List[str] = agent_connect_system.create_chat_history_dump(actor_comp.name)
             pack_all = "\n".join(chathistory)
-            self._npc_chat_history[npccomp.name] = pack_all
+            self._agent_chat_history[actor_comp.name] = pack_all
 ###############################################################################################################################################
-    def prepare_npc_with_props_info(self) ->  None:
-        self._npcs_with_props_info.clear()
+    def prepare_actors_with_props_info(self) ->  None:
+        self._actors_with_props_info.clear()
         #
         context = self.context
         file_system = context.file_system
-        npcs: set[Entity] = context.get_group(Matcher(ActorComponent)).entities
-        for npc in npcs:
-            npccomp: ActorComponent = npc.get(ActorComponent)
-            propfiles = file_system.get_prop_files(npccomp.name)
+        actor_entities: set[Entity] = context.get_group(Matcher(ActorComponent)).entities
+        for _en in actor_entities:
+            actor_comp: ActorComponent = _en.get(ActorComponent)
+            propfiles = file_system.get_prop_files(actor_comp.name)
             prop_and_desc: list[str] = []
             for file in propfiles:
                 prop_and_desc.append(f"{file.name}:{file.prop._description}")
-            self._npcs_with_props_info[npccomp.name] = prop_and_desc
+            self._actors_with_props_info[actor_comp.name] = prop_and_desc
 ###############################################################################################################################################
     @property
     def stagenames(self) -> Set[str]:
         return self._stagenames
 ###############################################################################################################################################
     @property
-    def npcnames(self) -> Set[str]:
-        return self._npcnames
+    def actor_names(self) -> Set[str]:
+        return self._actor_names
 ###############################################################################################################################################
-    def get_npcs_with_props_info(self, npcname: str) -> List[str]:
-        return self._npcs_with_props_info.get(npcname, [])
+    def get_actors_with_props_info(self, actor_name: str) -> List[str]:
+        return self._actors_with_props_info.get(actor_name, [])
 ###############################################################################################################################################
-    def stages_you_know(self, npcname: str) -> Set[str]:
+    def stages_you_know(self, actor_name: str) -> Set[str]:
         #需要检查的场景名
         need_check_names = self.stagenames
         #人身上道具提到的
-        mentioned_in_prop_description = self.name_mentioned_in_prop_description(need_check_names, npcname)
+        mentioned_in_prop_description = self.name_mentioned_in_prop_description(need_check_names, actor_name)
         #记忆中出现的
-        mentioned_in_memory = self.name_mentioned_in_memory(need_check_names, npcname)
+        mentioned_in_memory = self.name_mentioned_in_memory(need_check_names, actor_name)
         #对话历史与上下文中出现的
-        mentioned_in_chat_history = self.name_mentioned_in_chat_history(need_check_names, npcname)
+        mentioned_in_chat_history = self.name_mentioned_in_chat_history(need_check_names, actor_name)
         #取并集
         finalres = mentioned_in_prop_description | mentioned_in_memory | mentioned_in_chat_history 
         return finalres
 ###############################################################################################################################################
-    def who_do_you_know(self, npcname: str) -> Set[str]:
+    def who_do_you_know(self, actor_name: str) -> Set[str]:
         #需要检查的场景名
-        need_check_names = self.npcnames
+        need_check_names = self.actor_names
         #人身上道具提到的
-        mentioned_in_prop_description = self.name_mentioned_in_prop_description(need_check_names, npcname)
+        mentioned_in_prop_description = self.name_mentioned_in_prop_description(need_check_names, actor_name)
         #记忆中出现的
-        mentioned_in_memory = self.name_mentioned_in_memory(need_check_names, npcname)
+        mentioned_in_memory = self.name_mentioned_in_memory(need_check_names, actor_name)
         #对话历史与上下文中出现的
-        mentioned_in_chat_history = self.name_mentioned_in_chat_history(need_check_names, npcname)
+        mentioned_in_chat_history = self.name_mentioned_in_chat_history(need_check_names, actor_name)
         #取并集
         finalres = mentioned_in_prop_description | mentioned_in_memory | mentioned_in_chat_history
-        finalres.discard(npcname) ##去掉自己，没必要认识自己
+        finalres.discard(actor_name) ##去掉自己，没必要认识自己
         return finalres
 ###############################################################################################################################################
-    def name_mentioned_in_prop_description(self, checknames: Set[str], npcname: str) -> Set[str]:
+    def name_mentioned_in_prop_description(self, checknames: Set[str], actor_name: str) -> Set[str]:
         res: Set[str] = set()
-        propinfolist = self._npcs_with_props_info.get(npcname, [])
+        propinfolist = self._actors_with_props_info.get(actor_name, [])
         for propinfo in propinfolist:
             for name in checknames:
                 if propinfo.find(name) != -1:
                     res.add(name)
         return res
 ###############################################################################################################################################
-    def name_mentioned_in_memory(self, checknames: Set[str], npcname: str) -> Set[str]:
+    def name_mentioned_in_memory(self, checknames: Set[str], actor_name: str) -> Set[str]:
         memory_system = self.context.kick_off_memory_system
         result: set[str] = set()
-        npcmemory = memory_system.get_kick_off_memory(npcname)
+        kick_off_memory = memory_system.get_kick_off_memory(actor_name)
         for name in checknames:
-            if name in npcmemory:
+            if name in kick_off_memory:
                 result.add(name)
         return result
 ###############################################################################################################################################
-    def name_mentioned_in_chat_history(self, checknames: Set[str], npcname: str) -> Set[str]:
+    def name_mentioned_in_chat_history(self, checknames: Set[str], actor_name: str) -> Set[str]:
         result: set[str] = set()
-        pack_chat_history = self._npc_chat_history.get(npcname, "")
+        pack_chat_history = self._agent_chat_history.get(actor_name, "")
         for name in checknames:
             if pack_chat_history.find(name) != -1:
                 result.add(name)

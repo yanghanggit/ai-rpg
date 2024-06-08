@@ -5,12 +5,12 @@ sys.path.append(str(root_dir))
 import os
 from loguru import logger
 from typing import List
-from budding_world.configuration import GAME_NAME, OUT_PUT_NPC_SYS_PROMPT_DIR, OUT_PUT_STAGE_SYS_PROMPT_DIR, OUT_PUT_AGENT_DIR
+from budding_world.configuration import GAME_NAME, OUT_PUT_ACTOR_SYS_PROMPT_DIR, OUT_PUT_STAGE_SYS_PROMPT_DIR, OUT_PUT_AGENT_DIR
 
 ############################################################################################################
 ############################################################################################################
 ############################################################################################################
-class ExcelDataNPC:
+class ExcelDataActor:
 
     def __init__(self, name: str, 
                  codename: str, 
@@ -30,7 +30,7 @@ class ExcelDataNPC:
         self.port: int = port
         self.api: str = api
         self.worldview: str = worldview
-        self.mentioned_npcs: List[str] = []
+        self.mentioned_actors: List[str] = []
         self.mentioned_stages: List[str] = []
         self.mentioned_props: List[str] = []
 
@@ -39,10 +39,10 @@ class ExcelDataNPC:
         logger.info(self.localhost_api())
 
         #self.attributes: str = attributes
-        self.npc_sys_prompt_template_path: str = sys_prompt_template
+        self.actor_sys_prompt_template_path: str = sys_prompt_template
 
     def __str__(self) -> str:
-        return f"ExcelDataNPC({self.name}, {self.codename})"
+        return f"ExcelDataActor({self.name}, {self.codename})"
         
     def isvalid(self) -> bool:
         return True
@@ -59,7 +59,7 @@ class ExcelDataNPC:
     def gen_agentpy(self, agent_py_template: str) -> str:
         agentpy = str(agent_py_template)
         agentpy = agentpy.replace("<%RAG_MD_PATH>", f"""/{GAME_NAME}/{self.worldview}""")
-        agentpy = agentpy.replace("<%SYS_PROMPT_MD_PATH>", f"""/{GAME_NAME}/{OUT_PUT_NPC_SYS_PROMPT_DIR}/{self.codename}_sys_prompt.md""")
+        agentpy = agentpy.replace("<%SYS_PROMPT_MD_PATH>", f"""/{GAME_NAME}/{OUT_PUT_ACTOR_SYS_PROMPT_DIR}/{self.codename}_sys_prompt.md""")
         agentpy = agentpy.replace("<%GPT_MODEL>", self.gptmodel)
         agentpy = agentpy.replace("<%PORT>", str(self.port))
         agentpy = agentpy.replace("<%API>", self.api)
@@ -71,7 +71,7 @@ class ExcelDataNPC:
     
     def write_sys_prompt(self) -> None: 
         try:
-            directory = f"{GAME_NAME}/{OUT_PUT_NPC_SYS_PROMPT_DIR}"
+            directory = f"{GAME_NAME}/{OUT_PUT_ACTOR_SYS_PROMPT_DIR}"
             filename = f"{self.codename}_sys_prompt.md"
             path = os.path.join(directory, filename)
             # 确保目录存在
@@ -95,13 +95,13 @@ class ExcelDataNPC:
         except Exception as e:
             logger.error(f"An error occurred: {e}") 
 
-    def add_mentioned_npc(self, name: str) -> bool:
+    def add_mentioned_actor(self, name: str) -> bool:
         if name == self.name:
             return False
-        if name in self.mentioned_npcs:
+        if name in self.mentioned_actors:
             return True
         if name in self.description:
-            self.mentioned_npcs.append(name)
+            self.mentioned_actors.append(name)
             return True
         return False
     
@@ -113,8 +113,8 @@ class ExcelDataNPC:
             return True
         return False
     
-    def check_mentioned_npc(self, name: str) -> bool:
-        if name in self.mentioned_npcs:
+    def check_mentioned_actor(self, name: str) -> bool:
+        if name in self.mentioned_actors:
             return True
         return False
     

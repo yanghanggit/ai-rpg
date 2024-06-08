@@ -9,11 +9,11 @@ class DataBaseSystem:
         self.stages: dict[str, StageData] = {}
         self.props: dict[str, PropData] = {}
 
-    def add_actor(self, npcname: str, npc: ActorData) -> None:
-        self.actors.setdefault(npcname, npc)
+    def add_actor(self, actorname: str, actordata: ActorData) -> None:
+        self.actors.setdefault(actorname, actordata)
 
-    def get_actor(self, npcname: str) -> Optional[ActorData]:
-        return self.actors.get(npcname, None)
+    def get_actor(self, actorname: str) -> Optional[ActorData]:
+        return self.actors.get(actorname, None)
 
     def add_stage(self, stagename: str, stage: StageData) -> None:
         self.stages.setdefault(stagename, stage)

@@ -22,8 +22,8 @@ class TerminalPlayerInterruptAndWaitSystem(ExecuteProcessor):
             
         #就是展示一下并点击继续，没什么用
         playerproxy = get_player_proxy(TEST_TERMINAL_NAME)
-        player_npc_entity = self.context.get_player_entity(TEST_TERMINAL_NAME)
-        if player_npc_entity is None or playerproxy is None:
+        player_entity = self.context.get_player_entity(TEST_TERMINAL_NAME)
+        if player_entity is None or playerproxy is None:
             return
         
         self.display_client_messages(playerproxy, TEST_CLIENT_SHOW_MESSAGE_COUNT)

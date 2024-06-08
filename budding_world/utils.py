@@ -8,7 +8,7 @@ from loguru import logger
 from pandas.core.frame import DataFrame
 from typing import Dict
 from budding_world.configuration import RAG_FILE
-from budding_world.excel_data import ExcelDataNPC, ExcelDataStage, ExcelDataProp
+from budding_world.excel_data import ExcelDataActor, ExcelDataStage, ExcelDataProp
 
 
 ############################################################################################################
@@ -48,14 +48,14 @@ def readpy(file_path: str) -> str:
 
 
 ############################################################################################################
-def gen_all_npcs(sheet: DataFrame, sys_prompt_template_path: str, agent_template_path: str, output: Dict[str, ExcelDataNPC]) -> None:
+def gen_all_actors(sheet: DataFrame, sys_prompt_template_path: str, agent_template_path: str, output: Dict[str, ExcelDataActor]) -> None:
     ## 读取Excel文件
     for index, row in sheet.iterrows():
         if pd.isna(row["name"]):
             continue
 
         #
-        excelnpc = ExcelDataNPC(row["name"], 
+        excel_actor = ExcelDataActor(row["name"], 
                                 row["codename"], 
                                 row["description"], 
                                 row['conversation_example'],
@@ -65,14 +65,13 @@ def gen_all_npcs(sheet: DataFrame, sys_prompt_template_path: str, agent_template
                                 row["RAG"], 
                                 row["sys_prompt_template"])
         
-        if not excelnpc.isvalid():
-            #print(f"Invalid row: {excelnpc}")
+        if not excel_actor.isvalid():
             continue
-        excelnpc.gen_sys_prompt(sys_prompt_template_path)
-        excelnpc.write_sys_prompt()
-        excelnpc.gen_agentpy(agent_template_path)
-        excelnpc.write_agentpy()
-        output[excelnpc.name] = excelnpc
+        excel_actor.gen_sys_prompt(sys_prompt_template_path)
+        excel_actor.write_sys_prompt()
+        excel_actor.gen_agentpy(agent_template_path)
+        excel_actor.write_agentpy()
+        output[excel_actor.name] = excel_actor
 ############################################################################################################
 def gen_all_stages(sheet: DataFrame, sys_prompt_template_path: str, agent_template_path: str, output: Dict[str, ExcelDataStage]) -> None:
     ## 读取Excel文件
@@ -105,35 +104,35 @@ def gen_all_props(sheet: DataFrame, output: Dict[str, ExcelDataProp]) -> None:
         excelprop = ExcelDataProp(row["name"], row["codename"], row["isunique"], row["description"], row["RAG"], row["type"], str(row["attributes"]))
         output[excelprop.name] = excelprop
 ############################################################################################################
-def analyze_npc_relationship(analyze_data: Dict[str, ExcelDataNPC]) -> None:
+def analyze_actor_relationship(analyze_data: Dict[str, ExcelDataActor]) -> None:
     #先构建
-    for npc in analyze_data.values():
-        npc.mentioned_npcs.clear()
-        for other_npc in analyze_data.values():
-            npc.add_mentioned_npc(other_npc.name)
+    for _me in analyze_data.values():
+        _me.mentioned_actors.clear()
+        for _other in analyze_data.values():
+            _me.add_mentioned_actor(_other.name)
 
     #再检查
-    for npc in analyze_data.values():
-        for other_npc in analyze_data.values():
-            if npc.check_mentioned_npc(other_npc.name) and not other_npc.check_mentioned_npc(npc.name):
-                logger.warning(f"{npc.name} mentioned {other_npc.name}, but {other_npc.name} did not mention {npc.name}")
+    for _me in analyze_data.values():
+        for _other in analyze_data.values():
+            if _me.check_mentioned_actor(_other.name) and not _other.check_mentioned_actor(_me.name):
+                logger.warning(f"{_me.name} mentioned {_other.name}, but {_other.name} did not mention {_me.name}")
 ############################################################################################################
-def analyze_stage_relationship(analyze_stage_data: Dict[str, ExcelDataStage], analyze_npc_data: Dict[str, ExcelDataNPC]) -> None:
+def analyze_stage_relationship(analyze_stage_data: Dict[str, ExcelDataStage], analyze_actor_data: Dict[str, ExcelDataActor]) -> None:
     for stagename, stagedata in analyze_stage_data.items():
-        for npc in analyze_npc_data.values():
-            npc.mentioned_stages.clear()
-            npc.add_mentioned_stage(stagename)
+        for actor in analyze_actor_data.values():
+            actor.mentioned_stages.clear()
+            actor.add_mentioned_stage(stagename)
 ################################################################################################################
-def analyze_relationship_between_npcs_and_props(analyze_props_data: Dict[str, ExcelDataProp], analyze_npc_data: Dict[str, ExcelDataNPC]) -> None:
+def analyze_relationship_between_actors_and_props(analyze_props_data: Dict[str, ExcelDataProp], analyze_actor_data: Dict[str, ExcelDataActor]) -> None:
     #先构建
-    for npc in analyze_npc_data.values():
-        npc.mentioned_props.clear()
-        for other_prop in analyze_props_data.values():
-            npc.add_mentioned_prop(other_prop.name)
+    for _me in analyze_actor_data.values():
+        _me.mentioned_props.clear()
+        for _others_prop in analyze_props_data.values():
+            _me.add_mentioned_prop(_others_prop.name)
     #再检查
-    for npc in analyze_npc_data.values():
-        if len(npc.mentioned_props) > 0:
-            logger.warning(f"{npc.name}: {npc.mentioned_props}")
+    for _me in analyze_actor_data.values():
+        if len(_me.mentioned_props) > 0:
+            logger.warning(f"{_me.name}: {_me.mentioned_props}")
 ################################################################################################################
 def serialization_prop(prop: ExcelDataProp) -> Dict[str, str]:
     output: Dict[str, str] = {}

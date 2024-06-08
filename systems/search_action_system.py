@@ -18,15 +18,15 @@ from auxiliary.cn_builtin_prompt import search_action_failed_prompt, search_acti
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################     
-class NPCSearchFailedEvent(IDirectorEvent):
+class ActorSearchFailedEvent(IDirectorEvent):
 
     def __init__(self, who_search_failed: str, target: str) -> None:
         self.who_search_failed = who_search_failed
         self.target = target
 
     #
-    def to_actor(self, npcname: str, extended_context: ExtendedContext) -> str:
-        if npcname != self.who_search_failed:
+    def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
+        if actor_name != self.who_search_failed:
             ## 只有自己知道
             return ""
         event = search_action_failed_prompt(self.who_search_failed, self.target)
@@ -39,7 +39,7 @@ class NPCSearchFailedEvent(IDirectorEvent):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################     
-class NPCSearchSuccessEvent(IDirectorEvent):
+class ActorSearchSuccessEvent(IDirectorEvent):
 
     #
     def __init__(self, who_search_success: str, target: str, stagename: str) -> None:
@@ -48,8 +48,8 @@ class NPCSearchSuccessEvent(IDirectorEvent):
         self.stagename = stagename
 
     #
-    def to_actor(self, npcname: str, extended_context: ExtendedContext) -> str:
-        if npcname != self.who_search_success:
+    def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
+        if actor_name != self.who_search_success:
             ## 只有自己知道
             return ""
         event = search_action_success_prompt(self.who_search_success, self.target, self.stagename)
@@ -86,11 +86,11 @@ class SearchActionSystem(ReactiveProcessor):
         search_any_prop_success = False
         # 在本场景搜索
         file_system = self.context.file_system
-        safe_npc_name = self.context.safe_get_entity_name(entity)
+        safe_name = self.context.safe_get_entity_name(entity)
 
         stageentity = self.context.safe_get_stage_entity(entity)
         if stageentity is None:
-            logger.error(f"npc {safe_npc_name} not in any stage")
+            logger.error(f"{safe_name} not in any stage")
             return search_any_prop_success
         ##
         stagecomp: StageComponent = stageentity.get(StageComponent)
@@ -104,13 +104,13 @@ class SearchActionSystem(ReactiveProcessor):
         for targetpropname in searchtargets:
             ## 不在同一个场景就不能被搜寻，这个场景不具备这个道具，就无法搜寻
             if not self.check_stage_has_the_prop(targetpropname, propfiles):
-                notify_stage_director(self.context, stageentity, NPCSearchFailedEvent(safe_npc_name, targetpropname))
+                notify_stage_director(self.context, stageentity, ActorSearchFailedEvent(safe_name, targetpropname))
                 logger.debug(f"search failed, {targetpropname} not in {stagecomp.name}")
                 continue
             # 交换文件，即交换道具文件即可
-            self.stage_exchanges_prop_to_npc(stagecomp.name, action.name, targetpropname)
+            self.stage_exchanges_prop_to_actor(stagecomp.name, action.name, targetpropname)
             logger.info(f"search success, {targetpropname} in {stagecomp.name}")
-            notify_stage_director(self.context, stageentity, NPCSearchSuccessEvent(safe_npc_name, targetpropname, stagecomp.name))
+            notify_stage_director(self.context, stageentity, ActorSearchSuccessEvent(safe_name, targetpropname, stagecomp.name))
             search_any_prop_success = True
 
         return search_any_prop_success
@@ -121,14 +121,14 @@ class SearchActionSystem(ReactiveProcessor):
                 return True
         return False
 ###################################################################################################################
-    def stage_exchanges_prop_to_npc(self, stagename: str, npcname: str, propfilename: str) -> None:
+    def stage_exchanges_prop_to_actor(self, stagename: str, actor_name: str, propfilename: str) -> None:
         filesystem = self.context.file_system
-        filesystem.exchange_prop_file(stagename, npcname, propfilename)
+        filesystem.exchange_prop_file(stagename, actor_name, propfilename)
 ###################################################################################################################
     def after_search_success(self, entity: Entity) -> None:
         if entity.has(CheckStatusActionComponent):
             return
-        npccomp: ActorComponent = entity.get(ActorComponent)
-        action = ActorAction(npccomp.name, CheckStatusActionComponent.__name__, [npccomp.name])
+        actor_comp: ActorComponent = entity.get(ActorComponent)
+        action = ActorAction(actor_comp.name, CheckStatusActionComponent.__name__, [actor_comp.name])
         entity.add(CheckStatusActionComponent, action)
 ###################################################################################################################

@@ -17,15 +17,15 @@ from auxiliary.file_def import PropFile
 
 
 # 通知导演的类
-class NPCUsePropToStageEvent(IDirectorEvent):
-    def __init__(self, npcname: str, targetname: str, propname: str, tips: str) -> None:
-        self.npcname = npcname
+class ActorUsePropToStageEvent(IDirectorEvent):
+    def __init__(self, actor_name: str, targetname: str, propname: str, tips: str) -> None:
+        self.actor_name = actor_name
         self.targetname = targetname
         self.propname = propname
         self.tips = tips
 
-    def to_actor(self, npcname: str, extended_context: ExtendedContext) -> str:
-        if npcname != self.npcname:
+    def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
+        if actor_name != self.actor_name:
             return ""
         return self.tips
     
@@ -132,7 +132,7 @@ class UsePropActionSystem(ReactiveProcessor):
             exit_cond_status_prompt = stage_exit_cond_status_comp.condition
         else:
             logger.warning(f"InteractivePropActionSystem: {targetname} 没有退出条件, 下面的不用走")
-            notify_stage_director(context, entity, NPCUsePropToStageEvent(username, 
+            notify_stage_director(context, entity, ActorUsePropToStageEvent(username, 
                                                                                      targetname, 
                                                                                      prop_file.name, 
                                                                                      use_prop_no_response_prompt(username, prop_file.name, targetname)))
@@ -157,7 +157,7 @@ class UsePropActionSystem(ReactiveProcessor):
             helper = UsePropResponseHelper(plan)
             if helper.tips != "":
                 # 还是要做防守与通知导演
-                notify_stage_director(context, entity, NPCUsePropToStageEvent(username, targetname, prop_file.name, helper.tips))
+                notify_stage_director(context, entity, ActorUsePropToStageEvent(username, targetname, prop_file.name, helper.tips))
             else:
                 logger.warning(f"是空的？怎么回事？")
         else:

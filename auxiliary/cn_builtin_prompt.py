@@ -337,32 +337,32 @@ def stage_exit_conditions_check_promt(npc_name: str, current_stage_name: str,
                                       cond_check_role_props_prompt: str, role_props_prompt: str) -> str:
      # 拼接提示词
     final_prompt = f"""# {npc_name} 想要离开场景: {current_stage_name}。
-## 第1步: 根据当前‘你的状态’判断是否满足离开条件
-- 你的预设离开条件: 
+# 第1步: 根据当前‘你的状态’判断是否满足离开条件
+## 你的预设离开条件: 
 {stage_cond_status_prompt}
-- 当前状态可能由于事件而变化，请仔细考虑。
+## 当前状态可能由于事件而变化，请仔细考虑。
 
-## 第2步: 检查{npc_name}的状态是否符合以下要求:
-- 必须满足的状态信息: 
+# 第2步: 检查{npc_name}的状态是否符合以下要求:
+## 必须满足的状态信息: 
 {cond_check_role_status_prompt}
-- 当前角色状态: 
+## 当前角色状态: 
 {role_status_prompt}
 
-## 第3步: 检查{npc_name}的道具(与拥有的特殊技能)是否符合以下要求:
-- 必须满足的道具与特殊技能信息: 
+# 第3步: 检查{npc_name}的道具(与拥有的特殊技能)是否符合以下要求:
+## 必须满足的道具与特殊技能信息: 
 {cond_check_role_props_prompt}
-- 当前角色道具与特殊技能信息: 
+## 当前角色道具与特殊技能信息: 
 {role_props_prompt}
 
-## 判断结果
+# 判断结果
 - 完成以上步骤后，决定是否允许 {npc_name} 离开 {current_stage_name}。
 
-## 本次输出结果格式要求（遵循‘输出格式指南’）:
+# 本次输出结果格式要求（遵循‘输出格式指南’）:
 {{
     EnviroNarrateActionComponent: ["描述'允许离开'或'不允许离开'的原因，使{npc_name}明白"],
     TagActionComponent: ["Yes/No"]
 }}
-### 附注
+## 附注
 - 'EnviroNarrateActionComponent' 中请详细描述判断理由，注意如果不允许离开，就只说哪一条不符合要求，不要都说出来，否则会让{npc_name}迷惑。
 - Yes: 允许离开
 - No: 不允许离开
@@ -375,27 +375,32 @@ def stage_entry_conditions_check_promt(npc_name: str, current_stage_name: str,
                                       cond_check_role_props_prompt: str, role_props_prompt: str) -> str:
     # 拼接提示词
     final_prompt = f"""# {npc_name} 想要进入场景: {current_stage_name}。
-## 第1步: 根据当前‘你的状态’判断是否满足进入条件
-- 你的预设进入条件: {stage_cond_status_prompt}
-- 当前状态可能由于事件而变化，请仔细考虑。
+# 第1步: 根据当前‘你的状态’判断是否满足进入条件
+## 你的预设进入条件: 
+{stage_cond_status_prompt}
+## 当前状态可能由于事件而变化，请仔细考虑。
 
-## 第2步: 检查{npc_name}的状态是否符合以下要求:
-- 必须满足的状态信息: {cond_check_role_status_prompt}
-- 当前角色状态: {role_status_prompt}
+# 第2步: 检查{npc_name}的状态是否符合以下要求:
+## 必须满足的状态信息: 
+{cond_check_role_status_prompt}
+## 当前角色状态: 
+{role_status_prompt}
 
-## 第3步: 检查{npc_name}的道具(与拥有的特殊技能)是否符合以下要求:
-- 必须满足的道具与特殊技能信息: {cond_check_role_props_prompt}
-- 当前角色道具与特殊技能信息: {role_props_prompt}
+# 第3步: 检查{npc_name}的道具(与拥有的特殊技能)是否符合以下要求:
+## 必须满足的道具与特殊技能信息: 
+{cond_check_role_props_prompt}
+## 当前角色道具与特殊技能信息: 
+{role_props_prompt}
 
-## 判断结果
+# 判断结果
 - 完成以上步骤后，决定是否允许 {npc_name} 进入 {current_stage_name}。
 
-## 本次输出结果格式要求（遵循‘输出格式指南’）:
+# 本次输出结果格式要求（遵循‘输出格式指南’）:
 {{
     EnviroNarrateActionComponent: ["描述'允许进入'或'不允许进入'的原因，使{npc_name}明白"],
     TagActionComponent: ["Yes/No"]
 }}
-### 附注
+## 附注
 - 'EnviroNarrateActionComponent' 中请详细描述判断理由，注意如果不允许进入，就只说哪一条不符合要求，不要都说出来，否则会让{npc_name}迷惑。
 - Yes: 允许进入
 - No: 不允许进入
@@ -403,10 +408,14 @@ def stage_entry_conditions_check_promt(npc_name: str, current_stage_name: str,
     return final_prompt
 ################################################################################################################################################
 def exit_stage_failed_beacuse_stage_refuse_prompt(npc_name: str, current_stage_name: str, tips: str) -> str:
-     return f"""# {npc_name} 想要离开场景:{current_stage_name}，但是失败了。说明:{tips}。"""
+     return f"""# {npc_name} 想要离开场景: {current_stage_name}，但是失败了。
+## 说明:
+{tips}"""
 ################################################################################################################################################
 def enter_stage_failed_beacuse_stage_refuse_prompt(npc_name: str, stagename: str, tips: str) -> str:
-    return f"""# {npc_name} 想要进入场景:{stagename}，但是失败了。说明:{tips}。"""
+    return f"""# {npc_name} 想要进入场景: {stagename}，但是失败了。
+## 说明:
+{tips}"""
 ################################################################################################################################################
 def role_status_info_when_pre_leave_prompt(safe_name: str, appearance_info:str) -> str:
     return f"""### {safe_name}\n- 外貌信息:{appearance_info}\n"""

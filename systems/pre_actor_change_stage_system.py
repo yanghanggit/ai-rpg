@@ -298,9 +298,10 @@ class PreActorChangeStageSystem(ReactiveProcessor):
             return False
         
         if not handle_response_helper.result:
-            # 通知事件
+            # 通知事件, 因为没动，得是当前场景需要通知
+            current_stage_entity = self.context.safe_get_stage_entity(entity)
             notify_stage_director(self.context, 
-                                  target_stage_entity, 
+                                  current_stage_entity, 
                                   ActorEnterStageFailedBecauseStageRefuse(npc_name, target_stage_name, handle_response_helper.tips))
             return False
 

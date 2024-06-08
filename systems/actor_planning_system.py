@@ -11,7 +11,7 @@ from typing import Optional
 from systems.planning_response_check import check_component_register, check_conversation_action
 
 
-class NPCPlanningSystem(ExecuteProcessor):
+class ActorPlanningSystem(ExecuteProcessor):
 
     def __init__(self, context: ExtendedContext) -> None:
         self.context = context
@@ -23,7 +23,7 @@ class NPCPlanningSystem(ExecuteProcessor):
     @override
     async def async_pre_execute(self) -> None:
         #记录事件
-        self.context.chaos_engineering_system.on_npc_planning_system_execute(self.context)
+        self.context.chaos_engineering_system.on_actor_planning_system_execute(self.context)
         # 并行执行requests
         request_result = await self.context.agent_connect_system.run_async_requet_tasks("NPCPlanningSystem")
         all_response: dict[str, Optional[str]] = request_result[0]
@@ -59,7 +59,7 @@ class NPCPlanningSystem(ExecuteProcessor):
         #
         context = self.context
         chaos_engineering_system = context.chaos_engineering_system
-        response = chaos_engineering_system.hack_npc_planning(context, npcname, prompt)
+        response = chaos_engineering_system.hack_actor_planning(context, npcname, prompt)
         # 可以先走混沌工程系统
         if response is None:
            response = self.context.agent_connect_system.agent_request(npcname, prompt)

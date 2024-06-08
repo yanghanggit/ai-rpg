@@ -20,12 +20,12 @@ async def main() -> None:
     ## 临时 强行改成服务器终端模式，只要这个写死为空。后面的逻辑就会跟上。
     rpggame.extendedcontext.user_ips = []
 
-    #测试的代码，上来就控制一个NPC目标，先写死
-    TEST_SINGLE_PLAYER_NPC_NAME = "无名的复活者"
+    #测试的代码，上来就控制一个目标，先写死
+    TEST_SINGLE_PLAYER_ACTOR_NAME = "无名的复活者"
     create_player_proxy(TEST_TERMINAL_NAME)
     playerproxy = get_player_proxy(TEST_TERMINAL_NAME)
     assert playerproxy is not None
-    playerstartcmd = PlayerLogin("/player-login", rpggame, playerproxy, TEST_SINGLE_PLAYER_NPC_NAME)
+    playerstartcmd = PlayerLogin("/player-login", rpggame, playerproxy, TEST_SINGLE_PLAYER_ACTOR_NAME)
     playerstartcmd.execute()
 
     # 核心循环

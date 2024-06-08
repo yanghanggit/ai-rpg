@@ -23,7 +23,7 @@ class IChaosEngineering(ABC):
         pass
 
     @abstractmethod  
-    def on_npc_planning_system_execute(self, extended_context: Any) -> None:
+    def on_actor_planning_system_execute(self, extended_context: Any) -> None:
         pass
 
     @abstractmethod  
@@ -31,7 +31,7 @@ class IChaosEngineering(ABC):
         pass
 
     @abstractmethod
-    def hack_npc_planning(self, extended_context: Any, npcname: str, planprompt: str) -> Optional[str]:
+    def hack_actor_planning(self, extended_context: Any, actor_name: str, planprompt: str) -> Optional[str]:
         pass
 
 ## 运行中的测试系统, 空的混沌工程系统
@@ -59,8 +59,8 @@ class EmptyChaosEngineeringSystem(IChaosEngineering):
         return None
 
     ##
-    def hack_npc_planning(self, extended_context: Any, npcname: str, planprompt: str) -> Optional[str]:
-        logger.debug(f"{self.name}: hack_npc_planning {npcname} {planprompt}")
+    def hack_actor_planning(self, extended_context: Any, actor_name: str, planprompt: str) -> Optional[str]:
+        logger.debug(f"{self.name}: hack_actor_planning {actor_name} {planprompt}")
         return None
     
     ##
@@ -68,8 +68,8 @@ class EmptyChaosEngineeringSystem(IChaosEngineering):
         logger.debug(f"{self.name}: on_stage_planning_system_excute")
 
     ##
-    def on_npc_planning_system_execute(self, extended_context: Any) -> None:
-        logger.debug(f"{self.name}: on_npc_planning_system_execute")
+    def on_actor_planning_system_execute(self, extended_context: Any) -> None:
+        logger.debug(f"{self.name}: on_actor_planning_system_execute")
        
 
     

@@ -103,13 +103,13 @@ def PropDataProxy(name: str) -> PropData:
 ########################################################################################################################
 ########################################################################################################################
 ########################################################################################################################
-class NPCData:
+class ActorData:
     def __init__(self, name: str, 
                  codename: str, 
                  url: str, 
                  memory: str, 
                  props: Set[PropData], 
-                 mentioned_npcs: Set[str], 
+                 mentioned_actors: Set[str], 
                  mentioned_stages: Set[str],
                  roleappearance: str) -> None:
         self.name = name
@@ -117,7 +117,7 @@ class NPCData:
         self.url = url
         self.memory = memory
         self.props: Set[PropData] = props
-        self.npc_names_mentioned_during_editing_or_for_agent: Set[str] = mentioned_npcs 
+        self.actor_names_mentioned_during_editing_or_for_agent: Set[str] = mentioned_actors 
         self.stage_names_mentioned_during_editing_or_for_agent: Set[str] = mentioned_stages
         self.attributes: List[int] = []
         self.role_appearance: str = roleappearance
@@ -126,8 +126,8 @@ class NPCData:
         self.attributes = [int(attr) for attr in attributes.split(',')]
         assert len(self.attributes) == 4
 
-def NPCDataProxy(name: str) -> NPCData:
-    return NPCData(name, "", "", "", set(), set(), set(), "")
+def ActorDataProxy(name: str) -> ActorData:
+    return ActorData(name, "", "", "", set(), set(), set(), "")
 ########################################################################################################################
 ########################################################################################################################
 ########################################################################################################################
@@ -139,7 +139,7 @@ class StageData:
                  memory: str, 
                  foo1: Any, 
                  foo2: Any, 
-                 npcs: set[NPCData], 
+                 actors: set[ActorData], 
                  props: set[PropData],
                  foo3: Any,
                  stage_entry_status: str,
@@ -157,7 +157,7 @@ class StageData:
         self.memory = memory
         # self.entry_conditions: list[StageConditionData] = entry_conditions
         # self.exit_conditions: list[StageConditionData] = exit_conditions
-        self.npcs: set[NPCData] = npcs
+        self.actors: set[ActorData] = actors
         self.props: set[PropData] = props
         self.exit_of_portal: set[StageData] = set()
         self.attributes: List[int] = []

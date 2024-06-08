@@ -1,18 +1,18 @@
 from typing import Optional
-from auxiliary.base_data import NPCData, PropData, StageData
+from auxiliary.base_data import ActorData, PropData, StageData
 
 class DataBaseSystem:
 
     def __init__(self, description: str) -> None:
         self.description = description
-        self.actors: dict[str, NPCData] = {}
+        self.actors: dict[str, ActorData] = {}
         self.stages: dict[str, StageData] = {}
         self.props: dict[str, PropData] = {}
 
-    def add_actor(self, npcname: str, npc: NPCData) -> None:
+    def add_actor(self, npcname: str, npc: ActorData) -> None:
         self.actors.setdefault(npcname, npc)
 
-    def get_actor(self, npcname: str) -> Optional[NPCData]:
+    def get_actor(self, npcname: str) -> Optional[ActorData]:
         return self.actors.get(npcname, None)
 
     def add_stage(self, stagename: str, stage: StageData) -> None:

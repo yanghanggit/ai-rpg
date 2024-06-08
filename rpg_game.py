@@ -20,12 +20,12 @@ from auxiliary.components import (
     StageEntryCondCheckRolePropsComponent,
     )
 from auxiliary.extended_context import ExtendedContext
-from auxiliary.game_builders import GameBuilder, StageBuilder, NPCBuilder
+from auxiliary.game_builders import GameBuilder, StageBuilder, ActorBuilder
 from entitas.entity import Entity
 from systems.agents_kick_off_system import AgentsKickOffSystem
-from systems.npc_ready_for_planning_system import NPCReadyForPlanningSystem
+from systems.actor_ready_for_planning_system import ActorReadyForPlanningSystem
 from systems.stage_planning_system import StagePlanningSystem
-from systems.npc_planning_system import NPCPlanningSystem
+from systems.actor_planning_system import ActorPlanningSystem
 from systems.speak_action_system import SpeakActionSystem
 from systems.attack_action_system import AttackActionSystem
 from systems.go_to_action_system import GoToActionSystem
@@ -156,8 +156,8 @@ class RPGGame(BaseGame):
         processors.add(PrePlanningSystem(context)) ######## 在所有规划之前
         processors.add(StageReadyForPlanningSystem(context))
         processors.add(StagePlanningSystem(context))
-        processors.add(NPCReadyForPlanningSystem(context))
-        processors.add(NPCPlanningSystem(context))
+        processors.add(ActorReadyForPlanningSystem(context))
+        processors.add(ActorPlanningSystem(context))
         processors.add(PostPlanningSystem(context)) ####### 在所有规划之后
 
         ## 第一次抓可以被player看到的信息
@@ -197,10 +197,10 @@ class RPGGame(BaseGame):
         ## 第2步 创建管理员类型的角色，全局的AI
         self.create_world_entities(worlddata.world_builder)
 
-        ## 第3步，创建NPC，player是特殊的NPC
+        ## 第3步，创建actor，player是特殊的actor
         self.create_player_entities(worlddata.player_builder)
-        self.create_npc_entities(worlddata.npc_buidler)
-        self.add_code_name_component_to_world_and_npcs()
+        self.create_actor_entities(worlddata.actor_buidler)
+        self.add_code_name_component_to_world_and_actors()
 
         ## 第4步，创建stage
         self.create_stage_entities(worlddata.stage_builder)
@@ -243,7 +243,7 @@ class RPGGame(BaseGame):
         self.processors.tear_down()
         logger.info(f"{self.name}, game over")
 ###############################################################################################################################################
-    def create_world_entities(self, npcbuilder: NPCBuilder) -> List[Entity]:
+    def create_world_entities(self, actor_builder: ActorBuilder) -> List[Entity]:
 
         context = self.extendedcontext
         agent_connect_system = context.agent_connect_system
@@ -253,11 +253,11 @@ class RPGGame(BaseGame):
 
         res: List[Entity] = []
         
-        if npcbuilder.datalist is None:
-            raise ValueError("没有WorldNPCBuilder数据，请检查World.json配置。")
+        if actor_builder.datalist is None:
+            raise ValueError("没有WorldBuilder数据，请检查World.json配置。")
             return res
         
-        for builddata in npcbuilder.npcs:
+        for builddata in actor_builder.actors:
             #logger.debug(f"创建World Entity = {builddata.name}")
             worldentity = context.create_entity()
             res.append(worldentity)
@@ -265,29 +265,26 @@ class RPGGame(BaseGame):
             #必要组件
             worldentity.add(WorldComponent, builddata.name)
 
-            #故意不加NPC组件！！
-            logger.info(f"创建World Entity = {builddata.name}, 故意不加NPC组件")
-
             #重构
             agent_connect_system.register_agent(builddata.name, builddata.url)
             memory_system.add_kick_off_memory(builddata.name, builddata.memory)
             code_name_component_system.register_code_name_component_class(builddata.name, builddata.codename)
 
-            # 初步建立关系网（在编辑文本中提到的NPC名字）
-            add_actor_archive_files(file_system, builddata.name, builddata.npc_names_mentioned_during_editing_or_for_agent)
+            # 初步建立关系网（在编辑文本中提到的名字）
+            add_actor_archive_files(file_system, builddata.name, builddata.actor_names_mentioned_during_editing_or_for_agent)
             
         return res
 ###############################################################################################################################################
-    def create_player_entities(self, npcbuilder: NPCBuilder) -> List[Entity]:
-        # 创建player 本质就是创建NPC
-        create_result = self.create_npc_entities(npcbuilder)
+    def create_player_entities(self, actor_builder: ActorBuilder) -> List[Entity]:
+        # 创建player 本质就是创建Actor
+        create_result = self.create_actor_entities(actor_builder)
         for entity in create_result:
-            npccomp: ActorComponent = entity.get(ActorComponent)
-            logger.info(f"创建Player Entity = {npccomp.name}")
+            actor_comp: ActorComponent = entity.get(ActorComponent)
+            logger.info(f"创建Player Entity = {actor_comp.name}")
             entity.add(PlayerComponent, "")
         return create_result
 ###############################################################################################################################################
-    def create_npc_entities(self, npcbuilder: NPCBuilder) -> List[Entity]:
+    def create_actor_entities(self, actor_builder: ActorBuilder) -> List[Entity]:
 
         context = self.extendedcontext
         agent_connect_system = context.agent_connect_system
@@ -296,19 +293,18 @@ class RPGGame(BaseGame):
         code_name_component_system = context.code_name_component_system
         res: List[Entity] = []
 
-        if npcbuilder.datalist is None:
-            raise ValueError("没有NPCBuilder数据，请检查World.json配置。")
+        if actor_builder.datalist is None:
+            raise ValueError("没有ActorBuilder数据，请检查World.json配置。")
             return res
         
-        for builddata in npcbuilder.npcs:
-            #logger.debug(f"创建npc：{builddata.name}")
-            npcentity = context.create_entity()
-            res.append(npcentity)
+        for builddata in actor_builder.actors:
+            _entity = context.create_entity()
+            res.append(_entity)
 
             # 必要组件
-            npcentity.add(ActorComponent, builddata.name, "")
-            npcentity.add(SimpleRPGRoleComponent, builddata.name, builddata.attributes[0], builddata.attributes[1], builddata.attributes[2], builddata.attributes[3])
-            npcentity.add(AppearanceComponent, builddata.role_appearance)
+            _entity.add(ActorComponent, builddata.name, "")
+            _entity.add(SimpleRPGRoleComponent, builddata.name, builddata.attributes[0], builddata.attributes[1], builddata.attributes[2], builddata.attributes[3])
+            _entity.add(AppearanceComponent, builddata.role_appearance)
 
             #重构
             agent_connect_system.register_agent(builddata.name, builddata.url)
@@ -327,8 +323,8 @@ class RPGGame(BaseGame):
                 file_system.add_prop_file(create_prop_file)
                 code_name_component_system.register_code_name_component_class(prop_data_from_data_base._name, prop_data_from_data_base._codename)
 
-            # 初步建立关系网（在编辑文本中提到的NPC名字）
-            add_actor_archive_files(file_system, builddata.name, builddata.npc_names_mentioned_during_editing_or_for_agent)
+            # 初步建立关系网（在编辑文本中提到的Actor名字）
+            add_actor_archive_files(file_system, builddata.name, builddata.actor_names_mentioned_during_editing_or_for_agent)
 
         return res
 ###############################################################################################################################################
@@ -355,19 +351,13 @@ class RPGGame(BaseGame):
             stageentity.add(StageDirectorComponent, builddata.name) ###
             stageentity.add(SimpleRPGRoleComponent, builddata.name, builddata.attributes[0], builddata.attributes[1], builddata.attributes[2], builddata.attributes[3])
     
-            ## 重新设置npc和stage的关系
-            for npc in builddata.npcs:
-                npcname = npc.name
-                findnpcagain: Optional[Entity] = context.get_actor_entity(npcname)
-                if findnpcagain is None:
-                    #logger.error(f"没有找到npc：{npcname}！！！！！！！！！")
-                    raise ValueError(f"没有找到npc：{npcname}！！！！！！！！！")
-                    continue
-
-                ## 重新设置npc的stage，做覆盖处理
-                findnpcagain.replace(ActorComponent, npcname, builddata.name)
-                #logger.debug(f"重新设置npc：{npcname}的stage为：{builddata.name}")
-                    
+            ## 重新设置Actor和stage的关系
+            for _actor in builddata.actors:
+                _name = _actor.name
+                _entity: Optional[Entity] = context.get_actor_entity(_name)
+                assert _entity is not None
+                _entity.replace(ActorComponent, _name, builddata.name)
+                
             # 场景内添加道具
             for prop_proxy_in_stage in builddata.props:
                 # 直接使用文件系统
@@ -419,7 +409,7 @@ class RPGGame(BaseGame):
             stageentity.add(StageExitCondCheckRolePropsComponent, builddata.stage_exit_role_props)
             logger.debug(f"如果离开场景，需要检查角色拥有必要的道具：{builddata.stage_exit_role_props}")
 ###############################################################################################################################################
-    def add_code_name_component_to_world_and_npcs(self) -> None:
+    def add_code_name_component_to_world_and_actors(self) -> None:
         context = self.extendedcontext
         code_name_component_system = context.code_name_component_system
 
@@ -432,22 +422,22 @@ class RPGGame(BaseGame):
                 entity.add(codecompclass, worldcomp.name)
 
         #
-        npcsentities = context.get_group(Matcher(ActorComponent)).entities
-        for entity in npcsentities:
-            npccomp: ActorComponent = entity.get(ActorComponent)
-            codecompclass = code_name_component_system.get_component_class_by_name(npccomp.name)
+        actor_entities = context.get_group(Matcher(ActorComponent)).entities
+        for entity in actor_entities:
+            actor_comp: ActorComponent = entity.get(ActorComponent)
+            codecompclass = code_name_component_system.get_component_class_by_name(actor_comp.name)
             if codecompclass is not None:
-                entity.add(codecompclass, npccomp.name)
+                entity.add(codecompclass, actor_comp.name)
 ###############################################################################################################################################
     def add_code_name_component_stages(self) -> None:
         context = self.extendedcontext
         code_name_component_system = context.code_name_component_system
 
-        ## 重新设置npc和stage的关系
-        npcsentities = context.get_group(Matcher(ActorComponent)).entities
-        for entity in npcsentities:
-            npccomp: ActorComponent = entity.get(ActorComponent)
-            context.change_stage_tag_component(entity, "", npccomp.current_stage)
+        ## 重新设置actor和stage的关系
+        actor_entities = context.get_group(Matcher(ActorComponent)).entities
+        for entity in actor_entities:
+            actor_comp: ActorComponent = entity.get(ActorComponent)
+            context.change_stage_tag_component(entity, "", actor_comp.current_stage)
 
         ## 重新设置stage和stage的关系
         stagesentities = context.get_group(Matcher(StageComponent)).entities

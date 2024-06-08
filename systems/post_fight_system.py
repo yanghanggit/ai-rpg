@@ -4,7 +4,7 @@ from entitas import ExecuteProcessor, Matcher, Entity #type: ignore
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.components import DeadActionComponent, ACTOR_INTERACTIVE_ACTIONS_REGISTER, ActorComponent
-from auxiliary.cn_builtin_prompt import gen_npc_archive_prompt, died_in_fight_prompt
+from auxiliary.cn_builtin_prompt import gen_actor_archive_prompt, died_in_fight_prompt
 
 # 战斗后处理，入股哦死了就死亡存档
 class PostFightSystem(ExecuteProcessor):
@@ -37,7 +37,7 @@ class PostFightSystem(ExecuteProcessor):
         self.context.safe_add_human_message_to_entity(entity, newmsg)
 
         # 推理死亡，并且进行存档
-        archiveprompt = gen_npc_archive_prompt(self.context)
+        archiveprompt = gen_actor_archive_prompt(self.context)
         archive = agent_connect_system.agent_request(safename, archiveprompt)
         if archive is not None:
             memory_system.set_and_write(safename, archive)    # 存档!    

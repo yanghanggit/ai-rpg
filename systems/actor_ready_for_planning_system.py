@@ -1,5 +1,5 @@
 from overrides import override
-from auxiliary.cn_builtin_prompt import npc_plan_prompt
+from auxiliary.cn_builtin_prompt import actpr_plan_prompt
 from entitas import Entity, Matcher, ExecuteProcessor #type: ignore
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.components import (ActorComponent,
@@ -10,7 +10,7 @@ from auxiliary.actor_plan_and_action import ActorAction
 
 
 
-class NPCReadyForPlanningSystem(ExecuteProcessor):
+class ActorReadyForPlanningSystem(ExecuteProcessor):
     def __init__(self, context: ExtendedContext) -> None:
         self.context = context
 ####################################################################################################################################
@@ -28,7 +28,7 @@ class NPCReadyForPlanningSystem(ExecuteProcessor):
         stagename = tp[0]
         stage_enviro_narrate = tp[1]
         
-        prompt = npc_plan_prompt(stagename, stage_enviro_narrate, self.context)
+        prompt = actpr_plan_prompt(stagename, stage_enviro_narrate, self.context)
         self.context.agent_connect_system.add_async_request_task(npccomp.name, prompt)
 ####################################################################################################################################
     def get_stage_enviro_narrate(self, entity: Entity) -> tuple[str, str]:

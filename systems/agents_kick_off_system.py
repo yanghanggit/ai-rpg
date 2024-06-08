@@ -1,7 +1,7 @@
 from overrides import override
 from entitas import Entity, Matcher, InitializeProcessor, ExecuteProcessor # type: ignore
 from auxiliary.components import WorldComponent, StageComponent, ActorComponent, PlayerComponent, PerceptionActionComponent, CheckStatusActionComponent
-from auxiliary.cn_builtin_prompt import (init_memory_system_npc_prompt, init_memory_system_stage_prompt)
+from auxiliary.cn_builtin_prompt import (kick_off_memory_actor_prompt, init_memory_system_stage_prompt)
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from systems.update_archive_helper import UpdareArchiveHelper
@@ -79,7 +79,7 @@ class AgentsKickOffSystem(InitializeProcessor, ExecuteProcessor):
             if worldmemory == "":
                 logger.error(f"worldmemory is empty: {worldcomp.name}")
                 continue
-            prompt = init_memory_system_npc_prompt(worldmemory)
+            prompt = kick_off_memory_actor_prompt(worldmemory)
             agent_connect_system.add_async_request_task(worldcomp.name, prompt)
             result[worldcomp.name] = prompt
         
@@ -123,7 +123,7 @@ class AgentsKickOffSystem(InitializeProcessor, ExecuteProcessor):
             if npcmemory == "":
                 logger.error(f"npcmemory is empty: {npcname}")
                 continue
-            prompt = init_memory_system_npc_prompt(npcmemory)
+            prompt = kick_off_memory_actor_prompt(npcmemory)
             agent_connect_system.add_async_request_task(npcname, prompt)
             result[npcname] = prompt
 

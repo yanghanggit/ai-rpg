@@ -42,11 +42,11 @@ pm2 start budding_world/gen_agent/coffin_of_the_silent_one_agent.py budding_worl
 ```shell
 # 直接停掉整个游戏
 /quit
-# 攻击目标NPC, 名字为Name?
+# 攻击目标角色, 名字为Name?
 /attack ‘Name?’
 # 离开当前场景，去往Name?的场景
 /goto ‘Name?’
-# 在当前场景内广播内容。场景内所有NPC都能听见
+# 在当前场景内广播内容。场景内所有角色都能听见
 /broadcast ‘说的内容’
 # 对当前场景内的目标说话
 /speak ‘@对谁>说话内容’

@@ -132,15 +132,15 @@ async def imme_handle_perception(rpg_game: RPGGame, playerproxy: PlayerProxy) ->
     helper = PerceptionActionHelper(context)
     helper.perception(playerentity)
     #
-    safe_npc_name = context.safe_get_entity_name(playerentity)
+    safe_actor_name = context.safe_get_entity_name(playerentity)
     stageentity = context.safe_get_stage_entity(playerentity)
     assert stageentity is not None
     safe_stage_name = context.safe_get_entity_name(stageentity)
     #
-    event = ActorPerceptionEvent(safe_npc_name, safe_stage_name, helper.npcs_in_stage, helper.props_in_stage)
-    message = event.to_actor(safe_npc_name, context)
+    event = ActorPerceptionEvent(safe_actor_name, safe_stage_name, helper.actors_in_stage, helper.props_in_stage)
+    message = event.to_actor(safe_actor_name, context)
     #
-    playerproxy.add_actor_message(safe_npc_name, message)
+    playerproxy.add_actor_message(safe_actor_name, message)
 ############################################################################################################
 # player 可以是立即模式
 async def imme_handle_check_status(rpg_game: RPGGame, playerproxy: PlayerProxy) -> None:

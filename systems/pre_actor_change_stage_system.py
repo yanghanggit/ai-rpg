@@ -180,7 +180,10 @@ class PreActorChangeStageSystem(ReactiveProcessor):
             enter_result = self.handle_enter_stage(entity)
             if not enter_result:
                 entity.remove(GoToActionComponent)  # 停止进入
-                continue  #?        
+                continue  #?    
+
+            # 通过了，可以去下一个场景了
+            logger.info(f"{self.context.safe_get_entity_name(entity)} 通过了离开和进入条件，可以去下一个场景了")    
 ###############################################################################################################################################
     def need_check_exit_cond(self, stage_entity: Entity) -> bool:
         if stage_entity.has(StageExitCondStatusComponent):
@@ -300,6 +303,7 @@ class PreActorChangeStageSystem(ReactiveProcessor):
         if not handle_response_helper.result:
             # 通知事件, 因为没动，得是当前场景需要通知
             current_stage_entity = self.context.safe_get_stage_entity(entity)
+            assert current_stage_entity is not None
             notify_stage_director(self.context, 
                                   current_stage_entity, 
                                   ActorEnterStageFailedBecauseStageRefuse(npc_name, target_stage_name, handle_response_helper.tips))

@@ -54,7 +54,7 @@ class ChaosBuddingWorld(IChaosEngineering):
         self.on_stage_system_excute_count += 1
 
     ##
-    def on_npc_planning_system_execute(self, extended_context: Any) -> None:
+    def on_actor_planning_system_execute(self, extended_context: Any) -> None:
         self.on_npc_system_excute_count += 1
 
     ##
@@ -72,7 +72,7 @@ class ChaosBuddingWorld(IChaosEngineering):
         return None
 
     ##
-    def hack_npc_planning(self, extended_context: Any, npcname: str, planprompt: str) -> Optional[str]:
+    def hack_actor_planning(self, extended_context: Any, npcname: str, planprompt: str) -> Optional[str]:
         from auxiliary.extended_context import ExtendedContext
         context: ExtendedContext = extended_context
 

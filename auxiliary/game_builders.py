@@ -1,7 +1,7 @@
 from typing import Any, Optional, List, Set, Dict
 from loguru import logger
 import json
-from auxiliary.base_data import PropData, NPCData, StageData, NPCDataProxy, PropDataProxy
+from auxiliary.base_data import PropData, ActorData, StageData, ActorDataProxy, PropDataProxy
 from auxiliary.data_base_system import DataBaseSystem
 
 ########################################################################################################################
@@ -14,9 +14,9 @@ class GameBuilder:
         self.runtimepath = runtimepath
         self.version = version # version必须与生成的world.json文件中的version一致
         self._data: Any = None
-        self.world_builder = NPCBuilder("worlds")
-        self.player_builder = NPCBuilder("players")
-        self.npc_buidler = NPCBuilder("npcs")
+        self.world_builder = ActorBuilder("worlds")
+        self.player_builder = ActorBuilder("players")
+        self.actor_buidler = ActorBuilder("npcs")
         self.stage_builder = StageBuilder()
         self.data_base_system = data_base_system ## 依赖注入的方式，将数据库系统注入到这里
         self.about_game: str = ""
@@ -53,7 +53,7 @@ class GameBuilder:
         self.world_builder.build(self._data, self.data_base_system)
         # 第四步，创建玩家与NPC
         self.player_builder.build(self._data, self.data_base_system)
-        self.npc_buidler.build(self._data, self.data_base_system)
+        self.actor_buidler.build(self._data, self.data_base_system)
         # 第五步，创建场景
         self.stage_builder.build(self._data, self.data_base_system)
 ###############################################################################################################################################
@@ -82,7 +82,7 @@ class GameBuilder:
                  mentioned_stages = set(mentioned_stages_str.split(';'))
 
             # 创建
-            npc = NPCData(npcdata.get("name"), 
+            npc = ActorData(npcdata.get("name"), 
                           npcdata.get("codename"), 
                           npcdata.get("url"), 
                           npcdata.get("memory"), 
@@ -175,10 +175,10 @@ class StageBuilder:
             res.add(prop)
         return res
     #
-    def npcs_proxy_in_stage(self, npcs_data: List[Any]) -> set[NPCData]:
-        res: set[NPCData] = set()
+    def npcs_proxy_in_stage(self, npcs_data: List[Any]) -> set[ActorData]:
+        res: set[ActorData] = set()
         for obj in npcs_data:
-            npc = NPCDataProxy(obj.get("name"))
+            npc = ActorDataProxy(obj.get("name"))
             res.add(npc)
         return res
     #
@@ -198,18 +198,18 @@ class StageBuilder:
             propsinstage: set[PropData] = self.props_proxy_in_stage(stagedata.get("props"))
             stage.props = propsinstage
             #连接
-            npcsinstage: set[NPCData] = self.npcs_proxy_in_stage(stagedata.get("npcs"))
-            stage.npcs = npcsinstage
+            npcsinstage: set[ActorData] = self.npcs_proxy_in_stage(stagedata.get("npcs"))
+            stage.actors = npcsinstage
             #
             self.stages.append(stage)
 ########################################################################################################################
 ########################################################################################################################
 ########################################################################################################################
-class NPCBuilder:
+class ActorBuilder:
 
     def __init__(self, dataname: str) -> None:
         self.datalist: Optional[dict[str, Any]] = None
-        self.npcs: list[NPCData] = []
+        self.actors: list[ActorData] = []
         self.dataname = dataname
 
     def __str__(self) -> str:
@@ -239,7 +239,7 @@ class NPCBuilder:
             # 连接
             npcdata.props = npcprops
             #
-            self.npcs.append(npcdata)
+            self.actors.append(npcdata)
 ########################################################################################################################
 ########################################################################################################################
 ########################################################################################################################

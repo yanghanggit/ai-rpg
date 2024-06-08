@@ -5,7 +5,7 @@ from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.director_component import StageDirectorComponent
 from typing import List, Set, Optional, Dict
-from auxiliary.lang_serve_agent_system import LangServeAgentSystem
+from auxiliary.lang_serve_agent_system import LangServeAgentSystem, AgentRequestOption
 from auxiliary.cn_builtin_prompt import batch_conversation_action_events_in_stage
 
 # 这个类就是故意打包将对话类事件先进行一次request，如果LLM发现有政策问题就会抛异常，不会将污染的message加入chat history，这样就不可能进入chat_history。
@@ -68,7 +68,7 @@ class PostConversationActionSystem(ReactiveProcessor):
             batch_events2stage_prompt = self.batch_stage_events(stage_director_comp.name, raw_events2stage) 
             logger.info(f"PostConversationActionSystem: {stage_director_comp.name} : {batch_events2stage_prompt}")
             if async_execute:
-                agent_connect_system.add_async_request_task(stage_director_comp.name, batch_events2stage_prompt)
+                agent_connect_system.add_async_request_task(stage_director_comp.name, batch_events2stage_prompt, AgentRequestOption.ADD_PROMPT_TO_CHAT_HISTORY)
             else:
                 self.imme_request(stage_director_comp.name, batch_events2stage_prompt)
 
@@ -81,7 +81,7 @@ class PostConversationActionSystem(ReactiveProcessor):
                 batch_events2npc_prompt = self.batch_npc_events(stage_director_comp.name, raw_events2npc)
                 logger.info(f"PostConversationActionSystem: {npccomp.name} : {batch_events2npc_prompt}")
                 if async_execute:
-                    agent_connect_system.add_async_request_task(npccomp.name, batch_events2npc_prompt)
+                    agent_connect_system.add_async_request_task(npccomp.name, batch_events2npc_prompt, AgentRequestOption.ADD_PROMPT_TO_CHAT_HISTORY)
                 else:
                     self.imme_request(npccomp.name, batch_events2npc_prompt)
 ####################################################################################################
@@ -91,9 +91,6 @@ class PostConversationActionSystem(ReactiveProcessor):
             response = agent_connect_system.agent_request(name, prompt)
             if response is None:
                 logger.error(f"imme_request: {name} request error.")
-            else:
-                # AI的回复不要，防止污染上下文
-                agent_connect_system.remove_ai_message_from_chat_history(name, response)
         except Exception as e:
                 logger.error(f"imme_request: {name} request error.")
 ####################################################################################################
@@ -117,7 +114,6 @@ class PostConversationActionSystem(ReactiveProcessor):
             else:
                 # AI的回复不要，防止污染上下文
                 logger.debug(f"PostConversationActionSystem: {name} response is {response}")
-                agent_connect_system.remove_ai_message_from_chat_history(name, response)
 
         logger.debug(f"PostConversationActionSystem async_post_execute end.")
 ####################################################################################################

@@ -58,20 +58,14 @@ class UpdareArchiveHelper:
 ###############################################################################################################################################           
     def prepare_npc_chat_history(self) -> None:
         self._npc_chat_history.clear()
-        #
         context = self.context
         agent_connect_system = context.agent_connect_system
         npcs: set[Entity] = context.get_group(Matcher(ActorComponent)).entities
         for npc in npcs:
             npccomp: ActorComponent = npc.get(ActorComponent)
-            chathistory = agent_connect_system.get_chat_history(npccomp.name)
-            packmsg = ""
-            for chat in chathistory:
-                if isinstance(chat, HumanMessage):
-                    packmsg += str(chat.content)
-                elif isinstance(chat, AIMessage):
-                    packmsg += str(chat.content)
-            self._npc_chat_history[npccomp.name] = packmsg
+            chathistory: List[str] = agent_connect_system.create_chat_history_dump(npccomp.name)
+            pack_all = "\n".join(chathistory)
+            self._npc_chat_history[npccomp.name] = pack_all
 ###############################################################################################################################################
     def prepare_npc_with_props_info(self) ->  None:
         self._npcs_with_props_info.clear()

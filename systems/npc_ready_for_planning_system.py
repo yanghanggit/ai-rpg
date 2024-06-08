@@ -21,16 +21,12 @@ class NPCReadyForPlanningSystem(ExecuteProcessor):
         for entity in entities:
             self.handle(entity)
 ####################################################################################################################################
-    def handle(self, entity: Entity) -> None:
-        
+    def handle(self, entity: Entity) -> None:        
         npccomp: ActorComponent = entity.get(ActorComponent)
-        #logger.info(f"NPCReadyForPlanningSystem: {npccomp.name} is ready for planning.")
                 
         tp = self.get_stage_enviro_narrate(entity)
         stagename = tp[0]
-        #assert stagename != ""
         stage_enviro_narrate = tp[1]
-        #assert stage_enviro_narrate != ""
         
         prompt = npc_plan_prompt(stagename, stage_enviro_narrate, self.context)
         self.context.agent_connect_system.add_async_request_task(npccomp.name, prompt)

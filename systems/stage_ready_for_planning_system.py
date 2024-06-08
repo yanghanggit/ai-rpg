@@ -20,7 +20,6 @@ class StageReadyForPlanningSystem(ExecuteProcessor):
 ####################################################################################################################################
     def handle(self, entity: Entity) -> None:
         stage_comp: StageComponent = entity.get(StageComponent)
-        #logger.info(f"StageReadyForPlanningSystem: {stage_comp.name} is ready for planning.")
         props_in_stage: List[PropData] = self.get_props_in_stage(entity)
 
         npcs_in_stage = self.context.actors_in_stage(stage_comp.name)
@@ -28,8 +27,6 @@ class StageReadyForPlanningSystem(ExecuteProcessor):
         for npc in npcs_in_stage:
             npccomp: ActorComponent = npc.get(ActorComponent)
             npcnames.add(npccomp.name)
-            #npcnames.add(npc.name)
-
 
         prompt = stage_plan_prompt(props_in_stage, npcnames, self.context)
         self.context.agent_connect_system.add_async_request_task(stage_comp.name, prompt)

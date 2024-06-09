@@ -34,7 +34,7 @@ from systems.director_system import DirectorSystem
 from systems.destroy_system import DestroySystem
 from systems.stage_ready_for_planning_system import StageReadyForPlanningSystem
 from systems.tag_action_system import TagActionSystem
-#from systems.data_save_system import DataSaveSystem
+from systems.save_system import SaveSystem
 from systems.broadcast_action_system import BroadcastActionSystem  
 from systems.use_prop_action_system import UsePropActionSystem
 from systems.whisper_action_system import WhisperActionSystem 
@@ -141,7 +141,7 @@ class RPGGame(BaseGame):
 
         ###最后删除entity与存储数据
         processors.add(DestroySystem(context))
-        #processors.add(DataSaveSystem(context))
+        processors.add(SaveSystem(context))
 
         ##测试的系统，移除掉不太重要的提示词，例如一些上行命令的。
         processors.add(CompressChatHistorySystem(context)) ## 测试的系统

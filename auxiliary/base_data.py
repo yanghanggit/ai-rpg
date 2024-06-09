@@ -47,7 +47,7 @@ class PropData:
         return PropType.INVALID
     
     def is_actor_component(self) -> bool:
-        return self._type == "RoleComponent"
+        return self._type == "ActorComponent"
     
     def is_weapon(self) -> bool:
         return self._type == "Weapon"

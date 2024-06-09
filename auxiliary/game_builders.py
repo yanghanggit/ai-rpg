@@ -116,11 +116,11 @@ class GameBuilder:
                             set(),
                             "",
                             core_data.get('stage_entry_status'),
-                            core_data.get('stage_entry_role_status'),
-                            core_data.get('stage_entry_role_props'),
+                            core_data.get('stage_entry_actor_status'),
+                            core_data.get('stage_entry_actor_props'),
                             core_data.get('stage_exit_status'),
-                            core_data.get('stage_exit_role_status'),
-                            core_data.get('stage_exit_role_props'),
+                            core_data.get('stage_exit_actor_status'),
+                            core_data.get('stage_exit_actor_props'),
                             )
             
             # 做连接关系 目前仅用名字

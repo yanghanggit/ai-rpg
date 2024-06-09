@@ -132,7 +132,7 @@ def prop_type_prompt(prop: PropData) -> str:
         _type = "衣服(用于提高防御力)"
     elif prop.is_non_consumable_item():
         _type = "非消耗品"
-    elif prop.is_actor_component():
+    elif prop.is_special_component():
         _type = "特殊能力"
     return _type
 ###############################################################################################################################################

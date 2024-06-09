@@ -335,7 +335,7 @@ class PreActorChangeStageSystem(ReactiveProcessor):
     def get_actor_props_prompt(self, entity: Entity) -> str:
         helper = CheckStatusActionHelper(self.context)
         helper.check_status(entity)
-        props = helper.props + helper.actor_components
+        props = helper.props + helper.special_components
         prompt_of_props = ""
         if len(props) > 0:
             for prop in props:

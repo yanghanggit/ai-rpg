@@ -1,17 +1,13 @@
 from typing import List, Set, Dict, Any
-#from auxiliary.format_of_complex_stage_entry_and_exit_conditions import is_complex_stage_condition
 from enum import Enum
 from loguru import logger
 
-
-#
 class PropType(Enum):
     INVALID = 0,
-    ACTOR_COMPONENT = 1
+    SPECIAL_COMPONENT = 1
     WEAPON = 2
     CLOTHES = 3
     NON_CONSUMABLE_ITEM = 4
-    #EVENT = 5
 
 class PropData:
 
@@ -34,20 +30,18 @@ class PropData:
     
     @property
     def e_type(self) -> PropType:
-        if self.is_actor_component():
-            return PropType.ACTOR_COMPONENT
+        if self.is_special_component():
+            return PropType.SPECIAL_COMPONENT
         elif self.is_weapon():
             return PropType.WEAPON
         elif self.is_clothes():
             return PropType.CLOTHES
         elif self.is_non_consumable_item():
             return PropType.NON_CONSUMABLE_ITEM
-        # elif self.is_event():
-        #     self.em_type = PropType.EVENT
         return PropType.INVALID
     
-    def is_actor_component(self) -> bool:
-        return self._type == "ActorComponent"
+    def is_special_component(self) -> bool:
+        return self._type == "SpecialComponent"
     
     def is_weapon(self) -> bool:
         return self._type == "Weapon"

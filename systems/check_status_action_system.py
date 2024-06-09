@@ -17,7 +17,7 @@ class CheckStatusActionHelper:
         self.props: List[PropData] = []
         self.maxhp = 0
         self.hp = 0
-        self.actor_components: List[PropData] = []
+        self.special_components: List[PropData] = []
         self.events: List[PropData] = []
 
     def clear(self) -> None:
@@ -33,10 +33,8 @@ class CheckStatusActionHelper:
         for file in files:
             if file.prop.is_weapon() or file.prop.is_clothes() or file.prop.is_non_consumable_item():
                 self.props.append(file.prop)
-            elif file.prop.is_actor_component():
-                self.actor_components.append(file.prop)
-            # elif file.prop.is_event():
-            #     self.events.append(file.prop)
+            elif file.prop.is_special_component():
+                self.special_components.append(file.prop)
             
     def check_health(self, entity: Entity) -> None:
         if not entity.has(SimpleRPGAttrComponent):
@@ -105,6 +103,6 @@ class CheckStatusActionSystem(ReactiveProcessor):
         helper = CheckStatusActionHelper(self.context)
         helper.check_status(entity)
         #
-        notify_stage_director(self.context, entity, ActorCheckStatusEvent(safe_name, helper.props, helper.health, helper.actor_components, helper.events))
+        notify_stage_director(self.context, entity, ActorCheckStatusEvent(safe_name, helper.props, helper.health, helper.special_components, helper.events))
 ###################################################################################################################
     

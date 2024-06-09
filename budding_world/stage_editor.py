@@ -62,7 +62,7 @@ class ExcelEditorStage:
         self.stage_exit_conditions: List[ExcelEditorStageCondition] = []
         self.props_in_stage: List[ExcelDataProp] = []
         self.actors_in_stage: List[ExcelDataActor] = []
-        self.initialization_memory: str = ""
+        self.kick_off_memory: str = ""
         self.exit_of_portal: str = ""
         #self.raw_interactive_props_data: str = ""
         #self.interactive_props: List[ExcelDataProp] = []
@@ -76,7 +76,7 @@ class ExcelEditorStage:
         # self.parse_stage_exit_conditions()
         self.parse_props_in_stage()
         self.parse_actors_in_stage()
-        self.parse_initialization_memory()
+        self.parse_kick_off_memory()
         self.parse_exit_of_portal()
         #self.parse_interactive_props()
 
@@ -129,11 +129,11 @@ class ExcelEditorStage:
             else:
                 logger.error(f"Invalid actor: {actor}")
 
-    def parse_initialization_memory(self) -> None:
-        initialization_memory = self.data["initialization_memory"]
-        if initialization_memory is None:
+    def parse_kick_off_memory(self) -> None:
+        kick_off_memory = self.data["kick_off_memory"]
+        if kick_off_memory is None:
             return
-        self.initialization_memory = str(initialization_memory)
+        self.kick_off_memory = str(kick_off_memory)
 
     def parse_exit_of_portal(self) -> None:
         attrname = "exit_of_portal"
@@ -208,7 +208,7 @@ class ExcelEditorStage:
         dict["codename"] = data_stage.codename
         dict["description"] = data_stage.description
         dict["url"] = data_stage.localhost_api()
-        dict["memory"] = self.initialization_memory
+        dict["memory"] = self.kick_off_memory
         dict["exit_of_portal"] = self.exit_of_portal
         #dict["interactive_props"] = self.raw_interactive_props_data
         

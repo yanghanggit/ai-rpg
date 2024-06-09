@@ -18,7 +18,7 @@ class ExcelEditorActor:
         #
         self.excelactor: Optional[ExcelDataActor] = None
         self.excelprops: List[ExcelDataProp] = []
-        self.initialization_memory: str = ""
+        self.kick_off_memory: str = ""
         self._appearance: str = ""
         #
         if self.data["type"] not in ["World", "Player", "Actor"]:
@@ -27,7 +27,7 @@ class ExcelEditorActor:
         
         self.excelactor = self.actor_data_base[self.data["name"]]
         self.parse_props_on_actor()
-        self.parse_initialization_memory()
+        self.parse_kick_off_memory()
         self.parse_appearance()
 
         ### 这里可以添加属性？？？
@@ -45,11 +45,11 @@ class ExcelEditorActor:
             else:
                 logger.error(f"Invalid file: {file}")
 
-    def parse_initialization_memory(self) -> None:
-        initialization_memory = self.data["initialization_memory"]
-        if initialization_memory is None:
+    def parse_kick_off_memory(self) -> None:
+        kick_off_memory = self.data["kick_off_memory"]
+        if kick_off_memory is None:
             return
-        self.initialization_memory = str(initialization_memory)
+        self.kick_off_memory = str(kick_off_memory)
     
     def parse_appearance(self) -> None:
         _appearance = self.data["appearance"]
@@ -68,7 +68,7 @@ class ExcelEditorActor:
         dict['name'] = target.name
         dict['codename'] = target.codename
         dict['url'] = target.localhost_api()
-        dict['memory'] = self.initialization_memory
+        dict['memory'] = self.kick_off_memory
         dict['appearance'] = self._appearance
         dict['mentioned_actors'] = ";".join(target.mentioned_actors)
         dict['mentioned_stages'] = ";".join(target.mentioned_stages)

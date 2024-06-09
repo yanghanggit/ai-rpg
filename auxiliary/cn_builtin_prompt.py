@@ -199,36 +199,13 @@ def portal_break_action_begin_prompt(actor_name: str, stagesname: str, context: 
 - {actor_name}无法确认是否能够成功离开{stagesname}。可能会因为某些原因而失败。
 - {actor_name}无法确认将要前往的目的地。"""
 ################################################################################################################################################
-def leave_for_target_stage_failed_because_no_exit_condition_match_prompt(actor_name: str, stagename: str, tips: str, is_portal_break: bool) -> str:
-    if is_portal_break:
-        if tips == "":
-            return f"""# {actor_name}不能离开本场景。原因:当前不满足离开的条件。
-## 建议:
-- 可以通过CheckStatusActionComponent查看自己拥有的道具。
-- 或者通过PerceptionActionComponent感知场景内的道具，找到离开的条件。"""
-        
-        return f"""# {actor_name}不能离开本场景。
-## 提示:
-- {tips}"""
-    
-    else:
-        if tips == "":
-            return f"""# {actor_name}不能离开本场景并去往{stagename}。原因：可能当前不满足离开的条件。
-## 建议:
-- 可以通过CheckStatusActionComponent查看自己拥有的道具，
-- 或者通过PerceptionActionComponent感知场景内的道具，找到离开的条件。"""
-        
-        return f"""{actor_name}不能离开本场景并去往{stagename}。
-## 提示:
-- {tips}"""
-################################################################################################################################################
 def enter_stage_prompt1(some_ones_name: str, target_stage_name: str) -> str:
     return f"{some_ones_name}进入了场景——{target_stage_name}。"
 ################################################################################################################################################
 def enter_stage_prompt2(some_ones_name: str, target_stage_name: str, last_stage_name: str) -> str:
     return f"# {some_ones_name}离开了{last_stage_name}, 进入了{target_stage_name}。"
 ################################################################################################################################################
-def leave_stage_prompt(actor_name: str, current_stage_name: str, leave_for_stage_name: str) -> str:
+def leave_stage_prompt(actor_name: str, current_stage_name: str, go_to_stage_name: str) -> str:
     return f"# {actor_name}离开了{current_stage_name} 场景。"
 ################################################################################################################################################
 def stage_director_event_wrap_prompt(event: str, event_index: int) -> str:
@@ -263,13 +240,13 @@ def trade_action_prompt(fromwho: str, towho: str, propname: str, traderes: bool)
         return f"{fromwho}向{towho}交换{propname}, 失败了"
     return f"{fromwho}向{towho}成功交换了{propname}"
 ################################################################################################################################################
-def leave_for_stage_failed_because_stage_is_invalid_prompt(actor_name: str, stagename: str) -> str:
+def go_to_stage_failed_because_stage_is_invalid_prompt(actor_name: str, stagename: str) -> str:
     return f"""#{actor_name}不能离开本场景并去往{stagename}，原因可能如下:
 1. {stagename}目前对于{actor_name}并不是一个有效场景。游戏可能尚未对其开放，或者已经关闭。
 2. {stagename}的内容格式不对，例如下面的表达：‘xxx的深处/北部/边缘/附近/其他区域’，其中xxx可能是合理场景名，但加上后面的词后则变成了“无效场景名”（在游戏机制上无法正确检索与匹配）。
 ## 所以 {actor_name} 请参考以上的原因，需要重新考虑去往的目的地。"""
 ################################################################################################################################################
-def leave_for_stage_failed_because_already_in_stage_prompt(actor_name: str, stagename: str) -> str:
+def go_to_stage_failed_because_already_in_stage_prompt(actor_name: str, stagename: str) -> str:
     return f"你已经在{stagename}场景中了。需要重新考虑去往的目的地。'GoToActionComponent'行动类型意图是离开当前场景并去往某地。"
 ################################################################################################################################################
 def replace_all_mentions_of_your_name_with_you(content: str, your_name: str) -> str:
@@ -417,7 +394,7 @@ def enter_stage_failed_beacuse_stage_refuse_prompt(actor_name: str, stagename: s
 ## 说明:
 {tips}"""
 ################################################################################################################################################
-def role_status_info_when_pre_leave_prompt(safe_name: str, appearance_info:str) -> str:
+def role_status_when_stage_change_prompt(safe_name: str, appearance_info:str) -> str:
     return f"""### {safe_name}\n- 外貌信息:{appearance_info}\n"""
 ################################################################################################################################################
 def use_prop_no_response_prompt(username: str, propname: str, targetname: str) -> str:

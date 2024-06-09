@@ -47,7 +47,7 @@ class UpdateClientMessageSystem(ExecuteProcessor):
         self.broadcast_action_2_message(playerproxy, player_entity)
         self.speak_action_2_message(playerproxy, player_entity)
         self.attack_action_2_message(playerproxy, player_entity)
-        self.leave_for_action_2_message(playerproxy, player_entity)
+        self.go_to_action_2_message(playerproxy, player_entity)
 ############################################################################################################
     def stage_enviro_narrate_action_2_message(self, playerproxy: PlayerProxy, player_entity: Entity) -> None:
         stage = self.context.safe_get_stage_entity(player_entity)
@@ -180,7 +180,7 @@ class UpdateClientMessageSystem(ExecuteProcessor):
             targetname = action.values[0]
             playerproxy.add_actor_message(action.name, f"""准备对{targetname}发起了攻击""") #todo
 ############################################################################################################
-    def leave_for_action_2_message(self, playerproxy: PlayerProxy, player_entity: Entity) -> None:
+    def go_to_action_2_message(self, playerproxy: PlayerProxy, player_entity: Entity) -> None:
         player_entity_stage = self.context.safe_get_stage_entity(player_entity)
         entities = self.context.get_group(Matcher(GoToActionComponent)).entities
         for entity in entities:
@@ -192,10 +192,10 @@ class UpdateClientMessageSystem(ExecuteProcessor):
             if his_stage_entity != player_entity_stage:
                 continue
 
-            leave_for_component: GoToActionComponent = entity.get(GoToActionComponent)
-            action: ActorAction = leave_for_component.action
+            go_to_action_component: GoToActionComponent = entity.get(GoToActionComponent)
+            action: ActorAction = go_to_action_component.action
             if len(action.values) == 0:
-                logger.error("leave_for_action_2_message error")
+                logger.error("go_to_action_2_message error")
                 continue
 
             stagename = action.values[0]

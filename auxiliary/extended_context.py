@@ -183,7 +183,7 @@ class ExtendedContext(Context):
                 appearance_comp: AppearanceComponent = actor.get(AppearanceComponent)
                 res[actor_comp.name] = appearance_comp.appearance
             else:
-                logger.error(f"{actor_comp.name}没有RoleAppearanceComponent?!")
+                logger.error(f"{actor_comp.name}没有AppearanceComponent?!")
 
         return res
 ############################################################################################################

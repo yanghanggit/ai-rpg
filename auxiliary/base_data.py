@@ -111,7 +111,7 @@ class ActorData:
                  props: Set[PropData], 
                  mentioned_actors: Set[str], 
                  mentioned_stages: Set[str],
-                 roleappearance: str) -> None:
+                 appearance: str) -> None:
         self.name = name
         self.codename = codename
         self.url = url
@@ -120,7 +120,7 @@ class ActorData:
         self.actor_names_mentioned_during_editing_or_for_agent: Set[str] = mentioned_actors 
         self.stage_names_mentioned_during_editing_or_for_agent: Set[str] = mentioned_stages
         self.attributes: List[int] = []
-        self.role_appearance: str = roleappearance
+        self._appearance: str = appearance
 
     def build_attributes(self, attributes: str) -> None:
         self.attributes = [int(attr) for attr in attributes.split(',')]

@@ -132,7 +132,7 @@ class PlayerGoTo(PlayerCommand):
         target_stage_name = self.target_stage_name
         playerentity = context.get_player_entity(self.playerproxy.name)
         if playerentity is None:
-            logger.warning("debug_leave: player is None")
+            logger.warning("debug: player is None")
             return
         
         actor_comp: ActorComponent = playerentity.get(ActorComponent)
@@ -153,7 +153,7 @@ class PlayerPortalStep(PlayerCommand):
         context = self.game.extendedcontext
         playerentity = context.get_player_entity(self.playerproxy.name)
         if playerentity is None:
-            logger.warning("debug_leave: player is None")
+            logger.warning("debug: player is None")
             return
         
         actor_comp: ActorComponent = playerentity.get(ActorComponent)

@@ -14,8 +14,8 @@ from systems.director_system import director_events_to_actor
 from auxiliary.cn_builtin_prompt import ( leave_stage_prompt,
                                           enter_stage_prompt1,
                                           enter_stage_prompt2,
-                                          leave_for_stage_failed_because_stage_is_invalid_prompt,
-                                          leave_for_stage_failed_because_already_in_stage_prompt)
+                                          go_to_stage_failed_because_stage_is_invalid_prompt,
+                                          go_to_stage_failed_because_already_in_stage_prompt)
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
@@ -29,8 +29,7 @@ class ActorGoToFailedBecauseStageIsInvalidEvent(IDirectorEvent):
         if actor_name != self.actor_name:
             # 跟你无关不用关注，原因类的东西，是失败后矫正用，所以只有自己知道即可
             return ""
-        leave_for_stage_is_invalid_event = leave_for_stage_failed_because_stage_is_invalid_prompt(self.actor_name, self.stagename)
-        return leave_for_stage_is_invalid_event
+        return go_to_stage_failed_because_stage_is_invalid_prompt(self.actor_name, self.stagename)
     
     def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
         return ""
@@ -47,7 +46,7 @@ class ActorGoToFailedBecauseAlreadyInStage(IDirectorEvent):
         if actor_name != self.actor_name:
             # 跟你无关不用关注，原因类的东西，是失败后矫正用，所以只有自己知道即可
             return ""
-        already_in_stage_event = leave_for_stage_failed_because_already_in_stage_prompt(self.actor_name, self.stagename)
+        already_in_stage_event = go_to_stage_failed_because_already_in_stage_prompt(self.actor_name, self.stagename)
         return already_in_stage_event
     
     def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
@@ -55,10 +54,10 @@ class ActorGoToFailedBecauseAlreadyInStage(IDirectorEvent):
 ###############################################################################################################################################
 class GoToActionHelper:
 
-    def __init__(self, context: ExtendedContext, who_wana_leave: Entity, target_stage_name: str) -> None:
+    def __init__(self, context: ExtendedContext, who: Entity, target_stage_name: str) -> None:
         self.context = context
-        self.who_wana_leave_entity = who_wana_leave
-        self.current_stage_name = cast(ActorComponent, who_wana_leave.get(ActorComponent)).current_stage
+        self.who = who
+        self.current_stage_name = cast(ActorComponent, who.get(ActorComponent)).current_stage
         self.current_stage_entity = self.context.get_stage_entity(self.current_stage_name)
         self.target_stage_name = target_stage_name
         self.target_stage_entity = self.context.get_stage_entity(target_stage_name)
@@ -67,17 +66,17 @@ class GoToActionHelper:
 ####################################################################################################################################
 class ActorLeaveStageEvent(IDirectorEvent):
 
-    def __init__(self, actor_name: str, current_stage_name: str, leave_for_stage_name: str) -> None:
+    def __init__(self, actor_name: str, current_stage_name: str, goto_stage_name: str) -> None:
         self.actor_name = actor_name
         self.current_stage_name = current_stage_name
-        self.leave_for_stage_name = leave_for_stage_name
+        self.goto_stage_name = goto_stage_name
 
     def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
-        event = leave_stage_prompt(self.actor_name, self.current_stage_name, self.leave_for_stage_name)
+        event = leave_stage_prompt(self.actor_name, self.current_stage_name, self.goto_stage_name)
         return event
     
     def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
-        event = leave_stage_prompt(self.actor_name, self.current_stage_name, self.leave_for_stage_name)
+        event = leave_stage_prompt(self.actor_name, self.current_stage_name, self.goto_stage_name)
         return event
 ####################################################################################################################################
 ####################################################################################################################################
@@ -128,8 +127,8 @@ class GoToActionSystem(ReactiveProcessor):
                 logger.warning(f"GoToActionSystem: {entity} is not Actor?!")
                 continue
             
-            leavecomp: GoToActionComponent = entity.get(GoToActionComponent)
-            action: ActorAction = leavecomp.action
+            go_to_action_comp: GoToActionComponent = entity.get(GoToActionComponent)
+            action: ActorAction = go_to_action_comp.action
             if len(action.values) == 0:
                continue
    
@@ -151,7 +150,7 @@ class GoToActionSystem(ReactiveProcessor):
 ###############################################################################################################################################            
     def enter_stage(self, helper: GoToActionHelper) -> None:
 
-        entity = helper.who_wana_leave_entity
+        entity = helper.who
         current_stage_name = helper.current_stage_name
         target_stage_name = helper.target_stage_name
         target_stage_entity = helper.target_stage_entity
@@ -171,10 +170,10 @@ class GoToActionSystem(ReactiveProcessor):
         self.direct_before_leave(helper)
 ###############################################################################################################################################
     def direct_before_leave(self, helper: GoToActionHelper) -> None:
-        director_events_to_actor(self.context, helper.who_wana_leave_entity)
+        director_events_to_actor(self.context, helper.who)
 ###############################################################################################################################################
     def leave_stage(self, helper: GoToActionHelper) -> None:
-        entity: Entity = helper.who_wana_leave_entity
+        entity: Entity = helper.who
         actor_comp: ActorComponent = entity.get(ActorComponent)
         assert helper.current_stage_entity is not None
 
@@ -188,7 +187,7 @@ class GoToActionSystem(ReactiveProcessor):
         self.context.change_stage_tag_component(entity, helper.current_stage_name, replace_current_stage)
 ###############################################################################################################################################
     def after_enter_stage(self, helper: GoToActionHelper) -> None:
-        entity: Entity = helper.who_wana_leave_entity
+        entity: Entity = helper.who
         actor_comp: ActorComponent = entity.get(ActorComponent)
         stagename = actor_comp.current_stage
         actor_entities = self.context.actors_in_stage(stagename)

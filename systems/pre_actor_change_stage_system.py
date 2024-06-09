@@ -23,7 +23,7 @@ from auxiliary.cn_builtin_prompt import \
             enter_stage_failed_beacuse_stage_refuse_prompt, \
             NO_INFO_PROMPT,\
             NO_ROLE_PROPS_INFO_PROMPT, \
-            role_status_info_when_pre_leave_prompt
+            role_status_when_stage_change_prompt
 from typing import Optional, cast, override
 from systems.check_status_action_system import CheckStatusActionHelper
 from auxiliary.actor_plan_and_action import ActorPlan
@@ -316,10 +316,10 @@ class PreActorChangeStageSystem(ReactiveProcessor):
         return True
 ###############################################################################################################################################
     def get_target_stage_entity(self, entity: Entity) -> Optional[Entity]:
-        leave_action_comp: GoToActionComponent = entity.get(GoToActionComponent)
-        action: ActorAction = leave_action_comp.action
+        go_to_action_comp: GoToActionComponent = entity.get(GoToActionComponent)
+        action: ActorAction = go_to_action_comp.action
         if len(action.values) == 0:
-            logger.error(leave_action_comp)
+            logger.error(go_to_action_comp)
             return None
         #
         target_stage_name = action.values[0]
@@ -330,7 +330,7 @@ class PreActorChangeStageSystem(ReactiveProcessor):
         safe_name = self.context.safe_get_entity_name(entity)
         role_appearance_comp: AppearanceComponent = entity.get(AppearanceComponent)
         appearance_info: str = role_appearance_comp.appearance
-        return role_status_info_when_pre_leave_prompt(safe_name, appearance_info)
+        return role_status_when_stage_change_prompt(safe_name, appearance_info)
 ###############################################################################################################################################
     def get_role_props_prompt(self, entity: Entity) -> str:
         helper = CheckStatusActionHelper(self.context)

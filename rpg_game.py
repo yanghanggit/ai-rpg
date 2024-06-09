@@ -304,7 +304,7 @@ class RPGGame(BaseGame):
             # 必要组件
             _entity.add(ActorComponent, builddata.name, "")
             _entity.add(SimpleRPGRoleComponent, builddata.name, builddata.attributes[0], builddata.attributes[1], builddata.attributes[2], builddata.attributes[3])
-            _entity.add(AppearanceComponent, builddata.role_appearance)
+            _entity.add(AppearanceComponent, builddata._appearance)
 
             #重构
             agent_connect_system.register_agent(builddata.name, builddata.url)

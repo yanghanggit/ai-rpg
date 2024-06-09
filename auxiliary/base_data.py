@@ -7,7 +7,7 @@ from loguru import logger
 #
 class PropType(Enum):
     INVALID = 0,
-    ROLE_COMPONENT = 1
+    ACTOR_COMPONENT = 1
     WEAPON = 2
     CLOTHES = 3
     NON_CONSUMABLE_ITEM = 4
@@ -34,8 +34,8 @@ class PropData:
     
     @property
     def e_type(self) -> PropType:
-        if self.is_role_component():
-            return PropType.ROLE_COMPONENT
+        if self.is_actor_component():
+            return PropType.ACTOR_COMPONENT
         elif self.is_weapon():
             return PropType.WEAPON
         elif self.is_clothes():
@@ -46,7 +46,7 @@ class PropData:
         #     self.em_type = PropType.EVENT
         return PropType.INVALID
     
-    def is_role_component(self) -> bool:
+    def is_actor_component(self) -> bool:
         return self._type == "RoleComponent"
     
     def is_weapon(self) -> bool:
@@ -143,11 +143,11 @@ class StageData:
                  props: set[PropData],
                  foo3: Any,
                  stage_entry_status: str,
-                 stage_entry_role_status: str,
-                 stage_entry_role_props: str,
+                 stage_entry_actor_status: str,
+                 stage_entry_actor_props: str,
                  stage_exit_status: str,
-                 stage_exit_role_status: str,
-                 stage_exit_role_props: str
+                 stage_exit_actor_status: str,
+                 stage_exit_actor_props: str
                  ) -> None:
         
         self.name = name
@@ -165,11 +165,11 @@ class StageData:
 
         # 新的限制条件
         self.stage_entry_status: str = stage_entry_status
-        self.stage_entry_role_status: str = stage_entry_role_status
-        self.stage_entry_role_props: str = stage_entry_role_props
+        self.stage_entry_actor_status: str = stage_entry_actor_status
+        self.stage_entry_actor_props: str = stage_entry_actor_props
         self.stage_exit_status: str = stage_exit_status
-        self.stage_exit_role_status: str = stage_exit_role_status
-        self.stage_exit_role_props: str = stage_exit_role_props
+        self.stage_exit_actor_status: str = stage_exit_actor_status
+        self.stage_exit_actor_props: str = stage_exit_actor_props
 
     ###
     def stage_as_exit_of_portal(self, stagename: str) -> None:

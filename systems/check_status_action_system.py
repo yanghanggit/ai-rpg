@@ -1,6 +1,6 @@
 from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity #type: ignore
 from auxiliary.extended_context import ExtendedContext
-from auxiliary.components import (CheckStatusActionComponent, SimpleRPGRoleComponent, ActorComponent, DeadActionComponent)
+from auxiliary.components import (CheckStatusActionComponent, SimpleRPGAttrComponent, ActorComponent, DeadActionComponent)
 from loguru import logger
 from auxiliary.director_component import notify_stage_director
 from typing import List, override
@@ -17,7 +17,7 @@ class CheckStatusActionHelper:
         self.props: List[PropData] = []
         self.maxhp = 0
         self.hp = 0
-        self.role_components: List[PropData] = []
+        self.actor_components: List[PropData] = []
         self.events: List[PropData] = []
 
     def clear(self) -> None:
@@ -33,15 +33,15 @@ class CheckStatusActionHelper:
         for file in files:
             if file.prop.is_weapon() or file.prop.is_clothes() or file.prop.is_non_consumable_item():
                 self.props.append(file.prop)
-            elif file.prop.is_role_component():
-                self.role_components.append(file.prop)
+            elif file.prop.is_actor_component():
+                self.actor_components.append(file.prop)
             # elif file.prop.is_event():
             #     self.events.append(file.prop)
             
     def check_health(self, entity: Entity) -> None:
-        if not entity.has(SimpleRPGRoleComponent):
+        if not entity.has(SimpleRPGAttrComponent):
             return 
-        rpgcomp: SimpleRPGRoleComponent = entity.get(SimpleRPGRoleComponent)
+        rpgcomp: SimpleRPGAttrComponent = entity.get(SimpleRPGAttrComponent)
         self.maxhp = rpgcomp.maxhp
         self.hp = rpgcomp.hp
 
@@ -61,18 +61,18 @@ class CheckStatusActionHelper:
 ####################################################################################################################################        
 class ActorCheckStatusEvent(IDirectorEvent):
 
-    def __init__(self, who: str, props: List[PropData], health: float, role_components: List[PropData], events: List[PropData]) -> None:
+    def __init__(self, who: str, props: List[PropData], health: float, actor_components: List[PropData], events: List[PropData]) -> None:
         self.who = who
         self.props = props
         self.health = health
-        self.role_comps = role_components
+        self.actor_comps = actor_components
         self.events = events
 
     def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
         if actor_name != self.who:
             # 只有自己知道
             return ""
-        return check_status_action_prompt(self.who, self.props, self.health, self.role_comps, self.events)
+        return check_status_action_prompt(self.who, self.props, self.health, self.actor_comps, self.events)
     
     def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
         return ""
@@ -105,6 +105,6 @@ class CheckStatusActionSystem(ReactiveProcessor):
         helper = CheckStatusActionHelper(self.context)
         helper.check_status(entity)
         #
-        notify_stage_director(self.context, entity, ActorCheckStatusEvent(safe_name, helper.props, helper.health, helper.role_components, helper.events))
+        notify_stage_director(self.context, entity, ActorCheckStatusEvent(safe_name, helper.props, helper.health, helper.actor_components, helper.events))
 ###################################################################################################################
     

@@ -2,14 +2,14 @@ from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignor
 from auxiliary.components import (GoToActionComponent, 
                         ActorComponent, 
                         StageExitCondStatusComponent,
-                        StageExitCondCheckRoleStatusComponent,
-                        StageExitCondCheckRolePropsComponent,
+                        StageExitCondCheckActorStatusComponent,
+                        StageExitCondCheckActorPropsComponent,
                         AppearanceComponent,
                         EnviroNarrateActionComponent,
                         TagActionComponent,
                         StageEntryCondStatusComponent,
-                        StageEntryCondCheckRoleStatusComponent,
-                        StageEntryCondCheckRolePropsComponent,
+                        StageEntryCondCheckActorStatusComponent,
+                        StageEntryCondCheckActorPropsComponent,
                         DeadActionComponent)
 from auxiliary.actor_plan_and_action import ActorAction
 from auxiliary.extended_context import ExtendedContext
@@ -22,8 +22,8 @@ from auxiliary.cn_builtin_prompt import \
             exit_stage_failed_beacuse_stage_refuse_prompt, \
             enter_stage_failed_beacuse_stage_refuse_prompt, \
             NO_INFO_PROMPT,\
-            NO_ROLE_PROPS_INFO_PROMPT, \
-            role_status_when_stage_change_prompt
+            NO_ACTOR_PROPS_INFO_PROMPT, \
+            actor_status_when_stage_change_prompt
 from typing import Optional, cast, override
 from systems.check_status_action_system import CheckStatusActionHelper
 from auxiliary.actor_plan_and_action import ActorPlan
@@ -73,8 +73,8 @@ class StageConditionsHelper:
     def clear(self) -> None:
         self.stage_name = ""
         self.stage_cond_status_prompt = str(NO_INFO_PROMPT)
-        self.cond_check_role_status_prompt = str(NO_INFO_PROMPT)
-        self.cond_check_role_props_prompt = str(NO_INFO_PROMPT)
+        self.cond_check_actor_status_prompt = str(NO_INFO_PROMPT)
+        self.cond_check_actor_props_prompt = str(NO_INFO_PROMPT)
 ###############################################################################################################################################
     def prepare_exit_cond(self, stage_entity: Entity, context: ExtendedContext) -> None:
         self.clear()
@@ -83,11 +83,11 @@ class StageConditionsHelper:
         if stage_entity.has(StageExitCondStatusComponent):
             self.stage_cond_status_prompt = cast(StageExitCondStatusComponent, stage_entity.get(StageExitCondStatusComponent)).condition
         # 准备好数据
-        if stage_entity.has(StageExitCondCheckRoleStatusComponent):
-            self.cond_check_role_status_prompt = cast(StageExitCondCheckRoleStatusComponent, stage_entity.get(StageExitCondCheckRoleStatusComponent)).condition
+        if stage_entity.has(StageExitCondCheckActorStatusComponent):
+            self.cond_check_actor_status_prompt = cast(StageExitCondCheckActorStatusComponent, stage_entity.get(StageExitCondCheckActorStatusComponent)).condition
         # 准备好数据
-        if stage_entity.has(StageExitCondCheckRolePropsComponent):
-            self.cond_check_role_props_prompt = cast(StageExitCondCheckRolePropsComponent, stage_entity.get(StageExitCondCheckRolePropsComponent)).condition
+        if stage_entity.has(StageExitCondCheckActorPropsComponent):
+            self.cond_check_actor_props_prompt = cast(StageExitCondCheckActorPropsComponent, stage_entity.get(StageExitCondCheckActorPropsComponent)).condition
 ###############################################################################################################################################
     def prepare_entry_cond(self, stage_entity: Entity, context: ExtendedContext) -> None:
         self.clear()
@@ -96,11 +96,11 @@ class StageConditionsHelper:
         if stage_entity.has(StageEntryCondStatusComponent):
             self.stage_cond_status_prompt = cast(StageEntryCondStatusComponent, stage_entity.get(StageEntryCondStatusComponent)).condition
         # 准备好数据
-        if stage_entity.has(StageEntryCondCheckRoleStatusComponent):
-            self.cond_check_role_status_prompt = cast(StageEntryCondCheckRoleStatusComponent, stage_entity.get(StageEntryCondCheckRoleStatusComponent)).condition
+        if stage_entity.has(StageEntryCondCheckActorStatusComponent):
+            self.cond_check_actor_status_prompt = cast(StageEntryCondCheckActorStatusComponent, stage_entity.get(StageEntryCondCheckActorStatusComponent)).condition
         # 准备好数据
-        if stage_entity.has(StageEntryCondCheckRolePropsComponent):
-            self.cond_check_role_props_prompt = cast(StageEntryCondCheckRolePropsComponent, stage_entity.get(StageEntryCondCheckRolePropsComponent)).condition
+        if stage_entity.has(StageEntryCondCheckActorPropsComponent):
+            self.cond_check_actor_props_prompt = cast(StageEntryCondCheckActorPropsComponent, stage_entity.get(StageEntryCondCheckActorPropsComponent)).condition
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
@@ -188,18 +188,18 @@ class PreActorChangeStageSystem(ReactiveProcessor):
     def need_check_exit_cond(self, stage_entity: Entity) -> bool:
         if stage_entity.has(StageExitCondStatusComponent):
             return True
-        if stage_entity.has(StageExitCondCheckRoleStatusComponent):
+        if stage_entity.has(StageExitCondCheckActorStatusComponent):
             return True
-        if stage_entity.has(StageExitCondCheckRolePropsComponent):
+        if stage_entity.has(StageExitCondCheckActorPropsComponent):
             return True
         return False
 ###############################################################################################################################################
     def need_check_entry_cond(self, stage_entity: Entity) -> bool:
         if stage_entity.has(StageEntryCondStatusComponent):
             return True
-        if stage_entity.has(StageEntryCondCheckRoleStatusComponent):
+        if stage_entity.has(StageEntryCondCheckActorStatusComponent):
             return True
-        if stage_entity.has(StageEntryCondCheckRolePropsComponent):
+        if stage_entity.has(StageEntryCondCheckActorPropsComponent):
             return True
         return False
 ###############################################################################################################################################
@@ -216,17 +216,17 @@ class PreActorChangeStageSystem(ReactiveProcessor):
         stage_exit_cond_helper = StageConditionsHelper(f"离开{current_stage_name}的检查所有条件")
         stage_exit_cond_helper.prepare_exit_cond(current_stage_entity, self.context)
         # 准备好数据
-        current_role_status_prompt = self.get_role_status_prompt(entity)
-        current_role_props_prompt = self.get_role_props_prompt(entity)
+        current_actor_status_prompt = self.get_actor_status_prompt(entity)
+        current_actor_props_prompt = self.get_actor_props_prompt(entity)
         
         
         final_prompt = stage_exit_conditions_check_promt(actor_name, 
                                                          current_stage_name, 
                                                          stage_exit_cond_helper.stage_cond_status_prompt, 
-                                                         stage_exit_cond_helper.cond_check_role_status_prompt, 
-                                                         current_role_status_prompt, 
-                                                         stage_exit_cond_helper.cond_check_role_props_prompt, 
-                                                         current_role_props_prompt)
+                                                         stage_exit_cond_helper.cond_check_actor_status_prompt, 
+                                                         current_actor_status_prompt, 
+                                                         stage_exit_cond_helper.cond_check_actor_props_prompt, 
+                                                         current_actor_props_prompt)
 
         logger.debug(final_prompt)
 
@@ -274,16 +274,16 @@ class PreActorChangeStageSystem(ReactiveProcessor):
         stage_exit_cond_helper = StageConditionsHelper(f"进入{target_stage_name}的检查所有条件")
         stage_exit_cond_helper.prepare_entry_cond(target_stage_entity, self.context)
         # 准备好数据
-        current_role_status_prompt = self.get_role_status_prompt(entity)
-        current_role_props_prompt = self.get_role_props_prompt(entity)
+        current_actor_status_prompt = self.get_actor_status_prompt(entity)
+        current_actor_props_prompt = self.get_actor_props_prompt(entity)
         # 最终提示词
         final_prompt = stage_entry_conditions_check_promt(actor_name, 
                                                          target_stage_name, 
                                                          stage_exit_cond_helper.stage_cond_status_prompt, 
-                                                         stage_exit_cond_helper.cond_check_role_status_prompt, 
-                                                         current_role_status_prompt, 
-                                                         stage_exit_cond_helper.cond_check_role_props_prompt, 
-                                                         current_role_props_prompt)
+                                                         stage_exit_cond_helper.cond_check_actor_status_prompt, 
+                                                         current_actor_status_prompt, 
+                                                         stage_exit_cond_helper.cond_check_actor_props_prompt, 
+                                                         current_actor_props_prompt)
 
         logger.debug(final_prompt)
 
@@ -326,21 +326,21 @@ class PreActorChangeStageSystem(ReactiveProcessor):
         stageentity = self.context.get_stage_entity(target_stage_name)
         return stageentity
 ###############################################################################################################################################
-    def get_role_status_prompt(self, entity: Entity) -> str:
+    def get_actor_status_prompt(self, entity: Entity) -> str:
         safe_name = self.context.safe_get_entity_name(entity)
-        role_appearance_comp: AppearanceComponent = entity.get(AppearanceComponent)
-        appearance_info: str = role_appearance_comp.appearance
-        return role_status_when_stage_change_prompt(safe_name, appearance_info)
+        appearance_comp: AppearanceComponent = entity.get(AppearanceComponent)
+        appearance_info: str = appearance_comp.appearance
+        return actor_status_when_stage_change_prompt(safe_name, appearance_info)
 ###############################################################################################################################################
-    def get_role_props_prompt(self, entity: Entity) -> str:
+    def get_actor_props_prompt(self, entity: Entity) -> str:
         helper = CheckStatusActionHelper(self.context)
         helper.check_status(entity)
-        props = helper.props + helper.role_components
+        props = helper.props + helper.actor_components
         prompt_of_props = ""
         if len(props) > 0:
             for prop in props:
                 prompt_of_props += prop_info_prompt(prop)
         else:
-            prompt_of_props = str(NO_ROLE_PROPS_INFO_PROMPT)
+            prompt_of_props = str(NO_ACTOR_PROPS_INFO_PROMPT)
         return prompt_of_props
 ###############################################################################################################################################

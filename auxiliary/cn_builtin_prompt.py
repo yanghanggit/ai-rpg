@@ -9,7 +9,7 @@ STAGE_PLAN_PROMPT_TAG = "<%这是场景计划>"
 COMPRESS_ACTOR_PLAN_PROMPT = "请做出你的计划，决定你将要做什么"
 COMPRESS_STAGE_PLAN_PROMPT = "请输出'你的当前描述'和'你的计划'"
 NO_INFO_PROMPT = "- 无"
-NO_ROLE_PROPS_INFO_PROMPT = "- 无任何道具或者特殊技能"
+NO_ACTOR_PROPS_INFO_PROMPT = "- 无任何道具或者特殊技能"
 ##
 USE_PROP_TO_STAGE_PROMPT_TAG = "<%这是角色对场景使用道具>"
 ###############################################################################################################################################
@@ -132,7 +132,7 @@ def prop_type_prompt(prop: PropData) -> str:
         _type = "衣服(用于提高防御力)"
     elif prop.is_non_consumable_item():
         _type = "非消耗品"
-    elif prop.is_role_component():
+    elif prop.is_actor_component():
         _type = "特殊能力"
     return _type
 ###############################################################################################################################################
@@ -144,13 +144,13 @@ def prop_info_prompt(prop: PropData) -> str:
 """
     return prompt
 ###############################################################################################################################################
-def role_component_info_prompt(prop: PropData) -> str:
+def actor_component_info_prompt(prop: PropData) -> str:
     prompt = f"""### {prop._name}
 - {prop._description}
 """
     return prompt
 ###############################################################################################################################################
-def check_status_action_prompt(who: str, props: List[PropData], health: float, role_components: List[PropData], events: List[PropData]) -> str:
+def check_status_action_prompt(who: str, props: List[PropData], health: float, actor_components: List[PropData], events: List[PropData]) -> str:
     #百分比的
     health *= 100
     prompt_of_actor = f"生命值: {health:.2f}%"
@@ -162,12 +162,12 @@ def check_status_action_prompt(who: str, props: List[PropData], health: float, r
     else:
         prompt_of_props = "- 无任何道具。"
 
-    prompt_of_role_components = ""
-    if len(role_components) > 0:
-        for role in role_components:
-            prompt_of_role_components += role_component_info_prompt(role)
+    prompt_of_actor_components = ""
+    if len(actor_components) > 0:
+        for _r in actor_components:
+            prompt_of_actor_components += actor_component_info_prompt(_r)
     else:
-        prompt_of_role_components = "- 无任何特殊能力。"
+        prompt_of_actor_components = "- 无任何特殊能力。"
 
     final_prompt = f"""# {who}对自身执行CheckStatusActionComponent,即对自身状态进行检查,结果如下:
 ## 健康状态:
@@ -175,7 +175,7 @@ def check_status_action_prompt(who: str, props: List[PropData], health: float, r
 ## 持有道具:
 {prompt_of_props}
 ## 特殊能力:
-{prompt_of_role_components}
+{prompt_of_actor_components}
 """
     return final_prompt
 ###############################################################################################################################################
@@ -310,8 +310,8 @@ def use_prop_to_stage_prompt(username: str, propname: str, prop_prompt: str, exi
 ################################################################################################################################################
 def stage_exit_conditions_check_promt(actor_name: str, current_stage_name: str, 
                                       stage_cond_status_prompt: str, 
-                                      cond_check_role_status_prompt: str, role_status_prompt: str, 
-                                      cond_check_role_props_prompt: str, role_props_prompt: str) -> str:
+                                      cond_check_actor_status_prompt: str, actor_status_prompt: str, 
+                                      cond_check_actor_props_prompt: str, actor_props_prompt: str) -> str:
      # 拼接提示词
     final_prompt = f"""# {actor_name} 想要离开场景: {current_stage_name}。
 # 第1步: 根据当前‘你的状态’判断是否满足离开条件
@@ -321,15 +321,15 @@ def stage_exit_conditions_check_promt(actor_name: str, current_stage_name: str,
 
 # 第2步: 检查{actor_name}的状态是否符合以下要求:
 ## 必须满足的状态信息: 
-{cond_check_role_status_prompt}
+{cond_check_actor_status_prompt}
 ## 当前角色状态: 
-{role_status_prompt}
+{actor_status_prompt}
 
 # 第3步: 检查{actor_name}的道具(与拥有的特殊技能)是否符合以下要求:
 ## 必须满足的道具与特殊技能信息: 
-{cond_check_role_props_prompt}
+{cond_check_actor_props_prompt}
 ## 当前角色道具与特殊技能信息: 
-{role_props_prompt}
+{actor_props_prompt}
 
 # 判断结果
 - 完成以上步骤后，决定是否允许 {actor_name} 离开 {current_stage_name}。
@@ -348,8 +348,8 @@ def stage_exit_conditions_check_promt(actor_name: str, current_stage_name: str,
 ################################################################################################################################################
 def stage_entry_conditions_check_promt(actor_name: str, current_stage_name: str, 
                                       stage_cond_status_prompt: str, 
-                                      cond_check_role_status_prompt: str, role_status_prompt: str, 
-                                      cond_check_role_props_prompt: str, role_props_prompt: str) -> str:
+                                      cond_check_actor_status_prompt: str, actor_status_prompt: str, 
+                                      cond_check_actor_props_prompt: str, actor_props_prompt: str) -> str:
     # 拼接提示词
     final_prompt = f"""# {actor_name} 想要进入场景: {current_stage_name}。
 # 第1步: 根据当前‘你的状态’判断是否满足进入条件
@@ -359,15 +359,15 @@ def stage_entry_conditions_check_promt(actor_name: str, current_stage_name: str,
 
 # 第2步: 检查{actor_name}的状态是否符合以下要求:
 ## 必须满足的状态信息: 
-{cond_check_role_status_prompt}
+{cond_check_actor_status_prompt}
 ## 当前角色状态: 
-{role_status_prompt}
+{actor_status_prompt}
 
 # 第3步: 检查{actor_name}的道具(与拥有的特殊技能)是否符合以下要求:
 ## 必须满足的道具与特殊技能信息: 
-{cond_check_role_props_prompt}
+{cond_check_actor_props_prompt}
 ## 当前角色道具与特殊技能信息: 
-{role_props_prompt}
+{actor_props_prompt}
 
 # 判断结果
 - 完成以上步骤后，决定是否允许 {actor_name} 进入 {current_stage_name}。
@@ -394,7 +394,7 @@ def enter_stage_failed_beacuse_stage_refuse_prompt(actor_name: str, stagename: s
 ## 说明:
 {tips}"""
 ################################################################################################################################################
-def role_status_when_stage_change_prompt(safe_name: str, appearance_info:str) -> str:
+def actor_status_when_stage_change_prompt(safe_name: str, appearance_info:str) -> str:
     return f"""### {safe_name}\n- 外貌信息:{appearance_info}\n"""
 ################################################################################################################################################
 def use_prop_no_response_prompt(username: str, propname: str, targetname: str) -> str:

@@ -17,12 +17,12 @@ AutoPlanningComponent = namedtuple('AutoPlanningComponent', 'name')
 AppearanceComponent = namedtuple('AppearanceComponent', 'appearance')
 # 场景离开条件
 StageExitCondStatusComponent = namedtuple('StageExitCondStatusComponent', 'condition')
-StageExitCondCheckRoleStatusComponent = namedtuple('StageExitCondCheckRoleStatusComponent', 'condition')
-StageExitCondCheckRolePropsComponent = namedtuple('StageExitCondCheckRolePropsComponent', 'condition')
+StageExitCondCheckActorStatusComponent = namedtuple('StageExitCondCheckActorStatusComponent', 'condition')
+StageExitCondCheckActorPropsComponent = namedtuple('StageExitCondCheckActorPropsComponent', 'condition')
 # 场景进入条件
 StageEntryCondStatusComponent = namedtuple('StageEntryCondStatusComponent', 'condition')
-StageEntryCondCheckRoleStatusComponent = namedtuple('StageEntryCondCheckRoleStatusComponent', 'condition')
-StageEntryCondCheckRolePropsComponent = namedtuple('StageEntryCondCheckRolePropsComponent', 'condition')
+StageEntryCondCheckActorStatusComponent = namedtuple('StageEntryCondCheckActorStatusComponent', 'condition')
+StageEntryCondCheckActorPropsComponent = namedtuple('StageEntryCondCheckActorPropsComponent', 'condition')
 # 作为门类型的场景的组件标记
 ExitOfPortalComponent = namedtuple('ExitOfPortalComponent', 'name')
 ##############################################################################################################################################
@@ -63,10 +63,11 @@ PerceptionActionComponent = namedtuple('PerceptionActionComponent', 'action')
 CheckStatusActionComponent = namedtuple('CheckStatusActionComponent', 'action')
 ##############################################################################################################################################
 
+#SimpleRPGAttrComponent
 ######################################### 测试组件（业务强相关）：RPG Game #######################################################################
-SimpleRPGRoleComponent = namedtuple('SimpleRPGRoleComponent', 'name maxhp hp attack defense')
-SimpleRPGRoleWeaponComponent = namedtuple('SimpleRPGRoleWeaponComponent', 'name weaponname maxhp attack defense')
-SimpleRPGRoleArmorComponent = namedtuple('SimpleRPGRoleArmorComponent', 'name armorname maxhp attack defense')
+SimpleRPGAttrComponent = namedtuple('SimpleRPGAttrComponent', 'name maxhp hp attack defense')
+SimpleRPGWeaponComponent = namedtuple('SimpleRPGWeaponComponent', 'name weaponname maxhp attack defense')
+SimpleRPGArmorComponent = namedtuple('SimpleRPGArmorComponent', 'name armorname maxhp attack defense')
 ##############################################################################################################################################
 
 

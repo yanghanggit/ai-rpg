@@ -1,5 +1,5 @@
 from entitas import Matcher, ReactiveProcessor, GroupEvent, Entity # type: ignore
-from auxiliary.components import AttackActionComponent, SimpleRPGRoleComponent, DeadActionComponent, SimpleRPGRoleWeaponComponent, SimpleRPGRoleArmorComponent
+from auxiliary.components import AttackActionComponent, SimpleRPGAttrComponent, DeadActionComponent, SimpleRPGWeaponComponent, SimpleRPGArmorComponent
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.actor_plan_and_action import ActorAction
 from loguru import logger
@@ -61,7 +61,7 @@ class AttackActionSystem(ReactiveProcessor):
 ######################################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(AttackActionComponent) and entity.has(SimpleRPGRoleComponent)
+        return entity.has(AttackActionComponent) and entity.has(SimpleRPGAttrComponent)
 ######################################################################################################################################################
     @override
     def react(self, entities: list[Entity]) -> None:
@@ -70,7 +70,7 @@ class AttackActionSystem(ReactiveProcessor):
  ######################################################################################################################################################   
     def _attack(self, entity: Entity) -> None:
         context = self.context
-        rpgcomp: SimpleRPGRoleComponent = entity.get(SimpleRPGRoleComponent)
+        rpgcomp: SimpleRPGAttrComponent = entity.get(SimpleRPGAttrComponent)
         fightcomp: AttackActionComponent = entity.get(AttackActionComponent)
         action: ActorAction = fightcomp.action
         for value in action.values:
@@ -80,8 +80,8 @@ class AttackActionSystem(ReactiveProcessor):
                 logger.warning(f"攻击者{action.name}意图攻击的对象{value}无法被找到,本次攻击无效.")
                 continue
 
-            if not findtarget.has(SimpleRPGRoleComponent):
-                logger.warning(f"攻击者{action.name}意图攻击的对象{value}没有SimpleRPGRoleComponent,本次攻击无效.")
+            if not findtarget.has(SimpleRPGAttrComponent):
+                logger.warning(f"攻击者{action.name}意图攻击的对象{value}没有SimpleRPGComponent,本次攻击无效.")
                 continue
 
             if conversation_check(self.context, entity, value) != ErrorConversationEnable.VALID:
@@ -90,7 +90,7 @@ class AttackActionSystem(ReactiveProcessor):
                 continue
             
             #目标拿出来
-            targetsrpgcomp: SimpleRPGRoleComponent = findtarget.get(SimpleRPGRoleComponent)
+            targetsrpgcomp: SimpleRPGAttrComponent = findtarget.get(SimpleRPGAttrComponent)
 
             #简单的战斗计算，简单的血减掉伤害
             hp = targetsrpgcomp.hp
@@ -104,7 +104,7 @@ class AttackActionSystem(ReactiveProcessor):
             lefthp = max(0, min(lefthp, targetsrpgcomp.maxhp))
 
             #结果修改
-            findtarget.replace(SimpleRPGRoleComponent, targetsrpgcomp.name, targetsrpgcomp.maxhp, lefthp, targetsrpgcomp.attack, targetsrpgcomp.defense)
+            findtarget.replace(SimpleRPGAttrComponent, targetsrpgcomp.name, targetsrpgcomp.maxhp, lefthp, targetsrpgcomp.attack, targetsrpgcomp.defense)
 
             ##死亡是关键
             isdead = (lefthp <= 0)
@@ -133,8 +133,8 @@ class AttackActionSystem(ReactiveProcessor):
     def unique_prop_be_taken_away(self, thekiller: Entity, whoiskilled: Entity) -> None:
 
         file_system = self.context.file_system
-        killer_rpg_comp: SimpleRPGRoleComponent = thekiller.get(SimpleRPGRoleComponent)
-        be_killed_one_rpg_comp: SimpleRPGRoleComponent = whoiskilled.get(SimpleRPGRoleComponent)
+        killer_rpg_comp: SimpleRPGAttrComponent = thekiller.get(SimpleRPGAttrComponent)
+        be_killed_one_rpg_comp: SimpleRPGAttrComponent = whoiskilled.get(SimpleRPGAttrComponent)
         logger.info(f"{killer_rpg_comp.name} kill => {be_killed_one_rpg_comp.name}")
         
         hisprops = file_system.get_prop_files(be_killed_one_rpg_comp.name)
@@ -150,12 +150,12 @@ class AttackActionSystem(ReactiveProcessor):
         final: int = 0
 
         #基础的伤害
-        rpgcomp: SimpleRPGRoleComponent = entity.get(SimpleRPGRoleComponent)
+        rpgcomp: SimpleRPGAttrComponent = entity.get(SimpleRPGAttrComponent)
         final += cast(int, rpgcomp.attack)
 
         #计算武器带来的伤害
-        if entity.has(SimpleRPGRoleWeaponComponent):
-            weaponcomp: SimpleRPGRoleWeaponComponent = entity.get(SimpleRPGRoleWeaponComponent)
+        if entity.has(SimpleRPGWeaponComponent):
+            weaponcomp: SimpleRPGWeaponComponent = entity.get(SimpleRPGWeaponComponent)
             final += cast(int, weaponcomp.attack)
 
         return final
@@ -165,12 +165,12 @@ class AttackActionSystem(ReactiveProcessor):
         final: int = 0
 
         #基础防御力
-        rpgcomp: SimpleRPGRoleComponent = entity.get(SimpleRPGRoleComponent)
+        rpgcomp: SimpleRPGAttrComponent = entity.get(SimpleRPGAttrComponent)
         final += cast(int, rpgcomp.defense)
 
         #计算衣服带来的防御力
-        if entity.has(SimpleRPGRoleArmorComponent):
-            armorcomp: SimpleRPGRoleArmorComponent = entity.get(SimpleRPGRoleArmorComponent)
+        if entity.has(SimpleRPGArmorComponent):
+            armorcomp: SimpleRPGArmorComponent = entity.get(SimpleRPGArmorComponent)
             final += cast(int, armorcomp.defense)
 
         return final

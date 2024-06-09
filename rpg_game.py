@@ -10,14 +10,14 @@ from auxiliary.components import (
     ExitOfPortalComponent,
     ActorComponent, 
     PlayerComponent, 
-    SimpleRPGRoleComponent, 
+    SimpleRPGAttrComponent, 
     AppearanceComponent,
     StageExitCondStatusComponent,
-    StageExitCondCheckRoleStatusComponent,
-    StageExitCondCheckRolePropsComponent,
+    StageExitCondCheckActorStatusComponent,
+    StageExitCondCheckActorPropsComponent,
     StageEntryCondStatusComponent,
-    StageEntryCondCheckRoleStatusComponent,
-    StageEntryCondCheckRolePropsComponent,
+    StageEntryCondCheckActorStatusComponent,
+    StageEntryCondCheckActorPropsComponent,
     )
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.game_builders import GameBuilder, StageBuilder, ActorBuilder
@@ -60,7 +60,7 @@ from base_game import BaseGame
 from systems.agents_connect_system import AgentsConnectSystem
 from auxiliary.file_system_helper import add_actor_archive_files
 from systems.my_processors import MyProcessors
-from systems.simple_rpg_role_pre_fight_system import SimpleRPGRolePreFightSystem
+from systems.simple_rpg_pre_fight_system import SimpleRPGPreFightSystem
 from systems.update_client_message_system import UpdateClientMessageSystem
 from systems.terminal_player_interrupt_and_wait_system import TerminalPlayerInterruptAndWaitSystem
 from systems.compress_chat_history_system import CompressChatHistorySystem
@@ -110,7 +110,7 @@ class RPGGame(BaseGame):
         processors.add(PostConversationActionSystem(context))
 
         #战斗类的行为 ##########
-        processors.add(SimpleRPGRolePreFightSystem(context)) #战斗之前需要更新装备
+        processors.add(SimpleRPGPreFightSystem(context)) #战斗之前需要更新装备
         processors.add(AttackActionSystem(context)) 
         processors.add(PostFightSystem(context))
 
@@ -303,7 +303,7 @@ class RPGGame(BaseGame):
 
             # 必要组件
             _entity.add(ActorComponent, builddata.name, "")
-            _entity.add(SimpleRPGRoleComponent, builddata.name, builddata.attributes[0], builddata.attributes[1], builddata.attributes[2], builddata.attributes[3])
+            _entity.add(SimpleRPGAttrComponent, builddata.name, builddata.attributes[0], builddata.attributes[1], builddata.attributes[2], builddata.attributes[3])
             _entity.add(AppearanceComponent, builddata._appearance)
 
             #重构
@@ -349,7 +349,7 @@ class RPGGame(BaseGame):
             #必要组件
             stageentity.add(StageComponent, builddata.name)
             stageentity.add(StageDirectorComponent, builddata.name) ###
-            stageentity.add(SimpleRPGRoleComponent, builddata.name, builddata.attributes[0], builddata.attributes[1], builddata.attributes[2], builddata.attributes[3])
+            stageentity.add(SimpleRPGAttrComponent, builddata.name, builddata.attributes[0], builddata.attributes[1], builddata.attributes[2], builddata.attributes[3])
     
             ## 重新设置Actor和stage的关系
             for _actor in builddata.actors:
@@ -392,22 +392,22 @@ class RPGGame(BaseGame):
         if builddata.stage_entry_status != "":
             stageentity.add(StageEntryCondStatusComponent, builddata.stage_entry_status)
             logger.debug(f"如果进入场景，场景需要检查条件：{builddata.stage_entry_status}")
-        if builddata.stage_entry_role_status != "":
-            stageentity.add(StageEntryCondCheckRoleStatusComponent, builddata.stage_entry_role_status)
-            logger.debug(f"如果进入场景，需要检查角色符合条件：{builddata.stage_entry_role_status}")
-        if builddata.stage_entry_role_props != "":
-            stageentity.add(StageEntryCondCheckRolePropsComponent, builddata.stage_entry_role_props)
-            logger.debug(f"如果进入场景，需要检查角色拥有必要的道具：{builddata.stage_entry_role_props}")
+        if builddata.stage_entry_actor_status != "":
+            stageentity.add(StageEntryCondCheckActorStatusComponent, builddata.stage_entry_actor_status)
+            logger.debug(f"如果进入场景，需要检查角色符合条件：{builddata.stage_entry_actor_status}")
+        if builddata.stage_entry_actor_props != "":
+            stageentity.add(StageEntryCondCheckActorPropsComponent, builddata.stage_entry_actor_props)
+            logger.debug(f"如果进入场景，需要检查角色拥有必要的道具：{builddata.stage_entry_actor_props}")
 
         if builddata.stage_exit_status != "":
             stageentity.add(StageExitCondStatusComponent, builddata.stage_exit_status)
             logger.debug(f"如果离开场景，场景需要检查条件：{builddata.stage_exit_status}")
-        if builddata.stage_exit_role_status != "":
-            stageentity.add(StageExitCondCheckRoleStatusComponent, builddata.stage_exit_role_status)
-            logger.debug(f"如果离开场景，需要检查角色符合条件：{builddata.stage_exit_role_status}")
-        if builddata.stage_exit_role_props != "":
-            stageentity.add(StageExitCondCheckRolePropsComponent, builddata.stage_exit_role_props)
-            logger.debug(f"如果离开场景，需要检查角色拥有必要的道具：{builddata.stage_exit_role_props}")
+        if builddata.stage_exit_actor_status != "":
+            stageentity.add(StageExitCondCheckActorStatusComponent, builddata.stage_exit_actor_status)
+            logger.debug(f"如果离开场景，需要检查角色符合条件：{builddata.stage_exit_actor_status}")
+        if builddata.stage_exit_actor_props != "":
+            stageentity.add(StageExitCondCheckActorPropsComponent, builddata.stage_exit_actor_props)
+            logger.debug(f"如果离开场景，需要检查角色拥有必要的道具：{builddata.stage_exit_actor_props}")
 ###############################################################################################################################################
     def add_code_name_component_to_world_and_actors(self) -> None:
         context = self.extendedcontext

@@ -222,11 +222,11 @@ class ExcelEditorStage:
 
         # 添加新的场景限制条件
         dict["stage_entry_status"] = self.stage_entry_status
-        dict["stage_entry_role_status"] = self.stage_entry_role_status
-        dict["stage_entry_role_props"] = self.stage_entry_role_props
+        dict["stage_entry_role_status"] = self.stage_entry_actor_status
+        dict["stage_entry_role_props"] = self.stage_entry_actor_props
         dict["stage_exit_status"] = self.stage_exit_status
-        dict["stage_exit_role_status"] = self.stage_exit_role_status
-        dict["stage_exit_role_props"] = self.stage_exit_role_props
+        dict["stage_exit_role_status"] = self.stage_exit_actor_status
+        dict["stage_exit_role_props"] = self.stage_exit_actor_props
 
 
         output_dict: Dict[str, Any] = {}
@@ -257,11 +257,11 @@ class ExcelEditorStage:
         return self.safe_get_string("stage_entry_status")
 
     @property
-    def stage_entry_role_status(self) -> str:
+    def stage_entry_actor_status(self) -> str:
         return self.safe_get_string("stage_entry_role_status")
 
     @property
-    def stage_entry_role_props(self) -> str:
+    def stage_entry_actor_props(self) -> str:
         return self.safe_get_string("stage_entry_role_props")
 
     @property
@@ -269,9 +269,9 @@ class ExcelEditorStage:
         return self.safe_get_string("stage_exit_status")
 
     @property
-    def stage_exit_role_status(self) -> str:
+    def stage_exit_actor_status(self) -> str:
         return self.safe_get_string("stage_exit_role_status")
 
     @property
-    def stage_exit_role_props(self) -> str:
+    def stage_exit_actor_props(self) -> str:
         return self.safe_get_string("stage_exit_role_props")

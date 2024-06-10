@@ -13,44 +13,8 @@ from auxiliary.director_event import IDirectorEvent
 from systems.director_system import director_events_to_actor
 from auxiliary.cn_builtin_prompt import ( leave_stage_prompt,
                                           enter_stage_prompt1,
-                                          enter_stage_prompt2,
-                                          go_to_stage_failed_because_stage_is_invalid_prompt,
-                                          go_to_stage_failed_because_already_in_stage_prompt)
-####################################################################################################################################
-####################################################################################################################################
-####################################################################################################################################
-class ActorGoToFailedBecauseStageIsInvalidEvent(IDirectorEvent):
+                                          enter_stage_prompt2)
 
-    def __init__(self, actor_name: str, stagename: str) -> None:
-        self.actor_name = actor_name
-        self.stagename = stagename
-
-    def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
-        if actor_name != self.actor_name:
-            # 跟你无关不用关注，原因类的东西，是失败后矫正用，所以只有自己知道即可
-            return ""
-        return go_to_stage_failed_because_stage_is_invalid_prompt(self.actor_name, self.stagename)
-    
-    def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
-        return ""
-####################################################################################################################################
-####################################################################################################################################
-####################################################################################################################################
-class ActorGoToFailedBecauseAlreadyInStage(IDirectorEvent):
-
-    def __init__(self, actor_name: str, stagename: str) -> None:
-        self.actor_name = actor_name
-        self.stagename = stagename
-
-    def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
-        if actor_name != self.actor_name:
-            # 跟你无关不用关注，原因类的东西，是失败后矫正用，所以只有自己知道即可
-            return ""
-        already_in_stage_event = go_to_stage_failed_because_already_in_stage_prompt(self.actor_name, self.stagename)
-        return already_in_stage_event
-    
-    def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
-        return ""
 ###############################################################################################################################################
 class GoToActionHelper:
 

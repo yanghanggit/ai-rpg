@@ -29,7 +29,7 @@ from systems.actor_planning_system import ActorPlanningSystem
 from systems.speak_action_system import SpeakActionSystem
 from systems.attack_action_system import AttackActionSystem
 from systems.go_to_action_system import GoToActionSystem
-from systems.pre_actor_change_stage_system import PreActorChangeStageSystem
+from systems.check_before_go_to_action_system import CheckBeforeGoToActionSystem
 from systems.director_system import DirectorSystem
 from systems.destroy_system import DestroySystem
 from systems.stage_ready_for_planning_system import StageReadyForPlanningSystem
@@ -127,8 +127,10 @@ class RPGGame(BaseGame):
 
         # 场景切换类行为，非常重要而且必须在最后
         processors.add(PortalStepActionSystem(context)) 
-        processors.add(PreActorChangeStageSystem(context)) 
+        # 去往场景之前的检查与实际的执行
+        processors.add(CheckBeforeGoToActionSystem(context)) 
         processors.add(GoToActionSystem(context))
+        #
         processors.add(PerceptionActionSystem(context)) # 场景切换类行为之后可以发起感知
 
         processors.add(PostActionSystem(context)) ####### 在所有行动之后 #########################################

@@ -23,12 +23,48 @@ from auxiliary.cn_builtin_prompt import \
             enter_stage_failed_beacuse_stage_refuse_prompt, \
             NO_INFO_PROMPT,\
             NO_ACTOR_PROPS_INFO_PROMPT, \
-            actor_status_when_stage_change_prompt
+            actor_status_when_stage_change_prompt, \
+            go_to_stage_failed_because_stage_is_invalid_prompt, \
+            go_to_stage_failed_because_already_in_stage_prompt
 from typing import Optional, cast, override
 from systems.check_status_action_system import CheckStatusActionHelper
 from auxiliary.actor_plan_and_action import ActorPlan
 
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
+class ActorGoToFailedBecauseStageInvalid(IDirectorEvent):
 
+    def __init__(self, actor_name: str, stagename: str) -> None:
+        self.actor_name = actor_name
+        self.stagename = stagename
+
+    def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
+        if actor_name != self.actor_name:
+            # 跟你无关不用关注，原因类的东西，是失败后矫正用，所以只有自己知道即可
+            return ""
+        return go_to_stage_failed_because_stage_is_invalid_prompt(self.actor_name, self.stagename)
+    
+    def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
+        return ""
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
+class ActorGoToFailedBecauseAlreadyInStage(IDirectorEvent):
+
+    def __init__(self, actor_name: str, stagename: str) -> None:
+        self.actor_name = actor_name
+        self.stagename = stagename
+
+    def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
+        if actor_name != self.actor_name:
+            # 跟你无关不用关注，原因类的东西，是失败后矫正用，所以只有自己知道即可
+            return ""
+        already_in_stage_event = go_to_stage_failed_because_already_in_stage_prompt(self.actor_name, self.stagename)
+        return already_in_stage_event
+    
+    def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
+        return ""
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
@@ -65,17 +101,23 @@ class ActorEnterStageFailedBecauseStageRefuse(IDirectorEvent):
 ####################################################################################################################################
 ####################################################################################################################################
 class StageConditionsHelper:
+
+    tips: str
+    stage_name: str
+    stage_cond_status_prompt: str
+    cond_check_actor_status_prompt: str
+    cond_check_actor_props_prompt: str
      
     def __init__(self, tig: str) -> None:
         self.tips = tig
         self.clear()
-###############################################################################################################################################
+####################################################################################################################################
     def clear(self) -> None:
         self.stage_name = ""
         self.stage_cond_status_prompt = str(NO_INFO_PROMPT)
         self.cond_check_actor_status_prompt = str(NO_INFO_PROMPT)
         self.cond_check_actor_props_prompt = str(NO_INFO_PROMPT)
-###############################################################################################################################################
+####################################################################################################################################
     def prepare_exit_cond(self, stage_entity: Entity, context: ExtendedContext) -> None:
         self.clear()
         self.stage_name = context.safe_get_entity_name(stage_entity)
@@ -88,7 +130,7 @@ class StageConditionsHelper:
         # 准备好数据
         if stage_entity.has(StageExitCondCheckActorPropsComponent):
             self.cond_check_actor_props_prompt = cast(StageExitCondCheckActorPropsComponent, stage_entity.get(StageExitCondCheckActorPropsComponent)).condition
-###############################################################################################################################################
+####################################################################################################################################
     def prepare_entry_cond(self, stage_entity: Entity, context: ExtendedContext) -> None:
         self.clear()
         self.stage_name = context.safe_get_entity_name(stage_entity)
@@ -119,7 +161,7 @@ class HandleStageConditionsResponseHelper:
     def tips(self) -> str:
         return self._tips
 ###############################################################################################################################################
-    def handle(self) -> bool:
+    def parse(self) -> bool:
         if self._plan is None:
             return False
         
@@ -154,7 +196,7 @@ class HandleStageConditionsResponseHelper:
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class PreActorChangeStageSystem(ReactiveProcessor):
+class CheckBeforeGoToActionSystem(ReactiveProcessor):
 
     def __init__(self, context: ExtendedContext) -> None:
         super().__init__(context)
@@ -171,19 +213,51 @@ class PreActorChangeStageSystem(ReactiveProcessor):
     @override
     def react(self, entities: list[Entity]) -> None:
         for entity in entities:
-            
-            exit_result = self.handle_exit_stage(entity)
-            if not exit_result:
-                entity.remove(GoToActionComponent)  # 停止离开！
-                continue  #?
 
-            enter_result = self.handle_enter_stage(entity)
+            # 检查目标场景是否有效，可能是无效的，例如不存在，或者已经在目标场景了
+            if not self.check_target_stage_is_valid(entity):
+                self.on_failed(entity)
+                continue
+            
+            # 检查离开当前场景的条件是否满足，需要LLM推理
+            exit_result = self.handle_exit_stage_with_conditions(entity)
+            if not exit_result:
+                self.on_failed(entity)
+                continue
+            
+            # 检查进入目标场景的条件是否满足，需要LLM推理
+            enter_result = self.handle_enter_stage_with_conditions(entity)
             if not enter_result:
-                entity.remove(GoToActionComponent)  # 停止进入
-                continue  #?    
+                self.on_failed(entity)
+                continue 
 
             # 通过了，可以去下一个场景了
             logger.info(f"{self.context.safe_get_entity_name(entity)} 通过了离开和进入条件，可以去下一个场景了")    
+###############################################################################################################################################
+    def check_target_stage_is_valid(self, entity: Entity) -> bool:
+        current_stage_entity = self.context.safe_get_stage_entity(entity)
+        #assert current_stage_entity is not None
+        if current_stage_entity is None:
+            logger.error("当前场景为空??????！！！！！！！！！！！！！")
+            return False
+    
+        safe_name = self.context.safe_get_entity_name(entity)
+
+        target_stage_name = self.get_target_stage_name(entity)
+        target_stage_entity = self.get_target_stage_entity(entity)
+        if target_stage_entity is None:
+            notify_stage_director(self.context, 
+                                  current_stage_entity, 
+                                  ActorGoToFailedBecauseStageInvalid(safe_name, target_stage_name))
+            return False
+
+        if current_stage_entity == target_stage_entity:
+            notify_stage_director(self.context, 
+                                  current_stage_entity, 
+                                  ActorGoToFailedBecauseAlreadyInStage(safe_name, target_stage_name))
+            return False
+
+        return True
 ###############################################################################################################################################
     def need_check_exit_cond(self, stage_entity: Entity) -> bool:
         if stage_entity.has(StageExitCondStatusComponent):
@@ -203,7 +277,7 @@ class PreActorChangeStageSystem(ReactiveProcessor):
             return True
         return False
 ###############################################################################################################################################
-    def handle_exit_stage(self, entity: Entity) -> bool:
+    def handle_exit_stage_with_conditions(self, entity: Entity) -> bool:
         #
         current_stage_entity = self.context.safe_get_stage_entity(entity)
         assert current_stage_entity is not None
@@ -240,7 +314,7 @@ class PreActorChangeStageSystem(ReactiveProcessor):
         logger.debug(f"大模型推理后的结果: {respones}")
         plan = ActorPlan(current_stage_name, respones)
         handle_response_helper = HandleStageConditionsResponseHelper(plan)
-        if not handle_response_helper.handle():
+        if not handle_response_helper.parse():
             return False
         
         #
@@ -257,7 +331,7 @@ class PreActorChangeStageSystem(ReactiveProcessor):
         agent_connect_system.remove_last_conversation_between_human_and_ai(current_stage_name)
         return True
 ###############################################################################################################################################
-    def handle_enter_stage(self, entity: Entity) -> bool:
+    def handle_enter_stage_with_conditions(self, entity: Entity) -> bool:
         ##
         target_stage_entity = self.get_target_stage_entity(entity)
         if target_stage_entity is None:
@@ -297,7 +371,7 @@ class PreActorChangeStageSystem(ReactiveProcessor):
         logger.debug(f"大模型推理后的结果: {respones}")
         plan = ActorPlan(target_stage_name, respones)
         handle_response_helper = HandleStageConditionsResponseHelper(plan)
-        if not handle_response_helper.handle():
+        if not handle_response_helper.parse():
             return False
         
         if not handle_response_helper.result:
@@ -316,15 +390,16 @@ class PreActorChangeStageSystem(ReactiveProcessor):
         return True
 ###############################################################################################################################################
     def get_target_stage_entity(self, entity: Entity) -> Optional[Entity]:
+        target_stage_name = self.get_target_stage_name(entity)
+        return self.context.get_stage_entity(target_stage_name)
+###############################################################################################################################################
+    def get_target_stage_name(self, entity: Entity) -> str:
         go_to_action_comp: GoToActionComponent = entity.get(GoToActionComponent)
         action: ActorAction = go_to_action_comp.action
         if len(action.values) == 0:
             logger.error(go_to_action_comp)
-            return None
-        #
-        target_stage_name = action.values[0]
-        stageentity = self.context.get_stage_entity(target_stage_name)
-        return stageentity
+            return ""
+        return action.values[0]
 ###############################################################################################################################################
     def get_actor_status_prompt(self, entity: Entity) -> str:
         safe_name = self.context.safe_get_entity_name(entity)
@@ -343,4 +418,8 @@ class PreActorChangeStageSystem(ReactiveProcessor):
         else:
             prompt_of_props = str(NO_ACTOR_PROPS_INFO_PROMPT)
         return prompt_of_props
+###############################################################################################################################################
+    def on_failed(self, entity: Entity) -> None:
+        if entity.has(GoToActionComponent):
+            entity.remove(GoToActionComponent)
 ###############################################################################################################################################

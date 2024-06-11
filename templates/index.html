@@ -153,32 +153,43 @@
         <br># 创建游戏房间</br>
         <br>/create</br>
         <br># 加入已经存在的房间</br>
-        <br>/join @127.0.0.1</br>
+        <br>/join @'host_ip'</br>
+        <br>例如 /join @127.0.0.1</br>
         <br># 选择角色</br>
-        <br>/pickactor @无名的复活者</br>
-        <br>/pickactor @教廷密使</br>
+        <br>/pickactor @'角色名称'</br>
+        <br>例如 /pickactor @无名的复活者</br>
+        <br>例如 /pickactor @教廷密使</br>
         <br># 对谁使用某个道具</br>
-        <br>/useprop @禁言铁棺>腐朽的匕首</br>
+        <br>/useprop @'对象名字'>'道具名称'</br>
+        <br>例如 /useprop @禁言铁棺>腐朽的匕首</br>
         <br># 攻击目标Actor, 名字为Name?</br>
-        <br>/attack ‘Name?’</br>
+        <br>/attack '角色名称'</br>
+        <br>例如 /attack 摩尔</br>
         <br># 离开当前场景，去往Name?的场景</br>
-        <br>/goto ‘Name?’</br>
+        <br>/goto '场景名称'</br>
+        <br>例如 /goto 灰颜墓地</br>
         <br># 在当前场景内广播内容。场景内所有Actor都能听见</br>
-        <br>/broadcast ‘说的内容’</br>
+        <br>/broadcast '说的内容'</br>
+        <br>例如 /broadcast 你们是谁？</br>
         <br># 对当前场景内的目标说话</br>
-        <br>/speak ‘@对谁>说话内容’</br>
+        <br>/speak '@对谁>说话内容'</br>
+        <br>例如 /speak @格雷>我这是在哪？</br>
         <br># 对当前场景内的目标低语</br>
-        <br>/whisper ‘@对谁>说话内容’</br>
-        <br># 在当前场景内搜索叫‘Name?’的道具</br>
-        <br>/search ‘Name?’</br>
-        <br># 在不知道去往哪里的情况下，‘跳出’当前场景，如果当前场景没有连接场景则会失败。</br>
+        <br>/whisper '@对谁>说话内容'</br>
+        <br>例如 /whisper @摩尔>嘘，别吵。</br>
+        <br># 在当前场景内搜索叫'Name?'的道具</br>
+        <br>/search '道具名称'</br>
+        <br>例如 /search 腐朽的匕首</br>
+        <br># 在不知道去往哪里的情况下，'跳出'当前场景，如果当前场景没有连接场景则会失败。</br>
         <br>/portalstep</br>
         <br># 感知当前场景内有哪些人？事？道具？</br>
         <br>/perception</br>
         <br># 盗取对当前场景内的目标的道具</br>
-        <br>/steal ‘@对谁>盗取的道具名字’</br>
+        <br>/steal '@对谁>盗取的道具名字'</br>
+        <br>例如 /steal @格雷>断指钥匙</br>
         <br># 将我身上的道具交给目标</br>
-        <br>/trade ‘@对谁>我的道具的名字’</br>
+        <br>/trade '@对谁>我的道具的名字'</br>
+        <br>例如 /trade @格雷>炉钩</br>
         <br># 查看我身上有哪些道具？</br>
         <br>/checkstatus</br>
     </p>

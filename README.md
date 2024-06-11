@@ -3,7 +3,11 @@
 ## 依赖包安装
 
 ```python
+# 先安装anaconda或者miniconda
+
 conda create -n first_seed python=3.12.2 
+
+conda activate first_seed
 
 pip install langchain langchain_core langserve fastapi langchain_openai sse_starlette faiss-cpu loguru mypy pandas openpyxl overrides Jinja2
 ```

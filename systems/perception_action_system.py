@@ -2,7 +2,6 @@ from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity #type: ignore
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.components import (  PerceptionActionComponent,
                                     StageComponent,
-                                    AppearanceComponent,
                                     DeadActionComponent,
                                     ActorComponent)
 from loguru import logger
@@ -16,8 +15,12 @@ from auxiliary.cn_builtin_prompt import perception_action_prompt
 ####################################################################################################################################
 class PerceptionActionHelper:
 
+    """
+    辅助的类，把常用的行为封装到这里，方便别的地方再调用
+    """
+
     def __init__(self, context: ExtendedContext):
-        self.context = context
+        self.context: ExtendedContext = context
         self.props_in_stage: List[str] = []
         self.actors_in_stage: Dict[str, str] = {}
 ###################################################################################################################
@@ -30,22 +33,17 @@ class PerceptionActionHelper:
         self.props_in_stage = self.perception_props_in_stage(entity, safestage)
 ###################################################################################################################
     def perception_actors_in_stage(self, entity: Entity, stageentity: Entity) -> Dict[str, str]:
-        res: Dict[str, str] = {}
-        stagecomp: StageComponent = stageentity.get(StageComponent)
-        actor_entites = self.context.actors_in_stage(stagecomp.name)
-        for _en in actor_entites:
-            if _en == entity:
-                continue
-            actor_comp: ActorComponent = _en.get(ActorComponent)
-            appearance_comp: AppearanceComponent  = _en.get(AppearanceComponent)
-            res[actor_comp.name] = appearance_comp.appearance
-        return res
+        all: Dict[str, str] = self.context.appearance_in_stage(entity)
+        safe_name = self.context.safe_get_entity_name(entity)
+        all.pop(safe_name, None) # 删除自己，自己是不必要的。
+        assert all.get(safe_name) is None
+        return all
 ###################################################################################################################
     def perception_props_in_stage(self, entity: Entity, stageentity: Entity) -> List[str]:
         res: List[str] = []
         stagecomp: StageComponent = stageentity.get(StageComponent)
-        props_in_stage = self.context.file_system.get_prop_files(stagecomp.name)
-        for prop in props_in_stage:
+        prop_files = self.context.file_system.get_prop_files(stagecomp.name)
+        for prop in prop_files:
             res.append(prop.name)
         return res
 ####################################################################################################################################
@@ -53,27 +51,35 @@ class PerceptionActionHelper:
 #################################################################################################################################### 
 class ActorPerceptionEvent(IDirectorEvent):
 
-    def __init__(self, who_perception: str, stagename: str, result_actors_in_stage: Dict[str, str], result_props_in_stage: List[str]) -> None:
-        self.who_perception = who_perception
-        self.stagename = stagename
-        self.result_actors_in_stage = result_actors_in_stage
-        self.result_props_in_stage = result_props_in_stage
+    """
+    感知的结果事件
+    """
+
+    def __init__(self, who: str, current_stage_name: str, actors_in_stage: Dict[str, str], props_in_stage: List[str]) -> None:
+        self._who: str = who
+        self._current_stage_name: str = current_stage_name
+        self._actors_in_stage: Dict[str, str] = actors_in_stage
+        self._props_in_stage: List[str] = props_in_stage
     
     def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
-        if actor_name != self.who_perception:
-            return ""
-        return perception_action_prompt(self.who_perception, self.stagename, self.result_actors_in_stage, self.result_props_in_stage)
+        if actor_name != self._who:
+            return "" # 不是自己，不显示
+        return perception_action_prompt(self._who, self._current_stage_name, self._actors_in_stage, self._props_in_stage)
     
     def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
-        return ""
+        return "" # 不显示给场景
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
 class PerceptionActionSystem(ReactiveProcessor):
 
+    """
+    处理PerceptionActionComponent行为的系统
+    """
+
     def __init__(self, context: ExtendedContext):
         super().__init__(context)
-        self.context = context
+        self.context: ExtendedContext = context
 ###################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:

@@ -2,15 +2,17 @@ from overrides import override
 from auxiliary.cn_builtin_prompt import actpr_plan_prompt
 from entitas import Entity, Matcher, ExecuteProcessor #type: ignore
 from auxiliary.extended_context import ExtendedContext
-from auxiliary.components import (ActorComponent,
-                                AutoPlanningComponent,
-                                EnviroNarrateActionComponent)
+from auxiliary.components import (ActorComponent, AutoPlanningComponent, EnviroNarrateActionComponent)
 from loguru import logger
 from auxiliary.actor_plan_and_action import ActorAction
 
 
-
 class ActorReadyForPlanningSystem(ExecuteProcessor):
+
+    """
+    所有actor 准备做计划。用于并行request的准备。
+    """
+
     def __init__(self, context: ExtendedContext) -> None:
         self.context = context
 ####################################################################################################################################
@@ -23,14 +25,18 @@ class ActorReadyForPlanningSystem(ExecuteProcessor):
 ####################################################################################################################################
     def handle(self, entity: Entity) -> None:        
         actor_comp: ActorComponent = entity.get(ActorComponent)
-                
         tp = self.get_stage_enviro_narrate(entity)
-        stagename = tp[0]
+        stage_name = tp[0]
         stage_enviro_narrate = tp[1]
+        if stage_name == "" or stage_enviro_narrate == "":
+            logger.error("stagename or stage_enviro_narrate is None") # 放弃这个actor的计划
+            return
         
-        prompt = actpr_plan_prompt(stagename, stage_enviro_narrate, self.context)
+        # 必须要有一个stage的环境描述，否则无法做计划。
+        prompt = actpr_plan_prompt(stage_name, stage_enviro_narrate, self.context)
         self.context.agent_connect_system.add_async_request_task(actor_comp.name, prompt)
 ####################################################################################################################################
+    # 获取场景的环境描述
     def get_stage_enviro_narrate(self, entity: Entity) -> tuple[str, str]:
 
         stageentity = self.context.safe_get_stage_entity(entity)

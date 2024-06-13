@@ -181,7 +181,18 @@ def StageDataProxy(name: str) -> StageData:
 ########################################################################################################################
 ########################################################################################################################
 ########################################################################################################################
+class WorldSystemData:
+    def __init__(self, 
+                 name: str, 
+                 codename: str, 
+                 url: str) -> None:
+        self.name = name
+        self.codename = codename
+        self.url = url
+       
 
+def WorldSystemDataProxy(name: str) -> WorldSystemData:
+    return WorldSystemData(name, "", "")
 
 
 

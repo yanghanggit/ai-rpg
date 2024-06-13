@@ -10,7 +10,7 @@ from budding_world.configuration import WORLD_EDITOR_DIR, GAME_NAME, OUTPUT_RUNT
 from budding_world.utils import (gen_all_actors, gen_all_stages, gen_all_props, analyze_actor_relationship, 
                                 analyze_stage_relationship, analyze_relationship_between_actors_and_props, gen_all_world_system)
 from budding_world.excel_data import ExcelDataActor, ExcelDataStage, ExcelDataProp, ExcelDataWorldSystem
-from budding_world.world_editor import ExcelEditorWorld
+from budding_world.game_editor import ExcelEditorGame
 from typing import List, Dict, Any
  
 ############################################################################################################
@@ -18,13 +18,13 @@ def create_world_editor(sheet_name_as_world_name: str,
                         actor_data_base: Dict[str, ExcelDataActor],
                         prop_data_base: Dict[str, ExcelDataProp],
                         stage_data_base: Dict[str, ExcelDataStage],
-                        world_system_data_base: Dict[str, ExcelDataWorldSystem]) -> ExcelEditorWorld:
+                        world_system_data_base: Dict[str, ExcelDataWorldSystem]) -> ExcelEditorGame:
     ####测试的一个世界编辑
     data_frame: DataFrame = pd.read_excel(f"{GAME_NAME}/{WORLD_EDITOR_DIR}/{GAME_NAME}.xlsx", sheet_name = sheet_name_as_world_name, engine='openpyxl')
     ###费2遍事，就是试试转换成json好使不，其实可以不用直接dataframe做也行
     _2json: str = data_frame.to_json(orient='records', force_ascii=False)
     _2list: List[Any] = json.loads(_2json)
-    return ExcelEditorWorld(sheet_name_as_world_name, _2list, actor_data_base, prop_data_base, stage_data_base, world_system_data_base)
+    return ExcelEditorGame(sheet_name_as_world_name, _2list, actor_data_base, prop_data_base, stage_data_base, world_system_data_base)
 ############################################################################################################
 def main() -> None:
     #

@@ -58,11 +58,9 @@ class ExtendedContext(Context):
 ############################################################################################################
     #世界基本就一个（或者及其少的数量），所以就遍历一下得了。
     def get_world_entity(self, worldname: str) -> Optional[Entity]:
-        entities: set[Entity] = self.get_group(Matcher(WorldComponent)).entities
-        for entity in entities:
-            worldcomp: WorldComponent = entity.get(WorldComponent)
-            if worldcomp.name == worldname:
-                return entity
+        entity: Optional[Entity] = self.get_entity_by_code_name_component(worldname)
+        if entity is not None and entity.has(WorldComponent):
+            return entity
         return None
 ############################################################################################################
     #玩家基本就一个（或者及其少的数量），所以就遍历一下得了，注意是playername，比如yanghang。

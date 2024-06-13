@@ -20,7 +20,7 @@ from auxiliary.components import (
     StageEntryCondCheckActorPropsComponent,
     )
 from auxiliary.extended_context import ExtendedContext
-from auxiliary.game_builders import GameBuilder, StageBuilder, ActorBuilder
+from auxiliary.game_builders import GameBuilder, StageBuilder, ActorBuilder, WorldSystemBuilder
 from entitas.entity import Entity
 from systems.agents_kick_off_system import AgentsKickOffSystem
 from systems.actor_ready_for_planning_system import ActorReadyForPlanningSystem
@@ -197,7 +197,7 @@ class RPGGame(BaseGame):
         context.file_system.set_root_path(runtime_dir_for_world)
 
         ## 第2步 创建管理员类型的角色，全局的AI
-        self.create_world_entities(worlddata.world_builder)
+        self.create_world_system_entities(worlddata.world_system_builder)
 
         ## 第3步，创建actor，player是特殊的actor
         self.create_player_entities(worlddata.player_builder)
@@ -245,36 +245,24 @@ class RPGGame(BaseGame):
         self.processors.tear_down()
         logger.info(f"{self.name}, game over")
 ###############################################################################################################################################
-    def create_world_entities(self, actor_builder: ActorBuilder) -> List[Entity]:
-
+    def create_world_system_entities(self, actor_builder: WorldSystemBuilder) -> List[Entity]:
         context = self.extendedcontext
         agent_connect_system = context.agent_connect_system
-        memory_system = context.kick_off_memory_system
         code_name_component_system = context.code_name_component_system
-        file_system = context.file_system
-
         res: List[Entity] = []
-        
-        if actor_builder.datalist is None:
+        if actor_builder._data_list is None:
             raise ValueError("没有WorldBuilder数据，请检查World.json配置。")
             return res
         
-        for builddata in actor_builder.actors:
-            #logger.debug(f"创建World Entity = {builddata.name}")
+        for builddata in actor_builder._world_system_datas:
             worldentity = context.create_entity()
             res.append(worldentity)
-
             #必要组件
             worldentity.add(WorldComponent, builddata.name)
-
             #重构
             agent_connect_system.register_agent(builddata.name, builddata.url)
-            memory_system.add_kick_off_memory(builddata.name, builddata.memory)
             code_name_component_system.register_code_name_component_class(builddata.name, builddata.codename)
 
-            # 初步建立关系网（在编辑文本中提到的名字）
-            add_actor_archive_files(file_system, builddata.name, builddata.actor_names_mentioned_during_editing_or_for_agent)
-            
         return res
 ###############################################################################################################################################
     def create_player_entities(self, actor_builder: ActorBuilder) -> List[Entity]:

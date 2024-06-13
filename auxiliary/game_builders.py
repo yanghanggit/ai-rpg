@@ -1,7 +1,7 @@
 from typing import Any, Optional, List, Set, Dict
 from loguru import logger
 import json
-from auxiliary.base_data import PropData, ActorData, StageData, ActorDataProxy, PropDataProxy
+from auxiliary.base_data import PropData, ActorData, StageData, WorldSystemData, ActorDataProxy, PropDataProxy
 from auxiliary.data_base_system import DataBaseSystem
 
 ########################################################################################################################
@@ -14,7 +14,7 @@ class GameBuilder:
         self.runtimepath = runtimepath
         self.version = version # version必须与生成的world.json文件中的version一致
         self._data: Any = None
-        self.world_builder = ActorBuilder("worlds")
+        self.world_system_builder = WorldSystemBuilder("world_systems")
         self.player_builder = ActorBuilder("players")
         self.actor_buidler = ActorBuilder("actors")
         self.stage_builder = StageBuilder()
@@ -50,7 +50,7 @@ class GameBuilder:
         # 第二步，创建配置
         self._build_config(self._data)
         # 第三步，创建世界级别的管理员
-        self.world_builder.build(self._data, self.data_base_system)
+        self.world_system_builder.build(self._data, self.data_base_system)
         # 第四步，创建玩家与Actor
         self.player_builder.build(self._data, self.data_base_system)
         self.actor_buidler.build(self._data, self.data_base_system)
@@ -94,6 +94,18 @@ class GameBuilder:
             ## 设置（战斗）属性
             _actor.build_attributes(_data.get("attributes"))
             self.data_base_system.add_actor(_actor.name, _actor)
+###############################################################################################################################################
+    def _create_world_system_data_base(self, world_systems: Any) -> None:
+        if world_systems is None:
+            logger.error("没有世界系统数据内容(world_systems)，请检查World.json配置。")
+            return
+        for _ws_ in world_systems:
+            core_data = _ws_.get('world_system', None)
+            assert core_data is not None
+            _ws_da_ = WorldSystemData(core_data.get("name"), 
+                                        core_data.get("codename"), 
+                                        core_data.get("url"))
+            self.data_base_system.add_world_system(_ws_da_.name, _ws_da_)
 ###############################################################################################################################################
     def _create_stage_data_base(self, stages: Any) -> None:
         if stages is None:
@@ -159,6 +171,7 @@ class GameBuilder:
         self._create_actor_data_base(database.get('actors', None))
         self._create_stage_data_base(database.get('stages', None))
         self._create_prop_data_base(database.get('props', None))
+        self._create_world_system_data_base(database.get('world_systems', None))
 ########################################################################################################################
 class StageBuilder:
     def __init__(self) -> None:
@@ -243,3 +256,29 @@ class ActorBuilder:
 ########################################################################################################################
 ########################################################################################################################
 ########################################################################################################################
+class WorldSystemBuilder:
+
+    def __init__(self, data_name: str) -> None:
+        self._data_list: Optional[dict[str, Any]] = None
+        self._world_system_datas: List[WorldSystemData] = []
+        self._data_name = data_name
+
+    def __str__(self) -> str:
+        return f"WorldSystemBuilder: {self._data_list}"       
+
+    #
+    def build(self, json_data: dict[str, Any], data_base_system: DataBaseSystem) -> None:
+        self._data_list = json_data.get(self._data_name)
+        if self._data_list is None:
+            logger.error(f"WorldSystemBuilder: {self._data_name} data is None.")
+            return
+        
+        for datablock in self._data_list:
+            _core_ = datablock.get("world_system")
+            _name = _core_.get("name")
+            world_system_data = data_base_system.get_world_system(_name)
+            if world_system_data is None:
+                logger.error(f"WorldSystemBuilder: {_name} not found in database.")
+                continue
+     
+            self._world_system_datas.append(world_system_data)

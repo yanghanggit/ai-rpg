@@ -2,7 +2,7 @@ from typing import override
 from entitas import ExecuteProcessor, Matcher #type: ignore
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
-from auxiliary.components import STAGE_AVAILABLE_ACTIONS_REGISTER, ACTOR_AVAILABLE_ACTIONS_REGISTER, WorldComponent, StageComponent, ActorComponent
+from auxiliary.components import STAGE_AVAILABLE_ACTIONS_REGISTER, ACTOR_AVAILABLE_ACTIONS_REGISTER, StageComponent, ActorComponent
    
 class PostActionSystem(ExecuteProcessor):
 ############################################################################################################
@@ -12,17 +12,9 @@ class PostActionSystem(ExecuteProcessor):
     @override
     def execute(self) -> None:
         # 在这里清除所有的行动
-        self.remove_world_actions() # 因为world和actor的actions，目前是一样的
         self.remove_actor_actions()
         self.remove_stage_actions()
         self.test()
-############################################################################################################
-    def remove_world_actions(self) -> None:
-        entities = self.context.get_group(Matcher(all_of = [WorldComponent], any_of = ACTOR_AVAILABLE_ACTIONS_REGISTER)).entities.copy()
-        for entity in entities:
-            for actionsclass in ACTOR_AVAILABLE_ACTIONS_REGISTER:
-                if entity.has(actionsclass):
-                    entity.remove(actionsclass)
 ############################################################################################################
     def remove_stage_actions(self) -> None:
         entities = self.context.get_group(Matcher(all_of = [StageComponent], any_of = STAGE_AVAILABLE_ACTIONS_REGISTER)).entities.copy()

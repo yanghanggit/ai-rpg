@@ -21,7 +21,7 @@ class ExcelEditorActor:
         self.kick_off_memory: str = ""
         self._appearance: str = ""
         #
-        if self.data["type"] not in ["World", "Player", "Actor"]:
+        if self.data["type"] not in ["Player", "Actor"]:
             logger.error(f"Invalid type: {self.data['type']}")
             return
         

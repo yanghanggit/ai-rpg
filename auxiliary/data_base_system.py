@@ -1,5 +1,5 @@
 from typing import Optional
-from auxiliary.base_data import ActorData, PropData, StageData
+from auxiliary.base_data import ActorData, PropData, StageData, WorldSystemData
 
 class DataBaseSystem:
 
@@ -8,6 +8,7 @@ class DataBaseSystem:
         self.actors: dict[str, ActorData] = {}
         self.stages: dict[str, StageData] = {}
         self.props: dict[str, PropData] = {}
+        self.world_systems: dict[str, WorldSystemData] = {}
 
     def add_actor(self, actorname: str, actordata: ActorData) -> None:
         self.actors.setdefault(actorname, actordata)
@@ -26,3 +27,9 @@ class DataBaseSystem:
 
     def get_prop(self, propname: str) -> Optional[PropData]:
         return self.props.get(propname, None)
+    
+    def add_world_system(self, worldname: str, world: WorldSystemData) -> None:
+        self.world_systems.setdefault(worldname, world)
+
+    def get_world_system(self, worldname: str) -> Optional[WorldSystemData]:
+        return self.world_systems.get(worldname, None)

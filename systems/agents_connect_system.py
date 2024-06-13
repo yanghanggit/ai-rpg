@@ -11,11 +11,11 @@ class AgentsConnectSystem(InitializeProcessor):
 ###############################################################################################################################################
     @override
     def initialize(self) -> None:
-        self.connect_world_agents()
+        self.connect_world_system_agents()
         self.connect_stage_agents()
         self.connect_actor_agents()
 ###############################################################################################################################################
-    def connect_world_agents(self) -> None:
+    def connect_world_system_agents(self) -> None:
         agent_connect_system = self.context.agent_connect_system
         worlds: set[Entity] = self.context.get_group(Matcher(WorldComponent)).entities
         for world in worlds:

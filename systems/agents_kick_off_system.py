@@ -1,7 +1,7 @@
 from overrides import override
 from entitas import Entity, Matcher, InitializeProcessor, ExecuteProcessor # type: ignore
 from auxiliary.components import WorldComponent, StageComponent, ActorComponent, PlayerComponent, PerceptionActionComponent, CheckStatusActionComponent
-from auxiliary.cn_builtin_prompt import (kick_off_memory_actor_prompt, kick_off_memory_stage_prompt)
+from auxiliary.cn_builtin_prompt import (kick_off_memory_actor_prompt, kick_off_memory_stage_prompt, kick_off_world_system_prompt)
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from systems.update_archive_helper import UpdareArchiveHelper
@@ -22,7 +22,7 @@ class AgentsKickOffSystem(InitializeProcessor, ExecuteProcessor):
         helper.prepare()
         #分段处理
         self.tasks.clear()
-        world_tasks = self.create_world_tasks(helper)
+        world_tasks = self.create_world_system_tasks(helper)
         stage_tasks = self.create_stage_tasks(helper)
         actor_tasks = self.create_actor_tasks(helper)
         #填进去
@@ -65,21 +65,14 @@ class AgentsKickOffSystem(InitializeProcessor, ExecuteProcessor):
         self.tasks.clear() # 这句必须得走！！！
         logger.info("InitMemorySystem done.")
 ###############################################################################################################################################
-    def create_world_tasks(self, helper: UpdareArchiveHelper) -> Dict[str, str]:
-
+    def create_world_system_tasks(self, helper: UpdareArchiveHelper) -> Dict[str, str]:
         result: Dict[str, str] = {}
-
         context = self.context
-        memory_system = context.kick_off_memory_system
         agent_connect_system = context.agent_connect_system
         worlds: set[Entity] = context.get_group(Matcher(WorldComponent)).entities
         for world in worlds:
             worldcomp: WorldComponent = world.get(WorldComponent)
-            worldmemory = memory_system.get_kick_off_memory(worldcomp.name)
-            if worldmemory == "":
-                logger.error(f"worldmemory is empty: {worldcomp.name}")
-                continue
-            prompt = kick_off_memory_actor_prompt(worldmemory)
+            prompt = kick_off_world_system_prompt()
             agent_connect_system.add_async_request_task(worldcomp.name, prompt)
             result[worldcomp.name] = prompt
         

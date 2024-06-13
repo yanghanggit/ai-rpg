@@ -2,10 +2,8 @@ from overrides import override
 from entitas import InitializeProcessor, ExecuteProcessor, Matcher, Entity #type: ignore
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
-from auxiliary.components import ( AutoPlanningComponent, StageComponent, ActorComponent, PlayerComponent, 
-                                  STAGE_AVAILABLE_ACTIONS_REGISTER, ACTOR_AVAILABLE_ACTIONS_REGISTER)
+from auxiliary.components import ( AutoPlanningComponent, StageComponent, ActorComponent, PlayerComponent)
 from enum import Enum
-from typing import Set
 
 # 规划的策略
 class PlanningStrategy(Enum):
@@ -28,8 +26,6 @@ class PrePlanningSystem(InitializeProcessor, ExecuteProcessor):
     def execute(self) -> None:
         ## 计数
         self.execute_count += 1
-        ## 测试
-        # self.test()
         ## 通过策略来做计划
         strategy: PlanningStrategy = self.decide_strategy(self.strategy, self.execute_count)
         ## 制定更新策略
@@ -68,7 +64,6 @@ class PrePlanningSystem(InitializeProcessor, ExecuteProcessor):
         ###player所在场景的actors可以规划
         actor_entities = context.actors_in_stage(stagecomp.name)
         if len(actor_entities) == 0:
-            #logger.debug(f"Stage: {stagecomp.name} has no actors, so no need to plan.")
             return
         
         if not stageentity.has(AutoPlanningComponent):
@@ -89,7 +84,6 @@ class PrePlanningSystem(InitializeProcessor, ExecuteProcessor):
             stagecomp: StageComponent = stageentity.get(StageComponent)
             actors_in_stage = context.actors_in_stage(stagecomp.name)
             if len(actors_in_stage) == 0:
-                #logger.debug(f"Stage: {stagecomp.name} has no actors, so no need to plan.")
                 continue
             if not stageentity.has(AutoPlanningComponent):
                 stageentity.add(AutoPlanningComponent, stagecomp.name)
@@ -97,18 +91,8 @@ class PrePlanningSystem(InitializeProcessor, ExecuteProcessor):
         actor_entities = context.get_group(Matcher(ActorComponent)).entities
         for _en in actor_entities:
             if _en.has(PlayerComponent):
-                ## player 就跳过
                 continue
             actor_comp: ActorComponent = _en.get(ActorComponent)
             if not _en.has(AutoPlanningComponent):
                 _en.add(AutoPlanningComponent, actor_comp.name)
-############################################################################################################
-    ## 自我测试，这个调用点就是不允许再这个阶段有任何action
-    def test(self) -> None:
-        auto_planning_entities: Set[Entity] = self.context.get_group(Matcher(AutoPlanningComponent)).entities
-        assert len(auto_planning_entities) == 0, f"AutoPlanningComponent should be removed in PostPlanningSystem"
-        stageentities: Set[Entity] = self.context.get_group(Matcher(any_of = STAGE_AVAILABLE_ACTIONS_REGISTER)).entities
-        assert len(stageentities) == 0, f"Stage entities with actions: {stageentities}"
-        actor_entities: Set[Entity]  = self.context.get_group(Matcher(any_of = ACTOR_AVAILABLE_ACTIONS_REGISTER)).entities
-        assert len(actor_entities) == 0, f"Actor entities with actions: {actor_entities}"
 ############################################################################################################

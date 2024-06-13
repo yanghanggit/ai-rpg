@@ -7,53 +7,66 @@ from auxiliary.director_component import notify_stage_director
 from auxiliary.director_event import IDirectorEvent
 from typing import cast, override
 from auxiliary.target_and_message_format_handle import conversation_check, ErrorConversationEnable
-from auxiliary.cn_builtin_prompt import kill_someone, attack_someone_prompt
+from auxiliary.cn_builtin_prompt import kill_prompt, attack_prompt
 
 
 
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class KillSomeoneEvent(IDirectorEvent):
+class KillEvent(IDirectorEvent):
+
+    """
+    事件通知：在Attack之后，直接杀死了某个人。
+    """
     
     def __init__(self, attacker: str, target: str) -> None:
-        self.attacker = attacker
-        self.target = target
+        self.attacker: str = attacker
+        self.target: str = target
 
     def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
-        event = kill_someone(self.attacker, self.target)
+        event = kill_prompt(self.attacker, self.target)
         return event
     
     def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
-        event = kill_someone(self.attacker, self.target)
+        event = kill_prompt(self.attacker, self.target)
         return event
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class AttackSomeoneEvent(IDirectorEvent):
+class AttackEvent(IDirectorEvent):
+
+    """
+    事件通知：Attack行动的通知
+    """
 
     def __init__(self, attacker: str, target: str, damage: int, curhp: int, maxhp: int) -> None:
-        self.attacker = attacker
-        self.target = target
-        self.damage = damage
-        self.curhp = curhp
-        self.maxhp = maxhp
+        self.attacker: str = attacker
+        self.target: str = target
+        self.damage: int = damage
+        self.curhp: int = curhp
+        self.maxhp: int = maxhp
 
     def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
-        event = attack_someone_prompt(self.attacker, self.target, self.damage, self.curhp, self.maxhp)
+        event = attack_prompt(self.attacker, self.target, self.damage, self.curhp, self.maxhp)
         return event
     
     def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
-        event = attack_someone_prompt(self.attacker, self.target, self.damage, self.curhp, self.maxhp)
+        event = attack_prompt(self.attacker, self.target, self.damage, self.curhp, self.maxhp)
         return event
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
 class AttackActionSystem(ReactiveProcessor):
 
+    """
+    处理：AttackActionComponent 的系统
+    要求：AttackActionComponent 和 SimpleRPGAttrComponent 必须同时存在，否则无法处理。
+    """
+
     def __init__(self, context: ExtendedContext) -> None:
         super().__init__(context)
-        self.context = context
+        self.context: ExtendedContext = context
 ######################################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
@@ -67,51 +80,75 @@ class AttackActionSystem(ReactiveProcessor):
     def react(self, entities: list[Entity]) -> None:
         for entity in entities:
             self._attack(entity)
- ######################################################################################################################################################   
-    def _attack(self, entity: Entity) -> None:
+ ######################################################################################################################################################  
+    # todo 函数太长了，后续可以考虑拆分！！！！！
+    def _attack(self, _entity: Entity) -> None:
         context = self.context
-        rpgcomp: SimpleRPGAttrComponent = entity.get(SimpleRPGAttrComponent)
-        fightcomp: AttackActionComponent = entity.get(AttackActionComponent)
+        rpgcomp: SimpleRPGAttrComponent = _entity.get(SimpleRPGAttrComponent)
+        fightcomp: AttackActionComponent = _entity.get(AttackActionComponent)
         action: ActorAction = fightcomp.action
-        for value in action.values:
+        for value_as_target_name in action.values:
 
-            findtarget = context.get_entity_by_code_name_component(value)
-            if findtarget is None:
-                logger.warning(f"攻击者{action.name}意图攻击的对象{value}无法被找到,本次攻击无效.")
+            _target_entity = context.get_entity_by_code_name_component(value_as_target_name)
+            if _target_entity is None:
+                logger.warning(f"攻击者{action.name}意图攻击的对象{value_as_target_name}无法被找到,本次攻击无效.")
                 continue
 
-            if not findtarget.has(SimpleRPGAttrComponent):
-                logger.warning(f"攻击者{action.name}意图攻击的对象{value}没有SimpleRPGComponent,本次攻击无效.")
+            if not _target_entity.has(SimpleRPGAttrComponent):
+                logger.warning(f"攻击者{action.name}意图攻击的对象{value_as_target_name}没有SimpleRPGComponent,本次攻击无效.")
                 continue
 
-            if conversation_check(self.context, entity, value) != ErrorConversationEnable.VALID:
-                # 不能说话的就是不能打
-                logger.error(f"攻击者{action.name}意图攻击的对象{value}不能被攻击，因为不能对话，本次攻击无效.")
+            conversation_check_error = conversation_check(self.context, _entity, value_as_target_name)
+            if conversation_check_error != ErrorConversationEnable.VALID:
+                if conversation_check_error == ErrorConversationEnable.TARGET_DOES_NOT_EXIST:
+                    logger.error(f"攻击者{action.name}意图攻击的对象{value_as_target_name}不存在,本次攻击无效.")
+                    # todo 是否应该因该提示发起人？做一下矫正？
+
+                elif conversation_check_error == ErrorConversationEnable.WITHOUT_BEING_IN_STAGE:
+                    logger.error(f"攻击者{action.name}不在任何舞台上,本次攻击无效.? 这是一个严重的错误！")
+                    assert False # 不要继续了，因为出现了严重的错误
+
+                elif conversation_check_error == ErrorConversationEnable.NOT_IN_THE_SAME_STAGE:
+
+                    # 名字拿出来，看一下
+                    assert _entity is not None
+                    stage1 = self.context.safe_get_stage_entity(_entity)
+                    assert stage1 is not None
+                    stage1_name = self.context.safe_get_entity_name(stage1)
+
+                    assert _target_entity is not None
+                    stage2 = self.context.safe_get_stage_entity(_target_entity)
+                    assert stage2 is not None
+                    stage2_name = self.context.safe_get_entity_name(stage2)
+
+                    logger.error(f"攻击者 {action.name}:{stage1_name} 和攻击对象 {value_as_target_name}:{stage2_name} 不在同一个舞台上,本次攻击无效.")
+
+                # 跳过去，不能继续了！
                 continue
             
             #目标拿出来
-            targetsrpgcomp: SimpleRPGAttrComponent = findtarget.get(SimpleRPGAttrComponent)
+            target_rpg_comp: SimpleRPGAttrComponent = _target_entity.get(SimpleRPGAttrComponent)
 
             #简单的战斗计算，简单的血减掉伤害
-            hp = targetsrpgcomp.hp
-            damage = self.final_attack_val(entity) #rpgcomp.attack
+            hp = target_rpg_comp.hp
+            damage = self.final_attack_val(_entity) #rpgcomp.attack
             # 必须控制在0和最大值之间
-            damage = damage - self.final_defense_val(findtarget) #targetsrpgcomp.defense
+            damage = damage - self.final_defense_val(_target_entity) #targetsrpgcomp.defense
             if damage < 0:
                 damage = 0
             
             lefthp = hp - damage
-            lefthp = max(0, min(lefthp, targetsrpgcomp.maxhp))
+            lefthp = max(0, min(lefthp, target_rpg_comp.maxhp))
 
             #结果修改
-            findtarget.replace(SimpleRPGAttrComponent, targetsrpgcomp.name, targetsrpgcomp.maxhp, lefthp, targetsrpgcomp.attack, targetsrpgcomp.defense)
+            _target_entity.replace(SimpleRPGAttrComponent, target_rpg_comp.name, target_rpg_comp.maxhp, lefthp, target_rpg_comp.attack, target_rpg_comp.defense)
 
             ##死亡是关键
             isdead = (lefthp <= 0)
 
-            ## 死后处理大流程，step1——道具怎么办？后续可以封装的复杂一些: 夺取唯一性道具
+            ## 死后处理大流程，step1——道具怎么办？后续可以封装的复杂一些: 夺取唯一性道具.
             if isdead:  
-                self.unique_prop_be_taken_away(entity, findtarget)
+                self.unique_prop_be_taken_away(_entity, _target_entity)
 
             ## 可以加一些别的。。。。。。。。。。。。
             ## 比如杀人多了会被世界管理员记住——你是大坏蛋
@@ -119,31 +156,33 @@ class AttackActionSystem(ReactiveProcessor):
 
             ## 死后处理大流程，step最后——死亡组件系统必须要添加
             if isdead:
-                if not findtarget.has(DeadActionComponent):
+                if not _target_entity.has(DeadActionComponent):
                     #复制一个，不用以前的，怕GC不掉
-                    findtarget.add(DeadActionComponent, ActorAction(action.name, action.actionname, action.values)) 
+                    _target_entity.add(DeadActionComponent, ActorAction(action.name, action.actionname, action.values)) 
 
             ## 导演系统，单独处理，有旧的代码
             if isdead:
-                notify_stage_director(context, entity, KillSomeoneEvent(rpgcomp.name, value))
+                # 直接打死
+                notify_stage_director(context, _entity, KillEvent(rpgcomp.name, value_as_target_name))
             else:
-                notify_stage_director(context, entity, AttackSomeoneEvent(rpgcomp.name, value, damage, lefthp, targetsrpgcomp.maxhp))
+                # 没有打死，就把伤害通知给导演
+                notify_stage_director(context, _entity, AttackEvent(rpgcomp.name, value_as_target_name, damage, lefthp, target_rpg_comp.maxhp))
 ######################################################################################################################################################
     ## 杀死对方就直接夺取唯一性道具。
-    def unique_prop_be_taken_away(self, thekiller: Entity, whoiskilled: Entity) -> None:
+    def unique_prop_be_taken_away(self, _entity: Entity, _target_entity: Entity) -> None:
 
         file_system = self.context.file_system
-        killer_rpg_comp: SimpleRPGAttrComponent = thekiller.get(SimpleRPGAttrComponent)
-        be_killed_one_rpg_comp: SimpleRPGAttrComponent = whoiskilled.get(SimpleRPGAttrComponent)
-        logger.info(f"{killer_rpg_comp.name} kill => {be_killed_one_rpg_comp.name}")
+        _rpg_comp: SimpleRPGAttrComponent = _entity.get(SimpleRPGAttrComponent)
+        _target_rpg_comp: SimpleRPGAttrComponent = _target_entity.get(SimpleRPGAttrComponent)
+        logger.info(f"{_rpg_comp.name} kill => {_target_rpg_comp.name}")
         
-        hisprops = file_system.get_prop_files(be_killed_one_rpg_comp.name)
-        for propfile in hisprops:
+        prop_files = file_system.get_prop_files(_target_rpg_comp.name)
+        for propfile in prop_files:
             if not propfile.prop.isunique():
                 logger.info(f"the propfile {propfile.name} is not unique, so it will not be taken away.")
                 continue
             # 交换文件，即交换道具文件即可
-            file_system.exchange_prop_file(be_killed_one_rpg_comp.name, killer_rpg_comp.name, propfile.name)        
+            file_system.exchange_prop_file(_target_rpg_comp.name, _rpg_comp.name, propfile.name)        
 ######################################################################################################################################################
     def final_attack_val(self, entity: Entity) -> int:
         # 最后的攻击力

@@ -1,7 +1,7 @@
 from overrides import override
 from entitas import Entity, Matcher, InitializeProcessor, ExecuteProcessor # type: ignore
 from auxiliary.components import WorldComponent, StageComponent, ActorComponent, PlayerComponent, PerceptionActionComponent, CheckStatusActionComponent
-from auxiliary.cn_builtin_prompt import (kick_off_memory_actor_prompt, init_memory_system_stage_prompt)
+from auxiliary.cn_builtin_prompt import (kick_off_memory_actor_prompt, kick_off_memory_stage_prompt)
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from systems.update_archive_helper import UpdareArchiveHelper
@@ -101,7 +101,7 @@ class AgentsKickOffSystem(InitializeProcessor, ExecuteProcessor):
                 logger.error(f"stagememory is empty: {stagecomp.name}")
                 continue
 
-            prompt = init_memory_system_stage_prompt(stagememory)
+            prompt = kick_off_memory_stage_prompt(stagememory)
             agent_connect_system.add_async_request_task(stagecomp.name, prompt)
             result[stagecomp.name] = prompt
         

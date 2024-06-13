@@ -2,7 +2,6 @@ from auxiliary.extended_context import ExtendedContext
 from typing import Dict, List, Set
 from auxiliary.base_data import PropData
 
-
 #全局的变量
 ACTOR_PLAN_PROMPT_TAG = "<%这是角色计划>"
 STAGE_PLAN_PROMPT_TAG = "<%这是场景计划>"
@@ -10,31 +9,32 @@ COMPRESS_ACTOR_PLAN_PROMPT = "请做出你的计划，决定你将要做什么"
 COMPRESS_STAGE_PLAN_PROMPT = "请输出'你的当前描述'和'你的计划'"
 NO_INFO_PROMPT = "- 无"
 NO_ACTOR_PROPS_INFO_PROMPT = "- 无任何道具或者特殊技能"
-##
 USE_PROP_TO_STAGE_PROMPT_TAG = "<%这是角色对场景使用道具>"
+
+# _const.value1 = 100
 ###############################################################################################################################################
-def kick_off_memory_actor_prompt(init_memory: str) -> str:
+def kick_off_memory_actor_prompt(kick_off_memory: str) -> str:
     prompt = f"""# <%这是角色初始化>游戏世界即将开始运行。这是你的初始设定，你将以此为起点进行游戏
 ## 再次强调游戏风格!
 - 核心是借鉴《黑暗之魂》系列游戏的内核与风格，即西方中世纪背景奇幻结合克苏鲁恐怖式的文本与叙事风格。
 - 注意！这是一个以恐怖为主题的游戏，可能包含恐怖、血腥与暴力元素。所有的游戏设定和规则都旨在增强这种体验，你需要接受。
 - 作为这个游戏世界的一个角色，你认为世界的所有运行规律和法则都是不证自明的。
 ## 你的初始设定如下: 
-{init_memory}。
+{kick_off_memory}。
 ## 请结合你的角色设定,更新你的状态。
 ## 输出要求:
 - 请遵循'输出格式指南'。
 - 返回结果仅带MindVoiceActionComponent这个key"""
     return prompt
 ###############################################################################################################################################
-def init_memory_system_stage_prompt(init_memory: str) -> str:
+def kick_off_memory_stage_prompt(kick_off_memory: str) -> str:
     prompt = f"""# <%这是场景初始化>游戏世界即将开始运行。这是你的初始设定，你将以此为起点进行游戏
 ## 再次强调游戏风格!
 - 核心是借鉴《黑暗之魂》系列游戏的内核与风格，即西方中世纪背景奇幻结合克苏鲁恐怖式的文本与叙事风格。
 - 注意！这是一个以恐怖为主题的游戏，可能包含恐怖、血腥与暴力元素。所有的游戏设定和规则都旨在增强这种体验，你需要接受。
 - 作为这个游戏世界的一个角色，你认为世界的所有运行规律和法则都是不证自明的。
 ## 你的初始设定如下: 
-{init_memory}。
+{kick_off_memory}。
 ## 请结合你的场景设定,更新你的状态。
 ## 输出要求:
 - 请遵循'输出格式指南'。
@@ -264,12 +264,12 @@ def updated_information_about_StagesYouKnow_prompt(actor_name: str, where_you_kn
         return f"# 你更新了关于‘你都认识哪些场景’的信息，目前你没有认识的场景。你不能去任何地方。"
     return f"# 你更新了关于‘你都认识哪些场景’的信息，目前你所知道的场景有: {where_you_know}。如果你意图离开本场景并去往其他场景，你只能从这些场景中选择你的目的地。"
 ################################################################################################################################################
-def kill_someone(attacker_name: str, target_name: str) -> str:
-    return f"{attacker_name}对{target_name}发动了一次攻击,造成了{target_name}死亡。"
+def kill_prompt(attacker_name: str, target_name: str) -> str:
+    return f"# {attacker_name}对{target_name}发动了一次攻击,造成了{target_name}死亡。"
 ################################################################################################################################################
-def attack_someone_prompt(attacker_name: str, target_name: str, damage: int, target_current_hp: int ,target_max_hp: int) -> str:
+def attack_prompt(attacker_name: str, target_name: str, damage: int, target_current_hp: int ,target_max_hp: int) -> str:
     health_percent = max(0, (target_current_hp - damage) / target_max_hp * 100)
-    return f"{attacker_name}对{target_name}发动了一次攻击,造成了{damage}点伤害,当前{target_name}的生命值剩余{health_percent}%。"
+    return f"# {attacker_name}对{target_name}发动了一次攻击,造成了{damage}点伤害,当前{target_name}的生命值剩余{health_percent}%。"
 ################################################################################################################################################
 # def interactive_prop_action_success_prompt(who_use: str, targetname: str, propname: str, interactiveaction: str, interactiveresult: str) -> str:
 #     return f"{who_use}拿着{propname}{interactiveaction}了{targetname}造成了{interactiveresult}"

@@ -26,7 +26,6 @@ class KickOffMemorySystem:
                 os.makedirs(os.path.dirname(mempath), exist_ok=True)
             with open(mempath, "w", encoding="utf-8") as f:
                 f.write(kick_off_memory_content)
-                #self.initmemories[who] = initmemory #特殊记录
         except FileNotFoundError as e:
             return
         except Exception as e:

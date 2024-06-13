@@ -62,7 +62,7 @@ def use_prop_check(context: ExtendedContext, srcentity: Entity, targetname: str)
     
     return ErrorUsePropEnable.VALID
 ####################################################################################################
-# 特殊的字符串
+# 我方定义的规则字符串
 def parse_target_and_message(content: str) -> tuple[Optional[str], Optional[str]]:
     # 检查是否包含'@'和'>'符号
     if "@" not in content or ">" not in content:

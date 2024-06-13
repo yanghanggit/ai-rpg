@@ -59,18 +59,18 @@ class CheckStatusActionHelper:
 ####################################################################################################################################        
 class ActorCheckStatusEvent(IDirectorEvent):
 
-    def __init__(self, who: str, props: List[PropData], health: float, actor_components: List[PropData], events: List[PropData]) -> None:
+    def __init__(self, who: str, props: List[PropData], health: float, special_components: List[PropData], events: List[PropData]) -> None:
         self.who = who
         self.props = props
         self.health = health
-        self.actor_comps = actor_components
+        self.special_components = special_components
         self.events = events
 
     def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
         if actor_name != self.who:
             # 只有自己知道
             return ""
-        return check_status_action_prompt(self.who, self.props, self.health, self.actor_comps, self.events)
+        return check_status_action_prompt(self.who, self.props, self.health, self.special_components, self.events)
     
     def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
         return ""

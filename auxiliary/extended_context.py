@@ -102,7 +102,7 @@ class ExtendedContext(Context):
         entities: set[Entity] =  self.get_group(Matcher(all_of=[ActorComponent, stage_tag_component])).entities
         return list(entities)
 ############################################################################################################
-    # 特殊封装
+    # actors_in_stage 的另外一个实现
     def actors_in_stage_(self, entity: Entity) -> list[Entity]: 
         stage_entity = self.safe_get_stage_entity(entity)
         if stage_entity is None:

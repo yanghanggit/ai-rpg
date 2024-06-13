@@ -223,7 +223,7 @@ class ExcelDataProp:
         self.worldview: str = worldview
         self.type: str = type
 
-        ## 这里特殊处理吧～ 有些是nan
+        ## 有些是nan。需要小心
         self.raw_attributes: str = raw_attributes
         if self.raw_attributes == "nan":
             self.raw_attributes = ""

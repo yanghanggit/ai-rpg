@@ -1,6 +1,8 @@
 from auxiliary.extended_context import ExtendedContext
 from typing import Dict, List, Set
 from auxiliary.base_data import PropData
+from auxiliary.components import MindVoiceActionComponent, EnviroNarrateActionComponent, \
+    TagActionComponent, PerceptionActionComponent, CheckStatusActionComponent, SearchActionComponent, GoToActionComponent
 
 #全局的常量
 class ConstantPromptValue:
@@ -27,7 +29,7 @@ class ConstantPromptValue:
     
     @property
     def NO_ACTOR_PROPS_PROMPT(self) -> str:
-        return "- 无任何道具或者特殊技能"
+        return "- 无任何道具或者特殊能力"
     
     @property
     def USE_PROP_TO_STAGE_PROMPT_TAG(self) -> str:
@@ -48,7 +50,7 @@ def kick_off_memory_actor_prompt(kick_off_memory: str) -> str:
 ## 请结合你的角色设定,更新你的状态。
 ## 输出要求:
 - 请遵循'输出格式指南'。
-- 返回结果仅带MindVoiceActionComponent这个key"""
+- 返回结果仅带'{MindVoiceActionComponent.__name__}'这个key"""
     return prompt
 ###############################################################################################################################################
 def kick_off_memory_stage_prompt(kick_off_memory: str) -> str:
@@ -62,7 +64,7 @@ def kick_off_memory_stage_prompt(kick_off_memory: str) -> str:
 ## 请结合你的场景设定,更新你的状态。
 ## 输出要求:
 - 请遵循'输出格式指南'。
-- 返回结果仅带EnviroNarrateActionComponent这个key"""
+- 返回结果仅带'{EnviroNarrateActionComponent.__name__}'这个key"""
     return prompt
 ###############################################################################################################################################
 def actpr_plan_prompt(current_stage: str, stage_enviro_narrate: str, context: ExtendedContext) -> str:
@@ -81,7 +83,7 @@ def actpr_plan_prompt(current_stage: str, stage_enviro_narrate: str, context: Ex
 {current_stage_enviro_narrate_prompt}
 ## 要求:
 - 输出结果格式要遵循输出格式指南。
-- 结果中要附带TagActionComponent。"""
+- 结果中要附带'{TagActionComponent.__name__}'。"""
     return prompt
 ###############################################################################################################################################
 def stage_plan_prompt(props_in_stage: List[PropData], actors_in_stage: Set[str], context: ExtendedContext) -> str:
@@ -115,13 +117,13 @@ def stage_plan_prompt(props_in_stage: List[PropData], actors_in_stage: Set[str],
 - 不要添加角色未发生的事件与信息。
 - 不要自行推理与猜测角色的可能行为（如对话内容,行为反应与心理活动）。
 - 不要将过往已经描述过的'角色状态'做复述。
-### 第3步: 将'场景状态'的内容与'角色状态'的2部分内容合并,并作为EnviroNarrateActionComponent的值——"场景状态的描述",
-- 参考‘输出格式指南’中的:"EnviroNarrateActionComponent":["场景状态的描述"]
+### 第3步: 将'场景状态'的内容与'角色状态'的2部分内容合并,并作为{EnviroNarrateActionComponent.__name__}的值——"场景状态的描述",
+- 参考‘输出格式指南’中的:"{EnviroNarrateActionComponent.__name__}":["场景状态的描述"]
 ## 关于’你的计划‘内容生成规则
 - 根据你作为场景受到了什么事件的影响，你可以制定计划，并决定下一步将要做什么。可根据‘输出格式指南’选择相应的行动。
 ## 输出要求:
 - 输出结果格式要遵循‘输出格式指南’。
-- 结果中必须有EnviroNarrateActionComponent,并附带TagActionComponent。"""
+- 结果中必须有{EnviroNarrateActionComponent.__name__},并附带{TagActionComponent.__name__}。"""
     return prompt
 ###############################################################################################################################################
 def perception_action_prompt(who_perception: str, current_stage: str, ressult_actor_names: Dict[str, str], result_props_names: List[str]) -> str:
@@ -140,7 +142,7 @@ def perception_action_prompt(who_perception: str, current_stage: str, ressult_ac
     else:
         prompt_of_props = "- 无任何道具。"
 
-    final_prompt = f"""# {who_perception}当前在场景{current_stage}中。{who_perception}对{current_stage}执行PerceptionActionComponent,即使发起感知行为,结果如下:
+    final_prompt = f"""# {who_perception}当前在场景{current_stage}中。{who_perception}对{current_stage}执行{PerceptionActionComponent.__name__},即使发起感知行为,结果如下:
 ## 场景内角色:
 {prompt_of_actor}
 ## 场景内道具:
@@ -168,13 +170,14 @@ def prop_info_prompt(prop: PropData) -> str:
 """
     return prompt
 ###############################################################################################################################################
-def actor_component_info_prompt(prop: PropData) -> str:
+def special_component_prompt(prop: PropData) -> str:
+    assert prop.is_special_component()
     prompt = f"""### {prop._name}
 - {prop._description}
 """
     return prompt
 ###############################################################################################################################################
-def check_status_action_prompt(who: str, props: List[PropData], health: float, actor_components: List[PropData], events: List[PropData]) -> str:
+def check_status_action_prompt(who: str, props: List[PropData], health: float, special_components: List[PropData], events: List[PropData]) -> str:
     #百分比的
     health *= 100
     prompt_of_actor = f"生命值: {health:.2f}%"
@@ -186,31 +189,31 @@ def check_status_action_prompt(who: str, props: List[PropData], health: float, a
     else:
         prompt_of_props = "- 无任何道具。"
 
-    prompt_of_actor_components = ""
-    if len(actor_components) > 0:
-        for _r in actor_components:
-            prompt_of_actor_components += actor_component_info_prompt(_r)
+    prompt_of_special_components = ""
+    if len(special_components) > 0:
+        for _r in special_components:
+            prompt_of_special_components += special_component_prompt(_r)
     else:
-        prompt_of_actor_components = "- 无任何特殊能力。"
+        prompt_of_special_components = "- 无任何特殊能力。"
 
-    final_prompt = f"""# {who}对自身执行CheckStatusActionComponent,即对自身状态进行检查,结果如下:
+    final_prompt = f"""# {who}对自身执行{CheckStatusActionComponent.__name__},即对自身状态进行检查,结果如下:
 ## 健康状态:
 {prompt_of_actor}
 ## 持有道具:
 {prompt_of_props}
 ## 特殊能力:
-{prompt_of_actor_components}
+{prompt_of_special_components}
 """
     return final_prompt
 ###############################################################################################################################################
 def search_action_failed_prompt(actor_name: str, prop_name:str) -> str:
     return f"""# {actor_name}试图在场景内搜索"{prop_name}",但失败了。
 ## 原因可能如下:
-1. "{prop_name}"可能并非是一个道具。'SearchActionComponent'只能支持搜索道具的行为与计划
+1. "{prop_name}"可能并非是一个道具。{SearchActionComponent.__name__} 只能支持搜索道具的行为与计划
 2. 或者这个道具此时已不在本场景中（可能被其他角色搜索并获取了）。
 ## 建议与提示:
 - {actor_name}需重新考虑搜索目标。
-- 可使用PerceptionActionComponent来感知场景内的道具,并确认合理目标。"""
+- 可使用{PerceptionActionComponent.__name__}来感知场景内的道具,并确认合理目标。"""
 ###############################################################################################################################################
 def search_action_success_prompt(actor_name: str, prop_name:str, stagename: str) -> str:
     return f"""# {actor_name}从{stagename}场景内成功找到并获取了道具:{prop_name}。
@@ -271,7 +274,7 @@ def go_to_stage_failed_because_stage_is_invalid_prompt(actor_name: str, stagenam
 ## 所以 {actor_name} 请参考以上的原因，需要重新考虑去往的目的地。"""
 ################################################################################################################################################
 def go_to_stage_failed_because_already_in_stage_prompt(actor_name: str, stagename: str) -> str:
-    return f"你已经在{stagename}场景中了。需要重新考虑去往的目的地。'GoToActionComponent'行动类型意图是离开当前场景并去往某地。"
+    return f"你已经在{stagename}场景中了。需要重新考虑去往的目的地。 {GoToActionComponent.__name__}行动类型意图是离开当前场景并去往某地。"
 ################################################################################################################################################
 def replace_all_mentions_of_your_name_with_you(content: str, your_name: str) -> str:
     if len(content) == 0 or your_name not in content:
@@ -323,12 +326,12 @@ def use_prop_to_stage_prompt(username: str, propname: str, prop_prompt: str, exi
 - 不重复描述已经提及的角色状态。
 
 ### 第2步: 根据场景状态填写输出内容
-- 将场景状态详细描述放入 'EnviroNarrateActionComponent'。
-  参考格式：'EnviroNarrateActionComponent': ['场景状态的描述']
+- 将场景状态详细描述放入 {EnviroNarrateActionComponent.__name__}。
+  参考格式：'{EnviroNarrateActionComponent.__name__}': ['场景状态的描述']
 
 ## 输出格式要求:
 - 严格遵循‘输出格式指南’。
-- 必须包含 'EnviroNarrateActionComponent' 和 'TagActionComponent'。
+- 必须包含 '{EnviroNarrateActionComponent.__name__}' 和 '{TagActionComponent.__name__}'。
 """
     return final_prompt
 ################################################################################################################################################
@@ -349,10 +352,10 @@ def stage_exit_conditions_check_promt(actor_name: str, current_stage_name: str,
 ## 当前角色状态: 
 {actor_status_prompt}
 
-# 第3步: 检查{actor_name}的道具(与拥有的特殊技能)是否符合以下要求:
-## 必须满足的道具与特殊技能信息: 
+# 第3步: 检查{actor_name}的道具(与拥有的特殊能力)是否符合以下要求:
+## 必须满足的道具与特殊能力信息: 
 {cond_check_actor_props_prompt}
-## 当前角色道具与特殊技能信息: 
+## 当前角色道具与特殊能力信息: 
 {actor_props_prompt}
 
 # 判断结果
@@ -360,11 +363,11 @@ def stage_exit_conditions_check_promt(actor_name: str, current_stage_name: str,
 
 # 本次输出结果格式要求（遵循‘输出格式指南’）:
 {{
-    EnviroNarrateActionComponent: ["描述'允许离开'或'不允许离开'的原因，使{actor_name}明白"],
-    TagActionComponent: ["Yes/No"]
+    {EnviroNarrateActionComponent.__name__}: ["描述'允许离开'或'不允许离开'的原因，使{actor_name}明白"],
+    {TagActionComponent.__name__}: ["Yes/No"]
 }}
 ## 附注
-- 'EnviroNarrateActionComponent' 中请详细描述判断理由，注意如果不允许离开，就只说哪一条不符合要求，不要都说出来，否则会让{actor_name}迷惑。
+- '{EnviroNarrateActionComponent.__name__}' 中请详细描述判断理由，注意如果不允许离开，就只说哪一条不符合要求，不要都说出来，否则会让{actor_name}迷惑。
 - Yes: 允许离开
 - No: 不允许离开
 """
@@ -387,10 +390,10 @@ def stage_entry_conditions_check_promt(actor_name: str, current_stage_name: str,
 ## 当前角色状态: 
 {actor_status_prompt}
 
-# 第3步: 检查{actor_name}的道具(与拥有的特殊技能)是否符合以下要求:
-## 必须满足的道具与特殊技能信息: 
+# 第3步: 检查{actor_name}的道具(与拥有的特殊能力)是否符合以下要求:
+## 必须满足的道具与特殊能力信息: 
 {cond_check_actor_props_prompt}
-## 当前角色道具与特殊技能信息: 
+## 当前角色道具与特殊能力信息: 
 {actor_props_prompt}
 
 # 判断结果
@@ -398,11 +401,11 @@ def stage_entry_conditions_check_promt(actor_name: str, current_stage_name: str,
 
 # 本次输出结果格式要求（遵循‘输出格式指南’）:
 {{
-    EnviroNarrateActionComponent: ["描述'允许进入'或'不允许进入'的原因，使{actor_name}明白"],
-    TagActionComponent: ["Yes/No"]
+    {EnviroNarrateActionComponent.__name__}: ["描述'允许进入'或'不允许进入'的原因，使{actor_name}明白"],
+    {TagActionComponent.__name__}: ["Yes/No"]
 }}
 ## 附注
-- 'EnviroNarrateActionComponent' 中请详细描述判断理由，注意如果不允许进入，就只说哪一条不符合要求，不要都说出来，否则会让{actor_name}迷惑。
+- '{EnviroNarrateActionComponent.__name__}' 中请详细描述判断理由，注意如果不允许进入，就只说哪一条不符合要求，不要都说出来，否则会让{actor_name}迷惑。
 - Yes: 允许进入
 - No: 不允许进入
 """

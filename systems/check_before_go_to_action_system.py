@@ -21,8 +21,7 @@ from auxiliary.cn_builtin_prompt import \
             stage_entry_conditions_check_promt,\
             exit_stage_failed_beacuse_stage_refuse_prompt, \
             enter_stage_failed_beacuse_stage_refuse_prompt, \
-            NO_INFO_PROMPT,\
-            NO_ACTOR_PROPS_INFO_PROMPT, \
+            __ConstantPromptValue__,\
             actor_status_when_stage_change_prompt, \
             go_to_stage_failed_because_stage_is_invalid_prompt, \
             go_to_stage_failed_because_already_in_stage_prompt
@@ -114,9 +113,9 @@ class StageConditionsHelper:
 ####################################################################################################################################
     def clear(self) -> None:
         self.stage_name = ""
-        self.stage_cond_status_prompt = str(NO_INFO_PROMPT)
-        self.cond_check_actor_status_prompt = str(NO_INFO_PROMPT)
-        self.cond_check_actor_props_prompt = str(NO_INFO_PROMPT)
+        self.stage_cond_status_prompt = str(__ConstantPromptValue__.NONE_PROMPT)
+        self.cond_check_actor_status_prompt = str(__ConstantPromptValue__.NONE_PROMPT)
+        self.cond_check_actor_props_prompt = str(__ConstantPromptValue__.NONE_PROMPT)
 ####################################################################################################################################
     def prepare_exit_cond(self, stage_entity: Entity, context: ExtendedContext) -> None:
         self.clear()
@@ -151,7 +150,7 @@ class HandleStageConditionsResponseHelper:
     def __init__(self, plan: ActorPlan) -> None:
         self._plan = plan
         self._result = False
-        self._tips = str(NO_INFO_PROMPT)
+        self._tips = str(__ConstantPromptValue__.NONE_PROMPT)
 ###############################################################################################################################################
     @property
     def result(self) -> bool:
@@ -188,7 +187,7 @@ class HandleStageConditionsResponseHelper:
         assert enviro_narrate_action.actionname == EnviroNarrateActionComponent.__name__
         if len(enviro_narrate_action.values) == 0:
             logger.error(enviro_narrate_action)
-            return str(NO_INFO_PROMPT)
+            return str(__ConstantPromptValue__.NONE_PROMPT)
         return enviro_narrate_action.single_value()
 ###############################################################################################################################################
 
@@ -416,7 +415,7 @@ class CheckBeforeGoToActionSystem(ReactiveProcessor):
             for prop in props:
                 prompt_of_props += prop_info_prompt(prop)
         else:
-            prompt_of_props = str(NO_ACTOR_PROPS_INFO_PROMPT)
+            prompt_of_props = str(__ConstantPromptValue__.NO_ACTOR_PROPS_PROMPT)
         return prompt_of_props
 ###############################################################################################################################################
     def on_failed(self, entity: Entity) -> None:

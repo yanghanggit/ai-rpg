@@ -2,16 +2,40 @@ from auxiliary.extended_context import ExtendedContext
 from typing import Dict, List, Set
 from auxiliary.base_data import PropData
 
-#全局的变量
-ACTOR_PLAN_PROMPT_TAG = "<%这是角色计划>"
-STAGE_PLAN_PROMPT_TAG = "<%这是场景计划>"
-COMPRESS_ACTOR_PLAN_PROMPT = "请做出你的计划，决定你将要做什么"
-COMPRESS_STAGE_PLAN_PROMPT = "请输出'你的当前描述'和'你的计划'"
-NO_INFO_PROMPT = "- 无"
-NO_ACTOR_PROPS_INFO_PROMPT = "- 无任何道具或者特殊技能"
-USE_PROP_TO_STAGE_PROMPT_TAG = "<%这是角色对场景使用道具>"
+#全局的常量
+class ConstantPromptValue:
 
-# _const.value1 = 100
+    @property
+    def ACTOR_PLAN_PROMPT_TAG(self) -> str:
+        return "<%这是角色计划>"
+    
+    @property
+    def STAGE_PLAN_PROMPT_TAG(self) -> str:
+        return "<%这是场景计划>"
+    
+    @property
+    def COMPRESS_ACTOR_PLAN_PROMPT(self) -> str:
+        return "请做出你的计划，决定你将要做什么"
+    
+    @property
+    def COMPRESS_STAGE_PLAN_PROMPT(self) -> str:
+        return "请输出'你的当前描述'和'你的计划'"
+    
+    @property
+    def NONE_PROMPT(self) -> str:
+        return "- 无"
+    
+    @property
+    def NO_ACTOR_PROPS_PROMPT(self) -> str:
+        return "- 无任何道具或者特殊技能"
+    
+    @property
+    def USE_PROP_TO_STAGE_PROMPT_TAG(self) -> str:
+        return "<%这是角色对场景使用道具>"
+
+
+__ConstantPromptValue__ = ConstantPromptValue()
+
 ###############################################################################################################################################
 def kick_off_memory_actor_prompt(kick_off_memory: str) -> str:
     prompt = f"""# <%这是角色初始化>游戏世界即将开始运行。这是你的初始设定，你将以此为起点进行游戏
@@ -52,7 +76,7 @@ def actpr_plan_prompt(current_stage: str, stage_enviro_narrate: str, context: Ex
         current_stage_enviro_narrate_prompt = f"""## 当前场景的环境信息(用于你做参考):\n- {stage_enviro_narrate}"""
 
 
-    prompt = f"""# {ACTOR_PLAN_PROMPT_TAG}请做出你的计划，决定你将要做什么。
+    prompt = f"""# {__ConstantPromptValue__.ACTOR_PLAN_PROMPT_TAG}请做出你的计划，决定你将要做什么。
 ## 你当前所在的场景:{current_stage_prompt}。
 {current_stage_enviro_narrate_prompt}
 ## 要求:
@@ -79,7 +103,7 @@ def stage_plan_prompt(props_in_stage: List[PropData], actors_in_stage: Set[str],
         prompt_of_actor = "- 无任何角色。"
 
 
-    prompt = f"""# {STAGE_PLAN_PROMPT_TAG}请输出'你的当前描述'和'你的计划'
+    prompt = f"""# {__ConstantPromptValue__.STAGE_PLAN_PROMPT_TAG}请输出'你的当前描述'和'你的计划'
 ## 场景内道具:
 {prompt_of_props}
 ## 场景内角色:
@@ -285,7 +309,7 @@ def batch_conversation_action_events_in_stage(stagename: str, events: List[str],
 ################################################################################################################################################
 def use_prop_to_stage_prompt(username: str, propname: str, prop_prompt: str, exit_cond_status_prompt: str) -> str:
     #USE_PROP_TO_STAGE_PROMPT_TAG 留着做标记与压缩
-    final_prompt = f"""# {USE_PROP_TO_STAGE_PROMPT_TAG} {username} 使用道具 {propname} 对你造成影响。
+    final_prompt = f"""# {__ConstantPromptValue__.USE_PROP_TO_STAGE_PROMPT_TAG} {username} 使用道具 {propname} 对你造成影响。
 ## 道具 {propname} 说明:
 {prop_prompt}
 

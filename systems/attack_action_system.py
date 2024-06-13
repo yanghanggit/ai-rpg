@@ -14,7 +14,7 @@ from auxiliary.cn_builtin_prompt import kill_prompt, attack_prompt
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class KillEvent(IDirectorEvent):
+class StageOrActorKillEvent(IDirectorEvent):
 
     """
     事件通知：在Attack之后，直接杀死了某个人。
@@ -34,7 +34,7 @@ class KillEvent(IDirectorEvent):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class AttackEvent(IDirectorEvent):
+class StageOrActorAttackEvent(IDirectorEvent):
 
     """
     事件通知：Attack行动的通知
@@ -163,10 +163,10 @@ class AttackActionSystem(ReactiveProcessor):
             ## 导演系统，单独处理，有旧的代码
             if isdead:
                 # 直接打死
-                notify_stage_director(context, _entity, KillEvent(rpgcomp.name, value_as_target_name))
+                notify_stage_director(context, _entity, StageOrActorKillEvent(rpgcomp.name, value_as_target_name))
             else:
                 # 没有打死，就把伤害通知给导演
-                notify_stage_director(context, _entity, AttackEvent(rpgcomp.name, value_as_target_name, damage, lefthp, target_rpg_comp.maxhp))
+                notify_stage_director(context, _entity, StageOrActorAttackEvent(rpgcomp.name, value_as_target_name, damage, lefthp, target_rpg_comp.maxhp))
 ######################################################################################################################################################
     ## 杀死对方就直接夺取唯一性道具。
     def unique_prop_be_taken_away(self, _entity: Entity, _target_entity: Entity) -> None:

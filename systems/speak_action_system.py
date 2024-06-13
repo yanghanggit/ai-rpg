@@ -14,7 +14,7 @@ from auxiliary.cn_builtin_prompt import speak_action_prompt
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class SpeakEvent(IDirectorEvent):
+class StageOrActorSpeakEvent(IDirectorEvent):
 
     def __init__(self, who_is_speaking: str, who_is_target: str, message: str) -> None:
         self.who_is_speaking = who_is_speaking
@@ -63,5 +63,5 @@ class SpeakActionSystem(ReactiveProcessor):
             if conversation_check(self.context, entity, targetname) != ErrorConversationEnable.VALID:
                 continue
 
-            notify_stage_director(self.context, entity, SpeakEvent(safe_name, targetname, message))
+            notify_stage_director(self.context, entity, StageOrActorSpeakEvent(safe_name, targetname, message))
 ####################################################################################################

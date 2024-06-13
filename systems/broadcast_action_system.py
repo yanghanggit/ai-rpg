@@ -11,7 +11,7 @@ from auxiliary.cn_builtin_prompt import broadcast_action_prompt
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class BroadcastEvent(IDirectorEvent):
+class StageOrActorBroadcastEvent(IDirectorEvent):
 
     def __init__(self, whobroadcast: str, stagename: str, content: str) -> None:
         self.whobroadcast = whobroadcast
@@ -59,5 +59,5 @@ class BroadcastActionSystem(ReactiveProcessor):
         #
         action: ActorAction = broadcastcomp.action
         combine = action.single_value()
-        notify_stage_director(self.context, stageentity, BroadcastEvent(action.name, stagecomp.name, combine))
+        notify_stage_director(self.context, stageentity, StageOrActorBroadcastEvent(action.name, stagecomp.name, combine))
 ####################################################################################################

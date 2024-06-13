@@ -13,7 +13,7 @@ from auxiliary.cn_builtin_prompt import whisper_action_prompt
 ####################################################################################################################################
 ####################################################################################################################################
 #################################################################################################################################### 
-class WhisperEvent(IDirectorEvent):
+class StageOrActorWhisperEvent(IDirectorEvent):
     
     def __init__(self, who_is_whispering: str, who_is_target: str, message: str) -> None:
         self.who_is_whispering = who_is_whispering
@@ -66,5 +66,5 @@ class WhisperActionSystem(ReactiveProcessor):
             if conversation_check(self.context, entity, targetname) != ErrorConversationEnable.VALID:
                 continue
             
-            notify_stage_director(self.context, entity, WhisperEvent(safe_name, targetname, message))
+            notify_stage_director(self.context, entity, StageOrActorWhisperEvent(safe_name, targetname, message))
 ####################################################################################################

@@ -39,17 +39,17 @@ class StageDirectorComponent(DirectorComponentPrototype):
 ##########################################################################################################################
     def to_player(self, target_actor_name: str, extended_context: ExtendedContext) -> List[str]:
         # 哭，循环引用，临时就这么写吧, 这些不用客户端显示
-        from systems.whisper_action_system import WhisperEvent
-        from systems.speak_action_system import SpeakEvent
-        from systems.broadcast_action_system import BroadcastEvent
+        from systems.whisper_action_system import StageOrActorWhisperEvent
+        from systems.speak_action_system import StageOrActorSpeakEvent
+        from systems.broadcast_action_system import StageOrActorBroadcastEvent
         from systems.perception_action_system import ActorPerceptionEvent
         from systems.check_status_action_system import ActorCheckStatusEvent
         ###
         batch: List[str] = []
         for event in self._events:
-            check = isinstance(event, WhisperEvent) \
-            or isinstance(event, SpeakEvent) \
-            or isinstance(event, BroadcastEvent) \
+            check = isinstance(event, StageOrActorWhisperEvent) \
+            or isinstance(event, StageOrActorSpeakEvent) \
+            or isinstance(event, StageOrActorBroadcastEvent) \
             or isinstance(event, ActorPerceptionEvent) \
             or isinstance(event, ActorCheckStatusEvent)
             if check:

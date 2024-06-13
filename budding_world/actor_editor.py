@@ -73,6 +73,7 @@ class ExcelEditorActor:
         dict['mentioned_actors'] = ";".join(target.mentioned_actors)
         dict['mentioned_stages'] = ";".join(target.mentioned_stages)
         dict['attributes'] = self.attributes #target.attributes
+        dict['body'] = target._body
         return dict
     
     # 核心函数！！！

@@ -67,6 +67,7 @@ from systems.compress_chat_history_system import CompressChatHistorySystem
 from systems.terminal_player_input_system import TerminalPlayerInputSystem
 from systems.post_conversation_action_system import PostConversationActionSystem
 from auxiliary.base_data import StageData
+from systems.actor_update_appearance_system import ActorUpdateAppearanceSystem
 
 
 
@@ -90,6 +91,7 @@ class RPGGame(BaseGame):
         #初始化系统########################
         processors.add(AgentsConnectSystem(context)) ### 连接所有agent
         processors.add(AgentsKickOffSystem(context)) ### 第一次读状态, initmemory
+        processors.add(ActorUpdateAppearanceSystem(context)) ### 更新外观
         #########################################
 
         # 处理用户输入

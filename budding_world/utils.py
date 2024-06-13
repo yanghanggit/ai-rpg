@@ -7,7 +7,7 @@ import os
 from loguru import logger
 from pandas.core.frame import DataFrame
 from typing import Dict
-from budding_world.configuration import RAG_FILE
+#from budding_world.configuration import RAG_FILE
 from budding_world.excel_data import ExcelDataActor, ExcelDataStage, ExcelDataProp, ExcelDataWorldSystem
 
 
@@ -64,7 +64,8 @@ def gen_all_actors(sheet: DataFrame, output: Dict[str, ExcelDataActor]) -> None:
                                 row["API"], 
                                 row["RAG"], 
                                 row["sys_prompt_template"],
-                                row["agentpy_template"])
+                                row["agentpy_template"],
+                                row["body"])
         
 
         excel_actor.gen_sys_prompt(readmd(excel_actor._sys_prompt_template_path))

@@ -17,18 +17,17 @@ class ExcelDataActor:
                  codename: str, 
                  description: str, 
                  conversation_example: str,
-                 #gptmodel: str, 
                  port: int, 
                  api: str, 
                  rag: str,
                  sys_prompt_template_path: str,
-                 agentpy_template_path: str) -> None:
+                 agentpy_template_path: str,
+                 body: str) -> None:
         
         self.name: str = name
         self.codename: str = codename
         self.description: str = description
-        self.converation_example = conversation_example
-        #self.gptmodel: str = gptmodel
+        self.converation_example: str = conversation_example
         self.port: int = port
         self.api: str = api
         self._rag: str = rag
@@ -42,7 +41,8 @@ class ExcelDataActor:
 
         #self.attributes: str = attributes
         self._sys_prompt_template_path: str = sys_prompt_template_path
-        self._agentpy_template_path = agentpy_template_path
+        self._agentpy_template_path: str = agentpy_template_path
+        self._body: str = body
 
     def __str__(self) -> str:
         return f"ExcelDataActor({self.name}, {self.codename})"
@@ -59,7 +59,6 @@ class ExcelDataActor:
         agentpy = str(agent_py_template)
         agentpy = agentpy.replace("<%RAG_MD_PATH>", f"""/{GAME_NAME}/{self._rag}""")
         agentpy = agentpy.replace("<%SYS_PROMPT_MD_PATH>", f"""/{GAME_NAME}/{OUT_PUT_ACTOR_SYS_PROMPT_DIR}/{self.codename}_sys_prompt.md""")
-        #agentpy = agentpy.replace("<%GPT_MODEL>", self.gptmodel)
         agentpy = agentpy.replace("<%PORT>", str(self.port))
         agentpy = agentpy.replace("<%API>", self.api)
         self.agentpy = agentpy
@@ -137,7 +136,6 @@ class ExcelDataStage:
     def __init__(self, name: str, 
                  codename: str, 
                  description: str, 
-                 #gptmodel: str, 
                  port: int, 
                  api: str, 
                  rag: str, 
@@ -147,7 +145,6 @@ class ExcelDataStage:
         self.name: str = name
         self.codename: str = codename
         self.description: str = description
-        #self.gptmodel: str = gptmodel
         self.port: int = port
         self.api: str = api
         self._rag: str = rag
@@ -156,7 +153,6 @@ class ExcelDataStage:
         self.agentpy: str = ""
 
         logger.info(self.localhost_api())
-        #self.attributes: str = attributes
 
         self._sys_prompt_template_path: str = sys_prompt_template_path
         self._agentpy_template_path = agentpy_template_path
@@ -175,7 +171,6 @@ class ExcelDataStage:
         agentpy = str(agent_py_template)
         agentpy = agentpy.replace("<%RAG_MD_PATH>", f"""/{GAME_NAME}/{self._rag}""")
         agentpy = agentpy.replace("<%SYS_PROMPT_MD_PATH>", f"""/{GAME_NAME}/{OUT_PUT_STAGE_SYS_PROMPT_DIR}/{self.codename}_sys_prompt.md""")
-        #agentpy = agentpy.replace("<%GPT_MODEL>", self.gptmodel)
         agentpy = agentpy.replace("<%PORT>", str(self.port))
         agentpy = agentpy.replace("<%API>", self.api)
         self.agentpy = agentpy

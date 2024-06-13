@@ -89,7 +89,8 @@ class GameBuilder:
                           set(), 
                           mentioned_actors,
                           mentioned_stages,
-                          _data.get("appearance"))
+                          _data.get("appearance"),
+                          _data.get("body"))
             
             ## 设置（战斗）属性
             _actor.build_attributes(_data.get("attributes"))

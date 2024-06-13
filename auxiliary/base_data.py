@@ -105,7 +105,9 @@ class ActorData:
                  props: Set[PropData], 
                  mentioned_actors: Set[str], 
                  mentioned_stages: Set[str],
-                 appearance: str) -> None:
+                 appearance: str,
+                 body: str) -> None:
+        
         self.name = name
         self.codename = codename
         self.url = url
@@ -115,13 +117,14 @@ class ActorData:
         self.stage_names_mentioned_during_editing_or_for_agent: Set[str] = mentioned_stages
         self.attributes: List[int] = []
         self._appearance: str = appearance
+        self._body: str = body
 
     def build_attributes(self, attributes: str) -> None:
         self.attributes = [int(attr) for attr in attributes.split(',')]
         assert len(self.attributes) == 4
 
 def ActorDataProxy(name: str) -> ActorData:
-    return ActorData(name, "", "", "", set(), set(), set(), "")
+    return ActorData(name, "", "", "", set(), set(), set(), "", "")
 ########################################################################################################################
 ########################################################################################################################
 ########################################################################################################################

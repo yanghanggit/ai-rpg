@@ -48,7 +48,7 @@ def readpy(file_path: str) -> str:
 
 
 ############################################################################################################
-def gen_all_actors(sheet: DataFrame, sys_prompt_template_path: str, agent_template_path: str, output: Dict[str, ExcelDataActor]) -> None:
+def gen_all_actors(sheet: DataFrame, output: Dict[str, ExcelDataActor]) -> None:
     ## 读取Excel文件
     for index, row in sheet.iterrows():
         if pd.isna(row["name"]):
@@ -59,42 +59,40 @@ def gen_all_actors(sheet: DataFrame, sys_prompt_template_path: str, agent_templa
                                 row["codename"], 
                                 row["description"], 
                                 row['conversation_example'],
-                                row["GPT_MODEL"], 
+                                #row["GPT_MODEL"], 
                                 int(row["PORT"]), 
                                 row["API"], 
                                 row["RAG"], 
-                                row["sys_prompt_template"])
+                                row["sys_prompt_template"],
+                                row["agentpy_template"])
         
-        if not excel_actor.isvalid():
-            continue
-        excel_actor.gen_sys_prompt(sys_prompt_template_path)
+
+        excel_actor.gen_sys_prompt(readmd(excel_actor._sys_prompt_template_path))
         excel_actor.write_sys_prompt()
-        excel_actor.gen_agentpy(agent_template_path)
+        excel_actor.gen_agentpy(readpy(excel_actor._agentpy_template_path))
         excel_actor.write_agentpy()
         output[excel_actor.name] = excel_actor
 ############################################################################################################
-def gen_all_stages(sheet: DataFrame, sys_prompt_template_path: str, agent_template_path: str, output: Dict[str, ExcelDataStage]) -> None:
+def gen_all_stages(sheet: DataFrame, output: Dict[str, ExcelDataStage]) -> None:
     ## 读取Excel文件
     for index, row in sheet.iterrows():
         if pd.isna(row["name"]):
             continue
-        excelstage = ExcelDataStage(row["name"], 
+        excel_stage = ExcelDataStage(row["name"], 
                                     row["codename"], 
                                     row["description"], 
-                                    row["GPT_MODEL"], 
+                                    #row["GPT_MODEL"], 
                                     int(row["PORT"]), 
                                     row["API"], 
                                     row["RAG"], 
-                                    row["sys_prompt_template"])
-        
-        if not excelstage.isvalid():
-            #print(f"Invalid row: {excelstage}")
-            continue
-        excelstage.gen_sys_prompt(sys_prompt_template_path)
-        excelstage.write_sys_prompt()
-        excelstage.gen_agentpy(agent_template_path)
-        excelstage.write_agentpy()    
-        output[excelstage.name] = excelstage 
+                                    row["sys_prompt_template"],
+                                    row["agentpy_template"])
+
+        excel_stage.gen_sys_prompt(readmd(excel_stage._sys_prompt_template_path))
+        excel_stage.write_sys_prompt()
+        excel_stage.gen_agentpy(readpy(excel_stage._agentpy_template_path))
+        excel_stage.write_agentpy()    
+        output[excel_stage.name] = excel_stage 
 ############################################################################################################
 def gen_all_props(sheet: DataFrame, output: Dict[str, ExcelDataProp]) -> None:
     ## 读取Excel文件

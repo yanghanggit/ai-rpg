@@ -15,7 +15,7 @@ from langchain_core.tools import tool
 
 RAG_MD_PATH: str = f"""<%RAG_MD_PATH>"""
 SYS_PROMPT_MD_PATH: str = f"""<%SYS_PROMPT_MD_PATH>"""
-GPT_MODEL: str = f"""<%GPT_MODEL>"""
+#GPT_MODEL: str = f"""<%GPT_MODEL>"""
 PORT: int = <%PORT>
 API: str = f"""<%API>"""
 

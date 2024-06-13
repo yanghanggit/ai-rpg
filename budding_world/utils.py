@@ -8,7 +8,7 @@ from loguru import logger
 from pandas.core.frame import DataFrame
 from typing import Dict
 from budding_world.configuration import RAG_FILE
-from budding_world.excel_data import ExcelDataActor, ExcelDataStage, ExcelDataProp
+from budding_world.excel_data import ExcelDataActor, ExcelDataStage, ExcelDataProp, ExcelDataWorldSystem
 
 
 ############################################################################################################
@@ -93,6 +93,26 @@ def gen_all_stages(sheet: DataFrame, output: Dict[str, ExcelDataStage]) -> None:
         excel_stage.gen_agentpy(readpy(excel_stage._agentpy_template_path))
         excel_stage.write_agentpy()    
         output[excel_stage.name] = excel_stage 
+############################################################################################################
+def gen_all_world_system(sheet: DataFrame, output: Dict[str, ExcelDataWorldSystem]) -> None:
+    ## 读取Excel文件
+    for index, row in sheet.iterrows():
+        if pd.isna(row["name"]):
+            continue
+        excel_world_system = ExcelDataWorldSystem(row["name"], 
+                                    row["codename"], 
+                                    row["description"], 
+                                    int(row["PORT"]), 
+                                    row["API"], 
+                                    row["RAG"], 
+                                    row["sys_prompt_template"],
+                                    row["agentpy_template"])
+
+        excel_world_system.gen_sys_prompt(readmd(excel_world_system._sys_prompt_template_path))
+        excel_world_system.write_sys_prompt()
+        excel_world_system.gen_agentpy(readpy(excel_world_system._agentpy_template_path))
+        excel_world_system.write_agentpy()    
+        output[excel_world_system._name] = excel_world_system
 ############################################################################################################
 def gen_all_props(sheet: DataFrame, output: Dict[str, ExcelDataProp]) -> None:
     ## 读取Excel文件

@@ -229,3 +229,79 @@ class ExcelDataProp:
 
     def __str__(self) -> str:
         return f"ExcelDataProp({self.name}, {self.codename}, {self.isunique}, {self.type}, {self.raw_attributes})"
+    
+
+############################################################################################################
+############################################################################################################
+############################################################################################################
+class ExcelDataWorldSystem:
+
+    def __init__(self, 
+                 name: str, 
+                 codename: str, 
+                 description: str, 
+                 port: int, 
+                 api: str, 
+                 rag: str, 
+                 sys_prompt_template_path: str,
+                 agentpy_template_path: str) -> None:
+        
+        self._name: str = name
+        self._codename: str = codename
+        self._description: str = description
+        self._port: int = port
+        self._api: str = api
+        logger.info(self.localhost_api())
+        self._rag: str = rag
+        self._sysprompt: str = ""
+        self._agentpy: str = ""
+        self._sys_prompt_template_path: str = sys_prompt_template_path
+        self._agentpy_template_path: str = agentpy_template_path
+
+    def __str__(self) -> str:
+        return f"ExcelDataWorldSystem({self._name}, {self._codename})"
+    
+    def gen_sys_prompt(self, sys_prompt_template: str) -> str:
+        genprompt = str(sys_prompt_template)
+        genprompt = genprompt.replace("<%name>", self._name)
+        genprompt = genprompt.replace("<%description>", self._description)
+        self._sysprompt = genprompt
+        return self._sysprompt
+    
+    def gen_agentpy(self, agent_py_template: str) -> str:
+        agentpy = str(agent_py_template)
+        agentpy = agentpy.replace("<%RAG_MD_PATH>", f"""/{GAME_NAME}/{self._rag}""")
+        agentpy = agentpy.replace("<%SYS_PROMPT_MD_PATH>", f"""/{GAME_NAME}/{OUT_PUT_STAGE_SYS_PROMPT_DIR}/{self._codename}_sys_prompt.md""")
+        agentpy = agentpy.replace("<%PORT>", str(self._port))
+        agentpy = agentpy.replace("<%API>", self._api)
+        self._agentpy = agentpy
+        return self._agentpy
+    
+    def localhost_api(self) -> str:
+        return f"http://localhost:{self._port}{self._api}/"
+    
+    def write_sys_prompt(self) -> None: 
+        try:
+            directory = f"{GAME_NAME}/{OUT_PUT_STAGE_SYS_PROMPT_DIR}"
+            filename = f"{self._codename}_sys_prompt.md"
+            path = os.path.join(directory, filename)
+            # 确保目录存在
+            os.makedirs(directory, exist_ok=True)
+            with open(path, 'w', encoding='utf-8') as file:
+                file.write(self._sysprompt)
+                file.write("\n\n\n")
+        except Exception as e:
+            logger.error(f"An error occurred: {e}") 
+
+    def write_agentpy(self) -> None:
+        try:
+            directory = f"{GAME_NAME}/{OUT_PUT_AGENT_DIR}"
+            filename = f"{self._codename}_agent.py"
+            path = os.path.join(directory, filename)
+            # 确保目录存在
+            os.makedirs(directory, exist_ok=True)
+            with open(path, 'w', encoding='utf-8') as file:
+                file.write(self._agentpy)
+                file.write("\n\n\n")
+        except Exception as e:
+            logger.error(f"An error occurred: {e}") 

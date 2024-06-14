@@ -264,10 +264,10 @@ class RPGGame(BaseGame):
             worldentity = context.create_entity()
             res.append(worldentity)
             #必要组件
-            worldentity.add(WorldComponent, builddata.name)
+            worldentity.add(WorldComponent, builddata._name)
             #重构
-            agent_connect_system.register_agent(builddata.name, builddata.url)
-            code_name_component_system.register_code_name_component_class(builddata.name, builddata.codename)
+            agent_connect_system.register_agent(builddata._name, builddata._url)
+            code_name_component_system.register_code_name_component_class(builddata._name, builddata._codename)
 
         return res
 ###############################################################################################################################################
@@ -298,8 +298,8 @@ class RPGGame(BaseGame):
             res.append(_entity)
 
             # 必要组件
-            _entity.add(ActorComponent, actor_data.name, "")
-            _entity.add(SimpleRPGAttrComponent, actor_data.name, 
+            _entity.add(ActorComponent, actor_data._name, "")
+            _entity.add(SimpleRPGAttrComponent, actor_data._name, 
                         actor_data.maxhp, 
                         actor_data.hp, 
                         actor_data.attack, 
@@ -307,24 +307,24 @@ class RPGGame(BaseGame):
             _entity.add(AppearanceComponent, actor_data._appearance)
 
             #重构
-            agent_connect_system.register_agent(actor_data.name, actor_data.url)
-            memory_system.add_kick_off_memory(actor_data.name, actor_data.kick_off_memory)
-            code_name_component_system.register_code_name_component_class(actor_data.name, actor_data.codename)
+            agent_connect_system.register_agent(actor_data._name, actor_data._url)
+            memory_system.add_kick_off_memory(actor_data._name, actor_data._kick_off_memory)
+            code_name_component_system.register_code_name_component_class(actor_data._name, actor_data._codename)
             
             # 添加道具
-            for prop_proxy in actor_data.props:
+            for prop_proxy in actor_data._props:
                 ## 重构
                 prop_data_from_data_base = context.data_base_system.get_prop(prop_proxy._name)
                 if prop_data_from_data_base is None:
                     logger.error(f"没有从数据库找到道具：{prop_proxy._name}！！！！！！！！！")
                     continue
             
-                create_prop_file = PropFile(prop_proxy._name, actor_data.name, prop_data_from_data_base)
+                create_prop_file = PropFile(prop_proxy._name, actor_data._name, prop_data_from_data_base)
                 file_system.add_prop_file(create_prop_file)
                 code_name_component_system.register_code_name_component_class(prop_data_from_data_base._name, prop_data_from_data_base._codename)
 
             # 初步建立关系网（在编辑文本中提到的Actor名字）
-            add_actor_archive_files(file_system, actor_data.name, actor_data.actor_names_mentioned_during_editing_or_for_agent)
+            add_actor_archive_files(file_system, actor_data._name, actor_data._actor_names_mentioned_during_editing_or_for_agent)
 
         return res
 ###############################################################################################################################################
@@ -347,29 +347,29 @@ class RPGGame(BaseGame):
             stageentity = context.create_entity()
 
             #必要组件
-            stageentity.add(StageComponent, stage_data.name)
-            stageentity.add(StageDirectorComponent, stage_data.name) ###
-            stageentity.add(SimpleRPGAttrComponent, stage_data.name, 
+            stageentity.add(StageComponent, stage_data._name)
+            stageentity.add(StageDirectorComponent, stage_data._name) ###
+            stageentity.add(SimpleRPGAttrComponent, stage_data._name, 
                             stage_data.maxhp, 
                             stage_data.hp, 
                             stage_data.attack, 
                             stage_data.defense)
     
             ## 重新设置Actor和stage的关系
-            for _actor in stage_data.actors:
-                _name = _actor.name
+            for _actor in stage_data._actors:
+                _name = _actor._name
                 _entity: Optional[Entity] = context.get_actor_entity(_name)
                 assert _entity is not None
-                _entity.replace(ActorComponent, _name, stage_data.name)
+                _entity.replace(ActorComponent, _name, stage_data._name)
                 
             # 场景内添加道具
-            for prop_proxy_in_stage in stage_data.props:
+            for prop_proxy_in_stage in stage_data._props:
                 # 直接使用文件系统
                 prop_data_from_data_base = context.data_base_system.get_prop(prop_proxy_in_stage._name)
                 if prop_data_from_data_base is None:
                     logger.error(f"没有从数据库找到道具：{prop_proxy_in_stage._name}！！！！！！！！！")
                     continue
-                create_prop_file = PropFile(prop_proxy_in_stage._name, stage_data.name, prop_data_from_data_base)
+                create_prop_file = PropFile(prop_proxy_in_stage._name, stage_data._name, prop_data_from_data_base)
                 file_system.add_prop_file(create_prop_file)
                 code_name_component_system.register_code_name_component_class(prop_data_from_data_base._name, prop_data_from_data_base._codename)
 
@@ -377,41 +377,41 @@ class RPGGame(BaseGame):
             self.add_stage_conditions(stageentity, stage_data)
 
             ## 创建连接的场景用于PortalStepActionSystem, 目前如果添加就只能添加一个
-            assert len(stage_data.exit_of_portal) <= 1
-            if  len(stage_data.exit_of_portal) > 0:
-                exit_portal_and_goto_stage =  next(iter(stage_data.exit_of_portal))
-                stageentity.add(ExitOfPortalComponent, exit_portal_and_goto_stage.name)
+            assert len(stage_data._exit_of_portal) <= 1
+            if  len(stage_data._exit_of_portal) > 0:
+                exit_portal_and_goto_stage =  next(iter(stage_data._exit_of_portal))
+                stageentity.add(ExitOfPortalComponent, exit_portal_and_goto_stage._name)
 
             #重构
-            agent_connect_system.register_agent(stage_data.name, stage_data.url)
-            memory_system.add_kick_off_memory(stage_data.name, stage_data.kick_off_memory)
-            code_name_component_system.register_code_name_component_class(stage_data.name, stage_data.codename)
-            code_name_component_system.register_stage_tag_component_class(stage_data.name, stage_data.codename)
+            agent_connect_system.register_agent(stage_data._name, stage_data._url)
+            memory_system.add_kick_off_memory(stage_data._name, stage_data._kick_off_memory)
+            code_name_component_system.register_code_name_component_class(stage_data._name, stage_data._codename)
+            code_name_component_system.register_stage_tag_component_class(stage_data._name, stage_data._codename)
 
         return res
 ###############################################################################################################################################
     def add_stage_conditions(self, stageentity: Entity, builddata: StageData) -> None:
 
-        logger.debug(f"添加Stage条件：{builddata.name}")
-        if builddata.stage_entry_status != "":
-            stageentity.add(StageEntryCondStatusComponent, builddata.stage_entry_status)
-            logger.debug(f"如果进入场景，场景需要检查条件：{builddata.stage_entry_status}")
-        if builddata.stage_entry_actor_status != "":
-            stageentity.add(StageEntryCondCheckActorStatusComponent, builddata.stage_entry_actor_status)
-            logger.debug(f"如果进入场景，需要检查角色符合条件：{builddata.stage_entry_actor_status}")
-        if builddata.stage_entry_actor_props != "":
-            stageentity.add(StageEntryCondCheckActorPropsComponent, builddata.stage_entry_actor_props)
-            logger.debug(f"如果进入场景，需要检查角色拥有必要的道具：{builddata.stage_entry_actor_props}")
+        logger.debug(f"添加Stage条件：{builddata._name}")
+        if builddata._stage_entry_status != "":
+            stageentity.add(StageEntryCondStatusComponent, builddata._stage_entry_status)
+            logger.debug(f"如果进入场景，场景需要检查条件：{builddata._stage_entry_status}")
+        if builddata._stage_entry_actor_status != "":
+            stageentity.add(StageEntryCondCheckActorStatusComponent, builddata._stage_entry_actor_status)
+            logger.debug(f"如果进入场景，需要检查角色符合条件：{builddata._stage_entry_actor_status}")
+        if builddata._stage_entry_actor_props != "":
+            stageentity.add(StageEntryCondCheckActorPropsComponent, builddata._stage_entry_actor_props)
+            logger.debug(f"如果进入场景，需要检查角色拥有必要的道具：{builddata._stage_entry_actor_props}")
 
-        if builddata.stage_exit_status != "":
-            stageentity.add(StageExitCondStatusComponent, builddata.stage_exit_status)
-            logger.debug(f"如果离开场景，场景需要检查条件：{builddata.stage_exit_status}")
-        if builddata.stage_exit_actor_status != "":
-            stageentity.add(StageExitCondCheckActorStatusComponent, builddata.stage_exit_actor_status)
-            logger.debug(f"如果离开场景，需要检查角色符合条件：{builddata.stage_exit_actor_status}")
-        if builddata.stage_exit_actor_props != "":
-            stageentity.add(StageExitCondCheckActorPropsComponent, builddata.stage_exit_actor_props)
-            logger.debug(f"如果离开场景，需要检查角色拥有必要的道具：{builddata.stage_exit_actor_props}")
+        if builddata._stage_exit_status != "":
+            stageentity.add(StageExitCondStatusComponent, builddata._stage_exit_status)
+            logger.debug(f"如果离开场景，场景需要检查条件：{builddata._stage_exit_status}")
+        if builddata._stage_exit_actor_status != "":
+            stageentity.add(StageExitCondCheckActorStatusComponent, builddata._stage_exit_actor_status)
+            logger.debug(f"如果离开场景，需要检查角色符合条件：{builddata._stage_exit_actor_status}")
+        if builddata._stage_exit_actor_props != "":
+            stageentity.add(StageExitCondCheckActorPropsComponent, builddata._stage_exit_actor_props)
+            logger.debug(f"如果离开场景，需要检查角色拥有必要的道具：{builddata._stage_exit_actor_props}")
 ###############################################################################################################################################
     def add_code_name_component_to_world_and_actors(self) -> None:
         context = self.extendedcontext

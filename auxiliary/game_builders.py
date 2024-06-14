@@ -93,7 +93,7 @@ class GameBuilder:
                           _data.get("body"),
                           Attributes(_data.get("attributes")))
             
-            self.data_base_system.add_actor(_actor.name, _actor)
+            self.data_base_system.add_actor(_actor._name, _actor)
 ###############################################################################################################################################
     def _create_world_system_data_base(self, world_systems: Any) -> None:
         if world_systems is None:
@@ -105,7 +105,7 @@ class GameBuilder:
             _ws_da_ = WorldSystemData(core_data.get("name"), 
                                         core_data.get("codename"), 
                                         core_data.get("url"))
-            self.data_base_system.add_world_system(_ws_da_.name, _ws_da_)
+            self.data_base_system.add_world_system(_ws_da_._name, _ws_da_)
 ###############################################################################################################################################
     def _create_stage_data_base(self, stages: Any) -> None:
         if stages is None:
@@ -138,10 +138,10 @@ class GameBuilder:
             if exit_of_portal_and_goto_stagename != "":
                 stage.stage_as_exit_of_portal(exit_of_portal_and_goto_stagename)
             else:
-                logger.debug(f"Stage {stage.name} has no exit_of_portal.")
+                logger.debug(f"Stage {stage._name} has no exit_of_portal.")
 
             # 添加到数据库
-            self.data_base_system.add_stage(stage.name, stage)
+            self.data_base_system.add_stage(stage._name, stage)
 ###############################################################################################################################################
     def _create_prop_data_base(self, props: Any) -> None:
         if props is None:
@@ -206,10 +206,10 @@ class StageBuilder:
             assert stage is not None
             #连接
             propsinstage: set[PropData] = self.props_proxy_in_stage(stagedata.get("props"))
-            stage.props = propsinstage
+            stage._props = propsinstage
             #连接
             actors_in_stage: set[ActorData] = self.actors_proxy_in_stage(stagedata.get("actors"))
-            stage.actors = actors_in_stage
+            stage._actors = actors_in_stage
             #
             self.stages.append(stage)
 ########################################################################################################################
@@ -247,7 +247,7 @@ class ActorBuilder:
                 logger.error(f"ActorBuilder: {actor_name} not found in database.")
                 continue
             # 连接
-            actor_data.props = _props
+            actor_data._props = _props
             #
             self.actors.append(actor_data)
 ########################################################################################################################

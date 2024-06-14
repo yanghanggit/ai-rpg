@@ -2,6 +2,9 @@ from typing import List, Set, Dict, Any
 from enum import Enum
 from loguru import logger
 
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
 class PropType(Enum):
     INVALID = 0,
     SPECIAL_COMPONENT = 1
@@ -66,6 +69,8 @@ class PropData:
             return PropType.CLOTHES
         elif self.is_non_consumable_item():
             return PropType.NON_CONSUMABLE_ITEM
+        else:
+            assert False, f"Invalid prop type: {self._type}"
         return PropType.INVALID
     
     def is_special_component(self) -> bool:
@@ -132,13 +137,13 @@ class ActorData:
                  body: str,
                  attr: Attributes) -> None:
         
-        self.name: str = name
-        self.codename: str = codename
-        self.url: str = url
-        self.kick_off_memory: str = kick_off_memory
-        self.props: Set[PropData] = props
-        self.actor_names_mentioned_during_editing_or_for_agent: Set[str] = mentioned_actors 
-        self.stage_names_mentioned_during_editing_or_for_agent: Set[str] = mentioned_stages
+        self._name: str = name
+        self._codename: str = codename
+        self._url: str = url
+        self._kick_off_memory: str = kick_off_memory
+        self._props: Set[PropData] = props
+        self._actor_names_mentioned_during_editing_or_for_agent: Set[str] = mentioned_actors 
+        self._stage_names_mentioned_during_editing_or_for_agent: Set[str] = mentioned_stages
         self._attributes: Attributes = attr
         if self._attributes.length() > 0:
             assert self._attributes.length() == 4
@@ -184,30 +189,30 @@ class StageData:
                  attr: Attributes
                  ) -> None:
         
-        self.name: str = name
-        self.codename: str = codename
-        self.description: str = description
-        self.url: str = url
-        self.kick_off_memory: str = kick_off_memory
-        self.actors: set[ActorData] = actors
-        self.props: set[PropData] = props
-        self.exit_of_portal: set[StageData] = set()
+        self._name: str = name
+        self._codename: str = codename
+        self._description: str = description
+        self._url: str = url
+        self._kick_off_memory: str = kick_off_memory
+        self._actors: set[ActorData] = actors
+        self._props: set[PropData] = props
+        self._exit_of_portal: set[StageData] = set()
         self._attributes: Attributes = attr
         if self._attributes.length() > 0:
             assert self._attributes.length() == 4
 
         # 新的限制条件
-        self.stage_entry_status: str = stage_entry_status
-        self.stage_entry_actor_status: str = stage_entry_actor_status
-        self.stage_entry_actor_props: str = stage_entry_actor_props
-        self.stage_exit_status: str = stage_exit_status
-        self.stage_exit_actor_status: str = stage_exit_actor_status
-        self.stage_exit_actor_props: str = stage_exit_actor_props
+        self._stage_entry_status: str = stage_entry_status
+        self._stage_entry_actor_status: str = stage_entry_actor_status
+        self._stage_entry_actor_props: str = stage_entry_actor_props
+        self._stage_exit_status: str = stage_exit_status
+        self._stage_exit_actor_status: str = stage_exit_actor_status
+        self._stage_exit_actor_props: str = stage_exit_actor_props
 
     ###
     def stage_as_exit_of_portal(self, stagename: str) -> None:
         stage_proxy = StageDataProxy(stagename)
-        self.exit_of_portal.add(stage_proxy)
+        self._exit_of_portal.add(stage_proxy)
 
     @property
     def maxhp(self) -> int:
@@ -237,9 +242,9 @@ class WorldSystemData:
                  codename: str, 
                  url: str) -> None:
         
-        self.name: str = name
-        self.codename: str = codename
-        self.url: str = url
+        self._name: str = name
+        self._codename: str = codename
+        self._url: str = url
        
 
 def WorldSystemDataProxy(name: str) -> WorldSystemData:

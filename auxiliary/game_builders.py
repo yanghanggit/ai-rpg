@@ -1,7 +1,7 @@
 from typing import Any, Optional, List, Set, Dict
 from loguru import logger
 import json
-from auxiliary.base_data import PropData, ActorData, StageData, WorldSystemData, ActorDataProxy, PropDataProxy
+from auxiliary.base_data import PropData, ActorData, StageData, WorldSystemData, ActorDataProxy, PropDataProxy, Attributes
 from auxiliary.data_base_system import DataBaseSystem
 
 ########################################################################################################################
@@ -90,10 +90,9 @@ class GameBuilder:
                           mentioned_actors,
                           mentioned_stages,
                           _data.get("appearance"),
-                          _data.get("body"))
+                          _data.get("body"),
+                          Attributes(_data.get("attributes")))
             
-            ## 设置（战斗）属性
-            _actor.build_attributes(_data.get("attributes"))
             self.data_base_system.add_actor(_actor.name, _actor)
 ###############################################################################################################################################
     def _create_world_system_data_base(self, world_systems: Any) -> None:
@@ -131,6 +130,7 @@ class GameBuilder:
                             core_data.get('stage_exit_status'),
                             core_data.get('stage_exit_actor_status'),
                             core_data.get('stage_exit_actor_props'),
+                            Attributes(core_data.get("attributes"))
                             )
             
             # 做连接关系 目前仅用名字
@@ -139,9 +139,6 @@ class GameBuilder:
                 stage.stage_as_exit_of_portal(exit_of_portal_and_goto_stagename)
             else:
                 logger.debug(f"Stage {stage.name} has no exit_of_portal.")
-
-            # 设置（战斗）属性
-            stage.build_attributes(core_data.get("attributes"))
 
             # 添加到数据库
             self.data_base_system.add_stage(stage.name, stage)
@@ -153,13 +150,15 @@ class GameBuilder:
 
         for prop_data in props:
             propname = prop_data.get('name')
-            self.data_base_system.add_prop(propname, PropData(
+            _pd = PropData(
                 propname, 
                 prop_data.get('codename'), 
                 prop_data.get('description'), 
                 prop_data.get('isunique'), 
                 prop_data.get('type'), 
-                prop_data.get('attributes')))
+                Attributes(prop_data.get('attributes'))
+                )
+            self.data_base_system.add_prop(propname, _pd)
 ###############################################################################################################################################
     def _create_data_base_system(self) -> None:
         database = self._data.get('database', None)

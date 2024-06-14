@@ -293,34 +293,38 @@ class RPGGame(BaseGame):
             raise ValueError("没有ActorBuilder数据，请检查World.json配置。")
             return res
         
-        for builddata in actor_builder.actors:
+        for actor_data in actor_builder.actors:
             _entity = context.create_entity()
             res.append(_entity)
 
             # 必要组件
-            _entity.add(ActorComponent, builddata.name, "")
-            _entity.add(SimpleRPGAttrComponent, builddata.name, builddata.attributes[0], builddata.attributes[1], builddata.attributes[2], builddata.attributes[3])
-            _entity.add(AppearanceComponent, builddata._appearance)
+            _entity.add(ActorComponent, actor_data.name, "")
+            _entity.add(SimpleRPGAttrComponent, actor_data.name, 
+                        actor_data.maxhp, 
+                        actor_data.hp, 
+                        actor_data.attack, 
+                        actor_data.defense)
+            _entity.add(AppearanceComponent, actor_data._appearance)
 
             #重构
-            agent_connect_system.register_agent(builddata.name, builddata.url)
-            memory_system.add_kick_off_memory(builddata.name, builddata.kick_off_memory)
-            code_name_component_system.register_code_name_component_class(builddata.name, builddata.codename)
+            agent_connect_system.register_agent(actor_data.name, actor_data.url)
+            memory_system.add_kick_off_memory(actor_data.name, actor_data.kick_off_memory)
+            code_name_component_system.register_code_name_component_class(actor_data.name, actor_data.codename)
             
             # 添加道具
-            for prop_proxy in builddata.props:
+            for prop_proxy in actor_data.props:
                 ## 重构
                 prop_data_from_data_base = context.data_base_system.get_prop(prop_proxy._name)
                 if prop_data_from_data_base is None:
                     logger.error(f"没有从数据库找到道具：{prop_proxy._name}！！！！！！！！！")
                     continue
             
-                create_prop_file = PropFile(prop_proxy._name, builddata.name, prop_data_from_data_base)
+                create_prop_file = PropFile(prop_proxy._name, actor_data.name, prop_data_from_data_base)
                 file_system.add_prop_file(create_prop_file)
                 code_name_component_system.register_code_name_component_class(prop_data_from_data_base._name, prop_data_from_data_base._codename)
 
             # 初步建立关系网（在编辑文本中提到的Actor名字）
-            add_actor_archive_files(file_system, builddata.name, builddata.actor_names_mentioned_during_editing_or_for_agent)
+            add_actor_archive_files(file_system, actor_data.name, actor_data.actor_names_mentioned_during_editing_or_for_agent)
 
         return res
 ###############################################################################################################################################
@@ -338,47 +342,51 @@ class RPGGame(BaseGame):
             return res
         
         # 创建stage相关配置
-        for builddata in stagebuilder.stages:
+        for stage_data in stagebuilder.stages:
             #logger.debug(f"创建Stage：{builddata.name}")
             stageentity = context.create_entity()
 
             #必要组件
-            stageentity.add(StageComponent, builddata.name)
-            stageentity.add(StageDirectorComponent, builddata.name) ###
-            stageentity.add(SimpleRPGAttrComponent, builddata.name, builddata.attributes[0], builddata.attributes[1], builddata.attributes[2], builddata.attributes[3])
+            stageentity.add(StageComponent, stage_data.name)
+            stageentity.add(StageDirectorComponent, stage_data.name) ###
+            stageentity.add(SimpleRPGAttrComponent, stage_data.name, 
+                            stage_data.maxhp, 
+                            stage_data.hp, 
+                            stage_data.attack, 
+                            stage_data.defense)
     
             ## 重新设置Actor和stage的关系
-            for _actor in builddata.actors:
+            for _actor in stage_data.actors:
                 _name = _actor.name
                 _entity: Optional[Entity] = context.get_actor_entity(_name)
                 assert _entity is not None
-                _entity.replace(ActorComponent, _name, builddata.name)
+                _entity.replace(ActorComponent, _name, stage_data.name)
                 
             # 场景内添加道具
-            for prop_proxy_in_stage in builddata.props:
+            for prop_proxy_in_stage in stage_data.props:
                 # 直接使用文件系统
                 prop_data_from_data_base = context.data_base_system.get_prop(prop_proxy_in_stage._name)
                 if prop_data_from_data_base is None:
                     logger.error(f"没有从数据库找到道具：{prop_proxy_in_stage._name}！！！！！！！！！")
                     continue
-                create_prop_file = PropFile(prop_proxy_in_stage._name, builddata.name, prop_data_from_data_base)
+                create_prop_file = PropFile(prop_proxy_in_stage._name, stage_data.name, prop_data_from_data_base)
                 file_system.add_prop_file(create_prop_file)
                 code_name_component_system.register_code_name_component_class(prop_data_from_data_base._name, prop_data_from_data_base._codename)
 
             # 添加场景的条件：包括进入和离开的条件，自身变化条件等等
-            self.add_stage_conditions(stageentity, builddata)
+            self.add_stage_conditions(stageentity, stage_data)
 
             ## 创建连接的场景用于PortalStepActionSystem, 目前如果添加就只能添加一个
-            assert len(builddata.exit_of_portal) <= 1
-            if  len(builddata.exit_of_portal) > 0:
-                exit_portal_and_goto_stage =  next(iter(builddata.exit_of_portal))
+            assert len(stage_data.exit_of_portal) <= 1
+            if  len(stage_data.exit_of_portal) > 0:
+                exit_portal_and_goto_stage =  next(iter(stage_data.exit_of_portal))
                 stageentity.add(ExitOfPortalComponent, exit_portal_and_goto_stage.name)
 
             #重构
-            agent_connect_system.register_agent(builddata.name, builddata.url)
-            memory_system.add_kick_off_memory(builddata.name, builddata.kick_off_memory)
-            code_name_component_system.register_code_name_component_class(builddata.name, builddata.codename)
-            code_name_component_system.register_stage_tag_component_class(builddata.name, builddata.codename)
+            agent_connect_system.register_agent(stage_data.name, stage_data.url)
+            memory_system.add_kick_off_memory(stage_data.name, stage_data.kick_off_memory)
+            code_name_component_system.register_code_name_component_class(stage_data.name, stage_data.codename)
+            code_name_component_system.register_stage_tag_component_class(stage_data.name, stage_data.codename)
 
         return res
 ###############################################################################################################################################

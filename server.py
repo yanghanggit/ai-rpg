@@ -1,3 +1,6 @@
+# 修复windows上默认不使用utf-8格式的问题导致langserve的server代码报错
+import sys
+sys.stdout.reconfigure(encoding='utf-8')
 import datetime
 import re  
 from fastapi import FastAPI, Request

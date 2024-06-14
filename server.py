@@ -47,6 +47,7 @@ async def create(clientip: str) -> list[TupleModel]:
         global multiplayersgames
         multiplayersgames[clientip] = game
         multiplayersgames[clientip].rpggame.extendedcontext.user_ips.append(clientip)
+        multiplayersgames[clientip].rpggame.user_ips.append(clientip) # todo
         create_player_proxy(clientip)
 
     messages: list[TupleModel] = []
@@ -75,6 +76,7 @@ async def join(clientip: str, hostip: str) -> list[TupleModel]:
             multiplayersgames[clientip] = client_game
             messages.append(TupleModel(who=clientip, what=f"加入房间IP:{hostip}成功."))
             multiplayersgames[clientip].rpggame.extendedcontext.user_ips.append(clientip)
+            multiplayersgames[clientip].rpggame.user_ips.append(clientip) # todo
             create_player_proxy(clientip)
 
     if len(messages) == 0:

@@ -31,7 +31,7 @@ class ExtendedContext(Context):
         
         #
         super().__init__()
-        self.user_ips: list[str] = [] # 临时写法，待重构
+        self.user_ips: list[str] = [] # todo 临时写法，待重构, 待删除。
         
         #
         self.file_system = filesystem

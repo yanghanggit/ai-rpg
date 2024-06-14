@@ -61,10 +61,7 @@ from systems.agents_connect_system import AgentsConnectSystem
 from auxiliary.file_system_helper import add_actor_archive_files
 from systems.my_processors import MyProcessors
 from systems.simple_rpg_pre_fight_system import SimpleRPGPreFightSystem
-from systems.update_client_message_system import UpdateClientMessageSystem
-from systems.terminal_player_interrupt_and_wait_system import TerminalPlayerInterruptAndWaitSystem
 from systems.compress_chat_history_system import CompressChatHistorySystem
-from systems.terminal_player_input_system import TerminalPlayerInputSystem
 from systems.post_conversation_action_system import PostConversationActionSystem
 from auxiliary.base_data import StageData
 from systems.actor_update_appearance_system import ActorUpdateAppearanceSystem
@@ -80,8 +77,16 @@ class RPGGame(BaseGame):
         self.extendedcontext: ExtendedContext = context
         self.builder: Optional[GameBuilder] = None
         self.processors: MyProcessors = self.create_processors(self.extendedcontext)
+        self.user_ips: list[str] = [] # 临时写法，待重构
 ###############################################################################################################################################
     def create_processors(self, context: ExtendedContext) -> MyProcessors:
+
+        # 处理用户输入
+        from systems.handle_player_input_system import HandlePlayerInputSystem ### 不这样就循环引用
+        from systems.update_client_message_system import UpdateClientMessageSystem
+        from systems.dead_action_system import DeadActionSystem
+        from systems.terminal_player_interrupt_and_wait_system import TerminalPlayerInterruptAndWaitSystem
+        from systems.terminal_player_input_system import TerminalPlayerInputSystem
 
         processors = MyProcessors()
        
@@ -94,8 +99,7 @@ class RPGGame(BaseGame):
         processors.add(ActorUpdateAppearanceSystem(context)) ### 更新外观
         #########################################
 
-        # 处理用户输入
-        from systems.handle_player_input_system import HandlePlayerInputSystem ### 不这样就循环引用
+       
         processors.add(HandlePlayerInputSystem(context, self)) 
 
         # 行动逻辑################################################################################################
@@ -117,7 +121,7 @@ class RPGGame(BaseGame):
         processors.add(PostFightSystem(context))
 
         ## 战斗类行为产生结果可能有死亡，死亡之后，后面的行为都不可以做。
-        from systems.dead_action_system import DeadActionSystem
+        
         processors.add(DeadActionSystem(context, self)) 
         
         # 交互类的行为（交换数据），在死亡之后，因为死了就不能执行。。。
@@ -153,7 +157,7 @@ class RPGGame(BaseGame):
         processors.add(EndSystem(context))
 
         # 开发专用，网页版本不需要
-        processors.add(TerminalPlayerInterruptAndWaitSystem(context))
+        processors.add(TerminalPlayerInterruptAndWaitSystem(context, self))
         #########################################
 
         #规划逻辑########################
@@ -165,7 +169,7 @@ class RPGGame(BaseGame):
         processors.add(PostPlanningSystem(context)) ####### 在所有规划之后
 
         ## 第一次抓可以被player看到的信息
-        processors.add(UpdateClientMessageSystem(context)) 
+        processors.add(UpdateClientMessageSystem(context, self)) 
 
         ## 开发专用，网页版本不需要
         processors.add(TerminalPlayerInputSystem(context, self))

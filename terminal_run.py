@@ -19,6 +19,7 @@ async def main() -> None:
     
     ## 临时 强行改成服务器终端模式，只要这个写死为空。后面的逻辑就会跟上。
     rpggame.extendedcontext.user_ips = []
+    rpggame.user_ips = []
 
     #测试的代码，上来就控制一个目标，先写死
     TEST_SINGLE_PLAYER_ACTOR_NAME = "无名的复活者"

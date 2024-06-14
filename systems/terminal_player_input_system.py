@@ -4,18 +4,25 @@ from loguru import logger
 from auxiliary.player_proxy import PlayerProxy, get_player_proxy, TEST_TERMINAL_NAME, PLAYER_INPUT_MODE, determine_player_input_mode, TEST_CLIENT_SHOW_MESSAGE_COUNT
 from auxiliary.extended_context import ExtendedContext
 from typing import Any, cast, override
-
+from rpg_game import RPGGame 
 
 ############################################################################################################
 class TerminalPlayerInputSystem(ExecuteProcessor):
-    def __init__(self, context: ExtendedContext, rpggame: Any) -> None:
+    def __init__(self, context: ExtendedContext, rpggame: RPGGame) -> None:
         self.context: ExtendedContext = context
         self.rpggame = rpggame
 ############################################################################################################
     @override
     def execute(self) -> None:
+        # todo
         # 临时的设置，通过IP地址来判断是不是测试的客户端
-        if determine_player_input_mode(self.context.user_ips) != PLAYER_INPUT_MODE.TERMINAL:
+        user_ips = self.rpggame.user_ips    
+        # 判断，user_ips 与 self.context.user_ips 是否一致：元素的顺序和个数，和元素的内容
+        if user_ips != self.context.user_ips:
+            assert False, "user_ips 与 self.context.user_ips 不一致"
+
+        # 临时的设置，通过IP地址来判断是不是测试的客户端
+        if determine_player_input_mode(user_ips) != PLAYER_INPUT_MODE.TERMINAL:
             #logger.debug("只处理终端的输入")
             return
         # 通过终端输入

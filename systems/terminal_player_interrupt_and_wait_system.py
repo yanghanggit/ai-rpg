@@ -9,14 +9,24 @@ from auxiliary.player_proxy import (PlayerProxy,
                                     determine_player_input_mode, 
                                     TEST_CLIENT_SHOW_MESSAGE_COUNT)
 from auxiliary.extended_context import ExtendedContext
+from rpg_game import RPGGame 
 
 class TerminalPlayerInterruptAndWaitSystem(ExecuteProcessor):
-    def __init__(self, context: ExtendedContext) -> None:
+    def __init__(self, context: ExtendedContext, rpggame: RPGGame) -> None:
         self.context: ExtendedContext = context
+        self.rpggame = rpggame
 ############################################################################################################
     @override
     def execute(self) -> None:
-        input_mode = determine_player_input_mode(self.context.user_ips)
+
+        # todo
+        # 临时的设置，通过IP地址来判断是不是测试的客户端
+        user_ips = self.rpggame.user_ips    
+        # 判断，user_ips 与 self.context.user_ips 是否一致：元素的顺序和个数，和元素的内容
+        if user_ips != self.context.user_ips:
+            assert False, "user_ips 与 self.context.user_ips 不一致"
+
+        input_mode = determine_player_input_mode(user_ips)
         if input_mode != PLAYER_INPUT_MODE.TERMINAL:
             return
             

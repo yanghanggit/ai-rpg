@@ -9,19 +9,28 @@ from auxiliary.actor_plan_and_action import ActorAction
 from typing import Optional, override
 from loguru import logger
 from auxiliary.target_and_message_format_handle import parse_target_and_message, conversation_check, ErrorConversationEnable
+from rpg_game import RPGGame 
 
 class UpdateClientMessageSystem(ExecuteProcessor):
-    def __init__(self, context: ExtendedContext) -> None:
+    def __init__(self, context: ExtendedContext, rpggame: RPGGame) -> None:
         self.context: ExtendedContext = context
+        self.rpggame = rpggame
 ############################################################################################################
     @override
     def execute(self) -> None:
 
-        input_mode = determine_player_input_mode(self.context.user_ips)
+        # todo
+        # 临时的设置，通过IP地址来判断是不是测试的客户端
+        user_ips = self.rpggame.user_ips    
+        # 判断，user_ips 与 self.context.user_ips 是否一致：元素的顺序和个数，和元素的内容
+        if user_ips != self.context.user_ips:
+            assert False, "user_ips 与 self.context.user_ips 不一致"
+
+        input_mode = determine_player_input_mode(user_ips)
         
         if input_mode == PLAYER_INPUT_MODE.WEB_HTTP_REQUEST:
         
-            for user_ip in self.context.user_ips:
+            for user_ip in user_ips:
                 playername = str(user_ip)
                 playerproxy = get_player_proxy(playername)
                 player_entity = self.context.get_player_entity(playername)

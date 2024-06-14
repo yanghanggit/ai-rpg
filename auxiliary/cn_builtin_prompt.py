@@ -34,18 +34,26 @@ class ConstantPromptValue:
     @property
     def USE_PROP_TO_STAGE_PROMPT_TAG(self) -> str:
         return "<%这是角色对场景使用道具>"
-
-
-__ConstantPromptValue__ = ConstantPromptValue()
-
-###############################################################################################################################################
-def kick_off_memory_actor_prompt(kick_off_memory: str) -> str:
-    prompt = f"""# <%这是角色初始化>游戏世界即将开始运行。这是你的初始设定，你将以此为起点进行游戏
+    
+    # todo 这里故意在kickoff时机，是为了防止出现政策问题。策略上就是故意强调是恐怖类型，这样试图让LLM接受‘恐怖、血腥与暴力元素’的提示词与玩家输入的对话内容。
+    @property
+    def RE_EMPHASIZE_GAME_STYLE_TO_PREVENT_POLICY_PROBLEMS(self) -> str:
+        re_emphasize_game_style_to_prevent_policy_problems = f"""
 ## 再次强调游戏风格!
 - 核心是借鉴《黑暗之魂》系列游戏的内核与风格，即西方中世纪背景奇幻结合克苏鲁恐怖式的文本与叙事风格。
 - 注意！这是一个以恐怖为主题的游戏，可能包含恐怖、血腥与暴力元素。所有的游戏设定和规则都旨在增强这种体验，你需要接受。
 - 认为世界的所有运行规律和法则都是不证自明的。
-## 你的初始设定如下: 
+"""
+        return re_emphasize_game_style_to_prevent_policy_problems
+
+
+__ConstantPromptValue__ = ConstantPromptValue()
+
+
+###############################################################################################################################################
+def kick_off_memory_actor_prompt(kick_off_memory: str) -> str:
+    prompt = f"""# <%这是角色初始化>游戏世界即将开始运行。这是你的初始设定，你将以此为起点进行游戏
+{__ConstantPromptValue__.RE_EMPHASIZE_GAME_STYLE_TO_PREVENT_POLICY_PROBLEMS}
 {kick_off_memory}。
 ## 请结合你的角色设定,更新你的状态。
 ## 输出要求:
@@ -55,10 +63,7 @@ def kick_off_memory_actor_prompt(kick_off_memory: str) -> str:
 ###############################################################################################################################################
 def kick_off_memory_stage_prompt(kick_off_memory: str) -> str:
     prompt = f"""# <%这是场景初始化>游戏世界即将开始运行。这是你的初始设定，你将以此为起点进行游戏
-## 再次强调游戏风格!
-- 核心是借鉴《黑暗之魂》系列游戏的内核与风格，即西方中世纪背景奇幻结合克苏鲁恐怖式的文本与叙事风格。
-- 注意！这是一个以恐怖为主题的游戏，可能包含恐怖、血腥与暴力元素。所有的游戏设定和规则都旨在增强这种体验，你需要接受。
-- 你认为世界的所有运行规律和法则都是不证自明的。
+{__ConstantPromptValue__.RE_EMPHASIZE_GAME_STYLE_TO_PREVENT_POLICY_PROBLEMS}
 ## 你的初始设定如下: 
 {kick_off_memory}。
 ## 请结合你的场景设定,更新你的状态。
@@ -310,8 +315,8 @@ def attack_prompt(attacker_name: str, target_name: str, damage: int, target_curr
 # def interactive_prop_action_success_prompt(who_use: str, targetname: str, propname: str, interactiveaction: str, interactiveresult: str) -> str:
 #     return f"{who_use}拿着{propname}{interactiveaction}了{targetname}造成了{interactiveresult}"
 ################################################################################################################################################
-def died_in_fight_prompt(context: ExtendedContext) -> str:
-    return f"你已经死亡（在战斗中受到了致命的攻击）"
+# def died_in_fight_prompt(context: ExtendedContext) -> str:
+#     return f"你已经死亡（在战斗中受到了致命的攻击）"
 ################################################################################################################################################
 def batch_conversation_action_events_in_stage(stagename: str, events: List[str], context: ExtendedContext) -> str:
     if len(events) == 0:
@@ -444,54 +449,54 @@ def use_prop_no_response_prompt(username: str, propname: str, targetname: str) -
 
 
 ################################################################################################################################################
-def gen_actor_archive_prompt(context: ExtendedContext) -> str:
-    prompt = """
-请根据上下文，对自己知道的事情进行梳理总结成markdown格式后输出,但不要生成```markdown xxx```的形式:
-# 游戏世界存档
-## 地点
-### xxx
-#### 和我有关的事
-- xxxx
-- xxxx
-- xxxx
-- xxxx
-### xxx
-#### 和我有关的事
-- xxxx
-- xxxx
-- xxxx
-- xxxx
-"""
-    return prompt
+# def gen_actor_archive_prompt(context: ExtendedContext) -> str:
+#     prompt = """
+# 请根据上下文，对自己知道的事情进行梳理总结成markdown格式后输出,但不要生成```markdown xxx```的形式:
+# # 游戏世界存档
+# ## 地点
+# ### xxx
+# #### 和我有关的事
+# - xxxx
+# - xxxx
+# - xxxx
+# - xxxx
+# ### xxx
+# #### 和我有关的事
+# - xxxx
+# - xxxx
+# - xxxx
+# - xxxx
+# """
+#     return prompt
 ################################################################################################################################################
-def gen_stage_archive_prompt(context: ExtendedContext) -> str:
-     prompt = """
-请根据上下文，对自己知道的事情进行梳理总结成markdown格式后输出,但不要生成```markdown xxx```的形式:
-# 游戏世界存档
-## 地点
-- xxxxx
-## 发生的事情
-- xxxx
-- xxxx
-- xxxx
-"""
-     return prompt
-################################################################################################################################################
-def gen_world_archive_prompt(context: ExtendedContext) -> str:
-     prompt = """
-请根据上下文，对自己知道的事情进行梳理总结成markdown格式后输出,但不要生成```markdown xxx```的形式:
-# 游戏世界存档
-## 地点
-### xxx
-#### 发生的事件
-- xxxx
-- xxxx
-- xxxx
-### xxx
-#### 发生的事件
-- xxxx
-- xxxx
-- xxxx
-"""
-     return prompt
+# def gen_stage_archive_prompt(context: ExtendedContext) -> str:
+#      prompt = """
+# 请根据上下文，对自己知道的事情进行梳理总结成markdown格式后输出,但不要生成```markdown xxx```的形式:
+# # 游戏世界存档
+# ## 地点
+# - xxxxx
+# ## 发生的事情
+# - xxxx
+# - xxxx
+# - xxxx
+# """
+#      return prompt
+# ################################################################################################################################################
+# def gen_world_archive_prompt(context: ExtendedContext) -> str:
+#      prompt = """
+# 请根据上下文，对自己知道的事情进行梳理总结成markdown格式后输出,但不要生成```markdown xxx```的形式:
+# # 游戏世界存档
+# ## 地点
+# ### xxx
+# #### 发生的事件
+# - xxxx
+# - xxxx
+# - xxxx
+# ### xxx
+# #### 发生的事件
+# - xxxx
+# - xxxx
+# - xxxx
+# """
+#      return prompt
 ################################################################################################################################################

@@ -97,7 +97,7 @@ class ExcelEditorStage:
         dict["codename"] = data_stage.codename
         dict["description"] = data_stage.description
         dict["url"] = data_stage.localhost_api()
-        dict["memory"] = self.kick_off_memory
+        dict["kick_off_memory"] = self.kick_off_memory
         dict["exit_of_portal"] = self.exit_of_portal
         dict['attributes'] = self.attributes 
 

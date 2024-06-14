@@ -12,11 +12,11 @@ class PropType(Enum):
 class PropData:
 
     def __init__(self, name: str, codename: str, description: str, is_unique: str, type: str, attributes: str) -> None:
-        self._name = name
-        self._codename = codename
-        self._description = description
-        self._is_unique = is_unique
-        self._type = type
+        self._name: str = name
+        self._codename: str = codename
+        self._description: str = description
+        self._is_unique: str = is_unique
+        self._type: str = type
         self._attributes_string: str = attributes
 
         #默认值，如果不是武器或者衣服，就是0
@@ -98,20 +98,21 @@ def PropDataProxy(name: str) -> PropData:
 ########################################################################################################################
 ########################################################################################################################
 class ActorData:
-    def __init__(self, name: str, 
+    def __init__(self, 
+                 name: str, 
                  codename: str, 
                  url: str, 
-                 memory: str, 
+                 kick_off_memory: str, 
                  props: Set[PropData], 
                  mentioned_actors: Set[str], 
                  mentioned_stages: Set[str],
                  appearance: str,
                  body: str) -> None:
         
-        self.name = name
-        self.codename = codename
-        self.url = url
-        self.memory = memory
+        self.name: str = name
+        self.codename: str = codename
+        self.url: str = url
+        self.kick_off_memory: str = kick_off_memory
         self.props: Set[PropData] = props
         self.actor_names_mentioned_during_editing_or_for_agent: Set[str] = mentioned_actors 
         self.stage_names_mentioned_during_editing_or_for_agent: Set[str] = mentioned_stages
@@ -129,16 +130,14 @@ def ActorDataProxy(name: str) -> ActorData:
 ########################################################################################################################
 ########################################################################################################################
 class StageData:
-    def __init__(self, name: str, 
+    def __init__(self, 
+                 name: str, 
                  codename: str, 
                  description: str, 
                  url: str, 
-                 memory: str, 
-                 foo1: Any, 
-                 foo2: Any, 
+                 kick_off_memory: str, 
                  actors: set[ActorData], 
                  props: set[PropData],
-                 foo3: Any,
                  stage_entry_status: str,
                  stage_entry_actor_status: str,
                  stage_entry_actor_props: str,
@@ -147,18 +146,15 @@ class StageData:
                  stage_exit_actor_props: str
                  ) -> None:
         
-        self.name = name
-        self.codename = codename
-        self.description = description
-        self.url = url
-        self.memory = memory
-        # self.entry_conditions: list[StageConditionData] = entry_conditions
-        # self.exit_conditions: list[StageConditionData] = exit_conditions
+        self.name: str = name
+        self.codename: str = codename
+        self.description: str = description
+        self.url: str = url
+        self.kick_off_memory: str = kick_off_memory
         self.actors: set[ActorData] = actors
         self.props: set[PropData] = props
         self.exit_of_portal: set[StageData] = set()
         self.attributes: List[int] = []
-        #self.interactiveprops: str = interactiveprops
 
         # 新的限制条件
         self.stage_entry_status: str = stage_entry_status
@@ -179,25 +175,27 @@ class StageData:
 
 
 def StageDataProxy(name: str) -> StageData:
-    #logger.info(f"StageDataProxy: {name}")
-    return StageData(name, "", "", "", "", "", "", set(), set(), "", "", "", "", "", "", "")
+    return StageData(name, "", "", "", "", set(), set(), "", "", "", "", "", "")
 ########################################################################################################################
 ########################################################################################################################
 ########################################################################################################################
 class WorldSystemData:
+
     def __init__(self, 
                  name: str, 
                  codename: str, 
                  url: str) -> None:
-        self.name = name
-        self.codename = codename
-        self.url = url
+        
+        self.name: str = name
+        self.codename: str = codename
+        self.url: str = url
        
 
 def WorldSystemDataProxy(name: str) -> WorldSystemData:
     return WorldSystemData(name, "", "")
-
-
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
 
 
         

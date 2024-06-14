@@ -68,7 +68,7 @@ class ExcelEditorActor:
         dict['name'] = target.name
         dict['codename'] = target.codename
         dict['url'] = target.localhost_api()
-        dict['memory'] = self.kick_off_memory
+        dict["kick_off_memory"] = self.kick_off_memory
         dict['appearance'] = self._appearance
         dict['mentioned_actors'] = ";".join(target.mentioned_actors)
         dict['mentioned_stages'] = ";".join(target.mentioned_stages)

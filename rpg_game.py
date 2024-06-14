@@ -304,7 +304,7 @@ class RPGGame(BaseGame):
 
             #重构
             agent_connect_system.register_agent(builddata.name, builddata.url)
-            memory_system.add_kick_off_memory(builddata.name, builddata.memory)
+            memory_system.add_kick_off_memory(builddata.name, builddata.kick_off_memory)
             code_name_component_system.register_code_name_component_class(builddata.name, builddata.codename)
             
             # 添加道具
@@ -376,7 +376,7 @@ class RPGGame(BaseGame):
 
             #重构
             agent_connect_system.register_agent(builddata.name, builddata.url)
-            memory_system.add_kick_off_memory(builddata.name, builddata.memory)
+            memory_system.add_kick_off_memory(builddata.name, builddata.kick_off_memory)
             code_name_component_system.register_code_name_component_class(builddata.name, builddata.codename)
             code_name_component_system.register_stage_tag_component_class(builddata.name, builddata.codename)
 

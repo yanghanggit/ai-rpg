@@ -5,6 +5,7 @@ from collections import namedtuple
 from auxiliary.director_event import IDirectorEvent
 from auxiliary.cn_builtin_prompt import replace_all_mentions_of_your_name_with_you
 from loguru import logger
+from dev_config import _DevConfig_
 
 ## yh 第一个 扩展型组件，用于处理导演系统的事件
 ####################################################################################################
@@ -47,13 +48,20 @@ class StageDirectorComponent(DirectorComponentPrototype):
         ###
         batch: List[str] = []
         for event in self._events:
-            check = isinstance(event, StageOrActorWhisperEvent) \
+
+            ignore_type1 = isinstance(event, StageOrActorWhisperEvent) \
             or isinstance(event, StageOrActorSpeakEvent) \
-            or isinstance(event, StageOrActorBroadcastEvent) \
-            or isinstance(event, ActorPerceptionEvent) \
-            or isinstance(event, ActorCheckStatusEvent)
-            if check:
+            or isinstance(event, StageOrActorBroadcastEvent)
+            if ignore_type1:
+                # 不收集这个消息。
                 continue
+            
+            if _DevConfig_.perception_and_check_status_command_is_immeidate:
+                ignore_type2 = isinstance(event, ActorPerceptionEvent) or isinstance(event, ActorCheckStatusEvent)
+                if ignore_type2:
+                    # 立即模式下（就是Web模式下），不收集这个消息。马上反应，就是终端测试下收集这个消息。
+                    continue
+            
             res = event.to_actor(target_actor_name, extended_context)
             if res != "":
                 res = replace_all_mentions_of_your_name_with_you(res, target_actor_name)

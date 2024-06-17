@@ -1,16 +1,17 @@
 from entitas import ExecuteProcessor #type: ignore
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
-from auxiliary.player_proxy import PlayerProxy, get_player_proxy, TEST_TERMINAL_NAME, PLAYER_INPUT_MODE, determine_player_input_mode, TEST_CLIENT_SHOW_MESSAGE_COUNT
+from auxiliary.player_proxy import PlayerProxy, get_player_proxy, PLAYER_INPUT_MODE, determine_player_input_mode
 from auxiliary.extended_context import ExtendedContext
 from typing import Any, cast, override
 from rpg_game import RPGGame 
+from dev_config import TEST_TERMINAL_NAME, TEST_CLIENT_SHOW_MESSAGE_COUNT
 
 ############################################################################################################
 class TerminalPlayerInputSystem(ExecuteProcessor):
     def __init__(self, context: ExtendedContext, rpggame: RPGGame) -> None:
         self.context: ExtendedContext = context
-        self.rpggame = rpggame
+        self.rpggame: RPGGame = rpggame
 ############################################################################################################
     @override
     def execute(self) -> None:

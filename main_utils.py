@@ -12,10 +12,20 @@ from auxiliary.code_name_component_system import CodeNameComponentSystem
 from auxiliary.chaos_engineering_system import EmptyChaosEngineeringSystem, IChaosEngineering
 from auxiliary.data_base_system import DataBaseSystem
 from budding_world.chaos_budding_world import ChaosBuddingWorld
+from pathlib import Path
 
 #######################################################################################################################################
 ### （临时的）写死创建budding_world
 def _read_and_build_game_data(gamename: str, data_base_system: DataBaseSystem) -> Optional[GameBuilder]:
+
+    runtime_dir = Path("budding_world/gen_runtimes")
+    runtime_dir.mkdir(parents=True, exist_ok=True)
+    file_name = f"{gamename}.json"
+    final_path = runtime_dir / file_name
+    if not final_path.exists():
+        logger.error("未找到存档，请检查存档是否存在。")
+        return None
+
     version = 'ewan'
     runtimedir = f"./budding_world/gen_runtimes/"
     game_data_path: str = f"{runtimedir}{gamename}.json"

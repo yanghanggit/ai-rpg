@@ -1,4 +1,3 @@
-import os
 from typing import List, Optional
 from overrides import override
 from entitas import Matcher #type: ignore

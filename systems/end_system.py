@@ -68,7 +68,7 @@ class EndSystem(InitializeProcessor, ExecuteProcessor):
 ############################################################################################################
     def make_prop_files_dump(self) -> None:
         file_system = self.context.file_system
-        propfiles = file_system.propfiles
+        propfiles = file_system._prop_files
 
         dumpdict: Dict[str, str] = {}
         for ownername, propfilelist in propfiles.items():

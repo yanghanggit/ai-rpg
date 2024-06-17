@@ -186,7 +186,7 @@ class RPGGame(BaseGame):
         chaos_engineering_system = context.chaos_engineering_system
         
         ## 实际运行的路径
-        runtime_dir_for_world = f"{worlddata.runtimepath}{worlddata.name}/"
+        #runtime_dir_for_world = f"{worlddata.runtimepath}{worlddata.name}/"
 
         # 第0步，yh 目前用于测试!!!!!!!，直接删worlddata.name的文件夹，保证每次都是新的 删除runtime_dir_for_world的文件夹
         if worlddata.runtime_dir.exists():
@@ -204,7 +204,7 @@ class RPGGame(BaseGame):
         self.builder = worlddata
         context.agent_connect_system.set_runtime_dir(worlddata.runtime_dir)
         context.kick_off_memory_system.set_runtime_dir(worlddata.runtime_dir)
-        context.file_system.set_root_path(runtime_dir_for_world)
+        context.file_system.set_runtime_dir(worlddata.runtime_dir)
 
         ## 第2步 创建管理员类型的角色，全局的AI
         self.create_world_system_entities(worlddata.world_system_builder)

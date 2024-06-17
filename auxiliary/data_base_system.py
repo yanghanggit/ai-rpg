@@ -1,14 +1,14 @@
-from typing import Optional
+from typing import Optional, Dict
 from auxiliary.base_data import ActorData, PropData, StageData, WorldSystemData
 
 class DataBaseSystem:
 
     def __init__(self, description: str) -> None:
         self.description = description
-        self.actors: dict[str, ActorData] = {}
-        self.stages: dict[str, StageData] = {}
-        self.props: dict[str, PropData] = {}
-        self.world_systems: dict[str, WorldSystemData] = {}
+        self.actors: Dict[str, ActorData] = {}
+        self.stages: Dict[str, StageData] = {}
+        self.props: Dict[str, PropData] = {}
+        self.world_systems: Dict[str, WorldSystemData] = {}
 
     def add_actor(self, actorname: str, actordata: ActorData) -> None:
         self.actors.setdefault(actorname, actordata)

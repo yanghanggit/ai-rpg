@@ -33,7 +33,7 @@ class UpdareArchiveHelper:
         #
         context = self.context
         memory_system = context.kick_off_memory_system
-        stages: set[Entity] = context.get_group(Matcher(StageComponent)).entities
+        stages: Set[Entity] = context.get_group(Matcher(StageComponent)).entities
         for stage in stages:
             stagecomp: StageComponent = stage.get(StageComponent)
             stagememory = memory_system.get_kick_off_memory(stagecomp.name)
@@ -47,7 +47,7 @@ class UpdareArchiveHelper:
         #
         context = self.context
         memory_system = context.kick_off_memory_system
-        actor_entities: set[Entity] = context.get_group(Matcher(ActorComponent)).entities
+        actor_entities: Set[Entity] = context.get_group(Matcher(ActorComponent)).entities
         for _en in actor_entities:
             actor_comp: ActorComponent = _en.get(ActorComponent)
             kick_off_memory = memory_system.get_kick_off_memory(actor_comp.name)
@@ -60,7 +60,7 @@ class UpdareArchiveHelper:
         self._agent_chat_history.clear()
         context = self.context
         agent_connect_system = context.agent_connect_system
-        actor_entities: set[Entity] = context.get_group(Matcher(ActorComponent)).entities
+        actor_entities: Set[Entity] = context.get_group(Matcher(ActorComponent)).entities
         for _en in actor_entities:
             actor_comp: ActorComponent = _en.get(ActorComponent)
             chathistory: List[str] = agent_connect_system.create_chat_history_dump(actor_comp.name)
@@ -72,11 +72,11 @@ class UpdareArchiveHelper:
         #
         context = self.context
         file_system = context.file_system
-        actor_entities: set[Entity] = context.get_group(Matcher(ActorComponent)).entities
+        actor_entities: Set[Entity] = context.get_group(Matcher(ActorComponent)).entities
         for _en in actor_entities:
             actor_comp: ActorComponent = _en.get(ActorComponent)
             propfiles = file_system.get_prop_files(actor_comp.name)
-            prop_and_desc: list[str] = []
+            prop_and_desc: List[str] = []
             for file in propfiles:
                 prop_and_desc.append(f"{file.name}:{file.prop._description}")
             self._actors_with_props_info[actor_comp.name] = prop_and_desc
@@ -130,7 +130,7 @@ class UpdareArchiveHelper:
 ###############################################################################################################################################
     def name_mentioned_in_memory(self, checknames: Set[str], actor_name: str) -> Set[str]:
         memory_system = self.context.kick_off_memory_system
-        result: set[str] = set()
+        result: Set[str] = set()
         kick_off_memory = memory_system.get_kick_off_memory(actor_name)
         for name in checknames:
             if name in kick_off_memory:
@@ -138,7 +138,7 @@ class UpdareArchiveHelper:
         return result
 ###############################################################################################################################################
     def name_mentioned_in_chat_history(self, checknames: Set[str], actor_name: str) -> Set[str]:
-        result: set[str] = set()
+        result: Set[str] = set()
         pack_chat_history = self._agent_chat_history.get(actor_name, "")
         for name in checknames:
             if pack_chat_history.find(name) != -1:

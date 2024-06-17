@@ -74,55 +74,55 @@ class ExcelEditorStage:
         return "ExcelEditorStage({}, {}, props_in_stage: {}, actors_in_stage: {})".format(self.data["name"], self.data["type"], propsstr, actor_str)
 ################################################################################################################################
     def stage_props_proxy(self, props: List[ExcelDataProp]) -> List[Dict[str, str]]:
-        list: List[Dict[str, str]] = []
+        ls: List[Dict[str, str]] = []
         for prop in props:
-            dict = proxy_prop(prop) #代理即可
-            list.append(dict)
-        return list
+            _dt = proxy_prop(prop) #代理即可
+            ls.append(_dt)
+        return ls
 ################################################################################################################################
     ## 这里只做Actor引用，所以导出名字即可
     def stage_actors_proxy(self, actors: List[ExcelDataActor]) -> List[Dict[str, str]]:
-        list: List[Dict[str, str]] = []
+        ls: List[Dict[str, str]] = []
         for _d in actors:
-            dict: Dict[str, str] = {} 
-            dict['name'] = _d.name  ## 这里只做引用，所以导出名字即可
-            list.append(dict)
-        return list
+            _dt: Dict[str, str] = {} 
+            _dt['name'] = _d.name  ## 这里只做引用，所以导出名字即可
+            ls.append(_dt)
+        return ls
 ################################################################################################################################
     def serialization(self) -> Dict[str, Any]:
         data_stage: ExcelDataStage = self.stage_data_base[self.data["name"]]
 
-        dict: Dict[str, Any] = {}
-        dict["name"] = data_stage.name
-        dict["codename"] = data_stage.codename
-        dict["description"] = data_stage.description
-        dict["url"] = data_stage.localhost_api()
-        dict["kick_off_memory"] = self.kick_off_memory
-        dict["exit_of_portal"] = self.exit_of_portal
-        dict['attributes'] = self.attributes 
+        _dt: Dict[str, Any] = {}
+        _dt["name"] = data_stage.name
+        _dt["codename"] = data_stage.codename
+        _dt["description"] = data_stage.description
+        _dt["url"] = data_stage.localhost_api()
+        _dt["kick_off_memory"] = self.kick_off_memory
+        _dt["exit_of_portal"] = self.exit_of_portal
+        _dt['attributes'] = self.attributes 
 
         # 添加新的场景限制条件
-        dict["stage_entry_status"] = self.stage_entry_status
-        dict["stage_entry_actor_status"] = self.stage_entry_actor_status
-        dict["stage_entry_actor_props"] = self.stage_entry_actor_props
-        dict["stage_exit_status"] = self.stage_exit_status
-        dict["stage_exit_actor_status"] = self.stage_exit_actor_status
-        dict["stage_exit_actor_props"] = self.stage_exit_actor_props
+        _dt["stage_entry_status"] = self.stage_entry_status
+        _dt["stage_entry_actor_status"] = self.stage_entry_actor_status
+        _dt["stage_entry_actor_props"] = self.stage_entry_actor_props
+        _dt["stage_exit_status"] = self.stage_exit_status
+        _dt["stage_exit_actor_status"] = self.stage_exit_actor_status
+        _dt["stage_exit_actor_props"] = self.stage_exit_actor_props
 
         output_dict: Dict[str, Any] = {}
-        output_dict["stage"] = dict
+        output_dict["stage"] = _dt
         return output_dict
 ################################################################################################################################
     def proxy(self) -> Dict[str, Any]:
         data_stage: ExcelDataStage = self.stage_data_base[self.data["name"]]
-        dict: Dict[str, Any] = {}
-        dict["name"] = data_stage.name
+        _dt: Dict[str, Any] = {}
+        _dt["name"] = data_stage.name
         props = self.stage_props_proxy(self.props_in_stage)
         actors = self.stage_actors_proxy(self.actors_in_stage)
-        dict["props"] = props
-        dict["actors"] = actors
+        _dt["props"] = props
+        _dt["actors"] = actors
         output_dict: Dict[str, Any] = {}
-        output_dict["stage"] = dict
+        output_dict["stage"] = _dt
         return output_dict
 ################################################################################################################################
     def safe_get_string(self, key: str) -> str:

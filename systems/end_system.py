@@ -6,7 +6,7 @@ from auxiliary.components import (StageComponent,
                         ActorComponent,
                         WorldComponent)
 import json
-from typing import Dict, override
+from typing import Dict, override, List
    
 class EndSystem(InitializeProcessor, ExecuteProcessor):
 ############################################################################################################
@@ -51,10 +51,10 @@ class EndSystem(InitializeProcessor, ExecuteProcessor):
     def make_agent_chat_history_dump(self) -> None:
         self.context.agent_connect_system.dump_chat_history()
 ############################################################################################################
-    def information_about_all_stages_and_actors(self) -> dict[str, list[str]]:
+    def information_about_all_stages_and_actors(self) -> Dict[str, List[str]]:
         stagesentities = self.context.get_group(Matcher(StageComponent)).entities
         actor_entities = self.context.get_group(Matcher(ActorComponent)).entities
-        map: dict[str, list[str]] = {}
+        map: Dict[str, List[str]] = {}
         for entity in stagesentities:
             stagecomp: StageComponent = entity.get(StageComponent)
             ls = map.get(stagecomp.name, [])

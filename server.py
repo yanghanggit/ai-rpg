@@ -17,6 +17,7 @@ from rpg_game import RPGGame
 from auxiliary.player_proxy import PlayerProxy
 from systems.check_status_action_system import CheckStatusActionHelper, ActorCheckStatusEvent
 from systems.perception_action_system import PerceptionActionHelper, ActorPerceptionEvent
+from typing import List, Dict
 
 class TextInput(BaseModel):
     text_input: str
@@ -29,9 +30,9 @@ app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static") 
 
-multiplayersgames: dict[str, MultiplayersGame] = {}
+multiplayersgames: Dict[str, MultiplayersGame] = {}
 
-async def create(clientip: str) -> list[TupleModel]:
+async def create(clientip: str) -> List[TupleModel]:
     log_start_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     logger.add(f"logs/{log_start_time}.log", level="DEBUG")
 
@@ -50,7 +51,7 @@ async def create(clientip: str) -> list[TupleModel]:
         multiplayersgames[clientip].rpggame.user_ips.append(clientip) # todo
         create_player_proxy(clientip)
 
-    messages: list[TupleModel] = []
+    messages: List[TupleModel] = []
     messages.append(TupleModel(who=clientip, what=f"创建房间IP:{clientip}."))
 
     return messages
@@ -68,8 +69,8 @@ def parse_join_multi_game_params(command: str) -> str:
         logger.debug("在字符串中没有找到匹配的内容") 
         return ""
 
-async def join(clientip: str, hostip: str) -> list[TupleModel]:
-    messages: list[TupleModel] = []
+async def join(clientip: str, hostip: str) -> List[TupleModel]:
+    messages: List[TupleModel] = []
     for userip, game in multiplayersgames.copy().items():
         if game.hostname == hostip:
             client_game = MultiplayersGame(clientip, hostip, game.rpggame)
@@ -84,7 +85,7 @@ async def join(clientip: str, hostip: str) -> list[TupleModel]:
 
     return messages
 
-async def pick_actor(clientip: str, actorname: str) -> list[TupleModel]:
+async def pick_actor(clientip: str, actorname: str) -> List[TupleModel]:
     global multiplayersgames
     playerproxy = get_player_proxy(clientip)
     assert playerproxy is not None
@@ -93,14 +94,14 @@ async def pick_actor(clientip: str, actorname: str) -> list[TupleModel]:
     await multiplayersgames[clientip].rpggame.async_execute()
     logger.debug(f"pick actor finish")
 
-    messages: list[TupleModel] = []
+    messages: List[TupleModel] = []
     messages.append(TupleModel(who=clientip, what=f"选择了角色:{actorname}"))
 
     return messages
 
 
-async def request_game_messages(clientip: str) -> list[TupleModel]:
-    messages: list[TupleModel] = []
+async def request_game_messages(clientip: str) -> List[TupleModel]:
+    messages: List[TupleModel] = []
     playerproxy = get_player_proxy(clientip)
     if playerproxy is not None:
         for message in playerproxy.client_messages[-TEST_CLIENT_SHOW_MESSAGE_COUNT:]:
@@ -111,7 +112,7 @@ async def request_game_messages(clientip: str) -> list[TupleModel]:
     return messages
 
 
-async def quitgame(clientip: str) -> list[TupleModel]:
+async def quitgame(clientip: str) -> List[TupleModel]:
     quitclient = multiplayersgames.pop(clientip, None)
     if quitclient is not None:
         logger.debug(f"User IP:{clientip} quit a game.")
@@ -121,7 +122,7 @@ async def quitgame(clientip: str) -> list[TupleModel]:
         quitclient.rpggame.exited = True
         quitclient.rpggame.exit()
 
-    messages: list[TupleModel] = []
+    messages: List[TupleModel] = []
     messages.append(TupleModel(who=clientip, what="Quit Success"))
 
     return messages
@@ -165,7 +166,7 @@ async def imme_handle_check_status(rpg_game: RPGGame, playerproxy: PlayerProxy) 
     playerproxy.add_actor_message(safename, message)
 ############################################################################################################
 
-async def playerinput(clientip: str, command: str) -> list[TupleModel]:
+async def playerinput(clientip: str, command: str) -> List[TupleModel]:
     #
     playerproxy = get_player_proxy(clientip)
     assert playerproxy is not None
@@ -179,12 +180,12 @@ async def playerinput(clientip: str, command: str) -> list[TupleModel]:
     else:
         await multiplayersgames[clientip].rpggame.async_execute()
 
-    messages: list[TupleModel] = []
+    messages: List[TupleModel] = []
     messages.append(TupleModel(who=clientip, what=f"发送 {command}"))
 
     return messages
 
-async def main(clientip: str , command: str) -> list[TupleModel]:
+async def main(clientip: str , command: str) -> List[TupleModel]:
     if "/quit" in command:
         return await quitgame(clientip)
     elif "/create" in command:

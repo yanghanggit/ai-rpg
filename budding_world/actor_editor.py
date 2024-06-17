@@ -64,23 +64,23 @@ class ExcelEditorActor:
     def serialization_core(self, target: Optional[ExcelDataActor]) -> Dict[str, str]:
         if target is None:
             return {}
-        dict: Dict[str, str] = {}
-        dict['name'] = target.name
-        dict['codename'] = target.codename
-        dict['url'] = target.localhost_api()
-        dict["kick_off_memory"] = self.kick_off_memory
-        dict['appearance'] = self._appearance
-        dict['mentioned_actors'] = ";".join(target.mentioned_actors)
-        dict['mentioned_stages'] = ";".join(target.mentioned_stages)
-        dict['attributes'] = self.attributes #target.attributes
-        dict['body'] = target._body
-        return dict
+        _dt: Dict[str, str] = {}
+        _dt['name'] = target.name
+        _dt['codename'] = target.codename
+        _dt['url'] = target.localhost_api()
+        _dt["kick_off_memory"] = self.kick_off_memory
+        _dt['appearance'] = self._appearance
+        _dt['mentioned_actors'] = ";".join(target.mentioned_actors)
+        _dt['mentioned_stages'] = ";".join(target.mentioned_stages)
+        _dt['attributes'] = self.attributes #target.attributes
+        _dt['body'] = target._body
+        return _dt
     
     # 核心函数！！！
     def serialization(self) -> Dict[str, Any]:
-        dict: Dict[str, Any] = {}
-        dict["actor"] = self.serialization_core(self.excelactor)
-        return dict
+        _dt: Dict[str, Any] = {}
+        _dt["actor"] = self.serialization_core(self.excelactor)
+        return _dt
     
     def proxy(self) -> Dict[str, Any]:
         output: Dict[str, Any] = {}

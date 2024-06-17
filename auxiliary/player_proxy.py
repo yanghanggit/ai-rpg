@@ -14,7 +14,7 @@ def is_valid_ipv4(ip: str) -> bool:
     ipv4_pattern = re.compile(r'^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$')  
     return ipv4_pattern.match(ip) is not None
 
-def determine_player_input_mode(playername: list[str]) -> PLAYER_INPUT_MODE:
+def determine_player_input_mode(playername: List[str]) -> PLAYER_INPUT_MODE:
     for name in playername:
         if is_valid_ipv4(name):
             return PLAYER_INPUT_MODE.WEB_HTTP_REQUEST

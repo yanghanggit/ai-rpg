@@ -7,7 +7,7 @@ from auxiliary.components import (ActorComponent,
 from auxiliary.actor_plan_and_action import ActorPlan, ActorAction
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
-from typing import Optional
+from typing import Optional, Dict
 from systems.planning_response_check import check_component_register, check_conversation_action
 
 
@@ -26,14 +26,14 @@ class ActorPlanningSystem(ExecuteProcessor):
         self.context.chaos_engineering_system.on_actor_planning_system_execute(self.context)
         # 并行执行requests
         request_result = await self.context.agent_connect_system.run_async_requet_tasks("ActorPlanningSystem")
-        all_response: dict[str, Optional[str]] = request_result[0]
+        all_response: Dict[str, Optional[str]] = request_result[0]
         #正常流程
         entities = self.context.get_group(Matcher(all_of=[ActorComponent, AutoPlanningComponent])).entities
         for entity in entities:
             #开始处理Actor的行为计划
             self.handle(entity, all_response)
 ####################################################################################################
-    def handle(self, entity: Entity, all_reponse: dict[str, Optional[str]]) -> None:
+    def handle(self, entity: Entity, all_reponse: Dict[str, Optional[str]]) -> None:
         actor_comp: ActorComponent = entity.get(ActorComponent)
         response = all_reponse.get(actor_comp.name, None)
         if response is None:

@@ -8,7 +8,7 @@ from auxiliary.components import (  SearchActionComponent,
 from auxiliary.actor_plan_and_action import ActorAction
 from loguru import logger
 from auxiliary.director_component import notify_stage_director
-from typing import List, override
+from typing import List, override, Set
 from auxiliary.file_def import PropFile
 
 from auxiliary.director_event import IDirectorEvent
@@ -99,7 +99,7 @@ class SearchActionSystem(ReactiveProcessor):
         ###
         searchactioncomp: SearchActionComponent = entity.get(SearchActionComponent)
         action: ActorAction = searchactioncomp.action
-        searchtargets: set[str] = set(action.values)
+        searchtargets: Set[str] = set(action.values)
         ###
         for targetpropname in searchtargets:
             ## 不在同一个场景就不能被搜寻，这个场景不具备这个道具，就无法搜寻

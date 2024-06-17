@@ -21,7 +21,7 @@ class UpdateArchiveSystem(ExecuteProcessor):
         known_info_helper = UpdareArchiveHelper(self.context)
         known_info_helper.prepare()
         # 对Actor进行处理
-        actor_entities: set[Entity] = context.get_group(Matcher(all_of=[ActorComponent])).entities
+        actor_entities: Set[Entity] = context.get_group(Matcher(all_of=[ActorComponent])).entities
         for _en in actor_entities:
             #更新Actor的Actor档案，可能更新了谁认识谁，还有如果在场景中，外观是什么
             self.update_actor_archive(_en, known_info_helper)
@@ -31,7 +31,7 @@ class UpdateArchiveSystem(ExecuteProcessor):
     def update_actor_archive(self, actor_entity: Entity, helper: UpdareArchiveHelper) -> None:
         #
         actor_comp: ActorComponent = actor_entity.get(ActorComponent)
-        who_do_you_know: set[str] = helper.who_do_you_know(actor_comp.name)
+        who_do_you_know: Set[str] = helper.who_do_you_know(actor_comp.name)
         if len(who_do_you_know) == 0:
             logger.warning(f"{actor_comp.name} 什么人都不认识，这个合理么？")
             return
@@ -57,7 +57,7 @@ class UpdateArchiveSystem(ExecuteProcessor):
 ############################################################################################################
     def update_stage_archive(self, actor_entity: Entity, helper: UpdareArchiveHelper) -> None:
         actor_comp: ActorComponent = actor_entity.get(ActorComponent)
-        _stages_you_know: set[str] = helper.stages_you_know(actor_comp.name)
+        _stages_you_know: Set[str] = helper.stages_you_know(actor_comp.name)
         if len(_stages_you_know) == 0:
             logger.warning(f"{actor_comp.name} 什么地点都不知道，这个合理么？")
             return

@@ -8,7 +8,7 @@ from auxiliary.actor_plan_and_action import ActorAction
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.director_component import notify_stage_director
-from typing import cast, override
+from typing import cast, override, List
 from auxiliary.director_event import IDirectorEvent
 from systems.director_system import director_events_to_actor
 from auxiliary.cn_builtin_prompt import ( leave_stage_prompt,
@@ -84,7 +84,7 @@ class GoToActionSystem(ReactiveProcessor):
     def react(self, entities: list[Entity]) -> None:
         self._handle(entities)
 ###############################################################################################################################################
-    def _handle(self, entities: list[Entity]) -> None:
+    def _handle(self, entities: List[Entity]) -> None:
 
         for entity in entities:
             if not entity.has(ActorComponent):

@@ -7,7 +7,7 @@ from auxiliary.components import (StageComponent,
 from auxiliary.actor_plan_and_action import ActorPlan, ActorAction
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger 
-from typing import Optional
+from typing import Optional, Dict
 from systems.planning_response_check import check_component_register, check_conversation_action
 
 
@@ -27,7 +27,7 @@ class StagePlanningSystem(ExecuteProcessor):
         self.context.chaos_engineering_system.on_stage_planning_system_excute(self.context)
         # 并行执行requests
         request_result = await self.context.agent_connect_system.run_async_requet_tasks("StagePlanningSystem")
-        all_response: dict[str, Optional[str]] = request_result[0]
+        all_response: Dict[str, Optional[str]] = request_result[0]
         #正常流程
         entities = self.context.get_group(Matcher(all_of=[StageComponent, AutoPlanningComponent])).entities
         for entity in entities:
@@ -35,7 +35,7 @@ class StagePlanningSystem(ExecuteProcessor):
             self.handle(entity, all_response)
         return 
 ####################################################################################################
-    def handle(self, entity: Entity,  all_response: dict[str, Optional[str]]) -> None:
+    def handle(self, entity: Entity,  all_response: Dict[str, Optional[str]]) -> None:
         
         # prompt = stage_plan_prompt(entity, self.context)
         stage_comp: StageComponent = entity.get(StageComponent)

@@ -25,17 +25,17 @@ class ExcelEditorWorldSystem:
     def _serialization_core(self, target: Optional[ExcelDataWorldSystem]) -> Dict[str, str]:
         if target is None:
             return {}
-        dict: Dict[str, str] = {}
-        dict['name'] = target._name
-        dict['codename'] = target._codename
-        dict['url'] = target.localhost_api()
-        return dict
+        _dt: Dict[str, str] = {}
+        _dt['name'] = target._name
+        _dt['codename'] = target._codename
+        _dt['url'] = target.localhost_api()
+        return _dt
 ######################################################################################################################
     # 核心函数！！！
     def serialization(self) -> Dict[str, Any]:
-        dict: Dict[str, Any] = {}
-        dict["world_system"] = self._serialization_core(self.data)
-        return dict
+        _dt: Dict[str, Any] = {}
+        _dt["world_system"] = self._serialization_core(self.data)
+        return _dt
 ######################################################################################################################
     # 我的代理
     def proxy(self) -> Dict[str, Any]:

@@ -178,8 +178,8 @@ class StageData:
                  description: str, 
                  url: str, 
                  kick_off_memory: str, 
-                 actors: set[ActorData], 
-                 props: set[PropData],
+                 actors: Set[ActorData], 
+                 props: Set[PropData],
                  stage_entry_status: str,
                  stage_entry_actor_status: str,
                  stage_entry_actor_props: str,
@@ -194,9 +194,9 @@ class StageData:
         self._description: str = description
         self._url: str = url
         self._kick_off_memory: str = kick_off_memory
-        self._actors: set[ActorData] = actors
-        self._props: set[PropData] = props
-        self._exit_of_portal: set[StageData] = set()
+        self._actors: Set[ActorData] = actors
+        self._props: Set[PropData] = props
+        self._exit_of_portal: Set[StageData] = set()
         self._attributes: Attributes = attr
         if self._attributes.length() > 0:
             assert self._attributes.length() == 4

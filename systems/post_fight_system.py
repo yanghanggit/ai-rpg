@@ -1,4 +1,4 @@
-from typing import override
+from typing import override, Set
 from entitas import ExecuteProcessor, Matcher, Entity #type: ignore
 from auxiliary.extended_context import ExtendedContext
 #from loguru import logger
@@ -18,34 +18,9 @@ class PostFightSystem(ExecuteProcessor):
         #可以存档
         if self.context.save_data_enable:
             pass
-            #self.savedead()
-########################################################################################################################################################################
-    #def savedead(self) -> None:
-        #  entities: set[Entity] = self.context.get_group(Matcher(DeadActionComponent)).entities
-        #  for entity in entities:
-        #     self.save_actor(entity)
-########################################################################################################################################################################
-    # def save_actor(self, entity: Entity) -> None:
-    #     agent_connect_system = self.context.agent_connect_system
-    #     memory_system = self.context.kick_off_memory_system
-    #     safename = self.context.safe_get_entity_name(entity)
-    #     if safename == "":
-    #         return
-
-    #     # 
-    #     newmsg = died_in_fight_prompt(self.context)
-    #     self.context.safe_add_human_message_to_entity(entity, newmsg)
-
-    #     # 推理死亡，并且进行存档
-    #     archiveprompt = gen_actor_archive_prompt(self.context)
-    #     archive = agent_connect_system.agent_request(safename, archiveprompt)
-    #     if archive is not None:
-    #         memory_system.set_and_write(safename, archive)    # 存档!    
-    #     else:
-    #         logger.error(f"存档失败:{safename}")    
 ########################################################################################################################################################################
     def remove_actor_interactive_actions(self) -> None:
-        actor_entities:set[Entity] = self.context.get_group(Matcher(all_of = [ActorComponent, DeadActionComponent], any_of = ACTOR_INTERACTIVE_ACTIONS_REGISTER)).entities.copy()
+        actor_entities:Set[Entity] = self.context.get_group(Matcher(all_of = [ActorComponent, DeadActionComponent], any_of = ACTOR_INTERACTIVE_ACTIONS_REGISTER)).entities.copy()
         for entity in actor_entities:
             for actionsclass in ACTOR_INTERACTIVE_ACTIONS_REGISTER:
                 if entity.has(actionsclass):

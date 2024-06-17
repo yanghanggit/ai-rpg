@@ -1,6 +1,5 @@
 import os
 from typing import List, Optional
-
 from overrides import override
 from entitas import Matcher #type: ignore
 from loguru import logger
@@ -77,7 +76,7 @@ class RPGGame(BaseGame):
         self.extendedcontext: ExtendedContext = context
         self.builder: Optional[GameBuilder] = None
         self.processors: MyProcessors = self.create_processors(self.extendedcontext)
-        self.user_ips: list[str] = [] # 临时写法，待重构
+        self.user_ips: List[str] = [] # 临时写法，待重构
 ###############################################################################################################################################
     def create_processors(self, context: ExtendedContext) -> MyProcessors:
 

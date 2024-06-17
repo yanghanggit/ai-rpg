@@ -57,7 +57,7 @@ class GameBuilder:
         # 第五步，创建场景
         self.stage_builder.build(self._data, self.data_base_system)
 ###############################################################################################################################################
-    def _build_config(self, data: dict[str, Any]) -> None:
+    def _build_config(self, data: Dict[str, Any]) -> None:
         self.about_game = data.get('about_game', "无关于游戏的信息。")
 ###############################################################################################################################################
     def _create_actor_data_base(self, actors: Any) -> None:
@@ -172,27 +172,27 @@ class GameBuilder:
 ########################################################################################################################
 class StageBuilder:
     def __init__(self) -> None:
-        self.datalist: Optional[dict[str, Any]] = None
-        self.stages: list[StageData] = []
+        self.datalist: Optional[Dict[str, Any]] = None
+        self.stages: List[StageData] = []
 
     def __str__(self) -> str:
         return f"StageBuilder: {self.datalist}"      
 
-    def props_proxy_in_stage(self, props_data: List[Any]) -> set[PropData]:
-        res: set[PropData] = set()
+    def props_proxy_in_stage(self, props_data: List[Any]) -> Set[PropData]:
+        res: Set[PropData] = set()
         for obj in props_data:
             prop = PropDataProxy(obj.get("name"))
             res.add(prop)
         return res
     #
-    def actors_proxy_in_stage(self, _data: List[Any]) -> set[ActorData]:
-        res: set[ActorData] = set()
+    def actors_proxy_in_stage(self, _data: List[Any]) -> Set[ActorData]:
+        res: Set[ActorData] = set()
         for obj in _data:
             _d = ActorDataProxy(obj.get("name"))
             res.add(_d)
         return res
     #
-    def build(self, json_data: dict[str, Any], data_base_system: DataBaseSystem) -> None:
+    def build(self, json_data: Dict[str, Any], data_base_system: DataBaseSystem) -> None:
         self.datalist = json_data.get("stages")
         if self.datalist is None:
             logger.error("StageBuilder: stages data is None.")
@@ -205,10 +205,10 @@ class StageBuilder:
             stage = data_base_system.get_stage(stagedata.get('name'))
             assert stage is not None
             #连接
-            propsinstage: set[PropData] = self.props_proxy_in_stage(stagedata.get("props"))
+            propsinstage: Set[PropData] = self.props_proxy_in_stage(stagedata.get("props"))
             stage._props = propsinstage
             #连接
-            actors_in_stage: set[ActorData] = self.actors_proxy_in_stage(stagedata.get("actors"))
+            actors_in_stage: Set[ActorData] = self.actors_proxy_in_stage(stagedata.get("actors"))
             stage._actors = actors_in_stage
             #
             self.stages.append(stage)
@@ -218,22 +218,22 @@ class StageBuilder:
 class ActorBuilder:
 
     def __init__(self, dataname: str) -> None:
-        self.datalist: Optional[dict[str, Any]] = None
-        self.actors: list[ActorData] = []
+        self.datalist: Optional[Dict[str, Any]] = None
+        self.actors: List[ActorData] = []
         self.dataname = dataname
 
     def __str__(self) -> str:
         return f"ActorBuilder: {self.datalist}"       
 
     #
-    def build(self, json_data: dict[str, Any], data_base_system: DataBaseSystem) -> None:
+    def build(self, json_data: Dict[str, Any], data_base_system: DataBaseSystem) -> None:
         self.datalist = json_data.get(self.dataname)
         if self.datalist is None:
             logger.error(f"ActorBuilder: {self.dataname} data is None.")
             return
         
         for datablock in self.datalist:
-            _props: set[PropData] = set()
+            _props: Set[PropData] = set()
             propdata = datablock.get("props")
             for propdata in propdata:
                 prop = PropDataProxy(propdata.get("name"))
@@ -256,7 +256,7 @@ class ActorBuilder:
 class WorldSystemBuilder:
 
     def __init__(self, data_name: str) -> None:
-        self._data_list: Optional[dict[str, Any]] = None
+        self._data_list: Optional[Dict[str, Any]] = None
         self._world_system_datas: List[WorldSystemData] = []
         self._data_name = data_name
 
@@ -264,7 +264,7 @@ class WorldSystemBuilder:
         return f"WorldSystemBuilder: {self._data_list}"       
 
     #
-    def build(self, json_data: dict[str, Any], data_base_system: DataBaseSystem) -> None:
+    def build(self, json_data: Dict[str, Any], data_base_system: DataBaseSystem) -> None:
         self._data_list = json_data.get(self._data_name)
         if self._data_list is None:
             logger.error(f"WorldSystemBuilder: {self._data_name} data is None.")

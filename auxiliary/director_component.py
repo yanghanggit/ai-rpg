@@ -12,7 +12,7 @@ DirectorComponentPrototype = namedtuple('DirectorComponentPrototype', 'name')
 class StageDirectorComponent(DirectorComponentPrototype):
 
     def __init__(self) -> None:
-        self._events: list[IDirectorEvent] = []
+        self._events: List[IDirectorEvent] = []
 ##########################################################################################################################
     def add_event(self, event: IDirectorEvent) -> None:
         self._events.append(event)

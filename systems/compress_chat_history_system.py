@@ -19,7 +19,7 @@ class CompressChatHistorySystem(ExecuteProcessor):
         context = self.context
         agent_connect_system = context.agent_connect_system
         tags: Set[str] = {__ConstantPromptValue__.ACTOR_PLAN_PROMPT_TAG, __ConstantPromptValue__.STAGE_PLAN_PROMPT_TAG}
-        entities: set[Entity] = context.get_group(Matcher(any_of=[ActorComponent, StageComponent])).entities
+        entities: Set[Entity] = context.get_group(Matcher(any_of=[ActorComponent, StageComponent])).entities
         for entity in entities:
             safename = context.safe_get_entity_name(entity)
             if safename == "":
@@ -31,7 +31,7 @@ class CompressChatHistorySystem(ExecuteProcessor):
         agent_connect_system = context.agent_connect_system
         replace_data: Dict[str, str] = { __ConstantPromptValue__.ACTOR_PLAN_PROMPT_TAG : __ConstantPromptValue__.COMPRESS_ACTOR_PLAN_PROMPT, 
                                         __ConstantPromptValue__.STAGE_PLAN_PROMPT_TAG : __ConstantPromptValue__.COMPRESS_STAGE_PLAN_PROMPT}
-        entities: set[Entity] = context.get_group(Matcher(any_of=[ActorComponent, StageComponent])).entities
+        entities: Set[Entity] = context.get_group(Matcher(any_of=[ActorComponent, StageComponent])).entities
         for entity in entities:
             safename = context.safe_get_entity_name(entity)
             if safename == "":

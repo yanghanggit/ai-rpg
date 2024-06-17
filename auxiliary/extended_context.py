@@ -14,7 +14,7 @@ from typing import Optional
 from auxiliary.lang_serve_agent_system import LangServeAgentSystem
 from auxiliary.code_name_component_system import CodeNameComponentSystem
 from auxiliary.chaos_engineering_system import IChaosEngineering
-from typing import Optional, Dict
+from typing import Optional, Dict, List, Set
 
 
 class ExtendedContext(Context):
@@ -31,7 +31,7 @@ class ExtendedContext(Context):
         
         #
         super().__init__()
-        self.user_ips: list[str] = [] # todo 临时写法，待重构, 待删除。
+        self.user_ips: List[str] = [] # todo 临时写法，待重构, 待删除。
         
         #
         self.file_system = filesystem
@@ -65,7 +65,7 @@ class ExtendedContext(Context):
 ############################################################################################################
     #玩家基本就一个（或者及其少的数量），所以就遍历一下得了，注意是playername，比如yanghang。
     def get_player_entity(self, playername: str) -> Optional[Entity]:
-        entities: set[Entity] = self.get_group(Matcher(all_of=[PlayerComponent, ActorComponent])).entities
+        entities: Set[Entity] = self.get_group(Matcher(all_of=[PlayerComponent, ActorComponent])).entities
         for entity in entities:
             playercomp: PlayerComponent = entity.get(PlayerComponent)
             if playercomp.name == playername:
@@ -76,7 +76,7 @@ class ExtendedContext(Context):
         compclass = self.code_name_component_system.get_component_class_by_name(name)
         if compclass is None:
             return None
-        findstages: set[Entity] = self.get_group(Matcher(compclass)).entities
+        findstages: Set[Entity] = self.get_group(Matcher(compclass)).entities
         if len(findstages) > 0:
             return next(iter(findstages))
         return None
@@ -94,14 +94,14 @@ class ExtendedContext(Context):
         return None
 ############################################################################################################
     # 目标场景中的所有角色
-    def actors_in_stage(self, stagename: str) -> list[Entity]:   
+    def actors_in_stage(self, stagename: str) -> List[Entity]:   
         # 测试！！！
         stage_tag_component = self.code_name_component_system.get_stage_tag_component_class_by_name(stagename)
-        entities: set[Entity] =  self.get_group(Matcher(all_of=[ActorComponent, stage_tag_component])).entities
+        entities: Set[Entity] =  self.get_group(Matcher(all_of=[ActorComponent, stage_tag_component])).entities
         return list(entities)
 ############################################################################################################
     # actors_in_stage 的另外一个实现
-    def actors_in_stage_(self, entity: Entity) -> list[Entity]: 
+    def actors_in_stage_(self, entity: Entity) -> List[Entity]: 
         stage_entity = self.safe_get_stage_entity(entity)
         if stage_entity is None:
             return []
@@ -174,7 +174,7 @@ class ExtendedContext(Context):
             return res
         #
         safe_stage_name = self.safe_get_entity_name(stageentity)
-        actors_int_stage: list[Entity] = self.actors_in_stage(safe_stage_name)
+        actors_int_stage: List[Entity] = self.actors_in_stage(safe_stage_name)
         for actor in actors_int_stage:
             if actor.has(AppearanceComponent):
                 actor_comp: ActorComponent = actor.get(ActorComponent)

@@ -7,6 +7,7 @@ from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.actor_plan_and_action import ActorAction
 from rpg_game import RPGGame
+from typing import Set
 
 class DeadActionSystem(ExecuteProcessor):
     
@@ -23,7 +24,7 @@ class DeadActionSystem(ExecuteProcessor):
         self.destory()
 ########################################################################################################################################################################
     def is_player_dead_then_game_over(self) -> None:
-        entities: set[Entity] = self.context.get_group(Matcher(DeadActionComponent)).entities
+        entities: Set[Entity] = self.context.get_group(Matcher(DeadActionComponent)).entities
         for entity in entities:
             if entity.has(PlayerComponent):
                 logger.warning(f"玩家死亡，游戏结束")
@@ -31,7 +32,7 @@ class DeadActionSystem(ExecuteProcessor):
                 self.rpggame.on_exit()
 ########################################################################################################################################################################  
     def destory(self) -> None:
-        entities: set[Entity] = self.context.get_group(Matcher(DeadActionComponent)).entities
+        entities: Set[Entity] = self.context.get_group(Matcher(DeadActionComponent)).entities
         for entity in entities:
             deadcomp: DeadActionComponent = entity.get(DeadActionComponent)
             action: ActorAction = deadcomp.action

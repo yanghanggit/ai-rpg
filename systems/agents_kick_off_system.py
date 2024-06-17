@@ -5,7 +5,7 @@ from auxiliary.cn_builtin_prompt import (kick_off_memory_actor_prompt, kick_off_
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from systems.update_archive_helper import UpdareArchiveHelper
-from typing import Dict
+from typing import Dict, Set
 from auxiliary.actor_plan_and_action import ActorAction
 
 ###############################################################################################################################################
@@ -38,7 +38,7 @@ class AgentsKickOffSystem(InitializeProcessor, ExecuteProcessor):
 ####################################################################################################
     def first_time_add_perception_and_check_status(self) -> None:
         context = self.context
-        entities: set[Entity] = context.get_group(Matcher(all_of=[ActorComponent], none_of=[PlayerComponent])).entities
+        entities: Set[Entity] = context.get_group(Matcher(all_of=[ActorComponent], none_of=[PlayerComponent])).entities
         for entity in entities:
             actor_name: ActorComponent = entity.get(ActorComponent)
             #
@@ -69,7 +69,7 @@ class AgentsKickOffSystem(InitializeProcessor, ExecuteProcessor):
         result: Dict[str, str] = {}
         context = self.context
         agent_connect_system = context.agent_connect_system
-        worlds: set[Entity] = context.get_group(Matcher(WorldComponent)).entities
+        worlds: Set[Entity] = context.get_group(Matcher(WorldComponent)).entities
         for world in worlds:
             worldcomp: WorldComponent = world.get(WorldComponent)
             prompt = kick_off_world_system_prompt()
@@ -85,7 +85,7 @@ class AgentsKickOffSystem(InitializeProcessor, ExecuteProcessor):
         context = self.context
         memory_system = context.kick_off_memory_system
         agent_connect_system = context.agent_connect_system
-        stages: set[Entity] = context.get_group(Matcher(StageComponent)).entities
+        stages: Set[Entity] = context.get_group(Matcher(StageComponent)).entities
         for stage in stages:
 
             stagecomp: StageComponent = stage.get(StageComponent)
@@ -108,7 +108,7 @@ class AgentsKickOffSystem(InitializeProcessor, ExecuteProcessor):
         context = self.context
         memory_system = context.kick_off_memory_system
         agent_connect_system = context.agent_connect_system
-        actor_entities: set[Entity] = context.get_group(Matcher(all_of=[ActorComponent])).entities
+        actor_entities: Set[Entity] = context.get_group(Matcher(all_of=[ActorComponent])).entities
         for _entity in actor_entities:
             actor_comp: ActorComponent = _entity.get(ActorComponent)
             _name: str = actor_comp.name

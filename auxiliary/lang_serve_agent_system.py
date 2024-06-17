@@ -216,21 +216,21 @@ class LangServeAgentSystem:
         logger.error(f"async_requet: {name} is not registered.")
         return (name, None, prompt)
 ############################################################################################################
-    async def async_gather(self) -> list[tuple[str, Optional[str], str]]:
+    async def async_gather(self) -> List[tuple[str, Optional[str], str]]:
         tasks = [self.async_agent_requet(name, tp[0], tp[1]) for name, tp in self.async_request_tasks.items()]
         future = await asyncio.gather(*tasks)
         return future
 ############################################################################################################
     # 当确定全部异步请求任务添加完毕后，调用这个方法，等待所有任务完成，并拿到任务结果
-    async def run_async_requet_tasks(self, tag: str = "") -> tuple[dict[str, Optional[str]], dict[str, str]]:
+    async def run_async_requet_tasks(self, tag: str = "") -> tuple[Dict[str, Optional[str]], Dict[str, str]]:
 
         start_time = time.time()
 
         # 调用async_gather，等待所有任务完成，并拿到任务结果
-        async_results: list[tuple[str, Optional[str], str]] = await self.async_gather()
+        async_results: List[tuple[str, Optional[str], str]] = await self.async_gather()
 
-        response_dict: dict[str, Optional[str]] = {}
-        prompt_dict: dict[str, str] = {}
+        response_dict: Dict[str, Optional[str]] = {}
+        prompt_dict: Dict[str, str] = {}
 
         for result in async_results:
             response_dict[result[0]] = result[1]

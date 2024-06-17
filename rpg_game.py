@@ -203,7 +203,7 @@ class RPGGame(BaseGame):
         ## 第1步，设置根路径
         self.builder = worlddata
         context.agent_connect_system.set_runtime_dir(worlddata.runtime_dir)
-        context.kick_off_memory_system.set_root_path(runtime_dir_for_world)
+        context.kick_off_memory_system.set_runtime_dir(worlddata.runtime_dir)
         context.file_system.set_root_path(runtime_dir_for_world)
 
         ## 第2步 创建管理员类型的角色，全局的AI

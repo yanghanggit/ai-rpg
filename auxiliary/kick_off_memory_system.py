@@ -1,66 +1,61 @@
 from loguru import logger
-import os
 from typing import Dict, Optional
-
+from pathlib import Path
 
 ####################################################################################################################################
 ## 第一次初始化的时候，会做读取来确定角色初始上下文（记忆）
 class KickOffMemorySystem:
     def __init__(self, name: str) -> None:
         self.name: str = name
-        self.rootpath: str = ""
         self.kick_off_memories: Dict[str, str] = {}
+        self._runtime_dir: Optional[Path] = None
 ####################################################################################################################################
-    def set_root_path(self, rootpath: str) -> None:
-        if self.rootpath != "":
-            raise Exception(f"[{self.name}]已经设置了根路径，不能重复设置。")
-        self.rootpath = rootpath
+    def set_runtime_dir(self, runtime_dir: Path) -> None:
+        assert runtime_dir is not None
+        self._runtime_dir = runtime_dir
+        self._runtime_dir.mkdir(parents=True, exist_ok=True)
+        assert runtime_dir.exists()
+        assert self._runtime_dir.is_dir(), f"Directory is not a directory: {self._runtime_dir}"
 ####################################################################################################################################
-    def md_file_path(self, who: str) -> str:
-        return f"{self.rootpath}{who}/mems/memory.md"
+    def md_file_path(self, who: str) -> Path:
+        assert self._runtime_dir is not None
+        dir = self._runtime_dir / f"{who}"
+        dir.mkdir(parents=True, exist_ok=True)
+        return dir / f"kick_off_memory.md"
 ####################################################################################################################################
     def add_kick_off_memory(self, who: str, kick_off_memory_content: str) -> None:
-        mempath = self.md_file_path(who)    
-        try:
-            if not os.path.exists(mempath):
-                os.makedirs(os.path.dirname(mempath), exist_ok=True)
-            with open(mempath, "w", encoding="utf-8") as f:
-                f.write(kick_off_memory_content)
-        except FileNotFoundError as e:
-            return
-        except Exception as e:
-            return
-        
+        #初始化
+        self.write_md(who, kick_off_memory_content)
         #初始化成功了
         mm = self.read_md(who)
+        assert mm is not None
         if mm is not None:
+            assert mm == kick_off_memory_content
             self.kick_off_memories[who] = mm
 ####################################################################################################################################
     def read_md(self, who: str) -> Optional[str]:
-        mempath = self.md_file_path(who)
+
+        file_path = self.md_file_path(who)
+        if not file_path.exists():
+            assert False, f"文件不存在: {file_path}"
+            return None
+        
         try:
-            with open(mempath, "r", encoding="utf-8") as f:
-                readmemory = f.read()
-                return readmemory
-        except FileNotFoundError as e:
-            return None
+            content = file_path.read_text(encoding="utf-8")
+            assert content is not None
+            return content
         except Exception as e:
+            logger.error(f"读取文件失败: {file_path}, e = {e}")
             return None
-        return None
 ####################################################################################################################################
     def write_md(self, who: str, content: str) -> None:
-        mempath = self.md_file_path(who)
+        file_path = self.md_file_path(who)
         try:
-            if not os.path.exists(mempath):
-                os.makedirs(os.path.dirname(mempath), exist_ok=True)
-            with open(mempath, "w", encoding="utf-8") as f:
-                f.write(content)
+            res = file_path.write_text(content, encoding="utf-8")
+            logger.info(f"写入文件成功: {file_path}, res = {res}")
         except Exception as e:
+            logger.error(f"写入文件失败: {file_path}, e = {e}")
             return
-####################################################################################################################################
-    def set_and_write(self, who: str, content: str) -> None:
-        self.kick_off_memories[who] = content
-        self.write_md(who, content)
 ####################################################################################################################################
     def get_kick_off_memory(self, who: str) -> str:
         return self.kick_off_memories.get(who, "")

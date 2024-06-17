@@ -22,7 +22,7 @@ class MyJSONResponse:
         if is_repeat(self._output):
             merge_res = merge(self._output)
             if merge_res is not None:
-                self._output = json.dumps(merge_res)
+                self._output = json.dumps(merge_res, ensure_ascii=False)
         return self
 
     @property  

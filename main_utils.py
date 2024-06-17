@@ -1,5 +1,5 @@
 import os
-from typing import Optional
+from typing import Optional, Any
 from loguru import logger
 from auxiliary.game_builders import GameBuilder
 from rpg_game import RPGGame 
@@ -13,37 +13,48 @@ from auxiliary.chaos_engineering_system import EmptyChaosEngineeringSystem, ICha
 from auxiliary.data_base_system import DataBaseSystem
 from budding_world.chaos_budding_world import ChaosBuddingWorld
 from pathlib import Path
-
+import json
+#######################################################################################################################################
+def load_game_file(game_build_file_path: Path, version: str) -> Any:
+    if not game_build_file_path.exists():
+        logger.error("未找到存档，请检查存档是否存在。")
+        return None
+    try:
+        _content = game_build_file_path.read_text(encoding="utf-8")
+        assert _content is not None, f"File is empty: {game_build_file_path}"
+        _json = json.loads(_content)
+        if _json is None:
+            logger.error(f"File {game_build_file_path} is empty.")
+            return None
+        _version: str = _json['version']
+        if _version != version:
+            logger.error(f'游戏数据(World.json)与Builder版本不匹配，请检查。')
+            return None
+        return _json
+    except FileNotFoundError:
+        assert False, f"File not found: {game_build_file_path}"
+        return None
 #######################################################################################################################################
 ### （临时的）写死创建budding_world
-def _read_and_build_game_data(gamename: str, data_base_system: DataBaseSystem) -> Optional[GameBuilder]:
-
-    runtime_dir = Path("budding_world/gen_runtimes")
-    runtime_dir.mkdir(parents=True, exist_ok=True)
-    file_name = f"{gamename}.json"
-    final_path = runtime_dir / file_name
-    if not final_path.exists():
-        logger.error("未找到存档，请检查存档是否存在。")
-        return None
-
+def load_then_build_game_data(gamename: str, data_base_system: DataBaseSystem) -> Optional[GameBuilder]:
     version = 'ewan'
-    runtimedir = f"./budding_world/gen_runtimes/"
-    game_data_path: str = f"{runtimedir}{gamename}.json"
-    if not os.path.exists(game_data_path):
+
+    root_runtime_dir = Path("budding_world/gen_runtimes")
+    root_runtime_dir.mkdir(parents=True, exist_ok=True)
+
+    game_build_file_path = root_runtime_dir / f"{gamename}.json"
+    if not game_build_file_path.exists():
         logger.error("未找到存档，请检查存档是否存在。")
         return None
 
-    game_builder: Optional[GameBuilder] = GameBuilder(gamename, version, runtimedir, data_base_system)
-    if game_builder is None:
-        logger.error("WorldDataBuilder初始化失败。")
+    game_data = load_game_file(game_build_file_path, version)
+    if game_data is None:
+        logger.error("load_game_file 失败。")
         return None
-    
-    if not game_builder.loadfile(game_data_path, True):
-        logger.error("World.json版本不匹配，请检查版本号。")
-        return None
-    
-    game_builder.build()
-    return game_builder
+
+    #todo?
+    runtimedir = f"./budding_world/gen_runtimes/"
+    return GameBuilder(gamename, game_data, version, runtimedir, data_base_system, (root_runtime_dir / gamename)).build()
 #######################################################################################################################################
 ## 创建RPG Game
 def _create_rpg_game(worldname: str, chaosengineering: Optional[IChaosEngineering], data_base_system: DataBaseSystem) -> RPGGame:
@@ -78,7 +89,7 @@ def _create_rpg_game(worldname: str, chaosengineering: Optional[IChaosEngineerin
 def create_rpg_game(gamename: str) -> Optional[RPGGame]:
     # 通过依赖注入的方式创建数据系统
     data_base_system = DataBaseSystem("test!!! data_base_system，it is a system that stores all the origin data from the settings.")
-    game_builder = _read_and_build_game_data(gamename, data_base_system)
+    game_builder = load_then_build_game_data(gamename, data_base_system)
     if game_builder is None:
         logger.error("create_world_data_builder 失败。")
         return None
@@ -91,6 +102,5 @@ def create_rpg_game(gamename: str) -> Optional[RPGGame]:
         return None
     
     # 执行创建游戏的所有动作
-    rpggame.create_game(game_builder)
-    return rpggame
+    return rpggame.create_game(game_builder)
 #######################################################################################################################################

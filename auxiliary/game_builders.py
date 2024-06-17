@@ -3,45 +3,55 @@ from loguru import logger
 import json
 from auxiliary.base_data import PropData, ActorData, StageData, WorldSystemData, ActorDataProxy, PropDataProxy, Attributes
 from auxiliary.data_base_system import DataBaseSystem
+from pathlib import Path
 
 ########################################################################################################################
 ########################################################################################################################
 ########################################################################################################################
 class GameBuilder:
 
-    def __init__(self, name: str, version: str, runtimepath: str, data_base_system: DataBaseSystem) -> None:
+    def __init__(self, 
+                 name: str, 
+                 data: Any,
+                 version: str, 
+                 runtimepath: str, 
+                 data_base_system: DataBaseSystem, 
+                 runtime_file_dir: Path) -> None:
+        
         self.name = name
         self.runtimepath = runtimepath
         self.version = version # version必须与生成的world.json文件中的version一致
-        self._data: Any = None
+        self._data: Any = data
+        assert self._data is not None
         self.world_system_builder = WorldSystemBuilder("world_systems")
         self.player_builder = ActorBuilder("players")
         self.actor_buidler = ActorBuilder("actors")
         self.stage_builder = StageBuilder()
         self.data_base_system = data_base_system ## 依赖注入的方式，将数据库系统注入到这里
         self.about_game: str = ""
+        self.runtime_dir: Path = runtime_file_dir
 ###############################################################################################################################################
-    def loadfile(self, world_data_path: str, check_version: bool) -> bool:
-        try:
-            with open(world_data_path, 'r', encoding="utf-8") as file:
-                self._data = json.load(file)
-                if self._data is None:
-                    logger.error(f"File {world_data_path} is empty.")
-                    return False
-        except FileNotFoundError:
-            logger.exception(f"File {world_data_path} not found.")
-            return False
+    # def loadfile(self, world_data_path: str, check_version: bool) -> bool:
+    #     try:
+    #         with open(world_data_path, 'r', encoding="utf-8") as file:
+    #             self._data = json.load(file)
+    #             if self._data is None:
+    #                 logger.error(f"File {world_data_path} is empty.")
+    #                 return False
+    #     except FileNotFoundError:
+    #         logger.exception(f"File {world_data_path} not found.")
+    #         return False
         
-        if check_version:
-            game_data_version: str = self._data['version']
-            if self.version == game_data_version:
-                return True
-            else:
-                logger.error(f'游戏数据(World.json)与Builder版本不匹配，请检查。')
-                return False
-        return True
+    #     if check_version:
+    #         game_data_version: str = self._data['version']
+    #         if self.version == game_data_version:
+    #             return True
+    #         else:
+    #             logger.error(f'游戏数据(World.json)与Builder版本不匹配，请检查。')
+    #             return False
+    #     return True
 ###############################################################################################################################################
-    def build(self) -> None:
+    def build(self) -> 'GameBuilder':
         if self._data is None:
             logger.error("WorldDataBuilder: data is None.")
             return
@@ -56,6 +66,8 @@ class GameBuilder:
         self.actor_buidler.build(self._data, self.data_base_system)
         # 第五步，创建场景
         self.stage_builder.build(self._data, self.data_base_system)
+        #
+        return self
 ###############################################################################################################################################
     def _build_config(self, data: Dict[str, Any]) -> None:
         self.about_game = data.get('about_game', "无关于游戏的信息。")

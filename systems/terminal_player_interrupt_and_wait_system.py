@@ -49,7 +49,7 @@ class TerminalPlayerInterruptAndWaitSystem(ExecuteProcessor):
         for message in clientmessages[-display_messages_count:]:
             tag = message[0]
             content = message[1]
-            logger.error(f"{tag}=>{content}")
+            logger.info(f"{tag}=>{content}")
 ############################################################################################################
     
     

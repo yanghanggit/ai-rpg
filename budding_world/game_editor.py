@@ -10,8 +10,9 @@ from budding_world.excel_data import ExcelDataActor, ExcelDataStage, ExcelDataPr
 from budding_world.actor_editor import ExcelEditorActor
 from budding_world.stage_editor import ExcelEditorStage
 from budding_world.world_system_editor import ExcelEditorWorldSystem
-from budding_world.utils import serialization_prop
+from budding_world.gen_funcs import serialization_prop
 import pandas as pd
+from budding_world.utils import write_text_file
 
 EDITOR_WORLD_SYSTEM_TYPE = "WorldSystem"
 EDITOR_PLAYER_TYPE = "Player"
@@ -128,8 +129,7 @@ class ExcelEditorGame:
             if item['name'] not in self._world_system_data_base:
                 logger.error(f"Invalid WorldSystem name: {item['name']}")
                 continue
-            editor_world_system = ExcelEditorWorldSystem(item, self._world_system_data_base)
-            res.append(editor_world_system)
+            res.append(ExcelEditorWorldSystem(item, self._world_system_data_base))
         return res
 ############################################################################################################################
     def create_players(self, players: List[Any]) -> List[ExcelEditorActor]:
@@ -195,18 +195,9 @@ class ExcelEditorGame:
         return output
 ############################################################################################################################
     def write(self, directory: str) -> bool:
-        builddata = self.serialization()    
-        logger.warning(builddata)
-        builddata_json = json.dumps(builddata, indent=4, ensure_ascii = False)
-        try:
-            filename = f"{self._name}.json"
-            path = os.path.join(directory, filename)
-            # 确保目录存在
-            os.makedirs(directory, exist_ok=True)
-            with open(path, 'w', encoding='utf-8') as file:
-                file.write(builddata_json)
-                return True
-        except Exception as e:
-            logger.error(f"An error occurred: {e}") 
-        return False
+        _da = self.serialization()    
+        logger.warning(_da)
+        _json = json.dumps(_da, indent = 4, ensure_ascii = False)
+        filename = f"{self._name}.json"
+        return write_text_file(Path(directory), filename, _json) > 0
 ############################################################################################################################

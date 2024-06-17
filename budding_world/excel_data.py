@@ -6,6 +6,7 @@ import os
 from loguru import logger
 from typing import List
 from budding_world.configuration import GAME_NAME, OUT_PUT_ACTOR_SYS_PROMPT_DIR, OUT_PUT_STAGE_SYS_PROMPT_DIR, OUT_PUT_AGENT_DIR
+from budding_world.utils import write_text_file
 
 
 ############################################################################################################
@@ -68,30 +69,12 @@ class ExcelDataActor:
         return f"http://localhost:{self.port}{self.api}/"
     
     def write_sys_prompt(self) -> None: 
-        try:
-            directory = f"{GAME_NAME}/{OUT_PUT_ACTOR_SYS_PROMPT_DIR}"
-            filename = f"{self.codename}_sys_prompt.md"
-            path = os.path.join(directory, filename)
-            # 确保目录存在
-            os.makedirs(directory, exist_ok=True)
-            with open(path, 'w', encoding='utf-8') as file:
-                file.write(self.sysprompt)
-                file.write("\n\n\n")
-        except Exception as e:
-            logger.error(f"An error occurred: {e}") 
+        directory = Path(GAME_NAME) / OUT_PUT_ACTOR_SYS_PROMPT_DIR
+        write_text_file(directory, f"{self.codename}_sys_prompt.md", self.sysprompt)
 
     def write_agentpy(self) -> None:
-        try:
-            directory = f"{GAME_NAME}/{OUT_PUT_AGENT_DIR}"
-            filename = f"{self.codename}_agent.py"
-            path = os.path.join(directory, filename)
-            # 确保目录存在
-            os.makedirs(directory, exist_ok=True)
-            with open(path, 'w', encoding='utf-8') as file:
-                file.write(self.agentpy)
-                file.write("\n\n\n")
-        except Exception as e:
-            logger.error(f"An error occurred: {e}") 
+        directory = Path(GAME_NAME) / OUT_PUT_AGENT_DIR
+        write_text_file(directory, f"{self.codename}_agent.py", self.agentpy)
 
     def add_mentioned_actor(self, name: str) -> bool:
         if name == self.name:
@@ -180,30 +163,13 @@ class ExcelDataStage:
         return f"http://localhost:{self.port}{self.api}/"
     
     def write_sys_prompt(self) -> None: 
-        try:
-            directory = f"{GAME_NAME}/{OUT_PUT_STAGE_SYS_PROMPT_DIR}"
-            filename = f"{self.codename}_sys_prompt.md"
-            path = os.path.join(directory, filename)
-            # 确保目录存在
-            os.makedirs(directory, exist_ok=True)
-            with open(path, 'w', encoding='utf-8') as file:
-                file.write(self.sysprompt)
-                file.write("\n\n\n")
-        except Exception as e:
-            logger.error(f"An error occurred: {e}") 
+        directory = Path(GAME_NAME) / OUT_PUT_STAGE_SYS_PROMPT_DIR
+        write_text_file(directory, f"{self.codename}_sys_prompt.md", self.sysprompt)
 
     def write_agentpy(self) -> None:
-        try:
-            directory = f"{GAME_NAME}/{OUT_PUT_AGENT_DIR}"
-            filename = f"{self.codename}_agent.py"
-            path = os.path.join(directory, filename)
-            # 确保目录存在
-            os.makedirs(directory, exist_ok=True)
-            with open(path, 'w', encoding='utf-8') as file:
-                file.write(self.agentpy)
-                file.write("\n\n\n")
-        except Exception as e:
-            logger.error(f"An error occurred: {e}") 
+        directory = Path(GAME_NAME) / OUT_PUT_AGENT_DIR
+        write_text_file(directory, f"{self.codename}_agent.py", self.agentpy)
+
 ############################################################################################################
 ############################################################################################################
 ############################################################################################################
@@ -276,27 +242,9 @@ class ExcelDataWorldSystem:
         return f"http://localhost:{self._port}{self._api}/"
     
     def write_sys_prompt(self) -> None: 
-        try:
-            directory = f"{GAME_NAME}/{OUT_PUT_STAGE_SYS_PROMPT_DIR}"
-            filename = f"{self._codename}_sys_prompt.md"
-            path = os.path.join(directory, filename)
-            # 确保目录存在
-            os.makedirs(directory, exist_ok=True)
-            with open(path, 'w', encoding='utf-8') as file:
-                file.write(self._sysprompt)
-                file.write("\n\n\n")
-        except Exception as e:
-            logger.error(f"An error occurred: {e}") 
+        directory = Path(GAME_NAME) / OUT_PUT_STAGE_SYS_PROMPT_DIR
+        write_text_file(directory, f"{self._codename}_sys_prompt.md", self._sysprompt)
 
     def write_agentpy(self) -> None:
-        try:
-            directory = f"{GAME_NAME}/{OUT_PUT_AGENT_DIR}"
-            filename = f"{self._codename}_agent.py"
-            path = os.path.join(directory, filename)
-            # 确保目录存在
-            os.makedirs(directory, exist_ok=True)
-            with open(path, 'w', encoding='utf-8') as file:
-                file.write(self._agentpy)
-                file.write("\n\n\n")
-        except Exception as e:
-            logger.error(f"An error occurred: {e}") 
+        directory = Path(GAME_NAME) / OUT_PUT_AGENT_DIR
+        write_text_file(directory, f"{self._codename}_agent.py", self._agentpy)

@@ -202,7 +202,7 @@ class RPGGame(BaseGame):
 
         ## 第1步，设置根路径
         self.builder = worlddata
-        context.agent_connect_system.set_root_path(runtime_dir_for_world)
+        context.agent_connect_system.set_runtime_dir(worlddata.runtime_dir)
         context.kick_off_memory_system.set_root_path(runtime_dir_for_world)
         context.file_system.set_root_path(runtime_dir_for_world)
 

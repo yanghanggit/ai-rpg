@@ -54,10 +54,11 @@ def load_then_build_game_data(gamename: str, data_base_system: DataBaseSystem) -
 
     #todo?
     runtimedir = f"./budding_world/gen_runtimes/"
-    return GameBuilder(gamename, game_data, version, runtimedir, data_base_system, (root_runtime_dir / gamename)).build()
+    runtime_file_dir = root_runtime_dir / gamename
+    return GameBuilder(gamename, game_data, runtimedir, data_base_system, runtime_file_dir).build()
 #######################################################################################################################################
 ## 创建RPG Game
-def _create_rpg_game(worldname: str, chaosengineering: Optional[IChaosEngineering], data_base_system: DataBaseSystem) -> RPGGame:
+def create_rpg_game(worldname: str, chaosengineering: Optional[IChaosEngineering], data_base_system: DataBaseSystem) -> RPGGame:
 
     # 依赖注入的特殊系统
     file_system = FileSystem("file_system， Because it involves IO operations, an independent system is more convenient.")
@@ -82,11 +83,10 @@ def _create_rpg_game(worldname: str, chaosengineering: Optional[IChaosEngineerin
                               10000000)
 
     # 创建游戏
-    rpggame = RPGGame(worldname, context)
-    return rpggame
+    return RPGGame(worldname, context)
 #######################################################################################################################################
 ## 创建RPG Game + 读取数据
-def create_rpg_game(gamename: str) -> Optional[RPGGame]:
+def load_then_create_rpg_game(gamename: str) -> Optional[RPGGame]:
     # 通过依赖注入的方式创建数据系统
     data_base_system = DataBaseSystem("test!!! data_base_system，it is a system that stores all the origin data from the settings.")
     game_builder = load_then_build_game_data(gamename, data_base_system)
@@ -96,7 +96,7 @@ def create_rpg_game(gamename: str) -> Optional[RPGGame]:
     
     # 创建游戏 + 专门的混沌工程系统
     chaos_engineering_system = ChaosBuddingWorld("ChaosBuddingWorld")
-    rpggame = _create_rpg_game(gamename, chaos_engineering_system, game_builder.data_base_system)
+    rpggame = create_rpg_game(gamename, chaos_engineering_system, game_builder.data_base_system)
     if rpggame is None:
         logger.error("_create_rpg_game 失败。")
         return None

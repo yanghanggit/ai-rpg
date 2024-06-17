@@ -1,6 +1,5 @@
-from typing import Any, Optional, List, Set, Dict
+from typing import Any, Optional, List, Set, Dict, cast
 from loguru import logger
-import json
 from auxiliary.base_data import PropData, ActorData, StageData, WorldSystemData, ActorDataProxy, PropDataProxy, Attributes
 from auxiliary.data_base_system import DataBaseSystem
 from pathlib import Path
@@ -13,14 +12,12 @@ class GameBuilder:
     def __init__(self, 
                  name: str, 
                  data: Any,
-                 version: str, 
                  runtimepath: str, 
                  data_base_system: DataBaseSystem, 
                  runtime_file_dir: Path) -> None:
         
         self.name = name
         self.runtimepath = runtimepath
-        self.version = version # version必须与生成的world.json文件中的version一致
         self._data: Any = data
         assert self._data is not None
         self.world_system_builder = WorldSystemBuilder("world_systems")
@@ -31,30 +28,17 @@ class GameBuilder:
         self.about_game: str = ""
         self.runtime_dir: Path = runtime_file_dir
 ###############################################################################################################################################
-    # def loadfile(self, world_data_path: str, check_version: bool) -> bool:
-    #     try:
-    #         with open(world_data_path, 'r', encoding="utf-8") as file:
-    #             self._data = json.load(file)
-    #             if self._data is None:
-    #                 logger.error(f"File {world_data_path} is empty.")
-    #                 return False
-    #     except FileNotFoundError:
-    #         logger.exception(f"File {world_data_path} not found.")
-    #         return False
-        
-    #     if check_version:
-    #         game_data_version: str = self._data['version']
-    #         if self.version == game_data_version:
-    #             return True
-    #         else:
-    #             logger.error(f'游戏数据(World.json)与Builder版本不匹配，请检查。')
-    #             return False
-    #     return True
+    @property
+    def version(self) -> str:
+        if self._data is None:
+            logger.error("WorldDataBuilder: data is None.")
+            return ""
+        return cast(str, self._data.get('version', ""))  
 ###############################################################################################################################################
     def build(self) -> 'GameBuilder':
         if self._data is None:
             logger.error("WorldDataBuilder: data is None.")
-            return
+            return self
         # 第一步，创建数据库
         self._create_data_base_system()
         # 第二步，创建配置

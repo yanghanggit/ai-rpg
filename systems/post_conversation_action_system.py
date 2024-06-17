@@ -103,7 +103,7 @@ class PostConversationActionSystem(ReactiveProcessor):
     async def async_post_execute(self) -> None:
         # 并行执行requests
         agent_connect_system = self.context.agent_connect_system
-        if len(agent_connect_system.async_request_tasks) == 0:
+        if len(agent_connect_system._async_request_tasks) == 0:
             return
         logger.debug(f"PostConversationActionSystem async_post_execute begin.")     
         request_result = await agent_connect_system.run_async_requet_tasks("PostConversationActionSystem")

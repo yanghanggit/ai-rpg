@@ -1,4 +1,3 @@
-import os
 from loguru import logger
 from typing import Dict,  List, Union, Optional, Set, cast
 from langchain_core.messages import HumanMessage, AIMessage
@@ -7,6 +6,7 @@ import asyncio
 import time
 from langserve import RemoteRunnable  # type: ignore
 from enum import Enum
+from pathlib import Path
 
 #
 class AgentRequestOption(Enum):
@@ -104,16 +104,19 @@ class LangServeAgent:
 class LangServeAgentSystem:
 
     def __init__(self, name: str) -> None:
-        self.name: str = name
+        self._name: str = name
         self._agents: Dict[str, LangServeAgent] = {}
-        self.rootpath = ""
-        self.async_request_tasks: Dict[str, tuple[str, AgentRequestOption]] = {}
+        self._async_request_tasks: Dict[str, tuple[str, AgentRequestOption]] = {}
+        self._runtime_dir: Optional[Path] = None
 ############################################################################################################
     ### 必须设置根部的执行路行
-    def set_root_path(self, rootpath: str) -> None:
-        if self.rootpath != "":
-            raise Exception(f"[filesystem]已经设置了根路径，不能重复设置。")
-        self.rootpath = rootpath
+    def set_runtime_dir(self, runtime_dir: Path) -> None:
+        #
+        assert runtime_dir is not None
+        self._runtime_dir = runtime_dir
+        self._runtime_dir.mkdir(parents=True, exist_ok=True)
+        assert runtime_dir.exists()
+        assert self._runtime_dir.is_dir(), f"Directory is not a directory: {self._runtime_dir}"
 ############################################################################################################
     def register_agent(self, name: str, url: str) -> None:
         self._agents[name] = LangServeAgent(name, url)
@@ -165,9 +168,11 @@ class LangServeAgentSystem:
             elif isinstance(chat_history[i], AIMessage):
                 break
 ############################################################################################################
-    ### 目标文件
-    def chat_history_dump_path(self, who: str) -> str:
-        return f"{self.rootpath}{who}/chat_history/dump.json"
+    def chat_history_dump_path(self, who: str) -> Path:
+        assert self._runtime_dir is not None
+        dir = self._runtime_dir / f"{who}"
+        dir.mkdir(parents=True, exist_ok=True)
+        return dir / f"chat_history.json"
 ############################################################################################################  
     ### 所有的chathistory
     def dump_chat_history(self) -> None:
@@ -194,20 +199,18 @@ class LangServeAgentSystem:
 ############################################################################################################
     ##强制写入
     def write_chat_history_dump(self, who: str, content: str) -> None:
-        mempath = self.chat_history_dump_path(who)
+        _dump_path_ = self.chat_history_dump_path(who)
         try:
-            if not os.path.exists(mempath):
-                os.makedirs(os.path.dirname(mempath), exist_ok=True)
-            with open(mempath, "w", encoding="utf-8") as f:
-                f.write(content)
+            res = _dump_path_.write_text(content, encoding='utf-8')
+            logger.debug(f"[{who}]写入chat history dump成功。res: {res}")
         except Exception as e:
-            logger.error(f"[{who}]写入chat history dump失败。")
+            logger.error(f"[{who}]写入chat history dump失败。{e}")
             return
 ############################################################################################################
     # 每个Agent需要异步请求调用的时候，需要先添加任务，然后全部异步任务添加完毕后，再调用run_async_requet_tasks
     def add_async_request_task(self, name: str, prompt: str, option: AgentRequestOption = AgentRequestOption.ADD_RESPONSE_AND_PROMPT_TO_CHAT_HISTORY) -> None:
         logger.debug(f"{name}添加异步请求任务:{prompt}")
-        self.async_request_tasks[name] = (prompt, option)
+        self._async_request_tasks[name] = (prompt, option)
 ############################################################################################################
     async def async_agent_requet(self, name: str, prompt: str, option: AgentRequestOption = AgentRequestOption.ADD_RESPONSE_AND_PROMPT_TO_CHAT_HISTORY) -> tuple[str, Optional[str], str]:
         if name in self._agents:
@@ -217,7 +220,7 @@ class LangServeAgentSystem:
         return (name, None, prompt)
 ############################################################################################################
     async def async_gather(self) -> List[tuple[str, Optional[str], str]]:
-        tasks = [self.async_agent_requet(name, tp[0], tp[1]) for name, tp in self.async_request_tasks.items()]
+        tasks = [self.async_agent_requet(name, tp[0], tp[1]) for name, tp in self._async_request_tasks.items()]
         future = await asyncio.gather(*tasks)
         return future
 ############################################################################################################
@@ -236,7 +239,7 @@ class LangServeAgentSystem:
             response_dict[result[0]] = result[1]
             prompt_dict[result[0]] = result[2]
 
-        self.async_request_tasks.clear()
+        self._async_request_tasks.clear()
 
         end_time = time.time()
         execution_time = end_time - start_time

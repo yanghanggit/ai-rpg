@@ -96,7 +96,8 @@ class ExcelEditorGame:
     def parse_props_from_stage(self, stages: List[ExcelEditorStage]) -> List[ExcelDataProp]:
         res = []
         for stage in stages:
-            for prop in stage._stage_prop:
+            for tp in stage._stage_prop:
+                prop = tp[0]
                 if prop not in res:
                     res.append(prop)
         return res

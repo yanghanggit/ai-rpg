@@ -7,6 +7,7 @@ from typing import List, Dict, Any, Optional, cast
 from budding_world.gen_funcs import (proxy_prop)
 from budding_world.excel_data import ExcelDataActor, ExcelDataProp, ExcelDataStage
 import pandas as pd
+from budding_world.utils import parse_prop_string
 
 
 class ExcelEditorStage:
@@ -24,7 +25,7 @@ class ExcelEditorStage:
         self._actor_data_base: Dict[str, ExcelDataActor] = actor_data_base
         self._prop_data_base: Dict[str, ExcelDataProp] = prop_data_base
         self._stage_data_base: Dict[str, ExcelDataStage] = stage_data_base
-        self._stage_prop: List[ExcelDataProp] = []
+        self._stage_prop: List[tuple[ExcelDataProp, int]] = []
         self._actors_in_stage: List[ExcelDataActor] = []
         #分析数据
         self.parse_stage_prop()
@@ -39,12 +40,14 @@ class ExcelEditorStage:
         data: Optional[str] = self._data.get("stage_prop", None)
         if data is None:
             return
-        names = data.split(";")
-        for _n in names:
-            if _n in self._prop_data_base:
-                self._stage_prop.append(self._prop_data_base[_n])
-            else:
-                logger.error(f"Invalid prop: {_n}")
+        _str_ = data.split(";")
+        for _ss in _str_:
+            _tp = parse_prop_string(_ss)
+            _name = _tp[0]
+            _count = _tp[1]
+            if _name not in self._prop_data_base:
+                continue
+            self._stage_prop.append((self._prop_data_base[_name], _count))
 ################################################################################################################################
     def parse_actors_in_stage(self) -> None:
         data: Optional[str] = self._data.get("actors_in_stage", None)
@@ -70,10 +73,13 @@ class ExcelEditorStage:
     def __str__(self) -> str:
        return f"ExcelEditorStage: {self._data['name']}"
 ################################################################################################################################
-    def stage_props_proxy(self, props: List[ExcelDataProp]) -> List[Dict[str, str]]:
+    def stage_props_proxy(self, props: List[tuple[ExcelDataProp, int]]) -> List[Dict[str, str]]:
         ls: List[Dict[str, str]] = []
-        for prop in props:
+        for tp in props:
+            prop = tp[0]
+            count = tp[1]
             _dt = proxy_prop(prop) #代理即可
+            _dt["count"] = str(count)
             ls.append(_dt)
         return ls
 ################################################################################################################################
@@ -116,8 +122,6 @@ class ExcelEditorStage:
         _dt["name"] = data_stage._name
         #
         props = self.stage_props_proxy(self._stage_prop)
-        for _d in props:
-            _d["count"] = "77" #todo
         _dt["props"] = props
         #
         actors = self.stage_actors_proxy(self._actors_in_stage)

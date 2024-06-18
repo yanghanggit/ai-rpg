@@ -4,21 +4,19 @@ from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.player_proxy import (PlayerProxy, 
                                     get_player_proxy, 
-                                    TEST_TERMINAL_NAME, 
                                     PLAYER_INPUT_MODE, 
-                                    determine_player_input_mode, 
-                                    TEST_CLIENT_SHOW_MESSAGE_COUNT)
+                                    determine_player_input_mode)
+from dev_config import TEST_TERMINAL_NAME, TEST_CLIENT_SHOW_MESSAGE_COUNT
 from auxiliary.extended_context import ExtendedContext
 from rpg_game import RPGGame 
 
 class TerminalPlayerInterruptAndWaitSystem(ExecuteProcessor):
     def __init__(self, context: ExtendedContext, rpggame: RPGGame) -> None:
         self.context: ExtendedContext = context
-        self.rpggame = rpggame
+        self.rpggame: RPGGame = rpggame
 ############################################################################################################
     @override
     def execute(self) -> None:
-
         # todo
         # 临时的设置，通过IP地址来判断是不是测试的客户端
         user_ips = self.rpggame.user_ips    

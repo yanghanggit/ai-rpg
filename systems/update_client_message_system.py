@@ -1,6 +1,7 @@
 from entitas import ExecuteProcessor, Entity, Matcher #type: ignore
 from auxiliary.extended_context import ExtendedContext
-from auxiliary.player_proxy import PlayerProxy, get_player_proxy, TEST_TERMINAL_NAME, determine_player_input_mode, PLAYER_INPUT_MODE
+from auxiliary.player_proxy import PlayerProxy, get_player_proxy, determine_player_input_mode, PLAYER_INPUT_MODE
+from dev_config import TEST_TERMINAL_NAME
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.components import MindVoiceActionComponent, WhisperActionComponent, SpeakActionComponent, \
     BroadcastActionComponent, EnviroNarrateActionComponent, \
@@ -14,7 +15,7 @@ from rpg_game import RPGGame
 class UpdateClientMessageSystem(ExecuteProcessor):
     def __init__(self, context: ExtendedContext, rpggame: RPGGame) -> None:
         self.context: ExtendedContext = context
-        self.rpggame = rpggame
+        self.rpggame: RPGGame = rpggame
 ############################################################################################################
     @override
     def execute(self) -> None:

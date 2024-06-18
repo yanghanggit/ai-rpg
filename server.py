@@ -11,13 +11,17 @@ from loguru import logger
 from pydantic import BaseModel
 from auxiliary.multi_players_game import MultiplayersGame
 from auxiliary.player_command import PlayerLogin
-from auxiliary.player_proxy import create_player_proxy, get_player_proxy, remove_player_proxy, TEST_CLIENT_SHOW_MESSAGE_COUNT
+from auxiliary.player_proxy import create_player_proxy, get_player_proxy, remove_player_proxy
 from main_utils import load_then_create_rpg_game
+from dev_config import TEST_CLIENT_SHOW_MESSAGE_COUNT, _DevConfig_
 from rpg_game import RPGGame
 from auxiliary.player_proxy import PlayerProxy
 from systems.check_status_action_system import CheckStatusActionHelper, ActorCheckStatusEvent
 from systems.perception_action_system import PerceptionActionHelper, ActorPerceptionEvent
 from typing import List, Dict
+
+# 直接设置成全局模式
+_DevConfig_.perception_and_check_status_command_is_immeidate = True
 
 class TextInput(BaseModel):
     text_input: str
@@ -130,6 +134,9 @@ async def quitgame(clientip: str) -> List[TupleModel]:
 ############################################################################################################
 # player 可以是立即模式
 async def imme_handle_perception(rpg_game: RPGGame, playerproxy: PlayerProxy) -> None:
+
+    assert _DevConfig_.perception_and_check_status_command_is_immeidate, "PERCEPTION_AND_CHECK_STATUS_COMMAND_IS_IMMEIDATE is False"
+
     context = rpg_game.extendedcontext
     playerentity = context.get_player_entity(playerproxy.name)
     if playerentity is None:
@@ -150,6 +157,9 @@ async def imme_handle_perception(rpg_game: RPGGame, playerproxy: PlayerProxy) ->
 ############################################################################################################
 # player 可以是立即模式
 async def imme_handle_check_status(rpg_game: RPGGame, playerproxy: PlayerProxy) -> None:
+
+    assert _DevConfig_.perception_and_check_status_command_is_immeidate, "PERCEPTION_AND_CHECK_STATUS_COMMAND_IS_IMMEIDATE is False"
+
     context = rpg_game.extendedcontext
     playerentity = context.get_player_entity(playerproxy.name)
     if playerentity is None:

@@ -3,7 +3,8 @@ from entitas import ExecuteProcessor #type: ignore
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from rpg_game import RPGGame 
-from auxiliary.player_proxy import PlayerProxy, get_player_proxy, TEST_TERMINAL_NAME, PLAYER_INPUT_MODE, determine_player_input_mode
+from auxiliary.player_proxy import PlayerProxy, get_player_proxy, PLAYER_INPUT_MODE, determine_player_input_mode
+from dev_config import TEST_TERMINAL_NAME
 from auxiliary.player_command import (
                           PlayerAttack, 
                           PlayerGoTo, 

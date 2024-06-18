@@ -47,6 +47,6 @@ class StageReadyForPlanningSystem(ExecuteProcessor):
         safe_stage_name = self.context.safe_get_entity_name(entity)
         files = filesystem.get_prop_files(safe_stage_name)
         for file in files:
-            res.append(file.prop)
+            res.append(file._prop)
         return res
 ####################################################################################################################################

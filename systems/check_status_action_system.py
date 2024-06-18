@@ -31,10 +31,10 @@ class CheckStatusActionHelper:
         filesystem = self.context.file_system
         files = filesystem.get_prop_files(safename)
         for file in files:
-            if file.prop.is_weapon() or file.prop.is_clothes() or file.prop.is_non_consumable_item():
-                self.props.append(file.prop)
-            elif file.prop.is_special_component():
-                self.special_components.append(file.prop)
+            if file._prop.is_weapon() or file._prop.is_clothes() or file._prop.is_non_consumable_item():
+                self.props.append(file._prop)
+            elif file._prop.is_special_component():
+                self.special_components.append(file._prop)
             
     def check_health(self, entity: Entity) -> None:
         if not entity.has(SimpleRPGAttrComponent):

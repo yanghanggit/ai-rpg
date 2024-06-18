@@ -1,8 +1,6 @@
 from entitas import Entity, Matcher # type: ignore
 from auxiliary.components import StageComponent, ActorComponent
 from auxiliary.extended_context import ExtendedContext
-from langchain_core.messages import (HumanMessage, 
-                                    AIMessage)
 from loguru import logger
 from typing import List, Dict, Set
 import json
@@ -79,7 +77,7 @@ class UpdareArchiveHelper:
             propfiles = file_system.get_prop_files(actor_comp.name)
             prop_and_desc: List[str] = []
             for file in propfiles:
-                prop_and_desc.append(f"{file.name}:{file.prop._description}")
+                prop_and_desc.append(f"{file._name}:{file._prop._description}")
             self._actors_with_props_info[actor_comp.name] = prop_and_desc
 ###############################################################################################################################################
     @property

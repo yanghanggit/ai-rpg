@@ -117,7 +117,7 @@ class SearchActionSystem(ReactiveProcessor):
 ###################################################################################################################
     def check_stage_has_the_prop(self, targetname: str, curstagepropfiles: List[PropFile]) -> bool:
         for propfile in curstagepropfiles:
-            if propfile.name == targetname:
+            if propfile._name == targetname:
                 return True
         return False
 ###################################################################################################################

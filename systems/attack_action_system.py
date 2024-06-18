@@ -178,11 +178,11 @@ class AttackActionSystem(ReactiveProcessor):
         
         prop_files = file_system.get_prop_files(_target_rpg_comp.name)
         for propfile in prop_files:
-            if not propfile.prop.isunique():
-                logger.info(f"the propfile {propfile.name} is not unique, so it will not be taken away.")
+            if not propfile._prop.isunique():
+                logger.info(f"the propfile {propfile._name} is not unique, so it will not be taken away.")
                 continue
             # 交换文件，即交换道具文件即可
-            file_system.exchange_prop_file(_target_rpg_comp.name, _rpg_comp.name, propfile.name)        
+            file_system.exchange_prop_file(_target_rpg_comp.name, _rpg_comp.name, propfile._name)        
 ######################################################################################################################################################
     def final_attack_val(self, entity: Entity) -> int:
         # 最后的攻击力

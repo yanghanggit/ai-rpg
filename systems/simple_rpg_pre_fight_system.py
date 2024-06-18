@@ -59,9 +59,9 @@ class SimpleRPGPreFightSystem(ExecuteProcessor):
         highest_attack = 0
         highest_attack_weapon = None
         for _file in files:
-            if _file.prop.is_weapon() and _file.prop.attack > highest_attack:
-                highest_attack = _file.prop.attack
-                highest_attack_weapon = _file.prop
+            if _file._prop.is_weapon() and _file._prop.attack > highest_attack:
+                highest_attack = _file._prop.attack
+                highest_attack_weapon = _file._prop
 
         return highest_attack_weapon
 ######################################################################################################################################################
@@ -73,9 +73,9 @@ class SimpleRPGPreFightSystem(ExecuteProcessor):
         highest_defense = 0
         highest_defense_armor = None
         for _file in files:
-            if _file.prop.is_clothes() and _file.prop.defense > highest_defense:
-                highest_defense = _file.prop.defense
-                highest_defense_armor = _file.prop
+            if _file._prop.is_clothes() and _file._prop.defense > highest_defense:
+                highest_defense = _file._prop.defense
+                highest_defense_armor = _file._prop
         return highest_defense_armor
 ######################################################################################################################################################
         

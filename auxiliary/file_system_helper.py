@@ -23,7 +23,7 @@ def update_actor_archive_file(file_system: FileSystem, ownersname: str, actornam
     file = file_system.get_actor_archive(ownersname, actorname)
     if file is None:
         return None
-    file.appearance = appearance
+    file._appearance = appearance
     file_system.write_actor_archive(file)
     return file
 ####################################################################################################

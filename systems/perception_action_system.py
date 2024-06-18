@@ -44,7 +44,7 @@ class PerceptionActionHelper:
         stagecomp: StageComponent = stageentity.get(StageComponent)
         prop_files = self.context.file_system.get_prop_files(stagecomp.name)
         for prop in prop_files:
-            res.append(prop.name)
+            res.append(prop._name)
         return res
 ####################################################################################################################################
 ####################################################################################################################################

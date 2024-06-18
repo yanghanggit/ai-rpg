@@ -116,14 +116,14 @@ class UsePropActionSystem(ReactiveProcessor):
 ###################################################################################################################
     def use_prop_to_stage(self, entity: Entity, target_entity: Entity, prop_file: PropFile) -> bool:
         # 目前应该是这些！！
-        assert prop_file.prop.is_weapon() or prop_file.prop.is_non_consumable_item()
+        assert prop_file._prop.is_weapon() or prop_file._prop.is_non_consumable_item()
         assert entity.has(ActorComponent)
         assert target_entity.has(StageComponent)
         
         context = self.context
         targetname = context.safe_get_entity_name(target_entity)
         username = context.safe_get_entity_name(entity)
-        assert context.file_system.get_prop_file(username, prop_file.name) is not None
+        assert context.file_system.get_prop_file(username, prop_file._name) is not None
 
         # 检查条件
         exit_cond_status_prompt = str(__ConstantPromptValue__.NONE_PROMPT)
@@ -134,15 +134,15 @@ class UsePropActionSystem(ReactiveProcessor):
             logger.warning(f"InteractivePropActionSystem: {targetname} 没有退出条件, 下面的不用走")
             notify_stage_director(context, entity, ActorUsePropToStageEvent(username, 
                                                                                      targetname, 
-                                                                                     prop_file.name, 
-                                                                                     use_prop_no_response_prompt(username, prop_file.name, targetname)))
+                                                                                     prop_file._name, 
+                                                                                     use_prop_no_response_prompt(username, prop_file._name, targetname)))
             return True
 
         # 道具的提示词
-        prop_prompt = prop_info_prompt(prop_file.prop)
+        prop_prompt = prop_info_prompt(prop_file._prop)
 
         # 包装的最终提示词
-        final_prompt = use_prop_to_stage_prompt(username, prop_file.name, prop_prompt, exit_cond_status_prompt)
+        final_prompt = use_prop_to_stage_prompt(username, prop_file._name, prop_prompt, exit_cond_status_prompt)
 
         # 准备提交请求
         logger.debug(f"InteractivePropActionSystem, {targetname}: {final_prompt}")
@@ -157,7 +157,7 @@ class UsePropActionSystem(ReactiveProcessor):
             helper = UsePropResponseHelper(plan)
             if helper.tips != "":
                 # 还是要做防守与通知导演
-                notify_stage_director(context, entity, ActorUsePropToStageEvent(username, targetname, prop_file.name, helper.tips))
+                notify_stage_director(context, entity, ActorUsePropToStageEvent(username, targetname, prop_file._name, helper.tips))
             else:
                 logger.warning(f"是空的？怎么回事？")
         else:

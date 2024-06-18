@@ -312,7 +312,6 @@ class RPGGame(BaseGame):
                 # 数组组织
                 prop_proxy = tp[0]
                 count = tp[1]
-                assert count == 99
                 ## 重构
                 _pd = context.data_base_system.get_prop(prop_proxy._name)
                 if _pd is None:
@@ -366,7 +365,7 @@ class RPGGame(BaseGame):
             for tp in stage_data._props:
                 prop_proxy = tp[0]
                 count = tp[1]
-                assert count == 77
+                #assert count == 77
                 # 直接使用文件系统
                 _pd = context.data_base_system.get_prop(prop_proxy._name)
                 if _pd is None:

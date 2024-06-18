@@ -37,4 +37,16 @@ def read_system_prompt_md(path: Path) -> str:
 def read_agentpy_template(path: Path) -> str:
     return read_text_file(path)
 ############################################################################################################
+def parse_prop_string(data: str) -> tuple[str, int]:
+    # 例子: "道具", "道具#999"
+    if "#" not in data:
+        # 默认就是一个
+        return data, 1
+    prop_name, prop_quantity = data.split("#")
+    prop_count = int(prop_quantity)
+    if prop_count < 1:
+        logger.error(f"Invalid prop count: {prop_count}")
+        prop_count = 1
 
+    return prop_name, prop_count
+############################################################################################################

@@ -6,7 +6,7 @@ from loguru import logger
 from typing import List, Dict, Any, Optional, cast
 from budding_world.gen_funcs import (proxy_prop)
 from budding_world.excel_data import ExcelDataActor, ExcelDataProp
-
+from budding_world.utils import parse_prop_string
 
 class ExcelEditorActor:
 
@@ -21,7 +21,7 @@ class ExcelEditorActor:
         self._data: Any = data
         self._actor_data_base: Dict[str, ExcelDataActor] = actor_data_base
         self._prop_data_base: Dict[str, ExcelDataProp] = prop_data_base
-        self._prop_data: List[ExcelDataProp] = []
+        self._prop_data: List[tuple[ExcelDataProp, int]] = []
         # 解析道具
         self.parse_actor_prop()
 #################################################################################################################################
@@ -49,12 +49,15 @@ class ExcelEditorActor:
         data: Optional[str] = self._data.get("actor_prop", None) 
         if data is None:
             return        
-        names = data.split(";")
-        for _n in names:
-            if _n in self._prop_data_base:
-                self._prop_data.append(self._prop_data_base[_n])
-            else:
-                logger.error(f"Invalid file: {_n}")
+        _str_ = data.split(";")
+        for _ss in _str_:
+            _tp = parse_prop_string(_ss)
+            _name = _tp[0]
+            _count = _tp[1]
+            if _name not in self._prop_data_base:
+                logger.error(f"Invalid prop: {_name}")
+                continue
+            self._prop_data.append((self._prop_data_base[_name], _count))
 #################################################################################################################################
     def serialization_core(self, actor_data: Optional[ExcelDataActor]) -> Dict[str, str]:
         if actor_data is None:
@@ -81,18 +84,20 @@ class ExcelEditorActor:
     def proxy(self) -> Dict[str, Any]:
         output: Dict[str, Any] = {}
         #
-        actor_proxy: Dict[str, str] = {}
+        actor_block: Dict[str, str] = {}
         assert self.actor_data is not None
-        actor_proxy['name'] = self.actor_data._name
+        actor_block['name'] = self.actor_data._name
         #
-        props_proxy: List[Dict[str, str]] = []
-        for prop in self._prop_data:
+        props_block: List[Dict[str, str]] = []
+        for tp in self._prop_data:
             #代理即可
+            prop = tp[0]
+            count = tp[1]
             _dt = proxy_prop(prop)
-            _dt["count"] = "99" #todo
-            props_proxy.append(_dt) 
+            _dt["count"] = str(count)
+            props_block.append(_dt) 
         #
-        output["actor"] = actor_proxy
-        output["props"] = props_proxy
+        output["actor"] = actor_block
+        output["props"] = props_block
         return output
 #################################################################################################################################

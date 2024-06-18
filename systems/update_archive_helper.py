@@ -5,6 +5,7 @@ from langchain_core.messages import (HumanMessage,
                                     AIMessage)
 from loguru import logger
 from typing import List, Dict, Set
+import json
 
 
 #### 一次处理过程的封装
@@ -63,9 +64,9 @@ class UpdareArchiveHelper:
         actor_entities: Set[Entity] = context.get_group(Matcher(ActorComponent)).entities
         for _en in actor_entities:
             actor_comp: ActorComponent = _en.get(ActorComponent)
-            chathistory: List[str] = agent_connect_system.create_chat_history_dump(actor_comp.name)
-            pack_all = "\n".join(chathistory)
-            self._agent_chat_history[actor_comp.name] = pack_all
+            chat_history_dump: List[Dict[str, str]] = agent_connect_system.create_chat_history_dump(actor_comp.name)
+            _str = json.dumps(chat_history_dump, ensure_ascii=False)
+            self._agent_chat_history[actor_comp.name] = _str
 ###############################################################################################################################################
     def prepare_actors_with_props_info(self) ->  None:
         self._actors_with_props_info.clear()

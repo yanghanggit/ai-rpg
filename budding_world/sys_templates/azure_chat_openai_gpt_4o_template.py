@@ -1,6 +1,8 @@
 import sys
-sys.path.insert(0, sys.path[0]+"/../")
 import os
+from pathlib import Path
+root_dir = Path(__file__).resolve().parent.parent
+sys.path.append(str(root_dir))
 from typing import List, Union
 from fastapi import FastAPI
 from langchain.agents import AgentExecutor, create_openai_functions_agent
@@ -10,8 +12,8 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import AzureChatOpenAI
 from langserve import add_routes
 from langserve.pydantic_v1 import BaseModel, Field
-from loguru import logger
 from langchain_core.tools import tool
+from typing import Optional
 
 """
 这是一个Azure Chat OpenAI GPT-4o模板
@@ -22,26 +24,23 @@ SYS_PROMPT_MD_PATH: str = f"""<%SYS_PROMPT_MD_PATH>"""
 PORT: int = <%PORT>
 API: str = f"""<%API>"""
 
-def read_md(file_path: str) -> str:
+def read_md(filepath: str) -> Optional[str]:
+    fullpath = os.getcwd() + filepath
+    path = Path(fullpath)
+    if not path.exists():
+        assert False, f"File not found: {fullpath}"
+        return None
     try:
-        file_path = os.getcwd() + file_path
-        with open(file_path, 'r', encoding='utf-8') as file:
-            md_content = file.read()
-            if isinstance(md_content, str):
-                return md_content
-            else:
-                logger.error(f"Failed to read the file:{md_content}")
-                return ""
-    except FileNotFoundError:
-        return f"File not found: {file_path}"
+        content = path.read_text(encoding='utf-8')
+        return content
     except Exception as e:
-        return f"An error occurred: {e}"
-
+        assert False, f"An error occurred: {e}"
+        return None
 
 _rag_ = read_md(RAG_MD_PATH)
+assert _rag_ is not None, f"RAG_MD_PATH:{RAG_MD_PATH} is None"
 _sys_prompt_ = read_md(SYS_PROMPT_MD_PATH)
-print(f"rag:{_rag_}\nsys_prompt:{_sys_prompt_}")
-
+assert _sys_prompt_ is not None, f"SYS_PROMPT_MD_PATH:{SYS_PROMPT_MD_PATH} is None"
 
 prompt = ChatPromptTemplate.from_messages(
     [

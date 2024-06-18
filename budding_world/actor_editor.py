@@ -35,7 +35,7 @@ class ExcelEditorActor:
         logger.debug(f"Stage: {self.data['name']} has attributes: {self.attributes}")
 
     def parse_props_on_actor(self) -> None:
-        data: str = self.data["props_on_actor"]
+        data: str = self.data["actor_prop"]
         if data is None:
             return        
         propfiles = data.split(";")

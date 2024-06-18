@@ -24,10 +24,8 @@ class StageReadyForPlanningSystem(ExecuteProcessor):
             self.handle(entity)
 ####################################################################################################################################
     def handle(self, entity: Entity) -> None:
+        prompt = stage_plan_prompt(self.get_props_in_stage(entity), self.get_actor_names_in_stage(entity), self.context)
         stage_comp: StageComponent = entity.get(StageComponent)
-        props_in_stage: List[PropData] = self.get_props_in_stage(entity)
-        actor_names_in_stage: Set[str] = self.get_actor_names_in_stage(entity)
-        prompt = stage_plan_prompt(props_in_stage, actor_names_in_stage, self.context)
         self.context.agent_connect_system.add_async_request_task(stage_comp.name, prompt)
 ####################################################################################################################################
     # 获取场景内所有的actor的名字，用于场景计划。似乎不需要外观的信息？

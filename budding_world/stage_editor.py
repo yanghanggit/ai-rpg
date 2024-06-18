@@ -36,7 +36,7 @@ class ExcelEditorStage:
         logger.debug(f"Stage: {self.data['name']} has attributes: {self.attributes}")
 ################################################################################################################################
     def parse_props_in_stage(self) -> None:
-        props_in_stage: Optional[str] = self.data["props_in_stage"]
+        props_in_stage: Optional[str] = self.data["stage_prop"]
         if props_in_stage is None:
             return
         list_props_in_stage = props_in_stage.split(";")

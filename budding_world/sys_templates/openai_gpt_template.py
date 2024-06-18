@@ -15,6 +15,10 @@ from langchain_openai.embeddings import OpenAIEmbeddings
 from langchain.tools.retriever import create_retriever_tool
 from loguru import logger
 
+"""
+旧的直接调用OpenAI的模板，暂时没用了
+"""
+
 RAG_MD_PATH: str = f"""<%RAG_MD_PATH>"""
 SYS_PROMPT_MD_PATH: str = f"""<%SYS_PROMPT_MD_PATH>"""
 GPT_MODEL: str = f"""<%GPT_MODEL>"""

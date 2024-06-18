@@ -13,9 +13,12 @@ from langserve.pydantic_v1 import BaseModel, Field
 from loguru import logger
 from langchain_core.tools import tool
 
+"""
+这是一个Azure Chat OpenAI GPT-4o模板
+"""
+
 RAG_MD_PATH: str = f"""<%RAG_MD_PATH>"""
 SYS_PROMPT_MD_PATH: str = f"""<%SYS_PROMPT_MD_PATH>"""
-#GPT_MODEL: str = f"""<%GPT_MODEL>"""
 PORT: int = <%PORT>
 API: str = f"""<%API>"""
 
@@ -37,6 +40,8 @@ def read_md(file_path: str) -> str:
 
 _rag_ = read_md(RAG_MD_PATH)
 _sys_prompt_ = read_md(SYS_PROMPT_MD_PATH)
+print(f"rag:{_rag_}\nsys_prompt:{_sys_prompt_}")
+
 
 prompt = ChatPromptTemplate.from_messages(
     [

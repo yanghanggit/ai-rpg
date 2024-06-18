@@ -3,14 +3,13 @@ from pathlib import Path
 root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 import pandas as pd
-import os
 from loguru import logger
 from pandas.core.frame import DataFrame
 from typing import Dict
 from budding_world.excel_data import ExcelDataActor, ExcelDataStage, ExcelDataProp, ExcelDataWorldSystem
-#from pathlib import Path
-from budding_world.utils import readmd, readpy
-
+from pathlib import Path
+from budding_world.utils import read_system_prompt_md, read_agentpy_template
+from budding_world.configuration import GAME_NAME
 
 ############################################################################################################
 def gen_all_actors(sheet: DataFrame, output: Dict[str, ExcelDataActor]) -> None:
@@ -31,12 +30,17 @@ def gen_all_actors(sheet: DataFrame, output: Dict[str, ExcelDataActor]) -> None:
                                 row["sys_prompt_template"],
                                 row["agentpy_template"],
                                 row["body"])
-        
-
-        excel_actor.gen_sys_prompt(readmd(excel_actor._sys_prompt_template_path))
+        #
+        system_prompt_path = Path(GAME_NAME) / excel_actor._sys_prompt_template_path
+        assert system_prompt_path.exists(), f"File not found: {system_prompt_path}"
+        excel_actor.gen_sys_prompt(read_system_prompt_md(system_prompt_path))
         excel_actor.write_sys_prompt()
-        excel_actor.gen_agentpy(readpy(excel_actor._agentpy_template_path))
+        #
+        agentpy_template_path = Path(GAME_NAME) / excel_actor._agentpy_template_path
+        assert agentpy_template_path.exists(), f"File not found: {agentpy_template_path}"
+        excel_actor.gen_agentpy(read_agentpy_template(agentpy_template_path))
         excel_actor.write_agentpy()
+        #
         output[excel_actor.name] = excel_actor
 ############################################################################################################
 def gen_all_stages(sheet: DataFrame, output: Dict[str, ExcelDataStage]) -> None:
@@ -53,11 +57,17 @@ def gen_all_stages(sheet: DataFrame, output: Dict[str, ExcelDataStage]) -> None:
                                     row["RAG"], 
                                     row["sys_prompt_template"],
                                     row["agentpy_template"])
-
-        excel_stage.gen_sys_prompt(readmd(excel_stage._sys_prompt_template_path))
+        #
+        system_prompt_path = Path(GAME_NAME) / excel_stage._sys_prompt_template_path
+        assert system_prompt_path.exists(), f"File not found: {system_prompt_path}"
+        excel_stage.gen_sys_prompt(read_system_prompt_md(system_prompt_path))
         excel_stage.write_sys_prompt()
-        excel_stage.gen_agentpy(readpy(excel_stage._agentpy_template_path))
+        #
+        agentpy_template_path = Path(GAME_NAME) / excel_stage._agentpy_template_path
+        assert agentpy_template_path.exists(), f"File not found: {agentpy_template_path}"
+        excel_stage.gen_agentpy(read_agentpy_template(agentpy_template_path))
         excel_stage.write_agentpy()    
+        #
         output[excel_stage.name] = excel_stage 
 ############################################################################################################
 def gen_all_world_system(sheet: DataFrame, output: Dict[str, ExcelDataWorldSystem]) -> None:
@@ -73,11 +83,17 @@ def gen_all_world_system(sheet: DataFrame, output: Dict[str, ExcelDataWorldSyste
                                     row["RAG"], 
                                     row["sys_prompt_template"],
                                     row["agentpy_template"])
-
-        excel_world_system.gen_sys_prompt(readmd(excel_world_system._sys_prompt_template_path))
+        #
+        system_prompt_path = Path(GAME_NAME) / excel_world_system._sys_prompt_template_path
+        assert system_prompt_path.exists(), f"File not found: {system_prompt_path}"
+        excel_world_system.gen_sys_prompt(read_system_prompt_md(system_prompt_path))
         excel_world_system.write_sys_prompt()
-        excel_world_system.gen_agentpy(readpy(excel_world_system._agentpy_template_path))
+        #
+        agentpy_template_path = Path(GAME_NAME) / excel_world_system._agentpy_template_path
+        assert agentpy_template_path.exists(), f"File not found: {agentpy_template_path}"
+        excel_world_system.gen_agentpy(read_agentpy_template(agentpy_template_path))
         excel_world_system.write_agentpy()    
+        #
         output[excel_world_system._name] = excel_world_system
 ############################################################################################################
 def gen_all_props(sheet: DataFrame, output: Dict[str, ExcelDataProp]) -> None:

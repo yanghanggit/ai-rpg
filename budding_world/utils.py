@@ -2,7 +2,6 @@ import sys
 from pathlib import Path
 root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
-import os
 from loguru import logger
 from pathlib import Path
 
@@ -19,26 +18,23 @@ def write_text_file(directory: Path, filename: str, text: str) -> int:
         logger.error(f"An error occurred: {e}")
     return -1
 ############################################################################################################
-def read_text_file(full_path: str) -> str:
-    _path_ = Path(full_path)
-    if not _path_.exists():
-        assert False, f"File not found: {full_path}"
+def read_text_file(path: Path) -> str:
+    if not path.exists():
+        assert False, f"File not found: {path}"
         return ""
     try:
-        content = _path_.read_text(encoding="utf-8")
-        assert content is not None, f"File is empty: {full_path}"
-        assert len(content) > 0, f"File is empty: {full_path}"
+        content = path.read_text(encoding="utf-8")
+        assert content is not None, f"File is empty: {path}"
+        assert len(content) > 0, f"File is empty: {path}"
         return content
     except FileNotFoundError:
-        assert False, f"File not found: {full_path}"
+        assert False, f"File not found: {path}"
         return ""
 ############################################################################################################
-def readmd(budding_world_path: str) -> str:
-    cwd = os.getcwd()
-    return read_text_file(cwd + budding_world_path)
+def read_system_prompt_md(path: Path) -> str:
+    return read_text_file(path)
 ############################################################################################################
-def readpy(budding_world_path: str) -> str:
-    cwd = os.getcwd()
-    return read_text_file(cwd + budding_world_path)
+def read_agentpy_template(path: Path) -> str:
+    return read_text_file(path)
 ############################################################################################################
 

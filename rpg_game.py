@@ -177,24 +177,15 @@ class RPGGame(BaseGame):
     def create_game(self, worlddata: GameBuilder) -> 'RPGGame':
         assert worlddata is not None
         assert worlddata._data is not None
-        # if worlddata is None or worlddata._data is None:
-        #     logger.error("没有WorldBuilder数据，请检查World.json配置。")
-        #     return
-        
+
         context = self.extendedcontext
         chaos_engineering_system = context.chaos_engineering_system
         
-        ## 实际运行的路径
-        #runtime_dir_for_world = f"{worlddata.runtimepath}{worlddata.name}/"
-
         # 第0步，yh 目前用于测试!!!!!!!，直接删worlddata.name的文件夹，保证每次都是新的 删除runtime_dir_for_world的文件夹
         if worlddata.runtime_dir.exists():
             #todo
             logger.warning(f"删除文件夹：{worlddata.runtime_dir}, 这是为了测试，后续得改！！！")
             shutil.rmtree(worlddata.runtime_dir)
-
-        # if os.path.exists(runtime_dir_for_world):
-        #     shutil.rmtree(runtime_dir_for_world)
 
         # 混沌系统，准备测试
         chaos_engineering_system.on_pre_create_game(context, worlddata)

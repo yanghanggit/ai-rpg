@@ -6,7 +6,7 @@ import pandas as pd
 from loguru import logger
 from pandas.core.frame import DataFrame
 import json
-from budding_world.configuration import WORLD_EDITOR_DIR, GAME_NAME, OUTPUT_RUNTIMES_DIR
+from budding_world.configuration import EXCEL_EDITOR, GAME_NAME, OUTPUT_RUNTIMES_DIR
 from budding_world.gen_funcs import (gen_all_actors, gen_all_stages, gen_all_props, analyze_actor_relationship, 
                                 analyze_stage_relationship, analyze_relationship_between_actors_and_props, gen_all_world_system)
 from budding_world.excel_data import ExcelDataActor, ExcelDataStage, ExcelDataProp, ExcelDataWorldSystem
@@ -20,18 +20,21 @@ def create_world_editor(sheet_name_as_world_name: str,
                         stage_data_base: Dict[str, ExcelDataStage],
                         world_system_data_base: Dict[str, ExcelDataWorldSystem]) -> ExcelEditorGame:
     ####测试的一个世界编辑
-    data_frame: DataFrame = pd.read_excel(f"{GAME_NAME}/{WORLD_EDITOR_DIR}/{GAME_NAME}.xlsx", sheet_name = sheet_name_as_world_name, engine='openpyxl')
+    data_frame: DataFrame = pd.read_excel(f"{GAME_NAME}/{EXCEL_EDITOR}/{GAME_NAME}.xlsx", sheet_name = sheet_name_as_world_name, engine='openpyxl')
     ###费2遍事，就是试试转换成json好使不，其实可以不用直接dataframe做也行
     _2json: str = data_frame.to_json(orient='records', force_ascii=False)
     _2list: List[Any] = json.loads(_2json)
     return ExcelEditorGame(sheet_name_as_world_name, _2list, actor_data_base, prop_data_base, stage_data_base, world_system_data_base)
 ############################################################################################################
 def main() -> None:
+
+    excel_path = f"{GAME_NAME}/{EXCEL_EDITOR}/{GAME_NAME}.xlsx"
+    logger.info(f"开始读取Excel文件: {excel_path}")
     #
-    actor_sheet: DataFrame = pd.read_excel(f"{GAME_NAME}/{WORLD_EDITOR_DIR}/{GAME_NAME}.xlsx", sheet_name='Actor', engine='openpyxl')
-    stage_sheet: DataFrame = pd.read_excel(f"{GAME_NAME}/{WORLD_EDITOR_DIR}/{GAME_NAME}.xlsx", sheet_name='Stage', engine='openpyxl')
-    prop_sheet: DataFrame = pd.read_excel(f"{GAME_NAME}/{WORLD_EDITOR_DIR}/{GAME_NAME}.xlsx", sheet_name='Prop', engine='openpyxl')
-    world_system_sheet: DataFrame = pd.read_excel(f"{GAME_NAME}/{WORLD_EDITOR_DIR}/{GAME_NAME}.xlsx", sheet_name='WorldSystem', engine='openpyxl')
+    actor_sheet: DataFrame = pd.read_excel(excel_path, sheet_name='Actor', engine='openpyxl')
+    stage_sheet: DataFrame = pd.read_excel(excel_path, sheet_name='Stage', engine='openpyxl')
+    prop_sheet: DataFrame = pd.read_excel(excel_path, sheet_name='Prop', engine='openpyxl')
+    world_system_sheet: DataFrame = pd.read_excel(excel_path, sheet_name='WorldSystem', engine='openpyxl')
 
     #
     actor_data_base: Dict[str, ExcelDataActor] = {}

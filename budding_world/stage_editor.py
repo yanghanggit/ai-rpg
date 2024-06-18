@@ -85,7 +85,7 @@ class ExcelEditorStage:
         ls: List[Dict[str, str]] = []
         for _d in actors:
             _dt: Dict[str, str] = {} 
-            _dt['name'] = _d.name  ## 这里只做引用，所以导出名字即可
+            _dt['name'] = _d._name  ## 这里只做引用，所以导出名字即可
             ls.append(_dt)
         return ls
 ################################################################################################################################

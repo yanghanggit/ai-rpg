@@ -66,16 +66,16 @@ class GameBuilder:
             assert _data is not None
 
             # 寻找角色关系
-            mentioned_actors: Set[str] = set()
-            mentioned_actors_str: str = _data.get("mentioned_actors")
-            if len(mentioned_actors_str) > 0:
-                 mentioned_actors = set(mentioned_actors_str.split(';'))
+            actor_archives: Set[str] = set()
+            _actor_archives_str_: str = _data.get("actor_archives")
+            if len(_actor_archives_str_) > 0:
+                 actor_archives = set(_actor_archives_str_.split(';'))
 
              # 寻找角色与场景的关系关系
-            mentioned_stages: Set[str] = set()
-            mentioned_stages_str: str = _data.get("mentioned_stages")
-            if len(mentioned_stages_str) > 0:
-                 mentioned_stages = set(mentioned_stages_str.split(';'))
+            stage_archives: Set[str] = set()
+            _stage_archives_str_: str = _data.get("stage_archives")
+            if len(_stage_archives_str_) > 0:
+                 stage_archives = set(_stage_archives_str_.split(';'))
 
             # 创建
             _actor = ActorData(_data.get("name"), 
@@ -83,8 +83,8 @@ class GameBuilder:
                           _data.get("url"), 
                           _data.get("kick_off_memory"), 
                           set(), 
-                          mentioned_actors,
-                          mentioned_stages,
+                          actor_archives,
+                          stage_archives,
                           _data.get("appearance"),
                           _data.get("body"),
                           Attributes(_data.get("attributes")))

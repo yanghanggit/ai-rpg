@@ -87,7 +87,7 @@ class ExcelEditorGame:
     def parse_props_from_actor(self, actors: List[ExcelEditorActor]) -> List[ExcelDataProp]:
         res = []
         for _d in actors:
-            for prop in _d.excelprops:
+            for prop in _d._prop_data:
                 if prop not in res:
                     res.append(prop)
         return res

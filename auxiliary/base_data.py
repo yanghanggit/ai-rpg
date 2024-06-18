@@ -131,8 +131,8 @@ class ActorData:
                  url: str, 
                  kick_off_memory: str, 
                  props: Set[PropData], 
-                 mentioned_actors: Set[str], 
-                 mentioned_stages: Set[str],
+                 actor_archives: Set[str], 
+                 stage_archives: Set[str],
                  appearance: str,
                  body: str,
                  attr: Attributes) -> None:
@@ -142,8 +142,8 @@ class ActorData:
         self._url: str = url
         self._kick_off_memory: str = kick_off_memory
         self._props: Set[PropData] = props
-        self._actor_names_mentioned_during_editing_or_for_agent: Set[str] = mentioned_actors 
-        self._stage_names_mentioned_during_editing_or_for_agent: Set[str] = mentioned_stages
+        self._actor_archives: Set[str] = actor_archives 
+        self._stage_archives: Set[str] = stage_archives
         self._attributes: Attributes = attr
         if self._attributes.length() > 0:
             assert self._attributes.length() == 4

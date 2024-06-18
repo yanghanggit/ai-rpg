@@ -320,7 +320,7 @@ class RPGGame(BaseGame):
                 code_name_component_system.register_code_name_component_class(_pd._name, _pd._codename)
 
             # 初步建立关系网（在编辑文本中提到的Actor名字）
-            add_actor_archive_files(file_system, actor_data._name, actor_data._actor_names_mentioned_during_editing_or_for_agent)
+            add_actor_archive_files(file_system, actor_data._name, actor_data._actor_archives)
 
         return res
 ###############################################################################################################################################

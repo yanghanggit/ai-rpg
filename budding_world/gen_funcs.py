@@ -41,7 +41,7 @@ def gen_all_actors(sheet: DataFrame, output: Dict[str, ExcelDataActor]) -> None:
         excel_actor.gen_agentpy(read_agentpy_template(agentpy_template_path))
         excel_actor.write_agentpy()
         #
-        output[excel_actor.name] = excel_actor
+        output[excel_actor._name] = excel_actor
 ############################################################################################################
 def gen_all_stages(sheet: DataFrame, output: Dict[str, ExcelDataStage]) -> None:
     ## 读取Excel文件
@@ -107,32 +107,32 @@ def gen_all_props(sheet: DataFrame, output: Dict[str, ExcelDataProp]) -> None:
 def analyze_actor_relationship(analyze_data: Dict[str, ExcelDataActor]) -> None:
     #先构建
     for _me in analyze_data.values():
-        _me.mentioned_actors.clear()
+        _me._actor_archives.clear()
         for _other in analyze_data.values():
-            _me.add_mentioned_actor(_other.name)
+            _me.add_actor_archive(_other._name)
 
     #再检查
     for _me in analyze_data.values():
         for _other in analyze_data.values():
-            if _me.check_mentioned_actor(_other.name) and not _other.check_mentioned_actor(_me.name):
-                logger.warning(f"{_me.name} mentioned {_other.name}, but {_other.name} did not mention {_me.name}")
+            if _me.check_actor_archive(_other._name) and not _other.check_actor_archive(_me._name):
+                logger.warning(f"{_me._name} mentioned {_other._name}, but {_other._name} did not mention {_me._name}")
 ############################################################################################################
 def analyze_stage_relationship(analyze_stage_data: Dict[str, ExcelDataStage], analyze_actor_data: Dict[str, ExcelDataActor]) -> None:
     for stagename, stagedata in analyze_stage_data.items():
         for actor in analyze_actor_data.values():
-            actor.mentioned_stages.clear()
-            actor.add_mentioned_stage(stagename)
+            actor._stage_archives.clear()
+            actor.add_stage_archive(stagename)
 ################################################################################################################
 def analyze_relationship_between_actors_and_props(analyze_props_data: Dict[str, ExcelDataProp], analyze_actor_data: Dict[str, ExcelDataActor]) -> None:
     #先构建
     for _me in analyze_actor_data.values():
-        _me.mentioned_props.clear()
+        _me._prop_archives.clear()
         for _others_prop in analyze_props_data.values():
-            _me.add_mentioned_prop(_others_prop.name)
+            _me.add_prop_archive(_others_prop.name)
     #再检查
     for _me in analyze_actor_data.values():
-        if len(_me.mentioned_props) > 0:
-            logger.warning(f"{_me.name}: {_me.mentioned_props}")
+        if len(_me._prop_archives) > 0:
+            logger.warning(f"{_me._name}: {_me._prop_archives}")
 ################################################################################################################
 def serialization_prop(prop: ExcelDataProp) -> Dict[str, str]:
     output: Dict[str, str] = {}

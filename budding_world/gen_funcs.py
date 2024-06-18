@@ -68,7 +68,7 @@ def gen_all_stages(sheet: DataFrame, output: Dict[str, ExcelDataStage]) -> None:
         excel_stage.gen_agentpy(read_agentpy_template(agentpy_template_path))
         excel_stage.write_agentpy()    
         #
-        output[excel_stage.name] = excel_stage 
+        output[excel_stage._name] = excel_stage 
 ############################################################################################################
 def gen_all_world_system(sheet: DataFrame, output: Dict[str, ExcelDataWorldSystem]) -> None:
     ## 读取Excel文件
@@ -102,7 +102,7 @@ def gen_all_props(sheet: DataFrame, output: Dict[str, ExcelDataProp]) -> None:
         if pd.isna(row["name"]):
             continue
         excelprop = ExcelDataProp(row["name"], row["codename"], row["isunique"], row["description"], row["RAG"], row["type"], str(row["attributes"]))
-        output[excelprop.name] = excelprop
+        output[excelprop._name] = excelprop
 ############################################################################################################
 def analyze_actor_relationship(analyze_data: Dict[str, ExcelDataActor]) -> None:
     #先构建
@@ -128,7 +128,7 @@ def analyze_relationship_between_actors_and_props(analyze_props_data: Dict[str, 
     for _me in analyze_actor_data.values():
         _me._prop_archives.clear()
         for _others_prop in analyze_props_data.values():
-            _me.add_prop_archive(_others_prop.name)
+            _me.add_prop_archive(_others_prop._name)
     #再检查
     for _me in analyze_actor_data.values():
         if len(_me._prop_archives) > 0:
@@ -136,16 +136,16 @@ def analyze_relationship_between_actors_and_props(analyze_props_data: Dict[str, 
 ################################################################################################################
 def serialization_prop(prop: ExcelDataProp) -> Dict[str, str]:
     output: Dict[str, str] = {}
-    output['name'] = prop.name
-    output['codename'] = prop.codename
-    output['description'] = prop.description
-    output['isunique'] = prop.isunique
-    output['type'] = prop.type
-    output['attributes'] = prop.raw_attributes
+    output['name'] = prop._name
+    output['codename'] = prop._codename
+    output['description'] = prop._description
+    output['isunique'] = prop._isunique
+    output['type'] = prop._type
+    output['attributes'] = prop._attributes
     return output       
 ################################################################################################################
 def proxy_prop(prop: ExcelDataProp) -> Dict[str, str]:
     output: Dict[str, str] = {}
-    output['name'] = prop.name
+    output['name'] = prop._name
     return output       
 ################################################################################################################

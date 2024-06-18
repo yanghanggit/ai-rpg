@@ -82,7 +82,6 @@ class GameBuilder:
                           _data.get("codename"), 
                           _data.get("url"), 
                           _data.get("kick_off_memory"), 
-                          set(), 
                           actor_archives,
                           stage_archives,
                           _data.get("appearance"),
@@ -118,8 +117,6 @@ class GameBuilder:
                             core_data.get("description"), 
                             core_data.get("url"), 
                             core_data.get("kick_off_memory"), 
-                            set(), 
-                            set(),
                             core_data.get('stage_entry_status'),
                             core_data.get('stage_entry_actor_status'),
                             core_data.get('stage_entry_actor_props'),
@@ -166,86 +163,90 @@ class GameBuilder:
         self._create_prop_data_base(database.get('props', None))
         self._create_world_system_data_base(database.get('world_systems', None))
 ########################################################################################################################
+########################################################################################################################
+########################################################################################################################
 class StageBuilder:
+
     def __init__(self) -> None:
-        self.datalist: Optional[Dict[str, Any]] = None
-        self.stages: List[StageData] = []
-
+        self._data_block: Optional[Dict[str, Any]] = None
+        self._stages: List[StageData] = []
+########################################################################################################################
     def __str__(self) -> str:
-        return f"StageBuilder: {self.datalist}"      
-
-    def props_proxy_in_stage(self, props_data: List[Any]) -> Set[PropData]:
-        res: Set[PropData] = set()
-        for obj in props_data:
+        return f"StageBuilder: {self._data_block}"      
+########################################################################################################################
+    def props_proxy_in_stage(self, data: List[Any]) -> List[tuple[PropData, int]]:
+        res: List[tuple[PropData, int]] = []
+        for obj in data:
             prop = PropDataProxy(obj.get("name"))
-            res.add(prop)
+            count = int(obj.get("count"))
+            res.append((prop, count))
         return res
-    #
+########################################################################################################################
     def actors_proxy_in_stage(self, _data: List[Any]) -> Set[ActorData]:
         res: Set[ActorData] = set()
         for obj in _data:
             _d = ActorDataProxy(obj.get("name"))
             res.add(_d)
         return res
-    #
+########################################################################################################################
     def build(self, json_data: Dict[str, Any], data_base_system: DataBaseSystem) -> None:
-        self.datalist = json_data.get("stages")
-        if self.datalist is None:
+        self._data_block = json_data.get("stages")
+        if self._data_block is None:
             logger.error("StageBuilder: stages data is None.")
             return
 
-        for data in self.datalist:
-            stagedata = data.get("stage")    
-            assert stagedata is not None    
+        for _bk in self._data_block:
+            _da = _bk.get("stage")    
+            assert _da is not None    
             #
-            stage = data_base_system.get_stage(stagedata.get('name'))
-            assert stage is not None
+            stage_data = data_base_system.get_stage(_da.get('name'))
+            assert stage_data is not None
             #连接
-            propsinstage: Set[PropData] = self.props_proxy_in_stage(stagedata.get("props"))
-            stage._props = propsinstage
+            stage_data._props = self.props_proxy_in_stage(_da.get("props"))
             #连接
-            actors_in_stage: Set[ActorData] = self.actors_proxy_in_stage(stagedata.get("actors"))
-            stage._actors = actors_in_stage
-            #
-            self.stages.append(stage)
+            actors_in_stage: Set[ActorData] = self.actors_proxy_in_stage(_da.get("actors"))
+            stage_data._actors = actors_in_stage
+            #添加场景
+            self._stages.append(stage_data)
 ########################################################################################################################
 ########################################################################################################################
 ########################################################################################################################
 class ActorBuilder:
 
-    def __init__(self, dataname: str) -> None:
-        self.datalist: Optional[Dict[str, Any]] = None
-        self.actors: List[ActorData] = []
-        self.dataname = dataname
-
+    def __init__(self, root_name: str) -> None:
+        self._root_name = root_name
+        self._data_block: Optional[Dict[str, Any]] = None
+        self._actors: List[ActorData] = []
+########################################################################################################################
     def __str__(self) -> str:
-        return f"ActorBuilder: {self.datalist}"       
-
-    #
+        return f"ActorBuilder: {self._data_block}"       
+########################################################################################################################
     def build(self, json_data: Dict[str, Any], data_base_system: DataBaseSystem) -> None:
-        self.datalist = json_data.get(self.dataname)
-        if self.datalist is None:
-            logger.error(f"ActorBuilder: {self.dataname} data is None.")
+        self._data_block = json_data.get(self._root_name)
+        if self._data_block is None:
+            logger.error(f"ActorBuilder: {self._root_name} data is None.")
             return
         
-        for datablock in self.datalist:
-            _props: Set[PropData] = set()
-            propdata = datablock.get("props")
-            for propdata in propdata:
-                prop = PropDataProxy(propdata.get("name"))
-                _props.add(prop)
-
+        for _bk in self._data_block:
             # Actor核心数据
-            _core_ = datablock.get("actor")
-            actor_name = _core_.get("name")
+            assert _bk.get("actor") is not None
+            assert _bk.get("props") is not None
+            actor_name = _bk.get("actor").get("name")
             actor_data = data_base_system.get_actor(actor_name)
             if actor_data is None:
+                assert actor_data is not None
                 logger.error(f"ActorBuilder: {actor_name} not found in database.")
                 continue
-            # 连接
-            actor_data._props = _props
-            #
-            self.actors.append(actor_data)
+
+            # 最终添加到列表
+            self._actors.append(actor_data)
+
+            # 分析道具
+            actor_data._props.clear()
+            for _pd in _bk.get("props"):
+                proxy: PropData = PropDataProxy(_pd.get("name"))
+                count: int = int(_pd.get("count"))
+                actor_data._props.append((proxy, count)) # 连接道具         
 ########################################################################################################################
 ########################################################################################################################
 ########################################################################################################################
@@ -275,3 +276,6 @@ class WorldSystemBuilder:
                 continue
      
             self._world_system_datas.append(world_system_data)
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################

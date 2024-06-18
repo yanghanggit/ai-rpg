@@ -29,7 +29,7 @@ class ActorReadyForPlanningSystem(ExecuteProcessor):
         stage_name = tp[0]
         stage_enviro_narrate = tp[1]
         if stage_name == "" or stage_enviro_narrate == "":
-            logger.error("stagename or stage_enviro_narrate is None") # 放弃这个actor的计划
+            logger.error("stagename or stage_enviro_narrate is None, 有可能是是没有agent connect") # 放弃这个actor的计划
             return
         
         # 必须要有一个stage的环境描述，否则无法做计划。

@@ -25,7 +25,7 @@ class Attributes:
 
     def get_value(self, index: int) -> int:
         if index >= len(self._attributes):
-            logger.error(f"index: {index} is out of range.")
+            #logger.error(f"index: {index} is out of range.")
             return 0
         return self._attributes[index]
     
@@ -130,7 +130,6 @@ class ActorData:
                  codename: str, 
                  url: str, 
                  kick_off_memory: str, 
-                 props: Set[PropData], 
                  actor_archives: Set[str], 
                  stage_archives: Set[str],
                  appearance: str,
@@ -141,7 +140,7 @@ class ActorData:
         self._codename: str = codename
         self._url: str = url
         self._kick_off_memory: str = kick_off_memory
-        self._props: Set[PropData] = props
+        self._props: List[tuple[PropData, int]] = []
         self._actor_archives: Set[str] = actor_archives 
         self._stage_archives: Set[str] = stage_archives
         self._attributes: Attributes = attr
@@ -167,7 +166,7 @@ class ActorData:
         return self._attributes.get_value(3)
 
 def ActorDataProxy(name: str) -> ActorData:
-    return ActorData(name, "", "", "", set(), set(), set(), "", "", Attributes(""))
+    return ActorData(name, "", "", "", set(), set(), "", "", Attributes(""))
 ########################################################################################################################
 ########################################################################################################################
 ########################################################################################################################
@@ -178,8 +177,6 @@ class StageData:
                  description: str, 
                  url: str, 
                  kick_off_memory: str, 
-                 actors: Set[ActorData], 
-                 props: Set[PropData],
                  stage_entry_status: str,
                  stage_entry_actor_status: str,
                  stage_entry_actor_props: str,
@@ -194,8 +191,8 @@ class StageData:
         self._description: str = description
         self._url: str = url
         self._kick_off_memory: str = kick_off_memory
-        self._actors: Set[ActorData] = actors
-        self._props: Set[PropData] = props
+        self._actors: Set[ActorData] = set()
+        self._props: List[tuple[PropData, int]] = []
         self._exit_of_portal: Set[StageData] = set()
         self._attributes: Attributes = attr
         if self._attributes.length() > 0:
@@ -231,7 +228,7 @@ class StageData:
         return self._attributes.get_value(3)
 
 def StageDataProxy(name: str) -> StageData:
-    return StageData(name, "", "", "", "", set(), set(), "", "", "", "", "", "", Attributes(""))
+    return StageData(name, "", "", "", "", "", "", "", "", "", "", Attributes(""))
 ########################################################################################################################
 ########################################################################################################################
 ########################################################################################################################

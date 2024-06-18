@@ -48,7 +48,8 @@ class FileSystem:
 
         try:
             res = prop_file_path.write_text(content, encoding="utf-8")
-            logger.info(f"写入文件成功: {prop_file_path}, res = {res}")
+            assert res > 0
+            #logger.info(f"写入文件成功: {prop_file_path}, res = {res}")
         except Exception as e:
             logger.error(f"写入文件失败: {prop_file_path}, e = {e}")
             return
@@ -126,7 +127,8 @@ class FileSystem:
 
         try:
             res = archive_file_path.write_text(content, encoding="utf-8")
-            logger.info(f"写入文件成功: {archive_file_path}, res = {res}")
+            assert res > 0
+            #logger.info(f"写入文件成功: {archive_file_path}, res = {res}")
         except Exception as e:
             logger.error(f"写入文件失败: {archive_file_path}, e = {e}")
             return
@@ -158,7 +160,8 @@ class FileSystem:
 
         try:
             res = archive_file_path.write_text(content, encoding="utf-8")
-            logger.info(f"写入文件成功: {archive_file_path}, res = {res}")
+            assert res > 0
+            #logger.info(f"写入文件成功: {archive_file_path}, res = {res}")
         except Exception as e:
             logger.error(f"写入文件失败: {archive_file_path}, e = {e}")
             return

@@ -88,7 +88,9 @@ class ExcelEditorActor:
         props_proxy: List[Dict[str, str]] = []
         for prop in self._prop_data:
             #代理即可
-            props_proxy.append(proxy_prop(prop)) 
+            _dt = proxy_prop(prop)
+            _dt["count"] = "99" #todo
+            props_proxy.append(_dt) 
         #
         output["actor"] = actor_proxy
         output["props"] = props_proxy

@@ -11,67 +11,64 @@ import pandas as pd
 
 class ExcelEditorStage:
 
-    def __init__(self, data: Any, actor_data_base: Dict[str, ExcelDataActor], prop_data_base: Dict[str, ExcelDataProp], stage_data_base: Dict[str, ExcelDataStage]) -> None:
-        self.data: Any = data
-        self.actor_data_base = actor_data_base
-        self.prop_data_base = prop_data_base
-        self.stage_data_base = stage_data_base
-        self.props_in_stage: List[ExcelDataProp] = []
-        self.actors_in_stage: List[ExcelDataActor] = []
-        self.kick_off_memory: str = ""
-        self.exit_of_portal: str = ""
-
-        if self.data["type"] not in ["Stage"]:
-            logger.error(f"Invalid Stage type: {self.data['type']}")
-            return
-
+    def __init__(self, 
+                 data: Any, 
+                 actor_data_base: Dict[str, ExcelDataActor], 
+                 prop_data_base: Dict[str, ExcelDataProp], 
+                 stage_data_base: Dict[str, ExcelDataStage]) -> None:
+        
+        if data["type"] not in ["Stage"]:
+            assert False, f"Invalid Stage type: {data['type']}"
+        #
+        self._data: Any = data
+        self._actor_data_base: Dict[str, ExcelDataActor] = actor_data_base
+        self._prop_data_base: Dict[str, ExcelDataProp] = prop_data_base
+        self._stage_data_base: Dict[str, ExcelDataStage] = stage_data_base
+        self._stage_prop: List[ExcelDataProp] = []
+        self._actors_in_stage: List[ExcelDataActor] = []
         #分析数据
-        self.parse_props_in_stage()
+        self.parse_stage_prop()
         self.parse_actors_in_stage()
-        self.parse_kick_off_memory()
-        self.parse_exit_of_portal()
-
-        ### 这里可以添加属性？？？
-        self.attributes: str = data.get("attributes", "")
-        logger.debug(f"Stage: {self.data['name']} has attributes: {self.attributes}")
+#################################################################################################################################
+    @property
+    def attributes(self) -> str:
+        assert self._data is not None
+        return cast(str, self._data.get("attributes", ""))
 ################################################################################################################################
-    def parse_props_in_stage(self) -> None:
-        props_in_stage: Optional[str] = self.data["stage_prop"]
-        if props_in_stage is None:
+    def parse_stage_prop(self) -> None:
+        data: Optional[str] = self._data.get("stage_prop", None)
+        if data is None:
             return
-        list_props_in_stage = props_in_stage.split(";")
-        for prop in list_props_in_stage:
-            if prop in self.prop_data_base:
-                self.props_in_stage.append(self.prop_data_base[prop])
+        names = data.split(";")
+        for _n in names:
+            if _n in self._prop_data_base:
+                self._stage_prop.append(self._prop_data_base[_n])
             else:
-                logger.error(f"Invalid prop: {prop}")
+                logger.error(f"Invalid prop: {_n}")
 ################################################################################################################################
     def parse_actors_in_stage(self) -> None:
-        actors_in_stage: Optional[str] = self.data["actors_in_stage"]
-        if actors_in_stage is None:
+        data: Optional[str] = self._data.get("actors_in_stage", None)
+        if data is None:
             return
-        list_actors_in_stage = actors_in_stage.split(";")
-        for actor in list_actors_in_stage:
-            if actor in self.actor_data_base:
-                self.actors_in_stage.append(self.actor_data_base[actor])
+        names = data.split(";")
+        for _n in names:
+            if _n in self._actor_data_base:
+                self._actors_in_stage.append(self._actor_data_base[_n])
             else:
-                logger.error(f"Invalid actor: {actor}")
+                logger.error(f"Invalid actor: {_n}")
 ################################################################################################################################
-    def parse_kick_off_memory(self) -> None:
-        kick_off_memory = self.data["kick_off_memory"]
-        if kick_off_memory is None:
-            return
-        self.kick_off_memory = str(kick_off_memory)
+    @property
+    def kick_off_memory(self) -> str:
+        assert self._data is not None
+        return cast(str, self._data.get("kick_off_memory", ""))
 ################################################################################################################################
-    def parse_exit_of_portal(self) -> None:
-        attrname = "exit_of_portal"
-        if attrname in self.data and self.data[attrname] is not None:
-           self.exit_of_portal = str(self.data[attrname])
+    @property
+    def exit_of_portal(self) -> str:
+        assert self._data is not None
+        return cast(str, self._data.get("exit_of_portal", ""))
 ################################################################################################################################
     def __str__(self) -> str:
-        propsstr = ', '.join(str(prop) for prop in self.props_in_stage)
-        actor_str = ', '.join(str(actor) for actor in self.actors_in_stage)
-        return "ExcelEditorStage({}, {}, props_in_stage: {}, actors_in_stage: {})".format(self.data["name"], self.data["type"], propsstr, actor_str)
+       return f"ExcelEditorStage: {self._data['name']}"
 ################################################################################################################################
     def stage_props_proxy(self, props: List[ExcelDataProp]) -> List[Dict[str, str]]:
         ls: List[Dict[str, str]] = []
@@ -90,13 +87,13 @@ class ExcelEditorStage:
         return ls
 ################################################################################################################################
     def serialization(self) -> Dict[str, Any]:
-        data_stage: ExcelDataStage = self.stage_data_base[self.data["name"]]
+        data_stage: ExcelDataStage = self._stage_data_base[self._data["name"]]
 
         _dt: Dict[str, Any] = {}
-        _dt["name"] = data_stage.name
-        _dt["codename"] = data_stage.codename
-        _dt["description"] = data_stage.description
-        _dt["url"] = data_stage.localhost_api()
+        _dt["name"] = data_stage._name
+        _dt["codename"] = data_stage._codename
+        _dt["description"] = data_stage._description
+        _dt["url"] = data_stage.localhost()
         _dt["kick_off_memory"] = self.kick_off_memory
         _dt["exit_of_portal"] = self.exit_of_portal
         _dt['attributes'] = self.attributes 
@@ -114,21 +111,26 @@ class ExcelEditorStage:
         return output_dict
 ################################################################################################################################
     def proxy(self) -> Dict[str, Any]:
-        data_stage: ExcelDataStage = self.stage_data_base[self.data["name"]]
+        data_stage: ExcelDataStage = self._stage_data_base[self._data["name"]]
         _dt: Dict[str, Any] = {}
-        _dt["name"] = data_stage.name
-        props = self.stage_props_proxy(self.props_in_stage)
-        actors = self.stage_actors_proxy(self.actors_in_stage)
+        _dt["name"] = data_stage._name
+        #
+        props = self.stage_props_proxy(self._stage_prop)
+        for _d in props:
+            _d["count"] = "77" #todo
         _dt["props"] = props
+        #
+        actors = self.stage_actors_proxy(self._actors_in_stage)
         _dt["actors"] = actors
-        output_dict: Dict[str, Any] = {}
-        output_dict["stage"] = _dt
-        return output_dict
+        #
+        output: Dict[str, Any] = {}
+        output["stage"] = _dt
+        return output
 ################################################################################################################################
     def safe_get_string(self, key: str) -> str:
-        if pd.isna(self.data[key]):
+        if pd.isna(self._data[key]):
             return ""
-        return cast(str, self.data[key]) 
+        return cast(str, self._data[key]) 
 ################################################################################################################################
     @property
     def stage_entry_status(self) -> str:
@@ -153,4 +155,4 @@ class ExcelEditorStage:
     @property
     def stage_exit_actor_props(self) -> str:
         return self.safe_get_string("stage_exit_actor_props")
-    ################################################################################################################################
+################################################################################################################################

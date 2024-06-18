@@ -52,7 +52,7 @@ class KickOffMemorySystem:
         file_path = self.md_file_path(who)
         try:
             res = file_path.write_text(content, encoding="utf-8")
-            logger.info(f"写入文件成功: {file_path}, res = {res}")
+            #logger.info(f"写入文件成功: {file_path}, res = {res}")
         except Exception as e:
             logger.error(f"写入文件失败: {file_path}, e = {e}")
             return

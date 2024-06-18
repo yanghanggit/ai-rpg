@@ -28,7 +28,7 @@ class ExcelEditorWorldSystem:
         _dt: Dict[str, str] = {}
         _dt['name'] = target._name
         _dt['codename'] = target._codename
-        _dt['url'] = target.localhost_api()
+        _dt['url'] = target.localhost()
         return _dt
 ######################################################################################################################
     # 核心函数！！！

@@ -285,11 +285,11 @@ class RPGGame(BaseGame):
         code_name_component_system = context.code_name_component_system
         res: List[Entity] = []
 
-        if actor_builder.datalist is None:
+        if actor_builder._data_block is None:
             raise ValueError("没有ActorBuilder数据，请检查World.json配置。")
             return res
         
-        for actor_data in actor_builder.actors:
+        for actor_data in actor_builder._actors:
             _entity = context.create_entity()
             res.append(_entity)
 
@@ -308,15 +308,19 @@ class RPGGame(BaseGame):
             code_name_component_system.register_code_name_component_class(actor_data._name, actor_data._codename)
             
             # 添加道具
-            for prop_proxy in actor_data._props:
+            for tp in actor_data._props:
+                # 数组组织
+                prop_proxy = tp[0]
+                count = tp[1]
+                assert count == 99
                 ## 重构
                 _pd = context.data_base_system.get_prop(prop_proxy._name)
                 if _pd is None:
                     logger.error(f"没有从数据库找到道具：{prop_proxy._name}！！！！！！！！！")
                     continue
             
-                create_prop_file = PropFile(prop_proxy._name, actor_data._name, _pd, 1)
-                file_system.add_prop_file(create_prop_file)
+                prop_file = PropFile(prop_proxy._name, actor_data._name, _pd, count)
+                file_system.add_prop_file(prop_file)
                 code_name_component_system.register_code_name_component_class(_pd._name, _pd._codename)
 
             # 初步建立关系网（在编辑文本中提到的Actor名字）
@@ -333,12 +337,12 @@ class RPGGame(BaseGame):
         code_name_component_system = context.code_name_component_system
         res: List[Entity] = []
 
-        if stagebuilder.datalist is None:
+        if stagebuilder._data_block is None:
             raise ValueError("没有StageBuilder数据，请检查World.json配置。")
             return res
         
         # 创建stage相关配置
-        for stage_data in stagebuilder.stages:
+        for stage_data in stagebuilder._stages:
             #logger.debug(f"创建Stage：{builddata.name}")
             stageentity = context.create_entity()
 
@@ -359,13 +363,16 @@ class RPGGame(BaseGame):
                 _entity.replace(ActorComponent, _name, stage_data._name)
                 
             # 场景内添加道具
-            for prop_proxy_in_stage in stage_data._props:
+            for tp in stage_data._props:
+                prop_proxy = tp[0]
+                count = tp[1]
+                assert count == 77
                 # 直接使用文件系统
-                _pd = context.data_base_system.get_prop(prop_proxy_in_stage._name)
+                _pd = context.data_base_system.get_prop(prop_proxy._name)
                 if _pd is None:
-                    logger.error(f"没有从数据库找到道具：{prop_proxy_in_stage._name}！！！！！！！！！")
+                    logger.error(f"没有从数据库找到道具：{prop_proxy._name}！！！！！！！！！")
                     continue
-                prop_file = PropFile(prop_proxy_in_stage._name, stage_data._name, _pd, 1)
+                prop_file = PropFile(prop_proxy._name, stage_data._name, _pd, count)
                 file_system.add_prop_file(prop_file)
                 code_name_component_system.register_code_name_component_class(_pd._name, _pd._codename)
 

@@ -136,3 +136,9 @@ pm2 start budding_world/gen_agent/coffin_of_the_silent_one_agent.py budding_worl
 
 /checkstatus
 ```
+
+
+### Windows平台运行问题
+
+- agent的server代码报错：UnicodeEncodeError: 'gbk' codec can't encode character '\u26a0' in position 0: illegal multibyte sequence 
+    - 在Windows的环境变量中加入 `PYTHONIOENCODING=utf-8`

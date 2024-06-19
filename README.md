@@ -19,7 +19,7 @@ pip install langchain langchain_core langserve fastapi langchain_openai sse_star
 ## 严格模式检查
 
 - mypy --strict terminal_run.py
-- mypy --strict server.py
+- mypy --strict server.py. 必须开启ipv6
 - mypy --strict budding_world/gen_game.py
 
 ### 说明

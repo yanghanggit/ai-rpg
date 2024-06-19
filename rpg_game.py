@@ -16,6 +16,7 @@ from auxiliary.components import (
     StageEntryCondStatusComponent,
     StageEntryCondCheckActorStatusComponent,
     StageEntryCondCheckActorPropsComponent,
+    BodyComponent
     )
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.game_builders import GameBuilder, StageBuilder, ActorBuilder, WorldSystemBuilder
@@ -62,8 +63,12 @@ from systems.simple_rpg_pre_fight_system import SimpleRPGPreFightSystem
 from systems.compress_chat_history_system import CompressChatHistorySystem
 from systems.post_conversation_action_system import PostConversationActionSystem
 from auxiliary.base_data import StageData
-from systems.actor_update_appearance_system import ActorUpdateAppearanceSystem
+from systems.update_appearance_system import UpdateAppearanceSystem
 
+
+
+
+UPDATE_APPEARANCE_SYSTEM_NAME = "角色外观生成器"
 
 
 ## RPG 的测试类游戏
@@ -93,8 +98,8 @@ class RPGGame(BaseGame):
         
         #初始化系统########################
         processors.add(AgentsConnectSystem(context)) ### 连接所有agent
-        processors.add(AgentsKickOffSystem(context)) ### 第一次读状态, initmemory
-        processors.add(ActorUpdateAppearanceSystem(context)) ### 更新外观
+        #processors.add(AgentsKickOffSystem(context)) ### 第一次读状态, initmemory
+        processors.add(UpdateAppearanceSystem(context, UPDATE_APPEARANCE_SYSTEM_NAME)) ### 更新外观
         #########################################
 
        
@@ -160,10 +165,10 @@ class RPGGame(BaseGame):
 
         #规划逻辑########################
         processors.add(PrePlanningSystem(context)) ######## 在所有规划之前
-        processors.add(StageReadyForPlanningSystem(context))
-        processors.add(StagePlanningSystem(context))
-        processors.add(ActorReadyForPlanningSystem(context))
-        processors.add(ActorPlanningSystem(context))
+        # processors.add(StageReadyForPlanningSystem(context))
+        # processors.add(StagePlanningSystem(context))
+        # processors.add(ActorReadyForPlanningSystem(context))
+        # processors.add(ActorPlanningSystem(context))
         processors.add(PostPlanningSystem(context)) ####### 在所有规划之后
 
         ## 第一次抓可以被player看到的信息
@@ -301,6 +306,7 @@ class RPGGame(BaseGame):
                         actor_data.attack, 
                         actor_data.defense)
             _entity.add(AppearanceComponent, actor_data._appearance)
+            _entity.add(BodyComponent, actor_data._body)
 
             #重构
             agent_connect_system.register_agent(actor_data._name, actor_data._url)

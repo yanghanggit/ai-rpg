@@ -15,6 +15,8 @@ DestroyComponent = namedtuple('DestroyComponent', 'name')
 AutoPlanningComponent = namedtuple('AutoPlanningComponent', 'name')
 # 外形信息
 AppearanceComponent = namedtuple('AppearanceComponent', 'appearance')
+# 外形信息2
+BodyComponent = namedtuple('BodyComponent', 'body')
 # 场景离开条件
 StageExitCondStatusComponent = namedtuple('StageExitCondStatusComponent', 'condition')
 StageExitCondCheckActorStatusComponent = namedtuple('StageExitCondCheckActorStatusComponent', 'condition')

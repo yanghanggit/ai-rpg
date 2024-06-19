@@ -51,16 +51,16 @@ class ActorPlanningSystem(ExecuteProcessor):
         for action in actor_planning.actions:
             self.add_action_component(entity, action)
 ####################################################################################################
-    def requestplanning(self, actor_name: str, prompt: str) -> Optional[str]:
-        #
-        context = self.context
-        chaos_engineering_system = context.chaos_engineering_system
-        response = chaos_engineering_system.hack_actor_planning(context, actor_name, prompt)
-        # 可以先走混沌工程系统
-        if response is None:
-           response = self.context.agent_connect_system.agent_request(actor_name, prompt)
+    # def requestplanning(self, actor_name: str, prompt: str) -> Optional[str]:
+    #     #
+    #     context = self.context
+    #     chaos_engineering_system = context.chaos_engineering_system
+    #     response = chaos_engineering_system.hack_actor_planning(context, actor_name, prompt)
+    #     # 可以先走混沌工程系统
+    #     if response is None:
+    #        response = self.context.agent_connect_system.agent_request(actor_name, prompt)
             
-        return response
+    #     return response
 ####################################################################################################
     def check_plan(self, entity: Entity, plan: ActorPlan) -> bool:
         if len(plan.actions) == 0:

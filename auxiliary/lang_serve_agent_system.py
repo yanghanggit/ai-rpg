@@ -200,7 +200,7 @@ class LangServeAgentSystem:
         path = self.chat_history_dump_path(who)
         try:
             res = path.write_text(content, encoding='utf-8')
-            logger.debug(f"[{who}]写入chat history dump成功。res: {res}")
+            #logger.debug(f"[{who}]写入chat history dump成功。res: {res}")
         except Exception as e:
             logger.error(f"[{who}]写入chat history dump失败。{e}")
             return

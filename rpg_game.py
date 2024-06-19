@@ -98,7 +98,7 @@ class RPGGame(BaseGame):
         
         #初始化系统########################
         processors.add(AgentsConnectSystem(context)) ### 连接所有agent
-        #processors.add(AgentsKickOffSystem(context)) ### 第一次读状态, initmemory
+        processors.add(AgentsKickOffSystem(context)) ### 第一次读状态, initmemory
         processors.add(UpdateAppearanceSystem(context, UPDATE_APPEARANCE_SYSTEM_NAME)) ### 更新外观
         #########################################
 
@@ -165,10 +165,10 @@ class RPGGame(BaseGame):
 
         #规划逻辑########################
         processors.add(PrePlanningSystem(context)) ######## 在所有规划之前
-        # processors.add(StageReadyForPlanningSystem(context))
-        # processors.add(StagePlanningSystem(context))
-        # processors.add(ActorReadyForPlanningSystem(context))
-        # processors.add(ActorPlanningSystem(context))
+        processors.add(StageReadyForPlanningSystem(context))
+        processors.add(StagePlanningSystem(context))
+        processors.add(ActorReadyForPlanningSystem(context))
+        processors.add(ActorPlanningSystem(context))
         processors.add(PostPlanningSystem(context)) ####### 在所有规划之后
 
         ## 第一次抓可以被player看到的信息

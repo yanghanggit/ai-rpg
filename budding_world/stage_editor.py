@@ -68,7 +68,10 @@ class ExcelEditorStage:
     @property
     def exit_of_portal(self) -> str:
         assert self._data is not None
-        return cast(str, self._data.get("exit_of_portal", ""))
+        val = self._data.get("exit_of_portal", None)
+        if val is None:
+            return ""
+        return str(val)
 ################################################################################################################################
     def __str__(self) -> str:
        return f"ExcelEditorStage: {self._data['name']}"

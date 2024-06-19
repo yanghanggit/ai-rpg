@@ -33,7 +33,10 @@ class ExcelEditorActor:
     @property
     def appearance(self) -> str:
         assert self._data is not None
-        return cast(str, self._data.get("appearance", "")) 
+        val = self._data.get("appearance", None)
+        if val is None:
+            return ""
+        return str(val)
 #################################################################################################################################
     @property
     def attributes(self) -> str:

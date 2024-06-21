@@ -13,6 +13,7 @@ from auxiliary.data_base_system import DataBaseSystem
 from game_sample.my_chaos_engineering_system import MyChaosEngineeringSystem
 from pathlib import Path
 import json
+import shutil
 #######################################################################################################################################
 def load_game_file(game_build_file_path: Path, version: str) -> Any:
     if not game_build_file_path.exists():
@@ -76,9 +77,7 @@ def create_rpg_game(worldname: str, chaosengineering: Optional[IChaosEngineering
                               agent_connect_system, 
                               code_name_component_system,  
                               data_base_system,
-                              chaos_engineering_system,
-                              False,
-                              10000000)
+                              chaos_engineering_system)
 
     # 创建游戏
     return RPGGame(worldname, context)
@@ -101,4 +100,31 @@ def load_then_create_rpg_game(gamename: str) -> Optional[RPGGame]:
     
     # 执行创建游戏的所有动作
     return rpggame.create_game(game_builder)
+#######################################################################################################################################
+### （临时的）写死创建
+def test_save(gamename: str) -> None:
+
+    copy2_path = Path(f"game_sample/gen_runtimes/{gamename}")
+    if not copy2_path.exists():
+        logger.error("未找到存档，请检查存档是否存在。")
+        return None
+    
+    start_json_file = Path(f"game_sample/gen_runtimes/{gamename}.json")
+    if not start_json_file.exists():
+        logger.error("未找到存档，请检查存档是否存在。")
+        return None
+
+    # 拷贝运行时文件夹到另一个地方
+    to_save_path = Path(f"game_sample/gen_runtimes/{gamename}_save")
+    to_save_path.mkdir(parents=True, exist_ok=True)
+    shutil.copytree(copy2_path, to_save_path, dirs_exist_ok=True)
+
+    # 拷贝原始的运行文件
+    target_file = to_save_path / f"{gamename}.json"
+    if target_file.exists():
+        target_file.unlink()
+    shutil.copy(start_json_file, to_save_path / f"{gamename}.json")
+
+
+    return None
 #######################################################################################################################################

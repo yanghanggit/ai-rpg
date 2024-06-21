@@ -25,13 +25,10 @@ class ExtendedContext(Context):
                  agentconnectsys: LangServeAgentSystem, 
                  codenamecompsys: CodeNameComponentSystem,
                  databasesys: DataBaseSystem, 
-                 chaossystem: IChaosEngineering, 
-                 save_data_enable: bool,
-                 auto_save_trigger_count: int) -> None:
+                 chaossystem: IChaosEngineering) -> None:
         
         #
         super().__init__()
-        #self.user_ips: List[str] = [] # todo 临时写法，待重构, 待删除。
         
         #
         self.file_system = filesystem
@@ -40,10 +37,6 @@ class ExtendedContext(Context):
         self.code_name_component_system = codenamecompsys
         self.data_base_system = databasesys
         self.chaos_engineering_system = chaossystem
-        
-        # 控制一下自动存档
-        self.save_data_enable = save_data_enable
-        self.auto_save_trigger_count = auto_save_trigger_count
         
         # 世界运行的回合数
         self.execute_count: int = 0

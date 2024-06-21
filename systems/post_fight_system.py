@@ -16,8 +16,8 @@ class PostFightSystem(ExecuteProcessor):
         # 移除后续动作
         self.remove_actor_interactive_actions()
         #可以存档
-        if self.context.save_data_enable:
-            pass
+        # if self.context.save_data_enable:
+        #     pass
 ########################################################################################################################################################################
     def remove_actor_interactive_actions(self) -> None:
         actor_entities:Set[Entity] = self.context.get_group(Matcher(all_of = [ActorComponent, DeadActionComponent], any_of = ACTOR_INTERACTIVE_ACTIONS_REGISTER)).entities.copy()

@@ -2,32 +2,23 @@ from typing import override
 from entitas import (TearDownProcessor, ExecuteProcessor) #type: ignore
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
+from rpg_game import RPGGame 
 
 
 class SaveSystem(ExecuteProcessor, TearDownProcessor):
 
-    def __init__(self, context: ExtendedContext) -> None:
+    def __init__(self, context: ExtendedContext, rpggame: RPGGame) -> None:
         super().__init__()
         self.context = context
-        self.current_save_count = 0
+        self.rpggame = rpggame
 ################################################################################################
     @override
     def execute(self) -> None:
-        ## 运行一定次数后自动保存
-        if self.context.save_data_enable:
-            self.auto_save_all(self.context.auto_save_trigger_count)
+        self.save_all()
 ################################################################################################
     @override
     def tear_down(self) -> None:
-        if self.context.save_data_enable:
-            self.save_all()
-################################################################################################
-    def auto_save_all(self, auto_save_trigger_count: int) -> None:
-        assert auto_save_trigger_count > 0
-        self.current_save_count += 1
-        if self.current_save_count >= auto_save_trigger_count:
-            self.current_save_count = 0
-            self.save_all()
+        self.save_all()
 ################################################################################################
     def save_all(self) -> None:
         self.save_world()
@@ -45,4 +36,4 @@ class SaveSystem(ExecuteProcessor, TearDownProcessor):
     def save_actor(self) -> None:
         #todo
         logger.warning("save_actor")
-
+################################################################################################

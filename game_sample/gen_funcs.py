@@ -6,10 +6,10 @@ import pandas as pd
 from loguru import logger
 from pandas.core.frame import DataFrame
 from typing import Dict
-from budding_world.excel_data import ExcelDataActor, ExcelDataStage, ExcelDataProp, ExcelDataWorldSystem
+from game_sample.excel_data import ExcelDataActor, ExcelDataStage, ExcelDataProp, ExcelDataWorldSystem
 from pathlib import Path
-from budding_world.utils import read_system_prompt_md, read_agentpy_template
-from budding_world.configuration import GAME_NAME
+from game_sample.utils import read_system_prompt_md, read_agentpy_template
+from game_sample.configuration import GAME_NAME
 
 ############################################################################################################
 def gen_all_actors(sheet: DataFrame, output: Dict[str, ExcelDataActor]) -> None:

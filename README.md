@@ -1,15 +1,18 @@
-# First Seed
+# multi-agents-game-framework
 
 ## 依赖包安装
 
 ```python
 # 先安装anaconda或者miniconda
 
-conda create -n first_seed python=3.12.2 
+conda create -n Name python=3.12.2 
 
-conda activate first_seed
+conda activate Name
 
 pip install langchain langchain_core langserve fastapi langchain_openai sse_starlette faiss-cpu loguru mypy pandas openpyxl overrides Jinja2
+
+# Name 是环境的名字，任取。
+# 如果用vscode 进行代码调试，需要用 >Python Interpreter. 将python环境指向这个Name代表的环境
 ```
 
 ## 注意点
@@ -20,18 +23,18 @@ pip install langchain langchain_core langserve fastapi langchain_openai sse_star
 
 - mypy --strict terminal_run.py
 - mypy --strict server.py. 必须开启ipv6
-- mypy --strict budding_world/gen_game.py
+- mypy --strict game_sample/gen_game.py
 
 ### 说明
 
 - terminal_run.py 是通过终端进行访问测试游戏。默认会写死使用‘无名的复活者’这个测试的角色。
 - server.py 是使用测试网页进行游戏。
-- budding_world/gen_game.py。是利用budding_world.xlsx来构建游戏世界的构建数据的程序（入口）
+- game_sample/gen_game.py。是利用gameP_sample.xlsx来构建游戏世界的构建数据的程序（入口）
 
 ## 运行步骤
 
-1. 进入`first_seed/budding_world/`文件夹，运行`python gen_game.py`,输入世界名(budding_world.xlsx内的创建世界的sheet页名, 如World2, World3),输入版本号:`ewan`(目前builder的解析版本是ewan). 附注：budding_world.xlsx 尽量每次都从飞书在线表格中下载，并覆盖first_seed/budding_world/excel/budding_world.xlsx，以保持最新。
-2. 运行`first_seed/budding_world/gen_agent`下面的全部agent，启动agents服务器; 见下‘启动所有agents’
+1. 进入`multi-agents-game-framework/game_sample/`文件夹，运行`python gen_game.py`,输入世界名(game_sample.xlsx内的创建世界的sheet页名, 如World2, World3),输入版本号:`qwe`(目前builder的解析版本是qwe). 附注：game_sample.xlsx 尽量每次都从飞书在线表格中下载，并覆盖multi-agents-game-framework/game_sample/excel/game_sample.xlsx，以保持最新。
+2. 运行`multi-agents-game-framework/game_sample/gen_agent`下面的全部agent，启动agents服务器; 见下‘启动所有agents’
 3. 然后运行terminal_run.py进行对话,先输入第1步创建的世界名(如World2？), 然后便可进行游戏。
 4. 或者通过'/login'命令通过玩家身份登陆游戏游玩。
 
@@ -40,9 +43,9 @@ pip install langchain langchain_core langserve fastapi langchain_openai sse_star
 ```shell
 # 以ubuntu/macOS下pm2为例
 
-cd first_seed
+cd multi-agents-game-framework
 
-pm2 start budding_world/gen_agent/coffin_of_the_silent_one_agent.py budding_world/gen_agent/gray_chapel_agent.py budding_world/gen_agent/nameless_resurrector_agent.py budding_world/gen_agent/rat_king_agent.py budding_world/gen_agent/elias_gray_agent.py budding_world/gen_agent/moore_dog_agent.py budding_world/gen_agent/papal_emissary_agent.py budding_world/gen_agent/the_incinerator_agent.py budding_world/gen_agent/gray_cemetery_agent.py budding_world/gen_agent/mr_lucky_agent.py budding_world/gen_agent/rancid_cellar_agent.py budding_world/gen_agent/square_front_of_cemetery_agent.py budding_world/gen_agent/world_system_appearance_builder_agent.py
+pm2 start game_sample/gen_agent/coffin_of_the_silent_one_agent.py game_sample/gen_agent/gray_chapel_agent.py game_sample/gen_agent/nameless_resurrector_agent.py game_sample/gen_agent/rat_king_agent.py game_sample/gen_agent/elias_gray_agent.py game_sample/gen_agent/moore_dog_agent.py game_sample/gen_agent/papal_emissary_agent.py game_sample/gen_agent/the_incinerator_agent.py game_sample/gen_agent/gray_cemetery_agent.py game_sample/gen_agent/mr_lucky_agent.py game_sample/gen_agent/rancid_cellar_agent.py game_sample/gen_agent/square_front_of_cemetery_agent.py game_sample/gen_agent/world_system_appearance_builder_agent.py
 ```
 
 # 可用指令

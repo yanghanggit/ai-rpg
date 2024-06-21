@@ -4,9 +4,9 @@ root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 from loguru import logger
 from typing import List, Dict, Any, Optional, cast
-from budding_world.gen_funcs import (proxy_prop)
-from budding_world.excel_data import ExcelDataActor, ExcelDataProp
-from budding_world.utils import parse_prop_string
+from game_sample.gen_funcs import (proxy_prop)
+from game_sample.excel_data import ExcelDataActor, ExcelDataProp
+from game_sample.utils import parse_prop_string
 
 class ExcelEditorActor:
 

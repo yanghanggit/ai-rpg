@@ -3,7 +3,7 @@
 ##全局的，方便，不封装了，反正当工具用.....
 # 核心设置
 EXCEL_EDITOR = "excel"
-GAME_NAME = "budding_world"
+GAME_NAME = "game_sample"
 
 #模版
 TEMPLATE_DIR = "sys_templates"

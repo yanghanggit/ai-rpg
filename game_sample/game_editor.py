@@ -5,13 +5,13 @@ sys.path.append(str(root_dir))
 from loguru import logger
 import json
 from typing import List, Dict, Any, Set
-from budding_world.excel_data import ExcelDataActor, ExcelDataStage, ExcelDataProp, ExcelDataWorldSystem
-from budding_world.actor_editor import ExcelEditorActor
-from budding_world.stage_editor import ExcelEditorStage
-from budding_world.world_system_editor import ExcelEditorWorldSystem
-from budding_world.gen_funcs import serialization_prop
+from game_sample.excel_data import ExcelDataActor, ExcelDataStage, ExcelDataProp, ExcelDataWorldSystem
+from game_sample.actor_editor import ExcelEditorActor
+from game_sample.stage_editor import ExcelEditorStage
+from game_sample.world_system_editor import ExcelEditorWorldSystem
+from game_sample.gen_funcs import serialization_prop
 import pandas as pd
-from budding_world.utils import write_text_file
+from game_sample.utils import write_text_file
 
 EDITOR_WORLD_SYSTEM_TYPE = "WorldSystem"
 EDITOR_PLAYER_TYPE = "Player"
@@ -169,7 +169,7 @@ class ExcelEditorGame:
 
         version_sign = input("请输入版本号:")
         if version_sign == "":
-            version_sign = "ewan"
+            version_sign = "qwe" #doto
             logger.warning(f"使用默认的版本号: {version_sign}")
         
         output["version"] = version_sign

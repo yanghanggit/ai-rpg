@@ -10,7 +10,7 @@ from auxiliary.lang_serve_agent_system import LangServeAgentSystem
 from auxiliary.code_name_component_system import CodeNameComponentSystem
 from auxiliary.chaos_engineering_system import EmptyChaosEngineeringSystem, IChaosEngineering
 from auxiliary.data_base_system import DataBaseSystem
-from budding_world.chaos_budding_world import ChaosBuddingWorld
+from game_sample.my_chaos_engineering_system import MyChaosEngineeringSystem
 from pathlib import Path
 import json
 #######################################################################################################################################
@@ -34,11 +34,10 @@ def load_game_file(game_build_file_path: Path, version: str) -> Any:
         assert False, f"File not found: {game_build_file_path}"
         return None
 #######################################################################################################################################
-### （临时的）写死创建budding_world
+### （临时的）写死创建
 def load_then_build_game_data(gamename: str, data_base_system: DataBaseSystem) -> Optional[GameBuilder]:
-    version = 'ewan'
-
-    root_runtime_dir = Path("budding_world/gen_runtimes")
+    version = 'qwe' #doto
+    root_runtime_dir = Path("game_sample/gen_runtimes")
     root_runtime_dir.mkdir(parents=True, exist_ok=True)
 
     game_build_file_path = root_runtime_dir / f"{gamename}.json"
@@ -52,7 +51,7 @@ def load_then_build_game_data(gamename: str, data_base_system: DataBaseSystem) -
         return None
 
     #todo?
-    runtimedir = f"./budding_world/gen_runtimes/"
+    runtimedir = f"./game_sample/gen_runtimes/"
     runtime_file_dir = root_runtime_dir / gamename
     return GameBuilder(gamename, game_data, runtimedir, data_base_system, runtime_file_dir).build()
 #######################################################################################################################################
@@ -94,7 +93,7 @@ def load_then_create_rpg_game(gamename: str) -> Optional[RPGGame]:
         return None
     
     # 创建游戏 + 专门的混沌工程系统
-    chaos_engineering_system = ChaosBuddingWorld("ChaosBuddingWorld")
+    chaos_engineering_system = MyChaosEngineeringSystem("MyChaosEngineeringSystem")
     rpggame = create_rpg_game(gamename, chaos_engineering_system, game_builder.data_base_system)
     if rpggame is None:
         logger.error("_create_rpg_game 失败。")

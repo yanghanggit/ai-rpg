@@ -23,8 +23,8 @@ error_speak_target_is_invalid = f"""{{"SpeakActionComponent": ["@教宗>你在�
 ## value必须以[]形式出现
 error_value_is_not_array = f"""{{"GoToActionComponent": "禁言铁棺"}}"""
 
-## 运行中的测试系统, 空的混沌工程系统
-class ChaosBuddingWorld(IChaosEngineering):
+## 运行中的测试系统, 空的混沌工程系统 my_chaos_engineering_system
+class MyChaosEngineeringSystem(IChaosEngineering):
 
     ##
     def __init__(self, name: str) -> None:

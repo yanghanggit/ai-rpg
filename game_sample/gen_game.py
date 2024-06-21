@@ -6,11 +6,11 @@ import pandas as pd
 from loguru import logger
 from pandas.core.frame import DataFrame
 import json
-from budding_world.configuration import EXCEL_EDITOR, GAME_NAME, OUTPUT_RUNTIMES_DIR
-from budding_world.gen_funcs import (gen_all_actors, gen_all_stages, gen_all_props, analyze_actor_relationship, 
+from game_sample.configuration import EXCEL_EDITOR, GAME_NAME, OUTPUT_RUNTIMES_DIR
+from game_sample.gen_funcs import (gen_all_actors, gen_all_stages, gen_all_props, analyze_actor_relationship, 
                                 analyze_stage_relationship, analyze_relationship_between_actors_and_props, gen_all_world_system)
-from budding_world.excel_data import ExcelDataActor, ExcelDataStage, ExcelDataProp, ExcelDataWorldSystem
-from budding_world.game_editor import ExcelEditorGame
+from game_sample.excel_data import ExcelDataActor, ExcelDataStage, ExcelDataProp, ExcelDataWorldSystem
+from game_sample.game_editor import ExcelEditorGame
 from typing import List, Dict, Any
  
 ############################################################################################################

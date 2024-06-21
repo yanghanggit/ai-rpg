@@ -1,8 +1,8 @@
 __pycache__/
 *.DS_Store
 logs
-budding_world/gen_stage_sys_prompt
-budding_world/gen_runtimes
-budding_world/gen_npc_sys_prompt
-budding_world/gen_agent
+game_sample/gen_stage_sys_prompt
+game_sample/gen_runtimes
+game_sample/gen_npc_sys_prompt
+game_sample/gen_agent
 .VSCodeCounter

@@ -4,7 +4,7 @@ root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 from loguru import logger
 from typing import List, Dict, Any, Optional
-from budding_world.excel_data import ExcelDataWorldSystem
+from game_sample.excel_data import ExcelDataWorldSystem
 
 
 ######################################################################################################################

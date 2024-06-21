@@ -2,7 +2,7 @@ from loguru import logger
 import datetime
 from auxiliary.player_proxy import create_player_proxy, get_player_proxy
 from auxiliary.player_command import (PlayerLogin)
-from main_utils import load_then_create_rpg_game
+from create_game_funcs import load_then_create_rpg_game
 from dev_config import TEST_TERMINAL_NAME
 
 async def main() -> None:
@@ -18,7 +18,7 @@ async def main() -> None:
         return
     
     ## 临时 强行改成服务器终端模式，只要这个写死为空。后面的逻辑就会跟上。
-    rpggame.extendedcontext.user_ips = []
+    #rpggame.extendedcontext.user_ips = []
     rpggame.user_ips = []
 
     #测试的代码，上来就控制一个目标，先写死

@@ -9,10 +9,10 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from loguru import logger
 from pydantic import BaseModel
-from auxiliary.multi_players_game import MultiplayersGame
+from multi_players_game import MultiplayersGame
 from auxiliary.player_command import PlayerLogin
 from auxiliary.player_proxy import create_player_proxy, get_player_proxy, remove_player_proxy
-from main_utils import load_then_create_rpg_game
+from create_game_funcs import load_then_create_rpg_game
 from dev_config import TEST_CLIENT_SHOW_MESSAGE_COUNT, _DevConfig_
 from rpg_game import RPGGame
 from auxiliary.player_proxy import PlayerProxy
@@ -51,7 +51,7 @@ async def create(clientip: str) -> List[TupleModel]:
     if game is not None:
         global multiplayersgames
         multiplayersgames[clientip] = game
-        multiplayersgames[clientip].rpggame.extendedcontext.user_ips.append(clientip)
+        #multiplayersgames[clientip].rpggame.extendedcontext.user_ips.append(clientip)
         multiplayersgames[clientip].rpggame.user_ips.append(clientip) # todo
         create_player_proxy(clientip)
 
@@ -80,7 +80,7 @@ async def join(clientip: str, hostip: str) -> List[TupleModel]:
             client_game = MultiplayersGame(clientip, hostip, game.rpggame)
             multiplayersgames[clientip] = client_game
             messages.append(TupleModel(who=clientip, what=f"加入房间IP:{hostip}成功."))
-            multiplayersgames[clientip].rpggame.extendedcontext.user_ips.append(clientip)
+            #multiplayersgames[clientip].rpggame.extendedcontext.user_ips.append(clientip)
             multiplayersgames[clientip].rpggame.user_ips.append(clientip) # todo
             create_player_proxy(clientip)
 

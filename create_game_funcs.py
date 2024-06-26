@@ -125,6 +125,12 @@ def test_save(gamename: str) -> None:
         target_file.unlink()
     shutil.copy(start_json_file, to_save_path / f"{gamename}.json")
 
-
+    if not target_file.exists():
+        logger.error(f"File not found: {target_file}")
+        return None
+    
+    logger.info(f"Save to: {to_save_path}")
+    txt = target_file.read_text(encoding="utf-8")
+    obj = json.loads(txt)
     return None
 #######################################################################################################################################

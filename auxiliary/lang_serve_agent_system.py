@@ -172,7 +172,7 @@ class LangServeAgentSystem:
         return dir / f"chat_history.json"
 ################################################################################################################################################################################  
     ### 所有的agent的chat history dump写入文件
-    def dump_all_chat_history(self) -> None:
+    def dump_chat_history(self) -> None:
         for name in self._agents.keys():
             dump = self.create_chat_history_dump(name)
             if len(dump) == 0:

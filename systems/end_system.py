@@ -19,39 +19,36 @@ class EndSystem(InitializeProcessor, ExecuteProcessor):
 ############################################################################################################
     @override
     def execute(self) -> None:
-
+        self.debug_dump()
+############################################################################################################
+    def debug_dump(self) -> None:
         logger.debug(f"{'=' * 100}") #方便看
-
         # 打印所有的世界信息
-        self.showworld()
+        self.dump_world()
         # 打印一下所有的场景信息
-        self.showstages()
+        self.dump_stages_and_actors()
         # 打印一下所有的agent信息
-        self.make_agent_chat_history_dump()
+        self.context.agent_connect_system.dump_chat_history()
         # 打印所有的道具归属
-        self.make_prop_files_dump()
+        self.dump_prop_files()
         # 打印所有的实体信息
         #self.print_all_entities()
-
         logger.debug(f"{'=' * 100}")  #方便看
 ############################################################################################################
-    def showworld(self) -> None:
+    def dump_world(self) -> None:
         worldentities = self.context.get_group(Matcher(WorldComponent)).entities
         for entity in worldentities:
             worldcomp: WorldComponent = entity.get(WorldComponent)
-            logger.debug(f"/showworld: {worldcomp.name}")
+            logger.debug(f"/dump_world: {worldcomp.name}")
 ############################################################################################################
-    def showstages(self) -> None:
-        infomap = self.information_about_all_stages_and_actors()
+    def dump_stages_and_actors(self) -> None:
+        infomap = self.simple_dump_stages_and_actors()
         if len(infomap.keys()) > 0:
-            logger.debug(f"/showstages: \n{infomap}")
+            logger.debug(f"/dump_stages_and_actors: \n{infomap}")
         else:
-            logger.debug("/showstages: No stages and actors now")
+            logger.debug("/dump_stages_and_actors: No stages and actors now")
 ############################################################################################################
-    def make_agent_chat_history_dump(self) -> None:
-        self.context.agent_connect_system.dump_all_chat_history()
-############################################################################################################
-    def information_about_all_stages_and_actors(self) -> Dict[str, List[str]]:
+    def simple_dump_stages_and_actors(self) -> Dict[str, List[str]]:
         stagesentities = self.context.get_group(Matcher(StageComponent)).entities
         actor_entities = self.context.get_group(Matcher(ActorComponent)).entities
         map: Dict[str, List[str]] = {}
@@ -66,7 +63,7 @@ class EndSystem(InitializeProcessor, ExecuteProcessor):
                     ls.append(actor_comp.name)
         return map
 ############################################################################################################
-    def make_prop_files_dump(self) -> None:
+    def dump_prop_files(self) -> None:
         file_system = self.context.file_system
         propfiles = file_system._prop_files
 
@@ -76,11 +73,4 @@ class EndSystem(InitializeProcessor, ExecuteProcessor):
             dumpdict[ownername] = liststr
 
         logger.debug(f"{json.dumps(dumpdict, ensure_ascii = False)}")
-############################################################################################################
-    def print_all_entities(self) -> None:
-        context = self.context
-        allentities = context.entities
-        logger.debug(f"{'=' * 100}")
-        for entity in allentities:
-            logger.debug(f"{entity}")
 ############################################################################################################

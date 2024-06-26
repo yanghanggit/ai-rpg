@@ -9,6 +9,10 @@ StageComponent = namedtuple('StageComponent', 'name')
 ActorComponent = namedtuple('ActorComponent', 'name current_stage')
 # 玩家标记
 PlayerComponent = namedtuple('PlayerComponent', 'name')
+# 玩家标记: 是网页登陆的客户端
+PlayerIsWebClientComponent = namedtuple('PlayerIsWebClientComponent', 'name')
+# 玩家标记: 是网页登陆的客户端
+PlayerIsTerminalClientComponent = namedtuple('PlayerIsTerminalClientComponent', 'name')
 # 摧毁Entity标记
 DestroyComponent = namedtuple('DestroyComponent', 'name')
 # 自动规划行为的标记

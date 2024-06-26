@@ -1,14 +1,14 @@
 from entitas import Entity # type: ignore
 from auxiliary.extended_context import ExtendedContext
+from auxiliary.components import PlayerComponent, PlayerIsWebClientComponent, PlayerIsTerminalClientComponent
 from typing import List
 from collections import namedtuple
 from auxiliary.director_event import IDirectorEvent
 from builtin_prompt.cn_builtin_prompt import replace_mentions_of_your_name_with_you_prompt
 from loguru import logger
-from dev_config import _DevConfig_
 
 ##扩展型组件，用于处理导演系统的事件
-####################################################################################################
+##########################################################################################################################
 DirectorComponentPrototype = namedtuple('DirectorComponentPrototype', 'name')
 class StageDirectorComponent(DirectorComponentPrototype):
 
@@ -56,7 +56,7 @@ class StageDirectorComponent(DirectorComponentPrototype):
                 # 不收集这个消息。
                 continue
             
-            if _DevConfig_.perception_and_check_status_command_is_immeidate:
+            if self.is_player_web_client(target_actor_name, extended_context):
                 ignore_type2 = isinstance(event, ActorPerceptionEvent) or isinstance(event, ActorCheckStatusEvent)
                 if ignore_type2:
                     # 立即模式下（就是Web模式下），不收集这个消息。马上反应，就是终端测试下收集这个消息。
@@ -67,6 +67,21 @@ class StageDirectorComponent(DirectorComponentPrototype):
                 res = replace_mentions_of_your_name_with_you_prompt(res, target_actor_name)
                 batch.append(res)
         return batch
+##########################################################################################################################
+    def is_player_web_client(self, actor_name: str, extended_context: ExtendedContext) -> bool:
+        entity = extended_context.get_actor_entity(actor_name)
+        if entity is None:
+            assert False, f"ActorEntity not found in entity:{actor_name}"
+            return False
+        
+        if not entity.has(PlayerComponent):
+            assert False, f"PlayerComponent not found in entity:{actor_name}"
+            return False
+        
+        assert entity.has(PlayerIsWebClientComponent) or entity.has(PlayerIsTerminalClientComponent)
+        return entity.has(PlayerIsWebClientComponent)
+##########################################################################################################################
+##########################################################################################################################
 ##########################################################################################################################
 def notify_stage_director(context: ExtendedContext, entity: Entity, directevent: IDirectorEvent) -> bool:
     stageentity = context.safe_get_stage_entity(entity)

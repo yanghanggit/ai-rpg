@@ -3,7 +3,8 @@ from rpg_game import RPGGame
 from loguru import logger
 from auxiliary.components import (BroadcastActionComponent, SpeakActionComponent, StageComponent, ActorComponent, AttackActionComponent, PlayerComponent, 
     GoToActionComponent, UsePropActionComponent, WhisperActionComponent, SearchActionComponent, PortalStepActionComponent,
-    PerceptionActionComponent, StealActionComponent, TradeActionComponent, CheckStatusActionComponent)
+    PerceptionActionComponent, StealActionComponent, TradeActionComponent, CheckStatusActionComponent,
+    PlayerIsWebClientComponent, PlayerIsTerminalClientComponent)
 from auxiliary.actor_plan_and_action import ActorAction
 from auxiliary.player_proxy import PlayerProxy
 from abc import ABC, abstractmethod
@@ -43,13 +44,14 @@ class PlayerLogin(PlayerCommand):
     玩家登陆的行为，本质就是直接控制一个actor，将actor的playercomp的名字改为玩家的名字
     """
 
-    def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, actor_name: str) -> None:
+    def __init__(self, name: str, game: RPGGame, playerproxy: PlayerProxy, actor_name: str, is_web_client: bool) -> None:
         super().__init__(name, game, playerproxy)
-        self.actor_name: str = actor_name # 玩家控制的actor.
+        self._actor_name: str = actor_name # 玩家控制的actor.
+        self._is_web_client: bool = is_web_client
 
     def execute(self) -> None:
         context = self.game.extendedcontext
-        actor_name = self.actor_name
+        actor_name = self._actor_name
         player_name = self.playerproxy.name
         logger.debug(f"{self._description}, player name: {player_name}, target name: {actor_name}")
 
@@ -79,6 +81,16 @@ class PlayerLogin(PlayerCommand):
         # 更改player的名字，算作登陆成功
         _entity.replace(PlayerComponent, player_name)
 
+        # 判断登陆的方式：是web客户端还是终端客户端
+        if self._is_web_client:
+            if _entity.has(PlayerIsWebClientComponent):
+               _entity.remove(PlayerIsWebClientComponent)
+            _entity.add(PlayerIsWebClientComponent, player_name)
+        else:
+            if _entity.has(PlayerIsTerminalClientComponent):
+               _entity.remove(PlayerIsTerminalClientComponent)
+            _entity.add(PlayerIsTerminalClientComponent, player_name)
+
         # todo 添加游戏的介绍到客户端消息中
         self.playerproxy.add_system_message(self.game.about_game)
         
@@ -87,8 +99,8 @@ class PlayerLogin(PlayerCommand):
         self.playerproxy.add_system_message(f"login: {player_name}, time = {time}")
 
         # actor的kickoff记忆到客户端消息中
-        kick_off_memory = context.kick_off_memory_system.get_kick_off_memory(self.actor_name)
-        self.playerproxy.add_actor_message(self.actor_name, kick_off_memory)
+        kick_off_memory = context.kick_off_memory_system.get_kick_off_memory(self._actor_name)
+        self.playerproxy.add_actor_message(self._actor_name, kick_off_memory)
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################   

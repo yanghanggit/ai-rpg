@@ -1,6 +1,6 @@
 # 修复windows上默认不使用utf-8格式的问题导致langserve的server代码报错
 import sys
-sys.stdout.reconfigure(encoding='utf-8')
+sys.stdout.reconfigure(encoding='utf-8') #type: ignore
 import datetime
 import re  
 from fastapi import FastAPI, Request
@@ -13,15 +13,12 @@ from multi_players_game import MultiplayersGame
 from auxiliary.player_command import PlayerLogin
 from auxiliary.player_proxy import create_player_proxy, get_player_proxy, remove_player_proxy
 from create_game_funcs import load_then_create_rpg_game
-from dev_config import TEST_CLIENT_SHOW_MESSAGE_COUNT, _DevConfig_
+from dev_config import TEST_CLIENT_SHOW_MESSAGE_COUNT
 from rpg_game import RPGGame
 from auxiliary.player_proxy import PlayerProxy
 from systems.check_status_action_system import CheckStatusActionHelper, ActorCheckStatusEvent
 from systems.perception_action_system import PerceptionActionHelper, ActorPerceptionEvent
 from typing import List, Dict
-
-# 直接设置成全局模式
-_DevConfig_.perception_and_check_status_command_is_immeidate = True
 
 class TextInput(BaseModel):
     text_input: str
@@ -93,7 +90,7 @@ async def pick_actor(clientip: str, actorname: str) -> List[TupleModel]:
     global multiplayersgames
     playerproxy = get_player_proxy(clientip)
     assert playerproxy is not None
-    playerstartcmd = PlayerLogin("/player-login", multiplayersgames[clientip].rpggame, playerproxy, actorname)
+    playerstartcmd = PlayerLogin("/server_run_login", multiplayersgames[clientip].rpggame, playerproxy, actorname, True)
     playerstartcmd.execute()
     await multiplayersgames[clientip].rpggame.async_execute()
     logger.debug(f"pick actor finish")
@@ -135,8 +132,6 @@ async def quitgame(clientip: str) -> List[TupleModel]:
 # player 可以是立即模式
 async def imme_handle_perception(rpg_game: RPGGame, playerproxy: PlayerProxy) -> None:
 
-    assert _DevConfig_.perception_and_check_status_command_is_immeidate, "PERCEPTION_AND_CHECK_STATUS_COMMAND_IS_IMMEIDATE is False"
-
     context = rpg_game.extendedcontext
     playerentity = context.get_player_entity(playerproxy.name)
     if playerentity is None:
@@ -157,8 +152,6 @@ async def imme_handle_perception(rpg_game: RPGGame, playerproxy: PlayerProxy) ->
 ############################################################################################################
 # player 可以是立即模式
 async def imme_handle_check_status(rpg_game: RPGGame, playerproxy: PlayerProxy) -> None:
-
-    assert _DevConfig_.perception_and_check_status_command_is_immeidate, "PERCEPTION_AND_CHECK_STATUS_COMMAND_IS_IMMEIDATE is False"
 
     context = rpg_game.extendedcontext
     playerentity = context.get_player_entity(playerproxy.name)

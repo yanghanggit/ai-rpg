@@ -26,7 +26,7 @@ async def main() -> None:
     create_player_proxy(TEST_TERMINAL_NAME)
     playerproxy = get_player_proxy(TEST_TERMINAL_NAME)
     assert playerproxy is not None
-    playerstartcmd = PlayerLogin("/player-login", rpggame, playerproxy, TEST_SINGLE_PLAYER_ACTOR_NAME)
+    playerstartcmd = PlayerLogin("/terminal_run_login", rpggame, playerproxy, TEST_SINGLE_PLAYER_ACTOR_NAME, False)
     playerstartcmd.execute()
 
     # 测试的代码

@@ -19,7 +19,7 @@ from auxiliary.components import (
     BodyComponent
     )
 from auxiliary.extended_context import ExtendedContext
-from auxiliary.game_builders import GameBuilder, StageBuilder, ActorBuilder, WorldSystemBuilder
+from build_game.game_builders import GameBuilder, StageBuilder, ActorBuilder, WorldSystemBuilder
 from entitas.entity import Entity
 from systems.agents_kick_off_system import AgentsKickOffSystem
 from systems.actor_ready_for_planning_system import ActorReadyForPlanningSystem
@@ -61,7 +61,7 @@ from systems.my_processors import MyProcessors
 from systems.simple_rpg_pre_fight_system import SimpleRPGPreFightSystem
 from systems.compress_chat_history_system import CompressChatHistorySystem
 from systems.post_conversation_action_system import PostConversationActionSystem
-from auxiliary.base_data import StageData
+from prototype_data.data_def import StageData
 from systems.update_appearance_system import UpdateAppearanceSystem
 
 

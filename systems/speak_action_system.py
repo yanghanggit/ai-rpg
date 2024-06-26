@@ -7,7 +7,7 @@ from auxiliary.target_and_message_format_handle import conversation_check, parse
 from auxiliary.director_component import notify_stage_director
 from auxiliary.director_event import IDirectorEvent
 from typing import Optional, override
-from auxiliary.cn_builtin_prompt import speak_action_prompt
+from builtin_prompt.cn_builtin_prompt import speak_action_prompt
 
 
 

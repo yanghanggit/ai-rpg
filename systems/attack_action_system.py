@@ -7,7 +7,7 @@ from auxiliary.director_component import notify_stage_director
 from auxiliary.director_event import IDirectorEvent
 from typing import cast, override
 from auxiliary.target_and_message_format_handle import conversation_check, ErrorConversationEnable
-from auxiliary.cn_builtin_prompt import kill_prompt, attack_prompt
+from builtin_prompt.cn_builtin_prompt import kill_prompt, attack_prompt
 
 
 

@@ -11,7 +11,7 @@ from auxiliary.director_component import notify_stage_director
 from typing import cast, override, List
 from auxiliary.director_event import IDirectorEvent
 from systems.director_system import director_events_to_actor
-from auxiliary.cn_builtin_prompt import ( leave_stage_prompt,
+from builtin_prompt.cn_builtin_prompt import ( leave_stage_prompt,
                                           enter_stage_prompt1,
                                           enter_stage_prompt2)
 

@@ -1,5 +1,5 @@
 from overrides import override
-from auxiliary.base_data import PropData
+from prototype_data.data_def import PropData
 import json
 from typing import Dict, Any, List
 from abc import ABC, abstractmethod

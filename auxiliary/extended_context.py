@@ -1,5 +1,5 @@
 from loguru import logger
-from auxiliary.data_base_system import DataBaseSystem
+from prototype_data.data_base_system import DataBaseSystem
 from entitas import (Entity, # type: ignore
                     Matcher, 
                     Context)

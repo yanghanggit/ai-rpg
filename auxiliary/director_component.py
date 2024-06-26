@@ -3,7 +3,7 @@ from auxiliary.extended_context import ExtendedContext
 from typing import List
 from collections import namedtuple
 from auxiliary.director_event import IDirectorEvent
-from auxiliary.cn_builtin_prompt import replace_mentions_of_your_name_with_you_prompt
+from builtin_prompt.cn_builtin_prompt import replace_mentions_of_your_name_with_you_prompt
 from loguru import logger
 from dev_config import _DevConfig_
 

@@ -3,7 +3,7 @@ from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.components import (ActorComponent, StageComponent)
 from typing import Set, override, Dict
-from auxiliary.cn_builtin_prompt import __ConstantPromptValue__
+from builtin_prompt.cn_builtin_prompt import __ConstantPromptValue__
 
 class CompressChatHistorySystem(ExecuteProcessor):
     def __init__(self, context: ExtendedContext) -> None:

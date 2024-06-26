@@ -1,6 +1,6 @@
 from loguru import logger
 from abc import ABC, abstractmethod
-from auxiliary.game_builders import GameBuilder
+from build_game.game_builders import GameBuilder
 from typing import Any, Optional
 
 ##Used for testing, can simulate extreme situations, and can also be used to test system stability at runtime

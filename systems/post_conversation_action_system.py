@@ -6,7 +6,7 @@ from loguru import logger
 from auxiliary.director_component import StageDirectorComponent
 from typing import List, Set, Optional, Dict
 from auxiliary.lang_serve_agent_system import LangServeAgentSystem, AgentRequestOption
-from auxiliary.cn_builtin_prompt import batch_conversation_action_events_in_stage_prompt
+from builtin_prompt.cn_builtin_prompt import batch_conversation_action_events_in_stage_prompt
 
 # 这个类就是故意打包将对话类事件先进行一次request，如果LLM发现有政策问题就会抛异常，不会将污染的message加入chat history，这样就不可能进入chat_history。
 # 这么做是防止玩家的对话内容包含了非法信息和违反政策的内容。

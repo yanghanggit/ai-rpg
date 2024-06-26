@@ -3,7 +3,7 @@ from auxiliary.components import SimpleRPGAttrComponent, SimpleRPGWeaponComponen
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from typing import Set, Optional, override
-from auxiliary.base_data import PropData
+from prototype_data.data_def import PropData
 
 # 这是一个测试，将装备对战斗数值的影响先做一个初步的。
 # 后续不能这么写。在战斗前重新构造武器和防具是不合理的

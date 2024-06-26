@@ -1,7 +1,7 @@
 from typing import Any, Optional, List, Set, Dict, cast
 from loguru import logger
-from auxiliary.base_data import PropData, ActorData, StageData, WorldSystemData, ActorDataProxy, PropDataProxy, Attributes
-from auxiliary.data_base_system import DataBaseSystem
+from prototype_data.data_def import PropData, ActorData, StageData, WorldSystemData, ActorDataProxy, PropDataProxy, Attributes
+from prototype_data.data_base_system import DataBaseSystem
 from pathlib import Path
 
 ###############################################################################################################################################

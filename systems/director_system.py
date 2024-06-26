@@ -5,7 +5,7 @@ from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.director_component import StageDirectorComponent
 from auxiliary.player_proxy import add_client_actor_message
-from auxiliary.cn_builtin_prompt import stage_director_begin_prompt, stage_director_end_prompt, stage_director_event_wrap_prompt
+from builtin_prompt.cn_builtin_prompt import stage_director_begin_prompt, stage_director_end_prompt, stage_director_event_wrap_prompt
 
 class DirectorSystem(ExecuteProcessor):
 

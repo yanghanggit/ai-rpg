@@ -6,7 +6,7 @@ from typing import Dict, cast, Set
 from auxiliary.lang_serve_agent_system import LangServeAgentSystem, AgentRequestOption
 import json
 from auxiliary.components import AppearanceComponent, BodyComponent, ActorComponent
-from auxiliary.cn_builtin_prompt import actors_body_and_clothe_prompt
+from builtin_prompt.cn_builtin_prompt import actors_body_and_clothe_prompt
 
 ###############################################################################################################################################
 class UpdateAppearanceSystem(InitializeProcessor, ExecuteProcessor):

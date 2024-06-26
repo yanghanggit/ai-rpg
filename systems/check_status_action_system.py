@@ -4,8 +4,8 @@ from auxiliary.components import (CheckStatusActionComponent, SimpleRPGAttrCompo
 from loguru import logger
 from auxiliary.director_component import notify_stage_director
 from typing import List, override
-from auxiliary.base_data import PropData
-from auxiliary.cn_builtin_prompt import check_status_action_prompt
+from prototype_data.data_def import PropData
+from builtin_prompt.cn_builtin_prompt import check_status_action_prompt
 from auxiliary.director_event import IDirectorEvent
 
 ####################################################################################################################################

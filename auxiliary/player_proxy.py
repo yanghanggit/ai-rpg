@@ -81,10 +81,6 @@ def add_client_actor_message(entity: Entity, message: str) -> None:
     actor_comp: ActorComponent = entity.get(ActorComponent)
     playerproxy.add_actor_message(actor_comp.name, message)
 ###################################################################################################################
-# ### 单人游戏，临时的名字
-# TEST_TERMINAL_NAME = "北京柏林互动科技有限公司"
-# TEST_CLIENT_SHOW_MESSAGE_COUNT = 20
-###################################################################################################################
 
     
 

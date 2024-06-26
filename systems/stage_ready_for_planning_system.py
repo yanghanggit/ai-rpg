@@ -1,9 +1,9 @@
-from auxiliary.cn_builtin_prompt import stage_plan_prompt
+from builtin_prompt.cn_builtin_prompt import stage_plan_prompt
 from entitas import Entity, Matcher, ExecuteProcessor #type: ignore
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.components import (StageComponent, ActorComponent, AutoPlanningComponent)
 from loguru import logger
-from auxiliary.base_data import PropData
+from prototype_data.data_def import PropData
 from typing import List, Set, override
 
 ####################################################################################################################################

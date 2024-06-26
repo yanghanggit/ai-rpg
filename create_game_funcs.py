@@ -1,6 +1,6 @@
 from typing import Optional, Any
 from loguru import logger
-from auxiliary.game_builders import GameBuilder
+from build_game.game_builders import GameBuilder
 from rpg_game import RPGGame 
 from auxiliary.extended_context import ExtendedContext
 from file_system.file_system import FileSystem
@@ -9,7 +9,7 @@ from typing import Optional
 from auxiliary.lang_serve_agent_system import LangServeAgentSystem
 from auxiliary.code_name_component_system import CodeNameComponentSystem
 from auxiliary.chaos_engineering_system import EmptyChaosEngineeringSystem, IChaosEngineering
-from auxiliary.data_base_system import DataBaseSystem
+from prototype_data.data_base_system import DataBaseSystem
 from game_sample.my_chaos_engineering_system import MyChaosEngineeringSystem
 from pathlib import Path
 import json

@@ -1,6 +1,6 @@
 from auxiliary.extended_context import ExtendedContext
 from typing import Dict, List, Set
-from auxiliary.base_data import PropData
+from prototype_data.data_def import PropData
 from auxiliary.components import MindVoiceActionComponent, EnviroNarrateActionComponent, \
     TagActionComponent, PerceptionActionComponent, CheckStatusActionComponent
 import json

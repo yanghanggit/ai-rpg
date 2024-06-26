@@ -7,7 +7,7 @@ from loguru import logger
 from auxiliary.target_and_message_format_handle import parse_target_and_message, conversation_check, ErrorConversationEnable
 from auxiliary.director_component import notify_stage_director
 from auxiliary.director_event import IDirectorEvent
-from auxiliary.cn_builtin_prompt import whisper_action_prompt
+from builtin_prompt.cn_builtin_prompt import whisper_action_prompt
 
 
 ####################################################################################################################################

@@ -16,7 +16,7 @@ from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.director_component import notify_stage_director
 from auxiliary.director_event import IDirectorEvent
-from auxiliary.cn_builtin_prompt import \
+from builtin_prompt.cn_builtin_prompt import \
             prop_info_prompt, stage_exit_conditions_check_prompt, \
             stage_entry_conditions_check_prompt,\
             exit_stage_failed_beacuse_stage_refuse_prompt, \

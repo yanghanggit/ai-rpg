@@ -12,7 +12,7 @@ from typing import List, override, Set
 from file_system.files_def import PropFile
 
 from auxiliary.director_event import IDirectorEvent
-from auxiliary.cn_builtin_prompt import search_action_failed_prompt, search_action_success_prompt
+from builtin_prompt.cn_builtin_prompt import search_action_failed_prompt, search_action_success_prompt
 
 
 ####################################################################################################################################

@@ -1,5 +1,5 @@
 from overrides import override
-from auxiliary.cn_builtin_prompt import actpr_plan_prompt
+from builtin_prompt.cn_builtin_prompt import actpr_plan_prompt
 from entitas import Entity, Matcher, ExecuteProcessor #type: ignore
 from auxiliary.extended_context import ExtendedContext
 from auxiliary.components import (ActorComponent, AutoPlanningComponent, EnviroNarrateActionComponent)

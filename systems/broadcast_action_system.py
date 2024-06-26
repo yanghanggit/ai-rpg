@@ -6,7 +6,7 @@ from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.director_component import notify_stage_director
 from auxiliary.director_event import IDirectorEvent
-from auxiliary.cn_builtin_prompt import broadcast_action_prompt
+from builtin_prompt.cn_builtin_prompt import broadcast_action_prompt
 
 ####################################################################################################################################
 ####################################################################################################################################

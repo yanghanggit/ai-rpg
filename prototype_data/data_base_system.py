@@ -1,5 +1,5 @@
 from typing import Optional, Dict
-from auxiliary.base_data import ActorData, PropData, StageData, WorldSystemData
+from prototype_data.data_def import ActorData, PropData, StageData, WorldSystemData
 
 class DataBaseSystem:
 

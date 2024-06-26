@@ -68,7 +68,7 @@ class PostConversationActionSystem(ReactiveProcessor):
             batch_events2stage_prompt = self.batch_stage_events(stage_director_comp.name, raw_events2stage) 
             logger.info(f"PostConversationActionSystem: {stage_director_comp.name} : {batch_events2stage_prompt}")
             if async_execute:
-                agent_connect_system.add_async_request_task(stage_director_comp.name, batch_events2stage_prompt, AgentRequestOption.ADD_PROMPT_TO_CHAT_HISTORY)
+                agent_connect_system.add_async_request_task(stage_director_comp.name, batch_events2stage_prompt, AgentRequestOption.JUST_ADD_PROMPT_TO_CHAT_HISTORY)
             else:
                 self.imme_request(stage_director_comp.name, batch_events2stage_prompt)
 
@@ -81,7 +81,7 @@ class PostConversationActionSystem(ReactiveProcessor):
                 batch_events2actor_prompt = self.batch_actor_events(stage_director_comp.name, raw_events2actor)
                 logger.info(f"PostConversationActionSystem: {actor_comp.name} : {batch_events2actor_prompt}")
                 if async_execute:
-                    agent_connect_system.add_async_request_task(actor_comp.name, batch_events2actor_prompt, AgentRequestOption.ADD_PROMPT_TO_CHAT_HISTORY)
+                    agent_connect_system.add_async_request_task(actor_comp.name, batch_events2actor_prompt, AgentRequestOption.JUST_ADD_PROMPT_TO_CHAT_HISTORY)
                 else:
                     self.imme_request(actor_comp.name, batch_events2actor_prompt)
 ####################################################################################################

@@ -1,10 +1,10 @@
 from overrides import override
 from entitas import Entity, Matcher, InitializeProcessor, ExecuteProcessor # type: ignore
-from auxiliary.components import WorldComponent, StageComponent, ActorComponent, PlayerComponent, PerceptionActionComponent, CheckStatusActionComponent
+from auxiliary.components import WorldComponent, StageComponent, ActorComponent, \
+    PlayerComponent, PerceptionActionComponent, CheckStatusActionComponent
 from builtin_prompt.cn_builtin_prompt import (kick_off_memory_actor_prompt, kick_off_memory_stage_prompt, kick_off_world_system_prompt)
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
-from systems.update_archive_helper import UpdareArchiveHelper
 from typing import Dict, Set
 from auxiliary.actor_plan_and_action import ActorAction
 
@@ -13,18 +13,15 @@ class AgentsKickOffSystem(InitializeProcessor, ExecuteProcessor):
     def __init__(self, context: ExtendedContext) -> None:
         self.context: ExtendedContext = context
         self.tasks: Dict[str, str] = {}
-        self.flag_first_time_add_perception_and_check_status: bool = False
+        self._once_add_perception_and_check_status: bool = False
 ###############################################################################################################################################
     @override
     def initialize(self) -> None:
-        context = self.context
-        helper = UpdareArchiveHelper(context)
-        helper.prepare()
         #分段处理
         self.tasks.clear()
-        world_tasks = self.create_world_system_tasks(helper)
-        stage_tasks = self.create_stage_tasks(helper)
-        actor_tasks = self.create_actor_tasks(helper)
+        world_tasks = self.create_world_system_tasks()
+        stage_tasks = self.create_stage_tasks()
+        actor_tasks = self.create_actor_tasks()
         #填进去
         self.tasks.update(world_tasks)
         self.tasks.update(stage_tasks)
@@ -32,11 +29,11 @@ class AgentsKickOffSystem(InitializeProcessor, ExecuteProcessor):
 ###############################################################################################################################################
     @override
     def execute(self) -> None:
-        if not self.flag_first_time_add_perception_and_check_status:
-            self.first_time_add_perception_and_check_status()
-            self.flag_first_time_add_perception_and_check_status = True
+        if not self._once_add_perception_and_check_status:
+            self.once_add_perception_and_check_status()
+            self._once_add_perception_and_check_status = True
 ####################################################################################################
-    def first_time_add_perception_and_check_status(self) -> None:
+    def once_add_perception_and_check_status(self) -> None:
         context = self.context
         entities: Set[Entity] = context.get_group(Matcher(all_of=[ActorComponent], none_of=[PlayerComponent])).entities
         for entity in entities:
@@ -55,36 +52,32 @@ class AgentsKickOffSystem(InitializeProcessor, ExecuteProcessor):
         context = self.context
         agent_connect_system = context.agent_connect_system
         if len(self.tasks) == 0:
-            #logger.error("InitMemorySystem tasks is empty.")
             return
         
         for name, prompt in self.tasks.items():
             agent_connect_system.add_async_request_task(name, prompt)
 
-        await context.agent_connect_system.run_async_requet_tasks("InitMemorySystem")
-        self.tasks.clear() # 这句必须得走！！！
-        logger.info("InitMemorySystem done.")
+        await context.agent_connect_system.run_async_requet_tasks("AgentsKickOffSystem")
+        self.tasks.clear() # 这句必须得走.
 ###############################################################################################################################################
-    def create_world_system_tasks(self, helper: UpdareArchiveHelper) -> Dict[str, str]:
+    def create_world_system_tasks(self) -> Dict[str, str]:
         result: Dict[str, str] = {}
+        #
         context = self.context
-        agent_connect_system = context.agent_connect_system
         worlds: Set[Entity] = context.get_group(Matcher(WorldComponent)).entities
         for world in worlds:
+            
             worldcomp: WorldComponent = world.get(WorldComponent)
             prompt = kick_off_world_system_prompt()
-            agent_connect_system.add_async_request_task(worldcomp.name, prompt)
             result[worldcomp.name] = prompt
         
         return result
 ###############################################################################################################################################
-    def create_stage_tasks(self, helper: UpdareArchiveHelper) -> Dict[str, str]:
-
+    def create_stage_tasks(self) -> Dict[str, str]:
         result: Dict[str, str] = {}
-
+        #
         context = self.context
         memory_system = context.kick_off_memory_system
-        agent_connect_system = context.agent_connect_system
         stages: Set[Entity] = context.get_group(Matcher(StageComponent)).entities
         for stage in stages:
 
@@ -95,29 +88,27 @@ class AgentsKickOffSystem(InitializeProcessor, ExecuteProcessor):
                 continue
 
             prompt = kick_off_memory_stage_prompt(stagememory)
-            agent_connect_system.add_async_request_task(stagecomp.name, prompt)
             result[stagecomp.name] = prompt
         
         return result
 ###############################################################################################################################################
-    def create_actor_tasks(self, helper: UpdareArchiveHelper) -> Dict[str, str]:
-
+    def create_actor_tasks(self) -> Dict[str, str]:
         result: Dict[str, str] = {}
-
         #
         context = self.context
         memory_system = context.kick_off_memory_system
-        agent_connect_system = context.agent_connect_system
         actor_entities: Set[Entity] = context.get_group(Matcher(all_of=[ActorComponent])).entities
         for _entity in actor_entities:
+
             actor_comp: ActorComponent = _entity.get(ActorComponent)
             _name: str = actor_comp.name
+            
             _kick_off_memory = memory_system.get_kick_off_memory(_name)
             if _kick_off_memory == "":
                 logger.error(f"_kick_off_memory is empty: {_name}")
                 continue
+            
             prompt = kick_off_memory_actor_prompt(_kick_off_memory)
-            agent_connect_system.add_async_request_task(_name, prompt)
             result[_name] = prompt
 
         return result

@@ -10,9 +10,9 @@ from pathlib import Path
 
 #
 class AgentRequestOption(Enum):
-    ADD_RESPONSE_AND_PROMPT_TO_CHAT_HISTORY = 1000,
-    ADD_PROMPT_TO_CHAT_HISTORY = 2000
-    DO_NOT_ADD_MESSAGE_TO_CHAT_HISTORY = 3000
+    BOTH_ADD_RESPONSE_AND_PROMPT_TO_CHAT_HISTORY = 1000,
+    JUST_ADD_PROMPT_TO_CHAT_HISTORY = 2000
+    BE_CAREFUL_DO_NOT_ADD_MESSAGE_TO_CHAT_HISTORY = 3000
   
 #
 class LangServeAgent:
@@ -44,14 +44,14 @@ class LangServeAgent:
     def _add_chat_history_after_response(self, prompt: str, reponse_content: str, option: AgentRequestOption) -> None:
         match(option):
 
-            case AgentRequestOption.ADD_RESPONSE_AND_PROMPT_TO_CHAT_HISTORY:
+            case AgentRequestOption.BOTH_ADD_RESPONSE_AND_PROMPT_TO_CHAT_HISTORY:
                 self.chat_history.extend([HumanMessage(content = prompt), AIMessage(content = reponse_content)])
 
-            case AgentRequestOption.ADD_PROMPT_TO_CHAT_HISTORY:
+            case AgentRequestOption.JUST_ADD_PROMPT_TO_CHAT_HISTORY:
                 logger.debug(f"add_chat_history: {self.name} add prompt to chat history. 这是一种特殊情况的处理")
                 self.chat_history.extend([HumanMessage(content = prompt)])
 
-            case AgentRequestOption.DO_NOT_ADD_MESSAGE_TO_CHAT_HISTORY:
+            case AgentRequestOption.BE_CAREFUL_DO_NOT_ADD_MESSAGE_TO_CHAT_HISTORY:
                 logger.debug(f"add_chat_history: {self.name} do not add message to chat history.")
 
             case _:
@@ -124,7 +124,7 @@ class LangServeAgentSystem:
         logger.error(f"connect_actor_agent: {name} is not registered.")
         return False
 ################################################################################################################################################################################
-    def agent_request(self, name: str, prompt: str, option: AgentRequestOption = AgentRequestOption.ADD_RESPONSE_AND_PROMPT_TO_CHAT_HISTORY) -> Optional[str]:
+    def agent_request(self, name: str, prompt: str, option: AgentRequestOption = AgentRequestOption.BOTH_ADD_RESPONSE_AND_PROMPT_TO_CHAT_HISTORY) -> Optional[str]:
         if name in self._agents:
             return self._agents[name].request(prompt, option)
         logger.error(f"request: {name} is not registered.")
@@ -206,11 +206,12 @@ class LangServeAgentSystem:
             return
 ################################################################################################################################################################################
     # 每个Agent需要异步请求调用的时候，需要先添加任务，然后全部异步任务添加完毕后，再调用run_async_requet_tasks
-    def add_async_request_task(self, name: str, prompt: str, option: AgentRequestOption = AgentRequestOption.ADD_RESPONSE_AND_PROMPT_TO_CHAT_HISTORY) -> None:
+    def add_async_request_task(self, name: str, prompt: str, option: AgentRequestOption = AgentRequestOption.BOTH_ADD_RESPONSE_AND_PROMPT_TO_CHAT_HISTORY) -> None:
         logger.debug(f"{name}添加异步请求任务:{prompt}")
+        assert self._async_request_tasks.get(name, None) is None
         self._async_request_tasks[name] = (prompt, option)
 ################################################################################################################################################################################
-    async def async_agent_requet(self, name: str, prompt: str, option: AgentRequestOption = AgentRequestOption.ADD_RESPONSE_AND_PROMPT_TO_CHAT_HISTORY) -> tuple[str, Optional[str], str]:
+    async def async_agent_requet(self, name: str, prompt: str, option: AgentRequestOption = AgentRequestOption.BOTH_ADD_RESPONSE_AND_PROMPT_TO_CHAT_HISTORY) -> tuple[str, Optional[str], str]:
         if name in self._agents:
             response = await self._agents[name].a_request(prompt, option)
             return (name, response, prompt)

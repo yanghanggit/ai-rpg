@@ -75,7 +75,7 @@ class UpdateAppearanceSystem(InitializeProcessor, ExecuteProcessor):
         safe_name = self.context.safe_get_entity_name(world_entity)
         try:
             # 注意 DO_NOT_ADD_MESSAGE_TO_CHAT_HISTORY，不要把这个消息加入到聊天记录中。因为世界级系统不需要存储上下文。
-            response = agent_connect_system.agent_request(safe_name, final_prompt, AgentRequestOption.DO_NOT_ADD_MESSAGE_TO_CHAT_HISTORY)
+            response = agent_connect_system.agent_request(safe_name, final_prompt, AgentRequestOption.BE_CAREFUL_DO_NOT_ADD_MESSAGE_TO_CHAT_HISTORY)
             if response is None:
                 logger.error(f"{safe_name} request response is None.")
                 return False

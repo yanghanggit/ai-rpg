@@ -4,59 +4,91 @@ from auxiliary.base_data import PropData, ActorData, StageData, WorldSystemData,
 from auxiliary.data_base_system import DataBaseSystem
 from pathlib import Path
 
-########################################################################################################################
-########################################################################################################################
-########################################################################################################################
+###############################################################################################################################################
+###############################################################################################################################################
+###############################################################################################################################################
 class GameBuilder:
+
+    """
+    这是一个分析游戏json的数据的类。
+    将游戏数据转换为游戏对象。
+    内部管理着WorldSystemBuilder，PlayerBuilder，ActorBuilder，StageBuilder，DataBaseSystem。
+    """
 
     def __init__(self, 
                  name: str, 
                  data: Any,
-                 runtimepath: str, 
-                 data_base_system: DataBaseSystem, 
                  runtime_file_dir: Path) -> None:
         
-        self.name = name
-        self.runtimepath = runtimepath
-        self._data: Any = data
-        assert self._data is not None
-        self.world_system_builder = WorldSystemBuilder("world_systems")
-        self.player_builder = ActorBuilder("players")
-        self.actor_buidler = ActorBuilder("actors")
-        self.stage_builder = StageBuilder()
-        self.data_base_system = data_base_system ## 依赖注入的方式，将数据库系统注入到这里
-        self.about_game: str = ""
-        self.runtime_dir: Path = runtime_file_dir
+        self._game_name: str = name
+        self._raw_data: Any = data
+        assert self._raw_data is not None
+        self._runtime_dir: Path = runtime_file_dir
+        assert self._runtime_dir is not None
+        assert self._runtime_dir.exists()
+
+        # 先全部给空的，就是临时创建出来
+        self._world_system_builder: WorldSystemBuilder = WorldSystemBuilder()
+        self._player_builder: ActorBuilder = ActorBuilder()
+        self._actor_buidler: ActorBuilder = ActorBuilder()
+        self._stage_builder: StageBuilder = StageBuilder()
+        self._data_base_system: DataBaseSystem = DataBaseSystem("") # 空的
 ###############################################################################################################################################
     @property
     def version(self) -> str:
-        if self._data is None:
+        if self._raw_data is None:
             logger.error("WorldDataBuilder: data is None.")
             return ""
-        return cast(str, self._data.get('version', ""))  
+        return cast(str, self._raw_data.get('version', ""))  
+###############################################################################################################################################
+    @property
+    def about_game(self) -> str:
+        if self._raw_data is None:
+            assert False, "WorldDataBuilder: data is None."
+            return "?"
+        return str(self._raw_data.get('about_game', "无关于游戏的信息。"))
 ###############################################################################################################################################
     def build(self) -> 'GameBuilder':
-        if self._data is None:
+        if self._raw_data is None:
             logger.error("WorldDataBuilder: data is None.")
             return self
+        
+        raw_data = self._raw_data
+        assert raw_data is not None
         # 第一步，创建数据库
-        self._create_data_base_system()
-        # 第二步，创建配置
-        self._build_config(self._data)
+        database = raw_data.get('database', None)
+        if database is None:
+            assert False, "没有数据库(database)，请检查World.json配置。"
+            return
+        
+        # 常量
+        name_of_actor_data_block = "actors"
+        name_of_player_data_block = "players"
+        name_of_stage_data_block = "stages"
+        name_of_prop_data_block = "props"
+        name_of_world_system_data_block = "world_systems"
+
+        # 创建数据库，添加数据，直接盖掉。        
+        db_system = self._data_base_system = DataBaseSystem("data_base_system，it is a system that stores all the origin data from the settings.")
+        self._add_actors_2_db(database.get(name_of_actor_data_block, None), db_system)
+        self._add_stages_2_db(database.get(name_of_stage_data_block, None), db_system)
+        self._add_props_2_db(database.get(name_of_prop_data_block, None), db_system)
+        self._add_world_systems_2_db(database.get(name_of_world_system_data_block, None), db_system)
+
         # 第三步，创建世界级别的管理员
-        self.world_system_builder.build(self._data, self.data_base_system)
+        self._world_system_builder.build(name_of_world_system_data_block, raw_data, db_system)
+        
         # 第四步，创建玩家与Actor
-        self.player_builder.build(self._data, self.data_base_system)
-        self.actor_buidler.build(self._data, self.data_base_system)
+        self._player_builder.build(name_of_player_data_block, raw_data, db_system)
+        self._actor_buidler.build(name_of_actor_data_block, raw_data, db_system)
+        
         # 第五步，创建场景
-        self.stage_builder.build(self._data, self.data_base_system)
-        #
+        self._stage_builder.build(name_of_stage_data_block, raw_data, db_system)
+
+        # 返回自己
         return self
 ###############################################################################################################################################
-    def _build_config(self, data: Dict[str, Any]) -> None:
-        self.about_game = data.get('about_game', "无关于游戏的信息。")
-###############################################################################################################################################
-    def _create_actor_data_base(self, actors: Any) -> None:
+    def _add_actors_2_db(self, actors: Any, data_base_system: DataBaseSystem) -> None:
         if actors is None:
             logger.error("没有Actor数据内容，请检查World.json配置。")
             return
@@ -88,9 +120,9 @@ class GameBuilder:
                           _data.get("body"),
                           Attributes(_data.get("attributes")))
             
-            self.data_base_system.add_actor(_actor._name, _actor)
+            data_base_system.add_actor(_actor._name, _actor)
 ###############################################################################################################################################
-    def _create_world_system_data_base(self, world_systems: Any) -> None:
+    def _add_world_systems_2_db(self, world_systems: Any, data_base_system: DataBaseSystem) -> None:
         if world_systems is None:
             logger.error("没有世界系统数据内容(world_systems)，请检查World.json配置。")
             return
@@ -100,9 +132,9 @@ class GameBuilder:
             _ws_da_ = WorldSystemData(core_data.get("name"), 
                                         core_data.get("codename"), 
                                         core_data.get("url"))
-            self.data_base_system.add_world_system(_ws_da_._name, _ws_da_)
+            data_base_system.add_world_system(_ws_da_._name, _ws_da_)
 ###############################################################################################################################################
-    def _create_stage_data_base(self, stages: Any) -> None:
+    def _add_stages_2_db(self, stages: Any, data_base_system: DataBaseSystem) -> None:
         if stages is None:
             logger.error("没有场景数据内容(stages)，请检查World.json配置。")
             return
@@ -134,9 +166,9 @@ class GameBuilder:
                 logger.debug(f"Stage {stage._name} has no exit_of_portal.")
 
             # 添加到数据库
-            self.data_base_system.add_stage(stage._name, stage)
+            data_base_system.add_stage(stage._name, stage)
 ###############################################################################################################################################
-    def _create_prop_data_base(self, props: Any) -> None:
+    def _add_props_2_db(self, props: Any, data_base_system: DataBaseSystem) -> None:
         if props is None:
             logger.error("没有道具数据内容(props)，请检查World.json配置。")
             return
@@ -151,29 +183,25 @@ class GameBuilder:
                 prop_data.get('type'), 
                 Attributes(prop_data.get('attributes'))
                 )
-            self.data_base_system.add_prop(propname, _pd)
+            data_base_system.add_prop(propname, _pd)
 ###############################################################################################################################################
-    def _create_data_base_system(self) -> None:
-        database = self._data.get('database', None)
-        if database is None:
-            logger.error("没有数据库(database)，请检查World.json配置。")
-            return
-        self._create_actor_data_base(database.get('actors', None))
-        self._create_stage_data_base(database.get('stages', None))
-        self._create_prop_data_base(database.get('props', None))
-        self._create_world_system_data_base(database.get('world_systems', None))
-########################################################################################################################
-########################################################################################################################
-########################################################################################################################
+
+###############################################################################################################################################
+###############################################################################################################################################
+###############################################################################################################################################
 class StageBuilder:
+    
+    """
+    这是一个分析场景json的数据的类。
+    """
 
     def __init__(self) -> None:
-        self._data_block: Optional[Dict[str, Any]] = None
+        self._raw_data: Optional[Dict[str, Any]] = None
         self._stages: List[StageData] = []
-########################################################################################################################
+###############################################################################################################################################
     def __str__(self) -> str:
-        return f"StageBuilder: {self._data_block}"      
-########################################################################################################################
+        return f"StageBuilder: {self._raw_data}"      
+###############################################################################################################################################
     def props_proxy_in_stage(self, data: List[Any]) -> List[tuple[PropData, int]]:
         res: List[tuple[PropData, int]] = []
         for obj in data:
@@ -181,21 +209,21 @@ class StageBuilder:
             count = int(obj.get("count"))
             res.append((prop, count))
         return res
-########################################################################################################################
+###############################################################################################################################################
     def actors_proxy_in_stage(self, _data: List[Any]) -> Set[ActorData]:
         res: Set[ActorData] = set()
         for obj in _data:
             _d = ActorDataProxy(obj.get("name"))
             res.add(_d)
         return res
-########################################################################################################################
-    def build(self, json_data: Dict[str, Any], data_base_system: DataBaseSystem) -> None:
-        self._data_block = json_data.get("stages")
-        if self._data_block is None:
+###############################################################################################################################################
+    def build(self, block_name: str, json_data: Dict[str, Any], data_base_system: DataBaseSystem) -> 'StageBuilder':
+        self._raw_data = json_data.get(block_name)
+        if self._raw_data is None:
             logger.error("StageBuilder: stages data is None.")
-            return
+            return self
 
-        for _bk in self._data_block:
+        for _bk in self._raw_data:
             _da = _bk.get("stage")    
             assert _da is not None    
             #
@@ -208,26 +236,31 @@ class StageBuilder:
             stage_data._actors = actors_in_stage
             #添加场景
             self._stages.append(stage_data)
-########################################################################################################################
-########################################################################################################################
-########################################################################################################################
-class ActorBuilder:
 
-    def __init__(self, root_name: str) -> None:
-        self._root_name = root_name
-        self._data_block: Optional[Dict[str, Any]] = None
+        return self
+###############################################################################################################################################
+###############################################################################################################################################
+###############################################################################################################################################
+class ActorBuilder:
+    
+    """
+    这是一个分析角色json的数据的类。
+    """
+
+    def __init__(self) -> None:
+        self._raw_data: Optional[Dict[str, Any]] = None
         self._actors: List[ActorData] = []
-########################################################################################################################
+###############################################################################################################################################
     def __str__(self) -> str:
-        return f"ActorBuilder: {self._data_block}"       
-########################################################################################################################
-    def build(self, json_data: Dict[str, Any], data_base_system: DataBaseSystem) -> None:
-        self._data_block = json_data.get(self._root_name)
-        if self._data_block is None:
-            logger.error(f"ActorBuilder: {self._root_name} data is None.")
-            return
+        return f"ActorBuilder: {self._raw_data}"       
+###############################################################################################################################################
+    def build(self, block_name: str, json_data: Dict[str, Any], data_base_system: DataBaseSystem) -> 'ActorBuilder':
+        self._raw_data = json_data.get(block_name)
+        if self._raw_data is None:
+            logger.error(f"ActorBuilder: {block_name} data is None.")
+            return self
         
-        for _bk in self._data_block:
+        for _bk in self._raw_data:
             # Actor核心数据
             assert _bk.get("actor") is not None
             assert _bk.get("props") is not None
@@ -247,35 +280,41 @@ class ActorBuilder:
                 proxy: PropData = PropDataProxy(_pd.get("name"))
                 count: int = int(_pd.get("count"))
                 actor_data._props.append((proxy, count)) # 连接道具         
-########################################################################################################################
-########################################################################################################################
-########################################################################################################################
+
+        return self
+###############################################################################################################################################
+###############################################################################################################################################
+###############################################################################################################################################
 class WorldSystemBuilder:
+    
+    """
+    这是一个分析世界系统json的数据的类。
+    """
 
-    def __init__(self, data_name: str) -> None:
-        self._data_list: Optional[Dict[str, Any]] = None
-        self._world_system_datas: List[WorldSystemData] = []
-        self._data_name = data_name
-
+    def __init__(self) -> None:
+        self._raw_data: Optional[Dict[str, Any]] = None
+        self._world_systems: List[WorldSystemData] = []
+###############################################################################################################################################
     def __str__(self) -> str:
-        return f"WorldSystemBuilder: {self._data_list}"       
-
-    #
-    def build(self, json_data: Dict[str, Any], data_base_system: DataBaseSystem) -> None:
-        self._data_list = json_data.get(self._data_name)
-        if self._data_list is None:
-            logger.error(f"WorldSystemBuilder: {self._data_name} data is None.")
-            return
+        return f"WorldSystemBuilder: {self._raw_data}"       
+###############################################################################################################################################
+    def build(self, block_name: str, json_data: Dict[str, Any], data_base_system: DataBaseSystem) -> 'WorldSystemBuilder':
+        self._raw_data = json_data.get(block_name)
+        if self._raw_data is None:
+            logger.error(f"WorldSystemBuilder: {block_name} data is None.")
+            return self
         
-        for datablock in self._data_list:
-            _core_ = datablock.get("world_system")
+        for _d in self._raw_data:
+            _core_ = _d.get("world_system")
             _name = _core_.get("name")
             world_system_data = data_base_system.get_world_system(_name)
             if world_system_data is None:
                 logger.error(f"WorldSystemBuilder: {_name} not found in database.")
                 continue
      
-            self._world_system_datas.append(world_system_data)
-########################################################################################################################
-########################################################################################################################
-########################################################################################################################
+            self._world_systems.append(world_system_data)
+
+        return self
+###############################################################################################################################################
+###############################################################################################################################################
+###############################################################################################################################################

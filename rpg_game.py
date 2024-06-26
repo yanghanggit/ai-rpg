@@ -181,37 +181,35 @@ class RPGGame(BaseGame):
         return processors
 ###############################################################################################################################################
     def create_game(self, worlddata: GameBuilder) -> 'RPGGame':
-        assert worlddata is not None
-        assert worlddata._data is not None
 
         context = self.extendedcontext
         chaos_engineering_system = context.chaos_engineering_system
         
         # 第0步，yh 目前用于测试!!!!!!!，直接删worlddata.name的文件夹，保证每次都是新的 删除runtime_dir_for_world的文件夹
-        if worlddata.runtime_dir.exists():
+        if worlddata._runtime_dir.exists():
             #todo
-            logger.warning(f"删除文件夹：{worlddata.runtime_dir}, 这是为了测试，后续得改！！！")
-            shutil.rmtree(worlddata.runtime_dir)
+            logger.warning(f"删除文件夹：{worlddata._runtime_dir}, 这是为了测试，后续得改！！！")
+            shutil.rmtree(worlddata._runtime_dir)
 
         # 混沌系统，准备测试
         chaos_engineering_system.on_pre_create_game(context, worlddata)
 
         ## 第1步，设置根路径
         self.builder = worlddata
-        context.agent_connect_system.set_runtime_dir(worlddata.runtime_dir)
-        context.kick_off_memory_system.set_runtime_dir(worlddata.runtime_dir)
-        context.file_system.set_runtime_dir(worlddata.runtime_dir)
+        context.agent_connect_system.set_runtime_dir(worlddata._runtime_dir)
+        context.kick_off_memory_system.set_runtime_dir(worlddata._runtime_dir)
+        context.file_system.set_runtime_dir(worlddata._runtime_dir)
 
         ## 第2步 创建管理员类型的角色，全局的AI
-        self.create_world_system_entities(worlddata.world_system_builder)
+        self.create_world_system_entities(worlddata._world_system_builder)
 
         ## 第3步，创建actor，player是特殊的actor
-        self.create_player_entities(worlddata.player_builder)
-        self.create_actor_entities(worlddata.actor_buidler)
+        self.create_player_entities(worlddata._player_builder)
+        self.create_actor_entities(worlddata._actor_buidler)
         self.add_code_name_component_to_world_and_actors()
 
         ## 第4步，创建stage
-        self.create_stage_entities(worlddata.stage_builder)
+        self.create_stage_entities(worlddata._stage_builder)
         
         ## 第5步，最后处理因为需要上一阶段的注册流程
         self.add_code_name_component_stages()
@@ -258,11 +256,11 @@ class RPGGame(BaseGame):
         agent_connect_system = context.agent_connect_system
         code_name_component_system = context.code_name_component_system
         res: List[Entity] = []
-        if actor_builder._data_list is None:
+        if actor_builder._raw_data is None:
             raise ValueError("没有WorldBuilder数据，请检查World.json配置。")
             return res
         
-        for builddata in actor_builder._world_system_datas:
+        for builddata in actor_builder._world_systems:
             worldentity = context.create_entity()
             res.append(worldentity)
             #必要组件
@@ -291,7 +289,7 @@ class RPGGame(BaseGame):
         code_name_component_system = context.code_name_component_system
         res: List[Entity] = []
 
-        if actor_builder._data_block is None:
+        if actor_builder._raw_data is None:
             raise ValueError("没有ActorBuilder数据，请检查World.json配置。")
             return res
         
@@ -343,7 +341,7 @@ class RPGGame(BaseGame):
         code_name_component_system = context.code_name_component_system
         res: List[Entity] = []
 
-        if stagebuilder._data_block is None:
+        if stagebuilder._raw_data is None:
             raise ValueError("没有StageBuilder数据，请检查World.json配置。")
             return res
         

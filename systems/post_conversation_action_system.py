@@ -6,7 +6,7 @@ from loguru import logger
 from auxiliary.director_component import StageDirectorComponent
 from typing import List, Set, Optional, Dict
 from auxiliary.lang_serve_agent_system import LangServeAgentSystem, AgentRequestOption
-from auxiliary.cn_builtin_prompt import batch_conversation_action_events_in_stage
+from auxiliary.cn_builtin_prompt import batch_conversation_action_events_in_stage_prompt
 
 # 这个类就是故意打包将对话类事件先进行一次request，如果LLM发现有政策问题就会抛异常，不会将污染的message加入chat history，这样就不可能进入chat_history。
 # 这么做是防止玩家的对话内容包含了非法信息和违反政策的内容。
@@ -95,10 +95,10 @@ class PostConversationActionSystem(ReactiveProcessor):
                 logger.error(f"imme_request: {name} request error.")
 ####################################################################################################
     def batch_stage_events(self, stagename: str, events2stage: List[str]) -> str:
-        return batch_conversation_action_events_in_stage(stagename, events2stage, self.context)
+        return batch_conversation_action_events_in_stage_prompt(stagename, events2stage, self.context)
 ####################################################################################################
     def batch_actor_events(self, stagename: str, events2actor: List[str]) -> str:
-        return batch_conversation_action_events_in_stage(stagename, events2actor, self.context)
+        return batch_conversation_action_events_in_stage_prompt(stagename, events2actor, self.context)
 ####################################################################################################
     async def async_post_execute(self) -> None:
         # 并行执行requests

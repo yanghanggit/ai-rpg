@@ -17,8 +17,8 @@ from loguru import logger
 from auxiliary.director_component import notify_stage_director
 from auxiliary.director_event import IDirectorEvent
 from auxiliary.cn_builtin_prompt import \
-            prop_info_prompt, stage_exit_conditions_check_promt, \
-            stage_entry_conditions_check_promt,\
+            prop_info_prompt, stage_exit_conditions_check_prompt, \
+            stage_entry_conditions_check_prompt,\
             exit_stage_failed_beacuse_stage_refuse_prompt, \
             enter_stage_failed_beacuse_stage_refuse_prompt, \
             __ConstantPromptValue__,\
@@ -293,7 +293,7 @@ class CheckBeforeGoToActionSystem(ReactiveProcessor):
         current_actor_props_prompt = self.get_actor_props_prompt(entity)
         
         
-        final_prompt = stage_exit_conditions_check_promt(actor_name, 
+        final_prompt = stage_exit_conditions_check_prompt(actor_name, 
                                                          current_stage_name, 
                                                          stage_exit_cond_helper.stage_cond_status_prompt, 
                                                          stage_exit_cond_helper.cond_check_actor_status_prompt, 
@@ -350,7 +350,7 @@ class CheckBeforeGoToActionSystem(ReactiveProcessor):
         current_actor_status_prompt = self.get_actor_status_prompt(entity)
         current_actor_props_prompt = self.get_actor_props_prompt(entity)
         # 最终提示词
-        final_prompt = stage_entry_conditions_check_promt(actor_name, 
+        final_prompt = stage_entry_conditions_check_prompt(actor_name, 
                                                          target_stage_name, 
                                                          stage_exit_cond_helper.stage_cond_status_prompt, 
                                                          stage_exit_cond_helper.cond_check_actor_status_prompt, 

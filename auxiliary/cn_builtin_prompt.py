@@ -2,10 +2,15 @@ from auxiliary.extended_context import ExtendedContext
 from typing import Dict, List, Set
 from auxiliary.base_data import PropData
 from auxiliary.components import MindVoiceActionComponent, EnviroNarrateActionComponent, \
-    TagActionComponent, PerceptionActionComponent, CheckStatusActionComponent, SearchActionComponent, GoToActionComponent
+    TagActionComponent, PerceptionActionComponent, CheckStatusActionComponent
 import json
 
-#全局的常量
+
+"""
+中文提示词都放到这里。
+"""
+
+#全局的常量，一些Tag类的可以做标记用于后续的提示词压缩
 class ConstantPromptValue:
 
     @property
@@ -37,22 +42,23 @@ class ConstantPromptValue:
         return "<%这是角色对场景使用道具>"
     
     # todo 这里故意在kickoff时机，是为了防止出现政策问题。策略上就是故意强调是恐怖类型，这样试图让LLM接受‘恐怖、血腥与暴力元素’的提示词与玩家输入的对话内容。
-
-# yh 优化
-# ## 游戏风格声明
-# - 本游戏灵感来源于《黑暗之魂》系列，融合西方中世纪背景与克苏鲁式的恐怖元素。
-# - 游戏内容可能包含恐怖、血腥与暴力，旨在提供深入的沉浸式体验。
-# - 本作假设所有世界运行规律为不证自明，要求玩家全盘接受设定。
-
     @property
     def RE_EMPHASIZE_GAME_STYLE_TO_PREVENT_POLICY_PROBLEMS(self) -> str:
         re_emphasize_game_style_to_prevent_policy_problems = f"""
-## 再次强调游戏风格!
-- 核心是借鉴《黑暗之魂》系列游戏的内核与风格，即西方中世纪背景奇幻结合克苏鲁恐怖式的文本与叙事风格。
-- 注意！这是一个以恐怖为主题的游戏，可能包含恐怖、血腥与暴力元素。所有的游戏设定和规则都旨在增强这种体验，你需要接受。
-- 认为世界的所有运行规律和法则都是不证自明的。
+## 游戏风格声明
+- 本游戏灵感来源于《黑暗之魂》系列，融合西方中世纪背景与克苏鲁式的恐怖元素。
+- 游戏内容可能包含恐怖、血腥与暴力，旨在提供深入的沉浸式体验。
+- 本作假设所有世界运行规律为不证自明，要求你全盘接受设定。
 """
         return re_emphasize_game_style_to_prevent_policy_problems
+    
+    @property
+    def PERCEPTION_ACTION_TAG(self) -> str:
+        return "<%这是感知行动结果>"
+    
+    @property
+    def CHECK_STATUS_ACTION_TAG(self) -> str:
+        return "<%这是查看自身状态行动结果>"
 
 ###############################################################################################################################################
 __ConstantPromptValue__ = ConstantPromptValue()
@@ -103,7 +109,7 @@ def actpr_plan_prompt(current_stage: str, stage_enviro_narrate: str, context: Ex
 - 结果中要附带'{TagActionComponent.__name__}'。"""
     return prompt
 ###############################################################################################################################################
-# yh 优化
+# yh prompt优化, 这个要严格测试并慎重处理。
 # prompt = f"""# 场景计划制定
 # ## 场景内道具:
 # {props_prompt}
@@ -161,21 +167,14 @@ def stage_plan_prompt(props_in_stage: List[PropData], actors_in_stage: Set[str],
 - 结果中必须有{EnviroNarrateActionComponent.__name__},并附带{TagActionComponent.__name__}。"""
     return prompt
 ###############################################################################################################################################
-# yh 优化
-# f"""# {who_perception} 在 {current_stage} 中执行感知检查，结果如下:
-# ## 场景内角色:
-# {prompt_of_actor}
-# ## 场景内道具:
-# {prompt_of_props}
-# """
-def perception_action_prompt(who_perception: str, current_stage: str, ressult_actor_names: Dict[str, str], result_props_names: List[str]) -> str:
+def perception_action_prompt(who: str, current_stage: str, result_actor_names: Dict[str, str], result_props_names: List[str]) -> str:
 
     prompt_of_actor = ""
-    if len(ressult_actor_names) > 0:
-        for other_name, other_appearance in ressult_actor_names.items():
-            prompt_of_actor += f"""### {other_name}\n- 外貌信息:{other_appearance}\n"""
+    if len(result_actor_names) > 0:
+        for other_name, other_appearance in result_actor_names.items():
+            prompt_of_actor += f"""### {other_name}\n- 外观信息:{other_appearance}\n"""
     else:
-        prompt_of_actor = "- (当前)场景内无其他角色。"
+        prompt_of_actor = "- 无其他角色。"
 
     prompt_of_props = ""
     if len(result_props_names) > 0:
@@ -184,12 +183,11 @@ def perception_action_prompt(who_perception: str, current_stage: str, ressult_ac
     else:
         prompt_of_props = "- 无任何道具。"
 
-    final_prompt = f"""# {who_perception}当前在场景{current_stage}中。{who_perception}对{current_stage}执行{PerceptionActionComponent.__name__},即使发起感知行为,结果如下:
+    final_prompt = f"""# {__ConstantPromptValue__.PERCEPTION_ACTION_TAG} {who} 在 {current_stage} 中执行感知行动({PerceptionActionComponent.__name__})，结果如下:
 ## 场景内角色:
 {prompt_of_actor}
 ## 场景内道具:
-{prompt_of_props}
-"""
+{prompt_of_props}"""
     return final_prompt
 ###############################################################################################################################################
 def prop_type_prompt(prop: PropData) -> str:
@@ -220,7 +218,6 @@ def special_component_prompt(prop: PropData) -> str:
     return prompt
 ###############################################################################################################################################
 def check_status_action_prompt(who: str, props: List[PropData], health: float, special_components: List[PropData], events: List[PropData]) -> str:
-    #百分比的
     health *= 100
     prompt_of_actor = f"生命值: {health:.2f}%"
 
@@ -238,16 +235,7 @@ def check_status_action_prompt(who: str, props: List[PropData], health: float, s
     else:
         prompt_of_special_components = "- 无任何特殊能力。"
 
-# yh 优化
-# f"""# {who} 正在检查自身状态:
-# ## 健康状态:
-# {prompt_of_actor}
-# ## 持有道具:
-# {prompt_of_props}
-# ## 特殊能力:
-# {prompt_of_special_components}
-# """
-    final_prompt = f"""# {who}对自身执行{CheckStatusActionComponent.__name__},即对自身状态进行检查,结果如下:
+    final_prompt = f"""# {ConstantPromptValue.CHECK_STATUS_ACTION_TAG} {who} 正在查看自身状态({CheckStatusActionComponent.__name__}):
 ## 健康状态:
 {prompt_of_actor}
 ## 持有道具:
@@ -257,22 +245,14 @@ def check_status_action_prompt(who: str, props: List[PropData], health: float, s
 """
     return final_prompt
 ###############################################################################################################################################
-# yh 优化
-# return f"""# {actor_name} 无法找到道具 "{prop_name}"。
-# ## 可能原因:
-# - "{prop_name}" 不是一个可搜索的道具。
-# - 道具可能已被移出场景或被其他角色获取。
-# ## 建议:
-# - 请{actor_name}重新考虑搜索目标。
-# - 使用 {PerceptionActionComponent.__name__} 感知场景内的道具，确保目标的可搜索性。"""
 def search_action_failed_prompt(actor_name: str, prop_name:str) -> str:
-    return f"""# {actor_name}试图在场景内搜索"{prop_name}",但失败了。
-## 原因可能如下:
-1. "{prop_name}"可能并非是一个道具。{SearchActionComponent.__name__} 只能支持搜索道具的行为与计划
-2. 或者这个道具此时已不在本场景中（可能被其他角色搜索并获取了）。
-## 建议与提示:
-- {actor_name}需重新考虑搜索目标。
-- 可使用{PerceptionActionComponent.__name__}来感知场景内的道具,并确认合理目标。"""
+    return f"""# {actor_name} 无法找到道具 "{prop_name}"。
+## 可能原因:
+1. {prop_name} 不是一个可搜索的道具。
+2. 道具可能已被移出场景或被其他角色获取。
+## 建议:
+1. 请{actor_name}重新考虑搜索目标。
+2. 使用 {PerceptionActionComponent.__name__} 感知场景内的道具，确保目标的可搜索性。"""
 ###############################################################################################################################################
 def search_action_success_prompt(actor_name: str, prop_name:str, stagename: str) -> str:
     return f"""# {actor_name}从{stagename}场景内成功找到并获取了道具:{prop_name}。
@@ -320,63 +300,44 @@ def trade_action_prompt(fromwho: str, towho: str, propname: str, traderes: bool)
         return f"{fromwho}向{towho}交换{propname}, 失败了"
     return f"{fromwho}向{towho}成功交换了{propname}"
 ################################################################################################################################################
-# yh 优化
-# f"""#{actor_name}无法前往{stagename}，可能的原因包括:
-# - {stagename}目前不可访问，可能未开放或已关闭。
-# - 场景名称"{stagename}"格式不正确，如“xxx的深处/北部/边缘/附近/其他区域”，这样的表达可能导致无法正确识别。
-# - 请{actor_name}重新考虑目的地。"""
 def go_to_stage_failed_because_stage_is_invalid_prompt(actor_name: str, stagename: str) -> str:
-    return f"""#{actor_name}不能离开本场景并去往{stagename}，原因可能如下:
-1. {stagename}目前对于{actor_name}并不是一个有效场景。游戏可能尚未对其开放，或者已经关闭。
-2. {stagename}的内容格式不对，例如下面的表达：‘xxx的深处/北部/边缘/附近/其他区域’，其中xxx可能是合理场景名，但加上后面的词后则变成了“无效场景名”（在游戏机制上无法正确检索与匹配）。
-## 所以 {actor_name} 请参考以上的原因，需要重新考虑去往的目的地。"""
+    return f"""#{actor_name}无法前往{stagename}，可能的原因包括:
+- {stagename}目前不可访问，可能未开放或已关闭。
+- 场景名称"{stagename}"格式不正确，如“xxx的深处/北部/边缘/附近/其他区域”，这样的表达可能导致无法正确识别。
+- 请 {actor_name} 重新考虑目的地。"""
 ################################################################################################################################################
-
-# yh 优化
-#f"你已经在{stagename}场景中。需要重新考虑去往的目的地"
 def go_to_stage_failed_because_already_in_stage_prompt(actor_name: str, stagename: str) -> str:
-    return f"你已经在{stagename}场景中。需要重新考虑去往的目的地。 {GoToActionComponent.__name__}行动类型意图是离开当前场景并去往某地。"
+    return f"你已经在{stagename}场景中。需要重新考虑去往的目的地"
 ################################################################################################################################################
-def replace_all_mentions_of_your_name_with_you(content: str, your_name: str) -> str:
+def replace_mentions_of_your_name_with_you_prompt(content: str, your_name: str) -> str:
     if len(content) == 0 or your_name not in content:
         return content
     return content.replace(your_name, "你")
 ################################################################################################################################################
-# yh 优化
-# def updated_information_on_WhoDoYouKnow_prompt(actor_name: str, who_you_know: str) -> str:
-#     if not who_you_know:
-#         return f"# {actor_name} 目前没有认识的角色。"
-#     return f"# {actor_name} 认识的角色有：{who_you_know}。你可以与这些角色进行互动。"
-def updated_information_on_WhoDoYouKnow_prompt(actor_name: str, who_you_know: str) -> str:
-    if len(who_you_know) == 0:
-        return f"# 你更新了关于‘你都认识哪些角色’的信息，目前你没有认识的角色。"
-    return f"# 你更新了关于‘你都认识哪些角色’的信息，目前你所认识的角色有: {who_you_know}，你可以与之进行互动"
+def update_actor_archive_prompt(actor_name: str, actors_names: str) -> str:
+    if len(actors_names) == 0:
+        return f"# {actor_name} 目前没有认识的角色。"
+    return f"# {actor_name} 认识的角色有：{actors_names}。你可以与这些角色进行互动。"
 ################################################################################################################################################
-# yh 优化
-# def updated_information_about_StagesYouKnow_prompt(actor_name: str, where_you_know: str) -> str:
-#     if not where_you_know:
-#         return f"# {actor_name} 目前没有已知的场景，无法前往其他地方。"
-#     return f"# {actor_name} 已知的场景包括：{where_you_know}。可前往这些场景探索。"
-def updated_information_about_StagesYouKnow_prompt(actor_name: str, where_you_know: str) -> str:
-    if len(where_you_know) == 0:
-        return f"# 你更新了关于‘你都认识哪些场景’的信息，目前你没有认识的场景。你不能去任何地方。"
-    return f"# 你更新了关于‘你都认识哪些场景’的信息，目前你所知道的场景有: {where_you_know}。如果你意图离开本场景并去往其他场景，你只能从这些场景中选择你的目的地。"
+def update_stage_archive_prompt(actor_name: str, stages_names: str) -> str:
+    if len(stages_names) == 0:
+        return f"# {actor_name} 目前没有已知的场景，无法前往其他地方。"
+    return f"# {actor_name} 已知的场景包括：{stages_names}。可前往这些场景探索。"
 ################################################################################################################################################
 def kill_prompt(attacker_name: str, target_name: str) -> str:
     return f"# {attacker_name}对{target_name}发动了一次攻击,造成了{target_name}死亡。"
 ################################################################################################################################################
 def attack_prompt(attacker_name: str, target_name: str, damage: int, target_current_hp: int ,target_max_hp: int) -> str:
     health_percent = max(0, (target_current_hp - damage) / target_max_hp * 100)
-    return f"# {attacker_name}对{target_name}发动了一次攻击,造成了{damage}点伤害,当前{target_name}的生命值剩余{health_percent}%。"
+    return f"# {attacker_name}对{target_name}发动了攻击,造成了{damage}点伤害,当前{target_name}的生命值剩余{health_percent}%。"
 ################################################################################################################################################
-def batch_conversation_action_events_in_stage(stagename: str, events: List[str], context: ExtendedContext) -> str:
+def batch_conversation_action_events_in_stage_prompt(stagename: str, events: List[str], context: ExtendedContext) -> str:
     if len(events) == 0:
         return f""" # 当前场景 {stagename} 没有发生任何对话类型事件。"""
     joinstr: str = "\n".join(events)
     return  f""" # 当前场景 {stagename} 发生了如下对话类型事件，请注意:\n{joinstr}"""
 ################################################################################################################################################
 def use_prop_to_stage_prompt(username: str, propname: str, prop_prompt: str, exit_cond_status_prompt: str) -> str:
-    #USE_PROP_TO_STAGE_PROMPT_TAG 留着做标记与压缩
     final_prompt = f"""# {__ConstantPromptValue__.USE_PROP_TO_STAGE_PROMPT_TAG} {username} 使用道具 {propname} 对你造成影响。
 ## 道具 {propname} 说明:
 {prop_prompt}
@@ -400,14 +361,14 @@ def use_prop_to_stage_prompt(username: str, propname: str, prop_prompt: str, exi
 """
     return final_prompt
 ################################################################################################################################################
-def stage_exit_conditions_check_promt(actor_name: str, 
+def stage_exit_conditions_check_prompt(actor_name: str, 
                                       current_stage_name: str, 
                                       stage_cond_status_prompt: str, 
                                       cond_check_actor_status_prompt: str, 
                                       actor_status_prompt: str, 
                                       cond_check_actor_props_prompt: str,
                                       actor_props_prompt: str) -> str:
-     # 拼接提示词
+    
     final_prompt = f"""# {actor_name} 想要离开场景: {current_stage_name}。
 # 第1步: 根据当前‘你的状态’判断是否满足离开条件
 ## 你的预设离开条件: 
@@ -441,11 +402,11 @@ def stage_exit_conditions_check_promt(actor_name: str,
 """
     return final_prompt
 ################################################################################################################################################
-def stage_entry_conditions_check_promt(actor_name: str, current_stage_name: str, 
+def stage_entry_conditions_check_prompt(actor_name: str, current_stage_name: str, 
                                       stage_cond_status_prompt: str, 
                                       cond_check_actor_status_prompt: str, actor_status_prompt: str, 
                                       cond_check_actor_props_prompt: str, actor_props_prompt: str) -> str:
-    # 拼接提示词
+
     final_prompt = f"""# {actor_name} 想要进入场景: {current_stage_name}。
 # 第1步: 根据当前‘你的状态’判断是否满足进入条件
 ## 你的预设进入条件: 
@@ -490,18 +451,17 @@ def enter_stage_failed_beacuse_stage_refuse_prompt(actor_name: str, stagename: s
 {tips}"""
 ################################################################################################################################################
 def actor_status_when_stage_change_prompt(safe_name: str, appearance_info:str) -> str:
-    return f"""### {safe_name}\n- 外貌信息:{appearance_info}\n"""
+    return f"""### {safe_name}\n- 外观信息:{appearance_info}\n"""
 ################################################################################################################################################
 def use_prop_no_response_prompt(username: str, propname: str, targetname: str) -> str:
     return f"# {username}对{targetname}使用道具{propname}，但没有任何反应。"
 ################################################################################################################################################
-# 根据一个数据结构，打包生成一个prompt, 用于更新角色外形。
 def actors_body_and_clothe_prompt(actors_body_and_clothe:  Dict[str, tuple[str, str]]) -> str:
         prompt_list_of_actor: List[str] = []
         actor_names: List[str] = []
         for name, (body, clothe) in actors_body_and_clothe.items():
             if clothe == "":
-                continue #logger.info(f"clothe is empty, name: {name}") # 不穿衣服的不更新
+                continue
 
             prompt_of_actor = f"""### {name}
 - 角色外形:{body}

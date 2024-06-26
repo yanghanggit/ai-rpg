@@ -3,11 +3,11 @@ from auxiliary.extended_context import ExtendedContext
 from typing import List
 from collections import namedtuple
 from auxiliary.director_event import IDirectorEvent
-from auxiliary.cn_builtin_prompt import replace_all_mentions_of_your_name_with_you
+from auxiliary.cn_builtin_prompt import replace_mentions_of_your_name_with_you_prompt
 from loguru import logger
 from dev_config import _DevConfig_
 
-## yh 第一个 扩展型组件，用于处理导演系统的事件
+##扩展型组件，用于处理导演系统的事件
 ####################################################################################################
 DirectorComponentPrototype = namedtuple('DirectorComponentPrototype', 'name')
 class StageDirectorComponent(DirectorComponentPrototype):
@@ -23,7 +23,7 @@ class StageDirectorComponent(DirectorComponentPrototype):
         for event in self._events:
             res = event.to_actor(target_actor_name, extended_context)
             if res != "":
-                res = replace_all_mentions_of_your_name_with_you(res, target_actor_name)
+                res = replace_mentions_of_your_name_with_you_prompt(res, target_actor_name)
                 batch.append(res)
         return batch
 ##########################################################################################################################
@@ -64,7 +64,7 @@ class StageDirectorComponent(DirectorComponentPrototype):
             
             res = event.to_actor(target_actor_name, extended_context)
             if res != "":
-                res = replace_all_mentions_of_your_name_with_you(res, target_actor_name)
+                res = replace_mentions_of_your_name_with_you_prompt(res, target_actor_name)
                 batch.append(res)
         return batch
 ##########################################################################################################################

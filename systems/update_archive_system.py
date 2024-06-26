@@ -3,7 +3,7 @@ from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.components import (ActorComponent)
 from systems.update_archive_helper import UpdareArchiveHelper
-from auxiliary.cn_builtin_prompt import updated_information_on_WhoDoYouKnow_prompt, updated_information_about_StagesYouKnow_prompt
+from auxiliary.cn_builtin_prompt import update_actor_archive_prompt, update_stage_archive_prompt
 from auxiliary.file_system_helper import add_actor_archive_files, update_actor_archive_file, add_stage_archive_files
 from typing import Set, override
 
@@ -48,7 +48,7 @@ class UpdateArchiveSystem(ExecuteProcessor):
 
         # 更新chat history
         who_do_you_know_promt = ",".join(who_do_you_know)
-        message = updated_information_on_WhoDoYouKnow_prompt(actor_comp.name, who_do_you_know_promt)
+        message = update_actor_archive_prompt(actor_comp.name, who_do_you_know_promt)
 
         exclude_chat_history: Set[str] = set()
         exclude_chat_history.add(message)
@@ -67,7 +67,7 @@ class UpdateArchiveSystem(ExecuteProcessor):
 
         # 更新chat history
         _stages_you_know_prompt = ",".join(_stages_you_know)
-        message = updated_information_about_StagesYouKnow_prompt(actor_comp.name, _stages_you_know_prompt)
+        message = update_stage_archive_prompt(actor_comp.name, _stages_you_know_prompt)
 
         exclude_chat_history: Set[str] = set()
         exclude_chat_history.add(message)

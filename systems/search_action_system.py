@@ -9,7 +9,7 @@ from auxiliary.actor_plan_and_action import ActorAction
 from loguru import logger
 from auxiliary.director_component import notify_stage_director
 from typing import List, override, Set
-from auxiliary.file_def import PropFile
+from file_system.files_def import PropFile
 
 from auxiliary.director_event import IDirectorEvent
 from auxiliary.cn_builtin_prompt import search_action_failed_prompt, search_action_success_prompt

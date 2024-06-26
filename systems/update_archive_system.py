@@ -4,7 +4,7 @@ from loguru import logger
 from auxiliary.components import (ActorComponent)
 from systems.update_archive_helper import UpdareArchiveHelper
 from auxiliary.cn_builtin_prompt import update_actor_archive_prompt, update_stage_archive_prompt
-from auxiliary.file_system_helper import add_actor_archive_files, update_actor_archive_file, add_stage_archive_files
+from file_system.helper import add_actor_archive_files, update_actor_archive_file, add_stage_archive_files
 from typing import Set, override
 
 class UpdateArchiveSystem(ExecuteProcessor):

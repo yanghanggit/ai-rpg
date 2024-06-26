@@ -39,7 +39,7 @@ from systems.whisper_action_system import WhisperActionSystem
 from systems.search_action_system import SearchActionSystem
 from systems.mind_voice_action_system import MindVoiceActionSystem
 from auxiliary.director_component import StageDirectorComponent
-from auxiliary.file_def import PropFile
+from file_system.files_def import PropFile
 from systems.begin_system import BeginSystem
 from systems.end_system import EndSystem
 import shutil
@@ -56,7 +56,7 @@ from systems.trade_action_system import TradeActionSystem
 from systems.check_status_action_system import CheckStatusActionSystem
 from base_game import BaseGame
 from systems.agents_connect_system import AgentsConnectSystem
-from auxiliary.file_system_helper import add_actor_archive_files
+from file_system.helper import add_actor_archive_files
 from systems.my_processors import MyProcessors
 from systems.simple_rpg_pre_fight_system import SimpleRPGPreFightSystem
 from systems.compress_chat_history_system import CompressChatHistorySystem

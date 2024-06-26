@@ -8,7 +8,7 @@ from auxiliary.components import (WorldComponent,
                         ActorComponent, 
                         PlayerComponent, 
                         AppearanceComponent)
-from auxiliary.file_system import FileSystem
+from file_system.file_system import FileSystem
 from auxiliary.kick_off_memory_system import KickOffMemorySystem
 from typing import Optional
 from auxiliary.lang_serve_agent_system import LangServeAgentSystem

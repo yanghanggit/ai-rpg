@@ -5,11 +5,9 @@ from loguru import logger
 from auxiliary.components import (StageComponent, ActorComponent, WorldComponent, SimpleRPGAttrComponent)
 import json
 from typing import Dict, override, List
-from auxiliary.file_system_helper import update_status_profile_file
+from file_system.helper import update_status_profile_file, update_stage_actors_map_file
 
 
-
-   
 class EndSystem(InitializeProcessor, ExecuteProcessor):
 ############################################################################################################
     def __init__(self, context: ExtendedContext) -> None:
@@ -41,14 +39,16 @@ class EndSystem(InitializeProcessor, ExecuteProcessor):
         worldentities = self.context.get_group(Matcher(WorldComponent)).entities
         for entity in worldentities:
             worldcomp: WorldComponent = entity.get(WorldComponent)
-            logger.debug(f"/dump_world: {worldcomp.name}")
+            logger.debug(f"/dump_world:{worldcomp.name}")
 ############################################################################################################
     def dump_stages_and_actors(self) -> None:
-        infomap = self.simple_dump_stages_and_actors()
-        if len(infomap.keys()) > 0:
-            logger.debug(f"/dump_stages_and_actors: \n{infomap}")
+        simple_dump = self.simple_dump_stages_and_actors()
+        if len(simple_dump.keys()) > 0:
+            logger.debug(f"/dump_stages_and_actors: \n{simple_dump}")
         else:
-            logger.debug("/dump_stages_and_actors: No stages and actors now")
+            logger.warning("/dump_stages_and_actors: No stages and actors now")
+
+        update_stage_actors_map_file(self.context.file_system, simple_dump)
 ############################################################################################################
     def simple_dump_stages_and_actors(self) -> Dict[str, List[str]]:
         stages_entities = self.context.get_group(Matcher(StageComponent)).entities

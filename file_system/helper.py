@@ -1,8 +1,8 @@
 from typing import Set, Optional, List, Any, Dict
-from auxiliary.file_def import ActorArchiveFile, StageArchiveFile, StatusProfileFile
-from auxiliary.file_system import FileSystem
+from file_system.files_def import ActorArchiveFile, StageArchiveFile, StatusProfileFile, StageActorsMapFile
+from file_system.file_system import FileSystem
 
-####################################################################################################
+##################################################################################################################################
 # 为一个Actor添加他认识的其他Actor的文件
 def add_actor_archive_files(file_system: FileSystem, myname: str, others_names: Set[str]) -> List[ActorArchiveFile]:
 
@@ -17,7 +17,7 @@ def add_actor_archive_files(file_system: FileSystem, myname: str, others_names: 
         res.append(file)
 
     return res
-####################################################################################################
+##################################################################################################################################
 # 更新一个Actor的档案文件
 def update_actor_archive_file(file_system: FileSystem, ownersname: str, actorname: str, appearance: str) -> Optional[ActorArchiveFile]:
     file = file_system.get_actor_archive(ownersname, actorname)
@@ -26,7 +26,7 @@ def update_actor_archive_file(file_system: FileSystem, ownersname: str, actornam
     file._appearance = appearance
     file_system.write_actor_archive(file)
     return file
-####################################################################################################
+##################################################################################################################################
 ## 为一个Actor添加他认识的Stage的文件
 def add_stage_archive_files(file_system: FileSystem, myname: str, stage_names: Set[str]) -> List[StageArchiveFile]:
     
@@ -41,11 +41,18 @@ def add_stage_archive_files(file_system: FileSystem, myname: str, stage_names: S
         res.append(file)
     
     return res
-####################################################################################################
+##################################################################################################################################
 ## 更新角色的属性文件并记录下来～
 def update_status_profile_file(file_system: FileSystem, ownersname: str, update_data: Dict[str, Any]) -> Optional[StatusProfileFile]:
     file = StatusProfileFile(ownersname, ownersname, update_data)
     file_system.set_status_profile(file)
     file_system.write_status_profile(file)
     return file
-####################################################################################################
+##################################################################################################################################
+# 场景中有哪些人的总文件。
+def update_stage_actors_map_file(file_system: FileSystem, update_data: Dict[str, List[str]]) -> Optional[StageActorsMapFile]:
+    file = StageActorsMapFile(update_data)
+    file_system.set_stage_actors_map(file)
+    file_system.write_stage_actors_map(file)
+    return file
+##################################################################################################################################

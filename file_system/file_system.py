@@ -1,6 +1,6 @@
 from loguru import logger
 from typing import Dict, List, Optional
-from auxiliary.file_def import PropFile, ActorArchiveFile, StageArchiveFile, StatusProfileFile
+from file_system.files_def import PropFile, ActorArchiveFile, StageArchiveFile, StatusProfileFile, StageActorsMapFile
 from pathlib import Path
 
 class FileSystem:
@@ -18,6 +18,8 @@ class FileSystem:
         self._stage_archives: Dict[str, List[StageArchiveFile]] = {}
         # 角色的属性的记录
         self._status_profile: Dict[str, StatusProfileFile] = {}
+        # 场景的角色的映射关系，全局唯一，空的
+        self._stage_actors_map: StageActorsMapFile = StageActorsMapFile({})
 ################################################################################################################
     ### 必须设置根部的执行路行
     def set_runtime_dir(self, runtime_dir: Path) -> None:
@@ -206,3 +208,34 @@ class FileSystem:
     def set_status_profile(self, status_profile: StatusProfileFile) -> None:
         self._status_profile[status_profile._ownersname] = status_profile
 ################################################################################################################
+################################################################################################################
+################################################################################################################
+################################################################################################################
+    def stage_actors_map_path(self) -> Path:
+        assert self._runtime_dir is not None
+        dir = self._runtime_dir
+        dir.mkdir(parents=True, exist_ok=True)
+        return dir / f"stage_actors_map.json"
+################################################################################################################
+    def set_stage_actors_map(self, stage_actors_map: StageActorsMapFile) -> None:
+        self._stage_actors_map = stage_actors_map
+################################################################################################################
+    def write_stage_actors_map(self, stage_actors_map: StageActorsMapFile) -> None:
+        ## 测试
+        content = stage_actors_map.serialization()
+        assert content is not None
+        assert len(content) > 0
+
+        _stage_actors_map_path = self.stage_actors_map_path()
+        assert _stage_actors_map_path is not None
+
+        try:
+            res = _stage_actors_map_path.write_text(content, encoding="utf-8")
+            assert res > 0
+        except Exception as e:
+            logger.error(f"写入文件失败: {_stage_actors_map_path}, e = {e}")
+            return
+################################################################################################################
+
+
+

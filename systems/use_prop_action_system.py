@@ -13,7 +13,7 @@ from auxiliary.director_event import IDirectorEvent
 from auxiliary.cn_builtin_prompt import prop_info_prompt, use_prop_to_stage_prompt, __ConstantPromptValue__, use_prop_no_response_prompt
 from auxiliary.actor_plan_and_action import ActorPlan
 from auxiliary.target_and_message_format_handle import use_prop_check, ErrorUsePropEnable
-from auxiliary.file_def import PropFile
+from file_system.files_def import PropFile
 
 
 # 通知导演的类

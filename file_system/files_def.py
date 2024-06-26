@@ -1,7 +1,7 @@
 from overrides import override
 from auxiliary.base_data import PropData
 import json
-from typing import Dict, Any
+from typing import Dict, Any, List
 from abc import ABC, abstractmethod
 
 ############################################################################################################
@@ -94,6 +94,19 @@ class StatusProfileFile(BaseFile):
 ############################################################################################################
 ############################################################################################################
 ############################################################################################################
+## 场景与场景中的角色的映射文件。
+class StageActorsMapFile(BaseFile):
+    def __init__(self, data: Dict[str, List[str]]) -> None:
+        super().__init__("", "")
+        self._data: Dict[str, List[str]] = data
 
-
-
+    @override
+    def serialization(self) -> str:
+        assert self._data is not None
+        return json.dumps(self._data, ensure_ascii = False)
+    
+    def __str__(self) -> str:
+        return f"{self._name}"
+############################################################################################################
+############################################################################################################
+############################################################################################################

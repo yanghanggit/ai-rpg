@@ -158,7 +158,7 @@ class GoToActionSystem(ReactiveProcessor):
         for _entity in actor_entities:
             if _entity.has(PerceptionActionComponent):
                 continue
-            #进入新的场景之后，进入者与场景内所有人都加一次感知，这里会自动检查外貌信息
+            #进入新的场景之后，进入者与场景内所有人都加一次感知，这里会自动检查外观信息
             action = ActorAction(actor_comp.name, PerceptionActionComponent.__name__, [stagename])
             _entity.add(PerceptionActionComponent, action)
 ###############################################################################################################################################

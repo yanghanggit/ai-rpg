@@ -158,7 +158,7 @@ class ExtendedContext(Context):
         if to_stagetag_comp_class is not None and not entity.has(to_stagetag_comp_class):
             entity.add(to_stagetag_comp_class, to_stagename)
 ############################################################################################################
-    # 获取场景内所有的角色的外形信息
+    # 获取场景内所有的角色的外观信息
     def appearance_in_stage(self, entity: Entity) -> Dict[str, str]:
         #
         res: Dict[str, str] = {}

@@ -464,7 +464,7 @@ def actors_body_and_clothe_prompt(actors_body_and_clothe:  Dict[str, tuple[str, 
                 continue
 
             prompt_of_actor = f"""### {name}
-- 角色外形:{body}
+- 角色外观:{body}
 - 衣服:{clothe}
 """
             prompt_list_of_actor.append(prompt_of_actor)
@@ -476,7 +476,7 @@ def actors_body_and_clothe_prompt(actors_body_and_clothe:  Dict[str, tuple[str, 
         appearance_json = {name: "?" for name in actor_names}
         appearance_json_str = json.dumps(appearance_json, ensure_ascii = False)
         # 最后的合并
-        final_prompt = f"""# 请更新角色外形：根据‘角色外形’与‘衣服’，生成最终的角色外形的描述。
+        final_prompt = f"""# 请更新角色外观：根据‘角色外观’与‘衣服’，生成最终的角色外观的描述。
 ## 角色列表
 {batch_str}
 ## 输出格式指南

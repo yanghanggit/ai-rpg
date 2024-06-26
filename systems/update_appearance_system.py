@@ -41,12 +41,12 @@ class UpdateAppearanceSystem(InitializeProcessor, ExecuteProcessor):
         if len(actors_body_and_clothe) == 0:
             return        
         logger.warning(f"这是一个测试的系统，正在运行。")
-        # 没有衣服的，直接更新外形
+        # 没有衣服的，直接更新外观
         self.imme_update_appearance(actors_body_and_clothe)
         # 有衣服的，请求更新，通过LLM来推理外观
         self.request_update_appearance(actors_body_and_clothe, world_entity)
 ###############################################################################################################################################
-    # 没有衣服的，就直接更新外形，一般是动物类的，或者非人类的。
+    # 没有衣服的，就直接更新外观，一般是动物类的，或者非人类的。
     def imme_update_appearance(self, actors_body_and_clothe:  Dict[str, tuple[str, str]]) -> None:
         context = self.context
         for name, (body, clothe) in actors_body_and_clothe.items():

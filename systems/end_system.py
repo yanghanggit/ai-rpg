@@ -2,11 +2,13 @@
 from entitas import ExecuteProcessor, Matcher, InitializeProcessor #type: ignore
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
-from auxiliary.components import (StageComponent, 
-                        ActorComponent,
-                        WorldComponent)
+from auxiliary.components import (StageComponent, ActorComponent, WorldComponent, SimpleRPGAttrComponent)
 import json
 from typing import Dict, override, List
+from auxiliary.file_system_helper import update_status_profile_file
+
+
+
    
 class EndSystem(InitializeProcessor, ExecuteProcessor):
 ############################################################################################################
@@ -31,8 +33,8 @@ class EndSystem(InitializeProcessor, ExecuteProcessor):
         self.context.agent_connect_system.dump_chat_history()
         # 打印所有的道具归属
         self.dump_prop_files()
-        # 打印所有的实体信息
-        #self.print_all_entities()
+        # 打印所有的角色的状态信息（例如属性）
+        self.dump_status_profile()
         logger.debug(f"{'=' * 100}")  #方便看
 ############################################################################################################
     def dump_world(self) -> None:
@@ -49,10 +51,10 @@ class EndSystem(InitializeProcessor, ExecuteProcessor):
             logger.debug("/dump_stages_and_actors: No stages and actors now")
 ############################################################################################################
     def simple_dump_stages_and_actors(self) -> Dict[str, List[str]]:
-        stagesentities = self.context.get_group(Matcher(StageComponent)).entities
+        stages_entities = self.context.get_group(Matcher(StageComponent)).entities
         actor_entities = self.context.get_group(Matcher(ActorComponent)).entities
         map: Dict[str, List[str]] = {}
-        for entity in stagesentities:
+        for entity in stages_entities:
             stagecomp: StageComponent = entity.get(StageComponent)
             ls = map.get(stagecomp.name, [])
             map[stagecomp.name] = ls
@@ -73,4 +75,12 @@ class EndSystem(InitializeProcessor, ExecuteProcessor):
             dumpdict[ownername] = liststr
 
         logger.debug(f"{json.dumps(dumpdict, ensure_ascii = False)}")
+############################################################################################################
+    def dump_status_profile(self) -> None:
+        rpg_attr_entities = self.context.get_group(Matcher(SimpleRPGAttrComponent)).entities
+        for entity in rpg_attr_entities:
+            rpg_attr_comp: SimpleRPGAttrComponent = entity.get(SimpleRPGAttrComponent)
+            _dict_ = rpg_attr_comp._asdict()
+            assert len(_dict_) > 0
+            update_status_profile_file(self.context.file_system, rpg_attr_comp.name, _dict_)
 ############################################################################################################

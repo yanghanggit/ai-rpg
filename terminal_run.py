@@ -2,7 +2,7 @@ from loguru import logger
 import datetime
 from auxiliary.player_proxy import create_player_proxy, get_player_proxy
 from auxiliary.player_command import (PlayerLogin)
-from create_game_funcs import load_then_create_rpg_game, test_save
+from create_game_funcs import load_then_create_rpg_game, yh_test_save
 from dev_config import TEST_TERMINAL_NAME
 
 async def main() -> None:
@@ -30,7 +30,7 @@ async def main() -> None:
     playerstartcmd.execute()
 
     # 测试的代码
-    test_save(worldname)
+    yh_test_save(worldname)
 
     #核心循环
     while True:

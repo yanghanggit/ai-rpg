@@ -102,7 +102,7 @@ def load_then_create_rpg_game(gamename: str) -> Optional[RPGGame]:
     return rpggame.create_game(game_builder)
 #######################################################################################################################################
 ### （临时的）写死创建
-def test_save(gamename: str) -> None:
+def yh_test_save(gamename: str) -> None:
 
     copy2_path = Path(f"game_sample/gen_runtimes/{gamename}")
     if not copy2_path.exists():

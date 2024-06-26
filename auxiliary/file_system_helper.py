@@ -1,5 +1,5 @@
-from typing import Set, Optional, List
-from auxiliary.file_def import ActorArchiveFile, StageArchiveFile
+from typing import Set, Optional, List, Any, Dict
+from auxiliary.file_def import ActorArchiveFile, StageArchiveFile, StatusProfileFile
 from auxiliary.file_system import FileSystem
 
 ####################################################################################################
@@ -41,4 +41,11 @@ def add_stage_archive_files(file_system: FileSystem, myname: str, stage_names: S
         res.append(file)
     
     return res
+####################################################################################################
+## 更新角色的属性文件并记录下来～
+def update_status_profile_file(file_system: FileSystem, ownersname: str, update_data: Dict[str, Any]) -> Optional[StatusProfileFile]:
+    file = StatusProfileFile(ownersname, ownersname, update_data)
+    file_system.set_status_profile(file)
+    file_system.write_status_profile(file)
+    return file
 ####################################################################################################

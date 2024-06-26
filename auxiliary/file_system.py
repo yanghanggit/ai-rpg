@@ -1,6 +1,6 @@
 from loguru import logger
 from typing import Dict, List, Optional
-from auxiliary.file_def import PropFile, ActorArchiveFile, StageArchiveFile
+from auxiliary.file_def import PropFile, ActorArchiveFile, StageArchiveFile, StatusProfileFile
 from pathlib import Path
 
 class FileSystem:
@@ -8,14 +8,16 @@ class FileSystem:
     def __init__(self, name: str) -> None:
         # 名字
         self._name: str = name
+        # 运行时路径
+        self._runtime_dir: Optional[Path] = None
         # 拥有的道具
         self._prop_files: Dict[str, List[PropFile]] = {}
         # 知晓的Actor
         self._actor_archives: Dict[str, List[ActorArchiveFile]] = {}
         # 知晓的Stage
         self._stage_archives: Dict[str, List[StageArchiveFile]] = {}
-        # 运行时路径
-        self._runtime_dir: Optional[Path] = None
+        # 角色的属性的记录
+        self._status_profile: Dict[str, StatusProfileFile] = {}
 ################################################################################################################
     ### 必须设置根部的执行路行
     def set_runtime_dir(self, runtime_dir: Path) -> None:
@@ -175,4 +177,32 @@ class FileSystem:
 ################################################################################################################
     def has_stage_archive(self, ownersname: str, stagename: str) -> bool:
         return self.get_stage_archive(ownersname, stagename) is not None
+################################################################################################################
+################################################################################################################
+################################################################################################################
+################################################################################################################
+    def status_profile_path(self, ownersname: str) -> Path:
+        assert self._runtime_dir is not None
+        dir = self._runtime_dir / f"{ownersname}"
+        dir.mkdir(parents=True, exist_ok=True)
+        return dir / f"status_profile.json"
+################################################################################################################
+    def write_status_profile(self, status_profile: StatusProfileFile) -> None:
+        ## 测试
+        content = status_profile.serialization()
+        assert content is not None
+        assert len(content) > 0
+
+        status_profile_file_path = self.status_profile_path(status_profile._ownersname)
+        assert status_profile_file_path is not None
+
+        try:
+            res = status_profile_file_path.write_text(content, encoding="utf-8")
+            assert res > 0
+        except Exception as e:
+            logger.error(f"写入文件失败: {status_profile_file_path}, e = {e}")
+            return
+################################################################################################################
+    def set_status_profile(self, status_profile: StatusProfileFile) -> None:
+        self._status_profile[status_profile._ownersname] = status_profile
 ################################################################################################################

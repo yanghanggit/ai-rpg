@@ -8,9 +8,10 @@ from auxiliary.kick_off_memory_system import KickOffMemorySystem
 from typing import Optional
 from auxiliary.lang_serve_agent_system import LangServeAgentSystem
 from auxiliary.code_name_component_system import CodeNameComponentSystem
-from auxiliary.chaos_engineering_system import EmptyChaosEngineeringSystem, IChaosEngineering
+from chaos_engineering.chaos_engineering_system import IChaosEngineering
+from chaos_engineering.empty_engineering_system import EmptyChaosEngineeringSystem
 from prototype_data.data_base_system import DataBaseSystem
-from game_sample.my_chaos_engineering_system import MyChaosEngineeringSystem
+from game_sample.game_sample_chaos_engineering_system import GameSampleChaosEngineeringSystem
 from pathlib import Path
 import json
 import shutil
@@ -93,7 +94,7 @@ def load_then_create_rpg_game(gamename: str) -> Optional[RPGGame]:
         return None
     
     # 创建游戏 + 专门的混沌工程系统
-    chaos_engineering_system = MyChaosEngineeringSystem("MyChaosEngineeringSystem")
+    chaos_engineering_system = GameSampleChaosEngineeringSystem("MyChaosEngineeringSystem")
     assert chaos_engineering_system is not None, "chaos_engineering_system is None."
     assert game_builder._data_base_system is not None, "game_builder.data_base_system is None."
     rpggame = create_rpg_game(gamename, chaos_engineering_system, game_builder._data_base_system)

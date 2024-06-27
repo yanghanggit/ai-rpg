@@ -4,8 +4,8 @@ from pathlib import Path
 # 将项目根目录添加到sys.path
 root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
-
-from auxiliary.chaos_engineering_system import IChaosEngineering
+### 
+from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from loguru import logger
 from build_game.game_builders import GameBuilder
 from typing import Any, Optional
@@ -24,7 +24,7 @@ error_speak_target_is_invalid = f"""{{"SpeakActionComponent": ["@教宗>你在�
 error_value_is_not_array = f"""{{"GoToActionComponent": "禁言铁棺"}}"""
 
 ## 运行中的测试系统, 空的混沌工程系统 my_chaos_engineering_system
-class MyChaosEngineeringSystem(IChaosEngineering):
+class GameSampleChaosEngineeringSystem(IChaosEngineering):
 
     ##
     def __init__(self, name: str) -> None:

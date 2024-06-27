@@ -1,92 +1,124 @@
 from overrides import override
 from entitas import Entity, Matcher, ExecuteProcessor #type: ignore
-from auxiliary.components import (ActorComponent, 
-                        AutoPlanningComponent,
-                        ACTOR_DIALOGUE_ACTIONS_REGISTER, 
-                        ACTOR_AVAILABLE_ACTIONS_REGISTER)
+from auxiliary.components import (ActorComponent, AutoPlanningComponent, EnviroNarrateActionComponent, ACTOR_CONVERSATION_ACTIONS_REGISTER, 
+                                  ACTOR_AVAILABLE_ACTIONS_REGISTER)
 from auxiliary.actor_plan_and_action import ActorPlan, ActorAction
 from auxiliary.extended_context import ExtendedContext
 from loguru import logger
 from typing import Optional, Dict
 from systems.planning_response_check import check_component_register, check_conversation_action
+from builtin_prompt.cn_builtin_prompt import actpr_plan_prompt
 
 
 class ActorPlanningSystem(ExecuteProcessor):
 
+    """
+    角色的计划系统，必须在StagePlanningSystem之后执行
+    """
+
     def __init__(self, context: ExtendedContext) -> None:
         self.context = context
-####################################################################################################
+#######################################################################################################################################
     @override
     def execute(self) -> None:
         pass
-####################################################################################################
+#######################################################################################################################################
     @override
     async def async_pre_execute(self) -> None:
-        #记录事件
+         # step1: 添加任务
+        self.add_tasks()
+        # step可选：混沌工程做测试
         self.context.chaos_engineering_system.on_actor_planning_system_execute(self.context)
-        # 并行执行requests
+        # step2: 并行执行requests
         request_result = await self.context.agent_connect_system.run_async_requet_tasks("ActorPlanningSystem")
-        all_response: Dict[str, Optional[str]] = request_result[0]
-        #正常流程
-        entities = self.context.get_group(Matcher(all_of=[ActorComponent, AutoPlanningComponent])).entities
-        for entity in entities:
-            #开始处理Actor的行为计划
-            self.handle(entity, all_response)
-####################################################################################################
-    def handle(self, entity: Entity, all_reponse: Dict[str, Optional[str]]) -> None:
-        actor_comp: ActorComponent = entity.get(ActorComponent)
-        response = all_reponse.get(actor_comp.name, None)
-        if response is None:
-            logger.warning(f"ActorPlanningSystem: response is None or empty, so we can't get the planning.")
+        if len(request_result) == 0:
+            logger.warning(f"ActorPlanningSystem: request_result is empty.")
             return
-        
-        actor_planning = ActorPlan(actor_comp.name, response)
-        if not self.check_plan(entity, actor_planning):
-            logger.warning(f"ActorPlanningSystem: check_plan failed, {actor_planning}")
-            ## 需要失忆!
-            self.context.agent_connect_system.remove_last_conversation_between_human_and_ai(actor_comp.name)
-            return
-        
-        ## 不能停了，只能一直继续
-        for action in actor_planning.actions:
-            self.add_action_component(entity, action)
-####################################################################################################
-    # def requestplanning(self, actor_name: str, prompt: str) -> Optional[str]:
-    #     #
-    #     context = self.context
-    #     chaos_engineering_system = context.chaos_engineering_system
-    #     response = chaos_engineering_system.hack_actor_planning(context, actor_name, prompt)
-    #     # 可以先走混沌工程系统
-    #     if response is None:
-    #        response = self.context.agent_connect_system.agent_request(actor_name, prompt)
+        self.handle(request_result[0])
+#######################################################################################################################################
+    def handle(self, response_map: Dict[str, Optional[str]]) -> None:
+        for name, response in response_map.items():
+
+            if response is None:
+                logger.warning(f"ActorPlanningSystem: response is None or empty, so we can't get the planning.")
+                continue
             
-    #     return response
-####################################################################################################
-    def check_plan(self, entity: Entity, plan: ActorPlan) -> bool:
+            entity = self.context.get_actor_entity(name)
+            assert entity is not None, f"ActorPlanningSystem: entity is None, {name}"
+            if entity is None:
+                logger.warning(f"ActorPlanningSystem: entity is None, {name}")
+                continue
+
+            actor_comp: ActorComponent = entity.get(ActorComponent)
+            actor_planning = ActorPlan(actor_comp.name, response)
+            if not self._check_plan(entity, actor_planning):
+                logger.warning(f"ActorPlanningSystem: check_plan failed, {actor_planning}")
+                ## 需要失忆!
+                self.context.agent_connect_system.remove_last_conversation_between_human_and_ai(actor_comp.name)
+                continue
+            
+            ## 不能停了，只能一直继续
+            for action in actor_planning.actions:
+                self._add_action_component(entity, action)
+#######################################################################################################################################
+    def _check_plan(self, entity: Entity, plan: ActorPlan) -> bool:
         if len(plan.actions) == 0:
             # 走到这里
             logger.warning(f"走到这里就是request过了，但是格式在load json的时候出了问题")
             return False
 
         for action in plan.actions:
-            if not self.check_available(action):
+            if not self._check_available(action):
                 logger.warning(f"ActorPlanningSystem: action is not correct, {action}")
                 return False
-            if not self.check_dialogue(action):
+            if not self._check_conversation(action):
                 logger.warning(f"ActorPlanningSystem: target or message is not correct, {action}")
                 return False
         return True
-####################################################################################################
-    def check_available(self, action: ActorAction) -> bool:
+#######################################################################################################################################
+    def _check_available(self, action: ActorAction) -> bool:
         return check_component_register(action.actionname, ACTOR_AVAILABLE_ACTIONS_REGISTER) is not None
-####################################################################################################
-    def check_dialogue(self, action: ActorAction) -> bool:
-        return check_conversation_action(action.actionname, action.values, ACTOR_DIALOGUE_ACTIONS_REGISTER)
-####################################################################################################
-    def add_action_component(self, entity: Entity, action: ActorAction) -> None:
+#######################################################################################################################################
+    def _check_conversation(self, action: ActorAction) -> bool:
+        return check_conversation_action(action.actionname, action.values, ACTOR_CONVERSATION_ACTIONS_REGISTER)
+#######################################################################################################################################
+    def _add_action_component(self, entity: Entity, action: ActorAction) -> None:
         compclass = check_component_register(action.actionname, ACTOR_AVAILABLE_ACTIONS_REGISTER)
         if compclass is None:
             return
         if not entity.has(compclass):
             entity.add(compclass, action)
-####################################################################################################
+#######################################################################################################################################
+    # 获取场景的环境描述
+    def get_stage_enviro_narrate(self, entity: Entity) -> tuple[str, str]:
+
+        stageentity = self.context.safe_get_stage_entity(entity)
+        if stageentity is None:
+            logger.error("stage is None, actor无所在场景是有问题的")
+            return "", ""
+        
+        stagename = self.context.safe_get_entity_name(stageentity)
+        stage_enviro_narrate = ""
+        if stageentity.has(EnviroNarrateActionComponent):
+            envirocomp: EnviroNarrateActionComponent = stageentity.get(EnviroNarrateActionComponent)
+            action: ActorAction = envirocomp.action
+            if len(action.values) > 0:
+                stage_enviro_narrate = action.single_value()
+
+        return stagename, stage_enviro_narrate
+#######################################################################################################################################
+    def add_tasks(self) -> None:
+        entities = self.context.get_group(Matcher(all_of=[ActorComponent, AutoPlanningComponent])).entities
+        for entity in entities:
+            actor_comp: ActorComponent = entity.get(ActorComponent)
+            tp = self.get_stage_enviro_narrate(entity)
+            stage_name = tp[0]
+            stage_enviro_narrate = tp[1]
+            if stage_name == "" or stage_enviro_narrate == "":
+                logger.error("stagename or stage_enviro_narrate is None, 有可能是是没有agent connect") # 放弃这个actor的计划
+                continue
+            
+            # 必须要有一个stage的环境描述，否则无法做计划。
+            prompt = actpr_plan_prompt(stage_name, stage_enviro_narrate, self.context)
+            self.context.agent_connect_system.add_async_request_task(actor_comp.name, prompt)
+#######################################################################################################################################

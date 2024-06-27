@@ -85,7 +85,7 @@ STAGE_AVAILABLE_ACTIONS_REGISTER = [AttackActionComponent,
                                     EnviroNarrateActionComponent]
 
 #场景对话类动作
-STAGE_DIALOGUE_ACTIONS_REGISTER = [SpeakActionComponent,
+STAGE_CONVERSATION_ACTIONS_REGISTER = [SpeakActionComponent,
                                 MindVoiceActionComponent,
                                 WhisperActionComponent]
 
@@ -107,7 +107,7 @@ ACTOR_AVAILABLE_ACTIONS_REGISTER = [AttackActionComponent,
                          UsePropActionComponent]
 
 #角色对话类动作
-ACTOR_DIALOGUE_ACTIONS_REGISTER = [SpeakActionComponent, 
+ACTOR_CONVERSATION_ACTIONS_REGISTER = [SpeakActionComponent, 
                                 BroadcastActionComponent,
                                 WhisperActionComponent]
 

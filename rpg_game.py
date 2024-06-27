@@ -22,7 +22,6 @@ from auxiliary.extended_context import ExtendedContext
 from build_game.game_builders import GameBuilder, StageBuilder, ActorBuilder, WorldSystemBuilder
 from entitas.entity import Entity
 from systems.agents_kick_off_system import AgentsKickOffSystem
-from systems.actor_ready_for_planning_system import ActorReadyForPlanningSystem
 from systems.stage_planning_system import StagePlanningSystem
 from systems.actor_planning_system import ActorPlanningSystem
 from systems.speak_action_system import SpeakActionSystem
@@ -31,7 +30,6 @@ from systems.go_to_action_system import GoToActionSystem
 from systems.check_before_go_to_action_system import CheckBeforeGoToActionSystem
 from systems.director_system import DirectorSystem
 from systems.destroy_system import DestroySystem
-from systems.stage_ready_for_planning_system import StageReadyForPlanningSystem
 from systems.tag_action_system import TagActionSystem
 from systems.broadcast_action_system import BroadcastActionSystem  
 from systems.use_prop_action_system import UsePropActionSystem
@@ -166,9 +164,7 @@ class RPGGame(BaseGame):
 
         #规划逻辑########################
         processors.add(PrePlanningSystem(context)) ######## 在所有规划之前
-        processors.add(StageReadyForPlanningSystem(context))
         processors.add(StagePlanningSystem(context))
-        processors.add(ActorReadyForPlanningSystem(context))
         processors.add(ActorPlanningSystem(context))
         processors.add(PostPlanningSystem(context)) ####### 在所有规划之后
 

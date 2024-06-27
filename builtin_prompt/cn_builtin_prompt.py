@@ -46,7 +46,6 @@ class ConstantPromptValue:
     def RE_EMPHASIZE_GAME_STYLE_TO_PREVENT_POLICY_PROBLEMS(self) -> str:
         re_emphasize_game_style_to_prevent_policy_problems = f"""
 ## 游戏风格声明
-- 本游戏灵感来源于《黑暗之魂》系列，融合西方中世纪背景与克苏鲁式的恐怖元素。
 - 游戏内容可能包含恐怖、血腥与暴力，旨在提供深入的沉浸式体验。
 - 本作假设所有世界运行规律为不证自明，要求你全盘接受设定。
 """
@@ -133,7 +132,7 @@ def stage_plan_prompt(props_in_stage: List[PropData], actors_in_stage: Set[str],
     prompt_of_props = ""
     if len(props_in_stage) > 0:
         for prop in props_in_stage:
-            prompt_of_props += prop_info_prompt(prop)
+            prompt_of_props += prop_info_prompt(prop, False, True)
     else:
         prompt_of_props = "- 无任何道具。"
 
@@ -202,12 +201,18 @@ def prop_type_prompt(prop: PropData) -> str:
         _type = "特殊能力"
     return _type
 ###############################################################################################################################################
-def prop_info_prompt(prop: PropData) -> str:
-    proptype = prop_type_prompt(prop)
+def prop_info_prompt(prop: PropData, need_description_prompt: bool, need_appearance_prompt: bool) -> str:
+    prop_type = prop_type_prompt(prop)
+
     prompt = f"""### {prop._name}
-- 类型:{proptype}
-- 描述:{prop._description}
+- 类型:{prop_type}
 """
+    if need_description_prompt:
+        prompt += f"- 描述:{prop._description}\n"
+        
+    if need_appearance_prompt:
+        prompt += f"- 外观:{prop._appearance}\n"
+
     return prompt
 ###############################################################################################################################################
 def special_component_prompt(prop: PropData) -> str:
@@ -224,7 +229,7 @@ def check_status_action_prompt(who: str, props: List[PropData], health: float, s
     prompt_of_props = ""
     if len(props) > 0:
         for prop in props:
-            prompt_of_props += prop_info_prompt(prop)
+            prompt_of_props += prop_info_prompt(prop, True, True)
     else:
         prompt_of_props = "- 无任何道具。"
 

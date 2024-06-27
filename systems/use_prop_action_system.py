@@ -139,7 +139,7 @@ class UsePropActionSystem(ReactiveProcessor):
             return True
 
         # 道具的提示词
-        prop_prompt = prop_info_prompt(prop_file._prop)
+        prop_prompt = prop_info_prompt(prop_file._prop, True, True)
 
         # 包装的最终提示词
         final_prompt = use_prop_to_stage_prompt(username, prop_file._name, prop_prompt, exit_cond_status_prompt)

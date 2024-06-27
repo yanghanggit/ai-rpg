@@ -181,7 +181,8 @@ class GameBuilder:
                 prop_data.get('description'), 
                 prop_data.get('isunique'), 
                 prop_data.get('type'), 
-                Attributes(prop_data.get('attributes'))
+                Attributes(prop_data.get('attributes')),
+                prop_data.get('appearance')
                 )
             data_base_system.add_prop(propname, _pd)
 ###############################################################################################################################################

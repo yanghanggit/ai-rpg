@@ -101,7 +101,14 @@ def gen_all_props(sheet: DataFrame, output: Dict[str, ExcelDataProp]) -> None:
     for index, row in sheet.iterrows():
         if pd.isna(row["name"]):
             continue
-        excelprop = ExcelDataProp(row["name"], row["codename"], row["isunique"], row["description"], row["RAG"], row["type"], str(row["attributes"]))
+        excelprop = ExcelDataProp(  row["name"],
+                                    row["codename"],
+                                    row["isunique"],
+                                    row["description"],
+                                    row["RAG"],
+                                    row["type"],
+                                    row["attributes"],
+                                    row["appearance"])
         output[excelprop._name] = excelprop
 ############################################################################################################
 def analyze_actor_relationship(analyze_data: Dict[str, ExcelDataActor]) -> None:
@@ -136,12 +143,13 @@ def analyze_relationship_between_actors_and_props(analyze_props_data: Dict[str, 
 ################################################################################################################
 def serialization_prop(prop: ExcelDataProp) -> Dict[str, str]:
     output: Dict[str, str] = {}
-    output['name'] = prop._name
-    output['codename'] = prop._codename
-    output['description'] = prop._description
-    output['isunique'] = prop._isunique
-    output['type'] = prop._type
-    output['attributes'] = prop._attributes
+    output["name"] = prop._name
+    output["codename"] = prop._codename
+    output["description"] = prop._description
+    output["isunique"] = prop._isunique
+    output["type"] = prop._type
+    output["attributes"] = prop._attributes
+    output["appearance"] = prop._appearance
     return output       
 ################################################################################################################
 def proxy_prop(prop: ExcelDataProp) -> Dict[str, str]:

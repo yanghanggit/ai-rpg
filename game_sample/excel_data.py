@@ -164,7 +164,16 @@ class ExcelDataStage:
 ############################################################################################################
 class ExcelDataProp:
     
-    def __init__(self, name: str, codename: str, isunique: str, description: str, rag: str, type: str, attributes: str) -> None:
+    def __init__(self, 
+                 name: str, 
+                 codename: str, 
+                 isunique: str, 
+                 description: str, 
+                 rag: str, 
+                 type: str, 
+                 attributes: str, 
+                 appearance: str) -> None:
+        
         self._name: str = name
         self._codename: str = codename
         self._description: str = description
@@ -172,9 +181,10 @@ class ExcelDataProp:
         self._rag: str = rag
         self._type: str = type
         self._attributes: str = attributes
+        self._appearance: str = appearance
 ############################################################################################################
     def __str__(self) -> str:
-        return f"ExcelDataProp({self._name}, {self._codename}, {self._isunique}, {self._type}, {self._attributes})"
+        return f"ExcelDataProp({self._name}, {self._codename}, {self._isunique}, {self._type}, {self._attributes}, {self._appearance})"
 ############################################################################################################
 ############################################################################################################
 ############################################################################################################

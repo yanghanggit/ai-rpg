@@ -45,7 +45,8 @@ class PropData:
                  description: str, 
                  is_unique: str, 
                  type: str, 
-                 attr: Attributes) -> None:
+                 attr: Attributes, 
+                 appearance: str) -> None:
         
         self._name: str = name
         self._codename: str = codename
@@ -55,6 +56,7 @@ class PropData:
         self._attributes: Attributes = attr
         if self._attributes.length() > 0:
             assert self._attributes.length() == 3
+        self._appearance: str = appearance
 
     def isunique(self) -> bool:
         return self._is_unique.lower() == "yes"
@@ -101,7 +103,8 @@ class PropData:
             "description": self._description,
             "is_unique": self._is_unique,
             "type": self._type,
-            "attributes": self._attributes.serialization()
+            "attributes": self._attributes.serialization(),
+            "appearance": self._appearance
         }
     
     def __str__(self) -> str:
@@ -120,7 +123,7 @@ class PropData:
         return self._attributes.get_value(2)
     
 def PropDataProxy(name: str) -> PropData:
-    return PropData(name, "", "", "", "", Attributes(""))
+    return PropData(name, "", "", "", "", Attributes(""), "")
 ########################################################################################################################
 ########################################################################################################################
 ########################################################################################################################

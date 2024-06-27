@@ -414,7 +414,7 @@ class CheckBeforeGoToActionSystem(ReactiveProcessor):
         prompt_of_props = ""
         if len(props) > 0:
             for prop in props:
-                prompt_of_props += prop_info_prompt(prop)
+                prompt_of_props += prop_info_prompt(prop, True, True)
         else:
             prompt_of_props = str(__ConstantPromptValue__.NO_ACTOR_PROPS_PROMPT)
         return prompt_of_props

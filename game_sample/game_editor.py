@@ -169,7 +169,7 @@ class ExcelEditorGame:
 
         version_sign = input("请输入版本号:")
         if version_sign == "":
-            version_sign = "qwe" #doto
+            version_sign = "qwe" #todo
             logger.warning(f"使用默认的版本号: {version_sign}")
         
         output["version"] = version_sign

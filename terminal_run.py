@@ -12,7 +12,7 @@ async def main() -> None:
 
     # 读取世界资源文件
     worldname = input("请输入要进入的世界名称(必须与自动化创建的名字一致):")
-    rpggame = load_then_create_rpg_game(worldname)
+    rpggame = load_then_create_rpg_game(worldname, "qwe")
     if rpggame is None:
         logger.error("create_rpg_game 失败。")
         return

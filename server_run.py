@@ -38,7 +38,7 @@ async def create(clientip: str) -> List[TupleModel]:
     logger.add(f"logs/{log_start_time}.log", level="DEBUG")
 
     worldname = "World2"
-    rpg_game = load_then_create_rpg_game(worldname)
+    rpg_game = load_then_create_rpg_game(worldname, "qwe")
     if rpg_game is None:
         logger.error("create_rpg_game 失败。")
         return []

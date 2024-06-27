@@ -1,6 +1,6 @@
 
 from entitas import ExecuteProcessor, Matcher, Entity #type: ignore
-from auxiliary.extended_context import ExtendedContext
+from my_entitas.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.components import AutoPlanningComponent
 from typing import Set, override

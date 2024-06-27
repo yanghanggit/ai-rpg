@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from loguru import logger
 from pydantic import BaseModel
-from multi_players_game import MultiplayersGame
+from multi_players_rpg_game import MultiplayersRPGGame
 from auxiliary.player_command import PlayerLogin
 from auxiliary.player_proxy import create_player_proxy, get_player_proxy, remove_player_proxy
 from create_game_funcs import load_then_create_rpg_game
@@ -31,7 +31,7 @@ app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static") 
 
-multiplayersgames: Dict[str, MultiplayersGame] = {}
+multiplayersgames: Dict[str, MultiplayersRPGGame] = {}
 
 async def create(clientip: str) -> List[TupleModel]:
     log_start_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -44,12 +44,12 @@ async def create(clientip: str) -> List[TupleModel]:
         return []
 
     #
-    game = MultiplayersGame(clientip, clientip, rpg_game)
+    game = MultiplayersRPGGame(clientip, rpg_game)
     if game is not None:
         global multiplayersgames
         multiplayersgames[clientip] = game
         #multiplayersgames[clientip].rpggame.extendedcontext.user_ips.append(clientip)
-        multiplayersgames[clientip].rpggame.user_ips.append(clientip) # todo
+        multiplayersgames[clientip]._rpggame.user_ips.append(clientip) # todo
         create_player_proxy(clientip)
 
     messages: List[TupleModel] = []
@@ -73,12 +73,12 @@ def parse_join_multi_game_params(command: str) -> str:
 async def join(clientip: str, hostip: str) -> List[TupleModel]:
     messages: List[TupleModel] = []
     for userip, game in multiplayersgames.copy().items():
-        if game.hostname == hostip:
-            client_game = MultiplayersGame(clientip, hostip, game.rpggame)
+        if game._host == hostip:
+            client_game = MultiplayersRPGGame(hostip, game._rpggame)
             multiplayersgames[clientip] = client_game
             messages.append(TupleModel(who=clientip, what=f"加入房间IP:{hostip}成功."))
             #multiplayersgames[clientip].rpggame.extendedcontext.user_ips.append(clientip)
-            multiplayersgames[clientip].rpggame.user_ips.append(clientip) # todo
+            multiplayersgames[clientip]._rpggame.user_ips.append(clientip) # todo
             create_player_proxy(clientip)
 
     if len(messages) == 0:
@@ -90,9 +90,9 @@ async def pick_actor(clientip: str, actorname: str) -> List[TupleModel]:
     global multiplayersgames
     playerproxy = get_player_proxy(clientip)
     assert playerproxy is not None
-    playerstartcmd = PlayerLogin("/server_run_login", multiplayersgames[clientip].rpggame, playerproxy, actorname, True)
+    playerstartcmd = PlayerLogin("/server_run_login", multiplayersgames[clientip]._rpggame, playerproxy, actorname, True)
     playerstartcmd.execute()
-    await multiplayersgames[clientip].rpggame.async_execute()
+    await multiplayersgames[clientip]._rpggame.async_execute()
     logger.debug(f"pick actor finish")
 
     messages: List[TupleModel] = []
@@ -120,8 +120,8 @@ async def quitgame(clientip: str) -> List[TupleModel]:
         proxy = get_player_proxy(clientip)
         assert proxy is not None
         remove_player_proxy(proxy)
-        quitclient.rpggame.exited = True
-        quitclient.rpggame.exit()
+        quitclient._rpggame.exited = True
+        quitclient._rpggame.exit()
 
     messages: List[TupleModel] = []
     messages.append(TupleModel(who=clientip, what="Quit Success"))
@@ -177,11 +177,11 @@ async def playerinput(clientip: str, command: str) -> List[TupleModel]:
     
     #
     if "/checkstatus" in command:
-        await imme_handle_check_status(multiplayersgames[clientip].rpggame, playerproxy)
+        await imme_handle_check_status(multiplayersgames[clientip]._rpggame, playerproxy)
     elif "/perception" in command:
-        await imme_handle_perception(multiplayersgames[clientip].rpggame, playerproxy)
+        await imme_handle_perception(multiplayersgames[clientip]._rpggame, playerproxy)
     else:
-        await multiplayersgames[clientip].rpggame.async_execute()
+        await multiplayersgames[clientip]._rpggame.async_execute()
 
     messages: List[TupleModel] = []
     messages.append(TupleModel(who=clientip, what=f"发送 {command}"))

@@ -2,7 +2,7 @@ from overrides import override
 from entitas import Entity, Matcher, ExecuteProcessor #type: ignore
 from auxiliary.components import (StageComponent, AutoPlanningComponent, ActorComponent, STAGE_AVAILABLE_ACTIONS_REGISTER, STAGE_CONVERSATION_ACTIONS_REGISTER)
 from auxiliary.actor_plan_and_action import ActorPlan, ActorAction
-from auxiliary.extended_context import ExtendedContext
+from my_entitas.extended_context import ExtendedContext
 from loguru import logger 
 from typing import Optional, Dict, Set, List
 from systems.planning_response_check import check_component_register, check_conversation_action

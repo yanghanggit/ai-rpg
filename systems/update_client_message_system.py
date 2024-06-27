@@ -1,8 +1,8 @@
 from entitas import ExecuteProcessor, Entity, Matcher #type: ignore
-from auxiliary.extended_context import ExtendedContext
+from my_entitas.extended_context import ExtendedContext
 from auxiliary.player_proxy import PlayerProxy, get_player_proxy, determine_player_input_mode, PLAYER_INPUT_MODE
 from dev_config import TEST_TERMINAL_NAME
-from auxiliary.extended_context import ExtendedContext
+from my_entitas.extended_context import ExtendedContext
 from auxiliary.components import MindVoiceActionComponent, WhisperActionComponent, SpeakActionComponent, \
     BroadcastActionComponent, EnviroNarrateActionComponent, \
     AttackActionComponent, GoToActionComponent

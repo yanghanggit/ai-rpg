@@ -1,5 +1,5 @@
 from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity #type: ignore
-from auxiliary.extended_context import ExtendedContext
+from my_entitas.extended_context import ExtendedContext
 from auxiliary.components import (  StealActionComponent, CheckStatusActionComponent, DeadActionComponent,
                                     ActorComponent)
 from loguru import logger

@@ -19,7 +19,7 @@ from auxiliary.components import (
     BodyComponent,
     GUIDComponent
     )
-from auxiliary.extended_context import ExtendedContext
+from my_entitas.extended_context import ExtendedContext
 from build_game.game_builders import GameBuilder, StageBuilder, ActorBuilder, WorldSystemBuilder
 from entitas.entity import Entity
 from systems.agents_kick_off_system import AgentsKickOffSystem
@@ -56,7 +56,7 @@ from systems.check_status_action_system import CheckStatusActionSystem
 from base_game import BaseGame
 from systems.agents_connect_system import AgentsConnectSystem
 from file_system.helper import add_actor_archive_files
-from systems.my_processors import MyProcessors
+from my_entitas.extended_processors import ExtendedProcessors
 from systems.simple_rpg_pre_fight_system import SimpleRPGPreFightSystem
 from systems.compress_chat_history_system import CompressChatHistorySystem
 from systems.post_conversation_action_system import PostConversationActionSystem
@@ -77,10 +77,10 @@ class RPGGame(BaseGame):
         super().__init__(name)
         self.extendedcontext: ExtendedContext = context
         self.builder: Optional[GameBuilder] = None
-        self.processors: MyProcessors = self.create_processors(self.extendedcontext)
+        self.processors: ExtendedProcessors = self.create_processors(self.extendedcontext)
         self.user_ips: List[str] = [] # 临时写法，待重构
 ###############################################################################################################################################
-    def create_processors(self, context: ExtendedContext) -> MyProcessors:
+    def create_processors(self, context: ExtendedContext) -> ExtendedProcessors:
 
         # 处理用户输入
         from systems.handle_player_input_system import HandlePlayerInputSystem ### 不这样就循环引用
@@ -90,7 +90,7 @@ class RPGGame(BaseGame):
         from systems.terminal_player_input_system import TerminalPlayerInputSystem
         from systems.save_system import SaveSystem
 
-        processors = MyProcessors()
+        processors = ExtendedProcessors()
        
         ##调试用的系统。监视进入运行之前的状态
         processors.add(BeginSystem(context))

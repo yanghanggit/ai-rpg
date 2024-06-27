@@ -1,5 +1,5 @@
 from entitas import Entity # type: ignore
-from auxiliary.extended_context import ExtendedContext
+from my_entitas.extended_context import ExtendedContext
 from auxiliary.components import PlayerComponent, PlayerIsWebClientComponent, PlayerIsTerminalClientComponent
 from typing import List
 from collections import namedtuple

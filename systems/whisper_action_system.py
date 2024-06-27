@@ -1,7 +1,7 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
 from auxiliary.components import WhisperActionComponent
 from auxiliary.actor_plan_and_action import ActorAction
-from auxiliary.extended_context import ExtendedContext
+from my_entitas.extended_context import ExtendedContext
 from typing import Optional, override
 from loguru import logger
 from auxiliary.target_and_message_format_handle import parse_target_and_message, conversation_check, ErrorConversationEnable

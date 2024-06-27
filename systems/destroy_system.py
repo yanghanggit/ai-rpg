@@ -2,7 +2,7 @@
 from typing import override, Set
 from entitas import Matcher, ExecuteProcessor, Group, Entity #type: ignore
 from auxiliary.components import DestroyComponent
-from auxiliary.extended_context import ExtendedContext
+from my_entitas.extended_context import ExtendedContext
 from loguru import logger
    
 #### 这个类不允许再动了，基本固定了。

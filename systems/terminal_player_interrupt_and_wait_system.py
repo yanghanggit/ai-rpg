@@ -1,13 +1,13 @@
 from typing import override
 from entitas import ExecuteProcessor #type: ignore
-from auxiliary.extended_context import ExtendedContext
+from my_entitas.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.player_proxy import (PlayerProxy, 
                                     get_player_proxy, 
                                     PLAYER_INPUT_MODE, 
                                     determine_player_input_mode)
 from dev_config import TEST_TERMINAL_NAME, TEST_CLIENT_SHOW_MESSAGE_COUNT
-from auxiliary.extended_context import ExtendedContext
+from my_entitas.extended_context import ExtendedContext
 from rpg_game import RPGGame 
 
 class TerminalPlayerInterruptAndWaitSystem(ExecuteProcessor):

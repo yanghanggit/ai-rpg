@@ -1,7 +1,7 @@
 from typing import override
 from entitas import Entity, Matcher, ExecuteProcessor #type: ignore
 from auxiliary.components import StageComponent, ActorComponent, PlayerComponent
-from auxiliary.extended_context import ExtendedContext
+from my_entitas.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.director_component import StageDirectorComponent
 from auxiliary.player_proxy import add_client_actor_message

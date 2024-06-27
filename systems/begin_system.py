@@ -1,7 +1,7 @@
 
 from typing import override
 from entitas import InitializeProcessor, ExecuteProcessor #type: ignore
-from auxiliary.extended_context import ExtendedContext
+from my_entitas.extended_context import ExtendedContext
 from loguru import logger
    
 class BeginSystem(InitializeProcessor, ExecuteProcessor):

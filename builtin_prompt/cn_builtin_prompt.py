@@ -1,4 +1,4 @@
-from auxiliary.extended_context import ExtendedContext
+from my_entitas.extended_context import ExtendedContext
 from typing import Dict, List, Set
 from prototype_data.data_def import PropData
 from auxiliary.components import MindVoiceActionComponent, EnviroNarrateActionComponent, \

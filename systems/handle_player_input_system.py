@@ -1,6 +1,6 @@
 from typing import override
 from entitas import ExecuteProcessor #type: ignore
-from auxiliary.extended_context import ExtendedContext
+from my_entitas.extended_context import ExtendedContext
 from loguru import logger
 from rpg_game import RPGGame 
 from auxiliary.player_proxy import PlayerProxy, get_player_proxy, PLAYER_INPUT_MODE, determine_player_input_mode
@@ -18,7 +18,7 @@ from auxiliary.player_command import (
                           PlayerTrade, 
                           PlayerPerception,
                           PlayerCheckStatus)
-from auxiliary.extended_context import ExtendedContext
+from my_entitas.extended_context import ExtendedContext
 
 ############################################################################################################
 def splitcommand(input_val: str, split_str: str)-> str:

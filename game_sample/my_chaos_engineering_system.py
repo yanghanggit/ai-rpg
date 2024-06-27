@@ -43,7 +43,7 @@ class MyChaosEngineeringSystem(IChaosEngineering):
     ##
     def on_read_memory_failed(self, extended_context: Any, name: str, readarchprompt: str) -> None:
         logger.debug(f"{self.name}: on_read_memory_failed {name} {readarchprompt}")
-        from auxiliary.extended_context import ExtendedContext
+        from my_entitas.extended_context import ExtendedContext
         context: ExtendedContext = extended_context
         agent_connect_system = context.agent_connect_system
         agent_connect_system.add_human_message_to_chat_history(name, readarchprompt)
@@ -59,12 +59,12 @@ class MyChaosEngineeringSystem(IChaosEngineering):
 
     ##
     def hack_stage_planning(self, extended_context: Any, stagename: str, planprompt: str) -> Optional[str]:
-        from auxiliary.extended_context import ExtendedContext
+        from my_entitas.extended_context import ExtendedContext
         context: ExtendedContext = extended_context
         return None
 
     ##
     def hack_actor_planning(self, extended_context: Any, actor_name: str, planprompt: str) -> Optional[str]:
-        from auxiliary.extended_context import ExtendedContext
+        from my_entitas.extended_context import ExtendedContext
         context: ExtendedContext = extended_context
         return None

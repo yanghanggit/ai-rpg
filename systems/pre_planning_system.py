@@ -1,6 +1,6 @@
 from overrides import override
 from entitas import InitializeProcessor, ExecuteProcessor, Matcher, Entity #type: ignore
-from auxiliary.extended_context import ExtendedContext
+from my_entitas.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.components import ( AutoPlanningComponent, StageComponent, ActorComponent, PlayerComponent)
 from enum import Enum

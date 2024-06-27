@@ -3,7 +3,7 @@ from entitas import Entity, Matcher, InitializeProcessor, ExecuteProcessor # typ
 from auxiliary.components import WorldComponent, StageComponent, ActorComponent, \
     PlayerComponent, PerceptionActionComponent, CheckStatusActionComponent
 from builtin_prompt.cn_builtin_prompt import (kick_off_memory_actor_prompt, kick_off_memory_stage_prompt, kick_off_world_system_prompt)
-from auxiliary.extended_context import ExtendedContext
+from my_entitas.extended_context import ExtendedContext
 from loguru import logger
 from typing import Dict, Set
 from auxiliary.actor_plan_and_action import ActorAction

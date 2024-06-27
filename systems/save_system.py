@@ -1,6 +1,6 @@
 from typing import override
 from entitas import (TearDownProcessor, ExecuteProcessor) #type: ignore
-from auxiliary.extended_context import ExtendedContext
+from my_entitas.extended_context import ExtendedContext
 from loguru import logger
 from rpg_game import RPGGame 
 

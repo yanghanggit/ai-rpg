@@ -1,10 +1,9 @@
-from typing import Coroutine
 from entitas import Processors #type: ignore
 from loguru import logger
 from overrides import override
 import time
 
-class MyProcessors(Processors):
+class ExtendedProcessors(Processors):
 
     def __init__(self) -> None:
         super().__init__()

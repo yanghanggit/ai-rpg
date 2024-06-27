@@ -1,5 +1,5 @@
 from entitas import ExecuteProcessor, Matcher, Entity #type: ignore
-from auxiliary.extended_context import ExtendedContext
+from my_entitas.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.components import (ActorComponent, StageComponent)
 from typing import Set, override, Dict

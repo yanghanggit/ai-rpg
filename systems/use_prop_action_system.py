@@ -6,7 +6,7 @@ from auxiliary.components import (UsePropActionComponent, StageExitCondStatusCom
                                   EnviroNarrateActionComponent, StageComponent, ActorComponent,
                                   DeadActionComponent)
 from auxiliary.target_and_message_format_handle import parse_target_and_message
-from auxiliary.extended_context import ExtendedContext
+from my_entitas.extended_context import ExtendedContext
 from auxiliary.director_component import notify_stage_director
 from entitas.group import GroupEvent
 from auxiliary.director_event import IDirectorEvent

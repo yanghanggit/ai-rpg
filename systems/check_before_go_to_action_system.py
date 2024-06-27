@@ -12,7 +12,7 @@ from auxiliary.components import (GoToActionComponent,
                         StageEntryCondCheckActorPropsComponent,
                         DeadActionComponent)
 from auxiliary.actor_plan_and_action import ActorAction
-from auxiliary.extended_context import ExtendedContext
+from my_entitas.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.director_component import notify_stage_director
 from auxiliary.director_event import IDirectorEvent

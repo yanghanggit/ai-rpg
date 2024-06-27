@@ -3,7 +3,7 @@ from typing import override
 from entitas import Matcher, ExecuteProcessor, Entity #type: ignore
 from auxiliary.components import (DeadActionComponent, PlayerComponent,
                         DestroyComponent)
-from auxiliary.extended_context import ExtendedContext
+from my_entitas.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.actor_plan_and_action import ActorAction
 from rpg_game import RPGGame

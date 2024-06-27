@@ -1,7 +1,7 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
 from auxiliary.components import SpeakActionComponent
 from auxiliary.actor_plan_and_action import ActorAction
-from auxiliary.extended_context import ExtendedContext
+from my_entitas.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.target_and_message_format_handle import conversation_check, parse_target_and_message, ErrorConversationEnable
 from auxiliary.director_component import notify_stage_director

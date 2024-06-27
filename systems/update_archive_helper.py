@@ -1,6 +1,6 @@
 from entitas import Entity, Matcher # type: ignore
 from auxiliary.components import StageComponent, ActorComponent
-from auxiliary.extended_context import ExtendedContext
+from my_entitas.extended_context import ExtendedContext
 from loguru import logger
 from typing import List, Dict, Set
 import json

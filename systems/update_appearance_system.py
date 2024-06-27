@@ -1,6 +1,6 @@
 from overrides import override
 from entitas import Entity, InitializeProcessor, ExecuteProcessor, Matcher # type: ignore
-from auxiliary.extended_context import ExtendedContext
+from my_entitas.extended_context import ExtendedContext
 from loguru import logger
 from typing import Dict, cast, Set
 from auxiliary.lang_serve_agent_system import LangServeAgentSystem, AgentRequestOption

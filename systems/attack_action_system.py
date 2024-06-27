@@ -1,6 +1,6 @@
 from entitas import Matcher, ReactiveProcessor, GroupEvent, Entity # type: ignore
 from auxiliary.components import AttackActionComponent, SimpleRPGAttrComponent, DeadActionComponent, SimpleRPGWeaponComponent, SimpleRPGArmorComponent
-from auxiliary.extended_context import ExtendedContext
+from my_entitas.extended_context import ExtendedContext
 from auxiliary.actor_plan_and_action import ActorAction
 from loguru import logger
 from auxiliary.director_component import notify_stage_director

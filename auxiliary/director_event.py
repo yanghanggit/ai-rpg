@@ -1,4 +1,4 @@
-from auxiliary.extended_context import ExtendedContext
+from my_entitas.extended_context import ExtendedContext
 from abc import ABC, abstractmethod
 ####################################################################################################################################
 ####################################################################################################################################

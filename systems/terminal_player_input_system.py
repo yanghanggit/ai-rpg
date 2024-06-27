@@ -1,5 +1,5 @@
 from entitas import ExecuteProcessor #type: ignore
-from auxiliary.extended_context import ExtendedContext
+from my_entitas.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.player_proxy import PlayerProxy, get_player_proxy, PLAYER_INPUT_MODE, determine_player_input_mode
 from typing import Any, cast, override

@@ -1,6 +1,6 @@
 from typing import override, Set
 from entitas import ExecuteProcessor, Matcher, Entity #type: ignore
-from auxiliary.extended_context import ExtendedContext
+from my_entitas.extended_context import ExtendedContext
 #from loguru import logger
 from auxiliary.components import DeadActionComponent, ACTOR_INTERACTIVE_ACTIONS_REGISTER, ActorComponent
 #from auxiliary.cn_builtin_prompt import gen_actor_archive_prompt, died_in_fight_prompt

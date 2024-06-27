@@ -1,7 +1,7 @@
 from overrides import override
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
 from auxiliary.components import SpeakActionComponent, BroadcastActionComponent, WhisperActionComponent, PlayerComponent, ActorComponent
-from auxiliary.extended_context import ExtendedContext
+from my_entitas.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.director_component import StageDirectorComponent
 from typing import List, Set, Optional, Dict

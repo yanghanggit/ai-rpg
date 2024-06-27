@@ -1,5 +1,5 @@
 from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity #type: ignore
-from auxiliary.extended_context import ExtendedContext
+from my_entitas.extended_context import ExtendedContext
 from auxiliary.components import (CheckStatusActionComponent, SimpleRPGAttrComponent, ActorComponent, DeadActionComponent)
 from loguru import logger
 from auxiliary.director_component import notify_stage_director

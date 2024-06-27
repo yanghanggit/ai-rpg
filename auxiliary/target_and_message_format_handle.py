@@ -1,6 +1,6 @@
 from typing import Optional
 from entitas.entity import Entity
-from auxiliary.extended_context import ExtendedContext
+from my_entitas.extended_context import ExtendedContext
 from typing import Optional
 from enum import Enum
 

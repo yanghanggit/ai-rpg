@@ -1,6 +1,8 @@
 from collections import namedtuple
 
 ############################################# 核心组件（相对通用的？） ############################################################################
+# 全局唯一标识符
+GUIDComponent = namedtuple('GUIDComponent', 'name')
 # 管理员标记，世界级别的AI
 WorldComponent = namedtuple('WorldComponent', 'name')
 # 场景标记

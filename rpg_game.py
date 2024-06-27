@@ -16,7 +16,8 @@ from auxiliary.components import (
     StageEntryCondStatusComponent,
     StageEntryCondCheckActorStatusComponent,
     StageEntryCondCheckActorPropsComponent,
-    BodyComponent
+    BodyComponent,
+    GUIDComponent
     )
 from auxiliary.extended_context import ExtendedContext
 from build_game.game_builders import GameBuilder, StageBuilder, ActorBuilder, WorldSystemBuilder
@@ -61,7 +62,7 @@ from systems.compress_chat_history_system import CompressChatHistorySystem
 from systems.post_conversation_action_system import PostConversationActionSystem
 from prototype_data.data_def import StageData
 from systems.update_appearance_system import UpdateAppearanceSystem
-
+from auxiliary.guid_generator import GUIDGenerator, _GUIDGenerator_
 
 
 
@@ -257,10 +258,11 @@ class RPGGame(BaseGame):
             return res
         
         for builddata in actor_builder._world_systems:
-            worldentity = context.create_entity()
-            res.append(worldentity)
+            world_entity = context.create_entity()
+            res.append(world_entity)
             #必要组件
-            worldentity.add(WorldComponent, builddata._name)
+            world_entity.add(GUIDComponent, _GUIDGenerator_.generate_string())
+            world_entity.add(WorldComponent, builddata._name)
             #重构
             agent_connect_system.register_agent(builddata._name, builddata._url)
             code_name_component_system.register_code_name_component_class(builddata._name, builddata._codename)
@@ -294,6 +296,7 @@ class RPGGame(BaseGame):
             res.append(_entity)
 
             # 必要组件
+            _entity.add(GUIDComponent, _GUIDGenerator_.generate_string())
             _entity.add(ActorComponent, actor_data._name, "")
             _entity.add(SimpleRPGAttrComponent, actor_data._name, 
                         actor_data.maxhp, 
@@ -344,12 +347,13 @@ class RPGGame(BaseGame):
         # 创建stage相关配置
         for stage_data in stagebuilder._stages:
             #logger.debug(f"创建Stage：{builddata.name}")
-            stageentity = context.create_entity()
+            stage_entity = context.create_entity()
 
             #必要组件
-            stageentity.add(StageComponent, stage_data._name)
-            stageentity.add(StageDirectorComponent, stage_data._name) ###
-            stageentity.add(SimpleRPGAttrComponent, stage_data._name, 
+            stage_entity.add(GUIDComponent, _GUIDGenerator_.generate_string())
+            stage_entity.add(StageComponent, stage_data._name)
+            stage_entity.add(StageDirectorComponent, stage_data._name) ###
+            stage_entity.add(SimpleRPGAttrComponent, stage_data._name, 
                             stage_data.maxhp, 
                             stage_data.hp, 
                             stage_data.attack, 
@@ -376,13 +380,13 @@ class RPGGame(BaseGame):
                 code_name_component_system.register_code_name_component_class(_pd._name, _pd._codename)
 
             # 添加场景的条件：包括进入和离开的条件，自身变化条件等等
-            self.add_stage_conditions(stageentity, stage_data)
+            self.add_stage_conditions(stage_entity, stage_data)
 
             ## 创建连接的场景用于PortalStepActionSystem, 目前如果添加就只能添加一个
             assert len(stage_data._exit_of_portal) <= 1
             if  len(stage_data._exit_of_portal) > 0:
                 exit_portal_and_goto_stage =  next(iter(stage_data._exit_of_portal))
-                stageentity.add(ExitOfPortalComponent, exit_portal_and_goto_stage._name)
+                stage_entity.add(ExitOfPortalComponent, exit_portal_and_goto_stage._name)
 
             #重构
             agent_connect_system.register_agent(stage_data._name, stage_data._url)

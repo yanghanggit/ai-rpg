@@ -5,7 +5,7 @@ from auxiliary.components import (  SearchActionComponent,
                                     StageComponent,
                                     DeadActionComponent,
                                     CheckStatusActionComponent)
-from auxiliary.actor_plan_and_action import ActorAction
+from actor_plan_and_action.actor_action import ActorAction
 from loguru import logger
 from auxiliary.director_component import notify_stage_director
 from typing import List, override, Set
@@ -99,18 +99,18 @@ class SearchActionSystem(ReactiveProcessor):
         ###
         searchactioncomp: SearchActionComponent = entity.get(SearchActionComponent)
         action: ActorAction = searchactioncomp.action
-        searchtargets: Set[str] = set(action.values)
+        #searchtargets: Set[str] = set(action._values)
         ###
-        for targetpropname in searchtargets:
+        for target_prop_name in action._values:
             ## 不在同一个场景就不能被搜寻，这个场景不具备这个道具，就无法搜寻
-            if not self.check_stage_has_the_prop(targetpropname, propfiles):
-                notify_stage_director(self.context, stageentity, ActorSearchFailedEvent(safe_name, targetpropname))
-                logger.debug(f"search failed, {targetpropname} not in {stagecomp.name}")
+            if not self.check_stage_has_the_prop(target_prop_name, propfiles):
+                notify_stage_director(self.context, stageentity, ActorSearchFailedEvent(safe_name, target_prop_name))
+                logger.debug(f"search failed, {target_prop_name} not in {stagecomp.name}")
                 continue
             # 交换文件，即交换道具文件即可
-            self.stage_exchanges_prop_to_actor(stagecomp.name, action.name, targetpropname)
-            logger.info(f"search success, {targetpropname} in {stagecomp.name}")
-            notify_stage_director(self.context, stageentity, ActorSearchSuccessEvent(safe_name, targetpropname, stagecomp.name))
+            self.stage_exchanges_prop_to_actor(stagecomp.name, action._actor_name, target_prop_name)
+            logger.info(f"search success, {target_prop_name} in {stagecomp.name}")
+            notify_stage_director(self.context, stageentity, ActorSearchSuccessEvent(safe_name, target_prop_name, stagecomp.name))
             search_any_prop_success = True
 
         return search_any_prop_success

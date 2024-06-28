@@ -1,24 +1,24 @@
 from typing import List, Dict, Any, Optional
 import json
 from loguru import logger
-from auxiliary.error_json_handle import merge, is_repeat, is_markdown_json_block, extract_markdown_json_block
+from actor_plan_and_action.my_json import merge, is_repeat, is_markdown_json_block, extract_markdown_json_block
+from actor_plan_and_action.actor_action import ActorAction
 
-
 ############################################################################################################
 ############################################################################################################
 ############################################################################################################
-class MyJSONResponse:
+class ActorPlanJSONResponse:
 
     def __init__(self, raw_data: str) -> None:
         self._raw_data: str = str(raw_data)
         self._output: str = str(raw_data)
 
-    def extract_md_json_block(self) -> 'MyJSONResponse':
+    def extract_md_json_block(self) -> 'ActorPlanJSONResponse':
         if is_markdown_json_block(self._output):
             self._output = extract_markdown_json_block(self._output)
         return self
     
-    def merge_repeat_json(self) -> 'MyJSONResponse':
+    def merge_repeat_json(self) -> 'ActorPlanJSONResponse':
         if is_repeat(self._output):
             merge_res = merge(self._output)
             if merge_res is not None:
@@ -34,22 +34,7 @@ class MyJSONResponse:
 ############################################################################################################
 ############################################################################################################
 ############################################################################################################
-class ActorAction:
-    def __init__(self, name: str = "", actionname: str = "", values: List[str] = []) -> None:
-        self.name = name  
-        self.actionname = actionname
-        self.values = values
 
-    def __str__(self) -> str:
-        return f"ActorAction({self.name}, {self.actionname}, {self.values})"
-
-    def __repr__(self) -> str:
-        return f"ActorAction({self.name}, {self.actionname}, {self.values})"
-
-    def single_value(self) -> str:
-        if len(self.values) == 0:
-            return ""
-        return " ".join(self.values)
 ############################################################################################################
 ############################################################################################################
 ############################################################################################################
@@ -66,7 +51,7 @@ class ActorPlan:
         # 处理特殊的情况, 例如出现了markdown json block与重复json的情况
         # GPT4 也有可能输出markdown json block。以防万一，我们检查一下。
         # GPT4 也有可能输出重复的json。我们合并一下。有可能上面的json block的错误也犯了，所以放到第二个步骤来做
-        self.json_string = MyJSONResponse(raw_data).extract_md_json_block().merge_repeat_json().output
+        self.json_string = ActorPlanJSONResponse(raw_data).extract_md_json_block().merge_repeat_json().output
 
         #核心执行
         self.load_then_build() 

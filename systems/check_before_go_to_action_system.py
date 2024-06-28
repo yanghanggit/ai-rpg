@@ -11,7 +11,7 @@ from auxiliary.components import (GoToActionComponent,
                         StageEntryCondCheckActorStatusComponent,
                         StageEntryCondCheckActorPropsComponent,
                         DeadActionComponent)
-from auxiliary.actor_plan_and_action import ActorAction
+from actor_plan_and_action.actor_action import ActorAction
 from my_entitas.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.director_component import notify_stage_director
@@ -27,7 +27,7 @@ from builtin_prompt.cn_builtin_prompt import \
             go_to_stage_failed_because_already_in_stage_prompt
 from typing import Optional, cast, override
 from systems.check_status_action_system import CheckStatusActionHelper
-from auxiliary.actor_plan_and_action import ActorPlan
+from actor_plan_and_action.actor_plan import ActorPlan
 
 ####################################################################################################################################
 ####################################################################################################################################
@@ -177,18 +177,19 @@ class HandleStageConditionsResponseHelper:
         return True
 ###############################################################################################################################################
     def _parse_yes(self, tag_action: ActorAction) -> bool:
-        assert tag_action.actionname == TagActionComponent.__name__
-        if len(tag_action.values) == 0:
-            logger.error(tag_action)
-            return False
-        return tag_action.values[0].lower() == "yes"
+        assert tag_action._action_name == TagActionComponent.__name__
+        return tag_action.bool_value(0)
+        # if len(tag_action._values) == 0:
+        #     logger.error(tag_action)
+        #     return False
+        # return tag_action._values[0].lower() == "yes"
 ###############################################################################################################################################
     def _parse_tips(self, enviro_narrate_action: ActorAction) -> str:
-        assert enviro_narrate_action.actionname == EnviroNarrateActionComponent.__name__
-        if len(enviro_narrate_action.values) == 0:
+        assert enviro_narrate_action._action_name == EnviroNarrateActionComponent.__name__
+        if len(enviro_narrate_action._values) == 0:
             logger.error(enviro_narrate_action)
             return str(__ConstantPromptValue__.NONE_PROMPT)
-        return enviro_narrate_action.single_value()
+        return enviro_narrate_action.join_values()
 ###############################################################################################################################################
 
 
@@ -395,10 +396,11 @@ class CheckBeforeGoToActionSystem(ReactiveProcessor):
     def get_target_stage_name(self, entity: Entity) -> str:
         go_to_action_comp: GoToActionComponent = entity.get(GoToActionComponent)
         action: ActorAction = go_to_action_comp.action
-        if len(action.values) == 0:
-            logger.error(go_to_action_comp)
-            return ""
-        return action.values[0]
+        return action.value(0)
+        # if len(action._values) == 0:
+        #     logger.error(go_to_action_comp)
+        #     return ""
+        # return action._values[0]
 ###############################################################################################################################################
     # todo 目前就把外观信息当作状态信息，后续可以加入更多的状态信息
     def get_actor_status_prompt(self, entity: Entity) -> str:

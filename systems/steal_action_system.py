@@ -3,8 +3,8 @@ from my_entitas.extended_context import ExtendedContext
 from auxiliary.components import (  StealActionComponent, CheckStatusActionComponent, DeadActionComponent,
                                     ActorComponent)
 from loguru import logger
-from auxiliary.actor_plan_and_action import ActorAction
-from auxiliary.target_and_message_format_handle import conversation_check, parse_target_and_message, ErrorConversationEnable
+from actor_plan_and_action.actor_action import ActorAction
+from gameplay_checks.conversation_check import conversation_check, ErrorConversationEnable
 from typing import Optional, override
 from auxiliary.director_component import notify_stage_director
 from auxiliary.director_event import IDirectorEvent
@@ -55,33 +55,27 @@ class StealActionSystem(ReactiveProcessor):
 ###################################################################################################################
     def steal(self, entity: Entity) -> bool:
 
-        steal_any_success = False
+        steal_any = False
         safename = self.context.safe_get_entity_name(entity)
         logger.debug(f"StealActionSystem: {safename} is stealing")
 
-        stealcomp: StealActionComponent = entity.get(StealActionComponent)
-        stealaction: ActorAction = stealcomp.action
-        for value in stealaction.values:
-
-            parse = parse_target_and_message(value)
-            targetname: Optional[str] = parse[0]
-            message: Optional[str] = parse[1]
-            
-            if targetname is None or message is None:
-                # 不能交谈就是不能偷
-                continue
-    
-            if conversation_check(self.context, entity, targetname) != ErrorConversationEnable.VALID:
+        steal_comp: StealActionComponent = entity.get(StealActionComponent)
+        steal_action: ActorAction = steal_comp.action
+        target_and_message = steal_action.target_and_message_values()
+        for tp in target_and_message:
+            target = tp[0]
+            message = tp[1]
+            if conversation_check(self.context, entity, target) != ErrorConversationEnable.VALID:
                 # 不能交谈就是不能偷
                 continue
         
             propname = message
-            stealres = self._steal_(entity, targetname, propname)
-            notify_stage_director(self.context, entity, ActorStealEvent(safename, targetname, propname, stealres))
-            if stealres:
-                steal_any_success = True
+            steal_res = self._steal_(entity, target, propname)
+            notify_stage_director(self.context, entity, ActorStealEvent(safename, target, propname, steal_res))
+            if steal_res:
+                steal_any = True
 
-        return steal_any_success
+        return steal_any
 ###################################################################################################################
     def _steal_(self, entity: Entity, target_actor_name: str, propname: str) -> bool:
         filesystem = self.context.file_system

@@ -3,8 +3,8 @@ from my_entitas.extended_context import ExtendedContext
 from auxiliary.components import (  TradeActionComponent,CheckStatusActionComponent, DeadActionComponent,
                                     ActorComponent)
 from loguru import logger
-from auxiliary.actor_plan_and_action import ActorAction
-from auxiliary.target_and_message_format_handle import conversation_check, parse_target_and_message, ErrorConversationEnable
+from actor_plan_and_action.actor_action import ActorAction
+from gameplay_checks.conversation_check import conversation_check, ErrorConversationEnable
 from typing import Optional, List, override
 from auxiliary.director_component import notify_stage_director
 from auxiliary.director_event import IDirectorEvent
@@ -60,22 +60,17 @@ class TradeActionSystem(ReactiveProcessor):
         safe_name = self.context.safe_get_entity_name(entity)
         logger.debug(f"TradeActionSystem: {safe_name} is trading")
 
-        tradecomp: TradeActionComponent = entity.get(TradeActionComponent)
-        tradeaction: ActorAction = tradecomp.action
-        for value in tradeaction.values:
+        trade_comp: TradeActionComponent = entity.get(TradeActionComponent)
+        trade_action: ActorAction = trade_comp.action
+        target_and_message = trade_action.target_and_message_values()
+        for tp in target_and_message:
+            targetname = tp[0]
+            message = tp[1]
 
-            parse = parse_target_and_message(value)
-            targetname: Optional[str] = parse[0]
-            message: Optional[str] = parse[1]
-            
-            if targetname is None or message is None:
-                # 不能交谈就是不能交换道具
-                continue
-    
             if conversation_check(self.context, entity, targetname) != ErrorConversationEnable.VALID:
                 # 不能交谈就是不能交换道具
                 continue
-            ##
+    
             propname = message
             traderes = self._trade_(entity, targetname, propname)
             notify_stage_director(self.context, entity, ActorTradeEvent(safe_name, targetname, propname, traderes))

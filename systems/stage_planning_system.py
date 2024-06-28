@@ -1,11 +1,12 @@
 from overrides import override
 from entitas import Entity, Matcher, ExecuteProcessor #type: ignore
 from auxiliary.components import (StageComponent, AutoPlanningComponent, ActorComponent, STAGE_AVAILABLE_ACTIONS_REGISTER, STAGE_CONVERSATION_ACTIONS_REGISTER)
-from auxiliary.actor_plan_and_action import ActorPlan, ActorAction
+from actor_plan_and_action.actor_plan import ActorPlan
+from actor_plan_and_action.actor_action import ActorAction
 from my_entitas.extended_context import ExtendedContext
 from loguru import logger 
 from typing import Optional, Dict, Set, List
-from systems.planning_response_check import check_component_register, check_conversation_action
+from gameplay_checks.planning_check import check_component_register
 from prototype_data.data_def import PropData
 from builtin_prompt.cn_builtin_prompt import stage_plan_prompt
 
@@ -72,19 +73,19 @@ class StagePlanningSystem(ExecuteProcessor):
             if not self._check_available(action):
                 logger.warning(f"StagePlanningSystem: action is not correct, {action}")
                 return False
-            if not self._check_conversation(action):
-                logger.warning(f"StagePlanningSystem: target or message is not correct, {action}")
-                return False
+            # if not self._check_conversation(action):
+            #     logger.warning(f"StagePlanningSystem: target or message is not correct, {action}")
+            #     return False
         return True
 #######################################################################################################################################
     def _check_available(self, action: ActorAction) -> bool:
-        return check_component_register(action.actionname, STAGE_AVAILABLE_ACTIONS_REGISTER) is not None
+        return check_component_register(action._action_name, STAGE_AVAILABLE_ACTIONS_REGISTER) is not None
 #######################################################################################################################################
-    def _check_conversation(self, action: ActorAction) -> bool:
-        return check_conversation_action(action.actionname, action.values, STAGE_CONVERSATION_ACTIONS_REGISTER)
+    # def _check_conversation(self, action: ActorAction) -> bool:
+    #     return check_conversation_action(action, STAGE_CONVERSATION_ACTIONS_REGISTER)
 #######################################################################################################################################
     def _add_action_component(self, entity: Entity, action: ActorAction) -> None:
-        compclass = check_component_register(action.actionname, STAGE_AVAILABLE_ACTIONS_REGISTER)
+        compclass = check_component_register(action._action_name, STAGE_AVAILABLE_ACTIONS_REGISTER)
         if compclass is None:
             return
         if not entity.has(compclass):

@@ -1,7 +1,7 @@
 from typing import override
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
 from auxiliary.components import MindVoiceActionComponent
-from auxiliary.actor_plan_and_action import ActorAction
+from actor_plan_and_action.actor_action import ActorAction
 from my_entitas.extended_context import ExtendedContext
 #from auxiliary.print_in_color import Color
 from loguru import logger

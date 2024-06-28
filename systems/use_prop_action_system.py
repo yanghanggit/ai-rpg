@@ -1,18 +1,17 @@
 from entitas import Entity, Matcher, ReactiveProcessor # type: ignore
 from typing import Optional, override
 from loguru import logger
-from auxiliary.actor_plan_and_action import ActorAction
+from actor_plan_and_action.actor_action import ActorAction
 from auxiliary.components import (UsePropActionComponent, StageExitCondStatusComponent, 
                                   EnviroNarrateActionComponent, StageComponent, ActorComponent,
                                   DeadActionComponent)
-from auxiliary.target_and_message_format_handle import parse_target_and_message
 from my_entitas.extended_context import ExtendedContext
 from auxiliary.director_component import notify_stage_director
 from entitas.group import GroupEvent
 from auxiliary.director_event import IDirectorEvent
 from builtin_prompt.cn_builtin_prompt import prop_info_prompt, use_prop_to_stage_prompt, __ConstantPromptValue__, use_prop_no_response_prompt
-from auxiliary.actor_plan_and_action import ActorPlan
-from auxiliary.target_and_message_format_handle import use_prop_check, ErrorUsePropEnable
+from actor_plan_and_action.actor_plan import ActorPlan
+from gameplay_checks.use_prop_check import use_prop_check, ErrorUsePropEnable
 from file_system.files_def import PropFile
 
 
@@ -44,10 +43,10 @@ class UsePropResponseHelper:
 
     def _parse(self, plan: ActorPlan) -> str:
         enviro_narrate_action: Optional[ActorAction] = plan.get_action_by_key(EnviroNarrateActionComponent.__name__)
-        if enviro_narrate_action is None or len(enviro_narrate_action.values) == 0:
+        if enviro_narrate_action is None or len(enviro_narrate_action._values) == 0:
            logger.error(f"InteractivePropActionSystem: {plan._raw} is not correct")
            return ""
-        return enviro_narrate_action.single_value()
+        return enviro_narrate_action.join_values()
     
     @property
     def tips(self) -> str:
@@ -81,16 +80,10 @@ class UsePropActionSystem(ReactiveProcessor):
         filesystem = context.file_system
         use_interactive_prop_comp: UsePropActionComponent = entity.get(UsePropActionComponent)
         action: ActorAction = use_interactive_prop_comp.action
-
-        for value in action.values:
-            # 传入参数是否合理？
-            parse = parse_target_and_message(value)
-            targetname: Optional[str] = parse[0]
-            propname: Optional[str] = parse[1]
-            if targetname is None or propname is None:
-                logger.warning(f"InteractivePropActionSystem: {value} is not correct")
-                continue
-
+        target_and_message = action.target_and_message_values()
+        for tp in target_and_message:
+            targetname = tp[0]
+            propname = tp[1]
             # 基本检查，是否发起与接受的对象是合理的，而且是否在一个场景里
             error_code = use_prop_check(context, entity, targetname)
             if error_code != ErrorUsePropEnable.VALID:
@@ -98,7 +91,7 @@ class UsePropActionSystem(ReactiveProcessor):
                 continue
             
             # 检查道具是否存在，需要提醒，如果没有是大问题
-            prop_file = filesystem.get_prop_file(action.name, propname)
+            prop_file = filesystem.get_prop_file(action._actor_name, propname)
             if prop_file is None:
                 logger.error(f"检查道具合理性失败，{propname} 不存在")
                 continue

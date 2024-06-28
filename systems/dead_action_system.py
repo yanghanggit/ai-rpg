@@ -5,7 +5,7 @@ from auxiliary.components import (DeadActionComponent, PlayerComponent,
                         DestroyComponent)
 from my_entitas.extended_context import ExtendedContext
 from loguru import logger
-from auxiliary.actor_plan_and_action import ActorAction
+from actor_plan_and_action.actor_action import ActorAction
 from rpg_game import RPGGame
 from typing import Set
 
@@ -37,7 +37,7 @@ class DeadActionSystem(ExecuteProcessor):
             deadcomp: DeadActionComponent = entity.get(DeadActionComponent)
             action: ActorAction = deadcomp.action
             if not entity.has(DestroyComponent):
-                entity.add(DestroyComponent, action.name) ### 这里只需要名字，不需要values，谁造成了你的死亡
+                entity.add(DestroyComponent, action._actor_name) ### 这里只需要名字，不需要values，谁造成了你的死亡
 ########################################################################################################################################################################
             
 

@@ -5,7 +5,7 @@ from auxiliary.components import (BroadcastActionComponent, SpeakActionComponent
     GoToActionComponent, UsePropActionComponent, WhisperActionComponent, SearchActionComponent, PortalStepActionComponent,
     PerceptionActionComponent, StealActionComponent, TradeActionComponent, CheckStatusActionComponent,
     PlayerIsWebClientComponent, PlayerIsTerminalClientComponent)
-from auxiliary.actor_plan_and_action import ActorAction
+from actor_plan_and_action.actor_action import ActorAction
 from auxiliary.player_proxy import PlayerProxy
 from abc import ABC, abstractmethod
 import datetime

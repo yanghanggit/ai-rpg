@@ -4,7 +4,7 @@ from auxiliary.components import (
     ActorComponent,
     DeadActionComponent,
     PerceptionActionComponent)
-from auxiliary.actor_plan_and_action import ActorAction
+from actor_plan_and_action.actor_action import ActorAction
 from my_entitas.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.director_component import notify_stage_director
@@ -93,11 +93,13 @@ class GoToActionSystem(ReactiveProcessor):
             
             go_to_action_comp: GoToActionComponent = entity.get(GoToActionComponent)
             action: ActorAction = go_to_action_comp.action
-            if len(action.values) == 0:
-               continue
-   
-            stagename = action.values[0]
-            handle = GoToActionHelper(self.context, entity, stagename)
+            # if len(action._values) == 0:
+            #    continue
+            stage_name = action.value(0)
+            if stage_name == "":
+                logger.error(f"GoToActionSystem: {action} has no stage name")
+                continue
+            handle = GoToActionHelper(self.context, entity, stage_name)
             if handle.target_stage_entity is None or handle.current_stage_entity is None or handle.target_stage_entity == handle.current_stage_entity:
                 continue
 

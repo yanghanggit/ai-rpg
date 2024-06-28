@@ -6,7 +6,7 @@ from builtin_prompt.cn_builtin_prompt import (kick_off_memory_actor_prompt, kick
 from my_entitas.extended_context import ExtendedContext
 from loguru import logger
 from typing import Dict, Set
-from auxiliary.actor_plan_and_action import ActorAction
+from actor_plan_and_action.actor_action import ActorAction
 
 ###############################################################################################################################################
 class AgentsKickOffSystem(InitializeProcessor, ExecuteProcessor):

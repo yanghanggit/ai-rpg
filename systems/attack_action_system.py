@@ -1,12 +1,12 @@
 from entitas import Matcher, ReactiveProcessor, GroupEvent, Entity # type: ignore
 from auxiliary.components import AttackActionComponent, SimpleRPGAttrComponent, DeadActionComponent, SimpleRPGWeaponComponent, SimpleRPGArmorComponent
 from my_entitas.extended_context import ExtendedContext
-from auxiliary.actor_plan_and_action import ActorAction
+from actor_plan_and_action.actor_action import ActorAction
 from loguru import logger
 from auxiliary.director_component import notify_stage_director
 from auxiliary.director_event import IDirectorEvent
 from typing import cast, override
-from auxiliary.target_and_message_format_handle import conversation_check, ErrorConversationEnable
+from gameplay_checks.conversation_check import conversation_check, ErrorConversationEnable
 from builtin_prompt.cn_builtin_prompt import kill_prompt, attack_prompt
 
 
@@ -87,25 +87,25 @@ class AttackActionSystem(ReactiveProcessor):
         rpgcomp: SimpleRPGAttrComponent = _entity.get(SimpleRPGAttrComponent)
         fightcomp: AttackActionComponent = _entity.get(AttackActionComponent)
         action: ActorAction = fightcomp.action
-        for value_as_target_name in action.values:
+        for value_as_target_name in action._values:
 
             _target_entity = context.get_entity_by_code_name_component(value_as_target_name)
             if _target_entity is None:
-                logger.warning(f"攻击者{action.name}意图攻击的对象{value_as_target_name}无法被找到,本次攻击无效.")
+                logger.warning(f"攻击者{action._actor_name}意图攻击的对象{value_as_target_name}无法被找到,本次攻击无效.")
                 continue
 
             if not _target_entity.has(SimpleRPGAttrComponent):
-                logger.warning(f"攻击者{action.name}意图攻击的对象{value_as_target_name}没有SimpleRPGComponent,本次攻击无效.")
+                logger.warning(f"攻击者{action._actor_name}意图攻击的对象{value_as_target_name}没有SimpleRPGComponent,本次攻击无效.")
                 continue
 
             conversation_check_error = conversation_check(self.context, _entity, value_as_target_name)
             if conversation_check_error != ErrorConversationEnable.VALID:
                 if conversation_check_error == ErrorConversationEnable.TARGET_DOES_NOT_EXIST:
-                    logger.error(f"攻击者{action.name}意图攻击的对象{value_as_target_name}不存在,本次攻击无效.")
+                    logger.error(f"攻击者{action._actor_name}意图攻击的对象{value_as_target_name}不存在,本次攻击无效.")
                     # todo 是否应该因该提示发起人？做一下矫正？
 
                 elif conversation_check_error == ErrorConversationEnable.WITHOUT_BEING_IN_STAGE:
-                    logger.error(f"攻击者{action.name}不在任何舞台上,本次攻击无效.? 这是一个严重的错误！")
+                    logger.error(f"攻击者{action._actor_name}不在任何舞台上,本次攻击无效.? 这是一个严重的错误！")
                     assert False # 不要继续了，因为出现了严重的错误
 
                 elif conversation_check_error == ErrorConversationEnable.NOT_IN_THE_SAME_STAGE:
@@ -121,7 +121,7 @@ class AttackActionSystem(ReactiveProcessor):
                     assert stage2 is not None
                     stage2_name = self.context.safe_get_entity_name(stage2)
 
-                    logger.error(f"攻击者 {action.name}:{stage1_name} 和攻击对象 {value_as_target_name}:{stage2_name} 不在同一个舞台上,本次攻击无效.")
+                    logger.error(f"攻击者 {action._actor_name}:{stage1_name} 和攻击对象 {value_as_target_name}:{stage2_name} 不在同一个舞台上,本次攻击无效.")
 
                 # 跳过去，不能继续了！
                 continue
@@ -158,7 +158,7 @@ class AttackActionSystem(ReactiveProcessor):
             if isdead:
                 if not _target_entity.has(DeadActionComponent):
                     #复制一个，不用以前的，怕GC不掉
-                    _target_entity.add(DeadActionComponent, ActorAction(action.name, action.actionname, action.values)) 
+                    _target_entity.add(DeadActionComponent, ActorAction(action._actor_name, action._action_name, action._values)) 
 
             ## 导演系统，单独处理，有旧的代码
             if isdead:

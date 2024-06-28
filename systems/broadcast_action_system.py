@@ -1,7 +1,7 @@
 from typing import override
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
 from auxiliary.components import BroadcastActionComponent, StageComponent
-from auxiliary.actor_plan_and_action import ActorAction
+from actor_plan_and_action.actor_action import ActorAction
 from my_entitas.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.director_component import notify_stage_director
@@ -58,6 +58,6 @@ class BroadcastActionSystem(ReactiveProcessor):
         stagecomp: StageComponent = stageentity.get(StageComponent)
         #
         action: ActorAction = broadcastcomp.action
-        combine = action.single_value()
-        notify_stage_director(self.context, stageentity, StageOrActorBroadcastEvent(action.name, stagecomp.name, combine))
+        combine = action.join_values()
+        notify_stage_director(self.context, stageentity, StageOrActorBroadcastEvent(action._actor_name, stagecomp.name, combine))
 ####################################################################################################

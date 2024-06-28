@@ -1,11 +1,11 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
-from auxiliary.components import SpeakActionComponent
+from systems.components import SpeakActionComponent
 from actor_plan_and_action.actor_action import ActorAction
 from my_entitas.extended_context import ExtendedContext
 from loguru import logger
 from gameplay_checks.conversation_check import conversation_check, ErrorConversationEnable
-from auxiliary.director_component import notify_stage_director
-from auxiliary.director_event import IDirectorEvent
+from systems.stage_director_component import notify_stage_director
+from systems.stage_director_event import IStageDirectorEvent
 from typing import override
 from builtin_prompt.cn_builtin_prompt import speak_action_prompt
 
@@ -14,7 +14,7 @@ from builtin_prompt.cn_builtin_prompt import speak_action_prompt
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class StageOrActorSpeakEvent(IDirectorEvent):
+class StageOrActorSpeakEvent(IStageDirectorEvent):
 
     def __init__(self, who_is_speaking: str, who_is_target: str, message: str) -> None:
         self.who_is_speaking = who_is_speaking

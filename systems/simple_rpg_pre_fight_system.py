@@ -1,5 +1,5 @@
 from entitas import Matcher, ExecuteProcessor,Entity #type: ignore
-from auxiliary.components import SimpleRPGAttrComponent, SimpleRPGWeaponComponent, SimpleRPGArmorComponent, StageComponent
+from systems.components import SimpleRPGAttrComponent, SimpleRPGWeaponComponent, SimpleRPGArmorComponent, StageComponent
 from my_entitas.extended_context import ExtendedContext
 from loguru import logger
 from typing import Set, Optional, override

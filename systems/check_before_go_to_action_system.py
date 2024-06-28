@@ -1,5 +1,5 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
-from auxiliary.components import (GoToActionComponent, 
+from systems.components import (GoToActionComponent, 
                         ActorComponent, 
                         StageExitCondStatusComponent,
                         StageExitCondCheckActorStatusComponent,
@@ -14,8 +14,8 @@ from auxiliary.components import (GoToActionComponent,
 from actor_plan_and_action.actor_action import ActorAction
 from my_entitas.extended_context import ExtendedContext
 from loguru import logger
-from auxiliary.director_component import notify_stage_director
-from auxiliary.director_event import IDirectorEvent
+from systems.stage_director_component import notify_stage_director
+from systems.stage_director_event import IStageDirectorEvent
 from builtin_prompt.cn_builtin_prompt import \
             prop_info_prompt, stage_exit_conditions_check_prompt, \
             stage_entry_conditions_check_prompt,\
@@ -33,7 +33,7 @@ from actor_plan_and_action.actor_plan import ActorPlan
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class ActorGoToFailedBecauseStageInvalid(IDirectorEvent):
+class ActorGoToFailedBecauseStageInvalid(IStageDirectorEvent):
 
     def __init__(self, actor_name: str, stagename: str) -> None:
         self.actor_name = actor_name
@@ -50,7 +50,7 @@ class ActorGoToFailedBecauseStageInvalid(IDirectorEvent):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class ActorGoToFailedBecauseAlreadyInStage(IDirectorEvent):
+class ActorGoToFailedBecauseAlreadyInStage(IStageDirectorEvent):
 
     def __init__(self, actor_name: str, stagename: str) -> None:
         self.actor_name = actor_name
@@ -68,7 +68,7 @@ class ActorGoToFailedBecauseAlreadyInStage(IDirectorEvent):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class ActorExitStageFailedBecauseStageRefuse(IDirectorEvent):
+class ActorExitStageFailedBecauseStageRefuse(IStageDirectorEvent):
     def __init__(self, actor_name: str, stagename: str, tips: str) -> None:
         self.actor_name = actor_name
         self.stagename = stagename
@@ -84,7 +84,7 @@ class ActorExitStageFailedBecauseStageRefuse(IDirectorEvent):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class ActorEnterStageFailedBecauseStageRefuse(IDirectorEvent):
+class ActorEnterStageFailedBecauseStageRefuse(IStageDirectorEvent):
     def __init__(self, actor_name: str, stagename: str, tips: str) -> None:
         self.actor_name = actor_name
         self.stagename = stagename

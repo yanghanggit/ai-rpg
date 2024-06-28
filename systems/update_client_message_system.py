@@ -3,7 +3,7 @@ from my_entitas.extended_context import ExtendedContext
 from auxiliary.player_proxy import PlayerProxy, get_player_proxy, determine_player_input_mode, PLAYER_INPUT_MODE
 from dev_config import TEST_TERMINAL_NAME
 from my_entitas.extended_context import ExtendedContext
-from auxiliary.components import MindVoiceActionComponent, WhisperActionComponent, SpeakActionComponent, \
+from systems.components import MindVoiceActionComponent, WhisperActionComponent, SpeakActionComponent, \
     BroadcastActionComponent, EnviroNarrateActionComponent, \
     AttackActionComponent, GoToActionComponent
 from actor_plan_and_action.actor_action import ActorAction
@@ -11,7 +11,7 @@ from typing import override
 from loguru import logger
 from gameplay_checks.conversation_check import conversation_check, ErrorConversationEnable
 from my_format_string.target_and_message_format_string import make_target_and_message
-from rpg_game import RPGGame 
+from rpg_game.rpg_game import RPGGame 
 
 class UpdateClientMessageSystem(ExecuteProcessor):
     def __init__(self, context: ExtendedContext, rpggame: RPGGame) -> None:

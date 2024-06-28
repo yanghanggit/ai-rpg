@@ -1,13 +1,13 @@
 from typing import override
 from entitas import Entity, Matcher, ExecuteProcessor #type: ignore
-from auxiliary.components import StageComponent, ActorComponent, PlayerComponent
+from systems.components import StageComponent, ActorComponent, PlayerComponent
 from my_entitas.extended_context import ExtendedContext
 from loguru import logger
-from auxiliary.director_component import StageDirectorComponent
+from systems.stage_director_component import StageDirectorComponent
 from auxiliary.player_proxy import add_client_actor_message
 from builtin_prompt.cn_builtin_prompt import stage_director_begin_prompt, stage_director_end_prompt, stage_director_event_wrap_prompt
 
-class DirectorSystem(ExecuteProcessor):
+class StageDirectorSystem(ExecuteProcessor):
 
     def __init__(self, context: ExtendedContext) -> None:
         self.context = context

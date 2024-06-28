@@ -3,7 +3,7 @@ from my_entitas.extended_context import ExtendedContext
 from loguru import logger
 from auxiliary.player_proxy import PlayerProxy, get_player_proxy, PLAYER_INPUT_MODE, determine_player_input_mode
 from typing import Any, cast, override
-from rpg_game import RPGGame 
+from rpg_game.rpg_game import RPGGame 
 from dev_config import TEST_TERMINAL_NAME, TEST_CLIENT_SHOW_MESSAGE_COUNT
 
 ############################################################################################################
@@ -54,7 +54,7 @@ class TerminalPlayerInputSystem(ExecuteProcessor):
 ############################################################################################################
     def handle_input(self, rpggame: Any, playerproxy: PlayerProxy, usrinput: str) -> None:
         if "/quit" in usrinput:
-            from rpg_game import RPGGame 
+            from rpg_game.rpg_game import RPGGame 
             cast(RPGGame, rpggame).exit()
         else:
             playerproxy._inputs.append(str(usrinput))

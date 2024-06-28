@@ -1,7 +1,7 @@
 from entitas import ExecuteProcessor, Matcher, Entity #type: ignore
 from my_entitas.extended_context import ExtendedContext
 from loguru import logger
-from auxiliary.components import (ActorComponent, StageComponent)
+from systems.components import (ActorComponent, StageComponent)
 from builtin_prompt.cn_builtin_prompt import update_actor_archive_prompt, update_stage_archive_prompt
 from file_system.helper import add_actor_archive_files, update_actor_archive_file, add_stage_archive_files
 from typing import Set, override, Dict, List

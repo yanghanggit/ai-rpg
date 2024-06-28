@@ -1,21 +1,21 @@
 from entitas import Entity # type: ignore
 from my_entitas.extended_context import ExtendedContext
-from auxiliary.components import PlayerComponent, PlayerIsWebClientComponent, PlayerIsTerminalClientComponent
+from systems.components import PlayerComponent, PlayerIsWebClientComponent, PlayerIsTerminalClientComponent
 from typing import List
 from collections import namedtuple
-from auxiliary.director_event import IDirectorEvent
+from systems.stage_director_event import IStageDirectorEvent
 from builtin_prompt.cn_builtin_prompt import replace_mentions_of_your_name_with_you_prompt
 from loguru import logger
 
 ##扩展型组件，用于处理导演系统的事件
 ##########################################################################################################################
-DirectorComponentPrototype = namedtuple('DirectorComponentPrototype', 'name')
-class StageDirectorComponent(DirectorComponentPrototype):
+StageDirectorComponentPrototype = namedtuple('StageDirectorComponentPrototype', 'name')
+class StageDirectorComponent(StageDirectorComponentPrototype):
 
     def __init__(self) -> None:
-        self._events: List[IDirectorEvent] = []
+        self._events: List[IStageDirectorEvent] = []
 ##########################################################################################################################
-    def add_event(self, event: IDirectorEvent) -> None:
+    def add_event(self, event: IStageDirectorEvent) -> None:
         self._events.append(event)
 ##########################################################################################################################
     def to_actor(self, target_actor_name: str, extended_context: ExtendedContext) -> List[str]:
@@ -83,7 +83,7 @@ class StageDirectorComponent(DirectorComponentPrototype):
 ##########################################################################################################################
 ##########################################################################################################################
 ##########################################################################################################################
-def notify_stage_director(context: ExtendedContext, entity: Entity, directevent: IDirectorEvent) -> bool:
+def notify_stage_director(context: ExtendedContext, entity: Entity, directevent: IStageDirectorEvent) -> bool:
     stageentity = context.safe_get_stage_entity(entity)
     if stageentity is None:
         logger.error(f"StageDirectorComponent not found in entity:{entity}")

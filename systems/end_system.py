@@ -2,7 +2,7 @@
 from entitas import ExecuteProcessor, Matcher, InitializeProcessor #type: ignore
 from my_entitas.extended_context import ExtendedContext
 from loguru import logger
-from auxiliary.components import (StageComponent, ActorComponent, WorldComponent, SimpleRPGAttrComponent)
+from systems.components import (StageComponent, ActorComponent, WorldComponent, SimpleRPGAttrComponent)
 import json
 from typing import Dict, override, List
 from file_system.helper import update_status_profile_file, update_stage_actors_map_file

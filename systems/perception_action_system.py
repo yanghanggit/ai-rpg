@@ -1,13 +1,13 @@
 from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity #type: ignore
 from my_entitas.extended_context import ExtendedContext
-from auxiliary.components import (  PerceptionActionComponent,
+from systems.components import (  PerceptionActionComponent,
                                     StageComponent,
                                     DeadActionComponent,
                                     ActorComponent)
 from loguru import logger
 from typing import List, Dict, override
-from auxiliary.director_component import notify_stage_director
-from auxiliary.director_event import IDirectorEvent
+from systems.stage_director_component import notify_stage_director
+from systems.stage_director_event import IStageDirectorEvent
 from builtin_prompt.cn_builtin_prompt import perception_action_prompt
 
 ####################################################################################################################################
@@ -49,7 +49,7 @@ class PerceptionActionHelper:
 ####################################################################################################################################
 ####################################################################################################################################
 #################################################################################################################################### 
-class ActorPerceptionEvent(IDirectorEvent):
+class ActorPerceptionEvent(IStageDirectorEvent):
 
     """
     感知的结果事件

@@ -1,6 +1,6 @@
 from typing import override
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
-from auxiliary.components import (GoToActionComponent, PortalStepActionComponent, DeadActionComponent,
+from systems.components import (GoToActionComponent, PortalStepActionComponent, DeadActionComponent,
                         ActorComponent, 
                         ExitOfPortalComponent,)
 from actor_plan_and_action.actor_action import ActorAction

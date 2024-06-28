@@ -1,17 +1,17 @@
 from typing import override
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
-from auxiliary.components import BroadcastActionComponent, StageComponent
+from systems.components import BroadcastActionComponent, StageComponent
 from actor_plan_and_action.actor_action import ActorAction
 from my_entitas.extended_context import ExtendedContext
 from loguru import logger
-from auxiliary.director_component import notify_stage_director
-from auxiliary.director_event import IDirectorEvent
+from systems.stage_director_component import notify_stage_director
+from systems.stage_director_event import IStageDirectorEvent
 from builtin_prompt.cn_builtin_prompt import broadcast_action_prompt
 
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class StageOrActorBroadcastEvent(IDirectorEvent):
+class StageOrActorBroadcastEvent(IStageDirectorEvent):
 
     def __init__(self, whobroadcast: str, stagename: str, content: str) -> None:
         self.whobroadcast = whobroadcast

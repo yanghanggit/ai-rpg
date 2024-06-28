@@ -2,7 +2,7 @@ from typing import override
 from entitas import ExecuteProcessor, Matcher #type: ignore
 from my_entitas.extended_context import ExtendedContext
 from loguru import logger
-from auxiliary.components import STAGE_AVAILABLE_ACTIONS_REGISTER, ACTOR_AVAILABLE_ACTIONS_REGISTER, StageComponent, ActorComponent
+from systems.components import STAGE_AVAILABLE_ACTIONS_REGISTER, ACTOR_AVAILABLE_ACTIONS_REGISTER, StageComponent, ActorComponent
    
 class PostActionSystem(ExecuteProcessor):
 ############################################################################################################

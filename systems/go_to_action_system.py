@@ -1,5 +1,5 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
-from auxiliary.components import (
+from systems.components import (
     GoToActionComponent, 
     ActorComponent,
     DeadActionComponent,
@@ -7,10 +7,10 @@ from auxiliary.components import (
 from actor_plan_and_action.actor_action import ActorAction
 from my_entitas.extended_context import ExtendedContext
 from loguru import logger
-from auxiliary.director_component import notify_stage_director
+from systems.stage_director_component import notify_stage_director
 from typing import cast, override, List
-from auxiliary.director_event import IDirectorEvent
-from systems.director_system import director_events_to_actor
+from systems.stage_director_event import IStageDirectorEvent
+from systems.stage_director_system import director_events_to_actor
 from builtin_prompt.cn_builtin_prompt import ( leave_stage_prompt,
                                           enter_stage_prompt1,
                                           enter_stage_prompt2)
@@ -28,7 +28,7 @@ class GoToActionHelper:
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class ActorLeaveStageEvent(IDirectorEvent):
+class ActorLeaveStageEvent(IStageDirectorEvent):
 
     def __init__(self, actor_name: str, current_stage_name: str, goto_stage_name: str) -> None:
         self.actor_name = actor_name
@@ -45,7 +45,7 @@ class ActorLeaveStageEvent(IDirectorEvent):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class ActorEnterStageEvent(IDirectorEvent):
+class ActorEnterStageEvent(IStageDirectorEvent):
 
     def __init__(self, actor_name: str, stage_name: str, last_stage_name: str) -> None:
         self.actor_name = actor_name

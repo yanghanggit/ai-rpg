@@ -8,7 +8,7 @@ from auxiliary.player_proxy import (PlayerProxy,
                                     determine_player_input_mode)
 from dev_config import TEST_TERMINAL_NAME, TEST_CLIENT_SHOW_MESSAGE_COUNT
 from my_entitas.extended_context import ExtendedContext
-from rpg_game import RPGGame 
+from rpg_game.rpg_game import RPGGame 
 
 class TerminalPlayerInterruptAndWaitSystem(ExecuteProcessor):
     def __init__(self, context: ExtendedContext, rpggame: RPGGame) -> None:

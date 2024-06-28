@@ -2,13 +2,13 @@ from entitas import Entity, Matcher, ReactiveProcessor # type: ignore
 from typing import Optional, override
 from loguru import logger
 from actor_plan_and_action.actor_action import ActorAction
-from auxiliary.components import (UsePropActionComponent, StageExitCondStatusComponent, 
+from systems.components import (UsePropActionComponent, StageExitCondStatusComponent, 
                                   EnviroNarrateActionComponent, StageComponent, ActorComponent,
                                   DeadActionComponent)
 from my_entitas.extended_context import ExtendedContext
-from auxiliary.director_component import notify_stage_director
+from systems.stage_director_component import notify_stage_director
 from entitas.group import GroupEvent
-from auxiliary.director_event import IDirectorEvent
+from systems.stage_director_event import IStageDirectorEvent
 from builtin_prompt.cn_builtin_prompt import prop_info_prompt, use_prop_to_stage_prompt, use_prop_no_response_prompt
 from builtin_prompt.cn_constant_prompt import _CNConstantPrompt_
 from actor_plan_and_action.actor_plan import ActorPlan
@@ -17,7 +17,7 @@ from file_system.files_def import PropFile
 
 
 # 通知导演的类
-class ActorUsePropToStageEvent(IDirectorEvent):
+class ActorUsePropToStageEvent(IStageDirectorEvent):
     def __init__(self, actor_name: str, targetname: str, propname: str, tips: str) -> None:
         self.actor_name = actor_name
         self.targetname = targetname

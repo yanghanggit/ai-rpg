@@ -1,19 +1,19 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
-from auxiliary.components import WhisperActionComponent
+from systems.components import WhisperActionComponent
 from actor_plan_and_action.actor_action import ActorAction
 from my_entitas.extended_context import ExtendedContext
 from typing import Optional, override
 from loguru import logger
 from gameplay_checks.conversation_check import conversation_check, ErrorConversationEnable
-from auxiliary.director_component import notify_stage_director
-from auxiliary.director_event import IDirectorEvent
+from systems.stage_director_component import notify_stage_director
+from systems.stage_director_event import IStageDirectorEvent
 from builtin_prompt.cn_builtin_prompt import whisper_action_prompt
 
 
 ####################################################################################################################################
 ####################################################################################################################################
 #################################################################################################################################### 
-class StageOrActorWhisperEvent(IDirectorEvent):
+class StageOrActorWhisperEvent(IStageDirectorEvent):
     
     def __init__(self, who_is_whispering: str, who_is_target: str, message: str) -> None:
         self.who_is_whispering = who_is_whispering

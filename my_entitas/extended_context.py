@@ -3,7 +3,7 @@ from prototype_data.data_base_system import DataBaseSystem
 from entitas import (Entity, # type: ignore
                     Matcher, 
                     Context)
-from auxiliary.components import (WorldComponent, 
+from systems.components import (WorldComponent, 
                         StageComponent, 
                         ActorComponent, 
                         PlayerComponent, 

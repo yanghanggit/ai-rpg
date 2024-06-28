@@ -1,12 +1,12 @@
 
 from typing import override
 from entitas import Matcher, ExecuteProcessor, Entity #type: ignore
-from auxiliary.components import (DeadActionComponent, PlayerComponent,
+from systems.components import (DeadActionComponent, PlayerComponent,
                         DestroyComponent)
 from my_entitas.extended_context import ExtendedContext
 from loguru import logger
 from actor_plan_and_action.actor_action import ActorAction
-from rpg_game import RPGGame
+from rpg_game.rpg_game import RPGGame
 from typing import Set
 
 class DeadActionSystem(ExecuteProcessor):

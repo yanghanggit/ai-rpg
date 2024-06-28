@@ -1,12 +1,12 @@
 from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity #type: ignore
 from my_entitas.extended_context import ExtendedContext
-from auxiliary.components import (CheckStatusActionComponent, SimpleRPGAttrComponent, ActorComponent, DeadActionComponent)
+from systems.components import (CheckStatusActionComponent, SimpleRPGAttrComponent, ActorComponent, DeadActionComponent)
 from loguru import logger
-from auxiliary.director_component import notify_stage_director
+from systems.stage_director_component import notify_stage_director
 from typing import List, override
 from prototype_data.data_def import PropData
 from builtin_prompt.cn_builtin_prompt import check_status_action_prompt
-from auxiliary.director_event import IDirectorEvent
+from systems.stage_director_event import IStageDirectorEvent
 
 ####################################################################################################################################
 ####################################################################################################################################
@@ -57,7 +57,7 @@ class CheckStatusActionHelper:
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################        
-class ActorCheckStatusEvent(IDirectorEvent):
+class ActorCheckStatusEvent(IStageDirectorEvent):
 
     def __init__(self, who: str, props: List[PropData], health: float, special_components: List[PropData], events: List[PropData]) -> None:
         self.who = who

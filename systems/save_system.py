@@ -2,7 +2,7 @@ from typing import override
 from entitas import (TearDownProcessor, ExecuteProcessor) #type: ignore
 from my_entitas.extended_context import ExtendedContext
 from loguru import logger
-from rpg_game import RPGGame 
+from rpg_game.rpg_game import RPGGame 
 
 
 class SaveSystem(ExecuteProcessor, TearDownProcessor):

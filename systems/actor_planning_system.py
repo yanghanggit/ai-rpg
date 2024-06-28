@@ -1,6 +1,6 @@
 from overrides import override
 from entitas import Entity, Matcher, ExecuteProcessor #type: ignore
-from auxiliary.components import (ActorComponent, AutoPlanningComponent, EnviroNarrateActionComponent, ACTOR_CONVERSATION_ACTIONS_REGISTER, 
+from systems.components import (ActorComponent, AutoPlanningComponent, EnviroNarrateActionComponent, ACTOR_CONVERSATION_ACTIONS_REGISTER, 
                                   ACTOR_AVAILABLE_ACTIONS_REGISTER)
 from actor_plan_and_action.actor_plan import ActorPlan
 from actor_plan_and_action.actor_action import ActorAction

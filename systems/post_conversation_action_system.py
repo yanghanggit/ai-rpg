@@ -1,9 +1,9 @@
 from overrides import override
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
-from auxiliary.components import SpeakActionComponent, BroadcastActionComponent, WhisperActionComponent, PlayerComponent, ActorComponent
+from systems.components import SpeakActionComponent, BroadcastActionComponent, WhisperActionComponent, PlayerComponent, ActorComponent
 from my_entitas.extended_context import ExtendedContext
 from loguru import logger
-from auxiliary.director_component import StageDirectorComponent
+from systems.stage_director_component import StageDirectorComponent
 from typing import List, Set, Optional, Dict
 from auxiliary.lang_serve_agent_system import LangServeAgentSystem, AgentRequestOption
 from builtin_prompt.cn_builtin_prompt import batch_conversation_action_events_in_stage_prompt

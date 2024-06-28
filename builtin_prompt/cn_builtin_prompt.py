@@ -1,7 +1,7 @@
 from my_entitas.extended_context import ExtendedContext
 from typing import Dict, List, Set
 from prototype_data.data_def import PropData
-from auxiliary.components import MindVoiceActionComponent, EnviroNarrateActionComponent, \
+from systems.components import MindVoiceActionComponent, EnviroNarrateActionComponent, \
     TagActionComponent, PerceptionActionComponent, CheckStatusActionComponent
 import json
 from builtin_prompt.cn_constant_prompt import _CNConstantPrompt_

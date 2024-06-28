@@ -1,6 +1,6 @@
 from typing import override, Set
 from entitas import Entity, Matcher, InitializeProcessor # type: ignore
-from auxiliary.components import WorldComponent, StageComponent, ActorComponent, PlayerComponent
+from systems.components import WorldComponent, StageComponent, ActorComponent, PlayerComponent
 from my_entitas.extended_context import ExtendedContext
 
 

@@ -1,7 +1,7 @@
 
 from typing import override, Set
 from entitas import Matcher, ExecuteProcessor, Group, Entity #type: ignore
-from auxiliary.components import DestroyComponent
+from systems.components import DestroyComponent
 from my_entitas.extended_context import ExtendedContext
 from loguru import logger
    

@@ -1,10 +1,10 @@
 from entitas import Matcher, ReactiveProcessor, GroupEvent, Entity # type: ignore
-from auxiliary.components import AttackActionComponent, SimpleRPGAttrComponent, DeadActionComponent, SimpleRPGWeaponComponent, SimpleRPGArmorComponent
+from systems.components import AttackActionComponent, SimpleRPGAttrComponent, DeadActionComponent, SimpleRPGWeaponComponent, SimpleRPGArmorComponent
 from my_entitas.extended_context import ExtendedContext
 from actor_plan_and_action.actor_action import ActorAction
 from loguru import logger
-from auxiliary.director_component import notify_stage_director
-from auxiliary.director_event import IDirectorEvent
+from systems.stage_director_component import notify_stage_director
+from systems.stage_director_event import IStageDirectorEvent
 from typing import cast, override
 from gameplay_checks.conversation_check import conversation_check, ErrorConversationEnable
 from builtin_prompt.cn_builtin_prompt import kill_prompt, attack_prompt
@@ -14,7 +14,7 @@ from builtin_prompt.cn_builtin_prompt import kill_prompt, attack_prompt
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class StageOrActorKillEvent(IDirectorEvent):
+class StageOrActorKillEvent(IStageDirectorEvent):
 
     """
     事件通知：在Attack之后，直接杀死了某个人。
@@ -34,7 +34,7 @@ class StageOrActorKillEvent(IDirectorEvent):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class StageOrActorAttackEvent(IDirectorEvent):
+class StageOrActorAttackEvent(IStageDirectorEvent):
 
     """
     事件通知：Attack行动的通知

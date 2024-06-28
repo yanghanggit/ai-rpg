@@ -1,6 +1,6 @@
 from overrides import override
 from entitas import Entity, Matcher, InitializeProcessor, ExecuteProcessor # type: ignore
-from auxiliary.components import WorldComponent, StageComponent, ActorComponent, \
+from systems.components import WorldComponent, StageComponent, ActorComponent, \
     PlayerComponent, PerceptionActionComponent, CheckStatusActionComponent
 from builtin_prompt.cn_builtin_prompt import (kick_off_memory_actor_prompt, kick_off_memory_stage_prompt, kick_off_world_system_prompt)
 from my_entitas.extended_context import ExtendedContext

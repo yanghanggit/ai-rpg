@@ -2,7 +2,7 @@ from overrides import override
 from entitas import InitializeProcessor, ExecuteProcessor, Matcher, Entity #type: ignore
 from my_entitas.extended_context import ExtendedContext
 from loguru import logger
-from auxiliary.components import ( AutoPlanningComponent, StageComponent, ActorComponent, PlayerComponent)
+from systems.components import ( AutoPlanningComponent, StageComponent, ActorComponent, PlayerComponent)
 from enum import Enum
 
 # 规划的策略

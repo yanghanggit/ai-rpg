@@ -1,7 +1,7 @@
 from loguru import logger
 from typing import List, Optional
 from entitas import Entity, Matcher, ExecuteProcessor #type: ignore
-from auxiliary.components import StageComponent, ActorComponent, PlayerComponent
+from systems.components import StageComponent, ActorComponent, PlayerComponent
 from enum import Enum
 import re
 

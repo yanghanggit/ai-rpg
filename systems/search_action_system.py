@@ -1,24 +1,24 @@
 from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity #type: ignore
 from my_entitas.extended_context import ExtendedContext
-from auxiliary.components import (  SearchActionComponent, 
+from systems.components import (  SearchActionComponent, 
                                     ActorComponent,
                                     StageComponent,
                                     DeadActionComponent,
                                     CheckStatusActionComponent)
 from actor_plan_and_action.actor_action import ActorAction
 from loguru import logger
-from auxiliary.director_component import notify_stage_director
+from systems.stage_director_component import notify_stage_director
 from typing import List, override, Set
 from file_system.files_def import PropFile
 
-from auxiliary.director_event import IDirectorEvent
+from systems.stage_director_event import IStageDirectorEvent
 from builtin_prompt.cn_builtin_prompt import search_action_failed_prompt, search_action_success_prompt
 
 
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################     
-class ActorSearchFailedEvent(IDirectorEvent):
+class ActorSearchFailedEvent(IStageDirectorEvent):
 
     def __init__(self, who_search_failed: str, target: str) -> None:
         self.who_search_failed = who_search_failed
@@ -39,7 +39,7 @@ class ActorSearchFailedEvent(IDirectorEvent):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################     
-class ActorSearchSuccessEvent(IDirectorEvent):
+class ActorSearchSuccessEvent(IStageDirectorEvent):
 
     #
     def __init__(self, who_search_success: str, target: str, stagename: str) -> None:

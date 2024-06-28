@@ -1,20 +1,20 @@
 from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity #type: ignore
 from my_entitas.extended_context import ExtendedContext
-from auxiliary.components import (  StealActionComponent, CheckStatusActionComponent, DeadActionComponent,
+from systems.components import (  StealActionComponent, CheckStatusActionComponent, DeadActionComponent,
                                     ActorComponent)
 from loguru import logger
 from actor_plan_and_action.actor_action import ActorAction
 from gameplay_checks.conversation_check import conversation_check, ErrorConversationEnable
 from typing import Optional, override
-from auxiliary.director_component import notify_stage_director
-from auxiliary.director_event import IDirectorEvent
+from systems.stage_director_component import notify_stage_director
+from systems.stage_director_event import IStageDirectorEvent
 from builtin_prompt.cn_builtin_prompt import steal_action_prompt
 
 
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class ActorStealEvent(IDirectorEvent):
+class ActorStealEvent(IStageDirectorEvent):
 
     def __init__(self, whosteal: str, targetname: str, propname: str, stealres: bool) -> None:
         self.whosteal = whosteal

@@ -4,67 +4,13 @@ from prototype_data.data_def import PropData
 from auxiliary.components import MindVoiceActionComponent, EnviroNarrateActionComponent, \
     TagActionComponent, PerceptionActionComponent, CheckStatusActionComponent
 import json
+from builtin_prompt.cn_constant_prompt import _CNConstantPrompt_
 
 
-"""
-中文提示词都放到这里。
-"""
-
-#全局的常量，一些Tag类的可以做标记用于后续的提示词压缩
-class ConstantPromptValue:
-
-    @property
-    def ACTOR_PLAN_PROMPT_TAG(self) -> str:
-        return "<%这是角色计划>"
-    
-    @property
-    def STAGE_PLAN_PROMPT_TAG(self) -> str:
-        return "<%这是场景计划>"
-    
-    @property
-    def COMPRESS_ACTOR_PLAN_PROMPT(self) -> str:
-        return "请做出你的计划，决定你将要做什么"
-    
-    @property
-    def COMPRESS_STAGE_PLAN_PROMPT(self) -> str:
-        return "请输出'你的当前描述'和'你的计划'"
-    
-    @property
-    def NONE_PROMPT(self) -> str:
-        return "- 无"
-    
-    @property
-    def NO_ACTOR_PROPS_PROMPT(self) -> str:
-        return "- 无任何道具或者特殊能力"
-    
-    @property
-    def USE_PROP_TO_STAGE_PROMPT_TAG(self) -> str:
-        return "<%这是角色对场景使用道具>"
-    
-    # todo 这里故意在kickoff时机，是为了防止出现政策问题。策略上就是故意强调是恐怖类型，这样试图让LLM接受‘恐怖、血腥与暴力元素’的提示词与玩家输入的对话内容。
-    @property
-    def RE_EMPHASIZE_GAME_STYLE_TO_PREVENT_POLICY_PROBLEMS(self) -> str:
-        re_emphasize_game_style_to_prevent_policy_problems = f"""
-## 游戏风格声明
-- 游戏内容可能包含恐怖、血腥与暴力，旨在提供深入的沉浸式体验。
-- 本作假设所有世界运行规律为不证自明，要求你全盘接受设定。
-"""
-        return re_emphasize_game_style_to_prevent_policy_problems
-    
-    @property
-    def PERCEPTION_ACTION_TAG(self) -> str:
-        return "<%这是感知行动结果>"
-    
-    @property
-    def CHECK_STATUS_ACTION_TAG(self) -> str:
-        return "<%这是查看自身状态行动结果>"
-
-###############################################################################################################################################
-__ConstantPromptValue__ = ConstantPromptValue()
 ###############################################################################################################################################
 def kick_off_memory_actor_prompt(kick_off_memory: str) -> str:
     prompt = f"""# <%这是角色初始化>游戏世界即将开始运行。这是你的初始设定，你将以此为起点进行游戏
-{__ConstantPromptValue__.RE_EMPHASIZE_GAME_STYLE_TO_PREVENT_POLICY_PROBLEMS}
+{_CNConstantPrompt_.RE_EMPHASIZE_GAME_STYLE_TO_PREVENT_POLICY_PROBLEMS}
 {kick_off_memory}。
 ## 请结合你的角色设定,更新你的状态。
 ## 输出要求:
@@ -74,7 +20,7 @@ def kick_off_memory_actor_prompt(kick_off_memory: str) -> str:
 ###############################################################################################################################################
 def kick_off_memory_stage_prompt(kick_off_memory: str) -> str:
     prompt = f"""# <%这是场景初始化>游戏世界即将开始运行。这是你的初始设定，你将以此为起点进行游戏
-{__ConstantPromptValue__.RE_EMPHASIZE_GAME_STYLE_TO_PREVENT_POLICY_PROBLEMS}
+{_CNConstantPrompt_.RE_EMPHASIZE_GAME_STYLE_TO_PREVENT_POLICY_PROBLEMS}
 ## 你的初始设定如下: 
 {kick_off_memory}。
 ## 请结合你的场景设定,更新你的状态。
@@ -85,7 +31,7 @@ def kick_off_memory_stage_prompt(kick_off_memory: str) -> str:
 ###############################################################################################################################################
 def kick_off_world_system_prompt() -> str:
     prompt = f"""# <%这是世界系统初始化>游戏世界即将开始运行，请简要回答你的职能与描述。
-{__ConstantPromptValue__.RE_EMPHASIZE_GAME_STYLE_TO_PREVENT_POLICY_PROBLEMS}
+{_CNConstantPrompt_.RE_EMPHASIZE_GAME_STYLE_TO_PREVENT_POLICY_PROBLEMS}
 """
     return prompt
 ###############################################################################################################################################
@@ -100,7 +46,7 @@ def actpr_plan_prompt(current_stage: str, stage_enviro_narrate: str, context: Ex
         current_stage_enviro_narrate_prompt = f"""## 当前场景的环境信息(用于你做参考):\n- {stage_enviro_narrate}"""
 
 
-    prompt = f"""# {__ConstantPromptValue__.ACTOR_PLAN_PROMPT_TAG}请做出你的计划，决定你将要做什么。
+    prompt = f"""# {_CNConstantPrompt_.ACTOR_PLAN_PROMPT_TAG}请做出你的计划，决定你将要做什么。
 ## 你当前所在的场景:{current_stage_prompt}。
 {current_stage_enviro_narrate_prompt}
 ## 要求:
@@ -145,7 +91,7 @@ def stage_plan_prompt(props_in_stage: List[PropData], actors_in_stage: Set[str],
         prompt_of_actor = "- 无任何角色。"
 
 
-    prompt = f"""# {__ConstantPromptValue__.STAGE_PLAN_PROMPT_TAG}请输出'你的当前描述'和'你的计划'
+    prompt = f"""# {_CNConstantPrompt_.STAGE_PLAN_PROMPT_TAG}请输出'你的当前描述'和'你的计划'
 ## 场景内道具:
 {prompt_of_props}
 ## 场景内角色:
@@ -182,7 +128,7 @@ def perception_action_prompt(who: str, current_stage: str, result_actor_names: D
     else:
         prompt_of_props = "- 无任何道具。"
 
-    final_prompt = f"""# {__ConstantPromptValue__.PERCEPTION_ACTION_TAG} {who} 在 {current_stage} 中执行感知行动({PerceptionActionComponent.__name__})，结果如下:
+    final_prompt = f"""# {_CNConstantPrompt_.PERCEPTION_ACTION_TAG} {who} 在 {current_stage} 中执行感知行动({PerceptionActionComponent.__name__})，结果如下:
 ## 场景内角色:
 {prompt_of_actor}
 ## 场景内道具:
@@ -240,7 +186,7 @@ def check_status_action_prompt(who: str, props: List[PropData], health: float, s
     else:
         prompt_of_special_components = "- 无任何特殊能力。"
 
-    final_prompt = f"""# {ConstantPromptValue.CHECK_STATUS_ACTION_TAG} {who} 正在查看自身状态({CheckStatusActionComponent.__name__}):
+    final_prompt = f"""# {_CNConstantPrompt_.CHECK_STATUS_ACTION_TAG} {who} 正在查看自身状态({CheckStatusActionComponent.__name__}):
 ## 健康状态:
 {prompt_of_actor}
 ## 持有道具:
@@ -343,7 +289,7 @@ def batch_conversation_action_events_in_stage_prompt(stagename: str, events: Lis
     return  f""" # 当前场景 {stagename} 发生了如下对话类型事件，请注意:\n{joinstr}"""
 ################################################################################################################################################
 def use_prop_to_stage_prompt(username: str, propname: str, prop_prompt: str, exit_cond_status_prompt: str) -> str:
-    final_prompt = f"""# {__ConstantPromptValue__.USE_PROP_TO_STAGE_PROMPT_TAG} {username} 使用道具 {propname} 对你造成影响。
+    final_prompt = f"""# {_CNConstantPrompt_.USE_PROP_TO_STAGE_PROMPT_TAG} {username} 使用道具 {propname} 对你造成影响。
 ## 道具 {propname} 说明:
 {prop_prompt}
 

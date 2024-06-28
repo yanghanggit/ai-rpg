@@ -1,6 +1,6 @@
 from typing import Optional, Any
 from loguru import logger
-from build_game.game_builders import GameBuilder
+from build_game.game_builder import GameBuilder
 from rpg_game import RPGGame 
 from my_entitas.extended_context import ExtendedContext
 from file_system.file_system import FileSystem

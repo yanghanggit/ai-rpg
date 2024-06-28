@@ -7,7 +7,7 @@ sys.path.append(str(root_dir))
 ### 
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from loguru import logger
-from build_game.game_builders import GameBuilder
+from build_game.game_builder import GameBuilder
 from typing import Any, Optional
 
 ## 测试重复的json内容，应该是load不出来才对

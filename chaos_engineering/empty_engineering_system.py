@@ -1,6 +1,6 @@
 from loguru import logger
 from abc import ABC, abstractmethod
-from build_game.game_builders import GameBuilder
+from build_game.game_builder import GameBuilder
 from typing import Any, Optional
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
 

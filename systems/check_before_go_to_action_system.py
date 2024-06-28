@@ -21,10 +21,11 @@ from builtin_prompt.cn_builtin_prompt import \
             stage_entry_conditions_check_prompt,\
             exit_stage_failed_beacuse_stage_refuse_prompt, \
             enter_stage_failed_beacuse_stage_refuse_prompt, \
-            __ConstantPromptValue__,\
             actor_status_when_stage_change_prompt, \
             go_to_stage_failed_because_stage_is_invalid_prompt, \
             go_to_stage_failed_because_already_in_stage_prompt
+
+from builtin_prompt.cn_constant_prompt import _CNConstantPrompt_
 from typing import Optional, cast, override
 from systems.check_status_action_system import CheckStatusActionHelper
 from actor_plan_and_action.actor_plan import ActorPlan
@@ -113,9 +114,9 @@ class StageConditionsHelper:
 ####################################################################################################################################
     def clear(self) -> None:
         self.stage_name = ""
-        self.stage_cond_status_prompt = str(__ConstantPromptValue__.NONE_PROMPT)
-        self.cond_check_actor_status_prompt = str(__ConstantPromptValue__.NONE_PROMPT)
-        self.cond_check_actor_props_prompt = str(__ConstantPromptValue__.NONE_PROMPT)
+        self.stage_cond_status_prompt = str(_CNConstantPrompt_.NONE_PROMPT)
+        self.cond_check_actor_status_prompt = str(_CNConstantPrompt_.NONE_PROMPT)
+        self.cond_check_actor_props_prompt = str(_CNConstantPrompt_.NONE_PROMPT)
 ####################################################################################################################################
     def prepare_exit_cond(self, stage_entity: Entity, context: ExtendedContext) -> None:
         self.clear()
@@ -150,7 +151,7 @@ class HandleStageConditionsResponseHelper:
     def __init__(self, plan: ActorPlan) -> None:
         self._plan = plan
         self._result = False
-        self._tips = str(__ConstantPromptValue__.NONE_PROMPT)
+        self._tips = str(_CNConstantPrompt_.NONE_PROMPT)
 ###############################################################################################################################################
     @property
     def result(self) -> bool:
@@ -188,7 +189,7 @@ class HandleStageConditionsResponseHelper:
         assert enviro_narrate_action._action_name == EnviroNarrateActionComponent.__name__
         if len(enviro_narrate_action._values) == 0:
             logger.error(enviro_narrate_action)
-            return str(__ConstantPromptValue__.NONE_PROMPT)
+            return str(_CNConstantPrompt_.NONE_PROMPT)
         return enviro_narrate_action.join_values()
 ###############################################################################################################################################
 
@@ -418,7 +419,7 @@ class CheckBeforeGoToActionSystem(ReactiveProcessor):
             for prop in props:
                 prompt_of_props += prop_info_prompt(prop, True, True)
         else:
-            prompt_of_props = str(__ConstantPromptValue__.NO_ACTOR_PROPS_PROMPT)
+            prompt_of_props = str(_CNConstantPrompt_.NO_ACTOR_PROPS_PROMPT)
         return prompt_of_props
 ###############################################################################################################################################
     def on_failed(self, entity: Entity) -> None:

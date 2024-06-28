@@ -9,7 +9,8 @@ from my_entitas.extended_context import ExtendedContext
 from auxiliary.director_component import notify_stage_director
 from entitas.group import GroupEvent
 from auxiliary.director_event import IDirectorEvent
-from builtin_prompt.cn_builtin_prompt import prop_info_prompt, use_prop_to_stage_prompt, __ConstantPromptValue__, use_prop_no_response_prompt
+from builtin_prompt.cn_builtin_prompt import prop_info_prompt, use_prop_to_stage_prompt, use_prop_no_response_prompt
+from builtin_prompt.cn_constant_prompt import _CNConstantPrompt_
 from actor_plan_and_action.actor_plan import ActorPlan
 from gameplay_checks.use_prop_check import use_prop_check, ErrorUsePropEnable
 from file_system.files_def import PropFile
@@ -119,7 +120,7 @@ class UsePropActionSystem(ReactiveProcessor):
         assert context.file_system.get_prop_file(username, prop_file._name) is not None
 
         # 检查条件
-        exit_cond_status_prompt = str(__ConstantPromptValue__.NONE_PROMPT)
+        exit_cond_status_prompt = str(_CNConstantPrompt_.NONE_PROMPT)
         if target_entity.has(StageExitCondStatusComponent):
             stage_exit_cond_status_comp: StageExitCondStatusComponent = target_entity.get(StageExitCondStatusComponent)
             exit_cond_status_prompt = stage_exit_cond_status_comp.condition

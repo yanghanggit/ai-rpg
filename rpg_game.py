@@ -20,7 +20,11 @@ from auxiliary.components import (
     GUIDComponent
     )
 from my_entitas.extended_context import ExtendedContext
-from build_game.game_builders import GameBuilder, StageBuilder, ActorBuilder, WorldSystemBuilder
+from build_game.game_builder import GameBuilder
+from build_game.stage_builder import StageBuilder
+from build_game.actor_builder import ActorBuilder
+from build_game.world_system_builder import WorldSystemBuilder
+
 from entitas.entity import Entity
 from systems.agents_kick_off_system import AgentsKickOffSystem
 from systems.stage_planning_system import StagePlanningSystem

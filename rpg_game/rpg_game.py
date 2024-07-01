@@ -17,8 +17,7 @@ from ecs_systems.components import (
     StageEntryCondCheckActorStatusComponent,
     StageEntryCondCheckActorPropsComponent,
     BodyComponent,
-    GUIDComponent
-    )
+    GUIDComponent)
 from my_entitas.extended_context import ExtendedContext
 from build_game.game_builder import GameBuilder
 from build_game.stage_builder import StageBuilder

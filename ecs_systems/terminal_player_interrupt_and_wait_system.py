@@ -19,11 +19,7 @@ class TerminalPlayerInterruptAndWaitSystem(ExecuteProcessor):
     def execute(self) -> None:
         # todo
         # 临时的设置，通过IP地址来判断是不是测试的客户端
-        user_ips = self.rpggame.user_ips    
-        # 判断，user_ips 与 self.context.user_ips 是否一致：元素的顺序和个数，和元素的内容
-        # if user_ips != self.context.user_ips:
-        #     assert False, "user_ips 与 self.context.user_ips 不一致"
-
+        user_ips = self.rpggame.user_ips
         input_mode = determine_player_input_mode(user_ips)
         if input_mode != PLAYER_INPUT_MODE.TERMINAL:
             return

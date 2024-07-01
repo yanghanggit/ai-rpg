@@ -44,7 +44,7 @@ class RPGGame(BaseGame):
         self.extended_context: ExtendedContext = context
         self.builder: Optional[GameBuilder] = None
         self.processors: ExtendedProcessors = create_rpg_processors(self, context)
-        self.user_ips: List[str] = [] # 临时写法，待重构
+        self._player_names: List[str] = [] # 临时写法，待重构
 ###############################################################################################################################################
     def create_game(self, worlddata: GameBuilder) -> 'RPGGame':
 
@@ -354,4 +354,17 @@ class RPGGame(BaseGame):
         if self.builder is None:
             return ""
         return self.builder.about_game
+###############################################################################################################################################
+    def add_player(self, name: str) -> None:
+        assert name not in self._player_names
+        if name not in self._player_names:
+            self._player_names.append(name)
+###############################################################################################################################################
+    def single_player(self) -> str:
+        assert len(self._player_names) == 1
+        return self._player_names[0]
+###############################################################################################################################################
+    @property
+    def player_names(self) -> List[str]:
+        return self._player_names
 ###############################################################################################################################################

@@ -52,7 +52,7 @@ class PlayerLogin(PlayerCommand):
     def execute(self) -> None:
         context = self.game.extended_context
         actor_name = self._actor_name
-        player_name = self.playerproxy.name
+        player_name = self.playerproxy._name
         logger.debug(f"{self._description}, player name: {player_name}, target name: {actor_name}")
 
         _entity = context.get_actor_entity(actor_name)
@@ -117,7 +117,7 @@ class PlayerAttack(PlayerCommand):
     def execute(self) -> None:
         context = self.game.extended_context 
         attack_target_name = self.attack_target_name
-        playerentity = context.get_player_entity(self.playerproxy.name)
+        playerentity = context.get_player_entity(self.playerproxy._name)
         if playerentity is None:
             logger.warning("debug_attack: player is None")
             return
@@ -147,7 +147,7 @@ class PlayerGoTo(PlayerCommand):
     def execute(self) -> None:
         context = self.game.extended_context
         target_stage_name = self.target_stage_name
-        playerentity = context.get_player_entity(self.playerproxy.name)
+        playerentity = context.get_player_entity(self.playerproxy._name)
         if playerentity is None:
             # 玩家实体不存在
             logger.warning("debug: player is None")
@@ -175,7 +175,7 @@ class PlayerPortalStep(PlayerCommand):
 
     def execute(self) -> None:
         context = self.game.extended_context
-        playerentity = context.get_player_entity(self.playerproxy.name)
+        playerentity = context.get_player_entity(self.playerproxy._name)
         if playerentity is None:
             logger.warning("debug: player is None")
             return
@@ -210,7 +210,7 @@ class PlayerBroadcast(PlayerCommand):
     def execute(self) -> None:
         context = self.game.extended_context
         content = self.content
-        playerentity = context.get_player_entity(self.playerproxy.name)
+        playerentity = context.get_player_entity(self.playerproxy._name)
         if playerentity is None:
             logger.warning("debug_broadcast: player is None")
             return
@@ -239,7 +239,7 @@ class PlayerSpeak(PlayerCommand):
     def execute(self) -> None:
         context = self.game.extended_context
         speakcontent = self.speakcontent
-        playerentity = context.get_player_entity(self.playerproxy.name)
+        playerentity = context.get_player_entity(self.playerproxy._name)
         if playerentity is None:
             logger.warning("debug_speak: player is None")
             return
@@ -268,7 +268,7 @@ class PlayerWhisper(PlayerCommand):
     def execute(self) -> None:
         context = self.game.extended_context
         whispercontent = self.whispercontent
-        playerentity = context.get_player_entity(self.playerproxy.name)
+        playerentity = context.get_player_entity(self.playerproxy._name)
         if playerentity is None:
             logger.warning("debug_whisper: player is None")
             return
@@ -297,7 +297,7 @@ class PlayerSearch(PlayerCommand):
     def execute(self) -> None:
         context = self.game.extended_context
         search_target_prop_name = self.search_target_prop_name
-        playerentity = context.get_player_entity(self.playerproxy.name)
+        playerentity = context.get_player_entity(self.playerproxy._name)
         if playerentity is None:
             logger.warning("debug_search: player is None")
             return
@@ -325,7 +325,7 @@ class PlayerPerception(PlayerCommand):
 
     def execute(self) -> None:
         context = self.game.extended_context
-        playerentity = context.get_player_entity(self.playerproxy.name)
+        playerentity = context.get_player_entity(self.playerproxy._name)
         if playerentity is None:
             return
         
@@ -353,7 +353,7 @@ class PlayerSteal(PlayerCommand):
 
     def execute(self) -> None:
         context = self.game.extended_context
-        playerentity = context.get_player_entity(self.playerproxy.name)
+        playerentity = context.get_player_entity(self.playerproxy._name)
         if playerentity is None:
             return
         
@@ -381,7 +381,7 @@ class PlayerTrade(PlayerCommand):
 
     def execute(self) -> None:
         context = self.game.extended_context
-        playerentity = context.get_player_entity(self.playerproxy.name)
+        playerentity = context.get_player_entity(self.playerproxy._name)
         if playerentity is None:
             return
         
@@ -407,7 +407,7 @@ class PlayerCheckStatus(PlayerCommand):
 
     def execute(self) -> None:
         context = self.game.extended_context
-        playerentity = context.get_player_entity(self.playerproxy.name)
+        playerentity = context.get_player_entity(self.playerproxy._name)
         if playerentity is None:
             return
         
@@ -439,7 +439,7 @@ class PlayerUseProp(PlayerCommand):
 
     def execute(self) -> None:
         context = self.game.extended_context
-        playerentity = context.get_player_entity(self.playerproxy.name)
+        playerentity = context.get_player_entity(self.playerproxy._name)
         if playerentity is None:
             return
         

@@ -1,7 +1,6 @@
 from entitas import ExecuteProcessor, Entity, Matcher #type: ignore
 from my_entitas.extended_context import ExtendedContext
-from player.player_proxy import PlayerProxy, get_player_proxy, determine_player_input_mode, PLAYER_INPUT_MODE
-from dev_config import TEST_TERMINAL_NAME
+from player.player_proxy import PlayerProxy, get_player_proxy
 from my_entitas.extended_context import ExtendedContext
 from ecs_systems.components import MindVoiceActionComponent, WhisperActionComponent, SpeakActionComponent, \
     BroadcastActionComponent, EnviroNarrateActionComponent, \
@@ -12,6 +11,8 @@ from loguru import logger
 from gameplay_checks.conversation_check import conversation_check, ErrorConversationEnable
 from my_format_string.target_and_message_format_string import make_target_and_message
 from rpg_game.rpg_game import RPGGame 
+from rpg_game.terminal_rpg_game import TerminalRPGGame
+from rpg_game.web_server_multi_players_rpg_game import WebServerMultiplayersRPGGame
 
 class UpdateClientMessageSystem(ExecuteProcessor):
     def __init__(self, context: ExtendedContext, rpggame: RPGGame) -> None:
@@ -20,30 +21,16 @@ class UpdateClientMessageSystem(ExecuteProcessor):
 ############################################################################################################
     @override
     def execute(self) -> None:
-        # todo
-        # 临时的设置，通过IP地址来判断是不是测试的客户端
-        user_ips = self.rpggame.user_ips    
-        input_mode = determine_player_input_mode(user_ips)
-        if input_mode == PLAYER_INPUT_MODE.WEB_HTTP_REQUEST:
-        
-            for user_ip in user_ips:
-                playername = str(user_ip)
-                playerproxy = get_player_proxy(playername)
-                player_entity = self.context.get_player_entity(playername)
-                if player_entity is None or playerproxy is None:
-                    continue
-                self._add_message_to_player_proxy_(playerproxy, player_entity)
-        
-        elif input_mode == PLAYER_INPUT_MODE.TERMINAL:
-        
-            playerproxy = get_player_proxy(TEST_TERMINAL_NAME)
-            player_entity = self.context.get_player_entity(TEST_TERMINAL_NAME)
-            if player_entity is None or playerproxy is None:
-                    return
-            self._add_message_to_player_proxy_(playerproxy, player_entity)
+        assert len(self.rpggame.player_names) > 0
+        assert isinstance(self.rpggame, WebServerMultiplayersRPGGame) or isinstance(self.rpggame, TerminalRPGGame)
+        for player_name in self.rpggame.player_names:
+            player_proxy = get_player_proxy(player_name)
+            player_entity = self.context.get_player_entity(player_name)
+            if player_entity is None or player_proxy is None:
+                logger.error(f"玩家{player_name}不存在，或者玩家未加入游戏")
+                continue
 
-        else:
-            logger.error("未知的输入模式!!!!!")         
+            self._add_message_to_player_proxy_(player_proxy, player_entity)
 ############################################################################################################
     def _add_message_to_player_proxy_(self, playerproxy: PlayerProxy, player_entity: Entity) -> None:
         self.stage_enviro_narrate_action_2_message(playerproxy, player_entity)

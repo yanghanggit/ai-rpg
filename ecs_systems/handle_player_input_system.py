@@ -3,8 +3,7 @@ from entitas import ExecuteProcessor #type: ignore
 from my_entitas.extended_context import ExtendedContext
 from loguru import logger
 from rpg_game.rpg_game import RPGGame 
-from player.player_proxy import PlayerProxy, get_player_proxy, PLAYER_INPUT_MODE, determine_player_input_mode
-from dev_config import TEST_TERMINAL_NAME
+from player.player_proxy import PlayerProxy, get_player_proxy
 from player.player_command import (
                           PlayerAttack, 
                           PlayerGoTo, 
@@ -19,6 +18,8 @@ from player.player_command import (
                           PlayerPerception,
                           PlayerCheckStatus)
 from my_entitas.extended_context import ExtendedContext
+from rpg_game.terminal_rpg_game import TerminalRPGGame
+from rpg_game.web_server_multi_players_rpg_game import WebServerMultiplayersRPGGame
 
 ############################################################################################################
 def splitcommand(input_val: str, split_str: str)-> str:
@@ -33,17 +34,10 @@ class HandlePlayerInputSystem(ExecuteProcessor):
 ############################################################################################################
     @override
     def execute(self) -> None:
-        # todo
-        # 临时的设置，通过IP地址来判断是不是测试的客户端
-        user_ips = self.rpggame.user_ips    
-        input_mode = determine_player_input_mode(user_ips)
-        if input_mode == PLAYER_INPUT_MODE.WEB_HTTP_REQUEST:
-            for playername in user_ips:
-                self.play_via_client_and_handle_player_input(playername)
-        elif input_mode == PLAYER_INPUT_MODE.TERMINAL:
-            self.play_via_client_and_handle_player_input(TEST_TERMINAL_NAME)
-        else:
-            logger.error("未知的输入模式")
+        assert isinstance(self.rpggame, WebServerMultiplayersRPGGame) or isinstance(self.rpggame, TerminalRPGGame)
+        assert len(self.rpggame.player_names) > 0
+        for player_name in self.rpggame.player_names:
+            self.play_via_client_and_handle_player_input(player_name)
 ############################################################################################################
     def play_via_client_and_handle_player_input(self, playername: str) -> None:
         playerproxy = get_player_proxy(playername)

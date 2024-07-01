@@ -1,9 +1,8 @@
 from loguru import logger
 import datetime
-from player.player_proxy import create_player_proxy, get_player_proxy
+from player.player_proxy import create_player_proxy
 from player.player_command import (PlayerLogin)
 from rpg_game.create_rpg_game_funcs import load_then_create_rpg_game, yh_test_save, RPGGameType
-from dev_config import TEST_TERMINAL_NAME
 
 async def main() -> None:
 
@@ -11,34 +10,43 @@ async def main() -> None:
     logger.add(f"logs/{log_start_time}.log", level="DEBUG")
 
     # 读取世界资源文件
-    worldname = input("请输入要进入的世界名称(必须与自动化创建的名字一致):")
-    rpggame = load_then_create_rpg_game(worldname, "qwe", RPGGameType.TERMINAL)
-    if rpggame is None:
+    game_name = input("请输入要进入的世界名称(必须与自动化创建的名字一致):")
+    rpg_game = load_then_create_rpg_game(game_name, "qwe", RPGGameType.TERMINAL)
+    if rpg_game is None:
         logger.error("create_rpg_game 失败。")
         return
     
-    ## 临时 强行改成服务器终端模式，只要这个写死为空。后面的逻辑就会跟上。
-    #rpggame.extendedcontext.user_ips = []
-    rpggame.user_ips = []
+    player_actor_name = input("请输入要控制的角色名字:")
+    if player_actor_name == "":
+        player_actor_name = "无名的复活者" #todo
 
-    #测试的代码，上来就控制一个目标，先写死
-    TEST_SINGLE_PLAYER_ACTOR_NAME = "无名的复活者"
-    create_player_proxy(TEST_TERMINAL_NAME)
-    playerproxy = get_player_proxy(TEST_TERMINAL_NAME)
-    assert playerproxy is not None
-    playerstartcmd = PlayerLogin("/terminal_run_login", rpggame, playerproxy, TEST_SINGLE_PLAYER_ACTOR_NAME, False)
+    players_actor = rpg_game.extended_context.get_actor_entity(player_actor_name)
+    if players_actor is None:
+        logger.error(f"找不到玩家角色，请检查构建数据:{player_actor_name}")
+        return
+
+    player_name_as_terminal_name = "北京柏林互动科技有限公司"
+    
+    logger.info(f"玩家名字（做为terminal name）:{player_name_as_terminal_name}")
+    player_proxy = create_player_proxy(player_name_as_terminal_name)
+    assert player_proxy is not None
+    # 这个必须调用
+    rpg_game.add_player(player_name_as_terminal_name)
+    #
+    playerstartcmd = PlayerLogin("/terminal_run_login", rpg_game, player_proxy, player_actor_name, False)
     playerstartcmd.execute()
 
     # 测试的代码
-    yh_test_save(worldname)
+    yh_test_save(game_name)
 
     #核心循环
     while True:
-        if rpggame.exited:
+        if rpg_game.exited:
             break
-        await rpggame.async_execute()
-    #
-    rpggame.exit()
+        await rpg_game.async_execute()
+    
+    # 退出操作
+    rpg_game.exit()
 
 if __name__ == "__main__":
     import asyncio

@@ -13,7 +13,6 @@ from rpg_game.web_server_multi_players_rpg_game import WebServerMultiplayersRPGG
 from player.player_command import PlayerLogin
 from player.player_proxy import create_player_proxy, get_player_proxy, remove_player_proxy
 from rpg_game.create_rpg_game_funcs import load_then_create_rpg_game, RPGGameType
-from dev_config import TEST_CLIENT_SHOW_MESSAGE_COUNT
 from rpg_game.rpg_game import RPGGame
 from player.player_proxy import PlayerProxy
 from ecs_systems.check_status_action_system import CheckStatusActionHelper, ActorCheckStatusEvent
@@ -51,7 +50,7 @@ async def create(clientip: str) -> List[TupleModel]:
         web_server_multi_player_game.set_host(clientip)
         global multiplayersgames
         multiplayersgames[clientip] = web_server_multi_player_game
-        multiplayersgames[clientip].user_ips.append(clientip) # todo
+        multiplayersgames[clientip].add_player(clientip) # todo
         create_player_proxy(clientip)
 
     messages: List[TupleModel] = []
@@ -79,7 +78,7 @@ async def join(clientip: str, hostip: str) -> List[TupleModel]:
             client_game = game #WebServerMultiplayersRPGGame(hostip, game._rpggame)
             multiplayersgames[clientip] = client_game
             messages.append(TupleModel(who=clientip, what=f"加入房间IP:{hostip}成功."))
-            multiplayersgames[clientip].user_ips.append(clientip) # todo
+            multiplayersgames[clientip].add_player(clientip) # todo
             create_player_proxy(clientip)
 
     if len(messages) == 0:
@@ -106,7 +105,7 @@ async def request_game_messages(clientip: str) -> List[TupleModel]:
     messages: List[TupleModel] = []
     playerproxy = get_player_proxy(clientip)
     if playerproxy is not None:
-        for message in playerproxy.client_messages[-TEST_CLIENT_SHOW_MESSAGE_COUNT:]:
+        for message in playerproxy._client_messages[-20:]:
             messages.append(TupleModel(who=message[0], what=message[1]))
     else:
         messages.append(TupleModel(who=clientip, what="请先创建游戏或加入游戏."))
@@ -134,7 +133,7 @@ async def quitgame(clientip: str) -> List[TupleModel]:
 async def imme_handle_perception(rpg_game: RPGGame, playerproxy: PlayerProxy) -> None:
 
     context = rpg_game.extended_context
-    playerentity = context.get_player_entity(playerproxy.name)
+    playerentity = context.get_player_entity(playerproxy._name)
     if playerentity is None:
         return
     #
@@ -155,7 +154,7 @@ async def imme_handle_perception(rpg_game: RPGGame, playerproxy: PlayerProxy) ->
 async def imme_handle_check_status(rpg_game: RPGGame, playerproxy: PlayerProxy) -> None:
 
     context = rpg_game.extended_context
-    playerentity = context.get_player_entity(playerproxy.name)
+    playerentity = context.get_player_entity(playerproxy._name)
     if playerentity is None:
         return
     #

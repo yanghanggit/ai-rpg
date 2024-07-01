@@ -23,16 +23,6 @@ class TerminalPlayerInputSystem(ExecuteProcessor):
         #
         single_player = self.rpggame.single_player()
         self.play_via_terminal_and_handle_player_input(single_player)
-
-        # # todo
-        # # 临时的设置，通过IP地址来判断是不是测试的客户端
-        # user_ips = self.rpggame._player_names
-        # # 临时的设置，通过IP地址来判断是不是测试的客户端
-        # if determine_player_input_mode(user_ips) != PLAYER_INPUT_MODE.TERMINAL:
-        #     #logger.debug("只处理终端的输入")
-        #     return
-        # # 通过终端输入
-        # self.play_via_terminal_and_handle_player_input(TEST_TERMINAL_NAME)
 ############################################################################################################
     def play_via_terminal_and_handle_player_input(self, playername: str) -> None:
 

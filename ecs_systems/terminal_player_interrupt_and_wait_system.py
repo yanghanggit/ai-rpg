@@ -2,9 +2,7 @@ from typing import override
 from entitas import ExecuteProcessor #type: ignore
 from my_entitas.extended_context import ExtendedContext
 from loguru import logger
-from player.player_proxy import (PlayerProxy, 
-                                    get_player_proxy
-                                    )
+from player.player_proxy import (PlayerProxy, get_player_proxy)
 from my_entitas.extended_context import ExtendedContext
 from rpg_game.rpg_game import RPGGame 
 from rpg_game.terminal_rpg_game import TerminalRPGGame

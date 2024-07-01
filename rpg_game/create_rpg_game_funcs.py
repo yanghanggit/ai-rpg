@@ -98,15 +98,8 @@ def create_rpg_game(worldname: str, chaosengineering: Optional[IChaosEngineering
         case _:
             assert False, "Not implemented."
 
+    assert False, "Not implemented."
     return None
-    # if rpg_game_type == RPGGameType.WEB_SERVER:
-    #     assert False, "Not implemented."
-    # elif rpg_game_type == RPGGameType.TERMINAL:
-    #     return TerminalRPGGame(worldname, context)
-
-    # # 创建游戏
-    # assert False
-    # return RPGGame(worldname, context)
 #######################################################################################################################################
 ## 创建RPG Game + 读取数据
 def load_then_create_rpg_game(gamename: str, version: str, rpg_game_type: RPGGameType) -> Optional[RPGGame]:

@@ -15,6 +15,14 @@ from game_sample.game_sample_chaos_engineering_system import GameSampleChaosEngi
 from pathlib import Path
 import json
 import shutil
+from enum import Enum
+from rpg_game.terminal_rpg_game import TerminalRPGGame
+from rpg_game.web_server_multi_players_rpg_game import WebServerMultiplayersRPGGame
+
+class RPGGameType(Enum):
+    INVALID = 0,
+    WEB_SERVER = 1000
+    TERMINAL = 2000
 
 
 GAME_SAMPLE_RUNTIME_DIR = Path("game_sample/gen_runtimes")
@@ -60,7 +68,7 @@ def load_then_build_game_data(gamename: str, version: str) -> Optional[GameBuild
     return GameBuilder(gamename, game_data, runtime_file_dir).build()
 #######################################################################################################################################
 ## 创建RPG Game
-def create_rpg_game(worldname: str, chaosengineering: Optional[IChaosEngineering], data_base_system: DataBaseSystem) -> RPGGame:
+def create_rpg_game(worldname: str, chaosengineering: Optional[IChaosEngineering], data_base_system: DataBaseSystem, rpg_game_type: RPGGameType) -> RPGGame:
 
     # 依赖注入的特殊系统
     file_system = FileSystem("file_system， Because it involves IO operations, an independent system is more convenient.")
@@ -81,12 +89,27 @@ def create_rpg_game(worldname: str, chaosengineering: Optional[IChaosEngineering
                               code_name_component_system,  
                               data_base_system,
                               chaos_engineering_system)
+    
+    match rpg_game_type:
+        case RPGGameType.WEB_SERVER:
+            return WebServerMultiplayersRPGGame(worldname, context)
+        case RPGGameType.TERMINAL:
+            return TerminalRPGGame(worldname, context)
+        case _:
+            assert False, "Not implemented."
 
-    # 创建游戏
-    return RPGGame(worldname, context)
+    return None
+    # if rpg_game_type == RPGGameType.WEB_SERVER:
+    #     assert False, "Not implemented."
+    # elif rpg_game_type == RPGGameType.TERMINAL:
+    #     return TerminalRPGGame(worldname, context)
+
+    # # 创建游戏
+    # assert False
+    # return RPGGame(worldname, context)
 #######################################################################################################################################
 ## 创建RPG Game + 读取数据
-def load_then_create_rpg_game(gamename: str, version: str) -> Optional[RPGGame]:
+def load_then_create_rpg_game(gamename: str, version: str, rpg_game_type: RPGGameType) -> Optional[RPGGame]:
     # 通过依赖注入的方式创建数据系统
     #data_base_system = DataBaseSystem("test!!! data_base_system，it is a system that stores all the origin data from the settings.")
     game_builder = load_then_build_game_data(gamename, version)
@@ -98,7 +121,7 @@ def load_then_create_rpg_game(gamename: str, version: str) -> Optional[RPGGame]:
     chaos_engineering_system = GameSampleChaosEngineeringSystem("MyChaosEngineeringSystem")
     assert chaos_engineering_system is not None, "chaos_engineering_system is None."
     assert game_builder._data_base_system is not None, "game_builder.data_base_system is None."
-    rpggame = create_rpg_game(gamename, chaos_engineering_system, game_builder._data_base_system)
+    rpggame = create_rpg_game(gamename, chaos_engineering_system, game_builder._data_base_system, rpg_game_type)
     if rpggame is None:
         logger.error("_create_rpg_game 失败。")
         return None

@@ -2,7 +2,7 @@ from loguru import logger
 import datetime
 from player.player_proxy import create_player_proxy, get_player_proxy
 from player.player_command import (PlayerLogin)
-from create_rpg_game_funcs import load_then_create_rpg_game, yh_test_save
+from rpg_game.create_rpg_game_funcs import load_then_create_rpg_game, yh_test_save, RPGGameType
 from dev_config import TEST_TERMINAL_NAME
 
 async def main() -> None:
@@ -12,7 +12,7 @@ async def main() -> None:
 
     # 读取世界资源文件
     worldname = input("请输入要进入的世界名称(必须与自动化创建的名字一致):")
-    rpggame = load_then_create_rpg_game(worldname, "qwe")
+    rpggame = load_then_create_rpg_game(worldname, "qwe", RPGGameType.TERMINAL)
     if rpggame is None:
         logger.error("create_rpg_game 失败。")
         return

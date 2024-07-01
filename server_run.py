@@ -9,10 +9,10 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from loguru import logger
 from pydantic import BaseModel
-from multi_players_rpg_game import MultiplayersRPGGame
+from rpg_game.web_server_multi_players_rpg_game import WebServerMultiplayersRPGGame
 from player.player_command import PlayerLogin
 from player.player_proxy import create_player_proxy, get_player_proxy, remove_player_proxy
-from create_rpg_game_funcs import load_then_create_rpg_game
+from rpg_game.create_rpg_game_funcs import load_then_create_rpg_game, RPGGameType
 from dev_config import TEST_CLIENT_SHOW_MESSAGE_COUNT
 from rpg_game.rpg_game import RPGGame
 from player.player_proxy import PlayerProxy
@@ -31,24 +31,27 @@ app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static") 
 
-multiplayersgames: Dict[str, MultiplayersRPGGame] = {}
+multiplayersgames: Dict[str, WebServerMultiplayersRPGGame] = {}
 
 async def create(clientip: str) -> List[TupleModel]:
     log_start_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     logger.add(f"logs/{log_start_time}.log", level="DEBUG")
 
     worldname = "World2"
-    rpg_game = load_then_create_rpg_game(worldname, "qwe")
+    rpg_game = load_then_create_rpg_game(worldname, "qwe", RPGGameType.WEB_SERVER)
     if rpg_game is None:
         logger.error("create_rpg_game 失败。")
         return []
-
+    
+    assert isinstance(rpg_game, WebServerMultiplayersRPGGame)
     #
-    game = MultiplayersRPGGame(clientip, rpg_game)
-    if game is not None:
+    web_server_multi_player_game: WebServerMultiplayersRPGGame = rpg_game  #WebServerMultiplayersRPGGame(clientip, rpg_game)
+    if web_server_multi_player_game is not None:
+        # 设置主机
+        web_server_multi_player_game.set_host(clientip)
         global multiplayersgames
-        multiplayersgames[clientip] = game
-        multiplayersgames[clientip]._rpggame.user_ips.append(clientip) # todo
+        multiplayersgames[clientip] = web_server_multi_player_game
+        multiplayersgames[clientip].user_ips.append(clientip) # todo
         create_player_proxy(clientip)
 
     messages: List[TupleModel] = []
@@ -73,10 +76,10 @@ async def join(clientip: str, hostip: str) -> List[TupleModel]:
     messages: List[TupleModel] = []
     for userip, game in multiplayersgames.copy().items():
         if game._host == hostip:
-            client_game = MultiplayersRPGGame(hostip, game._rpggame)
+            client_game = game #WebServerMultiplayersRPGGame(hostip, game._rpggame)
             multiplayersgames[clientip] = client_game
             messages.append(TupleModel(who=clientip, what=f"加入房间IP:{hostip}成功."))
-            multiplayersgames[clientip]._rpggame.user_ips.append(clientip) # todo
+            multiplayersgames[clientip].user_ips.append(clientip) # todo
             create_player_proxy(clientip)
 
     if len(messages) == 0:
@@ -88,9 +91,9 @@ async def pick_actor(clientip: str, actorname: str) -> List[TupleModel]:
     global multiplayersgames
     playerproxy = get_player_proxy(clientip)
     assert playerproxy is not None
-    playerstartcmd = PlayerLogin("/server_run_login", multiplayersgames[clientip]._rpggame, playerproxy, actorname, True)
+    playerstartcmd = PlayerLogin("/server_run_login", multiplayersgames[clientip], playerproxy, actorname, True)
     playerstartcmd.execute()
-    await multiplayersgames[clientip]._rpggame.async_execute()
+    await multiplayersgames[clientip].async_execute()
     logger.debug(f"pick actor finish")
 
     messages: List[TupleModel] = []
@@ -118,8 +121,8 @@ async def quitgame(clientip: str) -> List[TupleModel]:
         proxy = get_player_proxy(clientip)
         assert proxy is not None
         remove_player_proxy(proxy)
-        quitclient._rpggame.exited = True
-        quitclient._rpggame.exit()
+        quitclient.exited = True
+        quitclient.exit()
 
     messages: List[TupleModel] = []
     messages.append(TupleModel(who=clientip, what="Quit Success"))
@@ -175,11 +178,11 @@ async def playerinput(clientip: str, command: str) -> List[TupleModel]:
     
     #
     if "/checkstatus" in command:
-        await imme_handle_check_status(multiplayersgames[clientip]._rpggame, playerproxy)
+        await imme_handle_check_status(multiplayersgames[clientip], playerproxy)
     elif "/perception" in command:
-        await imme_handle_perception(multiplayersgames[clientip]._rpggame, playerproxy)
+        await imme_handle_perception(multiplayersgames[clientip], playerproxy)
     else:
-        await multiplayersgames[clientip]._rpggame.async_execute()
+        await multiplayersgames[clientip].async_execute()
 
     messages: List[TupleModel] = []
     messages.append(TupleModel(who=clientip, what=f"发送 {command}"))

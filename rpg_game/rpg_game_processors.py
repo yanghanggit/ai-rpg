@@ -1,39 +1,39 @@
 from typing import Any, cast
 from my_entitas.extended_context import ExtendedContext
-from systems.agents_kick_off_system import AgentsKickOffSystem
-from systems.stage_planning_system import StagePlanningSystem
-from systems.actor_planning_system import ActorPlanningSystem
-from systems.speak_action_system import SpeakActionSystem
-from systems.attack_action_system import AttackActionSystem
-from systems.go_to_action_system import GoToActionSystem
-from systems.check_before_go_to_action_system import CheckBeforeGoToActionSystem
-from systems.stage_director_system import StageDirectorSystem
-from systems.destroy_system import DestroySystem
-from systems.tag_action_system import TagActionSystem
-from systems.broadcast_action_system import BroadcastActionSystem  
-from systems.use_prop_action_system import UsePropActionSystem
-from systems.whisper_action_system import WhisperActionSystem 
-from systems.search_action_system import SearchActionSystem
-from systems.mind_voice_action_system import MindVoiceActionSystem
-from systems.begin_system import BeginSystem
-from systems.end_system import EndSystem
-from systems.pre_planning_system import PrePlanningSystem
-from systems.post_planning_system import PostPlanningSystem
-from systems.pre_action_system import PreActionSystem
-from systems.post_action_system import PostActionSystem
-from systems.post_fight_system import PostFightSystem
-from systems.update_archive_system import UpdateArchiveSystem
-from systems.portal_step_action_system import PortalStepActionSystem
-from systems.perception_action_system import PerceptionActionSystem
-from systems.steal_action_system import StealActionSystem
-from systems.trade_action_system import TradeActionSystem
-from systems.check_status_action_system import CheckStatusActionSystem
-from systems.agents_connect_system import AgentsConnectSystem
+from ecs_systems.agents_kick_off_system import AgentsKickOffSystem
+from ecs_systems.stage_planning_system import StagePlanningSystem
+from ecs_systems.actor_planning_system import ActorPlanningSystem
+from ecs_systems.speak_action_system import SpeakActionSystem
+from ecs_systems.attack_action_system import AttackActionSystem
+from ecs_systems.go_to_action_system import GoToActionSystem
+from ecs_systems.check_before_go_to_action_system import CheckBeforeGoToActionSystem
+from ecs_systems.stage_director_system import StageDirectorSystem
+from ecs_systems.destroy_system import DestroySystem
+from ecs_systems.tag_action_system import TagActionSystem
+from ecs_systems.broadcast_action_system import BroadcastActionSystem  
+from ecs_systems.use_prop_action_system import UsePropActionSystem
+from ecs_systems.whisper_action_system import WhisperActionSystem 
+from ecs_systems.search_action_system import SearchActionSystem
+from ecs_systems.mind_voice_action_system import MindVoiceActionSystem
+from ecs_systems.begin_system import BeginSystem
+from ecs_systems.end_system import EndSystem
+from ecs_systems.pre_planning_system import PrePlanningSystem
+from ecs_systems.post_planning_system import PostPlanningSystem
+from ecs_systems.pre_action_system import PreActionSystem
+from ecs_systems.post_action_system import PostActionSystem
+from ecs_systems.post_fight_system import PostFightSystem
+from ecs_systems.update_archive_system import UpdateArchiveSystem
+from ecs_systems.portal_step_action_system import PortalStepActionSystem
+from ecs_systems.perception_action_system import PerceptionActionSystem
+from ecs_systems.steal_action_system import StealActionSystem
+from ecs_systems.trade_action_system import TradeActionSystem
+from ecs_systems.check_status_action_system import CheckStatusActionSystem
+from ecs_systems.agents_connect_system import AgentsConnectSystem
 from my_entitas.extended_processors import ExtendedProcessors
-from systems.simple_rpg_pre_fight_system import SimpleRPGPreFightSystem
-from systems.compress_chat_history_system import CompressChatHistorySystem
-from systems.post_conversation_action_system import PostConversationActionSystem
-from systems.update_appearance_system import UpdateAppearanceSystem
+from ecs_systems.simple_rpg_pre_fight_system import SimpleRPGPreFightSystem
+from ecs_systems.compress_chat_history_system import CompressChatHistorySystem
+from ecs_systems.post_conversation_action_system import PostConversationActionSystem
+from ecs_systems.update_appearance_system import UpdateAppearanceSystem
 
 
 UPDATE_APPEARANCE_SYSTEM_NAME = "角色外观生成器"
@@ -41,12 +41,12 @@ UPDATE_APPEARANCE_SYSTEM_NAME = "角色外观生成器"
 def create_rpg_processors(rpggame: Any, context: ExtendedContext) -> ExtendedProcessors:
 
     # 
-    from systems.handle_player_input_system import HandlePlayerInputSystem ### 不这样就循环引用
-    from systems.update_client_message_system import UpdateClientMessageSystem
-    from systems.dead_action_system import DeadActionSystem
-    from systems.terminal_player_interrupt_and_wait_system import TerminalPlayerInterruptAndWaitSystem
-    from systems.terminal_player_input_system import TerminalPlayerInputSystem
-    from systems.save_system import SaveSystem
+    from ecs_systems.handle_player_input_system import HandlePlayerInputSystem ### 不这样就循环引用
+    from ecs_systems.update_client_message_system import UpdateClientMessageSystem
+    from ecs_systems.dead_action_system import DeadActionSystem
+    from ecs_systems.terminal_player_interrupt_and_wait_system import TerminalPlayerInterruptAndWaitSystem
+    from ecs_systems.terminal_player_input_system import TerminalPlayerInputSystem
+    from ecs_systems.save_system import SaveSystem
     from rpg_game.rpg_game import RPGGame
 
     ##

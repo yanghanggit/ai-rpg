@@ -1,7 +1,7 @@
 from loguru import logger
 import datetime
-from auxiliary.player_proxy import create_player_proxy, get_player_proxy
-from auxiliary.player_command import (PlayerLogin)
+from player.player_proxy import create_player_proxy, get_player_proxy
+from player.player_command import (PlayerLogin)
 from create_rpg_game_funcs import load_then_create_rpg_game, yh_test_save
 from dev_config import TEST_TERMINAL_NAME
 

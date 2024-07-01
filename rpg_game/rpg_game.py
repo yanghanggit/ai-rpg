@@ -2,7 +2,7 @@ from typing import List, Optional
 from overrides import override
 from entitas import Matcher #type: ignore
 from loguru import logger
-from systems.components import (
+from ecs_systems.components import (
     WorldComponent,
     StageComponent, 
     ExitOfPortalComponent,
@@ -25,14 +25,14 @@ from build_game.stage_builder import StageBuilder
 from build_game.actor_builder import ActorBuilder
 from build_game.world_system_builder import WorldSystemBuilder
 from entitas.entity import Entity
-from systems.stage_director_component import StageDirectorComponent
+from ecs_systems.stage_director_component import StageDirectorComponent
 from file_system.files_def import PropFile
 import shutil
 from rpg_game.base_game import BaseGame
 from file_system.helper import add_actor_archive_files
 from my_entitas.extended_processors import ExtendedProcessors
 from prototype_data.data_def import StageData, ActorData, WorldSystemData
-from auxiliary.guid_generator import _GUIDGenerator_
+from extended_systems.guid_generator import _GUIDGenerator_
 from rpg_game.rpg_game_processors import create_rpg_processors
 
 

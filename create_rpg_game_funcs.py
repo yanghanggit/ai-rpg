@@ -4,10 +4,10 @@ from build_game.game_builder import GameBuilder
 from rpg_game.rpg_game import RPGGame 
 from my_entitas.extended_context import ExtendedContext
 from file_system.file_system import FileSystem
-from auxiliary.kick_off_memory_system import KickOffMemorySystem
+from extended_systems.kick_off_memory_system import KickOffMemorySystem
 from typing import Optional
-from auxiliary.lang_serve_agent_system import LangServeAgentSystem
-from auxiliary.code_name_component_system import CodeNameComponentSystem
+from my_agent.lang_serve_agent_system import LangServeAgentSystem
+from extended_systems.code_name_component_system import CodeNameComponentSystem
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from chaos_engineering.empty_engineering_system import EmptyChaosEngineeringSystem
 from prototype_data.data_base_system import DataBaseSystem

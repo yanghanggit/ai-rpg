@@ -10,14 +10,14 @@ from fastapi.templating import Jinja2Templates
 from loguru import logger
 from pydantic import BaseModel
 from multi_players_rpg_game import MultiplayersRPGGame
-from auxiliary.player_command import PlayerLogin
-from auxiliary.player_proxy import create_player_proxy, get_player_proxy, remove_player_proxy
+from player.player_command import PlayerLogin
+from player.player_proxy import create_player_proxy, get_player_proxy, remove_player_proxy
 from create_rpg_game_funcs import load_then_create_rpg_game
 from dev_config import TEST_CLIENT_SHOW_MESSAGE_COUNT
 from rpg_game.rpg_game import RPGGame
-from auxiliary.player_proxy import PlayerProxy
-from systems.check_status_action_system import CheckStatusActionHelper, ActorCheckStatusEvent
-from systems.perception_action_system import PerceptionActionHelper, ActorPerceptionEvent
+from player.player_proxy import PlayerProxy
+from ecs_systems.check_status_action_system import CheckStatusActionHelper, ActorCheckStatusEvent
+from ecs_systems.perception_action_system import PerceptionActionHelper, ActorPerceptionEvent
 from typing import List, Dict
 
 class TextInput(BaseModel):

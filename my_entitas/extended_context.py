@@ -3,16 +3,16 @@ from prototype_data.data_base_system import DataBaseSystem
 from entitas import (Entity, # type: ignore
                     Matcher, 
                     Context)
-from systems.components import (WorldComponent, 
+from ecs_systems.components import (WorldComponent, 
                         StageComponent, 
                         ActorComponent, 
                         PlayerComponent, 
                         AppearanceComponent)
 from file_system.file_system import FileSystem
-from auxiliary.kick_off_memory_system import KickOffMemorySystem
+from extended_systems.kick_off_memory_system import KickOffMemorySystem
 from typing import Optional
-from auxiliary.lang_serve_agent_system import LangServeAgentSystem
-from auxiliary.code_name_component_system import CodeNameComponentSystem
+from my_agent.lang_serve_agent_system import LangServeAgentSystem
+from extended_systems.code_name_component_system import CodeNameComponentSystem
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from typing import Optional, Dict, List, Set
 

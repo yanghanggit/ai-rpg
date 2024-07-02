@@ -306,7 +306,7 @@ class CheckBeforeGoToActionSystem(ReactiveProcessor):
         logger.debug(final_prompt)
 
         ## 让大模型去推断是否可以离开，分别检查stage自身，角色状态（例如长相），角色道具（拥有哪些道具与文件）
-        agent_connect_system = self.context.agent_connect_system
+        agent_connect_system = self.context._langserve_agent_system
         respones = agent_connect_system.agent_request(current_stage_name, final_prompt)
         if respones is None:
             logger.error("没有回应！！！！！！！！！！！！！")
@@ -328,7 +328,7 @@ class CheckBeforeGoToActionSystem(ReactiveProcessor):
 
         logger.info(f"允许通过！说明如下: {handle_response_helper._tips}")
         ## 可以删除，允许通过！这个上下文就拿掉，不需要了。
-        agent_connect_system = self.context.agent_connect_system
+        agent_connect_system = self.context._langserve_agent_system
         agent_connect_system.remove_last_conversation_between_human_and_ai(current_stage_name)
         return True
 ###############################################################################################################################################
@@ -363,7 +363,7 @@ class CheckBeforeGoToActionSystem(ReactiveProcessor):
         logger.debug(final_prompt)
 
         ## 让大模型去推断是否可以离开，分别检查stage自身，角色状态（例如长相），角色道具（拥有哪些道具与文件）
-        agent_connect_system = self.context.agent_connect_system
+        agent_connect_system = self.context._langserve_agent_system
         respones = agent_connect_system.agent_request(target_stage_name, final_prompt)
         if respones is None:
             logger.error("没有回应！！！！！！！！！！！！！")
@@ -386,7 +386,7 @@ class CheckBeforeGoToActionSystem(ReactiveProcessor):
 
         logger.info(f"允许通过！说明如下: {handle_response_helper._tips}")
         ## 可以删除，允许通过！这个上下文就拿掉，不需要了。
-        agent_connect_system = self.context.agent_connect_system
+        agent_connect_system = self.context._langserve_agent_system
         agent_connect_system.remove_last_conversation_between_human_and_ai(target_stage_name)
         return True
 ###############################################################################################################################################

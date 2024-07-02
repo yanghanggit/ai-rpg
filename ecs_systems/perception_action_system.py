@@ -42,7 +42,7 @@ class PerceptionActionHelper:
     def perception_props_in_stage(self, entity: Entity, stageentity: Entity) -> List[str]:
         res: List[str] = []
         stagecomp: StageComponent = stageentity.get(StageComponent)
-        prop_files = self.context.file_system.get_prop_files(stagecomp.name)
+        prop_files = self.context._file_system.get_prop_files(stagecomp.name)
         for prop in prop_files:
             res.append(prop._name)
         return res

@@ -49,7 +49,7 @@ class RPGGame(BaseGame):
     def create_game(self, worlddata: GameBuilder) -> 'RPGGame':
 
         context = self.extended_context
-        chaos_engineering_system = context.chaos_engineering_system
+        chaos_engineering_system = context._chaos_engineering_system
         
         # 第0步，yh 目前用于测试!!!!!!!，直接删worlddata.name的文件夹，保证每次都是新的 删除runtime_dir_for_world的文件夹
         if worlddata._runtime_dir.exists():
@@ -62,9 +62,9 @@ class RPGGame(BaseGame):
 
         ## 第1步，设置根路径
         self.builder = worlddata
-        context.agent_connect_system.set_runtime_dir(worlddata._runtime_dir)
-        context.kick_off_memory_system.set_runtime_dir(worlddata._runtime_dir)
-        context.file_system.set_runtime_dir(worlddata._runtime_dir)
+        context._langserve_agent_system.set_runtime_dir(worlddata._runtime_dir)
+        context._kick_off_memory_system.set_runtime_dir(worlddata._runtime_dir)
+        context._file_system.set_runtime_dir(worlddata._runtime_dir)
 
         ## 第2步 创建管理员类型的角色，全局的AI
         self.create_world_system_entities(worlddata._world_system_builder)
@@ -132,8 +132,8 @@ class RPGGame(BaseGame):
 ###############################################################################################################################################
     def create_world_system_entity(self, world_system_data: WorldSystemData, context: ExtendedContext) -> Entity:
         context = self.extended_context
-        agent_connect_system = context.agent_connect_system
-        code_name_component_system = context.code_name_component_system
+        agent_connect_system = context._langserve_agent_system
+        code_name_component_system = context._codename_component_system
     
         world_entity = context.create_entity()
         #必要组件
@@ -170,10 +170,10 @@ class RPGGame(BaseGame):
 ###############################################################################################################################################
     def create_actor_entity(self, actor_data: ActorData, context: ExtendedContext) -> Entity:
 
-        agent_connect_system = context.agent_connect_system
-        memory_system = context.kick_off_memory_system
-        file_system = context.file_system
-        code_name_component_system = context.code_name_component_system
+        agent_connect_system = context._langserve_agent_system
+        memory_system = context._kick_off_memory_system
+        file_system = context._file_system
+        code_name_component_system = context._codename_component_system
 
         _entity = context.create_entity()
 
@@ -199,7 +199,7 @@ class RPGGame(BaseGame):
             prop_proxy = tp[0]
             count = tp[1]
             ## 重构
-            _pd = context.data_base_system.get_prop(prop_proxy._name)
+            _pd = context._data_base_system.get_prop(prop_proxy._name)
             if _pd is None:
                 logger.error(f"没有从数据库找到道具：{prop_proxy._name}！！！！！！！！！")
                 continue
@@ -229,10 +229,10 @@ class RPGGame(BaseGame):
     def create_stage_entity(self, stage_data: StageData, context: ExtendedContext) -> Entity:
 
         context = self.extended_context
-        agent_connect_system = context.agent_connect_system
-        memory_system = context.kick_off_memory_system
-        file_system = context.file_system
-        code_name_component_system = context.code_name_component_system
+        agent_connect_system = context._langserve_agent_system
+        memory_system = context._kick_off_memory_system
+        file_system = context._file_system
+        code_name_component_system = context._codename_component_system
     
         #logger.debug(f"创建Stage：{builddata.name}")
         stage_entity = context.create_entity()
@@ -259,7 +259,7 @@ class RPGGame(BaseGame):
             prop_proxy = tp[0]
             count = tp[1]
             # 直接使用文件系统
-            _pd = context.data_base_system.get_prop(prop_proxy._name)
+            _pd = context._data_base_system.get_prop(prop_proxy._name)
             if _pd is None:
                 logger.error(f"没有从数据库找到道具：{prop_proxy._name}！！！！！！！！！")
                 continue
@@ -309,7 +309,7 @@ class RPGGame(BaseGame):
 ###############################################################################################################################################
     def add_code_name_component_to_world_and_actors(self) -> None:
         context = self.extended_context
-        code_name_component_system = context.code_name_component_system
+        code_name_component_system = context._codename_component_system
 
         #
         worldentities = context.get_group(Matcher(WorldComponent)).entities
@@ -329,7 +329,7 @@ class RPGGame(BaseGame):
 ###############################################################################################################################################
     def add_code_name_component_stages(self) -> None:
         context = self.extended_context
-        code_name_component_system = context.code_name_component_system
+        code_name_component_system = context._codename_component_system
 
         ## 重新设置actor和stage的关系
         actor_entities = context.get_group(Matcher(ActorComponent)).entities

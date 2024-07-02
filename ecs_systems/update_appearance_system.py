@@ -71,7 +71,7 @@ class UpdateAppearanceSystem(InitializeProcessor, ExecuteProcessor):
         logger.debug(f"final_prompt: {final_prompt}")
 
         # 请求更新
-        agent_connect_system: LangServeAgentSystem = self.context.agent_connect_system
+        agent_connect_system: LangServeAgentSystem = self.context._langserve_agent_system
         safe_name = self.context.safe_get_entity_name(world_entity)
         try:
             # 注意 DO_NOT_ADD_MESSAGE_TO_CHAT_HISTORY，不要把这个消息加入到聊天记录中。因为世界级系统不需要存储上下文。
@@ -114,7 +114,7 @@ class UpdateAppearanceSystem(InitializeProcessor, ExecuteProcessor):
 ###############################################################################################################################################
     # 获取衣服的描述 todo。现在就返回了第一个衣服的描述
     def get_clothe(self, entity: Entity) -> str:
-        filesystem = self.context.file_system
+        filesystem = self.context._file_system
         safename = self.context.safe_get_entity_name(entity)            
         files = filesystem.get_prop_files(safename)
         for _file in files:

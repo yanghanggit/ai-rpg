@@ -15,7 +15,7 @@ class BeginSystem(InitializeProcessor, ExecuteProcessor):
 ############################################################################################################
     @override
     def execute(self) -> None:
-        self.context.execute_count += 1
-        logger.debug(f"世界运行的回合数：{self.context.execute_count}")
+        self.context._execute_count += 1
+        logger.debug(f"世界运行的回合数：{self.context._execute_count}")
 ############################################################################################################
 

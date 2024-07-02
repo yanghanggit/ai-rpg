@@ -78,7 +78,7 @@ class StealActionSystem(ReactiveProcessor):
         return steal_any
 ###################################################################################################################
     def _steal_(self, entity: Entity, target_actor_name: str, propname: str) -> bool:
-        filesystem = self.context.file_system
+        filesystem = self.context._file_system
         prop = filesystem.get_prop_file(target_actor_name, propname)
         if prop is None:
             return False

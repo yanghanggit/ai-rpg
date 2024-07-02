@@ -85,7 +85,7 @@ class SearchActionSystem(ReactiveProcessor):
         # 
         search_any_prop_success = False
         # 在本场景搜索
-        file_system = self.context.file_system
+        file_system = self.context._file_system
         safe_name = self.context.safe_get_entity_name(entity)
 
         stageentity = self.context.safe_get_stage_entity(entity)
@@ -122,7 +122,7 @@ class SearchActionSystem(ReactiveProcessor):
         return False
 ###################################################################################################################
     def stage_exchanges_prop_to_actor(self, stagename: str, actor_name: str, propfilename: str) -> None:
-        filesystem = self.context.file_system
+        filesystem = self.context._file_system
         filesystem.exchange_prop_file(stagename, actor_name, propfilename)
 ###################################################################################################################
     def after_search_success(self, entity: Entity) -> None:

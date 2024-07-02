@@ -89,7 +89,7 @@ class AttackActionSystem(ReactiveProcessor):
         action: AgentAction = fightcomp.action
         for value_as_target_name in action._values:
 
-            _target_entity = context.get_entity_by_code_name_component(value_as_target_name)
+            _target_entity = context.get_entity_by_codename_component(value_as_target_name)
             if _target_entity is None:
                 logger.warning(f"攻击者{action._actor_name}意图攻击的对象{value_as_target_name}无法被找到,本次攻击无效.")
                 continue
@@ -171,7 +171,7 @@ class AttackActionSystem(ReactiveProcessor):
     ## 杀死对方就直接夺取唯一性道具。
     def unique_prop_be_taken_away(self, _entity: Entity, _target_entity: Entity) -> None:
 
-        file_system = self.context.file_system
+        file_system = self.context._file_system
         _rpg_comp: SimpleRPGAttrComponent = _entity.get(SimpleRPGAttrComponent)
         _target_rpg_comp: SimpleRPGAttrComponent = _target_entity.get(SimpleRPGAttrComponent)
         logger.info(f"{_rpg_comp.name} kill => {_target_rpg_comp.name}")

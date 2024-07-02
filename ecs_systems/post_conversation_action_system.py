@@ -61,7 +61,7 @@ class PostConversationActionSystem(ReactiveProcessor):
         if len(stage_director_comp._events) == 0:
             return
         ##
-        agent_connect_system: LangServeAgentSystem = self.context.agent_connect_system
+        agent_connect_system: LangServeAgentSystem = self.context._langserve_agent_system
         #处理场景的
         raw_events2stage = stage_director_comp.to_stage(stage_director_comp.name, self.context) 
         if len(raw_events2stage) > 0:
@@ -86,7 +86,7 @@ class PostConversationActionSystem(ReactiveProcessor):
                     self.imme_request(actor_comp.name, batch_events2actor_prompt)
 ####################################################################################################
     def imme_request(self, name: str, prompt: str) -> None:
-        agent_connect_system: LangServeAgentSystem = self.context.agent_connect_system
+        agent_connect_system: LangServeAgentSystem = self.context._langserve_agent_system
         try:
             response = agent_connect_system.agent_request(name, prompt)
             if response is None:
@@ -102,7 +102,7 @@ class PostConversationActionSystem(ReactiveProcessor):
 ####################################################################################################
     async def async_post_execute(self) -> None:
         # 并行执行requests
-        agent_connect_system = self.context.agent_connect_system
+        agent_connect_system = self.context._langserve_agent_system
         if len(agent_connect_system._async_request_tasks) == 0:
             return
         logger.debug(f"PostConversationActionSystem async_post_execute begin.")     

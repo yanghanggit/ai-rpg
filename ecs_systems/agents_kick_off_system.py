@@ -50,14 +50,14 @@ class AgentsKickOffSystem(InitializeProcessor, ExecuteProcessor):
     @override
     async def async_pre_execute(self) -> None:
         context = self.context
-        agent_connect_system = context.agent_connect_system
+        agent_connect_system = context._langserve_agent_system
         if len(self.tasks) == 0:
             return
         
         for name, prompt in self.tasks.items():
             agent_connect_system.add_async_request_task(name, prompt)
 
-        await context.agent_connect_system.run_async_requet_tasks("AgentsKickOffSystem")
+        await context._langserve_agent_system.run_async_requet_tasks("AgentsKickOffSystem")
         self.tasks.clear() # 这句必须得走.
 ###############################################################################################################################################
     def create_world_system_tasks(self) -> Dict[str, str]:
@@ -77,7 +77,7 @@ class AgentsKickOffSystem(InitializeProcessor, ExecuteProcessor):
         result: Dict[str, str] = {}
         #
         context = self.context
-        memory_system = context.kick_off_memory_system
+        memory_system = context._kick_off_memory_system
         stages: Set[Entity] = context.get_group(Matcher(StageComponent)).entities
         for stage in stages:
 
@@ -96,7 +96,7 @@ class AgentsKickOffSystem(InitializeProcessor, ExecuteProcessor):
         result: Dict[str, str] = {}
         #
         context = self.context
-        memory_system = context.kick_off_memory_system
+        memory_system = context._kick_off_memory_system
         actor_entities: Set[Entity] = context.get_group(Matcher(all_of=[ActorComponent])).entities
         for _entity in actor_entities:
 

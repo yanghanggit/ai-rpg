@@ -99,7 +99,7 @@ class PlayerLogin(PlayerCommand):
         self.playerproxy.add_system_message(f"login: {player_name}, time = {time}")
 
         # actor的kickoff记忆到客户端消息中
-        kick_off_memory = context.kick_off_memory_system.get_kick_off_memory(self._actor_name)
+        kick_off_memory = context._kick_off_memory_system.get_kick_off_memory(self._actor_name)
         self.playerproxy.add_actor_message(self._actor_name, kick_off_memory)
 ####################################################################################################################################
 ####################################################################################################################################

@@ -78,7 +78,7 @@ class UsePropActionSystem(ReactiveProcessor):
     def useprop(self, entity: Entity) -> None:
 
         context = self.context
-        filesystem = context.file_system
+        filesystem = context._file_system
         use_interactive_prop_comp: UsePropActionComponent = entity.get(UsePropActionComponent)
         action: AgentAction = use_interactive_prop_comp.action
         target_and_message = action.target_and_message_values()
@@ -117,7 +117,7 @@ class UsePropActionSystem(ReactiveProcessor):
         context = self.context
         targetname = context.safe_get_entity_name(target_entity)
         username = context.safe_get_entity_name(entity)
-        assert context.file_system.get_prop_file(username, prop_file._name) is not None
+        assert context._file_system.get_prop_file(username, prop_file._name) is not None
 
         # 检查条件
         exit_cond_status_prompt = str(_CNConstantPrompt_.NONE_PROMPT)
@@ -140,7 +140,7 @@ class UsePropActionSystem(ReactiveProcessor):
 
         # 准备提交请求
         logger.debug(f"InteractivePropActionSystem, {targetname}: {final_prompt}")
-        agent_connect_system = context.agent_connect_system
+        agent_connect_system = context._langserve_agent_system
         # 用同步的接口，这样能知道结果应该通知给谁。
         response = agent_connect_system.agent_request(targetname, final_prompt)
         if response is not None:

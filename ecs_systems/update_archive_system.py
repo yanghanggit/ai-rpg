@@ -33,7 +33,7 @@ class UpdateArchiveHelper:
         self._stagenames.clear()
         #
         context = self.context
-        memory_system = context.kick_off_memory_system
+        memory_system = context._kick_off_memory_system
         stages: Set[Entity] = context.get_group(Matcher(StageComponent)).entities
         for stage in stages:
             stagecomp: StageComponent = stage.get(StageComponent)
@@ -47,7 +47,7 @@ class UpdateArchiveHelper:
         self._actor_names.clear()
         #
         context = self.context
-        memory_system = context.kick_off_memory_system
+        memory_system = context._kick_off_memory_system
         actor_entities: Set[Entity] = context.get_group(Matcher(ActorComponent)).entities
         for _en in actor_entities:
             actor_comp: ActorComponent = _en.get(ActorComponent)
@@ -60,7 +60,7 @@ class UpdateArchiveHelper:
     def prepare_agent_chat_history(self) -> None:
         self._agent_chat_history.clear()
         context = self.context
-        agent_connect_system = context.agent_connect_system
+        agent_connect_system = context._langserve_agent_system
         actor_entities: Set[Entity] = context.get_group(Matcher(ActorComponent)).entities
         for _en in actor_entities:
             actor_comp: ActorComponent = _en.get(ActorComponent)
@@ -72,7 +72,7 @@ class UpdateArchiveHelper:
         self._actors_with_props_info.clear()
         #
         context = self.context
-        file_system = context.file_system
+        file_system = context._file_system
         actor_entities: Set[Entity] = context.get_group(Matcher(ActorComponent)).entities
         for _en in actor_entities:
             actor_comp: ActorComponent = _en.get(ActorComponent)
@@ -130,7 +130,7 @@ class UpdateArchiveHelper:
         return res
 ###############################################################################################################################################
     def name_mentioned_in_memory(self, checknames: Set[str], actor_name: str) -> Set[str]:
-        memory_system = self.context.kick_off_memory_system
+        memory_system = self.context._kick_off_memory_system
         result: Set[str] = set()
         kick_off_memory = memory_system.get_kick_off_memory(actor_name)
         for name in checknames:
@@ -177,14 +177,14 @@ class UpdateArchiveSystem(ExecuteProcessor):
             return
         
         # 补充文件，有可能是新的人，也有可能全是旧的人
-        add_actor_archive_files(self.context.file_system, actor_comp.name, who_do_you_know)        
+        add_actor_archive_files(self.context._file_system, actor_comp.name, who_do_you_know)        
 
         # 更新文件，只更新场景内我能看见的人
         appearance_data = self.context.appearance_in_stage(actor_entity)
         for name in who_do_you_know:
             appearance = appearance_data.get(name, "")
             if appearance != "":
-                update_actor_archive_file(self.context.file_system, actor_comp.name, name, appearance)
+                update_actor_archive_file(self.context._file_system, actor_comp.name, name, appearance)
 
         # 更新chat history
         who_do_you_know_promt = ",".join(who_do_you_know)
@@ -192,7 +192,7 @@ class UpdateArchiveSystem(ExecuteProcessor):
 
         exclude_chat_history: Set[str] = set()
         exclude_chat_history.add(message)
-        self.context.agent_connect_system.exclude_chat_history(actor_comp.name, exclude_chat_history)
+        self.context._langserve_agent_system.exclude_chat_history(actor_comp.name, exclude_chat_history)
         self.context.safe_add_human_message_to_entity(actor_entity, message)
 ############################################################################################################
     def update_stage_archive(self, actor_entity: Entity, helper: UpdateArchiveHelper) -> None:
@@ -203,7 +203,7 @@ class UpdateArchiveSystem(ExecuteProcessor):
             return
         
         # 写文件
-        add_stage_archive_files(self.context.file_system, actor_comp.name, _stages_you_know)
+        add_stage_archive_files(self.context._file_system, actor_comp.name, _stages_you_know)
 
         # 更新chat history
         _stages_you_know_prompt = ",".join(_stages_you_know)
@@ -211,7 +211,7 @@ class UpdateArchiveSystem(ExecuteProcessor):
 
         exclude_chat_history: Set[str] = set()
         exclude_chat_history.add(message)
-        self.context.agent_connect_system.exclude_chat_history(actor_comp.name, exclude_chat_history)
+        self.context._langserve_agent_system.exclude_chat_history(actor_comp.name, exclude_chat_history)
         self.context.safe_add_human_message_to_entity(actor_entity, message)
 ############################################################################################################
     

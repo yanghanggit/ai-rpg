@@ -28,7 +28,7 @@ class CheckStatusActionHelper:
     def check_props(self, entity: Entity) -> None:
         safename = self.context.safe_get_entity_name(entity)
         #logger.debug(f"{safename} is checking status")
-        filesystem = self.context.file_system
+        filesystem = self.context._file_system
         files = filesystem.get_prop_files(safename)
         for file in files:
             if file._prop.is_weapon() or file._prop.is_clothes() or file._prop.is_non_consumable_item():

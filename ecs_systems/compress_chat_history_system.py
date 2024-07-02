@@ -17,7 +17,7 @@ class CompressChatHistorySystem(ExecuteProcessor):
 ############################################################################################################
     def handle_exclude_chat_history(self) -> None:
         context = self.context
-        agent_connect_system = context.agent_connect_system
+        agent_connect_system = context._langserve_agent_system
         tags: Set[str] = {_CNConstantPrompt_.ACTOR_PLAN_PROMPT_TAG, _CNConstantPrompt_.STAGE_PLAN_PROMPT_TAG}
         entities: Set[Entity] = context.get_group(Matcher(any_of=[ActorComponent, StageComponent])).entities
         for entity in entities:
@@ -28,7 +28,7 @@ class CompressChatHistorySystem(ExecuteProcessor):
 ############################################################################################################
     def handle_compress_chat_history(self) -> None:
         context = self.context
-        agent_connect_system = context.agent_connect_system
+        agent_connect_system = context._langserve_agent_system
         replace_data: Dict[str, str] = { _CNConstantPrompt_.ACTOR_PLAN_PROMPT_TAG : _CNConstantPrompt_.COMPRESS_ACTOR_PLAN_PROMPT, 
                                         _CNConstantPrompt_.STAGE_PLAN_PROMPT_TAG : _CNConstantPrompt_.COMPRESS_STAGE_PLAN_PROMPT}
         entities: Set[Entity] = context.get_group(Matcher(any_of=[ActorComponent, StageComponent])).entities

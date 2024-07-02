@@ -79,7 +79,7 @@ class TradeActionSystem(ReactiveProcessor):
         return trade_success_target_names
 ###################################################################################################################
     def _trade_(self, entity: Entity, target_actor_name: str, mypropname: str) -> bool:
-        filesystem = self.context.file_system
+        filesystem = self.context._file_system
         safename = self.context.safe_get_entity_name(entity)
         myprop = filesystem.get_prop_file(safename, mypropname)
         if myprop is None:

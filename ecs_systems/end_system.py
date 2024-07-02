@@ -28,7 +28,7 @@ class EndSystem(InitializeProcessor, ExecuteProcessor):
         # 打印一下所有的场景信息
         self.dump_stages_and_actors()
         # 打印一下所有的agent信息
-        self.context.agent_connect_system.dump_chat_history()
+        self.context._langserve_agent_system.dump_chat_history()
         # 打印所有的道具归属
         self.dump_prop_files()
         # 打印所有的角色的状态信息（例如属性）
@@ -48,7 +48,7 @@ class EndSystem(InitializeProcessor, ExecuteProcessor):
         else:
             logger.warning("/dump_stages_and_actors: No stages and actors now")
 
-        update_stage_actors_map_file(self.context.file_system, simple_dump)
+        update_stage_actors_map_file(self.context._file_system, simple_dump)
 ############################################################################################################
     def simple_dump_stages_and_actors(self) -> Dict[str, List[str]]:
         stages_entities = self.context.get_group(Matcher(StageComponent)).entities
@@ -66,7 +66,7 @@ class EndSystem(InitializeProcessor, ExecuteProcessor):
         return map
 ############################################################################################################
     def dump_prop_files(self) -> None:
-        file_system = self.context.file_system
+        file_system = self.context._file_system
         propfiles = file_system._prop_files
 
         dumpdict: Dict[str, str] = {}
@@ -82,5 +82,5 @@ class EndSystem(InitializeProcessor, ExecuteProcessor):
             rpg_attr_comp: SimpleRPGAttrComponent = entity.get(SimpleRPGAttrComponent)
             _dict_ = rpg_attr_comp._asdict()
             assert len(_dict_) > 0
-            update_status_profile_file(self.context.file_system, rpg_attr_comp.name, _dict_)
+            update_status_profile_file(self.context._file_system, rpg_attr_comp.name, _dict_)
 ############################################################################################################

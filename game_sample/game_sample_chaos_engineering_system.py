@@ -43,11 +43,12 @@ class GameSampleChaosEngineeringSystem(IChaosEngineering):
     ##
     def on_read_memory_failed(self, extended_context: Any, name: str, readarchprompt: str) -> None:
         logger.debug(f"{self.name}: on_read_memory_failed {name} {readarchprompt}")
-        from my_entitas.extended_context import ExtendedContext
-        context: ExtendedContext = extended_context
-        agent_connect_system = context.agent_connect_system
-        agent_connect_system.add_human_message_to_chat_history(name, readarchprompt)
-        agent_connect_system.add_ai_message_to_chat_history(name, f"尝试着确认回忆")
+        # logger.debug(f"{self.name}: on_read_memory_failed {name} {readarchprompt}")
+        # from my_entitas.extended_context import ExtendedContext
+        # context: ExtendedContext = extended_context
+        # agent_connect_system = context._langserve_agent_system
+        # agent_connect_system.add_human_message_to_chat_history(name, readarchprompt)
+        # agent_connect_system.add_ai_message_to_chat_history(name, f"尝试着确认回忆")
 
     ##
     def on_stage_planning_system_excute(self, extended_context: Any) -> None:
@@ -59,12 +60,12 @@ class GameSampleChaosEngineeringSystem(IChaosEngineering):
 
     ##
     def hack_stage_planning(self, extended_context: Any, stagename: str, planprompt: str) -> Optional[str]:
-        from my_entitas.extended_context import ExtendedContext
-        context: ExtendedContext = extended_context
+        # from my_entitas.extended_context import ExtendedContext
+        # context: ExtendedContext = extended_context
         return None
 
     ##
     def hack_actor_planning(self, extended_context: Any, actor_name: str, planprompt: str) -> Optional[str]:
-        from my_entitas.extended_context import ExtendedContext
-        context: ExtendedContext = extended_context
+        # from my_entitas.extended_context import ExtendedContext
+        # context: ExtendedContext = extended_context
         return None

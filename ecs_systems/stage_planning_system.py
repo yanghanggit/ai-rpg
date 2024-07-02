@@ -29,9 +29,9 @@ class StagePlanningSystem(ExecuteProcessor):
         # step1: 添加任务
         self.add_tasks()
         # step可选：混沌工程做测试
-        self.context.chaos_engineering_system.on_stage_planning_system_excute(self.context)
+        self.context._chaos_engineering_system.on_stage_planning_system_excute(self.context)
         # step2: 并行执行requests
-        tasks_result = await self.context.agent_connect_system.run_async_requet_tasks("StagePlanningSystem")
+        tasks_result = await self.context._langserve_agent_system.run_async_requet_tasks("StagePlanningSystem")
         if len(tasks_result) == 0:
             logger.warning(f"StagePlanningSystem: tasks_result is empty.")
             return
@@ -56,7 +56,7 @@ class StagePlanningSystem(ExecuteProcessor):
             if not self._check_plan(stage_entity, stage_planning):
                 logger.warning(f"StagePlanningSystem: check_plan failed, {stage_planning}")
                 ## 需要失忆!
-                self.context.agent_connect_system.remove_last_conversation_between_human_and_ai(name)
+                self.context._langserve_agent_system.remove_last_conversation_between_human_and_ai(name)
                 continue
             
             ## 不能停了，只能一直继续
@@ -104,7 +104,7 @@ class StagePlanningSystem(ExecuteProcessor):
     # 获取场景内所有的道具的描述。
     def get_props_in_stage(self, entity: Entity) -> List[PropData]:
         res: List[PropData] = []
-        filesystem = self.context.file_system
+        filesystem = self.context._file_system
         safe_stage_name = self.context.safe_get_entity_name(entity)
         files = filesystem.get_prop_files(safe_stage_name)
         for file in files:
@@ -116,5 +116,5 @@ class StagePlanningSystem(ExecuteProcessor):
         for entity in entities:
             prompt = stage_plan_prompt(self.get_props_in_stage(entity), self.get_actor_names_in_stage(entity), self.context)
             stage_comp: StageComponent = entity.get(StageComponent)
-            self.context.agent_connect_system.add_async_request_task(stage_comp.name, prompt)
+            self.context._langserve_agent_system.add_async_request_task(stage_comp.name, prompt)
 #######################################################################################################################################

@@ -29,9 +29,9 @@ class ActorPlanningSystem(ExecuteProcessor):
          # step1: 添加任务
         self.add_tasks()
         # step可选：混沌工程做测试
-        self.context.chaos_engineering_system.on_actor_planning_system_execute(self.context)
+        self.context._chaos_engineering_system.on_actor_planning_system_execute(self.context)
         # step2: 并行执行requests
-        request_result = await self.context.agent_connect_system.run_async_requet_tasks("ActorPlanningSystem")
+        request_result = await self.context._langserve_agent_system.run_async_requet_tasks("ActorPlanningSystem")
         if len(request_result) == 0:
             logger.warning(f"ActorPlanningSystem: request_result is empty.")
             return
@@ -55,7 +55,7 @@ class ActorPlanningSystem(ExecuteProcessor):
             if not self._check_plan(entity, actor_planning):
                 logger.warning(f"ActorPlanningSystem: check_plan failed, {actor_planning}")
                 ## 需要失忆!
-                self.context.agent_connect_system.remove_last_conversation_between_human_and_ai(actor_comp.name)
+                self.context._langserve_agent_system.remove_last_conversation_between_human_and_ai(actor_comp.name)
                 continue
             
             ## 不能停了，只能一直继续
@@ -120,5 +120,5 @@ class ActorPlanningSystem(ExecuteProcessor):
             
             # 必须要有一个stage的环境描述，否则无法做计划。
             prompt = actpr_plan_prompt(stage_name, stage_enviro_narrate, self.context)
-            self.context.agent_connect_system.add_async_request_task(actor_comp.name, prompt)
+            self.context._langserve_agent_system.add_async_request_task(actor_comp.name, prompt)
 #######################################################################################################################################

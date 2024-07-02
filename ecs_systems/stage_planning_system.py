@@ -31,7 +31,7 @@ class StagePlanningSystem(ExecuteProcessor):
         # step可选：混沌工程做测试
         self.context._chaos_engineering_system.on_stage_planning_system_excute(self.context)
         # step2: 并行执行requests
-        tasks_result = await self.context._langserve_agent_system.run_async_requet_tasks("StagePlanningSystem")
+        tasks_result = await self.context._langserve_agent_system.request_tasks("StagePlanningSystem")
         if len(tasks_result) == 0:
             logger.warning(f"StagePlanningSystem: tasks_result is empty.")
             return
@@ -116,5 +116,5 @@ class StagePlanningSystem(ExecuteProcessor):
         for entity in entities:
             prompt = stage_plan_prompt(self.get_props_in_stage(entity), self.get_actor_names_in_stage(entity), self.context)
             stage_comp: StageComponent = entity.get(StageComponent)
-            self.context._langserve_agent_system.add_async_request_task(stage_comp.name, prompt)
+            self.context._langserve_agent_system.add_request_task(stage_comp.name, prompt)
 #######################################################################################################################################

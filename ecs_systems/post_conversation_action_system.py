@@ -5,7 +5,7 @@ from my_entitas.extended_context import ExtendedContext
 from loguru import logger
 from ecs_systems.stage_director_component import StageDirectorComponent
 from typing import List, Set, Optional, Dict
-from my_agent.lang_serve_agent_system import LangServeAgentSystem, AgentRequestOption
+from my_agent.lang_serve_agent_system import LangServeAgentSystem, AddChatHistoryOptionOnRequestSuccess
 from builtin_prompt.cn_builtin_prompt import batch_conversation_action_events_in_stage_prompt
 
 # 这个类就是故意打包将对话类事件先进行一次request，如果LLM发现有政策问题就会抛异常，不会将污染的message加入chat history，这样就不可能进入chat_history。
@@ -68,7 +68,7 @@ class PostConversationActionSystem(ReactiveProcessor):
             batch_events2stage_prompt = self.batch_stage_events(stage_director_comp.name, raw_events2stage) 
             logger.info(f"PostConversationActionSystem: {stage_director_comp.name} : {batch_events2stage_prompt}")
             if async_execute:
-                agent_connect_system.add_async_request_task(stage_director_comp.name, batch_events2stage_prompt, AgentRequestOption.JUST_ADD_PROMPT_TO_CHAT_HISTORY)
+                agent_connect_system.add_request_task(stage_director_comp.name, batch_events2stage_prompt, AddChatHistoryOptionOnRequestSuccess.ADD_PROMPT_TO_CHAT_HISTORY)
             else:
                 self.imme_request(stage_director_comp.name, batch_events2stage_prompt)
 
@@ -81,7 +81,7 @@ class PostConversationActionSystem(ReactiveProcessor):
                 batch_events2actor_prompt = self.batch_actor_events(stage_director_comp.name, raw_events2actor)
                 logger.info(f"PostConversationActionSystem: {actor_comp.name} : {batch_events2actor_prompt}")
                 if async_execute:
-                    agent_connect_system.add_async_request_task(actor_comp.name, batch_events2actor_prompt, AgentRequestOption.JUST_ADD_PROMPT_TO_CHAT_HISTORY)
+                    agent_connect_system.add_request_task(actor_comp.name, batch_events2actor_prompt, AddChatHistoryOptionOnRequestSuccess.ADD_PROMPT_TO_CHAT_HISTORY)
                 else:
                     self.imme_request(actor_comp.name, batch_events2actor_prompt)
 ####################################################################################################
@@ -103,10 +103,10 @@ class PostConversationActionSystem(ReactiveProcessor):
     async def async_post_execute(self) -> None:
         # 并行执行requests
         agent_connect_system = self.context._langserve_agent_system
-        if len(agent_connect_system._async_request_tasks) == 0:
+        if len(agent_connect_system._request_tasks) == 0:
             return
         logger.debug(f"PostConversationActionSystem async_post_execute begin.")     
-        request_result = await agent_connect_system.run_async_requet_tasks("PostConversationActionSystem")
+        request_result = await agent_connect_system.request_tasks("PostConversationActionSystem")
         responses: Dict[str, Optional[str]] = request_result[0]
         #正常流程
         for name, response in responses.items():

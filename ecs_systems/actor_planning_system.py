@@ -31,7 +31,7 @@ class ActorPlanningSystem(ExecuteProcessor):
         # step可选：混沌工程做测试
         self.context._chaos_engineering_system.on_actor_planning_system_execute(self.context)
         # step2: 并行执行requests
-        request_result = await self.context._langserve_agent_system.run_async_requet_tasks("ActorPlanningSystem")
+        request_result = await self.context._langserve_agent_system.request_tasks("ActorPlanningSystem")
         if len(request_result) == 0:
             logger.warning(f"ActorPlanningSystem: request_result is empty.")
             return
@@ -120,5 +120,5 @@ class ActorPlanningSystem(ExecuteProcessor):
             
             # 必须要有一个stage的环境描述，否则无法做计划。
             prompt = actpr_plan_prompt(stage_name, stage_enviro_narrate, self.context)
-            self.context._langserve_agent_system.add_async_request_task(actor_comp.name, prompt)
+            self.context._langserve_agent_system.add_request_task(actor_comp.name, prompt)
 #######################################################################################################################################

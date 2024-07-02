@@ -3,7 +3,7 @@ from entitas import Entity, InitializeProcessor, ExecuteProcessor, Matcher # typ
 from my_entitas.extended_context import ExtendedContext
 from loguru import logger
 from typing import Dict, cast, Set
-from my_agent.lang_serve_agent_system import LangServeAgentSystem, AgentRequestOption
+from my_agent.lang_serve_agent_system import LangServeAgentSystem, AddChatHistoryOptionOnRequestSuccess
 import json
 from ecs_systems.components import AppearanceComponent, BodyComponent, ActorComponent
 from builtin_prompt.cn_builtin_prompt import actors_body_and_clothe_prompt
@@ -75,7 +75,7 @@ class UpdateAppearanceSystem(InitializeProcessor, ExecuteProcessor):
         safe_name = self.context.safe_get_entity_name(world_entity)
         try:
             # 注意 DO_NOT_ADD_MESSAGE_TO_CHAT_HISTORY，不要把这个消息加入到聊天记录中。因为世界级系统不需要存储上下文。
-            response = agent_connect_system.agent_request(safe_name, final_prompt, AgentRequestOption.BE_CAREFUL_DO_NOT_ADD_MESSAGE_TO_CHAT_HISTORY)
+            response = agent_connect_system.agent_request(safe_name, final_prompt, AddChatHistoryOptionOnRequestSuccess.NOT_ADD_ANY_TO_CHAT_HISTORY)
             if response is None:
                 logger.error(f"{safe_name} request response is None.")
                 return False

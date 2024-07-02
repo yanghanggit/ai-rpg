@@ -55,9 +55,9 @@ class AgentsKickOffSystem(InitializeProcessor, ExecuteProcessor):
             return
         
         for name, prompt in self.tasks.items():
-            agent_connect_system.add_async_request_task(name, prompt)
+            agent_connect_system.add_request_task(name, prompt)
 
-        await context._langserve_agent_system.run_async_requet_tasks("AgentsKickOffSystem")
+        await context._langserve_agent_system.request_tasks("AgentsKickOffSystem")
         self.tasks.clear() # 这句必须得走.
 ###############################################################################################################################################
     def create_world_system_tasks(self) -> Dict[str, str]:

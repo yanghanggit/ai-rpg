@@ -18,7 +18,7 @@ class TerminalPlayerInterruptAndWaitSystem(ExecuteProcessor):
             logger.debug("不是终端模式，不需要中断等待")
             return
 
-        single_player = self.rpggame.single_player()
+        single_player = self.rpggame.single_terminal_player()
         player_proxy = get_player_proxy(single_player)
         player_entity = self.context.get_player_entity(single_player)
         if player_entity is None or player_proxy is None:

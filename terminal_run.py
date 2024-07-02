@@ -20,7 +20,7 @@ async def main() -> None:
     if player_actor_name == "":
         player_actor_name = "无名的复活者" #todo
 
-    players_actor = rpg_game.extended_context.get_actor_entity(player_actor_name)
+    players_actor = rpg_game._extended_context.get_actor_entity(player_actor_name)
     if players_actor is None:
         logger.error(f"找不到玩家角色，请检查构建数据:{player_actor_name}")
         return

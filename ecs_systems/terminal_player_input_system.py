@@ -21,7 +21,7 @@ class TerminalPlayerInputSystem(ExecuteProcessor):
             logger.error("只处理终端的输入")
             return
         #
-        single_player = self.rpggame.single_player()
+        single_player = self.rpggame.single_terminal_player()
         self.play_via_terminal_and_handle_player_input(single_player)
 ############################################################################################################
     def play_via_terminal_and_handle_player_input(self, playername: str) -> None:

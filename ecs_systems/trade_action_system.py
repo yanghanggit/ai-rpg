@@ -49,10 +49,7 @@ class TradeActionSystem(ReactiveProcessor):
     @override
     def react(self, entities: list[Entity]) -> None:
         for entity in entities:
-            trade_success_target_names = self.trade(entity)
-            for name in trade_success_target_names:
-                pass #todo 可以不用？这样更好玩？比如你收到谁谁谁给了你啥，你需要自己自检一下看看是啥？
-                #self.after_trade_success(name)
+            self.trade(entity)
 ###################################################################################################################
     def trade(self, entity: Entity) -> List[str]:
 

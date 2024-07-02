@@ -14,6 +14,7 @@ from rpg_game.rpg_game import RPGGame
 from rpg_game.terminal_rpg_game import TerminalRPGGame
 from rpg_game.web_server_multi_players_rpg_game import WebServerMultiplayersRPGGame
 
+# todo: 未完成
 class UpdateClientMessageSystem(ExecuteProcessor):
     def __init__(self, context: ExtendedContext, rpggame: RPGGame) -> None:
         self.context: ExtendedContext = context
@@ -100,7 +101,7 @@ class UpdateClientMessageSystem(ExecuteProcessor):
             broadcast_action_component: BroadcastActionComponent = entity.get(BroadcastActionComponent)
             action: AgentAction = broadcast_action_component.action
             single_val = action.join_values()
-            playerproxy.add_actor_message(action._actor_name, f"""<@all>{single_val}""") #todo
+            playerproxy.add_actor_message(action._actor_name, f"""<@all>{single_val}""")
 ############################################################################################################
     def speak_action_2_message(self, playerproxy: PlayerProxy, player_entity: Entity) -> None:
         player_entity_stage = self.context.safe_get_stage_entity(player_entity)
@@ -143,7 +144,7 @@ class UpdateClientMessageSystem(ExecuteProcessor):
             mind_voice_action_component: MindVoiceActionComponent = entity.get(MindVoiceActionComponent)
             action: AgentAction = mind_voice_action_component.action
             single_value = action.join_values()
-            playerproxy.add_actor_message(action._actor_name, f"""<心理活动>{single_value}""") #todo
+            playerproxy.add_actor_message(action._actor_name, f"""<心理活动>{single_value}""")
 ############################################################################################################
     def attack_action_2_message(self, playerproxy: PlayerProxy, player_entity: Entity) -> None:
         player_entity_stage = self.context.safe_get_stage_entity(player_entity)
@@ -164,7 +165,7 @@ class UpdateClientMessageSystem(ExecuteProcessor):
                 continue
 
             targetname = action._values[0]
-            playerproxy.add_actor_message(action._actor_name, f"""准备对{targetname}发起了攻击""") #todo
+            playerproxy.add_actor_message(action._actor_name, f"""准备对{targetname}发起了攻击""")
 ############################################################################################################
     def go_to_action_2_message(self, playerproxy: PlayerProxy, player_entity: Entity) -> None:
         player_entity_stage = self.context.safe_get_stage_entity(player_entity)
@@ -185,5 +186,5 @@ class UpdateClientMessageSystem(ExecuteProcessor):
                 continue
 
             stagename = action._values[0]
-            playerproxy.add_actor_message(action._actor_name, f"""准备去往{stagename}""") #todo
+            playerproxy.add_actor_message(action._actor_name, f"""准备去往{stagename}""")
 ############################################################################################################

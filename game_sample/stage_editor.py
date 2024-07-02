@@ -34,10 +34,10 @@ class ExcelEditorStage:
     @property
     def attributes(self) -> str:
         assert self._data is not None
-        return cast(str, self._data.get("attributes", ""))
+        return cast(str, self._data["attributes"])
 ################################################################################################################################
     def parse_stage_prop(self) -> None:
-        data: Optional[str] = self._data.get("stage_prop", None)
+        data: Optional[str] = self._data["stage_prop"]
         if data is None:
             return
         _str_ = data.split(";")
@@ -50,7 +50,7 @@ class ExcelEditorStage:
             self._stage_prop.append((self._prop_data_base[_name], _count))
 ################################################################################################################################
     def parse_actors_in_stage(self) -> None:
-        data: Optional[str] = self._data.get("actors_in_stage", None)
+        data: Optional[str] = self._data["actors_in_stage"]
         if data is None:
             return
         names = data.split(";")
@@ -63,12 +63,12 @@ class ExcelEditorStage:
     @property
     def kick_off_memory(self) -> str:
         assert self._data is not None
-        return cast(str, self._data.get("kick_off_memory", ""))
+        return cast(str, self._data["kick_off_memory"])
 ################################################################################################################################
     @property
     def exit_of_portal(self) -> str:
         assert self._data is not None
-        val = self._data.get("exit_of_portal", None)
+        val = self._data["exit_of_portal"]
         if val is None:
             return ""
         return str(val)

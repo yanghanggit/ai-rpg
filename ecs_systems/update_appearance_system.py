@@ -8,7 +8,7 @@ import json
 from ecs_systems.components import AppearanceComponent, BodyComponent, ActorComponent
 from builtin_prompt.cn_builtin_prompt import actors_body_and_clothe_prompt
 
-###############################################################################################################################################
+# todo
 class UpdateAppearanceSystem(InitializeProcessor, ExecuteProcessor):
 
     """

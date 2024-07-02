@@ -68,7 +68,7 @@ class LangServeAgent:
             response = self._remote_runnable.invoke({"input": prompt, "chat_history": self._chat_history})
 
             # 只要能执行到这里，说明LLM运行成功，可能包括政策问题也通过了。
-            response_content = cast(str, response.get('output', ''))
+            response_content = cast(str, response['output'])
             self._handle_chat_history_on_request_success(prompt, response_content, option)
             logger.debug(f"\n{'=' * 50}\n{self._name} request result:\n{response_content}\n{'=' * 50}")
             return response_content
@@ -90,7 +90,7 @@ class LangServeAgent:
             response = await self._remote_runnable.ainvoke({"input": prompt, "chat_history": self._chat_history})
 
             # 只要能执行到这里，说明LLM运行成功，可能包括政策问题也通过了。
-            response_content = cast(str, response.get('output', ''))
+            response_content = cast(str, response['output'])
             self._handle_chat_history_on_request_success(prompt, response_content, option)
             logger.debug(f"\n{'=' * 50}\n{self._name} request result:\n{response_content}\n{'=' * 50}")
             return response_content

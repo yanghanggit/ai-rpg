@@ -50,7 +50,7 @@ async def create(clientip: str) -> List[TupleModel]:
         web_server_multi_player_game.set_host(clientip)
         global multiplayersgames
         multiplayersgames[clientip] = web_server_multi_player_game
-        multiplayersgames[clientip].add_player(clientip) # todo
+        multiplayersgames[clientip].add_player(clientip)
         create_player_proxy(clientip)
 
     messages: List[TupleModel] = []
@@ -78,7 +78,7 @@ async def join(clientip: str, hostip: str) -> List[TupleModel]:
             client_game = game #WebServerMultiplayersRPGGame(hostip, game._rpggame)
             multiplayersgames[clientip] = client_game
             messages.append(TupleModel(who=clientip, what=f"加入房间IP:{hostip}成功."))
-            multiplayersgames[clientip].add_player(clientip) # todo
+            multiplayersgames[clientip].add_player(clientip)
             create_player_proxy(clientip)
 
     if len(messages) == 0:

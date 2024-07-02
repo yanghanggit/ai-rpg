@@ -46,7 +46,6 @@ class HandlePlayerInputSystem(ExecuteProcessor):
             return
         
         for command in playerproxy._inputs:
-            #todo
             singleplayer = self.context.get_player_entity(playername)
             assert singleplayer is not None
             #

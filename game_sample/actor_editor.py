@@ -33,7 +33,7 @@ class ExcelEditorActor:
     @property
     def appearance(self) -> str:
         assert self._data is not None
-        val = self._data.get("appearance", None)
+        val = self._data["appearance"]
         if val is None:
             return ""
         return str(val)
@@ -41,15 +41,15 @@ class ExcelEditorActor:
     @property
     def attributes(self) -> str:
         assert self._data is not None
-        return cast(str, self._data.get("attributes", ""))
+        return cast(str, self._data["attributes"])
 #################################################################################################################################
     @property
     def kick_off_memory(self) -> str:
         assert self._data is not None
-        return cast(str, self._data.get("kick_off_memory", ""))
+        return cast(str, self._data["kick_off_memory"])
 #################################################################################################################################
     def parse_actor_prop(self) -> None:
-        data: Optional[str] = self._data.get("actor_prop", None) 
+        data: Optional[str] = self._data["actor_prop"]
         if data is None:
             return        
         _str_ = data.split(";")

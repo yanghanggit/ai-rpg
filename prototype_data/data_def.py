@@ -88,12 +88,12 @@ class PropData:
         return self._type == "NonConsumableItem"
     
     def reseialization(self, prop_data: Any) -> 'PropData':
-        self._name = prop_data.get('name')
-        self._codename = prop_data.get('codename')
-        self._description = prop_data.get('description')
-        self._is_unique = prop_data.get('is_unique')
-        self._type = prop_data.get('type')
-        self._attributes = Attributes(prop_data.get('attributes'))
+        self._name = prop_data['name']
+        self._codename = prop_data['codename']
+        self._description = prop_data['description']
+        self._is_unique = prop_data['is_unique']
+        self._type = prop_data['type']
+        self._attributes = Attributes(prop_data['attributes'])
         return self
 
     def serialization(self) -> Dict[str, str]:

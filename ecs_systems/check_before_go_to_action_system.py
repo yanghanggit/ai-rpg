@@ -398,10 +398,6 @@ class CheckBeforeGoToActionSystem(ReactiveProcessor):
         go_to_action_comp: GoToActionComponent = entity.get(GoToActionComponent)
         action: AgentAction = go_to_action_comp.action
         return action.value(0)
-        # if len(action._values) == 0:
-        #     logger.error(go_to_action_comp)
-        #     return ""
-        # return action._values[0]
 ###############################################################################################################################################
     # todo 目前就把外观信息当作状态信息，后续可以加入更多的状态信息
     def get_actor_status_prompt(self, entity: Entity) -> str:

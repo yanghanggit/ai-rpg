@@ -1,6 +1,6 @@
 from typing import Any, Optional, List, Dict
 from loguru import logger
-from prototype_data.data_def import PropData, ActorData, PropDataProxy
+from prototype_data.data_def import ActorData, PropDataProxy
 from prototype_data.data_base_system import DataBaseSystem
 
 class ActorBuilder:
@@ -10,38 +10,57 @@ class ActorBuilder:
     """
 
     def __init__(self) -> None:
-        self._raw_data: Optional[Dict[str, Any]] = None
+        # 这个是从json中读取的数据, 只要我自己的这一块
+        self._raw_data: Optional[List[Dict[str, Any]]] = None
+        # 构建出来的数据
         self._actors: List[ActorData] = []
 ###############################################################################################################################################
     def __str__(self) -> str:
-        return f"ActorBuilder: {self._raw_data}"       
+        return f"ActorBuilder: {self._raw_data}"
 ###############################################################################################################################################
-    def build(self, block_name: str, json_data: Dict[str, Any], data_base_system: DataBaseSystem) -> 'ActorBuilder':
-        self._raw_data = json_data.get(block_name)
-        if self._raw_data is None:
-            logger.error(f"ActorBuilder: {block_name} data is None.")
+    def build(self, 
+              my_attention_key_name: str, 
+              game_builder_data: Dict[str, Any], 
+              data_base_system: DataBaseSystem) -> 'ActorBuilder':
+        try:
+            # 从大的数据结构中，只拿出我自己关心的那一块
+            self._raw_data = game_builder_data[my_attention_key_name]
+        except KeyError:
+            logger.error(f"ActorBuilder: {my_attention_key_name} data is missing in JSON.")
             return self
         
-        for _bk in self._raw_data:
-            # Actor核心数据
-            assert _bk.get("actor") is not None
-            assert _bk.get("props") is not None
-            actor_name = _bk.get("actor").get("name")
-            actor_data = data_base_system.get_actor(actor_name)
-            if actor_data is None:
-                assert actor_data is not None
-                logger.error(f"ActorBuilder: {actor_name} not found in database.")
+        if self._raw_data is None:
+            logger.error("ActorBuilder: data is None.")
+            return self
+
+        # 清空之前的数据
+        self._actors.clear()
+        for actor_info in self._raw_data:
+            try:
+                actor_data = data_base_system.get_actor(actor_info['actor']['name'])
+                if actor_data is None:
+                    raise ValueError(f"Actor {actor_info['actor']['name']} not found in database.")
+            except KeyError:
+                logger.error("Missing 'actor' or 'name' key in actor block.")
                 continue
-
-            # 最终添加到列表
-            self._actors.append(actor_data)
-
-            # 分析道具
+            
+            # 清空之前的数据
             actor_data._props.clear()
-            for _pd in _bk.get("props"):
-                proxy: PropData = PropDataProxy(_pd.get("name"))
-                count: int = int(_pd.get("count"))
-                actor_data._props.append((proxy, count)) # 连接道具         
+            try:
+                for prop in actor_info['props']:
+                    proxy = PropDataProxy(prop['name'])
+                    count = int(prop['count'])
+                    # 添加到列表
+                    actor_data._props.append((proxy, count))
+            except KeyError:
+                logger.error("Missing 'props' key or 'name'/'count' in props block.")
+                continue
+            except ValueError:
+                logger.error("Invalid 'count' value. Must be an integer.")
+                continue
+            
+            # 添加到列表
+            self._actors.append(actor_data)
 
         return self
 ###############################################################################################################################################

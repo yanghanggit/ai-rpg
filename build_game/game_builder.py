@@ -35,7 +35,7 @@ class GameBuilder:
         self._player_builder: ActorBuilder = ActorBuilder()
         self._actor_buidler: ActorBuilder = ActorBuilder()
         self._stage_builder: StageBuilder = StageBuilder()
-        self._data_base_system: DataBaseSystem = DataBaseSystem("") # 空的
+        self._data_base_system: DataBaseSystem = DataBaseSystem()
 ###############################################################################################################################################
     def check_json_jsonschema(self, json_data: Any, _schema: Any) -> bool:
         if json_data is None:
@@ -84,7 +84,7 @@ class GameBuilder:
         name_of_world_system_data_block = "world_systems"
 
         # 创建数据库，添加数据，直接盖掉。        
-        db_system = self._data_base_system = DataBaseSystem("data_base_system，it is a system that stores all the origin data from the settings.")
+        db_system = self._data_base_system = DataBaseSystem()
         self._add_actors_2_db(database[name_of_actor_data_block], db_system)
         self._add_stages_2_db(database[name_of_stage_data_block], db_system)
         self._add_props_2_db(database[name_of_prop_data_block], db_system)

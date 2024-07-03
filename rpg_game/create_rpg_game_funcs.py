@@ -103,8 +103,6 @@ def create_rpg_game(worldname: str, chaosengineering: Optional[IChaosEngineering
 #######################################################################################################################################
 ## 创建RPG Game + 读取数据
 def load_then_create_rpg_game(gamename: str, version: str, rpg_game_type: RPGGameType) -> Optional[RPGGame]:
-    # 通过依赖注入的方式创建数据系统
-    #data_base_system = DataBaseSystem("test!!! data_base_system，it is a system that stores all the origin data from the settings.")
     game_builder = load_then_build_game_data(gamename, version)
     if game_builder is None:
         logger.error("create_world_data_builder 失败。")

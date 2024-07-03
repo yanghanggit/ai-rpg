@@ -6,8 +6,8 @@ from pathlib import Path
 ## 第一次初始化的时候，会做读取来确定角色初始上下文（记忆）
 class KickOffMemorySystem:
     def __init__(self, name: str) -> None:
-        self.name: str = name
-        self.kick_off_memories: Dict[str, str] = {}
+        self._name: str = name
+        self._kick_off_memories: Dict[str, str] = {}
         self._runtime_dir: Optional[Path] = None
 ####################################################################################################################################
     def set_runtime_dir(self, runtime_dir: Path) -> None:
@@ -31,7 +31,7 @@ class KickOffMemorySystem:
         assert mm is not None
         if mm is not None:
             assert mm == kick_off_memory_content
-            self.kick_off_memories[who] = mm
+            self._kick_off_memories[who] = mm
 ####################################################################################################################################
     def read_md(self, who: str) -> Optional[str]:
 
@@ -58,5 +58,5 @@ class KickOffMemorySystem:
             return
 ####################################################################################################################################
     def get_kick_off_memory(self, who: str) -> str:
-        return self.kick_off_memories.get(who, "")
+        return self._kick_off_memories.get(who, "")
 ####################################################################################################################################

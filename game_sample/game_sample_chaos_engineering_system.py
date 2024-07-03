@@ -28,35 +28,29 @@ class GameSampleChaosEngineeringSystem(IChaosEngineering):
 
     ##
     def __init__(self, name: str) -> None:
-        self.name: str = name
-        self.on_stage_system_excute_count = 0
-        self.on_actor_system_excute_count = 0
+        self._name: str = name
+        self._on_stage_system_excute_count = 0
+        self._on_actor_system_excute_count = 0
 
     ##
     def on_pre_create_game(self, extended_context: Any, worlddata: GameBuilder) -> None:
-        logger.warning(f" {self.name}: on_pre_create_world")
+        logger.warning(f" {self._name}: on_pre_create_world")
 
     ##
     def on_post_create_game(self, extended_context: Any, worlddata: GameBuilder) -> None:
-        logger.warning(f" {self.name}: on_post_create_world")
+        logger.warning(f" {self._name}: on_post_create_world")
     
     ##
     def on_read_memory_failed(self, extended_context: Any, name: str, readarchprompt: str) -> None:
-        logger.debug(f"{self.name}: on_read_memory_failed {name} {readarchprompt}")
-        # logger.debug(f"{self.name}: on_read_memory_failed {name} {readarchprompt}")
-        # from my_entitas.extended_context import ExtendedContext
-        # context: ExtendedContext = extended_context
-        # agent_connect_system = context._langserve_agent_system
-        # agent_connect_system.add_human_message_to_chat_history(name, readarchprompt)
-        # agent_connect_system.add_ai_message_to_chat_history(name, f"尝试着确认回忆")
+        logger.debug(f"{self._name}: on_read_memory_failed {name} {readarchprompt}")
 
     ##
     def on_stage_planning_system_excute(self, extended_context: Any) -> None:
-        self.on_stage_system_excute_count += 1
+        self._on_stage_system_excute_count += 1
 
     ##
     def on_actor_planning_system_execute(self, extended_context: Any) -> None:
-        self.on_actor_system_excute_count += 1
+        self._on_actor_system_excute_count += 1
 
     ##
     def hack_stage_planning(self, extended_context: Any, stagename: str, planprompt: str) -> Optional[str]:

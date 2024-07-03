@@ -12,8 +12,9 @@ namedtuples for readability.
 from .utils import Event
 from .exceptions import (
     EntityNotEnabled, AlreadyAddedComponent, MissingComponent)
-from typing import Any, Dict, Type
+from typing import Any, Dict, Type, TypeVar, cast
 
+T = TypeVar('T') ##yh add
 
 class Entity(object):
     """Use context.create_entity() to create a new entity and
@@ -110,7 +111,8 @@ class Entity(object):
             self._components[comp_type] = new_comp
             self.on_component_replaced(self, previous_comp, new_comp)
 
-    def get(self, comp_type: Type[Any]) -> Any:
+    ## yh modified
+    def get(self, comp_type: Type[T]) -> T:
         """Retrieves a component by its type.
         :param comp_type: namedtuple type
         :rtype: namedtuple
@@ -120,7 +122,7 @@ class Entity(object):
                 'Cannot get unexisting component {!r} from {}.'
                 .format(comp_type.__name__, self))
 
-        return self._components[comp_type]
+        return cast(T, self._components[comp_type])
 
     def has(self, *args: Type[Any]) -> bool:
         """Checks if the entity has all components of the given type(s).

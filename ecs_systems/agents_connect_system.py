@@ -26,14 +26,14 @@ class AgentsConnectSystem(InitializeProcessor):
         agent_connect_system = self.context._langserve_agent_system
         stages: Set[Entity] = self.context.get_group(Matcher(StageComponent)).entities
         for stage in stages:
-            stagecomp: StageComponent = stage.get(StageComponent)
-            agent_connect_system.connect_agent(stagecomp.name)
+            stage_comp = stage.get(StageComponent)
+            agent_connect_system.connect_agent(stage_comp.name)
 ###############################################################################################################################################
     def connect_actor_agents(self) -> None:
         agent_connect_system = self.context._langserve_agent_system
         actors: Set[Entity] = self.context.get_group(Matcher(all_of=[ActorComponent], none_of=[PlayerComponent])).entities
-        for _entity in actors:
-            actor_comp: ActorComponent = _entity.get(ActorComponent)
+        for entity in actors:
+            actor_comp = entity.get(ActorComponent)
             agent_connect_system.connect_agent(actor_comp.name)
 ###############################################################################################################################################
     

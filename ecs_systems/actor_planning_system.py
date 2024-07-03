@@ -50,7 +50,7 @@ class ActorPlanningSystem(ExecuteProcessor):
                 logger.warning(f"ActorPlanningSystem: entity is None, {name}")
                 continue
 
-            actor_comp: ActorComponent = entity.get(ActorComponent)
+            actor_comp = entity.get(ActorComponent)
             actor_planning = AgentPlan(actor_comp.name, response)
             if not self._check_plan(entity, actor_planning):
                 logger.warning(f"ActorPlanningSystem: check_plan failed, {actor_planning}")
@@ -93,15 +93,15 @@ class ActorPlanningSystem(ExecuteProcessor):
     # 获取场景的环境描述
     def get_stage_enviro_narrate(self, entity: Entity) -> tuple[str, str]:
 
-        stageentity = self.context.safe_get_stage_entity(entity)
-        if stageentity is None:
+        stage_entity = self.context.safe_get_stage_entity(entity)
+        if stage_entity is None:
             logger.error("stage is None, actor无所在场景是有问题的")
             return "", ""
         
-        stagename = self.context.safe_get_entity_name(stageentity)
+        stagename = self.context.safe_get_entity_name(stage_entity)
         stage_enviro_narrate = ""
-        if stageentity.has(EnviroNarrateActionComponent):
-            envirocomp: EnviroNarrateActionComponent = stageentity.get(EnviroNarrateActionComponent)
+        if stage_entity.has(EnviroNarrateActionComponent):
+            envirocomp = stage_entity.get(EnviroNarrateActionComponent)
             action: AgentAction = envirocomp.action
             stage_enviro_narrate = action.join_values()
                 
@@ -110,7 +110,7 @@ class ActorPlanningSystem(ExecuteProcessor):
     def add_tasks(self) -> None:
         entities = self.context.get_group(Matcher(all_of=[ActorComponent, AutoPlanningComponent])).entities
         for entity in entities:
-            actor_comp: ActorComponent = entity.get(ActorComponent)
+            actor_comp = entity.get(ActorComponent)
             tp = self.get_stage_enviro_narrate(entity)
             stage_name = tp[0]
             stage_enviro_narrate = tp[1]

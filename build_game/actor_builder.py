@@ -18,17 +18,9 @@ class ActorBuilder:
     def __str__(self) -> str:
         return f"ActorBuilder: {self._raw_data}"
 ###############################################################################################################################################
-    def build(self, 
-              my_attention_key_name: str, 
-              game_builder_data: Dict[str, Any], 
-              data_base_system: DataBaseSystem) -> 'ActorBuilder':
-        try:
-            # 从大的数据结构中，只拿出我自己关心的那一块
-            self._raw_data = game_builder_data[my_attention_key_name]
-        except KeyError:
-            logger.error(f"ActorBuilder: {my_attention_key_name} data is missing in JSON.")
-            return self
+    def build(self, raw_data: Any, data_base_system: DataBaseSystem) -> 'ActorBuilder':
         
+        self._raw_data = raw_data
         if self._raw_data is None:
             logger.error("ActorBuilder: data is None.")
             return self

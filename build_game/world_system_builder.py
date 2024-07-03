@@ -17,10 +17,10 @@ class WorldSystemBuilder:
     def __str__(self) -> str:
         return f"WorldSystemBuilder: {self._raw_data}"       
 ###############################################################################################################################################
-    def build(self, my_attention_key_name: str, game_builder_data: Dict[str, Any], data_base_system: DataBaseSystem) -> 'WorldSystemBuilder':
-        self._raw_data = game_builder_data[my_attention_key_name]
+    def build(self, raw_data: Any, data_base_system: DataBaseSystem) -> 'WorldSystemBuilder':
+        self._raw_data = raw_data
         if self._raw_data is None:
-            logger.error(f"WorldSystemBuilder: {my_attention_key_name} data is None.")
+            logger.error("WorldSystemBuilder: data is None.")
             return self
         
         for _d in self._raw_data:

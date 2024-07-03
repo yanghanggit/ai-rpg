@@ -2,15 +2,16 @@ from dataclasses import dataclass
 from typing import Optional, Dict, TypeVar, Generic
 from prototype_data.data_def import ActorData, PropData, StageData, WorldSystemData
 
-
-PrototypeDataType = TypeVar('PrototypeDataType')
+# 加限制不能超出这四种类型
+PrototypeDataType = TypeVar('PrototypeDataType', ActorData, PropData, StageData, WorldSystemData) 
 
 class MyDBSystem(Generic[PrototypeDataType]):
 
     """
     单独封装一下，方便使用。
     """
-    _data: Dict[str, PrototypeDataType] = {}
+    def __init__(self) -> None:
+        self._data: Dict[str, PrototypeDataType] = {}
 
     def add(self, name: str, data: PrototypeDataType) -> None:
         self._data.setdefault(name, data)

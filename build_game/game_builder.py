@@ -64,42 +64,46 @@ class GameBuilder:
         return str(self._raw_data['about_game'])
 ###############################################################################################################################################
     def build(self) -> 'GameBuilder':
+
         if self._raw_data is None:
             logger.error("WorldDataBuilder: data is None.")
             return self
         
-        raw_data = self._raw_data
-        assert raw_data is not None
-        # 第一步，创建数据库
-        database = raw_data['database']
-        if database is None:
-            assert False, "没有数据库(database)，请检查World.json配置。"
-            return
-        
-        # 常量
-        name_of_actor_data_block = "actors"
-        name_of_player_data_block = "players"
-        name_of_stage_data_block = "stages"
-        name_of_prop_data_block = "props"
-        name_of_world_system_data_block = "world_systems"
+        try:
 
-        # 创建数据库，添加数据，直接盖掉。        
-        db_system = self._data_base_system = DataBaseSystem()
-        self._add_actors_2_db(database[name_of_actor_data_block], db_system)
-        self._add_stages_2_db(database[name_of_stage_data_block], db_system)
-        self._add_props_2_db(database[name_of_prop_data_block], db_system)
-        self._add_world_systems_2_db(database[name_of_world_system_data_block], db_system)
+            data_base_value = self._raw_data['database']
+            if data_base_value is None:
+                logger.error("没有数据库(database)，请检查World.json配置。")
+                return self
+            
+            # 常量
+            actors_property_name = "actors"
+            players_property_name = "players"
+            stages_property_name = "stages"
+            props_property_name = "props"
+            world_systems_property_name = "world_systems"
 
-        # 第三步，创建世界级别的管理员
-        self._world_system_builder.build(name_of_world_system_data_block, raw_data, db_system)
-        
-        # 第四步，创建玩家与Actor
-        self._player_builder.build(name_of_player_data_block, raw_data, db_system)
-        self._actor_buidler.build(name_of_actor_data_block, raw_data, db_system)
-        
-        # 第五步，创建场景
-        self._stage_builder.build(name_of_stage_data_block, raw_data, db_system)
+            # 创建数据库，添加数据，直接盖掉。        
+            self._data_base_system = DataBaseSystem()
+            self._add_actors_2_db(data_base_value[actors_property_name], self._data_base_system)
+            self._add_stages_2_db(data_base_value[stages_property_name], self._data_base_system)
+            self._add_props_2_db(data_base_value[props_property_name], self._data_base_system)
+            self._add_world_systems_2_db(data_base_value[world_systems_property_name], self._data_base_system)
 
+            # 第三步，从JSON构建世界系统的数据
+            self._world_system_builder.build(self._raw_data[world_systems_property_name], self._data_base_system)
+            
+            # 第四步，从JSON构建玩家与Actor的数据
+            self._player_builder.build(self._raw_data[players_property_name], self._data_base_system)
+            self._actor_buidler.build(self._raw_data[actors_property_name], self._data_base_system)
+            
+            # 第五步，从JSON构建场景的数据
+            self._stage_builder.build(self._raw_data[stages_property_name], self._data_base_system)
+
+        except KeyError:
+            logger.error("Missing 'world_systems', 'players', 'actors' or 'stages' key in world block.")
+            return self
+    
         # 返回自己
         return self
 ###############################################################################################################################################

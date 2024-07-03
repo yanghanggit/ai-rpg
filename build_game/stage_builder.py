@@ -28,15 +28,8 @@ class StageBuilder:
             res.add(ActorDataProxy(obj["name"]))
         return res
 ###############################################################################################################################################
-    def build(self, my_attention_key_name: str, game_builder_data: Dict[str, Any], data_base_system: DataBaseSystem) -> 'StageBuilder':
-
-        try:
-            # 从大的数据结构中，只拿出我自己关心的那一块
-            self._raw_data = game_builder_data[my_attention_key_name]
-        except KeyError:
-            logger.error(f"StageBuilder: {my_attention_key_name} data is missing in JSON.")
-            return self
-        
+    def build(self, raw_data: Any, data_base_system: DataBaseSystem) -> 'StageBuilder':
+        self._raw_data = raw_data
         if self._raw_data is None:
             logger.error("StageBuilder: data is None.")
             return self

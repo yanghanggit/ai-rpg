@@ -22,11 +22,11 @@ class StageOrActorSpeakEvent(IStageDirectorEvent):
         self.message = message
 
     def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
-        speakcontent: str = speak_action_prompt(self.who_is_speaking, self.who_is_target, self.message, extended_context)
+        speakcontent: str = speak_action_prompt(self.who_is_speaking, self.who_is_target, self.message)
         return speakcontent
     
     def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
-        speakcontent: str = speak_action_prompt(self.who_is_speaking, self.who_is_target, self.message, extended_context)
+        speakcontent: str = speak_action_prompt(self.who_is_speaking, self.who_is_target, self.message)
         return speakcontent
 ####################################################################################################################################
 class SpeakActionSystem(ReactiveProcessor):

@@ -104,7 +104,7 @@ pm2 start game_sample/gen_agent/coffin_of_the_silent_one_agent.py game_sample/ge
 
 例如 /speak @格雷>我这是在哪？
 
-# 对当前场景内的目标低语
+# 对当前场景内的目标私语
 
 /whisper '@对谁>说话内容'
 

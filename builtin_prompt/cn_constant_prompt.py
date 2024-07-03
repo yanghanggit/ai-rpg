@@ -52,7 +52,23 @@ class CNConstantPrompt:
     @property
     def CHECK_STATUS_ACTION_TAG(self) -> str:
         return "<%这是查看自身状态行动结果>"
+    
 
+    @property
+    def BROADCASE_ACTION_TAG(self) -> str:
+        return "<%这是广播行动结果>"
+    
+    @property
+    def SPEAK_ACTION_TAG(self) -> str:
+        return "<%这是说话行动结果>"
+    
+    @property
+    def WHISPER_ACTION_TAG(self) -> str:
+        return "<%这是私语行动结果>"
+
+    @property
+    def BATCH_CONVERSATION_ACTION_EVENTS_TAG(self) -> str:
+        return "<%这是场景内对话事件>"
 ###############################################################################################################################################
 _CNConstantPrompt_ = CNConstantPrompt()
 logger.debug(f"CNConstantPrompt: {_CNConstantPrompt_}")

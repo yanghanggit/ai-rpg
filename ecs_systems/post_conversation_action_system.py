@@ -95,10 +95,10 @@ class PostConversationActionSystem(ReactiveProcessor):
                 logger.error(f"imme_request: {name} request error.")
 ####################################################################################################
     def batch_stage_events(self, stagename: str, events2stage: List[str]) -> str:
-        return batch_conversation_action_events_in_stage_prompt(stagename, events2stage, self.context)
+        return batch_conversation_action_events_in_stage_prompt(stagename, events2stage)
 ####################################################################################################
     def batch_actor_events(self, stagename: str, events2actor: List[str]) -> str:
-        return batch_conversation_action_events_in_stage_prompt(stagename, events2actor, self.context)
+        return batch_conversation_action_events_in_stage_prompt(stagename, events2actor)
 ####################################################################################################
     async def async_post_execute(self) -> None:
         # 并行执行requests

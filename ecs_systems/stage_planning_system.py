@@ -114,7 +114,7 @@ class StagePlanningSystem(ExecuteProcessor):
     def add_tasks(self) -> None:
         entities = self.context.get_group(Matcher(all_of=[StageComponent, AutoPlanningComponent])).entities
         for entity in entities:
-            prompt = stage_plan_prompt(self.get_props_in_stage(entity), self.get_actor_names_in_stage(entity), self.context)
+            prompt = stage_plan_prompt(self.get_props_in_stage(entity), self.get_actor_names_in_stage(entity))
             stage_comp: StageComponent = entity.get(StageComponent)
             self.context._langserve_agent_system.add_request_task(stage_comp.name, prompt)
 #######################################################################################################################################

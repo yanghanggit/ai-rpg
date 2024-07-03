@@ -119,6 +119,6 @@ class ActorPlanningSystem(ExecuteProcessor):
                 continue
             
             # 必须要有一个stage的环境描述，否则无法做计划。
-            prompt = actpr_plan_prompt(stage_name, stage_enviro_narrate, self.context)
+            prompt = actpr_plan_prompt(stage_name, stage_enviro_narrate)
             self.context._langserve_agent_system.add_request_task(actor_comp.name, prompt)
 #######################################################################################################################################

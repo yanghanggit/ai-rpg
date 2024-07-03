@@ -35,7 +35,7 @@ def kick_off_world_system_prompt() -> str:
 """
     return prompt
 ###############################################################################################################################################
-def actpr_plan_prompt(current_stage: str, stage_enviro_narrate: str, context: ExtendedContext) -> str:
+def actpr_plan_prompt(current_stage: str, stage_enviro_narrate: str) -> str:
     
     current_stage_prompt = "未知"
     if current_stage != "":
@@ -72,7 +72,7 @@ def actpr_plan_prompt(current_stage: str, stage_enviro_narrate: str, context: Ex
 # ### 输出指南:
 # 请根据‘输出格式指南’严格输出，确保描述客观且行动计划明确，避免预设或猜测角色的未发生行为。
 # """
-def stage_plan_prompt(props_in_stage: List[PropData], actors_in_stage: Set[str], context: ExtendedContext) -> str:
+def stage_plan_prompt(props_in_stage: List[PropData], actors_in_stage: Set[str]) -> str:
 
     ## 场景内道具
     prompt_of_props = ""
@@ -229,16 +229,16 @@ def stage_director_begin_prompt(stage_name: str, events_count: int) -> str:
 def stage_director_end_prompt(stage_name: str, events_count: int) -> str:
     return f"""# 以上是{stage_name}场景内近期发生的{events_count}个事件。请注意。"""
 ################################################################################################################################################
-def whisper_action_prompt(srcname: str, destname: str, content: str, context: ExtendedContext) -> str:
-    prompt = f"# {srcname}对{destname}低语道:{content}"   
+def whisper_action_prompt(srcname: str, destname: str, content: str) -> str:
+    prompt = f"# {_CNConstantPrompt_.WHISPER_ACTION_TAG} {srcname}对{destname}私语道:{content}"   
     return prompt
 ################################################################################################################################################
-def broadcast_action_prompt(srcname: str, destname: str, content: str, context: ExtendedContext) -> str:
-    prompt = f"# {srcname}对{destname}里的所有人说:{content}"   
+def broadcast_action_prompt(srcname: str, destname: str, content: str) -> str:
+    prompt = f"# {_CNConstantPrompt_.BROADCASE_ACTION_TAG} {srcname}对{destname}里的所有人说:{content}"   
     return prompt
 ################################################################################################################################################
-def speak_action_prompt(srcname: str, destname: str, content: str, context: ExtendedContext) -> str:
-    prompt = f"# {srcname}对{destname}说:{content}"   
+def speak_action_prompt(srcname: str, destname: str, content: str) -> str:
+    prompt = f"# {_CNConstantPrompt_.SPEAK_ACTION_TAG} {srcname}对{destname}说:{content}"   
     return prompt
 ################################################################################################################################################
 def steal_action_prompt(whosteal: str, targetname: str, propname: str, stealres: bool) -> str:
@@ -282,11 +282,19 @@ def attack_prompt(attacker_name: str, target_name: str, damage: int, target_curr
     health_percent = max(0, (target_current_hp - damage) / target_max_hp * 100)
     return f"# {attacker_name}对{target_name}发动了攻击,造成了{damage}点伤害,当前{target_name}的生命值剩余{health_percent}%。"
 ################################################################################################################################################
-def batch_conversation_action_events_in_stage_prompt(stagename: str, events: List[str], context: ExtendedContext) -> str:
+def batch_conversation_action_events_in_stage_prompt(stage_name: str, events: List[str]) -> str:
+
+    batch: List[str] = []
     if len(events) == 0:
-        return f""" # 当前场景 {stagename} 没有发生任何对话类型事件。"""
-    joinstr: str = "\n".join(events)
-    return  f""" # 当前场景 {stagename} 发生了如下对话类型事件，请注意:\n{joinstr}"""
+        batch.append(f""" # {_CNConstantPrompt_.BATCH_CONVERSATION_ACTION_EVENTS_TAG} 当前场景 {stage_name} 没有发生任何对话类型事件。""")
+    else:
+        batch.append(f""" # {_CNConstantPrompt_.BATCH_CONVERSATION_ACTION_EVENTS_TAG} 当前场景 {stage_name} 发生了如下对话类型事件，请注意:""")
+
+    for event in events:
+        batch.append(event)
+
+    prompt = json.dumps(batch, ensure_ascii = False)
+    return prompt
 ################################################################################################################################################
 def use_prop_to_stage_prompt(username: str, propname: str, prop_prompt: str, exit_cond_status_prompt: str) -> str:
     final_prompt = f"""# {_CNConstantPrompt_.USE_PROP_TO_STAGE_PROMPT_TAG} {username} 使用道具 {propname} 对你造成影响。
@@ -401,7 +409,7 @@ def enter_stage_failed_beacuse_stage_refuse_prompt(actor_name: str, stagename: s
 ## 说明:
 {tips}"""
 ################################################################################################################################################
-def actor_status_when_stage_change_prompt(safe_name: str, appearance_info:str) -> str:
+def actor_status_when_stage_change_prompt(safe_name: str, appearance_info: str) -> str:
     return f"""### {safe_name}\n- 外观信息:{appearance_info}\n"""
 ################################################################################################################################################
 def use_prop_no_response_prompt(username: str, propname: str, targetname: str) -> str:

@@ -19,11 +19,11 @@ class StageOrActorBroadcastEvent(IStageDirectorEvent):
         self.content = content
     
     def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
-        broadcastcontent = broadcast_action_prompt(self.whobroadcast, self.stagename, self.content, extended_context)
+        broadcastcontent = broadcast_action_prompt(self.whobroadcast, self.stagename, self.content)
         return broadcastcontent
     
     def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
-        broadcastcontent = broadcast_action_prompt(self.whobroadcast, self.stagename, self.content, extended_context)
+        broadcastcontent = broadcast_action_prompt(self.whobroadcast, self.stagename, self.content)
         return broadcastcontent
 ####################################################################################################################################
 ####################################################################################################################################

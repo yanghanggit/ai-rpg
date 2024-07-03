@@ -24,7 +24,7 @@ class StageOrActorWhisperEvent(IStageDirectorEvent):
         if actor_name != self.who_is_whispering or actor_name != self.who_is_target:
             # 只有这2个人才能听到
             return ""
-        whispercontent = whisper_action_prompt(self.who_is_whispering, self.who_is_target, self.message, extended_context)
+        whispercontent = whisper_action_prompt(self.who_is_whispering, self.who_is_target, self.message)
         return whispercontent
     
     def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:

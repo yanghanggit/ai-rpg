@@ -24,7 +24,7 @@ class CompressChatHistorySystem(ExecuteProcessor):
             safename = context.safe_get_entity_name(entity)
             if safename == "":
                 continue
-            agent_connect_system.exclude_chat_history(safename, tags)
+            agent_connect_system.exclude_content_then_rebuild_chat_history(safename, tags)
 ############################################################################################################
     def handle_compress_chat_history(self) -> None:
         context = self.context

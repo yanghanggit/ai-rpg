@@ -253,24 +253,32 @@ class LangServeAgentSystem:
         return (result_responses, result_prompts)
 ################################################################################################################################################################################
     # 从chat history中排除指定的内容
-    def exclude_chat_history(self, name: str, excluded_content: Set[str]) -> None:
-        if not name in self._agents:
+    def exclude_content_then_rebuild_chat_history(self, name: str, excluded_content: Set[str]) -> None:
+        if not name in self._agents or len(excluded_content) == 0:
             return
         
+        rebuild: List[HumanMessage | AIMessage] = []
         chat_history = self._agents[name]._chat_history
-
-        rebuild_chat_history: List[HumanMessage | AIMessage] = []
         for message in chat_history:
-            if not self.check_message_has_tag(cast(str, message.content), excluded_content):
-                rebuild_chat_history.append(message)
+            if not self.message_has_content(cast(str, message.content), excluded_content):
+                rebuild.append(message)
 
-        self._agents[name]._chat_history = rebuild_chat_history
+        self._agents[name]._chat_history = rebuild
+################################################################################################################################################################################
+    def create_filter_chat_history(self, name: str, check_content: Set[str]) -> List[str]:
+        result: List[str] = []
+        if not name in self._agents or len(check_content) == 0:
+            return []
+        chat_history = self._agents[name]._chat_history
+        for message in chat_history:
+            if self.message_has_content(cast(str, message.content), check_content):
+                result.append(cast(str, message.content))
+        return result
 ################################################################################################################################################################################
     # 替换chat history中的内容
     def replace_chat_history(self, name: str, replace_data: Dict[str, str]) -> None:
         if not name in self._agents:
             return
-        
         chat_history = self._agents[name]._chat_history
         for message in chat_history:
             for key, value in replace_data.items():
@@ -278,9 +286,9 @@ class LangServeAgentSystem:
                     message.content = value
 ################################################################################################################################################################################
     # 判断是否包含指定的内容
-    def check_message_has_tag(self, check_message: str, excluded_content: Set[str]) -> bool:
-        for tag in excluded_content:
-            if tag in check_message:
+    def message_has_content(self, check_message: str, excluded_content: Set[str]) -> bool:
+        for content in excluded_content:
+            if content in check_message:
                 return True
         return False
 ################################################################################################################################################################################

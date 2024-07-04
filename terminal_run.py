@@ -4,7 +4,7 @@ from player.player_proxy import create_player_proxy
 from player.player_command import (PlayerLogin)
 from rpg_game.create_rpg_game_funcs import load_then_create_rpg_game, yh_test_save, RPGGameType
 
-async def main() -> None:
+async def main(default_actor_name: str) -> None:
 
     log_start_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     logger.add(f"logs/{log_start_time}.log", level="DEBUG")
@@ -16,9 +16,9 @@ async def main() -> None:
         logger.error("create_rpg_game 失败。")
         return
     
-    player_actor_name = input("请输入要控制的角色名字:")
+    player_actor_name = input(f"""请输入要控制的角色名字(默认为'{default_actor_name}',输入回车为默认):""")
     if player_actor_name == "":
-        player_actor_name = "无名的复活者" #todo
+        player_actor_name = default_actor_name 
 
     players_actor = rpg_game._extended_context.get_actor_entity(player_actor_name)
     if players_actor is None:
@@ -50,4 +50,4 @@ async def main() -> None:
 
 if __name__ == "__main__":
     import asyncio
-    asyncio.run(main())
+    asyncio.run(main("无名的复活者")) #todo

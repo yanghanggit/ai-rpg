@@ -180,10 +180,6 @@ class HandleStageConditionsResponseHelper:
     def _parse_yes(self, tag_action: AgentAction) -> bool:
         assert tag_action._action_name == TagActionComponent.__name__
         return tag_action.bool_value(0)
-        # if len(tag_action._values) == 0:
-        #     logger.error(tag_action)
-        #     return False
-        # return tag_action._values[0].lower() == "yes"
 ###############################################################################################################################################
     def _parse_tips(self, enviro_narrate_action: AgentAction) -> str:
         assert enviro_narrate_action._action_name == EnviroNarrateActionComponent.__name__

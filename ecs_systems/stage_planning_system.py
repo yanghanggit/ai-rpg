@@ -9,6 +9,7 @@ from typing import Optional, Dict, Set, List
 from gameplay_checks.planning_check import check_component_register
 from prototype_data.data_def import PropData
 from builtin_prompt.cn_builtin_prompt import stage_plan_prompt
+from my_agent.lang_serve_agent_request_task import LangServeAgentRequestTask, LangServeAgentAsyncRequestTasksGather
 
 #######################################################################################################################################
 class StagePlanningSystem(ExecuteProcessor):
@@ -18,7 +19,8 @@ class StagePlanningSystem(ExecuteProcessor):
     """
 
     def __init__(self, context: ExtendedContext) -> None:
-        self.context = context
+        self._context = context
+        self._request_tasks: Dict[str, LangServeAgentRequestTask] = {}
 #######################################################################################################################################
     @override
     def execute(self) -> None:
@@ -27,36 +29,49 @@ class StagePlanningSystem(ExecuteProcessor):
     @override
     async def async_pre_execute(self) -> None:
         # step1: 添加任务
-        self.add_tasks()
+        self._request_tasks.clear()
+        self.add_tasks(self._request_tasks)
         # step可选：混沌工程做测试
-        self.context._chaos_engineering_system.on_stage_planning_system_excute(self.context)
+        self._context._chaos_engineering_system.on_stage_planning_system_excute(self._context)
         # step2: 并行执行requests
-        tasks_result = await self.context._langserve_agent_system.request_tasks("StagePlanningSystem")
-        if len(tasks_result) == 0:
-            logger.warning(f"StagePlanningSystem: tasks_result is empty.")
+        if len(self._request_tasks) == 0:
             return
+        
+
+        tasks_gather = LangServeAgentAsyncRequestTasksGather("StagePlanningSystem Gather", self._request_tasks)
+        request_result = await tasks_gather.gather()
+        if len(request_result) == 0:
+            logger.warning(f"StagePlanningSystem: request_result is empty.")
+            return
+
+
+        # tasks_result = await self._context._langserve_agent_system.request_tasks("StagePlanningSystem")
+        # if len(tasks_result) == 0:
+        #     logger.warning(f"StagePlanningSystem: tasks_result is empty.")
+        #     return
         # step3: 处理结果
-        self.handle(tasks_result[0])
+        self.handle(self._request_tasks)
+        self._request_tasks.clear()
 #######################################################################################################################################
-    def handle(self, response_map: Dict[str, Optional[str]]) -> None:
+    def handle(self, request_tasks: Dict[str, LangServeAgentRequestTask]) -> None:
 
-        for name, response in response_map.items():
+        for name, task in request_tasks.items():
 
-            if response is None:
+            if task is None:
                 logger.warning(f"StagePlanningSystem: response is None or empty, so we can't get the planning.")
                 continue
 
-            stage_entity = self.context.get_stage_entity(name)
+            stage_entity = self._context.get_stage_entity(name)
             assert stage_entity is not None, f"StagePlanningSystem: stage_entity is None, {name}"
             if stage_entity is None:
                 logger.warning(f"StagePlanningSystem: stage_entity is None, {name}")
                 continue
 
-            stage_planning = AgentPlan(name, response)
+            stage_planning = AgentPlan(name, task.response_content)
             if not self._check_plan(stage_entity, stage_planning):
                 logger.warning(f"StagePlanningSystem: check_plan failed, {stage_planning}")
                 ## 需要失忆!
-                self.context._langserve_agent_system.remove_last_conversation_between_human_and_ai(name)
+                self._context._langserve_agent_system.remove_last_conversation_between_human_and_ai(name)
                 continue
             
             ## 不能停了，只能一直继续
@@ -94,7 +109,7 @@ class StagePlanningSystem(ExecuteProcessor):
     # 获取场景内所有的actor的名字，用于场景计划。似乎不需要外观的信息？
     def get_actor_names_in_stage(self, entity: Entity) -> Set[str]:
         stage_comp: StageComponent = entity.get(StageComponent)
-        _actors_in_stage = self.context.actors_in_stage(stage_comp.name)
+        _actors_in_stage = self._context.actors_in_stage(stage_comp.name)
         _names: Set[str] = set()
         for _en in _actors_in_stage:
             actor_comp: ActorComponent = _en.get(ActorComponent)
@@ -104,17 +119,19 @@ class StagePlanningSystem(ExecuteProcessor):
     # 获取场景内所有的道具的描述。
     def get_props_in_stage(self, entity: Entity) -> List[PropData]:
         res: List[PropData] = []
-        filesystem = self.context._file_system
-        safe_stage_name = self.context.safe_get_entity_name(entity)
+        filesystem = self._context._file_system
+        safe_stage_name = self._context.safe_get_entity_name(entity)
         files = filesystem.get_prop_files(safe_stage_name)
         for file in files:
             res.append(file._prop)
         return res
 #######################################################################################################################################
-    def add_tasks(self) -> None:
-        entities = self.context.get_group(Matcher(all_of=[StageComponent, AutoPlanningComponent])).entities
+    def add_tasks(self, request_tasks: Dict[str, LangServeAgentRequestTask]) -> None:
+        request_tasks.clear()
+        entities = self._context.get_group(Matcher(all_of=[StageComponent, AutoPlanningComponent])).entities
         for entity in entities:
             prompt = stage_plan_prompt(self.get_props_in_stage(entity), self.get_actor_names_in_stage(entity))
-            stage_comp: StageComponent = entity.get(StageComponent)
-            self.context._langserve_agent_system.add_request_task(stage_comp.name, prompt)
+            stage_comp = entity.get(StageComponent)
+            request_tasks[stage_comp.name] = LangServeAgentRequestTask(stage_comp.name, prompt)
+            #self._context._langserve_agent_system.add_request_task(stage_comp.name, prompt)
 #######################################################################################################################################

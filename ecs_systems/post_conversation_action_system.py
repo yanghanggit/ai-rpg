@@ -5,8 +5,9 @@ from my_entitas.extended_context import ExtendedContext
 from loguru import logger
 from ecs_systems.stage_director_component import StageDirectorComponent
 from typing import List, Set, Optional, Dict
-from my_agent.lang_serve_agent_system import LangServeAgentSystem, AddChatHistoryOptionOnRequestSuccess
+from my_agent.lang_serve_agent_system import LangServeAgentSystem
 from builtin_prompt.cn_builtin_prompt import batch_conversation_action_events_in_stage_prompt
+from my_agent.lang_serve_agent_request_task import LangServeAgentRequestTask, LangServeAgentAsyncRequestTasksGather
 
 # 这个类就是故意打包将对话类事件先进行一次request，如果LLM发现有政策问题就会抛异常，不会将污染的message加入chat history，这样就不可能进入chat_history。
 # 这么做是防止玩家的对话内容包含了非法信息和违反政策的内容。
@@ -14,8 +15,9 @@ from builtin_prompt.cn_builtin_prompt import batch_conversation_action_events_in
 class PostConversationActionSystem(ReactiveProcessor):
     def __init__(self, context: ExtendedContext) -> None:
         super().__init__(context)
-        self.context = context
-        self.need_async_execute: bool = True
+        self._context = context
+        self._async_execute: bool = True
+        self._request_tasks: Dict[str, LangServeAgentRequestTask] = {}
 ####################################################################################################
     @override 
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
@@ -37,14 +39,15 @@ class PostConversationActionSystem(ReactiveProcessor):
             if stage_entity is not None:
                 stage_entities.add(stage_entity)
 
+        self._request_tasks.clear()
         for stage_entity in stage_entities:
             self.before_handle(stage_entity)
-            self.handle(stage_entity, self.need_async_execute)
+            self.handle(stage_entity, self._async_execute, self._request_tasks)
             self.after_handle(stage_entity)
 ####################################################################################################   
     def before_handle(self, stage_entity: Entity) -> None:
         assert stage_entity.has(StageDirectorComponent)
-        safename = self.context.safe_get_entity_name(stage_entity)
+        safename = self._context.safe_get_entity_name(stage_entity)
         logger.warning(f"? {safename}:这里可以写，如果你说出来的话包涵了你目前不该知道的信息，就可以关掉。例如用broadcast喊某个地点，然后就能去了之类的")
 ####################################################################################################
     def after_handle(self, stage_entity: Entity) -> None:
@@ -53,42 +56,54 @@ class PostConversationActionSystem(ReactiveProcessor):
         stage_director_comp.clear()
 ####################################################################################################
     def collect_stage(self, entity: Entity) -> Optional[Entity]:
-        stage_entity = self.context.safe_get_stage_entity(entity)
+        stage_entity = self._context.safe_get_stage_entity(entity)
         return stage_entity
 ####################################################################################################
-    def handle(self, stage_entity: Entity, async_execute: bool) -> None:
+    def handle(self, stage_entity: Entity, async_execute: bool, request_tasks: Dict[str, LangServeAgentRequestTask]) -> None:
         stage_director_comp: StageDirectorComponent = stage_entity.get(StageDirectorComponent)
         if len(stage_director_comp._events) == 0:
             return
         ##
-        agent_connect_system: LangServeAgentSystem = self.context._langserve_agent_system
+        langserve_agent_system: LangServeAgentSystem = self._context._langserve_agent_system
         #处理场景的
-        raw_events2stage = stage_director_comp.to_stage(stage_director_comp.name, self.context) 
+        raw_events2stage = stage_director_comp.to_stage(stage_director_comp.name, self._context) 
         if len(raw_events2stage) > 0:
             batch_events2stage_prompt = self.batch_stage_events(stage_director_comp.name, raw_events2stage) 
             logger.info(f"PostConversationActionSystem: {stage_director_comp.name} : {batch_events2stage_prompt}")
             if async_execute:
-                agent_connect_system.add_request_task(stage_director_comp.name, batch_events2stage_prompt, AddChatHistoryOptionOnRequestSuccess.ADD_PROMPT_TO_CHAT_HISTORY)
+                task = langserve_agent_system.create_agent_request_for_checking_prompt(stage_director_comp.name, batch_events2stage_prompt)
+                assert task is not None
+                request_tasks[stage_director_comp.name] = task
+                #langserve_agent_system.add_request_task(stage_director_comp.name, batch_events2stage_prompt, AddChatHistoryOptionOnRequestSuccess.ADD_PROMPT_TO_CHAT_HISTORY)
             else:
                 self.imme_request(stage_director_comp.name, batch_events2stage_prompt)
 
         ### 处理Actor的
-        actors_in_this_stage = self.context.actors_in_stage(stage_director_comp.name)
+        actors_in_this_stage = self._context.actors_in_stage(stage_director_comp.name)
         for _entity in actors_in_this_stage:
             actor_comp: ActorComponent = _entity.get(ActorComponent)
-            raw_events2actor = stage_director_comp.to_actor(actor_comp.name, self.context)     
+            raw_events2actor = stage_director_comp.to_actor(actor_comp.name, self._context)     
             if len(raw_events2actor) > 0:
                 batch_events2actor_prompt = self.batch_actor_events(stage_director_comp.name, raw_events2actor)
                 logger.info(f"PostConversationActionSystem: {actor_comp.name} : {batch_events2actor_prompt}")
                 if async_execute:
-                    agent_connect_system.add_request_task(actor_comp.name, batch_events2actor_prompt, AddChatHistoryOptionOnRequestSuccess.ADD_PROMPT_TO_CHAT_HISTORY)
+                    task = langserve_agent_system.create_agent_request_for_checking_prompt(actor_comp.name, batch_events2actor_prompt)
+                    assert task is not None
+                    request_tasks[actor_comp.name] = task
+                    #langserve_agent_system.add_request_task(actor_comp.name, batch_events2actor_prompt, AddChatHistoryOptionOnRequestSuccess.ADD_PROMPT_TO_CHAT_HISTORY)
                 else:
                     self.imme_request(actor_comp.name, batch_events2actor_prompt)
 ####################################################################################################
     def imme_request(self, name: str, prompt: str) -> None:
-        agent_connect_system: LangServeAgentSystem = self.context._langserve_agent_system
+        langserve_agent_system: LangServeAgentSystem = self._context._langserve_agent_system
         try:
-            response = agent_connect_system.agent_request(name, prompt)
+            agent_request = langserve_agent_system.create_agent_request_for_checking_prompt(name, prompt)
+            if agent_request is None:
+                logger.error(f"imme_request: {name} request error.")
+                return
+            
+            response = agent_request.request()
+            #response = langserve_agent_system.agent_request(name, prompt)
             if response is None:
                 logger.error(f"imme_request: {name} request error.")
         except Exception as e:
@@ -102,19 +117,27 @@ class PostConversationActionSystem(ReactiveProcessor):
 ####################################################################################################
     async def async_post_execute(self) -> None:
         # 并行执行requests
-        agent_connect_system = self.context._langserve_agent_system
-        if len(agent_connect_system._request_tasks) == 0:
+        #langserve_agent_system = self._context._langserve_agent_system
+        if len(self._request_tasks) == 0:
             return
         logger.debug(f"PostConversationActionSystem async_post_execute begin.")     
-        request_result = await agent_connect_system.request_tasks("PostConversationActionSystem")
-        responses: Dict[str, Optional[str]] = request_result[0]
+        
+                
+        tasks_gather = LangServeAgentAsyncRequestTasksGather("PostConversationActionSystem Gather", self._request_tasks)
+        request_result = await tasks_gather.gather()
+        if len(request_result) == 0:
+            logger.warning(f"PostConversationActionSystem: request_result is empty.")
+            return
+        
+        #request_result = await langserve_agent_system.request_tasks("PostConversationActionSystem")
+        #responses: Dict[str, Optional[str]] = request_result[0]
         #正常流程
-        for name, response in responses.items():
-            if response is None:
+        for name, task in self._request_tasks.items():
+            if task is None:
                 logger.error(f"PostConversationActionSystem: {name} response is None or empty.")
             else:
                 # AI的回复不要，防止污染上下文
-                logger.debug(f"PostConversationActionSystem: {name} response is {response}")
+                logger.debug(f"PostConversationActionSystem: {name} response is {task.response_content}")
 
         logger.debug(f"PostConversationActionSystem async_post_execute end.")
 ####################################################################################################

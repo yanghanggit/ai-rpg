@@ -302,14 +302,21 @@ class CheckBeforeGoToActionSystem(ReactiveProcessor):
         logger.debug(final_prompt)
 
         ## 让大模型去推断是否可以离开，分别检查stage自身，角色状态（例如长相），角色道具（拥有哪些道具与文件）
-        agent_connect_system = self.context._langserve_agent_system
-        respones = agent_connect_system.agent_request(current_stage_name, final_prompt)
-        if respones is None:
+        langserve_agent_system = self.context._langserve_agent_system
+
+        agent_request = langserve_agent_system.create_agent_request(current_stage_name, final_prompt)
+        if agent_request is None:
+            logger.error("agent_request is None")
+            return False
+        
+        response = agent_request.request()
+        #respones = langserve_agent_system.agent_request(current_stage_name, final_prompt)
+        if response is None:
             logger.error("没有回应！！！！！！！！！！！！！")
             return False
         
-        logger.debug(f"大模型推理后的结果: {respones}")
-        plan = AgentPlan(current_stage_name, respones)
+        logger.debug(f"大模型推理后的结果: {response}")
+        plan = AgentPlan(current_stage_name, response)
         handle_response_helper = HandleStageConditionsResponseHelper(plan)
         if not handle_response_helper.parse():
             return False
@@ -324,8 +331,8 @@ class CheckBeforeGoToActionSystem(ReactiveProcessor):
 
         logger.info(f"允许通过！说明如下: {handle_response_helper._tips}")
         ## 可以删除，允许通过！这个上下文就拿掉，不需要了。
-        agent_connect_system = self.context._langserve_agent_system
-        agent_connect_system.remove_last_conversation_between_human_and_ai(current_stage_name)
+        langserve_agent_system = self.context._langserve_agent_system
+        langserve_agent_system.remove_last_conversation_between_human_and_ai(current_stage_name)
         return True
 ###############################################################################################################################################
     def handle_enter_stage_with_conditions(self, entity: Entity) -> bool:
@@ -359,14 +366,20 @@ class CheckBeforeGoToActionSystem(ReactiveProcessor):
         logger.debug(final_prompt)
 
         ## 让大模型去推断是否可以离开，分别检查stage自身，角色状态（例如长相），角色道具（拥有哪些道具与文件）
-        agent_connect_system = self.context._langserve_agent_system
-        respones = agent_connect_system.agent_request(target_stage_name, final_prompt)
-        if respones is None:
+        langserve_agent_system = self.context._langserve_agent_system
+        agent_request = langserve_agent_system.create_agent_request(target_stage_name, final_prompt)
+        if agent_request is None:
+            logger.error("agent_request is None")
+            return False
+        
+        response = agent_request.request()
+        #response = langserve_agent_system.agent_request(target_stage_name, final_prompt)
+        if response is None:
             logger.error("没有回应！！！！！！！！！！！！！")
             return False
         
-        logger.debug(f"大模型推理后的结果: {respones}")
-        plan = AgentPlan(target_stage_name, respones)
+        logger.debug(f"大模型推理后的结果: {response}")
+        plan = AgentPlan(target_stage_name, response)
         handle_response_helper = HandleStageConditionsResponseHelper(plan)
         if not handle_response_helper.parse():
             return False
@@ -382,8 +395,8 @@ class CheckBeforeGoToActionSystem(ReactiveProcessor):
 
         logger.info(f"允许通过！说明如下: {handle_response_helper._tips}")
         ## 可以删除，允许通过！这个上下文就拿掉，不需要了。
-        agent_connect_system = self.context._langserve_agent_system
-        agent_connect_system.remove_last_conversation_between_human_and_ai(target_stage_name)
+        langserve_agent_system = self.context._langserve_agent_system
+        langserve_agent_system.remove_last_conversation_between_human_and_ai(target_stage_name)
         return True
 ###############################################################################################################################################
     def get_target_stage_entity(self, entity: Entity) -> Optional[Entity]:

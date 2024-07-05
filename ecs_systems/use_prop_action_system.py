@@ -140,9 +140,15 @@ class UsePropActionSystem(ReactiveProcessor):
 
         # 准备提交请求
         logger.debug(f"InteractivePropActionSystem, {targetname}: {final_prompt}")
-        agent_connect_system = context._langserve_agent_system
+        langserve_agent_system = context._langserve_agent_system
+        agent_request = langserve_agent_system.create_agent_request(targetname, final_prompt)
+        if agent_request is None:
+            logger.error(f"InteractivePropActionSystem: {targetname} request error.")
+            return False
+
         # 用同步的接口，这样能知道结果应该通知给谁。
-        response = agent_connect_system.agent_request(targetname, final_prompt)
+        response = agent_request.request()
+        #response = langserve_agent_system.agent_request(targetname, final_prompt)
         if response is not None:
             # 场景有反应
             logger.debug(f"InteractivePropActionSystem: {response}")

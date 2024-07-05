@@ -3,7 +3,7 @@ from entitas import Entity, InitializeProcessor, ExecuteProcessor, Matcher # typ
 from my_entitas.extended_context import ExtendedContext
 from loguru import logger
 from typing import Dict, cast, Set
-from my_agent.lang_serve_agent_system import LangServeAgentSystem, AddChatHistoryOptionOnRequestSuccess
+from my_agent.lang_serve_agent_system import LangServeAgentSystem
 import json
 from ecs_systems.components import AppearanceComponent, BodyComponent, ActorComponent
 from builtin_prompt.cn_builtin_prompt import actors_body_and_clothe_prompt
@@ -71,16 +71,26 @@ class UpdateAppearanceSystem(InitializeProcessor, ExecuteProcessor):
         logger.debug(f"final_prompt: {final_prompt}")
 
         # 请求更新
-        agent_connect_system: LangServeAgentSystem = self.context._langserve_agent_system
+        langserve_agent_system: LangServeAgentSystem = self.context._langserve_agent_system
         safe_name = self.context.safe_get_entity_name(world_entity)
         try:
+
+            agent_request = langserve_agent_system.create_agent_request_without_any_context(safe_name, final_prompt)
+            if agent_request is None:
+                logger.error(f"{safe_name} request error.")
+                return False
+
+            #
+            response = agent_request.request()
             # 注意 DO_NOT_ADD_MESSAGE_TO_CHAT_HISTORY，不要把这个消息加入到聊天记录中。因为世界级系统不需要存储上下文。
-            response = agent_connect_system.agent_request(safe_name, final_prompt, AddChatHistoryOptionOnRequestSuccess.NOT_ADD_ANY_TO_CHAT_HISTORY)
+            #response = langserve_agent_system.agent_request(safe_name, final_prompt, AddChatHistoryOptionOnRequestSuccess.NOT_ADD_ANY_TO_CHAT_HISTORY)
             if response is None:
                 logger.error(f"{safe_name} request response is None.")
                 return False
+            
             json_response: Dict[str, str] = json.loads(response)
             self.on_request_success(json_response)
+
         except Exception as e:
             logger.error(f"{safe_name} request error = {e}")
             return False

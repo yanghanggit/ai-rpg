@@ -16,6 +16,7 @@ class LangServeAgentRequestTask:
         
         self._agent: LangServeAgent = agent
         self._prompt: str = prompt
+        assert self._prompt is not None and self._prompt != ""
         self._input_chat_history: bool = input_chat_history
         self._add_prompt_to_chat_history: bool = add_prompt_to_chat_history
         self._add_response_to_chat_history: bool = add_response_to_chat_history
@@ -32,6 +33,8 @@ class LangServeAgentRequestTask:
         return cast(str, self._response['output']) 
 ################################################################################################################################################################################
     def request(self) -> Optional[str]:
+
+        assert self._response is None
 
         if self._agent is None or self._agent._remote_runnable is None or self._prompt == "":
             logger.error(f"request: no agent")
@@ -61,6 +64,8 @@ class LangServeAgentRequestTask:
         return None
 ################################################################################################################################################################################
     async def async_request(self) -> Optional[str]:
+
+        assert self._response is None
 
         if self._agent is None or self._agent._remote_runnable is None or self._prompt == "":
             logger.error(f"async_request: no agent")
@@ -106,10 +111,11 @@ class LangServeAgentAsyncRequestTasksGather:
     # 当确定全部异步请求任务添加完毕后，调用这个方法，等待所有任务完成，并拿到任务结果
     async def gather(self) -> List[Optional[str]]:
         start_time = time.time()
+        
         result = await self.impl_gather() # 调用async_gather，等待所有任务完成，并拿到任务结果
+        
         end_time = time.time()
-        execution_time = end_time - start_time
-        logger.debug(f"{self._name} run_async_requet_tasks time: {execution_time:.2f} seconds")
+        logger.debug(f"{self._name} run_async_requet_tasks time: {end_time - start_time:.2f} seconds")
         return result
 ################################################################################################################################################################################
 ################################################################################################################################################################################

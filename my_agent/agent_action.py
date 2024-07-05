@@ -5,9 +5,9 @@ from my_format_string.target_and_message_format_string import is_target_and_mess
 class AgentAction:
 
     def __init__(self, actor_name: str, action_name: str, values: List[str]) -> None:
-        self._actor_name = actor_name  
-        self._action_name = action_name
-        self._values = values
+        self._actor_name: str = actor_name  
+        self._action_name: str = action_name
+        self._values: List[str] = values
 #######################################################################################################################################
     def __str__(self) -> str:
         return f"ActorAction({self._actor_name}, {self._action_name}, {self._values})"

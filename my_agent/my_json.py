@@ -41,7 +41,7 @@ def merge(json_str: str) -> Optional[Dict[str, List[str]]]:
            
     except Exception as e:
         logger.error(f"merge_json_strings failed. {e}")
-        return None
+        #return None
     return None   
 ############################################################################################################
 ## 检查是否是“当LLM穿回来的json是重复的错误的时候，可以尝试做合并处理”
@@ -55,6 +55,7 @@ def is_markdown_json_block(md_json_block: str) -> bool:
 ############################################################################################################
 ## 提取MD的JSON块内容
 def extract_markdown_json_block(jsonblock: str) -> str:
+    
     if "```json" in jsonblock:
         copyvalue = str(jsonblock).strip()
         copyvalue = copyvalue.replace("```json", "").replace("```", "").strip()

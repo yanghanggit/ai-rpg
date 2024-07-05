@@ -34,19 +34,15 @@ class AgentPlanJSON:
 ############################################################################################################
 ############################################################################################################
 ############################################################################################################
-
-############################################################################################################
-############################################################################################################
-############################################################################################################
 class AgentPlan:
 
     def __init__(self, name: str, raw_data: str) -> None:
 
-        self.name: str = name  
+        self._name: str = name  
         self._raw: str = raw_data
         self._json: Dict[str, List[str]] = {}
-        self.actions: List[AgentAction] = []
-        self.actions_dict: Dict[str, AgentAction] = {}
+        self._actions: List[AgentAction] = []
+        self._actions_dict: Dict[str, AgentAction] = {}
 
         # 处理特殊的情况, 例如出现了markdown json block与重复json的情况
         # GPT4 也有可能输出markdown json block。以防万一，我们检查一下。
@@ -60,21 +56,21 @@ class AgentPlan:
         try:
             json_data = json.loads(self.json_string)
             if not self.check_data_format(json_data):
-                logger.error(f"[{self.name}] = ActorPlan, check_data_format error.")
+                logger.error(f"[{self._name}] = ActorPlan, check_data_format error.")
                 return
             
             self._json = json_data
             self.build(self._json)
 
         except Exception as e:
-            logger.error(f"[{self.name}] = json.loads error.")
+            logger.error(f"[{self._name}] = json.loads error.")
         return    
 ############################################################################################################
     def build(self, json: Dict[str, List[str]]) -> None:
         for key, value in json.items():
-            action = AgentAction(self.name, key, value)
-            self.actions.append(action)
-            self.actions_dict[key] = action
+            action = AgentAction(self._name, key, value)
+            self._actions.append(action)
+            self._actions_dict[key] = action
 ############################################################################################################
     def check_data_format(self, json_data: Any) -> bool:
         for key, value in json_data.items():
@@ -85,11 +81,11 @@ class AgentPlan:
         return True
 ############################################################################################################
     def get_action_by_key(self, actionname: str) -> Optional[AgentAction]:
-        return self.actions_dict.get(actionname)
+        return self._actions_dict.get(actionname)
 ############################################################################################################
     def __str__(self) -> str:
-        return f"ActorPlan({self.name}, {self._raw})"
+        return f"ActorPlan({self._name}, {self._raw})"
 ############################################################################################################
     def __repr__(self) -> str:
-        return f"ActorPlan({self.name}, {self._raw})"
+        return f"ActorPlan({self._name}, {self._raw})"
 ############################################################################################################

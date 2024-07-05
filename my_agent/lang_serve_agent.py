@@ -23,7 +23,7 @@ class LangServeAgent:
             return True
         except Exception as e:
             logger.error(e)
-            return False        
+            #return False        
         return False
 ################################################################################################################################################################################
     def __str__(self) -> str:

@@ -68,16 +68,16 @@ class ActorPlanningSystem(ExecuteProcessor):
                 continue
             
             ## 不能停了，只能一直继续
-            for action in actor_planning.actions:
+            for action in actor_planning._actions:
                 self._add_action_component(entity, action)
 #######################################################################################################################################
     def _check_plan(self, entity: Entity, plan: AgentPlan) -> bool:
-        if len(plan.actions) == 0:
+        if len(plan._actions) == 0:
             # 走到这里
             logger.warning(f"走到这里就是request过了，但是格式在load json的时候出了问题")
             return False
 
-        for action in plan.actions:
+        for action in plan._actions:
             if not self._check_available(action):
                 logger.warning(f"ActorPlanningSystem: action is not correct, {action}")
                 return False

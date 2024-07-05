@@ -35,67 +35,66 @@ from my_agent.agent_plan import AgentPlan
 ####################################################################################################################################
 class ActorGoToFailedBecauseStageInvalid(IStageDirectorEvent):
 
-    def __init__(self, actor_name: str, stagename: str) -> None:
-        self.actor_name = actor_name
-        self.stagename = stagename
+    def __init__(self, actor_name: str, stage_name: str) -> None:
+        self._actor_name: str = actor_name
+        self._stage_name: str = stage_name
 
     def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
-        if actor_name != self.actor_name:
+        if actor_name != self._actor_name:
             # 跟你无关不用关注，原因类的东西，是失败后矫正用，所以只有自己知道即可
             return ""
-        return go_to_stage_failed_because_stage_is_invalid_prompt(self.actor_name, self.stagename)
+        return go_to_stage_failed_because_stage_is_invalid_prompt(self._actor_name, self._stage_name)
     
-    def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
+    def to_stage(self, stage_name: str, extended_context: ExtendedContext) -> str:
         return ""
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
 class ActorGoToFailedBecauseAlreadyInStage(IStageDirectorEvent):
 
-    def __init__(self, actor_name: str, stagename: str) -> None:
-        self.actor_name = actor_name
-        self.stagename = stagename
+    def __init__(self, actor_name: str, stage_name: str) -> None:
+        self._actor_name: str = actor_name
+        self._stage_name: str = stage_name
 
     def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
-        if actor_name != self.actor_name:
+        if actor_name != self._actor_name:
             # 跟你无关不用关注，原因类的东西，是失败后矫正用，所以只有自己知道即可
             return ""
-        already_in_stage_event = go_to_stage_failed_because_already_in_stage_prompt(self.actor_name, self.stagename)
-        return already_in_stage_event
+        return go_to_stage_failed_because_already_in_stage_prompt(self._actor_name, self._stage_name)
     
-    def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
+    def to_stage(self, stage_name: str, extended_context: ExtendedContext) -> str:
         return ""
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
 class ActorExitStageFailedBecauseStageRefuse(IStageDirectorEvent):
-    def __init__(self, actor_name: str, stagename: str, tips: str) -> None:
-        self.actor_name = actor_name
-        self.stagename = stagename
-        self.tips = tips
+    def __init__(self, actor_name: str, stage_name: str, tips: str) -> None:
+        self._actor_name: str = actor_name
+        self._stage_name: str = stage_name
+        self._tips: str= tips
 
     def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
-        if actor_name != self.actor_name:
+        if actor_name != self._actor_name:
             return ""
-        return exit_stage_failed_beacuse_stage_refuse_prompt(self.actor_name, self.stagename, self.tips)
+        return exit_stage_failed_beacuse_stage_refuse_prompt(self._actor_name, self._stage_name, self._tips)
     
-    def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
+    def to_stage(self, stage_name: str, extended_context: ExtendedContext) -> str:
         return ""
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
 class ActorEnterStageFailedBecauseStageRefuse(IStageDirectorEvent):
-    def __init__(self, actor_name: str, stagename: str, tips: str) -> None:
-        self.actor_name = actor_name
-        self.stagename = stagename
-        self.tips = tips
+    def __init__(self, actor_name: str, stage_name: str, tips: str) -> None:
+        self._actor_name: str = actor_name
+        self._stage_name: str = stage_name
+        self._tips: str = tips
 
     def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
-        if actor_name != self.actor_name:
+        if actor_name != self._actor_name:
             return ""
-        return enter_stage_failed_beacuse_stage_refuse_prompt(self.actor_name, self.stagename, self.tips)
+        return enter_stage_failed_beacuse_stage_refuse_prompt(self._actor_name, self._stage_name, self._tips)
     
-    def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
+    def to_stage(self, stage_name: str, extended_context: ExtendedContext) -> str:
         return ""
 ####################################################################################################################################
 ####################################################################################################################################
@@ -304,7 +303,7 @@ class CheckBeforeGoToActionSystem(ReactiveProcessor):
         ## 让大模型去推断是否可以离开，分别检查stage自身，角色状态（例如长相），角色道具（拥有哪些道具与文件）
         langserve_agent_system = self.context._langserve_agent_system
 
-        agent_request = langserve_agent_system.create_agent_request(current_stage_name, final_prompt)
+        agent_request = langserve_agent_system.create_agent_request_task(current_stage_name, final_prompt)
         if agent_request is None:
             logger.error("agent_request is None")
             return False
@@ -367,7 +366,7 @@ class CheckBeforeGoToActionSystem(ReactiveProcessor):
 
         ## 让大模型去推断是否可以离开，分别检查stage自身，角色状态（例如长相），角色道具（拥有哪些道具与文件）
         langserve_agent_system = self.context._langserve_agent_system
-        agent_request = langserve_agent_system.create_agent_request(target_stage_name, final_prompt)
+        agent_request = langserve_agent_system.create_agent_request_task(target_stage_name, final_prompt)
         if agent_request is None:
             logger.error("agent_request is None")
             return False

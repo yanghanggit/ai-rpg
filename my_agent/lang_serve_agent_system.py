@@ -30,14 +30,14 @@ class LangServeAgentSystem:
         logger.error(f"connect_actor_agent: {name} is not registered.")
         return False
 ################################################################################################################################################################################
-    def create_agent_request(self, name: str, prompt: str) -> Optional[LangServeAgentRequestTask]:
+    def create_agent_request_task(self, name: str, prompt: str) -> Optional[LangServeAgentRequestTask]:
         if name in self._agents:
             return LangServeAgentRequestTask(self._agents[name], prompt)
         logger.error(f"create_agent_request: {name} is not registered.")
         return None
 ################################################################################################################################################################################
-    def create_agent_request_without_any_context(self, name: str, prompt: str) -> Optional[LangServeAgentRequestTask]:
-        agent_request = self.create_agent_request(name, prompt)
+    def create_agent_request_task_without_any_context(self, name: str, prompt: str) -> Optional[LangServeAgentRequestTask]:
+        agent_request = self.create_agent_request_task(name, prompt)
         if agent_request is None:
             return None
         
@@ -47,8 +47,8 @@ class LangServeAgentSystem:
         agent_request._add_response_to_chat_history = False
         return agent_request
 ################################################################################################################################################################################
-    def create_agent_request_for_checking_prompt(self, name: str, prompt: str) -> Optional[LangServeAgentRequestTask]:
-        agent_request = self.create_agent_request(name, prompt)
+    def create_agent_request_task_for_checking_prompt(self, name: str, prompt: str) -> Optional[LangServeAgentRequestTask]:
+        agent_request = self.create_agent_request_task(name, prompt)
         if agent_request is None:
             return None
         

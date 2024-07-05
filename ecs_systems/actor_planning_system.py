@@ -43,10 +43,6 @@ class ActorPlanningSystem(ExecuteProcessor):
             logger.warning(f"ActorPlanningSystem: request_result is empty.")
             return
 
-        # request_result = await self._context._langserve_agent_system.request_tasks("ActorPlanningSystem")
-        # if len(request_result) == 0:
-        #     logger.warning(f"ActorPlanningSystem: request_result is empty.")
-        #     return
         self.handle(self._request_tasks)
         self._request_tasks.clear()
 #######################################################################################################################################
@@ -85,16 +81,10 @@ class ActorPlanningSystem(ExecuteProcessor):
             if not self._check_available(action):
                 logger.warning(f"ActorPlanningSystem: action is not correct, {action}")
                 return False
-            # if not self._check_conversation(action):
-            #     logger.warning(f"ActorPlanningSystem: target or message is not correct, {action}")
-            #     return False
         return True
 #######################################################################################################################################
     def _check_available(self, action: AgentAction) -> bool:
         return check_component_register(action._action_name, ACTOR_AVAILABLE_ACTIONS_REGISTER) is not None
-#######################################################################################################################################
-    # def _check_conversation(self, action: ActorAction) -> bool:
-    #     return check_conversation_action(action, ACTOR_CONVERSATION_ACTIONS_REGISTER)
 #######################################################################################################################################
     def _add_action_component(self, entity: Entity, action: AgentAction) -> None:
         compclass = check_component_register(action._action_name, ACTOR_AVAILABLE_ACTIONS_REGISTER)
@@ -135,6 +125,8 @@ class ActorPlanningSystem(ExecuteProcessor):
             
             # 必须要有一个stage的环境描述，否则无法做计划。
             prompt = actpr_plan_prompt(stage_name, stage_enviro_narrate)
-            #self._context._langserve_agent_system.add_request_task(actor_comp.name, prompt)
-            request_tasks[actor_comp.name] = LangServeAgentRequestTask(actor_comp.name, prompt)
+            task = self._context._langserve_agent_system.create_agent_request_task(actor_comp.name, prompt)
+            assert task is not None, f"ActorPlanningSystem: task is None, {actor_comp.name}"
+            if task is not None:
+                request_tasks[actor_comp.name] = task
 #######################################################################################################################################

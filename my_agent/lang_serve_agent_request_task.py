@@ -93,15 +93,13 @@ class LangServeAgentRequestTask:
 ################################################################################################################################################################################
 class LangServeAgentAsyncRequestTasksGather:
 
-    def __init__(   self, name: str,  
-                    request_tasks: Dict[str, LangServeAgentRequestTask]) -> None:
-        
+    def __init__(self, name: str, request_tasks: Dict[str, LangServeAgentRequestTask]) -> None:
         self._name: str = name
-        self._request_tasks: Dict[str, LangServeAgentRequestTask] = request_tasks
+        self._async_tasks: Dict[str, LangServeAgentRequestTask] = request_tasks
 
     # 核心方法
     async def impl_gather(self) -> List[Optional[str]]:
-        tasks = [task.async_request() for task in self._request_tasks.values()]
+        tasks = [task.async_request() for task in self._async_tasks.values()]
         future = await asyncio.gather(*tasks)
         return future
     

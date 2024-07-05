@@ -37,18 +37,12 @@ class StagePlanningSystem(ExecuteProcessor):
         if len(self._request_tasks) == 0:
             return
         
-
         tasks_gather = LangServeAgentAsyncRequestTasksGather("StagePlanningSystem Gather", self._request_tasks)
         request_result = await tasks_gather.gather()
         if len(request_result) == 0:
             logger.warning(f"StagePlanningSystem: request_result is empty.")
             return
 
-
-        # tasks_result = await self._context._langserve_agent_system.request_tasks("StagePlanningSystem")
-        # if len(tasks_result) == 0:
-        #     logger.warning(f"StagePlanningSystem: tasks_result is empty.")
-        #     return
         # step3: 处理结果
         self.handle(self._request_tasks)
         self._request_tasks.clear()
@@ -88,16 +82,10 @@ class StagePlanningSystem(ExecuteProcessor):
             if not self._check_available(action):
                 logger.warning(f"StagePlanningSystem: action is not correct, {action}")
                 return False
-            # if not self._check_conversation(action):
-            #     logger.warning(f"StagePlanningSystem: target or message is not correct, {action}")
-            #     return False
         return True
 #######################################################################################################################################
     def _check_available(self, action: AgentAction) -> bool:
         return check_component_register(action._action_name, STAGE_AVAILABLE_ACTIONS_REGISTER) is not None
-#######################################################################################################################################
-    # def _check_conversation(self, action: ActorAction) -> bool:
-    #     return check_conversation_action(action, STAGE_CONVERSATION_ACTIONS_REGISTER)
 #######################################################################################################################################
     def _add_action_component(self, entity: Entity, action: AgentAction) -> None:
         compclass = check_component_register(action._action_name, STAGE_AVAILABLE_ACTIONS_REGISTER)
@@ -132,6 +120,8 @@ class StagePlanningSystem(ExecuteProcessor):
         for entity in entities:
             prompt = stage_plan_prompt(self.get_props_in_stage(entity), self.get_actor_names_in_stage(entity))
             stage_comp = entity.get(StageComponent)
-            request_tasks[stage_comp.name] = LangServeAgentRequestTask(stage_comp.name, prompt)
-            #self._context._langserve_agent_system.add_request_task(stage_comp.name, prompt)
+            task = self._context._langserve_agent_system.create_agent_request_task(stage_comp.name, prompt)
+            assert task is not None, f"StagePlanningSystem: create_agent_request_task failed, {stage_comp.name}"
+            if task is not None:
+                request_tasks[stage_comp.name] = task
 #######################################################################################################################################

@@ -71,10 +71,9 @@ class PostConversationActionSystem(ReactiveProcessor):
             batch_events2stage_prompt = self.batch_stage_events(stage_director_comp.name, raw_events2stage) 
             logger.info(f"PostConversationActionSystem: {stage_director_comp.name} : {batch_events2stage_prompt}")
             if async_execute:
-                task = langserve_agent_system.create_agent_request_for_checking_prompt(stage_director_comp.name, batch_events2stage_prompt)
+                task = langserve_agent_system.create_agent_request_task_for_checking_prompt(stage_director_comp.name, batch_events2stage_prompt)
                 assert task is not None
                 request_tasks[stage_director_comp.name] = task
-                #langserve_agent_system.add_request_task(stage_director_comp.name, batch_events2stage_prompt, AddChatHistoryOptionOnRequestSuccess.ADD_PROMPT_TO_CHAT_HISTORY)
             else:
                 self.imme_request(stage_director_comp.name, batch_events2stage_prompt)
 
@@ -87,23 +86,21 @@ class PostConversationActionSystem(ReactiveProcessor):
                 batch_events2actor_prompt = self.batch_actor_events(stage_director_comp.name, raw_events2actor)
                 logger.info(f"PostConversationActionSystem: {actor_comp.name} : {batch_events2actor_prompt}")
                 if async_execute:
-                    task = langserve_agent_system.create_agent_request_for_checking_prompt(actor_comp.name, batch_events2actor_prompt)
+                    task = langserve_agent_system.create_agent_request_task_for_checking_prompt(actor_comp.name, batch_events2actor_prompt)
                     assert task is not None
                     request_tasks[actor_comp.name] = task
-                    #langserve_agent_system.add_request_task(actor_comp.name, batch_events2actor_prompt, AddChatHistoryOptionOnRequestSuccess.ADD_PROMPT_TO_CHAT_HISTORY)
                 else:
                     self.imme_request(actor_comp.name, batch_events2actor_prompt)
 ####################################################################################################
     def imme_request(self, name: str, prompt: str) -> None:
         langserve_agent_system: LangServeAgentSystem = self._context._langserve_agent_system
         try:
-            agent_request = langserve_agent_system.create_agent_request_for_checking_prompt(name, prompt)
+            agent_request = langserve_agent_system.create_agent_request_task_for_checking_prompt(name, prompt)
             if agent_request is None:
                 logger.error(f"imme_request: {name} request error.")
                 return
             
             response = agent_request.request()
-            #response = langserve_agent_system.agent_request(name, prompt)
             if response is None:
                 logger.error(f"imme_request: {name} request error.")
         except Exception as e:
@@ -117,20 +114,15 @@ class PostConversationActionSystem(ReactiveProcessor):
 ####################################################################################################
     async def async_post_execute(self) -> None:
         # 并行执行requests
-        #langserve_agent_system = self._context._langserve_agent_system
         if len(self._request_tasks) == 0:
             return
         logger.debug(f"PostConversationActionSystem async_post_execute begin.")     
-        
-                
         tasks_gather = LangServeAgentAsyncRequestTasksGather("PostConversationActionSystem Gather", self._request_tasks)
         request_result = await tasks_gather.gather()
         if len(request_result) == 0:
             logger.warning(f"PostConversationActionSystem: request_result is empty.")
             return
-        
-        #request_result = await langserve_agent_system.request_tasks("PostConversationActionSystem")
-        #responses: Dict[str, Optional[str]] = request_result[0]
+    
         #正常流程
         for name, task in self._request_tasks.items():
             if task is None:

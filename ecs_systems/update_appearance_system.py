@@ -75,7 +75,7 @@ class UpdateAppearanceSystem(InitializeProcessor, ExecuteProcessor):
         safe_name = self.context.safe_get_entity_name(world_entity)
         try:
 
-            agent_request = langserve_agent_system.create_agent_request_without_any_context(safe_name, final_prompt)
+            agent_request = langserve_agent_system.create_agent_request_task_without_any_context(safe_name, final_prompt)
             if agent_request is None:
                 logger.error(f"{safe_name} request error.")
                 return False

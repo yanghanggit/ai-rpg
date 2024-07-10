@@ -178,7 +178,7 @@ class AttackActionSystem(ReactiveProcessor):
         
         prop_files = file_system.get_prop_files(_target_rpg_comp.name)
         for propfile in prop_files:
-            if not propfile._prop.isunique():
+            if not propfile._prop.is_unique():
                 logger.info(f"the propfile {propfile._name} is not unique, so it will not be taken away.")
                 continue
             # 交换文件，即交换道具文件即可

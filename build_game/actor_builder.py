@@ -1,6 +1,6 @@
 from typing import Any, Optional, List, Dict
 from loguru import logger
-from prototype_data.data_def import ActorData, PropDataProxy
+from prototype_data.data_def import ActorData, PropData
 from prototype_data.data_base_system import DataBaseSystem
 
 class ActorBuilder:
@@ -40,7 +40,7 @@ class ActorBuilder:
             actor_data._props.clear()
             try:
                 for prop in actor_info['props']:
-                    proxy = PropDataProxy(prop['name'])
+                    proxy = PropData.create_proxy(prop['name'])
                     count = int(prop['count'])
                     # 添加到列表
                     actor_data._props.append((proxy, count))

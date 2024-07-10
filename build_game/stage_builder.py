@@ -1,6 +1,6 @@
 from typing import Any, Optional, List, Set, Dict
 from loguru import logger
-from prototype_data.data_def import PropData, ActorData, StageData, ActorDataProxy, PropDataProxy
+from prototype_data.data_def import PropData, ActorData, StageData
 from prototype_data.data_base_system import DataBaseSystem
 
 class StageBuilder:
@@ -19,13 +19,13 @@ class StageBuilder:
     def props_proxy_in_stage(self, data: List[Any]) -> List[tuple[PropData, int]]:
         res: List[tuple[PropData, int]] = []
         for obj in data:
-            res.append((PropDataProxy(obj["name"]), int(obj["count"])))
+            res.append((PropData.create_proxy(obj["name"]), int(obj["count"])))
         return res
 ###############################################################################################################################################
     def actors_proxy_in_stage(self, data: List[Any]) -> Set[ActorData]:
         res: Set[ActorData] = set()
         for obj in data:
-            res.add(ActorDataProxy(obj["name"]))
+            res.add(ActorData.create_proxy(obj["name"]))
         return res
 ###############################################################################################################################################
     def build(self, raw_data: Any, data_base_system: DataBaseSystem) -> 'StageBuilder':

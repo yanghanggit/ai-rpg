@@ -1,36 +1,38 @@
 from typing import List, Set, Dict, Any
-from enum import Enum
 from loguru import logger
 
 ########################################################################################################################
 ########################################################################################################################
 ########################################################################################################################
-class PropType(Enum):
-    INVALID = 0,
-    SPECIAL_COMPONENT = 1
-    WEAPON = 2
-    CLOTHES = 3
-    NON_CONSUMABLE_ITEM = 4
-########################################################################################################################
-########################################################################################################################
-########################################################################################################################
 class Attributes:
 
-    _attributes: List[int] = []
-
-    def __init__(self, raw_string_val: str) -> None:
-        if raw_string_val != "":
-            assert ',' in raw_string_val, f"raw_string_val: {raw_string_val} is not valid."
-            self._attributes = [int(attr) for attr in raw_string_val.split(',')]        
+    def __init__(self, org_string: str) -> None:
+        self._org_string: str = org_string
+        self._attributes: List[int] = []
+        self.reseialization(self._org_string)
 
     def get_value(self, index: int) -> int:
         if index >= len(self._attributes):
-            #logger.error(f"index: {index} is out of range.")
             return 0
         return self._attributes[index]
     
     def serialization(self) -> str:
         return ",".join([str(attr) for attr in self._attributes])
+    
+    def reseialization(self, data: Any) -> 'Attributes':
+        # 会对自身产生影响
+        self._attributes.clear()
+
+        if not isinstance(data, str):
+            logger.error(f"Attributes: {data} is not a string.")
+            return self
+        
+        if data == "":
+            return self
+
+        assert ',' in data, f"raw_string_val: {data} is not valid."
+        self._attributes = [int(attr) for attr in data.split(',')]        
+        return self
     
     def length(self) -> int:
         return len(self._attributes)
@@ -38,6 +40,10 @@ class Attributes:
 ########################################################################################################################
 ########################################################################################################################
 class PropData:
+
+    @staticmethod
+    def create_proxy(name: str) -> 'PropData':
+        return PropData(name, "", "", "", "", Attributes(""), "")
 
     def __init__(self, 
                  name: str, 
@@ -58,22 +64,8 @@ class PropData:
             assert self._attributes.length() == 3
         self._appearance: str = appearance
 
-    def isunique(self) -> bool:
-        return self._is_unique.lower() == "yes"
-    
-    @property
-    def e_type(self) -> PropType:
-        if self.is_special_component():
-            return PropType.SPECIAL_COMPONENT
-        elif self.is_weapon():
-            return PropType.WEAPON
-        elif self.is_clothes():
-            return PropType.CLOTHES
-        elif self.is_non_consumable_item():
-            return PropType.NON_CONSUMABLE_ITEM
-        else:
-            assert False, f"Invalid prop type: {self._type}"
-        return PropType.INVALID
+    def is_unique(self) -> bool:
+        return self._is_unique.lower() == "yes" or self._is_unique.lower() == "true"
     
     def is_special_component(self) -> bool:
         return self._type == "SpecialComponent"
@@ -87,13 +79,14 @@ class PropData:
     def is_non_consumable_item(self) -> bool:
         return self._type == "NonConsumableItem"
     
-    def reseialization(self, prop_data: Any) -> 'PropData':
-        self._name = prop_data['name']
-        self._codename = prop_data['codename']
-        self._description = prop_data['description']
-        self._is_unique = prop_data['is_unique']
-        self._type = prop_data['type']
-        self._attributes = Attributes(prop_data['attributes'])
+    def reseialization(self, data: Any) -> 'PropData':
+        self._name = data['name']
+        self._codename = data['codename']
+        self._description = data['description']
+        self._is_unique = data['is_unique']
+        self._type = data['type']
+        self._attributes = Attributes(data['attributes'])
+        self._appearance = data['appearance']
         return self
 
     def serialization(self) -> Dict[str, str]:
@@ -121,13 +114,15 @@ class PropData:
     @property
     def defense(self) -> int:
         return self._attributes.get_value(2)
-    
-def PropDataProxy(name: str) -> PropData:
-    return PropData(name, "", "", "", "", Attributes(""), "")
 ########################################################################################################################
 ########################################################################################################################
 ########################################################################################################################
 class ActorData:
+
+    @staticmethod
+    def create_proxy(name: str) -> 'ActorData':
+        return ActorData(name, "", "", "", set(), set(), "", "", Attributes(""))
+    
     def __init__(self, 
                  name: str, 
                  codename: str, 
@@ -167,13 +162,15 @@ class ActorData:
     @property
     def defense(self) -> int:
         return self._attributes.get_value(3)
-
-def ActorDataProxy(name: str) -> ActorData:
-    return ActorData(name, "", "", "", set(), set(), "", "", Attributes(""))
 ########################################################################################################################
 ########################################################################################################################
 ########################################################################################################################
 class StageData:
+
+    @staticmethod
+    def create_proxy(name: str) -> 'StageData':
+        return StageData(name, "", "", "", "", "", "", "", "", "", "", Attributes(""))
+
     def __init__(self, 
                  name: str, 
                  codename: str, 
@@ -211,7 +208,7 @@ class StageData:
 
     ###
     def stage_as_exit_of_portal(self, stagename: str) -> None:
-        stage_proxy = StageDataProxy(stagename)
+        stage_proxy = StageData.create_proxy(stagename)
         self._exit_of_portal.add(stage_proxy)
 
     @property
@@ -229,13 +226,15 @@ class StageData:
     @property
     def defense(self) -> int:
         return self._attributes.get_value(3)
-
-def StageDataProxy(name: str) -> StageData:
-    return StageData(name, "", "", "", "", "", "", "", "", "", "", Attributes(""))
 ########################################################################################################################
 ########################################################################################################################
 ########################################################################################################################
 class WorldSystemData:
+
+
+    @staticmethod
+    def create_proxy(name: str) -> 'WorldSystemData':
+        return WorldSystemData(name, "", "")
 
     def __init__(self, 
                  name: str, 
@@ -245,10 +244,6 @@ class WorldSystemData:
         self._name: str = name
         self._codename: str = codename
         self._url: str = url
-       
-
-def WorldSystemDataProxy(name: str) -> WorldSystemData:
-    return WorldSystemData(name, "", "")
 ########################################################################################################################
 ########################################################################################################################
 ########################################################################################################################

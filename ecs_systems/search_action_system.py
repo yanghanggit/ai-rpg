@@ -29,13 +29,11 @@ class ActorSearchFailedEvent(IStageDirectorEvent):
         if actor_name != self.who_search_failed:
             ## 只有自己知道
             return ""
-        event = search_action_failed_prompt(self.who_search_failed, self.target)
-        return event
+        return search_action_failed_prompt(self.who_search_failed, self.target)
     
     #
     def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
-        event = search_action_failed_prompt(self.who_search_failed, self.target)
-        return event
+        return ""
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################     

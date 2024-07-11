@@ -18,10 +18,10 @@ from file_system.files_def import PropFile
 
 # 通知导演的类
 class ActorUsePropToStageEvent(IStageDirectorEvent):
-    def __init__(self, actor_name: str, targetname: str, propname: str, tips: str) -> None:
+    def __init__(self, actor_name: str, target_name: str, prop_name: str, tips: str) -> None:
         self.actor_name = actor_name
-        self.targetname = targetname
-        self.propname = propname
+        self.target_name = target_name
+        self.prop_name = prop_name
         self.tips = tips
 
     def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
@@ -29,8 +29,10 @@ class ActorUsePropToStageEvent(IStageDirectorEvent):
             return ""
         return self.tips
     
-    def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
-        return ""
+    def to_stage(self, stage_name: str, extended_context: ExtendedContext) -> str:
+        if self.target_name != stage_name:
+            return ""
+        return self.tips
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################

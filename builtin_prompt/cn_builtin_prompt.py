@@ -1,4 +1,3 @@
-from my_entitas.extended_context import ExtendedContext
 from typing import Dict, List, Set
 from prototype_data.data_def import PropData
 from ecs_systems.components import MindVoiceActionComponent, EnviroNarrateActionComponent, \
@@ -35,7 +34,7 @@ def kick_off_world_system_prompt() -> str:
 """
     return prompt
 ###############################################################################################################################################
-def actpr_plan_prompt(current_stage: str, stage_enviro_narrate: str) -> str:
+def actor_plan_prompt(current_stage: str, stage_enviro_narrate: str) -> str:
     
     current_stage_prompt = "未知"
     if current_stage != "":

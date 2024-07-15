@@ -8,7 +8,7 @@ from my_entitas.extended_context import ExtendedContext
 from loguru import logger
 from typing import Dict
 from gameplay_checks.planning_check import check_component_register
-from builtin_prompt.cn_builtin_prompt import actpr_plan_prompt
+from builtin_prompt.cn_builtin_prompt import actor_plan_prompt
 from my_agent.lang_serve_agent_request_task import LangServeAgentRequestTask, LangServeAgentAsyncRequestTasksGather
 
 
@@ -124,7 +124,7 @@ class ActorPlanningSystem(ExecuteProcessor):
                 continue
             
             # 必须要有一个stage的环境描述，否则无法做计划。
-            prompt = actpr_plan_prompt(stage_name, stage_enviro_narrate)
+            prompt = actor_plan_prompt(stage_name, stage_enviro_narrate)
             task = self._context._langserve_agent_system.create_agent_request_task(actor_comp.name, prompt)
             assert task is not None, f"ActorPlanningSystem: task is None, {actor_comp.name}"
             if task is not None:

@@ -9,7 +9,7 @@ class TagActionSystem(ReactiveProcessor):
 
     def __init__(self, context: ExtendedContext) -> None:
         super().__init__(context)
-        self.context = context
+        self._context = context
 ####################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:

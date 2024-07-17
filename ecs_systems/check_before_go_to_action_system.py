@@ -71,7 +71,7 @@ class ActorExitStageFailedBecauseStageRefuse(IStageDirectorEvent):
     def __init__(self, actor_name: str, stage_name: str, tips: str) -> None:
         self._actor_name: str = actor_name
         self._stage_name: str = stage_name
-        self._tips: str= tips
+        self._tips: str = tips
 
     def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
         if actor_name != self._actor_name:
@@ -101,56 +101,56 @@ class ActorEnterStageFailedBecauseStageRefuse(IStageDirectorEvent):
 ####################################################################################################################################
 class StageConditionsHelper:
 
-    tips: str
-    stage_name: str
-    stage_cond_status_prompt: str
-    cond_check_actor_status_prompt: str
-    cond_check_actor_props_prompt: str
+    _tips: str
+    _stage_name: str
+    _stage_cond_status_prompt: str
+    _cond_check_actor_status_prompt: str
+    _cond_check_actor_props_prompt: str
      
     def __init__(self, tig: str) -> None:
-        self.tips = tig
+        self._tips = tig
         self.clear()
 ####################################################################################################################################
     def clear(self) -> None:
-        self.stage_name = ""
-        self.stage_cond_status_prompt = str(_CNConstantPrompt_.NONE_PROMPT)
-        self.cond_check_actor_status_prompt = str(_CNConstantPrompt_.NONE_PROMPT)
-        self.cond_check_actor_props_prompt = str(_CNConstantPrompt_.NONE_PROMPT)
+        self._stage_name = ""
+        self._stage_cond_status_prompt = str(_CNConstantPrompt_.NONE_PROMPT)
+        self._cond_check_actor_status_prompt = str(_CNConstantPrompt_.NONE_PROMPT)
+        self._cond_check_actor_props_prompt = str(_CNConstantPrompt_.NONE_PROMPT)
 ####################################################################################################################################
     def prepare_exit_cond(self, stage_entity: Entity, context: ExtendedContext) -> None:
         self.clear()
-        self.stage_name = context.safe_get_entity_name(stage_entity)
+        self._stage_name = context.safe_get_entity_name(stage_entity)
         # 准备好数据
         if stage_entity.has(StageExitCondStatusComponent):
-            self.stage_cond_status_prompt = cast(StageExitCondStatusComponent, stage_entity.get(StageExitCondStatusComponent)).condition
+            self._stage_cond_status_prompt = cast(StageExitCondStatusComponent, stage_entity.get(StageExitCondStatusComponent)).condition
         # 准备好数据
         if stage_entity.has(StageExitCondCheckActorStatusComponent):
-            self.cond_check_actor_status_prompt = cast(StageExitCondCheckActorStatusComponent, stage_entity.get(StageExitCondCheckActorStatusComponent)).condition
+            self._cond_check_actor_status_prompt = cast(StageExitCondCheckActorStatusComponent, stage_entity.get(StageExitCondCheckActorStatusComponent)).condition
         # 准备好数据
         if stage_entity.has(StageExitCondCheckActorPropsComponent):
-            self.cond_check_actor_props_prompt = cast(StageExitCondCheckActorPropsComponent, stage_entity.get(StageExitCondCheckActorPropsComponent)).condition
+            self._cond_check_actor_props_prompt = cast(StageExitCondCheckActorPropsComponent, stage_entity.get(StageExitCondCheckActorPropsComponent)).condition
 ####################################################################################################################################
     def prepare_entry_cond(self, stage_entity: Entity, context: ExtendedContext) -> None:
         self.clear()
-        self.stage_name = context.safe_get_entity_name(stage_entity)
+        self._stage_name = context.safe_get_entity_name(stage_entity)
         # 准备好数据
         if stage_entity.has(StageEntryCondStatusComponent):
-            self.stage_cond_status_prompt = cast(StageEntryCondStatusComponent, stage_entity.get(StageEntryCondStatusComponent)).condition
+            self._stage_cond_status_prompt = cast(StageEntryCondStatusComponent, stage_entity.get(StageEntryCondStatusComponent)).condition
         # 准备好数据
         if stage_entity.has(StageEntryCondCheckActorStatusComponent):
-            self.cond_check_actor_status_prompt = cast(StageEntryCondCheckActorStatusComponent, stage_entity.get(StageEntryCondCheckActorStatusComponent)).condition
+            self._cond_check_actor_status_prompt = cast(StageEntryCondCheckActorStatusComponent, stage_entity.get(StageEntryCondCheckActorStatusComponent)).condition
         # 准备好数据
         if stage_entity.has(StageEntryCondCheckActorPropsComponent):
-            self.cond_check_actor_props_prompt = cast(StageEntryCondCheckActorPropsComponent, stage_entity.get(StageEntryCondCheckActorPropsComponent)).condition
+            self._cond_check_actor_props_prompt = cast(StageEntryCondCheckActorPropsComponent, stage_entity.get(StageEntryCondCheckActorPropsComponent)).condition
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
 
 class HandleStageConditionsResponseHelper:
     def __init__(self, plan: AgentPlan) -> None:
-        self._plan = plan
-        self._result = False
-        self._tips = str(_CNConstantPrompt_.NONE_PROMPT)
+        self._plan: AgentPlan = plan
+        self._result: bool = False
+        self._tips: str = str(_CNConstantPrompt_.NONE_PROMPT)
 ###############################################################################################################################################
     @property
     def result(self) -> bool:
@@ -196,7 +196,7 @@ class CheckBeforeGoToActionSystem(ReactiveProcessor):
 
     def __init__(self, context: ExtendedContext) -> None:
         super().__init__(context)
-        self.context = context
+        self._context = context
 ###############################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
@@ -228,27 +228,27 @@ class CheckBeforeGoToActionSystem(ReactiveProcessor):
                 continue 
 
             # 通过了，可以去下一个场景了
-            logger.info(f"{self.context.safe_get_entity_name(entity)} 通过了离开和进入条件，可以去下一个场景了")    
+            logger.info(f"{self._context.safe_get_entity_name(entity)} 通过了离开和进入条件，可以去下一个场景了")    
 ###############################################################################################################################################
     def check_target_stage_is_valid(self, entity: Entity) -> bool:
-        current_stage_entity = self.context.safe_get_stage_entity(entity)
+        current_stage_entity = self._context.safe_get_stage_entity(entity)
         #assert current_stage_entity is not None
         if current_stage_entity is None:
             logger.error("当前场景为空??????！！！！！！！！！！！！！")
             return False
     
-        safe_name = self.context.safe_get_entity_name(entity)
+        safe_name = self._context.safe_get_entity_name(entity)
 
         target_stage_name = self.get_target_stage_name(entity)
         target_stage_entity = self.get_target_stage_entity(entity)
         if target_stage_entity is None:
-            notify_stage_director(self.context, 
+            notify_stage_director(self._context, 
                                   current_stage_entity, 
                                   ActorGoToFailedBecauseStageInvalid(safe_name, target_stage_name))
             return False
 
         if current_stage_entity == target_stage_entity:
-            notify_stage_director(self.context, 
+            notify_stage_director(self._context, 
                                   current_stage_entity, 
                                   ActorGoToFailedBecauseAlreadyInStage(safe_name, target_stage_name))
             return False
@@ -275,16 +275,16 @@ class CheckBeforeGoToActionSystem(ReactiveProcessor):
 ###############################################################################################################################################
     def handle_exit_stage_with_conditions(self, entity: Entity) -> bool:
         #
-        current_stage_entity = self.context.safe_get_stage_entity(entity)
+        current_stage_entity = self._context.safe_get_stage_entity(entity)
         assert current_stage_entity is not None
         if not self.need_check_exit_cond(current_stage_entity):
             return True
         #
-        actor_name = self.context.safe_get_entity_name(entity)
-        current_stage_name = self.context.safe_get_entity_name(current_stage_entity)
+        actor_name = self._context.safe_get_entity_name(entity)
+        current_stage_name = self._context.safe_get_entity_name(current_stage_entity)
         #
         stage_exit_cond_helper = StageConditionsHelper(f"离开{current_stage_name}的检查所有条件")
-        stage_exit_cond_helper.prepare_exit_cond(current_stage_entity, self.context)
+        stage_exit_cond_helper.prepare_exit_cond(current_stage_entity, self._context)
         # 准备好数据
         current_actor_status_prompt = self.get_actor_status_prompt(entity)
         current_actor_props_prompt = self.get_actor_props_prompt(entity)
@@ -292,16 +292,16 @@ class CheckBeforeGoToActionSystem(ReactiveProcessor):
         
         final_prompt = stage_exit_conditions_check_prompt(actor_name, 
                                                          current_stage_name, 
-                                                         stage_exit_cond_helper.stage_cond_status_prompt, 
-                                                         stage_exit_cond_helper.cond_check_actor_status_prompt, 
+                                                         stage_exit_cond_helper._stage_cond_status_prompt, 
+                                                         stage_exit_cond_helper._cond_check_actor_status_prompt, 
                                                          current_actor_status_prompt, 
-                                                         stage_exit_cond_helper.cond_check_actor_props_prompt, 
+                                                         stage_exit_cond_helper._cond_check_actor_props_prompt, 
                                                          current_actor_props_prompt)
 
         logger.debug(final_prompt)
 
         ## 让大模型去推断是否可以离开，分别检查stage自身，角色状态（例如长相），角色道具（拥有哪些道具与文件）
-        langserve_agent_system = self.context._langserve_agent_system
+        langserve_agent_system = self._context._langserve_agent_system
 
         agent_request = langserve_agent_system.create_agent_request_task(current_stage_name, final_prompt)
         if agent_request is None:
@@ -323,14 +323,14 @@ class CheckBeforeGoToActionSystem(ReactiveProcessor):
         #
         if not handle_response_helper.result:
             # 通知事件
-            notify_stage_director(self.context, 
+            notify_stage_director(self._context, 
                                   current_stage_entity, 
                                   ActorExitStageFailedBecauseStageRefuse(actor_name, current_stage_name, handle_response_helper.tips))
             return False
 
         logger.info(f"允许通过！说明如下: {handle_response_helper._tips}")
         ## 可以删除，允许通过！这个上下文就拿掉，不需要了。
-        langserve_agent_system = self.context._langserve_agent_system
+        langserve_agent_system = self._context._langserve_agent_system
         langserve_agent_system.remove_last_conversation_between_human_and_ai(current_stage_name)
         return True
 ###############################################################################################################################################
@@ -345,27 +345,27 @@ class CheckBeforeGoToActionSystem(ReactiveProcessor):
             return True
         
         ##
-        actor_name = self.context.safe_get_entity_name(entity)
-        target_stage_name = self.context.safe_get_entity_name(target_stage_entity)
+        actor_name = self._context.safe_get_entity_name(entity)
+        target_stage_name = self._context.safe_get_entity_name(target_stage_entity)
         #
         stage_exit_cond_helper = StageConditionsHelper(f"进入{target_stage_name}的检查所有条件")
-        stage_exit_cond_helper.prepare_entry_cond(target_stage_entity, self.context)
+        stage_exit_cond_helper.prepare_entry_cond(target_stage_entity, self._context)
         # 准备好数据
         current_actor_status_prompt = self.get_actor_status_prompt(entity)
         current_actor_props_prompt = self.get_actor_props_prompt(entity)
         # 最终提示词
         final_prompt = stage_entry_conditions_check_prompt(actor_name, 
                                                          target_stage_name, 
-                                                         stage_exit_cond_helper.stage_cond_status_prompt, 
-                                                         stage_exit_cond_helper.cond_check_actor_status_prompt, 
+                                                         stage_exit_cond_helper._stage_cond_status_prompt, 
+                                                         stage_exit_cond_helper._cond_check_actor_status_prompt, 
                                                          current_actor_status_prompt, 
-                                                         stage_exit_cond_helper.cond_check_actor_props_prompt, 
+                                                         stage_exit_cond_helper._cond_check_actor_props_prompt, 
                                                          current_actor_props_prompt)
 
         logger.debug(final_prompt)
 
         ## 让大模型去推断是否可以离开，分别检查stage自身，角色状态（例如长相），角色道具（拥有哪些道具与文件）
-        langserve_agent_system = self.context._langserve_agent_system
+        langserve_agent_system = self._context._langserve_agent_system
         agent_request = langserve_agent_system.create_agent_request_task(target_stage_name, final_prompt)
         if agent_request is None:
             logger.error("agent_request is None")
@@ -385,22 +385,22 @@ class CheckBeforeGoToActionSystem(ReactiveProcessor):
         
         if not handle_response_helper.result:
             # 通知事件, 因为没动，得是当前场景需要通知
-            current_stage_entity = self.context.safe_get_stage_entity(entity)
+            current_stage_entity = self._context.safe_get_stage_entity(entity)
             assert current_stage_entity is not None
-            notify_stage_director(self.context, 
+            notify_stage_director(self._context, 
                                   current_stage_entity, 
                                   ActorEnterStageFailedBecauseStageRefuse(actor_name, target_stage_name, handle_response_helper.tips))
             return False
 
         logger.info(f"允许通过！说明如下: {handle_response_helper._tips}")
         ## 可以删除，允许通过！这个上下文就拿掉，不需要了。
-        langserve_agent_system = self.context._langserve_agent_system
+        langserve_agent_system = self._context._langserve_agent_system
         langserve_agent_system.remove_last_conversation_between_human_and_ai(target_stage_name)
         return True
 ###############################################################################################################################################
     def get_target_stage_entity(self, entity: Entity) -> Optional[Entity]:
         target_stage_name = self.get_target_stage_name(entity)
-        return self.context.get_stage_entity(target_stage_name)
+        return self._context.get_stage_entity(target_stage_name)
 ###############################################################################################################################################
     def get_target_stage_name(self, entity: Entity) -> str:
         go_to_action_comp: GoToActionComponent = entity.get(GoToActionComponent)
@@ -409,15 +409,15 @@ class CheckBeforeGoToActionSystem(ReactiveProcessor):
 ###############################################################################################################################################
     # todo 目前就把外观信息当作状态信息，后续可以加入更多的状态信息
     def get_actor_status_prompt(self, entity: Entity) -> str:
-        safe_name = self.context.safe_get_entity_name(entity)
+        safe_name = self._context.safe_get_entity_name(entity)
         appearance_comp: AppearanceComponent = entity.get(AppearanceComponent)
         appearance_info: str = appearance_comp.appearance
         return actor_status_when_stage_change_prompt(safe_name, appearance_info)
 ###############################################################################################################################################
     def get_actor_props_prompt(self, entity: Entity) -> str:
-        helper = CheckStatusActionHelper(self.context)
+        helper = CheckStatusActionHelper(self._context)
         helper.check_status(entity)
-        props = helper.props + helper.special_components
+        props = helper._props + helper._special_components
         prompt_of_props = ""
         if len(props) > 0:
             for prop in props:

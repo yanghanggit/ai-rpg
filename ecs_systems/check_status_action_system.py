@@ -12,36 +12,37 @@ from ecs_systems.stage_director_event import IStageDirectorEvent
 ####################################################################################################################################
 #################################################################################################################################### 
 class CheckStatusActionHelper:
+
     def __init__(self, context: ExtendedContext):
-        self.context = context
-        self.props: List[PropData] = []
-        self.maxhp = 0
-        self.hp = 0
-        self.special_components: List[PropData] = []
-        self.events: List[PropData] = []
+
+        self._context: ExtendedContext = context
+        self._props: List[PropData] = []
+        self._maxhp: int = 0
+        self._hp: int = 0
+        self._special_components: List[PropData] = []
 
     def clear(self) -> None:
-        self.props.clear()
-        self.maxhp = 0
-        self.hp = 0
+        self._props.clear()
+        self._maxhp = 0
+        self._hp = 0
 
     def check_props(self, entity: Entity) -> None:
-        safename = self.context.safe_get_entity_name(entity)
+        safename = self._context.safe_get_entity_name(entity)
         #logger.debug(f"{safename} is checking status")
-        filesystem = self.context._file_system
+        filesystem = self._context._file_system
         files = filesystem.get_prop_files(safename)
         for file in files:
             if file._prop.is_weapon() or file._prop.is_clothes() or file._prop.is_non_consumable_item():
-                self.props.append(file._prop)
+                self._props.append(file._prop)
             elif file._prop.is_special_component():
-                self.special_components.append(file._prop)
+                self._special_components.append(file._prop)
             
     def check_health(self, entity: Entity) -> None:
         if not entity.has(SimpleRPGAttrComponent):
             return 
-        rpgcomp: SimpleRPGAttrComponent = entity.get(SimpleRPGAttrComponent)
-        self.maxhp = rpgcomp.maxhp
-        self.hp = rpgcomp.hp
+        rpg_attr_comp = entity.get(SimpleRPGAttrComponent)
+        self._maxhp = rpg_attr_comp.maxhp
+        self._hp = rpg_attr_comp.hp
 
     def check_status(self, entity: Entity) -> None:
         # 先清空
@@ -53,24 +54,23 @@ class CheckStatusActionHelper:
 
     @property
     def health(self) -> float:
-        return self.hp / self.maxhp
+        return self._hp / self._maxhp
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################        
 class ActorCheckStatusEvent(IStageDirectorEvent):
 
-    def __init__(self, who: str, props: List[PropData], health: float, special_components: List[PropData], events: List[PropData]) -> None:
-        self.who = who
-        self.props = props
-        self.health = health
-        self.special_components = special_components
-        self.events = events
+    def __init__(self, who: str, props: List[PropData], health: float, special_components: List[PropData]) -> None:
+        self._who: str = who
+        self._props: List[PropData] = props
+        self._health: float = health
+        self._special_components: List[PropData] = special_components
 
     def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
-        if actor_name != self.who:
+        if actor_name != self._who:
             # 只有自己知道
             return ""
-        return check_status_action_prompt(self.who, self.props, self.health, self.special_components, self.events)
+        return check_status_action_prompt(self._who, self._props, self._health, self._special_components)
     
     def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
         return ""
@@ -81,7 +81,7 @@ class CheckStatusActionSystem(ReactiveProcessor):
 
     def __init__(self, context: ExtendedContext):
         super().__init__(context)
-        self.context = context
+        self._context = context
 ###################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
@@ -98,11 +98,11 @@ class CheckStatusActionSystem(ReactiveProcessor):
 ###################################################################################################################
     # 临时写成这样，就是检查自己有哪些道具
     def check_status(self, entity: Entity) -> None:
-        safe_name = self.context.safe_get_entity_name(entity)
+        safe_name = self._context.safe_get_entity_name(entity)
         #
-        helper = CheckStatusActionHelper(self.context)
+        helper = CheckStatusActionHelper(self._context)
         helper.check_status(entity)
         #
-        notify_stage_director(self.context, entity, ActorCheckStatusEvent(safe_name, helper.props, helper.health, helper.special_components, helper.events))
+        notify_stage_director(self._context, entity, ActorCheckStatusEvent(safe_name, helper._props, helper.health, helper._special_components))
 ###################################################################################################################
     

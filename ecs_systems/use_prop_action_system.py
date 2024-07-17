@@ -19,20 +19,20 @@ from file_system.files_def import PropFile
 # 通知导演的类
 class ActorUsePropToStageEvent(IStageDirectorEvent):
     def __init__(self, actor_name: str, target_name: str, prop_name: str, tips: str) -> None:
-        self.actor_name = actor_name
-        self.target_name = target_name
-        self.prop_name = prop_name
-        self.tips = tips
+        self._actor_name: str = actor_name
+        self._target_name: str = target_name
+        self._prop_name: str = prop_name
+        self._tips: str = tips
 
     def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
-        if actor_name != self.actor_name:
+        if actor_name != self._actor_name:
             return ""
-        return self.tips
+        return self._tips
     
     def to_stage(self, stage_name: str, extended_context: ExtendedContext) -> str:
-        if self.target_name != stage_name:
+        if self._target_name != stage_name:
             return ""
-        return self.tips
+        return self._tips
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
@@ -61,7 +61,7 @@ class UsePropResponseHelper:
 class UsePropActionSystem(ReactiveProcessor):
     def __init__(self, context: ExtendedContext):
         super().__init__(context)
-        self.context = context
+        self._context = context
 ####################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
@@ -74,12 +74,12 @@ class UsePropActionSystem(ReactiveProcessor):
     @override
     def react(self, entities: list[Entity]) -> None:
         for entity in entities:
-            self.useprop(entity)
+            self.use_prop(entity)
 ####################################################################################################################################
     # 核心处理代码
-    def useprop(self, entity: Entity) -> None:
+    def use_prop(self, entity: Entity) -> None:
 
-        context = self.context
+        context = self._context
         filesystem = context._file_system
         use_interactive_prop_comp: UsePropActionComponent = entity.get(UsePropActionComponent)
         action: AgentAction = use_interactive_prop_comp.action
@@ -116,7 +116,7 @@ class UsePropActionSystem(ReactiveProcessor):
         assert entity.has(ActorComponent)
         assert target_entity.has(StageComponent)
         
-        context = self.context
+        context = self._context
         targetname = context.safe_get_entity_name(target_entity)
         username = context.safe_get_entity_name(entity)
         assert context._file_system.get_prop_file(username, prop_file._name) is not None

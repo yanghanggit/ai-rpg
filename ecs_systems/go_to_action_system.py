@@ -8,7 +8,7 @@ from my_agent.agent_action import AgentAction
 from my_entitas.extended_context import ExtendedContext
 from loguru import logger
 from ecs_systems.stage_director_component import notify_stage_director
-from typing import cast, override, List
+from typing import cast, override, List, Optional
 from ecs_systems.stage_director_event import IStageDirectorEvent
 from ecs_systems.stage_director_system import director_events_to_actor
 from builtin_prompt.cn_builtin_prompt import ( leave_stage_prompt,
@@ -19,58 +19,60 @@ from builtin_prompt.cn_builtin_prompt import ( leave_stage_prompt,
 class GoToActionHelper:
 
     def __init__(self, context: ExtendedContext, who: Entity, target_stage_name: str) -> None:
-        self.context = context
-        self.who = who
-        self.current_stage_name = cast(ActorComponent, who.get(ActorComponent)).current_stage
-        self.current_stage_entity = self.context.get_stage_entity(self.current_stage_name)
-        self.target_stage_name = target_stage_name
-        self.target_stage_entity = self.context.get_stage_entity(target_stage_name)
-####################################################################################################################################
-####################################################################################################################################
-####################################################################################################################################
+
+        self._context: ExtendedContext = context
+        self._who: Entity = who
+        self._current_stage_name: str = cast(ActorComponent, who.get(ActorComponent)).current_stage
+        self._current_stage_entity: Optional[Entity]  = self._context.get_stage_entity(self._current_stage_name)
+        assert self._current_stage_entity is not None
+        self._target_stage_name: str = target_stage_name
+        self._target_stage_entity: Optional[Entity] = self._context.get_stage_entity(target_stage_name)
+        assert self._target_stage_entity is not None
+###############################################################################################################################################
+###############################################################################################################################################
+###############################################################################################################################################
 class ActorLeaveStageEvent(IStageDirectorEvent):
 
     def __init__(self, actor_name: str, current_stage_name: str, goto_stage_name: str) -> None:
-        self.actor_name = actor_name
-        self.current_stage_name = current_stage_name
-        self.goto_stage_name = goto_stage_name
+
+        self._actor_name: str = actor_name
+        self._current_stage_name: str = current_stage_name
+        self._goto_stage_name: str = goto_stage_name
 
     def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
-        event = leave_stage_prompt(self.actor_name, self.current_stage_name, self.goto_stage_name)
-        return event
+        return leave_stage_prompt(self._actor_name, self._current_stage_name, self._goto_stage_name)
     
-    def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
-        event = leave_stage_prompt(self.actor_name, self.current_stage_name, self.goto_stage_name)
-        return event
-####################################################################################################################################
-####################################################################################################################################
-####################################################################################################################################
+    def to_stage(self, stage_name: str, extended_context: ExtendedContext) -> str:
+        return leave_stage_prompt(self._actor_name, self._current_stage_name, self._goto_stage_name)
+###############################################################################################################################################
+###############################################################################################################################################
+###############################################################################################################################################
 class ActorEnterStageEvent(IStageDirectorEvent):
 
     def __init__(self, actor_name: str, stage_name: str, last_stage_name: str) -> None:
-        self.actor_name = actor_name
-        self.stage_name = stage_name
-        self.last_stage_name = last_stage_name
+
+        self._actor_name: str = actor_name
+        self._stage_name: str = stage_name
+        self._last_stage_name: str = last_stage_name
 
     def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
-        if actor_name != self.actor_name:
+        if actor_name != self._actor_name:
             # 目标场景内的一切听到的是这个:"xxx进入了场景"
-            return enter_stage_prompt1(self.actor_name, self.stage_name)
+            return enter_stage_prompt1(self._actor_name, self._stage_name)
             
         #通知我自己，我从哪里去往了哪里。这样prompt更加清晰一些
-        return enter_stage_prompt2(self.actor_name, self.stage_name, self.last_stage_name)
+        return enter_stage_prompt2(self._actor_name, self._stage_name, self._last_stage_name)
     
-    def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
-        event = enter_stage_prompt1(self.actor_name, self.stage_name)
-        return event    
-####################################################################################################################################
-####################################################################################################################################
-#################################################################################################################################### 
+    def to_stage(self, stage_name: str, extended_context: ExtendedContext) -> str:
+        return enter_stage_prompt1(self._actor_name, self._stage_name)    
+###############################################################################################################################################
+###############################################################################################################################################
+###############################################################################################################################################
 class GoToActionSystem(ReactiveProcessor):
 
     def __init__(self, context: ExtendedContext) -> None:
         super().__init__(context)
-        self.context = context
+        self._context = context
 ###############################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
@@ -91,7 +93,7 @@ class GoToActionSystem(ReactiveProcessor):
                 logger.warning(f"GoToActionSystem: {entity} is not Actor?!")
                 continue
             
-            go_to_action_comp: GoToActionComponent = entity.get(GoToActionComponent)
+            go_to_action_comp = entity.get(GoToActionComponent)
             action: AgentAction = go_to_action_comp.action
             # if len(action._values) == 0:
             #    continue
@@ -99,11 +101,12 @@ class GoToActionSystem(ReactiveProcessor):
             if stage_name == "":
                 logger.error(f"GoToActionSystem: {action} has no stage name")
                 continue
-            handle = GoToActionHelper(self.context, entity, stage_name)
-            if handle.target_stage_entity is None or handle.current_stage_entity is None or handle.target_stage_entity == handle.current_stage_entity:
+
+            handle = GoToActionHelper(self._context, entity, stage_name)
+            if handle._target_stage_entity is None or handle._current_stage_entity is None or handle._target_stage_entity == handle._current_stage_entity:
                 continue
 
-            if handle.current_stage_entity is not None:
+            if handle._current_stage_entity is not None:
                 #离开前的处理
                 self.before_leave_stage(handle)
                 #离开
@@ -116,47 +119,47 @@ class GoToActionSystem(ReactiveProcessor):
 ###############################################################################################################################################            
     def enter_stage(self, helper: GoToActionHelper) -> None:
 
-        entity = helper.who
-        current_stage_name = helper.current_stage_name
-        target_stage_name = helper.target_stage_name
-        target_stage_entity = helper.target_stage_entity
+        entity = helper._who
+        current_stage_name = helper._current_stage_name
+        target_stage_name = helper._target_stage_name
+        target_stage_entity = helper._target_stage_entity
         assert target_stage_entity is not None
         actor_comp: ActorComponent = entity.get(ActorComponent)
 
         replace_name = actor_comp.name
         replace_current_stage = target_stage_name
         entity.replace(ActorComponent, replace_name, replace_current_stage)
-        self.context.change_stage_tag_component(entity, current_stage_name, replace_current_stage)
+        self._context.change_stage_tag_component(entity, current_stage_name, replace_current_stage)
 
         #进入场景的事件需要通知相关的人
-        notify_stage_director(self.context, entity, ActorEnterStageEvent(actor_comp.name, target_stage_name, current_stage_name))
+        notify_stage_director(self._context, entity, ActorEnterStageEvent(actor_comp.name, target_stage_name, current_stage_name))
 ###############################################################################################################################################
     def before_leave_stage(self, helper: GoToActionHelper) -> None:
         #目前就是强行刷一下history
         self.direct_before_leave(helper)
 ###############################################################################################################################################
     def direct_before_leave(self, helper: GoToActionHelper) -> None:
-        director_events_to_actor(self.context, helper.who)
+        director_events_to_actor(self._context, helper._who)
 ###############################################################################################################################################
     def leave_stage(self, helper: GoToActionHelper) -> None:
-        entity: Entity = helper.who
+        entity: Entity = helper._who
         actor_comp: ActorComponent = entity.get(ActorComponent)
-        assert helper.current_stage_entity is not None
+        assert helper._current_stage_entity is not None
 
         # 必须在场景信息还有效的时刻做通知
-        notify_stage_director(self.context, entity, ActorLeaveStageEvent(actor_comp.name, helper.current_stage_name, helper.target_stage_name))
+        notify_stage_director(self._context, entity, ActorLeaveStageEvent(actor_comp.name, helper._current_stage_name, helper._target_stage_name))
 
         # 离开场景 设置成空
         replace_name = actor_comp.name
         replace_current_stage = "" #设置空！！！！！
         entity.replace(ActorComponent, replace_name, replace_current_stage)
-        self.context.change_stage_tag_component(entity, helper.current_stage_name, replace_current_stage)
+        self._context.change_stage_tag_component(entity, helper._current_stage_name, replace_current_stage)
 ###############################################################################################################################################
     def after_enter_stage(self, helper: GoToActionHelper) -> None:
-        entity: Entity = helper.who
+        entity: Entity = helper._who
         actor_comp: ActorComponent = entity.get(ActorComponent)
         stagename = actor_comp.current_stage
-        actor_entities = self.context.actors_in_stage(stagename)
+        actor_entities = self._context.actors_in_stage(stagename)
         for _entity in actor_entities:
             if _entity.has(PerceptionActionComponent):
                 continue

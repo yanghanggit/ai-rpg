@@ -13,18 +13,16 @@ from builtin_prompt.cn_builtin_prompt import broadcast_action_prompt
 ####################################################################################################################################
 class StageOrActorBroadcastEvent(IStageDirectorEvent):
 
-    def __init__(self, whobroadcast: str, stagename: str, content: str) -> None:
-        self.whobroadcast = whobroadcast
-        self.stagename = stagename
-        self.content = content
+    def __init__(self, who_broadcast: str, stage_name: str, broadcast_content: str) -> None:
+        self._who_broadcast = who_broadcast
+        self._stagename = stage_name
+        self._broadcast_content = broadcast_content
     
     def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
-        broadcastcontent = broadcast_action_prompt(self.whobroadcast, self.stagename, self.content)
-        return broadcastcontent
+        return broadcast_action_prompt(self._who_broadcast, self._stagename, self._broadcast_content)
     
     def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
-        broadcastcontent = broadcast_action_prompt(self.whobroadcast, self.stagename, self.content)
-        return broadcastcontent
+        return broadcast_action_prompt(self._who_broadcast, self._stagename, self._broadcast_content)
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
@@ -32,7 +30,7 @@ class BroadcastActionSystem(ReactiveProcessor):
 
     def __init__(self, context: ExtendedContext) -> None:
         super().__init__(context)
-        self.context = context
+        self._context = context
 ####################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
@@ -49,15 +47,15 @@ class BroadcastActionSystem(ReactiveProcessor):
 ####################################################################################################
     ## 目前的设定是场景与Actor都能广播，后续会调整与修改。
     def broadcast(self, entity: Entity) -> None:
-        stageentity = self.context.safe_get_stage_entity(entity)
-        if stageentity is None:
+        current_stage_entity = self._context.safe_get_stage_entity(entity)
+        if current_stage_entity is None:
             logger.error(f"BroadcastActionSystem: stageentity is None!")
             return
         #
-        broadcastcomp: BroadcastActionComponent = entity.get(BroadcastActionComponent)
-        stagecomp: StageComponent = stageentity.get(StageComponent)
+        broadcast_comp = entity.get(BroadcastActionComponent)
+        stage_comp = current_stage_entity.get(StageComponent)
         #
-        action: AgentAction = broadcastcomp.action
-        combine = action.join_values()
-        notify_stage_director(self.context, stageentity, StageOrActorBroadcastEvent(action._actor_name, stagecomp.name, combine))
+        action: AgentAction = broadcast_comp.action
+        join_values = action.join_values()
+        notify_stage_director(self._context, current_stage_entity, StageOrActorBroadcastEvent(action._actor_name, stage_comp.name, join_values))
 ####################################################################################################

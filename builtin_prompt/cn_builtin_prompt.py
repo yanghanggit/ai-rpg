@@ -167,7 +167,7 @@ def special_component_prompt(prop: PropData) -> str:
 """
     return prompt
 ###############################################################################################################################################
-def check_status_action_prompt(who: str, props: List[PropData], health: float, special_components: List[PropData], events: List[PropData]) -> str:
+def check_status_action_prompt(who: str, props: List[PropData], health: float, special_components: List[PropData]) -> str:
     health *= 100
     prompt_of_actor = f"生命值: {health:.2f}%"
 

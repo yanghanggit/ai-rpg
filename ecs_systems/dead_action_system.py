@@ -13,8 +13,8 @@ class DeadActionSystem(ExecuteProcessor):
     
 ########################################################################################################################################################################
     def __init__(self, context: ExtendedContext, rpggame: RPGGame) -> None:
-        self.context = context
-        self.rpggame = rpggame
+        self._context: ExtendedContext = context
+        self._rpggame: RPGGame = rpggame
 ########################################################################################################################################################################
     @override
     def execute(self) -> None:
@@ -24,18 +24,18 @@ class DeadActionSystem(ExecuteProcessor):
         self.destory()
 ########################################################################################################################################################################
     def is_player_dead_then_game_over(self) -> None:
-        entities: Set[Entity] = self.context.get_group(Matcher(DeadActionComponent)).entities
+        entities: Set[Entity] = self._context.get_group(Matcher(DeadActionComponent)).entities
         for entity in entities:
             if entity.has(PlayerComponent):
                 logger.warning(f"玩家死亡，游戏结束")
-                self.rpggame.exited = True
-                self.rpggame.on_exit()
+                self._rpggame.exited = True
+                self._rpggame.on_exit()
 ########################################################################################################################################################################  
     def destory(self) -> None:
-        entities: Set[Entity] = self.context.get_group(Matcher(DeadActionComponent)).entities
+        entities: Set[Entity] = self._context.get_group(Matcher(DeadActionComponent)).entities
         for entity in entities:
-            deadcomp: DeadActionComponent = entity.get(DeadActionComponent)
-            action: AgentAction = deadcomp.action
+            dead_comp = entity.get(DeadActionComponent)
+            action: AgentAction = dead_comp.action
             if not entity.has(DestroyComponent):
                 entity.add(DestroyComponent, action._actor_name) ### 这里只需要名字，不需要values，谁造成了你的死亡
 ########################################################################################################################################################################

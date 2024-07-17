@@ -12,7 +12,7 @@ class PortalStepActionSystem(ReactiveProcessor):
 
     def __init__(self, context: ExtendedContext) -> None:
         super().__init__(context)
-        self.context = context
+        self._context = context
 ###############################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
@@ -32,12 +32,7 @@ class PortalStepActionSystem(ReactiveProcessor):
         actor_comp: ActorComponent = entity.get(ActorComponent)
         portalstepcomp: PortalStepActionComponent = entity.get(PortalStepActionComponent)
         action: AgentAction = portalstepcomp.action
-        # if len(action._values) == 0:
-        #     logger.error(f"PortalStepActionSystem: {action} has no action values")
-        #     return
-        #
-        # logger.debug(f"PortalStepActionSystem: {action}")
-        stage_name = action.value(0) #_values[0]
+        stage_name = action.value(0)
         if stage_name == "":
             logger.error(f"PortalStepActionSystem: {actor_comp.name} 想要离开的场景是: {stage_name}")
             return
@@ -49,7 +44,7 @@ class PortalStepActionSystem(ReactiveProcessor):
             return
 
         # 取出当前场景
-        stageentity = self.context.get_stage_entity(stage_name)
+        stageentity = self._context.get_stage_entity(stage_name)
         assert stageentity is not None, f"PortalStepActionSystem: {stage_name} is None"
         if not stageentity.has(ExitOfPortalComponent):
             # 该场景没有连接到任何场景，所以不能"盲目"的离开
@@ -59,7 +54,7 @@ class PortalStepActionSystem(ReactiveProcessor):
         # 取出数据，并准备沿用GoToActionComponent
         exit_of_portal_comp: ExitOfPortalComponent = stageentity.get(ExitOfPortalComponent)
         logger.debug(f"PortalStepActionSystem: {actor_comp.name} 想要离开的场景是: {stage_name}, 该场景可以连接的场景有: {exit_of_portal_comp.name}")
-        target_stage_entity = self.context.get_stage_entity(exit_of_portal_comp.name)
+        target_stage_entity = self._context.get_stage_entity(exit_of_portal_comp.name)
         if target_stage_entity is None:
             logger.error(f"PortalStepActionSystem: {actor_comp.name} 想要离开的场景是: {stage_name}, 该场景可以连接的场景有: {exit_of_portal_comp.name}, 但是该场景不存在")
             return

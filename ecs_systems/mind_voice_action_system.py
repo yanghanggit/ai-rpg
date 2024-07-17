@@ -1,16 +1,13 @@
 from typing import override
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
 from ecs_systems.components import MindVoiceActionComponent
-from my_agent.agent_action import AgentAction
 from my_entitas.extended_context import ExtendedContext
-#from auxiliary.print_in_color import Color
-from loguru import logger
 
 ####################################################################################################
 class MindVoiceActionSystem(ReactiveProcessor):
     def __init__(self, context: ExtendedContext) -> None:
         super().__init__(context)
-        self.context = context
+        self._context = context
 ####################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
@@ -28,9 +25,5 @@ class MindVoiceActionSystem(ReactiveProcessor):
 ####################################################################################################
     def mindvoice(self, entity: Entity) -> None:
         pass
-        # mindvoicecomp: MindVoiceActionComponent = entity.get(MindVoiceActionComponent)
-        # action: ActorAction = mindvoicecomp.action
-        # combine = action.single_value()
-        #logger.debug(f"debug!! [mindvoice]:{action.name} = {combine}")
  ####################################################################################################       
                 

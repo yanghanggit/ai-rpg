@@ -16,10 +16,10 @@ class UpdateAppearanceSystem(InitializeProcessor, ExecuteProcessor):
     """
 
     def __init__(self, context: ExtendedContext, system_name: str) -> None:
-        self.context: ExtendedContext = context
-        self.system_name: str = str(system_name)
-        assert self.system_name == "角色外观生成器"
-        assert len(self.system_name) > 0
+        self._context: ExtendedContext = context
+        self._system_name: str = str(system_name)
+        assert self._system_name == "角色外观生成器"
+        assert len(self._system_name) > 0
 ###############################################################################################################################################
     @override
     def initialize(self) -> None:
@@ -27,11 +27,11 @@ class UpdateAppearanceSystem(InitializeProcessor, ExecuteProcessor):
 ###############################################################################################################################################
     @override
     def execute(self) -> None:
-        context = self.context
-        world_entity = context.get_world_entity(self.system_name)
+        context = self._context
+        world_entity = context.get_world_entity(self._system_name)
         if world_entity is None:
             # 没有这个对象，就认为这个系统不成立。
-            logger.warning(f"{self.system_name}, world_entity is None.")
+            logger.warning(f"{self._system_name}, world_entity is None.")
             return
         self._execute(world_entity)
 ###############################################################################################################################################
@@ -48,7 +48,7 @@ class UpdateAppearanceSystem(InitializeProcessor, ExecuteProcessor):
 ###############################################################################################################################################
     # 没有衣服的，就直接更新外观，一般是动物类的，或者非人类的。
     def imme_update_appearance(self, actors_body_and_clothe:  Dict[str, tuple[str, str]]) -> None:
-        context = self.context
+        context = self._context
         for name, (body, clothe) in actors_body_and_clothe.items():
             if clothe == "" and body != "":
                 entity = context.get_actor_entity(name)
@@ -71,8 +71,8 @@ class UpdateAppearanceSystem(InitializeProcessor, ExecuteProcessor):
         logger.debug(f"final_prompt: {final_prompt}")
 
         # 请求更新
-        langserve_agent_system: LangServeAgentSystem = self.context._langserve_agent_system
-        safe_name = self.context.safe_get_entity_name(world_entity)
+        langserve_agent_system: LangServeAgentSystem = self._context._langserve_agent_system
+        safe_name = self._context.safe_get_entity_name(world_entity)
         try:
 
             agent_request = langserve_agent_system.create_agent_request_task_without_any_context(safe_name, final_prompt)
@@ -98,7 +98,7 @@ class UpdateAppearanceSystem(InitializeProcessor, ExecuteProcessor):
 ###############################################################################################################################################
     # 请求成功后的处理，就是把AppearanceComponent 设置一遍
     def on_request_success(self, json_response: Dict[str, str]) -> None:
-        context = self.context
+        context = self._context
         for name, appearance in json_response.items():
             entity = context.get_actor_entity(name)
             if entity is None:
@@ -110,7 +110,7 @@ class UpdateAppearanceSystem(InitializeProcessor, ExecuteProcessor):
     # 获取所有的角色的身体和衣服
     def get_actors_body_and_clothe(self) -> Dict[str, tuple[str, str]]:
         res: Dict[str, tuple[str, str]] = {}
-        actors: Set[Entity] = self.context.get_group(Matcher(all_of = [AppearanceComponent, BodyComponent, ActorComponent])).entities
+        actors: Set[Entity] = self._context.get_group(Matcher(all_of = [AppearanceComponent, BodyComponent, ActorComponent])).entities
         for _actor in actors:
             appearance_comp: AppearanceComponent = _actor.get(AppearanceComponent)
             if appearance_comp.appearance != "":
@@ -124,8 +124,8 @@ class UpdateAppearanceSystem(InitializeProcessor, ExecuteProcessor):
 ###############################################################################################################################################
     # 获取衣服的描述 todo。现在就返回了第一个衣服的描述
     def get_clothe(self, entity: Entity) -> str:
-        filesystem = self.context._file_system
-        safename = self.context.safe_get_entity_name(entity)            
+        filesystem = self._context._file_system
+        safename = self._context.safe_get_entity_name(entity)            
         files = filesystem.get_prop_files(safename)
         for _file in files:
             if _file._prop.is_clothes():

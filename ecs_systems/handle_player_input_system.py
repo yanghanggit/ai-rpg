@@ -29,14 +29,14 @@ def splitcommand(input_val: str, split_str: str)-> str:
 ############################################################################################################
 class HandlePlayerInputSystem(ExecuteProcessor):
     def __init__(self, context: ExtendedContext, rpggame: RPGGame) -> None:
-        self.context: ExtendedContext = context
-        self.rpggame = rpggame
+        self._context: ExtendedContext = context
+        self._rpggame: RPGGame = rpggame
 ############################################################################################################
     @override
     def execute(self) -> None:
-        assert isinstance(self.rpggame, WebServerMultiplayersRPGGame) or isinstance(self.rpggame, TerminalRPGGame)
-        assert len(self.rpggame.player_names) > 0
-        for player_name in self.rpggame.player_names:
+        assert isinstance(self._rpggame, WebServerMultiplayersRPGGame) or isinstance(self._rpggame, TerminalRPGGame)
+        assert len(self._rpggame.player_names) > 0
+        for player_name in self._rpggame.player_names:
             self.play_via_client_and_handle_player_input(player_name)
 ############################################################################################################
     def play_via_client_and_handle_player_input(self, playername: str) -> None:
@@ -46,14 +46,14 @@ class HandlePlayerInputSystem(ExecuteProcessor):
             return
         
         for command in playerproxy._inputs:
-            singleplayer = self.context.get_player_entity(playername)
+            singleplayer = self._context.get_player_entity(playername)
             assert singleplayer is not None
             #
-            safename = self.context.safe_get_entity_name(singleplayer)
+            safename = self._context.safe_get_entity_name(singleplayer)
             playerproxy.add_actor_message(safename, command)
             
             ## 处理玩家的输入
-            create_any_player_command_by_input = self.handle_input(self.rpggame, playerproxy, command)
+            create_any_player_command_by_input = self.handle_input(self._rpggame, playerproxy, command)
             logger.debug(f"{'=' * 50}")
 
             if not create_any_player_command_by_input:

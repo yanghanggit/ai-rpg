@@ -10,7 +10,7 @@ from builtin_prompt.cn_builtin_prompt import stage_director_begin_prompt, stage_
 class StageDirectorSystem(ExecuteProcessor):
 
     def __init__(self, context: ExtendedContext) -> None:
-        self.context: ExtendedContext = context
+        self._context: ExtendedContext = context
 #################################################################################################################################################################
     @override
     def execute(self) -> None:
@@ -18,7 +18,7 @@ class StageDirectorSystem(ExecuteProcessor):
         self.director_clear()
 #################################################################################################################################################################
     def handle(self) -> None:
-        entities = self.context.get_group(Matcher(all_of=[StageComponent, StageDirectorComponent])).entities
+        entities = self._context.get_group(Matcher(all_of=[StageComponent, StageDirectorComponent])).entities
         for entity in entities:
             logger.debug('=' *50)
             self.handle_stage(entity)
@@ -27,7 +27,7 @@ class StageDirectorSystem(ExecuteProcessor):
             logger.debug('=' *50)
 #################################################################################################################################################################   
     def director_clear(self) -> None:
-        entities = self.context.get_group(Matcher(all_of=[StageComponent, StageDirectorComponent])).entities
+        entities = self._context.get_group(Matcher(all_of=[StageComponent, StageDirectorComponent])).entities
         for entity in entities:
             directorcomp: StageDirectorComponent = entity.get(StageDirectorComponent)
             directorcomp.clear()
@@ -36,17 +36,17 @@ class StageDirectorSystem(ExecuteProcessor):
         assert entitystage.has(StageComponent)
         stagecomp: StageComponent = entitystage.get(StageComponent)
         directorcomp: StageDirectorComponent = entitystage.get(StageDirectorComponent)
-        events2stage = directorcomp.to_stage(stagecomp.name, self.context)  
+        events2stage = directorcomp.to_stage(stagecomp.name, self._context)  
         for event in events2stage:
             logger.debug(f"director:{stagecomp.name}:{event}")
-            self.context.safe_add_human_message_to_entity(entitystage, event)       
+            self._context.safe_add_human_message_to_entity(entitystage, event)       
 #################################################################################################################################################################
     def handle_actors_in_this_stage(self, entitystage: Entity) -> None:
         assert entitystage.has(StageComponent)
         stagecomp: StageComponent = entitystage.get(StageComponent)
-        actors_int_this_stage = self.context.actors_in_stage(stagecomp.name)
+        actors_int_this_stage = self._context.actors_in_stage(stagecomp.name)
         for _entity in actors_int_this_stage:
-            director_events_to_actor(self.context, _entity)
+            director_events_to_actor(self._context, _entity)
 #################################################################################################################################################################
 #################################################################################################################################################################
 #################################################################################################################################################################

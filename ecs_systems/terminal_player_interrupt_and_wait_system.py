@@ -9,18 +9,18 @@ from rpg_game.terminal_rpg_game import TerminalRPGGame
 
 class TerminalPlayerInterruptAndWaitSystem(ExecuteProcessor):
     def __init__(self, context: ExtendedContext, rpggame: RPGGame) -> None:
-        self.context: ExtendedContext = context
-        self.rpggame: RPGGame = rpggame
+        self._context: ExtendedContext = context
+        self._rpggame: RPGGame = rpggame
 ############################################################################################################
     @override
     def execute(self) -> None:
-        if not isinstance(self.rpggame, TerminalRPGGame):
+        if not isinstance(self._rpggame, TerminalRPGGame):
             logger.debug("不是终端模式，不需要中断等待")
             return
 
-        single_player = self.rpggame.single_terminal_player()
+        single_player = self._rpggame.single_terminal_player()
         player_proxy = get_player_proxy(single_player)
-        player_entity = self.context.get_player_entity(single_player)
+        player_entity = self._context.get_player_entity(single_player)
         if player_entity is None or player_proxy is None:
             return
         

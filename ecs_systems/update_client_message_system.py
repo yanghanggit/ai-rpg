@@ -17,16 +17,16 @@ from rpg_game.web_server_multi_players_rpg_game import WebServerMultiplayersRPGG
 # todo: 未完成
 class UpdateClientMessageSystem(ExecuteProcessor):
     def __init__(self, context: ExtendedContext, rpggame: RPGGame) -> None:
-        self.context: ExtendedContext = context
-        self.rpggame: RPGGame = rpggame
+        self._context: ExtendedContext = context
+        self._rpggame: RPGGame = rpggame
 ############################################################################################################
     @override
     def execute(self) -> None:
-        assert len(self.rpggame.player_names) > 0
-        assert isinstance(self.rpggame, WebServerMultiplayersRPGGame) or isinstance(self.rpggame, TerminalRPGGame)
-        for player_name in self.rpggame.player_names:
+        assert len(self._rpggame.player_names) > 0
+        assert isinstance(self._rpggame, WebServerMultiplayersRPGGame) or isinstance(self._rpggame, TerminalRPGGame)
+        for player_name in self._rpggame.player_names:
             player_proxy = get_player_proxy(player_name)
-            player_entity = self.context.get_player_entity(player_name)
+            player_entity = self._context.get_player_entity(player_name)
             if player_entity is None or player_proxy is None:
                 logger.error(f"玩家{player_name}不存在，或者玩家未加入游戏")
                 continue
@@ -43,7 +43,7 @@ class UpdateClientMessageSystem(ExecuteProcessor):
         self.go_to_action_2_message(playerproxy, player_entity)
 ############################################################################################################
     def stage_enviro_narrate_action_2_message(self, playerproxy: PlayerProxy, player_entity: Entity) -> None:
-        stage = self.context.safe_get_stage_entity(player_entity)
+        stage = self._context.safe_get_stage_entity(player_entity)
         if stage is None:
             return
         if not stage.has(EnviroNarrateActionComponent):
@@ -56,16 +56,16 @@ class UpdateClientMessageSystem(ExecuteProcessor):
         playerproxy.add_stage_message(action._actor_name, message)
 ############################################################################################################
     def whisper_action_2_message(self, playerproxy: PlayerProxy, player_entity: Entity) -> None:
-        player_entity_stage = self.context.safe_get_stage_entity(player_entity)
-        player_entity_name = self.context.safe_get_entity_name(player_entity) 
-        entities = self.context.get_group(Matcher(WhisperActionComponent)).entities
+        player_entity_stage = self._context.safe_get_stage_entity(player_entity)
+        player_entity_name = self._context.safe_get_entity_name(player_entity) 
+        entities = self._context.get_group(Matcher(WhisperActionComponent)).entities
         for entity in entities:
 
             if entity == player_entity:
                 #不能和自己对话
                 continue
             
-            his_stage_entity = self.context.safe_get_stage_entity(entity)
+            his_stage_entity = self._context.safe_get_stage_entity(entity)
             if his_stage_entity != player_entity_stage:
                 #场景不一样，不能看见
                 continue
@@ -76,7 +76,7 @@ class UpdateClientMessageSystem(ExecuteProcessor):
             for tp in target_and_message:
                 targetname = tp[0]
                 message = tp[1]
-                if conversation_check(self.context, entity, targetname) != ErrorConversationEnable.VALID:
+                if conversation_check(self._context, entity, targetname) != ErrorConversationEnable.VALID:
                     continue
                 if player_entity_name != targetname:
                     # 不是对你说的不能看见
@@ -85,15 +85,15 @@ class UpdateClientMessageSystem(ExecuteProcessor):
                 playerproxy.add_actor_message(action._actor_name, make_target_and_message(targetname, message))
 ############################################################################################################
     def broadcast_action_2_message(self, playerproxy: PlayerProxy, player_entity: Entity) -> None:
-        player_entity_stage = self.context.safe_get_stage_entity(player_entity)
-        entities = self.context.get_group(Matcher(BroadcastActionComponent)).entities
+        player_entity_stage = self._context.safe_get_stage_entity(player_entity)
+        entities = self._context.get_group(Matcher(BroadcastActionComponent)).entities
         for entity in entities:
                 
             if entity == player_entity:
                 #不能和自己对话
                 continue
             
-            his_stage_entity = self.context.safe_get_stage_entity(entity)
+            his_stage_entity = self._context.safe_get_stage_entity(entity)
             if his_stage_entity != player_entity_stage:
                 #场景不一样，不能看见
                 continue
@@ -104,15 +104,15 @@ class UpdateClientMessageSystem(ExecuteProcessor):
             playerproxy.add_actor_message(action._actor_name, f"""<@all>{single_val}""")
 ############################################################################################################
     def speak_action_2_message(self, playerproxy: PlayerProxy, player_entity: Entity) -> None:
-        player_entity_stage = self.context.safe_get_stage_entity(player_entity)
-        entities = self.context.get_group(Matcher(SpeakActionComponent)).entities
+        player_entity_stage = self._context.safe_get_stage_entity(player_entity)
+        entities = self._context.get_group(Matcher(SpeakActionComponent)).entities
         for entity in entities:
 
             if entity == player_entity:
                 #不能和自己对话
                 continue
             
-            his_stage_entity = self.context.safe_get_stage_entity(entity)
+            his_stage_entity = self._context.safe_get_stage_entity(entity)
             if his_stage_entity != player_entity_stage:
                 #场景不一样，不能看见
                 continue
@@ -123,20 +123,20 @@ class UpdateClientMessageSystem(ExecuteProcessor):
             for tp in target_and_message:
                 targetname = tp[0]
                 message = tp[1]
-                if conversation_check(self.context, entity, targetname) != ErrorConversationEnable.VALID:
+                if conversation_check(self._context, entity, targetname) != ErrorConversationEnable.VALID:
                     continue
                 playerproxy.add_actor_message(action._actor_name, make_target_and_message(targetname, message))
 ############################################################################################################
     def mind_voice_action_2_message(self, playerproxy: PlayerProxy, player_entity: Entity) -> None:
-        player_entity_stage = self.context.safe_get_stage_entity(player_entity)
-        entities = self.context.get_group(Matcher(MindVoiceActionComponent)).entities
+        player_entity_stage = self._context.safe_get_stage_entity(player_entity)
+        entities = self._context.get_group(Matcher(MindVoiceActionComponent)).entities
         for entity in entities:
 
             if entity == player_entity:
                 #自己没有mindvoice
                 continue
             
-            his_stage_entity = self.context.safe_get_stage_entity(entity)
+            his_stage_entity = self._context.safe_get_stage_entity(entity)
             if his_stage_entity != player_entity_stage:
                 #只添加同一个场景的mindvoice
                 continue
@@ -147,14 +147,14 @@ class UpdateClientMessageSystem(ExecuteProcessor):
             playerproxy.add_actor_message(action._actor_name, f"""<心理活动>{single_value}""")
 ############################################################################################################
     def attack_action_2_message(self, playerproxy: PlayerProxy, player_entity: Entity) -> None:
-        player_entity_stage = self.context.safe_get_stage_entity(player_entity)
-        entities = self.context.get_group(Matcher(AttackActionComponent)).entities
+        player_entity_stage = self._context.safe_get_stage_entity(player_entity)
+        entities = self._context.get_group(Matcher(AttackActionComponent)).entities
         for entity in entities:
 
             if entity == player_entity:
                 continue
             
-            his_stage_entity = self.context.safe_get_stage_entity(entity)
+            his_stage_entity = self._context.safe_get_stage_entity(entity)
             if his_stage_entity != player_entity_stage:
                 continue
 
@@ -168,14 +168,14 @@ class UpdateClientMessageSystem(ExecuteProcessor):
             playerproxy.add_actor_message(action._actor_name, f"""准备对{targetname}发起了攻击""")
 ############################################################################################################
     def go_to_action_2_message(self, playerproxy: PlayerProxy, player_entity: Entity) -> None:
-        player_entity_stage = self.context.safe_get_stage_entity(player_entity)
-        entities = self.context.get_group(Matcher(GoToActionComponent)).entities
+        player_entity_stage = self._context.safe_get_stage_entity(player_entity)
+        entities = self._context.get_group(Matcher(GoToActionComponent)).entities
         for entity in entities:
 
             if entity == player_entity:
                 continue
             
-            his_stage_entity = self.context.safe_get_stage_entity(entity)
+            his_stage_entity = self._context.safe_get_stage_entity(entity)
             if his_stage_entity != player_entity_stage:
                 continue
 

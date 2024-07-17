@@ -10,18 +10,18 @@ from rpg_game.web_server_multi_players_rpg_game import WebServerMultiplayersRPGG
 ############################################################################################################
 class TerminalPlayerInputSystem(ExecuteProcessor):
     def __init__(self, context: ExtendedContext, rpggame: RPGGame) -> None:
-        self.context: ExtendedContext = context
-        self.rpggame: RPGGame = rpggame
+        self._context: ExtendedContext = context
+        self._rpggame: RPGGame = rpggame
 ############################################################################################################
     @override
     def execute(self) -> None:
-        assert len(self.rpggame.player_names) > 0
-        assert isinstance(self.rpggame, WebServerMultiplayersRPGGame) or isinstance(self.rpggame, TerminalRPGGame)
-        if not isinstance(self.rpggame, TerminalRPGGame):
+        assert len(self._rpggame.player_names) > 0
+        assert isinstance(self._rpggame, WebServerMultiplayersRPGGame) or isinstance(self._rpggame, TerminalRPGGame)
+        if not isinstance(self._rpggame, TerminalRPGGame):
             logger.error("只处理终端的输入")
             return
         #
-        single_player = self.rpggame.single_terminal_player()
+        single_player = self._rpggame.single_terminal_player()
         self.play_via_terminal_and_handle_player_input(single_player)
 ############################################################################################################
     def play_via_terminal_and_handle_player_input(self, playername: str) -> None:
@@ -37,7 +37,7 @@ class TerminalPlayerInputSystem(ExecuteProcessor):
             # 测试的客户端反馈
             usrinput = input(f"[{playername}]:")
             # 处理玩家的输入
-            self.handle_input(self.rpggame, playerproxy, usrinput)
+            self.handle_input(self._rpggame, playerproxy, usrinput)
             ## 总之要跳出循环
             break
 ############################################################################################################ 

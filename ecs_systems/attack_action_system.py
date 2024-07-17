@@ -66,7 +66,7 @@ class AttackActionSystem(ReactiveProcessor):
 
     def __init__(self, context: ExtendedContext) -> None:
         super().__init__(context)
-        self.context: ExtendedContext = context
+        self._context: ExtendedContext = context
 ######################################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
@@ -83,7 +83,7 @@ class AttackActionSystem(ReactiveProcessor):
  ######################################################################################################################################################  
     # todo 函数太长了，后续可以考虑拆分！！！！！
     def _attack(self, _entity: Entity) -> None:
-        context = self.context
+        context = self._context
         rpgcomp: SimpleRPGAttrComponent = _entity.get(SimpleRPGAttrComponent)
         fightcomp: AttackActionComponent = _entity.get(AttackActionComponent)
         action: AgentAction = fightcomp.action
@@ -98,7 +98,7 @@ class AttackActionSystem(ReactiveProcessor):
                 logger.warning(f"攻击者{action._actor_name}意图攻击的对象{value_as_target_name}没有SimpleRPGComponent,本次攻击无效.")
                 continue
 
-            conversation_check_error = conversation_check(self.context, _entity, value_as_target_name)
+            conversation_check_error = conversation_check(self._context, _entity, value_as_target_name)
             if conversation_check_error != ErrorConversationEnable.VALID:
                 if conversation_check_error == ErrorConversationEnable.TARGET_DOES_NOT_EXIST:
                     logger.error(f"攻击者{action._actor_name}意图攻击的对象{value_as_target_name}不存在,本次攻击无效.")
@@ -112,14 +112,14 @@ class AttackActionSystem(ReactiveProcessor):
 
                     # 名字拿出来，看一下
                     assert _entity is not None
-                    stage1 = self.context.safe_get_stage_entity(_entity)
+                    stage1 = self._context.safe_get_stage_entity(_entity)
                     assert stage1 is not None
-                    stage1_name = self.context.safe_get_entity_name(stage1)
+                    stage1_name = self._context.safe_get_entity_name(stage1)
 
                     assert _target_entity is not None
-                    stage2 = self.context.safe_get_stage_entity(_target_entity)
+                    stage2 = self._context.safe_get_stage_entity(_target_entity)
                     assert stage2 is not None
-                    stage2_name = self.context.safe_get_entity_name(stage2)
+                    stage2_name = self._context.safe_get_entity_name(stage2)
 
                     logger.error(f"攻击者 {action._actor_name}:{stage1_name} 和攻击对象 {value_as_target_name}:{stage2_name} 不在同一个舞台上,本次攻击无效.")
 
@@ -171,7 +171,7 @@ class AttackActionSystem(ReactiveProcessor):
     ## 杀死对方就直接夺取唯一性道具。
     def unique_prop_be_taken_away(self, _entity: Entity, _target_entity: Entity) -> None:
 
-        file_system = self.context._file_system
+        file_system = self._context._file_system
         _rpg_comp: SimpleRPGAttrComponent = _entity.get(SimpleRPGAttrComponent)
         _target_rpg_comp: SimpleRPGAttrComponent = _target_entity.get(SimpleRPGAttrComponent)
         logger.info(f"{_rpg_comp.name} kill => {_target_rpg_comp.name}")

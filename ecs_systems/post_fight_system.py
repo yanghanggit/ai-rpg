@@ -9,7 +9,7 @@ from ecs_systems.components import DeadActionComponent, ACTOR_INTERACTIVE_ACTION
 class PostFightSystem(ExecuteProcessor):
 ############################################################################################################
     def __init__(self, context: ExtendedContext) -> None:
-        self.context: ExtendedContext = context
+        self._context: ExtendedContext = context
 ############################################################################################################
     @override
     def execute(self) -> None:
@@ -20,7 +20,7 @@ class PostFightSystem(ExecuteProcessor):
         #     pass
 ########################################################################################################################################################################
     def remove_actor_interactive_actions(self) -> None:
-        actor_entities:Set[Entity] = self.context.get_group(Matcher(all_of = [ActorComponent, DeadActionComponent], any_of = ACTOR_INTERACTIVE_ACTIONS_REGISTER)).entities.copy()
+        actor_entities:Set[Entity] = self._context.get_group(Matcher(all_of = [ActorComponent, DeadActionComponent], any_of = ACTOR_INTERACTIVE_ACTIONS_REGISTER)).entities.copy()
         for entity in actor_entities:
             for actionsclass in ACTOR_INTERACTIVE_ACTIONS_REGISTER:
                 if entity.has(actionsclass):

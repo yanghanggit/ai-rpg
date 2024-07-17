@@ -20,21 +20,21 @@ class PerceptionActionHelper:
     """
 
     def __init__(self, context: ExtendedContext):
-        self.context: ExtendedContext = context
-        self.props_in_stage: List[str] = []
-        self.actors_in_stage: Dict[str, str] = {}
+        self._context: ExtendedContext = context
+        self._props_in_stage: List[str] = []
+        self._actors_in_stage: Dict[str, str] = {}
 ###################################################################################################################
     def perception(self, entity: Entity) -> None:
-        safestage = self.context.safe_get_stage_entity(entity)
+        safestage = self._context.safe_get_stage_entity(entity)
         if safestage is None:
-            logger.error(f"PerceptionActionHelper: {self.context.safe_get_entity_name(entity)} can't find the stage")
+            logger.error(f"PerceptionActionHelper: {self._context.safe_get_entity_name(entity)} can't find the stage")
             return
-        self.actors_in_stage = self.perception_actors_in_stage(entity, safestage)
-        self.props_in_stage = self.perception_props_in_stage(entity, safestage)
+        self._actors_in_stage = self.perception_actors_in_stage(entity, safestage)
+        self._props_in_stage = self.perception_props_in_stage(entity, safestage)
 ###################################################################################################################
     def perception_actors_in_stage(self, entity: Entity, stageentity: Entity) -> Dict[str, str]:
-        all: Dict[str, str] = self.context.appearance_in_stage(entity)
-        safe_name = self.context.safe_get_entity_name(entity)
+        all: Dict[str, str] = self._context.appearance_in_stage(entity)
+        safe_name = self._context.safe_get_entity_name(entity)
         all.pop(safe_name, None) # 删除自己，自己是不必要的。
         assert all.get(safe_name) is None
         return all
@@ -42,7 +42,7 @@ class PerceptionActionHelper:
     def perception_props_in_stage(self, entity: Entity, stageentity: Entity) -> List[str]:
         res: List[str] = []
         stagecomp: StageComponent = stageentity.get(StageComponent)
-        prop_files = self.context._file_system.get_prop_files(stagecomp.name)
+        prop_files = self._context._file_system.get_prop_files(stagecomp.name)
         for prop in prop_files:
             res.append(prop._name)
         return res
@@ -79,7 +79,7 @@ class PerceptionActionSystem(ReactiveProcessor):
 
     def __init__(self, context: ExtendedContext):
         super().__init__(context)
-        self.context: ExtendedContext = context
+        self._context: ExtendedContext = context
 ###################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
@@ -95,13 +95,13 @@ class PerceptionActionSystem(ReactiveProcessor):
             self.perception(entity)
 ###################################################################################################################
     def perception(self, entity: Entity) -> None:
-        safe_name = self.context.safe_get_entity_name(entity)
+        safe_name = self._context.safe_get_entity_name(entity)
         #
-        helper = PerceptionActionHelper(self.context)
+        helper = PerceptionActionHelper(self._context)
         helper.perception(entity)
         #
-        stageentity = self.context.safe_get_stage_entity(entity)
+        stageentity = self._context.safe_get_stage_entity(entity)
         assert stageentity is not None
-        safe_stage_name = self.context.safe_get_entity_name(stageentity)   
-        notify_stage_director(self.context, entity, ActorPerceptionEvent(safe_name, safe_stage_name, helper.actors_in_stage, helper.props_in_stage))
+        safe_stage_name = self._context.safe_get_entity_name(stageentity)   
+        notify_stage_director(self._context, entity, ActorPerceptionEvent(safe_name, safe_stage_name, helper._actors_in_stage, helper._props_in_stage))
 ###################################################################################################################

@@ -145,7 +145,7 @@ async def imme_handle_perception(rpg_game: RPGGame, playerproxy: PlayerProxy) ->
     assert stageentity is not None
     safe_stage_name = context.safe_get_entity_name(stageentity)
     #
-    event = ActorPerceptionEvent(safe_actor_name, safe_stage_name, helper.actors_in_stage, helper.props_in_stage)
+    event = ActorPerceptionEvent(safe_actor_name, safe_stage_name, helper._actors_in_stage, helper._props_in_stage)
     message = event.to_actor(safe_actor_name, context)
     #
     playerproxy.add_actor_message(safe_actor_name, message)

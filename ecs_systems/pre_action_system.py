@@ -7,7 +7,7 @@ from typing import Set, override
 class PreActionSystem(ExecuteProcessor):
 ############################################################################################################
     def __init__(self, context: ExtendedContext) -> None:
-        self.context: ExtendedContext = context
+        self._context: ExtendedContext = context
 ############################################################################################################
     @override
     def execute(self) -> None:

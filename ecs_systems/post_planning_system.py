@@ -7,11 +7,11 @@ from typing import Set, override
 
 class PostPlanningSystem(ExecuteProcessor):
     def __init__(self, context: ExtendedContext) -> None:
-        self.context: ExtendedContext = context
+        self._context: ExtendedContext = context
 ############################################################################################################
     @override
     def execute(self) -> None:
-        entities: Set[Entity] = self.context.get_group(Matcher(AutoPlanningComponent)).entities.copy()
+        entities: Set[Entity] = self._context.get_group(Matcher(AutoPlanningComponent)).entities.copy()
         for entity in entities.copy():
             entity.remove(AutoPlanningComponent)
 ############################################################################################################

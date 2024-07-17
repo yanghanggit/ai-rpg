@@ -11,7 +11,7 @@ from prototype_data.data_def import PropData
 class SimpleRPGPreFightSystem(ExecuteProcessor):
     
     def __init__(self, context: ExtendedContext) -> None:
-        self.context: ExtendedContext = context
+        self._context: ExtendedContext = context
 ######################################################################################################################################################
     @override
     def execute(self) -> None:
@@ -20,7 +20,7 @@ class SimpleRPGPreFightSystem(ExecuteProcessor):
         self.rebuild_armors_from_prop_files()
 ######################################################################################################################################################
     def clear_weapons_and_armors(self) -> None:
-        rpgentities: Set[Entity] = self.context.get_group(Matcher(SimpleRPGAttrComponent)).entities
+        rpgentities: Set[Entity] = self._context.get_group(Matcher(SimpleRPGAttrComponent)).entities
         for entity in rpgentities:
             
             if entity.has(SimpleRPGWeaponComponent):
@@ -31,29 +31,29 @@ class SimpleRPGPreFightSystem(ExecuteProcessor):
 ######################################################################################################################################################
     # 临时的方案，最暴力的方式
     def rebuild_weapons_from_prop_files(self) -> None:
-        filesystem = self.context._file_system
-        rpgentities: Set[Entity] = self.context.get_group(Matcher(SimpleRPGAttrComponent)).entities
+        filesystem = self._context._file_system
+        rpgentities: Set[Entity] = self._context.get_group(Matcher(SimpleRPGAttrComponent)).entities
         for entity in rpgentities:
             if entity.has(StageComponent):
                 continue
             highest_attack_weapon = self.get_weapon_with_highest_attack_power(entity)
             if highest_attack_weapon is not None:
-                entity.add(SimpleRPGWeaponComponent, self.context.safe_get_entity_name(entity), highest_attack_weapon._name, highest_attack_weapon.maxhp, highest_attack_weapon.attack, highest_attack_weapon.defense)
+                entity.add(SimpleRPGWeaponComponent, self._context.safe_get_entity_name(entity), highest_attack_weapon._name, highest_attack_weapon.maxhp, highest_attack_weapon.attack, highest_attack_weapon.defense)
                 continue
 ######################################################################################################################################################
     def rebuild_armors_from_prop_files(self) -> None:
-        rpgentities: Set[Entity] = self.context.get_group(Matcher(SimpleRPGAttrComponent)).entities
+        rpgentities: Set[Entity] = self._context.get_group(Matcher(SimpleRPGAttrComponent)).entities
         for entity in rpgentities:
             if entity.has(StageComponent):
                 continue
             highest_defense_armor = self.get_armor_with_highest_defense_power(entity)
             if highest_defense_armor is not None:
-                entity.add(SimpleRPGArmorComponent, self.context.safe_get_entity_name(entity), highest_defense_armor._name, highest_defense_armor.maxhp, highest_defense_armor.attack, highest_defense_armor.defense)
+                entity.add(SimpleRPGArmorComponent, self._context.safe_get_entity_name(entity), highest_defense_armor._name, highest_defense_armor.maxhp, highest_defense_armor.attack, highest_defense_armor.defense)
                 continue
 ######################################################################################################################################################
     def get_weapon_with_highest_attack_power(self, entity: Entity) -> Optional[PropData]:
-        filesystem = self.context._file_system
-        safename = self.context.safe_get_entity_name(entity)            
+        filesystem = self._context._file_system
+        safename = self._context.safe_get_entity_name(entity)            
         files = filesystem.get_prop_files(safename)
         #
         highest_attack = 0
@@ -66,8 +66,8 @@ class SimpleRPGPreFightSystem(ExecuteProcessor):
         return highest_attack_weapon
 ######################################################################################################################################################
     def get_armor_with_highest_defense_power(self, entity: Entity) -> Optional[PropData]:
-        filesystem = self.context._file_system
-        safename = self.context.safe_get_entity_name(entity)            
+        filesystem = self._context._file_system
+        safename = self._context.safe_get_entity_name(entity)            
         files = filesystem.get_prop_files(safename)
         #
         highest_defense = 0

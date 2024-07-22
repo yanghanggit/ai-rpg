@@ -128,7 +128,7 @@ class RPGGame(BaseGame):
         # 创建实体
         world_entity = context.create_entity()
         #必要组件
-        world_entity.add(GUIDComponent, _GUIDGenerator_.generate_string())
+        world_entity.add(GUIDComponent, _GUIDGenerator_.generate())
         world_entity.add(WorldComponent, world_system_data._name)
         #重构
         agent_connect_system.register_agent(world_system_data._name, world_system_data._url)
@@ -170,7 +170,7 @@ class RPGGame(BaseGame):
         _entity = context.create_entity()
 
         # 必要组件
-        _entity.add(GUIDComponent, _GUIDGenerator_.generate_string())
+        _entity.add(GUIDComponent, _GUIDGenerator_.generate())
         _entity.add(ActorComponent, actor_data._name, "")
         _entity.add(SimpleRPGAttrComponent, actor_data._name, 
                     actor_data.maxhp, 
@@ -231,7 +231,7 @@ class RPGGame(BaseGame):
         stage_entity = context.create_entity()
 
         #必要组件
-        stage_entity.add(GUIDComponent, _GUIDGenerator_.generate_string())
+        stage_entity.add(GUIDComponent, _GUIDGenerator_.generate())
         stage_entity.add(StageComponent, stage_data._name)
         stage_entity.add(StageDirectorComponent, stage_data._name) ###
         stage_entity.add(SimpleRPGAttrComponent, stage_data._name, 

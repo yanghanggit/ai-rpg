@@ -100,8 +100,8 @@ class PropData:
             "appearance": self._appearance
         }
     
-    def __str__(self) -> str:
-        return f"{self._name}"
+    # def __str__(self) -> str:
+    #     return f"{self._name}"
     
     @property
     def maxhp(self) -> int:

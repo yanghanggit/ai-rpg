@@ -9,13 +9,13 @@ from typing import Dict, Set
 from my_agent.agent_action import AgentAction
 from my_agent.lang_serve_agent_request_task import LangServeAgentRequestTask, LangServeAgentAsyncRequestTasksGather
 
-###############################################################################################################################################
+######################################################################################################################################################
 class AgentsKickOffSystem(InitializeProcessor, ExecuteProcessor):
     def __init__(self, context: ExtendedContext) -> None:
         self._context: ExtendedContext = context
         self._request_tasks: Dict[str, LangServeAgentRequestTask] = {}
         self._once_add_perception_and_check_status: bool = False
-###############################################################################################################################################
+######################################################################################################################################################
     @override
     def initialize(self) -> None:
         #分段处理
@@ -27,13 +27,13 @@ class AgentsKickOffSystem(InitializeProcessor, ExecuteProcessor):
         self._request_tasks.update(world_tasks)
         self._request_tasks.update(stage_tasks)
         self._request_tasks.update(actor_tasks)
-###############################################################################################################################################
+######################################################################################################################################################
     @override
     def execute(self) -> None:
         if not self._once_add_perception_and_check_status:
-            self.once_add_perception_and_check_status()
             self._once_add_perception_and_check_status = True
-####################################################################################################
+            self.once_add_perception_and_check_status()
+######################################################################################################################################################
     def once_add_perception_and_check_status(self) -> None:
         context = self._context
         entities: Set[Entity] = context.get_group(Matcher(all_of=[ActorComponent], none_of=[PlayerComponent])).entities
@@ -45,7 +45,7 @@ class AgentsKickOffSystem(InitializeProcessor, ExecuteProcessor):
             #
             if not entity.has(CheckStatusActionComponent):
                 entity.add(CheckStatusActionComponent, AgentAction(actor_name.name, CheckStatusActionComponent.__name__, [actor_name.name]))
-####################################################################################################
+######################################################################################################################################################
     @override
     async def async_pre_execute(self) -> None:
         if len(self._request_tasks) == 0:
@@ -58,21 +58,20 @@ class AgentsKickOffSystem(InitializeProcessor, ExecuteProcessor):
             return
 
         self._request_tasks.clear() # 这句必须得走.
-###############################################################################################################################################
+######################################################################################################################################################
     def create_world_system_tasks(self) -> Dict[str, LangServeAgentRequestTask]:
         result: Dict[str, LangServeAgentRequestTask] = {}
     
         world_entities: Set[Entity] = self._context.get_group(Matcher(WorldComponent)).entities
         for world_entity in world_entities:
             world_comp = world_entity.get(WorldComponent)
-            prompt = kick_off_world_system_prompt()
-            task = self._context._langserve_agent_system.create_agent_request_task(world_comp.name, prompt)
+            task = self._context._langserve_agent_system.create_agent_request_task(world_comp.name, kick_off_world_system_prompt())
             assert task is not None, f"task is None: {world_comp.name}"
             if task is not None:
                 result[world_comp.name] = task
         
         return result
-###############################################################################################################################################
+######################################################################################################################################################
     def create_stage_tasks(self) -> Dict[str, LangServeAgentRequestTask]:
         result: Dict[str, LangServeAgentRequestTask] = {}
        
@@ -85,14 +84,13 @@ class AgentsKickOffSystem(InitializeProcessor, ExecuteProcessor):
                 logger.error(f"stagememory is empty: {stage_comp.name}")
                 continue
 
-            prompt = kick_off_memory_stage_prompt(kick_off_memory)
-            task = self._context._langserve_agent_system.create_agent_request_task(stage_comp.name, prompt)
+            task = self._context._langserve_agent_system.create_agent_request_task(stage_comp.name, kick_off_memory_stage_prompt(kick_off_memory))
             assert task is not None, f"task is None: {stage_comp.name}"
             if task is not None:
                 result[stage_comp.name] = task
         
         return result
-###############################################################################################################################################
+######################################################################################################################################################
     def create_actor_tasks(self) -> Dict[str, LangServeAgentRequestTask]:
         result: Dict[str, LangServeAgentRequestTask] = {}
      
@@ -105,11 +103,10 @@ class AgentsKickOffSystem(InitializeProcessor, ExecuteProcessor):
                 logger.error(f"_kick_off_memory is empty: {actor_comp.name}")
                 continue
             
-            prompt = kick_off_memory_actor_prompt(kick_off_memory)
-            task = self._context._langserve_agent_system.create_agent_request_task(actor_comp.name, prompt)
+            task = self._context._langserve_agent_system.create_agent_request_task(actor_comp.name, kick_off_memory_actor_prompt(kick_off_memory))
             assert task is not None, f"task is None: {actor_comp.name}"
             if task is not None:
                 result[actor_comp.name] = task
            
         return result
-###############################################################################################################################################
+######################################################################################################################################################

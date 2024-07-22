@@ -14,8 +14,8 @@ class WorldSystemBuilder:
         self._raw_data: Optional[List[Dict[str, Any]]] = None
         self._world_systems: List[WorldSystemData] = []
 ###############################################################################################################################################
-    def __str__(self) -> str:
-        return f"WorldSystemBuilder: {self._raw_data}"       
+    # def __str__(self) -> str:
+    #     return f"WorldSystemBuilder: {self._raw_data}"       
 ###############################################################################################################################################
     def build(self, raw_data: Any, data_base_system: DataBaseSystem) -> 'WorldSystemBuilder':
         self._raw_data = raw_data

@@ -9,11 +9,11 @@ class AgentAction:
         self._action_name: str = action_name
         self._values: List[str] = values
 #######################################################################################################################################
-    def __str__(self) -> str:
-        return f"ActorAction({self._actor_name}, {self._action_name}, {self._values})"
+    # def __str__(self) -> str:
+    #     return f"ActorAction({self._actor_name}, {self._action_name}, {self._values})"
 #######################################################################################################################################
-    def __repr__(self) -> str:
-        return f"ActorAction({self._actor_name}, {self._action_name}, {self._values})"
+    # def __repr__(self) -> str:
+    #     return f"ActorAction({self._actor_name}, {self._action_name}, {self._values})"
 #######################################################################################################################################
     def join_values(self, symbol: str = " ") -> str:
         if len(self._values) == 0:

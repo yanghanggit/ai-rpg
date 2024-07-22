@@ -15,8 +15,8 @@ class ActorBuilder:
         # 构建出来的数据
         self._actors: List[ActorData] = []
 ###############################################################################################################################################
-    def __str__(self) -> str:
-        return f"ActorBuilder: {self._raw_data}"
+    # def __str__(self) -> str:
+    #     return f"ActorBuilder: {self._raw_data}"
 ###############################################################################################################################################
     def build(self, raw_data: Any, data_base_system: DataBaseSystem) -> 'ActorBuilder':
         

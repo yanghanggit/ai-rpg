@@ -45,7 +45,7 @@ class HandlePlayerInputSystem(ExecuteProcessor):
             logger.warning("玩家不存在，或者玩家未加入游戏")
             return
         
-        for command in playerproxy._inputs:
+        for command in playerproxy._input_commands:
             singleplayer = self._context.get_player_entity(playername)
             assert singleplayer is not None
             #
@@ -63,7 +63,7 @@ class HandlePlayerInputSystem(ExecuteProcessor):
             ## 总之要跳出循环 
             break
                   
-        playerproxy._inputs.clear()
+        playerproxy._input_commands.clear()
 ############################################################################################################
     def handle_input(self, rpggame: RPGGame, playerproxy: PlayerProxy, usrinput: str) -> bool:
 

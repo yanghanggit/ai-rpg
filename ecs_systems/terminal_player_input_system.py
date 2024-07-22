@@ -53,6 +53,6 @@ class TerminalPlayerInputSystem(ExecuteProcessor):
             from rpg_game.rpg_game import RPGGame 
             cast(RPGGame, rpggame).exit()
         else:
-            playerproxy._inputs.append(str(usrinput))
+            playerproxy._input_commands.append(str(usrinput))
 ############################################################################################################
 

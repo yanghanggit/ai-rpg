@@ -173,7 +173,7 @@ async def playerinput(clientip: str, command: str) -> List[TupleModel]:
     #
     playerproxy = get_player_proxy(clientip)
     assert playerproxy is not None
-    playerproxy._inputs.append(command)
+    playerproxy._input_commands.append(command)
     
     #
     if "/checkstatus" in command:

@@ -13,8 +13,8 @@ class StageBuilder:
         self._raw_data: Optional[List[Dict[str, Any]]] = None
         self._stages: List[StageData] = []
 ###############################################################################################################################################
-    def __str__(self) -> str:
-        return f"StageBuilder: {self._raw_data}"      
+    # def __str__(self) -> str:
+    #     return f"StageBuilder: {self._raw_data}"      
 ###############################################################################################################################################
     def props_proxy_in_stage(self, data: List[Any]) -> List[tuple[PropData, int]]:
         res: List[tuple[PropData, int]] = []

@@ -1,8 +1,7 @@
-
 from typing import override
 from entitas import Matcher, ExecuteProcessor, Entity #type: ignore
-from ecs_systems.components import (DeadActionComponent, PlayerComponent,
-                        DestroyComponent)
+from ecs_systems.components import (PlayerComponent, DestroyComponent)
+from ecs_systems.action_components import DeadActionComponent
 from my_entitas.extended_context import ExtendedContext
 from loguru import logger
 from my_agent.agent_action import AgentAction

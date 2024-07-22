@@ -1,6 +1,7 @@
 from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity #type: ignore
 from my_entitas.extended_context import ExtendedContext
-from ecs_systems.components import (CheckStatusActionComponent, SimpleRPGAttrComponent, ActorComponent, DeadActionComponent)
+from ecs_systems.action_components import (CheckStatusActionComponent, DeadActionComponent)
+from ecs_systems.components import SimpleRPGAttrComponent, ActorComponent
 from loguru import logger
 from ecs_systems.stage_director_component import notify_stage_director
 from typing import List, override

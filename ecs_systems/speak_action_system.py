@@ -1,5 +1,5 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
-from ecs_systems.components import SpeakActionComponent
+from ecs_systems.action_components import SpeakActionComponent
 from my_agent.agent_action import AgentAction
 from my_entitas.extended_context import ExtendedContext
 from gameplay_checks.conversation_check import conversation_check, ErrorConversationEnable

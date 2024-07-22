@@ -1,5 +1,5 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
-from ecs_systems.components import WhisperActionComponent
+from ecs_systems.action_components import WhisperActionComponent
 from my_agent.agent_action import AgentAction
 from my_entitas.extended_context import ExtendedContext
 from typing import override

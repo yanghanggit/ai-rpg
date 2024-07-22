@@ -1,7 +1,7 @@
 from overrides import override
 from entitas import Entity, Matcher, ExecuteProcessor #type: ignore
-from ecs_systems.components import (ActorComponent, AutoPlanningComponent, EnviroNarrateActionComponent, 
-                                  ACTOR_AVAILABLE_ACTIONS_REGISTER)
+from ecs_systems.components import (ActorComponent, AutoPlanningComponent)
+from ecs_systems.action_components import EnviroNarrateActionComponent, ACTOR_AVAILABLE_ACTIONS_REGISTER
 from my_agent.agent_plan import AgentPlan
 from my_agent.agent_action import AgentAction
 from my_entitas.extended_context import ExtendedContext

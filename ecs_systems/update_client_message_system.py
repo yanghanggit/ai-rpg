@@ -2,7 +2,7 @@ from entitas import ExecuteProcessor, Entity, Matcher #type: ignore
 from my_entitas.extended_context import ExtendedContext
 from player.player_proxy import PlayerProxy, get_player_proxy
 from my_entitas.extended_context import ExtendedContext
-from ecs_systems.components import MindVoiceActionComponent, WhisperActionComponent, SpeakActionComponent, \
+from ecs_systems.action_components import MindVoiceActionComponent, WhisperActionComponent, SpeakActionComponent, \
     BroadcastActionComponent, EnviroNarrateActionComponent, \
     AttackActionComponent, GoToActionComponent
 from my_agent.agent_action import AgentAction

@@ -1,8 +1,7 @@
 from typing import override
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
-from ecs_systems.components import (GoToActionComponent, PortalStepActionComponent, DeadActionComponent,
-                        ActorComponent, 
-                        ExitOfPortalComponent,)
+from ecs_systems.action_components import (GoToActionComponent, PortalStepActionComponent, DeadActionComponent)
+from ecs_systems.components import ActorComponent, ExitOfPortalComponent
 from my_agent.agent_action import AgentAction
 from my_entitas.extended_context import ExtendedContext
 from loguru import logger
@@ -62,8 +61,7 @@ class PortalStepActionSystem(ReactiveProcessor):
         logger.debug(f"{exit_of_portal_comp.name}允许{actor_comp.name}前往")
         
         # 生成离开当前场景的动作
-        action = AgentAction(actor_comp.name, GoToActionComponent.__name__, [exit_of_portal_comp.name])
-        entity.add(GoToActionComponent, action)
+        entity.add(GoToActionComponent, AgentAction(actor_comp.name, GoToActionComponent.__name__, [exit_of_portal_comp.name]))
 ###############################################################################################################################################       
 
             

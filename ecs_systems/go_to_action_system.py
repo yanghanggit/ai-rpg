@@ -1,9 +1,9 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
-from ecs_systems.components import (
+from ecs_systems.action_components import (
     GoToActionComponent, 
-    ActorComponent,
     DeadActionComponent,
     PerceptionActionComponent)
+from ecs_systems.components import ActorComponent
 from my_agent.agent_action import AgentAction
 from my_entitas.extended_context import ExtendedContext
 from loguru import logger
@@ -160,11 +160,10 @@ class GoToActionSystem(ReactiveProcessor):
         actor_comp: ActorComponent = entity.get(ActorComponent)
         stagename = actor_comp.current_stage
         actor_entities = self._context.actors_in_stage(stagename)
-        for _entity in actor_entities:
-            if _entity.has(PerceptionActionComponent):
+        for actor_entity in actor_entities:
+            if actor_entity.has(PerceptionActionComponent):
                 continue
             #进入新的场景之后，进入者与场景内所有人都加一次感知，这里会自动检查外观信息
-            action = AgentAction(actor_comp.name, PerceptionActionComponent.__name__, [stagename])
-            _entity.add(PerceptionActionComponent, action)
+            actor_entity.add(PerceptionActionComponent, AgentAction(actor_comp.name, PerceptionActionComponent.__name__, [stagename]))
 ###############################################################################################################################################
 

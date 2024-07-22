@@ -1,7 +1,7 @@
 from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity #type: ignore
 from my_entitas.extended_context import ExtendedContext
-from ecs_systems.components import (  TradeActionComponent,CheckStatusActionComponent, DeadActionComponent,
-                                    ActorComponent)
+from ecs_systems.action_components import (TradeActionComponent,CheckStatusActionComponent, DeadActionComponent)
+from ecs_systems.components import ActorComponent
 from loguru import logger
 from my_agent.agent_action import AgentAction
 from gameplay_checks.conversation_check import conversation_check, ErrorConversationEnable
@@ -88,7 +88,6 @@ class TradeActionSystem(ReactiveProcessor):
             return
         if entity.has(CheckStatusActionComponent):
             return
-        actor_comp: ActorComponent = entity.get(ActorComponent)
-        action = AgentAction(actor_comp.name, CheckStatusActionComponent.__name__, [actor_comp.name])
-        entity.add(CheckStatusActionComponent, action)
+        actor_comp = entity.get(ActorComponent)
+        entity.add(CheckStatusActionComponent, AgentAction(actor_comp.name, CheckStatusActionComponent.__name__, [actor_comp.name]))
 ####################################################################################################################################

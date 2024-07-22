@@ -1,10 +1,10 @@
 from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity #type: ignore
 from my_entitas.extended_context import ExtendedContext
-from ecs_systems.components import (SearchActionComponent, 
-                                    ActorComponent,
-                                    StageComponent,
+from ecs_systems.action_components import (SearchActionComponent, 
                                     DeadActionComponent,
                                     CheckStatusActionComponent)
+
+from ecs_systems.components import ActorComponent, StageComponent
 from my_agent.agent_action import AgentAction
 from loguru import logger
 from ecs_systems.stage_director_component import notify_stage_director
@@ -123,6 +123,5 @@ class SearchActionSystem(ReactiveProcessor):
         if entity.has(CheckStatusActionComponent):
             return
         actor_comp = entity.get(ActorComponent)
-        action = AgentAction(actor_comp.name, CheckStatusActionComponent.__name__, [actor_comp.name])
-        entity.add(CheckStatusActionComponent, action)
+        entity.add(CheckStatusActionComponent, AgentAction(actor_comp.name, CheckStatusActionComponent.__name__, [actor_comp.name]))
 ####################################################################################################################################

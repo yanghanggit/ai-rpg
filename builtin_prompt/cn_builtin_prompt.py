@@ -1,6 +1,6 @@
 from typing import Dict, List, Set
 from prototype_data.data_def import PropData
-from ecs_systems.components import MindVoiceActionComponent, EnviroNarrateActionComponent, \
+from ecs_systems.action_components import MindVoiceActionComponent, EnviroNarrateActionComponent, \
     TagActionComponent, PerceptionActionComponent, CheckStatusActionComponent
 import json
 from builtin_prompt.cn_constant_prompt import _CNConstantPrompt_

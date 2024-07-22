@@ -1,6 +1,7 @@
 from typing import override
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
-from ecs_systems.components import BroadcastActionComponent, StageComponent
+from ecs_systems.components import StageComponent
+from ecs_systems.action_components import BroadcastActionComponent
 from my_agent.agent_action import AgentAction
 from my_entitas.extended_context import ExtendedContext
 from loguru import logger

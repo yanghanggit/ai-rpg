@@ -2,9 +2,8 @@ from entitas import Entity, Matcher, ReactiveProcessor # type: ignore
 from typing import Optional, override
 from loguru import logger
 from my_agent.agent_action import AgentAction
-from ecs_systems.components import (UsePropActionComponent, StageExitCondStatusComponent, 
-                                  EnviroNarrateActionComponent, StageComponent, ActorComponent,
-                                  DeadActionComponent)
+from ecs_systems.action_components import (UsePropActionComponent, EnviroNarrateActionComponent, DeadActionComponent)
+from ecs_systems.components import StageComponent, ActorComponent, StageExitCondStatusComponent
 from my_entitas.extended_context import ExtendedContext
 from ecs_systems.stage_director_component import notify_stage_director
 from entitas.group import GroupEvent

@@ -1,5 +1,6 @@
 from entitas import Matcher, ReactiveProcessor, GroupEvent, Entity # type: ignore
-from ecs_systems.components import AttackActionComponent, SimpleRPGAttrComponent, DeadActionComponent, SimpleRPGWeaponComponent, SimpleRPGArmorComponent
+from ecs_systems.action_components import AttackActionComponent, DeadActionComponent
+from ecs_systems.components import SimpleRPGAttrComponent, SimpleRPGWeaponComponent, SimpleRPGArmorComponent
 from my_entitas.extended_context import ExtendedContext
 from my_agent.agent_action import AgentAction
 from loguru import logger
@@ -89,12 +90,12 @@ class AttackActionSystem(ReactiveProcessor):
         action: AgentAction = fightcomp.action
         for value_as_target_name in action._values:
 
-            _target_entity = context.get_entity_by_codename_component(value_as_target_name)
-            if _target_entity is None:
+            target_entity = context.get_entity_by_codename_component(value_as_target_name)
+            if target_entity is None:
                 logger.warning(f"攻击者{action._actor_name}意图攻击的对象{value_as_target_name}无法被找到,本次攻击无效.")
                 continue
 
-            if not _target_entity.has(SimpleRPGAttrComponent):
+            if not target_entity.has(SimpleRPGAttrComponent):
                 logger.warning(f"攻击者{action._actor_name}意图攻击的对象{value_as_target_name}没有SimpleRPGComponent,本次攻击无效.")
                 continue
 
@@ -116,8 +117,8 @@ class AttackActionSystem(ReactiveProcessor):
                     assert stage1 is not None
                     stage1_name = self._context.safe_get_entity_name(stage1)
 
-                    assert _target_entity is not None
-                    stage2 = self._context.safe_get_stage_entity(_target_entity)
+                    assert target_entity is not None
+                    stage2 = self._context.safe_get_stage_entity(target_entity)
                     assert stage2 is not None
                     stage2_name = self._context.safe_get_entity_name(stage2)
 
@@ -127,13 +128,13 @@ class AttackActionSystem(ReactiveProcessor):
                 continue
             
             #目标拿出来
-            target_rpg_comp: SimpleRPGAttrComponent = _target_entity.get(SimpleRPGAttrComponent)
+            target_rpg_comp: SimpleRPGAttrComponent = target_entity.get(SimpleRPGAttrComponent)
 
             #简单的战斗计算，简单的血减掉伤害
             hp = target_rpg_comp.hp
             damage = self.final_attack_val(_entity) #rpgcomp.attack
             # 必须控制在0和最大值之间
-            damage = damage - self.final_defense_val(_target_entity) #targetsrpgcomp.defense
+            damage = damage - self.final_defense_val(target_entity) #targetsrpgcomp.defense
             if damage < 0:
                 damage = 0
             
@@ -141,14 +142,14 @@ class AttackActionSystem(ReactiveProcessor):
             lefthp = max(0, min(lefthp, target_rpg_comp.maxhp))
 
             #结果修改
-            _target_entity.replace(SimpleRPGAttrComponent, target_rpg_comp.name, target_rpg_comp.maxhp, lefthp, target_rpg_comp.attack, target_rpg_comp.defense)
+            target_entity.replace(SimpleRPGAttrComponent, target_rpg_comp.name, target_rpg_comp.maxhp, lefthp, target_rpg_comp.attack, target_rpg_comp.defense)
 
             ##死亡是关键
             isdead = (lefthp <= 0)
 
             ## 死后处理大流程，step1——道具怎么办？后续可以封装的复杂一些: 夺取唯一性道具.
             if isdead:  
-                self.unique_prop_be_taken_away(_entity, _target_entity)
+                self.unique_prop_be_taken_away(_entity, target_entity)
 
             ## 可以加一些别的。。。。。。。。。。。。
             ## 比如杀人多了会被世界管理员记住——你是大坏蛋
@@ -156,9 +157,9 @@ class AttackActionSystem(ReactiveProcessor):
 
             ## 死后处理大流程，step最后——死亡组件系统必须要添加
             if isdead:
-                if not _target_entity.has(DeadActionComponent):
+                if not target_entity.has(DeadActionComponent):
                     #复制一个，不用以前的，怕GC不掉
-                    _target_entity.add(DeadActionComponent, AgentAction(action._actor_name, action._action_name, action._values)) 
+                    target_entity.add(DeadActionComponent, AgentAction(action._actor_name, action._action_name, action._values)) 
 
             ## 导演系统，单独处理，有旧的代码
             if isdead:

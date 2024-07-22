@@ -1,9 +1,7 @@
 from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity #type: ignore
 from my_entitas.extended_context import ExtendedContext
-from ecs_systems.components import (  PerceptionActionComponent,
-                                    StageComponent,
-                                    DeadActionComponent,
-                                    ActorComponent)
+from ecs_systems.components import (StageComponent, ActorComponent)
+from ecs_systems.action_components import PerceptionActionComponent, DeadActionComponent
 from loguru import logger
 from typing import List, Dict, override
 from ecs_systems.stage_director_component import notify_stage_director

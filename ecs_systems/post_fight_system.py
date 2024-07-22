@@ -2,7 +2,8 @@ from typing import override, Set
 from entitas import ExecuteProcessor, Matcher, Entity #type: ignore
 from my_entitas.extended_context import ExtendedContext
 #from loguru import logger
-from ecs_systems.components import DeadActionComponent, ACTOR_INTERACTIVE_ACTIONS_REGISTER, ActorComponent
+from ecs_systems.components import ActorComponent
+from ecs_systems.action_components import DeadActionComponent, ACTOR_INTERACTIVE_ACTIONS_REGISTER
 #from auxiliary.cn_builtin_prompt import gen_actor_archive_prompt, died_in_fight_prompt
 
 # 战斗后处理，入股哦死了就死亡存档

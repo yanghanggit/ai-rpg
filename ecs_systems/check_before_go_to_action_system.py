@@ -1,16 +1,20 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
-from ecs_systems.components import (GoToActionComponent, 
-                        ActorComponent, 
-                        StageExitCondStatusComponent,
-                        StageExitCondCheckActorStatusComponent,
-                        StageExitCondCheckActorPropsComponent,
-                        AppearanceComponent,
+from ecs_systems.action_components import (GoToActionComponent, 
                         EnviroNarrateActionComponent,
                         TagActionComponent,
-                        StageEntryCondStatusComponent,
-                        StageEntryCondCheckActorStatusComponent,
-                        StageEntryCondCheckActorPropsComponent,
                         DeadActionComponent)
+
+from ecs_systems.components import (
+    ActorComponent, 
+    StageExitCondStatusComponent,
+    StageExitCondCheckActorStatusComponent,
+    StageExitCondCheckActorPropsComponent,
+    AppearanceComponent,
+    StageEntryCondStatusComponent,
+    StageEntryCondCheckActorStatusComponent,
+    StageEntryCondCheckActorPropsComponent,
+)
+
 from my_agent.agent_action import AgentAction
 from my_entitas.extended_context import ExtendedContext
 from loguru import logger

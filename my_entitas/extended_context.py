@@ -179,7 +179,7 @@ class ExtendedContext(Context):
         for actor in actors_int_stage:
             if actor.has(AppearanceComponent):
                 actor_comp: ActorComponent = actor.get(ActorComponent)
-                appearance_comp: AppearanceComponent = actor.get(AppearanceComponent)
+                appearance_comp = actor.get(AppearanceComponent)
                 res[actor_comp.name] = str(appearance_comp.appearance)
             else:
                 logger.error(f"{actor_comp.name}没有AppearanceComponent?!")

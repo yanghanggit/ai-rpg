@@ -414,9 +414,8 @@ class CheckBeforeGoToActionSystem(ReactiveProcessor):
     # todo 目前就把外观信息当作状态信息，后续可以加入更多的状态信息
     def get_actor_status_prompt(self, entity: Entity) -> str:
         safe_name = self._context.safe_get_entity_name(entity)
-        appearance_comp: AppearanceComponent = entity.get(AppearanceComponent)
-        appearance_info: str = appearance_comp.appearance
-        return actor_status_when_stage_change_prompt(safe_name, appearance_info)
+        appearance_comp = entity.get(AppearanceComponent)
+        return actor_status_when_stage_change_prompt(safe_name, cast(str, appearance_comp.appearance))
 ###############################################################################################################################################
     def get_actor_props_prompt(self, entity: Entity) -> str:
         helper = CheckStatusActionHelper(self._context)

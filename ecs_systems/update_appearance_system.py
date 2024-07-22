@@ -57,7 +57,8 @@ class UpdateAppearanceSystem(InitializeProcessor, ExecuteProcessor):
                 assert entity.has(BodyComponent)
                 body = self.get_body(entity)
                 assert body != ""
-                entity.replace(AppearanceComponent, body)
+                hash_code = hash(body)
+                entity.replace(AppearanceComponent, body, hash_code)
                 logger.debug(f"{name}, update_appearance_by_body: {body}")
 ###############################################################################################################################################
     # 有衣服的，请求更新，通过LLM来推理外观。
@@ -104,7 +105,8 @@ class UpdateAppearanceSystem(InitializeProcessor, ExecuteProcessor):
             if entity is None:
                 logger.error(f"update_after_requst, entity is None, name: {name}")
                 continue
-            entity.replace(AppearanceComponent, appearance)
+            hash_code = hash(appearance)
+            entity.replace(AppearanceComponent, appearance, hash_code)
             logger.debug(f"{name}, update_after_requst: {appearance}")
 ###############################################################################################################################################
     # 获取所有的角色的身体和衣服
@@ -112,7 +114,7 @@ class UpdateAppearanceSystem(InitializeProcessor, ExecuteProcessor):
         res: Dict[str, tuple[str, str]] = {}
         actors: Set[Entity] = self._context.get_group(Matcher(all_of = [AppearanceComponent, BodyComponent, ActorComponent])).entities
         for _actor in actors:
-            appearance_comp: AppearanceComponent = _actor.get(AppearanceComponent)
+            appearance_comp = _actor.get(AppearanceComponent)
             if appearance_comp.appearance != "":
                 continue
             name = cast(ActorComponent, _actor.get(ActorComponent)).name

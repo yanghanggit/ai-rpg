@@ -177,7 +177,8 @@ class RPGGame(BaseGame):
                     actor_data.hp, 
                     actor_data.attack, 
                     actor_data.defense)
-        _entity.add(AppearanceComponent, actor_data._appearance)
+        hash_code = hash(actor_data._appearance)
+        _entity.add(AppearanceComponent, actor_data._appearance, hash_code)
         _entity.add(BodyComponent, actor_data._body)
 
         #重构

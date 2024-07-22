@@ -1,7 +1,7 @@
 from entitas import Entity # type: ignore
 from my_entitas.extended_context import ExtendedContext
 from ecs_systems.components import PlayerComponent, PlayerIsWebClientComponent, PlayerIsTerminalClientComponent
-from typing import List
+from typing import List, Any
 from collections import namedtuple
 from ecs_systems.stage_director_event import IStageDirectorEvent
 from builtin_prompt.cn_builtin_prompt import replace_mentions_of_your_name_with_you_prompt
@@ -12,7 +12,9 @@ from loguru import logger
 StageDirectorComponentPrototype = namedtuple('StageDirectorComponentPrototype', 'name')
 class StageDirectorComponent(StageDirectorComponentPrototype):
 
-    def __init__(self) -> None:
+    def __init__(self, args: Any) -> None:
+        assert len(args) == 1
+        assert self.name == args[0]
         self._events: List[IStageDirectorEvent] = []
 ##########################################################################################################################
     def add_event(self, event: IStageDirectorEvent) -> None:

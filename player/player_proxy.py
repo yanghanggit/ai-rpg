@@ -7,9 +7,6 @@ class PlayerProxy:
         self._name: str = name
         self._client_messages: List[tuple[str, str]] = []
         self._input_commands: List[str] = []
-
-    # def __str__(self) -> str:
-    #     return f'PlayerProxy({self._name})'
     
     def add_message(self, sender: str, message: str) -> None:
         self._client_messages.append((sender, message))

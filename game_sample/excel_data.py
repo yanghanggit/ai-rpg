@@ -41,9 +41,6 @@ class ExcelDataActor:
         self._agentpy_template_path: str = agentpy_template_path
         self._body: str = body
 ############################################################################################################
-    # def __str__(self) -> str:
-    #     return f"ExcelDataActor({self._name}, {self._codename})"
-############################################################################################################
     def gen_sys_prompt(self, sys_prompt_template: str) -> str:
         genprompt = str(sys_prompt_template)
         genprompt = genprompt.replace("<%name>", self._name)
@@ -130,9 +127,6 @@ class ExcelDataStage:
         self._sys_prompt_template_path: str = sys_prompt_template_path
         self._agentpy_template_path: str = agentpy_template_path
 ############################################################################################################
-    # def __str__(self) -> str:
-    #     return f"ExcelDataStage({self._name}, {self._codename})"
-############################################################################################################
     def gen_sys_prompt(self, sys_prompt_template: str) -> str:
         genprompt = str(sys_prompt_template)
         genprompt = genprompt.replace("<%name>", self._name)
@@ -183,9 +177,6 @@ class ExcelDataProp:
         self._attributes: str = attributes
         self._appearance: str = appearance
 ############################################################################################################
-    # def __str__(self) -> str:
-    #     return f"ExcelDataProp({self._name}, {self._codename}, {self._isunique}, {self._type}, {self._attributes}, {self._appearance})"
-############################################################################################################
 ############################################################################################################
 ############################################################################################################
 class ExcelDataWorldSystem:
@@ -211,9 +202,6 @@ class ExcelDataWorldSystem:
         self._agentpy: str = ""
         self._sys_prompt_template_path: str = sys_prompt_template_path
         self._agentpy_template_path: str = agentpy_template_path
-############################################################################################################
-    # def __str__(self) -> str:
-    #     return f"ExcelDataWorldSystem({self._name}, {self._codename})"
 ############################################################################################################
     def gen_sys_prompt(self, sys_prompt_template: str) -> str:
         genprompt = str(sys_prompt_template)

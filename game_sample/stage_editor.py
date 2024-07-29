@@ -73,9 +73,6 @@ class ExcelEditorStage:
             return ""
         return str(val)
 ################################################################################################################################
-    # def __str__(self) -> str:
-    #    return f"ExcelEditorStage: {self._data['name']}"
-################################################################################################################################
     def stage_props_proxy(self, props: List[tuple[ExcelDataProp, int]]) -> List[Dict[str, str]]:
         ls: List[Dict[str, str]] = []
         for tp in props:

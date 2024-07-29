@@ -22,15 +22,12 @@ class AgentPlanJSON:
         if is_repeat(self._output):
             merge_res = merge(self._output)
             if merge_res is not None:
-                self._output = json.dumps(merge_res, ensure_ascii=False)
+                self._output = json.dumps(merge_res, ensure_ascii = False)
         return self
 
     @property  
     def output(self) -> str:
         return self._output
-    
-    # def __str__(self) -> str:
-    #     return self._output
 ############################################################################################################
 ############################################################################################################
 ############################################################################################################
@@ -68,24 +65,24 @@ class AgentPlan:
 ############################################################################################################
     def build(self, json: Dict[str, List[str]]) -> None:
         for key, value in json.items():
-            action = AgentAction(self._name, key, value)
-            self._actions.append(action)
-            self._actions_dict[key] = action
+            self._actions.append(AgentAction(self._name, key, value))
+            self._actions_dict[key] = self._actions[-1] # 方便查找
 ############################################################################################################
     def check_data_format(self, json_data: Any) -> bool:
+
+        if not isinstance(json_data, dict):
+            #assert False, f"json_data is not dict: {json_data}"
+            logger.error(f"json_data is not dict: {json_data}")
+            return False
+
         for key, value in json_data.items():
             if not isinstance(key, str):
                 return False
             if not isinstance(value, list) or not all(isinstance(v, str) for v in value):
                 return False
+            
         return True
 ############################################################################################################
-    def get_action_by_key(self, actionname: str) -> Optional[AgentAction]:
-        return self._actions_dict.get(actionname)
-############################################################################################################
-#     def __str__(self) -> str:
-#         return f"ActorPlan({self._name}, {self._raw})"
-# ############################################################################################################
-#     def __repr__(self) -> str:
-#         return f"ActorPlan({self._name}, {self._raw})"
+    def get_action_by_key(self, action_name: str) -> Optional[AgentAction]:
+        return self._actions_dict.get(action_name, None)
 ############################################################################################################

@@ -123,16 +123,14 @@ class RPGGame(BaseGame):
 ###############################################################################################################################################
     def create_world_system_entity(self, world_system_data: WorldSystemData, context: ExtendedContext) -> Entity:
         context = self._extended_context
-        agent_connect_system = context._langserve_agent_system
-        code_name_component_system = context._codename_component_system
         # 创建实体
         world_entity = context.create_entity()
         #必要组件
         world_entity.add(GUIDComponent, _GUIDGenerator_.generate())
         world_entity.add(WorldComponent, world_system_data._name)
         #重构
-        agent_connect_system.register_agent(world_system_data._name, world_system_data._url)
-        code_name_component_system.register_code_name_component_class(world_system_data._name, world_system_data._codename)
+        context._langserve_agent_system.register_agent(world_system_data._name, world_system_data._url)
+        context._codename_component_system.register_code_name_component_class(world_system_data._name, world_system_data._codename)
         
         return world_entity
 ###############################################################################################################################################
@@ -161,11 +159,6 @@ class RPGGame(BaseGame):
 ###############################################################################################################################################
     def create_actor_entity(self, actor_data: ActorData, context: ExtendedContext) -> Entity:
 
-        agent_connect_system = context._langserve_agent_system
-        memory_system = context._kick_off_memory_system
-        file_system = context._file_system
-        code_name_component_system = context._codename_component_system
-
         # 创建实体
         _entity = context.create_entity()
 
@@ -182,9 +175,9 @@ class RPGGame(BaseGame):
         _entity.add(BodyComponent, actor_data._body)
 
         #重构
-        agent_connect_system.register_agent(actor_data._name, actor_data._url)
-        memory_system.add_kick_off_memory(actor_data._name, actor_data._kick_off_memory)
-        code_name_component_system.register_code_name_component_class(actor_data._name, actor_data._codename)
+        context._langserve_agent_system.register_agent(actor_data._name, actor_data._url)
+        context._kick_off_memory_system.add_kick_off_memory(actor_data._name, actor_data._kick_off_memory)
+        context._codename_component_system.register_code_name_component_class(actor_data._name, actor_data._codename)
         
         # 添加道具
         for tp in actor_data._props:
@@ -198,11 +191,11 @@ class RPGGame(BaseGame):
                 continue
         
             prop_file = PropFile(prop_proxy._name, actor_data._name, _pd, count)
-            file_system.add_prop_file(prop_file)
-            code_name_component_system.register_code_name_component_class(_pd._name, _pd._codename)
+            context._file_system.add_prop_file(prop_file)
+            context._codename_component_system.register_code_name_component_class(_pd._name, _pd._codename)
 
         # 初步建立关系网（在编辑文本中提到的Actor名字）
-        add_actor_archive_files(file_system, actor_data._name, actor_data._actor_archives)
+        add_actor_archive_files(context._file_system, actor_data._name, actor_data._actor_archives)
 
         return _entity
 ###############################################################################################################################################
@@ -222,10 +215,6 @@ class RPGGame(BaseGame):
     def create_stage_entity(self, stage_data: StageData, context: ExtendedContext) -> Entity:
 
         context = self._extended_context
-        agent_connect_system = context._langserve_agent_system
-        memory_system = context._kick_off_memory_system
-        file_system = context._file_system
-        code_name_component_system = context._codename_component_system
 
         # 创建实体
         stage_entity = context.create_entity()
@@ -257,8 +246,8 @@ class RPGGame(BaseGame):
                 logger.error(f"没有从数据库找到道具：{prop_proxy._name}")
                 continue
             prop_file = PropFile(prop_proxy._name, stage_data._name, _pd, count)
-            file_system.add_prop_file(prop_file)
-            code_name_component_system.register_code_name_component_class(_pd._name, _pd._codename)
+            context._file_system.add_prop_file(prop_file)
+            context._codename_component_system.register_code_name_component_class(_pd._name, _pd._codename)
 
         # 添加场景的条件：包括进入和离开的条件，自身变化条件等等
         self.add_stage_conditions(stage_entity, stage_data)
@@ -270,10 +259,10 @@ class RPGGame(BaseGame):
             stage_entity.add(ExitOfPortalComponent, exit_portal_and_goto_stage._name)
 
         #重构
-        agent_connect_system.register_agent(stage_data._name, stage_data._url)
-        memory_system.add_kick_off_memory(stage_data._name, stage_data._kick_off_memory)
-        code_name_component_system.register_code_name_component_class(stage_data._name, stage_data._codename)
-        code_name_component_system.register_stage_tag_component_class(stage_data._name, stage_data._codename)
+        context._langserve_agent_system.register_agent(stage_data._name, stage_data._url)
+        context._kick_off_memory_system.add_kick_off_memory(stage_data._name, stage_data._kick_off_memory)
+        context._codename_component_system.register_code_name_component_class(stage_data._name, stage_data._codename)
+        context._codename_component_system.register_stage_tag_component_class(stage_data._name, stage_data._codename)
         
         return stage_entity
 ###############################################################################################################################################
@@ -302,13 +291,12 @@ class RPGGame(BaseGame):
 ###############################################################################################################################################
     def add_code_name_component_to_world_and_actors(self) -> None:
         context = self._extended_context
-        code_name_component_system = context._codename_component_system
 
         #
         world_entities = context.get_group(Matcher(WorldComponent)).entities
         for entity in world_entities:
             world_comp: WorldComponent = entity.get(WorldComponent)
-            codecompclass = code_name_component_system.get_component_class_by_name(world_comp.name)
+            codecompclass = context._codename_component_system.get_component_class_by_name(world_comp.name)
             if codecompclass is not None:
                 entity.add(codecompclass, world_comp.name)
 
@@ -316,13 +304,12 @@ class RPGGame(BaseGame):
         actor_entities = context.get_group(Matcher(ActorComponent)).entities
         for entity in actor_entities:
             actor_comp: ActorComponent = entity.get(ActorComponent)
-            codecompclass = code_name_component_system.get_component_class_by_name(actor_comp.name)
+            codecompclass = context._codename_component_system.get_component_class_by_name(actor_comp.name)
             if codecompclass is not None:
                 entity.add(codecompclass, actor_comp.name)
 ###############################################################################################################################################
     def add_code_name_component_stages(self) -> None:
         context = self._extended_context
-        code_name_component_system = context._codename_component_system
 
         ## 重新设置actor和stage的关系
         actor_entities = context.get_group(Matcher(ActorComponent)).entities
@@ -334,7 +321,7 @@ class RPGGame(BaseGame):
         stage_entities = context.get_group(Matcher(StageComponent)).entities
         for entity in stage_entities:
             stagecomp: StageComponent = entity.get(StageComponent)
-            codecompclass = code_name_component_system.get_component_class_by_name(stagecomp.name)
+            codecompclass = context._codename_component_system.get_component_class_by_name(stagecomp.name)
             if codecompclass is not None:
                 entity.add(codecompclass, stagecomp.name)
 ###############################################################################################################################################

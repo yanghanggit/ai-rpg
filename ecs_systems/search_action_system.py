@@ -81,7 +81,6 @@ class SearchActionSystem(ReactiveProcessor):
         # 
         search_any_prop_success = False
         # 在本场景搜索
-        file_system = self._context._file_system
         safe_name = self._context.safe_get_entity_name(entity)
 
         stageentity = self._context.safe_get_stage_entity(entity)
@@ -91,7 +90,7 @@ class SearchActionSystem(ReactiveProcessor):
         ##
         stagecomp: StageComponent = stageentity.get(StageComponent)
         # 场景有这些道具文件
-        propfiles = file_system.get_prop_files(stagecomp.name)
+        propfiles = self._context._file_system.get_prop_files(stagecomp.name)
         ###
         searchactioncomp: SearchActionComponent = entity.get(SearchActionComponent)
         action: AgentAction = searchactioncomp.action

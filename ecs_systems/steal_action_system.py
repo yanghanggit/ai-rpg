@@ -78,12 +78,11 @@ class StealActionSystem(ReactiveProcessor):
         return steal_any
 ####################################################################################################################################
     def _steal_(self, entity: Entity, target_actor_name: str, propname: str) -> bool:
-        filesystem = self._context._file_system
-        prop = filesystem.get_prop_file(target_actor_name, propname)
+        prop = self._context._file_system.get_prop_file(target_actor_name, propname)
         if prop is None:
             return False
         safename = self._context.safe_get_entity_name(entity)
-        filesystem.exchange_prop_file(target_actor_name, safename, propname)
+        self._context._file_system.exchange_prop_file(target_actor_name, safename, propname)
         return True
 ####################################################################################################################################
     def after_steal_success(self, entity: Entity) -> None:

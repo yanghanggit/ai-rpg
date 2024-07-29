@@ -79,7 +79,6 @@ class UsePropActionSystem(ReactiveProcessor):
     def use_prop(self, entity: Entity) -> None:
 
         context = self._context
-        filesystem = context._file_system
         use_interactive_prop_comp: UsePropActionComponent = entity.get(UsePropActionComponent)
         action: AgentAction = use_interactive_prop_comp.action
         target_and_message = action.target_and_message_values()
@@ -93,7 +92,7 @@ class UsePropActionSystem(ReactiveProcessor):
                 continue
             
             # 检查道具是否存在，需要提醒，如果没有是大问题
-            prop_file = filesystem.get_prop_file(action._actor_name, propname)
+            prop_file = context._file_system.get_prop_file(action._actor_name, propname)
             if prop_file is None:
                 logger.error(f"检查道具合理性失败，{propname} 不存在")
                 continue
@@ -141,8 +140,7 @@ class UsePropActionSystem(ReactiveProcessor):
 
         # 准备提交请求
         logger.debug(f"InteractivePropActionSystem, {targetname}: {final_prompt}")
-        langserve_agent_system = context._langserve_agent_system
-        agent_request = langserve_agent_system.create_agent_request_task(targetname, final_prompt)
+        agent_request = context._langserve_agent_system.create_agent_request_task(targetname, final_prompt)
         if agent_request is None:
             logger.error(f"InteractivePropActionSystem: {targetname} request error.")
             return False

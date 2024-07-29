@@ -65,9 +65,7 @@ class EndSystem(InitializeProcessor, ExecuteProcessor):
         return map
 ############################################################################################################
     def dump_prop_files(self) -> None:
-        file_system = self._context._file_system
-        prop_files = file_system._prop_files
-
+        prop_files = self._context._file_system._prop_files
         dump_data: Dict[str, str] = {}
         for owner_name, owners_prop_files in prop_files.items():
             name_list = ",".join([str(prop_file) for prop_file in owners_prop_files])

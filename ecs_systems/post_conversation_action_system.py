@@ -65,14 +65,13 @@ class PostConversationActionSystem(ReactiveProcessor):
         if len(stage_director_comp._events) == 0:
             return
         ##
-        langserve_agent_system: LangServeAgentSystem = self._context._langserve_agent_system
         #处理场景的
         raw_events2stage = stage_director_comp.to_stage(stage_director_comp.name, self._context) 
         if len(raw_events2stage) > 0:
             batch_events2stage_prompt = self.batch_stage_events(stage_director_comp.name, raw_events2stage) 
             logger.info(f"PostConversationActionSystem: {stage_director_comp.name} : {batch_events2stage_prompt}")
             if async_execute:
-                task = langserve_agent_system.create_agent_request_task_for_checking_prompt(stage_director_comp.name, batch_events2stage_prompt)
+                task = self._context._langserve_agent_system.create_agent_request_task_for_checking_prompt(stage_director_comp.name, batch_events2stage_prompt)
                 assert task is not None
                 request_tasks[stage_director_comp.name] = task
             else:
@@ -87,16 +86,15 @@ class PostConversationActionSystem(ReactiveProcessor):
                 batch_events2actor_prompt = self.batch_actor_events(stage_director_comp.name, raw_events2actor)
                 logger.info(f"PostConversationActionSystem: {actor_comp.name} : {batch_events2actor_prompt}")
                 if async_execute:
-                    task = langserve_agent_system.create_agent_request_task_for_checking_prompt(actor_comp.name, batch_events2actor_prompt)
+                    task = self._context._langserve_agent_system.create_agent_request_task_for_checking_prompt(actor_comp.name, batch_events2actor_prompt)
                     assert task is not None
                     request_tasks[actor_comp.name] = task
                 else:
                     self.imme_request(actor_comp.name, batch_events2actor_prompt)
 ####################################################################################################
     def imme_request(self, name: str, prompt: str) -> None:
-        langserve_agent_system: LangServeAgentSystem = self._context._langserve_agent_system
         try:
-            agent_request = langserve_agent_system.create_agent_request_task_for_checking_prompt(name, prompt)
+            agent_request = self._context._langserve_agent_system.create_agent_request_task_for_checking_prompt(name, prompt)
             if agent_request is None:
                 logger.error(f"imme_request: {name} request error.")
                 return

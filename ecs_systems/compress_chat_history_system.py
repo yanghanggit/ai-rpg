@@ -17,18 +17,16 @@ class CompressChatHistorySystem(ExecuteProcessor):
 ############################################################################################################
     def handle_exclude_chat_history(self) -> None:
         context = self._context
-        agent_connect_system = context._langserve_agent_system
         tags: Set[str] = {_CNConstantPrompt_.ACTOR_PLAN_PROMPT_TAG, _CNConstantPrompt_.STAGE_PLAN_PROMPT_TAG}
         entities: Set[Entity] = context.get_group(Matcher(any_of=[ActorComponent, StageComponent])).entities
         for entity in entities:
             safename = context.safe_get_entity_name(entity)
             if safename == "":
                 continue
-            agent_connect_system.exclude_content_then_rebuild_chat_history(safename, tags)
+            context._langserve_agent_system.exclude_content_then_rebuild_chat_history(safename, tags)
 ############################################################################################################
     def handle_compress_chat_history(self) -> None:
         context = self._context
-        agent_connect_system = context._langserve_agent_system
         replace_data: Dict[str, str] = { _CNConstantPrompt_.ACTOR_PLAN_PROMPT_TAG : _CNConstantPrompt_.COMPRESS_ACTOR_PLAN_PROMPT, 
                                         _CNConstantPrompt_.STAGE_PLAN_PROMPT_TAG : _CNConstantPrompt_.COMPRESS_STAGE_PLAN_PROMPT}
         entities: Set[Entity] = context.get_group(Matcher(any_of=[ActorComponent, StageComponent])).entities
@@ -36,5 +34,5 @@ class CompressChatHistorySystem(ExecuteProcessor):
             safename = context.safe_get_entity_name(entity)
             if safename == "":
                 continue
-            agent_connect_system.replace_chat_history(safename, replace_data)
+            context._langserve_agent_system.replace_chat_history(safename, replace_data)
 ############################################################################################################

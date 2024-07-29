@@ -305,9 +305,7 @@ class CheckBeforeGoToActionSystem(ReactiveProcessor):
         logger.debug(final_prompt)
 
         ## 让大模型去推断是否可以离开，分别检查stage自身，角色状态（例如长相），角色道具（拥有哪些道具与文件）
-        langserve_agent_system = self._context._langserve_agent_system
-
-        agent_request = langserve_agent_system.create_agent_request_task(current_stage_name, final_prompt)
+        agent_request = self._context._langserve_agent_system.create_agent_request_task(current_stage_name, final_prompt)
         if agent_request is None:
             logger.error("agent_request is None")
             return False
@@ -334,8 +332,7 @@ class CheckBeforeGoToActionSystem(ReactiveProcessor):
 
         logger.info(f"允许通过！说明如下: {handle_response_helper._tips}")
         ## 可以删除，允许通过！这个上下文就拿掉，不需要了。
-        langserve_agent_system = self._context._langserve_agent_system
-        langserve_agent_system.remove_last_conversation_between_human_and_ai(current_stage_name)
+        self._context._langserve_agent_system.remove_last_conversation_between_human_and_ai(current_stage_name)
         return True
 ###############################################################################################################################################
     def handle_enter_stage_with_conditions(self, entity: Entity) -> bool:
@@ -369,8 +366,7 @@ class CheckBeforeGoToActionSystem(ReactiveProcessor):
         logger.debug(final_prompt)
 
         ## 让大模型去推断是否可以离开，分别检查stage自身，角色状态（例如长相），角色道具（拥有哪些道具与文件）
-        langserve_agent_system = self._context._langserve_agent_system
-        agent_request = langserve_agent_system.create_agent_request_task(target_stage_name, final_prompt)
+        agent_request = self._context._langserve_agent_system.create_agent_request_task(target_stage_name, final_prompt)
         if agent_request is None:
             logger.error("agent_request is None")
             return False
@@ -398,8 +394,7 @@ class CheckBeforeGoToActionSystem(ReactiveProcessor):
 
         logger.info(f"允许通过！说明如下: {handle_response_helper._tips}")
         ## 可以删除，允许通过！这个上下文就拿掉，不需要了。
-        langserve_agent_system = self._context._langserve_agent_system
-        langserve_agent_system.remove_last_conversation_between_human_and_ai(target_stage_name)
+        self._context._langserve_agent_system.remove_last_conversation_between_human_and_ai(target_stage_name)
         return True
 ###############################################################################################################################################
     def get_target_stage_entity(self, entity: Entity) -> Optional[Entity]:

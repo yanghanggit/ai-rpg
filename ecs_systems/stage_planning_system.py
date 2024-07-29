@@ -108,9 +108,8 @@ class StagePlanningSystem(ExecuteProcessor):
     # 获取场景内所有的道具的描述。
     def get_props_in_stage(self, entity: Entity) -> List[PropData]:
         res: List[PropData] = []
-        filesystem = self._context._file_system
         safe_stage_name = self._context.safe_get_entity_name(entity)
-        files = filesystem.get_prop_files(safe_stage_name)
+        files = self._context._file_system.get_prop_files(safe_stage_name)
         for file in files:
             res.append(file._prop)
         return res

@@ -72,11 +72,10 @@ class UpdateAppearanceSystem(InitializeProcessor, ExecuteProcessor):
         logger.debug(f"final_prompt: {final_prompt}")
 
         # 请求更新
-        langserve_agent_system: LangServeAgentSystem = self._context._langserve_agent_system
         safe_name = self._context.safe_get_entity_name(world_entity)
         try:
 
-            agent_request = langserve_agent_system.create_agent_request_task_without_any_context(safe_name, final_prompt)
+            agent_request = self._context._langserve_agent_system.create_agent_request_task_without_any_context(safe_name, final_prompt)
             if agent_request is None:
                 logger.error(f"{safe_name} request error.")
                 return False
@@ -126,9 +125,8 @@ class UpdateAppearanceSystem(InitializeProcessor, ExecuteProcessor):
 ###############################################################################################################################################
     # 获取衣服的描述 todo。现在就返回了第一个衣服的描述
     def get_clothe(self, entity: Entity) -> str:
-        filesystem = self._context._file_system
         safename = self._context.safe_get_entity_name(entity)            
-        files = filesystem.get_prop_files(safename)
+        files = self._context._file_system.get_prop_files(safename)
         for _file in files:
             if _file._prop.is_clothes():
                 return _file._prop._description

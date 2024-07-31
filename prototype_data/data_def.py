@@ -101,7 +101,7 @@ class PropData:
         }
     
     @property
-    def maxhp(self) -> int:
+    def max_hp(self) -> int:
         return self._attributes.get_value(0)
     
     @property
@@ -145,7 +145,7 @@ class ActorData:
         self._body: str = body
 
     @property
-    def maxhp(self) -> int:
+    def max_hp(self) -> int:
         return self._attributes.get_value(0)
     
     @property
@@ -209,7 +209,7 @@ class StageData:
         self._exit_of_portal.add(stage_proxy)
 
     @property
-    def maxhp(self) -> int:
+    def max_hp(self) -> int:
         return self._attributes.get_value(0)
     
     @property

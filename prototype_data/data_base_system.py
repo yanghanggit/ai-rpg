@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from typing import Optional, Dict, TypeVar, Generic
 from prototype_data.data_def import ActorData, PropData, StageData, WorldSystemData
 

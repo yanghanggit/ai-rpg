@@ -166,7 +166,7 @@ class RPGGame(BaseGame):
         _entity.add(GUIDComponent, _GUIDGenerator_.generate())
         _entity.add(ActorComponent, actor_data._name, "")
         _entity.add(SimpleRPGAttrComponent, actor_data._name, 
-                    actor_data.maxhp, 
+                    actor_data.max_hp, 
                     actor_data.hp, 
                     actor_data.attack, 
                     actor_data.defense)
@@ -224,7 +224,7 @@ class RPGGame(BaseGame):
         stage_entity.add(StageComponent, stage_data._name)
         stage_entity.add(StageDirectorComponent, stage_data._name) ###
         stage_entity.add(SimpleRPGAttrComponent, stage_data._name, 
-                        stage_data.maxhp, 
+                        stage_data.max_hp, 
                         stage_data.hp, 
                         stage_data.attack, 
                         stage_data.defense)

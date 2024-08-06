@@ -43,11 +43,11 @@ class FileSystem:
         content = propfile.serialization()
         assert content is not None
         assert len(content) > 0
-        assert propfile._ownersname is not None
+        assert propfile._owner_name is not None
         assert propfile._name is not None
         assert self._runtime_dir is not None
         
-        prop_file_path = self.prop_file_path(propfile._ownersname, propfile._name)
+        prop_file_path = self.prop_file_path(propfile._owner_name, propfile._name)
         assert prop_file_path is not None
 
         try:
@@ -60,7 +60,7 @@ class FileSystem:
 ################################################################################################################
     ## 添加一个道具文件
     def add_prop_file(self, propfile: PropFile, write: bool = True) -> None:
-        self._prop_files.setdefault(propfile._ownersname, []).append(propfile)
+        self._prop_files.setdefault(propfile._owner_name, []).append(propfile)
         if write:
             self.write_prop_file(propfile)
 ################################################################################################################
@@ -102,7 +102,7 @@ class FileSystem:
 ################################################################################################################
     ## 添加一个你知道的Actor
     def add_actor_archive(self, actor_archive: ActorArchiveFile) -> Optional[ActorArchiveFile]:
-        files = self._actor_archives.setdefault(actor_archive._ownersname, [])
+        files = self._actor_archives.setdefault(actor_archive._owner_name, [])
         for file in files:
             if file._actor_name == actor_archive._actor_name:
                 # 名字匹配，先返回，不添加。后续可以复杂一些
@@ -126,7 +126,7 @@ class FileSystem:
         assert content is not None
         assert len(content) > 0
 
-        archive_file_path = self.actor_archive_path(actor_archive._ownersname, actor_archive._name)
+        archive_file_path = self.actor_archive_path(actor_archive._owner_name, actor_archive._name)
         assert archive_file_path is not None
 
         try:
@@ -147,7 +147,7 @@ class FileSystem:
         return dir / f"{filename}.json"
 ################################################################################################################
     def add_stage_archive(self, stage_archive: StageArchiveFile) -> None:
-        files = self._stage_archives.setdefault(stage_archive._ownersname, [])
+        files = self._stage_archives.setdefault(stage_archive._owner_name, [])
         for file in files:
             if file._stage_name == stage_archive._stage_name:
                 # 名字匹配，先返回，不添加。后续可以复杂一些
@@ -159,7 +159,7 @@ class FileSystem:
         assert content is not None
         assert len(content) > 0
 
-        archive_file_path = self.stage_archive_path(stage_archive_file._ownersname, stage_archive_file._name)
+        archive_file_path = self.stage_archive_path(stage_archive_file._owner_name, stage_archive_file._name)
         assert archive_file_path is not None
 
         try:
@@ -195,7 +195,7 @@ class FileSystem:
         assert content is not None
         assert len(content) > 0
 
-        status_profile_file_path = self.status_profile_path(status_profile._ownersname)
+        status_profile_file_path = self.status_profile_path(status_profile._owner_name)
         assert status_profile_file_path is not None
 
         try:
@@ -206,7 +206,7 @@ class FileSystem:
             return
 ################################################################################################################
     def set_status_profile(self, status_profile: StatusProfileFile) -> None:
-        self._status_profile[status_profile._ownersname] = status_profile
+        self._status_profile[status_profile._owner_name] = status_profile
 ################################################################################################################
 ################################################################################################################
 ################################################################################################################

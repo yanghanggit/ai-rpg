@@ -3,10 +3,10 @@ from entitas import Entity, InitializeProcessor, ExecuteProcessor, Matcher # typ
 from my_entitas.extended_context import ExtendedContext
 from loguru import logger
 from typing import Dict, cast, Set
-from my_agent.lang_serve_agent_system import LangServeAgentSystem
 import json
 from ecs_systems.components import AppearanceComponent, BodyComponent, ActorComponent
 from builtin_prompt.cn_builtin_prompt import actors_body_and_clothe_prompt
+from file_system.files_def import PropFile
 
 # todo
 class UpdateAppearanceSystem(InitializeProcessor, ExecuteProcessor):
@@ -125,11 +125,11 @@ class UpdateAppearanceSystem(InitializeProcessor, ExecuteProcessor):
 ###############################################################################################################################################
     # 获取衣服的描述 todo。现在就返回了第一个衣服的描述
     def get_clothe(self, entity: Entity) -> str:
-        safename = self._context.safe_get_entity_name(entity)            
-        files = self._context._file_system.get_prop_files(safename)
-        for _file in files:
-            if _file._prop.is_clothes():
-                return _file._prop._description
+        safe_name = self._context.safe_get_entity_name(entity)            
+        prop_files = self._context._file_system.get_prop_files(safe_name)
+        for prop_file in prop_files:
+            if prop_file.is_clothes:
+                return prop_file.description
         return "" 
 ###############################################################################################################################################
     # 获取身体的描述。

@@ -172,17 +172,17 @@ class AttackActionSystem(ReactiveProcessor):
     ## 杀死对方就直接夺取唯一性道具。
     def unique_prop_be_taken_away(self, _entity: Entity, _target_entity: Entity) -> None:
 
-        _rpg_comp: SimpleRPGAttrComponent = _entity.get(SimpleRPGAttrComponent)
-        _target_rpg_comp: SimpleRPGAttrComponent = _target_entity.get(SimpleRPGAttrComponent)
-        logger.info(f"{_rpg_comp.name} kill => {_target_rpg_comp.name}")
+        rpg_comp: SimpleRPGAttrComponent = _entity.get(SimpleRPGAttrComponent)
+        target_rpg_comp: SimpleRPGAttrComponent = _target_entity.get(SimpleRPGAttrComponent)
+        logger.info(f"{rpg_comp.name} kill => {target_rpg_comp.name}")
         
-        prop_files = self._context._file_system.get_prop_files(_target_rpg_comp.name)
-        for propfile in prop_files:
-            if not propfile._prop.is_unique():
-                logger.info(f"the propfile {propfile._name} is not unique, so it will not be taken away.")
+        prop_files = self._context._file_system.get_prop_files(target_rpg_comp.name)
+        for prop_file in prop_files:
+            if not prop_file.is_unique:
+                logger.info(f"the propfile {prop_file._name} is not unique, so it will not be taken away.")
                 continue
             # 交换文件，即交换道具文件即可
-            self._context._file_system.exchange_prop_file(_target_rpg_comp.name, _rpg_comp.name, propfile._name)        
+            self._context._file_system.exchange_prop_file(target_rpg_comp.name, rpg_comp.name, prop_file._name)        
 ######################################################################################################################################################
     def final_attack_val(self, entity: Entity) -> int:
         # 最后的攻击力

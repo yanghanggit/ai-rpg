@@ -32,9 +32,11 @@ class ExcelEditorStage:
         self.parse_actors_in_stage()
 #################################################################################################################################
     @property
-    def attributes(self) -> str:
+    def attributes(self) -> List[int]:
         assert self._data is not None
-        return cast(str, self._data["attributes"])
+        data = cast(str, self._data["attributes"])
+        assert ',' in data, f"raw_string_val: {data} is not valid."
+        return [int(attr) for attr in data.split(',')]    
 ################################################################################################################################
     def parse_stage_prop(self) -> None:
         data: Optional[str] = self._data["stage_prop"]
@@ -112,23 +114,19 @@ class ExcelEditorStage:
         _dt["stage_exit_actor_status"] = self.stage_exit_actor_status
         _dt["stage_exit_actor_props"] = self.stage_exit_actor_props
 
-        output_dict: Dict[str, Any] = {}
-        output_dict["stage"] = _dt
-        return output_dict
+        return _dt
 ################################################################################################################################
     def proxy(self) -> Dict[str, Any]:
         data_stage: ExcelDataStage = self._stage_data_base[self._data["name"]]
-        _dt: Dict[str, Any] = {}
-        _dt["name"] = data_stage._name
+        output: Dict[str, Any] = {}
+        output["name"] = data_stage._name
         #
         props = self.stage_props_proxy(self._stage_prop)
-        _dt["props"] = props
+        output["props"] = props
         #
         actors = self.stage_actors_proxy(self._actors_in_stage)
-        _dt["actors"] = actors
+        output["actors"] = actors
         #
-        output: Dict[str, Any] = {}
-        output["stage"] = _dt
         return output
 ################################################################################################################################
     def safe_get_string(self, key: str) -> str:

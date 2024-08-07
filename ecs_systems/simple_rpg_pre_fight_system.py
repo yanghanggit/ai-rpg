@@ -3,7 +3,8 @@ from ecs_systems.components import SimpleRPGAttrComponent, SimpleRPGWeaponCompon
 from my_entitas.extended_context import ExtendedContext
 from loguru import logger
 from typing import Set, Optional, override
-from prototype_data.data_def import PropData
+from file_system.files_def import PropFile
+
 
 # 这是一个测试，将装备对战斗数值的影响先做一个初步的。
 # 后续不能这么写。在战斗前重新构造武器和防具是不合理的
@@ -37,7 +38,13 @@ class SimpleRPGPreFightSystem(ExecuteProcessor):
                 continue
             highest_attack_weapon = self.get_weapon_with_highest_attack_power(entity)
             if highest_attack_weapon is not None:
-                entity.add(SimpleRPGWeaponComponent, self._context.safe_get_entity_name(entity), highest_attack_weapon._name, highest_attack_weapon.max_hp, highest_attack_weapon.attack, highest_attack_weapon.defense)
+                #rpg_prop = RPGPropParser(highest_attack_weapon)
+                entity.add(SimpleRPGWeaponComponent, 
+                           self._context.safe_get_entity_name(entity), 
+                           highest_attack_weapon.name, 
+                           highest_attack_weapon.max_hp, 
+                           highest_attack_weapon.attack, 
+                           highest_attack_weapon.defense)
                 continue
 ######################################################################################################################################################
     def rebuild_armors_from_prop_files(self) -> None:
@@ -47,32 +54,37 @@ class SimpleRPGPreFightSystem(ExecuteProcessor):
                 continue
             highest_defense_armor = self.get_armor_with_highest_defense_power(entity)
             if highest_defense_armor is not None:
-                entity.add(SimpleRPGArmorComponent, self._context.safe_get_entity_name(entity), highest_defense_armor._name, highest_defense_armor.max_hp, highest_defense_armor.attack, highest_defense_armor.defense)
+                entity.add(SimpleRPGArmorComponent, 
+                           self._context.safe_get_entity_name(entity), 
+                           highest_defense_armor.name, 
+                           highest_defense_armor.max_hp, 
+                           highest_defense_armor.attack, 
+                           highest_defense_armor.defense)
                 continue
 ######################################################################################################################################################
-    def get_weapon_with_highest_attack_power(self, entity: Entity) -> Optional[PropData]:
-        safename = self._context.safe_get_entity_name(entity)            
-        files = self._context._file_system.get_prop_files(safename)
+    def get_weapon_with_highest_attack_power(self, entity: Entity) -> Optional[PropFile]:
+        safe_name = self._context.safe_get_entity_name(entity)            
+        prop_files = self._context._file_system.get_prop_files(safe_name)
         #
         highest_attack = 0
         highest_attack_weapon = None
-        for _file in files:
-            if _file._prop.is_weapon() and _file._prop.attack > highest_attack:
-                highest_attack = _file._prop.attack
-                highest_attack_weapon = _file._prop
+        for prop_file in prop_files:
+            if prop_file.is_weapon and prop_file.attack > highest_attack:
+                highest_attack = prop_file.attack
+                highest_attack_weapon = prop_file
 
         return highest_attack_weapon
 ######################################################################################################################################################
-    def get_armor_with_highest_defense_power(self, entity: Entity) -> Optional[PropData]:
-        safename = self._context.safe_get_entity_name(entity)            
-        files = self._context._file_system.get_prop_files(safename)
+    def get_armor_with_highest_defense_power(self, entity: Entity) -> Optional[PropFile]:
+        safe_name = self._context.safe_get_entity_name(entity)            
+        prop_files = self._context._file_system.get_prop_files(safe_name)
         #
         highest_defense = 0
         highest_defense_armor = None
-        for _file in files:
-            if _file._prop.is_clothes() and _file._prop.defense > highest_defense:
-                highest_defense = _file._prop.defense
-                highest_defense_armor = _file._prop
+        for prop_file in prop_files:
+            if prop_file.is_clothes and prop_file.defense > highest_defense:
+                highest_defense = prop_file.defense
+                highest_defense_armor = prop_file
         return highest_defense_armor
 ######################################################################################################################################################
         

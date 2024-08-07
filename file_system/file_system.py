@@ -86,10 +86,9 @@ class FileSystem:
         self._prop_files[from_owner].remove(find_owners_file)
         # 文件得从文件系统中删除掉
         self.prop_file_path(from_owner, propname).unlink()
-        #self.delete_file(self.prop_file_path(from_owner, propname))
 
         # 文件重新写入
-        self.add_prop_file(PropFile(propname, to_owner, find_owners_file._prop, find_owners_file._count))
+        self.add_prop_file(PropFile(propname, to_owner, find_owners_file._prop_model, find_owners_file._count))
 ################################################################################################################
 ################################################################################################################
 ################################################################################################################

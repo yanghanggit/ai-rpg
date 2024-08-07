@@ -50,11 +50,11 @@ def load_game_file(game_build_file_path: Path, version: str) -> Any:
         return None
 #######################################################################################################################################
 ### （临时的）写死创建
-def load_then_build_game_data(gamename: str, version: str) -> Optional[GameBuilder]:
+def load_then_build_game_data(game_name: str, version: str) -> Optional[GameBuilder]:
     root_runtime_dir = GAME_SAMPLE_RUNTIME_DIR
     root_runtime_dir.mkdir(parents=True, exist_ok=True)
 
-    game_build_file_path = root_runtime_dir / f"{gamename}.json"
+    game_build_file_path = root_runtime_dir / f"{game_name}.json"
     if not game_build_file_path.exists():
         logger.error("未找到存档，请检查存档是否存在。")
         return None
@@ -64,8 +64,8 @@ def load_then_build_game_data(gamename: str, version: str) -> Optional[GameBuild
         logger.error("load_game_file 失败。")
         return None
 
-    runtime_file_dir = root_runtime_dir / gamename
-    return GameBuilder(gamename, game_data, runtime_file_dir).build()
+    runtime_file_dir = root_runtime_dir / game_name
+    return GameBuilder(game_name, game_data, runtime_file_dir)#.build()
 #######################################################################################################################################
 ## 创建RPG Game
 def create_rpg_game(worldname: str, chaosengineering: Optional[IChaosEngineering], data_base_system: DataBaseSystem, rpg_game_type: RPGGameType) -> RPGGame:

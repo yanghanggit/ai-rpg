@@ -6,9 +6,9 @@ from my_agent.agent_plan import AgentPlan
 from my_agent.agent_action import AgentAction
 from my_entitas.extended_context import ExtendedContext
 from loguru import logger 
-from typing import Optional, Dict, Set, List
+from typing import Dict, Set, List
 from gameplay_checks.planning_check import check_component_register
-from prototype_data.data_def import PropData
+from file_system.files_def import PropFile
 from builtin_prompt.cn_builtin_prompt import stage_plan_prompt
 from my_agent.lang_serve_agent_request_task import LangServeAgentRequestTask, LangServeAgentAsyncRequestTasksGather
 
@@ -106,13 +106,13 @@ class StagePlanningSystem(ExecuteProcessor):
         return _names
 #######################################################################################################################################
     # 获取场景内所有的道具的描述。
-    def get_props_in_stage(self, entity: Entity) -> List[PropData]:
-        res: List[PropData] = []
+    def get_props_in_stage(self, entity: Entity) -> List[PropFile]:
+        #res: List[PropModel] = []
         safe_stage_name = self._context.safe_get_entity_name(entity)
-        files = self._context._file_system.get_prop_files(safe_stage_name)
-        for file in files:
-            res.append(file._prop)
-        return res
+        return self._context._file_system.get_prop_files(safe_stage_name)
+        # for file in files:
+        #     res.append(file._prop_model)
+        # return res
 #######################################################################################################################################
     def add_tasks(self, request_tasks: Dict[str, LangServeAgentRequestTask]) -> None:
         request_tasks.clear()

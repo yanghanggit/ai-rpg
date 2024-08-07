@@ -70,7 +70,7 @@ class UpdateArchiveHelper:
             prop_files = self._context._file_system.get_prop_files(actor_comp.name)
             desc: List[str] = []
             for file in prop_files:
-                desc.append(f"{file._name}:{file._prop._description}")
+                desc.append(f"{file.name}:{file.description}")
             result[actor_comp.name] = desc
 
         return result

@@ -164,7 +164,7 @@ async def imme_handle_check_status(rpg_game: RPGGame, playerproxy: PlayerProxy) 
     #
     safename = context.safe_get_entity_name(playerentity)
     #
-    event = ActorCheckStatusEvent(safename, helper._props, helper.health, helper._special_components)
+    event = ActorCheckStatusEvent(safename, helper._prop_files_as_weapon_clothes_non_consumable_item, helper.health, helper._prop_files_as_special_components)
     message = event.to_actor(safename, context)
     playerproxy.add_actor_message(safename, message)
 ############################################################################################################

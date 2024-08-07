@@ -5,7 +5,7 @@ sys.path.append(str(root_dir))
 import pandas as pd
 from loguru import logger
 from pandas.core.frame import DataFrame
-from typing import Dict
+from typing import Dict, Any
 from game_sample.excel_data import ExcelDataActor, ExcelDataStage, ExcelDataProp, ExcelDataWorldSystem
 from pathlib import Path
 from game_sample.utils import read_system_prompt_md, read_agentpy_template
@@ -23,7 +23,6 @@ def gen_all_actors(sheet: DataFrame, output: Dict[str, ExcelDataActor]) -> None:
                                 row["codename"], 
                                 row["description"], 
                                 row['conversation_example'],
-                                #row["GPT_MODEL"], 
                                 int(row["PORT"]), 
                                 row["API"], 
                                 row["RAG"], 
@@ -51,7 +50,6 @@ def gen_all_stages(sheet: DataFrame, output: Dict[str, ExcelDataStage]) -> None:
         excel_stage = ExcelDataStage(row["name"], 
                                     row["codename"], 
                                     row["description"], 
-                                    #row["GPT_MODEL"], 
                                     int(row["PORT"]), 
                                     row["API"], 
                                     row["RAG"], 
@@ -141,18 +139,18 @@ def analyze_relationship_between_actors_and_props(analyze_props_data: Dict[str, 
         if len(_me._prop_archives) > 0:
             logger.warning(f"{_me._name}: {_me._prop_archives}")
 ################################################################################################################
-def serialization_prop(prop: ExcelDataProp) -> Dict[str, str]:
-    output: Dict[str, str] = {}
+def serialization_prop(prop: ExcelDataProp) -> Dict[str, Any]:
+    output: Dict[str, Any] = {}
     output["name"] = prop._name
     output["codename"] = prop._codename
     output["description"] = prop._description
     output["isunique"] = prop._isunique
     output["type"] = prop._type
-    output["attributes"] = prop._attributes
+    output["attributes"] = [int(attr) for attr in prop._attributes.split(',')]
     output["appearance"] = prop._appearance
     return output       
 ################################################################################################################
-def proxy_prop(prop: ExcelDataProp) -> Dict[str, str]:
+def proxy_prop(prop: ExcelDataProp) -> Dict[str, Any]:
     output: Dict[str, str] = {}
     output['name'] = prop._name
     return output       

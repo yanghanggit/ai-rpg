@@ -110,7 +110,7 @@ class UsePropActionSystem(ReactiveProcessor):
 ###################################################################################################################
     def use_prop_to_stage(self, entity: Entity, target_entity: Entity, prop_file: PropFile) -> bool:
         # 目前应该是这些！！
-        assert prop_file._prop.is_weapon() or prop_file._prop.is_non_consumable_item()
+        #assert prop_file._prop_model.is_weapon() or prop_file._prop_model.is_non_consumable_item()
         assert entity.has(ActorComponent)
         assert target_entity.has(StageComponent)
         
@@ -133,7 +133,7 @@ class UsePropActionSystem(ReactiveProcessor):
             return True
 
         # 道具的提示词
-        prop_prompt = prop_info_prompt(prop_file._prop, True, True)
+        prop_prompt = prop_info_prompt(prop_file, True, True)
 
         # 包装的最终提示词
         final_prompt = use_prop_to_stage_prompt(username, prop_file._name, prop_prompt, exit_cond_status_prompt)

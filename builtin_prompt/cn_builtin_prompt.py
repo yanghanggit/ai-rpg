@@ -1,5 +1,5 @@
 from typing import Dict, List, Set
-from prototype_data.data_def import PropData
+from file_system.files_def import PropFile
 from ecs_systems.action_components import MindVoiceActionComponent, EnviroNarrateActionComponent, \
     TagActionComponent, PerceptionActionComponent, CheckStatusActionComponent
 import json
@@ -71,12 +71,12 @@ def actor_plan_prompt(current_stage: str, stage_enviro_narrate: str) -> str:
 # ### 输出指南:
 # 请根据‘输出格式指南’严格输出，确保描述客观且行动计划明确，避免预设或猜测角色的未发生行为。
 # """
-def stage_plan_prompt(props_in_stage: List[PropData], actors_in_stage: Set[str]) -> str:
+def stage_plan_prompt(stage_prop_files: List[PropFile], actors_in_stage: Set[str]) -> str:
 
     ## 场景内道具
     prompt_of_props = ""
-    if len(props_in_stage) > 0:
-        for prop in props_in_stage:
+    if len(stage_prop_files) > 0:
+        for prop in stage_prop_files:
             prompt_of_props += prop_info_prompt(prop, False, True)
     else:
         prompt_of_props = "- 无任何道具。"
@@ -134,53 +134,54 @@ def perception_action_prompt(who: str, current_stage: str, result_actor_names: D
 {prompt_of_props}"""
     return final_prompt
 ###############################################################################################################################################
-def prop_type_prompt(prop: PropData) -> str:
+def prop_type_prompt(prop_file: PropFile) -> str:
     _type = "未知"
-    if prop.is_weapon():
+    if prop_file.is_weapon:
         _type = "武器(用于提高攻击力)"
-    elif prop.is_clothes():
+    elif prop_file.is_clothes:
         _type = "衣服(用于提高防御力与改变角色外观)"
-    elif prop.is_non_consumable_item():
+    elif prop_file.is_non_consumable_item:
         _type = "非消耗品"
-    elif prop.is_special_component():
+    elif prop_file.is_special_component:
         _type = "特殊能力"
     return _type
 ###############################################################################################################################################
-def prop_info_prompt(prop: PropData, need_description_prompt: bool, need_appearance_prompt: bool) -> str:
-    prop_type = prop_type_prompt(prop)
+def prop_info_prompt(prop_file: PropFile, need_description_prompt: bool, need_appearance_prompt: bool) -> str:
+    prop_type = prop_type_prompt(prop_file)
 
-    prompt = f"""### {prop._name}
+    prompt = f"""### {prop_file.name}
 - 类型:{prop_type}
 """
     if need_description_prompt:
-        prompt += f"- 描述:{prop._description}\n"
+        prompt += f"- 描述:{prop_file.description}\n"
         
     if need_appearance_prompt:
-        prompt += f"- 外观:{prop._appearance}\n"
+        prompt += f"- 外观:{prop_file.appearance}\n"
 
     return prompt
 ###############################################################################################################################################
-def special_component_prompt(prop: PropData) -> str:
-    assert prop.is_special_component()
-    prompt = f"""### {prop._name}
-- {prop._description}
+def special_component_prompt(prop_file: PropFile) -> str:
+    #rpg_prop = RPGPropParser(prop)
+    assert prop_file.is_special_component
+    prompt = f"""### {prop_file.name}
+- {prop_file.description}
 """
     return prompt
 ###############################################################################################################################################
-def check_status_action_prompt(who: str, props: List[PropData], health: float, special_components: List[PropData]) -> str:
+def check_status_action_prompt(who: str, prop_files: List[PropFile], health: float, prop_files_as_special_components: List[PropFile]) -> str:
     health *= 100
     prompt_of_actor = f"生命值: {health:.2f}%"
 
     prompt_of_props = ""
-    if len(props) > 0:
-        for prop in props:
+    if len(prop_files) > 0:
+        for prop in prop_files:
             prompt_of_props += prop_info_prompt(prop, True, True)
     else:
         prompt_of_props = "- 无任何道具。"
 
     prompt_of_special_components = ""
-    if len(special_components) > 0:
-        for _r in special_components:
+    if len(prop_files_as_special_components) > 0:
+        for _r in prop_files_as_special_components:
             prompt_of_special_components += special_component_prompt(_r)
     else:
         prompt_of_special_components = "- 无任何特殊能力。"

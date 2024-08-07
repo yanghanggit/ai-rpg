@@ -3,7 +3,7 @@ from pathlib import Path
 root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 from loguru import logger
-from typing import List, Dict, Any, Optional
+from typing import Dict, Any, Optional
 from game_sample.excel_data import ExcelDataWorldSystem
 
 
@@ -16,7 +16,6 @@ class ExcelEditorWorldSystem:
         if raw_data["type"] not in ["WorldSystem"]:
             logger.error(f"Invalid type: {raw_data['type']}")
             assert False
-            #return
 ######################################################################################################################
     @property
     def data(self) -> ExcelDataWorldSystem:
@@ -33,15 +32,11 @@ class ExcelEditorWorldSystem:
 ######################################################################################################################
     # 核心函数！！！
     def serialization(self) -> Dict[str, Any]:
-        _dt: Dict[str, Any] = {}
-        _dt["world_system"] = self._serialization_core(self.data)
-        return _dt
+        return self._serialization_core(self.data)
 ######################################################################################################################
     # 我的代理
     def proxy(self) -> Dict[str, Any]:
         output: Dict[str, Any] = {}
-        proxy: Dict[str, str] = {}
-        proxy['name'] = self.data._name
-        output["world_system"] = proxy
+        output['name'] = self.data._name
         return output
 ######################################################################################################################

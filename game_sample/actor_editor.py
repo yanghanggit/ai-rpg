@@ -39,9 +39,11 @@ class ExcelEditorActor:
         return str(val)
 #################################################################################################################################
     @property
-    def attributes(self) -> str:
+    def attributes(self) -> List[int]:
         assert self._data is not None
-        return cast(str, self._data["attributes"])
+        data = cast(str, self._data["attributes"])
+        assert ',' in data, f"raw_string_val: {data} is not valid."
+        return [int(attr) for attr in data.split(',')]    
 #################################################################################################################################
     @property
     def kick_off_memory(self) -> str:
@@ -62,45 +64,41 @@ class ExcelEditorActor:
                 continue
             self._prop_data.append((self._prop_data_base[_name], _count))
 #################################################################################################################################
-    def serialization_core(self, actor_data: Optional[ExcelDataActor]) -> Dict[str, str]:
+    def serialization_core(self, actor_data: Optional[ExcelDataActor]) -> Dict[str, Any]:
         if actor_data is None:
             return {}
-        _dt: Dict[str, str] = {}
-        _dt["name"] = actor_data._name
-        _dt["codename"] = actor_data._codename
-        _dt["url"] = actor_data.localhost()
-        _dt["kick_off_memory"] = self.kick_off_memory
-        _dt["appearance"] = self.appearance
-        _dt["actor_archives"] = ";".join(actor_data._actor_archives)
-        _dt["stage_archives"] = ";".join(actor_data._stage_archives)
-        _dt["attributes"] = self.attributes
-        _dt["body"] = actor_data._body
-        return _dt
+        out_put: Dict[str, Any] = {}
+        out_put["name"] = actor_data._name
+        out_put["codename"] = actor_data._codename
+        out_put["url"] = actor_data.localhost()
+        out_put["kick_off_memory"] = self.kick_off_memory
+        out_put["appearance"] = self.appearance
+        out_put["actor_archives"] = actor_data._actor_archives 
+        out_put["stage_archives"] = actor_data._stage_archives 
+        out_put["attributes"] = self.attributes
+        out_put["body"] = actor_data._body
+        return out_put
 #################################################################################################################################
     # 核心函数！！！
     def serialization(self) -> Dict[str, Any]:
-        _dt: Dict[str, Any] = {}
-        _dt["actor"] = self.serialization_core(self.actor_data)
-        return _dt
+        return self.serialization_core(self.actor_data)
 #################################################################################################################################
     # 核心函数！！！
     def proxy(self) -> Dict[str, Any]:
         output: Dict[str, Any] = {}
         #
-        actor_block: Dict[str, str] = {}
         assert self.actor_data is not None
-        actor_block['name'] = self.actor_data._name
+        output['name'] = self.actor_data._name
         #
-        props_block: List[Dict[str, str]] = []
+        props_block: List[Dict[str, Any]] = []
         for tp in self._prop_data:
             #代理即可
             prop = tp[0]
             count = tp[1]
-            _dt = proxy_prop(prop)
-            _dt["count"] = str(count)
-            props_block.append(_dt) 
+            dt = proxy_prop(prop)
+            dt["count"] = count
+            props_block.append(dt) 
         #
-        output["actor"] = actor_block
         output["props"] = props_block
         return output
 #################################################################################################################################

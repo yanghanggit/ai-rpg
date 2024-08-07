@@ -415,7 +415,7 @@ class CheckBeforeGoToActionSystem(ReactiveProcessor):
     def get_actor_props_prompt(self, entity: Entity) -> str:
         helper = CheckStatusActionHelper(self._context)
         helper.check_status(entity)
-        props = helper._props + helper._special_components
+        props = helper._prop_files_as_weapon_clothes_non_consumable_item + helper._prop_files_as_special_components
         prompt_of_props = ""
         if len(props) > 0:
             for prop in props:

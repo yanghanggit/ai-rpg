@@ -1,5 +1,5 @@
 from typing import Optional, Dict
-from prototype_data.data_model import DataBaseSystemModel, ActorModel, PropModel, StageModel, WorldSystemModel
+from my_data.data_model import DataBaseSystemModel, ActorModel, PropModel, StageModel, WorldSystemModel
 
 
 class DataBaseSystem:

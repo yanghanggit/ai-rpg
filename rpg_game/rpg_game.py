@@ -15,7 +15,7 @@ import shutil
 from rpg_game.base_game import BaseGame
 from file_system.helper import add_actor_archive_files
 from my_entitas.extended_processors import ExtendedProcessors
-from prototype_data.data_model import ActorProxyModel, StageProxyModel, ActorModel, StageModel, WorldSystemModel
+from my_data.data_model import ActorProxyModel, StageProxyModel, ActorModel, StageModel, WorldSystemModel
 from extended_systems.guid_generator import _GUIDGenerator_
 from rpg_game.rpg_game_processors import create_rpg_processors
 

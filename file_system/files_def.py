@@ -2,7 +2,7 @@ from overrides import override
 import json
 from typing import Dict, Any, List
 from abc import ABC, abstractmethod
-from prototype_data.data_model import PropModel
+from my_data.data_model import PropModel
 
 ############################################################################################################
 ############################################################################################################

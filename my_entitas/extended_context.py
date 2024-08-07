@@ -1,6 +1,6 @@
 from entitas import (Entity, Matcher, Context)# type: ignore   
 from loguru import logger
-from prototype_data.data_base_system import DataBaseSystem
+from my_data.data_base_system import DataBaseSystem
 from ecs_systems.components import (WorldComponent, StageComponent, ActorComponent, PlayerComponent, AppearanceComponent)
 from file_system.file_system import FileSystem
 from extended_systems.kick_off_memory_system import KickOffMemorySystem

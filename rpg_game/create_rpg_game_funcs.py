@@ -10,7 +10,7 @@ from my_agent.lang_serve_agent_system import LangServeAgentSystem
 from extended_systems.code_name_component_system import CodeNameComponentSystem
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from chaos_engineering.empty_engineering_system import EmptyChaosEngineeringSystem
-from prototype_data.data_base_system import DataBaseSystem
+from my_data.data_base_system import DataBaseSystem
 from game_sample.game_sample_chaos_engineering_system import GameSampleChaosEngineeringSystem
 from pathlib import Path
 import json

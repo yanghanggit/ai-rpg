@@ -2,231 +2,317 @@ import sys
 from pathlib import Path
 root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
-from loguru import logger
 from typing import List
 from game_sample.configuration import GAME_NAME, OUT_PUT_ACTOR_SYS_PROMPT_DIR, OUT_PUT_STAGE_SYS_PROMPT_DIR, OUT_PUT_AGENT_DIR
 from game_sample.utils import write_text_file
-
+from typing import Any
 
 ############################################################################################################
 ############################################################################################################
 ############################################################################################################
 class ExcelDataActor:
 
-    def __init__(self, name: str, 
-                 codename: str, 
-                 description: str, 
-                 conversation_example: str,
-                 port: int, 
-                 api: str, 
-                 rag: str,
-                 sys_prompt_template_path: str,
-                 agentpy_template_path: str,
-                 body: str) -> None:
-        
-        self._name: str = name
-        self._codename: str = codename
-        self._description: str = description
-        self._converation_example: str = conversation_example
-        self._port: int = port
-        self._api: str = api
-        logger.info(self.localhost())
-        self._rag: str = rag
+    def __init__(self, data: Any) -> None:
+        self._data = data
+  
+        # 构建出来的数据
+        self._gen_system_prompt: str = ""
+        self._gen_agentpy: str = ""
         self._actor_archives: List[str] = []
         self._stage_archives: List[str] = []
         self._prop_archives: List[str] = []
-        self._system_prompt: str = ""
-        self._agentpy: str = ""
-        self._sys_prompt_template_path: str = sys_prompt_template_path
-        self._agentpy_template_path: str = agentpy_template_path
-        self._body: str = body
+############################################################################################################
+    @property
+    def name(self) -> str:
+        return str(self._data["name"])
+    
+    @property
+    def codename(self) -> str:
+        return str(self._data["codename"])
+    
+    @property
+    def description(self) -> str:
+        return str(self._data["description"])
+    
+    @property
+    def conversation_example(self) -> str:
+        return str(self._data["conversation_example"])
+    
+    @property
+    def port(self) -> int:
+        return int(self._data["PORT"])
+    
+    @property
+    def api(self) -> str:
+        return str(self._data["API"])
+    
+    @property
+    def rag(self) -> str:
+        return str(self._data["RAG"])
+    
+    @property
+    def sys_prompt_template_path(self) -> str:
+        return str(self._data["sys_prompt_template"])
+    
+
+    @property
+    def agentpy_template_path(self) -> str:
+        return str(self._data["agentpy_template"])
+
+    @property
+    def body(self) -> str:
+        return str(self._data["body"])
 ############################################################################################################
     def gen_sys_prompt(self, sys_prompt_template: str) -> str:
-        genprompt = str(sys_prompt_template)
-        genprompt = genprompt.replace("<%name>", self._name)
-        genprompt = genprompt.replace("<%description>", self._description)
-        genprompt = genprompt.replace("<%conversation_example>", self._converation_example)
-        self._system_prompt = genprompt
-        return self._system_prompt
+        gen_prompt = str(sys_prompt_template)
+        gen_prompt = gen_prompt.replace("<%name>", self.name)
+        gen_prompt = gen_prompt.replace("<%description>", self.description)
+        gen_prompt = gen_prompt.replace("<%conversation_example>", self.conversation_example)
+        self._gen_system_prompt = gen_prompt
+        return self._gen_system_prompt
 ############################################################################################################
     def gen_agentpy(self, agent_py_template: str) -> str:
-        agentpy = str(agent_py_template)
-        agentpy = agentpy.replace("<%RAG_MD_PATH>", f"""/{GAME_NAME}/{self._rag}""")
-        agentpy = agentpy.replace("<%SYS_PROMPT_MD_PATH>", f"""/{GAME_NAME}/{OUT_PUT_ACTOR_SYS_PROMPT_DIR}/{self._codename}_sys_prompt.md""")
-        agentpy = agentpy.replace("<%PORT>", str(self._port))
-        agentpy = agentpy.replace("<%API>", self._api)
-        self._agentpy = agentpy
-        return self._agentpy
+        gen_py = str(agent_py_template)
+        gen_py = gen_py.replace("<%RAG_MD_PATH>", f"""/{GAME_NAME}/{self.rag}""")
+        gen_py = gen_py.replace("<%SYS_PROMPT_MD_PATH>", f"""/{GAME_NAME}/{OUT_PUT_ACTOR_SYS_PROMPT_DIR}/{self.codename}_sys_prompt.md""")
+        gen_py = gen_py.replace("<%PORT>", str(self.port))
+        gen_py = gen_py.replace("<%API>", self.api)
+        self._gen_agentpy = gen_py
+        return self._gen_agentpy
 ############################################################################################################
+    @property
     def localhost(self) -> str:
-        return f"http://localhost:{self._port}{self._api}/"
+        return f"http://localhost:{self.port}{self.api}/"
 ############################################################################################################
     def write_sys_prompt(self) -> None: 
         directory = Path(GAME_NAME) / OUT_PUT_ACTOR_SYS_PROMPT_DIR
-        write_text_file(directory, f"{self._codename}_sys_prompt.md", self._system_prompt)
+        write_text_file(directory, f"{self.codename}_sys_prompt.md", self._gen_system_prompt)
 ############################################################################################################
     def write_agentpy(self) -> None:
         directory = Path(GAME_NAME) / OUT_PUT_AGENT_DIR
-        write_text_file(directory, f"{self._codename}_agent.py", self._agentpy)
+        write_text_file(directory, f"{self.codename}_agent.py", self._gen_agentpy)
 ############################################################################################################
-    def add_actor_archive(self, name: str) -> bool:
-        if name == self._name:
+    def add_actor_archive(self, actor_name: str) -> bool:
+
+        if actor_name == self.name:
             return False
-        if name in self._actor_archives:
+        
+        if actor_name in self._actor_archives:
             return True
-        if name in self._description:
-            self._actor_archives.append(name)
+        
+        if actor_name in self.description:
+            self._actor_archives.append(actor_name)
             return True
+        
         return False
 ############################################################################################################
-    def add_stage_archive(self, stagename: str) -> bool:
-        if stagename in self._stage_archives:
+    def add_stage_archive(self, stage_name: str) -> bool:
+
+        if stage_name in self._stage_archives:
             return True
-        if stagename in self._description:
-            self._stage_archives.append(stagename)
+        
+        if stage_name in self.description:
+            self._stage_archives.append(stage_name)
             return True
+        
         return False
 ############################################################################################################
-    def check_actor_archive(self, name: str) -> bool:
-        return name in self._actor_archives
+    def check_actor_archive(self, actor_name: str) -> bool:
+        return actor_name in self._actor_archives
 ############################################################################################################
-    def add_prop_archive(self, name: str) -> bool:
-        if name in self._prop_archives:
+    def add_prop_archive(self, prop_name: str) -> bool:
+
+        if prop_name in self._prop_archives:
             return True
-        if name in self._description:
-            self._prop_archives.append(name)
+        
+        if prop_name in self.description:
+            self._prop_archives.append(prop_name)
             return True
+        
         return False
 ############################################################################################################
-    def check_prop_archive(self, name: str) -> bool:
-        return name in self._prop_archives
+    def check_prop_archive(self, prop_name: str) -> bool:
+        return prop_name in self._prop_archives
 ############################################################################################################
 ############################################################################################################
 ############################################################################################################
 class ExcelDataStage:
 
-    def __init__(self, 
-                 name: str, 
-                 codename: str, 
-                 description: str, 
-                 port: int, 
-                 api: str, 
-                 rag: str, 
-                 sys_prompt_template_path: str,
-                 agentpy_template_path: str) -> None:
-        
-        self._name: str = name
-        self._codename: str = codename
-        self._description: str = description
-        self._port: int = port
-        self._api: str = api
-        logger.info(self.localhost())
-        self._rag: str = rag
-        self._system_prompt: str = ""
-        self._agentpy: str = ""
-        self._sys_prompt_template_path: str = sys_prompt_template_path
-        self._agentpy_template_path: str = agentpy_template_path
+    def __init__(self, data: Any) -> None:
+        self._data = data
+        self._gen_system_prompt: str = ""
+        self._gen_agentpy: str = ""
+
+    @property
+    def name(self) -> str:
+        return str(self._data["name"])
+    
+    @property
+    def codename(self) -> str:
+        return str(self._data["codename"])
+    
+    @property
+    def description(self) -> str:
+        return str(self._data["description"])
+    
+    @property
+    def port(self) -> int:
+        return int(self._data["PORT"])
+    
+    @property
+    def api(self) -> str:
+        return str(self._data["API"])
+    
+    @property
+    def rag(self) -> str:
+        return str(self._data["RAG"])
+    
+
+    @property
+    def sys_prompt_template_path(self) -> str:
+        return str(self._data["sys_prompt_template"])
+    
+
+    @property
+    def agentpy_template_path(self) -> str:
+        return str(self._data["agentpy_template"])
+
+
+    @property
+    def localhost(self) -> str:
+        return f"http://localhost:{self.port}{self.api}/"
 ############################################################################################################
     def gen_sys_prompt(self, sys_prompt_template: str) -> str:
-        genprompt = str(sys_prompt_template)
-        genprompt = genprompt.replace("<%name>", self._name)
-        genprompt = genprompt.replace("<%description>", self._description)
-        self._system_prompt = genprompt
-        return self._system_prompt
+        gen_prompt = str(sys_prompt_template)
+        gen_prompt = gen_prompt.replace("<%name>", self.name)
+        gen_prompt = gen_prompt.replace("<%description>", self.description)
+        self._gen_system_prompt = gen_prompt
+        return self._gen_system_prompt
 ############################################################################################################
     def gen_agentpy(self, agent_py_template: str) -> str:
-        agentpy = str(agent_py_template)
-        agentpy = agentpy.replace("<%RAG_MD_PATH>", f"""/{GAME_NAME}/{self._rag}""")
-        agentpy = agentpy.replace("<%SYS_PROMPT_MD_PATH>", f"""/{GAME_NAME}/{OUT_PUT_STAGE_SYS_PROMPT_DIR}/{self._codename}_sys_prompt.md""")
-        agentpy = agentpy.replace("<%PORT>", str(self._port))
-        agentpy = agentpy.replace("<%API>", self._api)
-        self._agentpy = agentpy
-        return self._agentpy
-############################################################################################################
-    def localhost(self) -> str:
-        return f"http://localhost:{self._port}{self._api}/"
+        gen_py = str(agent_py_template)
+        gen_py = gen_py.replace("<%RAG_MD_PATH>", f"""/{GAME_NAME}/{self.rag}""")
+        gen_py = gen_py.replace("<%SYS_PROMPT_MD_PATH>", f"""/{GAME_NAME}/{OUT_PUT_STAGE_SYS_PROMPT_DIR}/{self.codename}_sys_prompt.md""")
+        gen_py = gen_py.replace("<%PORT>", str(self.port))
+        gen_py = gen_py.replace("<%API>", self.api)
+        self._gen_agentpy = gen_py
+        return self._gen_agentpy   
 ############################################################################################################
     def write_sys_prompt(self) -> None: 
         directory = Path(GAME_NAME) / OUT_PUT_STAGE_SYS_PROMPT_DIR
-        write_text_file(directory, f"{self._codename}_sys_prompt.md", self._system_prompt)
+        write_text_file(directory, f"{self.codename}_sys_prompt.md", self._gen_system_prompt)
 ############################################################################################################
     def write_agentpy(self) -> None:
         directory = Path(GAME_NAME) / OUT_PUT_AGENT_DIR
-        write_text_file(directory, f"{self._codename}_agent.py", self._agentpy)
+        write_text_file(directory, f"{self.codename}_agent.py", self._gen_agentpy)
 ############################################################################################################
 ############################################################################################################
 ############################################################################################################
 class ExcelDataProp:
+
+    def __init__(self, data: Any) -> None:
+        self._data = data
+
+    @property
+    def name(self) -> str:
+        return str(self._data["name"])
     
-    def __init__(self, 
-                 name: str, 
-                 codename: str, 
-                 isunique: str, 
-                 description: str, 
-                 rag: str, 
-                 type: str, 
-                 attributes: str, 
-                 appearance: str) -> None:
-        
-        self._name: str = name
-        self._codename: str = codename
-        self._description: str = description
-        self._isunique: str = isunique
-        self._rag: str = rag
-        self._type: str = type
-        self._attributes: str = attributes
-        self._appearance: str = appearance
+    @property
+    def codename(self) -> str:
+        return str(self._data["codename"])
+    
+    @property
+    def description(self) -> str:
+        return str(self._data["description"])
+    
+    @property
+    def isunique(self) -> str:
+        return str(self._data["isunique"])
+    
+    @property
+    def rag(self) -> str:
+        return str(self._data["RAG"])
+    
+    @property
+    def type(self) -> str:
+        return str(self._data["type"])
+    
+    @property
+    def attributes(self) -> str:
+        return str(self._data["attributes"])
+    
+    @property
+    def appearance(self) -> str:
+        return str(self._data["appearance"])
 ############################################################################################################
 ############################################################################################################
 ############################################################################################################
 class ExcelDataWorldSystem:
 
-    def __init__(self, 
-                 name: str, 
-                 codename: str, 
-                 description: str, 
-                 port: int, 
-                 api: str, 
-                 rag: str, 
-                 sys_prompt_template_path: str,
-                 agentpy_template_path: str) -> None:
-        
-        self._name: str = name
-        self._codename: str = codename
-        self._description: str = description
-        self._port: int = port
-        self._api: str = api
-        logger.info(self.localhost())
-        self._rag: str = rag
-        self._sysprompt: str = ""
-        self._agentpy: str = ""
-        self._sys_prompt_template_path: str = sys_prompt_template_path
-        self._agentpy_template_path: str = agentpy_template_path
+    def __init__(self, data: Any) -> None:
+        self._data = data
+        self._gen_sys_prompt: str = ""
+        self._gen_agentpy: str = ""
+
+    @property
+    def name(self) -> str:
+        return str(self._data["name"])
+    
+    @property
+    def codename(self) -> str:
+        return str(self._data["codename"])
+    
+    @property
+    def description(self) -> str:
+        return str(self._data["description"])
+    
+    @property
+    def port(self) -> int:
+        return int(self._data["PORT"])
+    
+    @property
+    def api(self) -> str:
+        return str(self._data["API"])
+    
+    @property
+    def rag(self) -> str:
+        return str(self._data["RAG"])
+    
+    @property
+    def sys_prompt_template_path(self) -> str:
+        return str(self._data["sys_prompt_template"])
+    
+    @property
+    def agentpy_template_path(self) -> str:
+        return str(self._data["agentpy_template"])
+
+
+############################################################################################################
+    @property
+    def localhost(self) -> str:
+        return f"http://localhost:{self.port}{self.api}/"
 ############################################################################################################
     def gen_sys_prompt(self, sys_prompt_template: str) -> str:
-        genprompt = str(sys_prompt_template)
-        genprompt = genprompt.replace("<%name>", self._name)
-        genprompt = genprompt.replace("<%description>", self._description)
-        self._sysprompt = genprompt
-        return self._sysprompt
+        gen_prompt = str(sys_prompt_template)
+        gen_prompt = gen_prompt.replace("<%name>", self.name)
+        gen_prompt = gen_prompt.replace("<%description>", self.description)
+        self._gen_sys_prompt = gen_prompt
+        return self._gen_sys_prompt
 ############################################################################################################
     def gen_agentpy(self, agent_py_template: str) -> str:
-        agentpy = str(agent_py_template)
-        agentpy = agentpy.replace("<%RAG_MD_PATH>", f"""/{GAME_NAME}/{self._rag}""")
-        agentpy = agentpy.replace("<%SYS_PROMPT_MD_PATH>", f"""/{GAME_NAME}/{OUT_PUT_STAGE_SYS_PROMPT_DIR}/{self._codename}_sys_prompt.md""")
-        agentpy = agentpy.replace("<%PORT>", str(self._port))
-        agentpy = agentpy.replace("<%API>", self._api)
-        self._agentpy = agentpy
-        return self._agentpy
-############################################################################################################
-    def localhost(self) -> str:
-        return f"http://localhost:{self._port}{self._api}/"
+        gen_py = str(agent_py_template)
+        gen_py = gen_py.replace("<%RAG_MD_PATH>", f"""/{GAME_NAME}/{self.rag}""")
+        gen_py = gen_py.replace("<%SYS_PROMPT_MD_PATH>", f"""/{GAME_NAME}/{OUT_PUT_STAGE_SYS_PROMPT_DIR}/{self.codename}_sys_prompt.md""")
+        gen_py = gen_py.replace("<%PORT>", str(self.port))
+        gen_py = gen_py.replace("<%API>", self.api)
+        self._gen_agentpy = gen_py
+        return self._gen_agentpy
 ############################################################################################################
     def write_sys_prompt(self) -> None: 
         directory = Path(GAME_NAME) / OUT_PUT_STAGE_SYS_PROMPT_DIR
-        write_text_file(directory, f"{self._codename}_sys_prompt.md", self._sysprompt)
+        write_text_file(directory, f"{self.codename}_sys_prompt.md", self._gen_sys_prompt)
 ############################################################################################################
     def write_agentpy(self) -> None:
         directory = Path(GAME_NAME) / OUT_PUT_AGENT_DIR
-        write_text_file(directory, f"{self._codename}_agent.py", self._agentpy)
+        write_text_file(directory, f"{self.codename}_agent.py", self._gen_agentpy)
 ############################################################################################################

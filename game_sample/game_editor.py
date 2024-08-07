@@ -66,9 +66,9 @@ class ExcelEditorGame:
         globalnames: Set[str] = set()
         self._editor_props.clear()
         for prop in allprops:
-            if prop._name not in globalnames:
+            if prop.name not in globalnames:
                 self._editor_props.append(prop)
-                globalnames.add(prop._name)
+                globalnames.add(prop.name)
         logger.debug(f"World: {self._name} has {len(self._editor_props)} props.")
 
         # 生成世界系统的数据

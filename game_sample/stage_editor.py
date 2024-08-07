@@ -90,18 +90,19 @@ class ExcelEditorStage:
         ls: List[Dict[str, str]] = []
         for _d in actors:
             _dt: Dict[str, str] = {} 
-            _dt['name'] = _d._name  ## 这里只做引用，所以导出名字即可
+            _dt['name'] = _d.name  ## 这里只做引用，所以导出名字即可
             ls.append(_dt)
         return ls
 ################################################################################################################################
     def serialization(self) -> Dict[str, Any]:
+
         data_stage: ExcelDataStage = self._stage_data_base[self._data["name"]]
 
         _dt: Dict[str, Any] = {}
-        _dt["name"] = data_stage._name
-        _dt["codename"] = data_stage._codename
-        _dt["description"] = data_stage._description
-        _dt["url"] = data_stage.localhost()
+        _dt["name"] = data_stage.name
+        _dt["codename"] = data_stage.codename
+        _dt["description"] = data_stage.description
+        _dt["url"] = data_stage.localhost
         _dt["kick_off_memory"] = self.kick_off_memory
         _dt["exit_of_portal"] = self.exit_of_portal
         _dt['attributes'] = self.attributes 
@@ -117,9 +118,10 @@ class ExcelEditorStage:
         return _dt
 ################################################################################################################################
     def proxy(self) -> Dict[str, Any]:
+        
         data_stage: ExcelDataStage = self._stage_data_base[self._data["name"]]
         output: Dict[str, Any] = {}
-        output["name"] = data_stage._name
+        output["name"] = data_stage.name
         #
         props = self.stage_props_proxy(self._stage_prop)
         output["props"] = props

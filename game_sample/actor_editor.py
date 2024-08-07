@@ -51,44 +51,47 @@ class ExcelEditorActor:
         return cast(str, self._data["kick_off_memory"])
 #################################################################################################################################
     def parse_actor_prop(self) -> None:
+
         data: Optional[str] = self._data["actor_prop"]
         if data is None:
             return        
-        _str_ = data.split(";")
-        for _ss in _str_:
-            _tp = parse_prop_string(_ss)
-            _name = _tp[0]
-            _count = _tp[1]
-            if _name not in self._prop_data_base:
-                logger.error(f"Invalid prop: {_name}")
+        
+        for prop_info_string in data.split(";"):
+            parse = parse_prop_string(prop_info_string)
+            prop_name = parse[0]
+            prop_count = parse[1]
+
+            if prop_name not in self._prop_data_base:
+                logger.error(f"Invalid prop: {prop_name}")
                 continue
-            self._prop_data.append((self._prop_data_base[_name], _count))
-#################################################################################################################################
-    def serialization_core(self, actor_data: Optional[ExcelDataActor]) -> Dict[str, Any]:
-        if actor_data is None:
-            return {}
-        out_put: Dict[str, Any] = {}
-        out_put["name"] = actor_data._name
-        out_put["codename"] = actor_data._codename
-        out_put["url"] = actor_data.localhost()
-        out_put["kick_off_memory"] = self.kick_off_memory
-        out_put["appearance"] = self.appearance
-        out_put["actor_archives"] = actor_data._actor_archives 
-        out_put["stage_archives"] = actor_data._stage_archives 
-        out_put["attributes"] = self.attributes
-        out_put["body"] = actor_data._body
-        return out_put
+
+            self._prop_data.append((self._prop_data_base[prop_name], prop_count))
 #################################################################################################################################
     # 核心函数！！！
     def serialization(self) -> Dict[str, Any]:
-        return self.serialization_core(self.actor_data)
+
+        assert self.actor_data is not None
+
+        output: Dict[str, Any] = {}
+
+        output["name"] = self.actor_data.name
+        output["codename"] = self.actor_data.codename
+        output["url"] = self.actor_data.localhost
+        output["kick_off_memory"] = self.kick_off_memory
+        output["appearance"] = self.appearance
+        output["actor_archives"] = self.actor_data._actor_archives 
+        output["stage_archives"] = self.actor_data._stage_archives 
+        output["attributes"] = self.attributes
+        output["body"] = self.actor_data.body
+
+        return output
 #################################################################################################################################
     # 核心函数！！！
     def proxy(self) -> Dict[str, Any]:
         output: Dict[str, Any] = {}
         #
         assert self.actor_data is not None
-        output['name'] = self.actor_data._name
+        output['name'] = self.actor_data.name
         #
         props_block: List[Dict[str, Any]] = []
         for tp in self._prop_data:

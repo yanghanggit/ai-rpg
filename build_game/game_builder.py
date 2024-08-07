@@ -1,5 +1,4 @@
 from typing import Any, List
-from loguru import logger
 from prototype_data.data_model import ActorProxyModel, StageProxyModel, WorldSystemProxyModel, GameBuilderModel
 from prototype_data.data_base_system import DataBaseSystem
 from pathlib import Path
@@ -19,13 +18,12 @@ class GameBuilder:
                  runtime_file_dir: Path) -> None:
         
         self._game_name: str = name
-        self._raw_data: Any = data
-        assert self._raw_data is not None
+
         self._runtime_dir: Path = runtime_file_dir
         assert self._runtime_dir is not None
         assert self._runtime_dir.exists()
 
-        logger.debug(json.dumps(GameBuilderModel.model_json_schema(), indent=2))  
+        #logger.debug(json.dumps(GameBuilderModel.model_json_schema(), indent=2))  
         self._model = GameBuilderModel.model_validate_json(json.dumps(data, ensure_ascii = False))
         self._data_base_system: DataBaseSystem = DataBaseSystem(self._model.database)
 ###############################################################################################################################################

@@ -8,7 +8,7 @@ from my_entitas.extended_context import ExtendedContext
 from ecs_systems.stage_director_component import notify_stage_director
 from entitas.group import GroupEvent
 from ecs_systems.stage_director_event import IStageDirectorEvent
-from builtin_prompt.cn_builtin_prompt import prop_info_prompt, use_prop_to_stage_prompt, use_prop_no_response_prompt
+from builtin_prompt.cn_builtin_prompt import prop_prompt, use_prop_to_stage_prompt, use_prop_no_response_prompt
 from builtin_prompt.cn_constant_prompt import _CNConstantPrompt_
 from my_agent.agent_plan import AgentPlan
 from gameplay_checks.use_prop_check import use_prop_check, ErrorUsePropEnable
@@ -133,7 +133,7 @@ class UsePropActionSystem(ReactiveProcessor):
             return True
 
         # 道具的提示词
-        prop_prompt = prop_info_prompt(prop_file, True, True)
+        prop_prompt = prop_prompt(prop_file, True, True)
 
         # 包装的最终提示词
         final_prompt = use_prop_to_stage_prompt(username, prop_file._name, prop_prompt, exit_cond_status_prompt)

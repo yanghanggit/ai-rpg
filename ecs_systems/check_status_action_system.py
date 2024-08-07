@@ -61,7 +61,7 @@ class ActorCheckStatusEvent(IStageDirectorEvent):
 
     def __init__(self, who: str, props: List[PropFile], health: float, special_components: List[PropFile]) -> None:
         self._who: str = who
-        self._prop_files: List[PropFile] = props
+        self._prop_files_as_weapon_clothes_non_consumable_item: List[PropFile] = props
         self._health: float = health
         self._prop_files_as_special_components: List[PropFile] = special_components
 
@@ -69,7 +69,7 @@ class ActorCheckStatusEvent(IStageDirectorEvent):
         if actor_name != self._who:
             # 只有自己知道
             return ""
-        return check_status_action_prompt(self._who, self._prop_files, self._health, self._prop_files_as_special_components)
+        return check_status_action_prompt(self._who, self._prop_files_as_weapon_clothes_non_consumable_item, self._health, self._prop_files_as_special_components)
     
     def to_stage(self, stage_name: str, extended_context: ExtendedContext) -> str:
         return ""

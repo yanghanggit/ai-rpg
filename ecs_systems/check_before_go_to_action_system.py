@@ -21,7 +21,7 @@ from loguru import logger
 from ecs_systems.stage_director_component import notify_stage_director
 from ecs_systems.stage_director_event import IStageDirectorEvent
 from builtin_prompt.cn_builtin_prompt import \
-            prop_info_prompt, stage_exit_conditions_check_prompt, \
+            prop_prompt, stage_exit_conditions_check_prompt, \
             stage_entry_conditions_check_prompt,\
             exit_stage_failed_beacuse_stage_refuse_prompt, \
             enter_stage_failed_beacuse_stage_refuse_prompt, \
@@ -419,7 +419,7 @@ class CheckBeforeGoToActionSystem(ReactiveProcessor):
         prompt_of_props = ""
         if len(props) > 0:
             for prop in props:
-                prompt_of_props += prop_info_prompt(prop, True, True)
+                prompt_of_props += prop_prompt(prop, True, True)
         else:
             prompt_of_props = str(_CNConstantPrompt_.NO_ACTOR_PROPS_PROMPT)
         return prompt_of_props

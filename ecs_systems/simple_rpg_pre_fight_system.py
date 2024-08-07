@@ -1,7 +1,6 @@
 from entitas import Matcher, ExecuteProcessor,Entity #type: ignore
 from ecs_systems.components import SimpleRPGAttrComponent, SimpleRPGWeaponComponent, SimpleRPGArmorComponent, StageComponent
 from my_entitas.extended_context import ExtendedContext
-from loguru import logger
 from typing import Set, Optional, override
 from file_system.files_def import PropFile
 
@@ -38,7 +37,7 @@ class SimpleRPGPreFightSystem(ExecuteProcessor):
                 continue
             highest_attack_weapon = self.get_weapon_with_highest_attack_power(entity)
             if highest_attack_weapon is not None:
-                #rpg_prop = RPGPropParser(highest_attack_weapon)
+
                 entity.add(SimpleRPGWeaponComponent, 
                            self._context.safe_get_entity_name(entity), 
                            highest_attack_weapon.name, 

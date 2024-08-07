@@ -40,20 +40,22 @@ class PropFile(BaseFile):
     TYPE_NON_CONSUMABLE_ITEM = "NonConsumableItem"
 
     def __init__(self, name: str, owner_name: str, prop_model: PropModel, count: int) -> None:
+        
         super().__init__(name, owner_name)
+
         self._prop_model: PropModel = prop_model
         assert self._name == self._prop_model.name
         assert self._prop_model.codename != ""
         assert len(self._prop_model.attributes) == 3
+        
         self._count: int = count
 ############################################################################################################
     @override
     def serialization(self) -> str:
         output: Dict[str, Any] = {}
-        output["prop"] = self._prop_model
+        output["prop"] = self._prop_model.model_dump()
         output["count"] = self._count
-        prop_json = json.dumps(output, ensure_ascii = False)
-        return prop_json
+        return json.dumps(output, ensure_ascii = False)
 ############################################################################################################
     @property
     def description(self) -> str:

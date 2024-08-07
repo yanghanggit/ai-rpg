@@ -74,27 +74,27 @@ def actor_plan_prompt(current_stage: str, stage_enviro_narrate: str) -> str:
 def stage_plan_prompt(stage_prop_files: List[PropFile], actors_in_stage: Set[str]) -> str:
 
     ## 场景内道具
-    prompt_of_props = ""
+    props_prompt = ""
     if len(stage_prop_files) > 0:
         for prop in stage_prop_files:
-            prompt_of_props += prop_info_prompt(prop, False, True)
+            props_prompt += prop_prompt(prop, False, True)
     else:
-        prompt_of_props = "- 无任何道具。"
+        props_prompt = "- 无任何道具。"
 
 
-    prompt_of_actor = ""
+    actors_prompt = ""
     if len(actors_in_stage) > 0:
         for _name in actors_in_stage:
-            prompt_of_actor += f"- {_name}\n"
+            actors_prompt += f"- {_name}\n"
     else:
-        prompt_of_actor = "- 无任何角色。"
+        actors_prompt = "- 无任何角色。"
 
 
     prompt = f"""# {_CNConstantPrompt_.STAGE_PLAN_PROMPT_TAG}请输出'你的当前描述'和'你的计划'
 ## 场景内道具:
-{prompt_of_props}
+{props_prompt}
 ## 场景内角色:
-{prompt_of_actor}
+{actors_prompt}
 ## 关于‘你的当前描述‘内容生成规则
 ### 第1步: 根据场景内发生的事件，场景内的道具的信息，将你的状态更新到‘最新’并以此作为‘场景状态’的内容。
 ### 第2步: 根据角色‘最新’的动作与神态，作为‘角色状态’的内容。
@@ -135,22 +135,26 @@ def perception_action_prompt(who: str, current_stage: str, result_actor_names: D
     return final_prompt
 ###############################################################################################################################################
 def prop_type_prompt(prop_file: PropFile) -> str:
-    _type = "未知"
+
+    ret = "未知"
+    
     if prop_file.is_weapon:
-        _type = "武器(用于提高攻击力)"
+        ret = "武器(用于提高攻击力)"
     elif prop_file.is_clothes:
-        _type = "衣服(用于提高防御力与改变角色外观)"
+        ret = "衣服(用于提高防御力与改变角色外观)"
     elif prop_file.is_non_consumable_item:
-        _type = "非消耗品"
+        ret = "非消耗品"
     elif prop_file.is_special_component:
-        _type = "特殊能力"
-    return _type
+        ret = "特殊能力"
+    
+    return ret
 ###############################################################################################################################################
-def prop_info_prompt(prop_file: PropFile, need_description_prompt: bool, need_appearance_prompt: bool) -> str:
-    prop_type = prop_type_prompt(prop_file)
+def prop_prompt(prop_file: PropFile, need_description_prompt: bool, need_appearance_prompt: bool) -> str:
+
+    _prop_type_ = prop_type_prompt(prop_file)
 
     prompt = f"""### {prop_file.name}
-- 类型:{prop_type}
+- 类型:{_prop_type_}
 """
     if need_description_prompt:
         prompt += f"- 描述:{prop_file.description}\n"
@@ -161,42 +165,50 @@ def prop_info_prompt(prop_file: PropFile, need_description_prompt: bool, need_ap
     return prompt
 ###############################################################################################################################################
 def special_component_prompt(prop_file: PropFile) -> str:
-    #rpg_prop = RPGPropParser(prop)
+
     assert prop_file.is_special_component
+    
     prompt = f"""### {prop_file.name}
 - {prop_file.description}
 """
     return prompt
 ###############################################################################################################################################
-def check_status_action_prompt(who: str, prop_files: List[PropFile], health: float, prop_files_as_special_components: List[PropFile]) -> str:
+def check_status_action_prompt(who: str, 
+                               prop_files_as_weapon_clothes_non_consumable_item: List[PropFile], 
+                               health: float, 
+                               prop_files_as_special_components: List[PropFile]) -> str:
+
     health *= 100
-    prompt_of_actor = f"生命值: {health:.2f}%"
+    actor_health_prompt = f"生命值: {health:.2f}%"
 
-    prompt_of_props = ""
-    if len(prop_files) > 0:
-        for prop in prop_files:
-            prompt_of_props += prop_info_prompt(prop, True, True)
+    # 组合非特殊技能的道具
+    props_prompt_as_weapon_clothes_non_consumable_item = ""
+    if len(prop_files_as_weapon_clothes_non_consumable_item) > 0:
+        for prop_file in prop_files_as_weapon_clothes_non_consumable_item:
+            props_prompt_as_weapon_clothes_non_consumable_item += prop_prompt(prop_file, True, True)
     else:
-        prompt_of_props = "- 无任何道具。"
+        props_prompt_as_weapon_clothes_non_consumable_item = "- 无任何道具。"
 
-    prompt_of_special_components = ""
+    # 组合特殊技能的道具
+    props_prompt_as_special_components = ""
     if len(prop_files_as_special_components) > 0:
-        for _r in prop_files_as_special_components:
-            prompt_of_special_components += special_component_prompt(_r)
+        for prop_file in prop_files_as_special_components:
+            props_prompt_as_special_components += special_component_prompt(prop_file)
     else:
-        prompt_of_special_components = "- 无任何特殊能力。"
+        props_prompt_as_special_components = "- 无任何特殊能力。"
 
-    final_prompt = f"""# {_CNConstantPrompt_.CHECK_STATUS_ACTION_TAG} {who} 正在查看自身状态({CheckStatusActionComponent.__name__}):
+    # 组合最终的提示
+    prompt = f"""# {_CNConstantPrompt_.CHECK_STATUS_ACTION_TAG} {who} 正在查看自身状态({CheckStatusActionComponent.__name__}):
 ## 健康状态:
-{prompt_of_actor}
+{actor_health_prompt}
 ## 持有道具:
-{prompt_of_props}
+{props_prompt_as_weapon_clothes_non_consumable_item}
 ## 特殊能力:
-{prompt_of_special_components}
+{props_prompt_as_special_components}
 """
-    return final_prompt
+    return prompt
 ###############################################################################################################################################
-def search_action_failed_prompt(actor_name: str, prop_name:str) -> str:
+def search_action_failed_prompt(actor_name: str, prop_name: str) -> str:
     return f"""# {actor_name} 无法找到道具 "{prop_name}"。
 ## 可能原因:
 1. {prop_name} 不是一个可搜索的道具。

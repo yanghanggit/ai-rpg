@@ -4,19 +4,23 @@ from file_system.file_system import FileSystem
 
 ##################################################################################################################################
 # 为一个Actor添加他认识的其他Actor的文件
-def add_actor_archive_files(file_system: FileSystem, myname: str, others_names: Set[str]) -> List[ActorArchiveFile]:
+def add_actor_archive_files(file_system: FileSystem, owners_name: str, actor_archive_names: Set[str]) -> List[ActorArchiveFile]:
 
-    res: List[ActorArchiveFile] = []
+    assert file_system is not None
 
-    for targetname in others_names:
-        if myname == targetname or file_system.has_actor_archive(myname, targetname):
+    ret: List[ActorArchiveFile] = []
+
+    for actor_name in actor_archive_names:
+
+        if owners_name == actor_name or file_system.has_actor_archive(owners_name, actor_name):
             continue
-        file = ActorArchiveFile(targetname, myname, targetname, "")
-        file_system.add_actor_archive(file)
-        file_system.write_actor_archive(file)
-        res.append(file)
 
-    return res
+        archive_file = ActorArchiveFile(actor_name, owners_name, actor_name, "")
+        file_system.add_actor_archive(archive_file)
+        file_system.write_actor_archive(archive_file)
+        ret.append(archive_file)
+
+    return ret
 ##################################################################################################################################
 # 更新一个Actor的档案文件
 def update_actor_archive_file(file_system: FileSystem, ownersname: str, actorname: str, appearance: str) -> Optional[ActorArchiveFile]:

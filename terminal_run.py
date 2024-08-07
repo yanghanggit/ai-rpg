@@ -11,6 +11,9 @@ async def main(default_actor_name: str) -> None:
 
     # 读取世界资源文件
     game_name = input("请输入要进入的世界名称(必须与自动化创建的名字一致):")
+    if game_name == "":
+        game_name = "World2"
+
     rpg_game = load_then_create_rpg_game(game_name, "qwe", RPGGameType.TERMINAL)
     if rpg_game is None:
         logger.error("create_rpg_game 失败。")

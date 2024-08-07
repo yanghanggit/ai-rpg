@@ -57,15 +57,15 @@ class RPGGame(BaseGame):
         self.create_world_system_entities(game_builder)
 
         ## 第3步，创建actor，player是特殊的actor
-        self.create_player_entities(game_builder)
-        self.create_actor_entities(game_builder)
+        self.create_player_entities(game_builder, game_builder.players_proxy)
+        self.create_actor_entities(game_builder, game_builder.actors_proxy)
         self.add_code_name_component_to_world_and_actors()
 
         ## 第4步，创建stage
         self.create_stage_entities(game_builder)
         
         ## 第5步，最后处理因为需要上一阶段的注册流程
-        self.add_code_name_component_stages()
+        self.add_code_name_component_to_stages()
 
         ## 最后！混沌系统，准备测试
         context._chaos_engineering_system.on_post_create_game(context, game_builder)
@@ -109,105 +109,144 @@ class RPGGame(BaseGame):
 
         assert game_builder is not None
         assert game_builder._data_base_system is not None
-        res: List[Entity] = []
+
+        ret: List[Entity] = []
        
         for world_system_proxy in game_builder.world_systems_proxy:
-            world_system_db_model = game_builder._data_base_system.get_world_system(world_system_proxy.name)
-            assert world_system_db_model is not None
-            world_entity = self.create_world_system_entity(world_system_db_model, self._extended_context) #
-            assert world_entity is not None
-            res.append(world_entity)
+            
+            world_system_model = game_builder._data_base_system.get_world_system(world_system_proxy.name)
+            assert world_system_model is not None
+            
+            world_system_entity = self.create_world_system_entity(world_system_model, self._extended_context) 
+            assert world_system_entity is not None
+            
+            ret.append(world_system_entity)
         
-        return res
+        return ret
 ###############################################################################################################################################
-    def create_world_system_entity(self, db_world_system: WorldSystemModel, context: ExtendedContext) -> Entity:
+    def create_world_system_entity(self, world_system_model: WorldSystemModel, context: ExtendedContext) -> Entity:
+
         # 创建实体
-        world_entity = context.create_entity()
+        world_system_entity = context.create_entity()
+        assert world_system_entity is not None
+
         #必要组件
-        world_entity.add(GUIDComponent, _GUIDGenerator_.generate())
-        world_entity.add(WorldComponent, db_world_system.name)
-        #重构
-        context._langserve_agent_system.register_agent(db_world_system.name, db_world_system.url)
-        context._codename_component_system.register_code_name_component_class(db_world_system.name, db_world_system.codename)
+        world_system_entity.add(GUIDComponent, _GUIDGenerator_.generate())
+        world_system_entity.add(WorldComponent, world_system_model.name)
         
-        return world_entity
+        #添加扩展子系统的功能
+        context._langserve_agent_system.register_agent(world_system_model.name, world_system_model.url)
+        context._codename_component_system.register_code_name_component_class(world_system_model.name, world_system_model.codename)
+        
+        return world_system_entity
 ###############################################################################################################################################
-    def create_player_entities(self, game_builder: GameBuilder) -> List[Entity]:
+    def create_player_entities(self, game_builder: GameBuilder, actors_proxy: List[ActorProxyModel]) -> List[Entity]:
+
+        assert game_builder is not None
+
         # 创建player 本质就是创建Actor
-        create_result = self.create_actor_entities(game_builder)
-        for entity in create_result:
-            actor_comp = entity.get(ActorComponent)
+        actor_entities = self.create_actor_entities(game_builder, actors_proxy)
+        
+        # 为Actor添加PlayerComponent，此时默认名字是空
+        for actor_entity in actor_entities:
+
+            assert actor_entity is not None
+            assert actor_entity.has(ActorComponent)
+
+            actor_comp = actor_entity.get(ActorComponent)
             logger.info(f"创建Player Entity = {actor_comp.name}")
-            assert not entity.has(PlayerComponent)
-            entity.add(PlayerComponent, "")
-        return create_result
+            
+            assert not actor_entity.has(PlayerComponent)
+            actor_entity.add(PlayerComponent, "")
+        
+        return actor_entities
 ###############################################################################################################################################
-    def create_actor_entities(self, game_builder: GameBuilder) -> List[Entity]:
+    def create_actor_entities(self, game_builder: GameBuilder, actors_proxy: List[ActorProxyModel]) -> List[Entity]:
 
         assert game_builder is not None
         assert game_builder._data_base_system is not None
-        res: List[Entity] = []
 
-        for actor_proxy_model in game_builder.actors_proxy:
-            actor_model = game_builder._data_base_system.get_actor(actor_proxy_model.name)
-            assert actor_model is not None
-            entity = self.create_actor_entity(actor_proxy_model, actor_model, self._extended_context)  #context.create_entity()
-            assert entity is not None
-            res.append(entity)
+        ret: List[Entity] = []
+
+        for actor_proxy in actors_proxy:
         
-        return res
+            actor_model = game_builder._data_base_system.get_actor(actor_proxy.name)
+            assert actor_model is not None
+        
+            entity = self.create_actor_entity(actor_proxy, actor_model, self._extended_context)  #context.create_entity()
+            assert entity is not None
+        
+            ret.append(entity)
+        
+        return ret
 ###############################################################################################################################################
-    def create_actor_entity(self, actor_proxy_model: ActorProxyModel, actor_model: ActorModel, context: ExtendedContext) -> Entity:
+    def create_actor_entity(self, actor_proxy: ActorProxyModel, actor_model: ActorModel, context: ExtendedContext) -> Entity:
 
         # 创建实体
-        entity = context.create_entity()
+        actor_entity = context.create_entity()
 
         # 必要组件
-        entity.add(GUIDComponent, _GUIDGenerator_.generate())
-        entity.add(ActorComponent, actor_model.name, "")
-        entity.add(SimpleRPGAttrComponent, actor_model.name, 
+        actor_entity.add(GUIDComponent, _GUIDGenerator_.generate())
+
+        assert actor_proxy.name == actor_model.name
+        actor_entity.add(ActorComponent, actor_model.name, "")
+        
+        assert len(actor_model.attributes) == 4
+        actor_entity.add(SimpleRPGAttrComponent, actor_model.name, 
                     actor_model.attributes[0], 
                     actor_model.attributes[1], 
                     actor_model.attributes[2], 
                     actor_model.attributes[3])
+        
         hash_code = hash(actor_model.appearance)
-        entity.add(AppearanceComponent, actor_model.appearance, hash_code)
-        entity.add(BodyComponent, actor_model.body)
+        actor_entity.add(AppearanceComponent, actor_model.appearance, hash_code)
+        actor_entity.add(BodyComponent, actor_model.body)
 
-        #重构
+        #添加扩展子系统的
         context._langserve_agent_system.register_agent(actor_model.name, actor_model.url)
         context._kick_off_memory_system.add_kick_off_memory(actor_model.name, actor_model.kick_off_memory)
         context._codename_component_system.register_code_name_component_class(actor_model.name, actor_model.codename)
         
         # 添加道具
-        for prop_proxy in actor_proxy_model.props:
+        for prop_proxy in actor_proxy.props:
             ## 重构
             prop_model = context._data_base_system.get_prop(prop_proxy.name)
             if prop_model is None:
                 logger.error(f"没有从数据库找到道具：{prop_proxy.name}")
                 continue
         
-            prop_file = PropFile(prop_model.name, actor_proxy_model.name, prop_model, prop_proxy.count)
-            context._file_system.add_prop_file(prop_file)
+            context._file_system.add_prop_file(PropFile(prop_model.name, actor_proxy.name, prop_model, prop_proxy.count))
             context._codename_component_system.register_code_name_component_class(prop_model.name, prop_model.codename)
 
         # 初步建立关系网（在编辑文本中提到的Actor名字）
         add_actor_archive_files(context._file_system, actor_model.name, set(actor_model.actor_archives))
 
-        return entity
+        return actor_entity
 ###############################################################################################################################################
     def create_stage_entities(self, game_builder: GameBuilder) -> List[Entity]:
-        res: List[Entity] = []
+
+        assert game_builder is not None
+
+        ret: List[Entity] = []
         
-        for stage_proxy_model in game_builder.stages_proxy:
-            stage_model = game_builder._data_base_system.get_stage(stage_proxy_model.name)
+        for stage_proxy in game_builder.stages_proxy:
+
+            stage_model = game_builder._data_base_system.get_stage(stage_proxy.name)
             assert stage_model is not None
-            stage_entity = self.create_stage_entity(stage_proxy_model, stage_model, self._extended_context)
-            res.append(stage_entity)
+
+            stage_entity = self.create_stage_entity(stage_proxy, stage_model, self._extended_context)
+            assert stage_entity is not None
+
+            ret.append(stage_entity)
     
-        return res
+        return ret
 ###############################################################################################################################################
-    def create_stage_entity(self, stage_proxy_model: StageProxyModel, stage_model: StageModel, context: ExtendedContext) -> Entity:
+    def create_stage_entity(self, stage_proxy: StageProxyModel, stage_model: StageModel, context: ExtendedContext) -> Entity:
+
+        assert stage_proxy is not None
+        assert stage_model is not None
+        assert stage_proxy.name == stage_model.name
+        assert context is not None
 
         # 创建实体
         stage_entity = context.create_entity()
@@ -215,7 +254,9 @@ class RPGGame(BaseGame):
         #必要组件
         stage_entity.add(GUIDComponent, _GUIDGenerator_.generate())
         stage_entity.add(StageComponent, stage_model.name)
-        stage_entity.add(StageDirectorComponent, stage_model.name) ###
+        stage_entity.add(StageDirectorComponent, stage_model.name)
+
+        assert len(stage_model.attributes) == 4
         stage_entity.add(SimpleRPGAttrComponent, stage_model.name, 
                         stage_model.attributes[0], 
                         stage_model.attributes[1], 
@@ -223,21 +264,24 @@ class RPGGame(BaseGame):
                         stage_model.attributes[3])
 
         ## 重新设置Actor和stage的关系
-        for actor_proxy in stage_proxy_model.actors:
+        for actor_proxy in stage_proxy.actors:
+
             actor_name = actor_proxy["name"]
             actor_entity: Optional[Entity] = context.get_actor_entity(actor_name)
             assert actor_entity is not None
+
             actor_entity.replace(ActorComponent, actor_name, stage_model.name)
             
+
         # 场景内添加道具
-        for prop_proxy in stage_proxy_model.props:
+        for prop_proxy in stage_proxy.props:
             # 直接使用文件系统
             prop_model = context._data_base_system.get_prop(prop_proxy.name)
             if prop_model is None:
                 logger.error(f"没有从数据库找到道具：{prop_proxy.name}")
                 continue
-            prop_file = PropFile(prop_proxy.name, stage_model.name, prop_model, prop_proxy.count)
-            context._file_system.add_prop_file(prop_file)
+
+            context._file_system.add_prop_file(PropFile(prop_proxy.name, stage_model.name, prop_model, prop_proxy.count))
             context._codename_component_system.register_code_name_component_class(prop_model.name, prop_model.codename)
 
         # 添加场景的条件：包括进入和离开的条件，自身变化条件等等
@@ -247,7 +291,7 @@ class RPGGame(BaseGame):
         if  stage_model.exit_of_portal != "":
             stage_entity.add(ExitOfPortalComponent, stage_model.exit_of_portal)
 
-        #重构
+        #添加子系统！
         context._langserve_agent_system.register_agent(stage_model.name, stage_model.url)
         context._kick_off_memory_system.add_kick_off_memory(stage_model.name, stage_model.kick_off_memory)
         context._codename_component_system.register_code_name_component_class(stage_model.name, stage_model.codename)
@@ -279,38 +323,38 @@ class RPGGame(BaseGame):
             logger.debug(f"如果离开场景，需要检查角色拥有必要的道具：{stage_model.stage_exit_actor_props}")
 ###############################################################################################################################################
     def add_code_name_component_to_world_and_actors(self) -> None:
+
         #
         world_entities = self._extended_context.get_group(Matcher(WorldComponent)).entities
-        for entity in world_entities:
-            world_comp: WorldComponent = entity.get(WorldComponent)
-            codecompclass = self._extended_context._codename_component_system.get_component_class_by_name(world_comp.name)
-            if codecompclass is not None:
-                entity.add(codecompclass, world_comp.name)
+        for world_entity in world_entities:
+            world_comp = world_entity.get(WorldComponent)
+            codecomp_class = self._extended_context._codename_component_system.get_component_class_by_name(world_comp.name)
+            if codecomp_class is not None:
+                world_entity.add(codecomp_class, world_comp.name)
 
         #
         actor_entities = self._extended_context.get_group(Matcher(ActorComponent)).entities
-        for entity in actor_entities:
-            actor_comp: ActorComponent = entity.get(ActorComponent)
-            codecompclass = self._extended_context._codename_component_system.get_component_class_by_name(actor_comp.name)
-            if codecompclass is not None:
-                entity.add(codecompclass, actor_comp.name)
+        for actor_entity in actor_entities:
+            actor_comp = actor_entity.get(ActorComponent)
+            codecomp_class = self._extended_context._codename_component_system.get_component_class_by_name(actor_comp.name)
+            if codecomp_class is not None:
+                actor_entity.add(codecomp_class, actor_comp.name)
 ###############################################################################################################################################
-    def add_code_name_component_stages(self) -> None:
-        context = self._extended_context
+    def add_code_name_component_to_stages(self) -> None:
 
         ## 重新设置actor和stage的关系
-        actor_entities = context.get_group(Matcher(ActorComponent)).entities
-        for entity in actor_entities:
-            actor_comp: ActorComponent = entity.get(ActorComponent)
-            context.change_stage_tag_component(entity, "", actor_comp.current_stage)
+        actor_entities = self._extended_context.get_group(Matcher(ActorComponent)).entities
+        for actor_entity in actor_entities:
+            actor_comp = actor_entity.get(ActorComponent)
+            self._extended_context.change_stage_tag_component(actor_entity, "", actor_comp.current_stage)
 
         ## 重新设置stage和stage的关系
-        stage_entities = context.get_group(Matcher(StageComponent)).entities
-        for entity in stage_entities:
-            stagecomp: StageComponent = entity.get(StageComponent)
-            codecompclass = context._codename_component_system.get_component_class_by_name(stagecomp.name)
-            if codecompclass is not None:
-                entity.add(codecompclass, stagecomp.name)
+        stage_entities = self._extended_context.get_group(Matcher(StageComponent)).entities
+        for stage_entity in stage_entities:
+            stage_comp = stage_entity.get(StageComponent)
+            codecomp_class = self._extended_context._codename_component_system.get_component_class_by_name(stage_comp.name)
+            if codecomp_class is not None:
+                stage_entity.add(codecomp_class, stage_comp.name)
 ###############################################################################################################################################
     @override
     def on_exit(self) -> None:

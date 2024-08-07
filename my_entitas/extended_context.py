@@ -146,25 +146,25 @@ class ExtendedContext(Context):
         return True
 #############################################################################################################################
     # 更改场景的标记组件
-    def change_stage_tag_component(self, entity: Entity, from_stagename: str, to_stagename: str) -> None:
+    def change_stage_tag_component(self, entity: Entity, from_stage_name: str, to_stage_name: str) -> None:
 
         if not entity.has(ActorComponent):
             logger.error("实体不是Actor, 目前场景标记只给Actor")
             return
         
         # 查看一下，如果一样基本就是错误
-        if from_stagename == to_stagename:
-            logger.error(f"stagename相同，无需修改: {from_stagename}")
+        if from_stage_name == to_stage_name:
+            logger.error(f"stagename相同，无需修改: {from_stage_name}")
 
         # 删除旧的
-        from_stagetag_comp_class = self._codename_component_system.get_stage_tag_component_class_by_name(from_stagename)
+        from_stagetag_comp_class = self._codename_component_system.get_stage_tag_component_class_by_name(from_stage_name)
         if from_stagetag_comp_class is not None and entity.has(from_stagetag_comp_class):
             entity.remove(from_stagetag_comp_class)
 
         # 添加新的
-        to_stagetag_comp_class = self._codename_component_system.get_stage_tag_component_class_by_name(to_stagename)
+        to_stagetag_comp_class = self._codename_component_system.get_stage_tag_component_class_by_name(to_stage_name)
         if to_stagetag_comp_class is not None and not entity.has(to_stagetag_comp_class):
-            entity.add(to_stagetag_comp_class, to_stagename)
+            entity.add(to_stagetag_comp_class, to_stage_name)
 #############################################################################################################################
     # 获取场景内所有的角色的外观信息
     def appearance_in_stage(self, entity: Entity) -> Dict[str, str]:

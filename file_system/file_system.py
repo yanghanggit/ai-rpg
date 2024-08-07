@@ -39,24 +39,29 @@ class FileSystem:
         return dir / f"{filename}.json"
 ################################################################################################################
     ## 写一个道具的文件
-    def write_prop_file(self, propfile: PropFile) -> None:
-        content = propfile.serialization()
-        assert content is not None
-        assert len(content) > 0
-        assert propfile._owner_name is not None
-        assert propfile._name is not None
+    def write_prop_file(self, prop_file: PropFile) -> int:
+
+        write_content = prop_file.serialization()
+        
+        assert write_content is not None
+        assert len(write_content) > 0
+        assert prop_file._owner_name is not None
+        assert prop_file._name is not None
         assert self._runtime_dir is not None
         
-        prop_file_path = self.prop_file_path(propfile._owner_name, propfile._name)
+        prop_file_path = self.prop_file_path(prop_file._owner_name, prop_file._name)
         assert prop_file_path is not None
 
         try:
-            res = prop_file_path.write_text(content, encoding="utf-8")
-            assert res > 0
-            #logger.info(f"写入文件成功: {prop_file_path}, res = {res}")
+
+            result = prop_file_path.write_text(write_content, encoding = "utf-8")
+            assert result > 0
+            return result
+        
         except Exception as e:
             logger.error(f"写入文件失败: {prop_file_path}, e = {e}")
-            return
+
+        return 0
 ################################################################################################################
     ## 添加一个道具文件
     def add_prop_file(self, propfile: PropFile, write: bool = True) -> None:

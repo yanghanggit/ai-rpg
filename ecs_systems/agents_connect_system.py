@@ -16,21 +16,21 @@ class AgentsConnectSystem(InitializeProcessor):
         self.connect_actor_agents()
 ###############################################################################################################################################
     def connect_world_system_agents(self) -> None:
-        worlds: Set[Entity] = self._context.get_group(Matcher(WorldComponent)).entities
-        for world in worlds:
-            worldcomp: WorldComponent = world.get(WorldComponent)
-            self._context._langserve_agent_system.connect_agent(worldcomp.name)
+        world_entities: Set[Entity] = self._context.get_group(Matcher(WorldComponent)).entities
+        for world_entity in world_entities:
+            world_comp = world_entity.get(WorldComponent)
+            self._context._langserve_agent_system.connect_agent(world_comp.name)
 ###############################################################################################################################################
     def connect_stage_agents(self) -> None:
-        stages: Set[Entity] = self._context.get_group(Matcher(StageComponent)).entities
-        for stage in stages:
-            stage_comp = stage.get(StageComponent)
+        stage_entities: Set[Entity] = self._context.get_group(Matcher(StageComponent)).entities
+        for stage_entity in stage_entities:
+            stage_comp = stage_entity.get(StageComponent)
             self._context._langserve_agent_system.connect_agent(stage_comp.name)
 ###############################################################################################################################################
     def connect_actor_agents(self) -> None:
-        actors: Set[Entity] = self._context.get_group(Matcher(all_of=[ActorComponent], none_of=[PlayerComponent])).entities
-        for entity in actors:
-            actor_comp = entity.get(ActorComponent)
+        actor_entities: Set[Entity] = self._context.get_group(Matcher(all_of = [ActorComponent], none_of = [PlayerComponent])).entities
+        for actor_entity in actor_entities:
+            actor_comp = actor_entity.get(ActorComponent)
             self._context._langserve_agent_system.connect_agent(actor_comp.name)
 ###############################################################################################################################################
     

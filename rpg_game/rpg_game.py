@@ -34,7 +34,7 @@ class RPGGame(BaseGame):
         self._processors: ExtendedProcessors = create_rpg_processors(self, context)
         self._player_names: List[str] = []
 ###############################################################################################################################################
-    def create_game(self, game_builder: GameBuilder) -> 'RPGGame':
+    def build(self, game_builder: GameBuilder) -> 'RPGGame':
 
         context = self._extended_context
         
@@ -210,7 +210,8 @@ class RPGGame(BaseGame):
         # 添加道具
         for prop_proxy in actor_proxy.props:
             ## 重构
-            prop_model = context._data_base_system.get_prop(prop_proxy.name)
+            assert self._game_builder is not None
+            prop_model = self._game_builder._data_base_system.get_prop(prop_proxy.name)
             if prop_model is None:
                 logger.error(f"没有从数据库找到道具：{prop_proxy.name}")
                 continue
@@ -276,7 +277,8 @@ class RPGGame(BaseGame):
         # 场景内添加道具
         for prop_proxy in stage_proxy.props:
             # 直接使用文件系统
-            prop_model = context._data_base_system.get_prop(prop_proxy.name)
+            assert self._game_builder is not None
+            prop_model =  self._game_builder._data_base_system.get_prop(prop_proxy.name)
             if prop_model is None:
                 logger.error(f"没有从数据库找到道具：{prop_proxy.name}")
                 continue

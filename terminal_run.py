@@ -2,9 +2,9 @@ from loguru import logger
 import datetime
 from player.player_proxy import create_player_proxy
 from player.player_command import (PlayerLogin)
-from rpg_game.create_rpg_game_funcs import load_then_create_rpg_game, yh_test_save, RPGGameType
+from rpg_game.create_rpg_game_funcs import load_then_create_rpg_game, test_save, RPGGameType
 
-async def main(default_actor_name: str) -> None:
+async def main(player_actor_name: str) -> None:
 
     log_start_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     logger.add(f"logs/{log_start_time}.log", level="DEBUG")
@@ -19,12 +19,12 @@ async def main(default_actor_name: str) -> None:
         logger.error("create_rpg_game 失败。")
         return
     
-    player_actor_name = input(f"""请输入要控制的角色名字(默认为'{default_actor_name}',输入回车为默认):""")
+    player_actor_name = input(f"""请输入要控制的角色名字(默认为'{player_actor_name}',输入回车为默认):""")
     if player_actor_name == "":
-        player_actor_name = default_actor_name 
+        player_actor_name = player_actor_name 
 
-    players_actor = rpg_game._extended_context.get_actor_entity(player_actor_name)
-    if players_actor is None:
+    player_actor = rpg_game._extended_context.get_actor_entity(player_actor_name)
+    if player_actor is None:
         logger.error(f"找不到玩家角色，请检查构建数据:{player_actor_name}")
         return
 
@@ -36,11 +36,11 @@ async def main(default_actor_name: str) -> None:
     # 这个必须调用
     rpg_game.add_player(player_name_as_terminal_name)
     #
-    playerstartcmd = PlayerLogin("/terminal_run_login", rpg_game, player_proxy, player_actor_name, False)
-    playerstartcmd.execute()
+    player_login_command = PlayerLogin("/terminal_run_login", rpg_game, player_proxy, player_actor_name, False)
+    player_login_command.execute()
 
     # 测试的代码
-    yh_test_save(game_name)
+    #yh_test_save(game_name)
 
     #核心循环
     while True:

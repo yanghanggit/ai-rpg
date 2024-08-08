@@ -11,6 +11,8 @@ class DataBaseSystem:
     def __init__(self, model: Optional[DataBaseSystemModel]) -> None:
         
         self._model: Optional[DataBaseSystemModel] = model
+        assert self._model is not None
+
         self._actors: Dict[str, ActorModel] = {}
         self._stages: Dict[str, StageModel] = {}
         self._props: Dict[str, PropModel] = {}
@@ -20,9 +22,13 @@ class DataBaseSystem:
 ###############################################################################################################################################
 
     def make_dict(self) -> None:
-        if self._model is None:
-            return
-        
+
+        assert self._model is not None
+        assert self._model.actors is not None
+        assert self._model.stages is not None
+        assert self._model.props is not None
+        assert self._model.world_systems is not None
+
         self._actors.clear()
         for actor in self._model.actors:
             self._actors.setdefault(actor.name, actor)

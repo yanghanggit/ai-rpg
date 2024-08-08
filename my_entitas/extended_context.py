@@ -1,6 +1,5 @@
 from entitas import (Entity, Matcher, Context)# type: ignore   
 from loguru import logger
-from my_data.data_base_system import DataBaseSystem
 from ecs_systems.components import (WorldComponent, StageComponent, ActorComponent, PlayerComponent, AppearanceComponent)
 from file_system.file_system import FileSystem
 from extended_systems.kick_off_memory_system import KickOffMemorySystem
@@ -21,7 +20,6 @@ class ExtendedContext(Context):
                  kick_off_memory_system: KickOffMemorySystem, 
                  langserve_agent_system: LangServeAgentSystem, 
                  codename_component_system: CodeNameComponentSystem,
-                 data_base_system: DataBaseSystem, 
                  chaos_engineering_system: IChaosEngineering) -> None:
         
         #
@@ -39,9 +37,6 @@ class ExtendedContext(Context):
         # 代码名字组件系统（方便快速查找用）
         self._codename_component_system = codename_component_system
 
-        # 数据库系统
-        self._data_base_system = data_base_system
-
         # 混沌工程系统
         self._chaos_engineering_system = chaos_engineering_system
         
@@ -53,7 +48,6 @@ class ExtendedContext(Context):
         assert self._kick_off_memory_system is not None, "self.memory_system is None"
         assert self._langserve_agent_system is not None, "self.agent_connect_system is None"
         assert self._codename_component_system is not None, "self.code_name_component_system is None"
-        assert self._data_base_system is not None, "self.data_base_system is None"
         assert self._chaos_engineering_system is not None, "self.chaos_engineering_system is None"
 #############################################################################################################################
     #世界基本就一个（或者及其少的数量），所以就遍历一下得了。

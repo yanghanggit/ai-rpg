@@ -14,7 +14,7 @@ class LangServeAgent:
     def connect(self) -> bool:
 
         if self._remote_runnable is not None:
-            assert False, "connect: already connected"
+            logger.error(f"connect: {self._name} already connected.")
             return False
         
         if self._url == "":
@@ -28,7 +28,6 @@ class LangServeAgent:
             return True
         except Exception as e:
             logger.error(e)
-            #return False        
         
         return False
 ################################################################################################################################################################################

@@ -24,7 +24,7 @@ class GameBuilder:
         assert self._runtime_dir.exists()
         
         self._model = GameBuilderModel.model_validate_json(json.dumps(data, ensure_ascii = False))
-        self._data_base_system: DataBaseSystem = DataBaseSystem(self._model.database)
+        self._data_base_system = DataBaseSystem(self._model.database)
 ###############################################################################################################################################
     @property
     def version(self) -> str:

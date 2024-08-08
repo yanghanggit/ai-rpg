@@ -73,25 +73,35 @@ class EndSystem(InitializeProcessor, ExecuteProcessor):
 
         logger.debug(f"{json.dumps(dump_data, ensure_ascii = False)}")
 ############################################################################################################
-    def dump_status_profile(self) -> None:
-        rpg_attr_entities = self._context.get_group(Matcher(all_of = [SimpleRPGAttrComponent, SimpleRPGWeaponComponent, SimpleRPGArmorComponent])).entities
-        for rpg_attr_entity in rpg_attr_entities:
-            
-            rpg_attr_comp = rpg_attr_entity.get(SimpleRPGAttrComponent)
-            attr_dict: Dict[str, Any] = {SimpleRPGAttrComponent.__name__: rpg_attr_comp._asdict()}
-            assert len(attr_dict) > 0
+    def dump_status_profile(self) -> List[Dict[str, Any]]:
 
-            rpg_weapon_comp = rpg_attr_entity.get(SimpleRPGWeaponComponent)
-            weapon_dict: Dict[str, Any] = {SimpleRPGWeaponComponent.__name__: rpg_weapon_comp._asdict()}
-            assert len(weapon_dict) > 0
+        ret: List[Dict[str, Any]] = []
 
-            rpg_armor_comp = rpg_attr_entity.get(SimpleRPGArmorComponent)
-            armor_dict: Dict[str, Any] = {SimpleRPGArmorComponent.__name__: rpg_armor_comp._asdict()}
-            assert len(armor_dict) > 0
+        entities = self._context.get_group(Matcher(any_of = [SimpleRPGAttrComponent, SimpleRPGWeaponComponent, SimpleRPGArmorComponent])).entities
+        for entity in entities:
 
             final_dict: Dict[str, Any] = {}
-            final_dict.update(attr_dict)
-            final_dict.update(weapon_dict)
-            final_dict.update(armor_dict)
+
+            if entity.has(SimpleRPGAttrComponent):
+                rpg_attr_comp = entity.get(SimpleRPGAttrComponent)
+                attr_dict: Dict[str, Any] = {SimpleRPGAttrComponent.__name__: rpg_attr_comp._asdict()}
+                assert len(attr_dict) > 0
+                final_dict.update(attr_dict)
+
+            if entity.has(SimpleRPGWeaponComponent):
+                rpg_weapon_comp = entity.get(SimpleRPGWeaponComponent)
+                weapon_dict: Dict[str, Any] = {SimpleRPGWeaponComponent.__name__: rpg_weapon_comp._asdict()}
+                assert len(weapon_dict) > 0
+                final_dict.update(weapon_dict)
+
+            if entity.has(SimpleRPGArmorComponent):
+                rpg_armor_comp = entity.get(SimpleRPGArmorComponent)
+                armor_dict: Dict[str, Any] = {SimpleRPGArmorComponent.__name__: rpg_armor_comp._asdict()}
+                assert len(armor_dict) > 0
+                final_dict.update(armor_dict)
+
+            ret.append(final_dict)
             update_status_profile_file(self._context._file_system, rpg_attr_comp.name, final_dict)
+
+        return ret
 ############################################################################################################

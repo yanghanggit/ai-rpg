@@ -10,7 +10,6 @@ from my_agent.lang_serve_agent_system import LangServeAgentSystem
 from extended_systems.code_name_component_system import CodeNameComponentSystem
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from chaos_engineering.empty_engineering_system import EmptyChaosEngineeringSystem
-from my_data.data_base_system import DataBaseSystem
 from game_sample.game_sample_chaos_engineering_system import GameSampleChaosEngineeringSystem
 from pathlib import Path
 import json
@@ -68,7 +67,7 @@ def load_then_build_game_data(game_name: str, version: str) -> Optional[GameBuil
     return GameBuilder(game_name, game_data, runtime_file_dir)#.build()
 #######################################################################################################################################
 ## 创建RPG Game
-def create_rpg_game(worldname: str, chaosengineering: Optional[IChaosEngineering], data_base_system: DataBaseSystem, rpg_game_type: RPGGameType) -> RPGGame:
+def create_rpg_game(worldname: str, chaosengineering: Optional[IChaosEngineering], rpg_game_type: RPGGameType) -> RPGGame:
 
     # 依赖注入的特殊系统
     file_system = FileSystem("file_system， Because it involves IO operations, an independent system is more convenient.")
@@ -86,8 +85,7 @@ def create_rpg_game(worldname: str, chaosengineering: Optional[IChaosEngineering
     context = ExtendedContext(file_system, 
                               memory_system, 
                               agent_connect_system, 
-                              code_name_component_system,  
-                              data_base_system,
+                              code_name_component_system, 
                               chaos_engineering_system)
     
     match rpg_game_type:
@@ -102,8 +100,8 @@ def create_rpg_game(worldname: str, chaosengineering: Optional[IChaosEngineering
     return None
 #######################################################################################################################################
 ## 创建RPG Game + 读取数据
-def load_then_create_rpg_game(gamename: str, version: str, rpg_game_type: RPGGameType) -> Optional[RPGGame]:
-    game_builder = load_then_build_game_data(gamename, version)
+def load_then_create_rpg_game(game_name: str, version: str, rpg_game_type: RPGGameType) -> Optional[RPGGame]:
+    game_builder = load_then_build_game_data(game_name, version)
     if game_builder is None:
         logger.error("create_world_data_builder 失败。")
         return None
@@ -112,37 +110,38 @@ def load_then_create_rpg_game(gamename: str, version: str, rpg_game_type: RPGGam
     chaos_engineering_system = GameSampleChaosEngineeringSystem("MyChaosEngineeringSystem")
     assert chaos_engineering_system is not None, "chaos_engineering_system is None."
     assert game_builder._data_base_system is not None, "game_builder.data_base_system is None."
-    rpggame = create_rpg_game(gamename, chaos_engineering_system, game_builder._data_base_system, rpg_game_type)
-    if rpggame is None:
+    rpg_game = create_rpg_game(game_name, chaos_engineering_system, rpg_game_type)
+    if rpg_game is None:
         logger.error("_create_rpg_game 失败。")
         return None
     
     # 执行创建游戏的所有动作
-    return rpggame.create_game(game_builder)
+    return rpg_game.build(game_builder)
 #######################################################################################################################################
 ### （临时的）写死创建
-def yh_test_save(gamename: str) -> None:
+# todo
+def test_save(game_name: str) -> None:
 
-    copy2_path = GAME_SAMPLE_RUNTIME_DIR / f"{gamename}" 
+    copy2_path = GAME_SAMPLE_RUNTIME_DIR / f"{game_name}" 
     if not copy2_path.exists():
         logger.error("未找到存档，请检查存档是否存在。")
         return None
     
-    start_json_file = GAME_SAMPLE_RUNTIME_DIR / f"{gamename}.json" 
+    start_json_file = GAME_SAMPLE_RUNTIME_DIR / f"{game_name}.json" 
     if not start_json_file.exists():
         logger.error("未找到存档，请检查存档是否存在。")
         return None
 
     # 拷贝运行时文件夹到另一个地方
-    to_save_path = GAME_SAMPLE_RUNTIME_DIR / f"{gamename}_save"
+    to_save_path = GAME_SAMPLE_RUNTIME_DIR / f"{game_name}_save"
     to_save_path.mkdir(parents=True, exist_ok=True)
-    shutil.copytree(copy2_path, to_save_path, dirs_exist_ok=True)
+    shutil.copytree(copy2_path, to_save_path, dirs_exist_ok = True)
 
     # 拷贝原始的运行文件
-    target_file = to_save_path / f"{gamename}.json"
+    target_file = to_save_path / f"{game_name}.json"
     if target_file.exists():
         target_file.unlink()
-    shutil.copy(start_json_file, to_save_path / f"{gamename}.json")
+    shutil.copy(start_json_file, to_save_path / f"{game_name}.json")
 
     if not target_file.exists():
         logger.error(f"File not found: {target_file}")

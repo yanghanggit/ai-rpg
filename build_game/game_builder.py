@@ -22,8 +22,7 @@ class GameBuilder:
         self._runtime_dir: Path = runtime_file_dir
         assert self._runtime_dir is not None
         assert self._runtime_dir.exists()
-
-        #logger.debug(json.dumps(GameBuilderModel.model_json_schema(), indent=2))  
+        
         self._model = GameBuilderModel.model_validate_json(json.dumps(data, ensure_ascii = False))
         self._data_base_system: DataBaseSystem = DataBaseSystem(self._model.database)
 ###############################################################################################################################################

@@ -5,7 +5,7 @@ sys.path.append(str(root_dir))
 from typing import List
 from game_sample.configuration import GAME_NAME, OUT_PUT_ACTOR_SYS_PROMPT_DIR, OUT_PUT_STAGE_SYS_PROMPT_DIR, OUT_PUT_AGENT_DIR
 from game_sample.utils import write_text_file
-from typing import Any
+from typing import Any, Dict
 
 ############################################################################################################
 ############################################################################################################
@@ -244,6 +244,22 @@ class ExcelDataProp:
     @property
     def appearance(self) -> str:
         return str(self._data["appearance"])
+############################################################################################################
+    def serialization(self) -> Dict[str, Any]:
+        output: Dict[str, Any] = {}
+        output["name"] = self.name
+        output["codename"] = self.codename
+        output["description"] = self.description
+        output["isunique"] = self.isunique
+        output["type"] = self.type
+        output["attributes"] = [int(attr) for attr in self.attributes.split(',')]
+        output["appearance"] = self.appearance
+        return output     
+############################################################################################################
+    def proxy(self) -> Dict[str, Any]:
+        output: Dict[str, str] = {}
+        output['name'] = self.name
+        return output         
 ############################################################################################################
 ############################################################################################################
 ############################################################################################################

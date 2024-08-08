@@ -4,7 +4,7 @@ root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 from loguru import logger
 from typing import List, Dict, Any, Optional, cast
-from game_sample.gen_funcs import (proxy_prop)
+#from game_sample.gen_funcs import (proxy_prop)
 from game_sample.excel_data import ExcelDataActor, ExcelDataProp
 from game_sample.utils import parse_prop_string
 
@@ -50,6 +50,14 @@ class ExcelEditorActor:
         assert self._data is not None
         return cast(str, self._data["kick_off_memory"])
 #################################################################################################################################
+    @property
+    def actor_current_using_prop(self) -> List[str]:
+        assert self._data is not None
+        raw_string = cast(str, self._data["actor_current_using_prop"])
+        if raw_string is None:
+            return []
+        return [str(attr) for attr in raw_string.split(';')]    
+#################################################################################################################################
     def parse_actor_prop(self) -> None:
 
         data: Optional[str] = self._data["actor_prop"]
@@ -93,15 +101,13 @@ class ExcelEditorActor:
         assert self.actor_data is not None
         output['name'] = self.actor_data.name
         #
-        props_block: List[Dict[str, Any]] = []
+        props_data: List[Dict[str, Any]] = []
         for tp in self._prop_data:
-            #代理即可
-            prop = tp[0]
-            count = tp[1]
-            dt = proxy_prop(prop)
-            dt["count"] = count
-            props_block.append(dt) 
+            dt = tp[0].proxy()
+            dt["count"] = tp[1]
+            props_data.append(dt) 
         #
-        output["props"] = props_block
+        output["props"] = props_data
+        output["actor_current_using_prop"] = self.actor_current_using_prop
         return output
 #################################################################################################################################

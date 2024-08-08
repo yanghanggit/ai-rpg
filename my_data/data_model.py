@@ -54,6 +54,7 @@ class PropProxyModel(BaseModel):
 class ActorProxyModel(BaseModel):
     name: str
     props: List[PropProxyModel]
+    actor_current_using_prop: List[str]
 
 class StageProxyModel(BaseModel):
     name: str

@@ -9,7 +9,7 @@ from game_sample.excel_data import ExcelDataActor, ExcelDataStage, ExcelDataProp
 from game_sample.actor_editor import ExcelEditorActor
 from game_sample.stage_editor import ExcelEditorStage
 from game_sample.world_system_editor import ExcelEditorWorldSystem
-from game_sample.gen_funcs import serialization_prop
+#from game_sample.gen_funcs import serialization_prop
 import pandas as pd
 from game_sample.utils import write_text_file
 
@@ -189,7 +189,7 @@ class ExcelEditorGame:
         # 道具
         output["props"] = []
         for prop in self._editor_props:
-            output["props"].append(serialization_prop(prop)) #要全的道具数据
+            output["props"].append(prop.serialization()) #要全的道具数据
 
         # 世界系统
         output["world_systems"] = [data.serialization() for data in self._editor_world_systems]

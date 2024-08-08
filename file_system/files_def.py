@@ -46,7 +46,7 @@ class PropFile(BaseFile):
         self._prop_model: PropModel = prop_model
         assert self._name == self._prop_model.name
         assert self._prop_model.codename != ""
-        assert len(self._prop_model.attributes) == 3
+        assert len(self._prop_model.attributes) == 4
         
         self._count: int = count
 ############################################################################################################
@@ -91,18 +91,19 @@ class PropFile(BaseFile):
 ############################################################################################################
     @property
     def max_hp(self) -> int:
-        assert len(self._prop_model.attributes) == 3
         return self._prop_model.attributes[0]
 ############################################################################################################
     @property
-    def attack(self) -> int:
-        assert len(self._prop_model.attributes) == 3
+    def hp(self) -> int:
         return self._prop_model.attributes[1]
 ############################################################################################################
     @property
-    def defense(self) -> int:
-        assert len(self._prop_model.attributes) == 3
+    def attack(self) -> int:
         return self._prop_model.attributes[2]
+############################################################################################################
+    @property
+    def defense(self) -> int:
+        return self._prop_model.attributes[3]
 ############################################################################################################
 ############################################################################################################
 ############################################################################################################

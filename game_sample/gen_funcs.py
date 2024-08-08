@@ -111,19 +111,19 @@ def analyze_relationship_between_actors_and_props(analyze_props_data: Dict[str, 
         if len(_me._prop_archives) > 0:
             logger.warning(f"{_me.name}: {_me._prop_archives}")
 ################################################################################################################
-def serialization_prop(prop: ExcelDataProp) -> Dict[str, Any]:
-    output: Dict[str, Any] = {}
-    output["name"] = prop.name
-    output["codename"] = prop.codename
-    output["description"] = prop.description
-    output["isunique"] = prop.isunique
-    output["type"] = prop.type
-    output["attributes"] = [int(attr) for attr in prop.attributes.split(',')]
-    output["appearance"] = prop.appearance
-    return output       
+# def serialization_prop(prop: ExcelDataProp) -> Dict[str, Any]:
+#     output: Dict[str, Any] = {}
+#     output["name"] = prop.name
+#     output["codename"] = prop.codename
+#     output["description"] = prop.description
+#     output["isunique"] = prop.isunique
+#     output["type"] = prop.type
+#     output["attributes"] = [int(attr) for attr in prop.attributes.split(',')]
+#     output["appearance"] = prop.appearance
+#     return output       
 ################################################################################################################
-def proxy_prop(prop: ExcelDataProp) -> Dict[str, Any]:
-    output: Dict[str, str] = {}
-    output['name'] = prop.name
-    return output       
+# def proxy_prop(prop: ExcelDataProp) -> Dict[str, Any]:
+#     output: Dict[str, str] = {}
+#     output['name'] = prop.name
+#     return output       
 ################################################################################################################

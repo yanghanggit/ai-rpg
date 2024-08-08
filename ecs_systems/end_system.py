@@ -1,9 +1,9 @@
 from entitas import ExecuteProcessor, Matcher, InitializeProcessor #type: ignore
 from my_entitas.extended_context import ExtendedContext
 from loguru import logger
-from ecs_systems.components import (StageComponent, ActorComponent, WorldComponent, SimpleRPGAttrComponent)
+from ecs_systems.components import (StageComponent, ActorComponent, WorldComponent, SimpleRPGAttrComponent, SimpleRPGWeaponComponent, SimpleRPGArmorComponent)
 import json
-from typing import Dict, override, List
+from typing import Dict, override, List, Any
 from file_system.helper import update_status_profile_file, update_stage_actors_map_file
 
 
@@ -74,10 +74,24 @@ class EndSystem(InitializeProcessor, ExecuteProcessor):
         logger.debug(f"{json.dumps(dump_data, ensure_ascii = False)}")
 ############################################################################################################
     def dump_status_profile(self) -> None:
-        rpg_attr_entities = self._context.get_group(Matcher(SimpleRPGAttrComponent)).entities
+        rpg_attr_entities = self._context.get_group(Matcher(all_of = [SimpleRPGAttrComponent, SimpleRPGWeaponComponent, SimpleRPGArmorComponent])).entities
         for rpg_attr_entity in rpg_attr_entities:
+            
             rpg_attr_comp = rpg_attr_entity.get(SimpleRPGAttrComponent)
-            _dict_ = rpg_attr_comp._asdict()
-            assert len(_dict_) > 0
-            update_status_profile_file(self._context._file_system, rpg_attr_comp.name, _dict_)
+            attr_dict: Dict[str, Any] = {SimpleRPGAttrComponent.__name__: rpg_attr_comp._asdict()}
+            assert len(attr_dict) > 0
+
+            rpg_weapon_comp = rpg_attr_entity.get(SimpleRPGWeaponComponent)
+            weapon_dict: Dict[str, Any] = {SimpleRPGWeaponComponent.__name__: rpg_weapon_comp._asdict()}
+            assert len(weapon_dict) > 0
+
+            rpg_armor_comp = rpg_attr_entity.get(SimpleRPGArmorComponent)
+            armor_dict: Dict[str, Any] = {SimpleRPGArmorComponent.__name__: rpg_armor_comp._asdict()}
+            assert len(armor_dict) > 0
+
+            final_dict: Dict[str, Any] = {}
+            final_dict.update(attr_dict)
+            final_dict.update(weapon_dict)
+            final_dict.update(armor_dict)
+            update_status_profile_file(self._context._file_system, rpg_attr_comp.name, final_dict)
 ############################################################################################################

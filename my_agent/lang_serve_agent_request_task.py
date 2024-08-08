@@ -42,18 +42,18 @@ class LangServeAgentRequestTask:
     
         try:
 
-            chat_history: List[Union[HumanMessage, AIMessage]] = self._input_chat_history and self._agent._chat_history or []
-            self._response = self._agent._remote_runnable.invoke({"input": self._prompt, "chat_history": chat_history})
+            chat_history_as_context: List[Union[HumanMessage, AIMessage]] = self._input_chat_history and self._agent._chat_history or []
+            self._response = self._agent._remote_runnable.invoke({"input": self._prompt, "chat_history": chat_history_as_context})
             # 只要能执行到这里，说明LLM运行成功，可能包括政策问题也通过了。
             if self._response is None:
                 return None
             
             if self._add_prompt_to_chat_history:
-                chat_history.extend([HumanMessage(content = self._prompt)])
+                self._agent._chat_history.extend([HumanMessage(content = self._prompt)])
 
             if self._add_response_to_chat_history:
                 assert self.response_content is not None
-                chat_history.extend([AIMessage(content = self.response_content)])
+                self._agent._chat_history.extend([AIMessage(content = self.response_content)])
 
             logger.debug(f"\n{'=' * 50}\n{self.agent_name} request result:\n{self.response_content}\n{'=' * 50}")
             return self.response_content
@@ -73,18 +73,18 @@ class LangServeAgentRequestTask:
     
         try:
 
-            chat_history: List[Union[HumanMessage, AIMessage]] = self._input_chat_history and self._agent._chat_history or []
-            self._response = await self._agent._remote_runnable.ainvoke({"input": self._prompt, "chat_history": chat_history})
+            chat_history_as_context: List[Union[HumanMessage, AIMessage]] = self._input_chat_history and self._agent._chat_history or []
+            self._response = await self._agent._remote_runnable.ainvoke({"input": self._prompt, "chat_history": chat_history_as_context})
             # 只要能执行到这里，说明LLM运行成功，可能包括政策问题也通过了。
             if self._response is None:
                 return None
 
             if self._add_prompt_to_chat_history:
-                chat_history.extend([HumanMessage(content = self._prompt)])
+                self._agent._chat_history.extend([HumanMessage(content = self._prompt)])
 
             if self._add_response_to_chat_history:
                 assert self.response_content is not None
-                chat_history.extend([AIMessage(content = self.response_content)])
+                self._agent._chat_history.extend([AIMessage(content = self.response_content)])
 
             logger.debug(f"\n{'=' * 50}\n{self.agent_name} request result:\n{self.response_content}\n{'=' * 50}")
             return self.response_content

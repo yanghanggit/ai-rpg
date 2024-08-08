@@ -112,9 +112,9 @@ pm2 start game_sample/gen_agent/coffin_of_the_silent_one_agent.py game_sample/ge
 
 # 在当前场景内搜索叫'Name?'的道具
 
-/search '道具名称'
+/searchprop '道具名称'
 
-例如 /search 腐朽的匕首
+例如 /searchprop 腐朽的匕首
 
 # 在不知道去往哪里的情况下，'跳出'当前场景，如果当前场景没有连接场景则会失败。
 
@@ -126,15 +126,15 @@ pm2 start game_sample/gen_agent/coffin_of_the_silent_one_agent.py game_sample/ge
 
 # 盗取对当前场景内的目标的道具
 
-/steal '@对谁>盗取的道具名字'
+/stealprop '@对谁>盗取的道具名字'
 
-例如 /steal @格雷>断指钥匙
+例如 /stealprop @格雷>断指钥匙
 
 # 将我身上的道具交给目标
 
-/trade '@对谁>我的道具的名字'
+/giveprop '@对谁>我的道具的名字'
 
-例如 /trade @格雷>炉钩
+例如 /giveprop @格雷>炉钩
 
 # 查看我身上有哪些道具？
 

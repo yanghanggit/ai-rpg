@@ -13,7 +13,7 @@ from ecs_systems.tag_action_system import TagActionSystem
 from ecs_systems.broadcast_action_system import BroadcastActionSystem  
 from ecs_systems.use_prop_action_system import UsePropActionSystem
 from ecs_systems.whisper_action_system import WhisperActionSystem 
-from ecs_systems.search_action_system import SearchActionSystem
+from ecs_systems.search_prop_action_system import SearchPropActionSystem
 from ecs_systems.mind_voice_action_system import MindVoiceActionSystem
 from ecs_systems.begin_system import BeginSystem
 from ecs_systems.end_system import EndSystem
@@ -26,7 +26,7 @@ from ecs_systems.update_archive_system import UpdateArchiveSystem
 from ecs_systems.portal_step_action_system import PortalStepActionSystem
 from ecs_systems.perception_action_system import PerceptionActionSystem
 from ecs_systems.steal_action_system import StealActionSystem
-from ecs_systems.trade_action_system import TradeActionSystem
+from ecs_systems.give_prop_action_system import GivePropActionSystem
 from ecs_systems.check_status_action_system import CheckStatusActionSystem
 from ecs_systems.agents_connect_system import AgentsConnectSystem
 from my_entitas.extended_processors import ExtendedProcessors
@@ -89,9 +89,9 @@ def create_rpg_processors(rpggame: Any, context: ExtendedContext) -> ExtendedPro
     processors.add(DeadActionSystem(context, rpg_game)) 
     
     # 交互类的行为（交换数据），在死亡之后，因为死了就不能执行。。。
-    processors.add(SearchActionSystem(context)) 
+    processors.add(SearchPropActionSystem(context)) 
     processors.add(StealActionSystem(context))
-    processors.add(TradeActionSystem(context))
+    processors.add(GivePropActionSystem(context))
     processors.add(UsePropActionSystem(context))
     processors.add(CheckStatusActionSystem(context)) # 道具交互类行为之后，可以发起自检
 

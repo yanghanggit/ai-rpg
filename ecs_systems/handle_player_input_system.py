@@ -11,10 +11,10 @@ from player.player_command import (
                           PlayerSpeak,
                           PlayerUseProp, 
                           PlayerWhisper, 
-                          PlayerSearch,
+                          PlayerSearchProp,
                           PlayerPortalStep,
                           PlayerSteal,
-                          PlayerTrade, 
+                          PlayerGiveProp, 
                           PlayerPerception,
                           PlayerCheckStatus)
 from my_entitas.extended_context import ExtendedContext
@@ -95,24 +95,24 @@ class HandlePlayerInputSystem(ExecuteProcessor):
             content = splitcommand(usrinput, command)
             PlayerWhisper(command, rpggame,playerproxy, content).execute()
 
-        elif "/search" in usrinput:
-            command = "/search"
+        elif "/searchprop" in usrinput:
+            command = "/searchprop"
             propname = splitcommand(usrinput, command)
-            PlayerSearch(command, rpggame, playerproxy, propname).execute()
+            PlayerSearchProp(command, rpggame, playerproxy, propname).execute()
 
         elif "/portalstep" in usrinput:
             command = "/portalstep"
             PlayerPortalStep(command, rpggame, playerproxy).execute()
 
-        elif "/steal" in usrinput:
-            command = "/steal"
+        elif "/stealprop" in usrinput:
+            command = "/stealprop"
             propname = splitcommand(usrinput, command)
             PlayerSteal(command, rpggame, playerproxy, propname).execute()
 
-        elif "/trade" in usrinput:
-            command = "/trade"
+        elif "/giveprop" in usrinput:
+            command = "/giveprop"
             propname = splitcommand(usrinput, command)
-            PlayerTrade(command, rpggame, playerproxy, propname).execute()
+            PlayerGiveProp(command, rpggame, playerproxy, propname).execute()
 
         elif "/perception" in usrinput:
             command = "/perception"

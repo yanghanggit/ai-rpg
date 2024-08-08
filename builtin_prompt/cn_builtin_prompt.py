@@ -208,7 +208,7 @@ def check_status_action_prompt(who: str,
 """
     return prompt
 ###############################################################################################################################################
-def search_action_failed_prompt(actor_name: str, prop_name: str) -> str:
+def search_prop_action_failed_prompt(actor_name: str, prop_name: str) -> str:
     return f"""# {actor_name} 无法找到道具 "{prop_name}"。
 ## 可能原因:
 1. {prop_name} 不是一个可搜索的道具。
@@ -217,7 +217,7 @@ def search_action_failed_prompt(actor_name: str, prop_name: str) -> str:
 1. 请{actor_name}重新考虑搜索目标。
 2. 使用 {PerceptionActionComponent.__name__} 感知场景内的道具，确保目标的可搜索性。"""
 ###############################################################################################################################################
-def search_action_success_prompt(actor_name: str, prop_name:str, stagename: str) -> str:
+def search_prop_action_success_prompt(actor_name: str, prop_name:str, stagename: str) -> str:
     return f"""# {actor_name}从{stagename}场景内成功找到并获取了道具:{prop_name}。
 ## 导致结果:
 - {stagename} 此场景内不再有这个道具。"""
@@ -253,15 +253,15 @@ def speak_action_prompt(srcname: str, destname: str, content: str) -> str:
     prompt = f"# {_CNConstantPrompt_.SPEAK_ACTION_TAG} {srcname}对{destname}说:{content}"   
     return prompt
 ################################################################################################################################################
-def steal_action_prompt(whosteal: str, targetname: str, propname: str, stealres: bool) -> str:
+def steal_prop_action_prompt(whosteal: str, targetname: str, propname: str, stealres: bool) -> str:
     if not stealres:
         return f"{whosteal}从{targetname}盗取{propname}, 失败了"
     return f"{whosteal}从{targetname}成功盗取了{propname}"
 ################################################################################################################################################
-def trade_action_prompt(fromwho: str, towho: str, propname: str, traderes: bool) -> str:
-    if not traderes:
-        return f"{fromwho}向{towho}交换{propname}, 失败了"
-    return f"{fromwho}向{towho}成功交换了{propname}"
+def give_prop_action_prompt(from_who: str, to_who: str, prop_name: str, action_result: bool) -> str:
+    if not action_result:
+        return f"{from_who}向{to_who}交换{prop_name}, 失败了"
+    return f"{from_who}向{to_who}成功交换了{prop_name}"
 ################################################################################################################################################
 def go_to_stage_failed_because_stage_is_invalid_prompt(actor_name: str, stagename: str) -> str:
     return f"""#{actor_name}无法前往{stagename}，可能的原因包括:

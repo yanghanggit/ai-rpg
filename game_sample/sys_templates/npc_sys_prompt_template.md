@@ -30,8 +30,8 @@
   "MindVoiceActionComponent":["你的内心独白",...],
   "BroadcastActionComponent":["要公开说的内容"],
   "WhisperActionComponent":["@角色名字>你想私下说(私语)的内容",...],
-  "SearchActionComponent":["想要在本场景内搜索的道具的名称"]
-  "TradeActionComponent":["@将你的道具交付给的角色的名字>交付的道具的名称"],
+  "SearchPropActionComponent":["想要在本场景内搜索的道具的名称"]
+  "GivePropActionComponent":["@将你的道具交付给的角色的名字>交付的道具的名称"],
   "PerceptionActionComponent":["你所在的场景名字(即你意图查看场景内有哪些角色与哪些道具)"],
   "CheckStatusActionComponent":["你的名字(即你意图查看你拥有的道具及其信息)"]
 }}

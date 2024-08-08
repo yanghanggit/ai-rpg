@@ -23,11 +23,11 @@ GoToActionComponent = namedtuple('GoToActionComponent', 'action')
 # 当前场景为‘门’，通过门进入下一个场景
 PortalStepActionComponent = namedtuple('PortalStepActionComponent', 'action')
 # 寻找场景内道具
-SearchActionComponent = namedtuple('SearchActionComponent', 'action')
+SearchPropActionComponent = namedtuple('SearchPropActionComponent', 'action')
 # 从目标角色处偷取
-StealActionComponent = namedtuple('StealActionComponent', 'action')
+StealPropActionComponent = namedtuple('StealPropActionComponent', 'action')
 # 将道具交给目标角色
-TradeActionComponent = namedtuple('TradeActionComponent', 'action')
+GivePropActionComponent = namedtuple('GivePropActionComponent', 'action')
 # 使用道具
 UsePropActionComponent = namedtuple('UsePropActionComponent', 'action')
 # 感知场景内的信息（角色与道具）
@@ -59,11 +59,11 @@ ACTOR_AVAILABLE_ACTIONS_REGISTER = [AttackActionComponent,
                          MindVoiceActionComponent, 
                          BroadcastActionComponent,
                          WhisperActionComponent,
-                         SearchActionComponent, 
+                         SearchPropActionComponent, 
                          PortalStepActionComponent,
                          PerceptionActionComponent,
-                         StealActionComponent,
-                         TradeActionComponent,
+                         StealPropActionComponent,
+                         GivePropActionComponent,
                          CheckStatusActionComponent,
                          UsePropActionComponent]
 
@@ -73,11 +73,11 @@ ACTOR_CONVERSATION_ACTIONS_REGISTER = [SpeakActionComponent,
                                 WhisperActionComponent]
 
 #角色交互类动作
-ACTOR_INTERACTIVE_ACTIONS_REGISTER = [SearchActionComponent, 
+ACTOR_INTERACTIVE_ACTIONS_REGISTER = [SearchPropActionComponent, 
                                     GoToActionComponent, 
                                     PortalStepActionComponent, 
                                     PerceptionActionComponent,
-                                    StealActionComponent,
-                                    TradeActionComponent,
+                                    StealPropActionComponent,
+                                    GivePropActionComponent,
                                     CheckStatusActionComponent,
                                     UsePropActionComponent]

@@ -24,7 +24,7 @@ pip install langchain langchain_core langserve fastapi langchain_openai sse_star
 - mypy --strict terminal_run.py
 - mypy --strict server_run.py
 - mypy --strict game_sample/gen_game.py
-- mypy --strict terminal_run.py game_sample/gen_game.py server_run.py
+- mypy --strict terminal_run.py game_sample/gen_game.py server_run.py agents_run.py
 
 ### 说明
 
@@ -48,6 +48,9 @@ cd multi-agents-game-framework
 
 pm2 start game_sample/gen_agent/coffin_of_the_silent_one_agent.py game_sample/gen_agent/gray_chapel_agent.py game_sample/gen_agent/nameless_resurrector_agent.py game_sample/gen_agent/rat_king_agent.py game_sample/gen_agent/elias_gray_agent.py game_sample/gen_agent/moore_dog_agent.py game_sample/gen_agent/papal_emissary_agent.py game_sample/gen_agent/the_incinerator_agent.py game_sample/gen_agent/gray_cemetery_agent.py game_sample/gen_agent/mr_lucky_agent.py game_sample/gen_agent/rancid_cellar_agent.py game_sample/gen_agent/square_front_of_cemetery_agent.py game_sample/gen_agent/world_system_appearance_builder_agent.py
 ```
+
+### 也可以直接调用 lang_serve_agents_run.py来自动化运行（需要输入游戏名字, 例如，输入World2，就是执行'game_sample/gen_runtimes/World2_agents.json'）
+
 
 # 可用指令
 

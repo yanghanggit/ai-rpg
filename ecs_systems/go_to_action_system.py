@@ -7,7 +7,7 @@ from ecs_systems.components import ActorComponent
 from my_agent.agent_action import AgentAction
 from my_entitas.extended_context import ExtendedContext
 from loguru import logger
-from ecs_systems.stage_director_component import notify_stage_director
+from ecs_systems.stage_director_component import StageDirectorComponent
 from typing import cast, override, List, Optional
 from ecs_systems.stage_director_event import IStageDirectorEvent
 from ecs_systems.stage_director_system import director_events_to_actor
@@ -132,7 +132,7 @@ class GoToActionSystem(ReactiveProcessor):
         self._context.change_stage_tag_component(entity, current_stage_name, replace_current_stage)
 
         #进入场景的事件需要通知相关的人
-        notify_stage_director(self._context, entity, ActorEnterStageEvent(actor_comp.name, target_stage_name, current_stage_name))
+        StageDirectorComponent.add_event_to_stage_director(self._context, entity, ActorEnterStageEvent(actor_comp.name, target_stage_name, current_stage_name))
 ###############################################################################################################################################
     def before_leave_stage(self, helper: GoToActionHelper) -> None:
         #目前就是强行刷一下history
@@ -147,7 +147,7 @@ class GoToActionSystem(ReactiveProcessor):
         assert helper._current_stage_entity is not None
 
         # 必须在场景信息还有效的时刻做通知
-        notify_stage_director(self._context, entity, ActorLeaveStageEvent(actor_comp.name, helper._current_stage_name, helper._target_stage_name))
+        StageDirectorComponent.add_event_to_stage_director(self._context, entity, ActorLeaveStageEvent(actor_comp.name, helper._current_stage_name, helper._target_stage_name))
 
         # 离开场景 设置成空
         replace_name = actor_comp.name

@@ -4,7 +4,7 @@ from ecs_systems.components import (StageComponent, ActorComponent)
 from ecs_systems.action_components import PerceptionActionComponent, DeadActionComponent
 from loguru import logger
 from typing import List, Dict, override
-from ecs_systems.stage_director_component import notify_stage_director
+from ecs_systems.stage_director_component import StageDirectorComponent
 from ecs_systems.stage_director_event import IStageDirectorEvent
 from builtin_prompt.cn_builtin_prompt import perception_action_prompt
 
@@ -101,5 +101,5 @@ class PerceptionActionSystem(ReactiveProcessor):
         stageentity = self._context.safe_get_stage_entity(entity)
         assert stageentity is not None
         safe_stage_name = self._context.safe_get_entity_name(stageentity)   
-        notify_stage_director(self._context, entity, ActorPerceptionEvent(safe_name, safe_stage_name, helper._actors_in_stage, helper._props_in_stage))
+        StageDirectorComponent.add_event_to_stage_director(self._context, entity, ActorPerceptionEvent(safe_name, safe_stage_name, helper._actors_in_stage, helper._props_in_stage))
 ###################################################################################################################

@@ -6,7 +6,7 @@ from loguru import logger
 from my_agent.agent_action import AgentAction
 from gameplay_checks.conversation_check import conversation_check, ErrorConversationEnable
 from typing import List, override
-from ecs_systems.stage_director_component import notify_stage_director
+from ecs_systems.stage_director_component import StageDirectorComponent
 from ecs_systems.stage_director_event import IStageDirectorEvent
 from builtin_prompt.cn_builtin_prompt import give_prop_action_prompt
 
@@ -66,7 +66,7 @@ class GivePropActionSystem(ReactiveProcessor):
     
             prop_name = message
             action_result = self._give_prop(entity, target_name, prop_name)
-            notify_stage_director(self._context, entity, ActorGivePropEvent(safe_name, target_name, prop_name, action_result))
+            StageDirectorComponent.add_event_to_stage_director(self._context, entity, ActorGivePropEvent(safe_name, target_name, prop_name, action_result))
             success_target_names.append(target_name)
 
         return success_target_names

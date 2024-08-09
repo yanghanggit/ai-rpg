@@ -3,7 +3,7 @@ from ecs_systems.action_components import SpeakActionComponent
 from my_agent.agent_action import AgentAction
 from my_entitas.extended_context import ExtendedContext
 from gameplay_checks.conversation_check import conversation_check, ErrorConversationEnable
-from ecs_systems.stage_director_component import notify_stage_director
+from ecs_systems.stage_director_component import StageDirectorComponent
 from ecs_systems.stage_director_event import IStageDirectorEvent
 from typing import override
 from builtin_prompt.cn_builtin_prompt import speak_action_prompt
@@ -54,5 +54,5 @@ class SpeakActionSystem(ReactiveProcessor):
             message = tp[1]
             if conversation_check(self._context, entity, target) != ErrorConversationEnable.VALID:
                 continue
-            notify_stage_director(self._context, entity, StageOrActorSpeakEvent(safe_name, target, message))
+            StageDirectorComponent.add_event_to_stage_director(self._context, entity, StageOrActorSpeakEvent(safe_name, target, message))
 ####################################################################################################################################

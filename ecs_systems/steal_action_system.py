@@ -6,7 +6,7 @@ from loguru import logger
 from my_agent.agent_action import AgentAction
 from gameplay_checks.conversation_check import conversation_check, ErrorConversationEnable
 from typing import override
-from ecs_systems.stage_director_component import notify_stage_director
+from ecs_systems.stage_director_component import StageDirectorComponent
 from ecs_systems.stage_director_event import IStageDirectorEvent
 from builtin_prompt.cn_builtin_prompt import steal_prop_action_prompt
 
@@ -69,9 +69,9 @@ class StealActionSystem(ReactiveProcessor):
                 continue
             if self._steal(entity, target, prop_name):
                 steal_success_count += 1
-                notify_stage_director(self._context, entity, ActorStealPropEvent(safename, target, prop_name, True))
+                StageDirectorComponent.add_event_to_stage_director(self._context, entity, ActorStealPropEvent(safename, target, prop_name, True))
             else:
-                notify_stage_director(self._context, entity, ActorStealPropEvent(safename, target, prop_name, False))
+                StageDirectorComponent.add_event_to_stage_director(self._context, entity, ActorStealPropEvent(safename, target, prop_name, False))
 
         return steal_success_count > 0
 ####################################################################################################################################

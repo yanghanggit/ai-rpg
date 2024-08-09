@@ -5,7 +5,7 @@ from my_agent.agent_action import AgentAction
 from ecs_systems.action_components import (UsePropActionComponent, EnviroNarrateActionComponent, DeadActionComponent)
 from ecs_systems.components import StageComponent, ActorComponent, StageExitCondStatusComponent
 from my_entitas.extended_context import ExtendedContext
-from ecs_systems.stage_director_component import notify_stage_director
+from ecs_systems.stage_director_component import StageDirectorComponent
 from entitas.group import GroupEvent
 from ecs_systems.stage_director_event import IStageDirectorEvent
 from builtin_prompt.cn_builtin_prompt import prop_prompt, use_prop_to_stage_prompt, use_prop_no_response_prompt
@@ -126,7 +126,7 @@ class UsePropActionSystem(ReactiveProcessor):
             exit_cond_status_prompt = stage_exit_cond_status_comp.condition
         else:
             logger.warning(f"InteractivePropActionSystem: {targetname} 没有退出条件, 下面的不用走")
-            notify_stage_director(context, entity, ActorUsePropToStageEvent(username, 
+            StageDirectorComponent.add_event_to_stage_director(context, entity, ActorUsePropToStageEvent(username, 
                                                                                      targetname, 
                                                                                      prop_file._name, 
                                                                                      use_prop_no_response_prompt(username, prop_file._name, targetname)))
@@ -156,7 +156,7 @@ class UsePropActionSystem(ReactiveProcessor):
             helper = UsePropResponseHelper(plan)
             if helper.tips != "":
                 # 还是要做防守与通知导演
-                notify_stage_director(context, entity, ActorUsePropToStageEvent(username, targetname, prop_file._name, helper.tips))
+                StageDirectorComponent.add_event_to_stage_director(context, entity, ActorUsePropToStageEvent(username, targetname, prop_file._name, helper.tips))
             else:
                 logger.warning(f"是空的？怎么回事？")
         else:

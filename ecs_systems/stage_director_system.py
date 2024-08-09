@@ -29,8 +29,7 @@ class StageDirectorSystem(ExecuteProcessor):
     def director_clear(self) -> None:
         entities = self._context.get_group(Matcher(all_of=[StageComponent, StageDirectorComponent])).entities
         for entity in entities:
-            directorcomp: StageDirectorComponent = entity.get(StageDirectorComponent)
-            directorcomp.clear()
+            entity.get(StageDirectorComponent).clear()
 #################################################################################################################################################################
     def handle_stage(self, entitystage: Entity) -> None:
         assert entitystage.has(StageComponent)

@@ -5,13 +5,19 @@ from typing import List, Any
 from collections import namedtuple
 from ecs_systems.stage_director_event import IStageDirectorEvent
 from builtin_prompt.cn_builtin_prompt import replace_mentions_of_your_name_with_you_prompt
-from loguru import logger
 
 ##扩展型组件，用于处理导演系统的事件
 ##########################################################################################################################
 StageDirectorComponentPrototype = namedtuple('StageDirectorComponentPrototype', 'name')
 class StageDirectorComponent(StageDirectorComponentPrototype):
 
+    @staticmethod
+    def add_event_to_stage_director(context: ExtendedContext, entity: Entity, direct_event: IStageDirectorEvent) -> None:
+        stage_entity = context.safe_get_stage_entity(entity)
+        if stage_entity is None or not stage_entity.has(StageDirectorComponent):
+            return
+        stage_entity.get(StageDirectorComponent).add_event(direct_event)
+##########################################################################################################################
     def __init__(self, args: Any) -> None:
         assert len(args) == 1
         assert self.name == args[0]
@@ -22,21 +28,21 @@ class StageDirectorComponent(StageDirectorComponentPrototype):
         self._events.append(event)
 ##########################################################################################################################
     def to_actor(self, target_actor_name: str, extended_context: ExtendedContext) -> List[str]:
-        result: List[str] = []
+        ret: List[str] = []
         for event in self._events:
-            res = event.to_actor(target_actor_name, extended_context)
-            if res != "":
-                res = replace_mentions_of_your_name_with_you_prompt(res, target_actor_name)
-                result.append(res)
-        return result
+            event_content = event.to_actor(target_actor_name, extended_context)
+            if event_content != "":
+                event_content_replace_mentions_of_your_name = replace_mentions_of_your_name_with_you_prompt(event_content, target_actor_name)
+                ret.append(event_content_replace_mentions_of_your_name)
+        return ret
 ##########################################################################################################################
     def to_stage(self, target_stage_name: str, extended_context: ExtendedContext) -> List[str]:
-        result: List[str] = []
+        ret: List[str] = []
         for event in self._events:
-            res = event.to_stage(target_stage_name, extended_context)
-            if res != "":
-                result.append(res)
-        return result
+            event_content = event.to_stage(target_stage_name, extended_context)
+            if event_content != "":
+                ret.append(event_content)
+        return ret
 ##########################################################################################################################
     def clear(self) -> None:
         self._events.clear()
@@ -49,52 +55,33 @@ class StageDirectorComponent(StageDirectorComponentPrototype):
         from ecs_systems.perception_action_system import ActorPerceptionEvent
         from ecs_systems.check_status_action_system import ActorCheckStatusEvent
         ###
-        result: List[str] = []
+        ret: List[str] = []
 
         for event in self._events:
 
-            ignore_type1 = isinstance(event, StageOrActorWhisperEvent) \
+            need_ignore_conversation_event = isinstance(event, StageOrActorWhisperEvent) \
             or isinstance(event, StageOrActorSpeakEvent) \
             or isinstance(event, StageOrActorBroadcastEvent)
-            if ignore_type1:
+            if need_ignore_conversation_event:
                 # 不收集这个消息。
                 continue
             
             if self.is_player_web_client(target_actor_name, extended_context):
-                ignore_type2 = isinstance(event, ActorPerceptionEvent) or isinstance(event, ActorCheckStatusEvent)
-                if ignore_type2:
+                if isinstance(event, ActorPerceptionEvent) or isinstance(event, ActorCheckStatusEvent):
                     # 立即模式下（就是Web模式下），不收集这个消息。马上反应，就是终端测试下收集这个消息。
                     continue
             
-            res = event.to_actor(target_actor_name, extended_context)
-            if res != "":
-                res = replace_mentions_of_your_name_with_you_prompt(res, target_actor_name)
-                result.append(res)
+            event_content = event.to_actor(target_actor_name, extended_context)
+            if event_content != "":
+                event_content_replace_mentions_of_your_name = replace_mentions_of_your_name_with_you_prompt(event_content, target_actor_name)
+                ret.append(event_content_replace_mentions_of_your_name)
 
-        return result
+        return ret
 ##########################################################################################################################
     def is_player_web_client(self, actor_name: str, extended_context: ExtendedContext) -> bool:
         entity = extended_context.get_actor_entity(actor_name)
-        if entity is None:
-            assert False, f"ActorEntity not found in entity:{actor_name}"
+        if entity is None or not entity.has(PlayerComponent):
             return False
-        
-        if not entity.has(PlayerComponent):
-            assert False, f"PlayerComponent not found in entity:{actor_name}"
-            return False
-        
         assert entity.has(PlayerIsWebClientComponent) or entity.has(PlayerIsTerminalClientComponent)
         return entity.has(PlayerIsWebClientComponent)
-##########################################################################################################################
-##########################################################################################################################
-##########################################################################################################################
-def notify_stage_director(context: ExtendedContext, entity: Entity, direct_event: IStageDirectorEvent) -> bool:
-    stage_entity = context.safe_get_stage_entity(entity)
-    if stage_entity is None or not stage_entity.has(StageDirectorComponent):
-        logger.error(f"StageDirectorComponent not found in entity:{entity}")
-        return False
-    assert stage_entity.has(StageDirectorComponent)
-    director_comp = stage_entity.get(StageDirectorComponent)
-    director_comp.add_event(direct_event)
-    return True
 ##########################################################################################################################

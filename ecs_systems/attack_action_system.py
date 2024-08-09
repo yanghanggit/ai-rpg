@@ -4,7 +4,7 @@ from ecs_systems.components import SimpleRPGAttrComponent, SimpleRPGWeaponCompon
 from my_entitas.extended_context import ExtendedContext
 from my_agent.agent_action import AgentAction
 from loguru import logger
-from ecs_systems.stage_director_component import notify_stage_director
+from ecs_systems.stage_director_component import StageDirectorComponent
 from ecs_systems.stage_director_event import IStageDirectorEvent
 from typing import cast, override
 from gameplay_checks.conversation_check import conversation_check, ErrorConversationEnable
@@ -164,10 +164,10 @@ class AttackActionSystem(ReactiveProcessor):
             ## 导演系统，单独处理，有旧的代码
             if isdead:
                 # 直接打死
-                notify_stage_director(context, _entity, StageOrActorKillEvent(rpgcomp.name, value_as_target_name))
+                StageDirectorComponent.add_event_to_stage_director(context, _entity, StageOrActorKillEvent(rpgcomp.name, value_as_target_name))
             else:
                 # 没有打死，就把伤害通知给导演
-                notify_stage_director(context, _entity, StageOrActorAttackEvent(rpgcomp.name, value_as_target_name, damage, lefthp, target_rpg_comp.maxhp))
+                StageDirectorComponent.add_event_to_stage_director(context, _entity, StageOrActorAttackEvent(rpgcomp.name, value_as_target_name, damage, lefthp, target_rpg_comp.maxhp))
 ######################################################################################################################################################
     ## 杀死对方就直接夺取唯一性道具。
     def unique_prop_be_taken_away(self, _entity: Entity, _target_entity: Entity) -> None:

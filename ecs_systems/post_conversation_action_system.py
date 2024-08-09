@@ -53,8 +53,7 @@ class PostConversationActionSystem(ReactiveProcessor):
 ####################################################################################################
     def after_handle(self, stage_entity: Entity) -> None:
         assert stage_entity.has(StageDirectorComponent)
-        stage_director_comp: StageDirectorComponent = stage_entity.get(StageDirectorComponent)
-        stage_director_comp.clear()
+        stage_entity.get(StageDirectorComponent).clear()
 ####################################################################################################
     def collect_stage(self, entity: Entity) -> Optional[Entity]:
         stage_entity = self._context.safe_get_stage_entity(entity)

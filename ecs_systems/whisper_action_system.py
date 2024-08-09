@@ -4,7 +4,7 @@ from my_agent.agent_action import AgentAction
 from my_entitas.extended_context import ExtendedContext
 from typing import override
 from gameplay_checks.conversation_check import conversation_check, ErrorConversationEnable
-from ecs_systems.stage_director_component import notify_stage_director
+from ecs_systems.stage_director_component import StageDirectorComponent
 from ecs_systems.stage_director_event import IStageDirectorEvent
 from builtin_prompt.cn_builtin_prompt import whisper_action_prompt
 
@@ -57,5 +57,5 @@ class WhisperActionSystem(ReactiveProcessor):
             message = tp[1]
             if conversation_check(self._context, entity, targetname) != ErrorConversationEnable.VALID:
                 continue
-            notify_stage_director(self._context, entity, StageOrActorWhisperEvent(safe_name, targetname, message))
+            StageDirectorComponent.add_event_to_stage_director(self._context, entity, StageOrActorWhisperEvent(safe_name, targetname, message))
 ####################################################################################################################################

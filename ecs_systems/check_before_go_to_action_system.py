@@ -18,7 +18,7 @@ from ecs_systems.components import (
 from my_agent.agent_action import AgentAction
 from my_entitas.extended_context import ExtendedContext
 from loguru import logger
-from ecs_systems.stage_director_component import notify_stage_director
+from ecs_systems.stage_director_component import StageDirectorComponent
 from ecs_systems.stage_director_event import IStageDirectorEvent
 from builtin_prompt.cn_builtin_prompt import \
             prop_prompt, stage_exit_conditions_check_prompt, \
@@ -246,13 +246,13 @@ class CheckBeforeGoToActionSystem(ReactiveProcessor):
         target_stage_name = self.get_target_stage_name(entity)
         target_stage_entity = self.get_target_stage_entity(entity)
         if target_stage_entity is None:
-            notify_stage_director(self._context, 
+            StageDirectorComponent.add_event_to_stage_director(self._context, 
                                   current_stage_entity, 
                                   ActorGoToFailedBecauseStageInvalid(safe_name, target_stage_name))
             return False
 
         if current_stage_entity == target_stage_entity:
-            notify_stage_director(self._context, 
+            StageDirectorComponent.add_event_to_stage_director(self._context, 
                                   current_stage_entity, 
                                   ActorGoToFailedBecauseAlreadyInStage(safe_name, target_stage_name))
             return False
@@ -325,7 +325,7 @@ class CheckBeforeGoToActionSystem(ReactiveProcessor):
         #
         if not handle_response_helper.result:
             # 通知事件
-            notify_stage_director(self._context, 
+            StageDirectorComponent.add_event_to_stage_director(self._context, 
                                   current_stage_entity, 
                                   ActorExitStageFailedBecauseStageRefuse(actor_name, current_stage_name, handle_response_helper.tips))
             return False
@@ -387,7 +387,7 @@ class CheckBeforeGoToActionSystem(ReactiveProcessor):
             # 通知事件, 因为没动，得是当前场景需要通知
             current_stage_entity = self._context.safe_get_stage_entity(entity)
             assert current_stage_entity is not None
-            notify_stage_director(self._context, 
+            StageDirectorComponent.add_event_to_stage_director(self._context, 
                                   current_stage_entity, 
                                   ActorEnterStageFailedBecauseStageRefuse(actor_name, target_stage_name, handle_response_helper.tips))
             return False

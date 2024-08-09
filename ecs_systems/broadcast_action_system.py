@@ -5,7 +5,7 @@ from ecs_systems.action_components import BroadcastActionComponent
 from my_agent.agent_action import AgentAction
 from my_entitas.extended_context import ExtendedContext
 from loguru import logger
-from ecs_systems.stage_director_component import notify_stage_director
+from ecs_systems.stage_director_component import StageDirectorComponent
 from ecs_systems.stage_director_event import IStageDirectorEvent
 from builtin_prompt.cn_builtin_prompt import broadcast_action_prompt
 
@@ -58,5 +58,5 @@ class BroadcastActionSystem(ReactiveProcessor):
         #
         action: AgentAction = broadcast_comp.action
         join_values = action.join_values()
-        notify_stage_director(self._context, current_stage_entity, StageOrActorBroadcastEvent(action._actor_name, stage_comp.name, join_values))
+        StageDirectorComponent.add_event_to_stage_director(self._context, current_stage_entity, StageOrActorBroadcastEvent(action._actor_name, stage_comp.name, join_values))
 ####################################################################################################

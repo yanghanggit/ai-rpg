@@ -2,7 +2,7 @@ from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity #type: ignore
 from my_entitas.extended_context import ExtendedContext
 from ecs_systems.action_components import (CheckStatusActionComponent, DeadActionComponent)
 from ecs_systems.components import SimpleRPGAttrComponent, ActorComponent
-from ecs_systems.stage_director_component import notify_stage_director
+from ecs_systems.stage_director_component import StageDirectorComponent
 from typing import List, override
 from file_system.files_def import PropFile
 from builtin_prompt.cn_builtin_prompt import check_status_action_prompt
@@ -102,10 +102,11 @@ class CheckStatusActionSystem(ReactiveProcessor):
         helper = CheckStatusActionHelper(self._context)
         helper.check_status(entity)
         #
-        notify_stage_director(self._context, entity, 
-                              ActorCheckStatusEvent(safe_name, 
-                                                    helper._prop_files_as_weapon_clothes_non_consumable_item, 
-                                                    helper.health, 
-                                                    helper._prop_files_as_special_components))
+        StageDirectorComponent.add_event_to_stage_director(self._context, 
+                                                           entity, 
+                                                           ActorCheckStatusEvent(safe_name, 
+                                                                                 helper._prop_files_as_weapon_clothes_non_consumable_item, 
+                                                                                 helper.health, 
+                                                                                 helper._prop_files_as_special_components))
 ####################################################################################################################################
     

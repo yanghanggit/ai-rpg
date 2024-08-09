@@ -7,7 +7,7 @@ from ecs_systems.action_components import (SearchPropActionComponent,
 from ecs_systems.components import ActorComponent, StageComponent
 from my_agent.agent_action import AgentAction
 from loguru import logger
-from ecs_systems.stage_director_component import notify_stage_director
+from ecs_systems.stage_director_component import StageDirectorComponent
 from typing import List, override
 from file_system.files_def import PropFile
 from ecs_systems.stage_director_event import IStageDirectorEvent
@@ -97,13 +97,13 @@ class SearchPropActionSystem(ReactiveProcessor):
         for target_prop_name in search_action._values:
             ## 不在同一个场景就不能被搜寻，这个场景不具备这个道具，就无法搜寻
             if not self.check_stage_has_the_prop(target_prop_name, prop_files):
-                notify_stage_director(self._context, stage_entity, ActorSearchPropFailedEvent(safe_name, target_prop_name))
+                StageDirectorComponent.add_event_to_stage_director(self._context, stage_entity, ActorSearchPropFailedEvent(safe_name, target_prop_name))
                 logger.debug(f"search failed, {target_prop_name} not in {stagecomp.name}")
                 continue
             # 交换文件，即交换道具文件即可
             self.stage_exchanges_prop_to_actor(stagecomp.name, search_action._actor_name, target_prop_name)
             logger.info(f"search success, {target_prop_name} in {stagecomp.name}")
-            notify_stage_director(self._context, stage_entity, ActorSearchPropSuccessEvent(safe_name, target_prop_name, stagecomp.name))
+            StageDirectorComponent.add_event_to_stage_director(self._context, stage_entity, ActorSearchPropSuccessEvent(safe_name, target_prop_name, stagecomp.name))
             search_success_count += 1
 
         return search_success_count > 0

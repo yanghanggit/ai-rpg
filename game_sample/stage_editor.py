@@ -13,15 +13,15 @@ from game_sample.utils import parse_prop_string
 class ExcelEditorStage:
 
     def __init__(self, 
-                 data: Any, 
+                 my_data: Any, 
                  actor_data_base: Dict[str, ExcelDataActor], 
                  prop_data_base: Dict[str, ExcelDataProp], 
                  stage_data_base: Dict[str, ExcelDataStage]) -> None:
         
-        if data["type"] not in ["Stage"]:
-            assert False, f"Invalid Stage type: {data['type']}"
+        if my_data["type"] not in ["Stage"]:
+            assert False, f"Invalid Stage type: {my_data['type']}"
         #
-        self._data: Any = data
+        self._my_data: Any = my_data
         self._actor_data_base: Dict[str, ExcelDataActor] = actor_data_base
         self._prop_data_base: Dict[str, ExcelDataProp] = prop_data_base
         self._stage_data_base: Dict[str, ExcelDataStage] = stage_data_base
@@ -33,13 +33,13 @@ class ExcelEditorStage:
 #################################################################################################################################
     @property
     def attributes(self) -> List[int]:
-        assert self._data is not None
-        data = cast(str, self._data["attributes"])
+        assert self._my_data is not None
+        data = cast(str, self._my_data["attributes"])
         assert ',' in data, f"raw_string_val: {data} is not valid."
         return [int(attr) for attr in data.split(',')]    
 ################################################################################################################################
     def parse_stage_prop(self) -> None:
-        data: Optional[str] = self._data["stage_prop"]
+        data: Optional[str] = self._my_data["stage_prop"]
         if data is None:
             return
         _str_ = data.split(";")
@@ -52,7 +52,7 @@ class ExcelEditorStage:
             self._stage_prop.append((self._prop_data_base[_name], _count))
 ################################################################################################################################
     def parse_actors_in_stage(self) -> None:
-        data: Optional[str] = self._data["actors_in_stage"]
+        data: Optional[str] = self._my_data["actors_in_stage"]
         if data is None:
             return
         names = data.split(";")
@@ -64,13 +64,13 @@ class ExcelEditorStage:
 ################################################################################################################################
     @property
     def kick_off_memory(self) -> str:
-        assert self._data is not None
-        return cast(str, self._data["kick_off_memory"])
+        assert self._my_data is not None
+        return cast(str, self._my_data["kick_off_memory"])
 ################################################################################################################################
     @property
     def exit_of_portal(self) -> str:
-        assert self._data is not None
-        val = self._data["exit_of_portal"]
+        assert self._my_data is not None
+        val = self._my_data["exit_of_portal"]
         if val is None:
             return ""
         return str(val)
@@ -96,7 +96,7 @@ class ExcelEditorStage:
 ################################################################################################################################
     def serialization(self) -> Dict[str, Any]:
 
-        data_stage: ExcelDataStage = self._stage_data_base[self._data["name"]]
+        data_stage: ExcelDataStage = self._stage_data_base[self._my_data["name"]]
 
         _dt: Dict[str, Any] = {}
         _dt["name"] = data_stage.name
@@ -119,7 +119,7 @@ class ExcelEditorStage:
 ################################################################################################################################
     def proxy(self) -> Dict[str, Any]:
         
-        data_stage: ExcelDataStage = self._stage_data_base[self._data["name"]]
+        data_stage: ExcelDataStage = self._stage_data_base[self._my_data["name"]]
         output: Dict[str, Any] = {}
         output["name"] = data_stage.name
         #
@@ -132,9 +132,9 @@ class ExcelEditorStage:
         return output
 ################################################################################################################################
     def safe_get_string(self, key: str) -> str:
-        if pd.isna(self._data[key]):
+        if pd.isna(self._my_data[key]):
             return ""
-        return cast(str, self._data[key]) 
+        return cast(str, self._my_data[key]) 
 ################################################################################################################################
     @property
     def stage_entry_status(self) -> str:
@@ -159,4 +159,20 @@ class ExcelEditorStage:
     @property
     def stage_exit_actor_props(self) -> str:
         return self.safe_get_string("stage_exit_actor_props")
+#################################################################################################################################
+    @property
+    def excel_data(self) -> Optional[ExcelDataStage]:
+        assert self._my_data is not None
+        assert self._stage_data_base is not None
+        return self._stage_data_base[self._my_data["name"]]
+################################################################################################################################
+    @property
+    def gen_agentpy_path(self) -> Path:
+        assert self.excel_data is not None
+        return self.excel_data.gen_agentpy_path
+################################################################################################################################
+    @property
+    def name(self) -> str:
+        assert self.excel_data is not None
+        return self.excel_data.name
 ################################################################################################################################

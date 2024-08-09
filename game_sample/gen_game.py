@@ -14,17 +14,17 @@ from game_sample.game_editor import ExcelEditorGame
 from typing import List, Dict, Any
  
 ############################################################################################################
-def create_world_editor(sheet_name_as_world_name: str, 
+def create_game_editor(sheet_name_as_game_name: str, 
                         actor_data_base: Dict[str, ExcelDataActor],
                         prop_data_base: Dict[str, ExcelDataProp],
                         stage_data_base: Dict[str, ExcelDataStage],
                         world_system_data_base: Dict[str, ExcelDataWorldSystem]) -> ExcelEditorGame:
     ####测试的一个世界编辑
-    data_frame: DataFrame = pd.read_excel(f"{GAME_NAME}/{EXCEL_EDITOR}/{GAME_NAME}.xlsx", sheet_name = sheet_name_as_world_name, engine='openpyxl')
+    data_frame: DataFrame = pd.read_excel(f"{GAME_NAME}/{EXCEL_EDITOR}/{GAME_NAME}.xlsx", sheet_name = sheet_name_as_game_name, engine='openpyxl')
     ###费2遍事，就是试试转换成json好使不，其实可以不用直接dataframe做也行
     _2json: str = data_frame.to_json(orient='records', force_ascii=False)
     _2list: List[Any] = json.loads(_2json)
-    return ExcelEditorGame(sheet_name_as_world_name, _2list, actor_data_base, prop_data_base, stage_data_base, world_system_data_base)
+    return ExcelEditorGame(sheet_name_as_game_name, _2list, actor_data_base, prop_data_base, stage_data_base, world_system_data_base)
 ############################################################################################################
 def main() -> None:
 
@@ -54,14 +54,16 @@ def main() -> None:
     analyze_relationship_between_actors_and_props(prop_data_base, actor_data_base)
     
     #测试这个世界编辑
-    sheet_name_as_world_name = input("输入要创建的World的名字(必须对应excel中的sheet名):")
-    if sheet_name_as_world_name == "":
-        sheet_name_as_world_name = "World3"
-        logger.warning(f"使用默认的World名称: {sheet_name_as_world_name}")
+    sheet_name_as_game_name = input("输入要创建的World的名字(必须对应excel中的sheet名):")
+    if sheet_name_as_game_name == "":
+        sheet_name_as_game_name = "World3"
+        logger.warning(f"使用默认的World名称: {sheet_name_as_game_name}")
 
-    world = create_world_editor(str(sheet_name_as_world_name), actor_data_base, prop_data_base, stage_data_base, world_system_data_base)
-    if world is not None:
-        world.write(f"{GAME_NAME}/{OUTPUT_RUNTIMES_DIR}/")
+    game_editor = create_game_editor(str(sheet_name_as_game_name), actor_data_base, prop_data_base, stage_data_base, world_system_data_base)
+    assert game_editor is not None, "创建GameEditor失败"
+    if game_editor is not None:
+        game_editor.write_game_editor(f"{GAME_NAME}/{OUTPUT_RUNTIMES_DIR}/")
+        game_editor.write_agent_list(f"{GAME_NAME}/{OUTPUT_RUNTIMES_DIR}/")
 ############################################################################################################
 if __name__ == "__main__":
     main()

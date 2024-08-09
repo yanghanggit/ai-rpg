@@ -6,6 +6,7 @@ from typing import List
 from game_sample.configuration import GAME_NAME, OUT_PUT_ACTOR_SYS_PROMPT_DIR, OUT_PUT_STAGE_SYS_PROMPT_DIR, OUT_PUT_AGENT_DIR
 from game_sample.utils import write_text_file
 from typing import Any, Dict
+from loguru import logger
 
 ############################################################################################################
 ############################################################################################################
@@ -62,6 +63,11 @@ class ExcelDataActor:
     @property
     def body(self) -> str:
         return str(self._data["body"])
+
+    @property
+    def gen_agentpy_path(self) -> Path:
+        directory = Path(GAME_NAME) / OUT_PUT_AGENT_DIR 
+        return directory / f"{self.codename}_agent.py"
 ############################################################################################################
     def gen_sys_prompt(self, sys_prompt_template: str) -> str:
         gen_prompt = str(sys_prompt_template)
@@ -90,6 +96,7 @@ class ExcelDataActor:
 ############################################################################################################
     def write_agentpy(self) -> None:
         directory = Path(GAME_NAME) / OUT_PUT_AGENT_DIR
+        #logger.debug(f"{self.name}, write_agentpy: {directory / f"{self.codename}_agent.py"}") 
         write_text_file(directory, f"{self.codename}_agent.py", self._gen_agentpy)
 ############################################################################################################
     def add_actor_archive(self, actor_name: str) -> bool:
@@ -177,10 +184,14 @@ class ExcelDataStage:
     def agentpy_template_path(self) -> str:
         return str(self._data["agentpy_template"])
 
-
     @property
     def localhost(self) -> str:
         return f"http://localhost:{self.port}{self.api}/"
+    
+    @property
+    def gen_agentpy_path(self) -> Path:
+        directory = Path(GAME_NAME) / OUT_PUT_AGENT_DIR 
+        return directory / f"{self.codename}_agent.py"
 ############################################################################################################
     def gen_sys_prompt(self, sys_prompt_template: str) -> str:
         gen_prompt = str(sys_prompt_template)
@@ -204,6 +215,7 @@ class ExcelDataStage:
 ############################################################################################################
     def write_agentpy(self) -> None:
         directory = Path(GAME_NAME) / OUT_PUT_AGENT_DIR
+        #logger.debug(f"{self.name}, write_agentpy: {directory / f"{self.codename}_agent.py"}") 
         write_text_file(directory, f"{self.codename}_agent.py", self._gen_agentpy)
 ############################################################################################################
 ############################################################################################################
@@ -331,4 +343,9 @@ class ExcelDataWorldSystem:
     def write_agentpy(self) -> None:
         directory = Path(GAME_NAME) / OUT_PUT_AGENT_DIR
         write_text_file(directory, f"{self.codename}_agent.py", self._gen_agentpy)
+############################################################################################################
+    @property
+    def gen_agentpy_path(self) -> Path:
+        directory = Path(GAME_NAME) / OUT_PUT_AGENT_DIR 
+        return directory / f"{self.codename}_agent.py"
 ############################################################################################################

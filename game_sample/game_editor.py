@@ -195,10 +195,29 @@ class ExcelEditorGame:
         output["world_systems"] = [data.serialization() for data in self._editor_world_systems]
         return output
 ############################################################################################################################
-    def write(self, directory: str) -> bool:
-        _da = self.serialization()    
-        logger.warning(_da)
-        _json = json.dumps(_da, indent = 4, ensure_ascii = False)
-        filename = f"{self._name}.json"
-        return write_text_file(Path(directory), filename, _json) > 0
+    def write_game_editor(self, directory: str) -> int:
+        return write_text_file(Path(directory), 
+                               f"{self._name}.json", 
+                               json.dumps(self.serialization(), indent = 4, ensure_ascii = False))
+    
+############################################################################################################################
+    def write_agent_list(self, directory: str) -> int:
+
+        actors = self._editor_players + self._editor_actors
+        actor_list: List[Dict[str, str]] = []
+        for actor in actors:
+            actor_list.append({actor.name: str(actor.gen_agentpy_path)})
+            
+        stage_list: List[Dict[str, str]] = []
+        for stage in self._editor_stages:
+            stage_list.append({stage.name: str(stage.gen_agentpy_path)})
+
+        world_system_list: List[Dict[str, str]] = []
+        for world_system in self._editor_world_systems:
+            world_system_list.append({world_system.name: str(world_system.gen_agentpy_path)})
+
+        final = {"actors": actor_list, "stages": stage_list, "world_systems": world_system_list}
+        return write_text_file(Path(directory), 
+                               f"{self._name}_agents.json", 
+                               json.dumps(final, indent = 2, ensure_ascii = False))
 ############################################################################################################################

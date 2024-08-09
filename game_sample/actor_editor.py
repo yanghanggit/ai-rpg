@@ -11,14 +11,14 @@ from game_sample.utils import parse_prop_string
 class ExcelEditorActor:
 
     def __init__(self, 
-                 data: Any, 
+                 my_data: Any, 
                  actor_data_base: Dict[str, ExcelDataActor], 
                  prop_data_base: Dict[str, ExcelDataProp]) -> None:
         #
-        if data["type"] not in ["Player", "Actor"]:
-            assert False, f"Invalid actor type: {data['type']}"
+        if my_data["type"] not in ["Player", "Actor"]:
+            assert False, f"Invalid actor type: {my_data['type']}"
         #
-        self._data: Any = data
+        self._my_data: Any = my_data
         self._actor_data_base: Dict[str, ExcelDataActor] = actor_data_base
         self._prop_data_base: Dict[str, ExcelDataProp] = prop_data_base
         self._prop_data: List[tuple[ExcelDataProp, int]] = []
@@ -26,41 +26,41 @@ class ExcelEditorActor:
         self.parse_actor_prop()
 #################################################################################################################################
     @property
-    def actor_data(self) -> Optional[ExcelDataActor]:
-        assert self._data is not None
-        return self._actor_data_base[self._data["name"]]
+    def excel_data(self) -> Optional[ExcelDataActor]:
+        assert self._my_data is not None
+        return self._actor_data_base[self._my_data["name"]]
 #################################################################################################################################
     @property
     def appearance(self) -> str:
-        assert self._data is not None
-        val = self._data["appearance"]
+        assert self._my_data is not None
+        val = self._my_data["appearance"]
         if val is None:
             return ""
         return str(val)
 #################################################################################################################################
     @property
     def attributes(self) -> List[int]:
-        assert self._data is not None
-        data = cast(str, self._data["attributes"])
+        assert self._my_data is not None
+        data = cast(str, self._my_data["attributes"])
         assert ',' in data, f"raw_string_val: {data} is not valid."
         return [int(attr) for attr in data.split(',')]    
 #################################################################################################################################
     @property
     def kick_off_memory(self) -> str:
-        assert self._data is not None
-        return cast(str, self._data["kick_off_memory"])
+        assert self._my_data is not None
+        return cast(str, self._my_data["kick_off_memory"])
 #################################################################################################################################
     @property
     def actor_current_using_prop(self) -> List[str]:
-        assert self._data is not None
-        raw_string = cast(str, self._data["actor_current_using_prop"])
+        assert self._my_data is not None
+        raw_string = cast(str, self._my_data["actor_current_using_prop"])
         if raw_string is None:
             return []
         return [str(attr) for attr in raw_string.split(';')]    
 #################################################################################################################################
     def parse_actor_prop(self) -> None:
 
-        data: Optional[str] = self._data["actor_prop"]
+        data: Optional[str] = self._my_data["actor_prop"]
         if data is None:
             return        
         
@@ -78,19 +78,19 @@ class ExcelEditorActor:
     # 核心函数！！！
     def serialization(self) -> Dict[str, Any]:
 
-        assert self.actor_data is not None
+        assert self.excel_data is not None
 
         output: Dict[str, Any] = {}
 
-        output["name"] = self.actor_data.name
-        output["codename"] = self.actor_data.codename
-        output["url"] = self.actor_data.localhost
+        output["name"] = self.excel_data.name
+        output["codename"] = self.excel_data.codename
+        output["url"] = self.excel_data.localhost
         output["kick_off_memory"] = self.kick_off_memory
         output["appearance"] = self.appearance
-        output["actor_archives"] = self.actor_data._actor_archives 
-        output["stage_archives"] = self.actor_data._stage_archives 
+        output["actor_archives"] = self.excel_data._actor_archives 
+        output["stage_archives"] = self.excel_data._stage_archives 
         output["attributes"] = self.attributes
-        output["body"] = self.actor_data.body
+        output["body"] = self.excel_data.body
 
         return output
 #################################################################################################################################
@@ -98,8 +98,8 @@ class ExcelEditorActor:
     def proxy(self) -> Dict[str, Any]:
         output: Dict[str, Any] = {}
         #
-        assert self.actor_data is not None
-        output['name'] = self.actor_data.name
+        assert self.excel_data is not None
+        output["name"] = self.excel_data.name
         #
         props_data: List[Dict[str, Any]] = []
         for tp in self._prop_data:
@@ -110,4 +110,14 @@ class ExcelEditorActor:
         output["props"] = props_data
         output["actor_current_using_prop"] = self.actor_current_using_prop
         return output
+#################################################################################################################################
+    @property
+    def gen_agentpy_path(self) -> Path:
+        assert self.excel_data is not None
+        return self.excel_data.gen_agentpy_path
+#################################################################################################################################
+    @property
+    def name(self) -> str:
+        assert self.excel_data is not None
+        return self.excel_data.name
 #################################################################################################################################

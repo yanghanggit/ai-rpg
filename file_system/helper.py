@@ -71,12 +71,7 @@ def give_prop_file(file_system: FileSystem, from_owner: str, to_owner: str, prop
         logger.error(f"{from_owner}没有{prop_name}这个道具。")
         return None
     # 文件得从管理数据结构中移除掉
-    #file_system._prop_files[from_owner].remove(find_owners_file)
     file_system.remove_file(find_owners_file)
-    # 文件得从文件系统中删除掉
-    file_path = file_system.parse_path(find_owners_file)
-    assert file_path is not None
-    file_path.unlink()
     # 文件重新写入
     new_file = PropFile(prop_name, to_owner, find_owners_file._prop_model, find_owners_file._count)
     file_system.add_file(new_file)

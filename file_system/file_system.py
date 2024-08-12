@@ -9,7 +9,7 @@ FileType = TypeVar('FileType')
 class FileSystem:
 
     def __init__(self, name: str) -> None:
-        
+
         # 名字
         self._name: str = name
         
@@ -80,20 +80,21 @@ class FileSystem:
     def add_file(self, file: BaseFile) -> bool:
 
         if isinstance(file, PropFile):
-            self.add_file_2_base_file_dict(cast(Dict[str, List[BaseFile]], self._prop_files), file, True)
+            return self.add_file_2_base_file_dict(cast(Dict[str, List[BaseFile]], self._prop_files), file)
         elif isinstance(file, ActorArchiveFile):
-            self.add_file_2_base_file_dict(cast(Dict[str, List[BaseFile]], self._actor_archives), file, True)
+            return self.add_file_2_base_file_dict(cast(Dict[str, List[BaseFile]], self._actor_archives), file)
         elif isinstance(file, StageArchiveFile):
-            self.add_file_2_base_file_dict(cast(Dict[str, List[BaseFile]], self._stage_archives), file, True)
+            return self.add_file_2_base_file_dict(cast(Dict[str, List[BaseFile]], self._stage_archives), file)
         elif isinstance(file, StatusProfileFile):
             self._status_profile[file._owner_name] = file
+            return True
         elif isinstance(file, StageActorsMapFile):
             self._stage_actors_map = file
+            return True
         else:
             logger.error(f"file type {type(file)} not support")
-            return False
-        
-        return True
+
+        return False
 ###############################################################################################################################################
     def remove_file(self, file: BaseFile) -> bool:
             
@@ -111,6 +112,11 @@ class FileSystem:
             logger.error(f"file type {type(file)} not support")
             return False
         
+        file_path = self.parse_path(file)
+        assert file_path is not None
+        if file_path.exists():
+            file_path.unlink()
+
         return True
 ###############################################################################################################################################
     def get_file(self, file_type: Type[FileType], owner_name: str, file_name: str) -> Optional[FileType]:
@@ -138,6 +144,10 @@ class FileSystem:
             return cast(List[FileType], self._actor_archives.get(owner_name, []))
         elif file_type == StageArchiveFile:
             return cast(List[FileType], self._stage_archives.get(owner_name, []))
+        elif file_type == StatusProfileFile:
+            return cast(List[FileType], [self._status_profile.get(owner_name, None)])
+        elif file_type == StageActorsMapFile:
+            return cast(List[FileType], [self._stage_actors_map])
         else:
             logger.error(f"file type {file_type} not support")
 
@@ -150,18 +160,21 @@ class FileSystem:
         elif file_type == ActorArchiveFile:
             return self.get_file(ActorArchiveFile, owner_name, file_name) is not None
         elif file_type == StageArchiveFile:
-            return self.get_file(StageArchiveFile, owner_name, file_name) is not None 
+            return self.get_file(StageArchiveFile, owner_name, file_name) is not None
+        elif file_type == StatusProfileFile:
+            return owner_name in self._status_profile
+        elif file_type == StageActorsMapFile:
+            return self._stage_actors_map is not None
         else:
             logger.error(f"file type {file_type} not support")
 
         return False
 ###############################################################################################################################################
-    def add_file_2_base_file_dict(self, data: Dict[str, List[BaseFile]], new_file: BaseFile, ignore_repeat: bool) -> bool:
+    def add_file_2_base_file_dict(self, data: Dict[str, List[BaseFile]], new_file: BaseFile) -> bool:
         files = data.setdefault(new_file._owner_name, [])
         for file in files:
             if file._name == new_file._name:
-                if ignore_repeat:
-                    return False
+                return False
         files.append(new_file)
         return True
 ###############################################################################################################################################

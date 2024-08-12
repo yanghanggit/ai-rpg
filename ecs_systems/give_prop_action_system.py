@@ -1,5 +1,5 @@
 from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity #type: ignore
-from my_entitas.extended_context import ExtendedContext
+from rpg_game.rpg_entitas_context import RPGEntitasContext
 from ecs_systems.action_components import (GivePropActionComponent,CheckStatusActionComponent, DeadActionComponent)
 from ecs_systems.components import ActorComponent
 from loguru import logger
@@ -8,7 +8,7 @@ from gameplay_checks.conversation_check import conversation_check, ErrorConversa
 from typing import List, override
 from ecs_systems.stage_director_component import StageDirectorComponent
 from ecs_systems.stage_director_event import IStageDirectorEvent
-from builtin_prompt.cn_builtin_prompt import give_prop_action_prompt
+from ecs_systems.cn_builtin_prompt import give_prop_action_prompt
 
 
 class ActorGivePropEvent(IStageDirectorEvent):
@@ -19,19 +19,19 @@ class ActorGivePropEvent(IStageDirectorEvent):
         self._prop_name: str = prop_name
         self._action_result: bool = action_result
 
-    def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
+    def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
         if actor_name != self._from_who or actor_name != self._to_who:
             return ""
         return give_prop_action_prompt(self._from_who, self._to_who, self._prop_name, self._action_result)
     
-    def to_stage(self, stage_name: str, extended_context: ExtendedContext) -> str:
+    def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
         return ""
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
 class GivePropActionSystem(ReactiveProcessor):
 
-    def __init__(self, context: ExtendedContext):
+    def __init__(self, context: RPGEntitasContext):
         super().__init__(context)
         self._context = context
 ####################################################################################################################################

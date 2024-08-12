@@ -1,12 +1,12 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
 from ecs_systems.action_components import SpeakActionComponent
 from my_agent.agent_action import AgentAction
-from my_entitas.extended_context import ExtendedContext
+from rpg_game.rpg_entitas_context import RPGEntitasContext
 from gameplay_checks.conversation_check import conversation_check, ErrorConversationEnable
 from ecs_systems.stage_director_component import StageDirectorComponent
 from ecs_systems.stage_director_event import IStageDirectorEvent
 from typing import override
-from builtin_prompt.cn_builtin_prompt import speak_action_prompt
+from ecs_systems.cn_builtin_prompt import speak_action_prompt
 
 
 
@@ -20,14 +20,14 @@ class StageOrActorSpeakEvent(IStageDirectorEvent):
         self._target: str = target
         self._message: str = message
 
-    def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
+    def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
         return speak_action_prompt(self._who, self._target, self._message)
     
-    def to_stage(self, stage_name: str, extended_context: ExtendedContext) -> str:
+    def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
         return speak_action_prompt(self._who, self._target, self._message)
 ####################################################################################################################################
 class SpeakActionSystem(ReactiveProcessor):
-    def __init__(self, context: ExtendedContext) -> None:
+    def __init__(self, context: RPGEntitasContext) -> None:
         super().__init__(context)
         self._context = context
 ####################################################################################################################################

@@ -1,11 +1,11 @@
 from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity #type: ignore
-from my_entitas.extended_context import ExtendedContext
+from rpg_game.rpg_entitas_context import RPGEntitasContext
 from ecs_systems.action_components import (CheckStatusActionComponent, DeadActionComponent)
 from ecs_systems.components import SimpleRPGAttrComponent, ActorComponent
 from ecs_systems.stage_director_component import StageDirectorComponent
 from typing import List, override
 from file_system.files_def import PropFile
-from builtin_prompt.cn_builtin_prompt import check_status_action_prompt
+from ecs_systems.cn_builtin_prompt import check_status_action_prompt
 from ecs_systems.stage_director_event import IStageDirectorEvent
 
 ####################################################################################################################################
@@ -13,9 +13,9 @@ from ecs_systems.stage_director_event import IStageDirectorEvent
 #################################################################################################################################### 
 class CheckStatusActionHelper:
 
-    def __init__(self, context: ExtendedContext):
+    def __init__(self, context: RPGEntitasContext):
 
-        self._context: ExtendedContext = context
+        self._context: RPGEntitasContext = context
         self._prop_files_as_weapon_clothes_non_consumable_item: List[PropFile] = []
         self._maxhp: int = 0
         self._hp: int = 0
@@ -65,22 +65,22 @@ class ActorCheckStatusEvent(IStageDirectorEvent):
         self._health: float = health
         self._prop_files_as_special_components: List[PropFile] = special_components
 
-    def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
+    def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
         if actor_name != self._who:
             # 只有自己知道
             return ""
         return check_status_action_prompt(self._who, self._prop_files_as_weapon_clothes_non_consumable_item, self._health, self._prop_files_as_special_components)
     
-    def to_stage(self, stage_name: str, extended_context: ExtendedContext) -> str:
+    def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
         return ""
 ####################################################################################################################################
 ####################################################################################################################################
 #################################################################################################################################### 
 class CheckStatusActionSystem(ReactiveProcessor):
 
-    def __init__(self, context: ExtendedContext):
+    def __init__(self, context: RPGEntitasContext):
         super().__init__(context)
-        self._context: ExtendedContext = context
+        self._context: RPGEntitasContext = context
 ####################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:

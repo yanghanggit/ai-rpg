@@ -1,14 +1,14 @@
 from entitas import Matcher, ReactiveProcessor, GroupEvent, Entity # type: ignore
 from ecs_systems.action_components import AttackActionComponent, DeadActionComponent
 from ecs_systems.components import SimpleRPGAttrComponent, SimpleRPGWeaponComponent, SimpleRPGArmorComponent
-from my_entitas.extended_context import ExtendedContext
+from rpg_game.rpg_entitas_context import RPGEntitasContext
 from my_agent.agent_action import AgentAction
 from loguru import logger
 from ecs_systems.stage_director_component import StageDirectorComponent
 from ecs_systems.stage_director_event import IStageDirectorEvent
 from typing import cast, override
 from gameplay_checks.conversation_check import conversation_check, ErrorConversationEnable
-from builtin_prompt.cn_builtin_prompt import kill_prompt, attack_prompt
+from ecs_systems.cn_builtin_prompt import kill_prompt, attack_prompt
 
 
 
@@ -25,11 +25,11 @@ class StageOrActorKillEvent(IStageDirectorEvent):
         self.attacker: str = attacker
         self.target: str = target
 
-    def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
+    def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
         event = kill_prompt(self.attacker, self.target)
         return event
     
-    def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
+    def to_stage(self, stagename: str, extended_context: RPGEntitasContext) -> str:
         event = kill_prompt(self.attacker, self.target)
         return event
 ####################################################################################################################################
@@ -48,11 +48,11 @@ class StageOrActorAttackEvent(IStageDirectorEvent):
         self.curhp: int = curhp
         self.maxhp: int = maxhp
 
-    def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
+    def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
         event = attack_prompt(self.attacker, self.target, self.damage, self.curhp, self.maxhp)
         return event
     
-    def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
+    def to_stage(self, stagename: str, extended_context: RPGEntitasContext) -> str:
         event = attack_prompt(self.attacker, self.target, self.damage, self.curhp, self.maxhp)
         return event
 ####################################################################################################################################
@@ -65,9 +65,9 @@ class AttackActionSystem(ReactiveProcessor):
     要求：AttackActionComponent 和 SimpleRPGAttrComponent 必须同时存在，否则无法处理。
     """
 
-    def __init__(self, context: ExtendedContext) -> None:
+    def __init__(self, context: RPGEntitasContext) -> None:
         super().__init__(context)
-        self._context: ExtendedContext = context
+        self._context: RPGEntitasContext = context
 ######################################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:

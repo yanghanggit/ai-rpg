@@ -1,11 +1,11 @@
 from overrides import override
 from entitas import Entity, InitializeProcessor, ExecuteProcessor, Matcher # type: ignore
-from my_entitas.extended_context import ExtendedContext
+from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from typing import Dict, cast, Set
 import json
 from ecs_systems.components import AppearanceComponent, BodyComponent, ActorComponent
-from builtin_prompt.cn_builtin_prompt import actors_body_and_clothe_prompt
+from ecs_systems.cn_builtin_prompt import actors_body_and_clothe_prompt
 from file_system.files_def import PropFile
 
 # todo
@@ -15,8 +15,8 @@ class UpdateAppearanceSystem(InitializeProcessor, ExecuteProcessor):
     更新外观信息的系统
     """
 
-    def __init__(self, context: ExtendedContext, system_name: str) -> None:
-        self._context: ExtendedContext = context
+    def __init__(self, context: RPGEntitasContext, system_name: str) -> None:
+        self._context: RPGEntitasContext = context
         self._system_name: str = str(system_name)
         assert self._system_name == "角色外观生成器"
         assert len(self._system_name) > 0

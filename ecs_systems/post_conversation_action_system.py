@@ -2,19 +2,19 @@ from overrides import override
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
 from ecs_systems.action_components import SpeakActionComponent, BroadcastActionComponent, WhisperActionComponent
 from ecs_systems.components import PlayerComponent, ActorComponent
-from my_entitas.extended_context import ExtendedContext
+from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from ecs_systems.stage_director_component import StageDirectorComponent
 from typing import List, Set, Optional, Dict
 from my_agent.lang_serve_agent_system import LangServeAgentSystem
-from builtin_prompt.cn_builtin_prompt import batch_conversation_action_events_in_stage_prompt
+from ecs_systems.cn_builtin_prompt import batch_conversation_action_events_in_stage_prompt
 from my_agent.lang_serve_agent_request_task import LangServeAgentRequestTask, LangServeAgentAsyncRequestTasksGather
 
 # 这个类就是故意打包将对话类事件先进行一次request，如果LLM发现有政策问题就会抛异常，不会将污染的message加入chat history，这样就不可能进入chat_history。
 # 这么做是防止玩家的对话内容包含了非法信息和违反政策的内容。
 ####################################################################################################
 class PostConversationActionSystem(ReactiveProcessor):
-    def __init__(self, context: ExtendedContext) -> None:
+    def __init__(self, context: RPGEntitasContext) -> None:
         super().__init__(context)
         self._context = context
         self._async_execute: bool = True

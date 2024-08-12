@@ -1,11 +1,11 @@
 from typing import override
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
 from ecs_systems.action_components import MindVoiceActionComponent
-from my_entitas.extended_context import ExtendedContext
+from rpg_game.rpg_entitas_context import RPGEntitasContext
 
 ####################################################################################################
 class MindVoiceActionSystem(ReactiveProcessor):
-    def __init__(self, context: ExtendedContext) -> None:
+    def __init__(self, context: RPGEntitasContext) -> None:
         super().__init__(context)
         self._context = context
 ####################################################################################################

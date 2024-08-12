@@ -1,12 +1,12 @@
 from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity #type: ignore
-from my_entitas.extended_context import ExtendedContext
+from rpg_game.rpg_entitas_context import RPGEntitasContext
 from ecs_systems.components import (StageComponent, ActorComponent)
 from ecs_systems.action_components import PerceptionActionComponent, DeadActionComponent
 from loguru import logger
 from typing import List, Dict, override
 from ecs_systems.stage_director_component import StageDirectorComponent
 from ecs_systems.stage_director_event import IStageDirectorEvent
-from builtin_prompt.cn_builtin_prompt import perception_action_prompt
+from ecs_systems.cn_builtin_prompt import perception_action_prompt
 
 ####################################################################################################################################
 ####################################################################################################################################
@@ -17,8 +17,8 @@ class PerceptionActionHelper:
     辅助的类，把常用的行为封装到这里，方便别的地方再调用
     """
 
-    def __init__(self, context: ExtendedContext):
-        self._context: ExtendedContext = context
+    def __init__(self, context: RPGEntitasContext):
+        self._context: RPGEntitasContext = context
         self._props_in_stage: List[str] = []
         self._actors_in_stage: Dict[str, str] = {}
 ###################################################################################################################
@@ -59,12 +59,12 @@ class ActorPerceptionEvent(IStageDirectorEvent):
         self._actors_in_stage: Dict[str, str] = actors_in_stage
         self._props_in_stage: List[str] = props_in_stage
     
-    def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
+    def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
         if actor_name != self._who:
             return "" # 不是自己，不显示
         return perception_action_prompt(self._who, self._current_stage_name, self._actors_in_stage, self._props_in_stage)
     
-    def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
+    def to_stage(self, stagename: str, extended_context: RPGEntitasContext) -> str:
         return "" # 不显示给场景
 ####################################################################################################################################
 ####################################################################################################################################
@@ -75,9 +75,9 @@ class PerceptionActionSystem(ReactiveProcessor):
     处理PerceptionActionComponent行为的系统
     """
 
-    def __init__(self, context: ExtendedContext):
+    def __init__(self, context: RPGEntitasContext):
         super().__init__(context)
-        self._context: ExtendedContext = context
+        self._context: RPGEntitasContext = context
 ###################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:

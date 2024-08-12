@@ -1,6 +1,6 @@
 from overrides import override
 from entitas import InitializeProcessor, ExecuteProcessor, Matcher, Entity #type: ignore
-from my_entitas.extended_context import ExtendedContext
+from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from ecs_systems.components import ( AutoPlanningComponent, StageComponent, ActorComponent, PlayerComponent)
 from enum import Enum
@@ -13,8 +13,8 @@ class PlanningStrategy(Enum):
 
 class PrePlanningSystem(InitializeProcessor, ExecuteProcessor):
 
-    def __init__(self, context: ExtendedContext) -> None:
-        self._context: ExtendedContext = context
+    def __init__(self, context: RPGEntitasContext) -> None:
+        self._context: RPGEntitasContext = context
         self._strategy: PlanningStrategy = PlanningStrategy.STRATEGY_ALL
         self._execute_count: int = 0
 ############################################################################################################

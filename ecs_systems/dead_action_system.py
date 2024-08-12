@@ -2,7 +2,7 @@ from typing import override
 from entitas import Matcher, ExecuteProcessor, Entity #type: ignore
 from ecs_systems.components import (PlayerComponent, DestroyComponent)
 from ecs_systems.action_components import DeadActionComponent
-from my_entitas.extended_context import ExtendedContext
+from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from my_agent.agent_action import AgentAction
 from rpg_game.rpg_game import RPGGame
@@ -11,8 +11,8 @@ from typing import Set
 class DeadActionSystem(ExecuteProcessor):
     
 ########################################################################################################################################################################
-    def __init__(self, context: ExtendedContext, rpggame: RPGGame) -> None:
-        self._context: ExtendedContext = context
+    def __init__(self, context: RPGEntitasContext, rpggame: RPGGame) -> None:
+        self._context: RPGEntitasContext = context
         self._rpggame: RPGGame = rpggame
 ########################################################################################################################################################################
     @override

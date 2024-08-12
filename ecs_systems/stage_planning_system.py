@@ -4,12 +4,12 @@ from ecs_systems.components import (StageComponent, AutoPlanningComponent, Actor
 from ecs_systems.action_components import STAGE_AVAILABLE_ACTIONS_REGISTER, STAGE_CONVERSATION_ACTIONS_REGISTER
 from my_agent.agent_plan import AgentPlan
 from my_agent.agent_action import AgentAction
-from my_entitas.extended_context import ExtendedContext
+from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger 
 from typing import Dict, Set, List
 from gameplay_checks.planning_check import check_component_register
 from file_system.files_def import PropFile
-from builtin_prompt.cn_builtin_prompt import stage_plan_prompt
+from ecs_systems.cn_builtin_prompt import stage_plan_prompt
 from my_agent.lang_serve_agent_request_task import LangServeAgentRequestTask, LangServeAgentAsyncRequestTasksGather
 
 #######################################################################################################################################
@@ -19,7 +19,7 @@ class StagePlanningSystem(ExecuteProcessor):
     场景计划系统
     """
 
-    def __init__(self, context: ExtendedContext) -> None:
+    def __init__(self, context: RPGEntitasContext) -> None:
         self._context = context
         self._request_tasks: Dict[str, LangServeAgentRequestTask] = {}
 #######################################################################################################################################

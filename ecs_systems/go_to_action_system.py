@@ -5,22 +5,22 @@ from ecs_systems.action_components import (
     PerceptionActionComponent)
 from ecs_systems.components import ActorComponent
 from my_agent.agent_action import AgentAction
-from my_entitas.extended_context import ExtendedContext
+from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from ecs_systems.stage_director_component import StageDirectorComponent
 from typing import cast, override, List, Optional
 from ecs_systems.stage_director_event import IStageDirectorEvent
 from ecs_systems.stage_director_system import director_events_to_actor
-from builtin_prompt.cn_builtin_prompt import ( leave_stage_prompt,
+from ecs_systems.cn_builtin_prompt import ( leave_stage_prompt,
                                           enter_stage_prompt1,
                                           enter_stage_prompt2)
 
 ###############################################################################################################################################
 class GoToActionHelper:
 
-    def __init__(self, context: ExtendedContext, who: Entity, target_stage_name: str) -> None:
+    def __init__(self, context: RPGEntitasContext, who: Entity, target_stage_name: str) -> None:
 
-        self._context: ExtendedContext = context
+        self._context: RPGEntitasContext = context
         self._who: Entity = who
         self._current_stage_name: str = cast(ActorComponent, who.get(ActorComponent)).current_stage
         self._current_stage_entity: Optional[Entity]  = self._context.get_stage_entity(self._current_stage_name)
@@ -39,10 +39,10 @@ class ActorLeaveStageEvent(IStageDirectorEvent):
         self._current_stage_name: str = current_stage_name
         self._goto_stage_name: str = goto_stage_name
 
-    def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
+    def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
         return leave_stage_prompt(self._actor_name, self._current_stage_name, self._goto_stage_name)
     
-    def to_stage(self, stage_name: str, extended_context: ExtendedContext) -> str:
+    def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
         return leave_stage_prompt(self._actor_name, self._current_stage_name, self._goto_stage_name)
 ###############################################################################################################################################
 ###############################################################################################################################################
@@ -55,7 +55,7 @@ class ActorEnterStageEvent(IStageDirectorEvent):
         self._stage_name: str = stage_name
         self._last_stage_name: str = last_stage_name
 
-    def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
+    def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
         if actor_name != self._actor_name:
             # 目标场景内的一切听到的是这个:"xxx进入了场景"
             return enter_stage_prompt1(self._actor_name, self._stage_name)
@@ -63,14 +63,14 @@ class ActorEnterStageEvent(IStageDirectorEvent):
         #通知我自己，我从哪里去往了哪里。这样prompt更加清晰一些
         return enter_stage_prompt2(self._actor_name, self._stage_name, self._last_stage_name)
     
-    def to_stage(self, stage_name: str, extended_context: ExtendedContext) -> str:
+    def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
         return enter_stage_prompt1(self._actor_name, self._stage_name)    
 ###############################################################################################################################################
 ###############################################################################################################################################
 ###############################################################################################################################################
 class GoToActionSystem(ReactiveProcessor):
 
-    def __init__(self, context: ExtendedContext) -> None:
+    def __init__(self, context: RPGEntitasContext) -> None:
         super().__init__(context)
         self._context = context
 ###############################################################################################################################################

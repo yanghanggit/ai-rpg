@@ -2,14 +2,14 @@
 from typing import override, Set
 from entitas import Matcher, ExecuteProcessor, Group, Entity #type: ignore
 from ecs_systems.components import DestroyComponent
-from my_entitas.extended_context import ExtendedContext
+from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
    
 #### 这个类不允许再动了，基本固定了。
 class DestroySystem(ExecuteProcessor):
     
-    def __init__(self, context: ExtendedContext) -> None:
-        self._context: ExtendedContext = context
+    def __init__(self, context: RPGEntitasContext) -> None:
+        self._context: RPGEntitasContext = context
 ####################################################################################################################################
     @override
     def execute(self) -> None:

@@ -2,7 +2,9 @@ from overrides import override
 import json
 from typing import Dict, Any, List
 from abc import ABC, abstractmethod
-from my_data.data_model import PropModel
+from build_game.data_model import PropModel
+from pathlib import Path
+from loguru import logger
 
 ############################################################################################################
 ############################################################################################################
@@ -26,6 +28,14 @@ class BaseFile(ABC):
     @abstractmethod
     def serialization(self) -> str:
         pass
+############################################################################################################
+    def write(self, write_path: Path) -> int:
+        try:
+            write_content = self.serialization() 
+            return write_path.write_text(write_content, encoding = "utf-8")
+        except Exception as e:
+            logger.error(f"{self._name}, {self._owner_name} 写文件失败: {write_path}")
+        return 0
 ############################################################################################################
 ############################################################################################################
 ############################################################################################################

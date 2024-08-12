@@ -1,15 +1,15 @@
 from typing import override
 from entitas import ExecuteProcessor #type: ignore
-from my_entitas.extended_context import ExtendedContext
+from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from player.player_proxy import (PlayerProxy, get_player_proxy)
-from my_entitas.extended_context import ExtendedContext
+from rpg_game.rpg_entitas_context import RPGEntitasContext
 from rpg_game.rpg_game import RPGGame 
 from rpg_game.terminal_rpg_game import TerminalRPGGame
 
 class TerminalPlayerInterruptAndWaitSystem(ExecuteProcessor):
-    def __init__(self, context: ExtendedContext, rpggame: RPGGame) -> None:
-        self._context: ExtendedContext = context
+    def __init__(self, context: RPGEntitasContext, rpggame: RPGGame) -> None:
+        self._context: RPGEntitasContext = context
         self._rpggame: RPGGame = rpggame
 ############################################################################################################
     @override
@@ -18,7 +18,7 @@ class TerminalPlayerInterruptAndWaitSystem(ExecuteProcessor):
             logger.debug("不是终端模式，不需要中断等待")
             return
 
-        single_player = self._rpggame.single_terminal_player()
+        single_player = self._rpggame.single_player()
         player_proxy = get_player_proxy(single_player)
         player_entity = self._context.get_player_entity(single_player)
         if player_entity is None or player_proxy is None:

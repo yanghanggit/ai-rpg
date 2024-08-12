@@ -1,6 +1,6 @@
 from entitas import Matcher, ExecuteProcessor,Entity #type: ignore
 from ecs_systems.components import SimpleRPGAttrComponent, SimpleRPGWeaponComponent, SimpleRPGArmorComponent, StageComponent
-from my_entitas.extended_context import ExtendedContext
+from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import Set, Optional, override
 from file_system.files_def import PropFile
 
@@ -10,8 +10,8 @@ from file_system.files_def import PropFile
 # 按理讲，应该有ChangeEquipmentAction来做更换装备。因为如果身可能有多个武器与防具，但一般只能使用一个。现在是遇到第一个就break了
 class SimpleRPGPreFightSystem(ExecuteProcessor):
     
-    def __init__(self, context: ExtendedContext) -> None:
-        self._context: ExtendedContext = context
+    def __init__(self, context: RPGEntitasContext) -> None:
+        self._context: RPGEntitasContext = context
 ######################################################################################################################################################
     @override
     def execute(self) -> None:

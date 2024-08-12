@@ -2,8 +2,8 @@ from overrides import override
 from entitas import Entity, Matcher, InitializeProcessor, ExecuteProcessor # type: ignore
 from ecs_systems.components import WorldComponent, StageComponent, ActorComponent, PlayerComponent
 from ecs_systems.action_components import PerceptionActionComponent, CheckStatusActionComponent
-from builtin_prompt.cn_builtin_prompt import (kick_off_memory_actor_prompt, kick_off_memory_stage_prompt, kick_off_world_system_prompt)
-from my_entitas.extended_context import ExtendedContext
+from ecs_systems.cn_builtin_prompt import (kick_off_memory_actor_prompt, kick_off_memory_stage_prompt, kick_off_world_system_prompt)
+from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from typing import Dict, Set
 from my_agent.agent_action import AgentAction
@@ -11,8 +11,8 @@ from my_agent.lang_serve_agent_request_task import LangServeAgentRequestTask, La
 
 ######################################################################################################################################################
 class AgentsKickOffSystem(InitializeProcessor, ExecuteProcessor):
-    def __init__(self, context: ExtendedContext) -> None:
-        self._context: ExtendedContext = context
+    def __init__(self, context: RPGEntitasContext) -> None:
+        self._context: RPGEntitasContext = context
         self._request_tasks: Dict[str, LangServeAgentRequestTask] = {}
         self._once_add_perception_and_check_status: bool = False
 ######################################################################################################################################################

@@ -6,7 +6,7 @@ from ecs_systems.components import ( WorldComponent, StageComponent, ExitOfPorta
     SimpleRPGAttrComponent, AppearanceComponent, StageExitCondStatusComponent, StageExitCondCheckActorStatusComponent,
     StageExitCondCheckActorPropsComponent, StageEntryCondStatusComponent, StageEntryCondCheckActorStatusComponent,
     StageEntryCondCheckActorPropsComponent, BodyComponent, GUIDComponent)
-from my_entitas.extended_context import ExtendedContext
+from rpg_game.rpg_entitas_context import RPGEntitasContext
 from build_game.game_builder import GameBuilder
 from entitas.entity import Entity
 from ecs_systems.stage_director_component import StageDirectorComponent
@@ -14,10 +14,10 @@ from file_system.files_def import PropFile
 import shutil
 from rpg_game.base_game import BaseGame
 from file_system.helper import add_actor_archive_files
-from my_entitas.extended_processors import ExtendedProcessors
-from my_data.data_model import ActorProxyModel, StageProxyModel, ActorModel, StageModel, WorldSystemModel
-from extended_systems.guid_generator import _GUIDGenerator_
-from rpg_game.rpg_game_processors import create_rpg_processors
+from rpg_game.rpg_entitas_processors import RPGEntitasProcessors
+from build_game.data_model import ActorProxyModel, StageProxyModel, ActorModel, StageModel, WorldSystemModel, WorldSystemProxyModel
+
+
 
 class RPGGame(BaseGame):
 
@@ -25,18 +25,19 @@ class RPGGame(BaseGame):
     RPG 的测试类游戏
     """
 
-    def __init__(self, name: str, context: ExtendedContext) -> None:
+    def __init__(self, name: str, context: RPGEntitasContext) -> None:
+        # 必须实现父
         super().__init__(name)
         
         ## 尽量不要再加东西了，Game就只管上下文，创建世界的数据，和Processors。其中上下文可以做运行中的全局数据管理者
-        self._extended_context: ExtendedContext = context
+        self._entitas_context: RPGEntitasContext = context
         self._game_builder: Optional[GameBuilder] = None
-        self._processors: ExtendedProcessors = create_rpg_processors(self, context)
+        self._processors: RPGEntitasProcessors = RPGEntitasProcessors.create(self, context)  #create_rpg_processors(self, context)
         self._player_names: List[str] = []
 ###############################################################################################################################################
     def build(self, game_builder: GameBuilder) -> 'RPGGame':
 
-        context = self._extended_context
+        context = self._entitas_context
         
         # 第0步，yh 目前用于测试!!!!!!!，直接删worlddata.name的文件夹，保证每次都是新的 删除runtime_dir_for_world的文件夹
         if game_builder._runtime_dir.exists():
@@ -96,7 +97,7 @@ class RPGGame(BaseGame):
             self._processors.activate_reactive_processors()
             self._processors.initialize()
         
-        await self._processors.async_execute()
+        await self._processors.a_execute()
         self._processors.cleanup()
 ###############################################################################################################################################
     @override
@@ -117,21 +118,21 @@ class RPGGame(BaseGame):
             world_system_model = game_builder._data_base_system.get_world_system(world_system_proxy.name)
             assert world_system_model is not None
             
-            world_system_entity = self.create_world_system_entity(world_system_model, self._extended_context) 
+            world_system_entity = self.create_world_system_entity(world_system_proxy, world_system_model, self._entitas_context) 
             assert world_system_entity is not None
             
             ret.append(world_system_entity)
         
         return ret
 ###############################################################################################################################################
-    def create_world_system_entity(self, world_system_model: WorldSystemModel, context: ExtendedContext) -> Entity:
+    def create_world_system_entity(self, world_system_proxy: WorldSystemProxyModel, world_system_model: WorldSystemModel, context: RPGEntitasContext) -> Entity:
 
         # 创建实体
         world_system_entity = context.create_entity()
         assert world_system_entity is not None
 
         #必要组件
-        world_system_entity.add(GUIDComponent, _GUIDGenerator_.generate())
+        world_system_entity.add(GUIDComponent, context._guid_generator.generate())
         world_system_entity.add(WorldComponent, world_system_model.name)
         
         #添加扩展子系统的功能
@@ -173,20 +174,20 @@ class RPGGame(BaseGame):
             actor_model = game_builder._data_base_system.get_actor(actor_proxy.name)
             assert actor_model is not None
         
-            entity = self.create_actor_entity(actor_proxy, actor_model, self._extended_context)  #context.create_entity()
+            entity = self.create_actor_entity(actor_proxy, actor_model, self._entitas_context)  #context.create_entity()
             assert entity is not None
         
             ret.append(entity)
         
         return ret
 ###############################################################################################################################################
-    def create_actor_entity(self, actor_proxy: ActorProxyModel, actor_model: ActorModel, context: ExtendedContext) -> Entity:
+    def create_actor_entity(self, actor_proxy: ActorProxyModel, actor_model: ActorModel, context: RPGEntitasContext) -> Entity:
 
         # 创建实体
         actor_entity = context.create_entity()
 
         # 必要组件
-        actor_entity.add(GUIDComponent, _GUIDGenerator_.generate())
+        actor_entity.add(GUIDComponent, context._guid_generator.generate())
 
         assert actor_proxy.name == actor_model.name
         actor_entity.add(ActorComponent, actor_model.name, "")
@@ -235,14 +236,14 @@ class RPGGame(BaseGame):
             stage_model = game_builder._data_base_system.get_stage(stage_proxy.name)
             assert stage_model is not None
 
-            stage_entity = self.create_stage_entity(stage_proxy, stage_model, self._extended_context)
+            stage_entity = self.create_stage_entity(stage_proxy, stage_model, self._entitas_context)
             assert stage_entity is not None
 
             ret.append(stage_entity)
     
         return ret
 ###############################################################################################################################################
-    def create_stage_entity(self, stage_proxy: StageProxyModel, stage_model: StageModel, context: ExtendedContext) -> Entity:
+    def create_stage_entity(self, stage_proxy: StageProxyModel, stage_model: StageModel, context: RPGEntitasContext) -> Entity:
 
         assert stage_proxy is not None
         assert stage_model is not None
@@ -253,7 +254,7 @@ class RPGGame(BaseGame):
         stage_entity = context.create_entity()
 
         #必要组件
-        stage_entity.add(GUIDComponent, _GUIDGenerator_.generate())
+        stage_entity.add(GUIDComponent, context._guid_generator.generate())
         stage_entity.add(StageComponent, stage_model.name)
         stage_entity.add(StageDirectorComponent, stage_model.name)
 
@@ -327,34 +328,34 @@ class RPGGame(BaseGame):
     def add_code_name_component_to_world_and_actors(self) -> None:
 
         #
-        world_entities = self._extended_context.get_group(Matcher(WorldComponent)).entities
+        world_entities = self._entitas_context.get_group(Matcher(WorldComponent)).entities
         for world_entity in world_entities:
             world_comp = world_entity.get(WorldComponent)
-            codecomp_class = self._extended_context._codename_component_system.get_component_class_by_name(world_comp.name)
+            codecomp_class = self._entitas_context._codename_component_system.get_component_class_by_name(world_comp.name)
             if codecomp_class is not None:
                 world_entity.add(codecomp_class, world_comp.name)
 
         #
-        actor_entities = self._extended_context.get_group(Matcher(ActorComponent)).entities
+        actor_entities = self._entitas_context.get_group(Matcher(ActorComponent)).entities
         for actor_entity in actor_entities:
             actor_comp = actor_entity.get(ActorComponent)
-            codecomp_class = self._extended_context._codename_component_system.get_component_class_by_name(actor_comp.name)
+            codecomp_class = self._entitas_context._codename_component_system.get_component_class_by_name(actor_comp.name)
             if codecomp_class is not None:
                 actor_entity.add(codecomp_class, actor_comp.name)
 ###############################################################################################################################################
     def add_code_name_component_to_stages(self) -> None:
 
         ## 重新设置actor和stage的关系
-        actor_entities = self._extended_context.get_group(Matcher(ActorComponent)).entities
+        actor_entities = self._entitas_context.get_group(Matcher(ActorComponent)).entities
         for actor_entity in actor_entities:
             actor_comp = actor_entity.get(ActorComponent)
-            self._extended_context.change_stage_tag_component(actor_entity, "", actor_comp.current_stage)
+            self._entitas_context.change_stage_tag_component(actor_entity, "", actor_comp.current_stage)
 
         ## 重新设置stage和stage的关系
-        stage_entities = self._extended_context.get_group(Matcher(StageComponent)).entities
+        stage_entities = self._entitas_context.get_group(Matcher(StageComponent)).entities
         for stage_entity in stage_entities:
             stage_comp = stage_entity.get(StageComponent)
-            codecomp_class = self._extended_context._codename_component_system.get_component_class_by_name(stage_comp.name)
+            codecomp_class = self._entitas_context._codename_component_system.get_component_class_by_name(stage_comp.name)
             if codecomp_class is not None:
                 stage_entity.add(codecomp_class, stage_comp.name)
 ###############################################################################################################################################
@@ -373,7 +374,7 @@ class RPGGame(BaseGame):
         if name not in self._player_names:
             self._player_names.append(name)
 ###############################################################################################################################################
-    def single_terminal_player(self) -> str:
+    def single_player(self) -> str:
         assert len(self._player_names) == 1
         if len(self._player_names) == 0:
             return ""
@@ -385,5 +386,5 @@ class RPGGame(BaseGame):
 ###############################################################################################################################################
     @property
     def game_rounds(self) -> int:
-        return self._extended_context._execute_count
+        return self._entitas_context._execute_count
 ###############################################################################################################################################

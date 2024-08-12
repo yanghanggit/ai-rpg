@@ -1,6 +1,6 @@
 from typing import Optional
 from entitas.entity import Entity
-from my_entitas.extended_context import ExtendedContext
+from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import Optional
 from enum import Enum
 
@@ -12,7 +12,7 @@ class ErrorUsePropEnable(Enum):
     NOT_IN_THE_SAME_STAGE = 3
 
 # 检查是否可以使用道具
-def use_prop_check(context: ExtendedContext, srcentity: Entity, targetname: str) -> ErrorUsePropEnable:
+def use_prop_check(context: RPGEntitasContext, srcentity: Entity, targetname: str) -> ErrorUsePropEnable:
 
     src_stage = context.safe_get_stage_entity(srcentity)
     if src_stage is None:

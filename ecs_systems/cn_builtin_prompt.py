@@ -3,7 +3,7 @@ from file_system.files_def import PropFile
 from ecs_systems.action_components import MindVoiceActionComponent, EnviroNarrateActionComponent, \
     TagActionComponent, PerceptionActionComponent, CheckStatusActionComponent
 import json
-from builtin_prompt.cn_constant_prompt import _CNConstantPrompt_
+from ecs_systems.cn_constant_prompt import _CNConstantPrompt_
 
 
 ###############################################################################################################################################

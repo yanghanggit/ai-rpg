@@ -1,16 +1,16 @@
 from typing import override
 from entitas import Entity, Matcher, ExecuteProcessor #type: ignore
 from ecs_systems.components import StageComponent, ActorComponent, PlayerComponent
-from my_entitas.extended_context import ExtendedContext
+from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from ecs_systems.stage_director_component import StageDirectorComponent
 from player.player_proxy import get_player_proxy
-from builtin_prompt.cn_builtin_prompt import stage_director_begin_prompt, stage_director_end_prompt, stage_director_event_wrap_prompt
+from ecs_systems.cn_builtin_prompt import stage_director_begin_prompt, stage_director_end_prompt, stage_director_event_wrap_prompt
 
 class StageDirectorSystem(ExecuteProcessor):
 
-    def __init__(self, context: ExtendedContext) -> None:
-        self._context: ExtendedContext = context
+    def __init__(self, context: RPGEntitasContext) -> None:
+        self._context: RPGEntitasContext = context
 #################################################################################################################################################################
     @override
     def execute(self) -> None:
@@ -49,7 +49,7 @@ class StageDirectorSystem(ExecuteProcessor):
 #################################################################################################################################################################
 #################################################################################################################################################################
 #################################################################################################################################################################
-def director_events_to_actor(context: ExtendedContext, actor_entity: Entity) -> None:
+def director_events_to_actor(context: RPGEntitasContext, actor_entity: Entity) -> None:
     stage_entity = context.safe_get_stage_entity(actor_entity)
     if stage_entity is None:
         return

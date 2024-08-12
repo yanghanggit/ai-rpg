@@ -2,7 +2,7 @@ from loguru import logger
 import datetime
 from player.player_proxy import create_player_proxy
 from player.player_command import (PlayerLogin)
-from rpg_game.create_rpg_game_funcs import load_then_create_rpg_game, test_save, RPGGameType
+from rpg_game.create_rpg_game_util import create_rpg_game, test_save, RPGGameClientType
 
 async def main(input_actor_name_as_default: str) -> None:
 
@@ -14,7 +14,7 @@ async def main(input_actor_name_as_default: str) -> None:
     if game_name == "":
         game_name = "World2"
 
-    rpg_game = load_then_create_rpg_game(game_name, "qwe", RPGGameType.TERMINAL)
+    rpg_game = create_rpg_game(game_name, "qwe", RPGGameClientType.TERMINAL)
     if rpg_game is None:
         logger.error("create_rpg_game 失败。")
         return
@@ -23,7 +23,7 @@ async def main(input_actor_name_as_default: str) -> None:
     if final_player_actor_name == "":
         final_player_actor_name = input_actor_name_as_default 
 
-    player_actor = rpg_game._extended_context.get_actor_entity(final_player_actor_name)
+    player_actor = rpg_game._entitas_context.get_actor_entity(final_player_actor_name)
     if player_actor is None:
         logger.error(f"找不到玩家角色，请检查构建数据:{final_player_actor_name}")
         return

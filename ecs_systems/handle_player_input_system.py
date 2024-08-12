@@ -1,6 +1,6 @@
 from typing import override
 from entitas import ExecuteProcessor #type: ignore
-from my_entitas.extended_context import ExtendedContext
+from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from rpg_game.rpg_game import RPGGame 
 from player.player_proxy import PlayerProxy, get_player_proxy
@@ -17,19 +17,19 @@ from player.player_command import (
                           PlayerGiveProp, 
                           PlayerPerception,
                           PlayerCheckStatus)
-from my_entitas.extended_context import ExtendedContext
+from rpg_game.rpg_entitas_context import RPGEntitasContext
 from rpg_game.terminal_rpg_game import TerminalRPGGame
 from rpg_game.web_server_multi_players_rpg_game import WebServerMultiplayersRPGGame
 
 ############################################################################################################
-def splitcommand(input_val: str, split_str: str)-> str:
+def split_command(input_val: str, split_str: str)-> str:
     if split_str in input_val:
         return input_val.split(split_str)[1].strip()
     return input_val
 ############################################################################################################
 class HandlePlayerInputSystem(ExecuteProcessor):
-    def __init__(self, context: ExtendedContext, rpggame: RPGGame) -> None:
-        self._context: ExtendedContext = context
+    def __init__(self, context: RPGEntitasContext, rpggame: RPGGame) -> None:
+        self._context: RPGEntitasContext = context
         self._rpggame: RPGGame = rpggame
 ############################################################################################################
     @override
@@ -72,32 +72,32 @@ class HandlePlayerInputSystem(ExecuteProcessor):
         
         elif "/attack" in usrinput:
             command = "/attack"
-            targetname = splitcommand(usrinput, command)           
+            targetname = split_command(usrinput, command)           
             PlayerAttack(command, rpggame, playerproxy, targetname).execute()
                         
         elif "/goto" in usrinput:
             command = "/goto"
-            stagename = splitcommand(usrinput, command)
+            stagename = split_command(usrinput, command)
             PlayerGoTo(command, rpggame, playerproxy, stagename).execute()
   
         elif "/broadcast" in usrinput:
             command = "/broadcast"
-            content = splitcommand(usrinput, command)
+            content = split_command(usrinput, command)
             PlayerBroadcast(command, rpggame, playerproxy, content).execute()
             
         elif "/speak" in usrinput:
             command = "/speak"
-            content = splitcommand(usrinput, command)
+            content = split_command(usrinput, command)
             PlayerSpeak(command, rpggame, playerproxy, content).execute()
 
         elif "/whisper" in usrinput:
             command = "/whisper"
-            content = splitcommand(usrinput, command)
+            content = split_command(usrinput, command)
             PlayerWhisper(command, rpggame,playerproxy, content).execute()
 
         elif "/searchprop" in usrinput:
             command = "/searchprop"
-            propname = splitcommand(usrinput, command)
+            propname = split_command(usrinput, command)
             PlayerSearchProp(command, rpggame, playerproxy, propname).execute()
 
         elif "/portalstep" in usrinput:
@@ -106,12 +106,12 @@ class HandlePlayerInputSystem(ExecuteProcessor):
 
         elif "/stealprop" in usrinput:
             command = "/stealprop"
-            propname = splitcommand(usrinput, command)
+            propname = split_command(usrinput, command)
             PlayerSteal(command, rpggame, playerproxy, propname).execute()
 
         elif "/giveprop" in usrinput:
             command = "/giveprop"
-            propname = splitcommand(usrinput, command)
+            propname = split_command(usrinput, command)
             PlayerGiveProp(command, rpggame, playerproxy, propname).execute()
 
         elif "/perception" in usrinput:
@@ -128,7 +128,7 @@ class HandlePlayerInputSystem(ExecuteProcessor):
         
         elif "/useprop" in usrinput:
             command = "/useprop"
-            content = splitcommand(usrinput, command)
+            content = split_command(usrinput, command)
             PlayerUseProp(command, rpggame, playerproxy, content).execute()
 
         return True

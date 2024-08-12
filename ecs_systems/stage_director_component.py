@@ -1,10 +1,10 @@
 from entitas import Entity # type: ignore
-from my_entitas.extended_context import ExtendedContext
+from rpg_game.rpg_entitas_context import RPGEntitasContext
 from ecs_systems.components import PlayerComponent, PlayerIsWebClientComponent, PlayerIsTerminalClientComponent
 from typing import List, Any
 from collections import namedtuple
 from ecs_systems.stage_director_event import IStageDirectorEvent
-from builtin_prompt.cn_builtin_prompt import replace_mentions_of_your_name_with_you_prompt
+from ecs_systems.cn_builtin_prompt import replace_mentions_of_your_name_with_you_prompt
 
 ##扩展型组件，用于处理导演系统的事件
 ##########################################################################################################################
@@ -12,7 +12,7 @@ StageDirectorComponentPrototype = namedtuple('StageDirectorComponentPrototype', 
 class StageDirectorComponent(StageDirectorComponentPrototype):
 
     @staticmethod
-    def add_event_to_stage_director(context: ExtendedContext, entity: Entity, direct_event: IStageDirectorEvent) -> None:
+    def add_event_to_stage_director(context: RPGEntitasContext, entity: Entity, direct_event: IStageDirectorEvent) -> None:
         stage_entity = context.safe_get_stage_entity(entity)
         if stage_entity is None or not stage_entity.has(StageDirectorComponent):
             return
@@ -27,7 +27,7 @@ class StageDirectorComponent(StageDirectorComponentPrototype):
         assert not event in self._events
         self._events.append(event)
 ##########################################################################################################################
-    def to_actor(self, target_actor_name: str, extended_context: ExtendedContext) -> List[str]:
+    def to_actor(self, target_actor_name: str, extended_context: RPGEntitasContext) -> List[str]:
         ret: List[str] = []
         for event in self._events:
             event_content = event.to_actor(target_actor_name, extended_context)
@@ -36,7 +36,7 @@ class StageDirectorComponent(StageDirectorComponentPrototype):
                 ret.append(event_content_replace_mentions_of_your_name)
         return ret
 ##########################################################################################################################
-    def to_stage(self, target_stage_name: str, extended_context: ExtendedContext) -> List[str]:
+    def to_stage(self, target_stage_name: str, extended_context: RPGEntitasContext) -> List[str]:
         ret: List[str] = []
         for event in self._events:
             event_content = event.to_stage(target_stage_name, extended_context)
@@ -47,7 +47,7 @@ class StageDirectorComponent(StageDirectorComponentPrototype):
     def clear(self) -> None:
         self._events.clear()
 ##########################################################################################################################
-    def to_player(self, target_actor_name: str, extended_context: ExtendedContext) -> List[str]:
+    def to_player(self, target_actor_name: str, extended_context: RPGEntitasContext) -> List[str]:
         # 哭，循环引用，临时就这么写吧, 这些不用客户端显示
         from ecs_systems.whisper_action_system import StageOrActorWhisperEvent
         from ecs_systems.speak_action_system import StageOrActorSpeakEvent
@@ -78,7 +78,7 @@ class StageDirectorComponent(StageDirectorComponentPrototype):
 
         return ret
 ##########################################################################################################################
-    def is_player_web_client(self, actor_name: str, extended_context: ExtendedContext) -> bool:
+    def is_player_web_client(self, actor_name: str, extended_context: RPGEntitasContext) -> bool:
         entity = extended_context.get_actor_entity(actor_name)
         if entity is None or not entity.has(PlayerComponent):
             return False

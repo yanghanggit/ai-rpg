@@ -1,13 +1,13 @@
 from entitas import ExecuteProcessor, Matcher, Entity #type: ignore
-from my_entitas.extended_context import ExtendedContext
+from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from ecs_systems.components import (ActorComponent, StageComponent)
 from typing import Set, override, Dict
-from builtin_prompt.cn_constant_prompt import _CNConstantPrompt_
+from ecs_systems.cn_constant_prompt import _CNConstantPrompt_
 
 class CompressChatHistorySystem(ExecuteProcessor):
-    def __init__(self, context: ExtendedContext) -> None:
-        self._context: ExtendedContext = context
+    def __init__(self, context: RPGEntitasContext) -> None:
+        self._context: RPGEntitasContext = context
 ############################################################################################################
     @override
     def execute(self) -> None:

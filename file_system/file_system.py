@@ -32,77 +32,56 @@ class FileSystem:
 ################################################################################################################
 ################################################################################################################
 ################################################################################################################
-    def prop_file_path(self, ownersname: str, filename: str) -> Path:
+    def prop_file_path(self, owner_name: str, file_name: str) -> Path:
         assert self._runtime_dir is not None
-        dir = self._runtime_dir / f"{ownersname}/props"
-        dir.mkdir(parents=True, exist_ok=True)
-        return dir / f"{filename}.json"
+        dir = self._runtime_dir / f"{owner_name}/props"
+        dir.mkdir(parents = True, exist_ok = True)
+        return dir / f"{file_name}.json"
 ################################################################################################################
     ## 写一个道具的文件
     def write_prop_file(self, prop_file: PropFile) -> int:
-
-        write_content = prop_file.serialization()
-        
-        assert write_content is not None
-        assert len(write_content) > 0
-        assert prop_file._owner_name is not None
-        assert prop_file._name is not None
-        assert self._runtime_dir is not None
-        
         prop_file_path = self.prop_file_path(prop_file._owner_name, prop_file._name)
-        assert prop_file_path is not None
-
-        try:
-
-            result = prop_file_path.write_text(write_content, encoding = "utf-8")
-            assert result > 0
-            return result
-        
-        except Exception as e:
-            logger.error(f"写入文件失败: {prop_file_path}, e = {e}")
-
-        return 0
+        return prop_file.write(prop_file_path)
 ################################################################################################################
     ## 添加一个道具文件
-    def add_prop_file(self, propfile: PropFile, write: bool = True) -> None:
-        self._prop_files.setdefault(propfile._owner_name, []).append(propfile)
-        if write:
-            self.write_prop_file(propfile)
+    def add_prop_file(self, prop_file: PropFile, need_write: bool = True) -> None:
+        self._prop_files.setdefault(prop_file._owner_name, []).append(prop_file)
+        if need_write:
+            self.write_prop_file(prop_file)
 ################################################################################################################
-    def get_prop_files(self, ownersname: str) -> List[PropFile]:
-        return self._prop_files.get(ownersname, [])
+    def get_prop_files(self, owner_name: str) -> List[PropFile]:
+        return self._prop_files.get(owner_name, [])
 ################################################################################################################
-    def get_prop_file(self, ownersname: str, propname: str) -> Optional[PropFile]:
-        propfiles = self.get_prop_files(ownersname)
-        for file in propfiles:
-            if file._name == propname:
+    def get_prop_file(self, owner_name: str, prop_name: str) -> Optional[PropFile]:
+        prop_files = self.get_prop_files(owner_name)
+        for file in prop_files:
+            if file._name == prop_name:
                 return file
         return None
 ################################################################################################################
-    def has_prop_file(self, ownersname: str, propname: str) -> bool:
-        return self.get_prop_file(ownersname, propname) is not None
+    def has_prop_file(self, owner_name: str, prop_name: str) -> bool:
+        return self.get_prop_file(owner_name, prop_name) is not None
 ################################################################################################################
-    def give_prop_file(self, from_owner: str, to_owner: str, propname: str) -> None:
-        find_owners_file = self.get_prop_file(from_owner, propname)
+    def give_prop_file(self, from_owner: str, to_owner: str, prop_name: str) -> None:
+        find_owners_file = self.get_prop_file(from_owner, prop_name)
         if find_owners_file is None:
-            logger.error(f"{from_owner}没有{propname}这个道具。")
+            logger.error(f"{from_owner}没有{prop_name}这个道具。")
             return
         # 文件得从管理数据结构中移除掉
         self._prop_files[from_owner].remove(find_owners_file)
         # 文件得从文件系统中删除掉
-        self.prop_file_path(from_owner, propname).unlink()
-
+        self.prop_file_path(from_owner, prop_name).unlink()
         # 文件重新写入
-        self.add_prop_file(PropFile(propname, to_owner, find_owners_file._prop_model, find_owners_file._count))
+        self.add_prop_file(PropFile(prop_name, to_owner, find_owners_file._prop_model, find_owners_file._count))
 ################################################################################################################
 ################################################################################################################
 ################################################################################################################
 ################################################################################################################
-    def actor_archive_path(self, ownersname: str, filename: str) -> Path:
+    def actor_archive_path(self, owner_name: str, file_name: str) -> Path:
         assert self._runtime_dir is not None
-        dir = self._runtime_dir / f"{ownersname}/actors_archive"
-        dir.mkdir(parents=True, exist_ok=True)
-        return dir / f"{filename}.json"
+        dir = self._runtime_dir / f"{owner_name}/actors_archive"
+        dir.mkdir(parents = True, exist_ok = True)
+        return dir / f"{file_name}.json"
 ################################################################################################################
     ## 添加一个你知道的Actor
     def add_actor_archive(self, actor_archive: ActorArchiveFile) -> Optional[ActorArchiveFile]:
@@ -114,41 +93,29 @@ class FileSystem:
         files.append(actor_archive)
         return actor_archive
 ################################################################################################################
-    def has_actor_archive(self, ownersname: str, actorname: str) -> bool:
-        return self.get_actor_archive(ownersname, actorname) is not None
+    def has_actor_archive(self, owner_name: str, actor_name: str) -> bool:
+        return self.get_actor_archive(owner_name, actor_name) is not None
 ################################################################################################################
-    def get_actor_archive(self, ownersname: str, actorname: str) -> Optional[ActorArchiveFile]:
-        files = self._actor_archives.get(ownersname, [])
+    def get_actor_archive(self, owner_name: str, actor_name: str) -> Optional[ActorArchiveFile]:
+        files = self._actor_archives.get(owner_name, [])
         for file in files:
-            if file._actor_name == actorname:
+            if file._actor_name == actor_name:
                 return file
         return None
 ################################################################################################################
     def write_actor_archive(self, actor_archive: ActorArchiveFile) -> None:
-        ## 测试
-        content = actor_archive.serialization()
-        assert content is not None
-        assert len(content) > 0
-
         archive_file_path = self.actor_archive_path(actor_archive._owner_name, actor_archive._name)
         assert archive_file_path is not None
-
-        try:
-            res = archive_file_path.write_text(content, encoding="utf-8")
-            assert res > 0
-            #logger.info(f"写入文件成功: {archive_file_path}, res = {res}")
-        except Exception as e:
-            logger.error(f"写入文件失败: {archive_file_path}, e = {e}")
-            return
+        actor_archive.write(archive_file_path)
 ################################################################################################################
 ################################################################################################################
 ################################################################################################################
 ################################################################################################################
-    def stage_archive_path(self, ownersname: str, filename: str) -> Path:
+    def stage_archive_path(self, owner_name: str, file_name: str) -> Path:
         assert self._runtime_dir is not None
-        dir = self._runtime_dir / f"{ownersname}/stages_archive"
-        dir.mkdir(parents=True, exist_ok=True)
-        return dir / f"{filename}.json"
+        dir = self._runtime_dir / f"{owner_name}/stages_archive"
+        dir.mkdir(parents = True, exist_ok = True)
+        return dir / f"{file_name}.json"
 ################################################################################################################
     def add_stage_archive(self, stage_archive: StageArchiveFile) -> None:
         files = self._stage_archives.setdefault(stage_archive._owner_name, [])
@@ -159,55 +126,33 @@ class FileSystem:
         files.append(stage_archive)
 ################################################################################################################
     def write_stage_archive(self, stage_archive_file: StageArchiveFile) -> None:
-        content = stage_archive_file.serialization()
-        assert content is not None
-        assert len(content) > 0
-
         archive_file_path = self.stage_archive_path(stage_archive_file._owner_name, stage_archive_file._name)
         assert archive_file_path is not None
-
-        try:
-            res = archive_file_path.write_text(content, encoding="utf-8")
-            assert res > 0
-            #logger.info(f"写入文件成功: {archive_file_path}, res = {res}")
-        except Exception as e:
-            logger.error(f"写入文件失败: {archive_file_path}, e = {e}")
-            return
+        stage_archive_file.write(archive_file_path)
 ################################################################################################################
-    def get_stage_archive(self, ownersname: str, stagename: str) -> Optional[StageArchiveFile]:
-        stagelist = self._stage_archives.get(ownersname, [])
-        for file in stagelist:
-            if file._stage_name == stagename:
+    def get_stage_archive(self, owner_name: str, stage_name: str) -> Optional[StageArchiveFile]:
+        stage_archives = self._stage_archives.get(owner_name, [])
+        for file in stage_archives:
+            if file._stage_name == stage_name:
                 return file
         return None
 ################################################################################################################
-    def has_stage_archive(self, ownersname: str, stagename: str) -> bool:
-        return self.get_stage_archive(ownersname, stagename) is not None
+    def has_stage_archive(self, owner_name: str, stage_name: str) -> bool:
+        return self.get_stage_archive(owner_name, stage_name) is not None
 ################################################################################################################
 ################################################################################################################
 ################################################################################################################
 ################################################################################################################
-    def status_profile_path(self, ownersname: str) -> Path:
+    def status_profile_path(self, owner_name: str) -> Path:
         assert self._runtime_dir is not None
-        dir = self._runtime_dir / f"{ownersname}"
-        dir.mkdir(parents=True, exist_ok=True)
+        dir = self._runtime_dir / f"{owner_name}"
+        dir.mkdir(parents = True, exist_ok = True)
         return dir / f"status_profile.json"
 ################################################################################################################
     def write_status_profile(self, status_profile: StatusProfileFile) -> None:
-        ## 测试
-        content = status_profile.serialization()
-        assert content is not None
-        assert len(content) > 0
-
         status_profile_file_path = self.status_profile_path(status_profile._owner_name)
         assert status_profile_file_path is not None
-
-        try:
-            res = status_profile_file_path.write_text(content, encoding="utf-8")
-            assert res > 0
-        except Exception as e:
-            logger.error(f"写入文件失败: {status_profile_file_path}, e = {e}")
-            return
+        status_profile.write(status_profile_file_path)
 ################################################################################################################
     def set_status_profile(self, status_profile: StatusProfileFile) -> None:
         self._status_profile[status_profile._owner_name] = status_profile
@@ -218,28 +163,14 @@ class FileSystem:
     def stage_actors_map_path(self) -> Path:
         assert self._runtime_dir is not None
         dir = self._runtime_dir
-        dir.mkdir(parents=True, exist_ok=True)
+        dir.mkdir(parents = True, exist_ok = True)
         return dir / f"stage_actors_map.json"
 ################################################################################################################
     def set_stage_actors_map(self, stage_actors_map: StageActorsMapFile) -> None:
         self._stage_actors_map = stage_actors_map
 ################################################################################################################
     def write_stage_actors_map(self, stage_actors_map: StageActorsMapFile) -> None:
-        ## 测试
-        content = stage_actors_map.serialization()
-        assert content is not None
-        assert len(content) > 0
-
         _stage_actors_map_path = self.stage_actors_map_path()
         assert _stage_actors_map_path is not None
-
-        try:
-            res = _stage_actors_map_path.write_text(content, encoding="utf-8")
-            assert res > 0
-        except Exception as e:
-            logger.error(f"写入文件失败: {_stage_actors_map_path}, e = {e}")
-            return
+        stage_actors_map.write(_stage_actors_map_path)
 ################################################################################################################
-
-
-

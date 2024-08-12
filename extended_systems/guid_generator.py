@@ -1,4 +1,3 @@
-from loguru import logger
 
 class GUIDGenerator:
 
@@ -9,6 +8,3 @@ class GUIDGenerator:
     def generate(self) -> int:
         self._index += 1
         return self._index
-    
-_GUIDGenerator_ = GUIDGenerator("MyGUIDGenerator")
-logger.debug(_GUIDGenerator_._name)

@@ -1,14 +1,14 @@
 from typing import override
 from entitas import ExecuteProcessor, Matcher #type: ignore
-from my_entitas.extended_context import ExtendedContext
+from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from ecs_systems.components import StageComponent, ActorComponent
 from ecs_systems.action_components import STAGE_AVAILABLE_ACTIONS_REGISTER, ACTOR_AVAILABLE_ACTIONS_REGISTER
    
 class PostActionSystem(ExecuteProcessor):
 ############################################################################################################
-    def __init__(self, context: ExtendedContext) -> None:
-        self._context: ExtendedContext = context
+    def __init__(self, context: RPGEntitasContext) -> None:
+        self._context: RPGEntitasContext = context
 ############################################################################################################
     @override
     def execute(self) -> None:

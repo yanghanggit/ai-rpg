@@ -1,9 +1,9 @@
 from entitas import ExecuteProcessor, Matcher, Entity #type: ignore
-from my_entitas.extended_context import ExtendedContext
+from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from ecs_systems.components import (ActorComponent, StageComponent)
-from builtin_prompt.cn_builtin_prompt import update_actor_archive_prompt, update_stage_archive_prompt
-from builtin_prompt.cn_constant_prompt import _CNConstantPrompt_
+from ecs_systems.cn_builtin_prompt import update_actor_archive_prompt, update_stage_archive_prompt
+from ecs_systems.cn_constant_prompt import _CNConstantPrompt_
 from file_system.helper import add_actor_archive_files, update_actor_archive_file, add_stage_archive_files
 from typing import Set, override, Dict, List
 
@@ -11,7 +11,7 @@ from typing import Set, override, Dict, List
 #### 一次处理过程的封装，目前是非常笨的方式（而且不是最终版本），后续可以优化。
 ###############################################################################################################################################
 class UpdateArchiveHelper:
-    def __init__(self, context: ExtendedContext) -> None:
+    def __init__(self, context: RPGEntitasContext) -> None:
         ##我的参数
         self._context = context
         self._stage_names: Set[str] = set()
@@ -141,8 +141,8 @@ class UpdateArchiveHelper:
 
 
 class UpdateArchiveSystem(ExecuteProcessor):
-    def __init__(self, context: ExtendedContext) -> None:
-        self._context: ExtendedContext = context
+    def __init__(self, context: RPGEntitasContext) -> None:
+        self._context: RPGEntitasContext = context
 ###############################################################################################################################################
     @override
     def execute(self) -> None:

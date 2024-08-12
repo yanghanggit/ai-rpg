@@ -3,13 +3,13 @@ from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignor
 from ecs_systems.action_components import (GoToActionComponent, PortalStepActionComponent, DeadActionComponent)
 from ecs_systems.components import ActorComponent, ExitOfPortalComponent
 from my_agent.agent_action import AgentAction
-from my_entitas.extended_context import ExtendedContext
+from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 
 ###############################################################################################################################################
 class PortalStepActionSystem(ReactiveProcessor):
 
-    def __init__(self, context: ExtendedContext) -> None:
+    def __init__(self, context: RPGEntitasContext) -> None:
         super().__init__(context)
         self._context = context
 ###############################################################################################################################################

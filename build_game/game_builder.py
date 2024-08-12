@@ -1,6 +1,6 @@
 from typing import Any, List
-from my_data.data_model import ActorProxyModel, StageProxyModel, WorldSystemProxyModel, GameBuilderModel
-from my_data.data_base_system import DataBaseSystem
+from build_game.data_model import ActorProxyModel, StageProxyModel, WorldSystemProxyModel, GameBuilderModel
+from build_game.data_base_system import DataBaseSystem
 from pathlib import Path
 import json
 

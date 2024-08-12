@@ -1,13 +1,13 @@
 from typing import override, Set
 from entitas import Entity, Matcher, InitializeProcessor # type: ignore
 from ecs_systems.components import WorldComponent, StageComponent, ActorComponent, PlayerComponent
-from my_entitas.extended_context import ExtendedContext
+from rpg_game.rpg_entitas_context import RPGEntitasContext
 
 
 # 远程连接agent
 class AgentsConnectSystem(InitializeProcessor):
-    def __init__(self, context: ExtendedContext) -> None:
-        self._context: ExtendedContext = context
+    def __init__(self, context: RPGEntitasContext) -> None:
+        self._context: RPGEntitasContext = context
 ###############################################################################################################################################
     @override
     def initialize(self) -> None:

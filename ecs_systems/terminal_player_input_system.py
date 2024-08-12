@@ -1,5 +1,5 @@
 from entitas import ExecuteProcessor #type: ignore
-from my_entitas.extended_context import ExtendedContext
+from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from player.player_proxy import PlayerProxy, get_player_proxy
 from typing import Any, cast, override
@@ -9,8 +9,8 @@ from rpg_game.web_server_multi_players_rpg_game import WebServerMultiplayersRPGG
 
 ############################################################################################################
 class TerminalPlayerInputSystem(ExecuteProcessor):
-    def __init__(self, context: ExtendedContext, rpggame: RPGGame) -> None:
-        self._context: ExtendedContext = context
+    def __init__(self, context: RPGEntitasContext, rpggame: RPGGame) -> None:
+        self._context: RPGEntitasContext = context
         self._rpggame: RPGGame = rpggame
 ############################################################################################################
     @override
@@ -21,7 +21,7 @@ class TerminalPlayerInputSystem(ExecuteProcessor):
             logger.error("只处理终端的输入")
             return
         #
-        single_player = self._rpggame.single_terminal_player()
+        single_player = self._rpggame.single_player()
         self.play_via_terminal_and_handle_player_input(single_player)
 ############################################################################################################
     def play_via_terminal_and_handle_player_input(self, playername: str) -> None:

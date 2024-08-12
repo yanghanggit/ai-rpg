@@ -1,6 +1,6 @@
 from typing import override, Set
 from entitas import ExecuteProcessor, Matcher, Entity #type: ignore
-from my_entitas.extended_context import ExtendedContext
+from rpg_game.rpg_entitas_context import RPGEntitasContext
 #from loguru import logger
 from ecs_systems.components import ActorComponent
 from ecs_systems.action_components import DeadActionComponent, ACTOR_INTERACTIVE_ACTIONS_REGISTER
@@ -9,8 +9,8 @@ from ecs_systems.action_components import DeadActionComponent, ACTOR_INTERACTIVE
 # 战斗后处理，入股哦死了就死亡存档
 class PostFightSystem(ExecuteProcessor):
 ############################################################################################################
-    def __init__(self, context: ExtendedContext) -> None:
-        self._context: ExtendedContext = context
+    def __init__(self, context: RPGEntitasContext) -> None:
+        self._context: RPGEntitasContext = context
 ############################################################################################################
     @override
     def execute(self) -> None:

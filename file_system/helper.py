@@ -23,23 +23,26 @@ def add_actor_archive_files(file_system: FileSystem, owners_name: str, actor_arc
     return ret
 ##################################################################################################################################
 # 更新一个Actor的档案文件
-def update_actor_archive_file(file_system: FileSystem, ownersname: str, actorname: str, appearance: str) -> Optional[ActorArchiveFile]:
-    file = file_system.get_actor_archive(ownersname, actorname)
+def update_actor_archive_file(file_system: FileSystem, owner_name: str, actor_name: str, appearance: str) -> Optional[ActorArchiveFile]:
+    
+    file = file_system.get_actor_archive(owner_name, actor_name)
+    
     if file is None:
         return None
     file._appearance = appearance
     file_system.write_actor_archive(file)
+    
     return file
 ##################################################################################################################################
 ## 为一个Actor添加他认识的Stage的文件
-def add_stage_archive_files(file_system: FileSystem, myname: str, stage_names: Set[str]) -> List[StageArchiveFile]:
+def add_stage_archive_files(file_system: FileSystem, my_name: str, stage_names: Set[str]) -> List[StageArchiveFile]:
     
     res: List[StageArchiveFile] = []
 
     for stagename in stage_names:
-        if myname == stagename or file_system.has_stage_archive(myname, stagename):
+        if my_name == stagename or file_system.has_stage_archive(my_name, stagename):
             continue
-        file = StageArchiveFile(stagename, myname, stagename)
+        file = StageArchiveFile(stagename, my_name, stagename)
         file_system.add_stage_archive(file)
         file_system.write_stage_archive(file)
         res.append(file)
@@ -47,8 +50,8 @@ def add_stage_archive_files(file_system: FileSystem, myname: str, stage_names: S
     return res
 ##################################################################################################################################
 ## 更新角色的属性文件并记录下来～
-def update_status_profile_file(file_system: FileSystem, ownersname: str, update_data: Dict[str, Any]) -> Optional[StatusProfileFile]:
-    file = StatusProfileFile(ownersname, ownersname, update_data)
+def update_status_profile_file(file_system: FileSystem, owner_name: str, update_data: Dict[str, Any]) -> Optional[StatusProfileFile]:
+    file = StatusProfileFile(owner_name, owner_name, update_data)
     file_system.set_status_profile(file)
     file_system.write_status_profile(file)
     return file

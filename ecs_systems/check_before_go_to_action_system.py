@@ -16,11 +16,11 @@ from ecs_systems.components import (
 )
 
 from my_agent.agent_action import AgentAction
-from my_entitas.extended_context import ExtendedContext
+from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from ecs_systems.stage_director_component import StageDirectorComponent
 from ecs_systems.stage_director_event import IStageDirectorEvent
-from builtin_prompt.cn_builtin_prompt import \
+from ecs_systems.cn_builtin_prompt import \
             prop_prompt, stage_exit_conditions_check_prompt, \
             stage_entry_conditions_check_prompt,\
             exit_stage_failed_beacuse_stage_refuse_prompt, \
@@ -29,7 +29,7 @@ from builtin_prompt.cn_builtin_prompt import \
             go_to_stage_failed_because_stage_is_invalid_prompt, \
             go_to_stage_failed_because_already_in_stage_prompt
 
-from builtin_prompt.cn_constant_prompt import _CNConstantPrompt_
+from ecs_systems.cn_constant_prompt import _CNConstantPrompt_
 from typing import Optional, cast, override
 from ecs_systems.check_status_action_system import CheckStatusActionHelper
 from my_agent.agent_plan import AgentPlan
@@ -43,13 +43,13 @@ class ActorGoToFailedBecauseStageInvalid(IStageDirectorEvent):
         self._actor_name: str = actor_name
         self._stage_name: str = stage_name
 
-    def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
+    def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
         if actor_name != self._actor_name:
             # 跟你无关不用关注，原因类的东西，是失败后矫正用，所以只有自己知道即可
             return ""
         return go_to_stage_failed_because_stage_is_invalid_prompt(self._actor_name, self._stage_name)
     
-    def to_stage(self, stage_name: str, extended_context: ExtendedContext) -> str:
+    def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
         return ""
 ####################################################################################################################################
 ####################################################################################################################################
@@ -60,13 +60,13 @@ class ActorGoToFailedBecauseAlreadyInStage(IStageDirectorEvent):
         self._actor_name: str = actor_name
         self._stage_name: str = stage_name
 
-    def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
+    def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
         if actor_name != self._actor_name:
             # 跟你无关不用关注，原因类的东西，是失败后矫正用，所以只有自己知道即可
             return ""
         return go_to_stage_failed_because_already_in_stage_prompt(self._actor_name, self._stage_name)
     
-    def to_stage(self, stage_name: str, extended_context: ExtendedContext) -> str:
+    def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
         return ""
 ####################################################################################################################################
 ####################################################################################################################################
@@ -77,12 +77,12 @@ class ActorExitStageFailedBecauseStageRefuse(IStageDirectorEvent):
         self._stage_name: str = stage_name
         self._tips: str = tips
 
-    def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
+    def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
         if actor_name != self._actor_name:
             return ""
         return exit_stage_failed_beacuse_stage_refuse_prompt(self._actor_name, self._stage_name, self._tips)
     
-    def to_stage(self, stage_name: str, extended_context: ExtendedContext) -> str:
+    def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
         return ""
 ####################################################################################################################################
 ####################################################################################################################################
@@ -93,12 +93,12 @@ class ActorEnterStageFailedBecauseStageRefuse(IStageDirectorEvent):
         self._stage_name: str = stage_name
         self._tips: str = tips
 
-    def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
+    def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
         if actor_name != self._actor_name:
             return ""
         return enter_stage_failed_beacuse_stage_refuse_prompt(self._actor_name, self._stage_name, self._tips)
     
-    def to_stage(self, stage_name: str, extended_context: ExtendedContext) -> str:
+    def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
         return ""
 ####################################################################################################################################
 ####################################################################################################################################
@@ -121,7 +121,7 @@ class StageConditionsHelper:
         self._cond_check_actor_status_prompt = str(_CNConstantPrompt_.NONE_PROMPT)
         self._cond_check_actor_props_prompt = str(_CNConstantPrompt_.NONE_PROMPT)
 ####################################################################################################################################
-    def prepare_exit_cond(self, stage_entity: Entity, context: ExtendedContext) -> None:
+    def prepare_exit_cond(self, stage_entity: Entity, context: RPGEntitasContext) -> None:
         self.clear()
         self._stage_name = context.safe_get_entity_name(stage_entity)
         # 准备好数据
@@ -134,7 +134,7 @@ class StageConditionsHelper:
         if stage_entity.has(StageExitCondCheckActorPropsComponent):
             self._cond_check_actor_props_prompt = cast(StageExitCondCheckActorPropsComponent, stage_entity.get(StageExitCondCheckActorPropsComponent)).condition
 ####################################################################################################################################
-    def prepare_entry_cond(self, stage_entity: Entity, context: ExtendedContext) -> None:
+    def prepare_entry_cond(self, stage_entity: Entity, context: RPGEntitasContext) -> None:
         self.clear()
         self._stage_name = context.safe_get_entity_name(stage_entity)
         # 准备好数据
@@ -198,7 +198,7 @@ class HandleStageConditionsResponseHelper:
 ####################################################################################################################################
 class CheckBeforeGoToActionSystem(ReactiveProcessor):
 
-    def __init__(self, context: ExtendedContext) -> None:
+    def __init__(self, context: RPGEntitasContext) -> None:
         super().__init__(context)
         self._context = context
 ###############################################################################################################################################

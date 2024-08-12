@@ -1,5 +1,5 @@
 from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity #type: ignore
-from my_entitas.extended_context import ExtendedContext
+from rpg_game.rpg_entitas_context import RPGEntitasContext
 from ecs_systems.action_components import (SearchPropActionComponent, 
                                     DeadActionComponent,
                                     CheckStatusActionComponent)
@@ -11,7 +11,7 @@ from ecs_systems.stage_director_component import StageDirectorComponent
 from typing import List, override
 from file_system.files_def import PropFile
 from ecs_systems.stage_director_event import IStageDirectorEvent
-from builtin_prompt.cn_builtin_prompt import search_prop_action_failed_prompt, search_prop_action_success_prompt
+from ecs_systems.cn_builtin_prompt import search_prop_action_failed_prompt, search_prop_action_success_prompt
 
 
 ####################################################################################################################################
@@ -23,13 +23,13 @@ class ActorSearchPropFailedEvent(IStageDirectorEvent):
         self._who: str = who
         self._target: str = target
 
-    def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
+    def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
         if actor_name != self._who:
             ## 只有自己知道
             return ""
         return search_prop_action_failed_prompt(self._who, self._target)
     
-    def to_stage(self, stage_name: str, extended_context: ExtendedContext) -> str:
+    def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
         return ""
 ####################################################################################################################################
 ####################################################################################################################################
@@ -43,21 +43,21 @@ class ActorSearchPropSuccessEvent(IStageDirectorEvent):
         self._stage_name: str = stage_name
 
     #
-    def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
+    def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
         if actor_name != self._who:
             ## 只有自己知道
             return ""
         return search_prop_action_success_prompt(self._who, self._target, self._stage_name)
     
     #
-    def to_stage(self, stage_name: str, extended_context: ExtendedContext) -> str:
+    def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
         return search_prop_action_success_prompt(self._who, self._target, self._stage_name)
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################    
 class SearchPropActionSystem(ReactiveProcessor):
 
-    def __init__(self, context: ExtendedContext):
+    def __init__(self, context: RPGEntitasContext):
         super().__init__(context)
         self._context = context
 ####################################################################################################################################

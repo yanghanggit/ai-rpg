@@ -3,11 +3,11 @@ from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignor
 from ecs_systems.components import StageComponent
 from ecs_systems.action_components import BroadcastActionComponent
 from my_agent.agent_action import AgentAction
-from my_entitas.extended_context import ExtendedContext
+from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from ecs_systems.stage_director_component import StageDirectorComponent
 from ecs_systems.stage_director_event import IStageDirectorEvent
-from builtin_prompt.cn_builtin_prompt import broadcast_action_prompt
+from ecs_systems.cn_builtin_prompt import broadcast_action_prompt
 
 ####################################################################################################################################
 ####################################################################################################################################
@@ -19,17 +19,17 @@ class StageOrActorBroadcastEvent(IStageDirectorEvent):
         self._stagename = stage_name
         self._broadcast_content = broadcast_content
     
-    def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
+    def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
         return broadcast_action_prompt(self._who_broadcast, self._stagename, self._broadcast_content)
     
-    def to_stage(self, stagename: str, extended_context: ExtendedContext) -> str:
+    def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
         return broadcast_action_prompt(self._who_broadcast, self._stagename, self._broadcast_content)
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
 class BroadcastActionSystem(ReactiveProcessor):
 
-    def __init__(self, context: ExtendedContext) -> None:
+    def __init__(self, context: RPGEntitasContext) -> None:
         super().__init__(context)
         self._context = context
 ####################################################################################################

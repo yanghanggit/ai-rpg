@@ -4,11 +4,11 @@ from ecs_systems.components import (ActorComponent, AutoPlanningComponent)
 from ecs_systems.action_components import EnviroNarrateActionComponent, ACTOR_AVAILABLE_ACTIONS_REGISTER
 from my_agent.agent_plan import AgentPlan
 from my_agent.agent_action import AgentAction
-from my_entitas.extended_context import ExtendedContext
+from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from typing import Dict
 from gameplay_checks.planning_check import check_component_register
-from builtin_prompt.cn_builtin_prompt import actor_plan_prompt
+from ecs_systems.cn_builtin_prompt import actor_plan_prompt
 from my_agent.lang_serve_agent_request_task import LangServeAgentRequestTask, LangServeAgentAsyncRequestTasksGather
 
 
@@ -18,7 +18,7 @@ class ActorPlanningSystem(ExecuteProcessor):
     角色的计划系统，必须在StagePlanningSystem之后执行
     """
 
-    def __init__(self, context: ExtendedContext) -> None:
+    def __init__(self, context: RPGEntitasContext) -> None:
         self._context = context
         self._request_tasks: Dict[str, LangServeAgentRequestTask] = {}
 #######################################################################################################################################

@@ -7,8 +7,9 @@ from extended_systems.code_name_component_system import CodeNameComponentSystem
 from my_agent.lang_serve_agent_system import LangServeAgentSystem
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from typing import Optional, Dict, List, Set
+from extended_systems.guid_generator import GUIDGenerator
 
-class ExtendedContext(Context):
+class RPGEntitasContext(Context):
 
     """
     对 entitas 的 Context 进行扩展，增加了一些常用的方法。
@@ -20,7 +21,8 @@ class ExtendedContext(Context):
                  kick_off_memory_system: KickOffMemorySystem, 
                  langserve_agent_system: LangServeAgentSystem, 
                  codename_component_system: CodeNameComponentSystem,
-                 chaos_engineering_system: IChaosEngineering) -> None:
+                 chaos_engineering_system: IChaosEngineering,
+                 guid_generator: GUIDGenerator) -> None:
         
         #
         super().__init__()
@@ -40,9 +42,12 @@ class ExtendedContext(Context):
         # 混沌工程系统
         self._chaos_engineering_system = chaos_engineering_system
         
+        # guid 生成器
+        self._guid_generator = guid_generator
+        
         # 世界运行的回合数
         self._execute_count: int = 0
-        
+
         #        
         assert self._file_system is not None, "self.file_system is None"
         assert self._kick_off_memory_system is not None, "self.memory_system is None"
@@ -70,9 +75,9 @@ class ExtendedContext(Context):
         compclass = self._codename_component_system.get_component_class_by_name(name)
         if compclass is None:
             return None
-        findstages: Set[Entity] = self.get_group(Matcher(compclass)).entities
-        if len(findstages) > 0:
-            return next(iter(findstages))
+        find_stages: Set[Entity] = self.get_group(Matcher(compclass)).entities
+        if len(find_stages) > 0:
+            return next(iter(find_stages))
         return None
 #############################################################################################################################
     def get_stage_entity(self, stagename: str) -> Optional[Entity]:
@@ -99,7 +104,7 @@ class ExtendedContext(Context):
         stage_entity = self.safe_get_stage_entity(entity)
         if stage_entity is None:
             return []
-        stagecomp: StageComponent = stage_entity.get(StageComponent)
+        stagecomp = stage_entity.get(StageComponent)
         return self.actors_in_stage(stagecomp.name)
 #############################################################################################################################
      # 直接从实体中获取场景实体，如果是Actor，就获取当前场景，如果是场景，就是自己
@@ -107,20 +112,20 @@ class ExtendedContext(Context):
         if entity.has(StageComponent):
             return entity 
         elif entity.has(ActorComponent):
-            actor_comp: ActorComponent = entity.get(ActorComponent)
+            actor_comp = entity.get(ActorComponent)
             return self.get_stage_entity(actor_comp.current_stage)
         return None
 #############################################################################################################################
     # 特定的如下几种类型来获取名字
     def safe_get_entity_name(self, entity: Entity) -> str:
         if entity.has(ActorComponent):
-            actor_comp: ActorComponent = entity.get(ActorComponent)
+            actor_comp = entity.get(ActorComponent)
             return str(actor_comp.name)
         elif entity.has(StageComponent):
-            stage_comp: StageComponent = entity.get(StageComponent)
+            stage_comp = entity.get(StageComponent)
             return str(stage_comp.name)
         elif entity.has(WorldComponent):
-            world_comp: WorldComponent = entity.get(WorldComponent)
+            world_comp = entity.get(WorldComponent)
             return str(world_comp.name)
         return ""
 #############################################################################################################################
@@ -163,22 +168,22 @@ class ExtendedContext(Context):
     # 获取场景内所有的角色的外观信息
     def appearance_in_stage(self, entity: Entity) -> Dict[str, str]:
         
-        res: Dict[str, str] = {}
+        ret: Dict[str, str] = {}
         stage_entity = self.safe_get_stage_entity(entity)
         if stage_entity is None:
-            return res
+            return ret
         
         safe_stage_name = self.safe_get_entity_name(stage_entity)
         actors_int_stage: List[Entity] = self.actors_in_stage(safe_stage_name)
         for actor in actors_int_stage:
             if actor.has(AppearanceComponent):
-                actor_comp: ActorComponent = actor.get(ActorComponent)
+                actor_comp = actor.get(ActorComponent)
                 appearance_comp = actor.get(AppearanceComponent)
-                res[actor_comp.name] = str(appearance_comp.appearance)
+                ret[actor_comp.name] = str(appearance_comp.appearance)
             else:
                 logger.error(f"{actor_comp.name}没有AppearanceComponent?!")
 
-        return res
+        return ret
 #############################################################################################################################
 
         

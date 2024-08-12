@@ -4,12 +4,12 @@ from loguru import logger
 from my_agent.agent_action import AgentAction
 from ecs_systems.action_components import (UsePropActionComponent, EnviroNarrateActionComponent, DeadActionComponent)
 from ecs_systems.components import StageComponent, ActorComponent, StageExitCondStatusComponent
-from my_entitas.extended_context import ExtendedContext
+from rpg_game.rpg_entitas_context import RPGEntitasContext
 from ecs_systems.stage_director_component import StageDirectorComponent
 from entitas.group import GroupEvent
 from ecs_systems.stage_director_event import IStageDirectorEvent
-from builtin_prompt.cn_builtin_prompt import prop_prompt, use_prop_to_stage_prompt, use_prop_no_response_prompt
-from builtin_prompt.cn_constant_prompt import _CNConstantPrompt_
+from ecs_systems.cn_builtin_prompt import prop_prompt, use_prop_to_stage_prompt, use_prop_no_response_prompt
+from ecs_systems.cn_constant_prompt import _CNConstantPrompt_
 from my_agent.agent_plan import AgentPlan
 from gameplay_checks.use_prop_check import use_prop_check, ErrorUsePropEnable
 from file_system.files_def import PropFile
@@ -23,12 +23,12 @@ class ActorUsePropToStageEvent(IStageDirectorEvent):
         self._prop_name: str = prop_name
         self._tips: str = tips
 
-    def to_actor(self, actor_name: str, extended_context: ExtendedContext) -> str:
+    def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
         if actor_name != self._actor_name:
             return ""
         return self._tips
     
-    def to_stage(self, stage_name: str, extended_context: ExtendedContext) -> str:
+    def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
         if self._target_name != stage_name:
             return ""
         return self._tips
@@ -58,7 +58,7 @@ class UsePropResponseHelper:
 ####################################################################################################################################
 ####################################################################################################################################
 class UsePropActionSystem(ReactiveProcessor):
-    def __init__(self, context: ExtendedContext):
+    def __init__(self, context: RPGEntitasContext):
         super().__init__(context)
         self._context = context
 ####################################################################################################################################

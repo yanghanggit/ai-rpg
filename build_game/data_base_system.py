@@ -1,5 +1,5 @@
 from typing import Optional, Dict
-from my_data.data_model import DataBaseSystemModel, ActorModel, PropModel, StageModel, WorldSystemModel
+from build_game.data_model import DataBaseSystemModel, ActorModel, PropModel, StageModel, WorldSystemModel
 
 
 class DataBaseSystem:
@@ -20,7 +20,6 @@ class DataBaseSystem:
 
         self.make_dict()
 ###############################################################################################################################################
-
     def make_dict(self) -> None:
 
         assert self._model is not None

@@ -34,7 +34,7 @@ class PlayerCommand(ABC):
     # 为了方便，直接在这里添加消息，不然每个子类都要写一遍
     # player 控制的actor本质和其他actor没有什么不同，这里模拟一个plan的动作。因为每一个actor都是plan -> acton -> direction(同步上下文) -> 再次plan的循环
     def add_human_message(self, entity: Entity, human_message_content: str) -> None:
-        self._rpggame._extended_context.safe_add_human_message_to_entity(entity, human_message_content)
+        self._rpggame._entitas_context.safe_add_human_message_to_entity(entity, human_message_content)
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
@@ -50,7 +50,7 @@ class PlayerLogin(PlayerCommand):
         self._is_web_client: bool = is_web_client
 
     def execute(self) -> None:
-        context = self._rpggame._extended_context
+        context = self._rpggame._entitas_context
         actor_name = self._actor_name
         player_name = self._player_proxy._name
         logger.debug(f"{self._description}, player name: {player_name}, target name: {actor_name}")
@@ -115,7 +115,7 @@ class PlayerAttack(PlayerCommand):
         self._target_name: str = target_name
 
     def execute(self) -> None:
-        context = self._rpggame._extended_context 
+        context = self._rpggame._entitas_context 
         attack_target_name = self._target_name
         player_entity = context.get_player_entity(self._player_proxy._name)
         if player_entity is None:
@@ -143,7 +143,7 @@ class PlayerGoTo(PlayerCommand):
         self._stage_name: str = stage_name
 
     def execute(self) -> None:
-        context = self._rpggame._extended_context
+        context = self._rpggame._entitas_context
         target_stage_name = self._stage_name
         player_entity = context.get_player_entity(self._player_proxy._name)
         if player_entity is None:
@@ -171,7 +171,7 @@ class PlayerPortalStep(PlayerCommand):
         super().__init__(name, rpg_game, player_proxy)
 
     def execute(self) -> None:
-        context = self._rpggame._extended_context
+        context = self._rpggame._entitas_context
         player_entity = context.get_player_entity(self._player_proxy._name)
         if player_entity is None:
             logger.warning("debug: player is None")
@@ -204,7 +204,7 @@ class PlayerBroadcast(PlayerCommand):
         self._broadcast_content: str = broadcast_content
 
     def execute(self) -> None:
-        context = self._rpggame._extended_context
+        context = self._rpggame._entitas_context
         player_entity = context.get_player_entity(self._player_proxy._name)
         if player_entity is None:
             logger.warning("debug_broadcast: player is None")
@@ -231,7 +231,7 @@ class PlayerSpeak(PlayerCommand):
         self._speak_content: str = speak_content
 
     def execute(self) -> None:
-        context = self._rpggame._extended_context
+        context = self._rpggame._entitas_context
         player_entity = context.get_player_entity(self._player_proxy._name)
         if player_entity is None:
             logger.warning("debug_speak: player is None")
@@ -258,7 +258,7 @@ class PlayerWhisper(PlayerCommand):
         self._whisper_content: str = whisper_content
 
     def execute(self) -> None:
-        context = self._rpggame._extended_context
+        context = self._rpggame._entitas_context
         player_entity = context.get_player_entity(self._player_proxy._name)
         if player_entity is None:
             logger.warning("debug_whisper: player is None")
@@ -285,7 +285,7 @@ class PlayerSearchProp(PlayerCommand):
         self._prop_name: str = prop_name
 
     def execute(self) -> None:
-        context = self._rpggame._extended_context
+        context = self._rpggame._entitas_context
         player_entity = context.get_player_entity(self._player_proxy._name)
         if player_entity is None:
             logger.warning("debug_search: player is None")
@@ -312,7 +312,7 @@ class PlayerPerception(PlayerCommand):
         
 
     def execute(self) -> None:
-        context = self._rpggame._extended_context
+        context = self._rpggame._entitas_context
         player_entity = context.get_player_entity(self._player_proxy._name)
         if player_entity is None:
             return
@@ -339,7 +339,7 @@ class PlayerSteal(PlayerCommand):
         self._target_and_message_format_string: str = target_and_message_format_string
 
     def execute(self) -> None:
-        context = self._rpggame._extended_context
+        context = self._rpggame._entitas_context
         player_entity = context.get_player_entity(self._player_proxy._name)
         if player_entity is None:
             return
@@ -366,7 +366,7 @@ class PlayerGiveProp(PlayerCommand):
         self._target_and_message_format_string: str = target_and_message_format_string
 
     def execute(self) -> None:
-        context = self._rpggame._extended_context
+        context = self._rpggame._entitas_context
         player_entity = context.get_player_entity(self._player_proxy._name)
         if player_entity is None:
             return
@@ -391,7 +391,7 @@ class PlayerCheckStatus(PlayerCommand):
         super().__init__(name, rpg_game, player_proxy)
 
     def execute(self) -> None:
-        context = self._rpggame._extended_context
+        context = self._rpggame._entitas_context
         player_entity = context.get_player_entity(self._player_proxy._name)
         if player_entity is None:
             return
@@ -422,7 +422,7 @@ class PlayerUseProp(PlayerCommand):
         self._target_and_message_format_string: str = target_and_message_format_string
 
     def execute(self) -> None:
-        context = self._rpggame._extended_context
+        context = self._rpggame._entitas_context
         player_entity = context.get_player_entity(self._player_proxy._name)
         if player_entity is None:
             return

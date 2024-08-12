@@ -1,5 +1,5 @@
 from entitas import ExecuteProcessor, Matcher, InitializeProcessor #type: ignore
-from my_entitas.extended_context import ExtendedContext
+from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from ecs_systems.components import (StageComponent, ActorComponent, WorldComponent, SimpleRPGAttrComponent, SimpleRPGWeaponComponent, SimpleRPGArmorComponent)
 import json
@@ -9,8 +9,8 @@ from file_system.helper import update_status_profile_file, update_stage_actors_m
 
 class EndSystem(InitializeProcessor, ExecuteProcessor):
 ############################################################################################################
-    def __init__(self, context: ExtendedContext) -> None:
-        self._context: ExtendedContext = context
+    def __init__(self, context: RPGEntitasContext) -> None:
+        self._context: RPGEntitasContext = context
 ############################################################################################################
     @override
     def initialize(self) -> None:

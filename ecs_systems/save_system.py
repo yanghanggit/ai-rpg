@@ -1,13 +1,13 @@
 from typing import override
 from entitas import (TearDownProcessor, ExecuteProcessor) #type: ignore
-from my_entitas.extended_context import ExtendedContext
+from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from rpg_game.rpg_game import RPGGame 
 
 
 class SaveSystem(ExecuteProcessor, TearDownProcessor):
 
-    def __init__(self, context: ExtendedContext, rpggame: RPGGame) -> None:
+    def __init__(self, context: RPGEntitasContext, rpggame: RPGGame) -> None:
         super().__init__()
         self._context = context
         self._rpggame = rpggame

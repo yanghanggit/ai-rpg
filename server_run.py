@@ -12,7 +12,7 @@ from pydantic import BaseModel
 from rpg_game.web_server_multi_players_rpg_game import WebServerMultiplayersRPGGame
 from player.player_command import PlayerLogin
 from player.player_proxy import create_player_proxy, get_player_proxy, remove_player_proxy
-from rpg_game.create_rpg_game_funcs import load_then_create_rpg_game, RPGGameType
+from rpg_game.create_rpg_game_util import create_rpg_game, RPGGameClientType
 from rpg_game.rpg_game import RPGGame
 from player.player_proxy import PlayerProxy
 from ecs_systems.check_status_action_system import CheckStatusActionHelper, ActorCheckStatusEvent
@@ -37,7 +37,7 @@ async def create(clientip: str) -> List[TupleModel]:
     logger.add(f"logs/{log_start_time}.log", level="DEBUG")
 
     worldname = "World2"
-    rpg_game = load_then_create_rpg_game(worldname, "qwe", RPGGameType.WEB_SERVER)
+    rpg_game = create_rpg_game(worldname, "qwe", RPGGameClientType.WEB_SERVER)
     if rpg_game is None:
         logger.error("create_rpg_game 失败。")
         return []
@@ -132,7 +132,7 @@ async def quitgame(clientip: str) -> List[TupleModel]:
 # player 可以是立即模式
 async def imme_handle_perception(rpg_game: RPGGame, playerproxy: PlayerProxy) -> None:
 
-    context = rpg_game._extended_context
+    context = rpg_game._entitas_context
     playerentity = context.get_player_entity(playerproxy._name)
     if playerentity is None:
         return
@@ -153,12 +153,12 @@ async def imme_handle_perception(rpg_game: RPGGame, playerproxy: PlayerProxy) ->
 # player 可以是立即模式
 async def imme_handle_check_status(rpg_game: RPGGame, playerproxy: PlayerProxy) -> None:
 
-    context = rpg_game._extended_context
+    context = rpg_game._entitas_context
     playerentity = context.get_player_entity(playerproxy._name)
     if playerentity is None:
         return
     #
-    context = rpg_game._extended_context
+    context = rpg_game._entitas_context
     helper = CheckStatusActionHelper(context)
     helper.check_status(playerentity)
     #

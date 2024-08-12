@@ -1,6 +1,6 @@
 from typing import Optional
 from entitas.entity import Entity
-from my_entitas.extended_context import ExtendedContext
+from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import Optional
 from enum import Enum
 
@@ -13,7 +13,7 @@ class ErrorConversationEnable(Enum):
     NOT_IN_THE_SAME_STAGE = 3
 
 # 检查是否可以对话
-def conversation_check(context: ExtendedContext, actor_or_stage_entity: Entity, target_name: str) -> ErrorConversationEnable:
+def conversation_check(context: RPGEntitasContext, actor_or_stage_entity: Entity, target_name: str) -> ErrorConversationEnable:
 
     must_be_actor_entity: Optional[Entity] = context.get_actor_entity(target_name)
     if must_be_actor_entity is None:

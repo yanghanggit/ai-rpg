@@ -4,7 +4,7 @@ from build_game.game_builder import GameBuilder
 from rpg_game.rpg_game import RPGGame 
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from file_system.file_system import FileSystem
-from extended_systems.kick_off_memory_system import KickOffMemorySystem
+from extended_systems.kick_off_message_system import KickOffMessageSystem
 from typing import Optional
 from my_agent.lang_serve_agent_system import LangServeAgentSystem
 from extended_systems.code_name_component_system import CodeNameComponentSystem
@@ -83,10 +83,10 @@ def create_game_builder(game_name: str, version: str) -> Optional[GameBuilder]:
 def _create_rpg_game_(game_name: str, chaos_engineering: Optional[IChaosEngineering], rpg_game_client_type: RPGGameClientType) -> Optional[RPGGame]:
 
     # 依赖注入的特殊系统
-    file_system = FileSystem("file_system， Because it involves IO operations, an independent system is more convenient.")
-    memory_system = KickOffMemorySystem("memorey_system， Because it involves IO operations, an independent system is more convenient.")
-    agent_connect_system = LangServeAgentSystem("agent_connect_system， Because it involves net operations, an independent system is more convenient.")
-    code_name_component_system = CodeNameComponentSystem("Build components by codename for special purposes")
+    file_system = FileSystem("FileSystem Because it involves IO operations, an independent system is more convenient.")
+    memory_system = KickOffMessageSystem("KickOffMessageSystem Because it involves IO operations, an independent system is more convenient.")
+    agent_connect_system = LangServeAgentSystem("LangServeAgentSystem Because it involves net operations, an independent system is more convenient.")
+    code_name_component_system = CodeNameComponentSystem("CodeNameComponentSystem, Build components by codename for special purposes")
     guid_generator = GUIDGenerator("GUIDGenerator")
     
     ### 混沌工程系统

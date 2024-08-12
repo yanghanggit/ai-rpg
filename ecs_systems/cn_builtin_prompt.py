@@ -7,21 +7,21 @@ from ecs_systems.cn_constant_prompt import _CNConstantPrompt_
 
 
 ###############################################################################################################################################
-def kick_off_memory_actor_prompt(kick_off_memory: str) -> str:
+def kick_off_actor_prompt(kick_off_message: str) -> str:
     prompt = f"""# <%这是角色初始化>游戏世界即将开始运行。这是你的初始设定，你将以此为起点进行游戏
 {_CNConstantPrompt_.RE_EMPHASIZE_GAME_STYLE_TO_PREVENT_POLICY_PROBLEMS}
-{kick_off_memory}。
+{kick_off_message}。
 ## 请结合你的角色设定,更新你的状态。
 ## 输出要求:
 - 请遵循'输出格式指南'。
 - 返回结果仅带'{MindVoiceActionComponent.__name__}'这个key"""
     return prompt
 ###############################################################################################################################################
-def kick_off_memory_stage_prompt(kick_off_memory: str) -> str:
+def kick_off_stage_prompt(kick_off_message: str) -> str:
     prompt = f"""# <%这是场景初始化>游戏世界即将开始运行。这是你的初始设定，你将以此为起点进行游戏
 {_CNConstantPrompt_.RE_EMPHASIZE_GAME_STYLE_TO_PREVENT_POLICY_PROBLEMS}
 ## 你的初始设定如下: 
-{kick_off_memory}。
+{kick_off_message}。
 ## 请结合你的场景设定,更新你的状态。
 ## 输出要求:
 - 请遵循 输出格式指南。

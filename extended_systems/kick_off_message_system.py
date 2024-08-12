@@ -4,10 +4,10 @@ from pathlib import Path
 
 ####################################################################################################################################
 ## 第一次初始化的时候，会做读取来确定角色初始上下文（记忆）
-class KickOffMemorySystem:
+class KickOffMessageSystem:
     def __init__(self, name: str) -> None:
         self._name: str = name
-        self._kick_off_memories: Dict[str, str] = {}
+        self._messages: Dict[str, str] = {}
         self._runtime_dir: Optional[Path] = None
 ####################################################################################################################################
     def set_runtime_dir(self, runtime_dir: Path) -> None:
@@ -17,46 +17,46 @@ class KickOffMemorySystem:
         assert runtime_dir.exists()
         assert self._runtime_dir.is_dir(), f"Directory is not a directory: {self._runtime_dir}"
 ####################################################################################################################################
-    def md_file_path(self, who: str) -> Path:
+    def md_file_path(self, actor_name: str) -> Path:
         assert self._runtime_dir is not None
-        dir = self._runtime_dir / f"{who}"
-        dir.mkdir(parents=True, exist_ok=True)
-        return dir / f"kick_off_memory.md"
+        dir = self._runtime_dir / f"{actor_name}"
+        dir.mkdir(parents = True, exist_ok = True)
+        return dir / f"kick_off_message.md"
 ####################################################################################################################################
-    def add_kick_off_memory(self, who: str, kick_off_memory_content: str) -> None:
+    def add_message(self, actor_name: str, kick_off_message: str) -> None:
         #初始化
-        self.write_md(who, kick_off_memory_content)
+        self.write_md(actor_name, kick_off_message)
         #初始化成功了
-        mm = self.read_md(who)
+        mm = self.read_md(actor_name)
         assert mm is not None
         if mm is not None:
-            assert mm == kick_off_memory_content
-            self._kick_off_memories[who] = mm
+            assert mm == kick_off_message
+            self._messages[actor_name] = mm
 ####################################################################################################################################
-    def read_md(self, who: str) -> Optional[str]:
+    def get_message(self, actor_name: str) -> str:
+        return self._messages.get(actor_name, "")
+####################################################################################################################################
+    def read_md(self, actor_name: str) -> Optional[str]:
 
-        file_path = self.md_file_path(who)
-        if not file_path.exists():
-            assert False, f"文件不存在: {file_path}"
-            return None
-        
         try:
-            content = file_path.read_text(encoding="utf-8")
-            assert content is not None
-            return content
+
+            file_path = self.md_file_path(actor_name)
+            if not file_path.exists():
+                logger.error(f"文件不存在: {file_path}")
+                return None
+
+            return file_path.read_text(encoding = "utf-8")
+        
         except Exception as e:
             logger.error(f"读取文件失败: {file_path}, e = {e}")
-            return None
+
+        return None
 ####################################################################################################################################
-    def write_md(self, who: str, content: str) -> None:
-        file_path = self.md_file_path(who)
+    def write_md(self, actor_name: str, content: str) -> int:
         try:
-            res = file_path.write_text(content, encoding="utf-8")
-            #logger.info(f"写入文件成功: {file_path}, res = {res}")
+            file_path = self.md_file_path(actor_name)
+            return file_path.write_text(content, encoding = "utf-8")
         except Exception as e:
             logger.error(f"写入文件失败: {file_path}, e = {e}")
-            return
-####################################################################################################################################
-    def get_kick_off_memory(self, who: str) -> str:
-        return self._kick_off_memories.get(who, "")
+        return -1
 ####################################################################################################################################

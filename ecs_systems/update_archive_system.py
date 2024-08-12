@@ -92,11 +92,11 @@ class UpdateArchiveHelper:
         #人身上道具提到的
         mentioned_in_prop_description = self._name_mentioned_in_prop_description(need_check_names, actor_name)
         #记忆中出现的
-        mentioned_in_kick_off_memory = self._name_mentioned_in_kick_off_memory(need_check_names, actor_name)
+        mentioned_in_kick_off_message = self._name_mentioned_in_kick_off_message(need_check_names, actor_name)
         #对话历史与上下文中出现的
         mentioned_in_chat_history = self._name_mentioned_in_chat_history(need_check_names, actor_name)
         #取并集
-        return mentioned_in_prop_description | mentioned_in_kick_off_memory | mentioned_in_chat_history
+        return mentioned_in_prop_description | mentioned_in_kick_off_message | mentioned_in_chat_history
 ###############################################################################################################################################
     def get_actor_archive(self, actor_name: str) -> Set[str]:
         #需要检查的场景名
@@ -104,11 +104,11 @@ class UpdateArchiveHelper:
         #人身上道具提到的
         mentioned_in_prop_description = self._name_mentioned_in_prop_description(need_check_names, actor_name)
         #记忆中出现的
-        mentioned_in_kick_off_memory = self._name_mentioned_in_kick_off_memory(need_check_names, actor_name)
+        mentioned_in_kick_off_message = self._name_mentioned_in_kick_off_message(need_check_names, actor_name)
         #对话历史与上下文中出现的
         mentioned_in_chat_history = self._name_mentioned_in_chat_history(need_check_names, actor_name)
         #取并集
-        finalres = mentioned_in_prop_description | mentioned_in_kick_off_memory | mentioned_in_chat_history
+        finalres = mentioned_in_prop_description | mentioned_in_kick_off_message | mentioned_in_chat_history
         finalres.discard(actor_name) ##去掉自己，没必要认识自己
         return finalres
 ###############################################################################################################################################
@@ -121,11 +121,11 @@ class UpdateArchiveHelper:
                     res.add(name)
         return res
 ###############################################################################################################################################
-    def _name_mentioned_in_kick_off_memory(self, check_names: Set[str], actor_name: str) -> Set[str]:
+    def _name_mentioned_in_kick_off_message(self, check_names: Set[str], actor_name: str) -> Set[str]:
         result: Set[str] = set()
-        kick_off_memory = self._context._kick_off_memory_system.get_kick_off_memory(actor_name)
+        kick_off_message = self._context._kick_off_message_system.get_message(actor_name)
         for name in check_names:
-            if name in kick_off_memory:
+            if name in kick_off_message:
                 result.add(name)
         return result
 ###############################################################################################################################################

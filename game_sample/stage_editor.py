@@ -63,9 +63,9 @@ class ExcelEditorStage:
                 logger.error(f"Invalid actor: {_n}")
 ################################################################################################################################
     @property
-    def kick_off_memory(self) -> str:
+    def kick_off_message(self) -> str:
         assert self._my_data is not None
-        return cast(str, self._my_data["kick_off_memory"])
+        return cast(str, self._my_data["kick_off_message"])
 ################################################################################################################################
     @property
     def exit_of_portal(self) -> str:
@@ -103,7 +103,7 @@ class ExcelEditorStage:
         _dt["codename"] = data_stage.codename
         _dt["description"] = data_stage.description
         _dt["url"] = data_stage.localhost
-        _dt["kick_off_memory"] = self.kick_off_memory
+        _dt["kick_off_message"] = self.kick_off_message
         _dt["exit_of_portal"] = self.exit_of_portal
         _dt['attributes'] = self.attributes 
 

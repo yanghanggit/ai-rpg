@@ -46,9 +46,9 @@ class ExcelEditorActor:
         return [int(attr) for attr in data.split(',')]    
 #################################################################################################################################
     @property
-    def kick_off_memory(self) -> str:
+    def kick_off_message(self) -> str:
         assert self._my_data is not None
-        return cast(str, self._my_data["kick_off_memory"])
+        return cast(str, self._my_data["kick_off_message"])
 #################################################################################################################################
     @property
     def actor_current_using_prop(self) -> List[str]:
@@ -85,7 +85,7 @@ class ExcelEditorActor:
         output["name"] = self.excel_data.name
         output["codename"] = self.excel_data.codename
         output["url"] = self.excel_data.localhost
-        output["kick_off_memory"] = self.kick_off_memory
+        output["kick_off_message"] = self.kick_off_message
         output["appearance"] = self.appearance
         output["actor_archives"] = self.excel_data._actor_archives 
         output["stage_archives"] = self.excel_data._stage_archives 

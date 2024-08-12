@@ -5,7 +5,7 @@ class ActorModel(BaseModel):
     name: str
     codename: str
     url: str
-    kick_off_memory: str
+    kick_off_message: str
     appearance: str
     actor_archives: List[str]
     stage_archives: List[str]
@@ -17,7 +17,7 @@ class StageModel(BaseModel):
     codename: str
     description: str
     url: str
-    kick_off_memory: str
+    kick_off_message: str
     exit_of_portal: str
     attributes: List[int]
     stage_entry_status: str

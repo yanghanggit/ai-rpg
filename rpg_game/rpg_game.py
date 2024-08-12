@@ -50,7 +50,7 @@ class RPGGame(BaseGame):
         ## 第1步，设置根路径
         self._game_builder = game_builder
         context._langserve_agent_system.set_runtime_dir(game_builder._runtime_dir)
-        context._kick_off_memory_system.set_runtime_dir(game_builder._runtime_dir)
+        context._kick_off_message_system.set_runtime_dir(game_builder._runtime_dir)
         context._file_system.set_runtime_dir(game_builder._runtime_dir)
 
         ## 第2步 创建管理员类型的角色，全局的AI
@@ -204,7 +204,7 @@ class RPGGame(BaseGame):
 
         #添加扩展子系统的
         context._langserve_agent_system.register_agent(actor_model.name, actor_model.url)
-        context._kick_off_memory_system.add_kick_off_memory(actor_model.name, actor_model.kick_off_memory)
+        context._kick_off_message_system.add_message(actor_model.name, actor_model.kick_off_message)
         context._codename_component_system.register_code_name_component_class(actor_model.name, actor_model.codename)
         
         # 添加道具
@@ -299,7 +299,7 @@ class RPGGame(BaseGame):
 
         #添加子系统！
         context._langserve_agent_system.register_agent(stage_model.name, stage_model.url)
-        context._kick_off_memory_system.add_kick_off_memory(stage_model.name, stage_model.kick_off_memory)
+        context._kick_off_message_system.add_message(stage_model.name, stage_model.kick_off_message)
         context._codename_component_system.register_code_name_component_class(stage_model.name, stage_model.codename)
         context._codename_component_system.register_stage_tag_component_class(stage_model.name, stage_model.codename)
         

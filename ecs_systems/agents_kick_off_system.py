@@ -2,7 +2,7 @@ from overrides import override
 from entitas import Entity, Matcher, InitializeProcessor, ExecuteProcessor # type: ignore
 from ecs_systems.components import WorldComponent, StageComponent, ActorComponent, PlayerComponent
 from ecs_systems.action_components import PerceptionActionComponent, CheckStatusActionComponent
-from ecs_systems.cn_builtin_prompt import (kick_off_memory_actor_prompt, kick_off_memory_stage_prompt, kick_off_world_system_prompt)
+from ecs_systems.cn_builtin_prompt import (kick_off_actor_prompt, kick_off_stage_prompt, kick_off_world_system_prompt)
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from typing import Dict, Set
@@ -79,12 +79,12 @@ class AgentsKickOffSystem(InitializeProcessor, ExecuteProcessor):
         for stage_entity in stage_entities:
 
             stage_comp = stage_entity.get(StageComponent)
-            kick_off_memory = self._context._kick_off_memory_system.get_kick_off_memory(stage_comp.name)
-            if kick_off_memory == "":
+            kick_off_message = self._context._kick_off_message_system.get_message(stage_comp.name)
+            if kick_off_message == "":
                 logger.error(f"stagememory is empty: {stage_comp.name}")
                 continue
 
-            task = self._context._langserve_agent_system.create_agent_request_task(stage_comp.name, kick_off_memory_stage_prompt(kick_off_memory))
+            task = self._context._langserve_agent_system.create_agent_request_task(stage_comp.name, kick_off_stage_prompt(kick_off_message))
             assert task is not None, f"task is None: {stage_comp.name}"
             if task is not None:
                 result[stage_comp.name] = task
@@ -98,12 +98,12 @@ class AgentsKickOffSystem(InitializeProcessor, ExecuteProcessor):
         for actor_entity in actor_entities:
 
             actor_comp = actor_entity.get(ActorComponent)
-            kick_off_memory = self._context._kick_off_memory_system.get_kick_off_memory(actor_comp.name)
-            if kick_off_memory == "":
-                logger.error(f"_kick_off_memory is empty: {actor_comp.name}")
+            kick_off_message = self._context._kick_off_message_system.get_message(actor_comp.name)
+            if kick_off_message == "":
+                logger.error(f"kick_off_message is empty: {actor_comp.name}")
                 continue
             
-            task = self._context._langserve_agent_system.create_agent_request_task(actor_comp.name, kick_off_memory_actor_prompt(kick_off_memory))
+            task = self._context._langserve_agent_system.create_agent_request_task(actor_comp.name, kick_off_actor_prompt(kick_off_message))
             assert task is not None, f"task is None: {actor_comp.name}"
             if task is not None:
                 result[actor_comp.name] = task

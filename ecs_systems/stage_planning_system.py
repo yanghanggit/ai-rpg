@@ -109,7 +109,7 @@ class StagePlanningSystem(ExecuteProcessor):
     def get_props_in_stage(self, entity: Entity) -> List[PropFile]:
         #res: List[PropModel] = []
         safe_stage_name = self._context.safe_get_entity_name(entity)
-        return self._context._file_system.get_prop_files(safe_stage_name)
+        return self._context._file_system.get_files(PropFile, safe_stage_name)
         # for file in files:
         #     res.append(file._prop_model)
         # return res

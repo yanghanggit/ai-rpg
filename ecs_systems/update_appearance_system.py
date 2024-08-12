@@ -126,7 +126,7 @@ class UpdateAppearanceSystem(InitializeProcessor, ExecuteProcessor):
     # 获取衣服的描述 todo。现在就返回了第一个衣服的描述
     def get_clothe(self, entity: Entity) -> str:
         safe_name = self._context.safe_get_entity_name(entity)            
-        prop_files = self._context._file_system.get_prop_files(safe_name)
+        prop_files = self._context._file_system.get_files(PropFile, safe_name)
         for prop_file in prop_files:
             if prop_file.is_clothes:
                 return prop_file.description

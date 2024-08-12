@@ -13,10 +13,9 @@ from ecs_systems.stage_director_component import StageDirectorComponent
 from file_system.files_def import PropFile
 import shutil
 from rpg_game.base_game import BaseGame
-from file_system.helper import add_actor_archive_files
+import file_system.helper
 from rpg_game.rpg_entitas_processors import RPGEntitasProcessors
 from build_game.data_model import ActorProxyModel, StageProxyModel, ActorModel, StageModel, WorldSystemModel, WorldSystemProxyModel
-
 
 
 class RPGGame(BaseGame):
@@ -32,7 +31,7 @@ class RPGGame(BaseGame):
         ## 尽量不要再加东西了，Game就只管上下文，创建世界的数据，和Processors。其中上下文可以做运行中的全局数据管理者
         self._entitas_context: RPGEntitasContext = context
         self._game_builder: Optional[GameBuilder] = None
-        self._processors: RPGEntitasProcessors = RPGEntitasProcessors.create(self, context)  #create_rpg_processors(self, context)
+        self._processors: RPGEntitasProcessors = RPGEntitasProcessors.create(self, context)
         self._player_names: List[str] = []
 ###############################################################################################################################################
     def build(self, game_builder: GameBuilder) -> 'RPGGame':
@@ -216,12 +215,14 @@ class RPGGame(BaseGame):
             if prop_model is None:
                 logger.error(f"没有从数据库找到道具：{prop_proxy.name}")
                 continue
-        
-            context._file_system.add_prop_file(PropFile(prop_model.name, actor_proxy.name, prop_model, prop_proxy.count))
+                
+            prop_file = PropFile(prop_model.name, actor_proxy.name, prop_model, prop_proxy.count)
+            context._file_system.add_file(prop_file)
+            context._file_system.write_file(prop_file)
             context._codename_component_system.register_code_name_component_class(prop_model.name, prop_model.codename)
 
         # 初步建立关系网（在编辑文本中提到的Actor名字）
-        add_actor_archive_files(context._file_system, actor_model.name, set(actor_model.actor_archives))
+        file_system.helper.add_actor_archive_files(context._file_system, actor_model.name, set(actor_model.actor_archives))
 
         return actor_entity
 ###############################################################################################################################################
@@ -283,8 +284,10 @@ class RPGGame(BaseGame):
             if prop_model is None:
                 logger.error(f"没有从数据库找到道具：{prop_proxy.name}")
                 continue
-
-            context._file_system.add_prop_file(PropFile(prop_proxy.name, stage_model.name, prop_model, prop_proxy.count))
+            
+            prop_file = PropFile(prop_proxy.name, stage_model.name, prop_model, prop_proxy.count)
+            context._file_system.add_file(prop_file)
+            context._file_system.write_file(prop_file)
             context._codename_component_system.register_code_name_component_class(prop_model.name, prop_model.codename)
 
         # 添加场景的条件：包括进入和离开的条件，自身变化条件等等

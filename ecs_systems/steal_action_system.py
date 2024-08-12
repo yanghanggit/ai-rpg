@@ -9,6 +9,8 @@ from typing import override
 from ecs_systems.stage_director_component import StageDirectorComponent
 from ecs_systems.stage_director_event import IStageDirectorEvent
 from ecs_systems.cn_builtin_prompt import steal_prop_action_prompt
+import file_system.helper
+from file_system.files_def import PropFile
 
 
 ####################################################################################################################################
@@ -76,11 +78,12 @@ class StealActionSystem(ReactiveProcessor):
         return steal_success_count > 0
 ####################################################################################################################################
     def _steal(self, entity: Entity, target_actor_name: str, prop_name: str) -> bool:
-        prop = self._context._file_system.get_prop_file(target_actor_name, prop_name)
+        prop = self._context._file_system.get_file(PropFile, target_actor_name, prop_name)
         if prop is None:
             return False
         safe_name = self._context.safe_get_entity_name(entity)
-        self._context._file_system.give_prop_file(target_actor_name, safe_name, prop_name)
+        #self._context._file_system.give_prop_file(target_actor_name, safe_name, prop_name)
+        file_system.helper.give_prop_file(self._context._file_system, target_actor_name, safe_name, prop_name)
         return True
 ####################################################################################################################################
     def on_success(self, entity: Entity) -> None:

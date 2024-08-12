@@ -9,6 +9,8 @@ from typing import List, override
 from ecs_systems.stage_director_component import StageDirectorComponent
 from ecs_systems.stage_director_event import IStageDirectorEvent
 from ecs_systems.cn_builtin_prompt import give_prop_action_prompt
+import file_system.helper
+from file_system.files_def import PropFile
 
 
 class ActorGivePropEvent(IStageDirectorEvent):
@@ -73,10 +75,11 @@ class GivePropActionSystem(ReactiveProcessor):
 ####################################################################################################################################
     def _give_prop(self, entity: Entity, target_actor_name: str, mypropname: str) -> bool:
         safename = self._context.safe_get_entity_name(entity)
-        myprop = self._context._file_system.get_prop_file(safename, mypropname)
+        myprop = self._context._file_system.get_file(PropFile, safename, mypropname)
         if myprop is None:
             return False
-        self._context._file_system.give_prop_file(safename, target_actor_name, mypropname)
+        #self._context._file_system.give_prop_file(safename, target_actor_name, mypropname)
+        file_system.helper.give_prop_file(self._context._file_system, safename, target_actor_name, mypropname)
         return True
 ####################################################################################################################################
     def on_success(self, name: str) -> None:

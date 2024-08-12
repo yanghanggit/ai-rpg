@@ -63,7 +63,7 @@ class SimpleRPGPreFightSystem(ExecuteProcessor):
 ######################################################################################################################################################
     def get_weapon_with_highest_attack_power(self, entity: Entity) -> Optional[PropFile]:
         safe_name = self._context.safe_get_entity_name(entity)            
-        prop_files = self._context._file_system.get_prop_files(safe_name)
+        prop_files = self._context._file_system.get_files(PropFile, safe_name)
         #
         highest_attack = 0
         highest_attack_weapon = None
@@ -76,7 +76,7 @@ class SimpleRPGPreFightSystem(ExecuteProcessor):
 ######################################################################################################################################################
     def get_armor_with_highest_defense_power(self, entity: Entity) -> Optional[PropFile]:
         safe_name = self._context.safe_get_entity_name(entity)            
-        prop_files = self._context._file_system.get_prop_files(safe_name)
+        prop_files = self._context._file_system.get_files(PropFile, safe_name)
         #
         highest_defense = 0
         highest_defense_armor = None

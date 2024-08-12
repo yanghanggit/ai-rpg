@@ -7,6 +7,7 @@ from typing import List, Dict, override
 from ecs_systems.stage_director_component import StageDirectorComponent
 from ecs_systems.stage_director_event import IStageDirectorEvent
 from ecs_systems.cn_builtin_prompt import perception_action_prompt
+from file_system.files_def import PropFile
 
 ####################################################################################################################################
 ####################################################################################################################################
@@ -40,7 +41,7 @@ class PerceptionActionHelper:
     def perception_props_in_stage(self, entity: Entity, stageentity: Entity) -> List[str]:
         res: List[str] = []
         stagecomp: StageComponent = stageentity.get(StageComponent)
-        prop_files = self._context._file_system.get_prop_files(stagecomp.name)
+        prop_files = self._context._file_system.get_files(PropFile, stagecomp.name)
         for prop in prop_files:
             res.append(prop._name)
         return res

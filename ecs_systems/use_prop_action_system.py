@@ -92,7 +92,7 @@ class UsePropActionSystem(ReactiveProcessor):
                 continue
             
             # 检查道具是否存在，需要提醒，如果没有是大问题
-            prop_file = context._file_system.get_prop_file(action._actor_name, propname)
+            prop_file = context._file_system.get_file(PropFile, action._actor_name, propname)
             if prop_file is None:
                 logger.error(f"检查道具合理性失败，{propname} 不存在")
                 continue
@@ -117,7 +117,7 @@ class UsePropActionSystem(ReactiveProcessor):
         context = self._context
         targetname = context.safe_get_entity_name(target_entity)
         username = context.safe_get_entity_name(entity)
-        assert context._file_system.get_prop_file(username, prop_file._name) is not None
+        assert context._file_system.get_file(PropFile, username, prop_file._name) is not None
 
         # 检查条件
         exit_cond_status_prompt = str(_CNConstantPrompt_.NONE_PROMPT)

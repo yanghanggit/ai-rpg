@@ -29,7 +29,7 @@ class CheckStatusActionHelper:
 
     def check_props(self, entity: Entity) -> None:
         safename = self._context.safe_get_entity_name(entity)
-        prop_files = self._context._file_system.get_prop_files(safename)
+        prop_files = self._context._file_system.get_files(PropFile, safename)
         for prop_file in prop_files:
             if prop_file.is_weapon or prop_file.is_clothes or prop_file.is_non_consumable_item:
                 self._prop_files_as_weapon_clothes_non_consumable_item.append(prop_file)

@@ -1,6 +1,7 @@
 from typing import Set, Optional, List, Any, Dict
-from file_system.files_def import ActorArchiveFile, StageArchiveFile, StatusProfileFile, StageActorsMapFile
+from file_system.files_def import PropFile, ActorArchiveFile, StageArchiveFile, StatusProfileFile, StageActorsMapFile
 from file_system.file_system import FileSystem
+from loguru import logger
 
 ##################################################################################################################################
 # 为一个Actor添加他认识的其他Actor的文件
@@ -12,12 +13,12 @@ def add_actor_archive_files(file_system: FileSystem, owners_name: str, actor_arc
 
     for actor_name in actor_archive_names:
 
-        if owners_name == actor_name or file_system.has_actor_archive(owners_name, actor_name):
+        if owners_name == actor_name or file_system.has_file(ActorArchiveFile, owners_name, actor_name):
             continue
 
         archive_file = ActorArchiveFile(actor_name, owners_name, actor_name, "")
-        file_system.add_actor_archive(archive_file)
-        file_system.write_actor_archive(archive_file)
+        file_system.add_file(archive_file)
+        file_system.write_file(archive_file)
         ret.append(archive_file)
 
     return ret
@@ -25,41 +26,60 @@ def add_actor_archive_files(file_system: FileSystem, owners_name: str, actor_arc
 # 更新一个Actor的档案文件
 def update_actor_archive_file(file_system: FileSystem, owner_name: str, actor_name: str, appearance: str) -> Optional[ActorArchiveFile]:
     
-    file = file_system.get_actor_archive(owner_name, actor_name)
-    
+    file = file_system.get_file(ActorArchiveFile, owner_name, actor_name)
     if file is None:
         return None
-    file._appearance = appearance
-    file_system.write_actor_archive(file)
     
+    file._appearance = appearance
+    file_system.write_file(file)
     return file
 ##################################################################################################################################
 ## 为一个Actor添加他认识的Stage的文件
 def add_stage_archive_files(file_system: FileSystem, my_name: str, stage_names: Set[str]) -> List[StageArchiveFile]:
     
-    res: List[StageArchiveFile] = []
+    ret: List[StageArchiveFile] = []
 
-    for stagename in stage_names:
-        if my_name == stagename or file_system.has_stage_archive(my_name, stagename):
+    for stage_name in stage_names:
+
+        if my_name == stage_name or file_system.has_file(StageArchiveFile, my_name, stage_name):
             continue
-        file = StageArchiveFile(stagename, my_name, stagename)
-        file_system.add_stage_archive(file)
-        file_system.write_stage_archive(file)
-        res.append(file)
+        
+        file = StageArchiveFile(stage_name, my_name, stage_name)
+        file_system.add_file(file)
+        file_system.write_file(file)
+        ret.append(file)
     
-    return res
+    return ret
 ##################################################################################################################################
 ## 更新角色的属性文件并记录下来～
 def update_status_profile_file(file_system: FileSystem, owner_name: str, update_data: Dict[str, Any]) -> Optional[StatusProfileFile]:
     file = StatusProfileFile(owner_name, owner_name, update_data)
-    file_system.set_status_profile(file)
-    file_system.write_status_profile(file)
+    file_system.add_file(file)
+    file_system.write_file(file)
     return file
 ##################################################################################################################################
 # 场景中有哪些人的总文件。
 def update_stage_actors_map_file(file_system: FileSystem, update_data: Dict[str, List[str]]) -> Optional[StageActorsMapFile]:
     file = StageActorsMapFile(update_data)
-    file_system.set_stage_actors_map(file)
-    file_system.write_stage_actors_map(file)
+    file_system.add_file(file)
+    file_system.write_file(file)
     return file
+##################################################################################################################################
+def give_prop_file(file_system: FileSystem, from_owner: str, to_owner: str, prop_name: str) -> Optional[PropFile]:
+    find_owners_file = file_system.get_file(PropFile, from_owner, prop_name)
+    if find_owners_file is None:
+        logger.error(f"{from_owner}没有{prop_name}这个道具。")
+        return None
+    # 文件得从管理数据结构中移除掉
+    #file_system._prop_files[from_owner].remove(find_owners_file)
+    file_system.remove_file(find_owners_file)
+    # 文件得从文件系统中删除掉
+    file_path = file_system.parse_path(find_owners_file)
+    assert file_path is not None
+    file_path.unlink()
+    # 文件重新写入
+    new_file = PropFile(prop_name, to_owner, find_owners_file._prop_model, find_owners_file._count)
+    file_system.add_file(new_file)
+    file_system.write_file(new_file)
+    return new_file
 ##################################################################################################################################

@@ -9,7 +9,8 @@ from ecs_systems.stage_director_event import IStageDirectorEvent
 from typing import cast, override
 from gameplay_checks.conversation_check import conversation_check, ErrorConversationEnable
 from ecs_systems.cn_builtin_prompt import kill_prompt, attack_prompt
-
+import file_system.helper
+from file_system.files_def import PropFile
 
 
 ####################################################################################################################################
@@ -176,13 +177,14 @@ class AttackActionSystem(ReactiveProcessor):
         target_rpg_comp: SimpleRPGAttrComponent = _target_entity.get(SimpleRPGAttrComponent)
         logger.info(f"{rpg_comp.name} kill => {target_rpg_comp.name}")
         
-        prop_files = self._context._file_system.get_prop_files(target_rpg_comp.name)
+        prop_files = self._context._file_system.get_files(PropFile, target_rpg_comp.name)
         for prop_file in prop_files:
             if not prop_file.is_unique:
                 logger.info(f"the propfile {prop_file._name} is not unique, so it will not be taken away.")
                 continue
             # 交换文件，即交换道具文件即可
-            self._context._file_system.give_prop_file(target_rpg_comp.name, rpg_comp.name, prop_file._name)        
+            #self._context._file_system.give_prop_file(target_rpg_comp.name, rpg_comp.name, prop_file._name)  
+            file_system.helper.give_prop_file(self._context._file_system, target_rpg_comp.name, rpg_comp.name, prop_file._name)      
 ######################################################################################################################################################
     def final_attack_val(self, entity: Entity) -> int:
         # 最后的攻击力

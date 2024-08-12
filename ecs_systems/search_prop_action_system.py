@@ -12,6 +12,7 @@ from typing import List, override
 from file_system.files_def import PropFile
 from ecs_systems.stage_director_event import IStageDirectorEvent
 from ecs_systems.cn_builtin_prompt import search_prop_action_failed_prompt, search_prop_action_success_prompt
+import file_system.helper
 
 
 ####################################################################################################################################
@@ -85,9 +86,9 @@ class SearchPropActionSystem(ReactiveProcessor):
             logger.error(f"{safe_name} not in any stage")
             return False
         ##
-        stagecomp: StageComponent = stage_entity.get(StageComponent)
+        stage_comp = stage_entity.get(StageComponent)
         # 场景有这些道具文件
-        prop_files = self._context._file_system.get_prop_files(stagecomp.name)
+        prop_files = self._context._file_system.get_files(PropFile, stage_comp.name)
         ###
         search_comp: SearchPropActionComponent = entity.get(SearchPropActionComponent)
         search_action: AgentAction = search_comp.action
@@ -98,12 +99,12 @@ class SearchPropActionSystem(ReactiveProcessor):
             ## 不在同一个场景就不能被搜寻，这个场景不具备这个道具，就无法搜寻
             if not self.check_stage_has_the_prop(target_prop_name, prop_files):
                 StageDirectorComponent.add_event_to_stage_director(self._context, stage_entity, ActorSearchPropFailedEvent(safe_name, target_prop_name))
-                logger.debug(f"search failed, {target_prop_name} not in {stagecomp.name}")
+                logger.debug(f"search failed, {target_prop_name} not in {stage_comp.name}")
                 continue
             # 交换文件，即交换道具文件即可
-            self.stage_exchanges_prop_to_actor(stagecomp.name, search_action._actor_name, target_prop_name)
-            logger.info(f"search success, {target_prop_name} in {stagecomp.name}")
-            StageDirectorComponent.add_event_to_stage_director(self._context, stage_entity, ActorSearchPropSuccessEvent(safe_name, target_prop_name, stagecomp.name))
+            self.stage_exchanges_prop_to_actor(stage_comp.name, search_action._actor_name, target_prop_name)
+            logger.info(f"search success, {target_prop_name} in {stage_comp.name}")
+            StageDirectorComponent.add_event_to_stage_director(self._context, stage_entity, ActorSearchPropSuccessEvent(safe_name, target_prop_name, stage_comp.name))
             search_success_count += 1
 
         return search_success_count > 0
@@ -115,7 +116,8 @@ class SearchPropActionSystem(ReactiveProcessor):
         return False
 ####################################################################################################################################
     def stage_exchanges_prop_to_actor(self, stage_name: str, actor_name: str, prop_file_name: str) -> None:
-        self._context._file_system.give_prop_file(stage_name, actor_name, prop_file_name)
+        #self._context._file_system.give_prop_file(stage_name, actor_name, prop_file_name)
+        file_system.helper.give_prop_file(self._context._file_system, stage_name, actor_name, prop_file_name)
 ####################################################################################################################################
     def on_success(self, entity: Entity) -> None:
         if entity.has(CheckStatusActionComponent):

@@ -4,8 +4,8 @@ from loguru import logger
 from ecs_systems.components import (StageComponent, ActorComponent, WorldComponent, SimpleRPGAttrComponent, SimpleRPGWeaponComponent, SimpleRPGArmorComponent)
 import json
 from typing import Dict, override, List, Any
-from file_system.helper import update_status_profile_file, update_stage_actors_map_file
-
+import file_system.helper
+from file_system.files_def import PropFile
 
 class EndSystem(InitializeProcessor, ExecuteProcessor):
 ############################################################################################################
@@ -47,7 +47,7 @@ class EndSystem(InitializeProcessor, ExecuteProcessor):
         else:
             logger.warning("/dump_stages_and_actors: No stages and actors now")
 
-        update_stage_actors_map_file(self._context._file_system, simple_dump)
+        file_system.helper.update_stage_actors_map_file(self._context._file_system, simple_dump)
 ############################################################################################################
     def simple_dump_stages_and_actors(self) -> Dict[str, List[str]]:
         stage_entities = self._context.get_group(Matcher(StageComponent)).entities
@@ -65,12 +65,10 @@ class EndSystem(InitializeProcessor, ExecuteProcessor):
         return map
 ############################################################################################################
     def dump_prop_files(self) -> None:
-        prop_files = self._context._file_system._prop_files
+        prop_file_dict = self._context._file_system.get_base_file_dict(PropFile)
         dump_data: Dict[str, str] = {}
-        for owner_name, owners_prop_files in prop_files.items():
-            name_list = ",".join([str(prop_file) for prop_file in owners_prop_files])
-            dump_data[owner_name] = name_list
-
+        for owner_name, prop_files in prop_file_dict.items():
+            dump_data[owner_name] = ",".join([str(prop_file) for prop_file in prop_files])
         logger.debug(f"{json.dumps(dump_data, ensure_ascii = False)}")
 ############################################################################################################
     def dump_status_profile(self) -> List[Dict[str, Any]]:
@@ -101,7 +99,7 @@ class EndSystem(InitializeProcessor, ExecuteProcessor):
                 final_dict.update(armor_dict)
 
             ret.append(final_dict)
-            update_status_profile_file(self._context._file_system, rpg_attr_comp.name, final_dict)
+            file_system.helper.update_status_profile_file(self._context._file_system, rpg_attr_comp.name, final_dict)
 
         return ret
 ############################################################################################################

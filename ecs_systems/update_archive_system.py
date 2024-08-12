@@ -4,9 +4,9 @@ from loguru import logger
 from ecs_systems.components import (ActorComponent, StageComponent)
 from ecs_systems.cn_builtin_prompt import update_actor_archive_prompt, update_stage_archive_prompt
 from ecs_systems.cn_constant_prompt import _CNConstantPrompt_
-from file_system.helper import add_actor_archive_files, update_actor_archive_file, add_stage_archive_files
 from typing import Set, override, Dict, List
-
+import file_system.helper
+from file_system.files_def import PropFile
 
 #### 一次处理过程的封装，目前是非常笨的方式（而且不是最终版本），后续可以优化。
 ###############################################################################################################################################
@@ -67,7 +67,7 @@ class UpdateArchiveHelper:
         actor_entities: Set[Entity] = self._context.get_group(Matcher(ActorComponent)).entities
         for actor_entity in actor_entities:
             actor_comp = actor_entity.get(ActorComponent)
-            prop_files = self._context._file_system.get_prop_files(actor_comp.name)
+            prop_files = self._context._file_system.get_files(PropFile, actor_comp.name)
             desc: List[str] = []
             for file in prop_files:
                 desc.append(f"{file.name}:{file.description}")
@@ -170,14 +170,14 @@ class UpdateArchiveSystem(ExecuteProcessor):
             return
         
         # 补充文件，有可能是新的人，也有可能全是旧的人
-        add_actor_archive_files(self._context._file_system, actor_comp.name, actor_archives)        
+        file_system.helper.add_actor_archive_files(self._context._file_system, actor_comp.name, actor_archives)        
 
         # 更新文件，只更新场景内我能看见的人
         appearance_data = self._context.appearance_in_stage(actor_entity)
         for name in actor_archives:
             appearance = appearance_data.get(name, "")
             if appearance != "":
-                update_actor_archive_file(self._context._file_system, actor_comp.name, name, appearance)
+                file_system.helper.update_actor_archive_file(self._context._file_system, actor_comp.name, name, appearance)
 
         # 更新chat history
         actors_names = ",".join(actor_archives)
@@ -200,7 +200,7 @@ class UpdateArchiveSystem(ExecuteProcessor):
             return
         
         # 写文件
-        add_stage_archive_files(self._context._file_system, actor_comp.name, stage_archives)
+        file_system.helper.add_stage_archive_files(self._context._file_system, actor_comp.name, stage_archives)
 
         # 更新chat history
         stages_names = ",".join(stage_archives)

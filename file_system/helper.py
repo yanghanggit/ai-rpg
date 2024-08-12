@@ -73,7 +73,7 @@ def give_prop_file(file_system: FileSystem, from_owner: str, to_owner: str, prop
     # 文件得从管理数据结构中移除掉
     file_system.remove_file(find_owners_file)
     # 文件重新写入
-    new_file = PropFile(prop_name, to_owner, find_owners_file._prop_model, find_owners_file._count)
+    new_file = PropFile(find_owners_file._guid, prop_name, to_owner, find_owners_file._prop_model, find_owners_file._count)
     file_system.add_file(new_file)
     file_system.write_file(new_file)
     return new_file

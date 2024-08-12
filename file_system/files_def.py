@@ -32,6 +32,7 @@ class BaseFile(ABC):
     def write(self, write_path: Path) -> int:
         try:
             write_content = self.serialization() 
+            assert write_content != ""
             return write_path.write_text(write_content, encoding = "utf-8")
         except Exception as e:
             logger.error(f"{self._name}, {self._owner_name} 写文件失败: {write_path}")
@@ -47,10 +48,11 @@ class PropFile(BaseFile):
     TYPE_CLOTHES = "Clothes"
     TYPE_NON_CONSUMABLE_ITEM = "NonConsumableItem"
 
-    def __init__(self, name: str, owner_name: str, prop_model: PropModel, count: int) -> None:
+    def __init__(self, guid: int, name: str, owner_name: str, prop_model: PropModel, count: int) -> None:
         
         super().__init__(name, owner_name)
 
+        self._guid = guid
         self._prop_model: PropModel = prop_model
         assert self._name == self._prop_model.name
         assert self._prop_model.codename != ""
@@ -61,6 +63,7 @@ class PropFile(BaseFile):
     @override
     def serialization(self) -> str:
         output: Dict[str, Any] = {}
+        output["guid"] = self._guid
         output["prop"] = self._prop_model.model_dump()
         output["count"] = self._count
         return json.dumps(output, ensure_ascii = False)

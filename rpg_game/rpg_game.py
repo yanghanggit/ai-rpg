@@ -216,7 +216,7 @@ class RPGGame(BaseGame):
                 logger.error(f"没有从数据库找到道具：{prop_proxy.name}")
                 continue
                 
-            prop_file = PropFile(prop_model.name, actor_proxy.name, prop_model, prop_proxy.count)
+            prop_file = PropFile(context._guid_generator.generate(), prop_model.name, actor_proxy.name, prop_model, prop_proxy.count)
             context._file_system.add_file(prop_file)
             context._file_system.write_file(prop_file)
             context._codename_component_system.register_code_name_component_class(prop_model.name, prop_model.codename)
@@ -285,7 +285,7 @@ class RPGGame(BaseGame):
                 logger.error(f"没有从数据库找到道具：{prop_proxy.name}")
                 continue
             
-            prop_file = PropFile(prop_proxy.name, stage_model.name, prop_model, prop_proxy.count)
+            prop_file = PropFile(context._guid_generator.generate(), prop_proxy.name, stage_model.name, prop_model, prop_proxy.count)
             context._file_system.add_file(prop_file)
             context._file_system.write_file(prop_file)
             context._codename_component_system.register_code_name_component_class(prop_model.name, prop_model.codename)

@@ -1,7 +1,7 @@
 from typing import override
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
 from ecs_systems.components import StageComponent
-from ecs_systems.action_components import BroadcastActionComponent
+from ecs_systems.action_components import BroadcastAction
 from my_agent.agent_action import AgentAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
@@ -35,11 +35,11 @@ class BroadcastActionSystem(ReactiveProcessor):
 ####################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(BroadcastActionComponent): GroupEvent.ADDED}
+        return {Matcher(BroadcastAction): GroupEvent.ADDED}
 ####################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(BroadcastActionComponent)
+        return entity.has(BroadcastAction)
 ####################################################################################################
     @override
     def react(self, entities: list[Entity]) -> None:
@@ -53,7 +53,7 @@ class BroadcastActionSystem(ReactiveProcessor):
             logger.error(f"BroadcastActionSystem: stageentity is None!")
             return
         #
-        broadcast_comp = entity.get(BroadcastActionComponent)
+        broadcast_comp = entity.get(BroadcastAction)
         stage_comp = current_stage_entity.get(StageComponent)
         #
         action: AgentAction = broadcast_comp.action

@@ -2,9 +2,9 @@ from entitas import ExecuteProcessor, Entity, Matcher #type: ignore
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from player.player_proxy import PlayerProxy, get_player_proxy
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from ecs_systems.action_components import MindVoiceActionComponent, WhisperActionComponent, SpeakActionComponent, \
-    BroadcastActionComponent, EnviroNarrateActionComponent, \
-    AttackActionComponent, GoToActionComponent
+from ecs_systems.action_components import MindVoiceAction, WhisperAction, SpeakAction, \
+    BroadcastAction, EnviroNarrateAction, \
+    AttackAction, GoToAction
 from my_agent.agent_action import AgentAction
 from typing import override
 from loguru import logger
@@ -46,9 +46,9 @@ class UpdateClientMessageSystem(ExecuteProcessor):
         stage = self._context.safe_get_stage_entity(player_entity)
         if stage is None:
             return
-        if not stage.has(EnviroNarrateActionComponent):
+        if not stage.has(EnviroNarrateAction):
             return
-        envirocomp: EnviroNarrateActionComponent = stage.get(EnviroNarrateActionComponent)
+        envirocomp: EnviroNarrateAction = stage.get(EnviroNarrateAction)
         action: AgentAction = envirocomp.action
         if len(action._values) == 0:
             return
@@ -58,7 +58,7 @@ class UpdateClientMessageSystem(ExecuteProcessor):
     def whisper_action_2_message(self, playerproxy: PlayerProxy, player_entity: Entity) -> None:
         player_entity_stage = self._context.safe_get_stage_entity(player_entity)
         player_entity_name = self._context.safe_get_entity_name(player_entity) 
-        entities = self._context.get_group(Matcher(WhisperActionComponent)).entities
+        entities = self._context.get_group(Matcher(WhisperAction)).entities
         for entity in entities:
 
             if entity == player_entity:
@@ -70,7 +70,7 @@ class UpdateClientMessageSystem(ExecuteProcessor):
                 #场景不一样，不能看见
                 continue
 
-            whisper_action_component: WhisperActionComponent = entity.get(WhisperActionComponent)
+            whisper_action_component: WhisperAction = entity.get(WhisperAction)
             action: AgentAction = whisper_action_component.action
             target_and_message = action.target_and_message_values()
             for tp in target_and_message:
@@ -86,7 +86,7 @@ class UpdateClientMessageSystem(ExecuteProcessor):
 ############################################################################################################
     def broadcast_action_2_message(self, playerproxy: PlayerProxy, player_entity: Entity) -> None:
         player_entity_stage = self._context.safe_get_stage_entity(player_entity)
-        entities = self._context.get_group(Matcher(BroadcastActionComponent)).entities
+        entities = self._context.get_group(Matcher(BroadcastAction)).entities
         for entity in entities:
                 
             if entity == player_entity:
@@ -98,14 +98,14 @@ class UpdateClientMessageSystem(ExecuteProcessor):
                 #场景不一样，不能看见
                 continue
 
-            broadcast_action_component: BroadcastActionComponent = entity.get(BroadcastActionComponent)
+            broadcast_action_component: BroadcastAction = entity.get(BroadcastAction)
             action: AgentAction = broadcast_action_component.action
             single_val = action.join_values()
             playerproxy.add_actor_message(action._actor_name, f"""<@all>{single_val}""")
 ############################################################################################################
     def speak_action_2_message(self, playerproxy: PlayerProxy, player_entity: Entity) -> None:
         player_entity_stage = self._context.safe_get_stage_entity(player_entity)
-        entities = self._context.get_group(Matcher(SpeakActionComponent)).entities
+        entities = self._context.get_group(Matcher(SpeakAction)).entities
         for entity in entities:
 
             if entity == player_entity:
@@ -117,7 +117,7 @@ class UpdateClientMessageSystem(ExecuteProcessor):
                 #场景不一样，不能看见
                 continue
 
-            speak_action_component: SpeakActionComponent = entity.get(SpeakActionComponent)
+            speak_action_component: SpeakAction = entity.get(SpeakAction)
             action: AgentAction = speak_action_component.action
             target_and_message = action.target_and_message_values()
             for tp in target_and_message:
@@ -129,7 +129,7 @@ class UpdateClientMessageSystem(ExecuteProcessor):
 ############################################################################################################
     def mind_voice_action_2_message(self, playerproxy: PlayerProxy, player_entity: Entity) -> None:
         player_entity_stage = self._context.safe_get_stage_entity(player_entity)
-        entities = self._context.get_group(Matcher(MindVoiceActionComponent)).entities
+        entities = self._context.get_group(Matcher(MindVoiceAction)).entities
         for entity in entities:
 
             if entity == player_entity:
@@ -141,14 +141,14 @@ class UpdateClientMessageSystem(ExecuteProcessor):
                 #只添加同一个场景的mindvoice
                 continue
 
-            mind_voice_action_component: MindVoiceActionComponent = entity.get(MindVoiceActionComponent)
+            mind_voice_action_component: MindVoiceAction = entity.get(MindVoiceAction)
             action: AgentAction = mind_voice_action_component.action
             single_value = action.join_values()
             playerproxy.add_actor_message(action._actor_name, f"""<心理活动>{single_value}""")
 ############################################################################################################
     def attack_action_2_message(self, playerproxy: PlayerProxy, player_entity: Entity) -> None:
         player_entity_stage = self._context.safe_get_stage_entity(player_entity)
-        entities = self._context.get_group(Matcher(AttackActionComponent)).entities
+        entities = self._context.get_group(Matcher(AttackAction)).entities
         for entity in entities:
 
             if entity == player_entity:
@@ -158,7 +158,7 @@ class UpdateClientMessageSystem(ExecuteProcessor):
             if his_stage_entity != player_entity_stage:
                 continue
 
-            attack_action_component: AttackActionComponent = entity.get(AttackActionComponent)
+            attack_action_component: AttackAction = entity.get(AttackAction)
             action: AgentAction = attack_action_component.action
             if len(action._values) == 0:
                 logger.error("attack_action_2_message error")
@@ -169,7 +169,7 @@ class UpdateClientMessageSystem(ExecuteProcessor):
 ############################################################################################################
     def go_to_action_2_message(self, playerproxy: PlayerProxy, player_entity: Entity) -> None:
         player_entity_stage = self._context.safe_get_stage_entity(player_entity)
-        entities = self._context.get_group(Matcher(GoToActionComponent)).entities
+        entities = self._context.get_group(Matcher(GoToAction)).entities
         for entity in entities:
 
             if entity == player_entity:
@@ -179,7 +179,7 @@ class UpdateClientMessageSystem(ExecuteProcessor):
             if his_stage_entity != player_entity_stage:
                 continue
 
-            go_to_action_component: GoToActionComponent = entity.get(GoToActionComponent)
+            go_to_action_component: GoToAction = entity.get(GoToAction)
             action: AgentAction = go_to_action_component.action
             if len(action._values) == 0:
                 logger.error("go_to_action_2_message error")

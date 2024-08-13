@@ -1,7 +1,7 @@
 from overrides import override
 from entitas import Entity, Matcher, InitializeProcessor, ExecuteProcessor # type: ignore
 from ecs_systems.components import WorldComponent, StageComponent, ActorComponent, PlayerComponent
-from ecs_systems.action_components import PerceptionActionComponent, CheckStatusActionComponent
+from ecs_systems.action_components import PerceptionAction, CheckStatusAction
 from ecs_systems.cn_builtin_prompt import (kick_off_actor_prompt, kick_off_stage_prompt, kick_off_world_system_prompt)
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
@@ -40,11 +40,11 @@ class AgentsKickOffSystem(InitializeProcessor, ExecuteProcessor):
         for entity in entities:
             actor_name: ActorComponent = entity.get(ActorComponent)
             #
-            if not entity.has(PerceptionActionComponent):
-                entity.add(PerceptionActionComponent, AgentAction(actor_name.name, PerceptionActionComponent.__name__, [actor_name.current_stage]))
+            if not entity.has(PerceptionAction):
+                entity.add(PerceptionAction, AgentAction(actor_name.name, PerceptionAction.__name__, [actor_name.current_stage]))
             #
-            if not entity.has(CheckStatusActionComponent):
-                entity.add(CheckStatusActionComponent, AgentAction(actor_name.name, CheckStatusActionComponent.__name__, [actor_name.name]))
+            if not entity.has(CheckStatusAction):
+                entity.add(CheckStatusAction, AgentAction(actor_name.name, CheckStatusAction.__name__, [actor_name.name]))
 ######################################################################################################################################################
     @override
     async def async_pre_execute(self) -> None:

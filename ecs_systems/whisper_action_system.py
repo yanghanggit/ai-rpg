@@ -1,5 +1,5 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
-from ecs_systems.action_components import WhisperActionComponent
+from ecs_systems.action_components import WhisperAction
 from my_agent.agent_action import AgentAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import override
@@ -36,11 +36,11 @@ class WhisperActionSystem(ReactiveProcessor):
 ####################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(WhisperActionComponent): GroupEvent.ADDED}
+        return {Matcher(WhisperAction): GroupEvent.ADDED}
 ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(WhisperActionComponent)
+        return entity.has(WhisperAction)
 ####################################################################################################################################
     @override
     def react(self, entities: list[Entity]) -> None:
@@ -48,7 +48,7 @@ class WhisperActionSystem(ReactiveProcessor):
             self.whisper(entity) 
 ####################################################################################################################################
     def whisper(self, entity: Entity) -> None:
-        whisper_comp: WhisperActionComponent = entity.get(WhisperActionComponent)
+        whisper_comp: WhisperAction = entity.get(WhisperAction)
         action: AgentAction = whisper_comp.action
         safe_name = self._context.safe_get_entity_name(entity)
         target_and_message = action.target_and_message_values()

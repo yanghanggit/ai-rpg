@@ -1,8 +1,8 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
-from ecs_systems.action_components import (GoToActionComponent, 
-                        EnviroNarrateActionComponent,
-                        TagActionComponent,
-                        DeadActionComponent)
+from ecs_systems.action_components import (GoToAction, 
+                        EnviroNarrateAction,
+                        TagAction,
+                        DeadAction)
 
 from ecs_systems.components import (
     ActorComponent, 
@@ -169,8 +169,8 @@ class HandleStageConditionsResponseHelper:
             return False
         
         # 再次检查是否符合结果预期
-        enviro_narrate_action: Optional[AgentAction] = self._plan.get_action_by_key(EnviroNarrateActionComponent.__name__)
-        tag_action: Optional[AgentAction] = self._plan.get_action_by_key(TagActionComponent.__name__)
+        enviro_narrate_action: Optional[AgentAction] = self._plan.get_action_by_key(EnviroNarrateAction.__name__)
+        tag_action: Optional[AgentAction] = self._plan.get_action_by_key(TagAction.__name__)
         if enviro_narrate_action is None or tag_action is None:
             logger.error(f"大模型推理错误 = {self._plan}")
             return False
@@ -181,11 +181,11 @@ class HandleStageConditionsResponseHelper:
         return True
 ###############################################################################################################################################
     def _parse_yes(self, tag_action: AgentAction) -> bool:
-        assert tag_action._action_name == TagActionComponent.__name__
+        assert tag_action._action_name == TagAction.__name__
         return tag_action.bool_value(0)
 ###############################################################################################################################################
     def _parse_tips(self, enviro_narrate_action: AgentAction) -> str:
-        assert enviro_narrate_action._action_name == EnviroNarrateActionComponent.__name__
+        assert enviro_narrate_action._action_name == EnviroNarrateAction.__name__
         if len(enviro_narrate_action._values) == 0:
             logger.error(enviro_narrate_action)
             return str(_CNConstantPrompt_.NONE_PROMPT)
@@ -204,11 +204,11 @@ class CheckBeforeGoToActionSystem(ReactiveProcessor):
 ###############################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(GoToActionComponent): GroupEvent.ADDED}
+        return {Matcher(GoToAction): GroupEvent.ADDED}
 ###############################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(GoToActionComponent) and entity.has(ActorComponent) and not entity.has(DeadActionComponent)
+        return entity.has(GoToAction) and entity.has(ActorComponent) and not entity.has(DeadAction)
 ###############################################################################################################################################
     @override
     def react(self, entities: list[Entity]) -> None:
@@ -402,7 +402,7 @@ class CheckBeforeGoToActionSystem(ReactiveProcessor):
         return self._context.get_stage_entity(target_stage_name)
 ###############################################################################################################################################
     def get_target_stage_name(self, entity: Entity) -> str:
-        go_to_action_comp: GoToActionComponent = entity.get(GoToActionComponent)
+        go_to_action_comp: GoToAction = entity.get(GoToAction)
         action: AgentAction = go_to_action_comp.action
         return action.value(0)
 ###############################################################################################################################################
@@ -425,6 +425,6 @@ class CheckBeforeGoToActionSystem(ReactiveProcessor):
         return prompt_of_props
 ###############################################################################################################################################
     def on_failed(self, entity: Entity) -> None:
-        if entity.has(GoToActionComponent):
-            entity.remove(GoToActionComponent)
+        if entity.has(GoToAction):
+            entity.remove(GoToAction)
 ###############################################################################################################################################

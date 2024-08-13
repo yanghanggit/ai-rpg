@@ -1,8 +1,8 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
 from ecs_systems.action_components import (
-    GoToActionComponent, 
-    DeadActionComponent,
-    PerceptionActionComponent)
+    GoToAction, 
+    DeadAction,
+    PerceptionAction)
 from ecs_systems.components import ActorComponent
 from my_agent.agent_action import AgentAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
@@ -76,11 +76,11 @@ class GoToActionSystem(ReactiveProcessor):
 ###############################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(GoToActionComponent): GroupEvent.ADDED}
+        return {Matcher(GoToAction): GroupEvent.ADDED}
 ###############################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(GoToActionComponent) and entity.has(ActorComponent) and not entity.has(DeadActionComponent)
+        return entity.has(GoToAction) and entity.has(ActorComponent) and not entity.has(DeadAction)
 ###############################################################################################################################################
     @override
     def react(self, entities: list[Entity]) -> None:
@@ -89,8 +89,8 @@ class GoToActionSystem(ReactiveProcessor):
 ###############################################################################################################################################
     def handle(self, entity: Entity) -> None:
 
-        assert entity.has(GoToActionComponent)
-        go_to_action_comp = entity.get(GoToActionComponent)
+        assert entity.has(GoToAction)
+        go_to_action_comp = entity.get(GoToAction)
         action: AgentAction = go_to_action_comp.action
         stage_name = action.value(0)
         if stage_name == "":
@@ -158,8 +158,8 @@ class GoToActionSystem(ReactiveProcessor):
         actor_entities = self._context.actors_in_stage(stage_name)
 
         for actor_entity in actor_entities:
-            if not actor_entity.has(PerceptionActionComponent):
+            if not actor_entity.has(PerceptionAction):
                 #进入新的场景之后，进入者与场景内所有人都加一次感知，这里会自动检查外观信息
-                actor_entity.add(PerceptionActionComponent, AgentAction(actor_comp.name, PerceptionActionComponent.__name__, [stage_name]))
+                actor_entity.add(PerceptionAction, AgentAction(actor_comp.name, PerceptionAction.__name__, [stage_name]))
 ###############################################################################################################################################
 

@@ -1,7 +1,7 @@
 from typing import override
 from entitas import Matcher, ExecuteProcessor, Entity #type: ignore
 from ecs_systems.components import (PlayerComponent, DestroyComponent)
-from ecs_systems.action_components import DeadActionComponent
+from ecs_systems.action_components import DeadAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from my_agent.agent_action import AgentAction
@@ -23,7 +23,7 @@ class DeadActionSystem(ExecuteProcessor):
         self.destory()
 ########################################################################################################################################################################
     def is_player_dead_then_game_over(self) -> None:
-        entities: Set[Entity] = self._context.get_group(Matcher(DeadActionComponent)).entities
+        entities: Set[Entity] = self._context.get_group(Matcher(DeadAction)).entities
         for entity in entities:
             if entity.has(PlayerComponent):
                 logger.warning(f"玩家死亡，游戏结束")
@@ -31,9 +31,9 @@ class DeadActionSystem(ExecuteProcessor):
                 self._rpggame.on_exit()
 ########################################################################################################################################################################  
     def destory(self) -> None:
-        entities: Set[Entity] = self._context.get_group(Matcher(DeadActionComponent)).entities
+        entities: Set[Entity] = self._context.get_group(Matcher(DeadAction)).entities
         for entity in entities:
-            dead_comp = entity.get(DeadActionComponent)
+            dead_comp = entity.get(DeadAction)
             action: AgentAction = dead_comp.action
             if not entity.has(DestroyComponent):
                 entity.add(DestroyComponent, action._actor_name) ### 这里只需要名字，不需要values，谁造成了你的死亡

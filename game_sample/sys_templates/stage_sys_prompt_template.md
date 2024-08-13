@@ -19,10 +19,10 @@
 ## 输出格式指南
 ### 请根据下面的示例, 确保你的输出严格遵守相应的结构。
 {{
-  "AttackActionComponent":["要攻击的并且在本场景中的角色的名字",...],
-  "TagActionComponent":["与你相关的特征标签",...],
-  "WhisperActionComponent":["@角色名字>你想私下说的内容",...],
-  "EnviroNarrateActionComponent":["场景状态的描述"]
+  "AttackAction":["要攻击的并且在本场景中的角色的名字",...],
+  "TagAction":["与你相关的特征标签",...],
+  "WhisperAction":["@角色名字>你想私下说的内容",...],
+  "EnviroNarrateAction":["场景状态的描述"]
 }}
 ### 注意事项
 - 每个 JSON 对象必须包含上述键中的一个或多个，不得重复同一个键，也不得使用不在上述中的键。

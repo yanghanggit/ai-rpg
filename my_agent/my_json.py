@@ -65,15 +65,15 @@ def extract_markdown_json_block(jsonblock: str) -> str:
 ############################################################################################################
 # TEST_ERROR_REPEAT_JSON = f"""
 # {{
-#     "PerceptionActionComponent": ["灰颜墓地"],
-#     "SpeakActionComponent": ["@哈哈哈哈哈>啦啦啦啦"],
-#     "CheckStatusActionComponent": ["埃利亚斯·格雷"],
-#     "TagActionComponent": ["守墓人", "阴郁", "畸形"]
+#     "PerceptionAction": ["灰颜墓地"],
+#     "SpeakAction": ["@哈哈哈哈哈>啦啦啦啦"],
+#     "CheckStatusAction": ["埃利亚斯·格雷"],
+#     "TagAction": ["守墓人", "阴郁", "畸形"]
 # }}
 # {{
-#     "PerceptionActionComponent": ["灰颜墓地"],
-#     "BroadcastActionComponent": ["哈哈哈哈哈"],
-#     "CheckStatusActionComponent": ["埃利亚斯·格雷"]
+#     "PerceptionAction": ["灰颜墓地"],
+#     "BroadcastAction": ["哈哈哈哈哈"],
+#     "CheckStatusAction": ["埃利亚斯·格雷"]
 # }}"""
 # # 测试代码
 # if is_repeat_error_json(TEST_ERROR_REPEAT_JSON):

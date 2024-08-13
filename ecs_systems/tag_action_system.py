@@ -1,6 +1,6 @@
 from typing import override
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
-from ecs_systems.action_components import TagActionComponent
+from ecs_systems.action_components import TagAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 
@@ -13,11 +13,11 @@ class TagActionSystem(ReactiveProcessor):
 ####################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(TagActionComponent): GroupEvent.ADDED}
+        return {Matcher(TagAction): GroupEvent.ADDED}
 ####################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(TagActionComponent)
+        return entity.has(TagAction)
 ####################################################################################################
     @override
     def react(self, entities: list[Entity]) -> None:

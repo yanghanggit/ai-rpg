@@ -1,7 +1,7 @@
 from overrides import override
 from entitas import Entity, Matcher, ExecuteProcessor #type: ignore
 from ecs_systems.components import (ActorComponent, AutoPlanningComponent)
-from ecs_systems.action_components import EnviroNarrateActionComponent, ACTOR_AVAILABLE_ACTIONS_REGISTER
+from ecs_systems.action_components import EnviroNarrateAction, ACTOR_AVAILABLE_ACTIONS_REGISTER
 from my_agent.agent_plan import AgentPlan
 from my_agent.agent_action import AgentAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
@@ -103,8 +103,8 @@ class ActorPlanningSystem(ExecuteProcessor):
         
         stage_name = self._context.safe_get_entity_name(stage_entity)
         stage_enviro_narrate = ""
-        if stage_entity.has(EnviroNarrateActionComponent):
-            envirocomp = stage_entity.get(EnviroNarrateActionComponent)
+        if stage_entity.has(EnviroNarrateAction):
+            envirocomp = stage_entity.get(EnviroNarrateAction)
             action: AgentAction = envirocomp.action
             stage_enviro_narrate = action.join_values()
                 

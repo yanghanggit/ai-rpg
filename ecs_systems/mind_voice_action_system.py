@@ -1,6 +1,6 @@
 from typing import override
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
-from ecs_systems.action_components import MindVoiceActionComponent
+from ecs_systems.action_components import MindVoiceAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 
 ####################################################################################################
@@ -11,11 +11,11 @@ class MindVoiceActionSystem(ReactiveProcessor):
 ####################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(MindVoiceActionComponent): GroupEvent.ADDED}
+        return {Matcher(MindVoiceAction): GroupEvent.ADDED}
 ####################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(MindVoiceActionComponent)
+        return entity.has(MindVoiceAction)
 ####################################################################################################
     @override
     def react(self, entities: list[Entity]) -> None:

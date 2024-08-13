@@ -1,7 +1,7 @@
 from typing import Dict, List, Set
 from file_system.files_def import PropFile
-from ecs_systems.action_components import MindVoiceActionComponent, EnviroNarrateActionComponent, \
-    TagActionComponent, PerceptionActionComponent, CheckStatusActionComponent
+from ecs_systems.action_components import MindVoiceAction, EnviroNarrateAction, \
+    TagAction, PerceptionAction, CheckStatusAction
 import json
 from ecs_systems.cn_constant_prompt import _CNConstantPrompt_
 
@@ -14,7 +14,7 @@ def kick_off_actor_prompt(kick_off_message: str) -> str:
 ## 请结合你的角色设定,更新你的状态。
 ## 输出要求:
 - 请遵循'输出格式指南'。
-- 返回结果仅带'{MindVoiceActionComponent.__name__}'这个key"""
+- 返回结果仅带'{MindVoiceAction.__name__}'这个key"""
     return prompt
 ###############################################################################################################################################
 def kick_off_stage_prompt(kick_off_message: str) -> str:
@@ -25,7 +25,7 @@ def kick_off_stage_prompt(kick_off_message: str) -> str:
 ## 请结合你的场景设定,更新你的状态。
 ## 输出要求:
 - 请遵循 输出格式指南。
-- 返回结果仅带'{EnviroNarrateActionComponent.__name__}'这个key"""
+- 返回结果仅带'{EnviroNarrateAction.__name__}'这个key"""
     return prompt
 ###############################################################################################################################################
 def kick_off_world_system_prompt() -> str:
@@ -50,7 +50,7 @@ def actor_plan_prompt(current_stage: str, stage_enviro_narrate: str) -> str:
 {current_stage_enviro_narrate_prompt}
 ## 要求:
 - 输出结果格式要遵循 输出格式指南。
-- 结果中要附带'{TagActionComponent.__name__}'。"""
+- 结果中要附带'{TagAction.__name__}'。"""
     return prompt
 ###############################################################################################################################################
 # yh prompt优化, 这个要严格测试并慎重处理。
@@ -62,7 +62,7 @@ def actor_plan_prompt(current_stage: str, stage_enviro_narrate: str) -> str:
 # ## 场景与角色状态描述规则:
 # - **第1步:** 根据场景事件和道具信息更新场景状态。
 # - **第2步:** 描述角色的动作和神态，避免包括对话、未发生的行为或心理活动。
-# - **第3步:** 将场景状态和角色状态合并，形成客观的场景描述，使用 {EnviroNarrateActionComponent.__name__}。
+# - **第3步:** 将场景状态和角色状态合并，形成客观的场景描述，使用 {EnviroNarrateAction.__name__}。
 
 # ## 行动计划规则:
 # - 根据场景所受事件的影响，决定你的行动计划。
@@ -102,13 +102,13 @@ def stage_plan_prompt(stage_prop_files: List[PropFile], actors_in_stage: Set[str
 - 不要添加角色未发生的事件与信息。
 - 不要自行推理与猜测角色的可能行为（如对话内容,行为反应与心理活动）。
 - 不要将过往已经描述过的'角色状态'做复述。
-### 第3步: 将'场景状态'的内容与'角色状态'的2部分内容合并,并作为{EnviroNarrateActionComponent.__name__}的值——"场景状态的描述",
-- 参考‘输出格式指南’中的:"{EnviroNarrateActionComponent.__name__}":["场景状态的描述"]
+### 第3步: 将'场景状态'的内容与'角色状态'的2部分内容合并,并作为{EnviroNarrateAction.__name__}的值——"场景状态的描述",
+- 参考‘输出格式指南’中的:"{EnviroNarrateAction.__name__}":["场景状态的描述"]
 ## 关于’你的计划‘内容生成规则
 - 根据你作为场景受到了什么事件的影响，你可以制定计划，并决定下一步将要做什么。可根据‘输出格式指南’选择相应的行动。
 ## 输出要求:
 - 输出结果格式要遵循‘输出格式指南’。
-- 结果中必须有{EnviroNarrateActionComponent.__name__},并附带{TagActionComponent.__name__}。"""
+- 结果中必须有{EnviroNarrateAction.__name__},并附带{TagAction.__name__}。"""
     return prompt
 ###############################################################################################################################################
 def perception_action_prompt(who: str, current_stage: str, result_actor_names: Dict[str, str], result_props_names: List[str]) -> str:
@@ -127,7 +127,7 @@ def perception_action_prompt(who: str, current_stage: str, result_actor_names: D
     else:
         prompt_of_props = "- 无任何道具。"
 
-    final_prompt = f"""# {_CNConstantPrompt_.PERCEPTION_ACTION_TAG} {who} 在 {current_stage} 中执行感知行动({PerceptionActionComponent.__name__})，结果如下:
+    final_prompt = f"""# {_CNConstantPrompt_.PERCEPTION_ACTION_TAG} {who} 在 {current_stage} 中执行感知行动({PerceptionAction.__name__})，结果如下:
 ## 场景内角色:
 {prompt_of_actor}
 ## 场景内道具:
@@ -198,7 +198,7 @@ def check_status_action_prompt(who: str,
         props_prompt_as_special_components = "- 无任何特殊能力。"
 
     # 组合最终的提示
-    prompt = f"""# {_CNConstantPrompt_.CHECK_STATUS_ACTION_TAG} {who} 正在查看自身状态({CheckStatusActionComponent.__name__}):
+    prompt = f"""# {_CNConstantPrompt_.CHECK_STATUS_ACTION_TAG} {who} 正在查看自身状态({CheckStatusAction.__name__}):
 ## 健康状态:
 {actor_health_prompt}
 ## 持有道具:
@@ -215,7 +215,7 @@ def search_prop_action_failed_prompt(actor_name: str, prop_name: str) -> str:
 2. 道具可能已被移出场景或被其他角色获取。
 ## 建议:
 1. 请{actor_name}重新考虑搜索目标。
-2. 使用 {PerceptionActionComponent.__name__} 感知场景内的道具，确保目标的可搜索性。"""
+2. 使用 {PerceptionAction.__name__} 感知场景内的道具，确保目标的可搜索性。"""
 ###############################################################################################################################################
 def search_prop_action_success_prompt(actor_name: str, prop_name:str, stagename: str) -> str:
     return f"""# {actor_name}从{stagename}场景内成功找到并获取了道具:{prop_name}。
@@ -323,12 +323,12 @@ def use_prop_to_stage_prompt(username: str, propname: str, prop_prompt: str, exi
 - 不重复描述已经提及的角色状态。
 
 ### 第2步: 根据场景状态填写输出内容
-- 将场景状态详细描述放入 {EnviroNarrateActionComponent.__name__}。
-- 参考格式：'{EnviroNarrateActionComponent.__name__}': ['场景状态的描述']
+- 将场景状态详细描述放入 {EnviroNarrateAction.__name__}。
+- 参考格式：'{EnviroNarrateAction.__name__}': ['场景状态的描述']
 
 ## 输出格式要求:
 - 严格遵循‘输出格式指南’。
-- 必须包含 '{EnviroNarrateActionComponent.__name__}' 和 '{TagActionComponent.__name__}'。
+- 必须包含 '{EnviroNarrateAction.__name__}' 和 '{TagAction.__name__}'。
 """
     return final_prompt
 ################################################################################################################################################
@@ -363,11 +363,11 @@ def stage_exit_conditions_check_prompt(actor_name: str,
 
 # 本次输出结果格式要求（遵循‘输出格式指南’）:
 {{
-    {EnviroNarrateActionComponent.__name__}: ["描述'允许离开'或'不允许离开'的原因，使{actor_name}明白"],
-    {TagActionComponent.__name__}: ["Yes/No"]
+    {EnviroNarrateAction.__name__}: ["描述'允许离开'或'不允许离开'的原因，使{actor_name}明白"],
+    {TagAction.__name__}: ["Yes/No"]
 }}
 ## 附注
-- '{EnviroNarrateActionComponent.__name__}' 中请详细描述判断理由，注意如果不允许离开，就只说哪一条不符合要求，不要都说出来，否则会让{actor_name}迷惑。
+- '{EnviroNarrateAction.__name__}' 中请详细描述判断理由，注意如果不允许离开，就只说哪一条不符合要求，不要都说出来，否则会让{actor_name}迷惑。
 - Yes: 允许离开
 - No: 不允许离开
 """
@@ -401,11 +401,11 @@ def stage_entry_conditions_check_prompt(actor_name: str, current_stage_name: str
 
 # 本次输出结果格式要求（遵循‘输出格式指南’）:
 {{
-    {EnviroNarrateActionComponent.__name__}: ["描述'允许进入'或'不允许进入'的原因，使{actor_name}明白"],
-    {TagActionComponent.__name__}: ["Yes/No"]
+    {EnviroNarrateAction.__name__}: ["描述'允许进入'或'不允许进入'的原因，使{actor_name}明白"],
+    {TagAction.__name__}: ["Yes/No"]
 }}
 ## 附注
-- '{EnviroNarrateActionComponent.__name__}' 中请详细描述判断理由，注意如果不允许进入，就只说哪一条不符合要求，不要都说出来，否则会让{actor_name}迷惑。
+- '{EnviroNarrateAction.__name__}' 中请详细描述判断理由，注意如果不允许进入，就只说哪一条不符合要求，不要都说出来，否则会让{actor_name}迷惑。
 - Yes: 允许进入
 - No: 不允许进入
 """

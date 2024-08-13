@@ -1,6 +1,6 @@
 from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity #type: ignore
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from ecs_systems.action_components import (CheckStatusActionComponent, DeadActionComponent)
+from ecs_systems.action_components import (CheckStatusAction, DeadAction)
 from ecs_systems.components import SimpleRPGAttrComponent, ActorComponent
 from ecs_systems.stage_director_component import StageDirectorComponent
 from typing import List, override
@@ -84,11 +84,11 @@ class CheckStatusActionSystem(ReactiveProcessor):
 ####################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return { Matcher(CheckStatusActionComponent): GroupEvent.ADDED }
+        return { Matcher(CheckStatusAction): GroupEvent.ADDED }
 ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(CheckStatusActionComponent) and entity.has(ActorComponent)  and not entity.has(DeadActionComponent)
+        return entity.has(CheckStatusAction) and entity.has(ActorComponent)  and not entity.has(DeadAction)
 ####################################################################################################################################
     @override
     def react(self, entities: list[Entity]) -> None:

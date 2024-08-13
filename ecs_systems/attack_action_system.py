@@ -1,5 +1,5 @@
 from entitas import Matcher, ReactiveProcessor, GroupEvent, Entity # type: ignore
-from ecs_systems.action_components import AttackActionComponent, DeadActionComponent
+from ecs_systems.action_components import AttackAction, DeadAction
 from ecs_systems.components import SimpleRPGAttrComponent, SimpleRPGWeaponComponent, SimpleRPGArmorComponent
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from my_agent.agent_action import AgentAction
@@ -62,8 +62,8 @@ class StageOrActorAttackEvent(IStageDirectorEvent):
 class AttackActionSystem(ReactiveProcessor):
 
     """
-    处理：AttackActionComponent 的系统
-    要求：AttackActionComponent 和 SimpleRPGAttrComponent 必须同时存在，否则无法处理。
+    处理：AttackAction 的系统
+    要求：AttackAction 和 SimpleRPGAttrComponent 必须同时存在，否则无法处理。
     """
 
     def __init__(self, context: RPGEntitasContext) -> None:
@@ -72,11 +72,11 @@ class AttackActionSystem(ReactiveProcessor):
 ######################################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(AttackActionComponent): GroupEvent.ADDED}
+        return {Matcher(AttackAction): GroupEvent.ADDED}
 ######################################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(AttackActionComponent) and entity.has(SimpleRPGAttrComponent)
+        return entity.has(AttackAction) and entity.has(SimpleRPGAttrComponent)
 ######################################################################################################################################################
     @override
     def react(self, entities: list[Entity]) -> None:
@@ -87,7 +87,7 @@ class AttackActionSystem(ReactiveProcessor):
     def _attack(self, _entity: Entity) -> None:
         context = self._context
         rpgcomp: SimpleRPGAttrComponent = _entity.get(SimpleRPGAttrComponent)
-        fightcomp: AttackActionComponent = _entity.get(AttackActionComponent)
+        fightcomp: AttackAction = _entity.get(AttackAction)
         action: AgentAction = fightcomp.action
         for value_as_target_name in action._values:
 
@@ -158,9 +158,9 @@ class AttackActionSystem(ReactiveProcessor):
 
             ## 死后处理大流程，step最后——死亡组件系统必须要添加
             if isdead:
-                if not target_entity.has(DeadActionComponent):
+                if not target_entity.has(DeadAction):
                     #复制一个，不用以前的，怕GC不掉
-                    target_entity.add(DeadActionComponent, AgentAction(action._actor_name, action._action_name, action._values)) 
+                    target_entity.add(DeadAction, AgentAction(action._actor_name, action._action_name, action._values)) 
 
             ## 导演系统，单独处理，有旧的代码
             if isdead:

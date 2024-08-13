@@ -1,6 +1,6 @@
 from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity #type: ignore
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from ecs_systems.action_components import (StealPropActionComponent, CheckStatusActionComponent, DeadActionComponent)
+from ecs_systems.action_components import (StealPropAction, CheckStatusAction, DeadAction)
 from ecs_systems.components import ActorComponent
 from loguru import logger
 from my_agent.agent_action import AgentAction
@@ -42,11 +42,11 @@ class StealActionSystem(ReactiveProcessor):
 ####################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return { Matcher(StealPropActionComponent): GroupEvent.ADDED }
+        return { Matcher(StealPropAction): GroupEvent.ADDED }
 ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(StealPropActionComponent) and entity.has(ActorComponent) and not entity.has(DeadActionComponent)
+        return entity.has(StealPropAction) and entity.has(ActorComponent) and not entity.has(DeadAction)
 ####################################################################################################################################
     @override
     def react(self, entities: list[Entity]) -> None:
@@ -60,7 +60,7 @@ class StealActionSystem(ReactiveProcessor):
         safename = self._context.safe_get_entity_name(entity)
         logger.debug(f"StealActionSystem: {safename} is stealing")
 
-        steal_comp: StealPropActionComponent = entity.get(StealPropActionComponent)
+        steal_comp: StealPropAction = entity.get(StealPropAction)
         steal_action: AgentAction = steal_comp.action
         target_and_message = steal_action.target_and_message_values()
         for tp in target_and_message:
@@ -87,8 +87,8 @@ class StealActionSystem(ReactiveProcessor):
         return True
 ####################################################################################################################################
     def on_success(self, entity: Entity) -> None:
-        if entity.has(CheckStatusActionComponent):
+        if entity.has(CheckStatusAction):
             return
         actor_comp = entity.get(ActorComponent)
-        entity.add(CheckStatusActionComponent, AgentAction(actor_comp.name, CheckStatusActionComponent.__name__, [actor_comp.name]))
+        entity.add(CheckStatusAction, AgentAction(actor_comp.name, CheckStatusAction.__name__, [actor_comp.name]))
 ####################################################################################################################################

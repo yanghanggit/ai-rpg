@@ -23,17 +23,17 @@
 ## 输出格式指南
 ### 请根据下面的示例, 确保你的输出严格遵守相应的结构。
 {{
-  "AttackActionComponent":["要攻击的并且在本场景中的角色的名字",...],
-  "SpeakActionComponent":["@角色名字>你要说的内容",...],
-  "GoToActionComponent":["离开当前所在场景后前往的场景名字"],
-  "TagActionComponent":["与你相关的特征标签",...],
-  "MindVoiceActionComponent":["你的内心独白",...],
-  "BroadcastActionComponent":["要公开说的内容"],
-  "WhisperActionComponent":["@角色名字>你想私下说(私语)的内容",...],
-  "SearchPropActionComponent":["想要在本场景内搜索的道具的名称"]
-  "GivePropActionComponent":["@将你的道具交付给的角色的名字>交付的道具的名称"],
-  "PerceptionActionComponent":["你所在的场景名字(即你意图查看场景内有哪些角色与哪些道具)"],
-  "CheckStatusActionComponent":["你的名字(即你意图查看你拥有的道具及其信息)"]
+  "AttackAction":["要攻击的并且在本场景中的角色的名字",...],
+  "SpeakAction":["@角色名字>你要说的内容",...],
+  "GoToAction":["离开当前所在场景后前往的场景名字"],
+  "TagAction":["与你相关的特征标签",...],
+  "MindVoiceAction":["你的内心独白",...],
+  "BroadcastAction":["要公开说的内容"],
+  "WhisperAction":["@角色名字>你想私下说(私语)的内容",...],
+  "SearchPropAction":["想要在本场景内搜索的道具的名称"]
+  "GivePropAction":["@将你的道具交付给的角色的名字>交付的道具的名称"],
+  "PerceptionAction":["你所在的场景名字(即你意图查看场景内有哪些角色与哪些道具)"],
+  "CheckStatusAction":["你的名字(即你意图查看你拥有的道具及其信息)"]
 }}
 ### 注意事项
 - 所有文本输出必须为第一人称。

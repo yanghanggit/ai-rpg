@@ -1,8 +1,8 @@
 from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity #type: ignore
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from ecs_systems.action_components import (SearchPropActionComponent, 
-                                    DeadActionComponent,
-                                    CheckStatusActionComponent)
+from ecs_systems.action_components import (SearchPropAction, 
+                                    DeadAction,
+                                    CheckStatusAction)
 
 from ecs_systems.components import ActorComponent, StageComponent
 from my_agent.agent_action import AgentAction
@@ -64,11 +64,11 @@ class SearchPropActionSystem(ReactiveProcessor):
 ####################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return { Matcher(SearchPropActionComponent): GroupEvent.ADDED }
+        return { Matcher(SearchPropAction): GroupEvent.ADDED }
 ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(SearchPropActionComponent) and entity.has(ActorComponent) and not entity.has(DeadActionComponent)
+        return entity.has(SearchPropAction) and entity.has(ActorComponent) and not entity.has(DeadAction)
 ####################################################################################################################################
     @override
     def react(self, entities: list[Entity]) -> None:
@@ -90,7 +90,7 @@ class SearchPropActionSystem(ReactiveProcessor):
         # 场景有这些道具文件
         prop_files = self._context._file_system.get_files(PropFile, stage_comp.name)
         ###
-        search_comp: SearchPropActionComponent = entity.get(SearchPropActionComponent)
+        search_comp: SearchPropAction = entity.get(SearchPropAction)
         search_action: AgentAction = search_comp.action
         ###
         # 
@@ -120,8 +120,8 @@ class SearchPropActionSystem(ReactiveProcessor):
         file_system.helper.give_prop_file(self._context._file_system, stage_name, actor_name, prop_file_name)
 ####################################################################################################################################
     def on_success(self, entity: Entity) -> None:
-        if entity.has(CheckStatusActionComponent):
+        if entity.has(CheckStatusAction):
             return
         actor_comp = entity.get(ActorComponent)
-        entity.add(CheckStatusActionComponent, AgentAction(actor_comp.name, CheckStatusActionComponent.__name__, [actor_comp.name]))
+        entity.add(CheckStatusAction, AgentAction(actor_comp.name, CheckStatusAction.__name__, [actor_comp.name]))
 ####################################################################################################################################

@@ -1,6 +1,6 @@
 from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity #type: ignore
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from ecs_systems.action_components import (GivePropActionComponent,CheckStatusActionComponent, DeadActionComponent)
+from ecs_systems.action_components import (GivePropAction,CheckStatusAction, DeadAction)
 from ecs_systems.components import ActorComponent
 from loguru import logger
 from my_agent.agent_action import AgentAction
@@ -39,11 +39,11 @@ class GivePropActionSystem(ReactiveProcessor):
 ####################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return { Matcher(GivePropActionComponent): GroupEvent.ADDED }
+        return { Matcher(GivePropAction): GroupEvent.ADDED }
 ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(GivePropActionComponent) and entity.has(ActorComponent)  and not entity.has(DeadActionComponent)
+        return entity.has(GivePropAction) and entity.has(ActorComponent)  and not entity.has(DeadAction)
 ####################################################################################################################################
     @override
     def react(self, entities: list[Entity]) -> None:
@@ -55,7 +55,7 @@ class GivePropActionSystem(ReactiveProcessor):
         success_target_names: List[str] = []
         safe_name = self._context.safe_get_entity_name(entity)
 
-        give_comp: GivePropActionComponent = entity.get(GivePropActionComponent)
+        give_comp: GivePropAction = entity.get(GivePropAction)
         give_action: AgentAction = give_comp.action
         target_and_message = give_action.target_and_message_values()
         for tp in target_and_message:
@@ -87,8 +87,8 @@ class GivePropActionSystem(ReactiveProcessor):
         if entity is None:
             logger.error(f"actor {name} not found")
             return
-        if entity.has(CheckStatusActionComponent):
+        if entity.has(CheckStatusAction):
             return
         actor_comp = entity.get(ActorComponent)
-        entity.add(CheckStatusActionComponent, AgentAction(actor_comp.name, CheckStatusActionComponent.__name__, [actor_comp.name]))
+        entity.add(CheckStatusAction, AgentAction(actor_comp.name, CheckStatusAction.__name__, [actor_comp.name]))
 ####################################################################################################################################

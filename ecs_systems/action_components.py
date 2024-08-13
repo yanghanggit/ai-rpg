@@ -3,81 +3,81 @@ from collections import namedtuple
 
 ################################################ 动作组件： ####################################################################################
 # 场景环境的描述
-EnviroNarrateActionComponent = namedtuple('EnviroNarrateActionComponent', 'action')
+EnviroNarrateAction = namedtuple('EnviroNarrateAction', 'action')
 # 内心独白
-MindVoiceActionComponent = namedtuple('MindVoiceActionComponent', 'action')
+MindVoiceAction = namedtuple('MindVoiceAction', 'action')
 # 场景内广播
-BroadcastActionComponent = namedtuple('BroadcastActionComponent', 'action')
+BroadcastAction = namedtuple('BroadcastAction', 'action')
 # 私下交流
-WhisperActionComponent = namedtuple('WhisperActionComponent', 'action')
+WhisperAction = namedtuple('WhisperAction', 'action')
 # 对谁说（场景内其他角色能听到）
-SpeakActionComponent = namedtuple('SpeakActionComponent', 'action')
+SpeakAction = namedtuple('SpeakAction', 'action')
 # 标签
-TagActionComponent = namedtuple('TagActionComponent', 'action')
+TagAction = namedtuple('TagAction', 'action')
 # 攻击
-AttackActionComponent = namedtuple('AttackActionComponent', 'action')
+AttackAction = namedtuple('AttackAction', 'action')
 # 死亡
-DeadActionComponent = namedtuple('DeadActionComponent', 'action')
+DeadAction = namedtuple('DeadAction', 'action')
 # 离开当前场景并去往
-GoToActionComponent = namedtuple('GoToActionComponent', 'action')
+GoToAction = namedtuple('GoToAction', 'action')
 # 当前场景为‘门’，通过门进入下一个场景
-PortalStepActionComponent = namedtuple('PortalStepActionComponent', 'action')
+PortalStepAction = namedtuple('PortalStepAction', 'action')
 # 寻找场景内道具
-SearchPropActionComponent = namedtuple('SearchPropActionComponent', 'action')
+SearchPropAction = namedtuple('SearchPropAction', 'action')
 # 从目标角色处偷取
-StealPropActionComponent = namedtuple('StealPropActionComponent', 'action')
+StealPropAction = namedtuple('StealPropAction', 'action')
 # 将道具交给目标角色
-GivePropActionComponent = namedtuple('GivePropActionComponent', 'action')
+GivePropAction = namedtuple('GivePropAction', 'action')
 # 使用道具
-UsePropActionComponent = namedtuple('UsePropActionComponent', 'action')
+UsePropAction = namedtuple('UsePropAction', 'action')
 # 感知场景内的信息（角色与道具）
-PerceptionActionComponent = namedtuple('PerceptionActionComponent', 'action')
+PerceptionAction = namedtuple('PerceptionAction', 'action')
 # 检查自身状态
-CheckStatusActionComponent = namedtuple('CheckStatusActionComponent', 'action')
+CheckStatusAction = namedtuple('CheckStatusAction', 'action')
 ##############################################################################################################################################
 
 
 
 #场景可以用的所有动作
-STAGE_AVAILABLE_ACTIONS_REGISTER = [AttackActionComponent,
-                                    TagActionComponent, 
-                                    MindVoiceActionComponent,
-                                    WhisperActionComponent,
-                                    EnviroNarrateActionComponent]
+STAGE_AVAILABLE_ACTIONS_REGISTER = [AttackAction,
+                                    TagAction, 
+                                    MindVoiceAction,
+                                    WhisperAction,
+                                    EnviroNarrateAction]
 
 #场景对话类动作
-STAGE_CONVERSATION_ACTIONS_REGISTER = [SpeakActionComponent,
-                                MindVoiceActionComponent,
-                                WhisperActionComponent]
+STAGE_CONVERSATION_ACTIONS_REGISTER = [SpeakAction,
+                                MindVoiceAction,
+                                WhisperAction]
 
 
 #角色可以用的所有动作
-ACTOR_AVAILABLE_ACTIONS_REGISTER = [AttackActionComponent, 
-                         GoToActionComponent, 
-                         SpeakActionComponent, 
-                         TagActionComponent, 
-                         MindVoiceActionComponent, 
-                         BroadcastActionComponent,
-                         WhisperActionComponent,
-                         SearchPropActionComponent, 
-                         PortalStepActionComponent,
-                         PerceptionActionComponent,
-                         StealPropActionComponent,
-                         GivePropActionComponent,
-                         CheckStatusActionComponent,
-                         UsePropActionComponent]
+ACTOR_AVAILABLE_ACTIONS_REGISTER = [AttackAction, 
+                         GoToAction, 
+                         SpeakAction, 
+                         TagAction, 
+                         MindVoiceAction, 
+                         BroadcastAction,
+                         WhisperAction,
+                         SearchPropAction, 
+                         PortalStepAction,
+                         PerceptionAction,
+                         StealPropAction,
+                         GivePropAction,
+                         CheckStatusAction,
+                         UsePropAction]
 
 #角色对话类动作
-ACTOR_CONVERSATION_ACTIONS_REGISTER = [SpeakActionComponent, 
-                                BroadcastActionComponent,
-                                WhisperActionComponent]
+ACTOR_CONVERSATION_ACTIONS_REGISTER = [SpeakAction, 
+                                BroadcastAction,
+                                WhisperAction]
 
 #角色交互类动作
-ACTOR_INTERACTIVE_ACTIONS_REGISTER = [SearchPropActionComponent, 
-                                    GoToActionComponent, 
-                                    PortalStepActionComponent, 
-                                    PerceptionActionComponent,
-                                    StealPropActionComponent,
-                                    GivePropActionComponent,
-                                    CheckStatusActionComponent,
-                                    UsePropActionComponent]
+ACTOR_INTERACTIVE_ACTIONS_REGISTER = [SearchPropAction, 
+                                    GoToAction, 
+                                    PortalStepAction, 
+                                    PerceptionAction,
+                                    StealPropAction,
+                                    GivePropAction,
+                                    CheckStatusAction,
+                                    UsePropAction]

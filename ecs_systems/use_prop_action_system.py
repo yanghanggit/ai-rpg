@@ -2,7 +2,7 @@ from entitas import Entity, Matcher, ReactiveProcessor # type: ignore
 from typing import Optional, override
 from loguru import logger
 from my_agent.agent_action import AgentAction
-from ecs_systems.action_components import (UsePropActionComponent, EnviroNarrateActionComponent, DeadActionComponent)
+from ecs_systems.action_components import (UsePropAction, EnviroNarrateAction, DeadAction)
 from ecs_systems.components import StageComponent, ActorComponent, StageExitCondStatusComponent
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from ecs_systems.stage_director_component import StageDirectorComponent
@@ -44,7 +44,7 @@ class UsePropResponseHelper:
         logger.debug(f"UseInteractivePropHelper: {self._tips}")
 
     def _parse(self, plan: AgentPlan) -> str:
-        enviro_narrate_action: Optional[AgentAction] = plan.get_action_by_key(EnviroNarrateActionComponent.__name__)
+        enviro_narrate_action: Optional[AgentAction] = plan.get_action_by_key(EnviroNarrateAction.__name__)
         if enviro_narrate_action is None or len(enviro_narrate_action._values) == 0:
            logger.error(f"InteractivePropActionSystem: {plan._raw} is not correct")
            return ""
@@ -64,11 +64,11 @@ class UsePropActionSystem(ReactiveProcessor):
 ####################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return { Matcher(UsePropActionComponent): GroupEvent.ADDED }
+        return { Matcher(UsePropAction): GroupEvent.ADDED }
 ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(UsePropActionComponent) and entity.has(ActorComponent) and not entity.has(DeadActionComponent)
+        return entity.has(UsePropAction) and entity.has(ActorComponent) and not entity.has(DeadAction)
 ####################################################################################################################################
     @override
     def react(self, entities: list[Entity]) -> None:
@@ -79,7 +79,7 @@ class UsePropActionSystem(ReactiveProcessor):
     def use_prop(self, entity: Entity) -> None:
 
         context = self._context
-        use_interactive_prop_comp: UsePropActionComponent = entity.get(UsePropActionComponent)
+        use_interactive_prop_comp: UsePropAction = entity.get(UsePropAction)
         action: AgentAction = use_interactive_prop_comp.action
         target_and_message = action.target_and_message_values()
         for tp in target_and_message:

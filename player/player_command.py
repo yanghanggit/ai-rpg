@@ -1,9 +1,9 @@
 from entitas import Entity #type: ignore
 from rpg_game.rpg_game import RPGGame
 from loguru import logger
-from ecs_systems.action_components import (BroadcastActionComponent, SpeakActionComponent, AttackActionComponent, 
-    GoToActionComponent, UsePropActionComponent, WhisperActionComponent, SearchPropActionComponent, PortalStepActionComponent,
-    PerceptionActionComponent, StealPropActionComponent, GivePropActionComponent, CheckStatusActionComponent)
+from ecs_systems.action_components import (BroadcastAction, SpeakAction, AttackAction, 
+    GoToAction, UsePropAction, WhisperAction, SearchPropAction, PortalStepAction,
+    PerceptionAction, StealPropAction, GivePropAction, CheckStatusAction)
 from ecs_systems.components import StageComponent, ActorComponent, PlayerComponent, PlayerIsWebClientComponent, PlayerIsTerminalClientComponent
 from my_agent.agent_action import AgentAction
 from player.player_proxy import PlayerProxy
@@ -107,7 +107,7 @@ class PlayerLogin(PlayerCommand):
 class PlayerAttack(PlayerCommand):
 
     """
-    玩家攻击的行为：AttackActionComponent
+    玩家攻击的行为：AttackAction
     """
 
     def __init__(self, name: str, rpg_game: RPGGame, player_proxy: PlayerProxy, target_name: str) -> None:
@@ -124,18 +124,18 @@ class PlayerAttack(PlayerCommand):
 
         if player_entity.has(ActorComponent):
             actor_comp = player_entity.get(ActorComponent)
-            player_entity.add(AttackActionComponent, AgentAction(actor_comp.name, AttackActionComponent.__name__, [attack_target_name]))
+            player_entity.add(AttackAction, AgentAction(actor_comp.name, AttackAction.__name__, [attack_target_name]))
 
         elif player_entity.has(StageComponent):
             stage_comp = player_entity.get(StageComponent)
-            player_entity.add(AttackActionComponent, AgentAction(stage_comp.name, AttackActionComponent.__name__, [attack_target_name]))
+            player_entity.add(AttackAction, AgentAction(stage_comp.name, AttackAction.__name__, [attack_target_name]))
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################     
 class PlayerGoTo(PlayerCommand):
 
     """
-    玩家移动的行为：GoToActionComponent
+    玩家移动的行为：GoToAction
     """
 
     def __init__(self, name: str, rpg_game: RPGGame, player_proxy: PlayerProxy, stage_name: str) -> None:
@@ -153,10 +153,10 @@ class PlayerGoTo(PlayerCommand):
         
         # 添加行动
         actor_comp = player_entity.get(ActorComponent)
-        player_entity.add(GoToActionComponent, AgentAction(actor_comp.name, GoToActionComponent.__name__, [target_stage_name]))
+        player_entity.add(GoToAction, AgentAction(actor_comp.name, GoToAction.__name__, [target_stage_name]))
 
         # 模拟添加一个plan的发起。
-        human_message = f"""{{"{GoToActionComponent.__name__}": ["{target_stage_name}"]}}"""
+        human_message = f"""{{"{GoToAction.__name__}": ["{target_stage_name}"]}}"""
         self.add_human_message(player_entity, human_message)
 ####################################################################################################################################
 ####################################################################################################################################
@@ -164,7 +164,7 @@ class PlayerGoTo(PlayerCommand):
 class PlayerPortalStep(PlayerCommand):
 
     """
-    玩家传送的行为：PortalStepActionComponent    
+    玩家传送的行为：PortalStepAction    
     """
 
     def __init__(self, name: str, rpg_game: RPGGame, player_proxy: PlayerProxy) -> None:
@@ -185,10 +185,10 @@ class PlayerPortalStep(PlayerCommand):
             return
 
         # 添加一个行动
-        player_entity.add(PortalStepActionComponent, AgentAction(actor_comp.name, PortalStepActionComponent.__name__, [current_stage_name]))
+        player_entity.add(PortalStepAction, AgentAction(actor_comp.name, PortalStepAction.__name__, [current_stage_name]))
         
         # 模拟添加一个plan的发起。
-        human_message = f"""{{"{PortalStepActionComponent.__name__}": ["{current_stage_name}"]}}"""
+        human_message = f"""{{"{PortalStepAction.__name__}": ["{current_stage_name}"]}}"""
         self.add_human_message(player_entity, human_message)
 ####################################################################################################################################
 ####################################################################################################################################
@@ -196,7 +196,7 @@ class PlayerPortalStep(PlayerCommand):
 class PlayerBroadcast(PlayerCommand):
 
     """
-    玩家广播的行为：BroadcastActionComponent
+    玩家广播的行为：BroadcastAction
     """
 
     def __init__(self, name: str, rpg_game: RPGGame, player_proxy: PlayerProxy, broadcast_content: str) -> None:
@@ -212,10 +212,10 @@ class PlayerBroadcast(PlayerCommand):
         
         # 添加行动
         actor_comp = player_entity.get(ActorComponent)
-        player_entity.add(BroadcastActionComponent, AgentAction(actor_comp.name, BroadcastActionComponent.__name__, [self._broadcast_content]))
+        player_entity.add(BroadcastAction, AgentAction(actor_comp.name, BroadcastAction.__name__, [self._broadcast_content]))
 
         # 模拟添加一个plan的发起。
-        human_message = f"""{{"{BroadcastActionComponent.__name__}": ["{self._broadcast_content}"]}}"""
+        human_message = f"""{{"{BroadcastAction.__name__}": ["{self._broadcast_content}"]}}"""
         self.add_human_message(player_entity, human_message)
 ####################################################################################################################################
 ####################################################################################################################################
@@ -223,7 +223,7 @@ class PlayerBroadcast(PlayerCommand):
 class PlayerSpeak(PlayerCommand):
 
     """
-    玩家说话的行为：SpeakActionComponent
+    玩家说话的行为：SpeakAction
     """
 
     def __init__(self, name: str, rpg_game: RPGGame, player_proxy: PlayerProxy, speak_content: str) -> None:
@@ -239,10 +239,10 @@ class PlayerSpeak(PlayerCommand):
         
         # 添加行动
         actor_comp = player_entity.get(ActorComponent)
-        player_entity.add(SpeakActionComponent, AgentAction(actor_comp.name, SpeakActionComponent.__name__, [self._speak_content]))
+        player_entity.add(SpeakAction, AgentAction(actor_comp.name, SpeakAction.__name__, [self._speak_content]))
         
         # 模拟添加一个plan的发起。
-        human_message = f"""{{"{SpeakActionComponent.__name__}": ["{self._speak_content}"]}}"""
+        human_message = f"""{{"{SpeakAction.__name__}": ["{self._speak_content}"]}}"""
         self.add_human_message(player_entity, human_message)
 ####################################################################################################################################
 ####################################################################################################################################
@@ -250,7 +250,7 @@ class PlayerSpeak(PlayerCommand):
 class PlayerWhisper(PlayerCommand):
 
     """
-    玩家私聊的行为：WhisperActionComponent
+    玩家私聊的行为：WhisperAction
     """
 
     def __init__(self, name: str, rpg_game: RPGGame, player_proxy: PlayerProxy, whisper_content: str) -> None:
@@ -266,10 +266,10 @@ class PlayerWhisper(PlayerCommand):
         
         # 添加行动
         actor_comp = player_entity.get(ActorComponent)
-        player_entity.add(WhisperActionComponent, AgentAction(actor_comp.name, WhisperActionComponent.__name__, [self._whisper_content]))
+        player_entity.add(WhisperAction, AgentAction(actor_comp.name, WhisperAction.__name__, [self._whisper_content]))
 
         # 模拟添加一个plan的发起。
-        human_message = f"""{{"{WhisperActionComponent.__name__}": ["{self._whisper_content}"]}}"""
+        human_message = f"""{{"{WhisperAction.__name__}": ["{self._whisper_content}"]}}"""
         self.add_human_message(player_entity, human_message)
 ####################################################################################################################################
 ####################################################################################################################################
@@ -277,7 +277,7 @@ class PlayerWhisper(PlayerCommand):
 class PlayerSearchProp(PlayerCommand):
 
     """
-    玩家搜索的行为：SearchPropActionComponent
+    玩家搜索的行为：SearchPropAction
     """
 
     def __init__(self, name: str, rpg_game: RPGGame, player_proxy: PlayerProxy, prop_name: str) -> None:
@@ -293,10 +293,10 @@ class PlayerSearchProp(PlayerCommand):
         
         # 添加行动
         actor_comp = player_entity.get(ActorComponent)
-        player_entity.add(SearchPropActionComponent, AgentAction(actor_comp.name, SearchPropActionComponent.__name__, [self._prop_name]))
+        player_entity.add(SearchPropAction, AgentAction(actor_comp.name, SearchPropAction.__name__, [self._prop_name]))
 
         # 模拟添加一个plan的发起。
-        human_message = f"""{{"{SearchPropActionComponent.__name__}": ["{self._prop_name}"]}}"""
+        human_message = f"""{{"{SearchPropAction.__name__}": ["{self._prop_name}"]}}"""
         self.add_human_message(player_entity, human_message)
 ####################################################################################################################################
 ####################################################################################################################################
@@ -304,7 +304,7 @@ class PlayerSearchProp(PlayerCommand):
 class PlayerPerception(PlayerCommand):
 
     """
-    玩家感知的行为：PerceptionActionComponent
+    玩家感知的行为：PerceptionAction
     """
 
     def __init__(self, name: str, rpg_game: RPGGame, player_proxy: PlayerProxy) -> None:
@@ -319,10 +319,10 @@ class PlayerPerception(PlayerCommand):
         
         # 添加行动
         actor_comp = player_entity.get(ActorComponent)
-        player_entity.add(PerceptionActionComponent, AgentAction(actor_comp.name, PerceptionActionComponent.__name__, [actor_comp.current_stage]))
+        player_entity.add(PerceptionAction, AgentAction(actor_comp.name, PerceptionAction.__name__, [actor_comp.current_stage]))
 
         # 模拟添加一个plan的发起。
-        human_message = f"""{{"{PerceptionActionComponent.__name__}": ["{actor_comp.current_stage}"]}}"""
+        human_message = f"""{{"{PerceptionAction.__name__}": ["{actor_comp.current_stage}"]}}"""
         self.add_human_message(player_entity, human_message)
 ####################################################################################################################################
 ####################################################################################################################################
@@ -346,10 +346,10 @@ class PlayerSteal(PlayerCommand):
         
         # 添加行动
         actor_comp = player_entity.get(ActorComponent)
-        player_entity.add(StealPropActionComponent, AgentAction(actor_comp.name, StealPropActionComponent.__name__, [self._target_and_message_format_string]))
+        player_entity.add(StealPropAction, AgentAction(actor_comp.name, StealPropAction.__name__, [self._target_and_message_format_string]))
 
         # 模拟添加一个plan的发起。
-        human_message = f"""{{"{StealPropActionComponent.__name__}": ["{self._target_and_message_format_string}"]}}"""
+        human_message = f"""{{"{StealPropAction.__name__}": ["{self._target_and_message_format_string}"]}}"""
         self.add_human_message(player_entity, human_message)
 ####################################################################################################################################
 ####################################################################################################################################
@@ -357,7 +357,7 @@ class PlayerSteal(PlayerCommand):
 class PlayerGiveProp(PlayerCommand):
     
     """
-    玩家交易的行为：GivePropActionComponent
+    玩家交易的行为：GivePropAction
     """
 
     def __init__(self, name: str, rpg_game: RPGGame, player_proxy: PlayerProxy, target_and_message_format_string: str) -> None:
@@ -373,10 +373,10 @@ class PlayerGiveProp(PlayerCommand):
         
         # 添加行动
         actor_comp = player_entity.get(ActorComponent)
-        player_entity.add(GivePropActionComponent, AgentAction(actor_comp.name, GivePropActionComponent.__name__, [self._target_and_message_format_string]))
+        player_entity.add(GivePropAction, AgentAction(actor_comp.name, GivePropAction.__name__, [self._target_and_message_format_string]))
 
         # 模拟添加一个plan的发起。
-        human_message = f"""{{"{GivePropActionComponent.__name__}": ["{self._target_and_message_format_string}"]}}"""
+        human_message = f"""{{"{GivePropAction.__name__}": ["{self._target_and_message_format_string}"]}}"""
         self.add_human_message(player_entity, human_message)
 ####################################################################################################################################
 ####################################################################################################################################
@@ -384,7 +384,7 @@ class PlayerGiveProp(PlayerCommand):
 class PlayerCheckStatus(PlayerCommand):
     
     """
-    玩家查看状态的行为：CheckStatusActionComponent
+    玩家查看状态的行为：CheckStatusAction
     """
 
     def __init__(self, name: str, rpg_game: RPGGame, player_proxy: PlayerProxy) -> None:
@@ -396,16 +396,16 @@ class PlayerCheckStatus(PlayerCommand):
         if player_entity is None:
             return
         
-        if player_entity.has(CheckStatusActionComponent):
-            logger.warning("debug: player has CheckStatusActionComponent????") # 应该是有问题的，如果存在。
-            player_entity.remove(CheckStatusActionComponent)
+        if player_entity.has(CheckStatusAction):
+            logger.warning("debug: player has CheckStatusAction????") # 应该是有问题的，如果存在。
+            player_entity.remove(CheckStatusAction)
         
         # 添加行动
         actor_comp = player_entity.get(ActorComponent)
-        player_entity.add(CheckStatusActionComponent, AgentAction(actor_comp.name, CheckStatusActionComponent.__name__, [actor_comp.name]))
+        player_entity.add(CheckStatusAction, AgentAction(actor_comp.name, CheckStatusAction.__name__, [actor_comp.name]))
 
         # 模拟添加一个plan的发起。
-        human_message = f"""{{"{CheckStatusActionComponent.__name__}": ["{actor_comp.name}"]}}"""
+        human_message = f"""{{"{CheckStatusAction.__name__}": ["{actor_comp.name}"]}}"""
         self.add_human_message(player_entity, human_message)
 ####################################################################################################################################
 ####################################################################################################################################
@@ -413,7 +413,7 @@ class PlayerCheckStatus(PlayerCommand):
 class PlayerUseProp(PlayerCommand):
     
     """
-    玩家使用道具的行为：UsePropActionComponent
+    玩家使用道具的行为：UsePropAction
     """
 
     def __init__(self, name: str, rpg_game: RPGGame, player_proxy: PlayerProxy, target_and_message_format_string: str) -> None:
@@ -429,10 +429,10 @@ class PlayerUseProp(PlayerCommand):
         
         # 添加行动
         actor_comp = player_entity.get(ActorComponent)
-        player_entity.add(UsePropActionComponent, AgentAction(actor_comp.name, UsePropActionComponent.__name__, [self._target_and_message_format_string]))
+        player_entity.add(UsePropAction, AgentAction(actor_comp.name, UsePropAction.__name__, [self._target_and_message_format_string]))
 
         # 模拟添加一个plan的发起。
-        human_message = f"""{{"{UsePropActionComponent.__name__}": ["{self._target_and_message_format_string}"]}}"""
+        human_message = f"""{{"{UsePropAction.__name__}": ["{self._target_and_message_format_string}"]}}"""
         self.add_human_message(player_entity, human_message)
 ####################################################################################################################################
 ####################################################################################################################################

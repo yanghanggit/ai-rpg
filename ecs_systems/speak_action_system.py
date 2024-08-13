@@ -1,5 +1,5 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
-from ecs_systems.action_components import SpeakActionComponent
+from ecs_systems.action_components import SpeakAction
 from my_agent.agent_action import AgentAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from gameplay_checks.conversation_check import conversation_check, ErrorConversationEnable
@@ -33,11 +33,11 @@ class SpeakActionSystem(ReactiveProcessor):
 ####################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(SpeakActionComponent): GroupEvent.ADDED}
+        return {Matcher(SpeakAction): GroupEvent.ADDED}
 ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(SpeakActionComponent)
+        return entity.has(SpeakAction)
 ####################################################################################################################################
     @override
     def react(self, entities: list[Entity]) -> None:
@@ -45,7 +45,7 @@ class SpeakActionSystem(ReactiveProcessor):
             self.speak(entity)  
 ####################################################################################################################################
     def speak(self, entity: Entity) -> None:
-        speak_comp = entity.get(SpeakActionComponent)
+        speak_comp = entity.get(SpeakAction)
         speak_action: AgentAction = speak_comp.action
         safe_name = self._context.safe_get_entity_name(entity)
         target_and_message = speak_action.target_and_message_values()

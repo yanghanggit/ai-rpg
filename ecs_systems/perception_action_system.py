@@ -1,7 +1,7 @@
 from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity #type: ignore
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from ecs_systems.components import (StageComponent, ActorComponent)
-from ecs_systems.action_components import PerceptionActionComponent, DeadActionComponent
+from ecs_systems.action_components import PerceptionAction, DeadAction
 from loguru import logger
 from typing import List, Dict, override
 from ecs_systems.stage_director_component import StageDirectorComponent
@@ -82,11 +82,11 @@ class PerceptionActionSystem(ReactiveProcessor):
 ###################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return { Matcher(PerceptionActionComponent): GroupEvent.ADDED }
+        return { Matcher(PerceptionAction): GroupEvent.ADDED }
 ###################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(PerceptionActionComponent) and entity.has(ActorComponent) and not entity.has(DeadActionComponent)
+        return entity.has(PerceptionAction) and entity.has(ActorComponent) and not entity.has(DeadAction)
 ###################################################################################################################
     @override
     def react(self, entities: list[Entity]) -> None:

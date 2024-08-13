@@ -1,6 +1,6 @@
 from overrides import override
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
-from ecs_systems.action_components import SpeakActionComponent, BroadcastActionComponent, WhisperActionComponent
+from ecs_systems.action_components import SpeakAction, BroadcastAction, WhisperAction
 from ecs_systems.components import PlayerComponent, ActorComponent
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
@@ -22,7 +22,7 @@ class PostConversationActionSystem(ReactiveProcessor):
 ####################################################################################################
     @override 
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(any_of=[SpeakActionComponent, BroadcastActionComponent, WhisperActionComponent]): GroupEvent.ADDED}
+        return {Matcher(any_of=[SpeakAction, BroadcastAction, WhisperAction]): GroupEvent.ADDED}
 ####################################################################################################
     @override 
     def filter(self, entity: Entity) -> bool:

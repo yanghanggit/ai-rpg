@@ -222,11 +222,11 @@ def search_prop_action_success_prompt(actor_name: str, prop_name:str, stagename:
 ## 导致结果:
 - {stagename} 此场景内不再有这个道具。"""
 ################################################################################################################################################
-def enter_stage_prompt1(some_ones_name: str, target_stage_name: str) -> str:
-    return f"{some_ones_name}进入了场景——{target_stage_name}。"
+def enter_stage_prompt1(actor_name: str, target_stage_name: str) -> str:
+    return f"{actor_name}进入了场景——{target_stage_name}。"
 ################################################################################################################################################
-def enter_stage_prompt2(some_ones_name: str, target_stage_name: str, last_stage_name: str) -> str:
-    return f"# {some_ones_name}离开了{last_stage_name}, 进入了{target_stage_name}。"
+def enter_stage_prompt2(actor_name: str, target_stage_name: str, last_stage_name: str) -> str:
+    return f"# {actor_name}离开了{last_stage_name}, 进入了{target_stage_name}。"
 ################################################################################################################################################
 def leave_stage_prompt(actor_name: str, current_stage_name: str, go_to_stage_name: str) -> str:
     return f"# {actor_name}离开了{current_stage_name} 场景。"

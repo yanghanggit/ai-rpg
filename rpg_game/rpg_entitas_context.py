@@ -93,9 +93,9 @@ class RPGEntitasContext(Context):
         return None
 #############################################################################################################################
     # 目标场景中的所有角色
-    def actors_in_stage(self, stagename: str) -> List[Entity]:   
+    def actors_in_stage(self, stage_name: str) -> List[Entity]:   
         # 测试！！！
-        stage_tag_component = self._codename_component_system.get_stage_tag_component_class_by_name(stagename)
+        stage_tag_component = self._codename_component_system.get_stage_tag_component_class_by_name(stage_name)
         entities: Set[Entity] =  self.get_group(Matcher(all_of=[ActorComponent, stage_tag_component])).entities
         return list(entities)
 #############################################################################################################################

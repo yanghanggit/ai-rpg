@@ -61,7 +61,7 @@ class PostConversationActionSystem(ReactiveProcessor):
 ####################################################################################################
     def handle(self, stage_entity: Entity, async_execute: bool, request_tasks: Dict[str, LangServeAgentRequestTask]) -> None:
         stage_director_comp: StageDirectorComponent = stage_entity.get(StageDirectorComponent)
-        if len(stage_director_comp._events) == 0:
+        if len(stage_director_comp._director_events) == 0:
             return
         ##
         #处理场景的

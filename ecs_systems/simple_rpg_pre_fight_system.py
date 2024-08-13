@@ -20,7 +20,7 @@ class SimpleRPGPreFightSystem(ExecuteProcessor):
         self.rebuild_armors_from_prop_files()
 ######################################################################################################################################################
     def clear_weapons_and_armors(self) -> None:
-        rpgentities: Set[Entity] = self._context.get_group(Matcher(SimpleRPGAttrComponent)).entities
+        rpgentities: Set[Entity] = self._context.get_group(Matcher(SimpleRPGAttrComponent)).entities.copy()
         for entity in rpgentities:
             
             if entity.has(SimpleRPGWeaponComponent):

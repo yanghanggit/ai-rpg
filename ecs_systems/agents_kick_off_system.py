@@ -8,13 +8,15 @@ from loguru import logger
 from typing import Dict, Set
 from my_agent.agent_action import AgentAction
 from my_agent.lang_serve_agent_request_task import LangServeAgentRequestTask, LangServeAgentAsyncRequestTasksGather
+from rpg_game.rpg_game import RPGGame 
 
 ######################################################################################################################################################
 class AgentsKickOffSystem(InitializeProcessor, ExecuteProcessor):
-    def __init__(self, context: RPGEntitasContext) -> None:
+    def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         self._context: RPGEntitasContext = context
         self._request_tasks: Dict[str, LangServeAgentRequestTask] = {}
         self._once_add_perception_and_check_status: bool = False
+        self._rpg_game: RPGGame = rpg_game
 ######################################################################################################################################################
     @override
     def initialize(self) -> None:
@@ -65,7 +67,7 @@ class AgentsKickOffSystem(InitializeProcessor, ExecuteProcessor):
         world_entities: Set[Entity] = self._context.get_group(Matcher(WorldComponent)).entities
         for world_entity in world_entities:
             world_comp = world_entity.get(WorldComponent)
-            task = self._context._langserve_agent_system.create_agent_request_task(world_comp.name, kick_off_world_system_prompt())
+            task = self._context._langserve_agent_system.create_agent_request_task(world_comp.name, kick_off_world_system_prompt(self._rpg_game.about_game))
             assert task is not None, f"task is None: {world_comp.name}"
             if task is not None:
                 result[world_comp.name] = task
@@ -84,7 +86,7 @@ class AgentsKickOffSystem(InitializeProcessor, ExecuteProcessor):
                 logger.error(f"stagememory is empty: {stage_comp.name}")
                 continue
 
-            task = self._context._langserve_agent_system.create_agent_request_task(stage_comp.name, kick_off_stage_prompt(kick_off_message))
+            task = self._context._langserve_agent_system.create_agent_request_task(stage_comp.name, kick_off_stage_prompt(kick_off_message, self._rpg_game.about_game))
             assert task is not None, f"task is None: {stage_comp.name}"
             if task is not None:
                 result[stage_comp.name] = task
@@ -103,7 +105,7 @@ class AgentsKickOffSystem(InitializeProcessor, ExecuteProcessor):
                 logger.error(f"kick_off_message is empty: {actor_comp.name}")
                 continue
             
-            task = self._context._langserve_agent_system.create_agent_request_task(actor_comp.name, kick_off_actor_prompt(kick_off_message))
+            task = self._context._langserve_agent_system.create_agent_request_task(actor_comp.name, kick_off_actor_prompt(kick_off_message, self._rpg_game.about_game))
             assert task is not None, f"task is None: {actor_comp.name}"
             if task is not None:
                 result[actor_comp.name] = task

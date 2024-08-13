@@ -7,9 +7,9 @@ from ecs_systems.cn_constant_prompt import _CNConstantPrompt_
 
 
 ###############################################################################################################################################
-def kick_off_actor_prompt(kick_off_message: str) -> str:
+def kick_off_actor_prompt(kick_off_message: str, about_game: str) -> str:
     prompt = f"""# <%这是角色初始化>游戏世界即将开始运行。这是你的初始设定，你将以此为起点进行游戏
-{_CNConstantPrompt_.RE_EMPHASIZE_GAME_STYLE_TO_PREVENT_POLICY_PROBLEMS}
+{about_game}
 {kick_off_message}。
 ## 请结合你的角色设定,更新你的状态。
 ## 输出要求:
@@ -17,9 +17,9 @@ def kick_off_actor_prompt(kick_off_message: str) -> str:
 - 返回结果仅带'{MindVoiceAction.__name__}'这个key"""
     return prompt
 ###############################################################################################################################################
-def kick_off_stage_prompt(kick_off_message: str) -> str:
+def kick_off_stage_prompt(kick_off_message: str, about_game: str) -> str:
     prompt = f"""# <%这是场景初始化>游戏世界即将开始运行。这是你的初始设定，你将以此为起点进行游戏
-{_CNConstantPrompt_.RE_EMPHASIZE_GAME_STYLE_TO_PREVENT_POLICY_PROBLEMS}
+{about_game}
 ## 你的初始设定如下: 
 {kick_off_message}。
 ## 请结合你的场景设定,更新你的状态。
@@ -28,9 +28,9 @@ def kick_off_stage_prompt(kick_off_message: str) -> str:
 - 返回结果仅带'{EnviroNarrateAction.__name__}'这个key"""
     return prompt
 ###############################################################################################################################################
-def kick_off_world_system_prompt() -> str:
+def kick_off_world_system_prompt(about_game: str) -> str:
     prompt = f"""# <%这是世界系统初始化>游戏世界即将开始运行，请简要回答你的职能与描述。
-{_CNConstantPrompt_.RE_EMPHASIZE_GAME_STYLE_TO_PREVENT_POLICY_PROBLEMS}
+{about_game}
 """
     return prompt
 ###############################################################################################################################################

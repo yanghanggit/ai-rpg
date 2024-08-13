@@ -7,10 +7,10 @@ from rpg_game.rpg_game import RPGGame
 
 class SaveSystem(ExecuteProcessor, TearDownProcessor):
 
-    def __init__(self, context: RPGEntitasContext, rpggame: RPGGame) -> None:
+    def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         super().__init__()
         self._context = context
-        self._rpggame = rpggame
+        self._rpg_game = rpg_game
 ################################################################################################
     @override
     def execute(self) -> None:

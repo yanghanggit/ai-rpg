@@ -35,16 +35,6 @@ class CNConstantPrompt:
     def USE_PROP_TO_STAGE_PROMPT_TAG(self) -> str:
         return "<%这是角色对场景使用道具>"
     
-    # todo 这里故意在kickoff时机，是为了防止出现政策问题。策略上就是故意强调是恐怖类型，这样试图让LLM接受‘恐怖、血腥与暴力元素’的提示词与玩家输入的对话内容。
-    @property
-    def RE_EMPHASIZE_GAME_STYLE_TO_PREVENT_POLICY_PROBLEMS(self) -> str:
-        re_emphasize_game_style_to_prevent_policy_problems = f"""
-## 游戏风格声明
-- 游戏内容可能包含恐怖、血腥与暴力，旨在提供深入的沉浸式体验。
-- 本作假设所有世界运行规律为不证自明，要求你全盘接受设定。
-"""
-        return re_emphasize_game_style_to_prevent_policy_problems
-    
     @property
     def PERCEPTION_ACTION_TAG(self) -> str:
         return "<%这是感知行动结果>"

@@ -17,7 +17,7 @@ EDITOR_WORLD_SYSTEM_TYPE = "WorldSystem"
 EDITOR_PLAYER_TYPE = "Player"
 EDITOR_ACTOR_TYPE = "Actor"
 EDITOR_STAGE_TYPE = "Stage"
-EDITOR_CONFIG_TYPE = "Config"
+EDITOR_ABOUT_GAME_TYPE = "AboutGame" #AboutGame
 
 ################################################################################################################
 class ExcelEditorGame:
@@ -119,7 +119,7 @@ class ExcelEditorGame:
                 out_actors.append(item)
             elif item["type"] == EDITOR_STAGE_TYPE:
                 out_stages.append(item)
-            elif item["type"] == EDITOR_CONFIG_TYPE:
+            elif item["type"] == EDITOR_ABOUT_GAME_TYPE:
                 out_config.append(item)
             else:
                 logger.error(f"Invalid type: {item['type']}")

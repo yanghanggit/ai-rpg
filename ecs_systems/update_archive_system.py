@@ -7,17 +7,19 @@ from ecs_systems.cn_constant_prompt import _CNConstantPrompt_
 from typing import Set, override, Dict, List
 import file_system.helper
 from file_system.files_def import PropFile
+from rpg_game.rpg_game import RPGGame 
 
 #### 一次处理过程的封装，目前是非常笨的方式（而且不是最终版本），后续可以优化。
 ###############################################################################################################################################
 class UpdateArchiveHelper:
-    def __init__(self, context: RPGEntitasContext) -> None:
+    def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         ##我的参数
         self._context = context
         self._stage_names: Set[str] = set()
         self._actor_names: Set[str] = set()
         self._agent_chat_history: Dict[str, str] = {}
         self._actors_props_desc: Dict[str, List[str]] = {}
+        self._rpg_game = rpg_game
 ###############################################################################################################################################
     def prepare(self) -> None:
         ## step1: 所有拥有初始化记忆的场景拿出来
@@ -46,11 +48,11 @@ class UpdateArchiveHelper:
         return result
 ###############################################################################################################################################           
     def get_agent_chat_history(self) -> Dict[str, str]:
-        tags: Set[str] = {_CNConstantPrompt_.RE_EMPHASIZE_GAME_STYLE_TO_PREVENT_POLICY_PROBLEMS,
-                                _CNConstantPrompt_.BATCH_CONVERSATION_ACTION_EVENTS_TAG,
-                                _CNConstantPrompt_.SPEAK_ACTION_TAG,
-                                _CNConstantPrompt_.WHISPER_ACTION_TAG,
-                                _CNConstantPrompt_.BATCH_CONVERSATION_ACTION_EVENTS_TAG,}
+        tags: Set[str] = {self._rpg_game.about_game, 
+                          _CNConstantPrompt_.BATCH_CONVERSATION_ACTION_EVENTS_TAG,
+                          _CNConstantPrompt_.SPEAK_ACTION_TAG,
+                          _CNConstantPrompt_.WHISPER_ACTION_TAG,
+                          _CNConstantPrompt_.BATCH_CONVERSATION_ACTION_EVENTS_TAG,}
         
         result: Dict[str, str] = {}
         actor_entities: Set[Entity] = self._context.get_group(Matcher(ActorComponent)).entities
@@ -141,8 +143,9 @@ class UpdateArchiveHelper:
 
 
 class UpdateArchiveSystem(ExecuteProcessor):
-    def __init__(self, context: RPGEntitasContext) -> None:
+    def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         self._context: RPGEntitasContext = context
+        self._rpg_game: RPGGame = rpg_game
 ###############################################################################################################################################
     @override
     def execute(self) -> None:
@@ -151,7 +154,7 @@ class UpdateArchiveSystem(ExecuteProcessor):
     def update_archive(self) -> None:
         # 建立数据
         context = self._context
-        archive_helper = UpdateArchiveHelper(self._context)
+        archive_helper = UpdateArchiveHelper(self._context, self._rpg_game)
         archive_helper.prepare()
         # 对Actor进行处理
         actor_entities: Set[Entity] = context.get_group(Matcher(all_of=[ActorComponent])).entities

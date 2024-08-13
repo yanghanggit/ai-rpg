@@ -4,7 +4,6 @@ from overrides import override
 import time
 from typing import Any, cast
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from ecs_systems.agents_kick_off_system import AgentsKickOffSystem
 from ecs_systems.stage_planning_system import StagePlanningSystem
 from ecs_systems.actor_planning_system import ActorPlanningSystem
 from ecs_systems.speak_action_system import SpeakActionSystem
@@ -25,7 +24,6 @@ from ecs_systems.pre_planning_system import PrePlanningSystem
 from ecs_systems.post_planning_system import PostPlanningSystem
 from ecs_systems.pre_action_system import PreActionSystem
 from ecs_systems.post_action_system import PostActionSystem
-from ecs_systems.update_archive_system import UpdateArchiveSystem
 from ecs_systems.portal_step_action_system import PortalStepActionSystem
 from ecs_systems.perception_action_system import PerceptionActionSystem
 from ecs_systems.steal_action_system import StealActionSystem
@@ -44,15 +42,17 @@ class RPGEntitasProcessors(Processors):
 
     @staticmethod
     def create(rpg_game: Any, context: RPGEntitasContext) -> 'RPGEntitasProcessors':
-
-        # 
-        from ecs_systems.handle_player_input_system import HandlePlayerInputSystem ### 不这样就循环引用
+        
+        ### 不这样就循环引用
+        from ecs_systems.handle_player_input_system import HandlePlayerInputSystem 
         from ecs_systems.update_client_message_system import UpdateClientMessageSystem
         from ecs_systems.dead_action_system import DeadActionSystem
         from ecs_systems.terminal_player_interrupt_and_wait_system import TerminalPlayerInterruptAndWaitSystem
         from ecs_systems.terminal_player_input_system import TerminalPlayerInputSystem
         from ecs_systems.save_system import SaveSystem
         from rpg_game.rpg_game import RPGGame
+        from ecs_systems.agents_kick_off_system import AgentsKickOffSystem
+        from ecs_systems.update_archive_system import UpdateArchiveSystem
 
         ##
         rpg_game = cast(RPGGame, rpg_game)
@@ -64,7 +64,7 @@ class RPGEntitasProcessors(Processors):
         
         #初始化系统########################
         processors.add(AgentsConnectSystem(context)) ### 连接所有agent
-        processors.add(AgentsKickOffSystem(context)) ### 第一次读状态, initmemory
+        processors.add(AgentsKickOffSystem(context, rpg_game)) ### 第一次读状态, initmemory
         processors.add(UpdateAppearanceSystem(context, UPDATE_APPEARANCE_SYSTEM_NAME)) ### 更新外观
         #########################################
 
@@ -108,7 +108,7 @@ class RPGEntitasProcessors(Processors):
         processors.add(StageDirectorSystem(context))
 
         #行动结束后更新关系网，因为依赖Director所以必须在后面
-        processors.add(UpdateArchiveSystem(context))
+        processors.add(UpdateArchiveSystem(context, rpg_game))
 
         ###最后删除entity与存储数据
         processors.add(DestroySystem(context))

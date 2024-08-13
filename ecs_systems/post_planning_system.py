@@ -11,8 +11,8 @@ class PostPlanningSystem(ExecuteProcessor):
 ############################################################################################################
     @override
     def execute(self) -> None:
-        entities: Set[Entity] = self._context.get_group(Matcher(AutoPlanningComponent)).entities.copy()
-        for entity in entities.copy():
+        entities = self._context.get_group(Matcher(AutoPlanningComponent)).entities.copy()
+        for entity in entities:
             entity.remove(AutoPlanningComponent)
 ############################################################################################################
 

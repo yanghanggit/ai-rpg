@@ -82,7 +82,7 @@ class UpdateAppearanceSystem(InitializeProcessor, ExecuteProcessor):
 
             #
             response = agent_request.request()
-            # 注意 DO_NOT_ADD_MESSAGE_TO_CHAT_HISTORY，不要把这个消息加入到聊天记录中。因为世界级系统不需要存储上下文。
+            # DO_NOT_ADD_MESSAGE_TO_CHAT_HISTORY，不要把这个消息加入到聊天记录中。因为世界级系统不需要存储上下文。
             #response = langserve_agent_system.agent_request(safe_name, final_prompt, AddChatHistoryOptionOnRequestSuccess.NOT_ADD_ANY_TO_CHAT_HISTORY)
             if response is None:
                 logger.error(f"{safe_name} request response is None.")

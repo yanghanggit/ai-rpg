@@ -236,10 +236,10 @@ def stage_director_event_wrap_prompt(event: str, event_index: int) -> str:
     return f"""# 事件{event_number}\n{event}"""
 ################################################################################################################################################
 def stage_director_begin_prompt(stage_name: str, events_count: int) -> str:
-    return f"""# 如下是{stage_name}场景内发生的事件，事件数量为{events_count}。如下(请注意):"""
+    return f"""# 如下是{stage_name}场景内发生的事件，事件数量为{events_count}。"""
 ################################################################################################################################################
 def stage_director_end_prompt(stage_name: str, events_count: int) -> str:
-    return f"""# 以上是{stage_name}场景内近期发生的{events_count}个事件。请注意。"""
+    return f"""# 以上是{stage_name}场景内近期发生的{events_count}个事件。"""
 ################################################################################################################################################
 def whisper_action_prompt(srcname: str, destname: str, content: str) -> str:
     prompt = f"# {_CNConstantPrompt_.WHISPER_ACTION_TAG} {srcname}对{destname}私语道:{content}"   
@@ -300,7 +300,7 @@ def batch_conversation_action_events_in_stage_prompt(stage_name: str, events: Li
     if len(events) == 0:
         batch.append(f""" # {_CNConstantPrompt_.BATCH_CONVERSATION_ACTION_EVENTS_TAG} 当前场景 {stage_name} 没有发生任何对话类型事件。""")
     else:
-        batch.append(f""" # {_CNConstantPrompt_.BATCH_CONVERSATION_ACTION_EVENTS_TAG} 当前场景 {stage_name} 发生了如下对话类型事件，请注意:""")
+        batch.append(f""" # {_CNConstantPrompt_.BATCH_CONVERSATION_ACTION_EVENTS_TAG} 当前场景 {stage_name} 发生了如下对话类型事件:""")
 
     for event in events:
         batch.append(event)
@@ -367,7 +367,7 @@ def stage_exit_conditions_check_prompt(actor_name: str,
     {TagAction.__name__}: ["Yes/No"]
 }}
 ## 附注
-- '{EnviroNarrateAction.__name__}' 中请详细描述判断理由，注意如果不允许离开，就只说哪一条不符合要求，不要都说出来，否则会让{actor_name}迷惑。
+- '{EnviroNarrateAction.__name__}' 中请详细描述判断理由，如果不允许离开，就只说哪一条不符合要求，不要都说出来，否则会让{actor_name}迷惑。
 - Yes: 允许离开
 - No: 不允许离开
 """
@@ -405,7 +405,7 @@ def stage_entry_conditions_check_prompt(actor_name: str, current_stage_name: str
     {TagAction.__name__}: ["Yes/No"]
 }}
 ## 附注
-- '{EnviroNarrateAction.__name__}' 中请详细描述判断理由，注意如果不允许进入，就只说哪一条不符合要求，不要都说出来，否则会让{actor_name}迷惑。
+- '{EnviroNarrateAction.__name__}' 中请详细描述判断理由，如果不允许进入，就只说哪一条不符合要求，不要都说出来，否则会让{actor_name}迷惑。
 - Yes: 允许进入
 - No: 不允许进入
 """
@@ -454,7 +454,7 @@ def actors_body_and_clothe_prompt(actors_body_and_clothe:  Dict[str, tuple[str, 
 ### 请根据下面的示意, 确保你的输出严格遵守相应的结构。
 {appearance_json_str}
 ### 注意事项
-- '?'就是你推理出来的结果(注意结果中可以不用再提及角色的名字)，你需要将其替换为你的推理结果。
+- '?'就是你推理出来的结果(结果中可以不用再提及角色的名字)，你需要将其替换为你的推理结果。
 - 所有文本输出必须为第3人称。
 - 每个 JSON 对象必须包含上述键中的一个或多个，不得重复同一个键，也不得使用不在上述中的键。
 - 输出不应包含任何超出所需 JSON 格式的额外文本、解释或总结。

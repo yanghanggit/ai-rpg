@@ -20,19 +20,19 @@ DestroyComponent = namedtuple('DestroyComponent', 'name')
 # 自动规划行为的标记
 AutoPlanningComponent = namedtuple('AutoPlanningComponent', 'name')
 # 角色外观信息
-AppearanceComponent = namedtuple('AppearanceComponent', 'appearance hash_code')
+AppearanceComponent = namedtuple('AppearanceComponent', 'name appearance hash_code')
 # 样貌，用于和衣服组成完整的外观信息。如果是动物等，就是动物的外观信息
-BodyComponent = namedtuple('BodyComponent', 'body')
+BodyComponent = namedtuple('BodyComponent', 'name body')
 # 场景离开条件
-StageExitCondStatusComponent = namedtuple('StageExitCondStatusComponent', 'condition')
-StageExitCondCheckActorStatusComponent = namedtuple('StageExitCondCheckActorStatusComponent', 'condition')
-StageExitCondCheckActorPropsComponent = namedtuple('StageExitCondCheckActorPropsComponent', 'condition')
+StageExitCondStatusComponent = namedtuple('StageExitCondStatusComponent', 'name condition')
+StageExitCondCheckActorStatusComponent = namedtuple('StageExitCondCheckActorStatusComponent', 'name condition')
+StageExitCondCheckActorPropsComponent = namedtuple('StageExitCondCheckActorPropsComponent', 'name condition')
 # 场景进入条件
-StageEntryCondStatusComponent = namedtuple('StageEntryCondStatusComponent', 'condition')
-StageEntryCondCheckActorStatusComponent = namedtuple('StageEntryCondCheckActorStatusComponent', 'condition')
-StageEntryCondCheckActorPropsComponent = namedtuple('StageEntryCondCheckActorPropsComponent', 'condition')
+StageEntryCondStatusComponent = namedtuple('StageEntryCondStatusComponent', 'name condition')
+StageEntryCondCheckActorStatusComponent = namedtuple('StageEntryCondCheckActorStatusComponent', 'name condition')
+StageEntryCondCheckActorPropsComponent = namedtuple('StageEntryCondCheckActorPropsComponent', 'name condition')
 # 作为门类型的场景的组件标记
-ExitOfPortalComponent = namedtuple('ExitOfPortalComponent', 'name')
+StagePortalComponent = namedtuple('StagePortalComponent', 'name target')  #StagePortalComponent
 ##############################################################################################################################################
 
 
@@ -42,3 +42,6 @@ SimpleRPGAttrComponent = namedtuple('SimpleRPGAttrComponent', 'name maxhp hp att
 SimpleRPGWeaponComponent = namedtuple('SimpleRPGWeaponComponent', 'name weaponname maxhp attack defense')
 SimpleRPGArmorComponent = namedtuple('SimpleRPGArmorComponent', 'name armorname maxhp attack defense')
 ##############################################################################################################################################
+
+# 角色当前装备的道具，一般是武器和衣服
+CurrentUsingPropComponent = namedtuple('CurrentUsingPropComponent', 'name weapon clothes')

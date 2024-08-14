@@ -2,10 +2,10 @@ from typing import List, Optional
 from overrides import override
 from entitas import Matcher #type: ignore
 from loguru import logger
-from ecs_systems.components import ( WorldComponent, StageComponent, ExitOfPortalComponent, ActorComponent,  PlayerComponent, 
+from ecs_systems.components import ( WorldComponent, StageComponent, StagePortalComponent, ActorComponent,  PlayerComponent, 
     SimpleRPGAttrComponent, AppearanceComponent, StageExitCondStatusComponent, StageExitCondCheckActorStatusComponent,
     StageExitCondCheckActorPropsComponent, StageEntryCondStatusComponent, StageEntryCondCheckActorStatusComponent,
-    StageEntryCondCheckActorPropsComponent, BodyComponent, GUIDComponent)
+    StageEntryCondCheckActorPropsComponent, BodyComponent, GUIDComponent, CurrentUsingPropComponent)
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from build_game.game_builder import GameBuilder
 from entitas.entity import Entity
@@ -199,8 +199,8 @@ class RPGGame(BaseGame):
                     actor_model.attributes[3])
         
         hash_code = hash(actor_model.appearance)
-        actor_entity.add(AppearanceComponent, actor_model.appearance, hash_code)
-        actor_entity.add(BodyComponent, actor_model.body)
+        actor_entity.add(AppearanceComponent, actor_model.name, actor_model.appearance, hash_code)
+        actor_entity.add(BodyComponent, actor_model.name, actor_model.body)
 
         #添加扩展子系统的
         context._langserve_agent_system.register_agent(actor_model.name, actor_model.url)
@@ -223,6 +223,23 @@ class RPGGame(BaseGame):
 
         # 初步建立关系网（在编辑文本中提到的Actor名字）
         file_system.helper.add_actor_archive_files(context._file_system, actor_model.name, set(actor_model.actor_archives))
+
+        # 当前使用的装备
+        weapon_name: str = ""
+        clothes_name: str = ""
+        for prop_name in actor_proxy.actor_current_using_prop:
+
+            find_weapon_or_clothes_file = context._file_system.get_file(PropFile, actor_model.name, prop_name)
+            if find_weapon_or_clothes_file is None:
+                logger.error(f"没有找到道具文件：{prop_name}")
+                continue
+
+            if find_weapon_or_clothes_file.is_weapon and weapon_name == "":
+                weapon_name = prop_name
+            elif find_weapon_or_clothes_file.is_clothes and clothes_name == "":
+                clothes_name = prop_name
+
+        actor_entity.add(CurrentUsingPropComponent, actor_model.name, weapon_name, clothes_name)
 
         return actor_entity
 ###############################################################################################################################################
@@ -294,8 +311,8 @@ class RPGGame(BaseGame):
         self.add_stage_conditions(stage_entity, stage_model)
 
         ## 创建连接的场景用于PortalStepActionSystem, 目前如果添加就只能添加一个
-        if  stage_model.exit_of_portal != "":
-            stage_entity.add(ExitOfPortalComponent, stage_model.exit_of_portal)
+        if  stage_model.stage_portal != "":
+            stage_entity.add(StagePortalComponent, stage_model.name, stage_model.stage_portal)
 
         #添加子系统！
         context._langserve_agent_system.register_agent(stage_model.name, stage_model.url)
@@ -309,23 +326,23 @@ class RPGGame(BaseGame):
 
         logger.debug(f"添加Stage条件：{stage_model.name}")
         if stage_model.stage_entry_status != "":
-            stage_entity.add(StageEntryCondStatusComponent, stage_model.stage_entry_status)
+            stage_entity.add(StageEntryCondStatusComponent, stage_model.name, stage_model.stage_entry_status)
             logger.debug(f"如果进入场景，场景需要检查条件：{stage_model.stage_entry_status}")
         if stage_model.stage_entry_actor_status != "":
-            stage_entity.add(StageEntryCondCheckActorStatusComponent, stage_model.stage_entry_actor_status)
+            stage_entity.add(StageEntryCondCheckActorStatusComponent, stage_model.name, stage_model.stage_entry_actor_status)
             logger.debug(f"如果进入场景，需要检查角色符合条件：{stage_model.stage_entry_actor_status}")
         if stage_model.stage_entry_actor_props != "":
-            stage_entity.add(StageEntryCondCheckActorPropsComponent, stage_model.stage_entry_actor_props)
+            stage_entity.add(StageEntryCondCheckActorPropsComponent, stage_model.name, stage_model.stage_entry_actor_props)
             logger.debug(f"如果进入场景，需要检查角色拥有必要的道具：{stage_model.stage_entry_actor_props}")
 
         if stage_model.stage_exit_status != "":
-            stage_entity.add(StageExitCondStatusComponent, stage_model.stage_exit_status)
+            stage_entity.add(StageExitCondStatusComponent, stage_model.name, stage_model.stage_exit_status)
             logger.debug(f"如果离开场景，场景需要检查条件：{stage_model.stage_exit_status}")
         if stage_model.stage_exit_actor_status != "":
-            stage_entity.add(StageExitCondCheckActorStatusComponent, stage_model.stage_exit_actor_status)
+            stage_entity.add(StageExitCondCheckActorStatusComponent, stage_model.name, stage_model.stage_exit_actor_status)
             logger.debug(f"如果离开场景，需要检查角色符合条件：{stage_model.stage_exit_actor_status}")
         if stage_model.stage_exit_actor_props != "":
-            stage_entity.add(StageExitCondCheckActorPropsComponent, stage_model.stage_exit_actor_props)
+            stage_entity.add(StageExitCondCheckActorPropsComponent, stage_model.name, stage_model.stage_exit_actor_props)
             logger.debug(f"如果离开场景，需要检查角色拥有必要的道具：{stage_model.stage_exit_actor_props}")
 ###############################################################################################################################################
     def add_code_name_component_to_world_and_actors(self) -> None:

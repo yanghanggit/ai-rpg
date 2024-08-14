@@ -1,10 +1,10 @@
-from overrides import override
 from entitas import Entity, InitializeProcessor, ExecuteProcessor, Matcher # type: ignore
+from overrides import override
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
-from typing import Dict, cast, Set
+from typing import Dict, cast
 import json
-from ecs_systems.components import AppearanceComponent, BodyComponent, ActorComponent
+from ecs_systems.components import AppearanceComponent, BodyComponent, ActorComponent, CurrentUsingPropComponent
 from ecs_systems.cn_builtin_prompt import actors_body_and_clothe_prompt
 from file_system.files_def import PropFile
 
@@ -63,7 +63,7 @@ class UpdateAppearanceSystem(InitializeProcessor, ExecuteProcessor):
                 assert body != ""
             
                 hash_code = hash(body)
-                entity.replace(AppearanceComponent, body, hash_code)
+                entity.replace(AppearanceComponent, name, body, hash_code)
                 logger.debug(f"{name}, update_appearance_by_body: {body}")
 ###############################################################################################################################################
     # 有衣服的，请求更新，通过LLM来推理外观。
@@ -109,7 +109,7 @@ class UpdateAppearanceSystem(InitializeProcessor, ExecuteProcessor):
                 logger.error(f"update_after_requst, entity is None, name: {name}")
                 continue
             hash_code = hash(appearance)
-            entity.replace(AppearanceComponent, appearance, hash_code)
+            entity.replace(AppearanceComponent, name, appearance, hash_code)
             #logger.debug(f"{name}, update_after_requst: {appearance}")
 ###############################################################################################################################################
     # 获取所有的角色的身体和衣服
@@ -125,20 +125,23 @@ class UpdateAppearanceSystem(InitializeProcessor, ExecuteProcessor):
 
             name = cast(ActorComponent, actor_entity.get(ActorComponent)).name
             body = self.get_body(actor_entity)
-            clothe = self.get_clothe(actor_entity)
+            clothe = self.get_current_clothe(actor_entity)
             logger.debug(f"actor: {name}, body: {body}, clothe: {clothe}")
             ret[name] = (body, clothe)
 
         return ret
 ###############################################################################################################################################
     # 获取衣服的描述 todo。现在就返回了第一个衣服的描述
-    def get_clothe(self, entity: Entity) -> str:
-        safe_name = self._context.safe_get_entity_name(entity)            
-        prop_files = self._context._file_system.get_files(PropFile, safe_name)
-        for prop_file in prop_files:
-            if prop_file.is_clothes:
-                return prop_file.appearance
-        return "" 
+    def get_current_clothe(self, entity: Entity) -> str:
+        if not entity.has(CurrentUsingPropComponent):
+            return ""
+    
+        current_using_prop_comp = entity.get(CurrentUsingPropComponent)
+        current_clothe_prop_file = self._context._file_system.get_file(PropFile, current_using_prop_comp.name, current_using_prop_comp.clothes)
+        if current_clothe_prop_file is None:
+            return ""
+
+        return current_clothe_prop_file.appearance
 ###############################################################################################################################################
     # 获取身体的描述。
     def get_body(self, entity: Entity) -> str:

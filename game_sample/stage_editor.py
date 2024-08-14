@@ -68,9 +68,9 @@ class ExcelEditorStage:
         return cast(str, self._my_data["kick_off_message"])
 ################################################################################################################################
     @property
-    def exit_of_portal(self) -> str:
+    def stage_portal(self) -> str:
         assert self._my_data is not None
-        val = self._my_data["exit_of_portal"]
+        val = self._my_data["stage_portal"]
         if val is None:
             return ""
         return str(val)
@@ -104,7 +104,7 @@ class ExcelEditorStage:
         _dt["description"] = data_stage.description
         _dt["url"] = data_stage.localhost
         _dt["kick_off_message"] = self.kick_off_message
-        _dt["exit_of_portal"] = self.exit_of_portal
+        _dt["stage_portal"] = self.stage_portal
         _dt['attributes'] = self.attributes 
 
         # 添加新的场景限制条件

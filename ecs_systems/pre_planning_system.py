@@ -27,7 +27,7 @@ class PrePlanningSystem(InitializeProcessor, ExecuteProcessor):
         ## 计数
         self._execute_count += 1
         ## 通过策略来做计划
-        strategy: PlanningStrategy = self.decide_strategy(self._strategy, self._execute_count)
+        strategy = self.decide_strategy(self._strategy, self._execute_count)
         ## 制定更新策略
         self.make_planning_by_strategy(strategy)
 ############################################################################################################
@@ -53,46 +53,47 @@ class PrePlanningSystem(InitializeProcessor, ExecuteProcessor):
         assert playerentity.has(PlayerComponent)
 
         context = self._context
-        stageentity = context.safe_get_stage_entity(playerentity)
-        if stageentity is None:
+        stage_entity = context.safe_get_stage_entity(playerentity)
+        if stage_entity is None:
             logger.error("stage is None, player无所在场景是有问题的")
             return
         
         ##player所在场景可以规划
-        stagecomp: StageComponent = stageentity.get(StageComponent)
+        stage_comp = stage_entity.get(StageComponent)
         
         ###player所在场景的actors可以规划
-        actor_entities = context.actors_in_stage(stagecomp.name)
+        actor_entities = context.actors_in_stage(stage_comp.name)
         if len(actor_entities) == 0:
             return
         
-        if not stageentity.has(AutoPlanningComponent):
-            stageentity.add(AutoPlanningComponent, stagecomp.name)
+        if not stage_entity.has(AutoPlanningComponent):
+            stage_entity.add(AutoPlanningComponent, stage_comp.name)
         
-        for _en in actor_entities:
-            if _en.has(PlayerComponent):
-                ## 挡掉
+        for actor_entity in actor_entities:
+
+            if actor_entity.has(PlayerComponent):
                 continue
-            actor_comp: ActorComponent = _en.get(ActorComponent)
-            if not _en.has(AutoPlanningComponent):
-                _en.add(AutoPlanningComponent, actor_comp.name)
+            
+            actor_comp = actor_entity.get(ActorComponent)
+            if not actor_entity.has(AutoPlanningComponent):
+                actor_entity.add(AutoPlanningComponent, actor_comp.name)
 ############################################################################################################
     def strategy2_all_stages_and_actors_except_player_allow_auto_planning(self) -> None:
         context = self._context
-        stageentities = context.get_group(Matcher(StageComponent)).entities
-        for stageentity in stageentities:
-            stagecomp: StageComponent = stageentity.get(StageComponent)
-            actors_in_stage = context.actors_in_stage(stagecomp.name)
+        stage_entities = context.get_group(Matcher(StageComponent)).entities
+        for stage_entity in stage_entities:
+            stage_comp = stage_entity.get(StageComponent)
+            actors_in_stage = context.actors_in_stage(stage_comp.name)
             if len(actors_in_stage) == 0:
                 continue
-            if not stageentity.has(AutoPlanningComponent):
-                stageentity.add(AutoPlanningComponent, stagecomp.name)
+            if not stage_entity.has(AutoPlanningComponent):
+                stage_entity.add(AutoPlanningComponent, stage_comp.name)
         
         actor_entities = context.get_group(Matcher(ActorComponent)).entities
-        for _en in actor_entities:
-            if _en.has(PlayerComponent):
+        for actor_entity in actor_entities:
+            if actor_entity.has(PlayerComponent):
                 continue
-            actor_comp: ActorComponent = _en.get(ActorComponent)
-            if not _en.has(AutoPlanningComponent):
-                _en.add(AutoPlanningComponent, actor_comp.name)
+            actor_comp = actor_entity.get(ActorComponent)
+            if not actor_entity.has(AutoPlanningComponent):
+                actor_entity.add(AutoPlanningComponent, actor_comp.name)
 ############################################################################################################

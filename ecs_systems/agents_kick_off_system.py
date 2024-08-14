@@ -1,5 +1,5 @@
-from overrides import override
 from entitas import Entity, Matcher, InitializeProcessor, ExecuteProcessor # type: ignore
+from overrides import override
 from ecs_systems.components import WorldComponent, StageComponent, ActorComponent, PlayerComponent
 from ecs_systems.action_components import PerceptionAction, CheckStatusAction
 from ecs_systems.cn_builtin_prompt import (kick_off_actor_prompt, kick_off_stage_prompt, kick_off_world_system_prompt)
@@ -38,7 +38,7 @@ class AgentsKickOffSystem(InitializeProcessor, ExecuteProcessor):
 ######################################################################################################################################################
     def once_add_perception_and_check_status(self) -> None:
         context = self._context
-        entities: Set[Entity] = context.get_group(Matcher(all_of=[ActorComponent], none_of=[PlayerComponent])).entities
+        entities = context.get_group(Matcher(all_of=[ActorComponent], none_of=[PlayerComponent])).entities
         for entity in entities:
             actor_name: ActorComponent = entity.get(ActorComponent)
             #
@@ -96,7 +96,7 @@ class AgentsKickOffSystem(InitializeProcessor, ExecuteProcessor):
     def create_actor_tasks(self) -> Dict[str, LangServeAgentRequestTask]:
         result: Dict[str, LangServeAgentRequestTask] = {}
      
-        actor_entities: Set[Entity] = self._context.get_group(Matcher(all_of=[ActorComponent])).entities
+        actor_entities: Set[Entity] = self._context.get_group(Matcher(all_of=[ActorComponent], none_of=[PlayerComponent] )).entities
         for actor_entity in actor_entities:
 
             actor_comp = actor_entity.get(ActorComponent)

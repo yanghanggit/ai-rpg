@@ -116,7 +116,7 @@ def perception_action_prompt(who: str, current_stage: str, result_actor_names: D
     prompt_of_actor = ""
     if len(result_actor_names) > 0:
         for other_name, other_appearance in result_actor_names.items():
-            prompt_of_actor += f"""### {other_name}\n- 外观信息:{other_appearance}\n"""
+            prompt_of_actor += f"""### {other_name}\n- 角色外观:{other_appearance}\n"""
     else:
         prompt_of_actor = "- 无其他角色。"
 
@@ -157,10 +157,10 @@ def prop_prompt(prop_file: PropFile, need_description_prompt: bool, need_appeara
 - 类型:{_prop_type_}
 """
     if need_description_prompt:
-        prompt += f"- 描述:{prop_file.description}\n"
+        prompt += f"- 道具描述:{prop_file.description}\n"
         
     if need_appearance_prompt:
-        prompt += f"- 外观:{prop_file.appearance}\n"
+        prompt += f"- 道具外观:{prop_file.appearance}\n"
 
     return prompt
 ###############################################################################################################################################
@@ -422,37 +422,47 @@ def enter_stage_failed_beacuse_stage_refuse_prompt(actor_name: str, stagename: s
 {tips}"""
 ################################################################################################################################################
 def actor_status_when_stage_change_prompt(safe_name: str, appearance_info: str) -> str:
-    return f"""### {safe_name}\n- 外观信息:{appearance_info}\n"""
+    return f"""### {safe_name}\n- 角色外观:{appearance_info}\n"""
 ################################################################################################################################################
 def use_prop_no_response_prompt(username: str, propname: str, targetname: str) -> str:
     return f"# {username}对{targetname}使用道具{propname}，但没有任何反应。"
 ################################################################################################################################################
 def actors_body_and_clothe_prompt(actors_body_and_clothe:  Dict[str, tuple[str, str]]) -> str:
-        prompt_list_of_actor: List[str] = []
+        appearance_info_list: List[str] = []
         actor_names: List[str] = []
         for name, (body, clothe) in actors_body_and_clothe.items():
             if clothe == "":
                 continue
-
-            prompt_of_actor = f"""### {name}
-- 角色外观:{body}
+            appearance_info = \
+f"""### {name}
+- 样貌:{body}
 - 衣服:{clothe}
 """
-            prompt_list_of_actor.append(prompt_of_actor)
+            appearance_info_list.append(appearance_info)
             actor_names.append(name)
+
+
         #
-        batch_str = "\n".join(prompt_list_of_actor)
-        assert len(batch_str) > 0
+        final_input_prompt = "\n".join(appearance_info_list)
+        assert len(final_input_prompt) > 0
         #
-        appearance_json = {name: "?" for name in actor_names}
-        appearance_json_str = json.dumps(appearance_json, ensure_ascii = False)
+        dumps_as_format = json.dumps({name: "?" for name in actor_names}, ensure_ascii = False)
+
         # 最后的合并
-        final_prompt = f"""# 请更新角色外观：根据‘角色外观’与‘衣服’，生成最终的角色外观的描述。
-## 角色列表
-{batch_str}
+        ret_prompt = f"""# 请根据 样貌 与 衣服，生成最终的角色外观的描述。
+## 提供给你的信息
+{final_input_prompt}
+
+## 推理逻辑
+- 第1步:判断是否有衣服，如果有。则推理结果为样貌与衣服进行结合后的描述——表达角色穿着衣服。
+- 第2步:如果没有衣服，推理结果为样貌的描述。
+- 第3步:将推理结果进行适度润色。
+
 ## 输出格式指南
-### 请根据下面的示意, 确保你的输出严格遵守相应的结构。
-{appearance_json_str}
+
+### 输出格式（请根据下面的示意, 确保你的输出严格遵守相应的结构)
+{dumps_as_format}
+
 ### 注意事项
 - '?'就是你推理出来的结果(结果中可以不用再提及角色的名字)，你需要将其替换为你的推理结果。
 - 所有文本输出必须为第3人称。
@@ -460,5 +470,5 @@ def actors_body_and_clothe_prompt(actors_body_and_clothe:  Dict[str, tuple[str, 
 - 输出不应包含任何超出所需 JSON 格式的额外文本、解释或总结。
 - 不要使用```json```来封装内容。
 """
-        return final_prompt
+        return ret_prompt
 ################################################################################################################################################

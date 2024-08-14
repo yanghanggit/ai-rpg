@@ -22,9 +22,9 @@ def create_game_editor(sheet_name_as_game_name: str,
     ####测试的一个世界编辑
     data_frame: DataFrame = pd.read_excel(f"{GAME_NAME}/{EXCEL_EDITOR}/{GAME_NAME}.xlsx", sheet_name = sheet_name_as_game_name, engine='openpyxl')
     ###费2遍事，就是试试转换成json好使不，其实可以不用直接dataframe做也行
-    _2json: str = data_frame.to_json(orient='records', force_ascii=False)
-    _2list: List[Any] = json.loads(_2json)
-    return ExcelEditorGame(sheet_name_as_game_name, _2list, actor_data_base, prop_data_base, stage_data_base, world_system_data_base)
+    json_data: str = data_frame.to_json(orient='records', force_ascii=False)
+    list_data: List[Any] = json.loads(json_data)
+    return ExcelEditorGame(sheet_name_as_game_name, list_data, actor_data_base, prop_data_base, stage_data_base, world_system_data_base)
 ############################################################################################################
 def main() -> None:
 
@@ -56,7 +56,7 @@ def main() -> None:
     #测试这个世界编辑
     sheet_name_as_game_name = input("输入要创建的World的名字(必须对应excel中的sheet名):")
     if sheet_name_as_game_name == "":
-        sheet_name_as_game_name = "World3"
+        sheet_name_as_game_name = "World1"
         logger.warning(f"使用默认的World名称: {sheet_name_as_game_name}")
 
     game_editor = create_game_editor(str(sheet_name_as_game_name), actor_data_base, prop_data_base, stage_data_base, world_system_data_base)

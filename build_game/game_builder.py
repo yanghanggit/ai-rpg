@@ -21,6 +21,7 @@ class GameBuilder:
 
         self._runtime_dir: Path = runtime_file_dir
         assert self._runtime_dir is not None
+        self._runtime_dir.mkdir(parents = True, exist_ok = True)
         assert self._runtime_dir.exists()
         
         self._model = GameBuilderModel.model_validate_json(json.dumps(data, ensure_ascii = False))

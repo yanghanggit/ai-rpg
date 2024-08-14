@@ -53,4 +53,4 @@ async def main(input_actor_name_as_default: str) -> None:
 
 if __name__ == "__main__":
     import asyncio
-    asyncio.run(main("无名的复活者")) #todo
+    asyncio.run(main("人物.火十一")) #todo

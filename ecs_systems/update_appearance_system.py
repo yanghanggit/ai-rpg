@@ -48,15 +48,20 @@ class UpdateAppearanceSystem(InitializeProcessor, ExecuteProcessor):
 ###############################################################################################################################################
     # 没有衣服的，就直接更新外观，一般是动物类的，或者非人类的。
     def imme_update_appearance(self, actors_body_and_clothe:  Dict[str, tuple[str, str]]) -> None:
+
         context = self._context
         for name, (body, clothe) in actors_body_and_clothe.items():
+            
             if clothe == "" and body != "":
+            
                 entity = context.get_actor_entity(name)
                 assert entity is not None
                 assert entity.has(AppearanceComponent)
                 assert entity.has(BodyComponent)
+            
                 body = self.get_body(entity)
                 assert body != ""
+            
                 hash_code = hash(body)
                 entity.replace(AppearanceComponent, body, hash_code)
                 logger.debug(f"{name}, update_appearance_by_body: {body}")
@@ -82,8 +87,6 @@ class UpdateAppearanceSystem(InitializeProcessor, ExecuteProcessor):
 
             #
             response = agent_request.request()
-            # DO_NOT_ADD_MESSAGE_TO_CHAT_HISTORY，不要把这个消息加入到聊天记录中。因为世界级系统不需要存储上下文。
-            #response = langserve_agent_system.agent_request(safe_name, final_prompt, AddChatHistoryOptionOnRequestSuccess.NOT_ADD_ANY_TO_CHAT_HISTORY)
             if response is None:
                 logger.error(f"{safe_name} request response is None.")
                 return False
@@ -94,6 +97,7 @@ class UpdateAppearanceSystem(InitializeProcessor, ExecuteProcessor):
         except Exception as e:
             logger.error(f"{safe_name} request error = {e}")
             return False
+        
         return True
 ###############################################################################################################################################
     # 请求成功后的处理，就是把AppearanceComponent 设置一遍
@@ -106,22 +110,26 @@ class UpdateAppearanceSystem(InitializeProcessor, ExecuteProcessor):
                 continue
             hash_code = hash(appearance)
             entity.replace(AppearanceComponent, appearance, hash_code)
-            logger.debug(f"{name}, update_after_requst: {appearance}")
+            #logger.debug(f"{name}, update_after_requst: {appearance}")
 ###############################################################################################################################################
     # 获取所有的角色的身体和衣服
     def get_actors_body_and_clothe(self) -> Dict[str, tuple[str, str]]:
-        res: Dict[str, tuple[str, str]] = {}
-        actors: Set[Entity] = self._context.get_group(Matcher(all_of = [AppearanceComponent, BodyComponent, ActorComponent])).entities
-        for _actor in actors:
-            appearance_comp = _actor.get(AppearanceComponent)
+        ret: Dict[str, tuple[str, str]] = {}
+        
+        actor_entities = self._context.get_group(Matcher(all_of = [AppearanceComponent, BodyComponent, ActorComponent])).entities
+        for actor_entity in actor_entities:
+            
+            appearance_comp = actor_entity.get(AppearanceComponent)
             if appearance_comp.appearance != "":
                 continue
-            name = cast(ActorComponent, _actor.get(ActorComponent)).name
-            body = self.get_body(_actor)
-            clothe = self.get_clothe(_actor)
+
+            name = cast(ActorComponent, actor_entity.get(ActorComponent)).name
+            body = self.get_body(actor_entity)
+            clothe = self.get_clothe(actor_entity)
             logger.debug(f"actor: {name}, body: {body}, clothe: {clothe}")
-            res[name] = (body, clothe)
-        return res
+            ret[name] = (body, clothe)
+
+        return ret
 ###############################################################################################################################################
     # 获取衣服的描述 todo。现在就返回了第一个衣服的描述
     def get_clothe(self, entity: Entity) -> str:
@@ -129,14 +137,14 @@ class UpdateAppearanceSystem(InitializeProcessor, ExecuteProcessor):
         prop_files = self._context._file_system.get_files(PropFile, safe_name)
         for prop_file in prop_files:
             if prop_file.is_clothes:
-                return prop_file.description
+                return prop_file.appearance
         return "" 
 ###############################################################################################################################################
     # 获取身体的描述。
     def get_body(self, entity: Entity) -> str:
         if not entity.has(BodyComponent):
             return ""
-        body_comp: BodyComponent = entity.get(BodyComponent)
+        body_comp = entity.get(BodyComponent)
         return cast(str, body_comp.body)
 ###############################################################################################################################################
    

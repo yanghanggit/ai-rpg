@@ -19,9 +19,9 @@ PlayerIsTerminalClientComponent = namedtuple('PlayerIsTerminalClientComponent', 
 DestroyComponent = namedtuple('DestroyComponent', 'name')
 # 自动规划行为的标记
 AutoPlanningComponent = namedtuple('AutoPlanningComponent', 'name')
-# 外观信息
+# 角色外观信息
 AppearanceComponent = namedtuple('AppearanceComponent', 'appearance hash_code')
-# 纯粹的身体信息，用于和衣服组成完整的外观信息。如果是动物等，就是动物的外观信息
+# 样貌，用于和衣服组成完整的外观信息。如果是动物等，就是动物的外观信息
 BodyComponent = namedtuple('BodyComponent', 'body')
 # 场景离开条件
 StageExitCondStatusComponent = namedtuple('StageExitCondStatusComponent', 'condition')

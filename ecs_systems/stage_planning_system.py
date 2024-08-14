@@ -97,13 +97,13 @@ class StagePlanningSystem(ExecuteProcessor):
 #######################################################################################################################################
     # 获取场景内所有的actor的名字，用于场景计划。似乎不需要外观的信息？
     def get_actor_names_in_stage(self, entity: Entity) -> Set[str]:
-        stage_comp: StageComponent = entity.get(StageComponent)
-        _actors_in_stage = self._context.actors_in_stage(stage_comp.name)
-        _names: Set[str] = set()
-        for _en in _actors_in_stage:
-            actor_comp: ActorComponent = _en.get(ActorComponent)
-            _names.add(actor_comp.name)
-        return _names
+        stage_comp = entity.get(StageComponent)
+        actors_in_stage = self._context.actors_in_stage(stage_comp.name)
+        ret: Set[str] = set()
+        for actor_entity in actors_in_stage:
+            actor_comp = actor_entity.get(ActorComponent)
+            ret.add(actor_comp.name)
+        return ret
 #######################################################################################################################################
     # 获取场景内所有的道具的描述。
     def get_props_in_stage(self, entity: Entity) -> List[PropFile]:

@@ -406,7 +406,7 @@ class CheckBeforeGoToActionSystem(ReactiveProcessor):
         action: AgentAction = go_to_action_comp.action
         return action.value(0)
 ###############################################################################################################################################
-    # todo 目前就把外观信息当作状态信息，后续可以加入更多的状态信息
+    # todo 目前就把角色外观信息当作状态信息，后续可以加入更多的状态信息
     def get_actor_status_prompt(self, entity: Entity) -> str:
         safe_name = self._context.safe_get_entity_name(entity)
         appearance_comp = entity.get(AppearanceComponent)

@@ -1,6 +1,6 @@
 from typing import override, Set
 from entitas import Entity, Matcher, InitializeProcessor # type: ignore
-from ecs_systems.components import WorldComponent, StageComponent, ActorComponent, PlayerComponent
+from ecs_systems.components import WorldComponent, StageComponent, ActorComponent
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 
 
@@ -28,7 +28,7 @@ class AgentsConnectSystem(InitializeProcessor):
             self._context._langserve_agent_system.connect_agent(stage_comp.name)
 ###############################################################################################################################################
     def connect_actor_agents(self) -> None:
-        actor_entities: Set[Entity] = self._context.get_group(Matcher(all_of = [ActorComponent], none_of = [PlayerComponent])).entities
+        actor_entities: Set[Entity] = self._context.get_group(Matcher(ActorComponent)).entities
         for actor_entity in actor_entities:
             actor_comp = actor_entity.get(ActorComponent)
             self._context._langserve_agent_system.connect_agent(actor_comp.name)

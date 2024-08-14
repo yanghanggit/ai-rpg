@@ -146,9 +146,8 @@ class RPGEntitasProcessors(Processors):
     def initialize(self) -> None:
         for processor in self._initialize_processors:
             logger.debug(f"<<<<<<<<<<<<< initialize: {processor.__class__.__name__}  >>>>>>>>>>>>>>>>>")
-            #processor.initialize()
             start_time = time.time()
-
+            
             processor.initialize()
             
             end_time = time.time()
@@ -166,7 +165,6 @@ class RPGEntitasProcessors(Processors):
     def execute(self) -> None:
         for processor in self._execute_processors:
             logger.debug(f"<<<<<<<<<<<<< execute: {processor.__class__.__name__}  >>>>>>>>>>>>>>>>>")
-            #processor.execute()
             start_time = time.time()
             
             processor.execute()

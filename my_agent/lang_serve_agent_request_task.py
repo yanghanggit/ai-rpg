@@ -84,7 +84,7 @@ class LangServeAgentRequestTask:
                 return None
 
             self.on_request_done()
-            logger.debug(f"\n{'=' * 50}\n{self.agent_name} async_request result:\n{self.response_content}\n{'=' * 50}")
+            logger.debug(f"\n{self.agent_name} async_request result:\n{self.response_content}\n")
             return self.response_content
            
         except Exception as e:
@@ -109,11 +109,9 @@ class LangServeAgentAsyncRequestTasksGather:
     # 当确定全部异步请求任务添加完毕后，调用这个方法，等待所有任务完成，并拿到任务结果
     async def gather(self) -> List[Optional[str]]:
         start_time = time.time()
-        
         result = await self.impl_gather() # 调用async_gather，等待所有任务完成，并拿到任务结果
-        
         end_time = time.time()
-        logger.debug(f"{self._name} run_async_requet_tasks time: {end_time - start_time:.2f} seconds")
+        #logger.debug(f"{self._name} run_async_requet_tasks time: {end_time - start_time:.2f} seconds")
         return result
 ################################################################################################################################################################################
 ################################################################################################################################################################################

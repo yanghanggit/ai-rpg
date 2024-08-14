@@ -21,11 +21,11 @@ class StageDirectorSystem(ExecuteProcessor):
     def handle(self) -> None:
         entities = self._context.get_group(Matcher(all_of=[StageComponent, StageDirectorComponent])).entities
         for entity in entities:
-            logger.debug('=' *50)
+            #logger.debug('=' *50)
             self.handle_stage(entity)
-            logger.debug('=' *50)
+            #logger.debug('=' *50)
             self.handle_stage_actors(entity)
-            logger.debug('=' *50)
+            #logger.debug('=' *50)
 #################################################################################################################################################################   
     def clear_director(self) -> None:
         for entity in self._context.get_group(Matcher(all_of=[StageComponent, StageDirectorComponent])).entities:
@@ -42,7 +42,7 @@ class StageDirectorSystem(ExecuteProcessor):
         
         events2stage = director_comp.to_stage(stage_comp.name, self._context)  
         for event in events2stage:
-            logger.debug(f"director:{stage_comp.name}:{event}")
+            logger.debug(f"handle_stage = {stage_comp.name}:{event}")
             self._context.safe_add_human_message_to_entity(stage_entity, event)       
 #################################################################################################################################################################
     def handle_stage_actors(self, stage_entity: Entity) -> None:
@@ -85,7 +85,7 @@ class StageDirectorSystem(ExecuteProcessor):
 
         for index, event in enumerate(events_2_actor):
             prompt = stage_director_event_wrap_prompt(event, index)
-            logger.debug(f"director:{actor_comp.name}:{event}")
+            logger.debug(f"director_events_to_actor = {actor_comp.name}:{event}")
             context.safe_add_human_message_to_entity(actor_entity, prompt)
 
         ## 标记结束

@@ -12,11 +12,13 @@ class EmptyChaosEngineeringSystem(IChaosEngineering):
 
     ##
     def on_pre_create_game(self, extended_context: Any, worlddata: GameBuilder) -> None:
-        logger.debug(f" {self.name}: on_pre_create_world")
+        pass
+        #logger.debug(f" {self.name}: on_pre_create_world")
 
     ##
     def on_post_create_game(self, extended_context: Any, worlddata: GameBuilder) -> None:
-        logger.debug(f"{self.name}: on_post_create_world")
+        pass
+        #logger.debug(f"{self.name}: on_post_create_world")
 
     ##
     def on_read_memory_failed(self, extended_context: Any, name: str, readarchprompt: str) -> None:

@@ -123,7 +123,7 @@ class RPGEntitasProcessors(Processors):
         processors.add(SaveSystem(context, rpg_game))
 
         # 开发专用，网页版本不需要
-        processors.add(TerminalPlayerInterruptAndWaitSystem(context, rpg_game))
+        #processors.add(TerminalPlayerInterruptAndWaitSystem(context, rpg_game))
 
         #规划逻辑
         processors.add(PrePlanningSystem(context)) ######## 在所有规划之前!

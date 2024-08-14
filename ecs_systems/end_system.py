@@ -21,7 +21,7 @@ class EndSystem(InitializeProcessor, ExecuteProcessor):
         self.debug_dump()
 ############################################################################################################
     def debug_dump(self) -> None:
-        logger.debug(f"{'=' * 100}") #方便看
+        #logger.debug(f"{'=' * 100}") #方便看
         # 打印所有的世界信息
         self.dump_world()
         # 打印一下所有的场景信息
@@ -29,10 +29,10 @@ class EndSystem(InitializeProcessor, ExecuteProcessor):
         # 打印一下所有的agent信息
         self._context._langserve_agent_system.dump_chat_history()
         # 打印所有的道具归属
-        self.dump_prop_files()
+        #self.dump_prop_files()
         # 打印所有的角色的状态信息（例如属性）
         self.dump_status_profile()
-        logger.debug(f"{'=' * 100}")  #方便看
+        #logger.debug(f"{'=' * 100}")  #方便看
 ############################################################################################################
     def dump_world(self) -> None:
         world_entities = self._context.get_group(Matcher(WorldComponent)).entities
@@ -64,12 +64,12 @@ class EndSystem(InitializeProcessor, ExecuteProcessor):
                     name_list.append(actor_comp.name)
         return map
 ############################################################################################################
-    def dump_prop_files(self) -> None:
-        prop_file_dict = self._context._file_system.get_base_file_dict(PropFile)
-        dump_data: Dict[str, str] = {}
-        for owner_name, prop_files in prop_file_dict.items():
-            dump_data[owner_name] = ",".join([str(prop_file) for prop_file in prop_files])
-        logger.debug(f"{json.dumps(dump_data, ensure_ascii = False)}")
+    # def dump_prop_files(self) -> None:
+    #     prop_file_dict = self._context._file_system.get_base_file_dict(PropFile)
+    #     dump_data: Dict[str, str] = {}
+    #     for owner_name, prop_files in prop_file_dict.items():
+    #         dump_data[owner_name] = ",".join([str(prop_file) for prop_file in prop_files])
+    #     logger.debug(f"{json.dumps(dump_data, ensure_ascii = False)}")
 ############################################################################################################
     def dump_status_profile(self) -> List[Dict[str, Any]]:
 

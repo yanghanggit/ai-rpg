@@ -26,14 +26,17 @@ class SaveSystem(ExecuteProcessor, TearDownProcessor):
         self.save_actor()
 ################################################################################################
     def save_world(self) -> None:
+        pass
         #todo
-        logger.warning("save_world")
+        #logger.warning("save_world")
 ################################################################################################
     def save_stage(self) -> None:
+        pass
         #todo
-        logger.warning("save_stage")
+        #logger.warning("save_stage")
 ################################################################################################
     def save_actor(self) -> None:
+        pass
         #todo
-        logger.warning("save_actor")
+        #logger.warning("save_actor")
 ################################################################################################

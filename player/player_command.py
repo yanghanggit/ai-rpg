@@ -53,7 +53,7 @@ class PlayerLogin(PlayerCommand):
         context = self._rpggame._entitas_context
         actor_name = self._actor_name
         player_name = self._player_proxy._name
-        logger.debug(f"{self._description}, player name: {player_name}, target name: {actor_name}")
+        logger.debug(f"{self._description}, player name: {player_name}, actor name: {actor_name}")
 
         actor_entity = context.get_actor_entity(actor_name)
         if actor_entity is None:

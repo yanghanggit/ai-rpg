@@ -153,8 +153,8 @@ class RPGGame(BaseGame):
             assert actor_entity is not None
             assert actor_entity.has(ActorComponent)
 
-            actor_comp = actor_entity.get(ActorComponent)
-            logger.info(f"创建Player Entity = {actor_comp.name}")
+            #actor_comp = actor_entity.get(ActorComponent)
+            #logger.info(f"创建Player Entity = {actor_comp.name}")
             
             assert not actor_entity.has(PlayerComponent)
             actor_entity.add(PlayerComponent, "")
@@ -324,7 +324,7 @@ class RPGGame(BaseGame):
 ###############################################################################################################################################
     def add_stage_conditions(self, stage_entity: Entity, stage_model: StageModel) -> None:
 
-        logger.debug(f"添加Stage条件：{stage_model.name}")
+        #logger.debug(f"添加Stage条件：{stage_model.name}")
         if stage_model.stage_entry_status != "":
             stage_entity.add(StageEntryCondStatusComponent, stage_model.name, stage_model.stage_entry_status)
             logger.debug(f"如果进入场景，场景需要检查条件：{stage_model.stage_entry_status}")

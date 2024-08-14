@@ -1,5 +1,5 @@
-from typing import override
 from entitas import ExecuteProcessor #type: ignore
+from typing import override
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from rpg_game.rpg_game import RPGGame 
@@ -54,7 +54,7 @@ class HandlePlayerInputSystem(ExecuteProcessor):
             
             ## 处理玩家的输入
             create_any_player_command_by_input = self.handle_input(self._rpggame, playerproxy, command)
-            logger.debug(f"{'=' * 50}")
+            #logger.debug(f"{'=' * 50}")
 
             if not create_any_player_command_by_input:
                 ## 是立即模式，显示一下客户端的消息

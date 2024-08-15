@@ -61,4 +61,4 @@ class CNConstantPrompt:
         return "<%这是场景内对话事件>"
 ###############################################################################################################################################
 _CNConstantPrompt_ = CNConstantPrompt()
-logger.debug(f"CNConstantPrompt: {_CNConstantPrompt_}")
+#logger.debug(f"CNConstantPrompt: {_CNConstantPrompt_}")

@@ -46,7 +46,9 @@ STAGE_AVAILABLE_ACTIONS_REGISTER = [AttackAction,
                                     TagAction, 
                                     MindVoiceAction,
                                     WhisperAction,
-                                    StageNarrateAction]
+                                    StageNarrateAction,
+                                    StageConditionCheckAction,
+                                    StageInteractionFeedbackAction]
 
 #场景对话类动作
 STAGE_CONVERSATION_ACTIONS_REGISTER = [SpeakAction,

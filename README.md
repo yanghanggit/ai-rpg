@@ -15,7 +15,7 @@ pip install langchain langchain_core langserve fastapi langchain_openai sse_star
 # 如果用vscode 进行代码调试，需要用 >Python Interpreter. 将python环境指向这个Name代表的环境
 ```
 
-## 注意点
+## 代理
 
 - Agent运行的设备需要挂代理；
 

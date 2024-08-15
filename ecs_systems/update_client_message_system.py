@@ -33,19 +33,19 @@ class UpdateClientMessageSystem(ExecuteProcessor):
 
             self.add_message_to_player_proxy(player_proxy, player_entity)
 ############################################################################################################
-    def add_message_to_player_proxy(self, playerproxy: PlayerProxy, player_entity: Entity) -> None:
+    def add_message_to_player_proxy(self, player_proxy: PlayerProxy, player_entity: Entity) -> None:
 
-        self.stage_enviro_narrate_action_2_message(playerproxy, player_entity)
-        self.push_cache_messages(playerproxy, player_entity) # 先把缓存的消息推送出去，在场景描述之后
+        self.stage_enviro_narrate_action_2_message(player_proxy, player_entity)
+        self.push_cache_messages(player_proxy, player_entity) # 先把缓存的消息推送出去，在场景描述之后
 
-        self.mind_voice_action_2_message(playerproxy, player_entity)
-        self.whisper_action_2_message(playerproxy, player_entity)
-        self.broadcast_action_2_message(playerproxy, player_entity)
-        self.speak_action_2_message(playerproxy, player_entity)
-        self.attack_action_2_message(playerproxy, player_entity)
-        self.go_to_action_2_message(playerproxy, player_entity)
+        self.mind_voice_action_2_message(player_proxy, player_entity)
+        self.whisper_action_2_message(player_proxy, player_entity)
+        self.broadcast_action_2_message(player_proxy, player_entity)
+        self.speak_action_2_message(player_proxy, player_entity)
+        self.attack_action_2_message(player_proxy, player_entity)
+        self.go_to_action_2_message(player_proxy, player_entity)
 ############################################################################################################
-    def stage_enviro_narrate_action_2_message(self, playerproxy: PlayerProxy, player_entity: Entity) -> None:
+    def stage_enviro_narrate_action_2_message(self, player_proxy: PlayerProxy, player_entity: Entity) -> None:
         stage = self._context.safe_get_stage_entity(player_entity)
         if stage is None:
             return
@@ -58,9 +58,9 @@ class UpdateClientMessageSystem(ExecuteProcessor):
             return
         
         message = action.join_values()
-        playerproxy.add_stage_message(action._actor_name, message)
+        player_proxy.add_stage_message(action._actor_name, message)
 ############################################################################################################
-    def whisper_action_2_message(self, playerproxy: PlayerProxy, player_entity: Entity) -> None:
+    def whisper_action_2_message(self, player_proxy: PlayerProxy, player_entity: Entity) -> None:
         player_entity_stage = self._context.safe_get_stage_entity(player_entity)
         player_entity_name = self._context.safe_get_entity_name(player_entity) 
         entities = self._context.get_group(Matcher(WhisperAction)).entities
@@ -87,9 +87,9 @@ class UpdateClientMessageSystem(ExecuteProcessor):
                     # 不是对你说的不能看见
                     continue
                 #最后添加
-                playerproxy.add_actor_message(action._actor_name, make_target_and_message(targetname, message))
+                player_proxy.add_actor_message(action._actor_name, make_target_and_message(targetname, message))
 ############################################################################################################
-    def broadcast_action_2_message(self, playerproxy: PlayerProxy, player_entity: Entity) -> None:
+    def broadcast_action_2_message(self, player_proxy: PlayerProxy, player_entity: Entity) -> None:
         player_entity_stage = self._context.safe_get_stage_entity(player_entity)
         entities = self._context.get_group(Matcher(BroadcastAction)).entities
         for entity in entities:
@@ -106,9 +106,9 @@ class UpdateClientMessageSystem(ExecuteProcessor):
             broadcast_action_component = entity.get(BroadcastAction)
             action: AgentAction = broadcast_action_component.action
             single_val = action.join_values()
-            playerproxy.add_actor_message(action._actor_name, f"""<@all>{single_val}""")
+            player_proxy.add_actor_message(action._actor_name, f"""<@all>{single_val}""")
 ############################################################################################################
-    def speak_action_2_message(self, playerproxy: PlayerProxy, player_entity: Entity) -> None:
+    def speak_action_2_message(self, player_proxy: PlayerProxy, player_entity: Entity) -> None:
         player_entity_stage = self._context.safe_get_stage_entity(player_entity)
         entities = self._context.get_group(Matcher(SpeakAction)).entities
         for entity in entities:
@@ -130,9 +130,9 @@ class UpdateClientMessageSystem(ExecuteProcessor):
                 message = tp[1]
                 if conversation_check(self._context, entity, targetname) != ErrorConversationEnable.VALID:
                     continue
-                playerproxy.add_actor_message(action._actor_name, make_target_and_message(targetname, message))
+                player_proxy.add_actor_message(action._actor_name, make_target_and_message(targetname, message))
 ############################################################################################################
-    def mind_voice_action_2_message(self, playerproxy: PlayerProxy, player_entity: Entity) -> None:
+    def mind_voice_action_2_message(self, player_proxy: PlayerProxy, player_entity: Entity) -> None:
         player_entity_stage = self._context.safe_get_stage_entity(player_entity)
         entities = self._context.get_group(Matcher(MindVoiceAction)).entities
         for entity in entities:
@@ -149,9 +149,9 @@ class UpdateClientMessageSystem(ExecuteProcessor):
             mind_voice_action_component = entity.get(MindVoiceAction)
             action: AgentAction = mind_voice_action_component.action
             single_value = action.join_values()
-            playerproxy.add_actor_message(action._actor_name, f"""<心理活动>{single_value}""")
+            player_proxy.add_actor_message(action._actor_name, f"""<心理活动>{single_value}""")
 ############################################################################################################
-    def attack_action_2_message(self, playerproxy: PlayerProxy, player_entity: Entity) -> None:
+    def attack_action_2_message(self, player_proxy: PlayerProxy, player_entity: Entity) -> None:
         player_entity_stage = self._context.safe_get_stage_entity(player_entity)
         entities = self._context.get_group(Matcher(AttackAction)).entities
         for entity in entities:
@@ -170,9 +170,9 @@ class UpdateClientMessageSystem(ExecuteProcessor):
                 continue
 
             targetname = action._values[0]
-            playerproxy.add_actor_message(action._actor_name, f"""准备对{targetname}发起了攻击""")
+            player_proxy.add_actor_message(action._actor_name, f"""准备对{targetname}发起了攻击""")
 ############################################################################################################
-    def go_to_action_2_message(self, playerproxy: PlayerProxy, player_entity: Entity) -> None:
+    def go_to_action_2_message(self, player_proxy: PlayerProxy, player_entity: Entity) -> None:
         player_entity_stage = self._context.safe_get_stage_entity(player_entity)
         entities = self._context.get_group(Matcher(GoToAction)).entities
         for entity in entities:
@@ -191,10 +191,10 @@ class UpdateClientMessageSystem(ExecuteProcessor):
                 continue
 
             stagename = action._values[0]
-            playerproxy.add_actor_message(action._actor_name, f"""准备去往{stagename}""")
+            player_proxy.add_actor_message(action._actor_name, f"""准备去往{stagename}""")
 ############################################################################################################
-    def push_cache_messages(self, playerproxy: PlayerProxy, player_entity: Entity) -> None:
-        for message in playerproxy._cache_messages:
-            playerproxy.add_actor_message(message[0], message[1])
-        playerproxy._cache_messages.clear()
+    def push_cache_messages(self, player_proxy: PlayerProxy, player_entity: Entity) -> None:
+        for message in player_proxy._cache_messages:
+            player_proxy.add_actor_message(message[0], message[1])
+        player_proxy._cache_messages.clear()
 ############################################################################################################

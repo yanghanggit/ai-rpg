@@ -118,20 +118,7 @@ class PostConversationActionSystem(ReactiveProcessor):
     async def async_post_execute(self) -> None:
         if len(self._request_tasks) == 0:
             return   
-       
         tasks_gather = LangServeAgentAsyncRequestTasksGather("PostConversationActionSystem Gather", self._request_tasks)
-        request_result = await tasks_gather.gather()
-        if len(request_result) == 0:
-            logger.warning(f"PostConversationActionSystem: request_result is empty.")
-            return
-
-        for name, task in self._request_tasks.items():
-            if task is None:
-                logger.error(f"PostConversationActionSystem: {name} response is None or empty.")
-            # else:
-            #     pass
-                # AI的回复不要，防止污染上下文
-                #logger.debug(f"PostConversationActionSystem: {name} response is {task.response_content}")
-
-       #logger.debug(f"PostConversationActionSystem async_post_execute end.")
+        await tasks_gather.gather()
+        self._request_tasks.clear()
 #################################################################################################################################################

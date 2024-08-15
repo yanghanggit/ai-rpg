@@ -23,7 +23,7 @@ class EndSystem(InitializeProcessor, ExecuteProcessor):
     def debug_dump(self) -> None:
         #logger.debug(f"{'=' * 100}") #方便看
         # 打印所有的世界信息
-        self.dump_world()
+        #self.dump_world()
         # 打印一下所有的场景信息
         self.dump_stages_and_actors()
         # 打印一下所有的agent信息

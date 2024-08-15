@@ -27,8 +27,7 @@ class UpdateAppearanceSystem(InitializeProcessor, ExecuteProcessor):
 ###############################################################################################################################################
     @override
     def execute(self) -> None:
-        context = self._context
-        world_entity = context.get_world_entity(self._system_name)
+        world_entity = self._context.get_world_entity(self._system_name)
         if world_entity is None:
             # 没有这个对象，就认为这个系统不成立。
             logger.warning(f"{self._system_name}, world_entity is None.")
@@ -40,7 +39,6 @@ class UpdateAppearanceSystem(InitializeProcessor, ExecuteProcessor):
         actors_body_and_clothe = self.get_actors_body_and_clothe()
         if len(actors_body_and_clothe) == 0:
             return        
-        #logger.warning(f"这是一个测试的系统，正在运行。")
         # 没有衣服的，直接更新外观
         self.imme_update_appearance(actors_body_and_clothe)
         # 有衣服的，请求更新，通过LLM来推理外观
@@ -64,17 +62,13 @@ class UpdateAppearanceSystem(InitializeProcessor, ExecuteProcessor):
             
                 hash_code = hash(body)
                 entity.replace(AppearanceComponent, name, body, hash_code)
-                #logger.debug(f"{name}, update_appearance_by_body: {body}")
 ###############################################################################################################################################
     # 有衣服的，请求更新，通过LLM来推理外观。
     def request_update_appearance(self, actors_body_and_clothe:  Dict[str, tuple[str, str]], world_entity: Entity) -> bool:
         assert world_entity is not None
         final_prompt = actors_body_and_clothe_prompt(actors_body_and_clothe)
         if final_prompt == "":
-            #logger.error(f"final_prompt is empty.")
             return False
-
-        #logger.debug(f"final_prompt: {final_prompt}")
 
         # 请求更新
         safe_name = self._context.safe_get_entity_name(world_entity)
@@ -110,7 +104,6 @@ class UpdateAppearanceSystem(InitializeProcessor, ExecuteProcessor):
                 continue
             hash_code = hash(appearance)
             entity.replace(AppearanceComponent, name, appearance, hash_code)
-            #logger.debug(f"{name}, update_after_requst: {appearance}")
 ###############################################################################################################################################
     # 获取所有的角色的身体和衣服
     def get_actors_body_and_clothe(self) -> Dict[str, tuple[str, str]]:
@@ -126,7 +119,6 @@ class UpdateAppearanceSystem(InitializeProcessor, ExecuteProcessor):
             name = cast(ActorComponent, actor_entity.get(ActorComponent)).name
             body = self.get_body(actor_entity)
             clothe = self.get_current_clothe(actor_entity)
-            #logger.debug(f"actor: {name}, body: {body}, clothe: {clothe}")
             ret[name] = (body, clothe)
 
         return ret

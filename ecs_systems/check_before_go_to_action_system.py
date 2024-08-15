@@ -1,6 +1,6 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent # type: ignore
 from ecs_systems.action_components import (GoToAction, 
-                        EnviroNarrateAction,
+                        StageNarrateAction,
                         TagAction,
                         DeadAction)
 
@@ -169,7 +169,7 @@ class HandleStageConditionsResponseHelper:
             return False
         
         # 再次检查是否符合结果预期
-        enviro_narrate_action: Optional[AgentAction] = self._plan.get_action_by_key(EnviroNarrateAction.__name__)
+        enviro_narrate_action: Optional[AgentAction] = self._plan.get_action_by_key(StageNarrateAction.__name__)
         tag_action: Optional[AgentAction] = self._plan.get_action_by_key(TagAction.__name__)
         if enviro_narrate_action is None or tag_action is None:
             logger.error(f"大模型推理错误 = {self._plan}")
@@ -185,7 +185,7 @@ class HandleStageConditionsResponseHelper:
         return tag_action.bool_value(0)
 ###############################################################################################################################################
     def _parse_tips(self, enviro_narrate_action: AgentAction) -> str:
-        assert enviro_narrate_action._action_name == EnviroNarrateAction.__name__
+        #assert enviro_narrate_action._action_name == StageNarrateAction.__name__
         if len(enviro_narrate_action._values) == 0:
             logger.error(enviro_narrate_action)
             return str(_CNConstantPrompt_.NONE_PROMPT)

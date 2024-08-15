@@ -3,7 +3,7 @@ from pathlib import Path
 root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 from game_sample.configuration import GAME_NAME, OUT_PUT_STAGE_SYS_PROMPT_DIR, OUT_PUT_AGENT_DIR
-from game_sample.utils import write_text_file
+import game_sample.utils
 from typing import Any
 
 ############################################################################################################
@@ -82,12 +82,11 @@ class ExcelDataStage:
 ############################################################################################################
     def write_sys_prompt(self) -> None: 
         directory = Path(GAME_NAME) / OUT_PUT_STAGE_SYS_PROMPT_DIR
-        write_text_file(directory, f"{self.codename}_sys_prompt.md", self._gen_system_prompt)
+        game_sample.utils.write_text_file(directory, f"{self.codename}_sys_prompt.md", self._gen_system_prompt)
 ############################################################################################################
     def write_agentpy(self) -> None:
         directory = Path(GAME_NAME) / OUT_PUT_AGENT_DIR
-        #logger.debug(f"{self.name}, write_agentpy: {directory / f"{self.codename}_agent.py"}") 
-        write_text_file(directory, f"{self.codename}_agent.py", self._gen_agentpy)
+        game_sample.utils.write_text_file(directory, f"{self.codename}_agent.py", self._gen_agentpy)
 ############################################################################################################
 ############################################################################################################
 ############################################################################################################

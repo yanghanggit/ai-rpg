@@ -14,7 +14,7 @@ from game_sample.stage_editor import ExcelEditorStage
 from game_sample.world_system_editor import ExcelEditorWorldSystem
 #from game_sample.gen_funcs import serialization_prop
 import pandas as pd
-from game_sample.utils import write_text_file
+import game_sample.utils
 
 EDITOR_WORLD_SYSTEM_TYPE = "WorldSystem"
 EDITOR_PLAYER_TYPE = "Player"
@@ -199,7 +199,7 @@ class ExcelEditorGame:
         return output
 ############################################################################################################################
     def write_game_editor(self, directory: str) -> int:
-        return write_text_file(Path(directory), 
+        return game_sample.utils.write_text_file(Path(directory), 
                                f"{self._name}.json", 
                                json.dumps(self.serialization(), indent = 4, ensure_ascii = False))
     
@@ -220,7 +220,7 @@ class ExcelEditorGame:
             world_system_list.append({world_system.name: str(world_system.gen_agentpy_path)})
 
         final = {"actors": actor_list, "stages": stage_list, "world_systems": world_system_list}
-        return write_text_file(Path(directory), 
+        return game_sample.utils.write_text_file(Path(directory), 
                                f"{self._name}_agents.json", 
                                json.dumps(final, indent = 2, ensure_ascii = False))
 ############################################################################################################################

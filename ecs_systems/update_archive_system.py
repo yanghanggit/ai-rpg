@@ -15,56 +15,61 @@ class UpdateArchiveHelper:
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         ##我的参数
         self._context = context
-        self._stage_names: Set[str] = set()
-        self._actor_names: Set[str] = set()
-        self._agent_chat_history: Dict[str, str] = {}
-        self._actors_props_desc: Dict[str, List[str]] = {}
+        self._stages: Set[str] = set()
+        self._actors: Set[str] = set()
+        self._chat_history: Dict[str, str] = {}
+        self._actor_prop_description: Dict[str, List[str]] = {}
         self._rpg_game = rpg_game
+
+        self.build()
 ###############################################################################################################################################
-    def prepare(self) -> None:
+    def build(self) -> None:
         ## step1: 所有拥有初始化记忆的场景拿出来
-        self._stage_names = self.get_stage_names()
+        self._stages = self.build_stages()
         ## step2: 所有拥有初始化记忆的Actor拿出来
-        self._actor_names = self.get_actor_names()
+        self._actors = self.build_actors()
         ## step3: 打包Actor的对话历史，方便后续查找
-        self._agent_chat_history = self.get_agent_chat_history()
+        self._chat_history = self.build_chat_history()
         ## step4: 所有拥有初始化记忆的Actor的道具信息拿出来
-        self._actors_props_desc = self.get_actors_props_desc()
+        self._actor_prop_description = self.build_actor_prop_description()
 ###############################################################################################################################################
-    def get_stage_names(self) -> Set[str]:
-        result: Set[str] = set()
+    def build_stages(self) -> Set[str]:
+        ret: Set[str] = set()
         stage_entities: Set[Entity] = self._context.get_group(Matcher(StageComponent)).entities
         for stage_entity in stage_entities:
             stage_comp = stage_entity.get(StageComponent)
-            result.add(stage_comp.name)
-        return result
+            ret.add(stage_comp.name)
+        return ret
 ###############################################################################################################################################
-    def get_actor_names(self) -> Set[str]:
-        result: Set[str] = set()
+    def build_actors(self) -> Set[str]:
+        ret: Set[str] = set()
         actor_entities: Set[Entity] = self._context.get_group(Matcher(ActorComponent)).entities
         for actor_entity in actor_entities:
             actor_comp = actor_entity.get(ActorComponent)
-            result.add(actor_comp.name)
-        return result
+            ret.add(actor_comp.name)
+        return ret
 ###############################################################################################################################################           
-    def get_agent_chat_history(self) -> Dict[str, str]:
+    def build_chat_history(self) -> Dict[str, str]:
         tags: Set[str] = {self._rpg_game.about_game, 
                           _CNConstantPrompt_.BATCH_CONVERSATION_ACTION_EVENTS_TAG,
                           _CNConstantPrompt_.SPEAK_ACTION_TAG,
                           _CNConstantPrompt_.WHISPER_ACTION_TAG,
-                          _CNConstantPrompt_.BATCH_CONVERSATION_ACTION_EVENTS_TAG,}
+                          _CNConstantPrompt_.BATCH_CONVERSATION_ACTION_EVENTS_TAG}
         
-        result: Dict[str, str] = {}
-        actor_entities: Set[Entity] = self._context.get_group(Matcher(ActorComponent)).entities
+        ret: Dict[str, str] = {}
+
+        actor_entities = self._context.get_group(Matcher(ActorComponent)).entities
         for actor_entity in actor_entities:
+        
             actor_comp = actor_entity.get(ActorComponent)
             filter_chat_history = self._context._langserve_agent_system.create_filter_chat_history(actor_comp.name, tags)
-            _str = " ".join(filter_chat_history) 
-            result[actor_comp.name] = _str
-        return result
+            ret[actor_comp.name] = " ".join(filter_chat_history) 
+        
+        return ret
 ###############################################################################################################################################
-    def get_actors_props_desc(self) -> Dict[str, List[str]]:
-        result: Dict[str, List[str]] = {}
+    def build_actor_prop_description(self) -> Dict[str, List[str]]:
+
+        ret: Dict[str, List[str]] = {}
         
         actor_entities: Set[Entity] = self._context.get_group(Matcher(ActorComponent)).entities
         for actor_entity in actor_entities:
@@ -73,71 +78,66 @@ class UpdateArchiveHelper:
             desc: List[str] = []
             for file in prop_files:
                 desc.append(f"{file.name}:{file.description}")
-            result[actor_comp.name] = desc
+            ret[actor_comp.name] = desc
 
-        return result
+        return ret
 ###############################################################################################################################################
     @property
     def stage_names(self) -> Set[str]:
-        return self._stage_names
+        return self._stages
 ###############################################################################################################################################
     @property
     def actor_names(self) -> Set[str]:
-        return self._actor_names
+        return self._actors
 ###############################################################################################################################################
-    def get_actor_props_desc(self, actor_name: str) -> List[str]:
-        return self._actors_props_desc.get(actor_name, [])
+    def get_actor_prop_description(self, actor_name: str) -> List[str]:
+        return self._actor_prop_description.get(actor_name, [])
 ###############################################################################################################################################
     def get_stage_archive(self, actor_name: str) -> Set[str]:
-        #需要检查的场景名
-        need_check_names = self.stage_names
-        #人身上道具提到的
-        mentioned_in_prop_description = self._name_mentioned_in_prop_description(need_check_names, actor_name)
-        #记忆中出现的
-        mentioned_in_kick_off_message = self._name_mentioned_in_kick_off_message(need_check_names, actor_name)
-        #对话历史与上下文中出现的
-        mentioned_in_chat_history = self._name_mentioned_in_chat_history(need_check_names, actor_name)
-        #取并集
-        return mentioned_in_prop_description | mentioned_in_kick_off_message | mentioned_in_chat_history
+
+        ret = self.mentioned_in_prop_description(self.stage_names, actor_name) \
+        | self.mentioned_in_kick_off_message(self.stage_names, actor_name) \
+        | self.mentioned_in_chat_history(self.stage_names, actor_name)
+
+        # 当前场景总要加一个
+        actor_entity = self._context.get_actor_entity(actor_name)
+        assert actor_entity is not None
+        stage_entity = self._context.safe_get_stage_entity(actor_entity)
+        assert stage_entity is not None
+        safe_name = self._context.safe_get_entity_name(stage_entity)
+        ret.add(safe_name)
+
+        return ret
 ###############################################################################################################################################
     def get_actor_archive(self, actor_name: str) -> Set[str]:
-        #需要检查的场景名
-        need_check_names = self.actor_names
-        #人身上道具提到的
-        mentioned_in_prop_description = self._name_mentioned_in_prop_description(need_check_names, actor_name)
-        #记忆中出现的
-        mentioned_in_kick_off_message = self._name_mentioned_in_kick_off_message(need_check_names, actor_name)
-        #对话历史与上下文中出现的
-        mentioned_in_chat_history = self._name_mentioned_in_chat_history(need_check_names, actor_name)
         #取并集
-        finalres = mentioned_in_prop_description | mentioned_in_kick_off_message | mentioned_in_chat_history
-        finalres.discard(actor_name) ##去掉自己，没必要认识自己
-        return finalres
+        ret = self.mentioned_in_prop_description(self.actor_names, actor_name) | self.mentioned_in_kick_off_message(self.actor_names, actor_name) | self.mentioned_in_chat_history(self.actor_names, actor_name)
+        ret.discard(actor_name) ##去掉自己，没必要认识自己
+        return ret
 ###############################################################################################################################################
-    def _name_mentioned_in_prop_description(self, check_names: Set[str], actor_name: str) -> Set[str]:
-        res: Set[str] = set()
-        propinfolist = self._actors_props_desc.get(actor_name, [])
-        for propinfo in propinfolist:
+    def mentioned_in_prop_description(self, check_names: Set[str], actor_name: str) -> Set[str]:
+        ret: Set[str] = set()
+        for prop_info in self._actor_prop_description.get(actor_name, []):
             for name in check_names:
-                if propinfo.find(name) != -1:
-                    res.add(name)
-        return res
+                if prop_info.find(name) != -1:
+                    ret.add(name)
+        return ret
 ###############################################################################################################################################
-    def _name_mentioned_in_kick_off_message(self, check_names: Set[str], actor_name: str) -> Set[str]:
-        result: Set[str] = set()
+    def mentioned_in_kick_off_message(self, check_names: Set[str], actor_name: str) -> Set[str]:
+        ret: Set[str] = set()
         kick_off_message = self._context._kick_off_message_system.get_message(actor_name)
         for name in check_names:
             if name in kick_off_message:
-                result.add(name)
-        return result
+                ret.add(name)
+        return ret
 ###############################################################################################################################################
-    def _name_mentioned_in_chat_history(self, check_names: Set[str], actor_name: str) -> Set[str]:
-        result: Set[str] = set()
-        chat_history = self._agent_chat_history.get(actor_name, "")
+    def mentioned_in_chat_history(self, check_names: Set[str], actor_name: str) -> Set[str]:
+        ret: Set[str] = set()
+        chat_history = self._chat_history.get(actor_name, "")
         for name in check_names:
             if chat_history.find(name) != -1:
-                result.add(name)
-        return result
+                ret.add(name)
+        return ret
 ###############################################################################################################################################
 
 
@@ -155,7 +155,6 @@ class UpdateArchiveSystem(ExecuteProcessor):
         # 建立数据
         context = self._context
         archive_helper = UpdateArchiveHelper(self._context, self._rpg_game)
-        archive_helper.prepare()
         # 对Actor进行处理
         actor_entities: Set[Entity] = context.get_group(Matcher(all_of=[ActorComponent])).entities
         for _en in actor_entities:
@@ -197,7 +196,7 @@ class UpdateArchiveSystem(ExecuteProcessor):
 ###############################################################################################################################################
     def update_stage_archive(self, actor_entity: Entity, helper: UpdateArchiveHelper) -> None:
         actor_comp = actor_entity.get(ActorComponent)
-        stage_archives: Set[str] = helper.get_stage_archive(actor_comp.name)
+        stage_archives = helper.get_stage_archive(actor_comp.name)
         if len(stage_archives) == 0:
             logger.warning(f"{actor_comp.name} 什么地点都不知道，这个合理么？")
             return

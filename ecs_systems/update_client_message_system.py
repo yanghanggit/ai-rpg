@@ -3,7 +3,7 @@ from rpg_game.rpg_entitas_context import RPGEntitasContext
 from player.player_proxy import PlayerProxy, get_player_proxy
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from ecs_systems.action_components import MindVoiceAction, WhisperAction, SpeakAction, \
-    BroadcastAction, EnviroNarrateAction, \
+    BroadcastAction, StageNarrateAction, \
     AttackAction, GoToAction
 from my_agent.agent_action import AgentAction
 from typing import override
@@ -16,25 +16,28 @@ from rpg_game.web_server_multi_players_rpg_game import WebServerMultiplayersRPGG
 
 # todo: 未完成
 class UpdateClientMessageSystem(ExecuteProcessor):
-    def __init__(self, context: RPGEntitasContext, rpggame: RPGGame) -> None:
+    def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         self._context: RPGEntitasContext = context
-        self._rpggame: RPGGame = rpggame
+        self._rpg_game: RPGGame = rpg_game
 ############################################################################################################
     @override
     def execute(self) -> None:
-        assert len(self._rpggame.player_names) > 0
-        assert isinstance(self._rpggame, WebServerMultiplayersRPGGame) or isinstance(self._rpggame, TerminalRPGGame)
-        for player_name in self._rpggame.player_names:
+        assert len(self._rpg_game.player_names) > 0
+        assert isinstance(self._rpg_game, WebServerMultiplayersRPGGame) or isinstance(self._rpg_game, TerminalRPGGame)
+        for player_name in self._rpg_game.player_names:
             player_proxy = get_player_proxy(player_name)
             player_entity = self._context.get_player_entity(player_name)
             if player_entity is None or player_proxy is None:
                 logger.error(f"玩家{player_name}不存在，或者玩家未加入游戏")
                 continue
 
-            self._add_message_to_player_proxy_(player_proxy, player_entity)
+            self.add_message_to_player_proxy(player_proxy, player_entity)
 ############################################################################################################
-    def _add_message_to_player_proxy_(self, playerproxy: PlayerProxy, player_entity: Entity) -> None:
+    def add_message_to_player_proxy(self, playerproxy: PlayerProxy, player_entity: Entity) -> None:
+
         self.stage_enviro_narrate_action_2_message(playerproxy, player_entity)
+        self.push_cache_messages(playerproxy, player_entity) # 先把缓存的消息推送出去，在场景描述之后
+
         self.mind_voice_action_2_message(playerproxy, player_entity)
         self.whisper_action_2_message(playerproxy, player_entity)
         self.broadcast_action_2_message(playerproxy, player_entity)
@@ -46,12 +49,14 @@ class UpdateClientMessageSystem(ExecuteProcessor):
         stage = self._context.safe_get_stage_entity(player_entity)
         if stage is None:
             return
-        if not stage.has(EnviroNarrateAction):
+        if not stage.has(StageNarrateAction):
             return
-        envirocomp: EnviroNarrateAction = stage.get(EnviroNarrateAction)
-        action: AgentAction = envirocomp.action
+        
+        enviro_comp = stage.get(StageNarrateAction)
+        action: AgentAction = enviro_comp.action
         if len(action._values) == 0:
             return
+        
         message = action.join_values()
         playerproxy.add_stage_message(action._actor_name, message)
 ############################################################################################################
@@ -70,7 +75,7 @@ class UpdateClientMessageSystem(ExecuteProcessor):
                 #场景不一样，不能看见
                 continue
 
-            whisper_action_component: WhisperAction = entity.get(WhisperAction)
+            whisper_action_component = entity.get(WhisperAction)
             action: AgentAction = whisper_action_component.action
             target_and_message = action.target_and_message_values()
             for tp in target_and_message:
@@ -98,7 +103,7 @@ class UpdateClientMessageSystem(ExecuteProcessor):
                 #场景不一样，不能看见
                 continue
 
-            broadcast_action_component: BroadcastAction = entity.get(BroadcastAction)
+            broadcast_action_component = entity.get(BroadcastAction)
             action: AgentAction = broadcast_action_component.action
             single_val = action.join_values()
             playerproxy.add_actor_message(action._actor_name, f"""<@all>{single_val}""")
@@ -117,7 +122,7 @@ class UpdateClientMessageSystem(ExecuteProcessor):
                 #场景不一样，不能看见
                 continue
 
-            speak_action_component: SpeakAction = entity.get(SpeakAction)
+            speak_action_component = entity.get(SpeakAction)
             action: AgentAction = speak_action_component.action
             target_and_message = action.target_and_message_values()
             for tp in target_and_message:
@@ -141,7 +146,7 @@ class UpdateClientMessageSystem(ExecuteProcessor):
                 #只添加同一个场景的mindvoice
                 continue
 
-            mind_voice_action_component: MindVoiceAction = entity.get(MindVoiceAction)
+            mind_voice_action_component = entity.get(MindVoiceAction)
             action: AgentAction = mind_voice_action_component.action
             single_value = action.join_values()
             playerproxy.add_actor_message(action._actor_name, f"""<心理活动>{single_value}""")
@@ -158,7 +163,7 @@ class UpdateClientMessageSystem(ExecuteProcessor):
             if his_stage_entity != player_entity_stage:
                 continue
 
-            attack_action_component: AttackAction = entity.get(AttackAction)
+            attack_action_component = entity.get(AttackAction)
             action: AgentAction = attack_action_component.action
             if len(action._values) == 0:
                 logger.error("attack_action_2_message error")
@@ -179,7 +184,7 @@ class UpdateClientMessageSystem(ExecuteProcessor):
             if his_stage_entity != player_entity_stage:
                 continue
 
-            go_to_action_component: GoToAction = entity.get(GoToAction)
+            go_to_action_component = entity.get(GoToAction)
             action: AgentAction = go_to_action_component.action
             if len(action._values) == 0:
                 logger.error("go_to_action_2_message error")
@@ -187,4 +192,9 @@ class UpdateClientMessageSystem(ExecuteProcessor):
 
             stagename = action._values[0]
             playerproxy.add_actor_message(action._actor_name, f"""准备去往{stagename}""")
+############################################################################################################
+    def push_cache_messages(self, playerproxy: PlayerProxy, player_entity: Entity) -> None:
+        for message in playerproxy._cache_messages:
+            playerproxy.add_actor_message(message[0], message[1])
+        playerproxy._cache_messages.clear()
 ############################################################################################################

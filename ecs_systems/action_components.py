@@ -3,7 +3,10 @@ from collections import namedtuple
 
 ################################################ 动作组件： ####################################################################################
 # 场景环境的描述
-EnviroNarrateAction = namedtuple('EnviroNarrateAction', 'action')
+StageNarrateAction = namedtuple('StageNarrateAction', 'action')
+StageConditionCheckAction = namedtuple('StageConditionCheckAction', 'action')
+StageInteractionFeedbackAction = namedtuple('StageInteractionFeedbackAction', 'action')
+
 # 内心独白
 MindVoiceAction = namedtuple('MindVoiceAction', 'action')
 # 场景内广播
@@ -43,7 +46,7 @@ STAGE_AVAILABLE_ACTIONS_REGISTER = [AttackAction,
                                     TagAction, 
                                     MindVoiceAction,
                                     WhisperAction,
-                                    EnviroNarrateAction]
+                                    StageNarrateAction]
 
 #场景对话类动作
 STAGE_CONVERSATION_ACTIONS_REGISTER = [SpeakAction,

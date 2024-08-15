@@ -80,14 +80,14 @@ class RPGEntitasContext(Context):
             return next(iter(find_stages))
         return None
 #############################################################################################################################
-    def get_stage_entity(self, stagename: str) -> Optional[Entity]:
-        entity: Optional[Entity] = self.get_entity_by_codename_component(stagename)
+    def get_stage_entity(self, stage_name: str) -> Optional[Entity]:
+        entity: Optional[Entity] = self.get_entity_by_codename_component(stage_name)
         if entity is not None and entity.has(StageComponent):
             return entity
         return None
 #############################################################################################################################
-    def get_actor_entity(self, actorname: str) -> Optional[Entity]:
-        entity: Optional[Entity] = self.get_entity_by_codename_component(actorname)
+    def get_actor_entity(self, actor_name: str) -> Optional[Entity]:
+        entity: Optional[Entity] = self.get_entity_by_codename_component(actor_name)
         if entity is not None and entity.has(ActorComponent):
             return entity
         return None
@@ -104,8 +104,8 @@ class RPGEntitasContext(Context):
         stage_entity = self.safe_get_stage_entity(entity)
         if stage_entity is None:
             return []
-        stagecomp = stage_entity.get(StageComponent)
-        return self.actors_in_stage(stagecomp.name)
+        stage_comp = stage_entity.get(StageComponent)
+        return self.actors_in_stage(stage_comp.name)
 #############################################################################################################################
      # 直接从实体中获取场景实体，如果是Actor，就获取当前场景，如果是场景，就是自己
     def safe_get_stage_entity(self, entity: Entity) -> Optional[Entity]:

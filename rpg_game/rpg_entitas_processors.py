@@ -123,7 +123,7 @@ class RPGEntitasProcessors(Processors):
         processors.add(SaveSystem(context, rpg_game))
 
         # 开发专用，网页版本不需要
-        #processors.add(TerminalPlayerInterruptAndWaitSystem(context, rpg_game))
+        processors.add(TerminalPlayerInterruptAndWaitSystem(context, rpg_game))
 
         #规划逻辑
         processors.add(PrePlanningSystem(context)) ######## 在所有规划之前!
@@ -157,13 +157,23 @@ class RPGEntitasProcessors(Processors):
     ## 异步执行方法
     async def a_execute(self) -> None:
         for processor in self._execute_processors:
+
+            logger.debug(f"<<<<<<<<<<<<< execute: {processor.__class__.__name__}  >>>>>>>>>>>>>>>>>")
+            start_time = time.time()
+
             await processor.async_pre_execute()
             processor.execute()
             await processor.async_post_execute()
+
+            end_time = time.time()
+            execution_time = end_time - start_time
+            logger.debug(f"{processor.__class__.__name__} execute time: {execution_time:.2f} seconds")
+
 ###################################################################################################################################################################     
     @override
     def execute(self) -> None:
         for processor in self._execute_processors:
+
             logger.debug(f"<<<<<<<<<<<<< execute: {processor.__class__.__name__}  >>>>>>>>>>>>>>>>>")
             start_time = time.time()
             
@@ -172,10 +182,12 @@ class RPGEntitasProcessors(Processors):
             end_time = time.time()
             execution_time = end_time - start_time
             logger.debug(f"{processor.__class__.__name__} execute time: {execution_time:.2f} seconds")
+
 ###################################################################################################################################################################
     @override
     def tear_down(self) -> None:
         for processor in self._tear_down_processors:
+            
             logger.debug(f"<<<<<<<<<<<<< tear_down: {processor.__class__.__name__}  >>>>>>>>>>>>>>>>>")
             processor.tear_down()
 ###################################################################################################################################################################

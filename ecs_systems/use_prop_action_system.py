@@ -2,7 +2,7 @@ from entitas import Entity, Matcher, ReactiveProcessor # type: ignore
 from typing import Optional, override
 from loguru import logger
 from my_agent.agent_action import AgentAction
-from ecs_systems.action_components import (UsePropAction, EnviroNarrateAction, DeadAction)
+from ecs_systems.action_components import (UsePropAction, StageInteractionFeedbackAction, DeadAction)
 from ecs_systems.components import StageComponent, ActorComponent, StageExitCondStatusComponent
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from ecs_systems.stage_director_component import StageDirectorComponent
@@ -44,11 +44,11 @@ class UsePropResponseHelper:
         logger.debug(f"UseInteractivePropHelper: {self._tips}")
 
     def _parse(self, plan: AgentPlan) -> str:
-        enviro_narrate_action: Optional[AgentAction] = plan.get_action_by_key(EnviroNarrateAction.__name__)
-        if enviro_narrate_action is None or len(enviro_narrate_action._values) == 0:
+        action: Optional[AgentAction] = plan.get_action_by_key(StageInteractionFeedbackAction.__name__)
+        if action is None or len(action._values) == 0:
            logger.error(f"InteractivePropActionSystem: {plan._raw} is not correct")
            return ""
-        return enviro_narrate_action.join_values()
+        return action.join_values()
     
     @property
     def tips(self) -> str:

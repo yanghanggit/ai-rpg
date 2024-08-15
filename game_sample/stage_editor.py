@@ -9,7 +9,7 @@ from game_sample.excel_data_prop import ExcelDataProp
 from game_sample.excel_data_actor import ExcelDataActor
 from game_sample.excel_data_stage import ExcelDataStage
 import pandas as pd
-from game_sample.utils import parse_prop_string
+import game_sample.utils
 
 
 class ExcelEditorStage:
@@ -46,7 +46,7 @@ class ExcelEditorStage:
             return
         _str_ = data.split(";")
         for _ss in _str_:
-            _tp = parse_prop_string(_ss)
+            _tp = game_sample.utils.parse_prop_string(_ss)
             _name = _tp[0]
             _count = _tp[1]
             if _name not in self._prop_data_base:

@@ -28,33 +28,32 @@ def split_command(input_val: str, split_str: str)-> str:
     return input_val
 ############################################################################################################
 class HandlePlayerInputSystem(ExecuteProcessor):
-    def __init__(self, context: RPGEntitasContext, rpggame: RPGGame) -> None:
+    def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         self._context: RPGEntitasContext = context
-        self._rpggame: RPGGame = rpggame
+        self._rpg_game: RPGGame = rpg_game
 ############################################################################################################
     @override
     def execute(self) -> None:
-        assert isinstance(self._rpggame, WebServerMultiplayersRPGGame) or isinstance(self._rpggame, TerminalRPGGame)
-        assert len(self._rpggame.player_names) > 0
-        for player_name in self._rpggame.player_names:
+        assert isinstance(self._rpg_game, WebServerMultiplayersRPGGame) or isinstance(self._rpg_game, TerminalRPGGame)
+        assert len(self._rpg_game.player_names) > 0
+        for player_name in self._rpg_game.player_names:
             self.play_via_client_and_handle_player_input(player_name)
 ############################################################################################################
-    def play_via_client_and_handle_player_input(self, playername: str) -> None:
-        playerproxy = get_player_proxy(playername)
-        if playerproxy is None:
+    def play_via_client_and_handle_player_input(self, player_name: str) -> None:
+        player_proxy = get_player_proxy(player_name)
+        if player_proxy is None:
             logger.warning("玩家不存在，或者玩家未加入游戏")
             return
         
-        for command in playerproxy._input_commands:
-            singleplayer = self._context.get_player_entity(playername)
-            assert singleplayer is not None
+        for command in player_proxy._input_commands:
+            single_player = self._context.get_player_entity(player_name)
+            assert single_player is not None
             #
-            safename = self._context.safe_get_entity_name(singleplayer)
-            playerproxy.add_actor_message(safename, command)
+            safe_name = self._context.safe_get_entity_name(single_player)
+            player_proxy.add_actor_message(safe_name, command)
             
             ## 处理玩家的输入
-            create_any_player_command_by_input = self.handle_input(self._rpggame, playerproxy, command)
-            #logger.debug(f"{'=' * 50}")
+            create_any_player_command_by_input = self.handle_input(self._rpg_game, player_proxy, command)
 
             if not create_any_player_command_by_input:
                 ## 是立即模式，显示一下客户端的消息
@@ -63,73 +62,73 @@ class HandlePlayerInputSystem(ExecuteProcessor):
             ## 总之要跳出循环 
             break
                   
-        playerproxy._input_commands.clear()
+        player_proxy._input_commands.clear()
 ############################################################################################################
-    def handle_input(self, rpggame: RPGGame, playerproxy: PlayerProxy, usrinput: str) -> bool:
+    def handle_input(self, rpg_game: RPGGame, player_proxy: PlayerProxy, usr_input: str) -> bool:
 
-        if "/quit" in usrinput:
-            rpggame.exited = True
+        if "/quit" in usr_input:
+            rpg_game.exited = True
         
-        elif "/attack" in usrinput:
+        elif "/attack" in usr_input:
             command = "/attack"
-            targetname = split_command(usrinput, command)           
-            PlayerAttack(command, rpggame, playerproxy, targetname).execute()
+            targetname = split_command(usr_input, command)           
+            PlayerAttack(command, rpg_game, player_proxy, targetname).execute()
                         
-        elif "/goto" in usrinput:
+        elif "/goto" in usr_input:
             command = "/goto"
-            stagename = split_command(usrinput, command)
-            PlayerGoTo(command, rpggame, playerproxy, stagename).execute()
+            stagename = split_command(usr_input, command)
+            PlayerGoTo(command, rpg_game, player_proxy, stagename).execute()
   
-        elif "/broadcast" in usrinput:
+        elif "/broadcast" in usr_input:
             command = "/broadcast"
-            content = split_command(usrinput, command)
-            PlayerBroadcast(command, rpggame, playerproxy, content).execute()
+            content = split_command(usr_input, command)
+            PlayerBroadcast(command, rpg_game, player_proxy, content).execute()
             
-        elif "/speak" in usrinput:
+        elif "/speak" in usr_input:
             command = "/speak"
-            content = split_command(usrinput, command)
-            PlayerSpeak(command, rpggame, playerproxy, content).execute()
+            content = split_command(usr_input, command)
+            PlayerSpeak(command, rpg_game, player_proxy, content).execute()
 
-        elif "/whisper" in usrinput:
+        elif "/whisper" in usr_input:
             command = "/whisper"
-            content = split_command(usrinput, command)
-            PlayerWhisper(command, rpggame,playerproxy, content).execute()
+            content = split_command(usr_input, command)
+            PlayerWhisper(command, rpg_game,player_proxy, content).execute()
 
-        elif "/searchprop" in usrinput:
+        elif "/searchprop" in usr_input:
             command = "/searchprop"
-            propname = split_command(usrinput, command)
-            PlayerSearchProp(command, rpggame, playerproxy, propname).execute()
+            propname = split_command(usr_input, command)
+            PlayerSearchProp(command, rpg_game, player_proxy, propname).execute()
 
-        elif "/portalstep" in usrinput:
+        elif "/portalstep" in usr_input:
             command = "/portalstep"
-            PlayerPortalStep(command, rpggame, playerproxy).execute()
+            PlayerPortalStep(command, rpg_game, player_proxy).execute()
 
-        elif "/stealprop" in usrinput:
+        elif "/stealprop" in usr_input:
             command = "/stealprop"
-            propname = split_command(usrinput, command)
-            PlayerSteal(command, rpggame, playerproxy, propname).execute()
+            propname = split_command(usr_input, command)
+            PlayerSteal(command, rpg_game, player_proxy, propname).execute()
 
-        elif "/giveprop" in usrinput:
+        elif "/giveprop" in usr_input:
             command = "/giveprop"
-            propname = split_command(usrinput, command)
-            PlayerGiveProp(command, rpggame, playerproxy, propname).execute()
+            propname = split_command(usr_input, command)
+            PlayerGiveProp(command, rpg_game, player_proxy, propname).execute()
 
-        elif "/perception" in usrinput:
+        elif "/perception" in usr_input:
             command = "/perception"
             #self.imme_handle_perception(playerproxy)
-            PlayerPerception(command, rpggame, playerproxy).execute()
+            PlayerPerception(command, rpg_game, player_proxy).execute()
             #return False
 
-        elif "/checkstatus" in usrinput:
+        elif "/checkstatus" in usr_input:
             command = "/checkstatus"
             #self.imme_handle_check_status(playerproxy)
-            PlayerCheckStatus(command, rpggame, playerproxy).execute()
+            PlayerCheckStatus(command, rpg_game, player_proxy).execute()
             #return False
         
-        elif "/useprop" in usrinput:
+        elif "/useprop" in usr_input:
             command = "/useprop"
-            content = split_command(usrinput, command)
-            PlayerUseProp(command, rpggame, playerproxy, content).execute()
+            content = split_command(usr_input, command)
+            PlayerUseProp(command, rpg_game, player_proxy, content).execute()
 
         return True
 ############################################################################################################

@@ -1,5 +1,5 @@
-from overrides import override
 from entitas import Entity, Matcher, ExecuteProcessor #type: ignore
+from overrides import override
 from ecs_systems.components import (StageComponent, AutoPlanningComponent, ActorComponent)
 from ecs_systems.action_components import STAGE_AVAILABLE_ACTIONS_REGISTER, STAGE_CONVERSATION_ACTIONS_REGISTER
 from my_agent.agent_plan import AgentPlan
@@ -107,12 +107,8 @@ class StagePlanningSystem(ExecuteProcessor):
 #######################################################################################################################################
     # 获取场景内所有的道具的描述。
     def get_props_in_stage(self, entity: Entity) -> List[PropFile]:
-        #res: List[PropModel] = []
         safe_stage_name = self._context.safe_get_entity_name(entity)
         return self._context._file_system.get_files(PropFile, safe_stage_name)
-        # for file in files:
-        #     res.append(file._prop_model)
-        # return res
 #######################################################################################################################################
     def add_tasks(self, request_tasks: Dict[str, LangServeAgentRequestTask]) -> None:
         request_tasks.clear()

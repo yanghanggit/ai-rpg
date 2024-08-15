@@ -6,6 +6,7 @@ from typing import Any, cast, override
 from rpg_game.rpg_game import RPGGame 
 from rpg_game.terminal_rpg_game import TerminalRPGGame
 from rpg_game.web_server_multi_players_rpg_game import WebServerMultiplayersRPGGame
+from ecs_systems.components import ActorComponent, StageComponent
 
 ############################################################################################################
 class TerminalPlayerInputSystem(ExecuteProcessor):
@@ -24,35 +25,51 @@ class TerminalPlayerInputSystem(ExecuteProcessor):
         single_player = self._rpggame.single_player()
         self.play_via_terminal_and_handle_player_input(single_player)
 ############################################################################################################
-    def play_via_terminal_and_handle_player_input(self, playername: str) -> None:
+    def play_via_terminal_and_handle_player_input(self, player_name: str) -> None:
 
-        playerproxy = get_player_proxy(playername)
-        if playerproxy is None:
-            logger.warning(f"玩家{playername}不存在，或者玩家未加入游戏")
+        player_proxy = get_player_proxy(player_name)
+        if player_proxy is None:
+            logger.warning(f"玩家{player_name}不存在，或者玩家未加入游戏")
             return
         
+        player_actor_name = self.get_player_actor_name(player_name)
+
         while True:
             # 客户端应该看到的
-            self.display_client_messages(playerproxy, 20)    
+            self.display_client_messages(player_proxy, 20)    
             # 测试的客户端反馈
-            usrinput = input(f"[{playername}]:")
+            usr_input = input(f"[{player_name}/{player_actor_name}]:")
             # 处理玩家的输入
-            self.handle_input(self._rpggame, playerproxy, usrinput)
+            self.handle_input(self._rpggame, player_proxy, usr_input)
             ## 总之要跳出循环
             break
+############################################################################################################
+    def get_player_actor_name(self, player_name: str) -> str:
+        player_entity = self._context.get_player_entity(player_name)
+        if player_entity is None:
+            return ""
+        
+        if player_entity.has(ActorComponent):
+            actor_comp = player_entity.get(ActorComponent)
+            return cast(str, actor_comp.name)
+        elif player_entity.has(StageComponent):
+            stage_comp = player_entity.get(StageComponent)
+            return cast(str, stage_comp.name)
+        
+        return ""
 ############################################################################################################ 
     def display_client_messages(self, playerproxy: PlayerProxy, display_messages_count: int) -> None:
-        clientmessages = playerproxy._client_messages
-        for message in clientmessages[-display_messages_count:]:
+        client_messages = playerproxy._client_messages
+        for message in client_messages[-display_messages_count:]:
             tag = message[0]
             content = message[1]
             logger.warning(f"{tag}=>{content}")
 ############################################################################################################
-    def handle_input(self, rpggame: Any, playerproxy: PlayerProxy, usrinput: str) -> None:
-        if "/quit" in usrinput:
+    def handle_input(self, rpg_game: Any, player_proxy: PlayerProxy, usr_input: str) -> None:
+        if "/quit" in usr_input:
             from rpg_game.rpg_game import RPGGame 
-            cast(RPGGame, rpggame).exit()
+            cast(RPGGame, rpg_game).exit()
         else:
-            playerproxy._input_commands.append(str(usrinput))
+            player_proxy._input_commands.append(str(usr_input))
 ############################################################################################################
 

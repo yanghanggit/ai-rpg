@@ -10,7 +10,7 @@ from game_sample.excel_data_prop import ExcelDataProp
 from game_sample.excel_data_world_system import ExcelDataWorldSystem
 from game_sample.excel_data_stage import ExcelDataStage
 from pathlib import Path
-from game_sample.utils import read_system_prompt_md, read_agentpy_template
+import game_sample.utils
 from game_sample.configuration import GAME_NAME
 from game_sample.excel_data_actor import ExcelDataActor
 
@@ -25,12 +25,12 @@ def gen_all_actors(sheet: DataFrame, output: Dict[str, ExcelDataActor]) -> None:
         #
         system_prompt_path = Path(GAME_NAME) / excel_actor.sys_prompt_template_path
         assert system_prompt_path.exists(), f"File not found: {system_prompt_path}"
-        excel_actor.gen_sys_prompt(read_system_prompt_md(system_prompt_path))
+        excel_actor.gen_sys_prompt(game_sample.utils.read_system_prompt_md(system_prompt_path))
         excel_actor.write_sys_prompt()
         #
         agentpy_template_path = Path(GAME_NAME) / excel_actor.agentpy_template_path
         assert agentpy_template_path.exists(), f"File not found: {agentpy_template_path}"
-        excel_actor.gen_agentpy(read_agentpy_template(agentpy_template_path))
+        excel_actor.gen_agentpy(game_sample.utils.read_agentpy_template(agentpy_template_path))
         excel_actor.write_agentpy()
         #
         output[excel_actor.name] = excel_actor
@@ -45,12 +45,12 @@ def gen_all_stages(sheet: DataFrame, output: Dict[str, ExcelDataStage]) -> None:
         #
         system_prompt_path = Path(GAME_NAME) / excel_stage.sys_prompt_template_path
         assert system_prompt_path.exists(), f"File not found: {system_prompt_path}"
-        excel_stage.gen_sys_prompt(read_system_prompt_md(system_prompt_path))
+        excel_stage.gen_sys_prompt(game_sample.utils.read_system_prompt_md(system_prompt_path))
         excel_stage.write_sys_prompt()
         #
         agentpy_template_path = Path(GAME_NAME) / excel_stage.agentpy_template_path
         assert agentpy_template_path.exists(), f"File not found: {agentpy_template_path}"
-        excel_stage.gen_agentpy(read_agentpy_template(agentpy_template_path))
+        excel_stage.gen_agentpy(game_sample.utils.read_agentpy_template(agentpy_template_path))
         excel_stage.write_agentpy()    
         #
         output[excel_stage.name] = excel_stage 
@@ -65,12 +65,12 @@ def gen_all_world_system(sheet: DataFrame, output: Dict[str, ExcelDataWorldSyste
         #
         system_prompt_path = Path(GAME_NAME) / excel_world_system.sys_prompt_template_path
         assert system_prompt_path.exists(), f"File not found: {system_prompt_path}"
-        excel_world_system.gen_sys_prompt(read_system_prompt_md(system_prompt_path))
+        excel_world_system.gen_sys_prompt(game_sample.utils.read_system_prompt_md(system_prompt_path))
         excel_world_system.write_sys_prompt()
         #
         agentpy_template_path = Path(GAME_NAME) / excel_world_system.agentpy_template_path
         assert agentpy_template_path.exists(), f"File not found: {agentpy_template_path}"
-        excel_world_system.gen_agentpy(read_agentpy_template(agentpy_template_path))
+        excel_world_system.gen_agentpy(game_sample.utils.read_agentpy_template(agentpy_template_path))
         excel_world_system.write_agentpy()    
         #
         output[excel_world_system.name] = excel_world_system
@@ -113,20 +113,4 @@ def analyze_relationship_between_actors_and_props(analyze_props_data: Dict[str, 
     for _me in analyze_actor_data.values():
         if len(_me._prop_archives) > 0:
             logger.warning(f"{_me.name}: {_me._prop_archives}")
-################################################################################################################
-# def serialization_prop(prop: ExcelDataProp) -> Dict[str, Any]:
-#     output: Dict[str, Any] = {}
-#     output["name"] = prop.name
-#     output["codename"] = prop.codename
-#     output["description"] = prop.description
-#     output["isunique"] = prop.isunique
-#     output["type"] = prop.type
-#     output["attributes"] = [int(attr) for attr in prop.attributes.split(',')]
-#     output["appearance"] = prop.appearance
-#     return output       
-################################################################################################################
-# def proxy_prop(prop: ExcelDataProp) -> Dict[str, Any]:
-#     output: Dict[str, str] = {}
-#     output['name'] = prop.name
-#     return output       
 ################################################################################################################

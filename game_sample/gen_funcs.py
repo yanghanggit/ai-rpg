@@ -5,11 +5,14 @@ sys.path.append(str(root_dir))
 import pandas as pd
 from loguru import logger
 from pandas.core.frame import DataFrame
-from typing import Dict, Any
-from game_sample.excel_data import ExcelDataActor, ExcelDataStage, ExcelDataProp, ExcelDataWorldSystem
+from typing import Dict
+from game_sample.excel_data_prop import ExcelDataProp
+from game_sample.excel_data_world_system import ExcelDataWorldSystem
+from game_sample.excel_data_stage import ExcelDataStage
 from pathlib import Path
 from game_sample.utils import read_system_prompt_md, read_agentpy_template
 from game_sample.configuration import GAME_NAME
+from game_sample.excel_data_actor import ExcelDataActor
 
 ############################################################################################################
 def gen_all_actors(sheet: DataFrame, output: Dict[str, ExcelDataActor]) -> None:

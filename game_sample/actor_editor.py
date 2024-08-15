@@ -5,8 +5,9 @@ sys.path.append(str(root_dir))
 from loguru import logger
 from typing import List, Dict, Any, Optional, cast
 #from game_sample.gen_funcs import (proxy_prop)
-from game_sample.excel_data import ExcelDataActor, ExcelDataProp
+from game_sample.excel_data_prop import ExcelDataProp
 from game_sample.utils import parse_prop_string
+from game_sample.excel_data_actor import ExcelDataActor
 
 class ExcelEditorActor:
 

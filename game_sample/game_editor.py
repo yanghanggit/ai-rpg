@@ -5,7 +5,10 @@ sys.path.append(str(root_dir))
 from loguru import logger
 import json
 from typing import List, Dict, Any, Set
-from game_sample.excel_data import ExcelDataActor, ExcelDataStage, ExcelDataProp, ExcelDataWorldSystem
+from game_sample.excel_data_prop import ExcelDataProp
+from game_sample.excel_data_world_system import ExcelDataWorldSystem
+from game_sample.excel_data_stage import ExcelDataStage
+from game_sample.excel_data_actor import ExcelDataActor
 from game_sample.actor_editor import ExcelEditorActor
 from game_sample.stage_editor import ExcelEditorStage
 from game_sample.world_system_editor import ExcelEditorWorldSystem

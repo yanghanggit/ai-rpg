@@ -9,9 +9,12 @@ import json
 from game_sample.configuration import EXCEL_EDITOR, GAME_NAME, OUTPUT_RUNTIMES_DIR
 from game_sample.gen_funcs import (gen_all_actors, gen_all_stages, gen_all_props, analyze_actor_relationship, 
                                 analyze_stage_relationship, analyze_relationship_between_actors_and_props, gen_all_world_system)
-from game_sample.excel_data import ExcelDataActor, ExcelDataStage, ExcelDataProp, ExcelDataWorldSystem
+from game_sample.excel_data_prop import ExcelDataProp
+from game_sample.excel_data_world_system import ExcelDataWorldSystem
+from game_sample.excel_data_stage import ExcelDataStage
 from game_sample.game_editor import ExcelEditorGame
 from typing import List, Dict, Any
+from game_sample.excel_data_actor import ExcelDataActor
  
 ############################################################################################################
 def create_game_editor(sheet_name_as_game_name: str, 

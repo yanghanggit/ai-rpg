@@ -11,7 +11,7 @@ from ecs_systems.stage_director_component import StageDirectorComponent
 from typing import List, override
 from file_system.files_def import PropFile
 from ecs_systems.stage_director_event import IStageDirectorEvent
-from ecs_systems.cn_builtin_prompt import search_prop_action_failed_prompt, search_prop_action_success_prompt
+import ecs_systems.cn_builtin_prompt as builtin_prompt
 import file_system.helper
 
 
@@ -28,7 +28,7 @@ class ActorSearchPropFailedEvent(IStageDirectorEvent):
         if actor_name != self._who:
             ## 只有自己知道
             return ""
-        return search_prop_action_failed_prompt(self._who, self._target)
+        return builtin_prompt.search_prop_action_failed_prompt(self._who, self._target)
     
     def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
         return ""
@@ -48,11 +48,11 @@ class ActorSearchPropSuccessEvent(IStageDirectorEvent):
         if actor_name != self._who:
             ## 只有自己知道
             return ""
-        return search_prop_action_success_prompt(self._who, self._target, self._stage_name)
+        return builtin_prompt.search_prop_action_success_prompt(self._who, self._target, self._stage_name)
     
     #
     def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
-        return search_prop_action_success_prompt(self._who, self._target, self._stage_name)
+        return builtin_prompt.search_prop_action_success_prompt(self._who, self._target, self._stage_name)
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################    

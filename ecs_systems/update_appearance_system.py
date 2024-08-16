@@ -5,8 +5,9 @@ from loguru import logger
 from typing import Dict, cast
 import json
 from ecs_systems.components import AppearanceComponent, BodyComponent, ActorComponent, CurrentUsingPropComponent
-from ecs_systems.cn_builtin_prompt import actors_body_and_clothe_prompt
+import ecs_systems.cn_builtin_prompt as builtin_prompt
 from file_system.files_def import PropFile
+from my_agent.lang_serve_agent_request_task import LangServeAgentRequestTask
 
 # todo
 class UpdateAppearanceSystem(InitializeProcessor, ExecuteProcessor):
@@ -66,7 +67,7 @@ class UpdateAppearanceSystem(InitializeProcessor, ExecuteProcessor):
     # 有衣服的，请求更新，通过LLM来推理外观。
     def request_update_appearance(self, actors_body_and_clothe:  Dict[str, tuple[str, str]], world_entity: Entity) -> bool:
         assert world_entity is not None
-        final_prompt = actors_body_and_clothe_prompt(actors_body_and_clothe)
+        final_prompt = builtin_prompt.actors_body_and_clothe_prompt(actors_body_and_clothe)
         if final_prompt == "":
             return False
 
@@ -74,13 +75,17 @@ class UpdateAppearanceSystem(InitializeProcessor, ExecuteProcessor):
         safe_name = self._context.safe_get_entity_name(world_entity)
         try:
 
-            agent_request = self._context._langserve_agent_system.create_agent_request_task_without_any_context(safe_name, final_prompt)
-            if agent_request is None:
+            agent = self._context._langserve_agent_system.get_agent(safe_name)
+            assert agent is not None
+            task = LangServeAgentRequestTask.create_without_any_context(agent, final_prompt)
+            assert task is not None
+
+            if task is None:
                 logger.error(f"{safe_name} request error.")
                 return False
 
             #
-            response = agent_request.request()
+            response = task.request()
             if response is None:
                 logger.error(f"{safe_name} request response is None.")
                 return False

@@ -20,19 +20,12 @@ from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from ecs_systems.stage_director_component import StageDirectorComponent
 from ecs_systems.stage_director_event import IStageDirectorEvent
-from ecs_systems.cn_builtin_prompt import \
-            prop_prompt, stage_exit_conditions_check_prompt, \
-            stage_entry_conditions_check_prompt,\
-            exit_stage_failed_beacuse_stage_refuse_prompt, \
-            enter_stage_failed_beacuse_stage_refuse_prompt, \
-            actor_status_when_stage_change_prompt, \
-            go_to_stage_failed_because_stage_is_invalid_prompt, \
-            go_to_stage_failed_because_already_in_stage_prompt
-
+import ecs_systems.cn_builtin_prompt as builtin_prompt
 from ecs_systems.cn_constant_prompt import _CNConstantPrompt_
 from typing import Optional, cast, override
 from ecs_systems.check_status_action_system import CheckStatusActionHelper
 from my_agent.agent_plan import AgentPlan
+from my_agent.lang_serve_agent_request_task import LangServeAgentRequestTask
 
 ####################################################################################################################################
 ####################################################################################################################################
@@ -47,7 +40,7 @@ class ActorGoToFailedBecauseStageInvalid(IStageDirectorEvent):
         if actor_name != self._actor_name:
             # 跟你无关不用关注，原因类的东西，是失败后矫正用，所以只有自己知道即可
             return ""
-        return go_to_stage_failed_because_stage_is_invalid_prompt(self._actor_name, self._stage_name)
+        return builtin_prompt.go_to_stage_failed_because_stage_is_invalid_prompt(self._actor_name, self._stage_name)
     
     def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
         return ""
@@ -64,7 +57,7 @@ class ActorGoToFailedBecauseAlreadyInStage(IStageDirectorEvent):
         if actor_name != self._actor_name:
             # 跟你无关不用关注，原因类的东西，是失败后矫正用，所以只有自己知道即可
             return ""
-        return go_to_stage_failed_because_already_in_stage_prompt(self._actor_name, self._stage_name)
+        return builtin_prompt.go_to_stage_failed_because_already_in_stage_prompt(self._actor_name, self._stage_name)
     
     def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
         return ""
@@ -80,7 +73,7 @@ class ActorExitStageFailedBecauseStageRefuse(IStageDirectorEvent):
     def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
         if actor_name != self._actor_name:
             return ""
-        return exit_stage_failed_beacuse_stage_refuse_prompt(self._actor_name, self._stage_name, self._tips)
+        return builtin_prompt.exit_stage_failed_beacuse_stage_refuse_prompt(self._actor_name, self._stage_name, self._tips)
     
     def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
         return ""
@@ -96,7 +89,7 @@ class ActorEnterStageFailedBecauseStageRefuse(IStageDirectorEvent):
     def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
         if actor_name != self._actor_name:
             return ""
-        return enter_stage_failed_beacuse_stage_refuse_prompt(self._actor_name, self._stage_name, self._tips)
+        return builtin_prompt.enter_stage_failed_beacuse_stage_refuse_prompt(self._actor_name, self._stage_name, self._tips)
     
     def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
         return ""
@@ -294,7 +287,7 @@ class CheckBeforeGoToActionSystem(ReactiveProcessor):
         current_actor_props_prompt = self.get_actor_props_prompt(entity)
         
         
-        final_prompt = stage_exit_conditions_check_prompt(actor_name, 
+        final_prompt = builtin_prompt.stage_exit_conditions_check_prompt(actor_name, 
                                                          current_stage_name, 
                                                          stage_exit_cond_helper._stage_cond_status_prompt, 
                                                          stage_exit_cond_helper._cond_check_actor_status_prompt, 
@@ -305,12 +298,15 @@ class CheckBeforeGoToActionSystem(ReactiveProcessor):
         logger.debug(final_prompt)
 
         ## 让大模型去推断是否可以离开，分别检查stage自身，角色状态（例如长相），角色道具（拥有哪些道具与文件）
-        agent_request = self._context._langserve_agent_system.create_agent_request_task(current_stage_name, final_prompt)
-        if agent_request is None:
+        agent = self._context._langserve_agent_system.get_agent(current_stage_name)
+        assert agent is not None
+        task = LangServeAgentRequestTask.create(agent, final_prompt)
+        assert task is not None
+        if task is None:
             logger.error("agent_request is None")
             return False
         
-        response = agent_request.request()
+        response = task.request()
         #respones = langserve_agent_system.agent_request(current_stage_name, final_prompt)
         if response is None:
             logger.error("没有回应！！！！！！！！！！！！！")
@@ -355,7 +351,7 @@ class CheckBeforeGoToActionSystem(ReactiveProcessor):
         current_actor_status_prompt = self.get_actor_status_prompt(entity)
         current_actor_props_prompt = self.get_actor_props_prompt(entity)
         # 最终提示词
-        final_prompt = stage_entry_conditions_check_prompt(actor_name, 
+        final_prompt = builtin_prompt.stage_entry_conditions_check_prompt(actor_name, 
                                                          target_stage_name, 
                                                          stage_exit_cond_helper._stage_cond_status_prompt, 
                                                          stage_exit_cond_helper._cond_check_actor_status_prompt, 
@@ -366,13 +362,15 @@ class CheckBeforeGoToActionSystem(ReactiveProcessor):
         logger.debug(final_prompt)
 
         ## 让大模型去推断是否可以离开，分别检查stage自身，角色状态（例如长相），角色道具（拥有哪些道具与文件）
-        agent_request = self._context._langserve_agent_system.create_agent_request_task(target_stage_name, final_prompt)
-        if agent_request is None:
+        agent = self._context._langserve_agent_system.get_agent(target_stage_name)
+        assert agent is not None
+        task = LangServeAgentRequestTask.create(agent, final_prompt)
+        assert task is not None
+        if task is None:
             logger.error("agent_request is None")
             return False
         
-        response = agent_request.request()
-        #response = langserve_agent_system.agent_request(target_stage_name, final_prompt)
+        response = task.request()
         if response is None:
             logger.error("没有回应！！！！！！！！！！！！！")
             return False
@@ -410,7 +408,7 @@ class CheckBeforeGoToActionSystem(ReactiveProcessor):
     def get_actor_status_prompt(self, entity: Entity) -> str:
         safe_name = self._context.safe_get_entity_name(entity)
         appearance_comp = entity.get(AppearanceComponent)
-        return actor_status_when_stage_change_prompt(safe_name, cast(str, appearance_comp.appearance))
+        return builtin_prompt.actor_status_when_stage_change_prompt(safe_name, cast(str, appearance_comp.appearance))
 ###############################################################################################################################################
     def get_actor_props_prompt(self, entity: Entity) -> str:
         helper = CheckStatusActionHelper(self._context)
@@ -419,7 +417,7 @@ class CheckBeforeGoToActionSystem(ReactiveProcessor):
         prompt_of_props = ""
         if len(props) > 0:
             for prop in props:
-                prompt_of_props += prop_prompt(prop, True, True)
+                prompt_of_props += builtin_prompt.prop_prompt(prop, True, True)
         else:
             prompt_of_props = str(_CNConstantPrompt_.NO_ACTOR_PROPS_PROMPT)
         return prompt_of_props

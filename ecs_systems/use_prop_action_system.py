@@ -8,11 +8,12 @@ from rpg_game.rpg_entitas_context import RPGEntitasContext
 from ecs_systems.stage_director_component import StageDirectorComponent
 from entitas.group import GroupEvent
 from ecs_systems.stage_director_event import IStageDirectorEvent
-from ecs_systems.cn_builtin_prompt import prop_prompt, use_prop_to_stage_prompt, use_prop_no_response_prompt
+import ecs_systems.cn_builtin_prompt as builtin_prompt
 from ecs_systems.cn_constant_prompt import _CNConstantPrompt_
 from my_agent.agent_plan import AgentPlan
 from gameplay_checks.use_prop_check import use_prop_check, ErrorUsePropEnable
 from file_system.files_def import PropFile
+from my_agent.lang_serve_agent_request_task import LangServeAgentRequestTask
 
 
 # 通知导演的类
@@ -129,24 +130,25 @@ class UsePropActionSystem(ReactiveProcessor):
             StageDirectorComponent.add_event_to_stage_director(context, entity, ActorUsePropToStageEvent(username, 
                                                                                      targetname, 
                                                                                      prop_file._name, 
-                                                                                     use_prop_no_response_prompt(username, prop_file._name, targetname)))
+                                                                                     builtin_prompt.use_prop_no_response_prompt(username, prop_file._name, targetname)))
             return True
 
-        # 道具的提示词
-        prop_prompt = prop_prompt(prop_file, True, True)
-
         # 包装的最终提示词
-        final_prompt = use_prop_to_stage_prompt(username, prop_file._name, prop_prompt, exit_cond_status_prompt)
+        final_prompt = builtin_prompt.use_prop_to_stage_prompt(username, prop_file._name, builtin_prompt.prop_prompt(prop_file, True, True), exit_cond_status_prompt)
 
         # 准备提交请求
         logger.debug(f"InteractivePropActionSystem, {targetname}: {final_prompt}")
-        agent_request = context._langserve_agent_system.create_agent_request_task(targetname, final_prompt)
-        if agent_request is None:
+
+        agent = context._langserve_agent_system.get_agent(targetname)
+        assert agent is not None
+        task = LangServeAgentRequestTask.create(agent, final_prompt)
+        assert task is not None
+        if task is None:
             logger.error(f"InteractivePropActionSystem: {targetname} request error.")
             return False
 
         # 用同步的接口，这样能知道结果应该通知给谁。
-        response = agent_request.request()
+        response = task.request()
         #response = langserve_agent_system.agent_request(targetname, final_prompt)
         if response is not None:
             # 场景有反应

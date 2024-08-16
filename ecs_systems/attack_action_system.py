@@ -8,7 +8,7 @@ from ecs_systems.stage_director_component import StageDirectorComponent
 from ecs_systems.stage_director_event import IStageDirectorEvent
 from typing import cast, override
 from gameplay_checks.conversation_check import conversation_check, ErrorConversationEnable
-from ecs_systems.cn_builtin_prompt import kill_prompt, attack_prompt
+import ecs_systems.cn_builtin_prompt as builtin_prompt
 import file_system.helper
 from file_system.files_def import PropFile
 
@@ -27,11 +27,11 @@ class StageOrActorKillEvent(IStageDirectorEvent):
         self.target: str = target
 
     def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
-        event = kill_prompt(self.attacker, self.target)
+        event = builtin_prompt.kill_prompt(self.attacker, self.target)
         return event
     
     def to_stage(self, stagename: str, extended_context: RPGEntitasContext) -> str:
-        event = kill_prompt(self.attacker, self.target)
+        event = builtin_prompt.kill_prompt(self.attacker, self.target)
         return event
 ####################################################################################################################################
 ####################################################################################################################################
@@ -50,11 +50,11 @@ class StageOrActorAttackEvent(IStageDirectorEvent):
         self.maxhp: int = maxhp
 
     def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
-        event = attack_prompt(self.attacker, self.target, self.damage, self.curhp, self.maxhp)
+        event = builtin_prompt.attack_prompt(self.attacker, self.target, self.damage, self.curhp, self.maxhp)
         return event
     
     def to_stage(self, stagename: str, extended_context: RPGEntitasContext) -> str:
-        event = attack_prompt(self.attacker, self.target, self.damage, self.curhp, self.maxhp)
+        event = builtin_prompt.attack_prompt(self.attacker, self.target, self.damage, self.curhp, self.maxhp)
         return event
 ####################################################################################################################################
 ####################################################################################################################################

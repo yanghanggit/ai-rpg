@@ -77,6 +77,20 @@ class ExcelEditorStage:
             return ""
         return str(val)
 ################################################################################################################################
+    @property
+    def stage_graph(self) -> List[str]:
+        assert self._my_data is not None
+        if self._my_data["stage_graph"] is None:
+            return []
+        data = cast(str, self._my_data["stage_graph"])
+        return data.split(';')
+################################################################################################################################
+    def add_stage_graph(self, graph: str) -> None:
+        stage_graph_value = self.stage_graph
+        if graph not in stage_graph_value:
+            stage_graph_value.append(graph)
+            self._my_data["stage_graph"] = ';'.join(stage_graph_value)
+################################################################################################################################
     def stage_props_proxy(self, props: List[tuple[ExcelDataProp, int]]) -> List[Dict[str, str]]:
         ls: List[Dict[str, str]] = []
         for tp in props:
@@ -100,24 +114,25 @@ class ExcelEditorStage:
 
         data_stage: ExcelDataStage = self._stage_data_base[self._my_data["name"]]
 
-        _dt: Dict[str, Any] = {}
-        _dt["name"] = data_stage.name
-        _dt["codename"] = data_stage.codename
-        _dt["description"] = data_stage.description
-        _dt["url"] = data_stage.localhost
-        _dt["kick_off_message"] = self.kick_off_message
-        _dt["stage_portal"] = self.stage_portal
-        _dt['attributes'] = self.attributes 
+        out_put: Dict[str, Any] = {}
+        out_put["name"] = data_stage.name
+        out_put["codename"] = data_stage.codename
+        out_put["description"] = data_stage.description
+        out_put["url"] = data_stage.localhost
+        out_put["kick_off_message"] = self.kick_off_message
+        out_put["stage_portal"] = self.stage_portal
+        out_put["stage_graph"] = self.stage_graph
+        out_put['attributes'] = self.attributes 
 
         # 添加新的场景限制条件
-        _dt["stage_entry_status"] = self.stage_entry_status
-        _dt["stage_entry_actor_status"] = self.stage_entry_actor_status
-        _dt["stage_entry_actor_props"] = self.stage_entry_actor_props
-        _dt["stage_exit_status"] = self.stage_exit_status
-        _dt["stage_exit_actor_status"] = self.stage_exit_actor_status
-        _dt["stage_exit_actor_props"] = self.stage_exit_actor_props
+        out_put["stage_entry_status"] = self.stage_entry_status
+        out_put["stage_entry_actor_status"] = self.stage_entry_actor_status
+        out_put["stage_entry_actor_props"] = self.stage_entry_actor_props
+        out_put["stage_exit_status"] = self.stage_exit_status
+        out_put["stage_exit_actor_status"] = self.stage_exit_actor_status
+        out_put["stage_exit_actor_props"] = self.stage_exit_actor_props
 
-        return _dt
+        return out_put
 ################################################################################################################################
     def proxy(self) -> Dict[str, Any]:
         

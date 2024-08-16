@@ -7,6 +7,35 @@ from my_agent.lang_serve_agent import LangServeAgent
 
 class LangServeAgentRequestTask:
 
+    @staticmethod
+    def create(agent: LangServeAgent, prompt: str) -> Optional['LangServeAgentRequestTask']:
+        assert agent is not None
+        return LangServeAgentRequestTask(agent, prompt)
+     
+    @staticmethod
+    def create_without_any_context(agent: LangServeAgent, prompt: str) -> Optional['LangServeAgentRequestTask']:
+        request_task = LangServeAgentRequestTask.create(agent, prompt)
+        if request_task is None:
+            return None
+        
+        # 不用任何上下文，也不添加到chat history
+        request_task._input_chat_history = False
+        request_task._add_prompt_to_chat_history = False
+        request_task._add_response_to_chat_history = False
+        return request_task
+
+    @staticmethod
+    def create_for_checking_prompt(agent: LangServeAgent, prompt: str) -> Optional['LangServeAgentRequestTask']:
+        request_task = LangServeAgentRequestTask.create(agent, prompt)
+        if request_task is None:
+            return None
+        
+        # 因为是为了检查prompt的合理性，就仅关掉response
+        request_task._input_chat_history = True
+        request_task._add_prompt_to_chat_history = True
+        request_task._add_response_to_chat_history = False #!!!!!
+        return request_task
+################################################################################################################################################################################
     def __init__(self, 
                  agent: LangServeAgent, 
                  prompt: str,
@@ -42,13 +71,14 @@ class LangServeAgentRequestTask:
     
         try:
 
+            logger.info(f"{self.agent_name} request prompt:\n{self._prompt}")
             self._response = self._agent._remote_runnable.invoke({"input": self._prompt, "chat_history": self.input_chat_history_as_context()})
             # 只要能执行到这里，说明LLM运行成功，可能包括政策问题也通过了。
             if self._response is None:
                 return None
             
             self.on_request_done()
-            logger.debug(f"\n{'=' * 50}\n{self.agent_name} request result:\n{self.response_content}\n{'=' * 50}")
+            logger.info(f"{self.agent_name} request success:\n{self.response_content}")
             return self.response_content
            
         except Exception as e:
@@ -78,13 +108,14 @@ class LangServeAgentRequestTask:
     
         try:
 
+            logger.info(f"{self.agent_name} async_request prompt:\n{self._prompt}")
             self._response = await self._agent._remote_runnable.ainvoke({"input": self._prompt, "chat_history": self.input_chat_history_as_context()})
             # 只要能执行到这里，说明LLM运行成功，可能包括政策问题也通过了。
             if self._response is None:
                 return None
 
             self.on_request_done()
-            logger.debug(f"\n{self.agent_name} async_request result:\n{self.response_content}\n")
+            logger.info(f"{self.agent_name} async_request success:\n{self.response_content}")
             return self.response_content
            
         except Exception as e:
@@ -98,11 +129,11 @@ class LangServeAgentAsyncRequestTasksGather:
 
     def __init__(self, name: str, request_tasks: Dict[str, LangServeAgentRequestTask]) -> None:
         self._name: str = name
-        self._async_tasks: Dict[str, LangServeAgentRequestTask] = request_tasks
+        self._tasks: Dict[str, LangServeAgentRequestTask] = request_tasks
 
     # 核心方法
     async def impl_gather(self) -> List[Optional[str]]:
-        tasks = [task.async_request() for task in self._async_tasks.values()]
+        tasks = [task.async_request() for task in self._tasks.values()]
         future = await asyncio.gather(*tasks)
         return future
     
@@ -111,7 +142,7 @@ class LangServeAgentAsyncRequestTasksGather:
         start_time = time.time()
         result = await self.impl_gather() # 调用async_gather，等待所有任务完成，并拿到任务结果
         end_time = time.time()
-        #logger.debug(f"{self._name} run_async_requet_tasks time: {end_time - start_time:.2f} seconds")
+        logger.debug(f"{self._name} run_async_requet_tasks time: {end_time - start_time:.2f} seconds")
         return result
 ################################################################################################################################################################################
 ################################################################################################################################################################################

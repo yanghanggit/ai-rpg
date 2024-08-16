@@ -8,7 +8,7 @@ from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from typing import Dict
 from gameplay_checks.planning_check import check_component_register
-from ecs_systems.cn_builtin_prompt import actor_plan_prompt
+import ecs_systems.cn_builtin_prompt as builtin_prompt
 from my_agent.lang_serve_agent_request_task import LangServeAgentRequestTask, LangServeAgentAsyncRequestTasksGather
 
 
@@ -20,7 +20,7 @@ class ActorPlanningSystem(ExecuteProcessor):
 
     def __init__(self, context: RPGEntitasContext) -> None:
         self._context = context
-        self._request_tasks: Dict[str, LangServeAgentRequestTask] = {}
+        self._tasks: Dict[str, LangServeAgentRequestTask] = {}
 #######################################################################################################################################
     @override
     def execute(self) -> None:
@@ -29,22 +29,22 @@ class ActorPlanningSystem(ExecuteProcessor):
     @override
     async def async_pre_execute(self) -> None:
         # step1: 添加任务
-        self._request_tasks.clear()
-        self.add_tasks(self._request_tasks)
+        self._tasks.clear()
+        self.add_tasks(self._tasks)
         # step可选：混沌工程做测试
         self._context._chaos_engineering_system.on_actor_planning_system_execute(self._context)
         # step2: 并行执行requests
-        if len(self._request_tasks) == 0:
+        if len(self._tasks) == 0:
             return
         
-        tasks_gather = LangServeAgentAsyncRequestTasksGather("ActorPlanningSystem Gather", self._request_tasks)
-        request_result = await tasks_gather.gather()
-        if len(request_result) == 0:
+        tasks_gather = LangServeAgentAsyncRequestTasksGather("ActorPlanningSystem", self._tasks)
+        response = await tasks_gather.gather()
+        if len(response) == 0:
             logger.warning(f"ActorPlanningSystem: request_result is empty.")
             return
 
-        self.handle(self._request_tasks)
-        self._request_tasks.clear()
+        self.handle(self._tasks)
+        self._tasks.clear()
 #######################################################################################################################################
     def handle(self, request_tasks: Dict[str, LangServeAgentRequestTask]) -> None:
         for name, task in request_tasks.items():
@@ -124,8 +124,11 @@ class ActorPlanningSystem(ExecuteProcessor):
                 continue
             
             # 必须要有一个stage的环境描述，否则无法做计划。
-            prompt = actor_plan_prompt(stage_name, stage_enviro_narrate)
-            task = self._context._langserve_agent_system.create_agent_request_task(actor_comp.name, prompt)
+            prompt = builtin_prompt.actor_plan_prompt(stage_name, stage_enviro_narrate)
+
+            agent = self._context._langserve_agent_system.get_agent(actor_comp.name)
+            assert agent is not None, f"ActorPlanningSystem: agent is None, {actor_comp.name}"
+            task = LangServeAgentRequestTask.create(agent, prompt)
             assert task is not None, f"ActorPlanningSystem: task is None, {actor_comp.name}"
             if task is not None:
                 request_tasks[actor_comp.name] = task

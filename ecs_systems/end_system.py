@@ -2,10 +2,10 @@ from entitas import ExecuteProcessor, Matcher, InitializeProcessor #type: ignore
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from ecs_systems.components import (StageComponent, ActorComponent, WorldComponent, SimpleRPGAttrComponent, SimpleRPGWeaponComponent, SimpleRPGArmorComponent)
-import json
+#import json
 from typing import Dict, override, List, Any
 import file_system.helper
-from file_system.files_def import PropFile
+#from file_system.files_def import PropFile
 
 class EndSystem(InitializeProcessor, ExecuteProcessor):
 ############################################################################################################

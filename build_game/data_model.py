@@ -19,6 +19,7 @@ class StageModel(BaseModel):
     url: str
     kick_off_message: str
     stage_portal: str
+    stage_graph: List[str]
     attributes: List[int]
     stage_entry_status: str
     stage_entry_actor_status: str

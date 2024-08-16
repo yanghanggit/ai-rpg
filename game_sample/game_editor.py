@@ -4,7 +4,7 @@ root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 from loguru import logger
 import json
-from typing import List, Dict, Any, Set
+from typing import List, Dict, Any, Set, Optional
 from game_sample.excel_data_prop import ExcelDataProp
 from game_sample.excel_data_world_system import ExcelDataWorldSystem
 from game_sample.excel_data_stage import ExcelDataStage
@@ -12,7 +12,6 @@ from game_sample.excel_data_actor import ExcelDataActor
 from game_sample.actor_editor import ExcelEditorActor
 from game_sample.stage_editor import ExcelEditorStage
 from game_sample.world_system_editor import ExcelEditorWorldSystem
-#from game_sample.gen_funcs import serialization_prop
 import pandas as pd
 import game_sample.utils
 
@@ -76,6 +75,9 @@ class ExcelEditorGame:
 
         # 生成世界系统的数据
         self._editor_world_systems = self.create_world_systems(self._raw_world_systems)
+
+        # 构建场景的图关系。
+        self.make_stage_graph()
 ############################################################################################################################
     @property
     def about_game(self) -> str:
@@ -223,4 +225,25 @@ class ExcelEditorGame:
         return game_sample.utils.write_text_file(Path(directory), 
                                f"{self._name}_agents.json", 
                                json.dumps(final, indent = 2, ensure_ascii = False))
+############################################################################################################################
+    def get_stage_editor(self, stage_name: str) -> Optional[ExcelEditorStage]:
+        for stage in self._editor_stages:
+            if stage.name == stage_name:
+                return stage
+        return None
+############################################################################################################################
+    def make_stage_graph(self) -> None:
+
+        for stage_editor in self._editor_stages:
+        
+            stage_graph = stage_editor.stage_graph
+            for stage_name_in_graph in stage_graph:
+
+                find_stage = self.get_stage_editor(stage_name_in_graph)
+                assert find_stage is not None, f"Invalid stage name: {stage_name_in_graph}"
+                if find_stage is None:
+                    logger.error(f"Invalid stage name: {stage_name_in_graph}")
+                    continue
+
+                find_stage.add_stage_graph(stage_editor.name)
 ############################################################################################################################

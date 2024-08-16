@@ -1,7 +1,7 @@
+from langserve import RemoteRunnable  # type: ignore
 from loguru import logger
 from typing import List, Union, Optional
 from langchain_core.messages import HumanMessage, AIMessage
-from langserve import RemoteRunnable  # type: ignore
 
 class LangServeAgent:
 

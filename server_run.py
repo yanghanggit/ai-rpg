@@ -11,7 +11,7 @@ from loguru import logger
 from pydantic import BaseModel
 from rpg_game.web_server_multi_players_rpg_game import WebServerMultiplayersRPGGame
 from player.player_command import PlayerLogin
-from player.player_proxy import create_player_proxy, get_player_proxy, remove_player_proxy
+import player.utils
 from rpg_game.create_rpg_game_util import create_rpg_game, RPGGameClientType
 from rpg_game.rpg_game import RPGGame
 from player.player_proxy import PlayerProxy
@@ -51,7 +51,7 @@ async def create(clientip: str) -> List[TupleModel]:
         global multiplayersgames
         multiplayersgames[clientip] = web_server_multi_player_game
         multiplayersgames[clientip].add_player(clientip)
-        create_player_proxy(clientip)
+        player.utils.create_player_proxy(clientip)
 
     messages: List[TupleModel] = []
     messages.append(TupleModel(who=clientip, what=f"创建房间IP:{clientip}."))
@@ -79,7 +79,7 @@ async def join(clientip: str, hostip: str) -> List[TupleModel]:
             multiplayersgames[clientip] = client_game
             messages.append(TupleModel(who=clientip, what=f"加入房间IP:{hostip}成功."))
             multiplayersgames[clientip].add_player(clientip)
-            create_player_proxy(clientip)
+            player.utils.create_player_proxy(clientip)
 
     if len(messages) == 0:
         messages.append(TupleModel(who=clientip, what=f"加入房间IP:{hostip}失败,请检查房间IP."))
@@ -88,10 +88,10 @@ async def join(clientip: str, hostip: str) -> List[TupleModel]:
 
 async def pick_actor(clientip: str, actorname: str) -> List[TupleModel]:
     global multiplayersgames
-    playerproxy = get_player_proxy(clientip)
+    playerproxy = player.utils.get_player_proxy(clientip)
     assert playerproxy is not None
-    playerstartcmd = PlayerLogin("/server_run_login", multiplayersgames[clientip], playerproxy, actorname, True)
-    playerstartcmd.execute()
+    login_command = PlayerLogin("/server_run_login", multiplayersgames[clientip], playerproxy, actorname, True)
+    login_command.execute()
     await multiplayersgames[clientip].async_execute()
     logger.debug(f"pick actor finish")
 
@@ -103,9 +103,9 @@ async def pick_actor(clientip: str, actorname: str) -> List[TupleModel]:
 
 async def request_game_messages(clientip: str) -> List[TupleModel]:
     messages: List[TupleModel] = []
-    playerproxy = get_player_proxy(clientip)
-    if playerproxy is not None:
-        for message in playerproxy._client_messages[-20:]:
+    player_proxy = player.utils.get_player_proxy(clientip)
+    if player_proxy is not None:
+        for message in player_proxy._client_messages[-20:]:
             messages.append(TupleModel(who=message[0], what=message[1]))
     else:
         messages.append(TupleModel(who=clientip, what="请先创建游戏或加入游戏."))
@@ -117,9 +117,9 @@ async def quitgame(clientip: str) -> List[TupleModel]:
     quitclient = multiplayersgames.pop(clientip, None)
     if quitclient is not None:
         logger.debug(f"User IP:{clientip} quit a game.")
-        proxy = get_player_proxy(clientip)
+        proxy = player.utils.get_player_proxy(clientip)
         assert proxy is not None
-        remove_player_proxy(proxy)
+        player.utils.remove_player_proxy(proxy)
         quitclient.exited = True
         quitclient.exit()
 
@@ -154,34 +154,42 @@ async def imme_handle_perception(rpg_game: RPGGame, playerproxy: PlayerProxy) ->
 async def imme_handle_check_status(rpg_game: RPGGame, playerproxy: PlayerProxy) -> None:
 
     context = rpg_game._entitas_context
-    playerentity = context.get_player_entity(playerproxy._name)
-    if playerentity is None:
+    player_entity = context.get_player_entity(playerproxy._name)
+    if player_entity is None:
         return
     #
     context = rpg_game._entitas_context
     helper = CheckStatusActionHelper(context)
-    helper.check_status(playerentity)
+    helper.check_status(player_entity)
     #
-    safename = context.safe_get_entity_name(playerentity)
+    safe_name = context.safe_get_entity_name(player_entity)
     #
-    event = ActorCheckStatusEvent(safename, helper._prop_files_as_weapon_clothes_non_consumable_item, helper.health, helper._prop_files_as_special_components)
-    message = event.to_actor(safename, context)
-    playerproxy.add_actor_message(safename, message)
+    event = ActorCheckStatusEvent(safe_name, helper._prop_files_as_weapon_clothes_non_consumable_item, helper.health, helper._prop_files_as_special_components)
+    message = event.to_actor(safe_name, context)
+    # 
+    playerproxy.add_actor_message(safe_name, message)
 ############################################################################################################
 
-async def playerinput(clientip: str, command: str) -> List[TupleModel]:
+async def handle_player_input(clientip: str, command: str) -> List[TupleModel]:
     #
-    playerproxy = get_player_proxy(clientip)
-    assert playerproxy is not None
-    playerproxy._input_commands.append(command)
+    player_proxy = player.utils.get_player_proxy(clientip)
+    assert player_proxy is not None
+    player_proxy._input_commands.append(command)
+
+    #
+    rpg_game = multiplayersgames[clientip]
+    player_entity = rpg_game._entitas_context.get_player_entity(player_proxy._name)
+    assert player_entity is not None
+    safe_name = rpg_game._entitas_context.safe_get_entity_name(player_entity)
+    player_proxy.add_actor_message(f"{player_proxy._name}/{safe_name}:", f"input = {command}")
     
     #
     if "/checkstatus" in command:
-        await imme_handle_check_status(multiplayersgames[clientip], playerproxy)
+        await imme_handle_check_status(rpg_game, player_proxy)
     elif "/perception" in command:
-        await imme_handle_perception(multiplayersgames[clientip], playerproxy)
+        await imme_handle_perception(rpg_game, player_proxy)
     else:
-        await multiplayersgames[clientip].async_execute()
+        await rpg_game.async_execute()
 
     messages: List[TupleModel] = []
     messages.append(TupleModel(who=clientip, what=f"发送 {command}"))
@@ -202,7 +210,7 @@ async def main(clientip: str , command: str) -> List[TupleModel]:
     elif "/run" in command:
         return await request_game_messages(clientip)
     else:
-        return await playerinput(clientip, command)
+        return await handle_player_input(clientip, command)
 
 @app.get("/")
 async def read_root(request: Request) -> templates.TemplateResponse: # type: ignore

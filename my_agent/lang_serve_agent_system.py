@@ -4,7 +4,6 @@ from langchain_core.messages import HumanMessage, AIMessage
 import json
 from pathlib import Path
 from my_agent.lang_serve_agent import LangServeAgent
-from my_agent.lang_serve_agent_request_task import LangServeAgentRequestTask
 
 class LangServeAgentSystem:
 
@@ -30,33 +29,11 @@ class LangServeAgentSystem:
         logger.error(f"connect_actor_agent: {name} is not registered.")
         return False
 ################################################################################################################################################################################
-    def create_agent_request_task(self, name: str, prompt: str) -> Optional[LangServeAgentRequestTask]:
+    def get_agent(self, name: str) -> Optional[LangServeAgent]:
         if name in self._agents:
-            return LangServeAgentRequestTask(self._agents[name], prompt)
-        logger.error(f"create_agent_request: {name} is not registered.")
-        return None
-################################################################################################################################################################################
-    def create_agent_request_task_without_any_context(self, name: str, prompt: str) -> Optional[LangServeAgentRequestTask]:
-        agent_request = self.create_agent_request_task(name, prompt)
-        if agent_request is None:
-            return None
-        
-        # 不用任何上下文，也不添加到chat history
-        agent_request._input_chat_history = False
-        agent_request._add_prompt_to_chat_history = False
-        agent_request._add_response_to_chat_history = False
-        return agent_request
-################################################################################################################################################################################
-    def create_agent_request_task_for_checking_prompt(self, name: str, prompt: str) -> Optional[LangServeAgentRequestTask]:
-        agent_request = self.create_agent_request_task(name, prompt)
-        if agent_request is None:
-            return None
-        
-        # 因为是为了检查prompt的合理性，就仅关掉response
-        agent_request._input_chat_history = True
-        agent_request._add_prompt_to_chat_history = True
-        agent_request._add_response_to_chat_history = False #!!!!!
-        return agent_request
+            return self._agents[name]
+        logger.error(f"get_actor_agent: {name} is not registered.")
+        return None   
 ################################################################################################################################################################################
     def add_human_message_to_chat_history(self, name: str, chat: str) -> None:
         if name in self._agents:

@@ -1,6 +1,6 @@
 from loguru import logger
 import datetime
-from player.player_proxy import create_player_proxy
+import player.utils
 from player.player_command import (PlayerLogin)
 from rpg_game.create_rpg_game_util import create_rpg_game, test_save, RPGGameClientType
 
@@ -31,13 +31,13 @@ async def main(input_actor_name_as_default: str) -> None:
     player_name_as_terminal_name = "北京柏林互动科技有限公司"
     
     logger.info(f"玩家名字（做为terminal name）:{player_name_as_terminal_name}")
-    player_proxy = create_player_proxy(player_name_as_terminal_name)
+    player_proxy = player.utils.create_player_proxy(player_name_as_terminal_name)
     assert player_proxy is not None
     # 这个必须调用
     rpg_game.add_player(player_name_as_terminal_name)
     #
-    player_login_command = PlayerLogin("/terminal_run_login", rpg_game, player_proxy, final_player_actor_name, False)
-    player_login_command.execute()
+    login_command = PlayerLogin("/terminal_run_login", rpg_game, player_proxy, final_player_actor_name, False)
+    login_command.execute()
 
     # 测试的代码
     #yh_test_save(game_name)

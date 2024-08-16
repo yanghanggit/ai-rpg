@@ -2,7 +2,7 @@ from collections import namedtuple
 
 ############################################# 核心组件（相对通用的？） ############################################################################
 # 全局唯一标识符
-GUIDComponent = namedtuple('GUIDComponent', 'GUID')
+GUIDComponent = namedtuple('GUIDComponent', 'name GUID')
 # 管理员标记，世界级别的AI
 WorldComponent = namedtuple('WorldComponent', 'name')
 # 场景标记
@@ -32,7 +32,8 @@ StageEntryCondStatusComponent = namedtuple('StageEntryCondStatusComponent', 'nam
 StageEntryCondCheckActorStatusComponent = namedtuple('StageEntryCondCheckActorStatusComponent', 'name condition')
 StageEntryCondCheckActorPropsComponent = namedtuple('StageEntryCondCheckActorPropsComponent', 'name condition')
 # 作为门类型的场景的组件标记
-StagePortalComponent = namedtuple('StagePortalComponent', 'name target')  #StagePortalComponent
+StagePortalComponent = namedtuple('StagePortalComponent', 'name target')
+StageGraphComponent = namedtuple('StageGraphComponent', 'name stage_graph')
 ##############################################################################################################################################
 
 

@@ -53,6 +53,7 @@ class RPGEntitasProcessors(Processors):
         from rpg_game.rpg_game import RPGGame
         from ecs_systems.agents_kick_off_system import AgentsKickOffSystem
         from ecs_systems.update_archive_system import UpdateArchiveSystem
+        from ecs_systems.terminal_player_tips_system import TerminalPlayerTipsSystem
 
         ##
         rpg_game = cast(RPGGame, rpg_game)
@@ -115,10 +116,10 @@ class RPGEntitasProcessors(Processors):
 
         ##测试的系统，移除掉不太重要的提示词，例如一些上行命令的。
         processors.add(CompressChatHistorySystem(context)) ## 测试的系统
-        
+
         ##调试用的系统。监视进入运行之后的状态
         processors.add(EndSystem(context))
-
+        
         #保存系统，在所有系统之后
         processors.add(SaveSystem(context, rpg_game))
 
@@ -133,6 +134,7 @@ class RPGEntitasProcessors(Processors):
 
         ## 第一次抓可以被player看到的信息
         processors.add(UpdateClientMessageSystem(context, rpg_game)) 
+        processors.add(TerminalPlayerTipsSystem(context, rpg_game))
 
         ## 开发专用，网页版本不需要
         processors.add(TerminalPlayerInputSystem(context, rpg_game))

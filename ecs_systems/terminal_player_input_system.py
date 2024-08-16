@@ -1,7 +1,8 @@
 from entitas import ExecuteProcessor #type: ignore
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
-from player.player_proxy import PlayerProxy, get_player_proxy
+from player.player_proxy import PlayerProxy
+import player.utils
 from typing import Any, cast, override
 from rpg_game.rpg_game import RPGGame 
 from rpg_game.terminal_rpg_game import TerminalRPGGame
@@ -27,7 +28,7 @@ class TerminalPlayerInputSystem(ExecuteProcessor):
 ############################################################################################################
     def play_via_terminal_and_handle_player_input(self, player_name: str) -> None:
 
-        player_proxy = get_player_proxy(player_name)
+        player_proxy = player.utils.get_player_proxy(player_name)
         if player_proxy is None:
             logger.warning(f"玩家{player_name}不存在，或者玩家未加入游戏")
             return
@@ -41,6 +42,8 @@ class TerminalPlayerInputSystem(ExecuteProcessor):
             usr_input = input(f"[{player_name}/{player_actor_name}]:")
             # 处理玩家的输入
             self.handle_input(self._rpggame, player_proxy, usr_input)
+            # 添加消息
+            player_proxy.add_actor_message(f"{player_name}/{player_actor_name}:", f"input = {usr_input}")
             ## 总之要跳出循环
             break
 ############################################################################################################

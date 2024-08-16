@@ -11,9 +11,7 @@ from ecs_systems.stage_director_component import StageDirectorComponent, OnEnter
 from typing import cast, override, Optional
 from ecs_systems.stage_director_event import IStageDirectorEvent
 from ecs_systems.stage_director_system import StageDirectorSystem
-from ecs_systems.cn_builtin_prompt import (leave_stage_prompt,
-                                          enter_stage_prompt1,
-                                          enter_stage_prompt2)
+import ecs_systems.cn_builtin_prompt as builtin_prompt
 
 ###############################################################################################################################################
 class GoToActionHelper:
@@ -40,10 +38,10 @@ class ActorLeaveStageEvent(IStageDirectorEvent):
         self._target_stage_name: str = target_stage_name
 
     def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
-        return leave_stage_prompt(self._actor_name, self._current_stage_name, self._target_stage_name)
+        return builtin_prompt.leave_stage_prompt(self._actor_name, self._current_stage_name, self._target_stage_name)
     
     def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
-        return leave_stage_prompt(self._actor_name, self._current_stage_name, self._target_stage_name)
+        return builtin_prompt.leave_stage_prompt(self._actor_name, self._current_stage_name, self._target_stage_name)
 ###############################################################################################################################################
 ###############################################################################################################################################
 ###############################################################################################################################################
@@ -58,13 +56,13 @@ class ActorEnterStageEvent(IStageDirectorEvent):
     def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
         if actor_name != self._actor_name:
             # 目标场景内的一切听到的是这个:"xxx进入了场景"
-            return enter_stage_prompt1(self._actor_name, self._target_stage_name)
+            return builtin_prompt.enter_stage_prompt1(self._actor_name, self._target_stage_name)
             
         #通知我自己，我从哪里去往了哪里。这样prompt更加清晰一些
-        return enter_stage_prompt2(self._actor_name, self._target_stage_name, self._last_stage_name)
+        return builtin_prompt.enter_stage_prompt2(self._actor_name, self._target_stage_name, self._last_stage_name)
     
     def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
-        return enter_stage_prompt1(self._actor_name, self._target_stage_name)    
+        return builtin_prompt.enter_stage_prompt1(self._actor_name, self._target_stage_name)    
 ###############################################################################################################################################
 ###############################################################################################################################################
 ###############################################################################################################################################

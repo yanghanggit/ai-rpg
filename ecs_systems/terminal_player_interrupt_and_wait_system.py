@@ -2,7 +2,8 @@ from typing import override
 from entitas import ExecuteProcessor #type: ignore
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
-from player.player_proxy import (PlayerProxy, get_player_proxy)
+from player.player_proxy import (PlayerProxy)
+import player.utils
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from rpg_game.rpg_game import RPGGame 
 from rpg_game.terminal_rpg_game import TerminalRPGGame
@@ -19,7 +20,7 @@ class TerminalPlayerInterruptAndWaitSystem(ExecuteProcessor):
             return
 
         single_player = self._rpg_game.single_player()
-        player_proxy = get_player_proxy(single_player)
+        player_proxy = player.utils.get_player_proxy(single_player)
         player_entity = self._context.get_player_entity(single_player)
         if player_entity is None or player_proxy is None:
             return

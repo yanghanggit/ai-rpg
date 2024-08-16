@@ -1,5 +1,5 @@
-from typing import override
 from entitas import InitializeProcessor, ExecuteProcessor #type: ignore
+from typing import override
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
    
@@ -15,6 +15,6 @@ class BeginSystem(InitializeProcessor, ExecuteProcessor):
     @override
     def execute(self) -> None:
         self._context._execute_count += 1
-        logger.debug(f"世界运行的回合数：{self._context._execute_count}")
+        logger.debug(f"self._context._execute_count = {self._context._execute_count}")
 ############################################################################################################
 

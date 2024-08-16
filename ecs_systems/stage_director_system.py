@@ -4,8 +4,8 @@ from ecs_systems.components import StageComponent, ActorComponent, PlayerCompone
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from ecs_systems.stage_director_component import StageDirectorComponent, OnEnterStageComponent
-from player.player_proxy import get_player_proxy
-from ecs_systems.cn_builtin_prompt import stage_director_begin_prompt, stage_director_end_prompt, stage_director_event_wrap_prompt
+import player.utils
+import ecs_systems.cn_builtin_prompt as builtin_prompt
 from ecs_systems.stage_director_event import IStageDirectorEvent
 
 class StageDirectorSystem(ExecuteProcessor):
@@ -81,15 +81,15 @@ class StageDirectorSystem(ExecuteProcessor):
             return
 
         ### 标记开始
-        context.safe_add_human_message_to_entity(actor_entity, stage_director_begin_prompt(stage_director_comp.name, len(events_2_actor)))
+        context.safe_add_human_message_to_entity(actor_entity, builtin_prompt.stage_director_begin_prompt(stage_director_comp.name, len(events_2_actor)))
 
         for index, event in enumerate(events_2_actor):
-            prompt = stage_director_event_wrap_prompt(event, index)
+            prompt = builtin_prompt.stage_director_event_wrap_prompt(event, index)
             logger.debug(f"director_events_to_actor = {actor_comp.name}:{event}")
             context.safe_add_human_message_to_entity(actor_entity, prompt)
 
         ## 标记结束
-        context.safe_add_human_message_to_entity(actor_entity, stage_director_end_prompt(stage_director_comp.name, len(events_2_actor)))
+        context.safe_add_human_message_to_entity(actor_entity, builtin_prompt.stage_director_end_prompt(stage_director_comp.name, len(events_2_actor)))
 #################################################################################################################################################################
     @staticmethod
     def director_events_to_player(context: RPGEntitasContext, player_entity: Entity, input_stage_director_events: Optional[List[IStageDirectorEvent]]) -> None:
@@ -103,7 +103,7 @@ class StageDirectorSystem(ExecuteProcessor):
         
         player_comp = player_entity.get(PlayerComponent)
         player_name: str = player_comp.name
-        player_proxy = get_player_proxy(player_name)
+        player_proxy = player.utils.get_player_proxy(player_name)
         if player_proxy is None:
             logger.error(f"notify_player_client, 玩家代理不存在{player_name}???")
             return

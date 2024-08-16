@@ -1,11 +1,11 @@
+from entitas import Matcher #type: ignore
 from typing import List, Optional
 from overrides import override
-from entitas import Matcher #type: ignore
 from loguru import logger
 from ecs_systems.components import ( WorldComponent, StageComponent, StagePortalComponent, ActorComponent,  PlayerComponent, 
     SimpleRPGAttrComponent, AppearanceComponent, StageExitCondStatusComponent, StageExitCondCheckActorStatusComponent,
     StageExitCondCheckActorPropsComponent, StageEntryCondStatusComponent, StageEntryCondCheckActorStatusComponent,
-    StageEntryCondCheckActorPropsComponent, BodyComponent, GUIDComponent, CurrentUsingPropComponent)
+    StageEntryCondCheckActorPropsComponent, BodyComponent, GUIDComponent, CurrentUsingPropComponent, StageGraphComponent)
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from build_game.game_builder import GameBuilder
 from entitas.entity import Entity
@@ -66,7 +66,7 @@ class RPGGame(BaseGame):
         
         ## 第5步，最后处理因为需要上一阶段的注册流程
         self.add_code_name_component_to_stages()
-
+ 
         ## 最后！混沌系统，准备测试
         context._chaos_engineering_system.on_post_create_game(context, game_builder)
 
@@ -131,7 +131,7 @@ class RPGGame(BaseGame):
         assert world_system_entity is not None
 
         #必要组件
-        world_system_entity.add(GUIDComponent, context._guid_generator.generate())
+        world_system_entity.add(GUIDComponent, world_system_model.name, context._guid_generator.generate())
         world_system_entity.add(WorldComponent, world_system_model.name)
         
         #添加扩展子系统的功能
@@ -152,10 +152,6 @@ class RPGGame(BaseGame):
 
             assert actor_entity is not None
             assert actor_entity.has(ActorComponent)
-
-            #actor_comp = actor_entity.get(ActorComponent)
-            #logger.info(f"创建Player Entity = {actor_comp.name}")
-            
             assert not actor_entity.has(PlayerComponent)
             actor_entity.add(PlayerComponent, "")
         
@@ -186,7 +182,7 @@ class RPGGame(BaseGame):
         actor_entity = context.create_entity()
 
         # 必要组件
-        actor_entity.add(GUIDComponent, context._guid_generator.generate())
+        actor_entity.add(GUIDComponent, actor_model.name, context._guid_generator.generate())
 
         assert actor_proxy.name == actor_model.name
         actor_entity.add(ActorComponent, actor_model.name, "")
@@ -272,7 +268,7 @@ class RPGGame(BaseGame):
         stage_entity = context.create_entity()
 
         #必要组件
-        stage_entity.add(GUIDComponent, context._guid_generator.generate())
+        stage_entity.add(GUIDComponent, stage_model.name, context._guid_generator.generate())
         stage_entity.add(StageComponent, stage_model.name)
         stage_entity.add(StageDirectorComponent, stage_model.name)
 
@@ -311,8 +307,12 @@ class RPGGame(BaseGame):
         self.add_stage_conditions(stage_entity, stage_model)
 
         ## 创建连接的场景用于PortalStepActionSystem, 目前如果添加就只能添加一个
-        if  stage_model.stage_portal != "":
+        if stage_model.stage_portal != "":
             stage_entity.add(StagePortalComponent, stage_model.name, stage_model.stage_portal)
+
+        if len(stage_model.stage_graph) > 0:
+            logger.debug(f"场景：{stage_model.name}，下一个场景：{stage_model.stage_graph}")
+            stage_entity.add(StageGraphComponent, stage_model.name, set(stage_model.stage_graph))
 
         #添加子系统！
         context._langserve_agent_system.register_agent(stage_model.name, stage_model.url)
@@ -407,4 +407,4 @@ class RPGGame(BaseGame):
     @property
     def game_rounds(self) -> int:
         return self._entitas_context._execute_count
-###############################################################################################################################################
+############################################################################################################################################### d

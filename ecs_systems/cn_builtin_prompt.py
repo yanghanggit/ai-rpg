@@ -9,7 +9,9 @@ from ecs_systems.cn_constant_prompt import _CNConstantPrompt_
 ###############################################################################################################################################
 def kick_off_actor_prompt(kick_off_message: str, about_game: str) -> str:
     prompt = f"""# <%这是角色初始化>游戏世界即将开始运行。这是你的初始设定，你将以此为起点进行游戏
+## 游戏介绍
 {about_game}
+## 初始设定
 {kick_off_message}。
 ## 请结合你的角色设定,更新你的状态。
 ## 输出要求:
@@ -36,6 +38,7 @@ def kick_off_stage_prompt(kick_off_message: str, about_game: str, stage_prop_fil
         actors_prompt = "- 无任何角色。"
 
     prompt = f"""# <%这是场景初始化>游戏世界即将开始运行。这是你的初始设定，你将以此为起点进行游戏
+## 游戏介绍
 {about_game}
 ## 初始设定
 {kick_off_message}。
@@ -51,6 +54,7 @@ def kick_off_stage_prompt(kick_off_message: str, about_game: str, stage_prop_fil
 ###############################################################################################################################################
 def kick_off_world_system_prompt(about_game: str) -> str:
     prompt = f"""# <%这是世界系统初始化>游戏世界即将开始运行，请简要回答你的职能与描述。
+## 游戏介绍
 {about_game}
 """
     return prompt
@@ -73,45 +77,6 @@ def actor_plan_prompt(current_stage: str, stage_enviro_narrate: str) -> str:
 - 结果中要附带'{TagAction.__name__}'。"""
     return prompt
 ###############################################################################################################################################
-# yh prompt优化, 这个要严格测试并慎重处理。
-# prompt = f"""# 场景计划制定
-# ## 场景内道具:
-# {props_prompt}
-# ## 场景内角色:
-# {actors_prompt}
-# ## 场景与角色状态描述规则:
-# - **第1步:** 根据场景事件和道具信息更新场景状态。
-# - **第2步:** 描述角色的动作和神态，避免包括对话、未发生的行为或心理活动。
-# - **第3步:** 将场景状态和角色状态合并，形成客观的场景描述，使用 {StageNarrateAction.__name__}。
-
-# ## 行动计划规则:
-# - 根据场景所受事件的影响，决定你的行动计划。
-# - 保持行动选择与场景发展的一致性。
-
-# ### 输出指南:
-# 请根据‘输出格式指南’严格输出，确保描述客观且行动计划明确，避免预设或猜测角色的未发生行为。
-# """
-
-
-#     prompt = f"""# {_CNConstantPrompt_.STAGE_PLAN_PROMPT_TAG}请输出'你的当前描述'和'你的计划'
-# ## 场景内道具:
-# {props_prompt}
-# ## 场景内角色:
-# {actors_prompt}
-# ## 关于‘你的当前描述‘内容生成规则
-# ### 第1步: 根据场景内发生的事件，场景内的道具的信息，将你的状态更新到‘最新’并以此作为‘场景状态’的内容。
-# ### 第2步: 根据角色‘最新’的动作与神态，作为‘角色状态’的内容。
-# - 不要输出角色的对话内容。
-# - 不要添加角色未发生的事件与信息。
-# - 不要自行推理与猜测角色的可能行为（如对话内容,行为反应与心理活动）。
-# - 不要将过往已经描述过的'角色状态'做复述。
-# ### 第3步: 将'场景状态'的内容与'角色状态'的2部分内容合并,并作为{StageNarrateAction.__name__}的值——"场景描述",
-# - 参考‘输出格式指南’中的:"{StageNarrateAction.__name__}":["场景描述"]
-# ## 关于’你的计划‘内容生成规则
-# - 根据你作为场景受到了什么事件的影响，你可以制定计划，并决定下一步将要做什么。可根据‘输出格式指南’选择相应的行动。
-# ## 输出要求:
-# - 输出结果格式要遵循‘输出格式指南’。
-# - 结果中必须有{StageNarrateAction.__name__},并附带{TagAction.__name__}。"""
 def stage_plan_prompt(stage_prop_files: List[PropFile], actors_in_stage: Set[str]) -> str:
 
     ## 场景内道具
@@ -312,15 +277,19 @@ def replace_mentions_of_your_name_with_you_prompt(content: str, your_name: str) 
         return content
     return content.replace(your_name, "你")
 ################################################################################################################################################
-def update_actor_archive_prompt(actor_name: str, actors_names: str) -> str:
-    if len(actors_names) == 0:
+def update_actor_archive_prompt(actor_name: str, actor_archives: Set[str]) -> str:
+    if len(actor_archives) == 0:
         return f"# {actor_name} 目前没有认识的角色。"
-    return f"# {actor_name} 认识的角色有：{actors_names}。你可以与这些角色进行互动。"
+    #return f"# {actor_name} 认识的角色有：{actors_names}。你可以与这些角色进行互动。"
+    actors_names = ",".join(actor_archives)
+    return f"# {actor_name} 认识的角色有：{actors_names}。"
 ################################################################################################################################################
-def update_stage_archive_prompt(actor_name: str, stages_names: str) -> str:
-    if len(stages_names) == 0:
+def update_stage_archive_prompt(actor_name: str, stage_archives: Set[str]) -> str:
+    if len(stage_archives) == 0:
         return f"# {actor_name} 目前没有已知的场景，无法前往其他地方。"
-    return f"# {actor_name} 已知的场景包括：{stages_names}。可前往这些场景探索。"
+    #return f"# {actor_name} 已知的场景包括：{stages_names}。可前往这些场景探索。"
+    stages_names = ",".join(stage_archives)
+    return f"# {actor_name} 已知的场景包括：{stages_names}。"
 ################################################################################################################################################
 def kill_prompt(attacker_name: str, target_name: str) -> str:
     return f"# {attacker_name}对{target_name}发动了一次攻击,造成了{target_name}死亡。"
@@ -343,28 +312,6 @@ def batch_conversation_action_events_in_stage_prompt(stage_name: str, events: Li
     prompt = json.dumps(batch, ensure_ascii = False)
     return prompt
 ################################################################################################################################################
-
-#     final_prompt = f"""# {_CNConstantPrompt_.USE_PROP_TO_STAGE_PROMPT_TAG} {username} 使用道具 {propname} 对你造成影响。
-# ## 道具 {propname} 说明:
-# {prop_prompt}
-
-# ## 状态更新规则:
-# {exit_cond_status_prompt}
-
-# ## 内容生成指南:
-# ### 第1步: 更新并固定场景状态
-# - 确保场景状态反映当前最新状态。
-# - 避免包含任何角色对话、未发生的事件、角色的潜在行为或心理活动。
-# - 不重复描述已经提及的角色状态。
-
-# ### 第2步: 根据场景状态填写输出内容
-# - 将场景状态详细描述放入 {StageNarrateAction.__name__}。
-# - 参考格式：'{StageNarrateAction.__name__}': ['场景描述']
-
-# ## 输出格式要求:
-# - 严格遵循‘输出格式指南’。
-# - 必须包含 '{StageNarrateAction.__name__}' 和 '{TagAction.__name__}'。
-# """
 def use_prop_to_stage_prompt(username: str, propname: str, prop_prompt: str, exit_cond_status_prompt: str) -> str:
     final_prompt = f"""# {_CNConstantPrompt_.USE_PROP_TO_STAGE_PROMPT_TAG} {username} 使用道具 {propname} 对你造成影响。
 ## {propname}
@@ -501,10 +448,12 @@ f"""### {name}
 {final_input_prompt}
 
 ## 推理逻辑
-- 第1步:如角色有衣服。则代表“角色穿着衣服”。最终推理结果为:裸身的信息结合衣服信息。
-    - 注意！部分身体部位会因穿着衣服被遮蔽。请根据衣服的信息进行推理。如衣服将某些部位遮住，则遮住的部位的信息需要从推理的结果中删除。
-    - 例如：衣服的样式，袖子与裤子等信息都会影响最终外观。
+- 第1步:如角色有衣服。则代表“角色穿着衣服”。最终推理结果为:裸身的信息结合衣服信息。并且是以第三者视角能看到的样子去描述。
+    - 注意！部分身体部位会因穿着衣服被遮蔽。请根据衣服的信息进行推理。
+    - 衣服的样式，袖子与裤子等信息都会影响最终外观。
     - 面具（遮住脸），帽子（遮住头部，或部分遮住脸）等头部装饰物也会影响最终外观。
+    - 被遮住的部位（因为站在第三者视角就无法看见），不需要再次提及，不要出现在推理结果中，如果有，需要删除。
+    - 注意！错误的句子：胸前的黑色印记被衣服遮盖住，无法看见。
 - 第2步:如角色无衣服，推理结果为角色当前为裸身。
     - 注意！如果是人形角色，裸身意味着穿着内衣!
     - 如果是动物，怪物等非人角色，就是最终外观信息。

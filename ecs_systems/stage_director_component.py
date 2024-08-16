@@ -4,7 +4,7 @@ from ecs_systems.components import PlayerComponent, PlayerIsWebClientComponent, 
 from typing import List, Any
 from collections import namedtuple
 from ecs_systems.stage_director_event import IStageDirectorEvent
-from ecs_systems.cn_builtin_prompt import replace_mentions_of_your_name_with_you_prompt
+import ecs_systems.cn_builtin_prompt as builtin_prompt
 
 
 
@@ -39,7 +39,7 @@ class StageDirectorComponent(StageDirectorComponentPrototype):
         for event in director_events:
             event_content = event.to_actor(target_actor_name, extended_context)
             if event_content != "":
-                event_content_replace_mentions_of_your_name = replace_mentions_of_your_name_with_you_prompt(event_content, target_actor_name)
+                event_content_replace_mentions_of_your_name = builtin_prompt.replace_mentions_of_your_name_with_you_prompt(event_content, target_actor_name)
                 ret.append(event_content_replace_mentions_of_your_name)
         return ret
 ##############################################################################################################################################################
@@ -86,7 +86,7 @@ class StageDirectorComponent(StageDirectorComponentPrototype):
             
             event_content = event.to_actor(target_actor_name, extended_context)
             if event_content != "":
-                event_content_replace_mentions_of_your_name = replace_mentions_of_your_name_with_you_prompt(event_content, target_actor_name)
+                event_content_replace_mentions_of_your_name = builtin_prompt.replace_mentions_of_your_name_with_you_prompt(event_content, target_actor_name)
                 ret.append(event_content_replace_mentions_of_your_name)
 
         return ret

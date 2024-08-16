@@ -3,7 +3,8 @@ from typing import override
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from rpg_game.rpg_game import RPGGame 
-from player.player_proxy import PlayerProxy, get_player_proxy
+from player.player_proxy import PlayerProxy
+import player.utils
 from player.player_command import (
                           PlayerAttack, 
                           PlayerGoTo, 
@@ -40,7 +41,7 @@ class HandlePlayerInputSystem(ExecuteProcessor):
             self.play_via_client_and_handle_player_input(player_name)
 ############################################################################################################
     def play_via_client_and_handle_player_input(self, player_name: str) -> None:
-        player_proxy = get_player_proxy(player_name)
+        player_proxy = player.utils.get_player_proxy(player_name)
         if player_proxy is None:
             logger.warning("玩家不存在，或者玩家未加入游戏")
             return
@@ -48,9 +49,6 @@ class HandlePlayerInputSystem(ExecuteProcessor):
         for command in player_proxy._input_commands:
             single_player = self._context.get_player_entity(player_name)
             assert single_player is not None
-            #
-            safe_name = self._context.safe_get_entity_name(single_player)
-            player_proxy.add_actor_message(safe_name, command)
             
             ## 处理玩家的输入
             create_any_player_command_by_input = self.handle_input(self._rpg_game, player_proxy, command)

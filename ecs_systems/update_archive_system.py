@@ -2,7 +2,7 @@ from entitas import ExecuteProcessor, Matcher, Entity #type: ignore
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from ecs_systems.components import (ActorComponent, StageComponent)
-from ecs_systems.cn_builtin_prompt import update_actor_archive_prompt, update_stage_archive_prompt
+import ecs_systems.cn_builtin_prompt as builtin_prompt
 from ecs_systems.cn_constant_prompt import _CNConstantPrompt_
 from typing import Set, override, Dict, List
 import file_system.helper
@@ -182,8 +182,7 @@ class UpdateArchiveSystem(ExecuteProcessor):
                 file_system.helper.update_actor_archive_file(self._context._file_system, actor_comp.name, name, appearance)
 
         # 更新chat history
-        actors_names = ",".join(actor_archives)
-        message = update_actor_archive_prompt(actor_comp.name, actors_names)
+        message = builtin_prompt.update_actor_archive_prompt(actor_comp.name, actor_archives)
 
         exclude_chat_history: Set[str] = set()
         exclude_chat_history.add(message)
@@ -205,8 +204,7 @@ class UpdateArchiveSystem(ExecuteProcessor):
         file_system.helper.add_stage_archive_files(self._context._file_system, actor_comp.name, stage_archives)
 
         # 更新chat history
-        stages_names = ",".join(stage_archives)
-        message = update_stage_archive_prompt(actor_comp.name, stages_names)
+        message = builtin_prompt.update_stage_archive_prompt(actor_comp.name, stage_archives)
 
         exclude_chat_history: Set[str] = set()
         exclude_chat_history.add(message)

@@ -7,7 +7,7 @@ from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from ecs_systems.stage_director_component import StageDirectorComponent
 from ecs_systems.stage_director_event import IStageDirectorEvent
-from ecs_systems.cn_builtin_prompt import broadcast_action_prompt
+import ecs_systems.cn_builtin_prompt as builtin_prompt
 
 ####################################################################################################################################
 ####################################################################################################################################
@@ -20,10 +20,10 @@ class StageOrActorBroadcastEvent(IStageDirectorEvent):
         self._broadcast_content = broadcast_content
     
     def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
-        return broadcast_action_prompt(self._who_broadcast, self._stagename, self._broadcast_content)
+        return builtin_prompt.broadcast_action_prompt(self._who_broadcast, self._stagename, self._broadcast_content)
     
     def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
-        return broadcast_action_prompt(self._who_broadcast, self._stagename, self._broadcast_content)
+        return builtin_prompt.broadcast_action_prompt(self._who_broadcast, self._stagename, self._broadcast_content)
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################

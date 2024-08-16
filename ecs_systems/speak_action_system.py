@@ -6,7 +6,7 @@ from gameplay_checks.conversation_check import conversation_check, ErrorConversa
 from ecs_systems.stage_director_component import StageDirectorComponent
 from ecs_systems.stage_director_event import IStageDirectorEvent
 from typing import override
-from ecs_systems.cn_builtin_prompt import speak_action_prompt
+import ecs_systems.cn_builtin_prompt as builtin_prompt
 
 
 
@@ -21,10 +21,10 @@ class StageOrActorSpeakEvent(IStageDirectorEvent):
         self._message: str = message
 
     def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
-        return speak_action_prompt(self._who, self._target, self._message)
+        return builtin_prompt.speak_action_prompt(self._who, self._target, self._message)
     
     def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
-        return speak_action_prompt(self._who, self._target, self._message)
+        return builtin_prompt.speak_action_prompt(self._who, self._target, self._message)
 ####################################################################################################################################
 class SpeakActionSystem(ReactiveProcessor):
     def __init__(self, context: RPGEntitasContext) -> None:

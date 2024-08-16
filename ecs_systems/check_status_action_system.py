@@ -5,7 +5,7 @@ from ecs_systems.components import SimpleRPGAttrComponent, ActorComponent
 from ecs_systems.stage_director_component import StageDirectorComponent
 from typing import List, override
 from file_system.files_def import PropFile
-from ecs_systems.cn_builtin_prompt import check_status_action_prompt
+import ecs_systems.cn_builtin_prompt as builtin_prompt
 from ecs_systems.stage_director_event import IStageDirectorEvent
 
 ####################################################################################################################################
@@ -69,7 +69,7 @@ class ActorCheckStatusEvent(IStageDirectorEvent):
         if actor_name != self._who:
             # 只有自己知道
             return ""
-        return check_status_action_prompt(self._who, self._prop_files_as_weapon_clothes_non_consumable_item, self._health, self._prop_files_as_special_components)
+        return builtin_prompt.check_status_action_prompt(self._who, self._prop_files_as_weapon_clothes_non_consumable_item, self._health, self._prop_files_as_special_components)
     
     def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
         return ""

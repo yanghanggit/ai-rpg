@@ -1,6 +1,7 @@
 from entitas import ExecuteProcessor, Entity, Matcher #type: ignore
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from player.player_proxy import PlayerProxy, get_player_proxy
+from player.player_proxy import PlayerProxy
+import player.utils
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from ecs_systems.action_components import MindVoiceAction, WhisperAction, SpeakAction, \
     BroadcastAction, StageNarrateAction, \
@@ -25,7 +26,7 @@ class UpdateClientMessageSystem(ExecuteProcessor):
         assert len(self._rpg_game.player_names) > 0
         assert isinstance(self._rpg_game, WebServerMultiplayersRPGGame) or isinstance(self._rpg_game, TerminalRPGGame)
         for player_name in self._rpg_game.player_names:
-            player_proxy = get_player_proxy(player_name)
+            player_proxy = player.utils.get_player_proxy(player_name)
             player_entity = self._context.get_player_entity(player_name)
             if player_entity is None or player_proxy is None:
                 logger.error(f"玩家{player_name}不存在，或者玩家未加入游戏")
@@ -35,8 +36,11 @@ class UpdateClientMessageSystem(ExecuteProcessor):
 ############################################################################################################
     def add_message_to_player_proxy(self, player_proxy: PlayerProxy, player_entity: Entity) -> None:
 
+        safe_name = self._context.safe_get_entity_name(player_entity)
+        player_proxy.add_actor_message(safe_name, f"execute_count = {self._context._execute_count}")
+
         self.stage_enviro_narrate_action_2_message(player_proxy, player_entity)
-        self.push_cache_messages(player_proxy, player_entity) # 先把缓存的消息推送出去，在场景描述之后
+        self.handle_cache_messages(player_proxy, player_entity) # 先把缓存的消息推送出去，在场景描述之后
 
         self.mind_voice_action_2_message(player_proxy, player_entity)
         self.whisper_action_2_message(player_proxy, player_entity)
@@ -190,11 +194,12 @@ class UpdateClientMessageSystem(ExecuteProcessor):
                 logger.error("go_to_action_2_message error")
                 continue
 
-            stagename = action._values[0]
-            player_proxy.add_actor_message(action._actor_name, f"""准备去往{stagename}""")
+            stage_name = action._values[0]
+            player_proxy.add_actor_message(action._actor_name, f"""准备去往{stage_name}""")
 ############################################################################################################
-    def push_cache_messages(self, player_proxy: PlayerProxy, player_entity: Entity) -> None:
+    def handle_cache_messages(self, player_proxy: PlayerProxy, player_entity: Entity) -> None:
         for message in player_proxy._cache_messages:
             player_proxy.add_actor_message(message[0], message[1])
         player_proxy._cache_messages.clear()
 ############################################################################################################
+    

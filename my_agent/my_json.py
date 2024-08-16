@@ -63,19 +63,3 @@ def extract_markdown_json_block(jsonblock: str) -> str:
     
     return jsonblock
 ############################################################################################################
-# TEST_ERROR_REPEAT_JSON = f"""
-# {{
-#     "PerceptionAction": ["灰颜墓地"],
-#     "SpeakAction": ["@哈哈哈哈哈>啦啦啦啦"],
-#     "CheckStatusAction": ["埃利亚斯·格雷"],
-#     "TagAction": ["守墓人", "阴郁", "畸形"]
-# }}
-# {{
-#     "PerceptionAction": ["灰颜墓地"],
-#     "BroadcastAction": ["哈哈哈哈哈"],
-#     "CheckStatusAction": ["埃利亚斯·格雷"]
-# }}"""
-# # 测试代码
-# if is_repeat_error_json(TEST_ERROR_REPEAT_JSON):
-#     jjj = merge_json(TEST_ERROR_REPEAT_JSON)
-#     logger.debug(jjj)

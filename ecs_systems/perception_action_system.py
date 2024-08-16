@@ -6,7 +6,7 @@ from loguru import logger
 from typing import List, Dict, override
 from ecs_systems.stage_director_component import StageDirectorComponent
 from ecs_systems.stage_director_event import IStageDirectorEvent
-from ecs_systems.cn_builtin_prompt import perception_action_prompt
+import ecs_systems.cn_builtin_prompt as builtin_prompt
 from file_system.files_def import PropFile
 
 ####################################################################################################################################
@@ -63,7 +63,7 @@ class ActorPerceptionEvent(IStageDirectorEvent):
     def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
         if actor_name != self._who:
             return "" # 不是自己，不显示
-        return perception_action_prompt(self._who, self._current_stage_name, self._actors_in_stage, self._props_in_stage)
+        return builtin_prompt.perception_action_prompt(self._who, self._current_stage_name, self._actors_in_stage, self._props_in_stage)
     
     def to_stage(self, stagename: str, extended_context: RPGEntitasContext) -> str:
         return "" # 不显示给场景

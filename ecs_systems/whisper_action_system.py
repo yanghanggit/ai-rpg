@@ -6,7 +6,7 @@ from typing import override
 from gameplay_checks.conversation_check import conversation_check, ErrorConversationEnable
 from ecs_systems.stage_director_component import StageDirectorComponent
 from ecs_systems.stage_director_event import IStageDirectorEvent
-from ecs_systems.cn_builtin_prompt import whisper_action_prompt
+import ecs_systems.cn_builtin_prompt as builtin_prompt
 
 
 ####################################################################################################################################
@@ -23,7 +23,7 @@ class StageOrActorWhisperEvent(IStageDirectorEvent):
         if actor_name != self._who or actor_name != self._target:
             # 只有这2个人才能听到
             return ""
-        return whisper_action_prompt(self._who, self._target, self._message)
+        return builtin_prompt.whisper_action_prompt(self._who, self._target, self._message)
     
     def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
         ## 场景应该是彻底听不到

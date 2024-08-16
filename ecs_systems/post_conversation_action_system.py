@@ -6,7 +6,7 @@ from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from ecs_systems.stage_director_component import StageDirectorComponent
 from typing import List, Set, Dict
-from ecs_systems.cn_builtin_prompt import batch_conversation_action_events_in_stage_prompt
+import ecs_systems.cn_builtin_prompt as builtin_prompt
 from my_agent.lang_serve_agent_request_task import LangServeAgentRequestTask, LangServeAgentAsyncRequestTasksGather
 
 # 这个类就是故意打包将对话类事件先进行一次request，如果LLM发现有政策问题就会抛异常，不会将污染的message加入chat history，这样就不可能进入chat_history。
@@ -17,7 +17,7 @@ class PostConversationActionSystem(ReactiveProcessor):
         super().__init__(context)
         self._context: RPGEntitasContext = context
         self._async_execute: bool = True
-        self._request_tasks: Dict[str, LangServeAgentRequestTask] = {}
+        self._tasks: Dict[str, LangServeAgentRequestTask] = {}
 #################################################################################################################################################
     @override 
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
@@ -39,10 +39,10 @@ class PostConversationActionSystem(ReactiveProcessor):
             if stage_entity is not None:
                 stage_entities.add(stage_entity)
 
-        self._request_tasks.clear()
+        self._tasks.clear()
         for stage_entity in stage_entities:
             self.before(stage_entity)
-            self.handle(stage_entity, self._async_execute, self._request_tasks)
+            self.handle(stage_entity, self._async_execute, self._tasks)
             self.after(stage_entity)
 #################################################################################################################################################   
     def before(self, stage_entity: Entity) -> None:
@@ -64,7 +64,10 @@ class PostConversationActionSystem(ReactiveProcessor):
             batch_events2stage_prompt = self.batch_stage_events(stage_director_comp.name, raw_events2stage) 
             #logger.info(f"PostConversationActionSystem: {stage_director_comp.name} : {batch_events2stage_prompt}")
             if async_execute:
-                task = self._context._langserve_agent_system.create_agent_request_task_for_checking_prompt(stage_director_comp.name, batch_events2stage_prompt)
+                agent = self._context._langserve_agent_system.get_agent(stage_director_comp.name)
+                assert agent is not None
+                task = LangServeAgentRequestTask.create_for_checking_prompt(agent, batch_events2stage_prompt)
+                #task = self._context._langserve_agent_system.create_agent_request_task_for_checking_prompt(stage_director_comp.name, batch_events2stage_prompt)
                 assert task is not None
                 request_tasks[stage_director_comp.name] = task
             else:
@@ -89,7 +92,9 @@ class PostConversationActionSystem(ReactiveProcessor):
                 continue
 
             if async_execute:
-                task = self._context._langserve_agent_system.create_agent_request_task_for_checking_prompt(actor_comp.name, batch_events2actor_prompt)
+                agent = self._context._langserve_agent_system.get_agent(actor_comp.name)
+                assert agent is not None
+                task = LangServeAgentRequestTask.create_for_checking_prompt(agent, batch_events2stage_prompt)
                 assert task is not None
                 request_tasks[actor_comp.name] = task
             else:
@@ -97,7 +102,10 @@ class PostConversationActionSystem(ReactiveProcessor):
 #################################################################################################################################################
     def imme_request(self, name: str, prompt: str) -> None:
         try:
-            agent_request = self._context._langserve_agent_system.create_agent_request_task_for_checking_prompt(name, prompt)
+            agent = self._context._langserve_agent_system.get_agent(name)
+            assert agent is not None
+            agent_request = LangServeAgentRequestTask.create_for_checking_prompt(agent, prompt)
+            assert agent_request is not None
             if agent_request is None:
                 logger.error(f"imme_request: {name} request error.")
                 return
@@ -110,15 +118,15 @@ class PostConversationActionSystem(ReactiveProcessor):
             logger.error(f"imme_request: {name} request error.")
 #################################################################################################################################################
     def batch_stage_events(self, stagename: str, events2stage: List[str]) -> str:
-        return batch_conversation_action_events_in_stage_prompt(stagename, events2stage)
+        return builtin_prompt.batch_conversation_action_events_in_stage_prompt(stagename, events2stage)
 #################################################################################################################################################
     def batch_actor_events(self, stagename: str, events2actor: List[str]) -> str:
-        return batch_conversation_action_events_in_stage_prompt(stagename, events2actor)
+        return builtin_prompt.batch_conversation_action_events_in_stage_prompt(stagename, events2actor)
 #################################################################################################################################################
     async def async_post_execute(self) -> None:
-        if len(self._request_tasks) == 0:
+        if len(self._tasks) == 0:
             return   
-        tasks_gather = LangServeAgentAsyncRequestTasksGather("PostConversationActionSystem Gather", self._request_tasks)
+        tasks_gather = LangServeAgentAsyncRequestTasksGather("PostConversationActionSystem", self._tasks)
         await tasks_gather.gather()
-        self._request_tasks.clear()
+        self._tasks.clear()
 #################################################################################################################################################

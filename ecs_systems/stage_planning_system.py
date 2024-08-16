@@ -9,7 +9,7 @@ from loguru import logger
 from typing import Dict, Set, List
 from gameplay_checks.planning_check import check_component_register
 from file_system.files_def import PropFile
-from ecs_systems.cn_builtin_prompt import stage_plan_prompt
+import ecs_systems.cn_builtin_prompt as builtin_prompt
 from my_agent.lang_serve_agent_request_task import LangServeAgentRequestTask, LangServeAgentAsyncRequestTasksGather
 
 #######################################################################################################################################
@@ -21,7 +21,7 @@ class StagePlanningSystem(ExecuteProcessor):
 
     def __init__(self, context: RPGEntitasContext) -> None:
         self._context = context
-        self._request_tasks: Dict[str, LangServeAgentRequestTask] = {}
+        self._tasks: Dict[str, LangServeAgentRequestTask] = {}
 #######################################################################################################################################
     @override
     def execute(self) -> None:
@@ -30,23 +30,23 @@ class StagePlanningSystem(ExecuteProcessor):
     @override
     async def async_pre_execute(self) -> None:
         # step1: 添加任务
-        self._request_tasks.clear()
-        self.add_tasks(self._request_tasks)
+        self._tasks.clear()
+        self.add_tasks(self._tasks)
         # step可选：混沌工程做测试
         self._context._chaos_engineering_system.on_stage_planning_system_excute(self._context)
         # step2: 并行执行requests
-        if len(self._request_tasks) == 0:
+        if len(self._tasks) == 0:
             return
         
-        tasks_gather = LangServeAgentAsyncRequestTasksGather("StagePlanningSystem Gather", self._request_tasks)
-        request_result = await tasks_gather.gather()
-        if len(request_result) == 0:
+        tasks_gather = LangServeAgentAsyncRequestTasksGather("StagePlanningSystem", self._tasks)
+        response = await tasks_gather.gather()
+        if len(response) == 0:
             logger.warning(f"StagePlanningSystem: request_result is empty.")
             return
 
         # step3: 处理结果
-        self.handle(self._request_tasks)
-        self._request_tasks.clear()
+        self.handle(self._tasks)
+        self._tasks.clear()
 #######################################################################################################################################
     def handle(self, request_tasks: Dict[str, LangServeAgentRequestTask]) -> None:
 
@@ -114,9 +114,13 @@ class StagePlanningSystem(ExecuteProcessor):
         request_tasks.clear()
         entities = self._context.get_group(Matcher(all_of=[StageComponent, AutoPlanningComponent])).entities
         for entity in entities:
-            prompt = stage_plan_prompt(self.get_props_in_stage(entity), self.get_actor_names_in_stage(entity))
+            prompt = builtin_prompt.stage_plan_prompt(self.get_props_in_stage(entity), self.get_actor_names_in_stage(entity))
             stage_comp = entity.get(StageComponent)
-            task = self._context._langserve_agent_system.create_agent_request_task(stage_comp.name, prompt)
+
+            agent = self._context._langserve_agent_system.get_agent(stage_comp.name)
+            assert agent is not None, f"StagePlanningSystem: agent is None, {stage_comp.name}"
+            task = LangServeAgentRequestTask.create(agent, prompt)
+            assert task is not None, f"StagePlanningSystem: create_agent_request_task failed, {stage_comp.name}"
             assert task is not None, f"StagePlanningSystem: create_agent_request_task failed, {stage_comp.name}"
             if task is not None:
                 request_tasks[stage_comp.name] = task

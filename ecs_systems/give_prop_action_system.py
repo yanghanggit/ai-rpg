@@ -8,7 +8,7 @@ from gameplay_checks.conversation_check import conversation_check, ErrorConversa
 from typing import List, override
 from ecs_systems.stage_director_component import StageDirectorComponent
 from ecs_systems.stage_director_event import IStageDirectorEvent
-from ecs_systems.cn_builtin_prompt import give_prop_action_prompt
+import ecs_systems.cn_builtin_prompt as builtin_prompt
 import file_system.helper
 from file_system.files_def import PropFile
 
@@ -24,7 +24,7 @@ class ActorGivePropEvent(IStageDirectorEvent):
     def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
         if actor_name != self._from_who or actor_name != self._to_who:
             return ""
-        return give_prop_action_prompt(self._from_who, self._to_who, self._prop_name, self._action_result)
+        return builtin_prompt.give_prop_action_prompt(self._from_who, self._to_who, self._prop_name, self._action_result)
     
     def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
         return ""

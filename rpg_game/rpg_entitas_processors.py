@@ -9,7 +9,7 @@ from ecs_systems.actor_planning_system import ActorPlanningSystem
 from ecs_systems.speak_action_system import SpeakActionSystem
 from ecs_systems.attack_action_system import AttackActionSystem
 from ecs_systems.go_to_action_system import GoToActionSystem
-from ecs_systems.check_before_go_to_action_system import CheckBeforeGoToActionSystem
+from ecs_systems.pre_go_to_action_system import PreBeforeGoToActionSystem
 from ecs_systems.stage_director_system import StageDirectorSystem
 from ecs_systems.destroy_system import DestroySystem
 from ecs_systems.tag_action_system import TagActionSystem
@@ -24,7 +24,6 @@ from ecs_systems.pre_planning_system import PrePlanningSystem
 from ecs_systems.post_planning_system import PostPlanningSystem
 from ecs_systems.pre_action_system import PreActionSystem
 from ecs_systems.post_action_system import PostActionSystem
-from ecs_systems.portal_step_action_system import PortalStepActionSystem
 from ecs_systems.perception_action_system import PerceptionActionSystem
 from ecs_systems.steal_action_system import StealActionSystem
 from ecs_systems.give_prop_action_system import GivePropActionSystem
@@ -98,8 +97,7 @@ class RPGEntitasProcessors(Processors):
         processors.add(CheckStatusActionSystem(context)) # 道具交互类行为之后，可以发起自检
 
         # 场景切换类行为，非常重要而且必须在最后!
-        processors.add(PortalStepActionSystem(context)) 
-        processors.add(CheckBeforeGoToActionSystem(context)) # 去往场景之前的检查与实际的执行
+        processors.add(PreBeforeGoToActionSystem(context)) # 去往场景之前的检查与实际的执行
         processors.add(GoToActionSystem(context))
         processors.add(PerceptionActionSystem(context)) # 场景切换类行为之后可以发起感知
 

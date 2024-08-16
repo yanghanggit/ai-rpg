@@ -70,12 +70,12 @@ class ExcelEditorStage:
         return cast(str, self._my_data["kick_off_message"])
 ################################################################################################################################
     @property
-    def stage_portal(self) -> str:
+    def stage_portal(self) -> List[str]:
         assert self._my_data is not None
-        val = self._my_data["stage_portal"]
-        if val is None:
-            return ""
-        return str(val)
+        if self._my_data["stage_portal"] is None:
+            return []
+        data = cast(str, self._my_data["stage_portal"])
+        return data.split(';')
 ################################################################################################################################
     @property
     def stage_graph(self) -> List[str]:

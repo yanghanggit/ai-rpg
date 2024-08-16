@@ -23,8 +23,6 @@ AttackAction = namedtuple('AttackAction', 'action')
 DeadAction = namedtuple('DeadAction', 'action')
 # 离开当前场景并去往
 GoToAction = namedtuple('GoToAction', 'action')
-# 当前场景为‘门’，通过门进入下一个场景
-PortalStepAction = namedtuple('PortalStepAction', 'action')
 # 寻找场景内道具
 SearchPropAction = namedtuple('SearchPropAction', 'action')
 # 从目标角色处偷取
@@ -65,7 +63,6 @@ ACTOR_AVAILABLE_ACTIONS_REGISTER = [AttackAction,
                          BroadcastAction,
                          WhisperAction,
                          SearchPropAction, 
-                         PortalStepAction,
                          PerceptionAction,
                          StealPropAction,
                          GivePropAction,
@@ -80,7 +77,6 @@ ACTOR_CONVERSATION_ACTIONS_REGISTER = [SpeakAction,
 #角色交互类动作
 ACTOR_INTERACTIVE_ACTIONS_REGISTER = [SearchPropAction, 
                                     GoToAction, 
-                                    PortalStepAction, 
                                     PerceptionAction,
                                     StealPropAction,
                                     GivePropAction,

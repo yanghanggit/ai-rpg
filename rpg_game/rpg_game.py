@@ -2,7 +2,7 @@ from entitas import Matcher #type: ignore
 from typing import List, Optional
 from overrides import override
 from loguru import logger
-from ecs_systems.components import ( WorldComponent, StageComponent, StagePortalComponent, ActorComponent,  PlayerComponent, 
+from ecs_systems.components import ( WorldComponent, StageComponent, ActorComponent,  PlayerComponent, 
     SimpleRPGAttrComponent, AppearanceComponent, StageExitCondStatusComponent, StageExitCondCheckActorStatusComponent,
     StageExitCondCheckActorPropsComponent, StageEntryCondStatusComponent, StageEntryCondCheckActorStatusComponent,
     StageEntryCondCheckActorPropsComponent, BodyComponent, GUIDComponent, CurrentUsingPropComponent, StageGraphComponent)
@@ -306,9 +306,9 @@ class RPGGame(BaseGame):
         # 添加场景的条件：包括进入和离开的条件，自身变化条件等等
         self.add_stage_conditions(stage_entity, stage_model)
 
-        ## 创建连接的场景用于PortalStepActionSystem, 目前如果添加就只能添加一个
-        if stage_model.stage_portal != "":
-            stage_entity.add(StagePortalComponent, stage_model.name, stage_model.stage_portal)
+        # 暂时没用
+        if len(stage_model.stage_portal) > 0:
+            logger.debug(f"场景：{stage_model.name}，可传送的场景：{stage_model.stage_portal}")
 
         if len(stage_model.stage_graph) > 0:
             logger.debug(f"场景：{stage_model.name}，下一个场景：{stage_model.stage_graph}")

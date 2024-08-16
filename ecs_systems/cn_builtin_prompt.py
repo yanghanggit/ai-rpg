@@ -151,10 +151,8 @@ def prop_type_prompt(prop_file: PropFile) -> str:
 ###############################################################################################################################################
 def prop_prompt(prop_file: PropFile, need_description_prompt: bool, need_appearance_prompt: bool) -> str:
 
-    _prop_type_ = prop_type_prompt(prop_file)
-
     prompt = f"""### {prop_file.name}
-- 类型:{_prop_type_}
+- 类型:{prop_type_prompt(prop_file)}
 """
     if need_description_prompt:
         prompt += f"- 道具描述:{prop_file.description}\n"
@@ -241,22 +239,19 @@ def stage_director_begin_prompt(stage_name: str, events_count: int) -> str:
 def stage_director_end_prompt(stage_name: str, events_count: int) -> str:
     return f"""# 以上是{stage_name}场景内近期发生的{events_count}个事件。"""
 ################################################################################################################################################
-def whisper_action_prompt(srcname: str, destname: str, content: str) -> str:
-    prompt = f"# {_CNConstantPrompt_.WHISPER_ACTION_TAG} {srcname}对{destname}私语道:{content}"   
-    return prompt
+def whisper_action_prompt(src_name: str, dest_name: str, content: str) -> str:
+    return f"# {_CNConstantPrompt_.WHISPER_ACTION_TAG} {src_name}对{dest_name}私语道:{content}"   
 ################################################################################################################################################
-def broadcast_action_prompt(srcname: str, destname: str, content: str) -> str:
-    prompt = f"# {_CNConstantPrompt_.BROADCASE_ACTION_TAG} {srcname}对{destname}里的所有人说:{content}"   
-    return prompt
+def broadcast_action_prompt(src_name: str, dest_name: str, content: str) -> str:
+    return f"# {_CNConstantPrompt_.BROADCASE_ACTION_TAG} {src_name}对{dest_name}里的所有人说:{content}"   
 ################################################################################################################################################
-def speak_action_prompt(srcname: str, destname: str, content: str) -> str:
-    prompt = f"# {_CNConstantPrompt_.SPEAK_ACTION_TAG} {srcname}对{destname}说:{content}"   
-    return prompt
+def speak_action_prompt(src_name: str, dest_name: str, content: str) -> str:
+    return f"# {_CNConstantPrompt_.SPEAK_ACTION_TAG} {src_name}对{dest_name}说:{content}"   
 ################################################################################################################################################
-def steal_prop_action_prompt(whosteal: str, targetname: str, propname: str, stealres: bool) -> str:
-    if not stealres:
-        return f"{whosteal}从{targetname}盗取{propname}, 失败了"
-    return f"{whosteal}从{targetname}成功盗取了{propname}"
+def steal_prop_action_prompt(actor_name: str, target_name: str, prop_name: str, action_result: bool) -> str:
+    if not action_result:
+        return f"{actor_name}从{target_name}盗取{prop_name}, 失败了"
+    return f"{actor_name}从{target_name}成功盗取了{prop_name}"
 ################################################################################################################################################
 def give_prop_action_prompt(from_who: str, to_who: str, prop_name: str, action_result: bool) -> str:
     if not action_result:
@@ -312,9 +307,10 @@ def batch_conversation_action_events_in_stage_prompt(stage_name: str, events: Li
     prompt = json.dumps(batch, ensure_ascii = False)
     return prompt
 ################################################################################################################################################
-def use_prop_to_stage_prompt(username: str, propname: str, prop_prompt: str, exit_cond_status_prompt: str) -> str:
-    final_prompt = f"""# {_CNConstantPrompt_.USE_PROP_TO_STAGE_PROMPT_TAG} {username} 使用道具 {propname} 对你造成影响。
-## {propname}
+def use_prop_to_stage_prompt(actor_name: str, prop_name: str, prop_prompt: str, exit_cond_status_prompt: str) -> str:
+
+    ret_prompt = f"""# {_CNConstantPrompt_.USE_PROP_TO_STAGE_PROMPT_TAG} {actor_name} 使用道具 {prop_name} 对你造成影响。
+## {prop_name}
 {prop_prompt}
 
 ## 状态更新规则
@@ -324,17 +320,23 @@ def use_prop_to_stage_prompt(username: str, propname: str, prop_prompt: str, exi
 - 严格遵循‘输出格式指南’。
 - 必须包含 {StageNarrateAction.__name__} 和 {TagAction.__name__}。
 """
-    return final_prompt
+    return ret_prompt
 ################################################################################################################################################
 def stage_exit_conditions_check_prompt(actor_name: str, 
                                       current_stage_name: str, 
-                                      stage_cond_status_prompt: str, 
+                                      stage_cond_status_prompt: str,
+
                                       cond_check_actor_status_prompt: str, 
                                       actor_status_prompt: str, 
+                                      
                                       cond_check_actor_props_prompt: str,
-                                      actor_props_prompt: str) -> str:
+                                      input_actor_props_prompt: List[str]) -> str:
     
-    final_prompt = f"""# {actor_name} 想要离开场景: {current_stage_name}。
+    actor_props_prompt = str(_CNConstantPrompt_.NO_ACTOR_PROPS_PROMPT)
+    if len(input_actor_props_prompt) > 0:
+        actor_props_prompt = "\n".join(input_actor_props_prompt)
+    
+    ret_prompt = f"""# {actor_name} 想要离开场景: {current_stage_name}。
 # 第1步: 根据当前‘你的状态’判断是否满足离开条件
 ## 你的预设离开条件: 
 {stage_cond_status_prompt}
@@ -365,14 +367,23 @@ def stage_exit_conditions_check_prompt(actor_name: str,
 - Yes: 允许离开
 - No: 不允许离开
 """
-    return final_prompt
+    return ret_prompt
 ################################################################################################################################################
-def stage_entry_conditions_check_prompt(actor_name: str, current_stage_name: str, 
-                                      stage_cond_status_prompt: str, 
-                                      cond_check_actor_status_prompt: str, actor_status_prompt: str, 
-                                      cond_check_actor_props_prompt: str, actor_props_prompt: str) -> str:
+def stage_entry_conditions_check_prompt(actor_name: str, 
+                                        current_stage_name: str, 
+                                        stage_cond_status_prompt: str, 
 
-    final_prompt = f"""# {actor_name} 想要进入场景: {current_stage_name}。
+                                        cond_check_actor_status_prompt: str, 
+                                        actor_status_prompt: str, 
+                                        
+                                        cond_check_actor_props_prompt: str, 
+                                        input_actor_props_prompt: List[str]) -> str:
+    
+    actor_props_prompt = str(_CNConstantPrompt_.NO_ACTOR_PROPS_PROMPT)
+    if len(input_actor_props_prompt) > 0:
+        actor_props_prompt = "\n".join(input_actor_props_prompt)
+
+    ret_prompt = f"""# {actor_name} 想要进入场景: {current_stage_name}。
 # 第1步: 根据当前‘你的状态’判断是否满足进入条件
 ## 你的预设进入条件: 
 {stage_cond_status_prompt}
@@ -403,23 +414,24 @@ def stage_entry_conditions_check_prompt(actor_name: str, current_stage_name: str
 - Yes: 允许进入
 - No: 不允许进入
 """
-    return final_prompt
+    return ret_prompt
 ################################################################################################################################################
 def exit_stage_failed_beacuse_stage_refuse_prompt(actor_name: str, current_stage_name: str, tips: str) -> str:
      return f"""# {actor_name} 想要离开场景: {current_stage_name}，但是失败了。
 ## 说明:
 {tips}"""
 ################################################################################################################################################
-def enter_stage_failed_beacuse_stage_refuse_prompt(actor_name: str, stagename: str, tips: str) -> str:
-    return f"""# {actor_name} 想要进入场景: {stagename}，但是失败了。
+def enter_stage_failed_beacuse_stage_refuse_prompt(actor_name: str, stage_name: str, tips: str) -> str:
+    return f"""# {actor_name} 想要进入场景: {stage_name}，但是失败了。
 ## 说明:
 {tips}"""
 ################################################################################################################################################
 def actor_status_when_stage_change_prompt(safe_name: str, appearance_info: str) -> str:
-    return f"""### {safe_name}\n- 角色外观:{appearance_info}\n"""
+    return f"""### {safe_name}
+- 角色外观:{appearance_info}"""
 ################################################################################################################################################
-def use_prop_no_response_prompt(username: str, propname: str, targetname: str) -> str:
-    return f"# {username}对{targetname}使用道具{propname}，但没有任何反应。"
+def use_prop_no_response_prompt(actor_name: str, prop_name: str, target_name: str) -> str:
+    return f"# {actor_name}对{target_name}使用道具{prop_name}，但没有任何反应。"
 ################################################################################################################################################
 def actors_body_and_clothe_prompt(actors_body_and_clothe:  Dict[str, tuple[str, str]]) -> str:
         appearance_info_list: List[str] = []
@@ -472,4 +484,13 @@ f"""### {name}
 - 不要使用```json```来封装内容。
 """
         return ret_prompt
+################################################################################################################################################
+def make_unknown_guid_stage_name_prompt(guid: int) -> str:
+    return f"未知场景:{guid}"
+################################################################################################################################################
+def is_unknown_guid_stage_name_prompt(stage_name: str) -> bool:
+    return "未知场景" in stage_name
+################################################################################################################################################
+def extract_from_unknown_guid_stage_name_prompt(stage_name: str) -> int:
+    return int(stage_name.split(":")[1])
 ################################################################################################################################################

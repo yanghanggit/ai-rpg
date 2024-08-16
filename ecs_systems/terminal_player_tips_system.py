@@ -8,6 +8,7 @@ import player.utils
 from ecs_systems.components import PlayerComponent, ActorComponent, StageGraphComponent, GUIDComponent
 from file_system.files_def import StageArchiveFile
 from player.player_proxy import PlayerProxy
+import ecs_systems.cn_builtin_prompt as builtin_prompt
 
 class TerminalPlayerTipsSystem(ExecuteProcessor):
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
@@ -37,12 +38,12 @@ class TerminalPlayerTipsSystem(ExecuteProcessor):
             assert player_entity.has(ActorComponent)
 
             # 当前场景能去往的场景
-            self._tips_next_stages(player_proxy, player_entity)
+            self.tips_next_stages(player_proxy, player_entity)
             
             # 人物已知的场景
-            self._tip_stage_archives(player_proxy, player_entity)
+            self.tip_stage_archives(player_proxy, player_entity)
 ############################################################################################################
-    def _tips_next_stages(self, player_proxy: PlayerProxy, player_entity: Entity) -> None:
+    def tips_next_stages(self, player_proxy: PlayerProxy, player_entity: Entity) -> None:
         assert player_entity is not None
         assert player_proxy is not None
         
@@ -71,9 +72,10 @@ class TerminalPlayerTipsSystem(ExecuteProcessor):
 
         assert stage_entity.has(GUIDComponent)
         guid_comp = stage_entity.get(GUIDComponent)
-        return f"未知场景({guid_comp.GUID})"
+        return builtin_prompt.make_unknown_guid_stage_name_prompt(guid_comp.GUID)
 ############################################################################################################
-    def _tip_stage_archives(self, player_proxy: PlayerProxy, player_entity: Entity) -> None:
+    def tip_stage_archives(self, player_proxy: PlayerProxy, player_entity: Entity) -> None:
+
         assert player_entity is not None
         assert player_proxy is not None
 

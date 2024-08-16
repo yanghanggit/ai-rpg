@@ -32,12 +32,9 @@ StageEntryCondStatusComponent = namedtuple('StageEntryCondStatusComponent', 'nam
 StageEntryCondCheckActorStatusComponent = namedtuple('StageEntryCondCheckActorStatusComponent', 'name condition')
 StageEntryCondCheckActorPropsComponent = namedtuple('StageEntryCondCheckActorPropsComponent', 'name condition')
 # 作为门类型的场景的组件标记
-StagePortalComponent = namedtuple('StagePortalComponent', 'name target')
 StageGraphComponent = namedtuple('StageGraphComponent', 'name stage_graph')
 ##############################################################################################################################################
 
-
-#SimpleRPGAttrComponent
 ######################################### 测试组件（业务强相关）：RPG Game #######################################################################
 SimpleRPGAttrComponent = namedtuple('SimpleRPGAttrComponent', 'name maxhp hp attack defense')
 SimpleRPGWeaponComponent = namedtuple('SimpleRPGWeaponComponent', 'name weaponname maxhp attack defense')

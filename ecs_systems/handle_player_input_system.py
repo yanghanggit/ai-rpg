@@ -13,7 +13,7 @@ from player.player_command import (
                           PlayerUseProp, 
                           PlayerWhisper, 
                           PlayerSearchProp,
-                          PlayerPortalStep,
+                          #PlayerPortalStep,
                           PlayerSteal,
                           PlayerGiveProp, 
                           PlayerPerception,
@@ -97,9 +97,9 @@ class HandlePlayerInputSystem(ExecuteProcessor):
             propname = split_command(usr_input, command)
             PlayerSearchProp(command, rpg_game, player_proxy, propname).execute()
 
-        elif "/portalstep" in usr_input:
-            command = "/portalstep"
-            PlayerPortalStep(command, rpg_game, player_proxy).execute()
+        # elif "/portalstep" in usr_input:
+        #     command = "/portalstep"
+        #     PlayerPortalStep(command, rpg_game, player_proxy).execute()
 
         elif "/stealprop" in usr_input:
             command = "/stealprop"

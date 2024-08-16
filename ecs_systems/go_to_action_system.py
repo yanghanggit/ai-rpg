@@ -88,14 +88,9 @@ class GoToActionSystem(ReactiveProcessor):
     def handle(self, entity: Entity) -> None:
 
         assert entity.has(GoToAction)
-        go_to_action_comp = entity.get(GoToAction)
-        action: AgentAction = go_to_action_comp.action
-        stage_name = action.value(0)
-        if stage_name == "":
-            logger.error(f"GoToActionSystem: {action} has no stage name")
-            return
-
-        helper = GoToActionHelper(self._context, entity, stage_name)
+        go_to_comp = entity.get(GoToAction)
+        action: AgentAction = go_to_comp.action
+        helper = GoToActionHelper(self._context, entity, action.value(0))
         if helper._target_stage_entity is None or helper._current_stage_entity is None or helper._target_stage_entity == helper._current_stage_entity:
             return
 
@@ -116,6 +111,9 @@ class GoToActionSystem(ReactiveProcessor):
         
         # 真正的进入场景
         helper._entity.replace(ActorComponent, actor_comp.name, helper._target_stage_name)
+        # 添加标记，忽略一次目标场景的导演事件
+        helper._entity.replace(OnEnterStageComponent, helper._target_stage_name)
+        # 更新场景标记
         self._context.change_stage_tag_component(helper._entity, helper._current_stage_name, helper._target_stage_name)
 
         #进入场景的事件需要通知相关的人
@@ -124,9 +122,6 @@ class GoToActionSystem(ReactiveProcessor):
                                                            helper._entity, 
                                                            enter_stage_event)
         
-        # 添加标记，忽略一次目标场景的导演事件
-        helper._entity.replace(OnEnterStageComponent, helper._target_stage_name)
-
         # 只添加进入场景的事件
         StageDirectorSystem.director_events_to_actor(self._context, helper._entity, [enter_stage_event])
         StageDirectorSystem.director_events_to_player(self._context, helper._entity,  [enter_stage_event])
@@ -147,17 +142,20 @@ class GoToActionSystem(ReactiveProcessor):
 
         # 离开场景 设置成空
         helper._entity.replace(ActorComponent, actor_comp.name, "")
+
+        # 移除这个
+        if helper._entity.has(OnEnterStageComponent):
+            helper._entity.remove(OnEnterStageComponent)
+
+        # 更新场景标记
         self._context.change_stage_tag_component(helper._entity, helper._current_stage_name, "")
 ###############################################################################################################################################
     def on_enter_target_stage(self, helper: GoToActionHelper) -> None:
-        
         actor_comp = helper._entity.get(ActorComponent)
-        stage_name = actor_comp.current_stage
-        actor_entities = self._context.actors_in_stage(stage_name)
-
+        actor_entities = self._context.actors_in_stage(actor_comp.current_stage)
         for actor_entity in actor_entities:
             if not actor_entity.has(PerceptionAction):
                 #进入新的场景之后，进入者与场景内所有人都加一次感知，这里会自动检查外观信息
-                actor_entity.add(PerceptionAction, AgentAction(actor_comp.name, PerceptionAction.__name__, [stage_name]))
+                actor_entity.add(PerceptionAction, AgentAction(actor_comp.name, PerceptionAction.__name__, [actor_comp.current_stage]))
 ###############################################################################################################################################
 

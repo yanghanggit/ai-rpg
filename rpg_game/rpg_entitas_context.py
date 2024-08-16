@@ -1,6 +1,6 @@
 from entitas import (Entity, Matcher, Context)# type: ignore   
 from loguru import logger
-from ecs_systems.components import (WorldComponent, StageComponent, ActorComponent, PlayerComponent, AppearanceComponent)
+from ecs_systems.components import (WorldComponent, StageComponent, ActorComponent, PlayerComponent, AppearanceComponent, GUIDComponent)
 from file_system.file_system import FileSystem
 from extended_systems.kick_off_message_system import KickOffMessageSystem
 from extended_systems.code_name_component_system import CodeNameComponentSystem
@@ -185,5 +185,12 @@ class RPGEntitasContext(Context):
 
         return ret
 #############################################################################################################################
-
+    def get_entity_by_guid(self, guid: int) -> Optional[Entity]:
+        entities = self.get_group(Matcher(GUIDComponent)).entities
+        for entity in entities:
+            guid_comp = entity.get(GUIDComponent)
+            if guid_comp.GUID == guid:
+                return entity
+        return None
+#############################################################################################################################
         

@@ -2,7 +2,7 @@ from entitas import Entity #type: ignore
 from rpg_game.rpg_game import RPGGame
 from loguru import logger
 from ecs_systems.action_components import (BroadcastAction, SpeakAction, AttackAction, 
-    GoToAction, UsePropAction, WhisperAction, SearchPropAction, PortalStepAction,
+    GoToAction, UsePropAction, WhisperAction, SearchPropAction,
     PerceptionAction, StealPropAction, GivePropAction, CheckStatusAction)
 from ecs_systems.components import StageComponent, ActorComponent, PlayerComponent, PlayerIsWebClientComponent, PlayerIsTerminalClientComponent
 from my_agent.agent_action import AgentAction
@@ -158,38 +158,6 @@ class PlayerGoTo(PlayerCommand):
 
         # 模拟添加一个plan的发起。
         human_message = f"""{{"{GoToAction.__name__}": ["{target_stage_name}"]}}"""
-        self.add_human_message(player_entity, human_message)
-####################################################################################################################################
-####################################################################################################################################
-#################################################################################################################################### 
-class PlayerPortalStep(PlayerCommand):
-
-    """
-    玩家传送的行为：PortalStepAction    
-    """
-
-    def __init__(self, name: str, rpg_game: RPGGame, player_proxy: PlayerProxy) -> None:
-        super().__init__(name, rpg_game, player_proxy)
-
-    def execute(self) -> None:
-        context = self._rpggame._entitas_context
-        player_entity = context.get_player_entity(self._player_proxy._name)
-        if player_entity is None:
-            logger.warning("debug: player is None")
-            return
-        
-        actor_comp = player_entity.get(ActorComponent)
-        current_stage_name: str = actor_comp.current_stage
-        stage_entity = context.get_stage_entity(current_stage_name)
-        if stage_entity is None:
-            logger.error(f"PortalStepActionSystem: {current_stage_name} is None")
-            return
-
-        # 添加一个行动
-        player_entity.add(PortalStepAction, AgentAction(actor_comp.name, PortalStepAction.__name__, [current_stage_name]))
-        
-        # 模拟添加一个plan的发起。
-        human_message = f"""{{"{PortalStepAction.__name__}": ["{current_stage_name}"]}}"""
         self.add_human_message(player_entity, human_message)
 ####################################################################################################################################
 ####################################################################################################################################

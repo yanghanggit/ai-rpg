@@ -36,8 +36,7 @@ class UpdateClientMessageSystem(ExecuteProcessor):
 ############################################################################################################
     def add_message_to_player_proxy(self, player_proxy: PlayerProxy, player_entity: Entity) -> None:
 
-        safe_name = self._context.safe_get_entity_name(player_entity)
-        player_proxy.add_actor_message(safe_name, f"execute_count = {self._context._execute_count}")
+        player_proxy.add_system_message(f"游戏回合:{self._context._execute_count}")
 
         self.stage_enviro_narrate_action_2_message(player_proxy, player_entity)
         self.handle_cache_messages(player_proxy, player_entity) # 先把缓存的消息推送出去，在场景描述之后

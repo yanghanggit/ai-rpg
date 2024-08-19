@@ -4,17 +4,13 @@ from loguru import logger
 from ecs_systems.components import (
     StageComponent,
     ActorComponent,
-    WorldComponent,
-    SimpleRPGAttrComponent,
+    RPGAttributesComponent,
     SimpleRPGWeaponComponent,
     SimpleRPGArmorComponent,
 )
 
-# import json
 from typing import Dict, override, List, Any
 import file_system.helper
-
-# from file_system.files_def import PropFile
 
 
 class EndSystem(InitializeProcessor, ExecuteProcessor):
@@ -34,25 +30,13 @@ class EndSystem(InitializeProcessor, ExecuteProcessor):
 
     ############################################################################################################
     def debug_dump(self) -> None:
-        # logger.debug(f"{'=' * 100}") #方便看
-        # 打印所有的世界信息
-        # self.dump_world()
+
         # 打印一下所有的场景信息
         self.dump_stages_and_actors()
         # 打印一下所有的agent信息
         self._context._langserve_agent_system.dump_chat_history()
-        # 打印所有的道具归属
-        # self.dump_prop_files()
         # 打印所有的角色的状态信息（例如属性）
         self.dump_status_profile()
-        # logger.debug(f"{'=' * 100}")  #方便看
-
-    ############################################################################################################
-    def dump_world(self) -> None:
-        world_entities = self._context.get_group(Matcher(WorldComponent)).entities
-        for world_entity in world_entities:
-            world_comp = world_entity.get(WorldComponent)
-            logger.debug(f"/dump_world:{world_comp.name}")
 
     ############################################################################################################
     def dump_stages_and_actors(self) -> None:
@@ -83,13 +67,6 @@ class EndSystem(InitializeProcessor, ExecuteProcessor):
         return map
 
     ############################################################################################################
-    # def dump_prop_files(self) -> None:
-    #     prop_file_dict = self._context._file_system.get_base_file_dict(PropFile)
-    #     dump_data: Dict[str, str] = {}
-    #     for owner_name, prop_files in prop_file_dict.items():
-    #         dump_data[owner_name] = ",".join([str(prop_file) for prop_file in prop_files])
-    #     logger.debug(f"{json.dumps(dump_data, ensure_ascii = False)}")
-    ############################################################################################################
     def dump_status_profile(self) -> List[Dict[str, Any]]:
 
         ret: List[Dict[str, Any]] = []
@@ -97,7 +74,7 @@ class EndSystem(InitializeProcessor, ExecuteProcessor):
         entities = self._context.get_group(
             Matcher(
                 any_of=[
-                    SimpleRPGAttrComponent,
+                    RPGAttributesComponent,
                     SimpleRPGWeaponComponent,
                     SimpleRPGArmorComponent,
                 ]
@@ -107,10 +84,10 @@ class EndSystem(InitializeProcessor, ExecuteProcessor):
 
             final_dict: Dict[str, Any] = {}
 
-            if entity.has(SimpleRPGAttrComponent):
-                rpg_attr_comp = entity.get(SimpleRPGAttrComponent)
+            if entity.has(RPGAttributesComponent):
+                rpg_attr_comp = entity.get(RPGAttributesComponent)
                 attr_dict: Dict[str, Any] = {
-                    SimpleRPGAttrComponent.__name__: rpg_attr_comp._asdict()
+                    RPGAttributesComponent.__name__: rpg_attr_comp._asdict()
                 }
                 assert len(attr_dict) > 0
                 final_dict.update(attr_dict)

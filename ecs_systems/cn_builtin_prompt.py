@@ -187,7 +187,7 @@ def prop_type_prompt(prop_file: PropFile) -> str:
         ret = "衣服(用于提高防御力与改变角色外观)"
     elif prop_file.is_non_consumable_item:
         ret = "非消耗品"
-    elif prop_file.is_special_component:
+    elif prop_file.is_special:
         ret = "特殊能力"
 
     return ret
@@ -213,7 +213,7 @@ def prop_prompt(
 ###############################################################################################################################################
 def special_component_prompt(prop_file: PropFile) -> str:
 
-    assert prop_file.is_special_component
+    assert prop_file.is_special
 
     prompt = f"""### {prop_file.name}
 - {prop_file.description}

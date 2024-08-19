@@ -50,7 +50,7 @@ class BaseFile(ABC):
 ## 表达一个道具.
 class PropFile(BaseFile):
 
-    TYPE_SPECIAL_COMPONENT = "SpecialComponent"
+    TYPE_SPECIAL = "Special"
     TYPE_WEAPON = "Weapon"
     TYPE_CLOTHES = "Clothes"
     TYPE_NON_CONSUMABLE_ITEM = "NonConsumableItem"
@@ -98,9 +98,9 @@ class PropFile(BaseFile):
 
     ############################################################################################################
     @property
-    def is_special_component(self) -> bool:
-        assert PropFile.TYPE_SPECIAL_COMPONENT == "SpecialComponent"
-        return self._prop_model.type == PropFile.TYPE_SPECIAL_COMPONENT
+    def is_special(self) -> bool:
+        assert PropFile.TYPE_SPECIAL == "Special"
+        return self._prop_model.type == PropFile.TYPE_SPECIAL
 
     ############################################################################################################
     @property

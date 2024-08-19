@@ -1,6 +1,6 @@
 from entitas import Matcher, ExecuteProcessor, Entity  # type: ignore
 from ecs_systems.components import (
-    SimpleRPGAttrComponent,
+    RPGAttributesComponent,
     SimpleRPGWeaponComponent,
     SimpleRPGArmorComponent,
     StageComponent,
@@ -28,7 +28,7 @@ class SimpleRPGPreFightSystem(ExecuteProcessor):
     ######################################################################################################################################################
     def clear_weapons_and_armors(self) -> None:
         rpgentities: Set[Entity] = self._context.get_group(
-            Matcher(SimpleRPGAttrComponent)
+            Matcher(RPGAttributesComponent)
         ).entities.copy()
         for entity in rpgentities:
 
@@ -42,7 +42,7 @@ class SimpleRPGPreFightSystem(ExecuteProcessor):
     # 临时的方案，最暴力的方式
     def rebuild_weapons_from_prop_files(self) -> None:
         rpgentities: Set[Entity] = self._context.get_group(
-            Matcher(SimpleRPGAttrComponent)
+            Matcher(RPGAttributesComponent)
         ).entities
         for entity in rpgentities:
             if entity.has(StageComponent):
@@ -63,7 +63,7 @@ class SimpleRPGPreFightSystem(ExecuteProcessor):
     ######################################################################################################################################################
     def rebuild_armors_from_prop_files(self) -> None:
         rpgentities: Set[Entity] = self._context.get_group(
-            Matcher(SimpleRPGAttrComponent)
+            Matcher(RPGAttributesComponent)
         ).entities
         for entity in rpgentities:
             if entity.has(StageComponent):

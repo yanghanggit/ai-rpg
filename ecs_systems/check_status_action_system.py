@@ -1,7 +1,7 @@
 from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity  # type: ignore
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from ecs_systems.action_components import CheckStatusAction, DeadAction
-from ecs_systems.components import SimpleRPGAttrComponent, ActorComponent
+from ecs_systems.components import RPGAttributesComponent, ActorComponent
 from ecs_systems.stage_director_component import StageDirectorComponent
 from typing import List, override
 from file_system.files_def import PropFile
@@ -38,13 +38,13 @@ class CheckStatusActionHelper:
                 or prop_file.is_non_consumable_item
             ):
                 self._prop_files_as_weapon_clothes_non_consumable_item.append(prop_file)
-            elif prop_file.is_special_component:
+            elif prop_file.is_special:
                 self._prop_files_as_special_components.append(prop_file)
 
     def check_health(self, entity: Entity) -> None:
-        if not entity.has(SimpleRPGAttrComponent):
+        if not entity.has(RPGAttributesComponent):
             return
-        rpg_attr_comp = entity.get(SimpleRPGAttrComponent)
+        rpg_attr_comp = entity.get(RPGAttributesComponent)
         self._maxhp = rpg_attr_comp.maxhp
         self._hp = rpg_attr_comp.hp
 

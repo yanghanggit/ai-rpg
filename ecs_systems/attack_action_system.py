@@ -1,7 +1,7 @@
 from entitas import Matcher, ReactiveProcessor, GroupEvent, Entity  # type: ignore
 from ecs_systems.action_components import AttackAction, DeadAction
 from ecs_systems.components import (
-    SimpleRPGAttrComponent,
+    RPGAttributesComponent,
     SimpleRPGWeaponComponent,
     SimpleRPGArmorComponent,
 )
@@ -89,21 +89,21 @@ class AttackActionSystem(ReactiveProcessor):
     ######################################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(AttackAction) and entity.has(SimpleRPGAttrComponent)
+        return entity.has(AttackAction) and entity.has(RPGAttributesComponent)
 
     ######################################################################################################################################################
     @override
     def react(self, entities: list[Entity]) -> None:
         for entity in entities:
-            self._attack(entity)
+            self.handle(entity)
 
     ######################################################################################################################################################
     # todo 函数太长了，后续可以考虑拆分！！！！！
-    def _attack(self, _entity: Entity) -> None:
+    def handle(self, actor_or_stage_entity: Entity) -> None:
         context = self._context
-        rpgcomp: SimpleRPGAttrComponent = _entity.get(SimpleRPGAttrComponent)
-        fightcomp: AttackAction = _entity.get(AttackAction)
-        action: AgentAction = fightcomp.action
+        rpg_attr_comp = actor_or_stage_entity.get(RPGAttributesComponent)
+        attack_action = actor_or_stage_entity.get(AttackAction)
+        action: AgentAction = attack_action.action
         for value_as_target_name in action._values:
 
             target_entity = context.get_entity_by_codename_component(
@@ -115,7 +115,7 @@ class AttackActionSystem(ReactiveProcessor):
                 )
                 continue
 
-            if not target_entity.has(SimpleRPGAttrComponent):
+            if not target_entity.has(RPGAttributesComponent):
                 logger.warning(
                     f"攻击者{action._actor_name}意图攻击的对象{value_as_target_name}没有SimpleRPGComponent,本次攻击无效."
                 )
@@ -123,7 +123,7 @@ class AttackActionSystem(ReactiveProcessor):
 
             conversation_check_error = (
                 gameplay.conversation_helper.check_conversation_enable(
-                    self._context, _entity, value_as_target_name
+                    self._context, actor_or_stage_entity, value_as_target_name
                 )
             )
             if (
@@ -154,8 +154,8 @@ class AttackActionSystem(ReactiveProcessor):
                 ):
 
                     # 名字拿出来，看一下
-                    assert _entity is not None
-                    stage1 = self._context.safe_get_stage_entity(_entity)
+                    assert actor_or_stage_entity is not None
+                    stage1 = self._context.safe_get_stage_entity(actor_or_stage_entity)
                     assert stage1 is not None
                     stage1_name = self._context.safe_get_entity_name(stage1)
 
@@ -172,13 +172,11 @@ class AttackActionSystem(ReactiveProcessor):
                 continue
 
             # 目标拿出来
-            target_rpg_comp: SimpleRPGAttrComponent = target_entity.get(
-                SimpleRPGAttrComponent
-            )
+            target_rpg_comp = target_entity.get(RPGAttributesComponent)
 
             # 简单的战斗计算，简单的血减掉伤害
             hp = target_rpg_comp.hp
-            damage = self.final_attack_val(_entity)  # rpgcomp.attack
+            damage = self.final_attack_val(actor_or_stage_entity)  # rpgcomp.attack
             # 必须控制在0和最大值之间
             damage = damage - self.final_defense_val(
                 target_entity
@@ -191,7 +189,7 @@ class AttackActionSystem(ReactiveProcessor):
 
             # 结果修改
             target_entity.replace(
-                SimpleRPGAttrComponent,
+                RPGAttributesComponent,
                 target_rpg_comp.name,
                 target_rpg_comp.maxhp,
                 lefthp,
@@ -204,7 +202,7 @@ class AttackActionSystem(ReactiveProcessor):
 
             ## 死后处理大流程，step1——道具怎么办？后续可以封装的复杂一些: 夺取唯一性道具.
             if isdead:
-                self.unique_prop_be_taken_away(_entity, target_entity)
+                self.unique_prop_be_taken_away(actor_or_stage_entity, target_entity)
 
             ## 可以加一些别的。。。。。。。。。。。。
             ## 比如杀人多了会被世界管理员记住——你是大坏蛋
@@ -226,16 +224,16 @@ class AttackActionSystem(ReactiveProcessor):
                 # 直接打死
                 StageDirectorComponent.add_event_to_stage_director(
                     context,
-                    _entity,
-                    StageOrActorKillEvent(rpgcomp.name, value_as_target_name),
+                    actor_or_stage_entity,
+                    StageOrActorKillEvent(rpg_attr_comp.name, value_as_target_name),
                 )
             else:
                 # 没有打死，就把伤害通知给导演
                 StageDirectorComponent.add_event_to_stage_director(
                     context,
-                    _entity,
+                    actor_or_stage_entity,
                     StageOrActorAttackEvent(
-                        rpgcomp.name,
+                        rpg_attr_comp.name,
                         value_as_target_name,
                         damage,
                         lefthp,
@@ -246,17 +244,15 @@ class AttackActionSystem(ReactiveProcessor):
     ######################################################################################################################################################
     ## 杀死对方就直接夺取唯一性道具。
     def unique_prop_be_taken_away(
-        self, _entity: Entity, _target_entity: Entity
+        self, attacker_entity: Entity, target_entity: Entity
     ) -> None:
 
-        rpg_comp: SimpleRPGAttrComponent = _entity.get(SimpleRPGAttrComponent)
-        target_rpg_comp: SimpleRPGAttrComponent = _target_entity.get(
-            SimpleRPGAttrComponent
-        )
-        logger.info(f"{rpg_comp.name} kill => {target_rpg_comp.name}")
+        rpg_attr_comp = attacker_entity.get(RPGAttributesComponent)
+        target_rpg_attr_comp = target_entity.get(RPGAttributesComponent)
+        logger.info(f"{rpg_attr_comp.name} kill => {target_rpg_attr_comp.name}")
 
         prop_files = self._context._file_system.get_files(
-            PropFile, target_rpg_comp.name
+            PropFile, target_rpg_attr_comp.name
         )
         for prop_file in prop_files:
             if not prop_file.is_unique:
@@ -268,8 +264,8 @@ class AttackActionSystem(ReactiveProcessor):
             # self._context._file_system.give_prop_file(target_rpg_comp.name, rpg_comp.name, prop_file._name)
             file_system.helper.give_prop_file(
                 self._context._file_system,
-                target_rpg_comp.name,
-                rpg_comp.name,
+                target_rpg_attr_comp.name,
+                rpg_attr_comp.name,
                 prop_file._name,
             )
 
@@ -279,8 +275,8 @@ class AttackActionSystem(ReactiveProcessor):
         final: int = 0
 
         # 基础的伤害
-        rpgcomp: SimpleRPGAttrComponent = entity.get(SimpleRPGAttrComponent)
-        final += cast(int, rpgcomp.attack)
+        rpg_attr_comp = entity.get(RPGAttributesComponent)
+        final += cast(int, rpg_attr_comp.attack)
 
         # 计算武器带来的伤害
         if entity.has(SimpleRPGWeaponComponent):
@@ -295,8 +291,8 @@ class AttackActionSystem(ReactiveProcessor):
         final: int = 0
 
         # 基础防御力
-        rpgcomp: SimpleRPGAttrComponent = entity.get(SimpleRPGAttrComponent)
-        final += cast(int, rpgcomp.defense)
+        rpg_attr_comp = entity.get(RPGAttributesComponent)
+        final += cast(int, rpg_attr_comp.defense)
 
         # 计算衣服带来的防御力
         if entity.has(SimpleRPGArmorComponent):

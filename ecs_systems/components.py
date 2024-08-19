@@ -49,8 +49,9 @@ StageEntryCondCheckActorPropsComponent = namedtuple(
 ##############################################################################################################################################
 
 ######################################### 测试组件（业务强相关）：RPG Game #######################################################################
-SimpleRPGAttrComponent = namedtuple(
-    "SimpleRPGAttrComponent", "name maxhp hp attack defense"
+# RPGAttributesComponent
+RPGAttributesComponent = namedtuple(
+    "RPGAttributesComponent", "name maxhp hp attack defense"
 )
 SimpleRPGWeaponComponent = namedtuple(
     "SimpleRPGWeaponComponent", "name weaponname maxhp attack defense"

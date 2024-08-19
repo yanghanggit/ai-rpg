@@ -1,7 +1,7 @@
 from entitas import Entity, Matcher, ExecuteProcessor #type: ignore
 from overrides import override
 from ecs_systems.components import (StageComponent, AutoPlanningComponent, ActorComponent)
-from ecs_systems.action_components import STAGE_AVAILABLE_ACTIONS_REGISTER, STAGE_CONVERSATION_ACTIONS_REGISTER
+from ecs_systems.action_components import STAGE_AVAILABLE_ACTIONS_REGISTER
 from my_agent.agent_plan import AgentPlan
 from my_agent.agent_action import AgentAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
@@ -38,8 +38,8 @@ class StagePlanningSystem(ExecuteProcessor):
         if len(self._tasks) == 0:
             return
         
-        tasks_gather = LangServeAgentAsyncRequestTasksGather("StagePlanningSystem", self._tasks)
-        response = await tasks_gather.gather()
+        gather = LangServeAgentAsyncRequestTasksGather("StagePlanningSystem", self._tasks)
+        response = await gather.gather()
         if len(response) == 0:
             logger.warning(f"StagePlanningSystem: request_result is empty.")
             return
@@ -110,18 +110,20 @@ class StagePlanningSystem(ExecuteProcessor):
         safe_stage_name = self._context.safe_get_entity_name(entity)
         return self._context._file_system.get_files(PropFile, safe_stage_name)
 #######################################################################################################################################
-    def add_tasks(self, request_tasks: Dict[str, LangServeAgentRequestTask]) -> None:
-        request_tasks.clear()
-        entities = self._context.get_group(Matcher(all_of=[StageComponent, AutoPlanningComponent])).entities
-        for entity in entities:
-            prompt = builtin_prompt.stage_plan_prompt(self.get_props_in_stage(entity), self.get_actor_names_in_stage(entity))
-            stage_comp = entity.get(StageComponent)
+    def add_tasks(self, out_put_request_tasks: Dict[str, LangServeAgentRequestTask]) -> None:
+        out_put_request_tasks.clear()
 
+        stage_entities = self._context.get_group(Matcher(all_of=[StageComponent, AutoPlanningComponent])).entities
+        for stage_entity in stage_entities:
+
+            stage_comp = stage_entity.get(StageComponent)
             agent = self._context._langserve_agent_system.get_agent(stage_comp.name)
-            assert agent is not None, f"StagePlanningSystem: agent is None, {stage_comp.name}"
-            task = LangServeAgentRequestTask.create(agent, prompt)
-            assert task is not None, f"StagePlanningSystem: create_agent_request_task failed, {stage_comp.name}"
-            assert task is not None, f"StagePlanningSystem: create_agent_request_task failed, {stage_comp.name}"
+            if agent is None:
+                continue
+            
+            task = LangServeAgentRequestTask.create(agent, 
+                                                    builtin_prompt.stage_plan_prompt(self.get_props_in_stage(stage_entity), self.get_actor_names_in_stage(stage_entity)))
+            
             if task is not None:
-                request_tasks[stage_comp.name] = task
+                out_put_request_tasks[stage_comp.name] = task
 #######################################################################################################################################

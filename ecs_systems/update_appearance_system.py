@@ -66,37 +66,28 @@ class UpdateAppearanceSystem(InitializeProcessor, ExecuteProcessor):
 ###############################################################################################################################################
     # 有衣服的，请求更新，通过LLM来推理外观。
     def request_update_appearance(self, actors_body_and_clothe:  Dict[str, tuple[str, str]], world_entity: Entity) -> bool:
-        assert world_entity is not None
+        # 请求更新
+        safe_name = self._context.safe_get_entity_name(world_entity)
+
+        agent = self._context._langserve_agent_system.get_agent(safe_name)
+        if  agent is None:
+            return False
+        
         final_prompt = builtin_prompt.actors_body_and_clothe_prompt(actors_body_and_clothe)
         if final_prompt == "":
             return False
-
-        # 请求更新
-        safe_name = self._context.safe_get_entity_name(world_entity)
-        try:
-
-            agent = self._context._langserve_agent_system.get_agent(safe_name)
-            assert agent is not None
-            task = LangServeAgentRequestTask.create_without_any_context(agent, final_prompt)
-            assert task is not None
-
-            if task is None:
-                logger.error(f"{safe_name} request error.")
-                return False
-
-            #
-            response = task.request()
-            if response is None:
-                logger.error(f"{safe_name} request response is None.")
-                return False
-            
-            json_response: Dict[str, str] = json.loads(response)
-            self.on_request_success(json_response)
-
-        except Exception as e:
-            logger.error(f"{safe_name} request error = {e}")
+        
+        task = LangServeAgentRequestTask.create_without_any_context(agent, final_prompt)
+        if task is None:
             return False
         
+        response = task.request()
+        if response is None:
+            logger.error(f"{safe_name} request response is None.")
+            return False
+        
+        json_response: Dict[str, str] = json.loads(response)
+        self.on_request_success(json_response)
         return True
 ###############################################################################################################################################
     # 请求成功后的处理，就是把AppearanceComponent 设置一遍

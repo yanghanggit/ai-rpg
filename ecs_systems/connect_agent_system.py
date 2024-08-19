@@ -3,9 +3,7 @@ from entitas import Entity, Matcher, InitializeProcessor # type: ignore
 from ecs_systems.components import WorldComponent, StageComponent, ActorComponent
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 
-
-# 远程连接agent
-class AgentsConnectSystem(InitializeProcessor):
+class ConnectAgentSystem(InitializeProcessor):
     def __init__(self, context: RPGEntitasContext) -> None:
         self._context: RPGEntitasContext = context
 ###############################################################################################################################################

@@ -22,6 +22,7 @@ class ExcelEditorActor:
         self._actor_data_base: Dict[str, ExcelDataActor] = actor_data_base
         self._prop_data_base: Dict[str, ExcelDataProp] = prop_data_base
         self._prop_data: List[tuple[ExcelDataProp, int]] = []
+        
         # 解析道具
         self.parse_actor_prop()
 #################################################################################################################################

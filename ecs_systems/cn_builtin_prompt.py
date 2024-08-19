@@ -15,7 +15,7 @@ def kick_off_actor_prompt(kick_off_message: str, about_game: str) -> str:
 {kick_off_message}。
 ## 请结合你的角色设定,更新你的状态。
 ## 输出要求:
-- 请遵循'输出格式指南'。
+- 请遵循 输出格式指南。
 - 返回结果仅带'{MindVoiceAction.__name__}'这个key"""
     return prompt
 ###############################################################################################################################################
@@ -49,7 +49,7 @@ def kick_off_stage_prompt(kick_off_message: str, about_game: str, stage_prop_fil
 ## 输出要求:
 - 请遵循 输出格式指南。
 - 返回结果不要提及任何场景内角色与道具。
-- 返回结果仅带'{StageNarrateAction.__name__}'这个key"""
+- 返回结果仅带'{StageNarrateAction.__name__}'"""
     return prompt
 ###############################################################################################################################################
 def kick_off_world_system_prompt(about_game: str) -> str:
@@ -59,22 +59,23 @@ def kick_off_world_system_prompt(about_game: str) -> str:
 """
     return prompt
 ###############################################################################################################################################
-def actor_plan_prompt(current_stage: str, stage_enviro_narrate: str) -> str:
+def actor_plan_prompt(current_stage: str, input_stage_enviro_narrate: str) -> str:
     
     current_stage_prompt = "未知"
     if current_stage != "":
         current_stage_prompt = current_stage
 
-    current_stage_enviro_narrate_prompt = ""
-    if stage_enviro_narrate != "":
-        current_stage_enviro_narrate_prompt = f"""## 当前场景的环境信息(用于你做参考):\n- {stage_enviro_narrate}"""
+    stage_enviro_narrate_prompt = ""
+    if input_stage_enviro_narrate != "":
+        stage_enviro_narrate_prompt = f"""## 你所在场景的环境信息
+- {input_stage_enviro_narrate}"""
 
-    prompt = f"""# {_CNConstantPrompt_.ACTOR_PLAN_PROMPT_TAG}请做出你的计划，决定你将要做什么。
-## 你当前所在的场景:{current_stage_prompt}。
-{current_stage_enviro_narrate_prompt}
+    prompt = f"""# {_CNConstantPrompt_.ACTOR_PLAN_PROMPT_TAG} 请做出你的计划，决定你将要做什么。
+## 你当前所在的场景:{current_stage_prompt}
+{stage_enviro_narrate_prompt}
 ## 要求:
-- 输出结果格式要遵循 输出格式指南。
-- 结果中要附带'{TagAction.__name__}'。"""
+- 请遵循 输出格式指南。
+- 结果中要附带{TagAction.__name__}。"""
     return prompt
 ###############################################################################################################################################
 def stage_plan_prompt(stage_prop_files: List[PropFile], actors_in_stage: Set[str]) -> str:
@@ -102,7 +103,7 @@ def stage_plan_prompt(stage_prop_files: List[PropFile], actors_in_stage: Set[str
 ## 场景内角色:
 {actors_prompt}
 ## 关于’你的计划‘内容生成规则
-- 根据你作为场景受到了什么事件的影响，你可以制定计划，并决定下一步将要做什么。可根据‘输出格式指南’选择相应的行动。
+- 根据你作为场景受到了什么事件的影响，你可以制定计划，并决定下一步将要做什么。可根据 输出格式指南 选择相应的行动。
 ## 输出要求:
 - 请遵循 输出格式指南。
 - 返回结果不要提及任何场景内角色与道具。
@@ -317,7 +318,7 @@ def use_prop_to_stage_prompt(actor_name: str, prop_name: str, prop_prompt: str, 
 {exit_cond_status_prompt}
 
 ## 输出格式要求
-- 严格遵循‘输出格式指南’。
+- 请遵循 输出格式指南。
 - 必须包含 {StageNarrateAction.__name__} 和 {TagAction.__name__}。
 """
     return ret_prompt
@@ -357,7 +358,7 @@ def stage_exit_conditions_check_prompt(actor_name: str,
 # 判断结果
 - 完成以上步骤后，决定是否允许 {actor_name} 离开 {current_stage_name}。
 
-# 本次输出结果格式要求（遵循‘输出格式指南’）:
+# 本次输出结果格式要求（遵循 输出格式指南 ）:
 {{
     {StageConditionCheckAction.__name__}: ["描述'允许离开'或'不允许离开'的原因，使{actor_name}明白"],
     {TagAction.__name__}: ["Yes/No"]
@@ -404,7 +405,7 @@ def stage_entry_conditions_check_prompt(actor_name: str,
 # 判断结果
 - 完成以上步骤后，决定是否允许 {actor_name} 进入 {current_stage_name}。
 
-# 本次输出结果格式要求（遵循‘输出格式指南’）:
+# 本次输出结果格式要求（遵循 输出格式指南 ）:
 {{
     {StageConditionCheckAction.__name__}: ["描述'允许进入'或'不允许进入'的原因，使{actor_name}明白"],
     {TagAction.__name__}: ["Yes/No"]

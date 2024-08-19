@@ -140,16 +140,15 @@ class UsePropActionSystem(ReactiveProcessor):
         logger.debug(f"InteractivePropActionSystem, {targetname}: {final_prompt}")
 
         agent = context._langserve_agent_system.get_agent(targetname)
-        assert agent is not None
+        if agent is None:
+            return False
+        
         task = LangServeAgentRequestTask.create(agent, final_prompt)
-        assert task is not None
         if task is None:
-            logger.error(f"InteractivePropActionSystem: {targetname} request error.")
             return False
 
         # 用同步的接口，这样能知道结果应该通知给谁。
         response = task.request()
-        #response = langserve_agent_system.agent_request(targetname, final_prompt)
         if response is not None:
             # 场景有反应
             logger.debug(f"InteractivePropActionSystem: {response}")

@@ -28,7 +28,7 @@ from ecs_systems.perception_action_system import PerceptionActionSystem
 from ecs_systems.steal_action_system import StealActionSystem
 from ecs_systems.give_prop_action_system import GivePropActionSystem
 from ecs_systems.check_status_action_system import CheckStatusActionSystem
-from ecs_systems.agents_connect_system import AgentsConnectSystem
+from ecs_systems.connect_agent_system import ConnectAgentSystem
 from ecs_systems.simple_rpg_pre_fight_system import SimpleRPGPreFightSystem
 from ecs_systems.compress_chat_history_system import CompressChatHistorySystem
 from ecs_systems.post_conversation_action_system import PostConversationActionSystem
@@ -50,7 +50,7 @@ class RPGEntitasProcessors(Processors):
         from ecs_systems.terminal_player_input_system import TerminalPlayerInputSystem
         from ecs_systems.save_system import SaveSystem
         from rpg_game.rpg_game import RPGGame
-        from ecs_systems.agents_kick_off_system import AgentsKickOffSystem
+        from ecs_systems.kick_off_system import KickOffSystem
         from ecs_systems.update_archive_system import UpdateArchiveSystem
         from ecs_systems.terminal_player_tips_system import TerminalPlayerTipsSystem
 
@@ -63,8 +63,8 @@ class RPGEntitasProcessors(Processors):
         processors.add(BeginSystem(context))
         
         #初始化系统########################
-        processors.add(AgentsConnectSystem(context)) ### 连接所有agent
-        processors.add(AgentsKickOffSystem(context, rpg_game)) ### 第一次读状态, initmemory
+        processors.add(ConnectAgentSystem(context)) ### 连接所有agent
+        processors.add(KickOffSystem(context, rpg_game)) ### 第一次读状态, initmemory
         processors.add(UpdateAppearanceSystem(context, UPDATE_APPEARANCE_SYSTEM_NAME)) ### 更新外观
         #########################################
 

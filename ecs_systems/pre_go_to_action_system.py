@@ -285,9 +285,12 @@ class PreBeforeGoToActionSystem(ReactiveProcessor):
 
         ## 让大模型去推断是否可以离开，分别检查stage自身，角色状态（例如长相），角色道具（拥有哪些道具与文件）
         agent = self._context._langserve_agent_system.get_agent(current_stage_name)
-        assert agent is not None
+        if agent is None:
+            return False
+        
         task = LangServeAgentRequestTask.create(agent, final_prompt)
-        assert task is not None
+        if task is None:
+            return False
 
         response = task.request()
         if response is None:
@@ -340,9 +343,12 @@ class PreBeforeGoToActionSystem(ReactiveProcessor):
 
         ## 让大模型去推断是否可以离开，分别检查stage自身，角色状态（例如长相），角色道具（拥有哪些道具与文件）
         agent = self._context._langserve_agent_system.get_agent(target_stage_name)
-        assert agent is not None
+        if agent is None:
+            return False
+        
         task = LangServeAgentRequestTask.create(agent, final_prompt)
-        assert task is not None
+        if task is None:
+            return False
 
         response = task.request()
         if response is None:

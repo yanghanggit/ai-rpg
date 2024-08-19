@@ -9,7 +9,8 @@ class LangServeAgentRequestTask:
 
     @staticmethod
     def create(agent: LangServeAgent, prompt: str) -> Optional['LangServeAgentRequestTask']:
-        assert agent is not None
+        if agent is None or prompt == "":
+            return None
         return LangServeAgentRequestTask(agent, prompt)
      
     @staticmethod
@@ -43,9 +44,10 @@ class LangServeAgentRequestTask:
                  add_prompt_to_chat_history: bool = True, 
                  add_response_to_chat_history: bool = True) -> None:
         
+        assert agent is not None
         self._agent: LangServeAgent = agent
         self._prompt: str = prompt
-        assert self._prompt is not None and self._prompt != ""
+        assert self._prompt != ""
         self._input_chat_history: bool = input_chat_history
         self._add_prompt_to_chat_history: bool = add_prompt_to_chat_history
         self._add_response_to_chat_history: bool = add_response_to_chat_history
@@ -53,6 +55,8 @@ class LangServeAgentRequestTask:
 ################################################################################################################################################################################
     @property
     def agent_name(self) -> str:
+        if self._agent is None:
+            return ""
         return self._agent._name
 ################################################################################################################################################################################
     @property
@@ -87,9 +91,11 @@ class LangServeAgentRequestTask:
         return None
 ################################################################################################################################################################################
     def input_chat_history_as_context(self) -> List[Union[HumanMessage, AIMessage]]:
+        assert self._agent is not None
         return self._input_chat_history and self._agent._chat_history or []
 ################################################################################################################################################################################
     def on_request_done(self) -> None:
+        assert self._agent is not None
         assert self._response is not None
         if self._add_prompt_to_chat_history:
             self._agent._chat_history.extend([HumanMessage(content = self._prompt)])

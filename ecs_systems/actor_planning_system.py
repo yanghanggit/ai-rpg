@@ -30,15 +30,15 @@ class ActorPlanningSystem(ExecuteProcessor):
     async def async_pre_execute(self) -> None:
         # step1: 添加任务
         self._tasks.clear()
-        self.add_tasks(self._tasks)
+        self.fill_tasks(self._tasks)
         # step可选：混沌工程做测试
         self._context._chaos_engineering_system.on_actor_planning_system_execute(self._context)
         # step2: 并行执行requests
         if len(self._tasks) == 0:
             return
         
-        tasks_gather = LangServeAgentAsyncRequestTasksGather("ActorPlanningSystem", self._tasks)
-        response = await tasks_gather.gather()
+        gather = LangServeAgentAsyncRequestTasksGather("ActorPlanningSystem", self._tasks)
+        response = await gather.gather()
         if len(response) == 0:
             logger.warning(f"ActorPlanningSystem: request_result is empty.")
             return
@@ -47,6 +47,7 @@ class ActorPlanningSystem(ExecuteProcessor):
         self._tasks.clear()
 #######################################################################################################################################
     def handle(self, request_tasks: Dict[str, LangServeAgentRequestTask]) -> None:
+        
         for name, task in request_tasks.items():
 
             if task is None:
@@ -110,26 +111,24 @@ class ActorPlanningSystem(ExecuteProcessor):
                 
         return stage_name, stage_enviro_narrate
 #######################################################################################################################################
-    def add_tasks(self, request_tasks: Dict[str, LangServeAgentRequestTask]) -> None:
-        request_tasks.clear()
+    def fill_tasks(self, out_put_request_tasks: Dict[str, LangServeAgentRequestTask]) -> None:
+        
+        out_put_request_tasks.clear()
 
-        entities = self._context.get_group(Matcher(all_of=[ActorComponent, AutoPlanningComponent])).entities
-        for entity in entities:
-            actor_comp = entity.get(ActorComponent)
-            tp = self.get_stage_enviro_narrate(entity)
-            stage_name = tp[0]
-            stage_enviro_narrate = tp[1]
-            if stage_name == "" or stage_enviro_narrate == "":
-                logger.error("stagename or stage_enviro_narrate is None, 有可能是是没有agent connect") # 放弃这个actor的计划
+        actor_entities = self._context.get_group(Matcher(all_of = [ActorComponent, AutoPlanningComponent])).entities
+        for actor_entity in actor_entities:
+
+            actor_comp = actor_entity.get(ActorComponent)
+            agent = self._context._langserve_agent_system.get_agent(actor_comp.name)
+            if agent is None:
+                continue
+
+            tp = self.get_stage_enviro_narrate(actor_entity)
+            if tp[0] == "" or tp[1] == "":
+                logger.error(f"{actor_comp.name} get_stage_enviro_narrate error")
                 continue
             
-            # 必须要有一个stage的环境描述，否则无法做计划。
-            prompt = builtin_prompt.actor_plan_prompt(stage_name, stage_enviro_narrate)
-
-            agent = self._context._langserve_agent_system.get_agent(actor_comp.name)
-            assert agent is not None, f"ActorPlanningSystem: agent is None, {actor_comp.name}"
-            task = LangServeAgentRequestTask.create(agent, prompt)
-            assert task is not None, f"ActorPlanningSystem: task is None, {actor_comp.name}"
+            task = LangServeAgentRequestTask.create(agent, builtin_prompt.actor_plan_prompt(tp[0], tp[1]))
             if task is not None:
-                request_tasks[actor_comp.name] = task
+                out_put_request_tasks[actor_comp.name] = task
 #######################################################################################################################################

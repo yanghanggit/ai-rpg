@@ -12,7 +12,7 @@ from rpg_game.rpg_game import RPGGame
 from file_system.files_def import PropFile
 
 ######################################################################################################################################################
-class AgentsKickOffSystem(InitializeProcessor, ExecuteProcessor):
+class KickOffSystem(InitializeProcessor, ExecuteProcessor):
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         self._context: RPGEntitasContext = context
         self._tasks: Dict[str, LangServeAgentRequestTask] = {}
@@ -56,8 +56,8 @@ class AgentsKickOffSystem(InitializeProcessor, ExecuteProcessor):
         if len(self._tasks) == 0:
             return
 
-        tasks_gather = LangServeAgentAsyncRequestTasksGather("AgentsKickOffSystem", self._tasks)
-        response = await tasks_gather.gather()
+        gather = LangServeAgentAsyncRequestTasksGather("AgentsKickOffSystem", self._tasks)
+        response = await gather.gather()
         if len(response) == 0:
             logger.warning(f"AgentsKickOffSystem: request_result is empty.")
             return
@@ -70,11 +70,13 @@ class AgentsKickOffSystem(InitializeProcessor, ExecuteProcessor):
     
         world_entities: Set[Entity] = self._context.get_group(Matcher(WorldComponent)).entities
         for world_entity in world_entities:
+
             world_comp = world_entity.get(WorldComponent)
             agent = self._context._langserve_agent_system.get_agent(world_comp.name)
-            assert agent is not None, f"agent is None: {world_comp.name}"
+            if agent is None:
+                continue
+            
             task = LangServeAgentRequestTask.create(agent, builtin_prompt.kick_off_world_system_prompt(self._rpg_game.about_game))
-            assert task is not None, f"task is None: {world_comp.name}"
             if task is not None:
                 ret[world_comp.name] = task
         
@@ -88,6 +90,10 @@ class AgentsKickOffSystem(InitializeProcessor, ExecuteProcessor):
         for stage_entity in stage_entities:
 
             stage_comp = stage_entity.get(StageComponent)
+            agent = self._context._langserve_agent_system.get_agent(stage_comp.name)
+            if agent is None:
+                continue
+
             kick_off_message = self._context._kick_off_message_system.get_message(stage_comp.name)
             if kick_off_message == "":
                 continue
@@ -99,10 +105,7 @@ class AgentsKickOffSystem(InitializeProcessor, ExecuteProcessor):
                                                     self.get_actor_names_in_stage(stage_entity))
             
 
-            agent = self._context._langserve_agent_system.get_agent(stage_comp.name)
-            assert agent is not None, f"agent is None: {stage_comp.name}"
             task = LangServeAgentRequestTask.create(agent, kick_off_prompt)
-            assert task is not None, f"task is None: {stage_comp.name}"
             if task is not None:
                 ret[stage_comp.name] = task
         
@@ -116,15 +119,16 @@ class AgentsKickOffSystem(InitializeProcessor, ExecuteProcessor):
         for actor_entity in actor_entities:
 
             actor_comp = actor_entity.get(ActorComponent)
+            agent = self._context._langserve_agent_system.get_agent(actor_comp.name)
+            if agent is None:
+                continue
+
             kick_off_message = self._context._kick_off_message_system.get_message(actor_comp.name)
             if kick_off_message == "":
                 logger.error(f"kick_off_message is empty: {actor_comp.name}")
                 continue
             
-            agent = self._context._langserve_agent_system.get_agent(actor_comp.name)
-            assert agent is not None, f"agent is None: {actor_comp.name}"
             task = LangServeAgentRequestTask.create(agent, builtin_prompt.kick_off_actor_prompt(kick_off_message, self._rpg_game.about_game))
-            assert task is not None, f"task is None: {actor_comp.name}"
             if task is not None:
                 ret[actor_comp.name] = task
            

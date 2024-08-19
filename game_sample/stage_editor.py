@@ -74,16 +74,20 @@ class ExcelEditorStage:
         assert self._my_data is not None
         if self._my_data["stage_portal"] is None:
             return []
-        data = cast(str, self._my_data["stage_portal"])
-        return data.split(';')
+        copy_data = str(self._my_data["stage_portal"])
+        return copy_data.split(';')
 ################################################################################################################################
     @property
     def stage_graph(self) -> List[str]:
         assert self._my_data is not None
         if self._my_data["stage_graph"] is None:
             return []
-        data = cast(str, self._my_data["stage_graph"])
-        return data.split(';')
+        copy_data = str(self._my_data["stage_graph"])
+        ret = copy_data.split(';')
+        if self.name in ret:
+            copy_name = str(self.name)
+            ret.remove(copy_name)
+        return ret
 ################################################################################################################################
     def add_stage_graph(self, graph: str) -> None:
         stage_graph_value = self.stage_graph

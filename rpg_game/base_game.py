@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
-#基础类
+
+# 基础类
 class BaseGame(ABC):
 
     def __init__(self, name: str) -> None:
@@ -8,7 +9,7 @@ class BaseGame(ABC):
         self.started: bool = False
         self.inited: bool = False
         self.exited: bool = False
-         
+
     @abstractmethod
     def execute(self) -> None:
         pass
@@ -24,5 +25,3 @@ class BaseGame(ABC):
     @abstractmethod
     def on_exit(self) -> None:
         pass
-
-

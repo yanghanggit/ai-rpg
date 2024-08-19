@@ -1,15 +1,20 @@
 from typing import Optional, Dict
-from build_game.data_model import DataBaseSystemModel, ActorModel, PropModel, StageModel, WorldSystemModel
+from build_game.data_model import (
+    DataBaseSystemModel,
+    ActorModel,
+    PropModel,
+    StageModel,
+    WorldSystemModel,
+)
 
 
 class DataBaseSystem:
-
     """
     将所有的数据存储在这里，以便于在游戏中使用。
     """
 
     def __init__(self, model: Optional[DataBaseSystemModel]) -> None:
-        
+
         self._model: Optional[DataBaseSystemModel] = model
         assert self._model is not None
 
@@ -19,7 +24,8 @@ class DataBaseSystem:
         self._world_systems: Dict[str, WorldSystemModel] = {}
 
         self.make_dict()
-###############################################################################################################################################
+
+    ###############################################################################################################################################
     def make_dict(self) -> None:
 
         assert self._model is not None
@@ -43,16 +49,19 @@ class DataBaseSystem:
         self._world_systems.clear()
         for world_system in self._model.world_systems:
             self._world_systems.setdefault(world_system.name, world_system)
-###############################################################################################################################################
+
+    ###############################################################################################################################################
     def get_actor(self, actor_name: str) -> Optional[ActorModel]:
-        return self._actors.get(actor_name, None)  
-############################################################################################################################################### 
+        return self._actors.get(actor_name, None)
+
+    ###############################################################################################################################################
     def get_stage(self, stage_name: str) -> Optional[StageModel]:
         return self._stages.get(stage_name, None)
- ###############################################################################################################################################   
+
+    ###############################################################################################################################################
     def get_prop(self, prop_name: str) -> Optional[PropModel]:
         return self._props.get(prop_name, None)
-###############################################################################################################################################
+
+    ###############################################################################################################################################
     def get_world_system(self, world_system_name: str) -> Optional[WorldSystemModel]:
         return self._world_systems.get(world_system_name, None)
-###############################################################################################################################################

@@ -1,8 +1,9 @@
 from loguru import logger
 import datetime
 import player.utils
-from player.player_command import (PlayerLogin)
-from rpg_game.create_rpg_game_util import create_rpg_game, test_save, RPGGameClientType
+from player.player_command import PlayerLogin
+from rpg_game.create_rpg_game_util import create_rpg_game, RPGGameClientType
+
 
 async def main(input_actor_name_as_default: str) -> None:
 
@@ -18,10 +19,12 @@ async def main(input_actor_name_as_default: str) -> None:
     if rpg_game is None:
         logger.error("create_rpg_game 失败。")
         return
-    
-    final_player_actor_name = input(f"""请输入要控制的角色名字(默认为'{input_actor_name_as_default}',输入回车为默认):""")
+
+    final_player_actor_name = input(
+        f"""请输入要控制的角色名字(默认为'{input_actor_name_as_default}',输入回车为默认):"""
+    )
     if final_player_actor_name == "":
-        final_player_actor_name = input_actor_name_as_default 
+        final_player_actor_name = input_actor_name_as_default
 
     player_actor = rpg_game._entitas_context.get_actor_entity(final_player_actor_name)
     if player_actor is None:
@@ -29,28 +32,32 @@ async def main(input_actor_name_as_default: str) -> None:
         return
 
     player_name_as_terminal_name = "北京柏林互动科技有限公司"
-    
+
     logger.info(f"玩家名字（做为terminal name）:{player_name_as_terminal_name}")
     player_proxy = player.utils.create_player_proxy(player_name_as_terminal_name)
     assert player_proxy is not None
     # 这个必须调用
     rpg_game.add_player(player_name_as_terminal_name)
     #
-    login_command = PlayerLogin("/terminal_run_login", rpg_game, player_proxy, final_player_actor_name, False)
+    login_command = PlayerLogin(
+        "/terminal_run_login", rpg_game, player_proxy, final_player_actor_name, False
+    )
     login_command.execute()
 
     # 测试的代码
-    #yh_test_save(game_name)
+    # yh_test_save(game_name)
 
-    #核心循环
+    # 核心循环
     while True:
         if rpg_game.exited:
             break
         await rpg_game.async_execute()
-    
+
     # 退出操作
     rpg_game.exit()
 
+
 if __name__ == "__main__":
     import asyncio
-    asyncio.run(main("人物.火十一")) #todo
+
+    asyncio.run(main("人物.火十一"))  # todo

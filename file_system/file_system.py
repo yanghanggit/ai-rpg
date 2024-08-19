@@ -1,10 +1,18 @@
 from loguru import logger
 from typing import Dict, List, Optional, TypeVar, Type, cast
-from file_system.files_def import BaseFile, PropFile, ActorArchiveFile, StageArchiveFile, StatusProfileFile, StageActorsMapFile
+from file_system.files_def import (
+    BaseFile,
+    PropFile,
+    ActorArchiveFile,
+    StageArchiveFile,
+    StatusProfileFile,
+    StageActorsMapFile,
+)
 from pathlib import Path
 
 
-FileType = TypeVar('FileType')
+FileType = TypeVar("FileType")
+
 
 class FileSystem:
 
@@ -12,79 +20,91 @@ class FileSystem:
 
         # 名字
         self._name: str = name
-        
+
         # 运行时路径
         self._runtime_dir: Optional[Path] = None
-        
+
         # 拥有的道具
         self._prop_files: Dict[str, List[PropFile]] = {}
-        
+
         # 知晓的Actor
         self._actor_archives: Dict[str, List[ActorArchiveFile]] = {}
-        
+
         # 知晓的Stage
         self._stage_archives: Dict[str, List[StageArchiveFile]] = {}
-        
+
         # 角色的属性的记录
         self._status_profile: Dict[str, StatusProfileFile] = {}
-        
+
         # 场景的角色的映射关系，全局唯一，空的
         self._stage_actors_map: StageActorsMapFile = StageActorsMapFile({})
-###############################################################################################################################################
+
+    ###############################################################################################################################################
     def parse_path(self, file: BaseFile) -> Optional[Path]:
 
         assert self._runtime_dir is not None
 
         if isinstance(file, PropFile):
             dir = self._runtime_dir / f"{file._owner_name}/props"
-            dir.mkdir(parents = True, exist_ok = True)
+            dir.mkdir(parents=True, exist_ok=True)
             return dir / f"{file._name}.json"
-        
+
         elif isinstance(file, ActorArchiveFile):
             dir = self._runtime_dir / f"{file._owner_name}/actors_archive"
-            dir.mkdir(parents = True, exist_ok = True)
+            dir.mkdir(parents=True, exist_ok=True)
             return dir / f"{file._name}.json"
-        
+
         elif isinstance(file, StageArchiveFile):
             dir = self._runtime_dir / f"{file._owner_name}/stages_archive"
-            dir.mkdir(parents = True, exist_ok = True)
+            dir.mkdir(parents=True, exist_ok=True)
             return dir / f"{file._name}.json"
-        
+
         elif isinstance(file, StatusProfileFile):
             dir = self._runtime_dir / f"{file._owner_name}"
-            dir.mkdir(parents = True, exist_ok = True)
+            dir.mkdir(parents=True, exist_ok=True)
             return dir / f"status_profile.json"
-        
+
         elif isinstance(file, StageActorsMapFile):
             dir = self._runtime_dir
-            dir.mkdir(parents = True, exist_ok = True)
+            dir.mkdir(parents=True, exist_ok=True)
             return dir / f"stage_actors_map.json"
-        
+
         return None
-###############################################################################################################################################
+
+    ###############################################################################################################################################
     def write_file(self, file: BaseFile) -> int:
         assert self._runtime_dir is not None
         assert file is not None
         file_path = self.parse_path(file)
         assert file_path is not None
         return file.write(file_path)
-###############################################################################################################################################
+
+    ###############################################################################################################################################
     ### 必须设置根部的执行路行
     def set_runtime_dir(self, runtime_dir: Path) -> None:
         assert runtime_dir is not None
         self._runtime_dir = runtime_dir
         self._runtime_dir.mkdir(parents=True, exist_ok=True)
         assert runtime_dir.exists()
-        assert self._runtime_dir.is_dir(), f"Directory is not a directory: {self._runtime_dir}"
-###############################################################################################################################################
+        assert (
+            self._runtime_dir.is_dir()
+        ), f"Directory is not a directory: {self._runtime_dir}"
+
+    ###############################################################################################################################################
     def add_file(self, file: BaseFile) -> bool:
 
         if isinstance(file, PropFile):
-            return self.add_file_2_base_file_dict(cast(Dict[str, List[BaseFile]], self._prop_files), file)
+            return self.add_file_2_base_file_dict(
+                cast(Dict[str, List[BaseFile]], self._prop_files), file
+            )
         elif isinstance(file, ActorArchiveFile):
-            return self.add_file_2_base_file_dict(cast(Dict[str, List[BaseFile]], self._actor_archives), file)
+            return self.add_file_2_base_file_dict(
+                cast(Dict[str, List[BaseFile]], self._actor_archives), file
+            )
         elif isinstance(file, StageArchiveFile):
-            return self.add_file_2_base_file_dict(cast(Dict[str, List[BaseFile]], self._stage_archives), file)
+            return self.add_file_2_base_file_dict(
+                cast(Dict[str, List[BaseFile]], self._stage_archives), file
+            )
         elif isinstance(file, StatusProfileFile):
             self._status_profile[file._owner_name] = file
             return True
@@ -95,9 +115,10 @@ class FileSystem:
             logger.error(f"file type {type(file)} not support")
 
         return False
-###############################################################################################################################################
+
+    ###############################################################################################################################################
     def remove_file(self, file: BaseFile) -> bool:
-            
+
         if isinstance(file, PropFile):
             self._prop_files[file._owner_name].remove(file)
         elif isinstance(file, ActorArchiveFile):
@@ -111,22 +132,46 @@ class FileSystem:
         else:
             logger.error(f"file type {type(file)} not support")
             return False
-        
+
         file_path = self.parse_path(file)
         assert file_path is not None
         if file_path.exists():
             file_path.unlink()
 
         return True
-###############################################################################################################################################
-    def get_file(self, file_type: Type[FileType], owner_name: str, file_name: str) -> Optional[FileType]:
+
+    ###############################################################################################################################################
+    def get_file(
+        self, file_type: Type[FileType], owner_name: str, file_name: str
+    ) -> Optional[FileType]:
 
         if file_type == PropFile:
-            return cast(Optional[FileType], self.get_file_from_base_file_dict(cast(Dict[str, List[BaseFile]], self._prop_files), owner_name, file_name))
+            return cast(
+                Optional[FileType],
+                self.get_file_from_base_file_dict(
+                    cast(Dict[str, List[BaseFile]], self._prop_files),
+                    owner_name,
+                    file_name,
+                ),
+            )
         elif file_type == ActorArchiveFile:
-            return cast(Optional[FileType], self.get_file_from_base_file_dict(cast(Dict[str, List[BaseFile]], self._actor_archives), owner_name, file_name))
+            return cast(
+                Optional[FileType],
+                self.get_file_from_base_file_dict(
+                    cast(Dict[str, List[BaseFile]], self._actor_archives),
+                    owner_name,
+                    file_name,
+                ),
+            )
         elif file_type == StageArchiveFile:
-            return cast(Optional[FileType], self.get_file_from_base_file_dict(cast(Dict[str, List[BaseFile]], self._stage_archives), owner_name, file_name))
+            return cast(
+                Optional[FileType],
+                self.get_file_from_base_file_dict(
+                    cast(Dict[str, List[BaseFile]], self._stage_archives),
+                    owner_name,
+                    file_name,
+                ),
+            )
         elif file_type == StatusProfileFile:
             return cast(Optional[FileType], self._status_profile.get(owner_name, None))
         elif file_type == StageActorsMapFile:
@@ -135,7 +180,8 @@ class FileSystem:
             logger.error(f"file type {file_type} not support")
 
         return None
-###############################################################################################################################################
+
+    ###############################################################################################################################################
     def get_files(self, file_type: Type[FileType], owner_name: str) -> List[FileType]:
 
         if file_type == PropFile:
@@ -152,8 +198,11 @@ class FileSystem:
             logger.error(f"file type {file_type} not support")
 
         return []
-###############################################################################################################################################
-    def has_file(self, file_type: Type[FileType], owner_name: str, file_name: str) -> bool:
+
+    ###############################################################################################################################################
+    def has_file(
+        self, file_type: Type[FileType], owner_name: str, file_name: str
+    ) -> bool:
 
         if file_type == PropFile:
             return self.get_file(PropFile, owner_name, file_name) is not None
@@ -169,23 +218,32 @@ class FileSystem:
             logger.error(f"file type {file_type} not support")
 
         return False
-###############################################################################################################################################
-    def add_file_2_base_file_dict(self, data: Dict[str, List[BaseFile]], new_file: BaseFile) -> bool:
+
+    ###############################################################################################################################################
+    def add_file_2_base_file_dict(
+        self, data: Dict[str, List[BaseFile]], new_file: BaseFile
+    ) -> bool:
         files = data.setdefault(new_file._owner_name, [])
         for file in files:
             if file._name == new_file._name:
                 return False
         files.append(new_file)
         return True
-###############################################################################################################################################
-    def get_file_from_base_file_dict(self, data: Dict[str, List[BaseFile]], owner_name: str, file_name: str) -> Optional[BaseFile]:
+
+    ###############################################################################################################################################
+    def get_file_from_base_file_dict(
+        self, data: Dict[str, List[BaseFile]], owner_name: str, file_name: str
+    ) -> Optional[BaseFile]:
         files = data.get(owner_name, [])
         for file in files:
             if file._name == file_name:
                 return file
         return None
-###############################################################################################################################################
-    def get_base_file_dict(self, file_type: Type[FileType]) -> Dict[str, List[BaseFile]]:
+
+    ###############################################################################################################################################
+    def get_base_file_dict(
+        self, file_type: Type[FileType]
+    ) -> Dict[str, List[BaseFile]]:
         if file_type == PropFile:
             return cast(Dict[str, List[BaseFile]], self._prop_files)
         elif file_type == ActorArchiveFile:
@@ -195,5 +253,6 @@ class FileSystem:
         else:
             logger.error(f"file type {file_type} not support")
         return {}
+
+
 ###############################################################################################################################################
-       

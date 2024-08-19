@@ -3,6 +3,7 @@ from .entity import Entity
 from .group import Group
 from typing import Any, Dict
 
+
 class Collector(object):
 
     def __init__(self) -> None:
@@ -46,4 +47,4 @@ class Collector(object):
         self._collected_entities.add(entity)
 
     def __repr__(self) -> str:
-        return '<Collector [{}]'.format(', '.join(map(str, self._groups)))
+        return "<Collector [{}]".format(", ".join(map(str, self._groups)))

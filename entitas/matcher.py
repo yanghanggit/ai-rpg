@@ -1,8 +1,6 @@
-
-
-
 from typing import Any
 from entitas.entity import Entity
+
 
 def get_expr_repr(expr: Any) -> str:
     """
@@ -14,7 +12,7 @@ def get_expr_repr(expr: Any) -> str:
     Returns:
         A string representation of the expression.
     """
-    return '' if expr is None else ','.join([x.__name__ for x in expr])
+    return "" if expr is None else ",".join([x.__name__ for x in expr])
 
 
 class Matcher(object):
@@ -38,9 +36,9 @@ class Matcher(object):
                 any_of: A tuple of component types where at least one must be present in entities.
                 none_of: A tuple of component types that must not be present in entities.
         """
-        self._all = args if args else kwargs.get('all_of', None)
-        self._any = kwargs.get('any_of', None)
-        self._none = kwargs.get('none_of', None)
+        self._all = args if args else kwargs.get("all_of", None)
+        self._any = kwargs.get("any_of", None)
+        self._none = kwargs.get("none_of", None)
 
     def matches(self, entity: Entity) -> bool:
         """
@@ -65,7 +63,8 @@ class Matcher(object):
         Returns:
             A string representation of the Matcher.
         """
-        return '<Matcher [all=({}) any=({}) none=({})]>'.format(
+        return "<Matcher [all=({}) any=({}) none=({})]>".format(
             get_expr_repr(self._all),
             get_expr_repr(self._any),
-            get_expr_repr(self._none))
+            get_expr_repr(self._none),
+        )

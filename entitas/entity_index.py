@@ -17,7 +17,7 @@ class AbstractEntityIndex(metaclass=ABCMeta):
     def __del__(self) -> None:
         self._deactivate()
 
-    def _activate(self) -> 'AbstractEntityIndex':
+    def _activate(self) -> "AbstractEntityIndex":
         self._group.on_entity_added += self._on_entity_added
         self._group.on_entity_removed += self._on_entity_removed
         self._index_entities()
@@ -73,7 +73,8 @@ class PrimaryEntityIndex(AbstractEntityIndex):
         if key in self._index:
             raise EntitasException(
                 "Entity for key '{key}' already exists!".format(key=key),
-                "Only one entity for a primary key is allowed.")
+                "Only one entity for a primary key is allowed.",
+            )
 
         self._index[key] = entity
 

@@ -1,6 +1,3 @@
-
-
-
 from enum import Enum
 from .utils import Event
 from .exceptions import GroupSingleEntity
@@ -61,21 +58,22 @@ class Group(object):
 
         Returns:
             Entity: The only entity in this group.
-        
+
         Raises:
             GroupSingleEntity: If the group has more than one entity.
         """
         count = len(self._entities)
 
         if count == 1:
-            #return min(self._entities)
+            # return min(self._entities)
             return next(iter(self._entities))
         if count == 0:
             return None
 
         raise GroupSingleEntity(
-            'Cannot get a single entity from a group containing {} entities.',
-            len(self._entities))
+            "Cannot get a single entity from a group containing {} entities.",
+            len(self._entities),
+        )
 
     def handle_entity_silently(self, entity: Entity) -> None:
         """This is used by the context to manage the group.
@@ -169,4 +167,4 @@ class Group(object):
         Returns:
             str: A string representation of the Group.
         """
-        return '<Group [{}]>'.format(self._matcher)
+        return "<Group [{}]>".format(self._matcher)

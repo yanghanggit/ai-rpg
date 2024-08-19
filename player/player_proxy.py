@@ -1,5 +1,6 @@
 from typing import List, Optional
 
+
 ### 简单的类定义，后续再加
 class PlayerProxy:
 
@@ -8,8 +9,10 @@ class PlayerProxy:
         self._input_commands: List[str] = []
         self._client_messages: List[tuple[str, str]] = []
         self._cache_messages: List[tuple[str, str]] = []
-    
-    def add_message(self, sender: str, message: str, target: List[tuple[str, str]]) -> None:
+
+    def add_message(
+        self, sender: str, message: str, target: List[tuple[str, str]]
+    ) -> None:
         target.append((sender, message))
 
     def add_system_message(self, message: str) -> None:
@@ -23,6 +26,8 @@ class PlayerProxy:
 
     def add_login_message(self, actor_name: str, message: str) -> None:
         self.add_message(f"[{actor_name}]", message, self._cache_messages)
+
+
 ##########################################################################################################################################################
 ##########################################################################################################################################################
 ##########################################################################################################################################################

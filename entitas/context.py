@@ -44,8 +44,7 @@ class Context(object):
         Then adds the entity to the list.
         :rtype: Entity
         """
-        entity = (self._reusable_entities.pop() if self._reusable_entities
-                  else Entity())
+        entity = self._reusable_entities.pop() if self._reusable_entities else Entity()
 
         entity.activate(self._entity_index)
         self._entity_index += 1
@@ -95,9 +94,9 @@ class Context(object):
     def get_unique_component(self, comp_type: Any) -> Any:
         group = self.get_group(Matcher(comp_type))
         if group.single_entity is not None:
-            return group.single_entity.get(comp_type)  
+            return group.single_entity.get(comp_type)
         return None
-         
+
     def add_entity_index(self, entity_index: AbstractEntityIndex) -> None:
         self._entity_indices[entity_index.type] = entity_index
 
@@ -114,5 +113,6 @@ class Context(object):
             group.update_entity(entity, previous_comp, new_comp)
 
     def __repr__(self) -> str:
-        return '<Context ({}/{})>'.format(
-            len(self._entities), len(self._reusable_entities))
+        return "<Context ({}/{})>".format(
+            len(self._entities), len(self._reusable_entities)
+        )

@@ -1,9 +1,17 @@
-from entitas import Entity, Matcher, ReactiveProcessor # type: ignore
+from entitas import Entity, Matcher, ReactiveProcessor  # type: ignore
 from typing import Optional, override
 from loguru import logger
 from my_agent.agent_action import AgentAction
-from ecs_systems.action_components import (UsePropAction, StageInteractionFeedbackAction, DeadAction)
-from ecs_systems.components import StageComponent, ActorComponent, StageExitCondStatusComponent
+from ecs_systems.action_components import (
+    UsePropAction,
+    StageInteractionFeedbackAction,
+    DeadAction,
+)
+from ecs_systems.components import (
+    StageComponent,
+    ActorComponent,
+    StageExitCondStatusComponent,
+)
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from ecs_systems.stage_director_component import StageDirectorComponent
 from entitas.group import GroupEvent
@@ -18,7 +26,9 @@ from my_agent.lang_serve_agent_request_task import LangServeAgentRequestTask
 
 # 通知导演的类
 class ActorUsePropToStageEvent(IStageDirectorEvent):
-    def __init__(self, actor_name: str, target_name: str, prop_name: str, tips: str) -> None:
+    def __init__(
+        self, actor_name: str, target_name: str, prop_name: str, tips: str
+    ) -> None:
         self._actor_name: str = actor_name
         self._target_name: str = target_name
         self._prop_name: str = prop_name
@@ -28,11 +38,13 @@ class ActorUsePropToStageEvent(IStageDirectorEvent):
         if actor_name != self._actor_name:
             return ""
         return self._tips
-    
+
     def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
         if self._target_name != stage_name:
             return ""
         return self._tips
+
+
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
@@ -41,19 +53,23 @@ class UsePropResponseHelper:
 
     def __init__(self, plan: AgentPlan) -> None:
         self._plan = plan
-        self._tips =  self._parse(self._plan)
+        self._tips = self._parse(self._plan)
         logger.debug(f"UseInteractivePropHelper: {self._tips}")
 
     def _parse(self, plan: AgentPlan) -> str:
-        action: Optional[AgentAction] = plan.get_action_by_key(StageInteractionFeedbackAction.__name__)
+        action: Optional[AgentAction] = plan.get_action_by_key(
+            StageInteractionFeedbackAction.__name__
+        )
         if action is None or len(action._values) == 0:
-           logger.error(f"InteractivePropActionSystem: {plan._raw} is not correct")
-           return ""
+            logger.error(f"InteractivePropActionSystem: {plan._raw} is not correct")
+            return ""
         return action.join_values()
-    
+
     @property
     def tips(self) -> str:
         return self._tips
+
+
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
@@ -62,20 +78,28 @@ class UsePropActionSystem(ReactiveProcessor):
     def __init__(self, context: RPGEntitasContext):
         super().__init__(context)
         self._context = context
-####################################################################################################################################
+
+    ####################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return { Matcher(UsePropAction): GroupEvent.ADDED }
-####################################################################################################################################
+        return {Matcher(UsePropAction): GroupEvent.ADDED}
+
+    ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(UsePropAction) and entity.has(ActorComponent) and not entity.has(DeadAction)
-####################################################################################################################################
+        return (
+            entity.has(UsePropAction)
+            and entity.has(ActorComponent)
+            and not entity.has(DeadAction)
+        )
+
+    ####################################################################################################################################
     @override
     def react(self, entities: list[Entity]) -> None:
         for entity in entities:
             self.use_prop(entity)
-####################################################################################################################################
+
+    ####################################################################################################################################
     # 核心处理代码
     def use_prop(self, entity: Entity) -> None:
 
@@ -91,13 +115,15 @@ class UsePropActionSystem(ReactiveProcessor):
             if error_code != ErrorUsePropEnable.VALID:
                 logger.error(f"检查场景关系失败，错误码：{error_code}")
                 continue
-            
+
             # 检查道具是否存在，需要提醒，如果没有是大问题
-            prop_file = context._file_system.get_file(PropFile, action._actor_name, propname)
+            prop_file = context._file_system.get_file(
+                PropFile, action._actor_name, propname
+            )
             if prop_file is None:
                 logger.error(f"检查道具合理性失败，{propname} 不存在")
                 continue
-            
+
             # 目前只处理场景
             is_stage_entity = context.get_stage_entity(targetname)
             if is_stage_entity is not None:
@@ -106,35 +132,58 @@ class UsePropActionSystem(ReactiveProcessor):
                     logger.error(f"对场景 {targetname} 使用道具 {propname} 失败？")
                     continue
             else:
-                logger.warning(f"{targetname} 不是一个场景，当前版本暂不处理")     
+                logger.warning(f"{targetname} 不是一个场景，当前版本暂不处理")
                 continue
-###################################################################################################################
-    def use_prop_to_stage(self, entity: Entity, target_entity: Entity, prop_file: PropFile) -> bool:
+
+    ###################################################################################################################
+    def use_prop_to_stage(
+        self, entity: Entity, target_entity: Entity, prop_file: PropFile
+    ) -> bool:
         # 目前应该是这些！！
-        #assert prop_file._prop_model.is_weapon() or prop_file._prop_model.is_non_consumable_item()
+        # assert prop_file._prop_model.is_weapon() or prop_file._prop_model.is_non_consumable_item()
         assert entity.has(ActorComponent)
         assert target_entity.has(StageComponent)
-        
+
         context = self._context
         targetname = context.safe_get_entity_name(target_entity)
         username = context.safe_get_entity_name(entity)
-        assert context._file_system.get_file(PropFile, username, prop_file._name) is not None
+        assert (
+            context._file_system.get_file(PropFile, username, prop_file._name)
+            is not None
+        )
 
         # 检查条件
         exit_cond_status_prompt = str(_CNConstantPrompt_.NONE_PROMPT)
         if target_entity.has(StageExitCondStatusComponent):
-            stage_exit_cond_status_comp: StageExitCondStatusComponent = target_entity.get(StageExitCondStatusComponent)
+            stage_exit_cond_status_comp: StageExitCondStatusComponent = (
+                target_entity.get(StageExitCondStatusComponent)
+            )
             exit_cond_status_prompt = stage_exit_cond_status_comp.condition
         else:
-            logger.warning(f"InteractivePropActionSystem: {targetname} 没有退出条件, 下面的不用走")
-            StageDirectorComponent.add_event_to_stage_director(context, entity, ActorUsePropToStageEvent(username, 
-                                                                                     targetname, 
-                                                                                     prop_file._name, 
-                                                                                     builtin_prompt.use_prop_no_response_prompt(username, prop_file._name, targetname)))
+            logger.warning(
+                f"InteractivePropActionSystem: {targetname} 没有退出条件, 下面的不用走"
+            )
+            StageDirectorComponent.add_event_to_stage_director(
+                context,
+                entity,
+                ActorUsePropToStageEvent(
+                    username,
+                    targetname,
+                    prop_file._name,
+                    builtin_prompt.use_prop_no_response_prompt(
+                        username, prop_file._name, targetname
+                    ),
+                ),
+            )
             return True
 
         # 包装的最终提示词
-        final_prompt = builtin_prompt.use_prop_to_stage_prompt(username, prop_file._name, builtin_prompt.prop_prompt(prop_file, True, True), exit_cond_status_prompt)
+        final_prompt = builtin_prompt.use_prop_to_stage_prompt(
+            username,
+            prop_file._name,
+            builtin_prompt.prop_prompt(prop_file, True, True),
+            exit_cond_status_prompt,
+        )
 
         # 准备提交请求
         logger.debug(f"InteractivePropActionSystem, {targetname}: {final_prompt}")
@@ -142,7 +191,7 @@ class UsePropActionSystem(ReactiveProcessor):
         agent = context._langserve_agent_system.get_agent(targetname)
         if agent is None:
             return False
-        
+
         task = LangServeAgentRequestTask.create(agent, final_prompt)
         if task is None:
             return False
@@ -157,7 +206,13 @@ class UsePropActionSystem(ReactiveProcessor):
             helper = UsePropResponseHelper(plan)
             if helper.tips != "":
                 # 还是要做防守与通知导演
-                StageDirectorComponent.add_event_to_stage_director(context, entity, ActorUsePropToStageEvent(username, targetname, prop_file._name, helper.tips))
+                StageDirectorComponent.add_event_to_stage_director(
+                    context,
+                    entity,
+                    ActorUsePropToStageEvent(
+                        username, targetname, prop_file._name, helper.tips
+                    ),
+                )
             else:
                 logger.warning(f"是空的？怎么回事？")
         else:
@@ -165,4 +220,6 @@ class UsePropActionSystem(ReactiveProcessor):
 
         # 最终返回
         return True
+
+
 ###################################################################################################################

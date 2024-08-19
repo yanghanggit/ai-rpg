@@ -1,4 +1,3 @@
-
 from abc import ABCMeta, abstractmethod
 from .collector import Collector
 from .context import Context
@@ -18,7 +17,7 @@ class ExecuteProcessor(metaclass=ABCMeta):
     @abstractmethod
     def execute(self) -> None:
         pass
-    
+
     async def async_pre_execute(self) -> None:
         pass
 
@@ -89,8 +88,9 @@ class ReactiveProcessor(ExecuteProcessor):
         return collector
 
 
-class Processors(InitializeProcessor, ExecuteProcessor,
-                 CleanupProcessor, TearDownProcessor):
+class Processors(
+    InitializeProcessor, ExecuteProcessor, CleanupProcessor, TearDownProcessor
+):
 
     def __init__(self) -> None:
         self._initialize_processors: list[InitializeProcessor] = []
@@ -147,7 +147,7 @@ class Processors(InitializeProcessor, ExecuteProcessor,
         for processor in self._execute_processors:
             # if issubclass(type(processor), ReactiveProcessor):
             #     processor.clear()
-            
+
             if isinstance(processor, ReactiveProcessor):
                 processor.clear()
 

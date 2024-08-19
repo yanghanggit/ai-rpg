@@ -1,6 +1,5 @@
-
-
 from typing import Callable, List, Any
+
 
 class Event(object):
     """C# events in Python."""
@@ -14,13 +13,13 @@ class Event(object):
         for listener in self._listeners:
             listener(*args, **kwargs)
 
-    def __add__(self, listener: Callable[..., None]) -> 'Event':
+    def __add__(self, listener: Callable[..., None]) -> "Event":
         """Add a listener to the event."""
         if listener not in self._listeners:
             self._listeners.append(listener)
         return self
 
-    def __sub__(self, listener: Callable[..., None]) -> 'Event':
+    def __sub__(self, listener: Callable[..., None]) -> "Event":
         """Remove a listener from the event."""
         if listener in self._listeners:
             self._listeners.remove(listener)

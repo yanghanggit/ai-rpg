@@ -1,6 +1,7 @@
 from typing import List, Dict, List, Any
 from pydantic import BaseModel
 
+
 class ActorModel(BaseModel):
     name: str
     codename: str
@@ -11,7 +12,8 @@ class ActorModel(BaseModel):
     stage_archives: List[str]
     attributes: List[int]
     body: str
-   
+
+
 class StageModel(BaseModel):
     name: str
     codename: str
@@ -28,6 +30,7 @@ class StageModel(BaseModel):
     stage_exit_actor_status: str
     stage_exit_actor_props: str
 
+
 class PropModel(BaseModel):
     name: str
     codename: str
@@ -37,10 +40,12 @@ class PropModel(BaseModel):
     attributes: List[int]
     appearance: str
 
+
 class WorldSystemModel(BaseModel):
     name: str
     codename: str
     url: str
+
 
 class DataBaseSystemModel(BaseModel):
     actors: List[ActorModel]
@@ -48,22 +53,27 @@ class DataBaseSystemModel(BaseModel):
     props: List[PropModel]
     world_systems: List[WorldSystemModel]
 
+
 class PropProxyModel(BaseModel):
     name: str
     count: int
-   
+
+
 class ActorProxyModel(BaseModel):
     name: str
     props: List[PropProxyModel]
     actor_current_using_prop: List[str]
+
 
 class StageProxyModel(BaseModel):
     name: str
     props: List[PropProxyModel]
     actors: List[Dict[str, Any]]
 
+
 class WorldSystemProxyModel(BaseModel):
     name: str
+
 
 class GameBuilderModel(BaseModel):
     players: List[ActorProxyModel]

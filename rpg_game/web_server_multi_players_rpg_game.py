@@ -3,7 +3,7 @@ from rpg_game.rpg_entitas_context import RPGEntitasContext
 
 
 class WebServerMultiplayersRPGGame(RPGGame):
-    
+
     def __init__(self, name: str, context: RPGEntitasContext):
         super().__init__(name, context)
         self._host: str = ""

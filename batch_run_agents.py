@@ -5,8 +5,8 @@ import os
 from typing import List, Dict, Any
 import json
 
-def main() -> None:
 
+def main() -> None:
     """
     直接根据一个游戏文件，执行文件内的所有agentpy程序。这样可以清晰一些，手动很麻烦。
     尤其是改了生成之后。
@@ -26,7 +26,7 @@ def main() -> None:
         logger.error(f"Directory does not exist: {directory}")
         return None
 
-    file_name = f"{game_name}_agents.json" 
+    file_name = f"{game_name}_agents.json"
     file_path = directory / file_name
     if not file_path.exists() or not file_path.is_file():
         logger.error(f"File does not exist: {file_path}")
@@ -34,7 +34,7 @@ def main() -> None:
 
     try:
 
-        content: str = file_path.read_text(encoding = "utf-8")
+        content: str = file_path.read_text(encoding="utf-8")
         data: Dict[str, List[Dict[str, Any]]] = json.loads(content)
 
         agentpy_list: List[str] = []
@@ -42,7 +42,7 @@ def main() -> None:
             for dict1 in value1:
                 for key2, value2 in dict1.items():
                     agentpy_list.append(value2)
-                
+
         logger.debug(f"agentpy_list: {agentpy_list}")
         command = f"pm2 start {' '.join(agentpy_list)}"
         logger.debug(command)
@@ -51,9 +51,9 @@ def main() -> None:
         os.system("pm2 delete all")
         os.system(command)
 
-     
     except Exception as e:
         logger.error(e)
+
 
 if __name__ == "__main__":
     main()

@@ -10,11 +10,11 @@ namedtuples for readability.
 """
 
 from .utils import Event
-from .exceptions import (
-    EntityNotEnabled, AlreadyAddedComponent, MissingComponent)
+from .exceptions import EntityNotEnabled, AlreadyAddedComponent, MissingComponent
 from typing import Any, Dict, Type, TypeVar, cast
 
-T = TypeVar('T') ##yh add
+T = TypeVar("T")  ##yh add
+
 
 class Entity(object):
     """Use context.create_entity() to create a new entity and
@@ -55,16 +55,20 @@ class Entity(object):
         """
         if not self._is_enabled:
             raise EntityNotEnabled(
-                'Cannot add component {!r}: {} is not enabled.'
-                .format(comp_type.__name__, self))
+                "Cannot add component {!r}: {} is not enabled.".format(
+                    comp_type.__name__, self
+                )
+            )
 
         if self.has(comp_type):
             raise AlreadyAddedComponent(
-                'Cannot add another component {!r} to {}.'
-                .format(comp_type.__name__, self))
+                "Cannot add another component {!r} to {}.".format(
+                    comp_type.__name__, self
+                )
+            )
 
         new_comp = comp_type._make(args)
-        new_comp.__init__(args) ##yh add
+        new_comp.__init__(args)  ##yh add
         self._components[comp_type] = new_comp
         self.on_component_added(self, new_comp)
 
@@ -74,13 +78,17 @@ class Entity(object):
         """
         if not self._is_enabled:
             raise EntityNotEnabled(
-                'Cannot remove component {!r}: {} is not enabled.'
-                .format(comp_type.__name__, self))
+                "Cannot remove component {!r}: {} is not enabled.".format(
+                    comp_type.__name__, self
+                )
+            )
 
         if not self.has(comp_type):
             raise MissingComponent(
-                'Cannot remove unexisting component {!r} from {}.'
-                .format(comp_type.__name__, self))
+                "Cannot remove unexisting component {!r} from {}.".format(
+                    comp_type.__name__, self
+                )
+            )
 
         self._replace(comp_type, None)
 
@@ -92,8 +100,10 @@ class Entity(object):
         """
         if not self._is_enabled:
             raise EntityNotEnabled(
-                'Cannot replace component {!r}: {} is not enabled.'
-                .format(comp_type.__name__, self))
+                "Cannot replace component {!r}: {} is not enabled.".format(
+                    comp_type.__name__, self
+                )
+            )
 
         if self.has(comp_type):
             self._replace(comp_type, args)
@@ -107,7 +117,7 @@ class Entity(object):
             self.on_component_removed(self, previous_comp)
         else:
             new_comp = comp_type._make(args)
-            new_comp.__init__(args) ##yh add
+            new_comp.__init__(args)  ##yh add
             self._components[comp_type] = new_comp
             self.on_component_replaced(self, previous_comp, new_comp)
 
@@ -119,8 +129,10 @@ class Entity(object):
         """
         if not self.has(comp_type):
             raise MissingComponent(
-                'Cannot get unexisting component {!r} from {}.'
-                .format(comp_type.__name__, self))
+                "Cannot get unexisting component {!r} from {}.".format(
+                    comp_type.__name__, self
+                )
+            )
 
         return cast(T, self._components[comp_type])
 
@@ -154,7 +166,8 @@ class Entity(object):
         self.remove_all()
 
     def __repr__(self) -> str:
-        """ <Entity_0 [Position(x=1, y=2, z=3)]> """
-        return '<Entity_{} [{}]>'.format(
+        """<Entity_0 [Position(x=1, y=2, z=3)]>"""
+        return "<Entity_{} [{}]>".format(
             self._creation_index,
-            ', '.join([str(self._components[x]) for x in self._components]))
+            ", ".join([str(self._components[x]) for x in self._components]),
+        )

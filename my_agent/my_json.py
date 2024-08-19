@@ -3,20 +3,25 @@ import json
 from loguru import logger
 import re
 
+
 ############################################################################################################
 ## 当LLM穿回来的json是重复的错误的时候，可以尝试做合并处理
 def merge(json_str: str) -> Optional[Dict[str, List[str]]]:
     try:
-        #清理干净
+        # 清理干净
         _copy = str(json_str).strip()
-        _copy = _copy.replace('\n', '')
-        _copy = _copy.replace('\t', '')
-        _copy = re.sub(r'\s+', '', _copy)
+        _copy = _copy.replace("\n", "")
+        _copy = _copy.replace("\t", "")
+        _copy = re.sub(r"\s+", "", _copy)
 
-        #分割与重组
-        json_parts = re.split(r'}\s*{', _copy)
-        json_parts = [part + '}' if not part.endswith('}') else part for part in json_parts]
-        json_parts = ['{' + part if not part.startswith('{') else part for part in json_parts]
+        # 分割与重组
+        json_parts = re.split(r"}\s*{", _copy)
+        json_parts = [
+            part + "}" if not part.endswith("}") else part for part in json_parts
+        ]
+        json_parts = [
+            "{" + part if not part.startswith("{") else part for part in json_parts
+        ]
 
         # 解析为JSON对象
         json_objects = [json.loads(part) for part in json_parts]
@@ -28,7 +33,9 @@ def merge(json_str: str) -> Optional[Dict[str, List[str]]]:
                 if key in merged_json:
                     if not isinstance(merged_json[key], list):
                         merged_json[key] = [merged_json[key]]
-                    merged_json[key].extend(value if isinstance(value, list) else [value])
+                    merged_json[key].extend(
+                        value if isinstance(value, list) else [value]
+                    )
                 else:
                     merged_json[key] = value
 
@@ -37,29 +44,37 @@ def merge(json_str: str) -> Optional[Dict[str, List[str]]]:
             if isinstance(merged_json[key], list):
                 merged_json[key] = list(set(merged_json[key]))
 
-        return cast(Dict[str, List[str]], merged_json) 
-           
+        return cast(Dict[str, List[str]], merged_json)
+
     except Exception as e:
         logger.error(f"merge_json_strings failed. {e}")
-        #return None
-    return None   
+        # return None
+    return None
+
+
 ############################################################################################################
 ## 检查是否是“当LLM穿回来的json是重复的错误的时候，可以尝试做合并处理”
 def is_repeat(errorjson: str) -> bool:
-    json_parts = re.split(r'}\s*{', errorjson)
+    json_parts = re.split(r"}\s*{", errorjson)
     return len(json_parts) > 1
+
+
 ############################################################################################################
 ## 是否是MD的JSON块
 def is_markdown_json_block(md_json_block: str) -> bool:
     return "```json" in md_json_block
+
+
 ############################################################################################################
 ## 提取MD的JSON块内容
 def extract_markdown_json_block(jsonblock: str) -> str:
-    
+
     if "```json" in jsonblock:
         copyvalue = str(jsonblock).strip()
         copyvalue = copyvalue.replace("```json", "").replace("```", "").strip()
         return copyvalue
-    
+
     return jsonblock
+
+
 ############################################################################################################

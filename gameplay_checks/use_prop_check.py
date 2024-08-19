@@ -4,6 +4,7 @@ from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import Optional
 from enum import Enum
 
+
 #################################################################################################################################
 class ErrorUsePropEnable(Enum):
     VALID = 0
@@ -11,8 +12,11 @@ class ErrorUsePropEnable(Enum):
     WITHOUT_BEING_IN_STAGE = 2
     NOT_IN_THE_SAME_STAGE = 3
 
+
 # 检查是否可以使用道具
-def use_prop_check(context: RPGEntitasContext, srcentity: Entity, targetname: str) -> ErrorUsePropEnable:
+def use_prop_check(
+    context: RPGEntitasContext, srcentity: Entity, targetname: str
+) -> ErrorUsePropEnable:
 
     src_stage = context.safe_get_stage_entity(srcentity)
     if src_stage is None:
@@ -33,6 +37,8 @@ def use_prop_check(context: RPGEntitasContext, srcentity: Entity, targetname: st
     target_stage = context.safe_get_stage_entity(final_target_entity)
     if target_stage is None or target_stage != src_stage:
         return ErrorUsePropEnable.NOT_IN_THE_SAME_STAGE
-    
+
     return ErrorUsePropEnable.VALID
+
+
 #################################################################################################################################

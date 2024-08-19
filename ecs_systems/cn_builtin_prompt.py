@@ -62,7 +62,7 @@ def kick_off_stage_prompt(
 ## 输出要求:
 - 请遵循 输出格式指南。
 - 返回结果不要提及任何场景内角色与道具。
-- 返回结果仅带'{StageNarrateAction.__name__}'"""
+- 返回结果仅带如下2个键: {StageNarrateAction.__name__} 和 {TagAction.__name__}。"""
     return prompt
 
 
@@ -76,20 +76,33 @@ def kick_off_world_system_prompt(about_game: str) -> str:
 
 
 ###############################################################################################################################################
-def actor_plan_prompt(current_stage: str, input_stage_enviro_narrate: str) -> str:
+def actor_plan_prompt(
+    input_current_stage: str,
+    input_stage_enviro_narrate: str,
+    input_stages_you_can_go: Set[str],
+) -> str:
 
-    current_stage_prompt = "未知"
-    if current_stage != "":
-        current_stage_prompt = current_stage
+    current_stage_name_prompt = (
+        input_current_stage != "" and input_current_stage or "未知场景"
+    )
 
-    stage_enviro_narrate_prompt = ""
-    if input_stage_enviro_narrate != "":
-        stage_enviro_narrate_prompt = f"""## 你所在场景的环境信息
-- {input_stage_enviro_narrate}"""
+    current_stage_enviro_narrate_prompt = (
+        input_stage_enviro_narrate != ""
+        and f"""## 你所在场景的环境信息\n- {input_stage_enviro_narrate}"""
+        or ""
+    )
+
+    name_list = "\n".join([f"- {stage}" for stage in input_stages_you_can_go])
+    stages_you_can_go_prompt = (
+        len(input_stages_you_can_go) > 0
+        and f"""## 目前你 只能 去往如下场景\n{name_list}"""
+        or "## 目前你不能去往任何场景"
+    )
 
     prompt = f"""# {_CNConstantPrompt_.ACTOR_PLAN_PROMPT_TAG} 请做出你的计划，决定你将要做什么。
-## 你当前所在的场景:{current_stage_prompt}
-{stage_enviro_narrate_prompt}
+## 你当前所在的场景为: {current_stage_name_prompt}
+{current_stage_enviro_narrate_prompt}
+{stages_you_can_go_prompt}
 ## 要求:
 - 请遵循 输出格式指南。
 - 结果中要附带{TagAction.__name__}。"""

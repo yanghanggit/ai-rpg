@@ -8,6 +8,7 @@ WorldComponent = namedtuple("WorldComponent", "name")
 # 场景标记
 StageComponent = namedtuple("StageComponent", "name")
 StageNarrateComponent = namedtuple("StageNarrateComponent", "name narrate round")
+StageGraphComponent = namedtuple("StageGraphComponent", "name stage_graph")
 # 角色标记
 ActorComponent = namedtuple("ActorComponent", "name current_stage")
 # 玩家标记
@@ -44,8 +45,7 @@ StageEntryCondCheckActorStatusComponent = namedtuple(
 StageEntryCondCheckActorPropsComponent = namedtuple(
     "StageEntryCondCheckActorPropsComponent", "name condition"
 )
-# 作为门类型的场景的组件标记
-StageGraphComponent = namedtuple("StageGraphComponent", "name stage_graph")
+
 ##############################################################################################################################################
 
 ######################################### 测试组件（业务强相关）：RPG Game #######################################################################

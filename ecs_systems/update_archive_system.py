@@ -300,8 +300,8 @@ class UpdateArchiveSystem(ExecuteProcessor):
             assert stage_archive is not None
             return
 
-        stage_archive._stage_narrate = str(stage_narrate_comp.narrate)
-        stage_archive._round = stage_narrate_comp.round
+        stage_archive._last_stage_narrate = str(stage_narrate_comp.narrate)
+        stage_archive._last_stage_narrate_round = stage_narrate_comp.round
         self._context._file_system.write_file(stage_archive)
 
     ###############################################################################################################################################

@@ -1,6 +1,10 @@
 from entitas import Entity, Matcher, ExecuteProcessor  # type: ignore
 from overrides import override
-from ecs_systems.components import ActorComponent, AutoPlanningComponent
+from ecs_systems.components import (
+    ActorComponent,
+    AutoPlanningComponent,
+    StageGraphComponent,
+)
 from ecs_systems.action_components import (
     StageNarrateAction,
     ACTOR_AVAILABLE_ACTIONS_REGISTER,
@@ -9,7 +13,7 @@ from my_agent.agent_plan import AgentPlan
 from my_agent.agent_action import AgentAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
-from typing import Dict
+from typing import Dict, Set
 import gameplay.planning_helper
 import ecs_systems.cn_builtin_prompt as builtin_prompt
 from my_agent.lang_serve_agent_request_task import (
@@ -134,9 +138,25 @@ class ActorPlanningSystem(ExecuteProcessor):
                 continue
 
             task = LangServeAgentRequestTask.create(
-                agent, builtin_prompt.actor_plan_prompt(tp[0], tp[1])
+                agent,
+                builtin_prompt.actor_plan_prompt(
+                    tp[0], tp[1], self.get_stages_actor_can_go_to(actor_entity)
+                ),
             )
             if task is not None:
                 out_put_request_tasks[actor_comp.name] = task
+
+    #######################################################################################################################################
+    def get_stages_actor_can_go_to(self, actor_entity: Entity) -> Set[str]:
+        stage_entity = self._context.safe_get_stage_entity(actor_entity)
+        if stage_entity is None:
+            logger.error("stage is None, actor无所在场景是有问题的")
+            return set()
+
+        if not stage_entity.has(StageGraphComponent):
+            return set()
+
+        stage_graph: Set[str] = stage_entity.get(StageGraphComponent).stage_graph
+        return stage_graph.copy()
 
     #######################################################################################################################################

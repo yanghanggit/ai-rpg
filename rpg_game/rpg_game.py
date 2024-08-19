@@ -1,5 +1,5 @@
 from entitas import Matcher  # type: ignore
-from typing import List, Optional
+from typing import List, Optional, Set
 from overrides import override
 from loguru import logger
 from ecs_systems.components import (
@@ -421,13 +421,15 @@ class RPGGame(BaseGame):
                 f"场景：{stage_model.name}，可传送的场景：{stage_model.stage_portal}"
             )
 
+        # 场景图的设置
         if len(stage_model.stage_graph) > 0:
             logger.debug(
-                f"场景：{stage_model.name}，下一个场景：{stage_model.stage_graph}"
+                f"场景：{stage_model.name}，可去往的场景：{stage_model.stage_graph}"
             )
-            stage_entity.add(
-                StageGraphComponent, stage_model.name, set(stage_model.stage_graph)
-            )
+        stage_graph: Set[str] = (
+            len(stage_model.stage_graph) > 0 and set(stage_model.stage_graph) or set()
+        )
+        stage_entity.add(StageGraphComponent, stage_model.name, stage_graph)
 
         # 添加子系统！
         context._langserve_agent_system.register_agent(

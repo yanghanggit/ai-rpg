@@ -14,7 +14,7 @@ class ErrorUsePropEnable(Enum):
 
 
 # 检查是否可以使用道具
-def use_prop_check(
+def check_use_prop_enable(
     context: RPGEntitasContext, srcentity: Entity, targetname: str
 ) -> ErrorUsePropEnable:
 

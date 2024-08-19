@@ -19,7 +19,7 @@ from ecs_systems.stage_director_event import IStageDirectorEvent
 import ecs_systems.cn_builtin_prompt as builtin_prompt
 from ecs_systems.cn_constant_prompt import _CNConstantPrompt_
 from my_agent.agent_plan import AgentPlan
-from gameplay_checks.use_prop_check import use_prop_check, ErrorUsePropEnable
+import gameplay.use_prop_helper
 from file_system.files_def import PropFile
 from my_agent.lang_serve_agent_request_task import LangServeAgentRequestTask
 
@@ -111,8 +111,10 @@ class UsePropActionSystem(ReactiveProcessor):
             targetname = tp[0]
             propname = tp[1]
             # 基本检查，是否发起与接受的对象是合理的，而且是否在一个场景里
-            error_code = use_prop_check(context, entity, targetname)
-            if error_code != ErrorUsePropEnable.VALID:
+            error_code = gameplay.use_prop_helper.check_use_prop_enable(
+                context, entity, targetname
+            )
+            if error_code != gameplay.use_prop_helper.ErrorUsePropEnable.VALID:
                 logger.error(f"检查场景关系失败，错误码：{error_code}")
                 continue
 

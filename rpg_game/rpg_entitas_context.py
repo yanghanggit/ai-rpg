@@ -138,6 +138,15 @@ class RPGEntitasContext(Context):
         return self.actors_in_stage(stage_comp.name)
 
     #############################################################################################################################
+    def actor_names_in_stage(self, entity: Entity) -> Set[str]:
+        actors = self.actors_in_stage_(entity)
+        ret: Set[str] = set()
+        for actor in actors:
+            actor_comp = actor.get(ActorComponent)
+            ret.add(actor_comp.name)
+        return ret
+
+    #############################################################################################################################
     # 直接从实体中获取场景实体，如果是Actor，就获取当前场景，如果是场景，就是自己
     def safe_get_stage_entity(self, entity: Entity) -> Optional[Entity]:
         if entity.has(StageComponent):

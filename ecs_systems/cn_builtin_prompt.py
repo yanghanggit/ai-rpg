@@ -22,7 +22,7 @@ def kick_off_actor_prompt(kick_off_message: str, about_game: str) -> str:
 ## 请结合你的角色设定,更新你的状态。
 ## 输出要求:
 - 请遵循 输出格式指南。
-- 返回结果仅带'{MindVoiceAction.__name__}'这个key"""
+- 返回结果 只 带如下的4个键: {MindVoiceAction.__name__}, {TagAction.__name__}, {PerceptionAction.__name__} 和 {CheckStatusAction.__name__}"""
     return prompt
 
 
@@ -367,7 +367,7 @@ def replace_mentions_of_your_name_with_you_prompt(content: str, your_name: str) 
 def update_actor_archive_prompt(actor_name: str, actor_archives: Set[str]) -> str:
     if len(actor_archives) == 0:
         return f"# {actor_name} 目前没有认识的角色。"
-    # return f"# {actor_name} 认识的角色有：{actors_names}。你可以与这些角色进行互动。"
+
     actors_names = ",".join(actor_archives)
     return f"# {actor_name} 认识的角色有：{actors_names}。"
 
@@ -375,8 +375,8 @@ def update_actor_archive_prompt(actor_name: str, actor_archives: Set[str]) -> st
 ################################################################################################################################################
 def update_stage_archive_prompt(actor_name: str, stage_archives: Set[str]) -> str:
     if len(stage_archives) == 0:
-        return f"# {actor_name} 目前没有已知的场景，无法前往其他地方。"
-    # return f"# {actor_name} 已知的场景包括：{stages_names}。可前往这些场景探索。"
+        return f"# {actor_name} 目前没有已知的场景。"
+
     stages_names = ",".join(stage_archives)
     return f"# {actor_name} 已知的场景包括：{stages_names}。"
 

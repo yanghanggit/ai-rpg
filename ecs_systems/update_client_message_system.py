@@ -15,10 +15,7 @@ from ecs_systems.action_components import (
 from my_agent.agent_action import AgentAction
 from typing import override
 from loguru import logger
-from gameplay_checks.conversation_check import (
-    conversation_check,
-    ErrorConversationEnable,
-)
+import gameplay.conversation_helper
 from my_format_string.target_and_message_format_string import make_target_and_message
 from rpg_game.rpg_game import RPGGame
 from rpg_game.terminal_rpg_game import TerminalRPGGame
@@ -109,8 +106,10 @@ class UpdateClientMessageSystem(ExecuteProcessor):
                 targetname = tp[0]
                 message = tp[1]
                 if (
-                    conversation_check(self._context, entity, targetname)
-                    != ErrorConversationEnable.VALID
+                    gameplay.conversation_helper.check_conversation_enable(
+                        self._context, entity, targetname
+                    )
+                    != gameplay.conversation_helper.ErrorConversationEnable.VALID
                 ):
                     continue
                 if player_entity_name != targetname:
@@ -169,8 +168,10 @@ class UpdateClientMessageSystem(ExecuteProcessor):
                 targetname = tp[0]
                 message = tp[1]
                 if (
-                    conversation_check(self._context, entity, targetname)
-                    != ErrorConversationEnable.VALID
+                    gameplay.conversation_helper.check_conversation_enable(
+                        self._context, entity, targetname
+                    )
+                    != gameplay.conversation_helper.ErrorConversationEnable.VALID
                 ):
                     continue
                 player_proxy.add_actor_message(

@@ -19,6 +19,7 @@ from ecs_systems.components import (
     GUIDComponent,
     CurrentUsingPropComponent,
     StageGraphComponent,
+    StageNarrateComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from build_game.game_builder import GameBuilder
@@ -367,6 +368,7 @@ class RPGGame(BaseGame):
             GUIDComponent, stage_model.name, context._guid_generator.generate()
         )
         stage_entity.add(StageComponent, stage_model.name)
+        stage_entity.add(StageNarrateComponent, stage_model.name, "", 0)
         stage_entity.add(StageDirectorComponent, stage_model.name)
 
         assert len(stage_model.attributes) == 4

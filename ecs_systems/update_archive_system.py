@@ -1,13 +1,17 @@
 from entitas import ExecuteProcessor, Matcher, Entity  # type: ignore
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
-from ecs_systems.components import ActorComponent, StageComponent
+from ecs_systems.components import ActorComponent, StageComponent, StageNarrateComponent
 import ecs_systems.cn_builtin_prompt as builtin_prompt
 from ecs_systems.cn_constant_prompt import _CNConstantPrompt_
 from typing import Set, override, Dict, List
 import file_system.helper
 from file_system.files_def import PropFile
 from rpg_game.rpg_game import RPGGame
+from file_system.files_def import (
+    PropFile,
+    StageArchiveFile,
+)
 
 
 #### 一次处理过程的封装，目前是非常笨的方式（而且不是最终版本），后续可以优化。
@@ -202,11 +206,12 @@ class UpdateArchiveSystem(ExecuteProcessor):
         actor_entities: Set[Entity] = context.get_group(
             Matcher(all_of=[ActorComponent])
         ).entities
-        for _en in actor_entities:
+        for actor_entity in actor_entities:
             # 更新Actor的Actor档案，可能更新了谁认识谁，还有如果在场景中，外观是什么
-            self.update_actor_archive(_en, archive_helper)
+            self.update_actor_archive(actor_entity, archive_helper)
             # 更新Actor的场景档案，
-            self.update_stage_archive(_en, archive_helper)
+            self.update_stage_archive(actor_entity, archive_helper)
+            self.update_stage_narrate_of_archive(actor_entity)
 
     ###############################################################################################################################################
     def update_actor_archive(
@@ -280,5 +285,23 @@ class UpdateArchiveSystem(ExecuteProcessor):
         # 添加新的
         self._context.safe_add_human_message_to_entity(actor_entity, message)
 
+    ###############################################################################################################################################
+    def update_stage_narrate_of_archive(self, actor_entity: Entity) -> None:
+        current_stage_entity = self._context.safe_get_stage_entity(actor_entity)
+        if current_stage_entity is None:
+            return
 
-###############################################################################################################################################
+        actor_comp = actor_entity.get(ActorComponent)
+        stage_narrate_comp = current_stage_entity.get(StageNarrateComponent)
+        stage_archive = self._context._file_system.get_file(
+            StageArchiveFile, actor_comp.name, stage_narrate_comp.name
+        )
+        if stage_archive is None or stage_narrate_comp.narrate == "":
+            assert stage_archive is not None
+            return
+
+        stage_archive._stage_narrate = str(stage_narrate_comp.narrate)
+        stage_archive._round = stage_narrate_comp.round
+        self._context._file_system.write_file(stage_archive)
+
+    ###############################################################################################################################################

@@ -3,10 +3,7 @@ from ecs_systems.action_components import WhisperAction
 from my_agent.agent_action import AgentAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import override
-from gameplay_checks.conversation_check import (
-    conversation_check,
-    ErrorConversationEnable,
-)
+import gameplay.conversation_helper
 from ecs_systems.stage_director_component import StageDirectorComponent
 from ecs_systems.stage_director_event import IStageDirectorEvent
 import ecs_systems.cn_builtin_prompt as builtin_prompt
@@ -67,8 +64,10 @@ class WhisperActionSystem(ReactiveProcessor):
             targetname = tp[0]
             message = tp[1]
             if (
-                conversation_check(self._context, entity, targetname)
-                != ErrorConversationEnable.VALID
+                gameplay.conversation_helper.check_conversation_enable(
+                    self._context, entity, targetname
+                )
+                != gameplay.conversation_helper.ErrorConversationEnable.VALID
             ):
                 continue
             StageDirectorComponent.add_event_to_stage_director(

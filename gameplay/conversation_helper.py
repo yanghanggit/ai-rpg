@@ -14,7 +14,7 @@ class ErrorConversationEnable(Enum):
 
 
 # 检查是否可以对话
-def conversation_check(
+def check_conversation_enable(
     context: RPGEntitasContext, actor_or_stage_entity: Entity, target_name: str
 ) -> ErrorConversationEnable:
 

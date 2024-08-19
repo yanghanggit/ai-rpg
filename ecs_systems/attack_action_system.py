@@ -11,10 +11,7 @@ from loguru import logger
 from ecs_systems.stage_director_component import StageDirectorComponent
 from ecs_systems.stage_director_event import IStageDirectorEvent
 from typing import cast, override
-from gameplay_checks.conversation_check import (
-    conversation_check,
-    ErrorConversationEnable,
-)
+import gameplay.conversation_helper
 import ecs_systems.cn_builtin_prompt as builtin_prompt
 import file_system.helper
 from file_system.files_def import PropFile
@@ -124,13 +121,18 @@ class AttackActionSystem(ReactiveProcessor):
                 )
                 continue
 
-            conversation_check_error = conversation_check(
-                self._context, _entity, value_as_target_name
+            conversation_check_error = (
+                gameplay.conversation_helper.check_conversation_enable(
+                    self._context, _entity, value_as_target_name
+                )
             )
-            if conversation_check_error != ErrorConversationEnable.VALID:
+            if (
+                conversation_check_error
+                != gameplay.conversation_helper.ErrorConversationEnable.VALID
+            ):
                 if (
                     conversation_check_error
-                    == ErrorConversationEnable.TARGET_DOES_NOT_EXIST
+                    == gameplay.conversation_helper.ErrorConversationEnable.TARGET_DOES_NOT_EXIST
                 ):
                     logger.error(
                         f"攻击者{action._actor_name}意图攻击的对象{value_as_target_name}不存在,本次攻击无效."
@@ -139,7 +141,7 @@ class AttackActionSystem(ReactiveProcessor):
 
                 elif (
                     conversation_check_error
-                    == ErrorConversationEnable.WITHOUT_BEING_IN_STAGE
+                    == gameplay.conversation_helper.ErrorConversationEnable.WITHOUT_BEING_IN_STAGE
                 ):
                     logger.error(
                         f"攻击者{action._actor_name}不在任何舞台上,本次攻击无效.? 这是一个严重的错误！"
@@ -148,7 +150,7 @@ class AttackActionSystem(ReactiveProcessor):
 
                 elif (
                     conversation_check_error
-                    == ErrorConversationEnable.NOT_IN_THE_SAME_STAGE
+                    == gameplay.conversation_helper.ErrorConversationEnable.NOT_IN_THE_SAME_STAGE
                 ):
 
                     # 名字拿出来，看一下

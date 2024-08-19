@@ -49,8 +49,8 @@ class PerceptionActionHelper:
         self, entity: Entity, stageentity: Entity
     ) -> List[str]:
         res: List[str] = []
-        stagecomp: StageComponent = stageentity.get(StageComponent)
-        prop_files = self._context._file_system.get_files(PropFile, stagecomp.name)
+        stage_comp = stageentity.get(StageComponent)
+        prop_files = self._context._file_system.get_files(PropFile, stage_comp.name)
         for prop in prop_files:
             res.append(prop._name)
         return res
@@ -129,9 +129,9 @@ class PerceptionActionSystem(ReactiveProcessor):
         helper = PerceptionActionHelper(self._context)
         helper.perception(entity)
         #
-        stageentity = self._context.safe_get_stage_entity(entity)
-        assert stageentity is not None
-        safe_stage_name = self._context.safe_get_entity_name(stageentity)
+        stage_entity = self._context.safe_get_stage_entity(entity)
+        assert stage_entity is not None
+        safe_stage_name = self._context.safe_get_entity_name(stage_entity)
         StageDirectorComponent.add_event_to_stage_director(
             self._context,
             entity,

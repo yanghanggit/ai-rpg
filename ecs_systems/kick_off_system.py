@@ -6,18 +6,22 @@ from ecs_systems.components import (
     ActorComponent,
     PlayerComponent,
 )
-from ecs_systems.action_components import PerceptionAction, CheckStatusAction
 import ecs_systems.cn_builtin_prompt as builtin_prompt
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
-from typing import Dict, Set, List
-from my_agent.agent_action import AgentAction
+from typing import Dict, Set, List, Any
 from my_agent.lang_serve_agent_request_task import (
     LangServeAgentRequestTask,
     LangServeAgentAsyncRequestTasksGather,
 )
 from rpg_game.rpg_game import RPGGame
 from file_system.files_def import PropFile
+from ecs_systems.action_components import (
+    STAGE_AVAILABLE_ACTIONS_REGISTER,
+    ACTOR_AVAILABLE_ACTIONS_REGISTER,
+)
+import gameplay.planning_helper
+from my_agent.agent_plan import AgentPlan
 
 
 ######################################################################################################################################################
@@ -25,56 +29,37 @@ class KickOffSystem(InitializeProcessor, ExecuteProcessor):
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         self._context: RPGEntitasContext = context
         self._tasks: Dict[str, LangServeAgentRequestTask] = {}
-        self._once_add_perception_and_check_status: bool = False
+        self._world_tasks: Dict[str, LangServeAgentRequestTask] = {}
+        self._stage_tasks: Dict[str, LangServeAgentRequestTask] = {}
+        self._actor_tasks: Dict[str, LangServeAgentRequestTask] = {}
         self._rpg_game: RPGGame = rpg_game
+
+    ######################################################################################################################################################
+    def clear_tasks(self) -> None:
+        self._tasks.clear()
+        self._world_tasks.clear()
+        self._stage_tasks.clear()
+        self._actor_tasks.clear()
 
     ######################################################################################################################################################
     @override
     def initialize(self) -> None:
-        # 分段处理
-        self._tasks.clear()
-        world_tasks = self.create_world_system_tasks()
-        stage_tasks = self.create_stage_tasks()
-        actor_tasks = self.create_actor_tasks()
+        # 清除
+        self.clear_tasks()
+        # 生成任务
+        self._world_tasks = self.create_world_system_tasks()
+        self._stage_tasks = self.create_stage_tasks()
+        self._actor_tasks = self.create_actor_tasks()
         self.handle_players()
         # 填进去
-        self._tasks.update(world_tasks)
-        self._tasks.update(stage_tasks)
-        self._tasks.update(actor_tasks)
+        self._tasks.update(self._world_tasks)
+        self._tasks.update(self._stage_tasks)
+        self._tasks.update(self._actor_tasks)
 
     ######################################################################################################################################################
     @override
     def execute(self) -> None:
-        if not self._once_add_perception_and_check_status:
-            self._once_add_perception_and_check_status = True
-            self.once_add_perception_and_check_status()
-
-    ######################################################################################################################################################
-    def once_add_perception_and_check_status(self) -> None:
-        actor_entities = self._context.get_group(
-            Matcher(all_of=[ActorComponent], none_of=[PlayerComponent])
-        ).entities
-        for actor_entity in actor_entities:
-
-            actor_comp = actor_entity.get(ActorComponent)
-
-            if not actor_entity.has(PerceptionAction):
-                actor_entity.add(
-                    PerceptionAction,
-                    AgentAction(
-                        actor_comp.name,
-                        PerceptionAction.__name__,
-                        [actor_comp.current_stage],
-                    ),
-                )
-
-            if not actor_entity.has(CheckStatusAction):
-                actor_entity.add(
-                    CheckStatusAction,
-                    AgentAction(
-                        actor_comp.name, CheckStatusAction.__name__, [actor_comp.name]
-                    ),
-                )
+        pass
 
     ######################################################################################################################################################
     @override
@@ -83,15 +68,13 @@ class KickOffSystem(InitializeProcessor, ExecuteProcessor):
         if len(self._tasks) == 0:
             return
 
-        gather = LangServeAgentAsyncRequestTasksGather(
-            "AgentsKickOffSystem", self._tasks
-        )
+        gather = LangServeAgentAsyncRequestTasksGather("KickOffSystem", self._tasks)
         response = await gather.gather()
         if len(response) == 0:
-            logger.warning(f"AgentsKickOffSystem: request_result is empty.")
             return
 
-        self._tasks.clear()  # 这句必须得走.
+        self.on_response(self._tasks)
+        self.clear_tasks()  # 这句必须得走.
 
     ######################################################################################################################################################
     def create_world_system_tasks(self) -> Dict[str, LangServeAgentRequestTask]:
@@ -141,8 +124,10 @@ class KickOffSystem(InitializeProcessor, ExecuteProcessor):
             kick_off_prompt = builtin_prompt.kick_off_stage_prompt(
                 kick_off_message,
                 self._rpg_game.about_game,
-                self.get_props_in_stage(stage_entity),
-                self.get_actor_names_in_stage(stage_entity),
+                self._context._file_system.get_files(
+                    PropFile, self._context.safe_get_entity_name(stage_entity)
+                ),
+                self._context.actor_names_in_stage(stage_entity),
             )
 
             task = LangServeAgentRequestTask.create(agent, kick_off_prompt)
@@ -203,19 +188,49 @@ class KickOffSystem(InitializeProcessor, ExecuteProcessor):
             self._context.safe_add_human_message_to_entity(actor_entity, prompt)
 
     ######################################################################################################################################################
-    def get_actor_names_in_stage(self, entity: Entity) -> Set[str]:
-        stage_comp = entity.get(StageComponent)
-        actors_in_stage = self._context.actors_in_stage(stage_comp.name)
-        ret: Set[str] = set()
-        for actor_entity in actors_in_stage:
-            actor_comp = actor_entity.get(ActorComponent)
-            ret.add(actor_comp.name)
-        return ret
+    def on_response(self, tasks: Dict[str, LangServeAgentRequestTask]) -> None:
+
+        for name, task in tasks.items():
+
+            if task is None:
+                logger.warning(
+                    f"ActorPlanningSystem: response is None or empty, so we can't get the planning."
+                )
+                continue
+
+            if name in self._world_tasks:
+                continue
+
+            agent_planning = AgentPlan(name, task.response_content)
+            entity = self._context.get_actor_entity(
+                name
+            ) or self._context.get_stage_entity(name)
+            if entity is None:
+                logger.warning(f"ActorPlanningSystem: entity is None, {name}")
+                continue
+
+            actions_register: List[Any] = []
+            if name in self._stage_tasks:
+                actions_register = STAGE_AVAILABLE_ACTIONS_REGISTER
+            elif name in self._actor_tasks:
+                actions_register = ACTOR_AVAILABLE_ACTIONS_REGISTER
+
+            if not gameplay.planning_helper.check_plan(
+                entity, agent_planning, actions_register
+            ):
+                logger.warning(
+                    f"ActorPlanningSystem: check_plan failed, {agent_planning}"
+                )
+                ## 需要失忆!
+                self._context._langserve_agent_system.remove_last_conversation_between_human_and_ai(
+                    name
+                )
+                continue
+
+            ## 不能停了，只能一直继续
+            for action in agent_planning._actions:
+                gameplay.planning_helper.add_action_component(
+                    entity, action, actions_register
+                )
 
     ######################################################################################################################################################
-    def get_props_in_stage(self, entity: Entity) -> List[PropFile]:
-        safe_stage_name = self._context.safe_get_entity_name(entity)
-        return self._context._file_system.get_files(PropFile, safe_stage_name)
-
-
-######################################################################################################################################################

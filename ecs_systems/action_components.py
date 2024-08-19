@@ -50,7 +50,7 @@ STAGE_AVAILABLE_ACTIONS_REGISTER = [
 ]
 
 # 场景对话类动作
-STAGE_CONVERSATION_ACTIONS_REGISTER = [SpeakAction, MindVoiceAction, WhisperAction]
+# STAGE_CONVERSATION_ACTIONS_REGISTER = [SpeakAction, MindVoiceAction, WhisperAction]
 
 
 # 角色可以用的所有动作
@@ -71,7 +71,7 @@ ACTOR_AVAILABLE_ACTIONS_REGISTER = [
 ]
 
 # 角色对话类动作
-ACTOR_CONVERSATION_ACTIONS_REGISTER = [SpeakAction, BroadcastAction, WhisperAction]
+# ACTOR_CONVERSATION_ACTIONS_REGISTER = [SpeakAction, BroadcastAction, WhisperAction]
 
 # 角色交互类动作
 ACTOR_INTERACTIVE_ACTIONS_REGISTER = [

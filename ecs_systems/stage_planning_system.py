@@ -1,13 +1,12 @@
-from entitas import Entity, Matcher, ExecuteProcessor  # type: ignore
+from entitas import Matcher, ExecuteProcessor  # type: ignore
 from overrides import override
-from ecs_systems.components import StageComponent, AutoPlanningComponent, ActorComponent
+from ecs_systems.components import StageComponent, AutoPlanningComponent
 from ecs_systems.action_components import STAGE_AVAILABLE_ACTIONS_REGISTER
 from my_agent.agent_plan import AgentPlan
-from my_agent.agent_action import AgentAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
-from typing import Dict, Set, List
-from gameplay_checks.planning_check import check_component_register
+from typing import Dict
+import gameplay.planning_helper
 from file_system.files_def import PropFile
 import ecs_systems.cn_builtin_prompt as builtin_prompt
 from my_agent.lang_serve_agent_request_task import (
@@ -36,7 +35,7 @@ class StagePlanningSystem(ExecuteProcessor):
     async def async_pre_execute(self) -> None:
         # step1: 添加任务
         self._tasks.clear()
-        self.add_tasks(self._tasks)
+        self.fill_tasks(self._tasks)
         # step可选：混沌工程做测试
         self._context._chaos_engineering_system.on_stage_planning_system_excute(
             self._context
@@ -77,7 +76,9 @@ class StagePlanningSystem(ExecuteProcessor):
                 continue
 
             stage_planning = AgentPlan(name, task.response_content)
-            if not self._check_plan(stage_entity, stage_planning):
+            if not gameplay.planning_helper.check_plan(
+                stage_entity, stage_planning, STAGE_AVAILABLE_ACTIONS_REGISTER
+            ):
                 logger.warning(
                     f"StagePlanningSystem: check_plan failed, {stage_planning}"
                 )
@@ -89,61 +90,12 @@ class StagePlanningSystem(ExecuteProcessor):
 
             ## 不能停了，只能一直继续
             for action in stage_planning._actions:
-                self._add_action_component(stage_entity, action)
+                gameplay.planning_helper.add_action_component(
+                    stage_entity, action, STAGE_AVAILABLE_ACTIONS_REGISTER
+                )
 
     #######################################################################################################################################
-    def _check_plan(self, entity: Entity, plan: AgentPlan) -> bool:
-        if len(plan._actions) == 0:
-            # 走到这里
-            logger.warning(
-                f"走到这里就是request过了，但是格式在load json的时候出了问题"
-            )
-            return False
-
-        for action in plan._actions:
-            if not self._check_available(action):
-                logger.warning(f"StagePlanningSystem: action is not correct, {action}")
-                return False
-        return True
-
-    #######################################################################################################################################
-    def _check_available(self, action: AgentAction) -> bool:
-        return (
-            check_component_register(
-                action._action_name, STAGE_AVAILABLE_ACTIONS_REGISTER
-            )
-            is not None
-        )
-
-    #######################################################################################################################################
-    def _add_action_component(self, entity: Entity, action: AgentAction) -> None:
-        compclass = check_component_register(
-            action._action_name, STAGE_AVAILABLE_ACTIONS_REGISTER
-        )
-        if compclass is None:
-            return
-        if not entity.has(compclass):
-            entity.add(compclass, action)
-
-    #######################################################################################################################################
-    # 获取场景内所有的actor的名字，用于场景计划。似乎不需要外观的信息？
-    def get_actor_names_in_stage(self, entity: Entity) -> Set[str]:
-        stage_comp = entity.get(StageComponent)
-        actors_in_stage = self._context.actors_in_stage(stage_comp.name)
-        ret: Set[str] = set()
-        for actor_entity in actors_in_stage:
-            actor_comp = actor_entity.get(ActorComponent)
-            ret.add(actor_comp.name)
-        return ret
-
-    #######################################################################################################################################
-    # 获取场景内所有的道具的描述。
-    def get_props_in_stage(self, entity: Entity) -> List[PropFile]:
-        safe_stage_name = self._context.safe_get_entity_name(entity)
-        return self._context._file_system.get_files(PropFile, safe_stage_name)
-
-    #######################################################################################################################################
-    def add_tasks(
+    def fill_tasks(
         self, out_put_request_tasks: Dict[str, LangServeAgentRequestTask]
     ) -> None:
         out_put_request_tasks.clear()
@@ -161,8 +113,10 @@ class StagePlanningSystem(ExecuteProcessor):
             task = LangServeAgentRequestTask.create(
                 agent,
                 builtin_prompt.stage_plan_prompt(
-                    self.get_props_in_stage(stage_entity),
-                    self.get_actor_names_in_stage(stage_entity),
+                    self._context._file_system.get_files(
+                        PropFile, self._context.safe_get_entity_name(stage_entity)
+                    ),
+                    self._context.actor_names_in_stage(stage_entity),
                 ),
             )
 

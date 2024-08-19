@@ -34,6 +34,7 @@ from ecs_systems.compress_chat_history_system import CompressChatHistorySystem
 from ecs_systems.post_conversation_action_system import PostConversationActionSystem
 from ecs_systems.pre_conversation_action_system import PreConversationActionSystem
 from ecs_systems.update_appearance_system import UpdateAppearanceSystem
+from ecs_systems.stage_narrate_action_system import StageNarrateActionSystem
 
 UPDATE_APPEARANCE_SYSTEM_NAME = "角色外观生成器"
 
@@ -83,6 +84,7 @@ class RPGEntitasProcessors(Processors):
 
         # 交流（与说话类）的行为!
         processors.add(PreConversationActionSystem(context))  # 所有对话之前
+        processors.add(StageNarrateActionSystem(context))
         processors.add(TagActionSystem(context))
         processors.add(MindVoiceActionSystem(context))
         processors.add(WhisperActionSystem(context))

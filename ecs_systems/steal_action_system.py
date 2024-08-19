@@ -4,10 +4,7 @@ from ecs_systems.action_components import StealPropAction, CheckStatusAction, De
 from ecs_systems.components import ActorComponent
 from loguru import logger
 from my_agent.agent_action import AgentAction
-from gameplay_checks.conversation_check import (
-    conversation_check,
-    ErrorConversationEnable,
-)
+import gameplay.conversation_helper
 from typing import override
 from ecs_systems.stage_director_component import StageDirectorComponent
 from ecs_systems.stage_director_event import IStageDirectorEvent
@@ -84,8 +81,10 @@ class StealActionSystem(ReactiveProcessor):
             target = tp[0]
             prop_name = tp[1]
             if (
-                conversation_check(self._context, entity, target)
-                != ErrorConversationEnable.VALID
+                gameplay.conversation_helper.check_conversation_enable(
+                    self._context, entity, target
+                )
+                != gameplay.conversation_helper.ErrorConversationEnable.VALID
             ):
                 # 不能交谈就是不能偷
                 continue

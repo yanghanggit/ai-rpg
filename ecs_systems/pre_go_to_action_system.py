@@ -209,7 +209,7 @@ class HandleStageConditionsResponseHelper:
         if self._tips_action is None:
             return str(_CNConstantPrompt_.NONE_PROMPT)
 
-        self._tips_action._action_name = StageNarrateAction.__name__
+        assert self._tips_action._action_name == StageNarrateAction.__name__
         if len(self._tips_action._values) == 0:
             return str(_CNConstantPrompt_.NONE_PROMPT)
         return self._tips_action.join_values()

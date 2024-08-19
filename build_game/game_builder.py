@@ -60,4 +60,3 @@ class GameBuilder:
     @property
     def stages_proxy(self) -> List[StageProxyModel]:
         return self._model.stages
-

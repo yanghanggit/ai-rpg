@@ -10,7 +10,7 @@ from my_agent.agent_action import AgentAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from typing import Dict
-from gameplay_checks.planning_check import check_component_register
+import gameplay.planning_helper
 import ecs_systems.cn_builtin_prompt as builtin_prompt
 from my_agent.lang_serve_agent_request_task import (
     LangServeAgentRequestTask,
@@ -76,7 +76,9 @@ class ActorPlanningSystem(ExecuteProcessor):
 
             actor_comp = entity.get(ActorComponent)
             actor_planning = AgentPlan(actor_comp.name, task.response_content)
-            if not self._check_plan(entity, actor_planning):
+            if not gameplay.planning_helper.check_plan(
+                entity, actor_planning, ACTOR_AVAILABLE_ACTIONS_REGISTER
+            ):
                 logger.warning(
                     f"ActorPlanningSystem: check_plan failed, {actor_planning}"
                 )
@@ -88,41 +90,9 @@ class ActorPlanningSystem(ExecuteProcessor):
 
             ## 不能停了，只能一直继续
             for action in actor_planning._actions:
-                self._add_action_component(entity, action)
-
-    #######################################################################################################################################
-    def _check_plan(self, entity: Entity, plan: AgentPlan) -> bool:
-        if len(plan._actions) == 0:
-            # 走到这里
-            logger.warning(
-                f"走到这里就是request过了，但是格式在load json的时候出了问题"
-            )
-            return False
-
-        for action in plan._actions:
-            if not self._check_available(action):
-                logger.warning(f"ActorPlanningSystem: action is not correct, {action}")
-                return False
-        return True
-
-    #######################################################################################################################################
-    def _check_available(self, action: AgentAction) -> bool:
-        return (
-            check_component_register(
-                action._action_name, ACTOR_AVAILABLE_ACTIONS_REGISTER
-            )
-            is not None
-        )
-
-    #######################################################################################################################################
-    def _add_action_component(self, entity: Entity, action: AgentAction) -> None:
-        compclass = check_component_register(
-            action._action_name, ACTOR_AVAILABLE_ACTIONS_REGISTER
-        )
-        if compclass is None:
-            return
-        if not entity.has(compclass):
-            entity.add(compclass, action)
+                gameplay.planning_helper.add_action_component(
+                    entity, action, ACTOR_AVAILABLE_ACTIONS_REGISTER
+                )
 
     #######################################################################################################################################
     # 获取场景的环境描述
@@ -136,8 +106,7 @@ class ActorPlanningSystem(ExecuteProcessor):
         stage_name = self._context.safe_get_entity_name(stage_entity)
         stage_enviro_narrate = ""
         if stage_entity.has(StageNarrateAction):
-            enviro_comp = stage_entity.get(StageNarrateAction)
-            action: AgentAction = enviro_comp.action
+            action: AgentAction = stage_entity.get(StageNarrateAction).action
             stage_enviro_narrate = action.join_values()
 
         return stage_name, stage_enviro_narrate
@@ -170,3 +139,4 @@ class ActorPlanningSystem(ExecuteProcessor):
             if task is not None:
                 out_put_request_tasks[actor_comp.name] = task
 
+    #######################################################################################################################################

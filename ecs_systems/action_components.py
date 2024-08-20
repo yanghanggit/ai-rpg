@@ -1,14 +1,6 @@
 from collections import namedtuple
 
 
-# self.name: str = actor_name
-# self.action_name: str = action_name
-# self.values: List[str] = values
-
-
-# name action_name values
-
-
 ################################################ 动作组件： ####################################################################################
 # 场景环境的描述
 StageNarrateAction = namedtuple("StageNarrateAction", "name action_name values")
@@ -49,6 +41,9 @@ PerceptionAction = namedtuple("PerceptionAction", "name action_name values")
 CheckStatusAction = namedtuple("CheckStatusAction", "name action_name values")
 #
 BehaviorAction = namedtuple("BehaviorAction", "name action_name values")
+TargetAction = namedtuple("TargetAction", "name action_name values")
+SkillAction = namedtuple("SkillAction", "name action_name values")
+PropAction = namedtuple("PropAction", "name action_name values")
 ##############################################################################################################################################
 
 
@@ -79,6 +74,9 @@ ACTOR_AVAILABLE_ACTIONS_REGISTER = [
     CheckStatusAction,
     UsePropAction,
     BehaviorAction,
+    TargetAction,
+    SkillAction,
+    PropAction,
 ]
 
 # 角色交互类动作
@@ -91,4 +89,7 @@ ACTOR_INTERACTIVE_ACTIONS_REGISTER = [
     CheckStatusAction,
     UsePropAction,
     BehaviorAction,
+    TargetAction,
+    SkillAction,
+    PropAction,
 ]

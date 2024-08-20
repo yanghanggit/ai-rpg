@@ -36,6 +36,7 @@ from ecs_systems.pre_conversation_action_system import PreConversationActionSyst
 from ecs_systems.update_appearance_system import UpdateAppearanceSystem
 from ecs_systems.stage_narrate_action_system import StageNarrateActionSystem
 from ecs_systems.behavior_action_system import BehaviorActionSystem
+from ecs_systems.skill_action_system import SkillActionSystem
 
 UPDATE_APPEARANCE_SYSTEM_NAME = "角色外观生成器"
 
@@ -95,15 +96,16 @@ class RPGEntitasProcessors(Processors):
             PostConversationActionSystem(context)
         )  # 所有对话之后，目前是防止用户用对话行为说出不符合政策的话
 
+        # 测试的系统
+        processors.add(BehaviorActionSystem(context))
+        processors.add(SkillActionSystem(context))  # skill_action_system
+
         # 战斗类的行为!
         processors.add(SimpleRPGPreFightSystem(context))
         processors.add(AttackActionSystem(context))
         processors.add(
             DeadActionSystem(context, rpg_game)
         )  ## 战斗类行为产生结果可能有死亡，死亡之后，后面的行为都不可以做。
-
-        # 测试的系统
-        processors.add(BehaviorActionSystem(context))
 
         # 交互类的行为（交换数据），在死亡之后，因为死了就不能执行
         processors.add(SearchPropActionSystem(context))
@@ -146,7 +148,7 @@ class RPGEntitasProcessors(Processors):
         processors.add(SaveSystem(context, rpg_game))
 
         # 开发专用，网页版本不需要
-        processors.add(TerminalPlayerInterruptAndWaitSystem(context, rpg_game))
+        # processors.add(TerminalPlayerInterruptAndWaitSystem(context, rpg_game))
 
         # 规划逻辑
         processors.add(PrePlanningSystem(context))  ######## 在所有规划之前!

@@ -192,6 +192,8 @@ def prop_type_prompt(prop_file: PropFile) -> str:
         ret = "非消耗品"
     elif prop_file.is_special:
         ret = "特殊能力"
+    elif prop_file.is_skill:
+        ret = "技能"
 
     return ret
 

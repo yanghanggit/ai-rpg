@@ -35,7 +35,7 @@ class PropModel(BaseModel):
     name: str
     codename: str
     description: str
-    isunique: str
+    # isunique: str
     type: str
     attributes: List[int]
     appearance: str

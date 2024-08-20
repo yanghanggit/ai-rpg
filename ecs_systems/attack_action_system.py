@@ -203,7 +203,8 @@ class AttackActionSystem(ReactiveProcessor):
 
             ## 死后处理大流程，step1——道具怎么办？后续可以封装的复杂一些: 夺取唯一性道具.
             if isdead:
-                self.unique_prop_be_taken_away(actor_or_stage_entity, target_entity)
+                pass
+                # self.unique_prop_be_taken_away(actor_or_stage_entity, target_entity)
 
             ## 可以加一些别的。。。。。。。。。。。。
             ## 比如杀人多了会被世界管理员记住——你是大坏蛋
@@ -244,31 +245,31 @@ class AttackActionSystem(ReactiveProcessor):
 
     ######################################################################################################################################################
     ## 杀死对方就直接夺取唯一性道具。
-    def unique_prop_be_taken_away(
-        self, attacker_entity: Entity, target_entity: Entity
-    ) -> None:
+    # def unique_prop_be_taken_away(
+    #     self, attacker_entity: Entity, target_entity: Entity
+    # ) -> None:
 
-        rpg_attr_comp = attacker_entity.get(RPGAttributesComponent)
-        target_rpg_attr_comp = target_entity.get(RPGAttributesComponent)
-        logger.info(f"{rpg_attr_comp.name} kill => {target_rpg_attr_comp.name}")
+    #     rpg_attr_comp = attacker_entity.get(RPGAttributesComponent)
+    #     target_rpg_attr_comp = target_entity.get(RPGAttributesComponent)
+    #     logger.info(f"{rpg_attr_comp.name} kill => {target_rpg_attr_comp.name}")
 
-        prop_files = self._context._file_system.get_files(
-            PropFile, target_rpg_attr_comp.name
-        )
-        for prop_file in prop_files:
-            if not prop_file.is_unique:
-                logger.info(
-                    f"the propfile {prop_file._name} is not unique, so it will not be taken away."
-                )
-                continue
-            # 交换文件，即交换道具文件即可
-            # self._context._file_system.give_prop_file(target_rpg_comp.name, rpg_comp.name, prop_file._name)
-            file_system.helper.give_prop_file(
-                self._context._file_system,
-                target_rpg_attr_comp.name,
-                rpg_attr_comp.name,
-                prop_file._name,
-            )
+    #     prop_files = self._context._file_system.get_files(
+    #         PropFile, target_rpg_attr_comp.name
+    #     )
+    #     for prop_file in prop_files:
+    #         if not prop_file.is_unique:
+    #             logger.info(
+    #                 f"the propfile {prop_file._name} is not unique, so it will not be taken away."
+    #             )
+    #             continue
+    #         # 交换文件，即交换道具文件即可
+    #         # self._context._file_system.give_prop_file(target_rpg_comp.name, rpg_comp.name, prop_file._name)
+    #         file_system.helper.give_prop_file(
+    #             self._context._file_system,
+    #             target_rpg_attr_comp.name,
+    #             rpg_attr_comp.name,
+    #             prop_file._name,
+    #         )
 
     ######################################################################################################################################################
     def final_attack_val(self, entity: Entity) -> int:

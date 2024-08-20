@@ -23,9 +23,9 @@ class ExcelDataProp:
     def description(self) -> str:
         return str(self._data["description"])
 
-    @property
-    def isunique(self) -> str:
-        return str(self._data["isunique"])
+    # @property
+    # def isunique(self) -> str:
+    #     return str(self._data["isunique"])
 
     @property
     def rag(self) -> str:
@@ -49,7 +49,7 @@ class ExcelDataProp:
         output["name"] = self.name
         output["codename"] = self.codename
         output["description"] = self.description
-        output["isunique"] = self.isunique
+        # output["isunique"] = self.isunique
         output["type"] = self.type
         output["attributes"] = [int(attr) for attr in self.attributes.split(",")]
         output["appearance"] = self.appearance

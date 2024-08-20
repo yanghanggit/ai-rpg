@@ -579,30 +579,19 @@ class PlayerBehavior(PlayerCommand):
         # 添加行动
         logger.debug(f"PlayerBehavior, {self._player_proxy._name}: {self._sentence}")
         actor_comp = player_entity.get(ActorComponent)
+        # /behavior 对@冀州.中山.卢奴.秘密监狱.火字十一号牢房的铁栏门  使用/飞炎咒
 
-        # /behavior 激活#黑火印记
-        skill_name = "激活特殊能力"
-        name = "人物.火十一"
-        target = "人物.火十一"
-        prop_name = "黑火印记"
-
-        # 属性改变
-        # 状态更新
-
-        # new_action = AgentAction(
-        #     actor_comp.name,
-        #     BehaviorAction.__name__,
-        #     [skill_name, name, target, prop_name],
-        # )
         player_entity.add(
             BehaviorAction,
             actor_comp.name,
             BehaviorAction.__name__,
-            [skill_name, name, target, prop_name],
+            [self._sentence],
         )
 
-        # # 模拟添加一个plan的发起。
-        out_put: Dict[str, List[str]] = {}
-        out_put[BehaviorAction.__name__] = [skill_name, name, target, prop_name]
-        human_message = json.dumps(out_put, ensure_ascii=False)
+        human_message = f"""{{"{BehaviorAction.__name__}": ["{self._sentence}"]}}"""
         self.add_human_message(player_entity, human_message)
+
+
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################

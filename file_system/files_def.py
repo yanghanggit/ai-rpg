@@ -90,12 +90,12 @@ class PropFile(BaseFile):
         return self._prop_model.appearance
 
     ############################################################################################################
-    @property
-    def is_unique(self) -> bool:
-        return (
-            self._prop_model.isunique.lower() == "yes"
-            or self._prop_model.isunique.lower() == "true"
-        )
+    # @property
+    # def is_unique(self) -> bool:
+    #     return (
+    #         self._prop_model.isunique.lower() == "yes"
+    #         or self._prop_model.isunique.lower() == "true"
+    #     )
 
     ############################################################################################################
     @property

@@ -38,7 +38,8 @@ from ecs_systems.stage_narrate_action_system import StageNarrateActionSystem
 from ecs_systems.behavior_action_system import BehaviorActionSystem
 from ecs_systems.skill_action_system import SkillActionSystem
 
-UPDATE_APPEARANCE_SYSTEM_NAME = "角色外观生成器"
+WORLD_APPEARANCE_SYSTEM_NAME = "角色外观生成器"
+WORLD_SKILL_SYSTEM_NAME = "技能系统"
 
 
 class RPGEntitasProcessors(Processors):
@@ -72,7 +73,7 @@ class RPGEntitasProcessors(Processors):
         processors.add(ConnectAgentSystem(context))  ### 连接所有agent
         processors.add(KickOffSystem(context, rpg_game))  ### 第一次读状态, initmemory
         processors.add(
-            UpdateAppearanceSystem(context, UPDATE_APPEARANCE_SYSTEM_NAME)
+            UpdateAppearanceSystem(context, WORLD_APPEARANCE_SYSTEM_NAME)
         )  ### 更新外观
         #########################################
 
@@ -98,7 +99,9 @@ class RPGEntitasProcessors(Processors):
 
         # 测试的系统
         processors.add(BehaviorActionSystem(context))
-        processors.add(SkillActionSystem(context))  # skill_action_system
+        processors.add(
+            SkillActionSystem(context, WORLD_SKILL_SYSTEM_NAME)
+        )  # skill_action_system
 
         # 战斗类的行为!
         processors.add(SimpleRPGPreFightSystem(context))

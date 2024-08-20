@@ -6,24 +6,25 @@ from ecs_systems.action_components import (
     PropAction,
 )
 from ecs_systems.components import (
-    StageComponent,
     AppearanceComponent,
     CurrentUsingPropComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from typing import override, Any, Dict, Set, List
+from typing import override, Any, Dict, List
 from loguru import logger
 from file_system.files_def import PropFile
 from build_game.data_model import PropModel
 import json
 import ecs_systems.cn_builtin_prompt as builtin_prompt
+from my_agent.lang_serve_agent_request_task import LangServeAgentRequestTask
 
 
 class SkillActionSystem(ReactiveProcessor):
 
-    def __init__(self, context: RPGEntitasContext) -> None:
+    def __init__(self, context: RPGEntitasContext, world_system_name: str) -> None:
         super().__init__(context)
         self._context: RPGEntitasContext = context
+        self._world_system_name: str = world_system_name
 
     ######################################################################################################################################################
     @override
@@ -83,7 +84,27 @@ class SkillActionSystem(ReactiveProcessor):
 
         logger.debug(prompt)
 
-    ######################################################################################################################################################
+        world_entity = self._context.get_world_entity(self._world_system_name)
+        if world_entity is None:
+            # 没有这个对象，就认为这个系统不成立。
+            logger.warning(f"{self._world_system_name}, world_entity is None.")
+            return
+
+        safe_name = self._context.safe_get_entity_name(world_entity)
+
+        agent = self._context._langserve_agent_system.get_agent(safe_name)
+        if agent is None:
+            return
+
+        task = LangServeAgentRequestTask.create_without_any_context(agent, prompt)
+        if task is None:
+            return
+
+        response = task.request()
+        if response is None:
+            return
+
+        logger.debug(response)
 
     ######################################################################################################################################################
     def get_skill_files(self, entity: Entity) -> List[PropFile]:

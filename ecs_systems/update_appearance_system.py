@@ -24,8 +24,6 @@ class UpdateAppearanceSystem(InitializeProcessor, ExecuteProcessor):
     def __init__(self, context: RPGEntitasContext, system_name: str) -> None:
         self._context: RPGEntitasContext = context
         self._system_name: str = str(system_name)
-        assert self._system_name == "角色外观生成器"
-        assert len(self._system_name) > 0
 
     ###############################################################################################################################################
     @override

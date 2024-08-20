@@ -7,6 +7,7 @@ from ecs_systems.stage_director_component import StageDirectorComponent
 from ecs_systems.stage_director_event import IStageDirectorEvent
 from typing import override
 import ecs_systems.cn_builtin_prompt as builtin_prompt
+import my_format_string.target_and_message_format_string
 
 
 ####################################################################################################################################
@@ -57,7 +58,8 @@ class SpeakActionSystem(ReactiveProcessor):
         speak_comp = entity.get(SpeakAction)
         speak_action: AgentAction = speak_comp.action
         safe_name = self._context.safe_get_entity_name(entity)
-        target_and_message = speak_action.target_and_message_values()
+        target_and_message = my_format_string.target_and_message_format_string.target_and_message_values(speak_action._values)
+        #speak_action.target_and_message_values()
         for tp in target_and_message:
             target = tp[0]
             message = tp[1]

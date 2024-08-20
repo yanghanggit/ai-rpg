@@ -111,7 +111,8 @@ class ActorPlanningSystem(ExecuteProcessor):
         stage_enviro_narrate = ""
         if stage_entity.has(StageNarrateAction):
             action: AgentAction = stage_entity.get(StageNarrateAction).action
-            stage_enviro_narrate = action.join_values()
+            stage_enviro_narrate = " ".join(action._values)
+            #action.join_values()
 
         return stage_name, stage_enviro_narrate
 

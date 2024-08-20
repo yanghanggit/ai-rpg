@@ -201,8 +201,12 @@ class HandleStageConditionsResponseHelper:
         if self._result_action is None:
             return False
         assert self._result_action._action_name == TagAction.__name__
-        return self._result_action.bool_value(0)
-
+        if len(self._result_action._values) == 0:
+            return False
+        return (
+            self._result_action._values[0].lower() == "yes"
+            or self._result_action._values[0].lower() == "true"
+        )
     ###############################################################################################################################################
     @property
     def tips(self) -> str:
@@ -212,7 +216,8 @@ class HandleStageConditionsResponseHelper:
         assert self._tips_action._action_name == StageNarrateAction.__name__
         if len(self._tips_action._values) == 0:
             return str(_CNConstantPrompt_.NONE_PROMPT)
-        return self._tips_action.join_values()
+        return " ".join(self._tips_action._values)
+    #self._tips_action.join_values()
 
     ###############################################################################################################################################
     def parse(self) -> bool:
@@ -482,7 +487,9 @@ class PreBeforeGoToActionSystem(ReactiveProcessor):
 
         go_to_comp: GoToAction = actor_entity.get(GoToAction)
         action: AgentAction = go_to_comp.action
-        return action.value(0)
+        if len(action._values) == 0:
+            return ""
+        return action._values[0]
 
     ###############################################################################################################################################
     # todo 目前就把角色外观信息当作状态信息，后续可以加入更多的状态信息
@@ -522,7 +529,9 @@ class PreBeforeGoToActionSystem(ReactiveProcessor):
 
         go_to_comp: GoToAction = actor_entity.get(GoToAction)
         action: AgentAction = go_to_comp.action
-        check_unknown_guid_stage_name = action.value(0)
+        if len(action._values) == 0:
+            return
+        check_unknown_guid_stage_name = action._values[0]
         if not builtin_prompt.is_unknown_guid_stage_name_prompt(
             check_unknown_guid_stage_name
         ):

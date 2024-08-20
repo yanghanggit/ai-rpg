@@ -127,7 +127,10 @@ class GoToActionSystem(ReactiveProcessor):
         assert entity.has(GoToAction)
         go_to_comp = entity.get(GoToAction)
         action: AgentAction = go_to_comp.action
-        helper = GoToActionHelper(self._context, entity, action.value(0))
+        if len(action._values) == 0:
+            return
+
+        helper = GoToActionHelper(self._context, entity, action._values[0])
         if (
             helper._target_stage_entity is None
             or helper._current_stage_entity is None

@@ -1,5 +1,5 @@
-from typing import Optional
-
+from typing import Optional, List
+from loguru import logger
 
 #################################################################################################################################
 # 我方定义的规则字符串
@@ -43,3 +43,22 @@ def make_target_and_message(target: str, message: str) -> str:
 
 
 #################################################################################################################################
+
+def target_and_message_values(values: List[str]) -> List[tuple[str, str]]:
+
+    result: List[tuple[str, str]] = []
+
+    for value in values:
+        if not is_target_and_message(value):
+            continue
+
+        tp = parse_target_and_message(value)
+        target: Optional[str] = tp[0]
+        message: Optional[str] = tp[1]
+        if target is None or message is None:
+            logger.error(f"target is None: {value}")
+            continue
+
+        result.append((target, message))
+
+    return result

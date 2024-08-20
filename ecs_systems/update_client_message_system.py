@@ -16,10 +16,11 @@ from my_agent.agent_action import AgentAction
 from typing import override
 from loguru import logger
 import gameplay.conversation_helper
-from my_format_string.target_and_message_format_string import make_target_and_message
+import my_format_string.target_and_message_format_string
 from rpg_game.rpg_game import RPGGame
 from rpg_game.terminal_rpg_game import TerminalRPGGame
 from rpg_game.web_server_multi_players_rpg_game import WebServerMultiplayersRPGGame
+import my_format_string.target_and_message_format_string
 
 
 # todo: 未完成
@@ -78,7 +79,8 @@ class UpdateClientMessageSystem(ExecuteProcessor):
         if len(action._values) == 0:
             return
 
-        message = action.join_values()
+        message = " ".join(action._values)
+        #action.join_values()
         player_proxy.add_stage_message(action._actor_name, message)
 
     ############################################################################################################
@@ -101,7 +103,8 @@ class UpdateClientMessageSystem(ExecuteProcessor):
 
             whisper_action_component = entity.get(WhisperAction)
             action: AgentAction = whisper_action_component.action
-            target_and_message = action.target_and_message_values()
+            target_and_message = my_format_string.target_and_message_format_string.target_and_message_values(action._values)
+            #action.target_and_message_values()
             for tp in target_and_message:
                 targetname = tp[0]
                 message = tp[1]
@@ -117,7 +120,7 @@ class UpdateClientMessageSystem(ExecuteProcessor):
                     continue
                 # 最后添加
                 player_proxy.add_actor_message(
-                    action._actor_name, make_target_and_message(targetname, message)
+                    action._actor_name, my_format_string.target_and_message_format_string.make_target_and_message(targetname, message)
                 )
 
     ############################################################################################################
@@ -139,7 +142,8 @@ class UpdateClientMessageSystem(ExecuteProcessor):
 
             broadcast_action_component = entity.get(BroadcastAction)
             action: AgentAction = broadcast_action_component.action
-            single_val = action.join_values()
+            single_val = " ".join(action._values)
+            #action.join_values()
             player_proxy.add_actor_message(
                 action._actor_name, f"""<@all>{single_val}"""
             )
@@ -163,7 +167,8 @@ class UpdateClientMessageSystem(ExecuteProcessor):
 
             speak_action_component = entity.get(SpeakAction)
             action: AgentAction = speak_action_component.action
-            target_and_message = action.target_and_message_values()
+            target_and_message = my_format_string.target_and_message_format_string.target_and_message_values(action._values)
+            #action.target_and_message_values()
             for tp in target_and_message:
                 targetname = tp[0]
                 message = tp[1]
@@ -175,7 +180,7 @@ class UpdateClientMessageSystem(ExecuteProcessor):
                 ):
                     continue
                 player_proxy.add_actor_message(
-                    action._actor_name, make_target_and_message(targetname, message)
+                    action._actor_name, my_format_string.target_and_message_format_string.make_target_and_message(targetname, message)
                 )
 
     ############################################################################################################
@@ -197,7 +202,8 @@ class UpdateClientMessageSystem(ExecuteProcessor):
 
             mind_voice_action_component = entity.get(MindVoiceAction)
             action: AgentAction = mind_voice_action_component.action
-            single_value = action.join_values()
+            single_value = " ".join(action._values)
+            #action.join_values()
             player_proxy.add_actor_message(
                 action._actor_name, f"""<心理活动>{single_value}"""
             )

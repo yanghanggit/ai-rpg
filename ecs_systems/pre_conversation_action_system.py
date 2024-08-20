@@ -69,7 +69,8 @@ class PreConversationActionSystem(ReactiveProcessor):
         if not player_entity.has(BroadcastAction):
             return ""
         broadcast_action = cast(AgentAction, player_entity.get(BroadcastAction).action)
-        return broadcast_action.join_values()
+        return " ".join(broadcast_action._values)
+    #broadcast_action.join_values()
 
     #################################################################################################################################################
     def get_speak_content(self, player_entity: Entity) -> List[str]:

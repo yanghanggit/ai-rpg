@@ -32,7 +32,8 @@ class StageNarrateActionSystem(ReactiveProcessor):
     ############################################################################################################
     def handle(self, stage_entity: Entity) -> None:
         action: AgentAction = stage_entity.get(StageNarrateAction).action
-        stage_narrate_content = action.join_values()
+        stage_narrate_content = " ".join(action._values)
+        #action.join_values()
         if stage_narrate_content == "":
             return
 

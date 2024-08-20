@@ -7,7 +7,7 @@ import gameplay.conversation_helper
 from ecs_systems.stage_director_component import StageDirectorComponent
 from ecs_systems.stage_director_event import IStageDirectorEvent
 import ecs_systems.cn_builtin_prompt as builtin_prompt
-
+import my_format_string.target_and_message_format_string
 
 ####################################################################################################################################
 ####################################################################################################################################
@@ -59,7 +59,8 @@ class WhisperActionSystem(ReactiveProcessor):
         whisper_comp: WhisperAction = entity.get(WhisperAction)
         action: AgentAction = whisper_comp.action
         safe_name = self._context.safe_get_entity_name(entity)
-        target_and_message = action.target_and_message_values()
+        target_and_message = my_format_string.target_and_message_format_string.target_and_message_values(action._values)
+        #action.target_and_message_values()
         for tp in target_and_message:
             targetname = tp[0]
             message = tp[1]

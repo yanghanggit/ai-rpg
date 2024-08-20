@@ -11,6 +11,7 @@ from ecs_systems.stage_director_event import IStageDirectorEvent
 import ecs_systems.cn_builtin_prompt as builtin_prompt
 import file_system.helper
 from file_system.files_def import PropFile
+import my_format_string.target_and_message_format_string
 
 
 class ActorGivePropEvent(IStageDirectorEvent):
@@ -71,7 +72,8 @@ class GivePropActionSystem(ReactiveProcessor):
 
         give_comp: GivePropAction = entity.get(GivePropAction)
         give_action: AgentAction = give_comp.action
-        target_and_message = give_action.target_and_message_values()
+        target_and_message = my_format_string.target_and_message_format_string.target_and_message_values(give_action._values) 
+        #give_action.target_and_message_values()
         for tp in target_and_message:
             target_name = tp[0]
             message = tp[1]

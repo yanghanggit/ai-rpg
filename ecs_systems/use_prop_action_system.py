@@ -22,6 +22,7 @@ from my_agent.agent_plan import AgentPlan
 import gameplay.use_prop_helper
 from file_system.files_def import PropFile
 from my_agent.lang_serve_agent_request_task import LangServeAgentRequestTask
+import my_format_string.target_and_message_format_string
 
 
 # 通知导演的类
@@ -63,7 +64,8 @@ class UsePropResponseHelper:
         if action is None or len(action._values) == 0:
             logger.error(f"InteractivePropActionSystem: {plan._raw} is not correct")
             return ""
-        return action.join_values()
+        return " ".join(action._values)
+    #action.join_values()
 
     @property
     def tips(self) -> str:
@@ -106,7 +108,8 @@ class UsePropActionSystem(ReactiveProcessor):
         context = self._context
         use_interactive_prop_comp: UsePropAction = entity.get(UsePropAction)
         action: AgentAction = use_interactive_prop_comp.action
-        target_and_message = action.target_and_message_values()
+        target_and_message = my_format_string.target_and_message_format_string.target_and_message_values(action._values)
+        #action.target_and_message_values()
         for tp in target_and_message:
             targetname = tp[0]
             propname = tp[1]

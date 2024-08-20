@@ -26,6 +26,8 @@ from my_agent.agent_action import AgentAction
 from player.player_proxy import PlayerProxy
 from abc import ABC, abstractmethod
 import datetime
+from typing import Dict, List
+import json
 
 
 ####################################################################################################################################
@@ -601,5 +603,7 @@ class PlayerBehavior(PlayerCommand):
         )
 
         # # 模拟添加一个plan的发起。
-        human_message = new_action.serialization()
+        out_put: Dict[str, List[str]] = {}
+        out_put[new_action._action_name] = new_action._values
+        human_message = json.dumps(out_put, ensure_ascii=False)
         self.add_human_message(player_entity, human_message)

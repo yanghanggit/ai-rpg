@@ -70,7 +70,8 @@ class BroadcastActionSystem(ReactiveProcessor):
         stage_comp = current_stage_entity.get(StageComponent)
         #
         action: AgentAction = broadcast_comp.action
-        join_values = action.join_values()
+        join_values = " ".join(action._values)
+        #action.join_values()
         StageDirectorComponent.add_event_to_stage_director(
             self._context,
             current_stage_entity,

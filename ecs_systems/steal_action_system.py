@@ -11,6 +11,7 @@ from ecs_systems.stage_director_event import IStageDirectorEvent
 import ecs_systems.cn_builtin_prompt as builtin_prompt
 import file_system.helper
 from file_system.files_def import PropFile
+import my_format_string.target_and_message_format_string
 
 
 ####################################################################################################################################
@@ -76,7 +77,8 @@ class StealActionSystem(ReactiveProcessor):
 
         steal_comp: StealPropAction = entity.get(StealPropAction)
         steal_action: AgentAction = steal_comp.action
-        target_and_message = steal_action.target_and_message_values()
+        target_and_message = my_format_string.target_and_message_format_string.target_and_message_values(steal_action._values)
+        #steal_action.target_and_message_values()
         for tp in target_and_message:
             target = tp[0]
             prop_name = tp[1]

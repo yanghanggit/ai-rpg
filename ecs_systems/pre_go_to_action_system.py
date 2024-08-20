@@ -16,7 +16,8 @@ from ecs_systems.components import (
     StageEntryCondCheckActorStatusComponent,
     StageEntryCondCheckActorPropsComponent,
 )
-from my_agent.agent_action import AgentAction
+
+# from my_agent.agent_action import AgentAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from ecs_systems.stage_director_component import StageDirectorComponent
@@ -25,7 +26,7 @@ import ecs_systems.cn_builtin_prompt as builtin_prompt
 from ecs_systems.cn_constant_prompt import _CNConstantPrompt_
 from typing import Optional, cast, override, List
 from ecs_systems.check_status_action_system import CheckStatusActionHelper
-from my_agent.agent_plan import AgentPlan
+from my_agent.agent_plan import AgentPlan, AgentAction
 from my_agent.lang_serve_agent_request_task import LangServeAgentRequestTask
 
 
@@ -141,21 +142,18 @@ class StageConditionsHelper:
         self._stage_name = context.safe_get_entity_name(stage_entity)
         # 准备好数据
         if stage_entity.has(StageExitCondStatusComponent):
-            self._stage_cond_status_prompt = cast(
-                StageExitCondStatusComponent,
-                stage_entity.get(StageExitCondStatusComponent),
+            self._stage_cond_status_prompt = stage_entity.get(
+                StageExitCondStatusComponent
             ).condition
         # 准备好数据
         if stage_entity.has(StageExitCondCheckActorStatusComponent):
-            self._cond_check_actor_status_prompt = cast(
-                StageExitCondCheckActorStatusComponent,
-                stage_entity.get(StageExitCondCheckActorStatusComponent),
+            self._cond_check_actor_status_prompt = stage_entity.get(
+                StageExitCondCheckActorStatusComponent
             ).condition
         # 准备好数据
         if stage_entity.has(StageExitCondCheckActorPropsComponent):
-            self._cond_check_actor_props_prompt = cast(
-                StageExitCondCheckActorPropsComponent,
-                stage_entity.get(StageExitCondCheckActorPropsComponent),
+            self._cond_check_actor_props_prompt = stage_entity.get(
+                StageExitCondCheckActorPropsComponent
             ).condition
 
     ####################################################################################################################################
@@ -166,21 +164,18 @@ class StageConditionsHelper:
         self._stage_name = context.safe_get_entity_name(stage_entity)
         # 准备好数据
         if stage_entity.has(StageEntryCondStatusComponent):
-            self._stage_cond_status_prompt = cast(
-                StageEntryCondStatusComponent,
-                stage_entity.get(StageEntryCondStatusComponent),
+            self._stage_cond_status_prompt = stage_entity.get(
+                StageEntryCondStatusComponent
             ).condition
         # 准备好数据
         if stage_entity.has(StageEntryCondCheckActorStatusComponent):
-            self._cond_check_actor_status_prompt = cast(
-                StageEntryCondCheckActorStatusComponent,
-                stage_entity.get(StageEntryCondCheckActorStatusComponent),
+            self._cond_check_actor_status_prompt = stage_entity.get(
+                StageEntryCondCheckActorStatusComponent
             ).condition
         # 准备好数据
         if stage_entity.has(StageEntryCondCheckActorPropsComponent):
-            self._cond_check_actor_props_prompt = cast(
-                StageEntryCondCheckActorPropsComponent,
-                stage_entity.get(StageEntryCondCheckActorPropsComponent),
+            self._cond_check_actor_props_prompt = stage_entity.get(
+                StageEntryCondCheckActorPropsComponent
             ).condition
 
 
@@ -200,24 +195,26 @@ class HandleStageConditionsResponseHelper:
     def result(self) -> bool:
         if self._result_action is None:
             return False
-        assert self._result_action._action_name == TagAction.__name__
-        if len(self._result_action._values) == 0:
+        assert self._result_action.action_name == TagAction.__name__
+        if len(self._result_action.values) == 0:
             return False
         return (
-            self._result_action._values[0].lower() == "yes"
-            or self._result_action._values[0].lower() == "true"
+            self._result_action.values[0].lower() == "yes"
+            or self._result_action.values[0].lower() == "true"
         )
+
     ###############################################################################################################################################
     @property
     def tips(self) -> str:
         if self._tips_action is None:
             return str(_CNConstantPrompt_.NONE_PROMPT)
 
-        assert self._tips_action._action_name == StageNarrateAction.__name__
-        if len(self._tips_action._values) == 0:
+        assert self._tips_action.action_name == StageNarrateAction.__name__
+        if len(self._tips_action.values) == 0:
             return str(_CNConstantPrompt_.NONE_PROMPT)
-        return " ".join(self._tips_action._values)
-    #self._tips_action.join_values()
+        return " ".join(self._tips_action.values)
+
+    # self._tips_action.join_values()
 
     ###############################################################################################################################################
     def parse(self) -> bool:
@@ -485,11 +482,11 @@ class PreBeforeGoToActionSystem(ReactiveProcessor):
         assert actor_entity.has(ActorComponent)
         assert actor_entity.has(GoToAction)
 
-        go_to_comp: GoToAction = actor_entity.get(GoToAction)
-        action: AgentAction = go_to_comp.action
-        if len(action._values) == 0:
+        go_to_action = actor_entity.get(GoToAction)
+        # go_to_action: AgentAction = go_to_comp.action
+        if len(go_to_action.values) == 0:
             return ""
-        return action._values[0]
+        return str(go_to_action.values[0])
 
     ###############################################################################################################################################
     # todo 目前就把角色外观信息当作状态信息，后续可以加入更多的状态信息
@@ -527,11 +524,11 @@ class PreBeforeGoToActionSystem(ReactiveProcessor):
         assert actor_entity.has(ActorComponent)
         assert actor_entity.has(GoToAction)
 
-        go_to_comp: GoToAction = actor_entity.get(GoToAction)
-        action: AgentAction = go_to_comp.action
-        if len(action._values) == 0:
+        go_to_action = actor_entity.get(GoToAction)
+        # go_to_action: AgentAction = go_to_comp.action
+        if len(go_to_action.values) == 0:
             return
-        check_unknown_guid_stage_name = action._values[0]
+        check_unknown_guid_stage_name = go_to_action.values[0]
         if not builtin_prompt.is_unknown_guid_stage_name_prompt(
             check_unknown_guid_stage_name
         ):
@@ -550,7 +547,7 @@ class PreBeforeGoToActionSystem(ReactiveProcessor):
             logger.error(f"({guid}) 对应的不是一个场景")
             return
 
-        action._values[0] = self._context.safe_get_entity_name(stage_entity)
+        go_to_action.values[0] = self._context.safe_get_entity_name(stage_entity)
 
 
 ###############################################################################################################################################

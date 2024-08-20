@@ -6,7 +6,8 @@ from ecs_systems.components import (
     SimpleRPGArmorComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from my_agent.agent_action import AgentAction
+
+# from my_agent.agent_action import AgentAction
 from loguru import logger
 from ecs_systems.stage_director_component import StageDirectorComponent
 from ecs_systems.stage_director_event import IStageDirectorEvent
@@ -103,21 +104,21 @@ class AttackActionSystem(ReactiveProcessor):
         context = self._context
         rpg_attr_comp = actor_or_stage_entity.get(RPGAttributesComponent)
         attack_action = actor_or_stage_entity.get(AttackAction)
-        action: AgentAction = attack_action.action
-        for value_as_target_name in action._values:
+        # action: AgentAction = attack_action.action
+        for value_as_target_name in attack_action.values:
 
             target_entity = context.get_entity_by_codename_component(
                 value_as_target_name
             )
             if target_entity is None:
                 logger.warning(
-                    f"攻击者{action._actor_name}意图攻击的对象{value_as_target_name}无法被找到,本次攻击无效."
+                    f"攻击者{attack_action.name}意图攻击的对象{value_as_target_name}无法被找到,本次攻击无效."
                 )
                 continue
 
             if not target_entity.has(RPGAttributesComponent):
                 logger.warning(
-                    f"攻击者{action._actor_name}意图攻击的对象{value_as_target_name}没有SimpleRPGComponent,本次攻击无效."
+                    f"攻击者{attack_action.name}意图攻击的对象{value_as_target_name}没有SimpleRPGComponent,本次攻击无效."
                 )
                 continue
 
@@ -135,7 +136,7 @@ class AttackActionSystem(ReactiveProcessor):
                     == gameplay.conversation_helper.ErrorConversationEnable.TARGET_DOES_NOT_EXIST
                 ):
                     logger.error(
-                        f"攻击者{action._actor_name}意图攻击的对象{value_as_target_name}不存在,本次攻击无效."
+                        f"攻击者{attack_action.name}意图攻击的对象{value_as_target_name}不存在,本次攻击无效."
                     )
                     # todo 是否应该因该提示发起人？做一下矫正？
 
@@ -144,7 +145,7 @@ class AttackActionSystem(ReactiveProcessor):
                     == gameplay.conversation_helper.ErrorConversationEnable.WITHOUT_BEING_IN_STAGE
                 ):
                     logger.error(
-                        f"攻击者{action._actor_name}不在任何舞台上,本次攻击无效.? 这是一个严重的错误！"
+                        f"攻击者{attack_action.name}不在任何舞台上,本次攻击无效.? 这是一个严重的错误！"
                     )
                     assert False  # 不要继续了，因为出现了严重的错误
 
@@ -165,7 +166,7 @@ class AttackActionSystem(ReactiveProcessor):
                     stage2_name = self._context.safe_get_entity_name(stage2)
 
                     logger.error(
-                        f"攻击者 {action._actor_name}:{stage1_name} 和攻击对象 {value_as_target_name}:{stage2_name} 不在同一个舞台上,本次攻击无效."
+                        f"攻击者 {attack_action.name}:{stage1_name} 和攻击对象 {value_as_target_name}:{stage2_name} 不在同一个舞台上,本次攻击无效."
                     )
 
                 # 跳过去，不能继续了！
@@ -214,9 +215,9 @@ class AttackActionSystem(ReactiveProcessor):
                     # 复制一个，不用以前的，怕GC不掉
                     target_entity.add(
                         DeadAction,
-                        AgentAction(
-                            action._actor_name, action._action_name, action._values
-                        ),
+                        attack_action.name,
+                        attack_action.action_name,
+                        attack_action.values,
                     )
 
             ## 导演系统，单独处理，有旧的代码
@@ -280,7 +281,7 @@ class AttackActionSystem(ReactiveProcessor):
 
         # 计算武器带来的伤害
         if entity.has(SimpleRPGWeaponComponent):
-            weaponcomp: SimpleRPGWeaponComponent = entity.get(SimpleRPGWeaponComponent)
+            weaponcomp = entity.get(SimpleRPGWeaponComponent)
             final += cast(int, weaponcomp.attack)
 
         return final
@@ -296,7 +297,7 @@ class AttackActionSystem(ReactiveProcessor):
 
         # 计算衣服带来的防御力
         if entity.has(SimpleRPGArmorComponent):
-            armorcomp: SimpleRPGArmorComponent = entity.get(SimpleRPGArmorComponent)
+            armorcomp = entity.get(SimpleRPGArmorComponent)
             final += cast(int, armorcomp.defense)
 
         return final

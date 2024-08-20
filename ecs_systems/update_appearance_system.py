@@ -132,7 +132,7 @@ class UpdateAppearanceSystem(InitializeProcessor, ExecuteProcessor):
             if appearance_comp.appearance != "":
                 continue
 
-            name = cast(ActorComponent, actor_entity.get(ActorComponent)).name
+            name = actor_entity.get(ActorComponent).name
             body = self.get_body(actor_entity)
             clothe = self.get_current_clothe(actor_entity)
             ret[name] = (body, clothe)

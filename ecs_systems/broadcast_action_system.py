@@ -2,7 +2,8 @@ from typing import override
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: ignore
 from ecs_systems.components import StageComponent
 from ecs_systems.action_components import BroadcastAction
-from my_agent.agent_action import AgentAction
+
+# from my_agent.agent_action import AgentAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from ecs_systems.stage_director_component import StageDirectorComponent
@@ -66,17 +67,17 @@ class BroadcastActionSystem(ReactiveProcessor):
             logger.error(f"BroadcastActionSystem: stageentity is None!")
             return
         #
-        broadcast_comp = entity.get(BroadcastAction)
+        broadcast_action = entity.get(BroadcastAction)
         stage_comp = current_stage_entity.get(StageComponent)
         #
-        action: AgentAction = broadcast_comp.action
-        join_values = " ".join(action._values)
-        #action.join_values()
+        # action: AgentAction = broadcast_action
+        join_values = " ".join(broadcast_action.values)
+        # action.join_values()
         StageDirectorComponent.add_event_to_stage_director(
             self._context,
             current_stage_entity,
             StageOrActorBroadcastEvent(
-                action._actor_name, stage_comp.name, join_values
+                broadcast_action.name, stage_comp.name, join_values
             ),
         )
 

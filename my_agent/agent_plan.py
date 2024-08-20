@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import List, Dict, Any, Optional
 import json
 from loguru import logger
@@ -7,7 +8,8 @@ from my_agent.my_json import (
     is_markdown_json_block,
     extract_markdown_json_block,
 )
-from my_agent.agent_action import AgentAction
+
+# from my_agent.agent_action import AgentAction
 
 
 ############################################################################################################
@@ -39,6 +41,15 @@ class AgentPlanJSON:
 ############################################################################################################
 ############################################################################################################
 ############################################################################################################
+
+
+@dataclass
+class AgentAction:
+    name: str
+    action_name: str
+    values: List[str]
+
+
 class AgentPlan:
 
     def __init__(self, name: str, raw_data: str) -> None:
@@ -77,6 +88,7 @@ class AgentPlan:
     ############################################################################################################
     def build(self, json: Dict[str, List[str]]) -> None:
         for key, value in json.items():
+            # self._actions.append(AgentAction(self._name, key, value))
             self._actions.append(AgentAction(self._name, key, value))
             self._actions_dict[key] = self._actions[-1]  # 方便查找
 

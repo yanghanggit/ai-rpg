@@ -1,7 +1,8 @@
 from entitas import Entity, Matcher, ReactiveProcessor  # type: ignore
 from typing import Optional, override
 from loguru import logger
-from my_agent.agent_action import AgentAction
+
+# from my_agent.agent_action import AgentAction
 from ecs_systems.action_components import (
     UsePropAction,
     StageInteractionFeedbackAction,
@@ -18,7 +19,7 @@ from entitas.group import GroupEvent
 from ecs_systems.stage_director_event import IStageDirectorEvent
 import ecs_systems.cn_builtin_prompt as builtin_prompt
 from ecs_systems.cn_constant_prompt import _CNConstantPrompt_
-from my_agent.agent_plan import AgentPlan
+from my_agent.agent_plan import AgentPlan, AgentAction
 import gameplay.use_prop_helper
 from file_system.files_def import PropFile
 from my_agent.lang_serve_agent_request_task import LangServeAgentRequestTask
@@ -61,11 +62,12 @@ class UsePropResponseHelper:
         action: Optional[AgentAction] = plan.get_action_by_key(
             StageInteractionFeedbackAction.__name__
         )
-        if action is None or len(action._values) == 0:
+        if action is None or len(action.values) == 0:
             logger.error(f"InteractivePropActionSystem: {plan._raw} is not correct")
             return ""
-        return " ".join(action._values)
-    #action.join_values()
+        return " ".join(action.values)
+
+    # action.join_values()
 
     @property
     def tips(self) -> str:
@@ -106,10 +108,14 @@ class UsePropActionSystem(ReactiveProcessor):
     def use_prop(self, entity: Entity) -> None:
 
         context = self._context
-        use_interactive_prop_comp: UsePropAction = entity.get(UsePropAction)
-        action: AgentAction = use_interactive_prop_comp.action
-        target_and_message = my_format_string.target_and_message_format_string.target_and_message_values(action._values)
-        #action.target_and_message_values()
+        use_interactive_prop_action = entity.get(UsePropAction)
+        # use_interactive_prop_action: AgentAction = use_interactive_prop_comp.action
+        target_and_message = (
+            my_format_string.target_and_message_format_string.target_and_message_values(
+                use_interactive_prop_action.values
+            )
+        )
+        # action.target_and_message_values()
         for tp in target_and_message:
             targetname = tp[0]
             propname = tp[1]
@@ -123,7 +129,7 @@ class UsePropActionSystem(ReactiveProcessor):
 
             # 检查道具是否存在，需要提醒，如果没有是大问题
             prop_file = context._file_system.get_file(
-                PropFile, action._actor_name, propname
+                PropFile, use_interactive_prop_action.name, propname
             )
             if prop_file is None:
                 logger.error(f"检查道具合理性失败，{propname} 不存在")
@@ -160,8 +166,8 @@ class UsePropActionSystem(ReactiveProcessor):
         # 检查条件
         exit_cond_status_prompt = str(_CNConstantPrompt_.NONE_PROMPT)
         if target_entity.has(StageExitCondStatusComponent):
-            stage_exit_cond_status_comp: StageExitCondStatusComponent = (
-                target_entity.get(StageExitCondStatusComponent)
+            stage_exit_cond_status_comp = target_entity.get(
+                StageExitCondStatusComponent
             )
             exit_cond_status_prompt = stage_exit_cond_status_comp.condition
         else:

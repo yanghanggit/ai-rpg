@@ -3,7 +3,8 @@ from rpg_game.rpg_entitas_context import RPGEntitasContext
 from ecs_systems.action_components import GivePropAction, CheckStatusAction, DeadAction
 from ecs_systems.components import ActorComponent
 from loguru import logger
-from my_agent.agent_action import AgentAction
+
+# from my_agent.agent_action import AgentAction
 import gameplay.conversation_helper
 from typing import List, override
 from ecs_systems.stage_director_component import StageDirectorComponent
@@ -70,10 +71,14 @@ class GivePropActionSystem(ReactiveProcessor):
         success_target_names: List[str] = []
         safe_name = self._context.safe_get_entity_name(entity)
 
-        give_comp: GivePropAction = entity.get(GivePropAction)
-        give_action: AgentAction = give_comp.action
-        target_and_message = my_format_string.target_and_message_format_string.target_and_message_values(give_action._values) 
-        #give_action.target_and_message_values()
+        give_action = entity.get(GivePropAction)
+        # give_action: AgentAction = give_comp.action
+        target_and_message = (
+            my_format_string.target_and_message_format_string.target_and_message_values(
+                give_action.values
+            )
+        )
+        # give_action.target_and_message_values()
         for tp in target_and_message:
             target_name = tp[0]
             message = tp[1]
@@ -123,7 +128,9 @@ class GivePropActionSystem(ReactiveProcessor):
         actor_comp = entity.get(ActorComponent)
         entity.add(
             CheckStatusAction,
-            AgentAction(actor_comp.name, CheckStatusAction.__name__, [actor_comp.name]),
+            actor_comp.name,
+            CheckStatusAction.__name__,
+            [actor_comp.name],
         )
 
 

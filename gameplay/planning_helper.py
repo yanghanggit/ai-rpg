@@ -1,8 +1,9 @@
 from entitas import Entity, Matcher, ExecuteProcessor  # type: ignore
 from loguru import logger
 from typing import List, Any
-from my_agent.agent_plan import AgentPlan
-from my_agent.agent_action import AgentAction
+from my_agent.agent_plan import AgentPlan, AgentAction
+
+# from my_agent.agent_action import AgentAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 
 
@@ -31,18 +32,18 @@ def check_plan(entity: Entity, plan: AgentPlan, actions_register: List[Any]) -> 
 
 #######################################################################################################################################
 def check_available(action: AgentAction, actions_register: List[Any]) -> bool:
-    return check_component_register(action._action_name, actions_register) is not None
+    return check_component_register(action.action_name, actions_register) is not None
 
 
 #######################################################################################################################################
 def add_action_component(
     entity: Entity, action: AgentAction, actions_register: List[Any]
 ) -> None:
-    comp_class = check_component_register(action._action_name, actions_register)
+    comp_class = check_component_register(action.action_name, actions_register)
     if comp_class is None:
         return
     if not entity.has(comp_class):
-        entity.add(comp_class, action)
+        entity.add(comp_class, action.name, action.action_name, action.values)
 
 
 ######################################################################################################################################

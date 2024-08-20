@@ -3,7 +3,8 @@ from ecs_systems.action_components import BehaviorAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import override, Optional, Any, Dict
 from loguru import logger
-from my_agent.agent_action import AgentAction
+
+# from my_agent.agent_action import AgentAction
 from file_system.files_def import PropFile
 from build_game.data_model import PropModel
 import json
@@ -37,8 +38,8 @@ class BehaviorActionSystem(ReactiveProcessor):
         assert entity.has(BehaviorAction)
 
         behavior_action: BehaviorAction = entity.get(BehaviorAction)
-        acton: AgentAction = behavior_action.action
-        if len(acton._values) != 4:
+        # acton: AgentAction = behavior_action.action
+        if len(behavior_action.values) != 4:
             return
 
         # /behavior 激活#黑火印记

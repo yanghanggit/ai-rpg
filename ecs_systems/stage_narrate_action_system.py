@@ -3,7 +3,8 @@ from typing import override
 from ecs_systems.action_components import StageNarrateAction
 from ecs_systems.components import StageNarrateComponent
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from my_agent.agent_action import AgentAction
+
+# from my_agent.agent_action import AgentAction
 
 
 ############################################################################################################
@@ -31,9 +32,9 @@ class StageNarrateActionSystem(ReactiveProcessor):
 
     ############################################################################################################
     def handle(self, stage_entity: Entity) -> None:
-        action: AgentAction = stage_entity.get(StageNarrateAction).action
-        stage_narrate_content = " ".join(action._values)
-        #action.join_values()
+        stage_narrate_action = stage_entity.get(StageNarrateAction)
+        stage_narrate_content = " ".join(stage_narrate_action.values)
+        # action.join_values()
         if stage_narrate_content == "":
             return
 

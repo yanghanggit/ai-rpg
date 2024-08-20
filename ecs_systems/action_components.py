@@ -1,42 +1,54 @@
 from collections import namedtuple
 
 
+# self.name: str = actor_name
+# self.action_name: str = action_name
+# self.values: List[str] = values
+
+
+# name action_name values
+
+
 ################################################ 动作组件： ####################################################################################
 # 场景环境的描述
-StageNarrateAction = namedtuple("StageNarrateAction", "action")
-StageConditionCheckAction = namedtuple("StageConditionCheckAction", "action")
-StageInteractionFeedbackAction = namedtuple("StageInteractionFeedbackAction", "action")
+StageNarrateAction = namedtuple("StageNarrateAction", "name action_name values")
+StageConditionCheckAction = namedtuple(
+    "StageConditionCheckAction", "name action_name values"
+)
+StageInteractionFeedbackAction = namedtuple(
+    "StageInteractionFeedbackAction", "name action_name values"
+)
 
 # 内心独白
-MindVoiceAction = namedtuple("MindVoiceAction", "action")
+MindVoiceAction = namedtuple("MindVoiceAction", "name action_name values")
 # 场景内广播
-BroadcastAction = namedtuple("BroadcastAction", "action")
+BroadcastAction = namedtuple("BroadcastAction", "name action_name values")
 # 私下交流
-WhisperAction = namedtuple("WhisperAction", "action")
+WhisperAction = namedtuple("WhisperAction", "name action_name values")
 # 对谁说（场景内其他角色能听到）
-SpeakAction = namedtuple("SpeakAction", "action")
+SpeakAction = namedtuple("SpeakAction", "name action_name values")
 # 标签
-TagAction = namedtuple("TagAction", "action")
+TagAction = namedtuple("TagAction", "name action_name values")
 # 攻击
-AttackAction = namedtuple("AttackAction", "action")
+AttackAction = namedtuple("AttackAction", "name action_name values")
 # 死亡
-DeadAction = namedtuple("DeadAction", "action")
+DeadAction = namedtuple("DeadAction", "name action_name values")
 # 离开当前场景并去往
-GoToAction = namedtuple("GoToAction", "action")
+GoToAction = namedtuple("GoToAction", "name action_name values")
 # 寻找场景内道具
-SearchPropAction = namedtuple("SearchPropAction", "action")
+SearchPropAction = namedtuple("SearchPropAction", "name action_name values")
 # 从目标角色处偷取
-StealPropAction = namedtuple("StealPropAction", "action")
+StealPropAction = namedtuple("StealPropAction", "name action_name values")
 # 将道具交给目标角色
-GivePropAction = namedtuple("GivePropAction", "action")
+GivePropAction = namedtuple("GivePropAction", "name action_name values")
 # 使用道具
-UsePropAction = namedtuple("UsePropAction", "action")
+UsePropAction = namedtuple("UsePropAction", "name action_name values")
 # 感知场景内的信息（角色与道具）
-PerceptionAction = namedtuple("PerceptionAction", "action")
+PerceptionAction = namedtuple("PerceptionAction", "name action_name values")
 # 检查自身状态
-CheckStatusAction = namedtuple("CheckStatusAction", "action")
+CheckStatusAction = namedtuple("CheckStatusAction", "name action_name values")
 #
-BehaviorAction = namedtuple("BehaviorAction", "action")
+BehaviorAction = namedtuple("BehaviorAction", "name action_name values")
 ##############################################################################################################################################
 
 

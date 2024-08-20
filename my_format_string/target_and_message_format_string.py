@@ -1,6 +1,7 @@
 from typing import Optional, List
 from loguru import logger
 
+
 #################################################################################################################################
 # 我方定义的规则字符串
 def parse_target_and_message(content: str) -> tuple[Optional[str], Optional[str]]:
@@ -43,6 +44,7 @@ def make_target_and_message(target: str, message: str) -> str:
 
 
 #################################################################################################################################
+
 
 def target_and_message_values(values: List[str]) -> List[tuple[str, str]]:
 

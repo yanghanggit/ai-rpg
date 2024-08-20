@@ -1,6 +1,7 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: ignore
 from ecs_systems.action_components import WhisperAction
-from my_agent.agent_action import AgentAction
+
+# from my_agent.agent_action import AgentAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import override
 import gameplay.conversation_helper
@@ -8,6 +9,7 @@ from ecs_systems.stage_director_component import StageDirectorComponent
 from ecs_systems.stage_director_event import IStageDirectorEvent
 import ecs_systems.cn_builtin_prompt as builtin_prompt
 import my_format_string.target_and_message_format_string
+
 
 ####################################################################################################################################
 ####################################################################################################################################
@@ -56,11 +58,15 @@ class WhisperActionSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     def whisper(self, entity: Entity) -> None:
-        whisper_comp: WhisperAction = entity.get(WhisperAction)
-        action: AgentAction = whisper_comp.action
+        whisper_action = entity.get(WhisperAction)
+        # action: AgentAction = whisper_comp.action
         safe_name = self._context.safe_get_entity_name(entity)
-        target_and_message = my_format_string.target_and_message_format_string.target_and_message_values(action._values)
-        #action.target_and_message_values()
+        target_and_message = (
+            my_format_string.target_and_message_format_string.target_and_message_values(
+                whisper_action.values
+            )
+        )
+        # action.target_and_message_values()
         for tp in target_and_message:
             targetname = tp[0]
             message = tp[1]

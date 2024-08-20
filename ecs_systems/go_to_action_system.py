@@ -1,7 +1,8 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: ignore
 from ecs_systems.action_components import GoToAction, DeadAction, PerceptionAction
 from ecs_systems.components import ActorComponent
-from my_agent.agent_action import AgentAction
+
+# from my_agent.agent_action import AgentAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from ecs_systems.stage_director_component import (
@@ -23,9 +24,7 @@ class GoToActionHelper:
 
         self._context: RPGEntitasContext = context
         self._entity: Entity = entity
-        self._current_stage_name: str = cast(
-            ActorComponent, entity.get(ActorComponent)
-        ).current_stage
+        self._current_stage_name: str = entity.get(ActorComponent).current_stage
         self._current_stage_entity: Optional[Entity] = self._context.get_stage_entity(
             self._current_stage_name
         )
@@ -125,12 +124,12 @@ class GoToActionSystem(ReactiveProcessor):
     def handle(self, entity: Entity) -> None:
 
         assert entity.has(GoToAction)
-        go_to_comp = entity.get(GoToAction)
-        action: AgentAction = go_to_comp.action
-        if len(action._values) == 0:
+        go_to_action = entity.get(GoToAction)
+        # o_to_action: AgentAction = go_to_comp.action
+        if len(go_to_action.values) == 0:
             return
 
-        helper = GoToActionHelper(self._context, entity, action._values[0])
+        helper = GoToActionHelper(self._context, entity, go_to_action.values[0])
         if (
             helper._target_stage_entity is None
             or helper._current_stage_entity is None
@@ -226,11 +225,9 @@ class GoToActionSystem(ReactiveProcessor):
                 # 进入新的场景之后，进入者与场景内所有人都加一次感知，这里会自动检查外观信息
                 actor_entity.add(
                     PerceptionAction,
-                    AgentAction(
-                        actor_comp.name,
-                        PerceptionAction.__name__,
-                        [actor_comp.current_stage],
-                    ),
+                    actor_comp.name,
+                    PerceptionAction.__name__,
+                    [actor_comp.current_stage],
                 )
 
 

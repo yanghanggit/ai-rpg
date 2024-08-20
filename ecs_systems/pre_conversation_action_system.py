@@ -7,7 +7,8 @@ from my_agent.lang_serve_agent_request_task import (
     LangServeAgentRequestTask,
     LangServeAgentAsyncRequestTasksGather,
 )
-from my_agent.agent_action import AgentAction
+
+# from my_agent.agent_action import AgentAction
 from typing import Dict, cast, List
 import copy
 import ecs_systems.cn_builtin_prompt as builtin_prompt
@@ -68,23 +69,24 @@ class PreConversationActionSystem(ReactiveProcessor):
     def get_broadcast_content(self, player_entity: Entity) -> str:
         if not player_entity.has(BroadcastAction):
             return ""
-        broadcast_action = cast(AgentAction, player_entity.get(BroadcastAction).action)
-        return " ".join(broadcast_action._values)
-    #broadcast_action.join_values()
+        broadcast_action = player_entity.get(BroadcastAction)
+        return " ".join(broadcast_action.values)
+
+    # broadcast_action.join_values()
 
     #################################################################################################################################################
     def get_speak_content(self, player_entity: Entity) -> List[str]:
         if not player_entity.has(SpeakAction):
             return []
-        speak_action = cast(AgentAction, player_entity.get(SpeakAction).action)
-        return copy.copy(speak_action._values)
+        speak_action = player_entity.get(SpeakAction)
+        return copy.copy(speak_action.values)
 
     #################################################################################################################################################
     def get_whisper_content(self, player_entity: Entity) -> List[str]:
         if not player_entity.has(WhisperAction):
             return []
-        whisper_action = cast(AgentAction, player_entity.get(WhisperAction).action)
-        return copy.copy(whisper_action._values)
+        whisper_action = player_entity.get(WhisperAction)
+        return copy.copy(whisper_action.values)
 
     #################################################################################################################################################
     async def async_post_execute(self) -> None:

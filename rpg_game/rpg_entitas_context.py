@@ -85,7 +85,7 @@ class RPGEntitasContext(Context):
             Matcher(all_of=[PlayerComponent, ActorComponent])
         ).entities
         for entity in entities:
-            player_comp: PlayerComponent = entity.get(PlayerComponent)
+            player_comp = entity.get(PlayerComponent)
             if player_comp.name == player_name:
                 return entity
         return None

@@ -12,7 +12,8 @@ from ecs_systems.action_components import (
     AttackAction,
     GoToAction,
 )
-from my_agent.agent_action import AgentAction
+
+# from my_agent.agent_action import AgentAction
 from typing import override
 from loguru import logger
 import gameplay.conversation_helper
@@ -74,14 +75,14 @@ class UpdateClientMessageSystem(ExecuteProcessor):
         if not stage.has(StageNarrateAction):
             return
 
-        enviro_comp = stage.get(StageNarrateAction)
-        action: AgentAction = enviro_comp.action
-        if len(action._values) == 0:
+        stage_narrate_action = stage.get(StageNarrateAction)
+        # stage_narrate_action: AgentAction = enviro_comp.action
+        if len(stage_narrate_action.values) == 0:
             return
 
-        message = " ".join(action._values)
-        #action.join_values()
-        player_proxy.add_stage_message(action._actor_name, message)
+        message = " ".join(stage_narrate_action.values)
+        # action.join_values()
+        player_proxy.add_stage_message(stage_narrate_action.name, message)
 
     ############################################################################################################
     def whisper_action_2_message(
@@ -101,10 +102,12 @@ class UpdateClientMessageSystem(ExecuteProcessor):
                 # 场景不一样，不能看见
                 continue
 
-            whisper_action_component = entity.get(WhisperAction)
-            action: AgentAction = whisper_action_component.action
-            target_and_message = my_format_string.target_and_message_format_string.target_and_message_values(action._values)
-            #action.target_and_message_values()
+            whisper_action_action = entity.get(WhisperAction)
+            # whisper_action_action: AgentAction = whisper_action_component.action
+            target_and_message = my_format_string.target_and_message_format_string.target_and_message_values(
+                whisper_action_action.values
+            )
+            # action.target_and_message_values()
             for tp in target_and_message:
                 targetname = tp[0]
                 message = tp[1]
@@ -120,7 +123,10 @@ class UpdateClientMessageSystem(ExecuteProcessor):
                     continue
                 # 最后添加
                 player_proxy.add_actor_message(
-                    action._actor_name, my_format_string.target_and_message_format_string.make_target_and_message(targetname, message)
+                    whisper_action_action.name,
+                    my_format_string.target_and_message_format_string.make_target_and_message(
+                        targetname, message
+                    ),
                 )
 
     ############################################################################################################
@@ -140,12 +146,12 @@ class UpdateClientMessageSystem(ExecuteProcessor):
                 # 场景不一样，不能看见
                 continue
 
-            broadcast_action_component = entity.get(BroadcastAction)
-            action: AgentAction = broadcast_action_component.action
-            single_val = " ".join(action._values)
-            #action.join_values()
+            broadcast_action = entity.get(BroadcastAction)
+            # roadcast_action: AgentAction = broadcast_action_component.action
+            single_val = " ".join(broadcast_action.values)
+            # action.join_values()
             player_proxy.add_actor_message(
-                action._actor_name, f"""<@all>{single_val}"""
+                broadcast_action.name, f"""<@all>{single_val}"""
             )
 
     ############################################################################################################
@@ -165,10 +171,12 @@ class UpdateClientMessageSystem(ExecuteProcessor):
                 # 场景不一样，不能看见
                 continue
 
-            speak_action_component = entity.get(SpeakAction)
-            action: AgentAction = speak_action_component.action
-            target_and_message = my_format_string.target_and_message_format_string.target_and_message_values(action._values)
-            #action.target_and_message_values()
+            speak_action = entity.get(SpeakAction)
+            # speak_action: AgentAction = speak_action_component.action
+            target_and_message = my_format_string.target_and_message_format_string.target_and_message_values(
+                speak_action.values
+            )
+            # action.target_and_message_values()
             for tp in target_and_message:
                 targetname = tp[0]
                 message = tp[1]
@@ -180,7 +188,10 @@ class UpdateClientMessageSystem(ExecuteProcessor):
                 ):
                     continue
                 player_proxy.add_actor_message(
-                    action._actor_name, my_format_string.target_and_message_format_string.make_target_and_message(targetname, message)
+                    speak_action.name,
+                    my_format_string.target_and_message_format_string.make_target_and_message(
+                        targetname, message
+                    ),
                 )
 
     ############################################################################################################
@@ -200,12 +211,12 @@ class UpdateClientMessageSystem(ExecuteProcessor):
                 # 只添加同一个场景的mindvoice
                 continue
 
-            mind_voice_action_component = entity.get(MindVoiceAction)
-            action: AgentAction = mind_voice_action_component.action
-            single_value = " ".join(action._values)
-            #action.join_values()
+            mind_voice_action = entity.get(MindVoiceAction)
+            # mind_voice_action: AgentAction = mind_voice_action_component.action
+            single_value = " ".join(mind_voice_action.values)
+            # action.join_values()
             player_proxy.add_actor_message(
-                action._actor_name, f"""<心理活动>{single_value}"""
+                mind_voice_action.name, f"""<心理活动>{single_value}"""
             )
 
     ############################################################################################################
@@ -223,15 +234,15 @@ class UpdateClientMessageSystem(ExecuteProcessor):
             if his_stage_entity != player_entity_stage:
                 continue
 
-            attack_action_component = entity.get(AttackAction)
-            action: AgentAction = attack_action_component.action
-            if len(action._values) == 0:
+            attack_action = entity.get(AttackAction)
+            # attack_action: AgentAction = attack_action_component.action
+            if len(attack_action.values) == 0:
                 logger.error("attack_action_2_message error")
                 continue
 
-            targetname = action._values[0]
+            targetname = attack_action.values[0]
             player_proxy.add_actor_message(
-                action._actor_name, f"""准备对{targetname}发起了攻击"""
+                attack_action.name, f"""准备对{targetname}发起了攻击"""
             )
 
     ############################################################################################################
@@ -249,15 +260,15 @@ class UpdateClientMessageSystem(ExecuteProcessor):
             if his_stage_entity != player_entity_stage:
                 continue
 
-            go_to_action_component = entity.get(GoToAction)
-            action: AgentAction = go_to_action_component.action
-            if len(action._values) == 0:
+            go_to_action = entity.get(GoToAction)
+            # go_to_action: AgentAction = go_to_action_component.action
+            if len(go_to_action.values) == 0:
                 logger.error("go_to_action_2_message error")
                 continue
 
-            stage_name = action._values[0]
+            stage_name = go_to_action.values[0]
             player_proxy.add_actor_message(
-                action._actor_name, f"""准备去往{stage_name}"""
+                go_to_action.name, f"""准备去往{stage_name}"""
             )
 
     ############################################################################################################

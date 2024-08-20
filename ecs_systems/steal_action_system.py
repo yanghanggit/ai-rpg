@@ -3,7 +3,8 @@ from rpg_game.rpg_entitas_context import RPGEntitasContext
 from ecs_systems.action_components import StealPropAction, CheckStatusAction, DeadAction
 from ecs_systems.components import ActorComponent
 from loguru import logger
-from my_agent.agent_action import AgentAction
+
+# from my_agent.agent_action import AgentAction
 import gameplay.conversation_helper
 from typing import override
 from ecs_systems.stage_director_component import StageDirectorComponent
@@ -75,10 +76,14 @@ class StealActionSystem(ReactiveProcessor):
         safename = self._context.safe_get_entity_name(entity)
         logger.debug(f"StealActionSystem: {safename} is stealing")
 
-        steal_comp: StealPropAction = entity.get(StealPropAction)
-        steal_action: AgentAction = steal_comp.action
-        target_and_message = my_format_string.target_and_message_format_string.target_and_message_values(steal_action._values)
-        #steal_action.target_and_message_values()
+        steal_action: StealPropAction = entity.get(StealPropAction)
+        # steal_action: AgentAction = steal_comp.action
+        target_and_message = (
+            my_format_string.target_and_message_format_string.target_and_message_values(
+                steal_action.values
+            )
+        )
+        # steal_action.target_and_message_values()
         for tp in target_and_message:
             target = tp[0]
             prop_name = tp[1]
@@ -127,7 +132,9 @@ class StealActionSystem(ReactiveProcessor):
         actor_comp = entity.get(ActorComponent)
         entity.add(
             CheckStatusAction,
-            AgentAction(actor_comp.name, CheckStatusAction.__name__, [actor_comp.name]),
+            actor_comp.name,
+            CheckStatusAction.__name__,
+            [actor_comp.name],
         )
 
 

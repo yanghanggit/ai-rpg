@@ -10,7 +10,8 @@ from ecs_systems.action_components import (
     ACTOR_AVAILABLE_ACTIONS_REGISTER,
 )
 from my_agent.agent_plan import AgentPlan
-from my_agent.agent_action import AgentAction
+
+# from my_agent.agent_action import AgentAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from typing import Dict, Set
@@ -108,13 +109,12 @@ class ActorPlanningSystem(ExecuteProcessor):
             return "", ""
 
         stage_name = self._context.safe_get_entity_name(stage_entity)
-        stage_enviro_narrate = ""
+        stage_enviro_narrate_content = ""
         if stage_entity.has(StageNarrateAction):
-            action: AgentAction = stage_entity.get(StageNarrateAction).action
-            stage_enviro_narrate = " ".join(action._values)
-            #action.join_values()
+            stage_enviro_narrate_action = stage_entity.get(StageNarrateAction)
+            stage_enviro_narrate_content = " ".join(stage_enviro_narrate_action.values)
 
-        return stage_name, stage_enviro_narrate
+        return stage_name, stage_enviro_narrate_content
 
     #######################################################################################################################################
     def fill_tasks(

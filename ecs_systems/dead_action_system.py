@@ -4,7 +4,8 @@ from ecs_systems.components import PlayerComponent, DestroyComponent, ActorCompo
 from ecs_systems.action_components import DeadAction, ACTOR_INTERACTIVE_ACTIONS_REGISTER
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
-from my_agent.agent_action import AgentAction
+
+# from my_agent.agent_action import AgentAction
 from rpg_game.rpg_game import RPGGame
 
 
@@ -50,11 +51,11 @@ class DeadActionSystem(ExecuteProcessor):
     def add_destory(self) -> None:
         entities = self._context.get_group(Matcher(DeadAction)).entities
         for entity in entities:
-            dead_comp = entity.get(DeadAction)
-            action: AgentAction = dead_comp.action
+            dead_caction = entity.get(DeadAction)
+            # dead_caction: AgentAction = dead_comp.action
             if not entity.has(DestroyComponent):
                 entity.add(
-                    DestroyComponent, action._actor_name
+                    DestroyComponent, dead_caction.name
                 )  ### 这里只需要名字，不需要values，谁造成了你的死亡
 
 

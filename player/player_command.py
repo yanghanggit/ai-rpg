@@ -22,7 +22,8 @@ from ecs_systems.components import (
     PlayerIsWebClientComponent,
     PlayerIsTerminalClientComponent,
 )
-from my_agent.agent_action import AgentAction
+
+# from my_agent.agent_action import AgentAction
 from player.player_proxy import PlayerProxy
 from abc import ABC, abstractmethod
 import datetime
@@ -99,16 +100,16 @@ class PlayerLogin(PlayerCommand):
             logger.error(f"{player_name}, already login")
             return
 
-        playercomp: PlayerComponent = actor_entity.get(PlayerComponent)
-        if playercomp is None:
+        player_comp = actor_entity.get(PlayerComponent)
+        if player_comp is None:
             # 扮演的角色不是设定的玩家可控制Actor
             logger.error(f"{actor_name}, actor is not player ctrl actor, login failed")
             return
 
-        if playercomp.name != "" and playercomp.name != player_name:
+        if player_comp.name != "" and player_comp.name != player_name:
             # 已经有人控制了，但不是你
             logger.error(
-                f"{actor_name}, player already ctrl by some player {playercomp.name}, login failed"
+                f"{actor_name}, player already ctrl by some player {player_comp.name}, login failed"
             )
             return
 
@@ -168,18 +169,18 @@ class PlayerAttack(PlayerCommand):
             actor_comp = player_entity.get(ActorComponent)
             player_entity.add(
                 AttackAction,
-                AgentAction(
-                    actor_comp.name, AttackAction.__name__, [attack_target_name]
-                ),
+                actor_comp.name,
+                AttackAction.__name__,
+                [attack_target_name],
             )
 
         elif player_entity.has(StageComponent):
             stage_comp = player_entity.get(StageComponent)
             player_entity.add(
                 AttackAction,
-                AgentAction(
-                    stage_comp.name, AttackAction.__name__, [attack_target_name]
-                ),
+                stage_comp.name,
+                AttackAction.__name__,
+                [attack_target_name],
             )
 
 
@@ -209,8 +210,7 @@ class PlayerGoTo(PlayerCommand):
         # 添加行动
         actor_comp = player_entity.get(ActorComponent)
         player_entity.add(
-            GoToAction,
-            AgentAction(actor_comp.name, GoToAction.__name__, [target_stage_name]),
+            GoToAction, actor_comp.name, GoToAction.__name__, [target_stage_name]
         )
 
         # 模拟添加一个plan的发起。
@@ -247,9 +247,9 @@ class PlayerBroadcast(PlayerCommand):
         actor_comp = player_entity.get(ActorComponent)
         player_entity.add(
             BroadcastAction,
-            AgentAction(
-                actor_comp.name, BroadcastAction.__name__, [self._broadcast_content]
-            ),
+            actor_comp.name,
+            BroadcastAction.__name__,
+            [self._broadcast_content],
         )
 
         # 模拟添加一个plan的发起。
@@ -287,8 +287,7 @@ class PlayerSpeak(PlayerCommand):
         # 添加行动
         actor_comp = player_entity.get(ActorComponent)
         player_entity.add(
-            SpeakAction,
-            AgentAction(actor_comp.name, SpeakAction.__name__, [self._speak_content]),
+            SpeakAction, actor_comp.name, SpeakAction.__name__, [self._speak_content]
         )
 
         # 模拟添加一个plan的发起。
@@ -325,9 +324,9 @@ class PlayerWhisper(PlayerCommand):
         actor_comp = player_entity.get(ActorComponent)
         player_entity.add(
             WhisperAction,
-            AgentAction(
-                actor_comp.name, WhisperAction.__name__, [self._whisper_content]
-            ),
+            actor_comp.name,
+            WhisperAction.__name__,
+            [self._whisper_content],
         )
 
         # 模拟添加一个plan的发起。
@@ -362,7 +361,9 @@ class PlayerSearchProp(PlayerCommand):
         actor_comp = player_entity.get(ActorComponent)
         player_entity.add(
             SearchPropAction,
-            AgentAction(actor_comp.name, SearchPropAction.__name__, [self._prop_name]),
+            actor_comp.name,
+            SearchPropAction.__name__,
+            [self._prop_name],
         )
 
         # 模拟添加一个plan的发起。
@@ -391,9 +392,9 @@ class PlayerPerception(PlayerCommand):
         actor_comp = player_entity.get(ActorComponent)
         player_entity.add(
             PerceptionAction,
-            AgentAction(
-                actor_comp.name, PerceptionAction.__name__, [actor_comp.current_stage]
-            ),
+            actor_comp.name,
+            PerceptionAction.__name__,
+            [actor_comp.current_stage],
         )
 
         # 模拟添加一个plan的发起。
@@ -432,11 +433,9 @@ class PlayerSteal(PlayerCommand):
         actor_comp = player_entity.get(ActorComponent)
         player_entity.add(
             StealPropAction,
-            AgentAction(
-                actor_comp.name,
-                StealPropAction.__name__,
-                [self._target_and_message_format_string],
-            ),
+            actor_comp.name,
+            StealPropAction.__name__,
+            [self._target_and_message_format_string],
         )
 
         # 模拟添加一个plan的发起。
@@ -473,11 +472,9 @@ class PlayerGiveProp(PlayerCommand):
         actor_comp = player_entity.get(ActorComponent)
         player_entity.add(
             GivePropAction,
-            AgentAction(
-                actor_comp.name,
-                GivePropAction.__name__,
-                [self._target_and_message_format_string],
-            ),
+            actor_comp.name,
+            GivePropAction.__name__,
+            [self._target_and_message_format_string],
         )
 
         # 模拟添加一个plan的发起。
@@ -512,7 +509,9 @@ class PlayerCheckStatus(PlayerCommand):
         actor_comp = player_entity.get(ActorComponent)
         player_entity.add(
             CheckStatusAction,
-            AgentAction(actor_comp.name, CheckStatusAction.__name__, [actor_comp.name]),
+            actor_comp.name,
+            CheckStatusAction.__name__,
+            [actor_comp.name],
         )
 
         # 模拟添加一个plan的发起。
@@ -549,11 +548,9 @@ class PlayerUseProp(PlayerCommand):
         actor_comp = player_entity.get(ActorComponent)
         player_entity.add(
             UsePropAction,
-            AgentAction(
-                actor_comp.name,
-                UsePropAction.__name__,
-                [self._target_and_message_format_string],
-            ),
+            actor_comp.name,
+            UsePropAction.__name__,
+            [self._target_and_message_format_string],
         )
 
         # 模拟添加一个plan的发起。
@@ -592,18 +589,20 @@ class PlayerBehavior(PlayerCommand):
         # 属性改变
         # 状态更新
 
-        new_action = AgentAction(
+        # new_action = AgentAction(
+        #     actor_comp.name,
+        #     BehaviorAction.__name__,
+        #     [skill_name, name, target, prop_name],
+        # )
+        player_entity.add(
+            BehaviorAction,
             actor_comp.name,
             BehaviorAction.__name__,
             [skill_name, name, target, prop_name],
         )
-        player_entity.add(
-            BehaviorAction,
-            new_action,
-        )
 
         # # 模拟添加一个plan的发起。
         out_put: Dict[str, List[str]] = {}
-        out_put[new_action._action_name] = new_action._values
+        out_put[BehaviorAction.__name__] = [skill_name, name, target, prop_name]
         human_message = json.dumps(out_put, ensure_ascii=False)
         self.add_human_message(player_entity, human_message)

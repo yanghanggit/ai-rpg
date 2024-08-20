@@ -1,6 +1,7 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: ignore
 from ecs_systems.action_components import SpeakAction
-from my_agent.agent_action import AgentAction
+
+# from my_agent.agent_action import AgentAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 import gameplay.conversation_helper
 from ecs_systems.stage_director_component import StageDirectorComponent
@@ -55,11 +56,15 @@ class SpeakActionSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     def speak(self, entity: Entity) -> None:
-        speak_comp = entity.get(SpeakAction)
-        speak_action: AgentAction = speak_comp.action
+        speak_action = entity.get(SpeakAction)
+        # speak_action: AgentAction = speak_comp.action
         safe_name = self._context.safe_get_entity_name(entity)
-        target_and_message = my_format_string.target_and_message_format_string.target_and_message_values(speak_action._values)
-        #speak_action.target_and_message_values()
+        target_and_message = (
+            my_format_string.target_and_message_format_string.target_and_message_values(
+                speak_action.values
+            )
+        )
+        # speak_action.target_and_message_values()
         for tp in target_and_message:
             target = tp[0]
             message = tp[1]

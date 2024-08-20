@@ -44,6 +44,7 @@ BehaviorAction = namedtuple("BehaviorAction", "name action_name values")
 TargetAction = namedtuple("TargetAction", "name action_name values")
 SkillAction = namedtuple("SkillAction", "name action_name values")
 PropAction = namedtuple("PropAction", "name action_name values")
+UpdateAppearanceAction = namedtuple("UpdateAppearanceAction", "name action_name values")
 ##############################################################################################################################################
 
 
@@ -77,6 +78,7 @@ ACTOR_AVAILABLE_ACTIONS_REGISTER = [
     TargetAction,
     SkillAction,
     PropAction,
+    UpdateAppearanceAction,
 ]
 
 # 角色交互类动作
@@ -92,4 +94,5 @@ ACTOR_INTERACTIVE_ACTIONS_REGISTER = [
     TargetAction,
     SkillAction,
     PropAction,
+    UpdateAppearanceAction,
 ]

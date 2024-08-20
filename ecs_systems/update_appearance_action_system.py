@@ -1,8 +1,8 @@
-from entitas import Entity, InitializeProcessor, ExecuteProcessor, Matcher  # type: ignore
+from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: ignore
 from overrides import override
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
-from typing import Dict, cast
+from typing import Dict, cast, Set
 import json
 from ecs_systems.components import (
     AppearanceComponent,
@@ -13,37 +13,47 @@ from ecs_systems.components import (
 import ecs_systems.cn_builtin_prompt as builtin_prompt
 from file_system.files_def import PropFile
 from my_agent.lang_serve_agent_request_task import LangServeAgentRequestTask
+from ecs_systems.action_components import UpdateAppearanceAction
 
 
-# todo
-class UpdateAppearanceSystem(InitializeProcessor, ExecuteProcessor):
-    """
-    更新外观信息的系统
-    """
+class UpdateAppearanceActionSystem(ReactiveProcessor):
 
     def __init__(self, context: RPGEntitasContext, system_name: str) -> None:
+        super().__init__(context)
         self._context: RPGEntitasContext = context
         self._system_name: str = str(system_name)
 
-    ###############################################################################################################################################
+    ####################################################################################################
     @override
-    def initialize(self) -> None:
-        pass
+    def get_trigger(self) -> dict[Matcher, GroupEvent]:
+        return {Matcher(UpdateAppearanceAction): GroupEvent.ADDED}
 
-    ###############################################################################################################################################
+    ####################################################################################################
     @override
-    def execute(self) -> None:
+    def filter(self, entity: Entity) -> bool:
+        return entity.has(UpdateAppearanceAction)
+
+    ####################################################################################################
+    @override
+    def react(self, entities: list[Entity]) -> None:
+
         world_entity = self._context.get_world_entity(self._system_name)
         if world_entity is None:
             # 没有这个对象，就认为这个系统不成立。
             logger.warning(f"{self._system_name}, world_entity is None.")
             return
-        self._execute(world_entity)
+
+        names: Set[str] = set()
+        for entity in entities:
+            safe_name = self._context.safe_get_entity_name(entity)
+            names.add(safe_name)
+
+        self.handle(world_entity, names)
 
     ###############################################################################################################################################
-    def _execute(self, world_entity: Entity) -> None:
+    def handle(self, world_entity: Entity, need_update_actors: Set[str]) -> None:
         assert world_entity is not None
-        actors_body_and_clothe = self.get_actors_body_and_clothe()
+        actors_body_and_clothe = self.get_actors_body_and_clothe(need_update_actors)
         if len(actors_body_and_clothe) == 0:
             return
         # 没有衣服的，直接更新外观
@@ -118,16 +128,20 @@ class UpdateAppearanceSystem(InitializeProcessor, ExecuteProcessor):
 
     ###############################################################################################################################################
     # 获取所有的角色的身体和衣服
-    def get_actors_body_and_clothe(self) -> Dict[str, tuple[str, str]]:
+    def get_actors_body_and_clothe(
+        self, need_update_actors: Set[str]
+    ) -> Dict[str, tuple[str, str]]:
         ret: Dict[str, tuple[str, str]] = {}
 
         actor_entities = self._context.get_group(
             Matcher(all_of=[AppearanceComponent, BodyComponent, ActorComponent])
         ).entities
+
         for actor_entity in actor_entities:
 
             appearance_comp = actor_entity.get(AppearanceComponent)
-            if appearance_comp.appearance != "":
+
+            if appearance_comp.name not in need_update_actors:
                 continue
 
             name = actor_entity.get(ActorComponent).name
@@ -160,5 +174,4 @@ class UpdateAppearanceSystem(InitializeProcessor, ExecuteProcessor):
         body_comp = entity.get(BodyComponent)
         return cast(str, body_comp.body)
 
-
-###############################################################################################################################################
+    ###############################################################################################################################################

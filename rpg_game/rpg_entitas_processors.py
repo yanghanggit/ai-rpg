@@ -33,7 +33,7 @@ from ecs_systems.simple_rpg_pre_fight_system import SimpleRPGPreFightSystem
 from ecs_systems.compress_chat_history_system import CompressChatHistorySystem
 from ecs_systems.post_conversation_action_system import PostConversationActionSystem
 from ecs_systems.pre_conversation_action_system import PreConversationActionSystem
-from ecs_systems.update_appearance_system import UpdateAppearanceSystem
+from ecs_systems.update_appearance_action_system import UpdateAppearanceActionSystem
 from ecs_systems.stage_narrate_action_system import StageNarrateActionSystem
 from ecs_systems.behavior_action_system import BehaviorActionSystem
 from ecs_systems.skill_action_system import SkillActionSystem
@@ -72,9 +72,6 @@ class RPGEntitasProcessors(Processors):
         # 初始化系统########################
         processors.add(ConnectAgentSystem(context))  ### 连接所有agent
         processors.add(KickOffSystem(context, rpg_game))  ### 第一次读状态, initmemory
-        processors.add(
-            UpdateAppearanceSystem(context, WORLD_APPEARANCE_SYSTEM_NAME)
-        )  ### 更新外观
         #########################################
 
         ### 处理玩家输入!
@@ -84,6 +81,10 @@ class RPGEntitasProcessors(Processors):
         processors.add(
             PreActionSystem(context)
         )  ######## <在所有行动之前> ##############################################################
+
+        processors.add(
+            UpdateAppearanceActionSystem(context, WORLD_APPEARANCE_SYSTEM_NAME)
+        )  ### 更新外观
 
         # 交流（与说话类）的行为!
         processors.add(PreConversationActionSystem(context))  # 所有对话之前

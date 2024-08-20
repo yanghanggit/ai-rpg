@@ -5,6 +5,8 @@ from ecs_systems.components import (
     StageComponent,
     ActorComponent,
     PlayerComponent,
+    AppearanceComponent,
+    BodyComponent,
 )
 import ecs_systems.cn_builtin_prompt as builtin_prompt
 from rpg_game.rpg_entitas_context import RPGEntitasContext
@@ -22,6 +24,7 @@ from ecs_systems.action_components import (
 )
 import gameplay.planning_helper
 from my_agent.agent_plan import AgentPlan
+from ecs_systems.action_components import UpdateAppearanceAction
 
 
 ######################################################################################################################################################
@@ -75,6 +78,7 @@ class KickOffSystem(InitializeProcessor, ExecuteProcessor):
 
         self.on_response(self._tasks)
         self.clear_tasks()  # 这句必须得走.
+        self.add_actions()
 
     ######################################################################################################################################################
     def create_world_system_tasks(self) -> Dict[str, LangServeAgentRequestTask]:
@@ -231,6 +235,24 @@ class KickOffSystem(InitializeProcessor, ExecuteProcessor):
             for action in agent_planning._actions:
                 gameplay.planning_helper.add_action_component(
                     entity, action, actions_register
+                )
+
+    ######################################################################################################################################################
+    def add_actions(self) -> None:
+
+        ## 第一次强制更新外观
+        actor_entities = self._context.get_group(
+            Matcher(all_of=[ActorComponent, AppearanceComponent, BodyComponent])
+        ).entities
+
+        for actor_entity in actor_entities:
+            if not actor_entity.has(UpdateAppearanceAction):
+                safe_name = self._context.safe_get_entity_name(actor_entity)
+                actor_entity.add(
+                    UpdateAppearanceAction,
+                    safe_name,
+                    UpdateAppearanceAction.__name__,
+                    [],
                 )
 
     ######################################################################################################################################################

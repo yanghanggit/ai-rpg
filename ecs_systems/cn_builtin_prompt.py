@@ -7,6 +7,9 @@ from ecs_systems.action_components import (
     PerceptionAction,
     CheckStatusAction,
     StageConditionCheckAction,
+    BroadcastAction,
+    SpeakAction,
+    WhisperAction,
 )
 import json
 from ecs_systems.cn_constant_prompt import _CNConstantPrompt_
@@ -211,7 +214,7 @@ def prop_prompt(
 
 
 ###############################################################################################################################################
-def special_component_prompt(prop_file: PropFile) -> str:
+def type_special_prop__prompt(prop_file: PropFile) -> str:
 
     assert prop_file.is_special
 
@@ -246,7 +249,7 @@ def check_status_action_prompt(
     props_prompt_as_special_components = ""
     if len(prop_files_as_special_components) > 0:
         for prop_file in prop_files_as_special_components:
-            props_prompt_as_special_components += special_component_prompt(prop_file)
+            props_prompt_as_special_components += type_special_prop__prompt(prop_file)
     else:
         props_prompt_as_special_components = "- 无任何特殊能力。"
 
@@ -412,25 +415,25 @@ def attack_prompt(
 
 
 ################################################################################################################################################
-def batch_conversation_action_events_in_stage_prompt(
-    stage_name: str, events: List[str]
-) -> str:
+# def batch_conversation_action_events_in_stage_prompt(
+#     stage_name: str, events: List[str]
+# ) -> str:
 
-    batch: List[str] = []
-    if len(events) == 0:
-        batch.append(
-            f""" # {_CNConstantPrompt_.BATCH_CONVERSATION_ACTION_EVENTS_TAG} 当前场景 {stage_name} 没有发生任何对话类型事件。"""
-        )
-    else:
-        batch.append(
-            f""" # {_CNConstantPrompt_.BATCH_CONVERSATION_ACTION_EVENTS_TAG} 当前场景 {stage_name} 发生了如下对话类型事件:"""
-        )
+#     batch: List[str] = []
+#     if len(events) == 0:
+#         batch.append(
+#             f""" # {_CNConstantPrompt_.BATCH_CONVERSATION_ACTION_EVENTS_TAG} 当前场景 {stage_name} 没有发生任何对话类型事件。"""
+#         )
+#     else:
+#         batch.append(
+#             f""" # {_CNConstantPrompt_.BATCH_CONVERSATION_ACTION_EVENTS_TAG} 当前场景 {stage_name} 发生了如下对话类型事件:"""
+#         )
 
-    for event in events:
-        batch.append(event)
+#     for event in events:
+#         batch.append(event)
 
-    prompt = json.dumps(batch, ensure_ascii=False)
-    return prompt
+#     prompt = json.dumps(batch, ensure_ascii=False)
+#     return prompt
 
 
 ################################################################################################################################################
@@ -650,6 +653,41 @@ def is_unknown_guid_stage_name_prompt(stage_name: str) -> bool:
 ################################################################################################################################################
 def extract_from_unknown_guid_stage_name_prompt(stage_name: str) -> int:
     return int(stage_name.split(":")[1])
+
+
+################################################################################################################################################
+def player_conversation_check_prompt(
+    input_broadcast_content: str,
+    input_speak_content_list: List[str],
+    input_whisper_content_list: List[str],
+) -> str:
+
+    broadcast_prompt = input_broadcast_content != "" and input_broadcast_content or "无"
+    speak_content_prompt = (
+        len(input_speak_content_list) > 0
+        and "\n".join(input_speak_content_list)
+        or "无"
+    )
+    whisper_content_prompt = (
+        len(input_whisper_content_list) > 0
+        and "\n".join(input_whisper_content_list)
+        or "无"
+    )
+
+    prompt = f"""# 玩家输入了如下对话类型事件，请你检查
+
+## {BroadcastAction.__name__}:广播事件,公开说话内容
+{broadcast_prompt}
+## {SpeakAction.__name__}:说话事件,对某角色说,场景其他角色可以听见
+{speak_content_prompt}
+## {WhisperAction.__name__}:私语事件,只有目标角色可以听见
+{whisper_content_prompt}
+## 检查规则
+- 对话内容是否违反政策。
+- 对话内容是否有不当的内容。
+- 对话对容是否有超出游戏范围的内容。例如，玩家说了一些关于游戏外的事情，或者说出不符合游戏世界观与历史背景的事件。
+"""
+    return prompt
 
 
 ################################################################################################################################################

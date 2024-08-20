@@ -10,6 +10,7 @@ from my_agent.lang_serve_agent_request_task import (
 from my_agent.agent_action import AgentAction
 from typing import Dict, cast, List
 import copy
+import ecs_systems.cn_builtin_prompt as builtin_prompt
 
 
 class PreConversationActionSystem(ReactiveProcessor):
@@ -53,45 +54,38 @@ class PreConversationActionSystem(ReactiveProcessor):
         speak_content_list = self.get_speak_content(player_entity)
         whisper_content_list = self.get_whisper_content(player_entity)
 
-        prompt = f"""# 玩家输入了如下对话类型事件，请你检查
+        prompt = builtin_prompt.player_conversation_check_prompt(
+            broadcast_content, speak_content_list, whisper_content_list
+        )
 
-## {BroadcastAction.__name__}:广播事件,公开说话内容
-{broadcast_content}
-## {SpeakAction.__name__}:说话事件,对某角色说,场景其他角色可以听见
-{"\n".join(speak_content_list)}
-## {WhisperAction.__name__}:私语事件,只有目标角色可以听见
-{"\n".join(whisper_content_list)}
-
-## 检查规则
-- 对话内容是否违反政策。
-- 对话内容是否有不当的内容。
-- 对话对容是否有超出游戏范围的内容。例如，玩家说了一些关于游戏外的事情或者说出不符合游戏世界观与历史背景的事件。
-"""
-
-        task = LangServeAgentRequestTask.create_for_checking_prompt(agent, prompt)
+        task = LangServeAgentRequestTask.create_without_any_context(agent, prompt)
         if task is None:
             return
 
         tasks[safe_name] = task
 
+    #################################################################################################################################################
     def get_broadcast_content(self, player_entity: Entity) -> str:
         if not player_entity.has(BroadcastAction):
-            return "无"
+            return ""
         broadcast_action = cast(AgentAction, player_entity.get(BroadcastAction).action)
         return broadcast_action.join_values()
 
+    #################################################################################################################################################
     def get_speak_content(self, player_entity: Entity) -> List[str]:
         if not player_entity.has(SpeakAction):
-            return ["无"]
+            return []
         speak_action = cast(AgentAction, player_entity.get(SpeakAction).action)
         return copy.copy(speak_action._values)
 
+    #################################################################################################################################################
     def get_whisper_content(self, player_entity: Entity) -> List[str]:
         if not player_entity.has(WhisperAction):
-            return ["无"]
+            return []
         whisper_action = cast(AgentAction, player_entity.get(WhisperAction).action)
         return copy.copy(whisper_action._values)
 
+    #################################################################################################################################################
     async def async_post_execute(self) -> None:
         if len(self._tasks) == 0:
             return
@@ -100,3 +94,54 @@ class PreConversationActionSystem(ReactiveProcessor):
         )
         await gather.gather()
         self._tasks.clear()
+
+        response = await gather.gather()
+        if len(response) == 0:
+            self.remove_all()
+            return
+
+        self.on_response(self._tasks)
+        self._tasks.clear()
+
+    #################################################################################################################################################
+    def remove_all(self) -> None:
+
+        actor_entities = self._context.get_group(
+            Matcher(
+                all_of=[ActorComponent, PlayerComponent],
+                any_of=[SpeakAction, BroadcastAction, WhisperAction],
+            )
+        ).entities.copy()
+
+        for actor_entity in actor_entities:
+            self.remove_action(actor_entity)
+
+    #################################################################################################################################################
+    def remove_action(self, player_entity: Entity) -> None:
+        if player_entity.has(SpeakAction):
+            player_entity.remove(SpeakAction)
+
+        if player_entity.has(BroadcastAction):
+            player_entity.remove(BroadcastAction)
+
+        if player_entity.has(WhisperAction):
+            player_entity.remove(WhisperAction)
+
+    #################################################################################################################################################
+    def on_response(self, tasks: Dict[str, LangServeAgentRequestTask]) -> None:
+        for name, task in tasks.items():
+
+            if task is None:
+                continue
+
+            player_entity = self._context.get_actor_entity(name)
+            if player_entity is None:
+                continue
+
+            if task.response is not None:
+                continue
+
+            # 说明可能在langserve中出现了问题，就是没有任何返回值。
+            self.remove_action(player_entity)
+
+    #################################################################################################################################################

@@ -1,9 +1,10 @@
-from typing import List, Optional
+from typing import List, Optional, Dict
 from loguru import logger
 from my_format_string.target_and_message_format_string import (
     is_target_and_message,
     parse_target_and_message,
 )
+import json
 
 
 class AgentAction:
@@ -54,6 +55,13 @@ class AgentAction:
             result.append((target, message))
 
         return result
+
+    #######################################################################################################################################
+    def serialization(self) -> str:
+
+        out_put: Dict[str, List[str]] = {}
+        out_put[self._action_name] = self._values
+        return json.dumps(out_put, ensure_ascii=False)
 
 
 #######################################################################################################################################

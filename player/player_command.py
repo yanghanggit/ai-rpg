@@ -13,6 +13,7 @@ from ecs_systems.action_components import (
     StealPropAction,
     GivePropAction,
     CheckStatusAction,
+    BehaviorAction,
 )
 from ecs_systems.components import (
     StageComponent,
@@ -561,3 +562,44 @@ class PlayerUseProp(PlayerCommand):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
+class PlayerBehavior(PlayerCommand):
+
+    def __init__(
+        self, name: str, rpg_game: RPGGame, player_proxy: PlayerProxy, sentence: str
+    ) -> None:
+        super().__init__(name, rpg_game, player_proxy)
+        self._sentence: str = sentence
+
+    def execute(self) -> None:
+        context = self._rpggame._entitas_context
+        player_entity = context.get_player_entity(self._player_proxy._name)
+        if player_entity is None:
+            return
+        # /behavior 激活#黑火印记
+        # /behavior 攻击@冀州.中山.卢奴.秘密监狱.火字十一号牢房的腐化的木牌
+        # 添加行动
+        logger.debug(f"PlayerBehavior, {self._player_proxy._name}: {self._sentence}")
+        actor_comp = player_entity.get(ActorComponent)
+
+        # /behavior 激活#黑火印记
+        skill_name = "激活特殊能力"
+        name = "人物.火十一"
+        target = "人物.火十一"
+        prop_name = "黑火印记"
+
+        # 属性改变
+        # 状态更新
+
+        new_action = AgentAction(
+            actor_comp.name,
+            BehaviorAction.__name__,
+            [skill_name, name, target, prop_name],
+        )
+        player_entity.add(
+            BehaviorAction,
+            new_action,
+        )
+
+        # # 模拟添加一个plan的发起。
+        human_message = new_action.serialization()
+        self.add_human_message(player_entity, human_message)

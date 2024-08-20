@@ -35,6 +35,7 @@ from ecs_systems.post_conversation_action_system import PostConversationActionSy
 from ecs_systems.pre_conversation_action_system import PreConversationActionSystem
 from ecs_systems.update_appearance_system import UpdateAppearanceSystem
 from ecs_systems.stage_narrate_action_system import StageNarrateActionSystem
+from ecs_systems.behavior_action_system import BehaviorActionSystem
 
 UPDATE_APPEARANCE_SYSTEM_NAME = "角色外观生成器"
 
@@ -100,6 +101,9 @@ class RPGEntitasProcessors(Processors):
         processors.add(
             DeadActionSystem(context, rpg_game)
         )  ## 战斗类行为产生结果可能有死亡，死亡之后，后面的行为都不可以做。
+
+        # 测试的系统
+        processors.add(BehaviorActionSystem(context))
 
         # 交互类的行为（交换数据），在死亡之后，因为死了就不能执行
         processors.add(SearchPropActionSystem(context))

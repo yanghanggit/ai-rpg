@@ -35,6 +35,8 @@ UsePropAction = namedtuple("UsePropAction", "action")
 PerceptionAction = namedtuple("PerceptionAction", "action")
 # 检查自身状态
 CheckStatusAction = namedtuple("CheckStatusAction", "action")
+#
+BehaviorAction = namedtuple("BehaviorAction", "action")
 ##############################################################################################################################################
 
 
@@ -48,10 +50,6 @@ STAGE_AVAILABLE_ACTIONS_REGISTER = [
     StageConditionCheckAction,
     StageInteractionFeedbackAction,
 ]
-
-# 场景对话类动作
-# STAGE_CONVERSATION_ACTIONS_REGISTER = [SpeakAction, MindVoiceAction, WhisperAction]
-
 
 # 角色可以用的所有动作
 ACTOR_AVAILABLE_ACTIONS_REGISTER = [
@@ -68,10 +66,8 @@ ACTOR_AVAILABLE_ACTIONS_REGISTER = [
     GivePropAction,
     CheckStatusAction,
     UsePropAction,
+    BehaviorAction,
 ]
-
-# 角色对话类动作
-# ACTOR_CONVERSATION_ACTIONS_REGISTER = [SpeakAction, BroadcastAction, WhisperAction]
 
 # 角色交互类动作
 ACTOR_INTERACTIVE_ACTIONS_REGISTER = [
@@ -82,4 +78,5 @@ ACTOR_INTERACTIVE_ACTIONS_REGISTER = [
     GivePropAction,
     CheckStatusAction,
     UsePropAction,
+    BehaviorAction,
 ]

@@ -92,12 +92,12 @@ class RPGEntitasContext(Context):
 
     #############################################################################################################################
     def get_entity_by_codename_component(self, name: str) -> Optional[Entity]:
-        compclass = self._codename_component_system.get_component_class_by_name(name)
-        if compclass is None:
+        comp_class = self._codename_component_system.get_component_class_by_name(name)
+        if comp_class is None:
             return None
-        find_stages: Set[Entity] = self.get_group(Matcher(compclass)).entities
-        if len(find_stages) > 0:
-            return next(iter(find_stages))
+        find_entities: Set[Entity] = self.get_group(Matcher(comp_class)).entities
+        if len(find_entities) > 0:
+            return next(iter(find_entities))
         return None
 
     #############################################################################################################################

@@ -54,6 +54,7 @@ class PropFile(BaseFile):
     TYPE_WEAPON = "Weapon"
     TYPE_CLOTHES = "Clothes"
     TYPE_NON_CONSUMABLE_ITEM = "NonConsumableItem"
+    TYPE_SKILL = "Skill"
 
     def __init__(
         self, guid: int, name: str, owner_name: str, prop_model: PropModel, count: int
@@ -119,6 +120,12 @@ class PropFile(BaseFile):
     def is_non_consumable_item(self) -> bool:
         assert PropFile.TYPE_NON_CONSUMABLE_ITEM == "NonConsumableItem"
         return self._prop_model.type == PropFile.TYPE_NON_CONSUMABLE_ITEM
+
+    ############################################################################################################
+    @property
+    def is_skill(self) -> bool:
+        assert PropFile.TYPE_SKILL == "Skill"
+        return self._prop_model.type == PropFile.TYPE_SKILL
 
     ############################################################################################################
     @property

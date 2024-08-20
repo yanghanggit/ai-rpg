@@ -18,6 +18,7 @@ from player.player_command import (
     PlayerGiveProp,
     PlayerPerception,
     PlayerCheckStatus,
+    PlayerBehavior,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from rpg_game.terminal_rpg_game import TerminalRPGGame
@@ -107,8 +108,8 @@ class HandlePlayerInputSystem(ExecuteProcessor):
 
         elif "/searchprop" in usr_input:
             command = "/searchprop"
-            propname = split_command(usr_input, command)
-            PlayerSearchProp(command, rpg_game, player_proxy, propname).execute()
+            prop_name = split_command(usr_input, command)
+            PlayerSearchProp(command, rpg_game, player_proxy, prop_name).execute()
 
         # elif "/portalstep" in usr_input:
         #     command = "/portalstep"
@@ -116,13 +117,13 @@ class HandlePlayerInputSystem(ExecuteProcessor):
 
         elif "/stealprop" in usr_input:
             command = "/stealprop"
-            propname = split_command(usr_input, command)
-            PlayerSteal(command, rpg_game, player_proxy, propname).execute()
+            prop_name = split_command(usr_input, command)
+            PlayerSteal(command, rpg_game, player_proxy, prop_name).execute()
 
         elif "/giveprop" in usr_input:
             command = "/giveprop"
-            propname = split_command(usr_input, command)
-            PlayerGiveProp(command, rpg_game, player_proxy, propname).execute()
+            prop_name = split_command(usr_input, command)
+            PlayerGiveProp(command, rpg_game, player_proxy, prop_name).execute()
 
         elif "/perception" in usr_input:
             command = "/perception"
@@ -140,6 +141,14 @@ class HandlePlayerInputSystem(ExecuteProcessor):
             command = "/useprop"
             content = split_command(usr_input, command)
             PlayerUseProp(command, rpg_game, player_proxy, content).execute()
+
+        elif "/behavior" in usr_input:
+            PlayerBehavior(
+                "/behavior",
+                rpg_game,
+                player_proxy,
+                split_command(usr_input, "/behavior"),
+            ).execute()
 
         return True
 

@@ -11,9 +11,11 @@ async def main(input_actor_name_as_default: str) -> None:
     logger.add(f"logs/{log_start_time}.log", level="DEBUG")
 
     # 读取世界资源文件
-    game_name = input("请输入要进入的世界名称(必须与自动化创建的名字一致):")
+    game_name = input(
+        "请输入要进入的世界名称(必须与自动化创建的名字一致), 默认为 World1"
+    )
     if game_name == "":
-        game_name = "World2"
+        game_name = "World1"
 
     rpg_game = create_rpg_game(game_name, "qwe", RPGGameClientType.TERMINAL)
     if rpg_game is None:

@@ -40,39 +40,33 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
     ####################################################################################################
     @override
     def react(self, entities: list[Entity]) -> None:
-
         world_entity = self._context.get_world_entity(self._system_name)
-        if world_entity is None:
-            # 没有这个对象，就认为这个系统不成立。
-            logger.warning(f"{self._system_name}, world_entity is None.")
-            return
-
-        names: Set[str] = set()
-        for entity in entities:
-            safe_name = self._context.safe_get_entity_name(entity)
-            names.add(safe_name)
-
-        self.handle(world_entity, names)
+        assert world_entity is not None
+        self.handle_all(world_entity, set(entities))
 
     ###############################################################################################################################################
-    def handle(self, world_entity: Entity, need_update_actors: Set[str]) -> None:
-        assert world_entity is not None
-        actors_body_and_clothe = self.get_actors_body_and_clothe(need_update_actors)
-        if len(actors_body_and_clothe) == 0:
+    def handle_all(self, world_entity: Entity, actor_entities: Set[Entity]) -> None:
+
+        if len(actor_entities) == 0 or world_entity is None:
             return
+
+        input_data = self.make_data(actor_entities)
+        if len(input_data) == 0:
+            return
+
         # 没有衣服的，直接更新外观
-        self.imme_update_appearance(actors_body_and_clothe)
+        self.imme_update(input_data)
+
         # 有衣服的，请求更新，通过LLM来推理外观
-        self.request_update_appearance(actors_body_and_clothe, world_entity)
+        world_system_agent_name = self._context.safe_get_entity_name(world_entity)
+        self.request(input_data, world_system_agent_name)
 
     ###############################################################################################################################################
     # 没有衣服的，就直接更新外观，一般是动物类的，或者非人类的。
-    def imme_update_appearance(
-        self, actors_body_and_clothe: Dict[str, tuple[str, str]]
-    ) -> None:
+    def imme_update(self, input_data: Dict[str, tuple[str, str]]) -> None:
 
         context = self._context
-        for name, (body, clothe) in actors_body_and_clothe.items():
+        for name, (body, clothe) in input_data.items():
 
             if clothe == "" and body != "":
 
@@ -89,65 +83,48 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
 
     ###############################################################################################################################################
     # 有衣服的，请求更新，通过LLM来推理外观。
-    def request_update_appearance(
-        self, actors_body_and_clothe: Dict[str, tuple[str, str]], world_entity: Entity
-    ) -> bool:
-        # 请求更新
-        safe_name = self._context.safe_get_entity_name(world_entity)
+    def request(self, input_data: Dict[str, tuple[str, str]], agent_name: str) -> bool:
 
-        agent = self._context._langserve_agent_system.get_agent(safe_name)
+        if len(input_data) == 0:
+            return False
+
+        agent = self._context._langserve_agent_system.get_agent(agent_name)
         if agent is None:
             return False
 
-        final_prompt = builtin_prompt.actors_body_and_clothe_prompt(
-            actors_body_and_clothe
-        )
-        if final_prompt == "":
-            return False
+        prompt = builtin_prompt.actors_body_and_clothe_prompt(input_data)
 
-        task = LangServeAgentRequestTask.create_without_any_context(agent, final_prompt)
+        task = LangServeAgentRequestTask.create_without_any_context(agent, prompt)
         if task is None:
             return False
 
         response = task.request()
         if response is None:
-            logger.error(f"{safe_name} request response is None.")
+            logger.error(f"{agent_name} request response is None.")
             return False
 
-        json_response: Dict[str, str] = json.loads(response)
-        self.on_request_success(json_response)
+        _json_: Dict[str, str] = json.loads(response)
+        self.on_success(_json_)
         return True
 
     ###############################################################################################################################################
     # 请求成功后的处理，就是把AppearanceComponent 设置一遍
-    def on_request_success(self, json_response: Dict[str, str]) -> None:
+    def on_success(self, _json_: Dict[str, str]) -> None:
         context = self._context
-        for name, appearance in json_response.items():
+        for name, appearance in _json_.items():
             entity = context.get_actor_entity(name)
             if entity is None:
-                logger.error(f"update_after_requst, entity is None, name: {name}")
                 continue
             hash_code = hash(appearance)
             entity.replace(AppearanceComponent, name, appearance, hash_code)
 
     ###############################################################################################################################################
     # 获取所有的角色的身体和衣服
-    def get_actors_body_and_clothe(
-        self, need_update_actors: Set[str]
-    ) -> Dict[str, tuple[str, str]]:
+    def make_data(self, actor_entities: Set[Entity]) -> Dict[str, tuple[str, str]]:
+
         ret: Dict[str, tuple[str, str]] = {}
 
-        actor_entities = self._context.get_group(
-            Matcher(all_of=[AppearanceComponent, BodyComponent, ActorComponent])
-        ).entities
-
         for actor_entity in actor_entities:
-
-            appearance_comp = actor_entity.get(AppearanceComponent)
-
-            if appearance_comp.name not in need_update_actors:
-                continue
-
             name = actor_entity.get(ActorComponent).name
             body = self.get_body(actor_entity)
             clothe = self.get_current_clothe(actor_entity)

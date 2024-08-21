@@ -3,7 +3,7 @@ from pathlib import Path
 
 root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
-from typing import Any, Dict
+from typing import Any, Dict, List, cast
 
 
 class ExcelDataProp:
@@ -23,10 +23,6 @@ class ExcelDataProp:
     def description(self) -> str:
         return str(self._data["description"])
 
-    # @property
-    # def isunique(self) -> str:
-    #     return str(self._data["isunique"])
-
     @property
     def rag(self) -> str:
         return str(self._data["RAG"])
@@ -36,8 +32,14 @@ class ExcelDataProp:
         return str(self._data["type"])
 
     @property
-    def attributes(self) -> str:
-        return str(self._data["attributes"])
+    def attributes(self) -> List[int]:
+        assert self._data is not None
+        data = cast(str, self._data["attributes"])
+        assert "," in data, f"raw_string_val: {data} is not valid."
+        values = [int(attr) for attr in data.split(",")]
+        if len(values) < 10:
+            values.extend([0] * (10 - len(values)))
+        return values
 
     @property
     def appearance(self) -> str:
@@ -49,9 +51,8 @@ class ExcelDataProp:
         output["name"] = self.name
         output["codename"] = self.codename
         output["description"] = self.description
-        # output["isunique"] = self.isunique
         output["type"] = self.type
-        output["attributes"] = [int(attr) for attr in self.attributes.split(",")]
+        output["attributes"] = self.attributes
         output["appearance"] = self.appearance
         return output
 

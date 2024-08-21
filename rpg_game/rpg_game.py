@@ -17,7 +17,8 @@ from ecs_systems.components import (
     StageEntryCondCheckActorPropsComponent,
     BodyComponent,
     GUIDComponent,
-    CurrentUsingPropComponent,
+    RPGCurrentWeaponComponent,
+    RPGCurrentClothesComponent,
     StageGraphComponent,
     StageNarrateComponent,
 )
@@ -312,15 +313,15 @@ class RPGGame(BaseGame):
                 logger.error(f"没有从数据库找到道具：{prop_proxy.name}")
                 continue
 
-            prop_file = PropFile(
+            new_prop_file = PropFile(
                 context._guid_generator.generate(),
                 prop_model.name,
                 actor_proxy.name,
                 prop_model,
                 prop_proxy.count,
             )
-            context._file_system.add_file(prop_file)
-            context._file_system.write_file(prop_file)
+            context._file_system.add_file(new_prop_file)
+            context._file_system.write_file(new_prop_file)
             context._codename_component_system.register_code_name_component_class(
                 prop_model.name, prop_model.codename
             )
@@ -330,26 +331,38 @@ class RPGGame(BaseGame):
             context._file_system, actor_model.name, set(actor_model.actor_archives)
         )
 
-        # 当前使用的装备
-        weapon_name: str = ""
-        clothes_name: str = ""
+        weapon_prop_file: Optional[PropFile] = None
+        clothes_prop_file: Optional[PropFile] = None
         for prop_name in actor_proxy.actor_current_using_prop:
 
-            find_weapon_or_clothes_file = context._file_system.get_file(
+            find_prop_file_weapon_or_clothes = context._file_system.get_file(
                 PropFile, actor_model.name, prop_name
             )
-            if find_weapon_or_clothes_file is None:
+            if find_prop_file_weapon_or_clothes is None:
                 logger.error(f"没有找到道具文件：{prop_name}")
                 continue
 
-            if find_weapon_or_clothes_file.is_weapon and weapon_name == "":
-                weapon_name = prop_name
-            elif find_weapon_or_clothes_file.is_clothes and clothes_name == "":
-                clothes_name = prop_name
+            if find_prop_file_weapon_or_clothes.is_weapon and weapon_prop_file is None:
+                weapon_prop_file = find_prop_file_weapon_or_clothes
+            elif (
+                find_prop_file_weapon_or_clothes.is_clothes
+                and clothes_prop_file is None
+            ):
+                clothes_prop_file = find_prop_file_weapon_or_clothes
 
-        actor_entity.add(
-            CurrentUsingPropComponent, actor_model.name, weapon_name, clothes_name
-        )
+        if weapon_prop_file is not None and not actor_entity.has(
+            RPGCurrentWeaponComponent
+        ):
+            actor_entity.add(
+                RPGCurrentWeaponComponent, actor_model.name, weapon_prop_file.name
+            )
+
+        if clothes_prop_file is not None and not actor_entity.has(
+            RPGCurrentClothesComponent
+        ):
+            actor_entity.add(
+                RPGCurrentClothesComponent, actor_model.name, clothes_prop_file.name
+            )
 
         return actor_entity
 

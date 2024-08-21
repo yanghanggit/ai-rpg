@@ -20,7 +20,7 @@ EDITOR_WORLD_SYSTEM_TYPE = "WorldSystem"
 EDITOR_PLAYER_TYPE = "Player"
 EDITOR_ACTOR_TYPE = "Actor"
 EDITOR_STAGE_TYPE = "Stage"
-EDITOR_ABOUT_GAME_TYPE = "AboutGame"  # AboutGame
+EDITOR_ABOUT_GAME_TYPE = "AboutGame"
 
 
 ################################################################################################################
@@ -178,7 +178,7 @@ class ExcelEditorGame:
 
     ############################################################################################################################
     def create_actors(self, actors: List[Any]) -> List[ExcelEditorActor]:
-        res: List[ExcelEditorActor] = []
+        ret: List[ExcelEditorActor] = []
         for item in actors:
             if item["name"] not in self._actor_data_base:
                 logger.error(f"Invalid  name: {item['name']}")
@@ -186,12 +186,12 @@ class ExcelEditorGame:
             editor_actor = ExcelEditorActor(
                 item, self._actor_data_base, self._prop_data_base
             )
-            res.append(editor_actor)
-        return res
+            ret.append(editor_actor)
+        return ret
 
     ############################################################################################################################
     def create_stages(self, stages: List[Any]) -> List[ExcelEditorStage]:
-        res: List[ExcelEditorStage] = []
+        ret: List[ExcelEditorStage] = []
         for item in stages:
             if item["name"] not in self._stage_data_base:
                 logger.error(f"Invalid Stage name: {item['name']}")
@@ -199,8 +199,8 @@ class ExcelEditorGame:
             editor_stage = ExcelEditorStage(
                 item, self._actor_data_base, self._prop_data_base, self._stage_data_base
             )
-            res.append(editor_stage)
-        return res
+            ret.append(editor_stage)
+        return ret
 
     ############################################################################################################################
     # 最后生成JSON
@@ -259,7 +259,7 @@ class ExcelEditorGame:
         return game_sample.utils.write_text_file(
             Path(directory),
             f"{self._name}.json",
-            json.dumps(self.serialization(), indent=4, ensure_ascii=False),
+            json.dumps(self.serialization(), indent=2, ensure_ascii=False),
         )
 
     ############################################################################################################################

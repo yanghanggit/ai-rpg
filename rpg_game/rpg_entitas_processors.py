@@ -29,7 +29,8 @@ from ecs_systems.steal_action_system import StealActionSystem
 from ecs_systems.give_prop_action_system import GivePropActionSystem
 from ecs_systems.check_status_action_system import CheckStatusActionSystem
 from ecs_systems.connect_agent_system import ConnectAgentSystem
-from ecs_systems.simple_rpg_pre_fight_system import SimpleRPGPreFightSystem
+
+# from ecs_systems.simple_rpg_pre_fight_system import SimpleRPGPreFightSystem
 from ecs_systems.compress_chat_history_system import CompressChatHistorySystem
 from ecs_systems.post_conversation_action_system import PostConversationActionSystem
 from ecs_systems.pre_conversation_action_system import PreConversationActionSystem
@@ -105,7 +106,7 @@ class RPGEntitasProcessors(Processors):
         )  # skill_action_system
 
         # 战斗类的行为!
-        processors.add(SimpleRPGPreFightSystem(context))
+        # processors.add(SimpleRPGPreFightSystem(context))
         processors.add(AttackActionSystem(context))
         processors.add(
             DeadActionSystem(context, rpg_game)

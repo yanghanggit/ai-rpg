@@ -2,8 +2,8 @@ from entitas import Matcher, ReactiveProcessor, GroupEvent, Entity  # type: igno
 from ecs_systems.action_components import AttackAction, DeadAction
 from ecs_systems.components import (
     RPGAttributesComponent,
-    SimpleRPGWeaponComponent,
-    SimpleRPGArmorComponent,
+    RPGCurrentWeaponComponent,
+    RPGCurrentClothesComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 
@@ -276,14 +276,14 @@ class AttackActionSystem(ReactiveProcessor):
         # 最后的攻击力
         final: int = 0
 
-        # 基础的伤害
-        rpg_attr_comp = entity.get(RPGAttributesComponent)
-        final += cast(int, rpg_attr_comp.attack)
+        # # 基础的伤害
+        # rpg_attr_comp = entity.get(RPGAttributesComponent)
+        # final += cast(int, rpg_attr_comp.attack)
 
-        # 计算武器带来的伤害
-        if entity.has(SimpleRPGWeaponComponent):
-            weaponcomp = entity.get(SimpleRPGWeaponComponent)
-            final += cast(int, weaponcomp.attack)
+        # # 计算武器带来的伤害
+        # if entity.has(RPGCurrentWeaponComponent):
+        #     weaponcomp = entity.get(RPGCurrentWeaponComponent)
+        #     final += cast(int, weaponcomp.attack)
 
         return final
 
@@ -293,13 +293,13 @@ class AttackActionSystem(ReactiveProcessor):
         final: int = 0
 
         # 基础防御力
-        rpg_attr_comp = entity.get(RPGAttributesComponent)
-        final += cast(int, rpg_attr_comp.defense)
+        # rpg_attr_comp = entity.get(RPGAttributesComponent)
+        # final += cast(int, rpg_attr_comp.defense)
 
-        # 计算衣服带来的防御力
-        if entity.has(SimpleRPGArmorComponent):
-            armorcomp = entity.get(SimpleRPGArmorComponent)
-            final += cast(int, armorcomp.defense)
+        # # 计算衣服带来的防御力
+        # if entity.has(RPGCurrentClothesComponent):
+        #     armorcomp = entity.get(RPGCurrentClothesComponent)
+        #     final += cast(int, armorcomp.defense)
 
         return final
 

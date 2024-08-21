@@ -66,7 +66,7 @@ class PropFile(BaseFile):
         self._prop_model: PropModel = prop_model
         assert self._name == self._prop_model.name
         assert self._prop_model.codename != ""
-        assert len(self._prop_model.attributes) == 4
+        assert len(self._prop_model.attributes) >= 4
 
         self._count: int = count
 

@@ -12,7 +12,6 @@ class LangServeAgent:
         self._remote_runnable: Optional[RemoteRunnable] = None
         self._chat_history: List[Union[HumanMessage, AIMessage]] = []
 
-    ################################################################################################################################################################################
     def connect(self) -> bool:
 
         if self._remote_runnable is not None:
@@ -34,6 +33,3 @@ class LangServeAgent:
             logger.error(e)
 
         return False
-
-
-################################################################################################################################################################################

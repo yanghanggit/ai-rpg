@@ -43,7 +43,10 @@ class ExcelEditorStage:
         assert self._my_data is not None
         data = cast(str, self._my_data["attributes"])
         assert "," in data, f"raw_string_val: {data} is not valid."
-        return [int(attr) for attr in data.split(",")]
+        values = [int(attr) for attr in data.split(",")]
+        if len(values) < 10:
+            values.extend([0] * (10 - len(values)))
+        return values
 
     ################################################################################################################################
     def parse_stage_prop(self) -> None:

@@ -53,15 +53,11 @@ StageEntryCondCheckActorPropsComponent = namedtuple(
 RPGAttributesComponent = namedtuple(
     "RPGAttributesComponent", "name maxhp hp attack defense"
 )
-SimpleRPGWeaponComponent = namedtuple(
-    "SimpleRPGWeaponComponent", "name weaponname maxhp attack defense"
-)
-SimpleRPGArmorComponent = namedtuple(
-    "SimpleRPGArmorComponent", "name armorname maxhp attack defense"
-)
+RPGCurrentWeaponComponent = namedtuple("RPGCurrentWeaponComponent", "name propname")
+RPGCurrentClothesComponent = namedtuple("RPGCurrentClothesComponent", "name propname")
 ##############################################################################################################################################
 
 # 角色当前装备的道具，一般是武器和衣服
-CurrentUsingPropComponent = namedtuple(
-    "CurrentUsingPropComponent", "name weapon clothes"
-)
+# CurrentUsingPropComponent = namedtuple(
+#     "CurrentUsingPropComponent", "name weapon clothes"
+# )

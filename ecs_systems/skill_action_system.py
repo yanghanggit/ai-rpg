@@ -7,10 +7,11 @@ from ecs_systems.action_components import (
 )
 from ecs_systems.components import (
     AppearanceComponent,
-    CurrentUsingPropComponent,
+    RPGCurrentWeaponComponent,
+    RPGCurrentClothesComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from typing import override, Any, Dict, List
+from typing import override, Any, Dict, List, cast
 from loguru import logger
 from file_system.files_def import PropFile
 from build_game.data_model import PropModel
@@ -167,20 +168,25 @@ class SkillActionSystem(ReactiveProcessor):
 
         ret: List[PropFile] = []
 
-        current_using_prop_comp = entity.get(CurrentUsingPropComponent)
-        assert current_using_prop_comp is not None
+        if entity.has(RPGCurrentWeaponComponent):
+            current_weapon_comp = entity.get(RPGCurrentWeaponComponent)
+            weapon_file = self._context._file_system.get_file(
+                PropFile,
+                cast(str, current_weapon_comp.name),
+                cast(str, current_weapon_comp.propname),
+            )
+            if weapon_file is not None:
+                ret.append(weapon_file)
 
-        current_clothe_prop_file = self._context._file_system.get_file(
-            PropFile, current_using_prop_comp.name, current_using_prop_comp.clothes
-        )
-        if current_clothe_prop_file is not None:
-            ret.append(current_clothe_prop_file)
-
-        current_weapon_prop_file = self._context._file_system.get_file(
-            PropFile, current_using_prop_comp.name, current_using_prop_comp.weapon
-        )
-        if current_weapon_prop_file is not None:
-            ret.append(current_weapon_prop_file)
+        if entity.has(RPGCurrentClothesComponent):
+            current_clothes_comp = entity.get(RPGCurrentClothesComponent)
+            clothes_file = self._context._file_system.get_file(
+                PropFile,
+                cast(str, current_clothes_comp.name),
+                cast(str, current_clothes_comp.propname),
+            )
+            if clothes_file is not None:
+                ret.append(clothes_file)
 
         return ret
 

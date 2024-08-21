@@ -8,7 +8,7 @@ from ecs_systems.components import (
     AppearanceComponent,
     BodyComponent,
     ActorComponent,
-    CurrentUsingPropComponent,
+    RPGCurrentClothesComponent,
 )
 import ecs_systems.cn_builtin_prompt as builtin_prompt
 from file_system.files_def import PropFile
@@ -31,7 +31,11 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
     ####################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(UpdateAppearanceAction)
+        return (
+            entity.has(UpdateAppearanceAction)
+            and entity.has(ActorComponent)
+            and entity.has(BodyComponent)
+        )
 
     ####################################################################################################
     @override
@@ -154,12 +158,12 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
     ###############################################################################################################################################
     # 获取衣服的描述 todo。现在就返回了第一个衣服的描述
     def get_current_clothe(self, entity: Entity) -> str:
-        if not entity.has(CurrentUsingPropComponent):
+        if not entity.has(RPGCurrentClothesComponent):
             return ""
 
-        current_using_prop_comp = entity.get(CurrentUsingPropComponent)
+        current_clothes_comp = entity.get(RPGCurrentClothesComponent)
         current_clothe_prop_file = self._context._file_system.get_file(
-            PropFile, current_using_prop_comp.name, current_using_prop_comp.clothes
+            PropFile, current_clothes_comp.name, current_clothes_comp.propname
         )
         if current_clothe_prop_file is None:
             return ""

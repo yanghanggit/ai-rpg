@@ -140,12 +140,12 @@ class LangServeAgentRequestTask:
 
             self.on_request_done()
             logger.info(
-                f"{self.agent_name} async_request success:\n{self.response_content}"
+                f"{self.agent_name} a_request success:\n{self.response_content}"
             )
             return self.response_content
 
         except Exception as e:
-            logger.error(f"{self.agent_name}: async_request error: {e}")
+            logger.error(f"{self.agent_name}: a_request error: {e}")
 
         return None
 

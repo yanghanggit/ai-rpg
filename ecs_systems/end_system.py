@@ -5,8 +5,8 @@ from ecs_systems.components import (
     StageComponent,
     ActorComponent,
     RPGAttributesComponent,
-    SimpleRPGWeaponComponent,
-    SimpleRPGArmorComponent,
+    RPGCurrentWeaponComponent,
+    RPGCurrentClothesComponent,
 )
 
 from typing import Dict, override, List, Any
@@ -75,8 +75,8 @@ class EndSystem(InitializeProcessor, ExecuteProcessor):
             Matcher(
                 any_of=[
                     RPGAttributesComponent,
-                    SimpleRPGWeaponComponent,
-                    SimpleRPGArmorComponent,
+                    RPGCurrentWeaponComponent,
+                    RPGCurrentClothesComponent,
                 ]
             )
         ).entities
@@ -92,18 +92,18 @@ class EndSystem(InitializeProcessor, ExecuteProcessor):
                 assert len(attr_dict) > 0
                 final_dict.update(attr_dict)
 
-            if entity.has(SimpleRPGWeaponComponent):
-                rpg_weapon_comp = entity.get(SimpleRPGWeaponComponent)
+            if entity.has(RPGCurrentWeaponComponent):
+                rpg_weapon_comp = entity.get(RPGCurrentWeaponComponent)
                 weapon_dict: Dict[str, Any] = {
-                    SimpleRPGWeaponComponent.__name__: rpg_weapon_comp._asdict()
+                    RPGCurrentWeaponComponent.__name__: rpg_weapon_comp._asdict()
                 }
                 assert len(weapon_dict) > 0
                 final_dict.update(weapon_dict)
 
-            if entity.has(SimpleRPGArmorComponent):
-                rpg_armor_comp = entity.get(SimpleRPGArmorComponent)
+            if entity.has(RPGCurrentClothesComponent):
+                rpg_armor_comp = entity.get(RPGCurrentClothesComponent)
                 armor_dict: Dict[str, Any] = {
-                    SimpleRPGArmorComponent.__name__: rpg_armor_comp._asdict()
+                    RPGCurrentClothesComponent.__name__: rpg_armor_comp._asdict()
                 }
                 assert len(armor_dict) > 0
                 final_dict.update(armor_dict)

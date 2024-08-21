@@ -40,34 +40,6 @@ from build_game.data_model import (
     WorldSystemProxyModel,
 )
 
-
-class RPGAttrTemplate:
-    def __init__(self, name: str, _attributes: List[int]) -> None:
-        self._name = name
-        assert len(_attributes) == 4
-        self._attributes = _attributes
-
-    @property
-    def name(self) -> str:
-        return self._name
-
-    @property
-    def max_hp(self) -> int:
-        return self._attributes[0]
-
-    @property
-    def hp(self) -> int:
-        return self._attributes[1]
-
-    @property
-    def attack(self) -> int:
-        return self._attributes[2]
-
-    @property
-    def defense(self) -> int:
-        return self._attributes[3]
-
-
 class RPGGame(BaseGame):
     """
     RPG 的测试类游戏
@@ -277,14 +249,13 @@ class RPGGame(BaseGame):
         assert actor_proxy.name == actor_model.name
         actor_entity.add(ActorComponent, actor_model.name, "")
 
-        rpg_attr_template = RPGAttrTemplate(actor_model.name, actor_model.attributes)
         actor_entity.add(
             RPGAttributesComponent,
-            rpg_attr_template.name,
-            rpg_attr_template.max_hp,
-            rpg_attr_template.hp,
-            rpg_attr_template.attack,
-            rpg_attr_template.defense,
+            actor_model.name,
+            actor_model.attributes[0],
+            actor_model.attributes[1],
+            actor_model.attributes[2],
+            actor_model.attributes[3]
         )
 
         hash_code = hash(actor_model.appearance)
@@ -411,14 +382,14 @@ class RPGGame(BaseGame):
         stage_entity.add(StageNarrateComponent, stage_model.name, "", 0)
         stage_entity.add(StageDirectorComponent, stage_model.name)
 
-        rpg_attr_template = RPGAttrTemplate(stage_model.name, stage_model.attributes)
+        
         stage_entity.add(
             RPGAttributesComponent,
-            rpg_attr_template.name,
-            rpg_attr_template.max_hp,
-            rpg_attr_template.hp,
-            rpg_attr_template.attack,
-            rpg_attr_template.defense,
+            stage_model.name,
+            stage_model.attributes[0],
+            stage_model.attributes[1],
+            stage_model.attributes[2],
+            stage_model.attributes[3]
         )
 
         ## 重新设置Actor和stage的关系

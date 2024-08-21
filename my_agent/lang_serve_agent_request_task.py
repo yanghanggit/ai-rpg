@@ -68,7 +68,8 @@ class LangServeAgentRequestTask:
 
         if (
             self._agent is None
-            or self._agent._remote_runnable is None
+            or self._agent._langserve_remote_runnable is None
+            or self._agent._langserve_remote_runnable._remote_runnable is None
             or self._prompt == ""
         ):
             logger.error(f"request: no agent")
@@ -77,11 +78,13 @@ class LangServeAgentRequestTask:
         try:
 
             logger.info(f"{self.agent_name} request prompt:\n{self._prompt}")
-            self._response = self._agent._remote_runnable.invoke(
-                {
-                    "input": self._prompt,
-                    "chat_history": self.input_chat_history_as_context(),
-                }
+            self._response = (
+                self._agent._langserve_remote_runnable._remote_runnable.invoke(
+                    {
+                        "input": self._prompt,
+                        "chat_history": self.input_chat_history_as_context(),
+                    }
+                )
             )
             # 只要能执行到这里，说明LLM运行成功，可能包括政策问题也通过了。
             if self._response is None:
@@ -119,7 +122,8 @@ class LangServeAgentRequestTask:
 
         if (
             self._agent is None
-            or self._agent._remote_runnable is None
+            or self._agent._langserve_remote_runnable is None
+            or self._agent._langserve_remote_runnable._remote_runnable is None
             or self._prompt == ""
         ):
             logger.error(f"a_request: no agent")
@@ -128,11 +132,13 @@ class LangServeAgentRequestTask:
         try:
 
             logger.info(f"{self.agent_name} a_request prompt:\n{self._prompt}")
-            self._response = await self._agent._remote_runnable.ainvoke(
-                {
-                    "input": self._prompt,
-                    "chat_history": self.input_chat_history_as_context(),
-                }
+            self._response = (
+                await self._agent._langserve_remote_runnable._remote_runnable.ainvoke(
+                    {
+                        "input": self._prompt,
+                        "chat_history": self.input_chat_history_as_context(),
+                    }
+                )
             )
             # 只要能执行到这里，说明LLM运行成功，可能包括政策问题也通过了。
             if self._response is None:

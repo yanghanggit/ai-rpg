@@ -3,7 +3,7 @@ from typing import Dict, List, Optional, Set, cast
 from langchain_core.messages import HumanMessage, AIMessage
 import json
 from pathlib import Path
-from my_agent.lang_serve_agent import LangServeAgent
+from my_agent.lang_serve_agent import LangServeAgent, LangServeRemoteRunnable
 
 
 class LangServeAgentSystem:
@@ -12,6 +12,7 @@ class LangServeAgentSystem:
         self._name: str = name
         self._agents: Dict[str, LangServeAgent] = {}
         self._runtime_dir: Optional[Path] = None
+        self._remote_runnables: Dict[str, LangServeRemoteRunnable] = {}
 
     ################################################################################################################################################################################
     ### 必须设置根部的执行路行
@@ -25,15 +26,30 @@ class LangServeAgentSystem:
         ), f"Directory is not a directory: {self._runtime_dir}"
 
     ################################################################################################################################################################################
-    def register_agent(self, name: str, url: str) -> None:
-        self._agents[name] = LangServeAgent(name, url)
+    def get_remote_runnable(
+        self, url: str, create: bool = False
+    ) -> Optional[LangServeRemoteRunnable]:
+        if url in self._remote_runnables:
+            return self._remote_runnables[url]
+
+        if not create:
+            return None
+
+        self._remote_runnables[url] = LangServeRemoteRunnable(url)
+        return self._remote_runnables[url]
 
     ################################################################################################################################################################################
-    def connect_agent(self, name: str) -> bool:
+    def register_agent(self, name: str, url: str) -> None:
+
+        remote_runnable = self.get_remote_runnable(url, create=True)
+        assert remote_runnable is not None
+        self._agents[name] = LangServeAgent(name, remote_runnable)
+
+    ################################################################################################################################################################################
+    def connect_agent(self, name: str) -> None:
         if name in self._agents:
-            return self._agents[name].connect()
+            self._agents[name].connect()
         logger.error(f"connect_actor_agent: {name} is not registered.")
-        return False
 
     ################################################################################################################################################################################
     def get_agent(self, name: str) -> Optional[LangServeAgent]:

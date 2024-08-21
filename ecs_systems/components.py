@@ -7,7 +7,7 @@ GUIDComponent = namedtuple("GUIDComponent", "name GUID")
 WorldComponent = namedtuple("WorldComponent", "name")
 # 场景标记
 StageComponent = namedtuple("StageComponent", "name")
-StageNarrateComponent = namedtuple("StageNarrateComponent", "name narrate round")
+StageArchiveComponent = namedtuple("StageArchiveComponent", "name narrate round")
 StageGraphComponent = namedtuple("StageGraphComponent", "name stage_graph")
 # 角色标记
 ActorComponent = namedtuple("ActorComponent", "name current_stage")
@@ -25,39 +25,14 @@ AutoPlanningComponent = namedtuple("AutoPlanningComponent", "name")
 AppearanceComponent = namedtuple("AppearanceComponent", "name appearance hash_code")
 # 裸身信息，用于和衣服组成完整的外观信息。如果是动物等，就是动物的外观信息
 BodyComponent = namedtuple("BodyComponent", "name body")
-# 场景离开条件
-StageExitCondStatusComponent = namedtuple(
-    "StageExitCondStatusComponent", "name condition"
-)
-StageExitCondCheckActorStatusComponent = namedtuple(
-    "StageExitCondCheckActorStatusComponent", "name condition"
-)
-StageExitCondCheckActorPropsComponent = namedtuple(
-    "StageExitCondCheckActorPropsComponent", "name condition"
-)
-# 场景进入条件
-StageEntryCondStatusComponent = namedtuple(
-    "StageEntryCondStatusComponent", "name condition"
-)
-StageEntryCondCheckActorStatusComponent = namedtuple(
-    "StageEntryCondCheckActorStatusComponent", "name condition"
-)
-StageEntryCondCheckActorPropsComponent = namedtuple(
-    "StageEntryCondCheckActorPropsComponent", "name condition"
-)
+
 
 ##############################################################################################################################################
 
 ######################################### 测试组件（业务强相关）：RPG Game #######################################################################
-# RPGAttributesComponent
 RPGAttributesComponent = namedtuple(
     "RPGAttributesComponent", "name maxhp hp attack defense"
 )
 RPGCurrentWeaponComponent = namedtuple("RPGCurrentWeaponComponent", "name propname")
 RPGCurrentClothesComponent = namedtuple("RPGCurrentClothesComponent", "name propname")
 ##############################################################################################################################################
-
-# 角色当前装备的道具，一般是武器和衣服
-# CurrentUsingPropComponent = namedtuple(
-#     "CurrentUsingPropComponent", "name weapon clothes"
-# )

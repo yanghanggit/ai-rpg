@@ -4,13 +4,6 @@ from collections import namedtuple
 ################################################ 动作组件： ####################################################################################
 # 场景环境的描述
 StageNarrateAction = namedtuple("StageNarrateAction", "name action_name values")
-StageConditionCheckAction = namedtuple(
-    "StageConditionCheckAction", "name action_name values"
-)
-StageInteractionFeedbackAction = namedtuple(
-    "StageInteractionFeedbackAction", "name action_name values"
-)
-
 # 内心独白
 MindVoiceAction = namedtuple("MindVoiceAction", "name action_name values")
 # 场景内广播
@@ -55,8 +48,8 @@ STAGE_AVAILABLE_ACTIONS_REGISTER = [
     MindVoiceAction,
     WhisperAction,
     StageNarrateAction,
-    StageConditionCheckAction,
-    StageInteractionFeedbackAction,
+    # StageConditionCheckAction,
+    # StageInteractionFeedbackAction,
 ]
 
 # 角色可以用的所有动作

@@ -6,7 +6,7 @@ from ecs_systems.action_components import (
     TagAction,
     PerceptionAction,
     CheckStatusAction,
-    StageConditionCheckAction,
+    # StageConditionCheckAction,
     BroadcastAction,
     SpeakAction,
     WhisperAction,
@@ -461,48 +461,44 @@ def use_prop_to_stage_prompt(
 def stage_exit_conditions_check_prompt(
     actor_name: str,
     current_stage_name: str,
-    stage_cond_status_prompt: str,
-    cond_check_actor_status_prompt: str,
     actor_status_prompt: str,
-    cond_check_actor_props_prompt: str,
-    input_actor_props_prompt: List[str],
+    prop_files: List[PropFile],
 ) -> str:
 
-    actor_props_prompt = str(_CNConstantPrompt_.NO_ACTOR_PROPS_PROMPT)
-    if len(input_actor_props_prompt) > 0:
-        actor_props_prompt = "\n".join(input_actor_props_prompt)
+    prop_prompt_list = "无"
+    if len(prop_files) > 0:
+        prop_prompt_list = "\n".join(
+            [prop_prompt(prop, True, True) for prop in prop_files]
+        )
 
     ret_prompt = f"""# {actor_name} 想要离开场景: {current_stage_name}。
-# 第1步: 根据当前‘你的状态’判断是否满足离开条件
-## 你的预设离开条件: 
-{stage_cond_status_prompt}
-## 当前状态可能由于事件而变化，请仔细考虑。
+## 第1步: 请回顾你的 {_CNConstantPrompt_.STAGE_EXIT_TAG}
 
-# 第2步: 检查{actor_name}的状态是否符合以下要求:
-## 必须满足的状态信息: 
-{cond_check_actor_status_prompt}
-## 当前角色状态: 
-{actor_status_prompt}
+## 第2步: 根据当前‘你的状态’判断是否满足允许{actor_name}离开
+当前状态可能由于事件而变化，请仔细考虑。
 
-# 第3步: 检查{actor_name}的道具(与拥有的特殊能力)是否符合以下要求:
-## 必须满足的道具与特殊能力信息: 
-{cond_check_actor_props_prompt}
-## 当前角色道具与特殊能力信息: 
-{actor_props_prompt}
+## 第3步: 检查{actor_name}的状态是否符合离开的需求:
+### 当前角色状态: 
+{actor_status_prompt if actor_status_prompt != "" else "无"}
+
+## 第4步: 检查{actor_name}的道具(与拥有的特殊能力)是否符合以下要求:
+### 当前角色道具与特殊能力信息: 
+{prop_prompt_list}
 
 # 判断结果
 - 完成以上步骤后，决定是否允许 {actor_name} 离开 {current_stage_name}。
 
-# 本次输出结果格式要求（遵循 输出格式指南 ）:
+# 本次输出结果格式要求。需遵循 输出格式指南:
 {{
-    {StageConditionCheckAction.__name__}: ["描述'允许离开'或'不允许离开'的原因，使{actor_name}明白"],
+    {WhisperAction.__name__}: ["@角色名字>你想私下说的内容，即描述允许离开或不允许的原因，使{actor_name}明白"],
     {TagAction.__name__}: ["Yes/No"]
 }}
 ## 附注
-- '{StageConditionCheckAction.__name__}' 中请详细描述判断理由，如果不允许离开，就只说哪一条不符合要求，不要都说出来，否则会让{actor_name}迷惑。
+- {WhisperAction.__name__} 中描述的判断理由。如果不允许离开，就只说哪一条不符合要求，不要都说出来，否则会让{actor_name}迷惑，和造成不必要的提示，影响玩家解谜的乐趣。
 - Yes: 允许离开
 - No: 不允许离开
 """
+
     return ret_prompt
 
 
@@ -510,45 +506,40 @@ def stage_exit_conditions_check_prompt(
 def stage_entry_conditions_check_prompt(
     actor_name: str,
     current_stage_name: str,
-    stage_cond_status_prompt: str,
-    cond_check_actor_status_prompt: str,
     actor_status_prompt: str,
-    cond_check_actor_props_prompt: str,
-    input_actor_props_prompt: List[str],
+    prop_files: List[PropFile],
 ) -> str:
 
-    actor_props_prompt = str(_CNConstantPrompt_.NO_ACTOR_PROPS_PROMPT)
-    if len(input_actor_props_prompt) > 0:
-        actor_props_prompt = "\n".join(input_actor_props_prompt)
+    prop_prompt_list = "无"
+    if len(prop_files) > 0:
+        prop_prompt_list = "\n".join(
+            [prop_prompt(prop, True, True) for prop in prop_files]
+        )
 
     ret_prompt = f"""# {actor_name} 想要进入场景: {current_stage_name}。
-# 第1步: 根据当前‘你的状态’判断是否满足进入条件
-## 你的预设进入条件: 
-{stage_cond_status_prompt}
-## 当前状态可能由于事件而变化，请仔细考虑。
+## 第1步: 请回顾你的 {_CNConstantPrompt_.STAGE_EXIT_TAG}
 
-# 第2步: 检查{actor_name}的状态是否符合以下要求:
-## 必须满足的状态信息: 
-{cond_check_actor_status_prompt}
-## 当前角色状态: 
-{actor_status_prompt}
+## 第2步: 根据当前‘你的状态’判断是否满足允许{actor_name}进入
+当前状态可能由于事件而变化，请仔细考虑。
 
-# 第3步: 检查{actor_name}的道具(与拥有的特殊能力)是否符合以下要求:
-## 必须满足的道具与特殊能力信息: 
-{cond_check_actor_props_prompt}
-## 当前角色道具与特殊能力信息: 
-{actor_props_prompt}
+## 第3步: 检查{actor_name}的状态是否符合进入的需求:
+### 当前角色状态: 
+{actor_status_prompt if actor_status_prompt != "" else "无"}
+
+## 第4步: 检查{actor_name}的道具(与拥有的特殊能力)是否符合以下要求:
+### 当前角色道具与特殊能力信息: 
+{prop_prompt_list}
 
 # 判断结果
 - 完成以上步骤后，决定是否允许 {actor_name} 进入 {current_stage_name}。
 
-# 本次输出结果格式要求（遵循 输出格式指南 ）:
+# 本次输出结果格式要求。需遵循 输出格式指南:
 {{
-    {StageConditionCheckAction.__name__}: ["描述'允许进入'或'不允许进入'的原因，使{actor_name}明白"],
+    {WhisperAction.__name__}: ["@角色名字>你想私下说的内容，即描述允许进入或不允许的原因，使{actor_name}明白"],
     {TagAction.__name__}: ["Yes/No"]
 }}
 ## 附注
-- '{StageConditionCheckAction.__name__}' 中请详细描述判断理由，如果不允许进入，就只说哪一条不符合要求，不要都说出来，否则会让{actor_name}迷惑。
+- {WhisperAction.__name__} 中描述的判断理由。如果不允许进入，就只说哪一条不符合要求，不要都说出来，否则会让{actor_name}迷惑，和造成不必要的提示，影响玩家解谜的乐趣。
 - Yes: 允许进入
 - No: 不允许进入
 """

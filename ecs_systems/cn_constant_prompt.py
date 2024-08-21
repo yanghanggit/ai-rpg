@@ -1,9 +1,5 @@
 from loguru import logger
 
-"""
-中文提示词都放到这里。
-"""
-
 
 # 全局的常量，一些Tag类的可以做标记用于后续的提示词压缩
 class CNConstantPrompt:
@@ -26,11 +22,11 @@ class CNConstantPrompt:
 
     @property
     def NONE_PROMPT(self) -> str:
-        return "- 无"
+        return "无"
 
     @property
     def NO_ACTOR_PROPS_PROMPT(self) -> str:
-        return "- 无任何道具或者特殊能力"
+        return "无任何道具或者特殊能力"
 
     @property
     def USE_PROP_TO_STAGE_PROMPT_TAG(self) -> str:
@@ -59,6 +55,14 @@ class CNConstantPrompt:
     @property
     def BATCH_CONVERSATION_ACTION_EVENTS_TAG(self) -> str:
         return "<%这是场景内对话事件>"
+
+    @property
+    def STAGE_ENTRY_TAG(self) -> str:
+        return f"场景进入限制"
+
+    @property
+    def STAGE_EXIT_TAG(self) -> str:
+        return f"场景离开限制"
 
 
 ###############################################################################################################################################

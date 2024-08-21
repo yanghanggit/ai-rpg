@@ -147,14 +147,6 @@ class ExcelEditorStage:
         out_put["stage_graph"] = self.stage_graph
         out_put["attributes"] = self.attributes
 
-        # 添加新的场景限制条件
-        out_put["stage_entry_status"] = self.stage_entry_status
-        out_put["stage_entry_actor_status"] = self.stage_entry_actor_status
-        out_put["stage_entry_actor_props"] = self.stage_entry_actor_props
-        out_put["stage_exit_status"] = self.stage_exit_status
-        out_put["stage_exit_actor_status"] = self.stage_exit_actor_status
-        out_put["stage_exit_actor_props"] = self.stage_exit_actor_props
-
         return out_put
 
     ################################################################################################################################
@@ -171,42 +163,6 @@ class ExcelEditorStage:
         output["actors"] = actors
         #
         return output
-
-    ################################################################################################################################
-    def safe_get_string(self, key: str) -> str:
-        if pd.isna(self._my_data[key]):
-            return ""
-        return cast(str, self._my_data[key])
-
-    ################################################################################################################################
-    @property
-    def stage_entry_status(self) -> str:
-        return self.safe_get_string("stage_entry_status")
-
-    ################################################################################################################################
-    @property
-    def stage_entry_actor_status(self) -> str:
-        return self.safe_get_string("stage_entry_actor_status")
-
-    ################################################################################################################################
-    @property
-    def stage_entry_actor_props(self) -> str:
-        return self.safe_get_string("stage_entry_actor_props")
-
-    ################################################################################################################################
-    @property
-    def stage_exit_status(self) -> str:
-        return self.safe_get_string("stage_exit_status")
-
-    ################################################################################################################################
-    @property
-    def stage_exit_actor_status(self) -> str:
-        return self.safe_get_string("stage_exit_actor_status")
-
-    ################################################################################################################################
-    @property
-    def stage_exit_actor_props(self) -> str:
-        return self.safe_get_string("stage_exit_actor_props")
 
     #################################################################################################################################
     @property

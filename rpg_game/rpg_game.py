@@ -9,18 +9,12 @@ from ecs_systems.components import (
     PlayerComponent,
     RPGAttributesComponent,
     AppearanceComponent,
-    StageExitCondStatusComponent,
-    StageExitCondCheckActorStatusComponent,
-    StageExitCondCheckActorPropsComponent,
-    StageEntryCondStatusComponent,
-    StageEntryCondCheckActorStatusComponent,
-    StageEntryCondCheckActorPropsComponent,
     BodyComponent,
     GUIDComponent,
     RPGCurrentWeaponComponent,
     RPGCurrentClothesComponent,
     StageGraphComponent,
-    StageNarrateComponent,
+    StageArchiveComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from build_game.game_builder import GameBuilder
@@ -39,6 +33,7 @@ from build_game.data_model import (
     WorldSystemModel,
     WorldSystemProxyModel,
 )
+
 
 class RPGGame(BaseGame):
     """
@@ -255,7 +250,7 @@ class RPGGame(BaseGame):
             actor_model.attributes[0],
             actor_model.attributes[1],
             actor_model.attributes[2],
-            actor_model.attributes[3]
+            actor_model.attributes[3],
         )
 
         hash_code = hash(actor_model.appearance)
@@ -379,17 +374,16 @@ class RPGGame(BaseGame):
             GUIDComponent, stage_model.name, context._guid_generator.generate()
         )
         stage_entity.add(StageComponent, stage_model.name)
-        stage_entity.add(StageNarrateComponent, stage_model.name, "", 0)
+        stage_entity.add(StageArchiveComponent, stage_model.name, "", 0)
         stage_entity.add(StageDirectorComponent, stage_model.name)
 
-        
         stage_entity.add(
             RPGAttributesComponent,
             stage_model.name,
             stage_model.attributes[0],
             stage_model.attributes[1],
             stage_model.attributes[2],
-            stage_model.attributes[3]
+            stage_model.attributes[3],
         )
 
         ## 重新设置Actor和stage的关系
@@ -423,9 +417,6 @@ class RPGGame(BaseGame):
                 prop_model.name, prop_model.codename
             )
 
-        # 添加场景的条件：包括进入和离开的条件，自身变化条件等等
-        self.add_stage_conditions(stage_entity, stage_model)
-
         # 暂时没用
         if len(stage_model.stage_portal) > 0:
             logger.debug(
@@ -457,68 +448,6 @@ class RPGGame(BaseGame):
         )
 
         return stage_entity
-
-    ###############################################################################################################################################
-    def add_stage_conditions(
-        self, stage_entity: Entity, stage_model: StageModel
-    ) -> None:
-
-        # logger.debug(f"添加Stage条件：{stage_model.name}")
-        if stage_model.stage_entry_status != "":
-            stage_entity.add(
-                StageEntryCondStatusComponent,
-                stage_model.name,
-                stage_model.stage_entry_status,
-            )
-            logger.debug(
-                f"如果进入场景，场景需要检查条件：{stage_model.stage_entry_status}"
-            )
-        if stage_model.stage_entry_actor_status != "":
-            stage_entity.add(
-                StageEntryCondCheckActorStatusComponent,
-                stage_model.name,
-                stage_model.stage_entry_actor_status,
-            )
-            logger.debug(
-                f"如果进入场景，需要检查角色符合条件：{stage_model.stage_entry_actor_status}"
-            )
-        if stage_model.stage_entry_actor_props != "":
-            stage_entity.add(
-                StageEntryCondCheckActorPropsComponent,
-                stage_model.name,
-                stage_model.stage_entry_actor_props,
-            )
-            logger.debug(
-                f"如果进入场景，需要检查角色拥有必要的道具：{stage_model.stage_entry_actor_props}"
-            )
-
-        if stage_model.stage_exit_status != "":
-            stage_entity.add(
-                StageExitCondStatusComponent,
-                stage_model.name,
-                stage_model.stage_exit_status,
-            )
-            logger.debug(
-                f"如果离开场景，场景需要检查条件：{stage_model.stage_exit_status}"
-            )
-        if stage_model.stage_exit_actor_status != "":
-            stage_entity.add(
-                StageExitCondCheckActorStatusComponent,
-                stage_model.name,
-                stage_model.stage_exit_actor_status,
-            )
-            logger.debug(
-                f"如果离开场景，需要检查角色符合条件：{stage_model.stage_exit_actor_status}"
-            )
-        if stage_model.stage_exit_actor_props != "":
-            stage_entity.add(
-                StageExitCondCheckActorPropsComponent,
-                stage_model.name,
-                stage_model.stage_exit_actor_props,
-            )
-            logger.debug(
-                f"如果离开场景，需要检查角色拥有必要的道具：{stage_model.stage_exit_actor_props}"
-            )
 
     ###############################################################################################################################################
     def add_code_name_component_to_world_and_actors(self) -> None:

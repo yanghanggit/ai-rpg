@@ -28,6 +28,7 @@ class LangServeRemoteRunnable:
         except Exception as e:
             logger.error(e)
 
+
 class LangServeAgent:
 
     def __init__(

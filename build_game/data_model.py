@@ -23,12 +23,6 @@ class StageModel(BaseModel):
     stage_portal: List[str]
     stage_graph: List[str]
     attributes: List[int]
-    stage_entry_status: str
-    stage_entry_actor_status: str
-    stage_entry_actor_props: str
-    stage_exit_status: str
-    stage_exit_actor_status: str
-    stage_exit_actor_props: str
 
 
 class PropModel(BaseModel):

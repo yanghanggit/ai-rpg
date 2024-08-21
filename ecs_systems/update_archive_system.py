@@ -1,7 +1,7 @@
 from entitas import ExecuteProcessor, Matcher, Entity  # type: ignore
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
-from ecs_systems.components import ActorComponent, StageComponent, StageNarrateComponent
+from ecs_systems.components import ActorComponent, StageComponent, StageArchiveComponent
 import ecs_systems.cn_builtin_prompt as builtin_prompt
 from ecs_systems.cn_constant_prompt import _CNConstantPrompt_
 from typing import Set, override, Dict, List
@@ -292,16 +292,16 @@ class UpdateArchiveSystem(ExecuteProcessor):
             return
 
         actor_comp = actor_entity.get(ActorComponent)
-        stage_narrate_comp = current_stage_entity.get(StageNarrateComponent)
+        stage_archive_comp = current_stage_entity.get(StageArchiveComponent)
         stage_archive = self._context._file_system.get_file(
-            StageArchiveFile, actor_comp.name, stage_narrate_comp.name
+            StageArchiveFile, actor_comp.name, stage_archive_comp.name
         )
-        if stage_archive is None or stage_narrate_comp.narrate == "":
+        if stage_archive is None or stage_archive_comp.narrate == "":
             assert stage_archive is not None
             return
 
-        stage_archive._last_stage_narrate = str(stage_narrate_comp.narrate)
-        stage_archive._last_stage_narrate_round = stage_narrate_comp.round
+        stage_archive._last_stage_narrate = str(stage_archive_comp.narrate)
+        stage_archive._last_stage_narrate_round = stage_archive_comp.round
         self._context._file_system.write_file(stage_archive)
 
     ###############################################################################################################################################

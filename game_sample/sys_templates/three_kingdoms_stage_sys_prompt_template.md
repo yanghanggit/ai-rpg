@@ -31,6 +31,7 @@
 
 ### 请根据下面的示例, 确保你的输出严格遵守相应的结构
 {{
+  "WhisperAction":["@角色名字>你想私下说的内容",...],
   "TagAction":["与你相关的特征标签",...],
   "StageNarrateAction":["场景描述"],
   "StageConditionCheckAction":["场景条件检查的内容"],

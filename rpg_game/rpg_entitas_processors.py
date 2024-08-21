@@ -14,7 +14,8 @@ from ecs_systems.stage_director_system import StageDirectorSystem
 from ecs_systems.destroy_system import DestroySystem
 from ecs_systems.tag_action_system import TagActionSystem
 from ecs_systems.broadcast_action_system import BroadcastActionSystem
-from ecs_systems.use_prop_action_system import UsePropActionSystem
+
+# from ecs_systems.use_prop_action_system import UsePropActionSystem
 from ecs_systems.whisper_action_system import WhisperActionSystem
 from ecs_systems.search_prop_action_system import SearchPropActionSystem
 from ecs_systems.mind_voice_action_system import MindVoiceActionSystem
@@ -116,7 +117,7 @@ class RPGEntitasProcessors(Processors):
         processors.add(SearchPropActionSystem(context))
         processors.add(StealActionSystem(context))
         processors.add(GivePropActionSystem(context))
-        processors.add(UsePropActionSystem(context))
+        # processors.add(UsePropActionSystem(context))
         processors.add(
             CheckStatusActionSystem(context)
         )  # 道具交互类行为之后，可以发起自检

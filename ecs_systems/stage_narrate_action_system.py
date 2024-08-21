@@ -1,7 +1,7 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: ignore
 from typing import override
 from ecs_systems.action_components import StageNarrateAction
-from ecs_systems.components import StageNarrateComponent
+from ecs_systems.components import StageArchiveComponent
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 
 # from my_agent.agent_action import AgentAction
@@ -22,7 +22,7 @@ class StageNarrateActionSystem(ReactiveProcessor):
     ############################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(StageNarrateAction) and entity.has(StageNarrateComponent)
+        return entity.has(StageNarrateAction) and entity.has(StageArchiveComponent)
 
     ############################################################################################################
     @override
@@ -34,14 +34,13 @@ class StageNarrateActionSystem(ReactiveProcessor):
     def handle(self, stage_entity: Entity) -> None:
         stage_narrate_action = stage_entity.get(StageNarrateAction)
         stage_narrate_content = " ".join(stage_narrate_action.values)
-        # action.join_values()
         if stage_narrate_content == "":
             return
 
-        stage_narrate_comp = stage_entity.get(StageNarrateComponent)
+        stage_archive_comp = stage_entity.get(StageArchiveComponent)
         stage_entity.replace(
-            StageNarrateComponent,
-            stage_narrate_comp.name,
+            StageArchiveComponent,
+            stage_archive_comp.name,
             stage_narrate_content,
             self._context._execute_count,
         )

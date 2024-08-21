@@ -38,15 +38,6 @@ class ExcelEditorActor:
 
     #################################################################################################################################
     @property
-    def appearance(self) -> str:
-        assert self._my_data is not None
-        val = self._my_data["appearance"]
-        if val is None:
-            return ""
-        return str(val)
-
-    #################################################################################################################################
-    @property
     def attributes(self) -> List[int]:
         assert self._my_data is not None
         data = cast(str, self._my_data["attributes"])
@@ -101,7 +92,6 @@ class ExcelEditorActor:
         output["codename"] = self.excel_data.codename
         output["url"] = self.excel_data.localhost
         output["kick_off_message"] = self.kick_off_message
-        output["appearance"] = self.appearance
         output["actor_archives"] = self.excel_data._actor_archives
         output["stage_archives"] = self.excel_data._stage_archives
         output["attributes"] = self.attributes

@@ -253,9 +253,9 @@ class RPGGame(BaseGame):
             actor_model.attributes[3],
         )
 
-        hash_code = hash(actor_model.appearance)
+        hash_code = hash(actor_model.body)
         actor_entity.add(
-            AppearanceComponent, actor_model.name, actor_model.appearance, hash_code
+            AppearanceComponent, actor_model.name, actor_model.body, hash_code
         )
         actor_entity.add(BodyComponent, actor_model.name, actor_model.body)
 

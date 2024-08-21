@@ -7,7 +7,7 @@ class ActorModel(BaseModel):
     codename: str
     url: str
     kick_off_message: str
-    #appearance: str
+    # appearance: str
     actor_archives: List[str]
     stage_archives: List[str]
     attributes: List[int]

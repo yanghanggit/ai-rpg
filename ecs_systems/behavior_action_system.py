@@ -1,7 +1,7 @@
 from entitas import Matcher, ReactiveProcessor, GroupEvent, Entity  # type: ignore
 from ecs_systems.action_components import (
     BehaviorAction,
-    TargetAction,
+    SkillTargetAction,
     SkillAction,
     PropAction,
 )
@@ -63,8 +63,8 @@ class BehaviorActionSystem(ReactiveProcessor):
 
     ######################################################################################################################################################
     def clear_action(self, entity: Entity) -> None:
-        if entity.has(TargetAction):
-            entity.remove(TargetAction)
+        if entity.has(SkillTargetAction):
+            entity.remove(SkillTargetAction)
         if entity.has(SkillAction):
             entity.remove(SkillAction)
         if entity.has(PropAction):
@@ -95,7 +95,9 @@ class BehaviorActionSystem(ReactiveProcessor):
         if len(targets) == 0:
             return
         safe_name = self._context.safe_get_entity_name(entity)
-        entity.add(TargetAction, safe_name, TargetAction.__name__, list(targets))
+        entity.add(
+            SkillTargetAction, safe_name, SkillTargetAction.__name__, list(targets)
+        )
 
     ######################################################################################################################################################
     def parse_skills(self, entity: Entity, sentence: str) -> Set[PropFile]:

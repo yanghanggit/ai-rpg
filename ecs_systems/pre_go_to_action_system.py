@@ -112,7 +112,7 @@ class StageConditionsCheckPlan(AgentPlan):
 
     @property
     def allow(self) -> bool:
-        tip_action = self.get_action_by_key(TagAction.__name__)
+        tip_action = self.get_by_key(TagAction.__name__)
         if tip_action is None or len(tip_action.values) == 0:
             return False
         first_value = tip_action.values[0].lower()
@@ -120,7 +120,7 @@ class StageConditionsCheckPlan(AgentPlan):
 
     @property
     def show_tips(self) -> str:
-        whisper_action = self.get_action_by_key(WhisperAction.__name__)
+        whisper_action = self.get_by_key(WhisperAction.__name__)
         if whisper_action is None or len(whisper_action.values) == 0:
             return ""
         return " ".join(whisper_action.values)
@@ -379,7 +379,7 @@ class PreBeforeGoToActionSystem(ReactiveProcessor):
             return ""
 
         appearance_comp = actor_entity.get(AppearanceComponent)
-        return builtin_prompt.actor_status_when_stage_change_prompt(
+        return builtin_prompt.appearance_prompt(
             appearance_comp.name, cast(str, appearance_comp.appearance)
         )
 

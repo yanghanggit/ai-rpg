@@ -9,24 +9,22 @@ from my_agent.my_json import (
     extract_markdown_json_block,
 )
 
-# from my_agent.agent_action import AgentAction
-
 
 ############################################################################################################
 ############################################################################################################
 ############################################################################################################
-class AgentPlanJSON:
+class PlanFormatJSON:
 
-    def __init__(self, raw_data: str) -> None:
-        self._raw_data: str = str(raw_data)
-        self._output: str = str(raw_data)
+    def __init__(self, input_str: str) -> None:
+        self._input: str = str(input_str)
+        self._output: str = str(input_str)
 
-    def extract_md_json_block(self) -> "AgentPlanJSON":
+    def extract_md_json_block(self) -> "PlanFormatJSON":
         if is_markdown_json_block(self._output):
             self._output = extract_markdown_json_block(self._output)
         return self
 
-    def merge_repeat_json(self) -> "AgentPlanJSON":
+    def merge_repeat_json(self) -> "PlanFormatJSON":
         if is_repeat(self._output):
             merge_res = merge(self._output)
             if merge_res is not None:
@@ -52,19 +50,22 @@ class AgentAction:
 
 class AgentPlan:
 
-    def __init__(self, name: str, raw_data: str) -> None:
+    def __init__(self, name: str, input_string: str) -> None:
 
         self._name: str = name
-        self._raw: str = raw_data
+        self._input_str: str = input_string
         self._json: Dict[str, List[str]] = {}
         self._actions: List[AgentAction] = []
-        self._actions_dict: Dict[str, AgentAction] = {}
+        self._dict: Dict[str, AgentAction] = {}
 
         # 处理特殊的情况, 例如出现了markdown json block与重复json的情况
         # GPT4 也有可能输出markdown json block。以防万一，我们检查一下。
         # GPT4 也有可能输出重复的json。我们合并一下。有可能上面的json block的错误也犯了，所以放到第二个步骤来做
         self.json_string = (
-            AgentPlanJSON(raw_data).extract_md_json_block().merge_repeat_json().output
+            PlanFormatJSON(input_string)
+            .extract_md_json_block()
+            .merge_repeat_json()
+            .output
         )
 
         # 核心执行
@@ -74,7 +75,7 @@ class AgentPlan:
     def load_then_build(self) -> None:
         try:
             json_data = json.loads(self.json_string)
-            if not self.check_data_format(json_data):
+            if not self.check_fmt(json_data):
                 logger.error(f"[{self._name}] = ActorPlan, check_data_format error.")
                 return
 
@@ -88,12 +89,11 @@ class AgentPlan:
     ############################################################################################################
     def build(self, json: Dict[str, List[str]]) -> None:
         for key, value in json.items():
-            # self._actions.append(AgentAction(self._name, key, value))
             self._actions.append(AgentAction(self._name, key, value))
-            self._actions_dict[key] = self._actions[-1]  # 方便查找
+            self._dict[key] = self._actions[-1]  # 方便查找
 
     ############################################################################################################
-    def check_data_format(self, json_data: Any) -> bool:
+    def check_fmt(self, json_data: Any) -> bool:
 
         if not isinstance(json_data, dict):
             # assert False, f"json_data is not dict: {json_data}"
@@ -111,8 +111,5 @@ class AgentPlan:
         return True
 
     ############################################################################################################
-    def get_action_by_key(self, action_name: str) -> Optional[AgentAction]:
-        return self._actions_dict.get(action_name, None)
-
-
-############################################################################################################
+    def get_by_key(self, action_name: str) -> Optional[AgentAction]:
+        return self._dict.get(action_name, None)

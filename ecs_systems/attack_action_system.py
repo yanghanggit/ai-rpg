@@ -107,9 +107,7 @@ class AttackActionSystem(ReactiveProcessor):
         # action: AgentAction = attack_action.action
         for value_as_target_name in attack_action.values:
 
-            target_entity = context.get_entity_by_codename_component(
-                value_as_target_name
-            )
+            target_entity = context.get_entity_by_name(value_as_target_name)
             if target_entity is None:
                 logger.warning(
                     f"攻击者{attack_action.name}意图攻击的对象{value_as_target_name}无法被找到,本次攻击无效."

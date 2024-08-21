@@ -6,13 +6,14 @@ from ecs_systems.action_components import (
     TagAction,
     PerceptionAction,
     CheckStatusAction,
-    # StageConditionCheckAction,
+    PolishingStoryAction,
     BroadcastAction,
     SpeakAction,
     WhisperAction,
 )
 import json
 from ecs_systems.cn_constant_prompt import _CNConstantPrompt_
+from loguru import logger
 
 
 ###############################################################################################################################################
@@ -41,7 +42,7 @@ def kick_off_stage_prompt(
     props_prompt = ""
     if len(stage_prop_files) > 0:
         for prop_file in stage_prop_files:
-            props_prompt += prop_prompt(prop_file, False, True)
+            props_prompt += make_prop_prompt(prop_file, False, True)
     else:
         props_prompt = "- 无任何道具。"
 
@@ -121,7 +122,7 @@ def stage_plan_prompt(
     props_prompt = ""
     if len(stage_prop_files) > 0:
         for prop in stage_prop_files:
-            props_prompt += prop_prompt(prop, False, True)
+            props_prompt += make_prop_prompt(prop, False, True)
     else:
         props_prompt = "- 无任何道具。"
 
@@ -199,7 +200,7 @@ def prop_type_prompt(prop_file: PropFile) -> str:
 
 
 ###############################################################################################################################################
-def prop_prompt(
+def make_prop_prompt(
     prop_file: PropFile, need_description_prompt: bool, need_appearance_prompt: bool
 ) -> str:
 
@@ -241,7 +242,7 @@ def check_status_action_prompt(
     props_prompt_as_weapon_clothes_non_consumable_item = ""
     if len(prop_files_as_weapon_clothes_non_consumable_item) > 0:
         for prop_file in prop_files_as_weapon_clothes_non_consumable_item:
-            props_prompt_as_weapon_clothes_non_consumable_item += prop_prompt(
+            props_prompt_as_weapon_clothes_non_consumable_item += make_prop_prompt(
                 prop_file, True, True
             )
     else:
@@ -439,22 +440,22 @@ def attack_prompt(
 
 
 ################################################################################################################################################
-def use_prop_to_stage_prompt(
-    actor_name: str, prop_name: str, prop_prompt: str, exit_cond_status_prompt: str
-) -> str:
+# def use_prop_to_stage_prompt(
+#     actor_name: str, prop_name: str, prop_prompt: str, exit_cond_status_prompt: str
+# ) -> str:
 
-    ret_prompt = f"""# {_CNConstantPrompt_.USE_PROP_TO_STAGE_PROMPT_TAG} {actor_name} 使用道具 {prop_name} 对你造成影响。
-## {prop_name}
-{prop_prompt}
+#     ret_prompt = f"""# {_CNConstantPrompt_.USE_PROP_TO_STAGE_PROMPT_TAG} {actor_name} 使用道具 {prop_name} 对你造成影响。
+# ## {prop_name}
+# {prop_prompt}
 
-## 状态更新规则
-{exit_cond_status_prompt}
+# ## 状态更新规则
+# {exit_cond_status_prompt}
 
-## 输出格式要求
-- 请遵循 输出格式指南。
-- 必须包含 {StageNarrateAction.__name__} 和 {TagAction.__name__}。
-"""
-    return ret_prompt
+# ## 输出格式要求
+# - 请遵循 输出格式指南。
+# - 必须包含 {StageNarrateAction.__name__} 和 {TagAction.__name__}。
+# """
+#     return ret_prompt
 
 
 ################################################################################################################################################
@@ -468,7 +469,7 @@ def stage_exit_conditions_check_prompt(
     prop_prompt_list = "无"
     if len(prop_files) > 0:
         prop_prompt_list = "\n".join(
-            [prop_prompt(prop, True, True) for prop in prop_files]
+            [make_prop_prompt(prop, True, True) for prop in prop_files]
         )
 
     ret_prompt = f"""# {actor_name} 想要离开场景: {current_stage_name}。
@@ -513,7 +514,7 @@ def stage_entry_conditions_check_prompt(
     prop_prompt_list = "无"
     if len(prop_files) > 0:
         prop_prompt_list = "\n".join(
-            [prop_prompt(prop, True, True) for prop in prop_files]
+            [make_prop_prompt(prop, True, True) for prop in prop_files]
         )
 
     ret_prompt = f"""# {actor_name} 想要进入场景: {current_stage_name}。
@@ -548,33 +549,33 @@ def stage_entry_conditions_check_prompt(
 
 ################################################################################################################################################
 def exit_stage_failed_beacuse_stage_refuse_prompt(
-    actor_name: str, current_stage_name: str, tips: str
+    actor_name: str, current_stage_name: str, show_tips: str
 ) -> str:
     return f"""# {actor_name} 想要离开场景: {current_stage_name}，但是失败了。
 ## 说明:
-{tips}"""
+{show_tips}"""
 
 
 ################################################################################################################################################
 def enter_stage_failed_beacuse_stage_refuse_prompt(
-    actor_name: str, stage_name: str, tips: str
+    actor_name: str, stage_name: str, show_tips: str
 ) -> str:
     return f"""# {actor_name} 想要进入场景: {stage_name}，但是失败了。
 ## 说明:
-{tips}"""
+{show_tips}"""
 
 
 ################################################################################################################################################
-def actor_status_when_stage_change_prompt(safe_name: str, appearance_info: str) -> str:
+def appearance_prompt(safe_name: str, appearance: str) -> str:
     return f"""### {safe_name}
-- 角色外观:{appearance_info}"""
+- 角色外观:{appearance}"""
 
 
 ################################################################################################################################################
-def use_prop_no_response_prompt(
-    actor_name: str, prop_name: str, target_name: str
-) -> str:
-    return f"# {actor_name}对{target_name}使用道具{prop_name}，但没有任何反应。"
+# def use_prop_no_response_prompt(
+#     actor_name: str, prop_name: str, target_name: str
+# ) -> str:
+#     return f"# {actor_name}对{target_name}使用道具{prop_name}，但没有任何反应。"
 
 
 ################################################################################################################################################
@@ -684,3 +685,117 @@ def player_conversation_check_prompt(
 
 
 ################################################################################################################################################
+
+
+def world_determine_skill_enable_prompt(
+    actor_name: str,
+    appearance: str,
+    skill_files: List[PropFile],
+    prop_files: List[PropFile],
+) -> str:
+
+    skill_prompt: List[str] = []
+    if len(skill_files) > 0:
+        for skill_file in skill_files:
+            skill_prompt.append(make_prop_prompt(skill_file, True, False))
+    else:
+        skill_prompt.append("- 无任何技能。")
+
+    _prop_prompt: List[str] = []
+    if len(prop_files) > 0:
+        for prop_file in prop_files:
+            _prop_prompt.append(make_prop_prompt(prop_file, True, True))
+    else:
+        _prop_prompt.append("- 无任何道具。")
+
+    prompt = f"""# {actor_name} 准备使用技能，请你判断是否有效。
+
+## {actor_name} 信息
+{appearance}
+        
+## 施放技能
+{"\n".join(skill_prompt)}
+
+## 使用道具
+{"\n".join(_prop_prompt)}
+
+## 判断步骤
+1. 结合 {actor_name} 信息 与 施放技能。判断其是否可以满足释放技能的条件。如果可以，则进行下一步。
+2. 如果有 使用道具。则代表 在释放技能中，使用了道具作为辅助。例如: 触媒，消耗品，强化等，武器或者衣服。在道具信息中如果没有对技能释放有帮助的信息，可以忽略。
+3. 如果没有 使用道具。则直接进行技能释放。
+
+## 输出格式指南
+
+### 请根据下面的示例, 确保你的输出严格遵守相应的结构。
+{{
+  "{TagAction.__name__}":["{_CNConstantPrompt_.BIG_SUCCESS}或{_CNConstantPrompt_.SUCCESS}或{_CNConstantPrompt_.FAILURE}或{_CNConstantPrompt_.BIG_FAILURE}"],
+  "{PolishingStoryAction.__name__}":["输出逻辑合理且附带润色的句子描述"]
+}}
+
+### 关于键值的补充规则说明
+- 关于 {TagAction.__name__} 键值:
+    - 只能是如下4个值: {_CNConstantPrompt_.BIG_SUCCESS},{_CNConstantPrompt_.SUCCESS},{_CNConstantPrompt_.FAILURE},{_CNConstantPrompt_.BIG_FAILURE}。
+    - {_CNConstantPrompt_.BIG_SUCCESS} 代表技能释放不仅{_CNConstantPrompt_.SUCCESS}，且效果超出预期。
+    - {_CNConstantPrompt_.FAILURE} 代表技能释放不仅{_CNConstantPrompt_.BIG_FAILURE}，且使用者会受到惩罚。
+    - 为了提高游戏性，请根据输入给你的: {actor_name} 信息，施放技能，使用道具，来判断技能释放的结果。
+- 关于 {PolishingStoryAction.__name__} 键值:
+    - 在技能释放成功的情况下，结合以上所有信息，输出逻辑合理且附带润色的句子描述，来表达 {actor_name} 使用技能的释放结果。
+    - 例句：{actor_name} 使用了 xx技能， 效果为xxx(逻辑合理且附带润色)。
+
+### 注意事项
+- 每个 JSON 对象必须包含上述键中的一个或多个，不得重复同一个键，也不得使用不在上述中的键。
+- 输出不应包含任何超出所需 JSON 格式的额外文本、解释或总结。
+- 不要使用```json```来封装内容。"""
+
+    return prompt
+
+
+################################################################################################################################################
+
+
+def release_skill_prompt(
+    actor_name: str,
+    appearance: str,
+    skill_files: List[PropFile],
+    prop_files: List[PropFile],
+    polish_story: str,
+) -> str:
+
+    skill_prompt: List[str] = []
+    if len(skill_files) > 0:
+        for skill_file in skill_files:
+            skill_prompt.append(make_prop_prompt(skill_file, True, False))
+    else:
+        skill_prompt.append("- 无任何技能。")
+
+    _prop_prompt: List[str] = []
+    if len(prop_files) > 0:
+        for prop_file in prop_files:
+            _prop_prompt.append(make_prop_prompt(prop_file, True, True))
+    else:
+        _prop_prompt.append("- 无任何道具。")
+
+    prompt = f"""# {actor_name} 向你发动技能。
+
+## {actor_name} 信息
+{appearance}
+        
+## 施放技能
+{"\n".join(skill_prompt)}
+
+## 使用道具
+{"\n".join(_prop_prompt)}
+
+## 故事描述为
+ {polish_story}
+
+## 判断步骤
+1. 综合以上信息，判断技能对你的影响，例如改变你的状态，或者对你造成伤害等。
+2. 更新的你的状态。
+
+## 输出要求:
+- 请遵循 输出格式指南。
+- 返回结果仅带如下2个键: {StageNarrateAction.__name__} 和 {TagAction.__name__}。
+"""
+
+    return prompt

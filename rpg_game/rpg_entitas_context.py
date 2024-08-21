@@ -73,7 +73,7 @@ class RPGEntitasContext(Context):
     #############################################################################################################################
     # 世界基本就一个（或者及其少的数量），所以就遍历一下得了。
     def get_world_entity(self, worldname: str) -> Optional[Entity]:
-        entity: Optional[Entity] = self.get_entity_by_codename_component(worldname)
+        entity: Optional[Entity] = self.get_entity_by_name(worldname)
         if entity is not None and entity.has(WorldComponent):
             return entity
         return None
@@ -91,25 +91,25 @@ class RPGEntitasContext(Context):
         return None
 
     #############################################################################################################################
-    def get_entity_by_codename_component(self, name: str) -> Optional[Entity]:
+    def get_entity_by_name(self, name: str) -> Optional[Entity]:
         comp_class = self._codename_component_system.get_component_class_by_name(name)
         if comp_class is None:
             return None
-        find_entities: Set[Entity] = self.get_group(Matcher(comp_class)).entities
+        find_entities = self.get_group(Matcher(comp_class)).entities
         if len(find_entities) > 0:
             return next(iter(find_entities))
         return None
 
     #############################################################################################################################
     def get_stage_entity(self, stage_name: str) -> Optional[Entity]:
-        entity: Optional[Entity] = self.get_entity_by_codename_component(stage_name)
+        entity: Optional[Entity] = self.get_entity_by_name(stage_name)
         if entity is not None and entity.has(StageComponent):
             return entity
         return None
 
     #############################################################################################################################
     def get_actor_entity(self, actor_name: str) -> Optional[Entity]:
-        entity: Optional[Entity] = self.get_entity_by_codename_component(actor_name)
+        entity: Optional[Entity] = self.get_entity_by_name(actor_name)
         if entity is not None and entity.has(ActorComponent):
             return entity
         return None

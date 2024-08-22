@@ -72,8 +72,8 @@ class RPGEntitasContext(Context):
 
     #############################################################################################################################
     # 世界基本就一个（或者及其少的数量），所以就遍历一下得了。
-    def get_world_entity(self, worldname: str) -> Optional[Entity]:
-        entity: Optional[Entity] = self.get_entity_by_name(worldname)
+    def get_world_entity(self, world_name: str) -> Optional[Entity]:
+        entity: Optional[Entity] = self.get_entity_by_name(world_name)
         if entity is not None and entity.has(WorldComponent):
             return entity
         return None

@@ -97,7 +97,9 @@ class KickOffSystem(InitializeProcessor, ExecuteProcessor):
 
             task = LangServeAgentRequestTask.create(
                 agent,
-                builtin_prompt.kick_off_world_system_prompt(self._rpg_game.about_game),
+                builtin_prompt.make_kick_off_world_system_prompt(
+                    self._rpg_game.about_game, self._context._execute_count
+                ),
             )
             if task is not None:
                 ret[world_comp.name] = task
@@ -125,13 +127,14 @@ class KickOffSystem(InitializeProcessor, ExecuteProcessor):
             if kick_off_message == "":
                 continue
 
-            kick_off_prompt = builtin_prompt.kick_off_stage_prompt(
+            kick_off_prompt = builtin_prompt.make_kick_off_stage_prompt(
                 kick_off_message,
                 self._rpg_game.about_game,
                 self._context._file_system.get_files(
                     PropFile, self._context.safe_get_entity_name(stage_entity)
                 ),
                 self._context.actor_names_in_stage(stage_entity),
+                self._context._execute_count,
             )
 
             task = LangServeAgentRequestTask.create(agent, kick_off_prompt)
@@ -164,8 +167,10 @@ class KickOffSystem(InitializeProcessor, ExecuteProcessor):
 
             task = LangServeAgentRequestTask.create(
                 agent,
-                builtin_prompt.kick_off_actor_prompt(
-                    kick_off_message, self._rpg_game.about_game
+                builtin_prompt.make_kick_off_actor_prompt(
+                    kick_off_message,
+                    self._rpg_game.about_game,
+                    self._context._execute_count,
                 ),
             )
             if task is not None:
@@ -186,8 +191,10 @@ class KickOffSystem(InitializeProcessor, ExecuteProcessor):
             if kick_off_message == "":
                 logger.error(f"kick_off_message is empty: {actor_comp.name}")
                 continue
-            prompt = builtin_prompt.kick_off_actor_prompt(
-                kick_off_message, self._rpg_game.about_game
+            prompt = builtin_prompt.make_kick_off_actor_prompt(
+                kick_off_message,
+                self._rpg_game.about_game,
+                self._context._execute_count,
             )
             self._context.safe_add_human_message_to_entity(actor_entity, prompt)
 

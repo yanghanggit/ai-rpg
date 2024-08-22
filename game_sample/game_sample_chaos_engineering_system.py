@@ -12,19 +12,6 @@ from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from build_game.game_builder import GameBuilder
 from typing import Any, Optional
 
-## 测试重复的json内容，应该是load不出来才对
-# error_repeat = f"""{{"MindVoiceAction": ["测试的字符串"]}}{{"WhisperAction": ["测试的字符串"]}}"""
-
-# ## 有额外的字符串
-# error_extra_string_added = f"""{{"GoToAction": ["禁言铁棺"]}}一个测试的字符串，不应该出现在这里"""
-
-# ## SpeakActionComponent的格式，value格式就不对。应该是"@目标名字>对话内容"
-# error_speak_format = f"""{{"SpeakAction": ["这是一个错误的格式"]}}"""
-# error_speak_target_is_invalid = f"""{{"SpeakAction": ["@教宗>你在读书吗？？"]}}"""
-
-# ## value必须以[]形式出现
-# error_value_is_not_array = f"""{{"GoToAction": "禁言铁棺"}}"""
-
 
 ## 运行中的测试系统, 空的混沌工程系统 my_chaos_engineering_system
 class GameSampleChaosEngineeringSystem(IChaosEngineering):

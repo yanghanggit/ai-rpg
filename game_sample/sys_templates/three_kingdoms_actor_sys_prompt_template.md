@@ -42,7 +42,8 @@
   "SearchPropAction":["想要在本场景内搜索的道具的名称"]
   "GivePropAction":["@将你的道具交付给的角色的名字>交付的道具的名称"],
   "PerceptionAction":["你所在的场景名字(即你意图查看场景内有哪些角色与哪些道具)"],
-  "CheckStatusAction":["你的名字(即你意图查看你拥有的道具及其信息)"]
+  "CheckStatusAction":["你的名字(即你意图查看你拥有的道具及其信息)"],
+  "SkillFeedbackAction":["针对你受到的技能的结果的反馈描述"]
 }}
 
 ### 注意事项

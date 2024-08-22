@@ -307,9 +307,6 @@ class ExcelEditorGame:
             for stage_name_in_graph in stage_graph:
 
                 find_stage = self.get_stage_editor(stage_name_in_graph)
-                assert (
-                    find_stage is not None
-                ), f"Invalid stage name: {stage_name_in_graph}"
                 if find_stage is None:
                     logger.error(f"Invalid stage name: {stage_name_in_graph}")
                     continue

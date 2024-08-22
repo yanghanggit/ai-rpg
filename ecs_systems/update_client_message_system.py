@@ -119,7 +119,6 @@ class UpdateClientMessageSystem(ExecuteProcessor):
                 ):
                     continue
                 if player_entity_name != targetname:
-                    # 不是对你说的不能看见
                     continue
                 # 最后添加
                 player_proxy.add_actor_message(

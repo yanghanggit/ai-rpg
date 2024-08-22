@@ -19,21 +19,29 @@ class CompressChatHistorySystem(ExecuteProcessor):
 
     ############################################################################################################
     def handle_exclude_chat_history(self) -> None:
-        context = self._context
+
         tags: Set[str] = {
             _CNConstantPrompt_.ACTOR_PLAN_PROMPT_TAG,
             _CNConstantPrompt_.STAGE_PLAN_PROMPT_TAG,
         }
-        entities: Set[Entity] = context.get_group(
+
+        entities: Set[Entity] = self._context.get_group(
             Matcher(any_of=[ActorComponent, StageComponent])
         ).entities
+
         for entity in entities:
-            safename = context.safe_get_entity_name(entity)
-            if safename == "":
-                continue
-            context._langserve_agent_system.exclude_content_then_rebuild_chat_history(
-                safename, tags
+
+            safe_name = self._context.safe_get_entity_name(entity)
+            filters = self._context._langserve_agent_system.filter_chat_history(
+                safe_name, tags
             )
+            self._context._langserve_agent_system.exclude_chat_history(
+                safe_name, filters
+            )
+
+            # context._langserve_agent_system.exclude_content_then_rebuild_chat_history(
+            #     safe_name, tags
+            # )
 
     ############################################################################################################
     def handle_compress_chat_history(self) -> None:

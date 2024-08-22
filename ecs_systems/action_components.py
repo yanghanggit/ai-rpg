@@ -37,10 +37,9 @@ BehaviorAction = namedtuple("BehaviorAction", "name action_name values")
 SkillTargetAction = namedtuple("SkillTargetAction", "name action_name values")
 SkillAction = namedtuple("SkillAction", "name action_name values")
 PropAction = namedtuple("PropAction", "name action_name values")
-UpdateAppearanceAction = namedtuple("UpdateAppearanceAction", "name action_name values")
-#
 
-PolishingStoryAction = namedtuple("PolishingStoryAction", "name action_name values")
+UpdateAppearanceAction = namedtuple("UpdateAppearanceAction", "name action_name values")
+SkillFeedbackAction = namedtuple("SkillFeedbackAction", "name action_name values")
 ##############################################################################################################################################
 
 
@@ -51,6 +50,7 @@ STAGE_AVAILABLE_ACTIONS_REGISTER = [
     MindVoiceAction,
     WhisperAction,
     StageNarrateAction,
+    SkillFeedbackAction,
 ]
 
 # 角色可以用的所有动作
@@ -73,6 +73,7 @@ ACTOR_AVAILABLE_ACTIONS_REGISTER = [
     SkillAction,
     PropAction,
     UpdateAppearanceAction,
+    SkillFeedbackAction,
 ]
 
 # 角色交互类动作
@@ -89,4 +90,5 @@ ACTOR_INTERACTIVE_ACTIONS_REGISTER = [
     SkillAction,
     PropAction,
     UpdateAppearanceAction,
+    SkillFeedbackAction,
 ]

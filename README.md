@@ -99,7 +99,7 @@ pm2 start game_sample/gen_agent/coffin_of_the_silent_one_agent.py game_sample/ge
 
 /broadcast '说的内容'
 
-例如 /broadcast 你们是谁？
+例如 /broadcast 大家好！
 
 # 对当前场景内的目标说话
 

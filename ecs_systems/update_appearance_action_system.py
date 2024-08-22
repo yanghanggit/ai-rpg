@@ -55,7 +55,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
             return
 
         # 没有衣服的，直接更新外观
-        self.imme_update(input_data)
+        self.default_update(input_data)
 
         # 有衣服的，请求更新，通过LLM来推理外观
         world_system_agent_name = self._context.safe_get_entity_name(world_entity)
@@ -63,23 +63,23 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
 
     ###############################################################################################################################################
     # 没有衣服的，就直接更新外观，一般是动物类的，或者非人类的。
-    def imme_update(self, input_data: Dict[str, tuple[str, str]]) -> None:
+    def default_update(self, input_data: Dict[str, tuple[str, str]]) -> None:
 
         context = self._context
         for name, (body, clothe) in input_data.items():
 
-            if clothe == "" and body != "":
+            if body == "":
+                assert False, f"body is empty, name: {name}"
+                continue
 
-                entity = context.get_actor_entity(name)
-                assert entity is not None
-                assert entity.has(AppearanceComponent)
-                assert entity.has(BodyComponent)
+            default_appearance = body + clothe if clothe != "" else " "
 
-                body = self.get_body(entity)
-                assert body != ""
+            entity = context.get_actor_entity(name)
+            assert entity is not None, f"entity is None, name: {name}"
 
-                hash_code = hash(body)
-                entity.replace(AppearanceComponent, name, body, hash_code)
+            entity.replace(
+                AppearanceComponent, name, default_appearance, hash(default_appearance)
+            )
 
     ###############################################################################################################################################
     # 有衣服的，请求更新，通过LLM来推理外观。
@@ -92,7 +92,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
         if agent is None:
             return False
 
-        prompt = builtin_prompt.actors_body_and_clothe_prompt(input_data)
+        prompt = builtin_prompt.make_gen_appearance_prompt(input_data)
 
         task = LangServeAgentRequestTask.create_without_any_context(agent, prompt)
         if task is None:

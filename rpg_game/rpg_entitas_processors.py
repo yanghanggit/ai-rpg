@@ -30,8 +30,6 @@ from ecs_systems.steal_action_system import StealActionSystem
 from ecs_systems.give_prop_action_system import GivePropActionSystem
 from ecs_systems.check_status_action_system import CheckStatusActionSystem
 from ecs_systems.connect_agent_system import ConnectAgentSystem
-
-# from ecs_systems.simple_rpg_pre_fight_system import SimpleRPGPreFightSystem
 from ecs_systems.compress_chat_history_system import CompressChatHistorySystem
 from ecs_systems.post_conversation_action_system import PostConversationActionSystem
 from ecs_systems.pre_conversation_action_system import PreConversationActionSystem
@@ -39,6 +37,7 @@ from ecs_systems.update_appearance_action_system import UpdateAppearanceActionSy
 from ecs_systems.stage_narrate_action_system import StageNarrateActionSystem
 from ecs_systems.behavior_action_system import BehaviorActionSystem
 from ecs_systems.skill_action_system import SkillActionSystem
+from ecs_systems.skill_feedback_action_system import SkillFeedbackActionSystem
 
 WORLD_APPEARANCE_SYSTEM_NAME = "角色外观生成器"
 WORLD_SKILL_SYSTEM_NAME = "技能系统"
@@ -102,9 +101,9 @@ class RPGEntitasProcessors(Processors):
 
         # 测试的系统
         processors.add(BehaviorActionSystem(context))
-        processors.add(
-            SkillActionSystem(context, WORLD_SKILL_SYSTEM_NAME)
-        )  # skill_action_system
+        processors.add(SkillActionSystem(context, WORLD_SKILL_SYSTEM_NAME))
+
+        processors.add(SkillFeedbackActionSystem(context))
 
         # 战斗类的行为!
         # processors.add(SimpleRPGPreFightSystem(context))

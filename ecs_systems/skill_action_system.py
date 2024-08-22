@@ -5,7 +5,7 @@ from ecs_systems.action_components import (
     SkillAction,
     PropAction,
     TagAction,
-    PolishingStoryAction,
+    BroadcastAction,
 )
 from ecs_systems.components import (
     AppearanceComponent,
@@ -22,6 +22,11 @@ import ecs_systems.cn_builtin_prompt as builtin_prompt
 from my_agent.lang_serve_agent_request_task import LangServeAgentRequestTask
 from my_agent.agent_plan import AgentPlan
 from ecs_systems.cn_constant_prompt import _CNConstantPrompt_
+import gameplay.planning_helper
+from ecs_systems.action_components import (
+    STAGE_AVAILABLE_ACTIONS_REGISTER,
+    ACTOR_AVAILABLE_ACTIONS_REGISTER,
+)
 
 
 class WorldDetermineSkillEnablePlan(AgentPlan):
@@ -37,11 +42,11 @@ class WorldDetermineSkillEnablePlan(AgentPlan):
         return tip_action.values[0]
 
     @property
-    def polishing_story(self) -> str:
-        polishing_story_action = self.get_by_key(PolishingStoryAction.__name__)
-        if polishing_story_action is None or len(polishing_story_action.values) == 0:
+    def sentence(self) -> str:
+        broadcast_action = self.get_by_key(BroadcastAction.__name__)
+        if broadcast_action is None or len(broadcast_action.values) == 0:
             return ""
-        return " ".join(polishing_story_action.values)
+        return " ".join(broadcast_action.values)
 
 
 class SkillActionSystem(ReactiveProcessor):
@@ -59,7 +64,11 @@ class SkillActionSystem(ReactiveProcessor):
     ######################################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(SkillAction) and entity.has(SkillTargetAction)
+        return (
+            entity.has(SkillAction)
+            and entity.has(SkillTargetAction)
+            and entity.has(BehaviorAction)
+        )
 
     ######################################################################################################################################################
     @override
@@ -84,19 +93,13 @@ class SkillActionSystem(ReactiveProcessor):
         prop_files = self.get_prop_files(entity)
         prop_files.extend(self.get_current_using_prop(entity))
 
-        determine_skill_enable_ret = self.world_determine_skill_enable(
+        world_determine = self.world_determine_skill_enable(
             entity, world_entity, appearance, skill_files, prop_files
         )
 
-        if determine_skill_enable_ret is None:
+        if world_determine is None:
             logger.debug(
                 f"{self._world_system_name}, determine_skill_enable_ret is None."
-            )
-            return
-
-        if not determine_skill_enable_ret.result:
-            logger.debug(
-                f"{self._world_system_name}, determine_skill_enable_ret.result is False."
             )
             return
 
@@ -107,8 +110,17 @@ class SkillActionSystem(ReactiveProcessor):
                 appearance,
                 skill_files,
                 prop_files,
-                determine_skill_enable_ret,
+                world_determine,
+                self.get_behavior_sentence(entity),
             )
+
+    ######################################################################################################################################################
+
+    def get_behavior_sentence(self, entity: Entity) -> str:
+        behavior_action = entity.get(BehaviorAction)
+        if behavior_action is None or len(behavior_action.values) == 0:
+            return ""
+        return cast(str, behavior_action.values[0])
 
     ######################################################################################################################################################
     def get_targets(self, entity: Entity) -> Set[Entity]:
@@ -129,36 +141,62 @@ class SkillActionSystem(ReactiveProcessor):
         skill_files: List[PropFile],
         prop_files: List[PropFile],
         world_determine_plan: WorldDetermineSkillEnablePlan,
+        behavior_sentence: str,
     ) -> None:
-
-        logger.debug(
-            f"release_skill: {self._context.safe_get_entity_name(entity)} -> {self._context.safe_get_entity_name(target)}"
-        )
 
         agent_name = self._context.safe_get_entity_name(target)
         agent = self._context._langserve_agent_system.get_agent(agent_name)
         if agent is None:
             return
 
-        prompt = builtin_prompt.release_skill_prompt(
+        prompt = builtin_prompt.make_release_skill_prompt(
             self._context.safe_get_entity_name(entity),
+            agent_name,
             appearance,
             skill_files,
             prop_files,
-            world_determine_plan.polishing_story,
+            world_determine_plan.sentence,
+            world_determine_plan.result,
+            behavior_sentence,
         )
 
         logger.debug(prompt)
-        task = LangServeAgentRequestTask.create(agent, prompt)
+        task = LangServeAgentRequestTask.create(
+            agent,
+            builtin_prompt.replace_mentions_of_your_name_with_you_prompt(
+                prompt, agent_name
+            ),
+        )
+
         if task is None:
             return None
 
         response = task.request()
         if response is None:
+            logger.debug(f"{agent._name}, response is None.")
             return None
 
-        plan = AgentPlan(agent._name, response)
-        logger.debug(plan)
+        agent_planning = AgentPlan(agent._name, response)
+        logger.debug(agent_planning)
+        self.add_skill_feedback(target, agent_planning)
+
+    ######################################################################################################################################################
+    def add_skill_feedback(self, target: Entity, agent_plan: AgentPlan) -> None:
+
+        all_register: List[Any] = (
+            STAGE_AVAILABLE_ACTIONS_REGISTER + ACTOR_AVAILABLE_ACTIONS_REGISTER
+        )
+        if not gameplay.planning_helper.check_plan(target, agent_plan, all_register):
+            logger.warning(f"ActorPlanningSystem: check_plan failed, {agent_plan}")
+            ## 需要失忆!
+            self._context._langserve_agent_system.remove_last_conversation_between_human_and_ai(
+                agent_plan._name
+            )
+            return
+
+        ## 不能停了，只能一直继续
+        for action in agent_plan._actions:
+            gameplay.planning_helper.add_action_component(target, action, all_register)
 
     ######################################################################################################################################################
     def world_determine_skill_enable(
@@ -171,7 +209,7 @@ class SkillActionSystem(ReactiveProcessor):
     ) -> Optional[WorldDetermineSkillEnablePlan]:
 
         # 生成提示
-        prompt = builtin_prompt.world_determine_skill_enable_prompt(
+        prompt = builtin_prompt.make_world_determine_skill_enable_prompt(
             self._context.safe_get_entity_name(entity),
             appearance,
             skill_files,
@@ -190,11 +228,12 @@ class SkillActionSystem(ReactiveProcessor):
 
         response = task.request()
         if response is None:
+            logger.debug(f"{self._world_system_name}, response is None.")
             return None
 
         plan = WorldDetermineSkillEnablePlan(agent._name, response)
         logger.debug(plan.result)
-        logger.debug(plan.polishing_story)
+        logger.debug(plan.sentence)
         return plan
 
     ######################################################################################################################################################

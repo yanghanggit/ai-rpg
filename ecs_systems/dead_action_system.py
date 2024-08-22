@@ -52,11 +52,8 @@ class DeadActionSystem(ExecuteProcessor):
         entities = self._context.get_group(Matcher(DeadAction)).entities
         for entity in entities:
             dead_caction = entity.get(DeadAction)
-            # dead_caction: AgentAction = dead_comp.action
             if not entity.has(DestroyComponent):
-                entity.add(
-                    DestroyComponent, dead_caction.name
-                )  ### 这里只需要名字，不需要values，谁造成了你的死亡
+                entity.add(DestroyComponent, dead_caction.name)
 
 
 ########################################################################################################################################################################

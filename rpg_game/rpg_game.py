@@ -417,12 +417,6 @@ class RPGGame(BaseGame):
                 prop_model.name, prop_model.codename
             )
 
-        # 暂时没用
-        if len(stage_model.stage_portal) > 0:
-            logger.debug(
-                f"场景：{stage_model.name}，可传送的场景：{stage_model.stage_portal}"
-            )
-
         # 场景图的设置
         if len(stage_model.stage_graph) > 0:
             logger.debug(

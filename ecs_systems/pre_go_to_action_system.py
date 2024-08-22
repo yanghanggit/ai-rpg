@@ -34,7 +34,6 @@ class ActorGoToFailedBecauseStageInvalid(IStageDirectorEvent):
 
     def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
         if actor_name != self._actor_name:
-            # 跟你无关不用关注，原因类的东西，是失败后矫正用，所以只有自己知道即可
             return ""
         return builtin_prompt.go_to_stage_failed_because_stage_is_invalid_prompt(
             self._actor_name, self._stage_name
@@ -379,7 +378,7 @@ class PreBeforeGoToActionSystem(ReactiveProcessor):
             return ""
 
         appearance_comp = actor_entity.get(AppearanceComponent)
-        return builtin_prompt.appearance_prompt(
+        return builtin_prompt.make_appearance_prompt(
             appearance_comp.name, cast(str, appearance_comp.appearance)
         )
 

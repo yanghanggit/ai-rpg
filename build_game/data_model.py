@@ -20,7 +20,6 @@ class StageModel(BaseModel):
     description: str
     url: str
     kick_off_message: str
-    stage_portal: List[str]
     stage_graph: List[str]
     attributes: List[int]
 

@@ -8,8 +8,6 @@ from ecs_systems.action_components import (
 from ecs_systems.components import StageComponent
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import override, Any, Dict, Set
-
-# from loguru import logger
 from file_system.files_def import PropFile
 from build_game.data_model import PropModel
 import json

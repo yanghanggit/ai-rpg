@@ -112,11 +112,13 @@ class StagePlanningSystem(ExecuteProcessor):
 
             task = LangServeAgentRequestTask.create(
                 agent,
-                builtin_prompt.stage_plan_prompt(
+                builtin_prompt.make_stage_plan_prompt(
                     self._context._file_system.get_files(
-                        PropFile, self._context.safe_get_entity_name(stage_entity)
+                        PropFile,
+                        self._context.safe_get_entity_name(stage_entity),
                     ),
                     self._context.actor_names_in_stage(stage_entity),
+                    self._context._execute_count,
                 ),
             )
 

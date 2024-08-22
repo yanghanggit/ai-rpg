@@ -49,13 +49,13 @@ class LangServeAgentSystem:
     def connect_agent(self, name: str) -> None:
         if name in self._agents:
             self._agents[name].connect()
-        logger.error(f"connect_actor_agent: {name} is not registered.")
+        #logger.error(f"connect_actor_agent: {name} is not registered.")
 
     ################################################################################################################################################################################
     def get_agent(self, name: str) -> Optional[LangServeAgent]:
         if name in self._agents:
             return self._agents[name]
-        logger.error(f"get_actor_agent: {name} is not registered.")
+        #logger.error(f"get_actor_agent: {name} is not registered.")
         return None
 
     ################################################################################################################################################################################
@@ -109,65 +109,36 @@ class LangServeAgentSystem:
             dump = self.create_chat_history_dump(name)
             if len(dump) == 0:
                 continue
-            _str = json.dumps(dump, ensure_ascii=False)
-            self.write_chat_history_dump(name, _str)
+            content = json.dumps(dump, ensure_ascii=False)
+            self.write_chat_history_dump(name, content)
 
     ################################################################################################################################################################################
     # 创建一个agent的所有chat history的数据结构
     def create_chat_history_dump(self, name: str) -> List[Dict[str, str]]:
-        res: List[Dict[str, str]] = []
-        if name not in self._agents:
-            return res
 
+        if name not in self._agents:
+            return []
+
+        ret: List[Dict[str, str]] = []
         chat_history = self._agents[name]._chat_history
         for chat in chat_history:
             if isinstance(chat, HumanMessage):
-                res.append({"HumanMessage": cast(str, chat.content)})
+                ret.append({"HumanMessage": cast(str, chat.content)})
             elif isinstance(chat, AIMessage):
-                res.append({"AIMessage": cast(str, chat.content)})
+                ret.append({"AIMessage": cast(str, chat.content)})
 
-        return res
+        return ret
 
     ################################################################################################################################################################################
     ##强制写入
-    def write_chat_history_dump(self, who: str, content: str) -> None:
-        path = self.chat_history_dump_path(who)
+    def write_chat_history_dump(self, agent_name: str, content: str) -> int:
         try:
-            res = path.write_text(content, encoding="utf-8")
+            path = self.chat_history_dump_path(agent_name)
+            return path.write_text(content, encoding="utf-8")
         except Exception as e:
-            logger.error(f"[{who}]写入chat history dump失败。{e}")
-            return
+            logger.error(f"[{agent_name}]写入chat history dump失败。{e}")
 
-    ################################################################################################################################################################################
-    # 从chat history中排除指定的内容
-    def exclude_content_then_rebuild_chat_history(
-        self, name: str, excluded_content: Set[str]
-    ) -> None:
-        if not name in self._agents or len(excluded_content) == 0:
-            return
-
-        rebuild: List[HumanMessage | AIMessage] = []
-        chat_history = self._agents[name]._chat_history
-        for message in chat_history:
-            if not self.message_has_content(
-                cast(str, message.content), excluded_content
-            ):
-                rebuild.append(message)
-
-        self._agents[name]._chat_history = rebuild
-
-    ################################################################################################################################################################################
-    def create_filter_chat_history(
-        self, name: str, check_content: Set[str]
-    ) -> List[str]:
-        result: List[str] = []
-        if not name in self._agents or len(check_content) == 0:
-            return []
-        chat_history = self._agents[name]._chat_history
-        for message in chat_history:
-            if self.message_has_content(cast(str, message.content), check_content):
-                result.append(cast(str, message.content))
-        return result
+        return -1
 
     ################################################################################################################################################################################
     # 替换chat history中的内容
@@ -181,14 +152,29 @@ class LangServeAgentSystem:
                     message.content = value
 
     ################################################################################################################################################################################
-    # 判断是否包含指定的内容
-    def message_has_content(
-        self, check_message: str, excluded_content: Set[str]
-    ) -> bool:
-        for content in excluded_content:
-            if content in check_message:
-                return True
-        return False
+    def filter_chat_history(
+        self, name: str, filter_content: Set[str]
+    ) -> list[HumanMessage | AIMessage]:
+        if not name in self._agents:
+            return []
 
+        ret: list[HumanMessage | AIMessage] = []
+        for message in self._agents[name]._chat_history:
+            for content in filter_content:
+                if content in cast(str, message.content):
+                    ret.append(message)
+        return ret
 
-################################################################################################################################################################################
+    ################################################################################################################################################################################
+    def exclude_chat_history(
+        self, name: str, exclude_content: list[HumanMessage | AIMessage]
+    ) -> None:
+        if not name in self._agents:
+            return
+
+        shallow_copy = self._agents[name]._chat_history.copy()
+        for message in exclude_content:
+            if message in shallow_copy:
+                shallow_copy.remove(message)
+
+    ################################################################################################################################################################################

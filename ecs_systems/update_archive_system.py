@@ -4,7 +4,7 @@ from loguru import logger
 from ecs_systems.components import ActorComponent, StageComponent, StageArchiveComponent
 import ecs_systems.cn_builtin_prompt as builtin_prompt
 from ecs_systems.cn_constant_prompt import _CNConstantPrompt_
-from typing import Set, override, Dict, List
+from typing import Set, override, Dict, List, cast
 import file_system.helper
 from file_system.files_def import PropFile
 from rpg_game.rpg_game import RPGGame
@@ -14,7 +14,6 @@ from file_system.files_def import (
 )
 
 
-#### 一次处理过程的封装，目前是非常笨的方式（而且不是最终版本），后续可以优化。
 ###############################################################################################################################################
 class UpdateArchiveHelper:
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
@@ -77,12 +76,15 @@ class UpdateArchiveHelper:
         for actor_entity in actor_entities:
 
             actor_comp = actor_entity.get(ActorComponent)
-            filter_chat_history = (
-                self._context._langserve_agent_system.create_filter_chat_history(
-                    actor_comp.name, tags
-                )
+
+            filters = self._context._langserve_agent_system.filter_chat_history(
+                actor_comp.name, tags
             )
-            ret[actor_comp.name] = " ".join(filter_chat_history)
+            content_list: List[str] = []
+            for filter in filters:
+                content_list.append(cast(str, filter.content))
+
+            ret[actor_comp.name] = " ".join(content_list)
 
         return ret
 
@@ -94,12 +96,15 @@ class UpdateArchiveHelper:
         actor_entities: Set[Entity] = self._context.get_group(
             Matcher(ActorComponent)
         ).entities
+
         for actor_entity in actor_entities:
             actor_comp = actor_entity.get(ActorComponent)
+
             prop_files = self._context._file_system.get_files(PropFile, actor_comp.name)
             desc: List[str] = []
             for file in prop_files:
                 desc.append(f"{file.name}:{file.description}")
+
             ret[actor_comp.name] = desc
 
         return ret
@@ -243,12 +248,11 @@ class UpdateArchiveSystem(ExecuteProcessor):
             actor_comp.name, actor_archives
         )
 
-        exclude_chat_history: Set[str] = set()
-        exclude_chat_history.add(message)
-
-        # 过去的都删除了
-        self._context._langserve_agent_system.exclude_content_then_rebuild_chat_history(
-            actor_comp.name, exclude_chat_history
+        filters = self._context._langserve_agent_system.filter_chat_history(
+            actor_comp.name, set({message})
+        )
+        self._context._langserve_agent_system.exclude_chat_history(
+            actor_comp.name, filters
         )
 
         # 添加新的
@@ -274,12 +278,19 @@ class UpdateArchiveSystem(ExecuteProcessor):
             actor_comp.name, stage_archives
         )
 
-        exclude_chat_history: Set[str] = set()
-        exclude_chat_history.add(message)
+        # exclude_chat_history: Set[str] = set()
+        # exclude_chat_history.add(message)
 
         # 过去的都删除了
-        self._context._langserve_agent_system.exclude_content_then_rebuild_chat_history(
-            actor_comp.name, exclude_chat_history
+        # self._context._langserve_agent_system.exclude_content_then_rebuild_chat_history(
+        #     actor_comp.name, exclude_chat_history
+        # )
+
+        filters = self._context._langserve_agent_system.filter_chat_history(
+            actor_comp.name, set({message})
+        )
+        self._context._langserve_agent_system.exclude_chat_history(
+            actor_comp.name, filters
         )
 
         # 添加新的

@@ -140,8 +140,11 @@ class ActorPlanningSystem(ExecuteProcessor):
 
             task = LangServeAgentRequestTask.create(
                 agent,
-                builtin_prompt.actor_plan_prompt(
-                    tp[0], tp[1], self.get_stages_actor_can_go_to(actor_entity)
+                builtin_prompt.make_actor_plan_prompt(
+                    tp[0],
+                    tp[1],
+                    self.get_stages_actor_can_go_to(actor_entity),
+                    self._context._execute_count,
                 ),
             )
             if task is not None:

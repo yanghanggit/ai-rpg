@@ -82,15 +82,6 @@ class ExcelEditorStage:
 
     ################################################################################################################################
     @property
-    def stage_portal(self) -> List[str]:
-        assert self._my_data is not None
-        if self._my_data["stage_portal"] is None:
-            return []
-        copy_data = str(self._my_data["stage_portal"])
-        return copy_data.split(";")
-
-    ################################################################################################################################
-    @property
     def stage_graph(self) -> List[str]:
         assert self._my_data is not None
         if self._my_data["stage_graph"] is None:
@@ -143,7 +134,6 @@ class ExcelEditorStage:
         out_put["description"] = data_stage.description
         out_put["url"] = data_stage.localhost
         out_put["kick_off_message"] = self.kick_off_message
-        out_put["stage_portal"] = self.stage_portal
         out_put["stage_graph"] = self.stage_graph
         out_put["attributes"] = self.attributes
 

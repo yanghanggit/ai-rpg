@@ -6,36 +6,43 @@ from ecs_systems.action_components import (
     TagAction,
     PerceptionAction,
     CheckStatusAction,
-    PolishingStoryAction,
+    BroadcastAction,
     BroadcastAction,
     SpeakAction,
     WhisperAction,
+    SkillFeedbackAction,
 )
 import json
 from ecs_systems.cn_constant_prompt import _CNConstantPrompt_
-from loguru import logger
 
 
 ###############################################################################################################################################
-def kick_off_actor_prompt(kick_off_message: str, about_game: str) -> str:
-    prompt = f"""# <%这是角色初始化>游戏世界即将开始运行。这是你的初始设定，你将以此为起点进行游戏
+def make_kick_off_actor_prompt(
+    kick_off_message: str, about_game: str, game_round: int
+) -> str:
+
+    prompt = f"""# <%这是角色初始化> 游戏世界即将开始运行。这是你的初始设定，你将以此为起点进行游戏
 ## 游戏介绍
 {about_game}
+## 游戏运行回合
+当前回合: {game_round}
 ## 初始设定
 {kick_off_message}。
 ## 请结合你的角色设定,更新你的状态。
 ## 输出要求:
 - 请遵循 输出格式指南。
 - 返回结果 只 带如下的4个键: {MindVoiceAction.__name__}, {TagAction.__name__}, {PerceptionAction.__name__} 和 {CheckStatusAction.__name__}"""
+
     return prompt
 
 
 ###############################################################################################################################################
-def kick_off_stage_prompt(
+def make_kick_off_stage_prompt(
     kick_off_message: str,
     about_game: str,
     stage_prop_files: List[PropFile],
     actors_in_stage: Set[str],
+    game_round: int,
 ) -> str:
 
     ## 场景内道具
@@ -54,7 +61,7 @@ def kick_off_stage_prompt(
     else:
         actors_prompt = "- 无任何角色。"
 
-    prompt = f"""# <%这是场景初始化>游戏世界即将开始运行。这是你的初始设定，你将以此为起点进行游戏
+    prompt = f"""# <%这是场景初始化> 游戏世界即将开始运行。这是你的初始设定，你将以此为起点进行游戏
 ## 游戏介绍
 {about_game}
 ## 初始设定
@@ -63,6 +70,8 @@ def kick_off_stage_prompt(
 {props_prompt}
 ## 场景内角色
 {actors_prompt}
+## 游戏运行回合
+当前回合: {game_round}
 ## 输出要求:
 - 请遵循 输出格式指南。
 - 返回结果不要提及任何场景内角色与道具。
@@ -71,19 +80,22 @@ def kick_off_stage_prompt(
 
 
 ###############################################################################################################################################
-def kick_off_world_system_prompt(about_game: str) -> str:
-    prompt = f"""# <%这是世界系统初始化>游戏世界即将开始运行，请简要回答你的职能与描述。
+def make_kick_off_world_system_prompt(about_game: str, game_round: int) -> str:
+    prompt = f"""# <%这是世界系统初始化> 游戏世界即将开始运行，请简要回答你的职能与描述。
 ## 游戏介绍
 {about_game}
+## 游戏运行回合
+当前回合: {game_round}
 """
     return prompt
 
 
 ###############################################################################################################################################
-def actor_plan_prompt(
+def make_actor_plan_prompt(
     input_current_stage: str,
     input_stage_enviro_narrate: str,
     input_stages_you_can_go: Set[str],
+    game_round: int,
 ) -> str:
 
     current_stage_name_prompt = (
@@ -107,6 +119,8 @@ def actor_plan_prompt(
 ## 你当前所在的场景为: {current_stage_name_prompt}
 {current_stage_enviro_narrate_prompt}
 {stages_you_can_go_prompt}
+## 游戏运行回合
+当前回合: {game_round}
 ## 要求:
 - 请遵循 输出格式指南。
 - 结果中要附带{TagAction.__name__}。"""
@@ -114,8 +128,8 @@ def actor_plan_prompt(
 
 
 ###############################################################################################################################################
-def stage_plan_prompt(
-    stage_prop_files: List[PropFile], actors_in_stage: Set[str]
+def make_stage_plan_prompt(
+    stage_prop_files: List[PropFile], actors_in_stage: Set[str], game_round: int
 ) -> str:
 
     ## 场景内道具
@@ -139,6 +153,8 @@ def stage_plan_prompt(
 {props_prompt}
 ## 场景内角色:
 {actors_prompt}
+## 游戏运行回合
+当前回合: {game_round}
 ## 关于’你的计划‘内容生成规则
 - 根据你作为场景受到了什么事件的影响，你可以制定计划，并决定下一步将要做什么。可根据 输出格式指南 选择相应的行动。
 ## 输出要求:
@@ -566,20 +582,13 @@ def enter_stage_failed_beacuse_stage_refuse_prompt(
 
 
 ################################################################################################################################################
-def appearance_prompt(safe_name: str, appearance: str) -> str:
+def make_appearance_prompt(safe_name: str, appearance: str) -> str:
     return f"""### {safe_name}
 - 角色外观:{appearance}"""
 
 
 ################################################################################################################################################
-# def use_prop_no_response_prompt(
-#     actor_name: str, prop_name: str, target_name: str
-# ) -> str:
-#     return f"# {actor_name}对{target_name}使用道具{prop_name}，但没有任何反应。"
-
-
-################################################################################################################################################
-def actors_body_and_clothe_prompt(
+def make_gen_appearance_prompt(
     actors_body_and_clothe: Dict[str, tuple[str, str]]
 ) -> str:
     appearance_info_list: List[str] = []
@@ -687,7 +696,7 @@ def player_conversation_check_prompt(
 ################################################################################################################################################
 
 
-def world_determine_skill_enable_prompt(
+def make_world_determine_skill_enable_prompt(
     actor_name: str,
     appearance: str,
     skill_files: List[PropFile],
@@ -729,7 +738,7 @@ def world_determine_skill_enable_prompt(
 ### 请根据下面的示例, 确保你的输出严格遵守相应的结构。
 {{
   "{TagAction.__name__}":["{_CNConstantPrompt_.BIG_SUCCESS}或{_CNConstantPrompt_.SUCCESS}或{_CNConstantPrompt_.FAILURE}或{_CNConstantPrompt_.BIG_FAILURE}"],
-  "{PolishingStoryAction.__name__}":["输出逻辑合理且附带润色的句子描述"]
+  "{BroadcastAction.__name__}":["输出逻辑合理且附带润色的句子描述"]
 }}
 
 ### 关于键值的补充规则说明
@@ -738,7 +747,7 @@ def world_determine_skill_enable_prompt(
     - {_CNConstantPrompt_.BIG_SUCCESS} 代表技能释放不仅{_CNConstantPrompt_.SUCCESS}，且效果超出预期。
     - {_CNConstantPrompt_.FAILURE} 代表技能释放不仅{_CNConstantPrompt_.BIG_FAILURE}，且使用者会受到惩罚。
     - 为了提高游戏性，请根据输入给你的: {actor_name} 信息，施放技能，使用道具，来判断技能释放的结果。
-- 关于 {PolishingStoryAction.__name__} 键值:
+- 关于 {BroadcastAction.__name__} 键值:
     - 在技能释放成功的情况下，结合以上所有信息，输出逻辑合理且附带润色的句子描述，来表达 {actor_name} 使用技能的释放结果。
     - 例句：{actor_name} 使用了 xx技能， 效果为xxx(逻辑合理且附带润色)。
 
@@ -753,12 +762,15 @@ def world_determine_skill_enable_prompt(
 ################################################################################################################################################
 
 
-def release_skill_prompt(
+def make_release_skill_prompt(
     actor_name: str,
+    target_name: str,
     appearance: str,
     skill_files: List[PropFile],
     prop_files: List[PropFile],
-    polish_story: str,
+    polish_sentence: str,
+    result_string: str,
+    behavior_sentence: str,
 ) -> str:
 
     skill_prompt: List[str] = []
@@ -775,7 +787,7 @@ def release_skill_prompt(
     else:
         _prop_prompt.append("- 无任何道具。")
 
-    prompt = f"""# {actor_name} 向你发动技能。
+    prompt = f"""# {actor_name} 向 {target_name} 发动技能。
 
 ## {actor_name} 信息
 {appearance}
@@ -786,16 +798,25 @@ def release_skill_prompt(
 ## 使用道具
 {"\n".join(_prop_prompt)}
 
-## 故事描述为
- {polish_story}
+## 原始的的描述为
+{behavior_sentence}
+
+## 系统预判本次技能的释放结果
+{result_string}
+
+## 润色后的故事描述为
+ {polish_sentence}
 
 ## 判断步骤
 1. 综合以上信息，判断技能对你的影响，例如改变你的状态，或者对你造成伤害等。
-2. 更新的你的状态。
+2. 更新的{target_name}的状态。
 
 ## 输出要求:
 - 请遵循 输出格式指南。
-- 返回结果仅带如下2个键: {StageNarrateAction.__name__} 和 {TagAction.__name__}。
+- 返回结果仅带如下2个键: {SkillFeedbackAction.__name__} 和 {TagAction.__name__}。
 """
 
     return prompt
+
+
+################################################################################################################################################

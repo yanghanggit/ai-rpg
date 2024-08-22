@@ -205,7 +205,7 @@ class AttackActionSystem(ReactiveProcessor):
                 # self.unique_prop_be_taken_away(actor_or_stage_entity, target_entity)
 
             ## 可以加一些别的。。。。。。。。。。。。
-            ## 比如杀人多了会被世界管理员记住——你是大坏蛋
+
             ## 。。。。。。。。。。。。。。。。。。。
 
             ## 死后处理大流程，step最后——死亡组件系统必须要添加

@@ -85,10 +85,6 @@ pm2 start game_sample/gen_agent/coffin_of_the_silent_one_agent.py game_sample/ge
 
 # 攻击目标Actor, 名字为Name?
 
-/attack '角色名称'
-
-例如 /attack 摩尔
-
 # 离开当前场景，去往Name?的场景
 
 /goto '场景名称'

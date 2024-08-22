@@ -15,7 +15,7 @@ SpeakAction = namedtuple("SpeakAction", "name action_name values")
 # 标签
 TagAction = namedtuple("TagAction", "name action_name values")
 # 攻击
-AttackAction = namedtuple("AttackAction", "name action_name values")
+#AttackAction = namedtuple("AttackAction", "name action_name values")
 # 死亡
 DeadAction = namedtuple("DeadAction", "name action_name values")
 # 离开当前场景并去往
@@ -45,7 +45,7 @@ FeedbackAction = namedtuple("FeedbackAction", "name action_name values")
 
 # 场景可以用的所有动作
 STAGE_AVAILABLE_ACTIONS_REGISTER = [
-    AttackAction,
+    #AttackAction,
     TagAction,
     MindVoiceAction,
     WhisperAction,
@@ -55,7 +55,7 @@ STAGE_AVAILABLE_ACTIONS_REGISTER = [
 
 # 角色可以用的所有动作
 ACTOR_AVAILABLE_ACTIONS_REGISTER = [
-    AttackAction,
+    #AttackAction,
     GoToAction,
     SpeakAction,
     TagAction,

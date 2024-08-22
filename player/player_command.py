@@ -4,7 +4,7 @@ from loguru import logger
 from ecs_systems.action_components import (
     BroadcastAction,
     SpeakAction,
-    AttackAction,
+    #AttackAction,
     GoToAction,
     UsePropAction,
     WhisperAction,
@@ -146,42 +146,42 @@ class PlayerLogin(PlayerCommand):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class PlayerAttack(PlayerCommand):
-    """
-    玩家攻击的行为：AttackAction
-    """
+# class PlayerAttack(PlayerCommand):
+#     """
+#     玩家攻击的行为：AttackAction
+#     """
 
-    def __init__(
-        self, name: str, rpg_game: RPGGame, player_proxy: PlayerProxy, target_name: str
-    ) -> None:
-        super().__init__(name, rpg_game, player_proxy)
-        self._target_name: str = target_name
+#     def __init__(
+#         self, name: str, rpg_game: RPGGame, player_proxy: PlayerProxy, target_name: str
+#     ) -> None:
+#         super().__init__(name, rpg_game, player_proxy)
+#         self._target_name: str = target_name
 
-    def execute(self) -> None:
-        context = self._rpggame._entitas_context
-        attack_target_name = self._target_name
-        player_entity = context.get_player_entity(self._player_proxy._name)
-        if player_entity is None:
-            logger.warning("debug_attack: player is None")
-            return
+#     def execute(self) -> None:
+#         context = self._rpggame._entitas_context
+#         attack_target_name = self._target_name
+#         player_entity = context.get_player_entity(self._player_proxy._name)
+#         if player_entity is None:
+#             logger.warning("debug_attack: player is None")
+#             return
 
-        if player_entity.has(ActorComponent):
-            actor_comp = player_entity.get(ActorComponent)
-            player_entity.add(
-                AttackAction,
-                actor_comp.name,
-                AttackAction.__name__,
-                [attack_target_name],
-            )
+#         if player_entity.has(ActorComponent):
+#             actor_comp = player_entity.get(ActorComponent)
+#             player_entity.add(
+#                 AttackAction,
+#                 actor_comp.name,
+#                 AttackAction.__name__,
+#                 [attack_target_name],
+#             )
 
-        elif player_entity.has(StageComponent):
-            stage_comp = player_entity.get(StageComponent)
-            player_entity.add(
-                AttackAction,
-                stage_comp.name,
-                AttackAction.__name__,
-                [attack_target_name],
-            )
+#         elif player_entity.has(StageComponent):
+#             stage_comp = player_entity.get(StageComponent)
+#             player_entity.add(
+#                 AttackAction,
+#                 stage_comp.name,
+#                 AttackAction.__name__,
+#                 [attack_target_name],
+#             )
 
 
 ####################################################################################################################################

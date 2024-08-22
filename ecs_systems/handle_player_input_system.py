@@ -6,7 +6,7 @@ from rpg_game.rpg_game import RPGGame
 from player.player_proxy import PlayerProxy
 import player.utils
 from player.player_command import (
-    PlayerAttack,
+    #PlayerAttack,
     PlayerGoTo,
     PlayerBroadcast,
     PlayerSpeak,
@@ -81,10 +81,10 @@ class HandlePlayerInputSystem(ExecuteProcessor):
         if "/quit" in usr_input:
             rpg_game.exited = True
 
-        elif "/attack" in usr_input:
-            command = "/attack"
-            targetname = split_command(usr_input, command)
-            PlayerAttack(command, rpg_game, player_proxy, targetname).execute()
+        # elif "/attack" in usr_input:
+        #     command = "/attack"
+        #     targetname = split_command(usr_input, command)
+        #     PlayerAttack(command, rpg_game, player_proxy, targetname).execute()
 
         elif "/goto" in usr_input:
             command = "/goto"

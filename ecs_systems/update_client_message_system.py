@@ -9,7 +9,7 @@ from ecs_systems.action_components import (
     SpeakAction,
     BroadcastAction,
     StageNarrateAction,
-    AttackAction,
+    #AttackAction,
     GoToAction,
 )
 
@@ -62,7 +62,7 @@ class UpdateClientMessageSystem(ExecuteProcessor):
         self.whisper_action_2_message(player_proxy, player_entity)
         self.broadcast_action_2_message(player_proxy, player_entity)
         self.speak_action_2_message(player_proxy, player_entity)
-        self.attack_action_2_message(player_proxy, player_entity)
+        #self.attack_action_2_message(player_proxy, player_entity)
         self.go_to_action_2_message(player_proxy, player_entity)
 
     ############################################################################################################
@@ -219,30 +219,30 @@ class UpdateClientMessageSystem(ExecuteProcessor):
             )
 
     ############################################################################################################
-    def attack_action_2_message(
-        self, player_proxy: PlayerProxy, player_entity: Entity
-    ) -> None:
-        player_entity_stage = self._context.safe_get_stage_entity(player_entity)
-        entities = self._context.get_group(Matcher(AttackAction)).entities
-        for entity in entities:
+    # def attack_action_2_message(
+    #     self, player_proxy: PlayerProxy, player_entity: Entity
+    # ) -> None:
+    #     player_entity_stage = self._context.safe_get_stage_entity(player_entity)
+    #     entities = self._context.get_group(Matcher(AttackAction)).entities
+    #     for entity in entities:
 
-            if entity == player_entity:
-                continue
+    #         if entity == player_entity:
+    #             continue
 
-            his_stage_entity = self._context.safe_get_stage_entity(entity)
-            if his_stage_entity != player_entity_stage:
-                continue
+    #         his_stage_entity = self._context.safe_get_stage_entity(entity)
+    #         if his_stage_entity != player_entity_stage:
+    #             continue
 
-            attack_action = entity.get(AttackAction)
-            # attack_action: AgentAction = attack_action_component.action
-            if len(attack_action.values) == 0:
-                logger.error("attack_action_2_message error")
-                continue
+    #         attack_action = entity.get(AttackAction)
+    #         # attack_action: AgentAction = attack_action_component.action
+    #         if len(attack_action.values) == 0:
+    #             logger.error("attack_action_2_message error")
+    #             continue
 
-            targetname = attack_action.values[0]
-            player_proxy.add_actor_message(
-                attack_action.name, f"""准备对{targetname}发起了攻击"""
-            )
+    #         targetname = attack_action.values[0]
+    #         player_proxy.add_actor_message(
+    #             attack_action.name, f"""准备对{targetname}发起了攻击"""
+    #         )
 
     ############################################################################################################
     def go_to_action_2_message(

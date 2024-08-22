@@ -7,7 +7,7 @@ from rpg_game.rpg_entitas_context import RPGEntitasContext
 from ecs_systems.stage_planning_system import StagePlanningSystem
 from ecs_systems.actor_planning_system import ActorPlanningSystem
 from ecs_systems.speak_action_system import SpeakActionSystem
-from ecs_systems.attack_action_system import AttackActionSystem
+#from ecs_systems.attack_action_system import AttackActionSystem
 from ecs_systems.go_to_action_system import GoToActionSystem
 from ecs_systems.pre_go_to_action_system import PreBeforeGoToActionSystem
 from ecs_systems.stage_director_system import StageDirectorSystem
@@ -102,12 +102,11 @@ class RPGEntitasProcessors(Processors):
         # 测试的系统
         processors.add(BehaviorActionSystem(context))
         processors.add(SkillActionSystem(context, WORLD_SKILL_SYSTEM_NAME))
-
         processors.add(FeedbackActionSystem(context))
 
         # 战斗类的行为!
         # processors.add(SimpleRPGPreFightSystem(context))
-        processors.add(AttackActionSystem(context))
+        #processors.add(AttackActionSystem(context))
         processors.add(
             DeadActionSystem(context, rpg_game)
         )  ## 战斗类行为产生结果可能有死亡，死亡之后，后面的行为都不可以做。

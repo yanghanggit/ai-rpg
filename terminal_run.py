@@ -46,9 +46,6 @@ async def main(input_actor_name_as_default: str) -> None:
     )
     login_command.execute()
 
-    # 测试的代码
-    # yh_test_save(game_name)
-
     # 核心循环
     while True:
         if rpg_game.exited:

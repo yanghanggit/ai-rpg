@@ -10,7 +10,7 @@ from ecs_systems.action_components import (
     BroadcastAction,
     SpeakAction,
     WhisperAction,
-    SkillFeedbackAction,
+    FeedbackAction,
 )
 import json
 from ecs_systems.cn_constant_prompt import _CNConstantPrompt_
@@ -588,7 +588,7 @@ def make_appearance_prompt(safe_name: str, appearance: str) -> str:
 
 
 ################################################################################################################################################
-def make_gen_appearance_prompt(
+def make_world_system_reasoning_appearance_prompt(
     actors_body_and_clothe: Dict[str, tuple[str, str]]
 ) -> str:
     appearance_info_list: List[str] = []
@@ -696,7 +696,7 @@ def player_conversation_check_prompt(
 ################################################################################################################################################
 
 
-def make_world_determine_skill_enable_prompt(
+def make_world_reasoning_release_skill_enable_prompt(
     actor_name: str,
     appearance: str,
     skill_files: List[PropFile],
@@ -762,7 +762,7 @@ def make_world_determine_skill_enable_prompt(
 ################################################################################################################################################
 
 
-def make_release_skill_prompt(
+def make_reasoning_skill_target_feedback_prompt(
     actor_name: str,
     target_name: str,
     appearance: str,
@@ -813,10 +813,31 @@ def make_release_skill_prompt(
 
 ## 输出要求:
 - 请遵循 输出格式指南。
-- 返回结果仅带如下2个键: {SkillFeedbackAction.__name__} 和 {TagAction.__name__}。
+- 返回结果仅带如下2个键: {FeedbackAction.__name__} 和 {TagAction.__name__}。
 """
 
     return prompt
 
 
 ################################################################################################################################################
+
+
+def make_world_reasoning_behavior_check_prompt(
+    actor_name: str, behavior_sentence: str, allow: bool
+) -> str:
+    if allow:
+        return f"""# {actor_name} 计划行动: {behavior_sentence}。系统判断之后通过。"""
+    return f"""# {actor_name} 计划的行动: {behavior_sentence}。系统判断之后拒绝。请重新检查计划中提到的技能，对象，道具等是否存在问题。"""
+
+
+################################################################################################################################################
+
+
+def make_notify_skill_event_prompt(actor_name: str, behavior_sentence: str) -> str:
+    return f"""# {actor_name} 实施了行动(使用了技能)
+## 行动内容
+{behavior_sentence}"""
+
+
+
+

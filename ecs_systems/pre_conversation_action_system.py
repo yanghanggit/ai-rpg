@@ -59,7 +59,7 @@ class PreConversationActionSystem(ReactiveProcessor):
             broadcast_content, speak_content_list, whisper_content_list
         )
 
-        task = LangServeAgentRequestTask.create_without_any_context(agent, prompt)
+        task = LangServeAgentRequestTask.create_without_context(agent, prompt)
         if task is None:
             return
 

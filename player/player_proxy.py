@@ -8,7 +8,7 @@ class PlayerProxy:
         self._name: str = name
         self._input_commands: List[str] = []
         self._client_messages: List[tuple[str, str]] = []
-        self._cache_messages: List[tuple[str, str]] = []
+        self._login_messages: List[tuple[str, str]] = []
 
     def add_message(
         self, sender: str, message: str, target: List[tuple[str, str]]
@@ -25,7 +25,7 @@ class PlayerProxy:
         self.add_message(f"[{stage_name}]", message, self._client_messages)
 
     def add_login_message(self, actor_name: str, message: str) -> None:
-        self.add_message(f"[{actor_name}]", message, self._cache_messages)
+        self.add_message(f"{actor_name}", message, self._login_messages)
 
 
 ##########################################################################################################################################################

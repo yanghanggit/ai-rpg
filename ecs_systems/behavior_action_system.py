@@ -1,16 +1,38 @@
 from entitas import Matcher, ReactiveProcessor, GroupEvent, Entity  # type: ignore
 from ecs_systems.action_components import (
     BehaviorAction,
-    SkillTargetAction,
+    TargetAction,
     SkillAction,
     PropAction,
 )
 from ecs_systems.components import StageComponent
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from typing import override, Any, Dict, Set
+from typing import override, Set
 from file_system.files_def import PropFile
-from build_game.data_model import PropModel
-import json
+from ecs_systems.stage_director_event import IStageDirectorEvent
+import ecs_systems.cn_builtin_prompt as builtin_prompt
+from ecs_systems.stage_director_component import StageDirectorComponent
+
+
+class WorldBehaviorCheckEvent(IStageDirectorEvent):
+
+    def __init__(self, actor_name: str, behavior_sentece: str, allow: bool) -> None:
+
+        self._actor_name: str = actor_name
+        self._behavior_sentece: str = behavior_sentece
+        self._allow: bool = allow
+
+    def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
+        if actor_name != self._actor_name:
+            # 只有自己知道
+            return ""
+
+        return builtin_prompt.make_world_reasoning_behavior_check_prompt(
+            self._actor_name, self._behavior_sentece, self._allow
+        )
+
+    def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
+        return ""
 
 
 class BehaviorActionSystem(ReactiveProcessor):
@@ -36,22 +58,23 @@ class BehaviorActionSystem(ReactiveProcessor):
             self.handle(entity)
 
     ######################################################################################################################################################
-    #
     def handle(self, entity: Entity) -> None:
 
-        # /behavior 对@冀州.中山.卢奴.秘密监狱.火字十一号牢房的铁栏门  使用/飞炎咒
         behavior_action: BehaviorAction = entity.get(BehaviorAction)
         if len(behavior_action.values) == 0:
             return
 
-        sentence = behavior_action.values[0]
-        if sentence == "":
+        behavior_sentence = behavior_action.values[0]
+        if behavior_sentence == "":
             return
 
-        targets = self.parse_targets(entity, sentence)
-        skills = self.parse_skills(entity, sentence)
-        props = self.parse_props(entity, sentence)
+        targets = self.parse_targets(entity, behavior_sentence)
+        skills = self.parse_skills(entity, behavior_sentence)
+        props = self.parse_props(entity, behavior_sentence)
         if len(targets) == 0 or len(skills) == 0:
+            self.on_stage_director_world_behavior_check_event(
+                entity, behavior_sentence, False
+            )
             return
 
         self.clear_action(entity)
@@ -59,12 +82,20 @@ class BehaviorActionSystem(ReactiveProcessor):
         self.add_skill_action(entity, skills)
         self.add_prop_action(entity, props)
 
+        # 导演类来统筹
+        self.on_stage_director_world_behavior_check_event(
+            entity, behavior_sentence, True
+        )
+
     ######################################################################################################################################################
     def clear_action(self, entity: Entity) -> None:
-        if entity.has(SkillTargetAction):
-            entity.remove(SkillTargetAction)
+
+        if entity.has(TargetAction):
+            entity.remove(TargetAction)
+
         if entity.has(SkillAction):
             entity.remove(SkillAction)
+
         if entity.has(PropAction):
             entity.remove(PropAction)
 
@@ -93,16 +124,13 @@ class BehaviorActionSystem(ReactiveProcessor):
         if len(targets) == 0:
             return
         safe_name = self._context.safe_get_entity_name(entity)
-        entity.add(
-            SkillTargetAction, safe_name, SkillTargetAction.__name__, list(targets)
-        )
+        entity.add(TargetAction, safe_name, TargetAction.__name__, list(targets))
 
     ######################################################################################################################################################
     def parse_skills(self, entity: Entity, sentence: str) -> Set[PropFile]:
 
         safe_name = self._context.safe_get_entity_name(entity)
         skill_files = self._context._file_system.get_files(PropFile, safe_name)
-        skill_files.append(self.fake_skill(safe_name))
 
         ret: Set[PropFile] = set()
         for skill_file in skill_files:
@@ -119,43 +147,41 @@ class BehaviorActionSystem(ReactiveProcessor):
         if len(skills) == 0:
             return
         safe_name = self._context.safe_get_entity_name(entity)
-        entity.add(SkillAction, safe_name, SkillAction.__name__, list(skills))
+        skill_names = [skill.name for skill in skills]
+        entity.add(SkillAction, safe_name, SkillAction.__name__, skill_names)
 
     ######################################################################################################################################################
     def parse_props(self, entity: Entity, sentence: str) -> Set[PropFile]:
-        return set()
+
+        safe_name = self._context.safe_get_entity_name(entity)
+        prop_files = self._context._file_system.get_files(PropFile, safe_name)
+        ret: Set[PropFile] = set()
+        for prop_file in prop_files:
+            if prop_file.is_skill:
+                continue
+            if prop_file.name in sentence:
+                ret.add(prop_file)
+
+        return ret
 
     ######################################################################################################################################################
     def add_prop_action(self, entity: Entity, props: Set[PropFile]) -> None:
         if len(props) == 0:
             return
         safe_name = self._context.safe_get_entity_name(entity)
-        entity.add(PropAction, safe_name, PropAction.__name__, list(props))
+        prop_names = [prop.name for prop in props]
+        entity.add(PropAction, safe_name, PropAction.__name__, prop_names)
 
     ######################################################################################################################################################
-    def fake_skill(self, owner_name: str) -> PropFile:
-
-        fake_data: Dict[str, Any] = {
-            "name": "飞炎咒",
-            "codename": "flying_flame_curse",
-            "description": "发射小型火球",
-            "type": "Skill",
-            "attributes": [0, 0, 1, 0],
-            "appearance": "无",
-        }
-
-        prop_model = PropModel.model_validate_json(
-            json.dumps(fake_data, ensure_ascii=False)
+    def on_stage_director_world_behavior_check_event(
+        self, entity: Entity, behavior_sentence: str, allow: bool
+    ) -> None:
+        StageDirectorComponent.add_event_to_stage_director(
+            self._context,
+            entity,
+            WorldBehaviorCheckEvent(
+                self._context.safe_get_entity_name(entity), behavior_sentence, allow
+            ),
         )
-
-        prop_file = PropFile(
-            self._context._guid_generator.generate(),
-            prop_model.name,
-            owner_name,
-            prop_model,
-            1,
-        )
-
-        return prop_file
 
     ######################################################################################################################################################

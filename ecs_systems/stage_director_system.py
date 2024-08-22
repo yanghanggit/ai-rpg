@@ -29,11 +29,8 @@ class StageDirectorSystem(ExecuteProcessor):
             Matcher(all_of=[StageComponent, StageDirectorComponent])
         ).entities
         for entity in entities:
-            # logger.debug('=' *50)
             self.handle_stage(entity)
-            # logger.debug('=' *50)
             self.handle_stage_actors(entity)
-            # logger.debug('=' *50)
 
     #################################################################################################################################################################
     def clear_director(self) -> None:
@@ -82,7 +79,7 @@ class StageDirectorSystem(ExecuteProcessor):
     def director_events_to_actor(
         context: RPGEntitasContext,
         actor_entity: Entity,
-        input_stage_director_events: Optional[List[IStageDirectorEvent]],
+        option_stage_director_events: Optional[List[IStageDirectorEvent]],
     ) -> None:
 
         stage_entity = context.safe_get_stage_entity(actor_entity)
@@ -96,9 +93,9 @@ class StageDirectorSystem(ExecuteProcessor):
         actor_comp = actor_entity.get(ActorComponent)
 
         events_2_actor: List[str] = []
-        if input_stage_director_events is not None:
+        if option_stage_director_events is not None:
             events_2_actor = stage_director_comp._to_actor(
-                actor_comp.name, context, input_stage_director_events
+                actor_comp.name, context, option_stage_director_events
             )
         else:
             events_2_actor = stage_director_comp.to_actor(actor_comp.name, context)
@@ -132,7 +129,7 @@ class StageDirectorSystem(ExecuteProcessor):
     def director_events_to_player(
         context: RPGEntitasContext,
         player_entity: Entity,
-        input_stage_director_events: Optional[List[IStageDirectorEvent]],
+        option_stage_director_events: Optional[List[IStageDirectorEvent]],
     ) -> None:
 
         if not player_entity.has(PlayerComponent) or not player_entity.has(
@@ -158,9 +155,9 @@ class StageDirectorSystem(ExecuteProcessor):
         actor_comp = player_entity.get(ActorComponent)
 
         events_2_player: List[str] = []
-        if input_stage_director_events is not None:
+        if option_stage_director_events is not None:
             events_2_player = stage_director_comp._to_player(
-                actor_comp.name, context, input_stage_director_events
+                actor_comp.name, context, option_stage_director_events
             )
         else:
             events_2_player = stage_director_comp.to_player(actor_comp.name, context)

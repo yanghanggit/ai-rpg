@@ -20,17 +20,17 @@ class CheckStatusActionHelper:
         self._prop_files_as_weapon_clothes_non_consumable_item: List[PropFile] = []
         self._maxhp: int = 0
         self._hp: int = 0
-        self._prop_files_as_special_components: List[PropFile] = []
+        self._prop_files_as_special: List[PropFile] = []
 
     def clear(self) -> None:
         self._prop_files_as_weapon_clothes_non_consumable_item.clear()
         self._maxhp = 0
         self._hp = 0
-        self._prop_files_as_special_components.clear()
+        self._prop_files_as_special.clear()
 
     def check_props(self, entity: Entity) -> None:
-        safename = self._context.safe_get_entity_name(entity)
-        prop_files = self._context._file_system.get_files(PropFile, safename)
+        safe_name = self._context.safe_get_entity_name(entity)
+        prop_files = self._context._file_system.get_files(PropFile, safe_name)
         for prop_file in prop_files:
             if (
                 prop_file.is_weapon
@@ -39,7 +39,7 @@ class CheckStatusActionHelper:
             ):
                 self._prop_files_as_weapon_clothes_non_consumable_item.append(prop_file)
             elif prop_file.is_special:
-                self._prop_files_as_special_components.append(prop_file)
+                self._prop_files_as_special.append(prop_file)
 
     def check_health(self, entity: Entity) -> None:
         if not entity.has(RPGAttributesComponent):
@@ -137,7 +137,7 @@ class CheckStatusActionSystem(ReactiveProcessor):
                 safe_name,
                 helper._prop_files_as_weapon_clothes_non_consumable_item,
                 helper.health,
-                helper._prop_files_as_special_components,
+                helper._prop_files_as_special,
             ),
         )
 

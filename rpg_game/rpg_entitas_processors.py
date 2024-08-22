@@ -37,7 +37,7 @@ from ecs_systems.update_appearance_action_system import UpdateAppearanceActionSy
 from ecs_systems.stage_narrate_action_system import StageNarrateActionSystem
 from ecs_systems.behavior_action_system import BehaviorActionSystem
 from ecs_systems.skill_action_system import SkillActionSystem
-from ecs_systems.skill_feedback_action_system import SkillFeedbackActionSystem
+from ecs_systems.feedback_action_system import FeedbackActionSystem
 
 WORLD_APPEARANCE_SYSTEM_NAME = "角色外观生成器"
 WORLD_SKILL_SYSTEM_NAME = "技能系统"
@@ -103,7 +103,7 @@ class RPGEntitasProcessors(Processors):
         processors.add(BehaviorActionSystem(context))
         processors.add(SkillActionSystem(context, WORLD_SKILL_SYSTEM_NAME))
 
-        processors.add(SkillFeedbackActionSystem(context))
+        processors.add(FeedbackActionSystem(context))
 
         # 战斗类的行为!
         # processors.add(SimpleRPGPreFightSystem(context))

@@ -18,7 +18,7 @@ import ecs_systems.cn_builtin_prompt as builtin_prompt
 from ecs_systems.cn_constant_prompt import _CNConstantPrompt_
 from typing import cast, override, List
 from ecs_systems.check_status_action_system import CheckStatusActionHelper
-from my_agent.agent_plan import AgentPlan, AgentAction
+from my_agent.agent_plan import AgentPlan
 from my_agent.lang_serve_agent_request_task import LangServeAgentRequestTask
 from file_system.files_def import PropFile
 
@@ -388,7 +388,7 @@ class PreBeforeGoToActionSystem(ReactiveProcessor):
         helper.check_status(actor_entity)
         return (
             helper._prop_files_as_weapon_clothes_non_consumable_item
-            + helper._prop_files_as_special_components
+            + helper._prop_files_as_special
         )
 
     ###############################################################################################################################################

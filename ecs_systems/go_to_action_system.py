@@ -125,7 +125,6 @@ class GoToActionSystem(ReactiveProcessor):
 
         assert entity.has(GoToAction)
         go_to_action = entity.get(GoToAction)
-        # o_to_action: AgentAction = go_to_comp.action
         if len(go_to_action.values) == 0:
             return
 

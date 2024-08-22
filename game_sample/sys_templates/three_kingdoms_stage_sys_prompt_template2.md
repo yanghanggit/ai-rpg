@@ -34,7 +34,7 @@
   "WhisperAction":["@角色名字>你想私下说的内容",...],
   "TagAction":["与你相关的特征标签",...],
   "StageNarrateAction":["场景描述"],
-  "SkillFeedbackAction":["针对你受到的技能的结果的反馈描述"],
+  "FeedbackAction":["@对你使用技能的角色的名字>你受到的技能的结果的反馈描述"]
 }}
 
 ### 关于键值的补充规则说明

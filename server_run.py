@@ -196,7 +196,7 @@ async def imme_handle_check_status(rpg_game: RPGGame, playerproxy: PlayerProxy) 
         safe_name,
         helper._prop_files_as_weapon_clothes_non_consumable_item,
         helper.health,
-        helper._prop_files_as_special_components,
+        helper._prop_files_as_special,
     )
     message = event.to_actor(safe_name, context)
     #

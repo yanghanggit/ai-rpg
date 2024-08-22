@@ -17,7 +17,7 @@ class LangServeAgentRequestTask:
         return LangServeAgentRequestTask(agent, prompt)
 
     @staticmethod
-    def create_without_any_context(
+    def create_without_context(
         agent: LangServeAgent, prompt: str
     ) -> Optional["LangServeAgentRequestTask"]:
         request_task = LangServeAgentRequestTask.create(agent, prompt)

@@ -274,9 +274,9 @@ class UpdateClientMessageSystem(ExecuteProcessor):
     def handle_cache_messages(
         self, player_proxy: PlayerProxy, player_entity: Entity
     ) -> None:
-        for message in player_proxy._cache_messages:
+        for message in player_proxy._login_messages:
             player_proxy.add_actor_message(message[0], message[1])
-        player_proxy._cache_messages.clear()
+        player_proxy._login_messages.clear()
 
 
 ############################################################################################################

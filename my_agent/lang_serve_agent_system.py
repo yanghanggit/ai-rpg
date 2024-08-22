@@ -49,13 +49,13 @@ class LangServeAgentSystem:
     def connect_agent(self, name: str) -> None:
         if name in self._agents:
             self._agents[name].connect()
-        #logger.error(f"connect_actor_agent: {name} is not registered.")
+        # logger.error(f"connect_actor_agent: {name} is not registered.")
 
     ################################################################################################################################################################################
     def get_agent(self, name: str) -> Optional[LangServeAgent]:
         if name in self._agents:
             return self._agents[name]
-        #logger.error(f"get_actor_agent: {name} is not registered.")
+        # logger.error(f"get_actor_agent: {name} is not registered.")
         return None
 
     ################################################################################################################################################################################

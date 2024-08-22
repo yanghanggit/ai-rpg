@@ -15,7 +15,7 @@ from loguru import logger
 from ecs_systems.stage_director_component import StageDirectorComponent
 from ecs_systems.stage_director_event import IStageDirectorEvent
 import ecs_systems.cn_builtin_prompt as builtin_prompt
-from ecs_systems.cn_constant_prompt import _CNConstantPrompt_
+from ecs_systems.cn_constant_prompt import _CNConstantPrompt_ as ConstantPrompt
 from typing import cast, override, List
 from ecs_systems.check_status_action_system import CheckStatusActionHelper
 from my_agent.agent_plan import AgentPlan
@@ -219,7 +219,7 @@ class PreBeforeGoToActionSystem(ReactiveProcessor):
 
         safe_name = self._context.safe_get_entity_name(stage_entity)
         kickoff = self._context._kick_off_message_system.get_message(safe_name)
-        return _CNConstantPrompt_.STAGE_EXIT_TAG in kickoff
+        return ConstantPrompt.STAGE_EXIT_TAG in kickoff
 
         # return (
         #     stage_entity.has(StageExitCondStatusComponent)
@@ -231,7 +231,7 @@ class PreBeforeGoToActionSystem(ReactiveProcessor):
     def has_entry_conditions(self, stage_entity: Entity) -> bool:
         safe_name = self._context.safe_get_entity_name(stage_entity)
         kickoff = self._context._kick_off_message_system.get_message(safe_name)
-        return _CNConstantPrompt_.STAGE_ENTRY_TAG in kickoff
+        return ConstantPrompt.STAGE_ENTRY_TAG in kickoff
         # return (
         #     stage_entity.has(StageEntryCondStatusComponent)
         #     or stage_entity.has(StageEntryCondCheckActorStatusComponent)

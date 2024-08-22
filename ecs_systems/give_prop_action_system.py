@@ -28,7 +28,7 @@ class ActorGivePropEvent(IStageDirectorEvent):
     def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
         if actor_name != self._from_who or actor_name != self._to_who:
             return ""
-        return builtin_prompt.give_prop_action_prompt(
+        return builtin_prompt.make_give_prop_action_prompt(
             self._from_who, self._to_who, self._prop_name, self._action_result
         )
 

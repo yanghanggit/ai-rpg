@@ -106,20 +106,20 @@ class StageDirectorSystem(ExecuteProcessor):
         ### 标记开始
         context.safe_add_human_message_to_entity(
             actor_entity,
-            builtin_prompt.stage_director_begin_prompt(
+            builtin_prompt.make_stage_director_begin_prompt(
                 stage_director_comp.name, len(events_2_actor)
             ),
         )
 
         for index, event in enumerate(events_2_actor):
-            prompt = builtin_prompt.stage_director_event_wrap_prompt(event, index)
+            prompt = builtin_prompt.make_stage_director_event_wrap_prompt(event, index)
             logger.debug(f"director_events_to_actor = {actor_comp.name}:{event}")
             context.safe_add_human_message_to_entity(actor_entity, prompt)
 
         ## 标记结束
         context.safe_add_human_message_to_entity(
             actor_entity,
-            builtin_prompt.stage_director_end_prompt(
+            builtin_prompt.make_stage_director_end_prompt(
                 stage_director_comp.name, len(events_2_actor)
             ),
         )

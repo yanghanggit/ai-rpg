@@ -79,7 +79,7 @@ class ActorPerceptionEvent(IStageDirectorEvent):
     def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
         if actor_name != self._who:
             return ""  # 不是自己，不显示
-        return builtin_prompt.perception_action_prompt(
+        return builtin_prompt.make_perception_action_prompt(
             self._who,
             self._current_stage_name,
             self._actors_in_stage,

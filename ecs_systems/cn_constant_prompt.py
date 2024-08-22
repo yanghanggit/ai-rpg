@@ -83,4 +83,3 @@ class CNConstantPrompt:
 
 ###############################################################################################################################################
 _CNConstantPrompt_ = CNConstantPrompt()
-# logger.debug(f"CNConstantPrompt: {_CNConstantPrompt_}")

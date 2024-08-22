@@ -19,7 +19,7 @@ from file_system.files_def import PropFile
 import ecs_systems.cn_builtin_prompt as builtin_prompt
 from my_agent.lang_serve_agent_request_task import LangServeAgentRequestTask
 from my_agent.agent_plan import AgentPlan
-from ecs_systems.cn_constant_prompt import _CNConstantPrompt_
+from ecs_systems.cn_constant_prompt import _CNConstantPrompt_ as ConstantPrompt
 import gameplay.planning_helper
 from ecs_systems.action_components import (
     STAGE_AVAILABLE_ACTIONS_REGISTER,
@@ -58,7 +58,7 @@ class WorldSkillSystemResponsePlan(AgentPlan):
     def result(self) -> str:
         tip_action = self.get_by_key(TagAction.__name__)
         if tip_action is None or len(tip_action.values) == 0:
-            return _CNConstantPrompt_.FAILURE
+            return ConstantPrompt.FAILURE
         return tip_action.values[0]
 
     @property
@@ -128,8 +128,8 @@ class SkillActionSystem(ReactiveProcessor):
             return
 
         if (
-            world_response_plan.result == _CNConstantPrompt_.BIG_FAILURE
-            or world_response_plan.result == _CNConstantPrompt_.FAILURE
+            world_response_plan.result == ConstantPrompt.BIG_FAILURE
+            or world_response_plan.result == ConstantPrompt.FAILURE
         ):
             logger.debug(
                 f"{self._world_system_name}, determine_skill_enable_ret is BIG_FAILURE."

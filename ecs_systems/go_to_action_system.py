@@ -50,12 +50,12 @@ class ActorLeaveStageEvent(IStageDirectorEvent):
         self._target_stage_name: str = target_stage_name
 
     def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
-        return builtin_prompt.leave_stage_prompt(
+        return builtin_prompt.make_leave_stage_prompt(
             self._actor_name, self._current_stage_name, self._target_stage_name
         )
 
     def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
-        return builtin_prompt.leave_stage_prompt(
+        return builtin_prompt.make_leave_stage_prompt(
             self._actor_name, self._current_stage_name, self._target_stage_name
         )
 
@@ -76,17 +76,17 @@ class ActorEnterStageEvent(IStageDirectorEvent):
     def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
         if actor_name != self._actor_name:
             # 目标场景内的一切听到的是这个:"xxx进入了场景"
-            return builtin_prompt.enter_stage_prompt1(
+            return builtin_prompt.make_enter_stage_prompt1(
                 self._actor_name, self._target_stage_name
             )
 
         # 通知我自己，我从哪里去往了哪里。这样prompt更加清晰一些
-        return builtin_prompt.enter_stage_prompt2(
+        return builtin_prompt.make_enter_stage_prompt2(
             self._actor_name, self._target_stage_name, self._last_stage_name
         )
 
     def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
-        return builtin_prompt.enter_stage_prompt1(
+        return builtin_prompt.make_enter_stage_prompt1(
             self._actor_name, self._target_stage_name
         )
 

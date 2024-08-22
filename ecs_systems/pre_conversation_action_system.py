@@ -55,7 +55,7 @@ class PreConversationActionSystem(ReactiveProcessor):
         speak_content_list = self.get_speak_content(player_entity)
         whisper_content_list = self.get_whisper_content(player_entity)
 
-        prompt = builtin_prompt.player_conversation_check_prompt(
+        prompt = builtin_prompt.make_player_conversation_check_prompt(
             broadcast_content, speak_content_list, whisper_content_list
         )
 

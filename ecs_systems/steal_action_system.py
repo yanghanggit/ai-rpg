@@ -31,7 +31,7 @@ class ActorStealPropEvent(IStageDirectorEvent):
     def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
         if actor_name != self._who or actor_name != self._target:
             return ""
-        return builtin_prompt.steal_prop_action_prompt(
+        return builtin_prompt.make_steal_prop_action_prompt(
             self._who, self._target, self._prop_name, self._action_result
         )
 

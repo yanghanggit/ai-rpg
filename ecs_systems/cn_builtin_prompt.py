@@ -13,7 +13,7 @@ from ecs_systems.action_components import (
     FeedbackAction,
 )
 import json
-from ecs_systems.cn_constant_prompt import _CNConstantPrompt_
+from ecs_systems.cn_constant_prompt import _CNConstantPrompt_ as ConstantPrompt
 
 
 ###############################################################################################################################################
@@ -115,7 +115,7 @@ def make_actor_plan_prompt(
         or "## 目前你不能去往任何场景"
     )
 
-    prompt = f"""# {_CNConstantPrompt_.ACTOR_PLAN_PROMPT_TAG} 请做出你的计划，决定你将要做什么。
+    prompt = f"""# {ConstantPrompt.ACTOR_PLAN_PROMPT_TAG} 请做出你的计划，决定你将要做什么。
 ## 你当前所在的场景为: {current_stage_name_prompt}
 {current_stage_enviro_narrate_prompt}
 {stages_you_can_go_prompt}
@@ -148,7 +148,7 @@ def make_stage_plan_prompt(
     else:
         actors_prompt = "- 无任何角色。"
 
-    prompt = f"""# {_CNConstantPrompt_.STAGE_PLAN_PROMPT_TAG} 请输出'场景描述'和'你的计划'
+    prompt = f"""# {ConstantPrompt.STAGE_PLAN_PROMPT_TAG} 请输出'场景描述'和'你的计划'
 ## 场景内道具:
 {props_prompt}
 ## 场景内角色:
@@ -167,7 +167,7 @@ def make_stage_plan_prompt(
 
 
 ###############################################################################################################################################
-def perception_action_prompt(
+def make_perception_action_prompt(
     who: str,
     current_stage: str,
     result_actor_names: Dict[str, str],
@@ -188,7 +188,7 @@ def perception_action_prompt(
     else:
         prompt_of_props = "- 无任何道具。"
 
-    final_prompt = f"""# {_CNConstantPrompt_.PERCEPTION_ACTION_TAG} {who} 在 {current_stage} 中执行感知行动({PerceptionAction.__name__})，结果如下:
+    final_prompt = f"""# {ConstantPrompt.PERCEPTION_ACTION_TAG} {who} 在 {current_stage} 中执行感知行动({PerceptionAction.__name__})，结果如下:
 ## 场景内角色:
 {prompt_of_actor}
 ## 场景内道具:
@@ -197,7 +197,7 @@ def perception_action_prompt(
 
 
 ###############################################################################################################################################
-def prop_type_prompt(prop_file: PropFile) -> str:
+def make_prop_type_prompt(prop_file: PropFile) -> str:
 
     ret = "未知"
 
@@ -221,7 +221,7 @@ def make_prop_prompt(
 ) -> str:
 
     prompt = f"""### {prop_file.name}
-- 类型:{prop_type_prompt(prop_file)}
+- 类型:{make_prop_type_prompt(prop_file)}
 """
     if need_description_prompt:
         prompt += f"- 道具描述:{prop_file.description}\n"
@@ -233,7 +233,7 @@ def make_prop_prompt(
 
 
 ###############################################################################################################################################
-def type_special_prop__prompt(prop_file: PropFile) -> str:
+def make_type_special_prop__prompt(prop_file: PropFile) -> str:
 
     assert prop_file.is_special
 
@@ -244,7 +244,7 @@ def type_special_prop__prompt(prop_file: PropFile) -> str:
 
 
 ###############################################################################################################################################
-def check_status_action_prompt(
+def make_check_status_action_prompt(
     who: str,
     prop_files_as_weapon_clothes_non_consumable_item: List[PropFile],
     health: float,
@@ -268,12 +268,14 @@ def check_status_action_prompt(
     props_prompt_as_special_components = ""
     if len(prop_files_as_special_components) > 0:
         for prop_file in prop_files_as_special_components:
-            props_prompt_as_special_components += type_special_prop__prompt(prop_file)
+            props_prompt_as_special_components += make_type_special_prop__prompt(
+                prop_file
+            )
     else:
         props_prompt_as_special_components = "- 无任何特殊能力。"
 
     # 组合最终的提示
-    prompt = f"""# {_CNConstantPrompt_.CHECK_STATUS_ACTION_TAG} {who} 正在查看自身状态({CheckStatusAction.__name__}):
+    prompt = f"""# {ConstantPrompt.CHECK_STATUS_ACTION_TAG} {who} 正在查看自身状态({CheckStatusAction.__name__}):
 ## 健康状态:
 {actor_health_prompt}
 ## 持有道具:
@@ -285,7 +287,7 @@ def check_status_action_prompt(
 
 
 ###############################################################################################################################################
-def search_prop_action_failed_prompt(actor_name: str, prop_name: str) -> str:
+def make_search_prop_action_failed_prompt(actor_name: str, prop_name: str) -> str:
     return f"""# {actor_name} 无法找到道具 "{prop_name}"。
 ## 可能原因:
 1. {prop_name} 不是一个可搜索的道具。
@@ -296,7 +298,7 @@ def search_prop_action_failed_prompt(actor_name: str, prop_name: str) -> str:
 
 
 ###############################################################################################################################################
-def search_prop_action_success_prompt(
+def make_search_prop_action_success_prompt(
     actor_name: str, prop_name: str, stagename: str
 ) -> str:
     return f"""# {actor_name}从{stagename}场景内成功找到并获取了道具:{prop_name}。
@@ -305,59 +307,59 @@ def search_prop_action_success_prompt(
 
 
 ################################################################################################################################################
-def enter_stage_prompt1(actor_name: str, target_stage_name: str) -> str:
+def make_enter_stage_prompt1(actor_name: str, target_stage_name: str) -> str:
     return f"{actor_name}进入了场景——{target_stage_name}。"
 
 
 ################################################################################################################################################
-def enter_stage_prompt2(
+def make_enter_stage_prompt2(
     actor_name: str, target_stage_name: str, last_stage_name: str
 ) -> str:
     return f"# {actor_name}离开了{last_stage_name}, 进入了{target_stage_name}。"
 
 
 ################################################################################################################################################
-def leave_stage_prompt(
+def make_leave_stage_prompt(
     actor_name: str, current_stage_name: str, go_to_stage_name: str
 ) -> str:
     return f"# {actor_name}离开了{current_stage_name} 场景。"
 
 
 ################################################################################################################################################
-def stage_director_event_wrap_prompt(event: str, event_index: int) -> str:
+def make_stage_director_event_wrap_prompt(event: str, event_index: int) -> str:
     event_number = event_index + 1
     return f"""# 事件{event_number}\n{event}"""
 
 
 ################################################################################################################################################
-def stage_director_begin_prompt(stage_name: str, events_count: int) -> str:
+def make_stage_director_begin_prompt(stage_name: str, events_count: int) -> str:
     return f"""# 如下是{stage_name}场景内发生的事件，事件数量为{events_count}。"""
 
 
 ################################################################################################################################################
-def stage_director_end_prompt(stage_name: str, events_count: int) -> str:
+def make_stage_director_end_prompt(stage_name: str, events_count: int) -> str:
     return f"""# 以上是{stage_name}场景内近期发生的{events_count}个事件。"""
 
 
 ################################################################################################################################################
-def whisper_action_prompt(src_name: str, dest_name: str, content: str) -> str:
-    return f"# {_CNConstantPrompt_.WHISPER_ACTION_TAG} {src_name}对{dest_name}私语道:{content}"
-
-
-################################################################################################################################################
-def broadcast_action_prompt(src_name: str, dest_name: str, content: str) -> str:
-    return f"# {_CNConstantPrompt_.BROADCASE_ACTION_TAG} {src_name}对{dest_name}里的所有人说:{content}"
-
-
-################################################################################################################################################
-def speak_action_prompt(src_name: str, dest_name: str, content: str) -> str:
+def make_whisper_action_prompt(src_name: str, dest_name: str, content: str) -> str:
     return (
-        f"# {_CNConstantPrompt_.SPEAK_ACTION_TAG} {src_name}对{dest_name}说:{content}"
+        f"# {ConstantPrompt.WHISPER_ACTION_TAG} {src_name}对{dest_name}私语道:{content}"
     )
 
 
 ################################################################################################################################################
-def steal_prop_action_prompt(
+def make_broadcast_action_prompt(src_name: str, dest_name: str, content: str) -> str:
+    return f"# {ConstantPrompt.BROADCASE_ACTION_TAG} {src_name}对{dest_name}里的所有人说:{content}"
+
+
+################################################################################################################################################
+def make_speak_action_prompt(src_name: str, dest_name: str, content: str) -> str:
+    return f"# {ConstantPrompt.SPEAK_ACTION_TAG} {src_name}对{dest_name}说:{content}"
+
+
+################################################################################################################################################
+def make_steal_prop_action_prompt(
     actor_name: str, target_name: str, prop_name: str, action_result: bool
 ) -> str:
     if not action_result:
@@ -366,7 +368,7 @@ def steal_prop_action_prompt(
 
 
 ################################################################################################################################################
-def give_prop_action_prompt(
+def make_give_prop_action_prompt(
     from_who: str, to_who: str, prop_name: str, action_result: bool
 ) -> str:
     if not action_result:
@@ -417,20 +419,20 @@ def update_stage_archive_prompt(actor_name: str, stage_archives: Set[str]) -> st
 
 
 ################################################################################################################################################
-def kill_prompt(attacker_name: str, target_name: str) -> str:
-    return f"# {attacker_name}对{target_name}发动了一次攻击,造成了{target_name}死亡。"
+# def kill_prompt(attacker_name: str, target_name: str) -> str:
+#     return f"# {attacker_name}对{target_name}发动了一次攻击,造成了{target_name}死亡。"
 
 
 ################################################################################################################################################
-def attack_prompt(
-    attacker_name: str,
-    target_name: str,
-    damage: int,
-    target_current_hp: int,
-    target_max_hp: int,
-) -> str:
-    health_percent = max(0, (target_current_hp - damage) / target_max_hp * 100)
-    return f"# {attacker_name}对{target_name}发动了攻击,造成了{damage}点伤害,当前{target_name}的生命值剩余{health_percent}%。"
+# def attack_prompt(
+#     attacker_name: str,
+#     target_name: str,
+#     damage: int,
+#     target_current_hp: int,
+#     target_max_hp: int,
+# ) -> str:
+#     health_percent = max(0, (target_current_hp - damage) / target_max_hp * 100)
+#     return f"# {attacker_name}对{target_name}发动了攻击,造成了{damage}点伤害,当前{target_name}的生命值剩余{health_percent}%。"
 
 
 ################################################################################################################################################
@@ -489,7 +491,7 @@ def stage_exit_conditions_check_prompt(
         )
 
     ret_prompt = f"""# {actor_name} 想要离开场景: {current_stage_name}。
-## 第1步: 请回顾你的 {_CNConstantPrompt_.STAGE_EXIT_TAG}
+## 第1步: 请回顾你的 {ConstantPrompt.STAGE_EXIT_TAG}
 
 ## 第2步: 根据当前‘你的状态’判断是否满足允许{actor_name}离开
 当前状态可能由于事件而变化，请仔细考虑。
@@ -534,7 +536,7 @@ def stage_entry_conditions_check_prompt(
         )
 
     ret_prompt = f"""# {actor_name} 想要进入场景: {current_stage_name}。
-## 第1步: 请回顾你的 {_CNConstantPrompt_.STAGE_EXIT_TAG}
+## 第1步: 请回顾你的 {ConstantPrompt.STAGE_EXIT_TAG}
 
 ## 第2步: 根据当前‘你的状态’判断是否满足允许{actor_name}进入
 当前状态可能由于事件而变化，请仔细考虑。
@@ -659,7 +661,7 @@ def extract_from_unknown_guid_stage_name_prompt(stage_name: str) -> int:
 
 
 ################################################################################################################################################
-def player_conversation_check_prompt(
+def make_player_conversation_check_prompt(
     input_broadcast_content: str,
     input_speak_content_list: List[str],
     input_whisper_content_list: List[str],
@@ -737,15 +739,15 @@ def make_world_reasoning_release_skill_enable_prompt(
 
 ### 请根据下面的示例, 确保你的输出严格遵守相应的结构。
 {{
-  "{TagAction.__name__}":["{_CNConstantPrompt_.BIG_SUCCESS}或{_CNConstantPrompt_.SUCCESS}或{_CNConstantPrompt_.FAILURE}或{_CNConstantPrompt_.BIG_FAILURE}"],
+  "{TagAction.__name__}":["{ConstantPrompt.BIG_SUCCESS}或{ConstantPrompt.SUCCESS}或{ConstantPrompt.FAILURE}或{ConstantPrompt.BIG_FAILURE}"],
   "{BroadcastAction.__name__}":["输出逻辑合理且附带润色的句子描述"]
 }}
 
 ### 关于键值的补充规则说明
 - 关于 {TagAction.__name__} 键值:
-    - 只能是如下4个值: {_CNConstantPrompt_.BIG_SUCCESS},{_CNConstantPrompt_.SUCCESS},{_CNConstantPrompt_.FAILURE},{_CNConstantPrompt_.BIG_FAILURE}。
-    - {_CNConstantPrompt_.BIG_SUCCESS} 代表技能释放不仅{_CNConstantPrompt_.SUCCESS}，且效果超出预期。
-    - {_CNConstantPrompt_.FAILURE} 代表技能释放不仅{_CNConstantPrompt_.BIG_FAILURE}，且使用者会受到惩罚。
+    - 只能是如下4个值: {ConstantPrompt.BIG_SUCCESS},{ConstantPrompt.SUCCESS},{ConstantPrompt.FAILURE},{ConstantPrompt.BIG_FAILURE}。
+    - {ConstantPrompt.BIG_SUCCESS} 代表技能释放不仅{ConstantPrompt.SUCCESS}，且效果超出预期。
+    - {ConstantPrompt.FAILURE} 代表技能释放不仅{ConstantPrompt.BIG_FAILURE}，且使用者会受到惩罚。
     - 为了提高游戏性，请根据输入给你的: {actor_name} 信息，施放技能，使用道具，来判断技能释放的结果。
 - 关于 {BroadcastAction.__name__} 键值:
     - 在技能释放成功的情况下，结合以上所有信息，输出逻辑合理且附带润色的句子描述，来表达 {actor_name} 使用技能的释放结果。

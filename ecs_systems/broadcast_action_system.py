@@ -24,12 +24,12 @@ class StageOrActorBroadcastEvent(IStageDirectorEvent):
         self._broadcast_content = broadcast_content
 
     def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
-        return builtin_prompt.broadcast_action_prompt(
+        return builtin_prompt.make_broadcast_action_prompt(
             self._who_broadcast, self._stagename, self._broadcast_content
         )
 
     def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
-        return builtin_prompt.broadcast_action_prompt(
+        return builtin_prompt.make_broadcast_action_prompt(
             self._who_broadcast, self._stagename, self._broadcast_content
         )
 

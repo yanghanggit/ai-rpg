@@ -82,7 +82,7 @@ class ActorCheckStatusEvent(IStageDirectorEvent):
         if actor_name != self._who:
             # 只有自己知道
             return ""
-        return builtin_prompt.check_status_action_prompt(
+        return builtin_prompt.make_check_status_action_prompt(
             self._who,
             self._prop_files_as_weapon_clothes_non_consumable_item,
             self._health,

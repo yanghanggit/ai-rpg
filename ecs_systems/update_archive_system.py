@@ -3,7 +3,7 @@ from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from ecs_systems.components import ActorComponent, StageComponent, StageArchiveComponent
 import ecs_systems.cn_builtin_prompt as builtin_prompt
-from ecs_systems.cn_constant_prompt import _CNConstantPrompt_
+from ecs_systems.cn_constant_prompt import _CNConstantPrompt_ as ConstantPrompt
 from typing import Set, override, Dict, List, cast
 import file_system.helper
 from file_system.files_def import PropFile
@@ -64,10 +64,10 @@ class UpdateArchiveHelper:
     def build_chat_history(self) -> Dict[str, str]:
         tags: Set[str] = {
             self._rpg_game.about_game,
-            _CNConstantPrompt_.BATCH_CONVERSATION_ACTION_EVENTS_TAG,
-            _CNConstantPrompt_.SPEAK_ACTION_TAG,
-            _CNConstantPrompt_.WHISPER_ACTION_TAG,
-            _CNConstantPrompt_.BATCH_CONVERSATION_ACTION_EVENTS_TAG,
+            ConstantPrompt.BATCH_CONVERSATION_ACTION_EVENTS_TAG,
+            ConstantPrompt.SPEAK_ACTION_TAG,
+            ConstantPrompt.WHISPER_ACTION_TAG,
+            ConstantPrompt.BATCH_CONVERSATION_ACTION_EVENTS_TAG,
         }
 
         ret: Dict[str, str] = {}

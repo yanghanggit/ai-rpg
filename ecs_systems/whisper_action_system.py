@@ -25,7 +25,7 @@ class StageOrActorWhisperEvent(IStageDirectorEvent):
         if actor_name != self._who or actor_name != self._target:
             # 只有这2个人才能听到
             return ""
-        return builtin_prompt.whisper_action_prompt(
+        return builtin_prompt.make_whisper_action_prompt(
             self._who, self._target, self._message
         )
 

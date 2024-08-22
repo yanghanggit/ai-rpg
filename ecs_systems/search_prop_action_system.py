@@ -31,7 +31,9 @@ class ActorSearchPropFailedEvent(IStageDirectorEvent):
         if actor_name != self._who:
             ## 只有自己知道
             return ""
-        return builtin_prompt.search_prop_action_failed_prompt(self._who, self._target)
+        return builtin_prompt.make_search_prop_action_failed_prompt(
+            self._who, self._target
+        )
 
     def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
         return ""
@@ -53,13 +55,13 @@ class ActorSearchPropSuccessEvent(IStageDirectorEvent):
         if actor_name != self._who:
             ## 只有自己知道
             return ""
-        return builtin_prompt.search_prop_action_success_prompt(
+        return builtin_prompt.make_search_prop_action_success_prompt(
             self._who, self._target, self._stage_name
         )
 
     #
     def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
-        return builtin_prompt.search_prop_action_success_prompt(
+        return builtin_prompt.make_search_prop_action_success_prompt(
             self._who, self._target, self._stage_name
         )
 

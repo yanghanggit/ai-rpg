@@ -22,12 +22,12 @@ class StageOrActorSpeakEvent(IStageDirectorEvent):
         self._message: str = message
 
     def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
-        return builtin_prompt.speak_action_prompt(
+        return builtin_prompt.make_speak_action_prompt(
             self._who, self._target, self._message
         )
 
     def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
-        return builtin_prompt.speak_action_prompt(
+        return builtin_prompt.make_speak_action_prompt(
             self._who, self._target, self._message
         )
 

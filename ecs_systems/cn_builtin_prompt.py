@@ -837,7 +837,3 @@ def make_notify_skill_event_prompt(actor_name: str, behavior_sentence: str) -> s
     return f"""# {actor_name} 实施了行动(使用了技能)
 ## 行动内容
 {behavior_sentence}"""
-
-
-
-

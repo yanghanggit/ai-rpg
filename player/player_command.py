@@ -4,9 +4,9 @@ from loguru import logger
 from ecs_systems.action_components import (
     BroadcastAction,
     SpeakAction,
-    #AttackAction,
+    # AttackAction,
     GoToAction,
-    UsePropAction,
+    # UsePropAction,
     WhisperAction,
     SearchPropAction,
     PerceptionAction,
@@ -522,40 +522,40 @@ class PlayerCheckStatus(PlayerCommand):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class PlayerUseProp(PlayerCommand):
-    """
-    玩家使用道具的行为：UsePropAction
-    """
+# class PlayerUseProp(PlayerCommand):
+#     """
+#     玩家使用道具的行为：UsePropAction
+#     """
 
-    def __init__(
-        self,
-        name: str,
-        rpg_game: RPGGame,
-        player_proxy: PlayerProxy,
-        target_and_message_format_string: str,
-    ) -> None:
-        super().__init__(name, rpg_game, player_proxy)
-        # "@使用道具对象>道具名"
-        self._target_and_message_format_string: str = target_and_message_format_string
+#     def __init__(
+#         self,
+#         name: str,
+#         rpg_game: RPGGame,
+#         player_proxy: PlayerProxy,
+#         target_and_message_format_string: str,
+#     ) -> None:
+#         super().__init__(name, rpg_game, player_proxy)
+#         # "@使用道具对象>道具名"
+#         self._target_and_message_format_string: str = target_and_message_format_string
 
-    def execute(self) -> None:
-        context = self._rpggame._entitas_context
-        player_entity = context.get_player_entity(self._player_proxy._name)
-        if player_entity is None:
-            return
+#     def execute(self) -> None:
+#         context = self._rpggame._entitas_context
+#         player_entity = context.get_player_entity(self._player_proxy._name)
+#         if player_entity is None:
+#             return
 
-        # 添加行动
-        actor_comp = player_entity.get(ActorComponent)
-        player_entity.add(
-            UsePropAction,
-            actor_comp.name,
-            UsePropAction.__name__,
-            [self._target_and_message_format_string],
-        )
+#         # 添加行动
+#         actor_comp = player_entity.get(ActorComponent)
+#         player_entity.add(
+#             UsePropAction,
+#             actor_comp.name,
+#             UsePropAction.__name__,
+#             [self._target_and_message_format_string],
+#         )
 
-        # 模拟添加一个plan的发起。
-        human_message = f"""{{"{UsePropAction.__name__}": ["{self._target_and_message_format_string}"]}}"""
-        self.add_human_message(player_entity, human_message)
+#         # 模拟添加一个plan的发起。
+#         human_message = f"""{{"{UsePropAction.__name__}": ["{self._target_and_message_format_string}"]}}"""
+#         self.add_human_message(player_entity, human_message)
 
 
 ####################################################################################################################################

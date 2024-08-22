@@ -77,14 +77,6 @@ pm2 start game_sample/gen_agent/coffin_of_the_silent_one_agent.py game_sample/ge
 
 例如 /pickactor @教廷密使
 
-# 对谁使用某个道具
-
-/useprop @'对象名字'>'道具名称'
-
-例如 /useprop @禁言铁棺>腐朽的匕首
-
-# 攻击目标Actor, 名字为Name?
-
 # 离开当前场景，去往Name?的场景
 
 /goto '场景名称'

@@ -9,7 +9,7 @@ from ecs_systems.action_components import (
     SpeakAction,
     BroadcastAction,
     StageNarrateAction,
-    #AttackAction,
+    # AttackAction,
     GoToAction,
 )
 
@@ -62,7 +62,7 @@ class UpdateClientMessageSystem(ExecuteProcessor):
         self.whisper_action_2_message(player_proxy, player_entity)
         self.broadcast_action_2_message(player_proxy, player_entity)
         self.speak_action_2_message(player_proxy, player_entity)
-        #self.attack_action_2_message(player_proxy, player_entity)
+        # self.attack_action_2_message(player_proxy, player_entity)
         self.go_to_action_2_message(player_proxy, player_entity)
 
     ############################################################################################################

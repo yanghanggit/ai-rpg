@@ -6,11 +6,11 @@ from rpg_game.rpg_game import RPGGame
 from player.player_proxy import PlayerProxy
 import player.utils
 from player.player_command import (
-    #PlayerAttack,
+    # PlayerAttack,
     PlayerGoTo,
     PlayerBroadcast,
     PlayerSpeak,
-    PlayerUseProp,
+    # PlayerUseProp,
     PlayerWhisper,
     PlayerSearchProp,
     # PlayerPortalStep,
@@ -137,10 +137,10 @@ class HandlePlayerInputSystem(ExecuteProcessor):
             PlayerCheckStatus(command, rpg_game, player_proxy).execute()
             # return False
 
-        elif "/useprop" in usr_input:
-            command = "/useprop"
-            content = split_command(usr_input, command)
-            PlayerUseProp(command, rpg_game, player_proxy, content).execute()
+        # elif "/useprop" in usr_input:
+        #     command = "/useprop"
+        #     content = split_command(usr_input, command)
+        #     PlayerUseProp(command, rpg_game, player_proxy, content).execute()
 
         elif "/behavior" in usr_input:
             PlayerBehavior(

@@ -95,7 +95,9 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
         if agent is None:
             return False
 
-        prompt = builtin_prompt.make_world_system_reasoning_appearance_prompt(input_data)
+        prompt = builtin_prompt.make_world_system_reasoning_appearance_prompt(
+            input_data
+        )
 
         task = LangServeAgentRequestTask.create_without_context(agent, prompt)
         if task is None:
@@ -163,9 +165,9 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
     def add_update_appearance_human_message(self, actor_entities: Set[Entity]) -> None:
         for actor_entity in actor_entities:
             appearance_comp = actor_entity.get(AppearanceComponent)
-            message = builtin_prompt.make_appearance_prompt(appearance_comp.name, appearance_comp.appearance)
-            self._context.safe_add_human_message_to_entity(
-                actor_entity, message
+            message = builtin_prompt.make_appearance_prompt(
+                appearance_comp.name, appearance_comp.appearance
             )
+            self._context.safe_add_human_message_to_entity(actor_entity, message)
 
     ###############################################################################################################################################

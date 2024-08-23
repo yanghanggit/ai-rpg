@@ -1,6 +1,6 @@
 from entitas import Entity, Matcher, Context  # type: ignore
 from loguru import logger
-from ecs_systems.components import (
+from gameplay_systems.components import (
     WorldComponent,
     StageComponent,
     ActorComponent,
@@ -15,7 +15,7 @@ from my_agent.lang_serve_agent_system import LangServeAgentSystem
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from typing import Optional, Dict, List, Set, cast
 from extended_systems.guid_generator import GUIDGenerator
-import ecs_systems.cn_builtin_prompt as builtin_prompt
+import gameplay_systems.cn_builtin_prompt as builtin_prompt
 import player.utils
 
 

@@ -4,42 +4,36 @@ from overrides import override
 import time
 from typing import Any, cast
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from ecs_systems.stage_planning_system import StagePlanningSystem
-from ecs_systems.actor_planning_system import ActorPlanningSystem
-from ecs_systems.speak_action_system import SpeakActionSystem
-
-# from ecs_systems.attack_action_system import AttackActionSystem
-from ecs_systems.go_to_action_system import GoToActionSystem
-from ecs_systems.pre_go_to_action_system import PreBeforeGoToActionSystem
-
-# from ecs_systems.stage_director_system import StageDirectorSystem
-from ecs_systems.destroy_system import DestroySystem
-from ecs_systems.tag_action_system import TagActionSystem
-from ecs_systems.broadcast_action_system import BroadcastActionSystem
-
-# from ecs_systems.use_prop_action_system import UsePropActionSystem
-from ecs_systems.whisper_action_system import WhisperActionSystem
-from ecs_systems.search_prop_action_system import SearchPropActionSystem
-from ecs_systems.mind_voice_action_system import MindVoiceActionSystem
-from ecs_systems.begin_system import BeginSystem
-from ecs_systems.end_system import EndSystem
-from ecs_systems.pre_planning_system import PrePlanningSystem
-from ecs_systems.post_planning_system import PostPlanningSystem
-from ecs_systems.pre_action_system import PreActionSystem
-from ecs_systems.post_action_system import PostActionSystem
-from ecs_systems.perception_action_system import PerceptionActionSystem
-from ecs_systems.steal_action_system import StealActionSystem
-from ecs_systems.give_prop_action_system import GivePropActionSystem
-from ecs_systems.check_status_action_system import CheckStatusActionSystem
-from ecs_systems.connect_agent_system import ConnectAgentSystem
-from ecs_systems.compress_chat_history_system import CompressChatHistorySystem
-from ecs_systems.post_conversation_action_system import PostConversationActionSystem
-from ecs_systems.pre_conversation_action_system import PreConversationActionSystem
-from ecs_systems.update_appearance_action_system import UpdateAppearanceActionSystem
-from ecs_systems.stage_narrate_action_system import StageNarrateActionSystem
-from ecs_systems.behavior_action_system import BehaviorActionSystem
-from ecs_systems.skill_action_system import SkillActionSystem
-from ecs_systems.feedback_action_system import FeedbackActionSystem
+from gameplay_systems.stage_planning_system import StagePlanningSystem
+from gameplay_systems.actor_planning_system import ActorPlanningSystem
+from gameplay_systems.speak_action_system import SpeakActionSystem
+from gameplay_systems.go_to_action_system import GoToActionSystem
+from gameplay_systems.pre_go_to_action_system import PreBeforeGoToActionSystem
+from gameplay_systems.destroy_system import DestroySystem
+from gameplay_systems.tag_action_system import TagActionSystem
+from gameplay_systems.broadcast_action_system import BroadcastActionSystem
+from gameplay_systems.whisper_action_system import WhisperActionSystem
+from gameplay_systems.search_prop_action_system import SearchPropActionSystem
+from gameplay_systems.mind_voice_action_system import MindVoiceActionSystem
+from gameplay_systems.begin_system import BeginSystem
+from gameplay_systems.end_system import EndSystem
+from gameplay_systems.pre_planning_system import PrePlanningSystem
+from gameplay_systems.post_planning_system import PostPlanningSystem
+from gameplay_systems.pre_action_system import PreActionSystem
+from gameplay_systems.post_action_system import PostActionSystem
+from gameplay_systems.perception_action_system import PerceptionActionSystem
+from gameplay_systems.steal_action_system import StealActionSystem
+from gameplay_systems.give_prop_action_system import GivePropActionSystem
+from gameplay_systems.check_status_action_system import CheckStatusActionSystem
+from gameplay_systems.connect_agent_system import ConnectAgentSystem
+from gameplay_systems.compress_chat_history_system import CompressChatHistorySystem
+from gameplay_systems.post_conversation_action_system import PostConversationActionSystem
+from gameplay_systems.pre_conversation_action_system import PreConversationActionSystem
+from gameplay_systems.update_appearance_action_system import UpdateAppearanceActionSystem
+from gameplay_systems.stage_narrate_action_system import StageNarrateActionSystem
+from gameplay_systems.behavior_action_system import BehaviorActionSystem
+from gameplay_systems.skill_action_system import SkillActionSystem
+from gameplay_systems.feedback_action_system import FeedbackActionSystem
 
 WORLD_APPEARANCE_SYSTEM_NAME = "角色外观生成器"
 WORLD_SKILL_SYSTEM_NAME = "技能系统"
@@ -51,18 +45,18 @@ class RPGEntitasProcessors(Processors):
     def create(rpg_game: Any, context: RPGEntitasContext) -> "RPGEntitasProcessors":
 
         ### 不这样就循环引用
-        from ecs_systems.handle_player_input_system import HandlePlayerInputSystem
-        from ecs_systems.update_client_message_system import UpdateClientMessageSystem
-        from ecs_systems.dead_action_system import DeadActionSystem
-        from ecs_systems.terminal_player_interrupt_and_wait_system import (
+        from gameplay_systems.handle_player_input_system import HandlePlayerInputSystem
+        from gameplay_systems.update_client_message_system import UpdateClientMessageSystem
+        from gameplay_systems.dead_action_system import DeadActionSystem
+        from gameplay_systems.terminal_player_interrupt_and_wait_system import (
             TerminalPlayerInterruptAndWaitSystem,
         )
-        from ecs_systems.terminal_player_input_system import TerminalPlayerInputSystem
-        from ecs_systems.save_system import SaveSystem
+        from gameplay_systems.terminal_player_input_system import TerminalPlayerInputSystem
+        from gameplay_systems.save_system import SaveSystem
         from rpg_game.rpg_game import RPGGame
-        from ecs_systems.kick_off_system import KickOffSystem
-        from ecs_systems.update_archive_system import UpdateArchiveSystem
-        from ecs_systems.terminal_player_tips_system import TerminalPlayerTipsSystem
+        from gameplay_systems.kick_off_system import KickOffSystem
+        from gameplay_systems.update_archive_system import UpdateArchiveSystem
+        from gameplay_systems.terminal_player_tips_system import TerminalPlayerTipsSystem
 
         ##
         rpg_game = cast(RPGGame, rpg_game)

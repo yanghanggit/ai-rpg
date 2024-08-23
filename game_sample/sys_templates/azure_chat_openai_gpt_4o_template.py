@@ -21,7 +21,9 @@ from typing import Optional
 
 RAG_MD_PATH: str = f"""<%RAG_MD_PATH>"""
 SYS_PROMPT_MD_PATH: str = f"""<%SYS_PROMPT_MD_PATH>"""
+# fmt: off
 PORT: int = <%PORT>
+# fmt: on
 API: str = f"""<%API>"""
 
 def read_md(filepath: str) -> Optional[str]:

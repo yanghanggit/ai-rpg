@@ -2,7 +2,7 @@ from entitas import Matcher  # type: ignore
 from typing import List, Optional, Set
 from overrides import override
 from loguru import logger
-from ecs_systems.components import (
+from gameplay_systems.components import (
     WorldComponent,
     StageComponent,
     ActorComponent,
@@ -20,7 +20,7 @@ from rpg_game.rpg_entitas_context import RPGEntitasContext
 from build_game.game_builder import GameBuilder
 from entitas.entity import Entity
 
-# from ecs_systems.stage_director_component import StageDirectorComponent
+# from gameplay_systems.stage_director_component import StageDirectorComponent
 from file_system.files_def import PropFile
 import shutil
 from rpg_game.base_game import BaseGame

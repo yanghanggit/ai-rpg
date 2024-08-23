@@ -1,7 +1,7 @@
 from entitas import Entity  # type: ignore
 from rpg_game.rpg_game import RPGGame
 from loguru import logger
-from ecs_systems.action_components import (
+from gameplay_systems.action_components import (
     BroadcastAction,
     SpeakAction,
     # AttackAction,
@@ -15,7 +15,7 @@ from ecs_systems.action_components import (
     CheckStatusAction,
     BehaviorAction,
 )
-from ecs_systems.components import (
+from gameplay_systems.components import (
     StageComponent,
     ActorComponent,
     PlayerComponent,

@@ -7,11 +7,7 @@ from gameplay_systems.action_components import (
     TagAction,
     BroadcastAction,
 )
-from gameplay_systems.components import (
-    AppearanceComponent,
-    RPGCurrentWeaponComponent,
-    RPGCurrentClothesComponent,
-)
+from gameplay_systems.components import AppearanceComponent
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import override, Any, List, cast, Optional, Set
 from loguru import logger
@@ -34,14 +30,14 @@ class WorldSkillSystemResponsePlan(AgentPlan):
         super().__init__(name, input_str)
 
     @property
-    def result(self) -> str:
+    def result_description(self) -> str:
         tip_action = self.get_by_key(TagAction.__name__)
         if tip_action is None or len(tip_action.values) == 0:
             return ConstantPrompt.FAILURE
         return tip_action.values[0]
 
     @property
-    def behavior_sentence(self) -> str:
+    def reasoning_sentence(self) -> str:
         broadcast_action = self.get_by_key(BroadcastAction.__name__)
         if broadcast_action is None or len(broadcast_action.values) == 0:
             return ""
@@ -80,62 +76,71 @@ class SkillActionSystem(ReactiveProcessor):
 
         assert entity.has(SkillAction) and entity.has(TargetAction)
 
+        # 没有世界系统就是错误
         world_entity = self._context.get_world_entity(self._world_system_name)
         if world_entity is None:
-            logger.warning(f"{self._world_system_name}, world_entity is None.")
+            logger.error(f"{self._world_system_name}, world_entity is None.")
             return
 
+        # 准备数据
         appearance = self.get_appearance(entity)
-
         skill_files = self.get_skill_files(entity)
-
         prop_files = self.get_prop_files(entity)
-        prop_files.extend(self.get_current_using_prop(entity))
 
-        world_response_plan = self.request_world_skill_system_check(
+        world_response_plan = self.request_world_skill_system_reasoning(
             entity, world_entity, appearance, skill_files, prop_files
         )
 
         if world_response_plan is None:
-            logger.debug(
-                f"{self._world_system_name}, determine_skill_enable_ret is None."
-            )
 
-            self.on_stage_director_world_behavior_check_event(
-                entity, self.get_behavior_sentence(entity), False
+            self._context.add_agent_context_message(
+                set({entity}),
+                builtin_prompt.make_world_skill_system_off_line_error_prompt(
+                    self._context.safe_get_entity_name(entity),
+                    self.get_behavior_sentence(entity),
+                ),
             )
+            # 全局技能系统是不是掉线了？
             return
 
+        # 单独处理失败和大失败
         if (
-            world_response_plan.result == ConstantPrompt.BIG_FAILURE
-            or world_response_plan.result == ConstantPrompt.FAILURE
+            world_response_plan.result_description == ConstantPrompt.BIG_FAILURE
+            or world_response_plan.result_description == ConstantPrompt.FAILURE
         ):
-            logger.debug(
-                f"{self._world_system_name}, determine_skill_enable_ret is BIG_FAILURE."
+
+            self._context.add_agent_context_message(
+                set({entity}),
+                builtin_prompt.make_world_skill_system_reasoning_result_is_failure_prompt(
+                    self._context.safe_get_entity_name(entity),
+                    world_response_plan.result_description,
+                    self.get_behavior_sentence(entity),
+                    world_response_plan.reasoning_sentence,
+                ),
             )
-            self.on_stage_director_world_behavior_check_event(
-                entity, self.get_behavior_sentence(entity), False
-            )
+
+            # 不要再往下走了。全局技能系统推理出失败 就提示下一下截断掉
             return
 
+        # 释放技能
         for target in self.get_targets(entity):
 
-            self.on_stage_director_notify_release_skill_event(
-                entity, world_response_plan.behavior_sentence
-            )
-
-            skill_reponse_plan = self.request_release_skill(
-                entity,
-                target,
-                appearance,
-                skill_files,
-                prop_files,
-                world_response_plan,
-                self.get_behavior_sentence(entity),
+            skill_reponse_plan = self.request_release_skill_to_target_feedback(
+                entity, target, world_response_plan
             )
 
             if skill_reponse_plan is None:
-                logger.debug(f"{self._world_system_name}, response_plan is None.")
+
+                self._context.add_agent_context_message(
+                    set({entity}),
+                    builtin_prompt.make_skill_skill_target_agent_off_line_error_prompt(
+                        self._context.safe_get_entity_name(entity),
+                        self._context.safe_get_entity_name(target),
+                        world_response_plan.reasoning_sentence,
+                    ),
+                )
+
+                # 目标是不是掉线了？
                 continue
 
             self.add_actions(target, skill_reponse_plan)
@@ -159,15 +164,11 @@ class SkillActionSystem(ReactiveProcessor):
         return targets
 
     ######################################################################################################################################################
-    def request_release_skill(
+    def request_release_skill_to_target_feedback(
         self,
         entity: Entity,
         target: Entity,
-        appearance: str,
-        skill_files: List[PropFile],
-        prop_files: List[PropFile],
         world_response_plan: WorldSkillSystemResponsePlan,
-        behavior_sentence: str,
     ) -> Optional[AgentPlan]:
 
         agent_name = self._context.safe_get_entity_name(target)
@@ -178,15 +179,10 @@ class SkillActionSystem(ReactiveProcessor):
         prompt = builtin_prompt.make_reasoning_skill_target_feedback_prompt(
             self._context.safe_get_entity_name(entity),
             agent_name,
-            appearance,
-            skill_files,
-            prop_files,
-            world_response_plan.behavior_sentence,
-            world_response_plan.result,
-            behavior_sentence,
+            world_response_plan.reasoning_sentence,
+            world_response_plan.result_description,
         )
 
-        logger.debug(prompt)
         task = LangServeAgentRequestTask.create(
             agent,
             builtin_prompt.replace_mentions_of_your_name_with_you_prompt(
@@ -211,20 +207,22 @@ class SkillActionSystem(ReactiveProcessor):
             STAGE_AVAILABLE_ACTIONS_REGISTER + ACTOR_AVAILABLE_ACTIONS_REGISTER
         )
 
-        if not gameplay_systems.planning_helper.check_plan(target, agent_plan, all_register):
+        if not gameplay_systems.planning_helper.check_plan(
+            target, agent_plan, all_register
+        ):
             logger.warning(f"ActorPlanningSystem: check_plan failed, {agent_plan}")
-            ## 需要失忆!
             self._context._langserve_agent_system.remove_last_conversation_between_human_and_ai(
                 agent_plan._name
             )
             return
 
-        ## 不能停了，只能一直继续
         for action in agent_plan._actions:
-            gameplay_systems.planning_helper.add_action_component(target, action, all_register)
+            gameplay_systems.planning_helper.add_action_component(
+                target, action, all_register
+            )
 
     ######################################################################################################################################################
-    def request_world_skill_system_check(
+    def request_world_skill_system_reasoning(
         self,
         entity: Entity,
         world_entity: Entity,
@@ -234,7 +232,7 @@ class SkillActionSystem(ReactiveProcessor):
     ) -> Optional[WorldSkillSystemResponsePlan]:
 
         # 生成提示
-        prompt = builtin_prompt.make_world_reasoning_release_skill_enable_prompt(
+        prompt = builtin_prompt.make_world_reasoning_release_skill_prompt(
             self._context.safe_get_entity_name(entity),
             appearance,
             skill_files,
@@ -253,7 +251,6 @@ class SkillActionSystem(ReactiveProcessor):
 
         response = task.request()
         if response is None:
-            logger.debug(f"{self._world_system_name}, response is None.")
             return None
 
         return WorldSkillSystemResponsePlan(agent._name, response)
@@ -302,58 +299,5 @@ class SkillActionSystem(ReactiveProcessor):
             ret.append(prop_file)
 
         return ret
-
-    ######################################################################################################################################################
-    def get_current_using_prop(self, entity: Entity) -> List[PropFile]:
-
-        ret: List[PropFile] = []
-
-        if entity.has(RPGCurrentWeaponComponent):
-            current_weapon_comp = entity.get(RPGCurrentWeaponComponent)
-            weapon_file = self._context._file_system.get_file(
-                PropFile,
-                cast(str, current_weapon_comp.name),
-                cast(str, current_weapon_comp.propname),
-            )
-            if weapon_file is not None:
-                ret.append(weapon_file)
-
-        if entity.has(RPGCurrentClothesComponent):
-            current_clothes_comp = entity.get(RPGCurrentClothesComponent)
-            clothes_file = self._context._file_system.get_file(
-                PropFile,
-                cast(str, current_clothes_comp.name),
-                cast(str, current_clothes_comp.propname),
-            )
-            if clothes_file is not None:
-                ret.append(clothes_file)
-
-        return ret
-
-    ######################################################################################################################################################
-    def on_stage_director_world_behavior_check_event(
-        self, entity: Entity, behavior_sentence: str, allow: bool
-    ) -> None:
-        # 只有自己
-        self._context.add_agent_context_message(
-            set({entity}),
-            builtin_prompt.make_world_reasoning_behavior_check_prompt(
-                self._context.safe_get_entity_name(entity), behavior_sentence, allow
-            ),
-        )
-
-    ######################################################################################################################################################
-    def on_stage_director_notify_release_skill_event(
-        self, entity: Entity, behavior_sentece: str
-    ) -> None:
-
-        stage_entity = self._context.safe_get_stage_entity(entity)
-        assert stage_entity is not None
-        self._context.add_agent_context_message(
-            set({stage_entity}),
-            builtin_prompt.make_notify_skill_event_prompt(
-                self._context.safe_get_entity_name(entity), behavior_sentece
-            ),
-        )
 
     ######################################################################################################################################################

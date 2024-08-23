@@ -1,6 +1,10 @@
 from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity  # type: ignore
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from gameplay_systems.action_components import GivePropAction, CheckStatusAction, DeadAction
+from gameplay_systems.action_components import (
+    GivePropAction,
+    CheckStatusAction,
+    DeadAction,
+)
 from gameplay_systems.components import ActorComponent
 from loguru import logger
 import gameplay_systems.conversation_helper

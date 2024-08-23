@@ -27,9 +27,13 @@ from gameplay_systems.give_prop_action_system import GivePropActionSystem
 from gameplay_systems.check_status_action_system import CheckStatusActionSystem
 from gameplay_systems.connect_agent_system import ConnectAgentSystem
 from gameplay_systems.compress_chat_history_system import CompressChatHistorySystem
-from gameplay_systems.post_conversation_action_system import PostConversationActionSystem
+from gameplay_systems.post_conversation_action_system import (
+    PostConversationActionSystem,
+)
 from gameplay_systems.pre_conversation_action_system import PreConversationActionSystem
-from gameplay_systems.update_appearance_action_system import UpdateAppearanceActionSystem
+from gameplay_systems.update_appearance_action_system import (
+    UpdateAppearanceActionSystem,
+)
 from gameplay_systems.stage_narrate_action_system import StageNarrateActionSystem
 from gameplay_systems.behavior_action_system import BehaviorActionSystem
 from gameplay_systems.skill_action_system import SkillActionSystem
@@ -46,17 +50,23 @@ class RPGEntitasProcessors(Processors):
 
         ### 不这样就循环引用
         from gameplay_systems.handle_player_input_system import HandlePlayerInputSystem
-        from gameplay_systems.update_client_message_system import UpdateClientMessageSystem
+        from gameplay_systems.update_client_message_system import (
+            UpdateClientMessageSystem,
+        )
         from gameplay_systems.dead_action_system import DeadActionSystem
         from gameplay_systems.terminal_player_interrupt_and_wait_system import (
             TerminalPlayerInterruptAndWaitSystem,
         )
-        from gameplay_systems.terminal_player_input_system import TerminalPlayerInputSystem
+        from gameplay_systems.terminal_player_input_system import (
+            TerminalPlayerInputSystem,
+        )
         from gameplay_systems.save_system import SaveSystem
         from rpg_game.rpg_game import RPGGame
         from gameplay_systems.kick_off_system import KickOffSystem
         from gameplay_systems.update_archive_system import UpdateArchiveSystem
-        from gameplay_systems.terminal_player_tips_system import TerminalPlayerTipsSystem
+        from gameplay_systems.terminal_player_tips_system import (
+            TerminalPlayerTipsSystem,
+        )
 
         ##
         rpg_game = cast(RPGGame, rpg_game)

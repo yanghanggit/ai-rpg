@@ -9,32 +9,7 @@ from gameplay_systems.components import StageComponent
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import override, Set
 from file_system.files_def import PropFile
-
-# from gameplay_systems.stage_director_event import IStageDirectorEvent
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
-
-# from gameplay_systems.stage_director_component import StageDirectorComponent
-
-
-# class WorldBehaviorCheckEvent(IStageDirectorEvent):
-
-#     def __init__(self, actor_name: str, behavior_sentece: str, allow: bool) -> None:
-
-#         self._actor_name: str = actor_name
-#         self._behavior_sentece: str = behavior_sentece
-#         self._allow: bool = allow
-
-#     def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
-#         if actor_name != self._actor_name:
-#             # 只有自己知道
-#             return ""
-
-#         return builtin_prompt.make_world_reasoning_behavior_check_prompt(
-#             self._actor_name, self._behavior_sentece, self._allow
-#         )
-
-#     def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
-#         return ""
 
 
 class BehaviorActionSystem(ReactiveProcessor):
@@ -74,9 +49,7 @@ class BehaviorActionSystem(ReactiveProcessor):
         skills = self.parse_skills(entity, behavior_sentence)
         props = self.parse_props(entity, behavior_sentence)
         if len(targets) == 0 or len(skills) == 0:
-            self.on_stage_director_world_behavior_check_event(
-                entity, behavior_sentence, False
-            )
+            self.on_behavior_check_event(entity, behavior_sentence, False)
             return
 
         self.clear_action(entity)
@@ -85,9 +58,7 @@ class BehaviorActionSystem(ReactiveProcessor):
         self.add_prop_action(entity, props)
 
         # 导演类来统筹
-        self.on_stage_director_world_behavior_check_event(
-            entity, behavior_sentence, True
-        )
+        self.on_behavior_check_event(entity, behavior_sentence, True)
 
     ######################################################################################################################################################
     def clear_action(self, entity: Entity) -> None:
@@ -175,13 +146,13 @@ class BehaviorActionSystem(ReactiveProcessor):
         entity.add(PropAction, safe_name, PropAction.__name__, prop_names)
 
     ######################################################################################################################################################
-    def on_stage_director_world_behavior_check_event(
+    def on_behavior_check_event(
         self, entity: Entity, behavior_sentence: str, allow: bool
     ) -> None:
-        # 只有自己
+
         self._context.add_agent_context_message(
             set({entity}),
-            builtin_prompt.make_world_reasoning_behavior_check_prompt(
+            builtin_prompt.make_behavior_check_prompt(
                 self._context.safe_get_entity_name(entity), behavior_sentence, allow
             ),
         )

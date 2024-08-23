@@ -1,7 +1,11 @@
 from entitas import ExecuteProcessor, Matcher, Entity  # type: ignore
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
-from gameplay_systems.components import ActorComponent, StageComponent, StageArchiveComponent
+from gameplay_systems.components import (
+    ActorComponent,
+    StageComponent,
+    StageArchiveComponent,
+)
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
 from gameplay_systems.cn_constant_prompt import _CNConstantPrompt_ as ConstantPrompt
 from typing import Set, override, Dict, List, cast

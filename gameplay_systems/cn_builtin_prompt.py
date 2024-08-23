@@ -698,7 +698,7 @@ def make_player_conversation_check_prompt(
 ################################################################################################################################################
 
 
-def make_world_reasoning_release_skill_enable_prompt(
+def make_world_reasoning_release_skill_prompt(
     actor_name: str,
     appearance: str,
     skill_files: List[PropFile],
@@ -712,14 +712,14 @@ def make_world_reasoning_release_skill_enable_prompt(
     else:
         skill_prompt.append("- 无任何技能。")
 
-    _prop_prompt: List[str] = []
+    prop_prompt: List[str] = []
     if len(prop_files) > 0:
         for prop_file in prop_files:
-            _prop_prompt.append(make_prop_prompt(prop_file, True, True))
+            prop_prompt.append(make_prop_prompt(prop_file, True, True))
     else:
-        _prop_prompt.append("- 无任何道具。")
+        prop_prompt.append("- 无任何道具。")
 
-    prompt = f"""# {actor_name} 准备使用技能，请你判断是否有效。
+    prompt = f"""# {actor_name} 准备使用技能，请你做出判断并推理结果。
 
 ## {actor_name} 信息
 {appearance}
@@ -727,32 +727,40 @@ def make_world_reasoning_release_skill_enable_prompt(
 ## 施放技能
 {"\n".join(skill_prompt)}
 
-## 使用道具
-{"\n".join(_prop_prompt)}
+## 配置的道具
+{"\n".join(prop_prompt)}
+
+## 配置道具 的说明
+- 在释放技能中，配置了道具来使用。例如: 触媒，消耗品，强化等，武器或者衣服。
+- 有些道具，可能是释放技能所必须的。例如某些技能需要消耗品，或者需要特定的武器。
+- 有些道具，释放技能的辅助，例如提高技能的效果，或者减少技能的消耗。不是必须的。
+- 请酌情判断！
 
 ## 判断步骤
-1. 结合 {actor_name} 信息 与 施放技能。判断其是否可以满足释放技能的条件。如果可以，则进行下一步。
-2. 如果有 使用道具。则代表 在释放技能中，使用了道具作为辅助。例如: 触媒，消耗品，强化等，武器或者衣服。在道具信息中如果没有对技能释放有帮助的信息，可以忽略。
-3. 如果没有 使用道具。则直接进行技能释放。
+步骤1: 结合: {actor_name} 信息与施放技能。如果 {actor_name} 信息 不满足技能释放的条件，则技能释放失败。
+步骤2: 检查 施放技能 是否对 配置的道具的道具有明确的需求。如果有需求，但是 配置的道具不满足技能释放的条件，则技能释放失败。
+步骤3: 在 配置的道具 中如果没有对技能释放有帮助的信息，可以忽略。
+步骤4: 如果没有 配置的道具，而且没有被 步骤2 否决。则按着技能在 不配置任何道具下，直接释放。
 
 ## 输出格式指南
 
 ### 请根据下面的示例, 确保你的输出严格遵守相应的结构。
 {{
-  "{TagAction.__name__}":["{ConstantPrompt.BIG_SUCCESS}或{ConstantPrompt.SUCCESS}或{ConstantPrompt.FAILURE}或{ConstantPrompt.BIG_FAILURE}"],
-  "{BroadcastAction.__name__}":["输出逻辑合理且附带润色的句子描述"]
+  "{BroadcastAction.__name__}":["输出逻辑合理且附带润色的句子描述"],
+  "{TagAction.__name__}":["{ConstantPrompt.BIG_SUCCESS}或{ConstantPrompt.SUCCESS}或{ConstantPrompt.FAILURE}或{ConstantPrompt.BIG_FAILURE}"]
 }}
 
 ### 关于键值的补充规则说明
 - 关于 {TagAction.__name__} 键值:
     - 只能是如下4个值: {ConstantPrompt.BIG_SUCCESS},{ConstantPrompt.SUCCESS},{ConstantPrompt.FAILURE},{ConstantPrompt.BIG_FAILURE}。
-    - {ConstantPrompt.BIG_SUCCESS} 代表技能释放不仅{ConstantPrompt.SUCCESS}，且效果超出预期。
-    - {ConstantPrompt.FAILURE} 代表技能释放不仅{ConstantPrompt.BIG_FAILURE}，且使用者会受到惩罚。
-    - 为了提高游戏性，请根据输入给你的: {actor_name} 信息，施放技能，使用道具，来判断技能释放的结果。
-- 关于 {BroadcastAction.__name__} 键值:
-    - 在技能释放成功的情况下，结合以上所有信息，输出逻辑合理且附带润色的句子描述，来表达 {actor_name} 使用技能的释放结果。
-    - 例句：{actor_name} 使用了 xx技能， 效果为xxx(逻辑合理且附带润色)。
+    - {ConstantPrompt.BIG_SUCCESS} 代表技能释放 不仅{ConstantPrompt.SUCCESS}，且效果超出预期。
+    - {ConstantPrompt.FAILURE} 代表技能释放 不仅{ConstantPrompt.BIG_FAILURE}，且使用者会受到惩罚。
 
+- 关于 {BroadcastAction.__name__} 键值:
+    - 例句：{actor_name} 使用了xx道具,对xx目标,释放了xx技能,结果为xxx(注意{TagAction.__name__}键值),表现效果为xxx(逻辑合理且附带润色)。
+    - 按着例句，输出逻辑合理且附带润色的句子描述，来表达 {actor_name} 使用技能的释放结果。
+    - 如果是失败，需要描述失败的原因。
+    
 ### 注意事项
 - 每个 JSON 对象必须包含上述键中的一个或多个，不得重复同一个键，也不得使用不在上述中的键。
 - 输出不应包含任何超出所需 JSON 格式的额外文本、解释或总结。
@@ -767,51 +775,21 @@ def make_world_reasoning_release_skill_enable_prompt(
 def make_reasoning_skill_target_feedback_prompt(
     actor_name: str,
     target_name: str,
-    appearance: str,
-    skill_files: List[PropFile],
-    prop_files: List[PropFile],
-    polish_sentence: str,
-    result_string: str,
-    behavior_sentence: str,
+    reasoning_sentence: str,
+    result_desc: str,
 ) -> str:
 
-    skill_prompt: List[str] = []
-    if len(skill_files) > 0:
-        for skill_file in skill_files:
-            skill_prompt.append(make_prop_prompt(skill_file, True, False))
-    else:
-        skill_prompt.append("- 无任何技能。")
-
-    _prop_prompt: List[str] = []
-    if len(prop_files) > 0:
-        for prop_file in prop_files:
-            _prop_prompt.append(make_prop_prompt(prop_file, True, True))
-    else:
-        _prop_prompt.append("- 无任何道具。")
-
     prompt = f"""# {actor_name} 向 {target_name} 发动技能。
+## 事件描述
+ {reasoning_sentence}
 
-## {actor_name} 信息
-{appearance}
-        
-## 施放技能
-{"\n".join(skill_prompt)}
-
-## 使用道具
-{"\n".join(_prop_prompt)}
-
-## 原始的的描述为
-{behavior_sentence}
-
-## 系统预判本次技能的释放结果
-{result_string}
-
-## 润色后的故事描述为
- {polish_sentence}
+## 系统判断结果
+{result_desc}
 
 ## 判断步骤
-1. 综合以上信息，判断技能对你的影响，例如改变你的状态，或者对你造成伤害等。
-2. 更新的{target_name}的状态。
+第1步:回顾 {target_name} 的当前状态。
+第2步:结合 事件描述 与 系统判断结果，推理技能对 {target_name} 的影响。例如改变你的状态，或者对你造成伤害等。
+第3步:更新 {target_name} 的状态，作为最终输出。
 
 ## 输出要求:
 - 请遵循 输出格式指南。
@@ -824,12 +802,79 @@ def make_reasoning_skill_target_feedback_prompt(
 ################################################################################################################################################
 
 
-def make_world_reasoning_behavior_check_prompt(
+def make_behavior_check_prompt(
     actor_name: str, behavior_sentence: str, allow: bool
 ) -> str:
     if allow:
-        return f"""# {actor_name} 计划行动: {behavior_sentence}。系统判断之后通过。"""
-    return f"""# {actor_name} 计划的行动: {behavior_sentence}。系统判断之后拒绝。请重新检查计划中提到的技能，对象，道具等是否存在问题。"""
+        prompt1 = f"""# 这是一次 {actor_name} 的计划行动
+## 行动内容语句
+{behavior_sentence}
+## 结果
+- 系统经过分析之后允许通过。也就是执行后续的处理步骤。"""
+        return prompt1
+
+    prompt2 = f""" # 这是一次 {actor_name} 的计划行动
+## 行动内容语句
+{behavior_sentence}
+## 结果
+- 系统判断后，拒绝！不通过。
+- 请检查行动内容，必须至少有一个技能与一个目标。"""
+
+    return prompt2
+
+
+################################################################################################################################################
+
+
+def make_world_skill_system_off_line_error_prompt(
+    actor_name: str, behavior_sentence: str
+) -> str:
+
+    prompt = f"""# 注意! 全局技能系统 处于离线状态或者出错，无法使用技能，请一会再试。
+## 行动内容语句({actor_name} 发起)
+{behavior_sentence}
+## 以上的行动将无法执行（被系统强制取消），因为技能系统处于离线状态或者出错。
+"""
+    return prompt
+
+
+################################################################################################################################################
+
+
+def make_skill_skill_target_agent_off_line_error_prompt(
+    actor_name: str, target_name: str, reasoning_sentence: str
+) -> str:
+
+    prompt = f"""# 注意! {actor_name} 无法对 {target_name} 使用技能，本次技能释放被系统取消。
+## 行动内容语句({actor_name} 发起)
+{reasoning_sentence}
+"""
+    return prompt
+
+
+################################################################################################################################################
+def make_world_skill_system_reasoning_result_is_failure_prompt(
+    actor_name: str,
+    failure_desc: str,
+    input_behavior_sentence: str,
+    reasoning_sentence: str,
+) -> str:
+
+    prompt = f"""# 全局技能系统 推理与判断之后，判断结果为 {failure_desc}
+## 行动(技能)发起者: {actor_name}
+## 失败类型: {failure_desc}
+## 原始的行动内容语句
+{input_behavior_sentence}
+## 系统推理后的结果
+{reasoning_sentence}
+
+## 错误分析与提示
+- 请检查行动内容，必须至少有一个技能与一个目标。
+- 如果 技能的释放目标 不合理会被系统拒绝。
+- 虽然道具可用来配合技能使用，但使用必须合理(请注意道具的说明，使用限制等)
+- 道具，技能和对象之间的关系如果不合理（违反游戏世界的运行规律与常识）。也会被系统拒绝。
+"""
+    return prompt
 
 
 ################################################################################################################################################

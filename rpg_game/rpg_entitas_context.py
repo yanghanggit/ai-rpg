@@ -16,6 +16,7 @@ from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from typing import Optional, Dict, List, Set, cast
 from extended_systems.guid_generator import GUIDGenerator
 import ecs_systems.cn_builtin_prompt as builtin_prompt
+import player.utils
 
 
 class RPGEntitasContext(Context):
@@ -114,7 +115,7 @@ class RPGEntitasContext(Context):
 
     #############################################################################################################################
 
-    def _get_actors_in_stage(self, stage_name: str) -> List[Entity]:
+    def _get_actors_in_stage(self, stage_name: str) -> Set[Entity]:
         # 测试！！！
         stage_tag_component = (
             self._codename_component_system.get_stage_tag_component_class_by_name(
@@ -124,14 +125,14 @@ class RPGEntitasContext(Context):
         entities = self.get_group(
             Matcher(all_of=[ActorComponent, stage_tag_component])
         ).entities
-        return list(entities)
+        return set(entities)
 
     #############################################################################################################################
 
-    def get_actors_in_stage(self, entity: Entity) -> List[Entity]:
+    def get_actors_in_stage(self, entity: Entity) -> Set[Entity]:
         stage_entity = self.safe_get_stage_entity(entity)
         if stage_entity is None:
-            return []
+            return set()
         stage_comp = stage_entity.get(StageComponent)
         return self._get_actors_in_stage(stage_comp.name)
 
@@ -254,61 +255,42 @@ class RPGEntitasContext(Context):
         self, entities: Set[Entity], message_content: str
     ) -> None:
 
-        stage_entities: Set[Entity] = set()
-        for stage_entity in entities:
-            if not stage_entity.has(StageComponent):
-                continue
-            stage_entities.add(stage_entity)
+        copy_entities = entities.copy()
 
-        assert len(stage_entities) <= 1
-        if len(stage_entities) > 0:
-            self._add_agent_context_message_to_stage(
-                next(iter(stage_entities)), message_content
-            )
-            return
+        # 场景内群体广播，包括场景内所有的角色和场景自己
+        if len(copy_entities) == 1:
+            only_stage_entity = next(iter(copy_entities))
+            if only_stage_entity.has(StageComponent):
+                actor_entities = self.get_actors_in_stage(only_stage_entity)
+                copy_entities.update(actor_entities)
 
-        self._add_agent_context_message_to_actor(entities, message_content)
+        self._add_agent_context_message(copy_entities, message_content)
 
     #############################################################################################################################
-    def _add_agent_context_message_to_stage(
-        self, stage_entity: Entity, message_content: str
-    ) -> None:
-        assert stage_entity.has(StageComponent)
-
-        stage_name = self.safe_get_entity_name(stage_entity)
-        self._langserve_agent_system.add_human_message_to_chat_history(
-            stage_name,
-            builtin_prompt.replace_mentions_of_your_name_with_you_prompt(
-                stage_name, message_content
-            ),
-        )
-
-        actor_names = self.get_actor_names_in_stage(stage_entity)
-        for actor_name in actor_names:
-            self._langserve_agent_system.add_human_message_to_chat_history(
-                actor_name,
-                builtin_prompt.replace_mentions_of_your_name_with_you_prompt(
-                    actor_name, message_content
-                ),
-            )
-
-    #############################################################################################################################
-    def _add_agent_context_message_to_actor(
-        self, actor_entities: Set[Entity], message_content: str
+    def _add_agent_context_message(
+        self, entities: Set[Entity], message_content: str
     ) -> None:
 
-        for actor_entity in actor_entities:
-            if not actor_entity.has(ActorComponent):
-                continue
+        for entity in entities:
 
-            actor_comp = actor_entity.get(ActorComponent)
-
-            self._langserve_agent_system.add_human_message_to_chat_history(
-                actor_comp.name,
+            safe_name = self.safe_get_entity_name(entity)
+            replace_message = (
                 builtin_prompt.replace_mentions_of_your_name_with_you_prompt(
-                    actor_comp.name, message_content
-                ),
+                    message_content, safe_name
+                )
             )
+
+            #
+            self._langserve_agent_system.add_human_message_to_chat_history(
+                safe_name, replace_message
+            )
+
+            # 如果是player 就特殊处理
+            if entity.has(PlayerComponent):
+                player_comp = entity.get(PlayerComponent)
+                player_proxy = player.utils.get_player_proxy(player_comp.name)
+                if player_proxy is not None:
+                    player_proxy.add_actor_message(safe_name, replace_message)
 
 
 #############################################################################################################################

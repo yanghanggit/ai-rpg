@@ -51,9 +51,7 @@ class ActorPlanningSystem(ExecuteProcessor):
         if len(self._tasks) == 0:
             return
 
-        gather = LangServeAgentAsyncRequestTasksGather(
-            "ActorPlanningSystem", self._tasks
-        )
+        gather = LangServeAgentAsyncRequestTasksGather("", self._tasks)
         response = await gather.gather()
         if len(response) == 0:
             logger.warning(f"ActorPlanningSystem: request_result is empty.")

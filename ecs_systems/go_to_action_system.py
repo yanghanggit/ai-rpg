@@ -237,7 +237,7 @@ class GoToActionSystem(ReactiveProcessor):
         message = builtin_prompt.make_leave_stage_prompt(
             actor_comp.name, helper._current_stage_name, helper._target_stage_name
         )
-        self._context.add_agent_context_message(set({helper._entity}), message)
+        self._context.add_agent_context_message(set({helper._current_stage_entity}), message)
 
         # 离开场景 设置成空
         helper._entity.replace(ActorComponent, actor_comp.name, "")

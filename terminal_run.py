@@ -38,7 +38,7 @@ async def main(input_actor_name_as_default: str) -> None:
     logger.info(f"玩家名字（做为terminal name）:{player_name_as_terminal_name}")
     player_proxy = player.utils.create_player_proxy(player_name_as_terminal_name)
     assert player_proxy is not None
-    # 这个必须调用
+    # 这个必须调用\
     rpg_game.add_player(player_name_as_terminal_name)
     #
     login_command = PlayerLogin(

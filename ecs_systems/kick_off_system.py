@@ -71,7 +71,7 @@ class KickOffSystem(InitializeProcessor, ExecuteProcessor):
         if len(self._tasks) == 0:
             return
 
-        gather = LangServeAgentAsyncRequestTasksGather("KickOffSystem", self._tasks)
+        gather = LangServeAgentAsyncRequestTasksGather("", self._tasks)
         response = await gather.gather()
         if len(response) == 0:
             return

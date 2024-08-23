@@ -90,11 +90,8 @@ class PreConversationActionSystem(ReactiveProcessor):
     async def async_post_execute(self) -> None:
         if len(self._tasks) == 0:
             return
-        gather = LangServeAgentAsyncRequestTasksGather(
-            "PreConversationActionSystem", self._tasks
-        )
-        await gather.gather()
-        self._tasks.clear()
+
+        gather = LangServeAgentAsyncRequestTasksGather("", self._tasks)
 
         response = await gather.gather()
         if len(response) == 0:
@@ -139,10 +136,8 @@ class PreConversationActionSystem(ReactiveProcessor):
             if player_entity is None:
                 continue
 
-            if task.response is not None:
-                continue
-
-            # 说明可能在langserve中出现了问题，就是没有任何返回值。
-            self.remove_action(player_entity)
+            if task.response is None:
+                # 说明可能在langserve中出现了问题，就是没有任何返回值。
+                self.remove_action(player_entity)
 
     #################################################################################################################################################

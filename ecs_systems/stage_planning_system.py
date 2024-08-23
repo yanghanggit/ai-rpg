@@ -44,9 +44,7 @@ class StagePlanningSystem(ExecuteProcessor):
         if len(self._tasks) == 0:
             return
 
-        gather = LangServeAgentAsyncRequestTasksGather(
-            "StagePlanningSystem", self._tasks
-        )
+        gather = LangServeAgentAsyncRequestTasksGather("", self._tasks)
         response = await gather.gather()
         if len(response) == 0:
             logger.warning(f"StagePlanningSystem: request_result is empty.")

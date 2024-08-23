@@ -4,8 +4,9 @@ from ecs_systems.action_components import SpeakAction
 # from my_agent.agent_action import AgentAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 import gameplay.conversation_helper
-from ecs_systems.stage_director_component import StageDirectorComponent
-from ecs_systems.stage_director_event import IStageDirectorEvent
+
+# from ecs_systems.stage_director_component import StageDirectorComponent
+# from ecs_systems.stage_director_event import IStageDirectorEvent
 from typing import override
 import ecs_systems.cn_builtin_prompt as builtin_prompt
 import my_format_string.target_and_message_format_string
@@ -14,22 +15,22 @@ import my_format_string.target_and_message_format_string
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class StageOrActorSpeakEvent(IStageDirectorEvent):
+# class StageOrActorSpeakEvent(IStageDirectorEvent):
 
-    def __init__(self, who: str, target: str, message: str) -> None:
-        self._who: str = who
-        self._target: str = target
-        self._message: str = message
+#     def __init__(self, who: str, target: str, message: str) -> None:
+#         self._who: str = who
+#         self._target: str = target
+#         self._message: str = message
 
-    def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
-        return builtin_prompt.make_speak_action_prompt(
-            self._who, self._target, self._message
-        )
+#     def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
+#         return builtin_prompt.make_speak_action_prompt(
+#             self._who, self._target, self._message
+#         )
 
-    def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
-        return builtin_prompt.make_speak_action_prompt(
-            self._who, self._target, self._message
-        )
+#     def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
+#         return builtin_prompt.make_speak_action_prompt(
+#             self._who, self._target, self._message
+#         )
 
 
 ####################################################################################################################################
@@ -75,10 +76,21 @@ class SpeakActionSystem(ReactiveProcessor):
                 != gameplay.conversation_helper.ErrorConversationEnable.VALID
             ):
                 continue
-            StageDirectorComponent.add_event_to_stage_director(
-                self._context,
-                entity,
-                StageOrActorSpeakEvent(safe_name, target, message),
+            # StageDirectorComponent.add_event_to_stage_director(
+            #     self._context,
+            #     entity,
+            #     StageOrActorSpeakEvent(safe_name, target, message),
+            # )
+
+            target_entity = self._context.get_entity_by_name(target)
+            assert target_entity is not None
+
+            #     return builtin_prompt.make_speak_action_prompt(
+            #     self._who, self._target, self._message
+            # )
+            self._context.add_agent_context_message(
+                set({entity, target_entity}),
+                builtin_prompt.make_speak_action_prompt(safe_name, target, message),
             )
 
 

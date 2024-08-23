@@ -11,7 +11,8 @@ from ecs_systems.speak_action_system import SpeakActionSystem
 # from ecs_systems.attack_action_system import AttackActionSystem
 from ecs_systems.go_to_action_system import GoToActionSystem
 from ecs_systems.pre_go_to_action_system import PreBeforeGoToActionSystem
-from ecs_systems.stage_director_system import StageDirectorSystem
+
+# from ecs_systems.stage_director_system import StageDirectorSystem
 from ecs_systems.destroy_system import DestroySystem
 from ecs_systems.tag_action_system import TagActionSystem
 from ecs_systems.broadcast_action_system import BroadcastActionSystem
@@ -135,7 +136,7 @@ class RPGEntitasProcessors(Processors):
         )  ####### <在所有行动之后> ##############################################################
 
         # 行动结束后导演
-        processors.add(StageDirectorSystem(context))
+        # processors.add(StageDirectorSystem(context))
 
         # 行动结束后更新关系网，因为依赖Director所以必须在后面
         processors.add(UpdateArchiveSystem(context, rpg_game))

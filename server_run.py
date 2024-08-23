@@ -18,11 +18,11 @@ from rpg_game.rpg_game import RPGGame
 from player.player_proxy import PlayerProxy
 from ecs_systems.check_status_action_system import (
     CheckStatusActionHelper,
-    ActorCheckStatusEvent,
+    # ActorCheckStatusEvent,
 )
 from ecs_systems.perception_action_system import (
     PerceptionActionHelper,
-    ActorPerceptionEvent,
+    # ActorPerceptionEvent,
 )
 from typing import List, Dict
 
@@ -152,55 +152,57 @@ async def quitgame(clientip: str) -> List[TupleModel]:
 ############################################################################################################
 # player 可以是立即模式
 async def imme_handle_perception(rpg_game: RPGGame, playerproxy: PlayerProxy) -> None:
+    pass
 
-    context = rpg_game._entitas_context
-    playerentity = context.get_player_entity(playerproxy._name)
-    if playerentity is None:
-        return
-    #
-    helper = PerceptionActionHelper(context)
-    helper.perception(playerentity)
-    #
-    safe_actor_name = context.safe_get_entity_name(playerentity)
-    stageentity = context.safe_get_stage_entity(playerentity)
-    assert stageentity is not None
-    safe_stage_name = context.safe_get_entity_name(stageentity)
-    #
-    event = ActorPerceptionEvent(
-        safe_actor_name,
-        safe_stage_name,
-        helper._actors_in_stage,
-        helper._props_in_stage,
-    )
-    message = event.to_actor(safe_actor_name, context)
-    #
-    playerproxy.add_actor_message(safe_actor_name, message)
+    # context = rpg_game._entitas_context
+    # playerentity = context.get_player_entity(playerproxy._name)
+    # if playerentity is None:
+    #     return
+    # #
+    # helper = PerceptionActionHelper(context)
+    # helper.perception(playerentity)
+    # #
+    # safe_actor_name = context.safe_get_entity_name(playerentity)
+    # stageentity = context.safe_get_stage_entity(playerentity)
+    # assert stageentity is not None
+    # safe_stage_name = context.safe_get_entity_name(stageentity)
+    # #
+    # event = ActorPerceptionEvent(
+    #     safe_actor_name,
+    #     safe_stage_name,
+    #     helper._actors_in_stage,
+    #     helper._props_in_stage,
+    # )
+    # message = event.to_actor(safe_actor_name, context)
+    # #
+    # playerproxy.add_actor_message(safe_actor_name, message)
 
 
 ############################################################################################################
 # player 可以是立即模式
 async def imme_handle_check_status(rpg_game: RPGGame, playerproxy: PlayerProxy) -> None:
+    pass
 
-    context = rpg_game._entitas_context
-    player_entity = context.get_player_entity(playerproxy._name)
-    if player_entity is None:
-        return
-    #
-    context = rpg_game._entitas_context
-    helper = CheckStatusActionHelper(context)
-    helper.check_status(player_entity)
-    #
-    safe_name = context.safe_get_entity_name(player_entity)
-    #
-    event = ActorCheckStatusEvent(
-        safe_name,
-        helper._prop_files_as_weapon_clothes_non_consumable_item,
-        helper.health,
-        helper._prop_files_as_special,
-    )
-    message = event.to_actor(safe_name, context)
-    #
-    playerproxy.add_actor_message(safe_name, message)
+    # context = rpg_game._entitas_context
+    # player_entity = context.get_player_entity(playerproxy._name)
+    # if player_entity is None:
+    #     return
+    # #
+    # context = rpg_game._entitas_context
+    # helper = CheckStatusActionHelper(context)
+    # helper.check_status(player_entity)
+    # #
+    # safe_name = context.safe_get_entity_name(player_entity)
+    # #
+    # event = ActorCheckStatusEvent(
+    #     safe_name,
+    #     helper._prop_files_as_weapon_clothes_non_consumable_item,
+    #     helper.health,
+    #     helper._prop_files_as_special,
+    # )
+    # message = event.to_actor(safe_name, context)
+    # #
+    # playerproxy.add_actor_message(safe_name, message)
 
 
 ############################################################################################################

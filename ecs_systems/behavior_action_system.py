@@ -9,30 +9,32 @@ from ecs_systems.components import StageComponent
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import override, Set
 from file_system.files_def import PropFile
-from ecs_systems.stage_director_event import IStageDirectorEvent
+
+# from ecs_systems.stage_director_event import IStageDirectorEvent
 import ecs_systems.cn_builtin_prompt as builtin_prompt
-from ecs_systems.stage_director_component import StageDirectorComponent
+
+# from ecs_systems.stage_director_component import StageDirectorComponent
 
 
-class WorldBehaviorCheckEvent(IStageDirectorEvent):
+# class WorldBehaviorCheckEvent(IStageDirectorEvent):
 
-    def __init__(self, actor_name: str, behavior_sentece: str, allow: bool) -> None:
+#     def __init__(self, actor_name: str, behavior_sentece: str, allow: bool) -> None:
 
-        self._actor_name: str = actor_name
-        self._behavior_sentece: str = behavior_sentece
-        self._allow: bool = allow
+#         self._actor_name: str = actor_name
+#         self._behavior_sentece: str = behavior_sentece
+#         self._allow: bool = allow
 
-    def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
-        if actor_name != self._actor_name:
-            # 只有自己知道
-            return ""
+#     def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
+#         if actor_name != self._actor_name:
+#             # 只有自己知道
+#             return ""
 
-        return builtin_prompt.make_world_reasoning_behavior_check_prompt(
-            self._actor_name, self._behavior_sentece, self._allow
-        )
+#         return builtin_prompt.make_world_reasoning_behavior_check_prompt(
+#             self._actor_name, self._behavior_sentece, self._allow
+#         )
 
-    def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
-        return ""
+#     def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
+#         return ""
 
 
 class BehaviorActionSystem(ReactiveProcessor):
@@ -176,12 +178,18 @@ class BehaviorActionSystem(ReactiveProcessor):
     def on_stage_director_world_behavior_check_event(
         self, entity: Entity, behavior_sentence: str, allow: bool
     ) -> None:
-        StageDirectorComponent.add_event_to_stage_director(
-            self._context,
-            entity,
-            WorldBehaviorCheckEvent(
-                self._context.safe_get_entity_name(entity), behavior_sentence, allow
-            ),
+        # StageDirectorComponent.add_event_to_stage_director(
+        #     self._context,
+        #     entity,
+        #     WorldBehaviorCheckEvent(
+        #         self._context.safe_get_entity_name(entity), behavior_sentence, allow
+        #     ),
+        # )
+
+        message = builtin_prompt.make_world_reasoning_behavior_check_prompt(
+            self._context.safe_get_entity_name(entity), behavior_sentence, allow
         )
+        # 只有自己
+        self._context.add_agent_context_message(set({entity}), message)
 
     ######################################################################################################################################################

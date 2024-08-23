@@ -4,8 +4,9 @@ from ecs_systems.components import StageComponent, ActorComponent
 from ecs_systems.action_components import PerceptionAction, DeadAction
 from loguru import logger
 from typing import List, Dict, override
-from ecs_systems.stage_director_component import StageDirectorComponent
-from ecs_systems.stage_director_event import IStageDirectorEvent
+
+# from ecs_systems.stage_director_component import StageDirectorComponent
+# from ecs_systems.stage_director_event import IStageDirectorEvent
 import ecs_systems.cn_builtin_prompt as builtin_prompt
 from file_system.files_def import PropFile
 
@@ -59,35 +60,35 @@ class PerceptionActionHelper:
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class ActorPerceptionEvent(IStageDirectorEvent):
-    """
-    感知的结果事件
-    """
+# class ActorPerceptionEvent(IStageDirectorEvent):
+#     """
+#     感知的结果事件
+#     """
 
-    def __init__(
-        self,
-        who: str,
-        current_stage_name: str,
-        actors_in_stage: Dict[str, str],
-        props_in_stage: List[str],
-    ) -> None:
-        self._who: str = who
-        self._current_stage_name: str = current_stage_name
-        self._actors_in_stage: Dict[str, str] = actors_in_stage
-        self._props_in_stage: List[str] = props_in_stage
+#     def __init__(
+#         self,
+#         who: str,
+#         current_stage_name: str,
+#         actors_in_stage: Dict[str, str],
+#         props_in_stage: List[str],
+#     ) -> None:
+#         self._who: str = who
+#         self._current_stage_name: str = current_stage_name
+#         self._actors_in_stage: Dict[str, str] = actors_in_stage
+#         self._props_in_stage: List[str] = props_in_stage
 
-    def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
-        if actor_name != self._who:
-            return ""  # 不是自己，不显示
-        return builtin_prompt.make_perception_action_prompt(
-            self._who,
-            self._current_stage_name,
-            self._actors_in_stage,
-            self._props_in_stage,
-        )
+#     def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
+#         if actor_name != self._who:
+#             return ""  # 不是自己，不显示
+#         return builtin_prompt.make_perception_action_prompt(
+#             self._who,
+#             self._current_stage_name,
+#             self._actors_in_stage,
+#             self._props_in_stage,
+#         )
 
-    def to_stage(self, stagename: str, extended_context: RPGEntitasContext) -> str:
-        return ""  # 不显示给场景
+#     def to_stage(self, stagename: str, extended_context: RPGEntitasContext) -> str:
+#         return ""  # 不显示给场景
 
 
 ####################################################################################################################################
@@ -132,16 +133,24 @@ class PerceptionActionSystem(ReactiveProcessor):
         stage_entity = self._context.safe_get_stage_entity(entity)
         assert stage_entity is not None
         safe_stage_name = self._context.safe_get_entity_name(stage_entity)
-        StageDirectorComponent.add_event_to_stage_director(
-            self._context,
-            entity,
-            ActorPerceptionEvent(
-                safe_name,
-                safe_stage_name,
-                helper._actors_in_stage,
-                helper._props_in_stage,
-            ),
+        # StageDirectorComponent.add_event_to_stage_director(
+        #     self._context,
+        #     entity,
+        #     ActorPerceptionEvent(
+        #         safe_name,
+        #         safe_stage_name,
+        #         helper._actors_in_stage,
+        #         helper._props_in_stage,
+        #     ),
+        # )
+
+        message = builtin_prompt.make_perception_action_prompt(
+            safe_name,
+            safe_stage_name,
+            helper._actors_in_stage,
+            helper._props_in_stage,
         )
+        self._context.add_agent_context_message(set({entity}), message)
 
 
 ###################################################################################################################

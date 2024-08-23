@@ -10,10 +10,12 @@ from ecs_systems.components import ActorComponent, StageComponent
 
 # from my_agent.agent_action import AgentAction
 from loguru import logger
-from ecs_systems.stage_director_component import StageDirectorComponent
+
+# from ecs_systems.stage_director_component import StageDirectorComponent
 from typing import List, override
 from file_system.files_def import PropFile
-from ecs_systems.stage_director_event import IStageDirectorEvent
+
+# from ecs_systems.stage_director_event import IStageDirectorEvent
 import ecs_systems.cn_builtin_prompt as builtin_prompt
 import file_system.helper
 
@@ -21,49 +23,49 @@ import file_system.helper
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class ActorSearchPropFailedEvent(IStageDirectorEvent):
+# class ActorSearchPropFailedEvent(IStageDirectorEvent):
 
-    def __init__(self, who: str, target: str) -> None:
-        self._who: str = who
-        self._target: str = target
+#     def __init__(self, who: str, target: str) -> None:
+#         self._who: str = who
+#         self._target: str = target
 
-    def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
-        if actor_name != self._who:
-            ## 只有自己知道
-            return ""
-        return builtin_prompt.make_search_prop_action_failed_prompt(
-            self._who, self._target
-        )
+#     def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
+#         if actor_name != self._who:
+#             ## 只有自己知道
+#             return ""
+#         return builtin_prompt.make_search_prop_action_failed_prompt(
+#             self._who, self._target
+#         )
 
-    def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
-        return ""
+#     def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
+#         return ""
 
 
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class ActorSearchPropSuccessEvent(IStageDirectorEvent):
+# class ActorSearchPropSuccessEvent(IStageDirectorEvent):
 
-    #
-    def __init__(self, who: str, target: str, stage_name: str) -> None:
-        self._who: str = who
-        self._target: str = target
-        self._stage_name: str = stage_name
+#     #
+#     def __init__(self, who: str, target: str, stage_name: str) -> None:
+#         self._who: str = who
+#         self._target: str = target
+#         self._stage_name: str = stage_name
 
-    #
-    def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
-        if actor_name != self._who:
-            ## 只有自己知道
-            return ""
-        return builtin_prompt.make_search_prop_action_success_prompt(
-            self._who, self._target, self._stage_name
-        )
+#     #
+#     def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
+#         if actor_name != self._who:
+#             ## 只有自己知道
+#             return ""
+#         return builtin_prompt.make_search_prop_action_success_prompt(
+#             self._who, self._target, self._stage_name
+#         )
 
-    #
-    def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
-        return builtin_prompt.make_search_prop_action_success_prompt(
-            self._who, self._target, self._stage_name
-        )
+#     #
+#     def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
+#         return builtin_prompt.make_search_prop_action_success_prompt(
+#             self._who, self._target, self._stage_name
+#         )
 
 
 ####################################################################################################################################
@@ -119,27 +121,49 @@ class SearchPropActionSystem(ReactiveProcessor):
         for target_prop_name in search_action.values:
             ## 不在同一个场景就不能被搜寻，这个场景不具备这个道具，就无法搜寻
             if not self.check_stage_has_the_prop(target_prop_name, prop_files):
-                StageDirectorComponent.add_event_to_stage_director(
-                    self._context,
-                    stage_entity,
-                    ActorSearchPropFailedEvent(safe_name, target_prop_name),
+                # StageDirectorComponent.add_event_to_stage_director(
+                #     self._context,
+                #     stage_entity,
+                #     ActorSearchPropFailedEvent(safe_name, target_prop_name),
+                # )
+                # logger.debug(
+                #     f"search failed, {target_prop_name} not in {stage_comp.name}"
+                # )
+
+                #         builtin_prompt.make_search_prop_action_failed_prompt(
+                #     self._who, self._target
+                # )
+                self._context.add_agent_context_message(
+                    set({entity}),
+                    builtin_prompt.make_search_prop_action_failed_prompt(
+                        safe_name, target_prop_name
+                    ),
                 )
-                logger.debug(
-                    f"search failed, {target_prop_name} not in {stage_comp.name}"
-                )
+
                 continue
             # 交换文件，即交换道具文件即可
             self.stage_exchanges_prop_to_actor(
                 stage_comp.name, search_action.name, target_prop_name
             )
             logger.info(f"search success, {target_prop_name} in {stage_comp.name}")
-            StageDirectorComponent.add_event_to_stage_director(
-                self._context,
-                stage_entity,
-                ActorSearchPropSuccessEvent(
+            # StageDirectorComponent.add_event_to_stage_director(
+            #     self._context,
+            #     stage_entity,
+            #     ActorSearchPropSuccessEvent(
+            #         safe_name, target_prop_name, stage_comp.name
+            #     ),
+            # )
+
+            #     builtin_prompt.make_search_prop_action_success_prompt(
+            #     self._who, self._target, self._stage_name
+            # )
+            self._context.add_agent_context_message(
+                set({entity}),
+                builtin_prompt.make_search_prop_action_success_prompt(
                     safe_name, target_prop_name, stage_comp.name
                 ),
             )
+
             search_success_count += 1
 
         return search_success_count > 0

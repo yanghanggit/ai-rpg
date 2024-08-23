@@ -12,8 +12,9 @@ from ecs_systems.components import (
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
-from ecs_systems.stage_director_component import StageDirectorComponent
-from ecs_systems.stage_director_event import IStageDirectorEvent
+
+# from ecs_systems.stage_director_component import StageDirectorComponent
+# from ecs_systems.stage_director_event import IStageDirectorEvent
 import ecs_systems.cn_builtin_prompt as builtin_prompt
 from ecs_systems.cn_constant_prompt import _CNConstantPrompt_ as ConstantPrompt
 from typing import cast, override, List
@@ -26,82 +27,82 @@ from file_system.files_def import PropFile
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class ActorGoToFailedBecauseStageInvalid(IStageDirectorEvent):
+# class ActorGoToFailedBecauseStageInvalid(IStageDirectorEvent):
 
-    def __init__(self, actor_name: str, stage_name: str) -> None:
-        self._actor_name: str = actor_name
-        self._stage_name: str = stage_name
+#     def __init__(self, actor_name: str, stage_name: str) -> None:
+#         self._actor_name: str = actor_name
+#         self._stage_name: str = stage_name
 
-    def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
-        if actor_name != self._actor_name:
-            return ""
-        return builtin_prompt.go_to_stage_failed_because_stage_is_invalid_prompt(
-            self._actor_name, self._stage_name
-        )
+#     def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
+#         if actor_name != self._actor_name:
+#             return ""
+#         return builtin_prompt.go_to_stage_failed_because_stage_is_invalid_prompt(
+#             self._actor_name, self._stage_name
+#         )
 
-    def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
-        return ""
-
-
-####################################################################################################################################
-####################################################################################################################################
-####################################################################################################################################
-class ActorGoToFailedBecauseAlreadyInStage(IStageDirectorEvent):
-
-    def __init__(self, actor_name: str, stage_name: str) -> None:
-        self._actor_name: str = actor_name
-        self._stage_name: str = stage_name
-
-    def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
-        if actor_name != self._actor_name:
-            # 跟你无关不用关注，原因类的东西，是失败后矫正用，所以只有自己知道即可
-            return ""
-        return builtin_prompt.go_to_stage_failed_because_already_in_stage_prompt(
-            self._actor_name, self._stage_name
-        )
-
-    def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
-        return ""
+#     def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
+#         return ""
 
 
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class ActorExitStageFailedBecauseStageRefuse(IStageDirectorEvent):
-    def __init__(self, actor_name: str, stage_name: str, tips: str) -> None:
-        self._actor_name: str = actor_name
-        self._stage_name: str = stage_name
-        self._tips: str = tips
+# class ActorGoToFailedBecauseAlreadyInStage(IStageDirectorEvent):
 
-    def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
-        if actor_name != self._actor_name:
-            return ""
-        return builtin_prompt.exit_stage_failed_beacuse_stage_refuse_prompt(
-            self._actor_name, self._stage_name, self._tips
-        )
+#     def __init__(self, actor_name: str, stage_name: str) -> None:
+#         self._actor_name: str = actor_name
+#         self._stage_name: str = stage_name
 
-    def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
-        return ""
+#     def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
+#         if actor_name != self._actor_name:
+#             # 跟你无关不用关注，原因类的东西，是失败后矫正用，所以只有自己知道即可
+#             return ""
+#         return builtin_prompt.go_to_stage_failed_because_already_in_stage_prompt(
+#             self._actor_name, self._stage_name
+#         )
+
+#     def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
+#         return ""
 
 
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class ActorEnterStageFailedBecauseStageRefuse(IStageDirectorEvent):
-    def __init__(self, actor_name: str, stage_name: str, tips: str) -> None:
-        self._actor_name: str = actor_name
-        self._stage_name: str = stage_name
-        self._tips: str = tips
+# class ActorExitStageFailedBecauseStageRefuse(IStageDirectorEvent):
+#     def __init__(self, actor_name: str, stage_name: str, tips: str) -> None:
+#         self._actor_name: str = actor_name
+#         self._stage_name: str = stage_name
+#         self._tips: str = tips
 
-    def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
-        if actor_name != self._actor_name:
-            return ""
-        return builtin_prompt.enter_stage_failed_beacuse_stage_refuse_prompt(
-            self._actor_name, self._stage_name, self._tips
-        )
+#     def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
+#         if actor_name != self._actor_name:
+#             return ""
+#         return builtin_prompt.exit_stage_failed_beacuse_stage_refuse_prompt(
+#             self._actor_name, self._stage_name, self._tips
+#         )
 
-    def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
-        return ""
+#     def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
+#         return ""
+
+
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
+# class ActorEnterStageFailedBecauseStageRefuse(IStageDirectorEvent):
+#     def __init__(self, actor_name: str, stage_name: str, tips: str) -> None:
+#         self._actor_name: str = actor_name
+#         self._stage_name: str = stage_name
+#         self._tips: str = tips
+
+#     def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
+#         if actor_name != self._actor_name:
+#             return ""
+#         return builtin_prompt.enter_stage_failed_beacuse_stage_refuse_prompt(
+#             self._actor_name, self._stage_name, self._tips
+#         )
+
+#     def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
+#         return ""
 
 
 class StageConditionsCheckPlan(AgentPlan):
@@ -194,22 +195,44 @@ class PreBeforeGoToActionSystem(ReactiveProcessor):
         )
         if target_stage_entity is None:
             # 无效的去往目标!
-            StageDirectorComponent.add_event_to_stage_director(
-                self._context,
-                current_stage_entity,
-                ActorGoToFailedBecauseStageInvalid(safe_actor_name, target_stage_name),
+            # StageDirectorComponent.add_event_to_stage_director(
+            #     self._context,
+            #     current_stage_entity,
+            #     ActorGoToFailedBecauseStageInvalid(safe_actor_name, target_stage_name),
+            # )
+
+            #     return builtin_prompt.go_to_stage_failed_because_stage_is_invalid_prompt(
+            #     self._actor_name, self._stage_name
+            # )
+            self._context.add_agent_context_message(
+                set({actor_entity}),
+                builtin_prompt.go_to_stage_failed_because_stage_is_invalid_prompt(
+                    safe_actor_name, target_stage_name
+                ),
             )
+
             return False
 
         if current_stage_entity == target_stage_entity:
             # 已经在这个场景里了，不要重复去了
-            StageDirectorComponent.add_event_to_stage_director(
-                self._context,
-                current_stage_entity,
-                ActorGoToFailedBecauseAlreadyInStage(
+            # StageDirectorComponent.add_event_to_stage_director(
+            #     self._context,
+            #     current_stage_entity,
+            #     ActorGoToFailedBecauseAlreadyInStage(
+            #         safe_actor_name, target_stage_name
+            #     ),
+            # )
+
+            #      return builtin_prompt.go_to_stage_failed_because_already_in_stage_prompt(
+            #     self._actor_name, self._stage_name
+            # )
+            self._context.add_agent_context_message(
+                set({actor_entity}),
+                builtin_prompt.go_to_stage_failed_because_already_in_stage_prompt(
                     safe_actor_name, target_stage_name
                 ),
             )
+
             return False
 
         return True
@@ -279,13 +302,25 @@ class PreBeforeGoToActionSystem(ReactiveProcessor):
         #
         if not plan.allow:
             # 通知事件
-            StageDirectorComponent.add_event_to_stage_director(
-                self._context,
-                current_stage_entity,
-                ActorExitStageFailedBecauseStageRefuse(
+            # StageDirectorComponent.add_event_to_stage_director(
+            #     self._context,
+            #     current_stage_entity,
+            #     ActorExitStageFailedBecauseStageRefuse(
+            #         actor_name, current_stage_name, plan.show_tips
+            #     ),
+            # )
+
+            # builtin_prompt.exit_stage_failed_beacuse_stage_refuse_prompt(
+            # self._actor_name, self._stage_name, self._tips
+            # )
+
+            self._context.add_agent_context_message(
+                set({actor_entity}),
+                builtin_prompt.exit_stage_failed_beacuse_stage_refuse_prompt(
                     actor_name, current_stage_name, plan.show_tips
                 ),
             )
+
             return False
 
         logger.debug(f"允许通过！说明如下: {plan.show_tips}")
@@ -345,13 +380,21 @@ class PreBeforeGoToActionSystem(ReactiveProcessor):
             # 通知事件, 因为没动，得是当前场景需要通知
             current_stage_entity = self._context.safe_get_stage_entity(actor_entity)
             assert current_stage_entity is not None
-            StageDirectorComponent.add_event_to_stage_director(
-                self._context,
-                current_stage_entity,
-                ActorEnterStageFailedBecauseStageRefuse(
+            # StageDirectorComponent.add_event_to_stage_director(
+            #     self._context,
+            #     current_stage_entity,
+            #     ActorEnterStageFailedBecauseStageRefuse(
+            #         actor_name, target_stage_name, plan.show_tips
+            #     ),
+            # )
+
+            self._context.add_agent_context_message(
+                set({actor_entity}),
+                builtin_prompt.enter_stage_failed_beacuse_stage_refuse_prompt(
                     actor_name, target_stage_name, plan.show_tips
                 ),
             )
+
             return False
 
         logger.debug(f"允许通过！说明如下: {plan.show_tips}")

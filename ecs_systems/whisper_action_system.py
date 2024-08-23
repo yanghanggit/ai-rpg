@@ -5,8 +5,9 @@ from ecs_systems.action_components import WhisperAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import override
 import gameplay.conversation_helper
-from ecs_systems.stage_director_component import StageDirectorComponent
-from ecs_systems.stage_director_event import IStageDirectorEvent
+
+# from ecs_systems.stage_director_component import StageDirectorComponent
+# from ecs_systems.stage_director_event import IStageDirectorEvent
 import ecs_systems.cn_builtin_prompt as builtin_prompt
 import my_format_string.target_and_message_format_string
 
@@ -14,24 +15,24 @@ import my_format_string.target_and_message_format_string
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class StageOrActorWhisperEvent(IStageDirectorEvent):
+# class StageOrActorWhisperEvent(IStageDirectorEvent):
 
-    def __init__(self, who: str, target: str, message: str) -> None:
-        self._who: str = who
-        self._target: str = target
-        self._message: str = message
+#     def __init__(self, who: str, target: str, message: str) -> None:
+#         self._who: str = who
+#         self._target: str = target
+#         self._message: str = message
 
-    def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
-        if actor_name != self._who or actor_name != self._target:
-            # 只有这2个人才能听到
-            return ""
-        return builtin_prompt.make_whisper_action_prompt(
-            self._who, self._target, self._message
-        )
+#     def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
+#         if actor_name != self._who or actor_name != self._target:
+#             # 只有这2个人才能听到
+#             return ""
+#         return builtin_prompt.make_whisper_action_prompt(
+#             self._who, self._target, self._message
+#         )
 
-    def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
-        ## 场景应该是彻底听不到
-        return ""
+#     def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
+#         ## 场景应该是彻底听不到
+#         return ""
 
 
 ####################################################################################################################################
@@ -68,19 +69,32 @@ class WhisperActionSystem(ReactiveProcessor):
         )
         # action.target_and_message_values()
         for tp in target_and_message:
-            targetname = tp[0]
+            target_name = tp[0]
             message = tp[1]
             if (
                 gameplay.conversation_helper.check_conversation_enable(
-                    self._context, entity, targetname
+                    self._context, entity, target_name
                 )
                 != gameplay.conversation_helper.ErrorConversationEnable.VALID
             ):
                 continue
-            StageDirectorComponent.add_event_to_stage_director(
-                self._context,
-                entity,
-                StageOrActorWhisperEvent(safe_name, targetname, message),
+            # StageDirectorComponent.add_event_to_stage_director(
+            #     self._context,
+            #     entity,
+            #     StageOrActorWhisperEvent(safe_name, target_name, message),
+            # )
+
+            #     builtin_prompt.make_whisper_action_prompt(
+            #     self._who, self._target, self._message
+            # )
+
+            target_entity = self._context.get_entity_by_name(target_name)
+            assert target_entity is not None
+            self._context.add_agent_context_message(
+                set({entity, target_entity}),
+                builtin_prompt.make_whisper_action_prompt(
+                    safe_name, target_name, message
+                ),
             )
 
 

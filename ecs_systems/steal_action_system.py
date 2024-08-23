@@ -7,8 +7,9 @@ from loguru import logger
 # from my_agent.agent_action import AgentAction
 import gameplay.conversation_helper
 from typing import override
-from ecs_systems.stage_director_component import StageDirectorComponent
-from ecs_systems.stage_director_event import IStageDirectorEvent
+
+# from ecs_systems.stage_director_component import StageDirectorComponent
+# from ecs_systems.stage_director_event import IStageDirectorEvent
 import ecs_systems.cn_builtin_prompt as builtin_prompt
 import file_system.helper
 from file_system.files_def import PropFile
@@ -18,25 +19,25 @@ import my_format_string.target_and_message_format_string
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class ActorStealPropEvent(IStageDirectorEvent):
+# class ActorStealPropEvent(IStageDirectorEvent):
 
-    def __init__(
-        self, who: str, target: str, prop_name: str, action_result: bool
-    ) -> None:
-        self._who: str = who
-        self._target: str = target
-        self._prop_name: str = prop_name
-        self._action_result: bool = action_result
+#     def __init__(
+#         self, who: str, target: str, prop_name: str, action_result: bool
+#     ) -> None:
+#         self._who: str = who
+#         self._target: str = target
+#         self._prop_name: str = prop_name
+#         self._action_result: bool = action_result
 
-    def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
-        if actor_name != self._who or actor_name != self._target:
-            return ""
-        return builtin_prompt.make_steal_prop_action_prompt(
-            self._who, self._target, self._prop_name, self._action_result
-        )
+#     def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
+#         if actor_name != self._who or actor_name != self._target:
+#             return ""
+#         return builtin_prompt.make_steal_prop_action_prompt(
+#             self._who, self._target, self._prop_name, self._action_result
+#         )
 
-    def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
-        return ""
+#     def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
+#         return ""
 
 
 ####################################################################################################################################
@@ -95,18 +96,38 @@ class StealActionSystem(ReactiveProcessor):
             ):
                 # 不能交谈就是不能偷
                 continue
+
+            target_entity = self._context.get_entity_by_name(target)
+            assert target_entity is not None
             if self._steal(entity, target, prop_name):
                 steal_success_count += 1
-                StageDirectorComponent.add_event_to_stage_director(
-                    self._context,
-                    entity,
-                    ActorStealPropEvent(safename, target, prop_name, True),
+                # StageDirectorComponent.add_event_to_stage_director(
+                #     self._context,
+                #     entity,
+                #     ActorStealPropEvent(safename, target, prop_name, True),
+                # )
+
+                #         builtin_prompt.make_steal_prop_action_prompt(
+                #     self._who, self._target, self._prop_name, self._action_result
+                # )
+                self._context.add_agent_context_message(
+                    set({entity, target_entity}),
+                    builtin_prompt.make_steal_prop_action_prompt(
+                        safename, target, prop_name, True
+                    ),
                 )
+
             else:
-                StageDirectorComponent.add_event_to_stage_director(
-                    self._context,
-                    entity,
-                    ActorStealPropEvent(safename, target, prop_name, False),
+                # StageDirectorComponent.add_event_to_stage_director(
+                #     self._context,
+                #     entity,
+                #     ActorStealPropEvent(safename, target, prop_name, False),
+                # )
+                self._context.add_agent_context_message(
+                    set({entity, target_entity}),
+                    builtin_prompt.make_steal_prop_action_prompt(
+                        safename, target, prop_name, False
+                    ),
                 )
 
         return steal_success_count > 0

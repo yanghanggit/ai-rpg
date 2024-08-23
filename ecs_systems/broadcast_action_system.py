@@ -6,32 +6,33 @@ from ecs_systems.action_components import BroadcastAction
 # from my_agent.agent_action import AgentAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
-from ecs_systems.stage_director_component import StageDirectorComponent
-from ecs_systems.stage_director_event import IStageDirectorEvent
+
+# from ecs_systems.stage_director_component import StageDirectorComponent
+# from ecs_systems.stage_director_event import IStageDirectorEvent
 import ecs_systems.cn_builtin_prompt as builtin_prompt
 
 
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class StageOrActorBroadcastEvent(IStageDirectorEvent):
+# class StageOrActorBroadcastEvent(IStageDirectorEvent):
 
-    def __init__(
-        self, who_broadcast: str, stage_name: str, broadcast_content: str
-    ) -> None:
-        self._who_broadcast = who_broadcast
-        self._stagename = stage_name
-        self._broadcast_content = broadcast_content
+#     def __init__(
+#         self, who_broadcast: str, stage_name: str, broadcast_content: str
+#     ) -> None:
+#         self._who_broadcast = who_broadcast
+#         self._stagename = stage_name
+#         self._broadcast_content = broadcast_content
 
-    def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
-        return builtin_prompt.make_broadcast_action_prompt(
-            self._who_broadcast, self._stagename, self._broadcast_content
-        )
+#     def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
+#         return builtin_prompt.make_broadcast_action_prompt(
+#             self._who_broadcast, self._stagename, self._broadcast_content
+#         )
 
-    def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
-        return builtin_prompt.make_broadcast_action_prompt(
-            self._who_broadcast, self._stagename, self._broadcast_content
-        )
+#     def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
+#         return builtin_prompt.make_broadcast_action_prompt(
+#             self._who_broadcast, self._stagename, self._broadcast_content
+#         )
 
 
 ####################################################################################################################################
@@ -69,17 +70,22 @@ class BroadcastActionSystem(ReactiveProcessor):
         #
         broadcast_action = entity.get(BroadcastAction)
         stage_comp = current_stage_entity.get(StageComponent)
-        #
-        # action: AgentAction = broadcast_action
-        join_values = " ".join(broadcast_action.values)
-        # action.join_values()
-        StageDirectorComponent.add_event_to_stage_director(
-            self._context,
-            current_stage_entity,
-            StageOrActorBroadcastEvent(
-                broadcast_action.name, stage_comp.name, join_values
-            ),
+
+        # join_values = " ".join(broadcast_action.values)
+
+        # StageDirectorComponent.add_event_to_stage_director(
+        #     self._context,
+        #     current_stage_entity,
+        #     StageOrActorBroadcastEvent(
+        #         broadcast_action.name, stage_comp.name, join_values
+        #     ),
+        # )
+
+        message = builtin_prompt.make_broadcast_action_prompt(
+            broadcast_action.name, stage_comp.name, " ".join(broadcast_action.values)
         )
+        # 整个场景
+        self._context.add_agent_context_message(set({current_stage_entity}), message)
 
 
 ####################################################################################################

@@ -54,7 +54,7 @@ class UpdateClientMessageSystem(ExecuteProcessor):
         player_proxy.add_system_message(f"游戏回合:{self._context._execute_count}")
 
         self.stage_enviro_narrate_action_2_message(player_proxy, player_entity)
-        self.handle_cache_messages(
+        self.handle_login_messages(
             player_proxy, player_entity
         )  # 先把缓存的消息推送出去，在场景描述之后
 
@@ -271,7 +271,7 @@ class UpdateClientMessageSystem(ExecuteProcessor):
             )
 
     ############################################################################################################
-    def handle_cache_messages(
+    def handle_login_messages(
         self, player_proxy: PlayerProxy, player_entity: Entity
     ) -> None:
         for message in player_proxy._login_messages:

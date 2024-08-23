@@ -5,13 +5,15 @@ from ecs_systems.components import ActorComponent
 # from my_agent.agent_action import AgentAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
-from ecs_systems.stage_director_component import (
-    StageDirectorComponent,
-    OnEnterStageComponent,
-)
+
+# from ecs_systems.stage_director_component import (
+#     StageDirectorComponent,
+#     OnEnterStageComponent,
+# )
 from typing import cast, override, Optional
-from ecs_systems.stage_director_event import IStageDirectorEvent
-from ecs_systems.stage_director_system import StageDirectorSystem
+
+# from ecs_systems.stage_director_event import IStageDirectorEvent
+# from ecs_systems.stage_director_system import StageDirectorSystem
 import ecs_systems.cn_builtin_prompt as builtin_prompt
 
 
@@ -39,56 +41,56 @@ class GoToActionHelper:
 ###############################################################################################################################################
 ###############################################################################################################################################
 ###############################################################################################################################################
-class ActorLeaveStageEvent(IStageDirectorEvent):
+# class ActorLeaveStageEvent(IStageDirectorEvent):
 
-    def __init__(
-        self, actor_name: str, current_stage_name: str, target_stage_name: str
-    ) -> None:
+#     def __init__(
+#         self, actor_name: str, current_stage_name: str, target_stage_name: str
+#     ) -> None:
 
-        self._actor_name: str = actor_name
-        self._current_stage_name: str = current_stage_name
-        self._target_stage_name: str = target_stage_name
+#         self._actor_name: str = actor_name
+#         self._current_stage_name: str = current_stage_name
+#         self._target_stage_name: str = target_stage_name
 
-    def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
-        return builtin_prompt.make_leave_stage_prompt(
-            self._actor_name, self._current_stage_name, self._target_stage_name
-        )
+#     def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
+#         return builtin_prompt.make_leave_stage_prompt(
+#             self._actor_name, self._current_stage_name, self._target_stage_name
+#         )
 
-    def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
-        return builtin_prompt.make_leave_stage_prompt(
-            self._actor_name, self._current_stage_name, self._target_stage_name
-        )
+#     def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
+#         return builtin_prompt.make_leave_stage_prompt(
+#             self._actor_name, self._current_stage_name, self._target_stage_name
+#         )
 
 
 ###############################################################################################################################################
 ###############################################################################################################################################
 ###############################################################################################################################################
-class ActorEnterStageEvent(IStageDirectorEvent):
+# class ActorEnterStageEvent(IStageDirectorEvent):
 
-    def __init__(
-        self, actor_name: str, target_stage_name: str, last_stage_name: str
-    ) -> None:
+#     def __init__(
+#         self, actor_name: str, target_stage_name: str, last_stage_name: str
+#     ) -> None:
 
-        self._actor_name: str = actor_name
-        self._target_stage_name: str = target_stage_name
-        self._last_stage_name: str = last_stage_name
+#         self._actor_name: str = actor_name
+#         self._target_stage_name: str = target_stage_name
+#         self._last_stage_name: str = last_stage_name
 
-    def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
-        if actor_name != self._actor_name:
-            # 目标场景内的一切听到的是这个:"xxx进入了场景"
-            return builtin_prompt.make_enter_stage_prompt1(
-                self._actor_name, self._target_stage_name
-            )
+#     def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
+#         if actor_name != self._actor_name:
+#             # 目标场景内的一切听到的是这个:"xxx进入了场景"
+#             return builtin_prompt.make_enter_stage_prompt1(
+#                 self._actor_name, self._target_stage_name
+#             )
 
-        # 通知我自己，我从哪里去往了哪里。这样prompt更加清晰一些
-        return builtin_prompt.make_enter_stage_prompt2(
-            self._actor_name, self._target_stage_name, self._last_stage_name
-        )
+#         # 通知我自己，我从哪里去往了哪里。这样prompt更加清晰一些
+#         return builtin_prompt.make_enter_stage_prompt2(
+#             self._actor_name, self._target_stage_name, self._last_stage_name
+#         )
 
-    def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
-        return builtin_prompt.make_enter_stage_prompt1(
-            self._actor_name, self._target_stage_name
-        )
+#     def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
+#         return builtin_prompt.make_enter_stage_prompt1(
+#             self._actor_name, self._target_stage_name
+#         )
 
 
 ###############################################################################################################################################
@@ -157,37 +159,56 @@ class GoToActionSystem(ReactiveProcessor):
             ActorComponent, actor_comp.name, helper._target_stage_name
         )
         # 添加标记，忽略一次目标场景的导演事件
-        helper._entity.replace(OnEnterStageComponent, helper._target_stage_name)
+        # helper._entity.replace(OnEnterStageComponent, helper._target_stage_name)
         # 更新场景标记
         self._context.change_stage_tag_component(
             helper._entity, helper._current_stage_name, helper._target_stage_name
         )
 
         # 进入场景的事件需要通知相关的人
-        enter_stage_event = ActorEnterStageEvent(
-            actor_comp.name, helper._target_stage_name, helper._current_stage_name
-        )
-        StageDirectorComponent.add_event_to_stage_director(
-            self._context, helper._entity, enter_stage_event
+        # enter_stage_event = ActorEnterStageEvent(
+        #     actor_comp.name, helper._target_stage_name, helper._current_stage_name
+        # )
+        # StageDirectorComponent.add_event_to_stage_director(
+        #     self._context, helper._entity, enter_stage_event
+        # )
+
+        # # 只添加进入场景的事件
+        # StageDirectorSystem.director_events_to_actor(
+        #     self._context, helper._entity, [enter_stage_event]
+        # )
+        # StageDirectorSystem.director_events_to_player(
+        #     self._context, helper._entity, [enter_stage_event]
+        # )
+
+        # message1 = builtin_prompt.make_enter_stage_prompt1(
+        #     actor_comp.name, helper._target_stage_name
+        # )
+        assert helper._target_stage_entity is not None
+        self._context.add_agent_context_message(
+            set({helper._target_stage_entity}),
+            builtin_prompt.make_enter_stage_prompt1(
+                actor_comp.name, helper._target_stage_name
+            ),
         )
 
-        # 只添加进入场景的事件
-        StageDirectorSystem.director_events_to_actor(
-            self._context, helper._entity, [enter_stage_event]
-        )
-        StageDirectorSystem.director_events_to_player(
-            self._context, helper._entity, [enter_stage_event]
+        self._context.add_agent_context_message(
+            set({helper._entity}),
+            builtin_prompt.make_enter_stage_prompt2(
+                actor_comp.name, helper._target_stage_name, helper._current_stage_name
+            ),
         )
 
     ###############################################################################################################################################
     def before_leave_current_stage(self, helper: GoToActionHelper) -> None:
+        pass
         # 目前就是强行刷一下history
-        StageDirectorSystem.director_events_to_actor(
-            self._context, helper._entity, None
-        )
-        StageDirectorSystem.director_events_to_player(
-            self._context, helper._entity, None
-        )
+        # StageDirectorSystem.director_events_to_actor(
+        #     self._context, helper._entity, None
+        # )
+        # StageDirectorSystem.director_events_to_player(
+        #     self._context, helper._entity, None
+        # )
 
     ###############################################################################################################################################
     def leave_current_stage(self, helper: GoToActionHelper) -> None:
@@ -195,20 +216,35 @@ class GoToActionSystem(ReactiveProcessor):
         actor_comp = helper._entity.get(ActorComponent)
 
         # 必须在场景信息还有效的时刻做通知
-        StageDirectorComponent.add_event_to_stage_director(
-            self._context,
-            helper._entity,
-            ActorLeaveStageEvent(
-                actor_comp.name, helper._current_stage_name, helper._target_stage_name
-            ),
+        # StageDirectorComponent.add_event_to_stage_director(
+        #     self._context,
+        #     helper._entity,
+        #     ActorLeaveStageEvent(
+        #         actor_comp.name, helper._current_stage_name, helper._target_stage_name
+        #     ),
+        # )
+
+        #         def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
+        #     return builtin_prompt.make_leave_stage_prompt(
+        #         self._actor_name, self._current_stage_name, self._target_stage_name
+        #     )
+
+        # def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
+        #     return builtin_prompt.make_leave_stage_prompt(
+        #         self._actor_name, self._current_stage_name, self._target_stage_name
+        #     )
+
+        message = builtin_prompt.make_leave_stage_prompt(
+            actor_comp.name, helper._current_stage_name, helper._target_stage_name
         )
+        self._context.add_agent_context_message(set({helper._entity}), message)
 
         # 离开场景 设置成空
         helper._entity.replace(ActorComponent, actor_comp.name, "")
 
         # 移除这个
-        if helper._entity.has(OnEnterStageComponent):
-            helper._entity.remove(OnEnterStageComponent)
+        # if helper._entity.has(OnEnterStageComponent):
+        #     helper._entity.remove(OnEnterStageComponent)
 
         # 更新场景标记
         self._context.change_stage_tag_component(

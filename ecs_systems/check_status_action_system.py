@@ -2,11 +2,13 @@ from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity  # type: igno
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from ecs_systems.action_components import CheckStatusAction, DeadAction
 from ecs_systems.components import RPGAttributesComponent, ActorComponent
-from ecs_systems.stage_director_component import StageDirectorComponent
+
+# from ecs_systems.stage_director_component import StageDirectorComponent
 from typing import List, override
 from file_system.files_def import PropFile
 import ecs_systems.cn_builtin_prompt as builtin_prompt
-from ecs_systems.stage_director_event import IStageDirectorEvent
+
+# from ecs_systems.stage_director_event import IStageDirectorEvent
 
 
 ####################################################################################################################################
@@ -64,33 +66,33 @@ class CheckStatusActionHelper:
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class ActorCheckStatusEvent(IStageDirectorEvent):
+# class ActorCheckStatusEvent(IStageDirectorEvent):
 
-    def __init__(
-        self,
-        who: str,
-        props: List[PropFile],
-        health: float,
-        special_components: List[PropFile],
-    ) -> None:
-        self._who: str = who
-        self._prop_files_as_weapon_clothes_non_consumable_item: List[PropFile] = props
-        self._health: float = health
-        self._prop_files_as_special_components: List[PropFile] = special_components
+#     def __init__(
+#         self,
+#         who: str,
+#         props: List[PropFile],
+#         health: float,
+#         special_components: List[PropFile],
+#     ) -> None:
+#         self._who: str = who
+#         self._prop_files_as_weapon_clothes_non_consumable_item: List[PropFile] = props
+#         self._health: float = health
+#         self._prop_files_as_special_components: List[PropFile] = special_components
 
-    def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
-        if actor_name != self._who:
-            # 只有自己知道
-            return ""
-        return builtin_prompt.make_check_status_action_prompt(
-            self._who,
-            self._prop_files_as_weapon_clothes_non_consumable_item,
-            self._health,
-            self._prop_files_as_special_components,
-        )
+#     def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
+#         if actor_name != self._who:
+#             # 只有自己知道
+#             return ""
+#         return builtin_prompt.make_check_status_action_prompt(
+#             self._who,
+#             self._prop_files_as_weapon_clothes_non_consumable_item,
+#             self._health,
+#             self._prop_files_as_special_components,
+#         )
 
-    def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
-        return ""
+#     def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
+#         return ""
 
 
 ####################################################################################################################################
@@ -130,16 +132,25 @@ class CheckStatusActionSystem(ReactiveProcessor):
         helper = CheckStatusActionHelper(self._context)
         helper.check_status(entity)
         #
-        StageDirectorComponent.add_event_to_stage_director(
-            self._context,
-            entity,
-            ActorCheckStatusEvent(
-                safe_name,
-                helper._prop_files_as_weapon_clothes_non_consumable_item,
-                helper.health,
-                helper._prop_files_as_special,
-            ),
+        # StageDirectorComponent.add_event_to_stage_director(
+        #     self._context,
+        #     entity,
+        #     ActorCheckStatusEvent(
+        #         safe_name,
+        #         helper._prop_files_as_weapon_clothes_non_consumable_item,
+        #         helper.health,
+        #         helper._prop_files_as_special,
+        #     ),
+        # )
+
+        message = builtin_prompt.make_check_status_action_prompt(
+            safe_name,
+            helper._prop_files_as_weapon_clothes_non_consumable_item,
+            helper.health,
+            helper._prop_files_as_special,
         )
+        # 只有自己
+        self._context.add_agent_context_message(set({entity}), message)
 
 
 ####################################################################################################################################

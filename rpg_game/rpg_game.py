@@ -19,7 +19,8 @@ from ecs_systems.components import (
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from build_game.game_builder import GameBuilder
 from entitas.entity import Entity
-from ecs_systems.stage_director_component import StageDirectorComponent
+
+# from ecs_systems.stage_director_component import StageDirectorComponent
 from file_system.files_def import PropFile
 import shutil
 from rpg_game.base_game import BaseGame
@@ -375,7 +376,7 @@ class RPGGame(BaseGame):
         )
         stage_entity.add(StageComponent, stage_model.name)
         stage_entity.add(StageArchiveComponent, stage_model.name, "", 0)
-        stage_entity.add(StageDirectorComponent, stage_model.name)
+        # stage_entity.add(StageDirectorComponent, stage_model.name)
 
         stage_entity.add(
             RPGAttributesComponent,

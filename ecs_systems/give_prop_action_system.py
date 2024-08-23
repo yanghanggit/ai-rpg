@@ -3,37 +3,36 @@ from rpg_game.rpg_entitas_context import RPGEntitasContext
 from ecs_systems.action_components import GivePropAction, CheckStatusAction, DeadAction
 from ecs_systems.components import ActorComponent
 from loguru import logger
-
-# from my_agent.agent_action import AgentAction
 import gameplay.conversation_helper
-from typing import List, override
-from ecs_systems.stage_director_component import StageDirectorComponent
-from ecs_systems.stage_director_event import IStageDirectorEvent
+from typing import List, override, Set
+
+# from ecs_systems.stage_director_component import StageDirectorComponent
+# from ecs_systems.stage_director_event import IStageDirectorEvent
 import ecs_systems.cn_builtin_prompt as builtin_prompt
 import file_system.helper
 from file_system.files_def import PropFile
 import my_format_string.target_and_message_format_string
 
 
-class ActorGivePropEvent(IStageDirectorEvent):
+# class ActorGivePropEvent(IStageDirectorEvent):
 
-    def __init__(
-        self, from_who: str, to_who: str, prop_name: str, action_result: bool
-    ) -> None:
-        self._from_who: str = from_who
-        self._to_who: str = to_who
-        self._prop_name: str = prop_name
-        self._action_result: bool = action_result
+#     def __init__(
+#         self, from_who: str, to_who: str, prop_name: str, action_result: bool
+#     ) -> None:
+#         self._from_who: str = from_who
+#         self._to_who: str = to_who
+#         self._prop_name: str = prop_name
+#         self._action_result: bool = action_result
 
-    def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
-        if actor_name != self._from_who or actor_name != self._to_who:
-            return ""
-        return builtin_prompt.make_give_prop_action_prompt(
-            self._from_who, self._to_who, self._prop_name, self._action_result
-        )
+#     def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
+#         if actor_name != self._from_who or actor_name != self._to_who:
+#             return ""
+#         return builtin_prompt.make_give_prop_action_prompt(
+#             self._from_who, self._to_who, self._prop_name, self._action_result
+#         )
 
-    def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
-        return ""
+#     def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
+#         return ""
 
 
 ####################################################################################################################################
@@ -94,11 +93,21 @@ class GivePropActionSystem(ReactiveProcessor):
 
             prop_name = message
             action_result = self._give_prop(entity, target_name, prop_name)
-            StageDirectorComponent.add_event_to_stage_director(
-                self._context,
-                entity,
-                ActorGivePropEvent(safe_name, target_name, prop_name, action_result),
+            # StageDirectorComponent.add_event_to_stage_director(
+            #     self._context,
+            #     entity,
+            #     ActorGivePropEvent(safe_name, target_name, prop_name, action_result),
+            # )
+
+            target_entity = self._context.get_actor_entity(target_name)
+            assert target_entity is not None
+            self._context.add_agent_context_message(
+                set({entity, target_entity}),
+                builtin_prompt.make_give_prop_action_prompt(
+                    safe_name, target_name, prop_name, action_result
+                ),
             )
+
             success_target_names.append(target_name)
 
         return success_target_names

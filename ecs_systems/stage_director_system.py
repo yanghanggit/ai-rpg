@@ -62,7 +62,7 @@ class StageDirectorSystem(ExecuteProcessor):
         assert stage_entity.has(StageComponent)
         stage_comp = stage_entity.get(StageComponent)
 
-        actors_int_this_stage = self._context.actors_in_stage(stage_comp.name)
+        actors_int_this_stage = self._context._get_actors_in_stage(stage_comp.name)
         for actor_entity in actors_int_this_stage:
             if actor_entity.has(OnEnterStageComponent):
                 # 新进入场景的人，不要收到这些事件。

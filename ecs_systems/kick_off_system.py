@@ -133,7 +133,7 @@ class KickOffSystem(InitializeProcessor, ExecuteProcessor):
                 self._context._file_system.get_files(
                     PropFile, self._context.safe_get_entity_name(stage_entity)
                 ),
-                self._context.actor_names_in_stage(stage_entity),
+                self._context.get_actor_names_in_stage(stage_entity),
                 self._context._execute_count,
             )
 

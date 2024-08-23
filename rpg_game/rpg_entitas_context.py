@@ -13,14 +13,11 @@ from extended_systems.kick_off_message_system import KickOffMessageSystem
 from extended_systems.code_name_component_system import CodeNameComponentSystem
 from my_agent.lang_serve_agent_system import LangServeAgentSystem
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
-from typing import Optional, Dict, List, Set
+from typing import Optional, Dict, List, Set, cast
 from extended_systems.guid_generator import GUIDGenerator
 
 
 class RPGEntitasContext(Context):
-    """
-    对 entitas 的 Context 进行扩展，增加了一些常用的方法。
-    """
 
     #
     def __init__(
@@ -71,7 +68,7 @@ class RPGEntitasContext(Context):
         ), "self.chaos_engineering_system is None"
 
     #############################################################################################################################
-    # 世界基本就一个（或者及其少的数量），所以就遍历一下得了。
+
     def get_world_entity(self, world_name: str) -> Optional[Entity]:
         entity: Optional[Entity] = self.get_entity_by_name(world_name)
         if entity is not None and entity.has(WorldComponent):
@@ -115,31 +112,32 @@ class RPGEntitasContext(Context):
         return None
 
     #############################################################################################################################
-    # 目标场景中的所有角色
-    def actors_in_stage(self, stage_name: str) -> List[Entity]:
+
+    def _get_actors_in_stage(self, stage_name: str) -> List[Entity]:
         # 测试！！！
         stage_tag_component = (
             self._codename_component_system.get_stage_tag_component_class_by_name(
                 stage_name
             )
         )
-        entities: Set[Entity] = self.get_group(
+        entities = self.get_group(
             Matcher(all_of=[ActorComponent, stage_tag_component])
         ).entities
         return list(entities)
 
     #############################################################################################################################
-    # actors_in_stage 的另外一个实现
-    def actors_in_stage_(self, entity: Entity) -> List[Entity]:
+    
+    def get_actors_in_stage(self, entity: Entity) -> List[Entity]:
         stage_entity = self.safe_get_stage_entity(entity)
         if stage_entity is None:
             return []
         stage_comp = stage_entity.get(StageComponent)
-        return self.actors_in_stage(stage_comp.name)
+        return self._get_actors_in_stage(stage_comp.name)
 
     #############################################################################################################################
-    def actor_names_in_stage(self, entity: Entity) -> Set[str]:
-        actors = self.actors_in_stage_(entity)
+
+    def get_actor_names_in_stage(self, entity: Entity) -> Set[str]:
+        actors = self.get_actors_in_stage(entity)
         ret: Set[str] = set()
         for actor in actors:
             actor_comp = actor.get(ActorComponent)
@@ -228,33 +226,32 @@ class RPGEntitasContext(Context):
 
     #############################################################################################################################
     # 获取场景内所有的角色的外观信息
-    def appearance_in_stage(self, entity: Entity) -> Dict[str, str]:
+    def get_appearance_in_stage(self, entity: Entity) -> Dict[str, str]:
 
         ret: Dict[str, str] = {}
-        stage_entity = self.safe_get_stage_entity(entity)
-        if stage_entity is None:
-            return ret
-
-        safe_stage_name = self.safe_get_entity_name(stage_entity)
-        actors_int_stage: List[Entity] = self.actors_in_stage(safe_stage_name)
-        for actor in actors_int_stage:
-            if actor.has(AppearanceComponent):
-                actor_comp = actor.get(ActorComponent)
-                appearance_comp = actor.get(AppearanceComponent)
-                ret[actor_comp.name] = str(appearance_comp.appearance)
-            else:
-                logger.error(f"{actor_comp.name}没有AppearanceComponent?!")
+        for actor in self.get_actors_in_stage(entity):
+            if not actor.has(AppearanceComponent):
+                continue
+            
+            appearance_comp = actor.get(AppearanceComponent)
+            ret[appearance_comp.name] = str(appearance_comp.appearance)
 
         return ret
 
     #############################################################################################################################
     def get_entity_by_guid(self, guid: int) -> Optional[Entity]:
-        entities = self.get_group(Matcher(GUIDComponent)).entities
-        for entity in entities:
+
+        for entity in self.get_group(Matcher(GUIDComponent)).entities:
             guid_comp = entity.get(GUIDComponent)
-            if guid_comp.GUID == guid:
+            if cast(int, guid_comp.GUID) == guid:
                 return entity
+            
         return None
+    
+
+    #############################################################################################################################
+
+
 
 
 #############################################################################################################################

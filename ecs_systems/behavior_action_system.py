@@ -113,7 +113,7 @@ class BehaviorActionSystem(ReactiveProcessor):
             return set({current_stage_name})
 
         ret: Set[str] = set()
-        actor_names = self._context.actor_names_in_stage(current_stage_entity)
+        actor_names = self._context.get_actor_names_in_stage(current_stage_entity)
         for actor_name in actor_names:
             if actor_name in sentence:
                 ret.add(actor_name)

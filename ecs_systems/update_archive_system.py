@@ -235,7 +235,7 @@ class UpdateArchiveSystem(ExecuteProcessor):
         )
 
         # 更新文件，只更新场景内我能看见的人
-        appearance_data = self._context.appearance_in_stage(actor_entity)
+        appearance_data = self._context.get_appearance_in_stage(actor_entity)
         for name in actor_archives:
             appearance = appearance_data.get(name, "")
             if appearance != "":

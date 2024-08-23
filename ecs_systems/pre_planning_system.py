@@ -84,7 +84,7 @@ class PrePlanningSystem(InitializeProcessor, ExecuteProcessor):
         stage_comp = stage_entity.get(StageComponent)
 
         ###player所在场景的actors可以规划
-        actor_entities = context.actors_in_stage(stage_comp.name)
+        actor_entities = context._get_actors_in_stage(stage_comp.name)
         if len(actor_entities) == 0:
             return
 
@@ -106,7 +106,7 @@ class PrePlanningSystem(InitializeProcessor, ExecuteProcessor):
         stage_entities = context.get_group(Matcher(StageComponent)).entities
         for stage_entity in stage_entities:
             stage_comp = stage_entity.get(StageComponent)
-            actors_in_stage = context.actors_in_stage(stage_comp.name)
+            actors_in_stage = context._get_actors_in_stage(stage_comp.name)
             if len(actors_in_stage) == 0:
                 continue
             if not stage_entity.has(AutoPlanningComponent):

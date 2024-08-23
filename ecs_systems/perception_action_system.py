@@ -38,7 +38,7 @@ class PerceptionActionHelper:
     def perception_actors_in_stage(
         self, entity: Entity, stageentity: Entity
     ) -> Dict[str, str]:
-        all: Dict[str, str] = self._context.appearance_in_stage(entity)
+        all: Dict[str, str] = self._context.get_appearance_in_stage(entity)
         safe_name = self._context.safe_get_entity_name(entity)
         all.pop(safe_name, None)  # 删除自己，自己是不必要的。
         assert all.get(safe_name) is None

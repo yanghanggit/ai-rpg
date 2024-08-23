@@ -218,7 +218,7 @@ class GoToActionSystem(ReactiveProcessor):
     ###############################################################################################################################################
     def on_enter_target_stage(self, helper: GoToActionHelper) -> None:
         actor_comp = helper._entity.get(ActorComponent)
-        actor_entities = self._context.actors_in_stage(actor_comp.current_stage)
+        actor_entities = self._context._get_actors_in_stage(actor_comp.current_stage)
         for actor_entity in actor_entities:
             if not actor_entity.has(PerceptionAction):
                 # 进入新的场景之后，进入者与场景内所有人都加一次感知，这里会自动检查外观信息

@@ -30,9 +30,9 @@ PerceptionAction = namedtuple("PerceptionAction", "name action_name values")
 CheckStatusAction = namedtuple("CheckStatusAction", "name action_name values")
 #
 BehaviorAction = namedtuple("BehaviorAction", "name action_name values")
-TargetAction = namedtuple("TargetAction", "name action_name values")
+SkillTargetAction = namedtuple("SkillTargetAction", "name action_name values")
 SkillAction = namedtuple("SkillAction", "name action_name values")
-PropAction = namedtuple("PropAction", "name action_name values")
+SkillPropAction = namedtuple("SkillPropAction", "name action_name values")
 
 
 # 更新外观
@@ -66,9 +66,9 @@ ACTOR_AVAILABLE_ACTIONS_REGISTER = [
     GivePropAction,
     CheckStatusAction,
     BehaviorAction,
-    TargetAction,
+    SkillTargetAction,
     SkillAction,
-    PropAction,
+    SkillPropAction,
     UpdateAppearanceAction,
     DamageAction,
 ]
@@ -82,9 +82,9 @@ ACTOR_INTERACTIVE_ACTIONS_REGISTER = [
     GivePropAction,
     CheckStatusAction,
     BehaviorAction,
-    TargetAction,
+    SkillTargetAction,
     SkillAction,
-    PropAction,
+    SkillPropAction,
     UpdateAppearanceAction,
     DamageAction,
 ]

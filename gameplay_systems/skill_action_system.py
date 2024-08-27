@@ -1,9 +1,9 @@
 from entitas import Matcher, ReactiveProcessor, GroupEvent, Entity  # type: ignore
 from gameplay_systems.action_components import (
     BehaviorAction,
-    TargetAction,
+    SkillTargetAction,
     SkillAction,
-    PropAction,
+    SkillPropAction,
     TagAction,
     BroadcastAction,
     DamageAction,
@@ -59,7 +59,7 @@ class SkillActionSystem(ReactiveProcessor):
     def filter(self, entity: Entity) -> bool:
         return (
             entity.has(SkillAction)
-            and entity.has(TargetAction)
+            and entity.has(SkillTargetAction)
             and entity.has(BehaviorAction)
         )
 
@@ -72,7 +72,7 @@ class SkillActionSystem(ReactiveProcessor):
     ######################################################################################################################################################
     def handle(self, entity: Entity) -> None:
 
-        assert entity.has(SkillAction) and entity.has(TargetAction)
+        assert entity.has(SkillAction) and entity.has(SkillTargetAction)
 
         # 没有世界系统就是错误
         world_entity = self._context.get_world_entity(self._world_system_name)
@@ -236,9 +236,9 @@ class SkillActionSystem(ReactiveProcessor):
 
     ######################################################################################################################################################
     def get_targets(self, entity: Entity) -> Set[Entity]:
-        assert entity.has(TargetAction)
+        assert entity.has(SkillTargetAction)
         targets = set()
-        for target_name in entity.get(TargetAction).values:
+        for target_name in entity.get(SkillTargetAction).values:
             target = self._context.get_entity_by_name(target_name)
             if target is not None:
                 targets.add(target)
@@ -317,7 +317,7 @@ class SkillActionSystem(ReactiveProcessor):
 
     ######################################################################################################################################################
     def get_skill_files(self, entity: Entity) -> List[PropFile]:
-        assert entity.has(SkillAction) and entity.has(TargetAction)
+        assert entity.has(SkillAction) and entity.has(SkillTargetAction)
 
         ret: List[PropFile] = []
 
@@ -344,11 +344,11 @@ class SkillActionSystem(ReactiveProcessor):
 
     ######################################################################################################################################################
     def get_prop_files(self, entity: Entity) -> List[PropFile]:
-        if not entity.has(PropAction):
+        if not entity.has(SkillPropAction):
             return []
 
         safe_name = self._context.safe_get_entity_name(entity)
-        prop_action = entity.get(PropAction)
+        prop_action = entity.get(SkillPropAction)
         ret: List[PropFile] = []
         for prop_name in prop_action.values:
             prop_file = self._context._file_system.get_file(

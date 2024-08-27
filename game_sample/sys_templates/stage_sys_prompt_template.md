@@ -21,6 +21,7 @@
 ### 请根据下面的示例, 确保你的输出严格遵守相应的结构。
 {{
   "TagAction":["与你相关的特征标签",...],
+  "BroadcastAction":["要公开说的内容"],
   "WhisperAction":["@角色名字>你想私下说的内容",...],
   "StageNarrateAction":["场景描述"]
 }}

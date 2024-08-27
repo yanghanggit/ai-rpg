@@ -123,7 +123,7 @@ class UpdateClientMessageSystem(ExecuteProcessor):
                     targetname, message
                 )
                 player_proxy.add_actor_message(
-                    whisper_action_action.name, f"""<%client-show%>{mm}"""
+                    whisper_action_action.name, f"""<%client-show%><低语道>{mm}"""
                 )
 
     ############################################################################################################
@@ -146,7 +146,8 @@ class UpdateClientMessageSystem(ExecuteProcessor):
             broadcast_action = entity.get(BroadcastAction)
             single_val = " ".join(broadcast_action.values)
             player_proxy.add_actor_message(
-                broadcast_action.name, f"""<%client-show%><@all>{single_val}"""
+                broadcast_action.name,
+                f"""<%client-show%><对场景内所有角色说道>{single_val}""",
             )
 
     ############################################################################################################
@@ -185,7 +186,7 @@ class UpdateClientMessageSystem(ExecuteProcessor):
                     targetname, message
                 )
                 player_proxy.add_actor_message(
-                    speak_action.name, f"""<%client-show%>{mm}"""
+                    speak_action.name, f"""<%client-show%><说道>{mm}"""
                 )
 
     ############################################################################################################

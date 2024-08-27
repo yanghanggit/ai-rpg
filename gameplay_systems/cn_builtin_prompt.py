@@ -10,7 +10,6 @@ from gameplay_systems.action_components import (
     BroadcastAction,
     SpeakAction,
     WhisperAction,
-    FeedbackAction,
 )
 import json
 from gameplay_systems.cn_constant_prompt import _CNConstantPrompt_ as ConstantPrompt
@@ -308,14 +307,14 @@ def make_search_prop_action_success_prompt(
 
 ################################################################################################################################################
 def make_enter_stage_prompt1(actor_name: str, target_stage_name: str) -> str:
-    return f"# {actor_name}进入了场景——{target_stage_name}。"
+    return f"# {actor_name}进入了场景 {target_stage_name}。"
 
 
 ################################################################################################################################################
 def make_enter_stage_prompt2(
     actor_name: str, target_stage_name: str, last_stage_name: str
 ) -> str:
-    return f"# {actor_name}离开了{last_stage_name}, 进入了{target_stage_name}。"
+    return f"# {actor_name} 离开了 {last_stage_name}, 进入了{target_stage_name}。"
 
 
 ################################################################################################################################################
@@ -388,9 +387,9 @@ def go_to_stage_failed_because_stage_is_invalid_prompt(
 
 ################################################################################################################################################
 def go_to_stage_failed_because_already_in_stage_prompt(
-    actor_name: str, stagename: str
+    actor_name: str, stage_name: str
 ) -> str:
-    return f"你已经在{stagename}场景中。需要重新考虑去往的目的地"
+    return f"你已经在 {stage_name} 场景中。需要重新考虑去往的目的地"
 
 
 ################################################################################################################################################
@@ -419,20 +418,20 @@ def update_stage_archive_prompt(actor_name: str, stage_archives: Set[str]) -> st
 
 
 ################################################################################################################################################
-# def kill_prompt(attacker_name: str, target_name: str) -> str:
-#     return f"# {attacker_name}对{target_name}发动了一次攻击,造成了{target_name}死亡。"
+def make_kill_prompt(actor_name: str, target_name: str) -> str:
+    return f"# {actor_name}对{target_name}发动了一次攻击,造成了{target_name}死亡。"
 
 
 ################################################################################################################################################
-# def attack_prompt(
-#     attacker_name: str,
-#     target_name: str,
-#     damage: int,
-#     target_current_hp: int,
-#     target_max_hp: int,
-# ) -> str:
-#     health_percent = max(0, (target_current_hp - damage) / target_max_hp * 100)
-#     return f"# {attacker_name}对{target_name}发动了攻击,造成了{damage}点伤害,当前{target_name}的生命值剩余{health_percent}%。"
+def make_damage_event_prompt(
+    actor_name: str,
+    target_name: str,
+    damage: int,
+    target_current_hp: int,
+    target_max_hp: int,
+) -> str:
+    health_percent = max(0, (target_current_hp - damage) / target_max_hp * 100)
+    return f"# {actor_name}对{target_name}发动了攻击,造成了{damage}点伤害,当前{target_name}的生命值剩余{health_percent}%。"
 
 
 ################################################################################################################################################
@@ -700,7 +699,7 @@ def make_player_conversation_check_prompt(
 
 def make_world_reasoning_release_skill_prompt(
     actor_name: str,
-    appearance: str,
+    actor_info: str,
     skill_files: List[PropFile],
     prop_files: List[PropFile],
 ) -> str:
@@ -722,25 +721,19 @@ def make_world_reasoning_release_skill_prompt(
     prompt = f"""# {actor_name} 准备使用技能，请你做出判断并推理结果。
 
 ## {actor_name} 信息
-{appearance}
+{actor_info}
         
 ## 施放技能
 {"\n".join(skill_prompt)}
 
-## 配置的道具
+## 配置的道具(例如: 触媒，消耗品，强化等，武器或者衣服)
 {"\n".join(prop_prompt)}
 
-## 配置道具 的说明
-- 在释放技能中，配置了道具来使用。例如: 触媒，消耗品，强化等，武器或者衣服。
-- 有些道具，可能是释放技能所必须的。例如某些技能需要消耗品，或者需要特定的武器。
-- 有些道具，释放技能的辅助，例如提高技能的效果，或者减少技能的消耗。不是必须的。
-- 请酌情判断！
-
 ## 判断步骤
-步骤1: 结合: {actor_name} 信息与施放技能。如果 {actor_name} 信息 不满足技能释放的条件，则技能释放失败。
-步骤2: 检查 施放技能 是否对 配置的道具的道具有明确的需求。如果有需求，但是 配置的道具不满足技能释放的条件，则技能释放失败。
-步骤3: 在 配置的道具 中如果没有对技能释放有帮助的信息，可以忽略。
-步骤4: 如果没有 配置的道具，而且没有被 步骤2 否决。则按着技能在 不配置任何道具下，直接释放。
+步骤1: 如果 {actor_name} 自身不满足技能释放的条件，则技能释放失败。
+步骤2: 如果 施放技能 对配置的道具有 明确的需求（例如某些技能需要消耗品，或者需要特定的武器），如果道具不满足，则技能释放失败。
+步骤3: 如果 施放技能 对配置的道具无需求（或者不依赖任何道具），则技能释放成功。
+步骤4: 如果有 配置的道具。则按着技能在道具辅助下释放技能。例如提高技能的效果，或者减少技能的消耗。不是必须的，所以放到最后来判断。
 
 ## 输出格式指南
 
@@ -772,7 +765,7 @@ def make_world_reasoning_release_skill_prompt(
 ################################################################################################################################################
 
 
-def make_reasoning_skill_target_feedback_prompt(
+def make_reasoning_skill_target_reasoning_prompt(
     actor_name: str,
     target_name: str,
     reasoning_sentence: str,
@@ -793,7 +786,8 @@ def make_reasoning_skill_target_feedback_prompt(
 
 ## 输出要求:
 - 请遵循 输出格式指南。
-- 返回结果仅带如下2个键: {FeedbackAction.__name__} 和 {TagAction.__name__}。
+- 返回结果仅带如下2个键: {BroadcastAction.__name__} 和 {TagAction.__name__}。
+- {BroadcastAction.__name__} 的内容格式要求为: "{target_name}对技能的反馈与更新后的状态描述"。
 """
 
     return prompt
@@ -880,7 +874,12 @@ def make_world_skill_system_reasoning_result_is_failure_prompt(
 ################################################################################################################################################
 
 
-def make_notify_skill_event_prompt(actor_name: str, behavior_sentence: str) -> str:
-    return f"""# {actor_name} 实施了行动(使用了技能)
-## 行动内容
-{behavior_sentence}"""
+def make_notify_release_skill_event_prompt(
+    actor_name: str, target_name: str, reasoning_sentence: str
+) -> str:
+
+    prompt = f"""# {actor_name} 向 {target_name} 发动技能。
+## 事件描述
+{reasoning_sentence}
+"""
+    return prompt

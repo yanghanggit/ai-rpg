@@ -4,14 +4,16 @@ from loguru import logger
 
 #################################################################################################################################
 # 我方定义的规则字符串
-def parse_target_and_message(content: str) -> tuple[Optional[str], Optional[str]]:
+def parse_target_and_message(
+    content: str, symbol1: str = "@", symbol2: str = ">"
+) -> tuple[Optional[str], Optional[str]]:
     # 检查是否包含'@'和'>'符号
-    if "@" not in content or ">" not in content:
+    if symbol1 not in content or symbol2 not in content:
         return None, content
 
     # 检查'@'是否出现在'>'之前
-    at_index = content.find("@")
-    gt_index = content.find(">")
+    at_index = content.find(symbol1)
+    gt_index = content.find(symbol2)
     if at_index > gt_index:
         return None, content
 
@@ -32,15 +34,17 @@ def parse_target_and_message(content: str) -> tuple[Optional[str], Optional[str]
 
 #################################################################################################################################
 # 是否是有效的目标和消息格式
-def is_target_and_message(content: str) -> bool:
-    if "@" not in content or ">" not in content:
+def is_target_and_message(content: str, symbol1: str = "@", symbol2: str = ">") -> bool:
+    if symbol1 not in content or symbol2 not in content:
         return False
     return True
 
 
 #################################################################################################################################
-def make_target_and_message(target: str, message: str) -> str:
-    return f"@{target}>{message}"
+def make_target_and_message(
+    target: str, message: str, symbol1: str = "@", symbol2: str = ">"
+) -> str:
+    return f"{symbol1}{target}{symbol2}{message}"
 
 
 #################################################################################################################################

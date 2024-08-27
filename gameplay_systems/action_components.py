@@ -14,8 +14,6 @@ WhisperAction = namedtuple("WhisperAction", "name action_name values")
 SpeakAction = namedtuple("SpeakAction", "name action_name values")
 # 标签
 TagAction = namedtuple("TagAction", "name action_name values")
-# 攻击
-# AttackAction = namedtuple("AttackAction", "name action_name values")
 # 死亡
 DeadAction = namedtuple("DeadAction", "name action_name values")
 # 离开当前场景并去往
@@ -26,8 +24,6 @@ SearchPropAction = namedtuple("SearchPropAction", "name action_name values")
 StealPropAction = namedtuple("StealPropAction", "name action_name values")
 # 将道具交给目标角色
 GivePropAction = namedtuple("GivePropAction", "name action_name values")
-# 使用道具
-# UsePropAction = namedtuple("UsePropAction", "name action_name values")
 # 感知场景内的信息（角色与道具）
 PerceptionAction = namedtuple("PerceptionAction", "name action_name values")
 # 检查自身状态
@@ -38,24 +34,26 @@ TargetAction = namedtuple("TargetAction", "name action_name values")
 SkillAction = namedtuple("SkillAction", "name action_name values")
 PropAction = namedtuple("PropAction", "name action_name values")
 
+
+# 更新外观
 UpdateAppearanceAction = namedtuple("UpdateAppearanceAction", "name action_name values")
-FeedbackAction = namedtuple("FeedbackAction", "name action_name values")
+
+# 处理伤害逻辑
+DamageAction = namedtuple("DamageAction", "name action_name values")
 ##############################################################################################################################################
 
 
 # 场景可以用的所有动作
 STAGE_AVAILABLE_ACTIONS_REGISTER = [
-    # AttackAction,
     TagAction,
     MindVoiceAction,
     WhisperAction,
     StageNarrateAction,
-    FeedbackAction,
+    DamageAction,
 ]
 
 # 角色可以用的所有动作
 ACTOR_AVAILABLE_ACTIONS_REGISTER = [
-    # AttackAction,
     GoToAction,
     SpeakAction,
     TagAction,
@@ -67,13 +65,12 @@ ACTOR_AVAILABLE_ACTIONS_REGISTER = [
     StealPropAction,
     GivePropAction,
     CheckStatusAction,
-    # UsePropAction,
     BehaviorAction,
     TargetAction,
     SkillAction,
     PropAction,
     UpdateAppearanceAction,
-    FeedbackAction,
+    DamageAction,
 ]
 
 # 角色交互类动作
@@ -84,11 +81,10 @@ ACTOR_INTERACTIVE_ACTIONS_REGISTER = [
     StealPropAction,
     GivePropAction,
     CheckStatusAction,
-    # UsePropAction,
     BehaviorAction,
     TargetAction,
     SkillAction,
     PropAction,
     UpdateAppearanceAction,
-    FeedbackAction,
+    DamageAction,
 ]

@@ -4,9 +4,7 @@ from loguru import logger
 from gameplay_systems.action_components import (
     BroadcastAction,
     SpeakAction,
-    # AttackAction,
     GoToAction,
-    # UsePropAction,
     WhisperAction,
     SearchPropAction,
     PerceptionAction,
@@ -16,7 +14,6 @@ from gameplay_systems.action_components import (
     BehaviorAction,
 )
 from gameplay_systems.components import (
-    StageComponent,
     ActorComponent,
     PlayerComponent,
     PlayerIsWebClientComponent,

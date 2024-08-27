@@ -78,7 +78,7 @@ class KickOffSystem(InitializeProcessor, ExecuteProcessor):
 
         self.on_response(self._tasks)
         self.clear_tasks()  # 这句必须得走.
-        self.add_actions()
+        self.on_add_update_appearance_action()
 
     ######################################################################################################################################################
     def create_world_system_tasks(self) -> Dict[str, LangServeAgentRequestTask]:
@@ -245,7 +245,7 @@ class KickOffSystem(InitializeProcessor, ExecuteProcessor):
                 )
 
     ######################################################################################################################################################
-    def add_actions(self) -> None:
+    def on_add_update_appearance_action(self) -> None:
 
         ## 第一次强制更新外观
         actor_entities = self._context.get_group(

@@ -21,16 +21,21 @@ def make_kick_off_actor_prompt(
 ) -> str:
 
     prompt = f"""# <%这是角色初始化> 游戏世界即将开始运行。这是你的初始设定，你将以此为起点进行游戏
+
 ## 游戏介绍
 {about_game}
-## 游戏运行回合
+
+## 当前游戏运行回合
 当前回合: {game_round}
+
 ## 初始设定
-{kick_off_message}。
-## 请结合你的角色设定,更新你的状态。
+{kick_off_message}
+
+## 请结合你的角色设定,更新你的状态!
+
 ## 输出要求:
 - 请遵循 输出格式指南。
-- 返回结果 只 带如下的2个键: {MindVoiceAction.__name__}, {TagAction.__name__}"""
+- 返回结果只带如下的键: {MindVoiceAction.__name__}, {TagAction.__name__}。"""
 
     return prompt
 
@@ -44,7 +49,6 @@ def make_kick_off_stage_prompt(
     game_round: int,
 ) -> str:
 
-    ## 场景内道具
     props_prompt = ""
     if len(stage_prop_files) > 0:
         for prop_file in stage_prop_files:
@@ -61,31 +65,37 @@ def make_kick_off_stage_prompt(
         actors_prompt = "- 无任何角色。"
 
     prompt = f"""# <%这是场景初始化> 游戏世界即将开始运行。这是你的初始设定，你将以此为起点进行游戏
+
 ## 游戏介绍
 {about_game}
-## 初始设定
-{kick_off_message}。
+
+## 当前游戏运行回合
+当前回合: {game_round}
+
 ## 场景内道具
 {props_prompt}
+
 ## 场景内角色
 {actors_prompt}
-## 游戏运行回合
-当前回合: {game_round}
+
+## 初始设定
+{kick_off_message}
+
 ## 输出要求:
 - 请遵循 输出格式指南。
-- 返回结果不要提及任何场景内角色与道具。
-- 返回结果仅带如下2个键: {StageNarrateAction.__name__} 和 {TagAction.__name__}。"""
+- 返回结果，仅带如下的键: {StageNarrateAction.__name__} 和 {TagAction.__name__}。"""
     return prompt
 
 
 ###############################################################################################################################################
 def make_kick_off_world_system_prompt(about_game: str, game_round: int) -> str:
-    prompt = f"""# <%这是世界系统初始化> 游戏世界即将开始运行，请简要回答你的职能与描述。
+    prompt = f"""# <%这是世界系统初始化> 游戏世界即将开始运行，请简要回答你的职能与描述
+
 ## 游戏介绍
 {about_game}
-## 游戏运行回合
-当前回合: {game_round}
-"""
+
+## 当前游戏运行回合
+当前回合: {game_round}"""
     return prompt
 
 
@@ -114,15 +124,19 @@ def make_actor_plan_prompt(
         or "## 目前你不能去往任何场景"
     )
 
-    prompt = f"""# {ConstantPrompt.ACTOR_PLAN_PROMPT_TAG} 请做出你的计划，决定你将要做什么。
+    prompt = f"""# {ConstantPrompt.ACTOR_PLAN_PROMPT_TAG} 请做出你的计划，决定你将要做什么
+
+## 当前游戏运行回合
+当前回合: {game_round}
+
 ## 你当前所在的场景为: {current_stage_name_prompt}
 {current_stage_enviro_narrate_prompt}
+
 {stages_you_can_go_prompt}
-## 游戏运行回合
-当前回合: {game_round}
+
 ## 要求:
 - 请遵循 输出格式指南。
-- 结果中要附带{TagAction.__name__}。"""
+- 结果中要附带 {TagAction.__name__}。"""
     return prompt
 
 
@@ -148,19 +162,22 @@ def make_stage_plan_prompt(
         actors_prompt = "- 无任何角色。"
 
     prompt = f"""# {ConstantPrompt.STAGE_PLAN_PROMPT_TAG} 请输出'场景描述'和'你的计划'
-## 场景内道具:
+
+## 当前游戏运行回合
+当前回合: {game_round}
+
+## 场景内道具
 {props_prompt}
+
 ## 场景内角色:
 {actors_prompt}
-## 游戏运行回合
-当前回合: {game_round}
+
 ## 关于’你的计划‘内容生成规则
 - 根据你作为场景受到了什么事件的影响，你可以制定计划，并决定下一步将要做什么。可根据 输出格式指南 选择相应的行动。
+
 ## 输出要求:
 - 请遵循 输出格式指南。
-- 返回结果不要提及任何场景内角色与道具。
-- 必须包含 {StageNarrateAction.__name__} 和 {TagAction.__name__}。
-"""
+- 必须包含 {StageNarrateAction.__name__} 和 {TagAction.__name__}。"""
 
     return prompt
 
@@ -190,7 +207,7 @@ def make_perception_action_prompt(
     final_prompt = f"""# {ConstantPrompt.PERCEPTION_ACTION_TAG} {who} 在 {current_stage} 中执行感知行动({PerceptionAction.__name__})，结果如下:
 ## 场景内角色:
 {prompt_of_actor}
-## 场景内道具:
+## 场景内道具
 {prompt_of_props}"""
     return final_prompt
 
@@ -433,48 +450,6 @@ def make_damage_event_prompt(
     health_percent = max(0, (target_current_hp - damage) / target_max_hp * 100)
     return f"# {actor_name}对{target_name}发动了攻击,造成了{damage}点伤害,当前{target_name}的生命值剩余{health_percent}%。"
 
-
-################################################################################################################################################
-# def batch_conversation_action_events_in_stage_prompt(
-#     stage_name: str, events: List[str]
-# ) -> str:
-
-#     batch: List[str] = []
-#     if len(events) == 0:
-#         batch.append(
-#             f""" # {_CNConstantPrompt_.BATCH_CONVERSATION_ACTION_EVENTS_TAG} 当前场景 {stage_name} 没有发生任何对话类型事件。"""
-#         )
-#     else:
-#         batch.append(
-#             f""" # {_CNConstantPrompt_.BATCH_CONVERSATION_ACTION_EVENTS_TAG} 当前场景 {stage_name} 发生了如下对话类型事件:"""
-#         )
-
-#     for event in events:
-#         batch.append(event)
-
-#     prompt = json.dumps(batch, ensure_ascii=False)
-#     return prompt
-
-
-################################################################################################################################################
-# def use_prop_to_stage_prompt(
-#     actor_name: str, prop_name: str, prop_prompt: str, exit_cond_status_prompt: str
-# ) -> str:
-
-#     ret_prompt = f"""# {_CNConstantPrompt_.USE_PROP_TO_STAGE_PROMPT_TAG} {actor_name} 使用道具 {prop_name} 对你造成影响。
-# ## {prop_name}
-# {prop_prompt}
-
-# ## 状态更新规则
-# {exit_cond_status_prompt}
-
-# ## 输出格式要求
-# - 请遵循 输出格式指南。
-# - 必须包含 {StageNarrateAction.__name__} 和 {TagAction.__name__}。
-# """
-#     return ret_prompt
-
-
 ################################################################################################################################################
 def stage_exit_conditions_check_prompt(
     actor_name: str,
@@ -680,11 +655,11 @@ def make_player_conversation_check_prompt(
 
     prompt = f"""# 玩家输入了如下对话类型事件，请你检查
 
-## {BroadcastAction.__name__}:广播事件,公开说话内容
+## {BroadcastAction.__name__}
 {broadcast_prompt}
-## {SpeakAction.__name__}:说话事件,对某角色说,场景其他角色可以听见
+## {SpeakAction.__name__}
 {speak_content_prompt}
-## {WhisperAction.__name__}:私语事件,只有目标角色可以听见
+## {WhisperAction.__name__}
 {whisper_content_prompt}
 ## 检查规则
 - 对话内容是否违反政策。

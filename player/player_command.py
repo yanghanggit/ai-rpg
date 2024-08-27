@@ -54,8 +54,11 @@ class PlayerCommand(ABC):
 
     # 为了方便，直接在这里添加消息，不然每个子类都要写一遍
     # player 控制的actor本质和其他actor没有什么不同，这里模拟一个plan的动作。因为每一个actor都是plan -> acton -> direction(同步上下文) -> 再次plan的循环
-    def add_human_message(self, entity: Entity, human_message_content: str) -> None:
-        self._rpggame._entitas_context.safe_add_human_message_to_entity(
+    def simu_player_planning_input_message(self, entity: Entity, human_message_content: str) -> None:
+        # self._rpggame._entitas_context.safe_add_human_message_to_entity(
+        #     entity, human_message_content
+        # )
+        self._rpggame._entitas_context.safe_add_ai_message_to_entity(
             entity, human_message_content
         )
 
@@ -215,7 +218,7 @@ class PlayerGoTo(PlayerCommand):
 
         # 模拟添加一个plan的发起。
         human_message = f"""{{"{GoToAction.__name__}": ["{target_stage_name}"]}}"""
-        self.add_human_message(player_entity, human_message)
+        self.simu_player_planning_input_message(player_entity, human_message)
 
 
 ####################################################################################################################################
@@ -256,7 +259,7 @@ class PlayerBroadcast(PlayerCommand):
         human_message = (
             f"""{{"{BroadcastAction.__name__}": ["{self._broadcast_content}"]}}"""
         )
-        self.add_human_message(player_entity, human_message)
+        self.simu_player_planning_input_message(player_entity, human_message)
 
 
 ####################################################################################################################################
@@ -292,7 +295,7 @@ class PlayerSpeak(PlayerCommand):
 
         # 模拟添加一个plan的发起。
         human_message = f"""{{"{SpeakAction.__name__}": ["{self._speak_content}"]}}"""
-        self.add_human_message(player_entity, human_message)
+        self.simu_player_planning_input_message(player_entity, human_message)
 
 
 ####################################################################################################################################
@@ -333,7 +336,7 @@ class PlayerWhisper(PlayerCommand):
         human_message = (
             f"""{{"{WhisperAction.__name__}": ["{self._whisper_content}"]}}"""
         )
-        self.add_human_message(player_entity, human_message)
+        self.simu_player_planning_input_message(player_entity, human_message)
 
 
 ####################################################################################################################################
@@ -368,7 +371,7 @@ class PlayerSearchProp(PlayerCommand):
 
         # 模拟添加一个plan的发起。
         human_message = f"""{{"{SearchPropAction.__name__}": ["{self._prop_name}"]}}"""
-        self.add_human_message(player_entity, human_message)
+        self.simu_player_planning_input_message(player_entity, human_message)
 
 
 ####################################################################################################################################
@@ -401,7 +404,7 @@ class PlayerPerception(PlayerCommand):
         human_message = (
             f"""{{"{PerceptionAction.__name__}": ["{actor_comp.current_stage}"]}}"""
         )
-        self.add_human_message(player_entity, human_message)
+        self.simu_player_planning_input_message(player_entity, human_message)
 
 
 ####################################################################################################################################
@@ -440,7 +443,7 @@ class PlayerSteal(PlayerCommand):
 
         # 模拟添加一个plan的发起。
         human_message = f"""{{"{StealPropAction.__name__}": ["{self._target_and_message_format_string}"]}}"""
-        self.add_human_message(player_entity, human_message)
+        self.simu_player_planning_input_message(player_entity, human_message)
 
 
 ####################################################################################################################################
@@ -479,7 +482,7 @@ class PlayerGiveProp(PlayerCommand):
 
         # 模拟添加一个plan的发起。
         human_message = f"""{{"{GivePropAction.__name__}": ["{self._target_and_message_format_string}"]}}"""
-        self.add_human_message(player_entity, human_message)
+        self.simu_player_planning_input_message(player_entity, human_message)
 
 
 ####################################################################################################################################
@@ -516,7 +519,7 @@ class PlayerCheckStatus(PlayerCommand):
 
         # 模拟添加一个plan的发起。
         human_message = f"""{{"{CheckStatusAction.__name__}": ["{actor_comp.name}"]}}"""
-        self.add_human_message(player_entity, human_message)
+        self.simu_player_planning_input_message(player_entity, human_message)
 
 
 ####################################################################################################################################
@@ -589,7 +592,7 @@ class PlayerBehavior(PlayerCommand):
         )
 
         human_message = f"""{{"{BehaviorAction.__name__}": ["{self._sentence}"]}}"""
-        self.add_human_message(player_entity, human_message)
+        self.simu_player_planning_input_message(player_entity, human_message)
 
 
 ####################################################################################################################################

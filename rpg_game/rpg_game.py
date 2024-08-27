@@ -516,7 +516,6 @@ class RPGGame(BaseGame):
 
     ###############################################################################################################################################
     def single_player(self) -> str:
-        assert len(self._player_names) == 1
         if len(self._player_names) == 0:
             return ""
         return self._player_names[0]

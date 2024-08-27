@@ -19,7 +19,7 @@ class TerminalPlayerInputSystem(ExecuteProcessor):
     ############################################################################################################
     @override
     def execute(self) -> None:
-        assert len(self._rpggame.player_names) > 0
+        # assert len(self._rpggame.player_names) > 0
         assert isinstance(self._rpggame, WebServerMultiplayersRPGGame) or isinstance(
             self._rpggame, TerminalRPGGame
         )

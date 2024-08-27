@@ -30,7 +30,7 @@ def make_kick_off_actor_prompt(
 ## 请结合你的角色设定,更新你的状态。
 ## 输出要求:
 - 请遵循 输出格式指南。
-- 返回结果 只 带如下的4个键: {MindVoiceAction.__name__}, {TagAction.__name__}, {PerceptionAction.__name__} 和 {CheckStatusAction.__name__}"""
+- 返回结果 只 带如下的2个键: {MindVoiceAction.__name__}, {TagAction.__name__}"""
 
     return prompt
 

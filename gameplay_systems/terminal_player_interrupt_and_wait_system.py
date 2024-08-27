@@ -22,16 +22,22 @@ class TerminalPlayerInterruptAndWaitSystem(ExecuteProcessor):
             return
 
         single_player = self._rpg_game.single_player()
-        player_proxy = player.utils.get_player_proxy(single_player)
-        player_entity = self._context.get_player_entity(single_player)
-        if player_entity is None or player_proxy is None:
-            return
+        if single_player != "":
+            player_proxy = player.utils.get_player_proxy(single_player)
+            player_entity = self._context.get_player_entity(single_player)
+            if player_entity is None or player_proxy is None:
+                return
 
-        self.display_client_messages(player_proxy, 20)
-        while True:
-            # 测试的客户端反馈
-            input(f"[{single_player}]:当前为中断等待，请任意键继续")
-            break
+            self.display_client_messages(player_proxy, 20)
+            while True:
+                # 测试的客户端反馈
+                input(f"[{single_player}]:当前为中断等待，请任意键继续")
+                break
+        else:
+            while True:
+                # 测试的客户端反馈
+                input(f"目前无任何玩家角色仅有NPC:当前为中断等待，请任意键继续")
+                break
 
     ############################################################################################################
     def display_client_messages(

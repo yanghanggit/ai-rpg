@@ -23,14 +23,14 @@ class PerceptionActionHelper:
 
     ###################################################################################################################
     def perception(self, entity: Entity) -> None:
-        safestage = self._context.safe_get_stage_entity(entity)
-        if safestage is None:
+        stage_entity = self._context.safe_get_stage_entity(entity)
+        if stage_entity is None:
             logger.error(
                 f"PerceptionActionHelper: {self._context.safe_get_entity_name(entity)} can't find the stage"
             )
             return
-        self._actors_in_stage = self.perception_actors_in_stage(entity, safestage)
-        self._props_in_stage = self.perception_props_in_stage(entity, safestage)
+        self._actors_in_stage = self.perception_actors_in_stage(entity, stage_entity)
+        self._props_in_stage = self.perception_props_in_stage(entity, stage_entity)
 
     ###################################################################################################################
     def perception_actors_in_stage(

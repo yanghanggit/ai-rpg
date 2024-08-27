@@ -12,10 +12,10 @@ async def main(input_actor_name_as_default: str) -> None:
 
     # 读取世界资源文件
     game_name = input(
-        "请输入要进入的世界名称(必须与自动化创建的名字一致), 默认为 World1"
+        "请输入要进入的世界名称(必须与自动化创建的名字一致), 默认为 World2"
     )
     if game_name == "":
-        game_name = "World1"
+        game_name = "World2"
 
     rpg_game = create_rpg_game(game_name, "qwe", RPGGameClientType.TERMINAL)
     if rpg_game is None:
@@ -29,22 +29,25 @@ async def main(input_actor_name_as_default: str) -> None:
         final_player_actor_name = input_actor_name_as_default
 
     player_actor = rpg_game._entitas_context.get_actor_entity(final_player_actor_name)
-    if player_actor is None:
+    if player_actor is not None:
+        player_name_as_terminal_name = "北京柏林互动科技有限公司"
+
+        logger.info(f"玩家名字（做为terminal name）:{player_name_as_terminal_name}")
+        player_proxy = player.utils.create_player_proxy(player_name_as_terminal_name)
+        assert player_proxy is not None
+        # 这个必须调用
+        rpg_game.add_player(player_name_as_terminal_name)
+        #
+        login_command = PlayerLogin(
+            "/terminal_run_login",
+            rpg_game,
+            player_proxy,
+            final_player_actor_name,
+            False,
+        )
+        login_command.execute()
+    else:
         logger.error(f"找不到玩家角色，请检查构建数据:{final_player_actor_name}")
-        return
-
-    player_name_as_terminal_name = "北京柏林互动科技有限公司"
-
-    logger.info(f"玩家名字（做为terminal name）:{player_name_as_terminal_name}")
-    player_proxy = player.utils.create_player_proxy(player_name_as_terminal_name)
-    assert player_proxy is not None
-    # 这个必须调用\
-    rpg_game.add_player(player_name_as_terminal_name)
-    #
-    login_command = PlayerLogin(
-        "/terminal_run_login", rpg_game, player_proxy, final_player_actor_name, False
-    )
-    login_command.execute()
 
     # 核心循环
     while True:

@@ -38,15 +38,15 @@ from gameplay_systems.stage_narrate_action_system import StageNarrateActionSyste
 from gameplay_systems.behavior_action_system import BehaviorActionSystem
 from gameplay_systems.skill_action_system import SkillActionSystem
 from gameplay_systems.damage_action_system import DamageActionSystem
-
-WORLD_APPEARANCE_SYSTEM_NAME = "角色外观生成器"
-WORLD_SKILL_SYSTEM_NAME = "技能系统"
+import rpg_game.rpg_entitas_builtin_world_system as builtin_world_systems
 
 
 class RPGEntitasProcessors(Processors):
 
     @staticmethod
-    def create(rpg_game: Any, context: RPGEntitasContext) -> "RPGEntitasProcessors":
+    def create(
+        input_rpg_game: Any, context: RPGEntitasContext
+    ) -> "RPGEntitasProcessors":
 
         ### 不这样就循环引用
         from gameplay_systems.handle_player_input_system import HandlePlayerInputSystem
@@ -69,7 +69,7 @@ class RPGEntitasProcessors(Processors):
         )
 
         ##
-        rpg_game = cast(RPGGame, rpg_game)
+        input_rpg_game = cast(RPGGame, input_rpg_game)
 
         processors = RPGEntitasProcessors()
 
@@ -78,11 +78,11 @@ class RPGEntitasProcessors(Processors):
 
         # 初始化系统########################
         processors.add(ConnectAgentSystem(context))
-        processors.add(KickOffSystem(context, rpg_game))
+        processors.add(KickOffSystem(context, input_rpg_game))
         #########################################
 
         ### 处理玩家输入!
-        processors.add(HandlePlayerInputSystem(context, rpg_game))
+        processors.add(HandlePlayerInputSystem(context, input_rpg_game))
 
         # 行动逻辑!
         processors.add(
@@ -90,7 +90,9 @@ class RPGEntitasProcessors(Processors):
         )  ######## <在所有行动之前> ##############################################################
 
         processors.add(
-            UpdateAppearanceActionSystem(context, WORLD_APPEARANCE_SYSTEM_NAME)
+            UpdateAppearanceActionSystem(
+                context, builtin_world_systems.WORLD_APPEARANCE_SYSTEM_NAME
+            )
         )  ### 更新外观
 
         # 交流（与说话类）的行为!
@@ -105,23 +107,20 @@ class RPGEntitasProcessors(Processors):
             PostConversationActionSystem(context)
         )  # 所有对话之后，目前是防止用户用对话行为说出不符合政策的话
 
-        # 测试的系统
-        processors.add(BehaviorActionSystem(context))
-        processors.add(SkillActionSystem(context, WORLD_SKILL_SYSTEM_NAME))
-        processors.add(DamageActionSystem(context))
-
         # 战斗类的行为!
-        # processors.add(SimpleRPGPreFightSystem(context))
-        # processors.add(AttackActionSystem(context))
+        processors.add(BehaviorActionSystem(context))
         processors.add(
-            DeadActionSystem(context, rpg_game)
+            SkillActionSystem(context, builtin_world_systems.WORLD_SKILL_SYSTEM_NAME)
+        )
+        processors.add(DamageActionSystem(context))
+        processors.add(
+            DeadActionSystem(context, input_rpg_game)
         )  ## 战斗类行为产生结果可能有死亡，死亡之后，后面的行为都不可以做。
 
         # 交互类的行为（交换数据），在死亡之后，因为死了就不能执行
         processors.add(SearchPropActionSystem(context))
         processors.add(StealActionSystem(context))
         processors.add(GivePropActionSystem(context))
-        # processors.add(UsePropActionSystem(context))
         processors.add(
             CheckStatusActionSystem(context)
         )  # 道具交互类行为之后，可以发起自检
@@ -139,11 +138,8 @@ class RPGEntitasProcessors(Processors):
             PostActionSystem(context)
         )  ####### <在所有行动之后> ##############################################################
 
-        # 行动结束后导演
-        # processors.add(StageDirectorSystem(context))
-
         # 行动结束后更新关系网，因为依赖Director所以必须在后面
-        processors.add(UpdateArchiveSystem(context, rpg_game))
+        processors.add(UpdateArchiveSystem(context, input_rpg_game))
 
         ###最后删除entity与存储数据
         processors.add(DestroySystem(context))
@@ -155,10 +151,10 @@ class RPGEntitasProcessors(Processors):
         processors.add(EndSystem(context))
 
         # 保存系统，在所有系统之后
-        processors.add(SaveSystem(context, rpg_game))
+        processors.add(SaveSystem(context, input_rpg_game))
 
         # 开发专用，网页版本不需要
-        # processors.add(TerminalPlayerInterruptAndWaitSystem(context, rpg_game))
+        processors.add(TerminalPlayerInterruptAndWaitSystem(context, input_rpg_game))
 
         # 规划逻辑
         processors.add(PrePlanningSystem(context))  ######## 在所有规划之前!
@@ -167,11 +163,11 @@ class RPGEntitasProcessors(Processors):
         processors.add(PostPlanningSystem(context))  ####### 在所有规划之后!
 
         ## 第一次抓可以被player看到的信息
-        processors.add(UpdateClientMessageSystem(context, rpg_game))
-        processors.add(TerminalPlayerTipsSystem(context, rpg_game))
+        processors.add(UpdateClientMessageSystem(context, input_rpg_game))
+        processors.add(TerminalPlayerTipsSystem(context, input_rpg_game))
 
         ## 开发专用，网页版本不需要
-        processors.add(TerminalPlayerInputSystem(context, rpg_game))
+        processors.add(TerminalPlayerInputSystem(context, input_rpg_game))
 
         return processors
 

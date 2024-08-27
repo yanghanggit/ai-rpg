@@ -191,6 +191,25 @@ class RPGEntitasContext(Context):
         return True
 
     #############################################################################################################################
+    def safe_add_ai_message_to_entity(
+        self, entity: Entity, message_content: str
+    ) -> bool:
+
+        if message_content == "":
+            logger.error("消息内容为空，无法添加记忆")
+            return False
+
+        name = self.safe_get_entity_name(entity)
+        if name == "":
+            logger.error("实体没有名字，无法添加记忆")
+            return False
+
+        self._langserve_agent_system.add_ai_message_to_chat_history(
+            name, message_content
+        )
+        return True
+
+    #############################################################################################################################
     # 更改场景的标记组件
     def change_stage_tag_component(
         self, entity: Entity, from_stage_name: str, to_stage_name: str

@@ -93,7 +93,7 @@ def main() -> None:
         "输入要创建的World的名字(必须对应excel中的sheet名):"
     )
     if sheet_name_as_game_name == "":
-        sheet_name_as_game_name = "World1"
+        sheet_name_as_game_name = "World2"
         logger.warning(f"使用默认的World名称: {sheet_name_as_game_name}")
 
     game_editor = create_game_editor(

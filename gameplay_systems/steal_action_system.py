@@ -2,11 +2,9 @@ from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity  # type: igno
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from gameplay_systems.action_components import (
     StealPropAction,
-    CheckStatusAction,
     DeadAction,
 )
 from gameplay_systems.components import ActorComponent
-from loguru import logger
 import gameplay_systems.conversation_helper
 from typing import override
 import gameplay_systems.cn_builtin_prompt as builtin_prompt

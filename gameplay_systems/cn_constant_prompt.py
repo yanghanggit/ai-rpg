@@ -1,6 +1,3 @@
-from loguru import logger
-
-
 # 全局的常量，一些Tag类的可以做标记用于后续的提示词压缩
 class CNConstantPrompt:
 

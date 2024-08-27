@@ -10,8 +10,6 @@ from gameplay_systems.action_components import (
     ACTOR_AVAILABLE_ACTIONS_REGISTER,
 )
 from my_agent.agent_plan import AgentPlan
-
-# from my_agent.agent_action import AgentAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from typing import Dict, Set

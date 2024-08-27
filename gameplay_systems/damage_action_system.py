@@ -5,8 +5,7 @@ from gameplay_systems.components import (
     RPGCurrentClothesComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from loguru import logger
-from typing import cast, override, List
+from typing import cast, override
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
 from file_system.files_def import PropFile
 import my_format_string.target_and_message_format_string

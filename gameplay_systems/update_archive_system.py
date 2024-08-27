@@ -23,12 +23,12 @@ class UpdateArchiveHelper:
 
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         ##我的参数
-        self._context = context
+        self._context: RPGEntitasContext = context
         self._stages: Set[str] = set()
         self._actors: Set[str] = set()
         self._chat_history: Dict[str, str] = {}
         self._actor_prop_description: Dict[str, List[str]] = {}
-        self._rpg_game = rpg_game
+        self._rpg_game: RPGGame = rpg_game
 
         self.build()
 

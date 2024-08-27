@@ -1,5 +1,5 @@
-from typing import override
 from entitas import ExecuteProcessor  # type: ignore
+from typing import override
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from player.player_proxy import PlayerProxy

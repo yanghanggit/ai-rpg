@@ -4,9 +4,6 @@ from gameplay_systems.components import StageComponent, ActorComponent
 from gameplay_systems.action_components import PerceptionAction, DeadAction
 from loguru import logger
 from typing import List, Dict, override
-
-# from gameplay_systems.stage_director_component import StageDirectorComponent
-# from gameplay_systems.stage_director_event import IStageDirectorEvent
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
 from file_system.files_def import PropFile
 
@@ -37,7 +34,7 @@ class PerceptionActionHelper:
 
     ###################################################################################################################
     def perception_actors_in_stage(
-        self, entity: Entity, stageentity: Entity
+        self, entity: Entity, stage_entity: Entity
     ) -> Dict[str, str]:
         all: Dict[str, str] = self._context.get_appearance_in_stage(entity)
         safe_name = self._context.safe_get_entity_name(entity)
@@ -55,40 +52,6 @@ class PerceptionActionHelper:
         for prop in prop_files:
             res.append(prop._name)
         return res
-
-
-####################################################################################################################################
-####################################################################################################################################
-####################################################################################################################################
-# class ActorPerceptionEvent(IStageDirectorEvent):
-#     """
-#     感知的结果事件
-#     """
-
-#     def __init__(
-#         self,
-#         who: str,
-#         current_stage_name: str,
-#         actors_in_stage: Dict[str, str],
-#         props_in_stage: List[str],
-#     ) -> None:
-#         self._who: str = who
-#         self._current_stage_name: str = current_stage_name
-#         self._actors_in_stage: Dict[str, str] = actors_in_stage
-#         self._props_in_stage: List[str] = props_in_stage
-
-#     def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
-#         if actor_name != self._who:
-#             return ""  # 不是自己，不显示
-#         return builtin_prompt.make_perception_action_prompt(
-#             self._who,
-#             self._current_stage_name,
-#             self._actors_in_stage,
-#             self._props_in_stage,
-#         )
-
-#     def to_stage(self, stagename: str, extended_context: RPGEntitasContext) -> str:
-#         return ""  # 不显示给场景
 
 
 ####################################################################################################################################

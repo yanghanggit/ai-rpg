@@ -1,8 +1,7 @@
-from typing import override
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: ignore
+from typing import override
 from gameplay_systems.action_components import TagAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from loguru import logger
 
 
 ####################################################################################################

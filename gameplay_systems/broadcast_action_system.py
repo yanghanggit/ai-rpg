@@ -3,7 +3,6 @@ from typing import override, cast
 from gameplay_systems.components import StageComponent
 from gameplay_systems.action_components import BroadcastAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from loguru import logger
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
 
 

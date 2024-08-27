@@ -6,14 +6,11 @@ from rpg_game.rpg_game import RPGGame
 from player.player_proxy import PlayerProxy
 import player.utils
 from player.player_command import (
-    # PlayerAttack,
     PlayerGoTo,
     PlayerBroadcast,
     PlayerSpeak,
-    # PlayerUseProp,
     PlayerWhisper,
     PlayerSearchProp,
-    # PlayerPortalStep,
     PlayerSteal,
     PlayerGiveProp,
     PlayerPerception,

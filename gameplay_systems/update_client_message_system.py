@@ -9,11 +9,8 @@ from gameplay_systems.action_components import (
     SpeakAction,
     BroadcastAction,
     StageNarrateAction,
-    # AttackAction,
     GoToAction,
 )
-
-# from my_agent.agent_action import AgentAction
 from typing import override
 from loguru import logger
 import gameplay_systems.conversation_helper
@@ -24,7 +21,6 @@ from rpg_game.web_server_multi_players_rpg_game import WebServerMultiplayersRPGG
 import my_format_string.target_and_message_format_string
 
 
-# todo: 未完成
 class UpdateClientMessageSystem(ExecuteProcessor):
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         self._context: RPGEntitasContext = context
@@ -62,7 +58,6 @@ class UpdateClientMessageSystem(ExecuteProcessor):
         self.whisper_action_2_message(player_proxy, player_entity)
         self.broadcast_action_2_message(player_proxy, player_entity)
         self.speak_action_2_message(player_proxy, player_entity)
-        # self.attack_action_2_message(player_proxy, player_entity)
         self.go_to_action_2_message(player_proxy, player_entity)
 
     ############################################################################################################
@@ -76,12 +71,10 @@ class UpdateClientMessageSystem(ExecuteProcessor):
             return
 
         stage_narrate_action = stage.get(StageNarrateAction)
-        # stage_narrate_action: AgentAction = enviro_comp.action
         if len(stage_narrate_action.values) == 0:
             return
 
         message = " ".join(stage_narrate_action.values)
-        # action.join_values()
         player_proxy.add_stage_message(stage_narrate_action.name, message)
 
     ############################################################################################################
@@ -213,32 +206,6 @@ class UpdateClientMessageSystem(ExecuteProcessor):
             )
 
     ############################################################################################################
-    # def attack_action_2_message(
-    #     self, player_proxy: PlayerProxy, player_entity: Entity
-    # ) -> None:
-    #     player_entity_stage = self._context.safe_get_stage_entity(player_entity)
-    #     entities = self._context.get_group(Matcher(AttackAction)).entities
-    #     for entity in entities:
-
-    #         if entity == player_entity:
-    #             continue
-
-    #         his_stage_entity = self._context.safe_get_stage_entity(entity)
-    #         if his_stage_entity != player_entity_stage:
-    #             continue
-
-    #         attack_action = entity.get(AttackAction)
-    #         # attack_action: AgentAction = attack_action_component.action
-    #         if len(attack_action.values) == 0:
-    #             logger.error("attack_action_2_message error")
-    #             continue
-
-    #         targetname = attack_action.values[0]
-    #         player_proxy.add_actor_message(
-    #             attack_action.name, f"""准备对{targetname}发起了攻击"""
-    #         )
-
-    ############################################################################################################
     def go_to_action_2_message(
         self, player_proxy: PlayerProxy, player_entity: Entity
     ) -> None:
@@ -254,7 +221,6 @@ class UpdateClientMessageSystem(ExecuteProcessor):
                 continue
 
             go_to_action = entity.get(GoToAction)
-            # go_to_action: AgentAction = go_to_action_component.action
             if len(go_to_action.values) == 0:
                 logger.error("go_to_action_2_message error")
                 continue

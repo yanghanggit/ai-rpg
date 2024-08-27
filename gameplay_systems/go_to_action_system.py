@@ -2,7 +2,6 @@ from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: igno
 from gameplay_systems.action_components import GoToAction, DeadAction, PerceptionAction
 from gameplay_systems.components import ActorComponent
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from loguru import logger
 from typing import override, Optional
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
 

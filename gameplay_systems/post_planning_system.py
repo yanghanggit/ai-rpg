@@ -1,8 +1,7 @@
-from entitas import ExecuteProcessor, Matcher, Entity  # type: ignore
+from entitas import ExecuteProcessor, Matcher  # type: ignore
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from loguru import logger
 from gameplay_systems.components import AutoPlanningComponent
-from typing import Set, override
+from typing import override
 
 
 class PostPlanningSystem(ExecuteProcessor):

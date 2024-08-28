@@ -1,5 +1,5 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: ignore
-from gameplay_systems.action_components import GoToAction, DeadAction, PerceptionAction
+from gameplay_systems.action_components import GoToAction, DeadAction
 from gameplay_systems.components import ActorComponent
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import override, Optional
@@ -80,7 +80,7 @@ class GoToActionSystem(ReactiveProcessor):
         # 进入新的场景
         self.enter_target_stage(helper)
         # 进入场景后的处理
-        self.on_enter_target_stage(helper)
+        # self.on_enter_target_stage(helper)
 
     ###############################################################################################################################################
     def enter_target_stage(self, helper: GoToActionHelper) -> None:
@@ -138,18 +138,18 @@ class GoToActionSystem(ReactiveProcessor):
         )
 
     ###############################################################################################################################################
-    def on_enter_target_stage(self, helper: GoToActionHelper) -> None:
-        actor_comp = helper._entity.get(ActorComponent)
-        actor_entities = self._context._get_actors_in_stage(actor_comp.current_stage)
-        for actor_entity in actor_entities:
-            if not actor_entity.has(PerceptionAction):
-                # 进入新的场景之后，进入者与场景内所有人都加一次感知，这里会自动检查外观信息
-                actor_entity.add(
-                    PerceptionAction,
-                    actor_comp.name,
-                    PerceptionAction.__name__,
-                    [actor_comp.current_stage],
-                )
+    # def on_enter_target_stage(self, helper: GoToActionHelper) -> None:
+    #     actor_comp = helper._entity.get(ActorComponent)
+    #     actor_entities = self._context._get_actors_in_stage(actor_comp.current_stage)
+    #     for actor_entity in actor_entities:
+    #         if not actor_entity.has(PerceptionAction):
+    #             # 进入新的场景之后，进入者与场景内所有人都加一次感知，这里会自动检查外观信息
+    #             actor_entity.add(
+    #                 PerceptionAction,
+    #                 actor_comp.name,
+    #                 PerceptionAction.__name__,
+    #                 [actor_comp.current_stage],
+    #             )
 
 
 ###############################################################################################################################################

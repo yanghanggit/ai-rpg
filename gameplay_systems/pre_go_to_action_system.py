@@ -22,7 +22,7 @@ from file_system.files_def import PropFile
 from rpg_game.rpg_game import RPGGame
 
 
-class StageCondCheckResponsePlan(AgentPlan):
+class StageCondCheckResponse(AgentPlan):
 
     def __init__(self, name: str, input_str: str) -> None:
         super().__init__(name, input_str)
@@ -176,7 +176,7 @@ class PreBeforeGoToActionSystem(ReactiveProcessor):
         if response is None:
             return False
 
-        plan = StageCondCheckResponsePlan(current_stage_name, response)
+        plan = StageCondCheckResponse(current_stage_name, response)
         #
         if not plan.allow:
             # 通知事件
@@ -235,7 +235,7 @@ class PreBeforeGoToActionSystem(ReactiveProcessor):
         if response is None:
             return False
 
-        plan = StageCondCheckResponsePlan(target_stage_name, response)
+        plan = StageCondCheckResponse(target_stage_name, response)
         if not plan.allow:
             # 通知事件, 因为没动，得是当前场景需要通知
             current_stage_entity = self._context.safe_get_stage_entity(actor_entity)
@@ -272,12 +272,8 @@ class PreBeforeGoToActionSystem(ReactiveProcessor):
         assert actor_entity.has(ActorComponent)
         if not actor_entity.has(AppearanceComponent):
             return ""
-
         appearance_comp = actor_entity.get(AppearanceComponent)
         return cast(str, appearance_comp.appearance)
-        # return builtin_prompt.make_appearance_prompt(
-        #     appearance_comp.name, cast(str, appearance_comp.appearance)
-        # )
 
     ###############################################################################################################################################
     def get_actor_props(self, actor_entity: Entity) -> List[PropFile]:
@@ -288,8 +284,6 @@ class PreBeforeGoToActionSystem(ReactiveProcessor):
             + check_self.get_prop_files(PropFile.TYPE_WEAPON)
             + check_self.get_prop_files(PropFile.TYPE_CLOTHES)
             + check_self.get_prop_files(PropFile.TYPE_NON_CONSUMABLE_ITEM)
-            # helper._prop_files_as_weapon_clothes_non_consumable_item
-            # + helper._prop_files_as_special
         )
 
     ###############################################################################################################################################

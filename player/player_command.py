@@ -7,10 +7,10 @@ from gameplay_systems.action_components import (
     GoToAction,
     WhisperAction,
     PickUpPropAction,
-    PerceptionAction,
+    # PerceptionAction,
     StealPropAction,
     GivePropAction,
-    CheckSelfAction,
+    # CheckSelfAction,
     BehaviorAction,
 )
 from gameplay_systems.components import (
@@ -366,34 +366,34 @@ class PlayerPickUpProp(PlayerCommand):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class PlayerPerception(PlayerCommand):
-    """
-    玩家感知的行为：PerceptionAction
-    """
+# class PlayerPerception(PlayerCommand):
+#     """
+#     玩家感知的行为：PerceptionAction
+#     """
 
-    def __init__(self, name: str, rpg_game: RPGGame, player_proxy: PlayerProxy) -> None:
-        super().__init__(name, rpg_game, player_proxy)
+#     def __init__(self, name: str, rpg_game: RPGGame, player_proxy: PlayerProxy) -> None:
+#         super().__init__(name, rpg_game, player_proxy)
 
-    def execute(self) -> None:
-        context = self._rpggame._entitas_context
-        player_entity = context.get_player_entity(self._player_proxy._name)
-        if player_entity is None:
-            return
+#     def execute(self) -> None:
+#         context = self._rpggame._entitas_context
+#         player_entity = context.get_player_entity(self._player_proxy._name)
+#         if player_entity is None:
+#             return
 
-        # 添加行动
-        actor_comp = player_entity.get(ActorComponent)
-        player_entity.add(
-            PerceptionAction,
-            actor_comp.name,
-            PerceptionAction.__name__,
-            [actor_comp.current_stage],
-        )
+#         # 添加行动
+#         actor_comp = player_entity.get(ActorComponent)
+#         player_entity.add(
+#             PerceptionAction,
+#             actor_comp.name,
+#             PerceptionAction.__name__,
+#             [actor_comp.current_stage],
+#         )
 
-        # 模拟添加一个plan的发起。
-        human_message = (
-            f"""{{"{PerceptionAction.__name__}": ["{actor_comp.current_stage}"]}}"""
-        )
-        self.simu_player_planning_input_message(player_entity, human_message)
+#         # 模拟添加一个plan的发起。
+#         human_message = (
+#             f"""{{"{PerceptionAction.__name__}": ["{actor_comp.current_stage}"]}}"""
+#         )
+#         self.simu_player_planning_input_message(player_entity, human_message)
 
 
 ####################################################################################################################################
@@ -477,38 +477,32 @@ class PlayerGiveProp(PlayerCommand):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class PlayerCheckStatus(PlayerCommand):
-    """
-    玩家查看状态的行为：CheckSelfAction
-    """
+# class PlayerCheckStatus(PlayerCommand):
 
-    def __init__(self, name: str, rpg_game: RPGGame, player_proxy: PlayerProxy) -> None:
-        super().__init__(name, rpg_game, player_proxy)
+#     def __init__(self, name: str, rpg_game: RPGGame, player_proxy: PlayerProxy) -> None:
+#         super().__init__(name, rpg_game, player_proxy)
 
-    def execute(self) -> None:
-        context = self._rpggame._entitas_context
-        player_entity = context.get_player_entity(self._player_proxy._name)
-        if player_entity is None:
-            return
+#     def execute(self) -> None:
+#         context = self._rpggame._entitas_context
+#         player_entity = context.get_player_entity(self._player_proxy._name)
+#         if player_entity is None:
+#             return
 
-        if player_entity.has(CheckSelfAction):
-            logger.warning(
-                "debug: player has CheckSelfAction????"
-            )  # 应该是有问题的，如果存在。
-            player_entity.remove(CheckSelfAction)
+#         if player_entity.has(CheckSelfAction):
+#             player_entity.remove(CheckSelfAction)
 
-        # 添加行动
-        actor_comp = player_entity.get(ActorComponent)
-        player_entity.add(
-            CheckSelfAction,
-            actor_comp.name,
-            CheckSelfAction.__name__,
-            [actor_comp.name],
-        )
+#         # 添加行动
+#         actor_comp = player_entity.get(ActorComponent)
+#         player_entity.add(
+#             CheckSelfAction,
+#             actor_comp.name,
+#             CheckSelfAction.__name__,
+#             [actor_comp.name],
+#         )
 
-        # 模拟添加一个plan的发起。
-        human_message = f"""{{"{CheckSelfAction.__name__}": ["{actor_comp.name}"]}}"""
-        self.simu_player_planning_input_message(player_entity, human_message)
+#         # 模拟添加一个plan的发起。
+#         human_message = f"""{{"{CheckSelfAction.__name__}": ["{actor_comp.name}"]}}"""
+#         self.simu_player_planning_input_message(player_entity, human_message)
 
 
 ####################################################################################################################################

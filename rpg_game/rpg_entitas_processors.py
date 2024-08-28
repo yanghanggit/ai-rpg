@@ -33,10 +33,12 @@ class RPGEntitasProcessors(Processors):
         from gameplay_systems.post_planning_system import PostPlanningSystem
         from gameplay_systems.pre_action_system import PreActionSystem
         from gameplay_systems.post_action_system import PostActionSystem
-        from gameplay_systems.perception_action_system import PerceptionActionSystem
+
+        # from gameplay_systems.perception_action_system import PerceptionActionSystem
         from gameplay_systems.steal_action_system import StealActionSystem
         from gameplay_systems.give_prop_action_system import GivePropActionSystem
-        from gameplay_systems.check_self_action_system import CheckSelfActionSystem
+
+        # from gameplay_systems.check_self_action_system import CheckSelfActionSystem
         from gameplay_systems.connect_agent_system import ConnectAgentSystem
         from gameplay_systems.compress_chat_history_system import (
             CompressChatHistorySystem,
@@ -73,6 +75,7 @@ class RPGEntitasProcessors(Processors):
         from gameplay_systems.terminal_player_tips_system import (
             TerminalPlayerTipsSystem,
         )
+        from gameplay_systems.equip_prop_action_system import EquipPropActionSystem
 
         ##
         input_rpg_game = cast(RPGGame, input_rpg_game)
@@ -133,18 +136,27 @@ class RPGEntitasProcessors(Processors):
         processors.add(PickUpPropActionSystem(context, input_rpg_game))
         processors.add(StealActionSystem(context, input_rpg_game))
         processors.add(GivePropActionSystem(context, input_rpg_game))
+        processors.add(EquipPropActionSystem(context, input_rpg_game))
         processors.add(
-            CheckSelfActionSystem(context, input_rpg_game)
-        )  # 道具交互类行为之后，可以发起自检
+            UpdateAppearanceActionSystem(
+                context,
+                input_rpg_game,
+                builtin_world_systems.WORLD_APPEARANCE_SYSTEM_NAME,
+            )
+        )  ### 更新外观
+
+        # processors.add(
+        #     CheckSelfActionSystem(context, input_rpg_game)
+        # )  # 道具交互类行为之后，可以发起自检
 
         # 场景切换类行为，非常重要而且必须在最后!
         processors.add(
             PreBeforeGoToActionSystem(context, input_rpg_game)
         )  # 去往场景之前的检查与实际的执行
         processors.add(GoToActionSystem(context, input_rpg_game))
-        processors.add(
-            PerceptionActionSystem(context, input_rpg_game)
-        )  # 场景切换类行为之后可以发起感知
+        # processors.add(
+        #     PerceptionActionSystem(context, input_rpg_game)
+        # )  # 场景切换类行为之后可以发起感知
 
         processors.add(
             PostActionSystem(context, input_rpg_game)

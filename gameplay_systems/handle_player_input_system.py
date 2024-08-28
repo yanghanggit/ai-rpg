@@ -13,8 +13,8 @@ from player.player_command import (
     PlayerPickUpProp,
     PlayerSteal,
     PlayerGiveProp,
-    PlayerPerception,
-    PlayerCheckStatus,
+    # PlayerPerception,
+    # PlayerCheckStatus,
     PlayerBehavior,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
@@ -122,17 +122,17 @@ class HandlePlayerInputSystem(ExecuteProcessor):
             prop_name = split_command(usr_input, command)
             PlayerGiveProp(command, rpg_game, player_proxy, prop_name).execute()
 
-        elif "/perception" in usr_input:
-            command = "/perception"
-            # self.imme_handle_perception(playerproxy)
-            PlayerPerception(command, rpg_game, player_proxy).execute()
-            # return False
+        # elif "/perception" in usr_input:
+        #     command = "/perception"
+        #     # self.imme_handle_perception(playerproxy)
+        #     PlayerPerception(command, rpg_game, player_proxy).execute()
+        # return False
 
-        elif "/checkstatus" in usr_input:
-            command = "/checkstatus"
-            # self.imme_handle_check_status(playerproxy)
-            PlayerCheckStatus(command, rpg_game, player_proxy).execute()
-            # return False
+        # elif "/checkstatus" in usr_input:
+        #     command = "/checkstatus"
+        #     # self.imme_handle_check_status(playerproxy)
+        #     PlayerCheckStatus(command, rpg_game, player_proxy).execute()
+        #     # return False
 
         # elif "/useprop" in usr_input:
         #     command = "/useprop"

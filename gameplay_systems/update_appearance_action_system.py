@@ -2,7 +2,7 @@ from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: igno
 from overrides import override
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
-from typing import Dict, cast, Set
+from typing import Dict, cast, Set, List
 import json
 from gameplay_systems.components import (
     AppearanceComponent,
@@ -47,6 +47,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
         world_entity = self._context.get_world_entity(self._system_name)
         assert world_entity is not None
         self.handle_all(world_entity, set(entities))
+        self.remove_all(entities)
 
     ###############################################################################################################################################
     def handle_all(self, world_entity: Entity, actor_entities: Set[Entity]) -> None:
@@ -168,10 +169,22 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
 
     def add_update_appearance_human_message(self, actor_entities: Set[Entity]) -> None:
         for actor_entity in actor_entities:
+            current_stage_entity = self._context.safe_get_stage_entity(actor_entity)
+            if current_stage_entity is None:
+                continue
+
             appearance_comp = actor_entity.get(AppearanceComponent)
-            message = builtin_prompt.make_on_update_appearance_event_prompt(
-                appearance_comp.name, appearance_comp.appearance
+            self._context.add_agent_context_message(
+                set({current_stage_entity}),
+                builtin_prompt.make_on_update_appearance_event_prompt(
+                    appearance_comp.name, appearance_comp.appearance
+                ),
             )
-            self._context.safe_add_human_message_to_entity(actor_entity, message)
+
+    ###############################################################################################################################################
+    def remove_all(self, entities: List[Entity]) -> None:
+        for entity in entities:
+            if entity.has(UpdateAppearanceAction):
+                entity.remove(UpdateAppearanceAction)
 
     ###############################################################################################################################################

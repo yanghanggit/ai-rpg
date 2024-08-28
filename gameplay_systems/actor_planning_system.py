@@ -4,8 +4,6 @@ from gameplay_systems.components import (
     ActorComponent,
     AutoPlanningComponent,
     StageGraphComponent,
-    RPGCurrentWeaponComponent,
-    RPGCurrentClothesComponent,
 )
 from gameplay_systems.action_components import (
     StageNarrateAction,
@@ -116,6 +114,8 @@ class ActorPlanningSystem(ExecuteProcessor):
                 continue
 
             check_self = CheckSelfHelper(self._context, actor_entity)
+            actors_appearance = self._context.get_appearance_in_stage(actor_entity)
+            actors_appearance.pop(actor_comp.name, None)  # 自己不要
 
             task = LangServeAgentRequestTask.create(
                 agent,
@@ -125,6 +125,7 @@ class ActorPlanningSystem(ExecuteProcessor):
                     stage_enviro_narrate=self.get_stage_narrate(actor_entity),
                     stage_graph=self.get_stage_graph(actor_entity),
                     stage_props=self.get_stage_props(actor_entity),
+                    stage_actors_info=actors_appearance,
                     health=check_self.health,
                     categorized_prop_files=check_self._categorized_prop_files,
                     current_weapon=check_self._current_weapon,

@@ -25,9 +25,9 @@ StealPropAction = namedtuple("StealPropAction", "name action_name values")
 # 将道具交给目标角色
 GivePropAction = namedtuple("GivePropAction", "name action_name values")
 # 感知场景内的信息（角色与道具）
-PerceptionAction = namedtuple("PerceptionAction", "name action_name values")
+# PerceptionAction = namedtuple("PerceptionAction", "name action_name values")
 # 检查自身状态
-CheckSelfAction = namedtuple("CheckSelfAction", "name action_name values")
+# CheckSelfAction = namedtuple("CheckSelfAction", "name action_name values")
 #
 BehaviorAction = namedtuple("BehaviorAction", "name action_name values")
 SkillTargetAction = namedtuple("SkillTargetAction", "name action_name values")
@@ -40,6 +40,9 @@ UpdateAppearanceAction = namedtuple("UpdateAppearanceAction", "name action_name 
 
 # 处理伤害逻辑
 DamageAction = namedtuple("DamageAction", "name action_name values")
+
+# 装备道具
+EquipPropAction = namedtuple("EquipPropAction", "name action_name values")
 ##############################################################################################################################################
 
 
@@ -61,30 +64,28 @@ ACTOR_AVAILABLE_ACTIONS_REGISTER = [
     BroadcastAction,
     WhisperAction,
     PickUpPropAction,
-    PerceptionAction,
     StealPropAction,
     GivePropAction,
-    CheckSelfAction,
     BehaviorAction,
     SkillTargetAction,
     SkillAction,
     SkillPropAction,
     UpdateAppearanceAction,
     DamageAction,
+    EquipPropAction,
 ]
 
 # 角色交互类动作
 ACTOR_INTERACTIVE_ACTIONS_REGISTER = [
     PickUpPropAction,
     GoToAction,
-    PerceptionAction,
     StealPropAction,
     GivePropAction,
-    CheckSelfAction,
     BehaviorAction,
     SkillTargetAction,
     SkillAction,
     SkillPropAction,
     UpdateAppearanceAction,
     DamageAction,
+    EquipPropAction,
 ]

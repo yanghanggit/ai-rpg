@@ -4,11 +4,12 @@ from gameplay_systems.action_components import (
     MindVoiceAction,
     StageNarrateAction,
     TagAction,
-    PerceptionAction,
+    # PerceptionAction,
     BroadcastAction,
     BroadcastAction,
     SpeakAction,
     WhisperAction,
+    GoToAction,
 )
 import json
 from gameplay_systems.cn_constant_prompt import _CNConstantPrompt_ as ConstantPrompt
@@ -32,7 +33,7 @@ def make_kick_off_actor_prompt(
 
 ## 请结合你的角色设定,更新你的状态!
 
-## 输出要求:
+## 输出要求
 - 请遵循 输出格式指南。
 - 返回结果只带如下的键: {MindVoiceAction.__name__}, {TagAction.__name__}。"""
 
@@ -51,7 +52,9 @@ def make_kick_off_stage_prompt(
     props_prompt = ""
     if len(stage_prop_files) > 0:
         for prop_file in stage_prop_files:
-            props_prompt += make_prop_prompt(prop_file, False, True)
+            props_prompt += make_prop_prompt(
+                prop_file, description_prompt=False, appearance_prompt=True
+            )
     else:
         props_prompt = "- 无任何道具。"
 
@@ -80,9 +83,9 @@ def make_kick_off_stage_prompt(
 ## 初始设定
 {kick_off_message}
 
-## 输出要求:
+## 输出要求
 - 请遵循 输出格式指南。
-- 返回结果，仅带如下的键: {StageNarrateAction.__name__} 和 {TagAction.__name__}。"""
+- 返回结果只带如下的键: {StageNarrateAction.__name__} 和 {TagAction.__name__}。"""
     return prompt
 
 
@@ -105,6 +108,7 @@ def make_actor_plan_prompt(
     stage_enviro_narrate: str,
     stage_graph: Set[str],
     stage_props: List[PropFile],
+    stage_actors_info: Dict[str, str],
     health: float,
     categorized_prop_files: Dict[str, List[PropFile]],
     current_weapon: Optional[PropFile],
@@ -113,11 +117,19 @@ def make_actor_plan_prompt(
 
     health *= 100
 
-    prop_files_prompt_list = make_categorized_prop_files_prompt_list(
-        categorized_prop_files
-    )
+    prop_files_prompts = make_categorized_prop_files_prompt_list(categorized_prop_files)
 
-    stage_prop_prompts = [make_prop_prompt(prop, False, True) for prop in stage_props]
+    stage_props_prompt = [
+        make_prop_prompt(prop, description_prompt=False, appearance_prompt=True)
+        for prop in stage_props
+    ]
+
+    stage_actors_prompt = ""
+    if len(stage_actors_info) > 0:
+        for actor_name, actor_appearance in stage_actors_info.items():
+            stage_actors_prompt += f"### {actor_name}\n- 角色外观:{actor_appearance}\n"
+    else:
+        stage_actors_prompt = "- 无任何角色。"
 
     prompt = f"""# {ConstantPrompt.ACTOR_PLAN_PROMPT_TAG} 请做出你的计划，决定你将要做什么
 
@@ -129,22 +141,30 @@ def make_actor_plan_prompt(
 ### 场景描述
 {stage_enviro_narrate != "" and stage_enviro_narrate or "无"}
 ### 从本场景可以去往的场景
-{len(stage_graph) > 0 and "\n".join([f"- {stage}" for stage in stage_graph]) or "无"}
+{len(stage_graph) > 0 and "\n".join([f"- {stage}" for stage in stage_graph]) or "无可去往场景"}   
 
 ## 场景内的可交互的道具(包括 可拾取，可与之交互)
-{len(stage_prop_prompts) > 0 and "\n".join(stage_prop_prompts) or "- 无任何道具。"}
+{len(stage_props_prompt) > 0 and "\n".join(stage_props_prompt) or "- 无任何道具。"}
+
+## 场景内活动的角色(你可以与之互动):
+{stage_actors_prompt}
 
 ## 你的健康状态:
 {f"生命值: {health:.2f}%"}
 
 ## 你自身持有道具:
-{len(prop_files_prompt_list) > 0 and "\n".join(prop_files_prompt_list) or "- 无任何道具。"}
+{len(prop_files_prompts) > 0 and "\n".join(prop_files_prompts) or "- 无任何道具。"}
 
 ## 你当前装备的道具
 - 武器: {current_weapon is not None and current_weapon.name or "无"}
 - 衣服: {current_clothes is not None and current_clothes.name or "无"}
 
-## 输出要求:
+## 建议与注意事项
+- 结合以上信息，决定你的下一步行动。
+- 随时保持装备武器与衣服的状态(前提是你自身有的话）。
+- 注意！如果 从本场景可以去往的场景 为 ‘无可去往场景’，你就不可以执行{GoToAction.__name__}，因为系统的设计规则如此。
+
+## 输出要求
 - 请遵循 输出格式指南。
 - 结果中要附带 {TagAction.__name__}。"""
 
@@ -160,7 +180,9 @@ def make_stage_plan_prompt(
     props_prompt = ""
     if len(stage_prop_files) > 0:
         for prop in stage_prop_files:
-            props_prompt += make_prop_prompt(prop, False, True)
+            props_prompt += make_prop_prompt(
+                prop, description_prompt=False, appearance_prompt=True
+            )
     else:
         props_prompt = "- 无任何道具。"
 
@@ -186,41 +208,41 @@ def make_stage_plan_prompt(
 ## 关于’你的计划‘内容生成规则
 - 根据你作为场景受到了什么事件的影响，你可以制定计划，并决定下一步将要做什么。可根据 输出格式指南 选择相应的行动。
 
-## 输出要求:
+## 输出要求
 - 请遵循 输出格式指南。
-- 必须包含 {StageNarrateAction.__name__} 和 {TagAction.__name__}。"""
+- 返回结果必须包含 {StageNarrateAction.__name__} 和 {TagAction.__name__}。"""
 
     return prompt
 
 
 ###############################################################################################################################################
-def make_perception_action_prompt(
-    who: str,
-    current_stage: str,
-    result_actor_names: Dict[str, str],
-    result_props_names: List[str],
-) -> str:
+# def make_perception_action_prompt(
+#     who: str,
+#     current_stage: str,
+#     result_actor_names: Dict[str, str],
+#     result_props_names: List[str],
+# ) -> str:
 
-    prompt_of_actor = ""
-    if len(result_actor_names) > 0:
-        for other_name, other_appearance in result_actor_names.items():
-            prompt_of_actor += f"""### {other_name}\n- 角色外观:{other_appearance}\n"""
-    else:
-        prompt_of_actor = "- 无其他角色。"
+#     prompt_of_actor = ""
+#     if len(result_actor_names) > 0:
+#         for other_name, other_appearance in result_actor_names.items():
+#             prompt_of_actor += f"""### {other_name}\n- 角色外观:{other_appearance}\n"""
+#     else:
+#         prompt_of_actor = "- 无其他角色。"
 
-    prompt_of_props = ""
-    if len(result_props_names) > 0:
-        for propname in result_props_names:
-            prompt_of_props += f"- {propname}\n"
-    else:
-        prompt_of_props = "- 无任何道具。"
+#     prompt_of_props = ""
+#     if len(result_props_names) > 0:
+#         for propname in result_props_names:
+#             prompt_of_props += f"- {propname}\n"
+#     else:
+#         prompt_of_props = "- 无任何道具。"
 
-    final_prompt = f"""# {ConstantPrompt.PERCEPTION_ACTION_TAG} {who} 在 {current_stage} 中执行感知行动({PerceptionAction.__name__})，结果如下:
-## 场景内角色:
-{prompt_of_actor}
-## 场景内的可交互的道具(包括 可拾取，可与之交互)
-{prompt_of_props}"""
-    return final_prompt
+#     final_prompt = f"""# {ConstantPrompt.PERCEPTION_ACTION_TAG} {who} 在 {current_stage} 中执行感知行动({PerceptionAction.__name__})，结果如下:
+# ## 场景内角色:
+# {prompt_of_actor}
+# ## 场景内的可交互的道具(包括 可拾取，可与之交互)
+# {prompt_of_props}"""
+#     return final_prompt
 
 
 ###############################################################################################################################################
@@ -244,16 +266,23 @@ def make_prop_type_prompt(prop_file: PropFile) -> str:
 
 ###############################################################################################################################################
 def make_prop_prompt(
-    prop_file: PropFile, need_description_prompt: bool, need_appearance_prompt: bool
+    prop_file: PropFile,
+    description_prompt: bool,
+    appearance_prompt: bool,
+    attr_prompt: bool = False,
 ) -> str:
 
     prompt = f"""### {prop_file.name}
 - 类型:{make_prop_type_prompt(prop_file)}"""
-    if need_description_prompt:
+
+    if description_prompt:
         prompt += f"\n- 道具描述:{prop_file.description}"
 
-    if need_appearance_prompt:
+    if appearance_prompt:
         prompt += f"\n- 道具外观:{prop_file.appearance}"
+
+    if attr_prompt:
+        prompt += f"\n- 攻击力:{prop_file.attack}\n- 防御力:{prop_file.defense}"
 
     return prompt
 
@@ -281,32 +310,39 @@ def make_categorized_prop_files_prompt_list(
             continue
 
         for prop_file in prop_files:
-            ret.append(make_prop_prompt(prop_file, True, True))
+            ret.append(
+                make_prop_prompt(
+                    prop_file,
+                    description_prompt=True,
+                    appearance_prompt=True,
+                    attr_prompt=True,
+                )
+            )
 
     return ret
 
 
 ###############################################################################################################################################
-def make_check_status_action_prompt(
-    actor_name: str,
-    health: float,
-    categorized_prop_files: Dict[str, List[PropFile]],
-) -> str:
+# def make_check_status_action_prompt(
+#     actor_name: str,
+#     health: float,
+#     categorized_prop_files: Dict[str, List[PropFile]],
+# ) -> str:
 
-    health *= 100
+#     health *= 100
 
-    prop_files_prompt_list = make_categorized_prop_files_prompt_list(
-        categorized_prop_files
-    )
+#     prop_files_prompt_list = make_categorized_prop_files_prompt_list(
+#         categorized_prop_files
+#     )
 
-    # 组合最终的提示
-    prompt = f"""# {ConstantPrompt.CHECK_STATUS_ACTION_TAG} {actor_name} 正在查看自身状态与拥有的道具
-## 健康状态:
-{f"生命值: {health:.2f}%"}
-## 持有道具:
-{len(prop_files_prompt_list) > 0 and "\n".join(prop_files_prompt_list) or "- 无任何道具。"}"""
+#     # 组合最终的提示
+#     prompt = f"""# {ConstantPrompt.CHECK_STATUS_ACTION_TAG} {actor_name} 正在查看自身状态与拥有的道具
+# ## 健康状态:
+# {f"生命值: {health:.2f}%"}
+# ## 持有道具:
+# {len(prop_files_prompt_list) > 0 and "\n".join(prop_files_prompt_list) or "- 无任何道具。"}"""
 
-    return prompt
+#     return prompt
 
 
 ###############################################################################################################################################
@@ -468,7 +504,10 @@ def stage_exit_conditions_check_prompt(
     prop_prompt_list = "无"
     if len(prop_files) > 0:
         prop_prompt_list = "\n".join(
-            [make_prop_prompt(prop, True, True) for prop in prop_files]
+            [
+                make_prop_prompt(prop, description_prompt=True, appearance_prompt=True)
+                for prop in prop_files
+            ]
         )
 
     ret_prompt = f"""# {actor_name} 想要离开场景: {current_stage_name}。
@@ -513,7 +552,10 @@ def stage_entry_conditions_check_prompt(
     prop_prompt_list = "无"
     if len(prop_files) > 0:
         prop_prompt_list = "\n".join(
-            [make_prop_prompt(prop, True, True) for prop in prop_files]
+            [
+                make_prop_prompt(prop, description_prompt=True, appearance_prompt=True)
+                for prop in prop_files
+            ]
         )
 
     ret_prompt = f"""# {actor_name} 想要进入场景: {current_stage_name}。
@@ -690,14 +732,22 @@ def make_world_reasoning_release_skill_prompt(
     skill_prompt: List[str] = []
     if len(skill_files) > 0:
         for skill_file in skill_files:
-            skill_prompt.append(make_prop_prompt(skill_file, True, False))
+            skill_prompt.append(
+                make_prop_prompt(
+                    skill_file, description_prompt=True, appearance_prompt=True
+                )
+            )
     else:
         skill_prompt.append("- 无任何技能。")
 
     prop_prompt: List[str] = []
     if len(prop_files) > 0:
         for prop_file in prop_files:
-            prop_prompt.append(make_prop_prompt(prop_file, True, True))
+            prop_prompt.append(
+                make_prop_prompt(
+                    prop_file, description_prompt=True, appearance_prompt=True
+                )
+            )
     else:
         prop_prompt.append("- 无任何道具。")
 
@@ -767,9 +817,9 @@ def make_reasoning_skill_target_reasoning_prompt(
 第2步:结合 事件描述 与 系统判断结果，推理技能对 {target_name} 的影响。例如改变你的状态，或者对你造成伤害等。
 第3步:更新 {target_name} 的状态，作为最终输出。
 
-## 输出要求:
+## 输出要求
 - 请遵循 输出格式指南。
-- 返回结果仅带如下2个键: {BroadcastAction.__name__} 和 {TagAction.__name__}。
+- 返回结果只带如下的键: {BroadcastAction.__name__} 和 {TagAction.__name__}。
 - {BroadcastAction.__name__} 的内容格式要求为: "{target_name}对技能的反馈与更新后的状态描述"。
 """
 
@@ -866,3 +916,22 @@ def make_notify_release_skill_event_prompt(
 {reasoning_sentence}
 """
     return prompt
+
+
+################################################################################################################################################
+
+
+def make_equip_prop_weapon_prompt(actor_name: str, prop_file_weapon: PropFile) -> str:
+    assert prop_file_weapon.is_weapon
+    return f"""# {actor_name} 装备了武器: {prop_file_weapon.name} """
+
+
+################################################################################################################################################
+
+
+def make_equip_prop_clothes_prompt(actor_name: str, prop_file_clothes: PropFile) -> str:
+    assert prop_file_clothes.is_clothes
+    return f"""# {actor_name} 装备了衣服: {prop_file_clothes.name} """
+
+
+################################################################################################################################################

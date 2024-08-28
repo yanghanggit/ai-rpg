@@ -1,16 +1,23 @@
 from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity  # type: ignore
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from gameplay_systems.action_components import PickUpPropAction, DeadAction
-from gameplay_systems.components import ActorComponent, StageComponent
+from gameplay_systems.action_components import (
+    EquipPropAction,
+    DeadAction,
+    UpdateAppearanceAction,
+)
+from gameplay_systems.components import (
+    ActorComponent,
+    RPGCurrentWeaponComponent,
+    RPGCurrentClothesComponent,
+)
 from loguru import logger
 from typing import override
 from file_system.files_def import PropFile
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
-import file_system.helper
 from rpg_game.rpg_game import RPGGame
 
 
-class PickUpPropActionSystem(ReactiveProcessor):
+class EquipPropActionSystem(ReactiveProcessor):
 
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame):
         super().__init__(context)
@@ -20,13 +27,13 @@ class PickUpPropActionSystem(ReactiveProcessor):
     ####################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(PickUpPropAction): GroupEvent.ADDED}
+        return {Matcher(EquipPropAction): GroupEvent.ADDED}
 
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
         return (
-            entity.has(PickUpPropAction)
+            entity.has(EquipPropAction)
             and entity.has(ActorComponent)
             and not entity.has(DeadAction)
         )
@@ -40,47 +47,57 @@ class PickUpPropActionSystem(ReactiveProcessor):
     ####################################################################################################################################
     def handle(self, entity: Entity) -> None:
 
-        pick_up_prop_action = entity.get(PickUpPropAction)
-        if len(pick_up_prop_action.values) == 0:
-            return
-
-        current_stage_entity = self._context.safe_get_stage_entity(entity)
-        if current_stage_entity is None:
-            logger.error(f"current_stage_entity is None")
+        equip_prop_action = entity.get(EquipPropAction)
+        if len(equip_prop_action.values) == 0:
             return
 
         actor_name = self._context.safe_get_entity_name(entity)
-        stage_comp = current_stage_entity.get(StageComponent)
-
-        for prop_name in pick_up_prop_action.values:
+        for prop_name in equip_prop_action.values:
 
             prop_file = self._context._file_system.get_file(
-                PropFile, stage_comp.name, prop_name
+                PropFile, actor_name, prop_name
             )
+
             if prop_file is None:
-                self._context.add_agent_context_message(
-                    set({entity}),
-                    builtin_prompt.make_pick_up_prop_failed_prompt(
-                        actor_name, prop_name
-                    ),
+                logger.warning(
+                    f"EquipPropActionSystem: {actor_name} can't find prop {prop_name}"
                 )
                 continue
 
-            file_system.helper.give_prop_file(
-                self._context._file_system,
-                stage_comp.name,
-                pick_up_prop_action.name,
-                prop_name,
-            )
+            if prop_file.is_weapon:
 
-            self._context.add_agent_context_message(
-                set({entity, current_stage_entity}),
-                builtin_prompt.make_pick_up_prop_success_prompt(
-                    actor_name, prop_name, stage_comp.name
-                ),
-            )
+                entity.replace(
+                    RPGCurrentWeaponComponent, equip_prop_action.name, prop_name
+                )
 
-            # 写死的，只能拾取一次。
-            break
+                self._context.add_agent_context_message(
+                    set({entity}),
+                    builtin_prompt.make_equip_prop_weapon_prompt(actor_name, prop_file),
+                )
+
+            elif prop_file.is_clothes:
+
+                entity.replace(
+                    RPGCurrentClothesComponent, equip_prop_action.name, prop_name
+                )
+
+                self._context.add_agent_context_message(
+                    set({entity}),
+                    builtin_prompt.make_equip_prop_clothes_prompt(
+                        actor_name, prop_file
+                    ),
+                )
+
+                self.on_add_update_apperance_action(entity)
+
+    ####################################################################################################################################
+    def on_add_update_apperance_action(self, entity: Entity) -> None:
+        if not entity.has(UpdateAppearanceAction):
+            entity.add(
+                UpdateAppearanceAction,
+                self._context.safe_get_entity_name(entity),
+                UpdateAppearanceAction.__name__,
+                [],
+            )
 
     ####################################################################################################################################

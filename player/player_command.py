@@ -10,7 +10,7 @@ from gameplay_systems.action_components import (
     PerceptionAction,
     StealPropAction,
     GivePropAction,
-    CheckStatusAction,
+    CheckSelfAction,
     BehaviorAction,
 )
 from gameplay_systems.components import (
@@ -19,13 +19,9 @@ from gameplay_systems.components import (
     PlayerIsWebClientComponent,
     PlayerIsTerminalClientComponent,
 )
-
-# from my_agent.agent_action import AgentAction
 from player.player_proxy import PlayerProxy
 from abc import ABC, abstractmethod
 import datetime
-from typing import Dict, List
-import json
 
 
 ####################################################################################################################################
@@ -66,9 +62,6 @@ class PlayerCommand(ABC):
 ####################################################################################################################################
 ####################################################################################################################################
 class PlayerLogin(PlayerCommand):
-    """
-    玩家登陆的行为，本质就是直接控制一个actor，将actor的playercomp的名字改为玩家的名字
-    """
 
     def __init__(
         self,
@@ -115,7 +108,7 @@ class PlayerLogin(PlayerCommand):
             )
             return
 
-        # 更改player的名字，算作登陆成功
+        # 更改算作登陆成功
         actor_entity.replace(PlayerComponent, player_name)
 
         # 判断登陆的方式：是web客户端还是终端客户端
@@ -341,10 +334,7 @@ class PlayerWhisper(PlayerCommand):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class PlayerSearchProp(PlayerCommand):
-    """
-    玩家搜索的行为：PickUpPropAction
-    """
+class PlayerPickUpProp(PlayerCommand):
 
     def __init__(
         self, name: str, rpg_game: RPGGame, player_proxy: PlayerProxy, prop_name: str
@@ -489,7 +479,7 @@ class PlayerGiveProp(PlayerCommand):
 ####################################################################################################################################
 class PlayerCheckStatus(PlayerCommand):
     """
-    玩家查看状态的行为：CheckStatusAction
+    玩家查看状态的行为：CheckSelfAction
     """
 
     def __init__(self, name: str, rpg_game: RPGGame, player_proxy: PlayerProxy) -> None:
@@ -501,23 +491,23 @@ class PlayerCheckStatus(PlayerCommand):
         if player_entity is None:
             return
 
-        if player_entity.has(CheckStatusAction):
+        if player_entity.has(CheckSelfAction):
             logger.warning(
-                "debug: player has CheckStatusAction????"
+                "debug: player has CheckSelfAction????"
             )  # 应该是有问题的，如果存在。
-            player_entity.remove(CheckStatusAction)
+            player_entity.remove(CheckSelfAction)
 
         # 添加行动
         actor_comp = player_entity.get(ActorComponent)
         player_entity.add(
-            CheckStatusAction,
+            CheckSelfAction,
             actor_comp.name,
-            CheckStatusAction.__name__,
+            CheckSelfAction.__name__,
             [actor_comp.name],
         )
 
         # 模拟添加一个plan的发起。
-        human_message = f"""{{"{CheckStatusAction.__name__}": ["{actor_comp.name}"]}}"""
+        human_message = f"""{{"{CheckSelfAction.__name__}": ["{actor_comp.name}"]}}"""
         self.simu_player_planning_input_message(player_entity, human_message)
 
 

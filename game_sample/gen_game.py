@@ -88,25 +88,39 @@ def main() -> None:
     analyze_stage_relationship(stage_data_base, actor_data_base)
     analyze_relationship_between_actors_and_props(prop_data_base, actor_data_base)
 
-    # 测试这个世界编辑
-    sheet_name_as_game_name = input(
-        "输入要创建的World的名字(必须对应excel中的sheet名):"
-    )
-    if sheet_name_as_game_name == "":
-        sheet_name_as_game_name = "World2"
-        logger.warning(f"使用默认的World名称: {sheet_name_as_game_name}")
+    gen_games: List[str] = ["World1", "World2"]
+    for sheet_name_as_game_name in gen_games:
+        game_editor = create_game_editor(
+            str(sheet_name_as_game_name),
+            actor_data_base,
+            prop_data_base,
+            stage_data_base,
+            world_system_data_base,
+        )
+        assert game_editor is not None, "创建GameEditor失败"
+        if game_editor is not None:
+            game_editor.write_game_editor(f"{GAME_NAME}/{OUTPUT_RUNTIMES_DIR}/")
+            game_editor.write_agent_list(f"{GAME_NAME}/{OUTPUT_RUNTIMES_DIR}/")
 
-    game_editor = create_game_editor(
-        str(sheet_name_as_game_name),
-        actor_data_base,
-        prop_data_base,
-        stage_data_base,
-        world_system_data_base,
-    )
-    assert game_editor is not None, "创建GameEditor失败"
-    if game_editor is not None:
-        game_editor.write_game_editor(f"{GAME_NAME}/{OUTPUT_RUNTIMES_DIR}/")
-        game_editor.write_agent_list(f"{GAME_NAME}/{OUTPUT_RUNTIMES_DIR}/")
+    # 测试这个世界编辑
+    # sheet_name_as_game_name = input(
+    #     "输入要创建的World的名字(必须对应excel中的sheet名):"
+    # )
+    # if sheet_name_as_game_name == "":
+    #     sheet_name_as_game_name = "World2"
+    #     logger.warning(f"使用默认的World名称: {sheet_name_as_game_name}")
+
+    # game_editor = create_game_editor(
+    #     str(sheet_name_as_game_name),
+    #     actor_data_base,
+    #     prop_data_base,
+    #     stage_data_base,
+    #     world_system_data_base,
+    # )
+    # assert game_editor is not None, "创建GameEditor失败"
+    # if game_editor is not None:
+    #     game_editor.write_game_editor(f"{GAME_NAME}/{OUTPUT_RUNTIMES_DIR}/")
+    #     game_editor.write_agent_list(f"{GAME_NAME}/{OUTPUT_RUNTIMES_DIR}/")
 
 
 ############################################################################################################

@@ -14,10 +14,8 @@ from build_game.data_model import AttributesIndex
 class BaseFile(ABC):
 
     def __init__(self, name: str, owner_name: str) -> None:
-        # 文件本身的名字，看具体需求
-        self._name = name
-        # 文件拥有者的名字
-        self._owner_name = owner_name
+        self._name: str = name
+        self._owner_name: str = owner_name
 
     ############################################################################################################
     @property

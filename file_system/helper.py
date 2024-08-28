@@ -119,3 +119,15 @@ def give_prop_file(
 
 
 ##################################################################################################################################
+def get_categorized_files_dict(
+    file_system: FileSystem, from_owner: str
+) -> Dict[str, List[PropFile]]:
+    ret: Dict[str, List[PropFile]] = {}
+    for file in file_system.get_files(PropFile, from_owner):
+        if file._prop_model.type not in ret:
+            ret[file._prop_model.type] = []
+        ret[file._prop_model.type].append(file)
+    return ret
+
+
+##################################################################################################################################

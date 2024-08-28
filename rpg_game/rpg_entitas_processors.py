@@ -36,7 +36,7 @@ class RPGEntitasProcessors(Processors):
         from gameplay_systems.perception_action_system import PerceptionActionSystem
         from gameplay_systems.steal_action_system import StealActionSystem
         from gameplay_systems.give_prop_action_system import GivePropActionSystem
-        from gameplay_systems.check_status_action_system import CheckStatusActionSystem
+        from gameplay_systems.check_self_action_system import CheckSelfActionSystem
         from gameplay_systems.connect_agent_system import ConnectAgentSystem
         from gameplay_systems.compress_chat_history_system import (
             CompressChatHistorySystem,
@@ -134,7 +134,7 @@ class RPGEntitasProcessors(Processors):
         processors.add(StealActionSystem(context, input_rpg_game))
         processors.add(GivePropActionSystem(context, input_rpg_game))
         processors.add(
-            CheckStatusActionSystem(context, input_rpg_game)
+            CheckSelfActionSystem(context, input_rpg_game)
         )  # 道具交互类行为之后，可以发起自检
 
         # 场景切换类行为，非常重要而且必须在最后!
@@ -220,9 +220,9 @@ class RPGEntitasProcessors(Processors):
             )
             start_time = time.time()
 
-            await processor.async_pre_execute()
+            await processor.pre_execute()
             processor.execute()
-            await processor.async_post_execute()
+            await processor.post_execute()
 
             end_time = time.time()
             execution_time = end_time - start_time

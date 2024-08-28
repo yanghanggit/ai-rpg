@@ -34,7 +34,7 @@ class StagePlanningSystem(ExecuteProcessor):
 
     #######################################################################################################################################
     @override
-    async def async_pre_execute(self) -> None:
+    async def pre_execute(self) -> None:
         # step1: 添加任务
         self._tasks.clear()
         self.fill_tasks(self._tasks)
@@ -117,8 +117,8 @@ class StagePlanningSystem(ExecuteProcessor):
                         PropFile,
                         self._context.safe_get_entity_name(stage_entity),
                     ),
-                    self._context.get_actor_names_in_stage(stage_entity),
                     self._game.round,
+                    self._context.get_appearance_in_stage(stage_entity),
                 ),
             )
 

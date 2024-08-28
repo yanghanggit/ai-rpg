@@ -27,7 +27,7 @@ GivePropAction = namedtuple("GivePropAction", "name action_name values")
 # 感知场景内的信息（角色与道具）
 PerceptionAction = namedtuple("PerceptionAction", "name action_name values")
 # 检查自身状态
-CheckStatusAction = namedtuple("CheckStatusAction", "name action_name values")
+CheckSelfAction = namedtuple("CheckSelfAction", "name action_name values")
 #
 BehaviorAction = namedtuple("BehaviorAction", "name action_name values")
 SkillTargetAction = namedtuple("SkillTargetAction", "name action_name values")
@@ -64,7 +64,7 @@ ACTOR_AVAILABLE_ACTIONS_REGISTER = [
     PerceptionAction,
     StealPropAction,
     GivePropAction,
-    CheckStatusAction,
+    CheckSelfAction,
     BehaviorAction,
     SkillTargetAction,
     SkillAction,
@@ -80,7 +80,7 @@ ACTOR_INTERACTIVE_ACTIONS_REGISTER = [
     PerceptionAction,
     StealPropAction,
     GivePropAction,
-    CheckStatusAction,
+    CheckSelfAction,
     BehaviorAction,
     SkillTargetAction,
     SkillAction,

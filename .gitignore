@@ -3,6 +3,7 @@ __pycache__/
 logs
 game_sample/gen_stage_sys_prompt
 game_sample/gen_runtimes
-game_sample/gen_npc_sys_prompt
+game_sample/gen_actor_sys_prompt
+game_sample/gen_world_sys_prompt
 game_sample/gen_agent
 .VSCodeCounter

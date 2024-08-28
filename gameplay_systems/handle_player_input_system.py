@@ -10,7 +10,7 @@ from player.player_command import (
     PlayerBroadcast,
     PlayerSpeak,
     PlayerWhisper,
-    PlayerSearchProp,
+    PlayerPickUpProp,
     PlayerSteal,
     PlayerGiveProp,
     PlayerPerception,
@@ -103,10 +103,10 @@ class HandlePlayerInputSystem(ExecuteProcessor):
             content = split_command(usr_input, command)
             PlayerWhisper(command, rpg_game, player_proxy, content).execute()
 
-        elif "/searchprop" in usr_input:
-            command = "/searchprop"
+        elif "/pickup" in usr_input:
+            command = "/pickup"
             prop_name = split_command(usr_input, command)
-            PlayerSearchProp(command, rpg_game, player_proxy, prop_name).execute()
+            PlayerPickUpProp(command, rpg_game, player_proxy, prop_name).execute()
 
         # elif "/portalstep" in usr_input:
         #     command = "/portalstep"

@@ -18,10 +18,10 @@ class ExecuteProcessor(metaclass=ABCMeta):
     def execute(self) -> None:
         pass
 
-    async def async_pre_execute(self) -> None:
+    async def pre_execute(self) -> None:
         pass
 
-    async def async_post_execute(self) -> None:
+    async def post_execute(self) -> None:
         pass
 
 

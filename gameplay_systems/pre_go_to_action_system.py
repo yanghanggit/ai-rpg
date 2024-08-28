@@ -15,7 +15,7 @@ from loguru import logger
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
 from gameplay_systems.cn_constant_prompt import _CNConstantPrompt_ as ConstantPrompt
 from typing import cast, override, List
-from gameplay_systems.check_status_action_system import CheckStatusActionHelper
+from gameplay_systems.check_self_action_system import CheckSelfHelper
 from my_agent.agent_plan import AgentPlan
 from my_agent.lang_serve_agent_request_task import LangServeAgentRequestTask
 from file_system.files_def import PropFile
@@ -159,7 +159,7 @@ class PreBeforeGoToActionSystem(ReactiveProcessor):
         final_prompt = builtin_prompt.stage_exit_conditions_check_prompt(
             actor_name,
             current_stage_name,
-            self.get_actor_status_prompt(actor_entity),
+            self.get_actor_appearance_prompt(actor_entity),
             self.get_actor_props(actor_entity),
         )
 
@@ -218,7 +218,7 @@ class PreBeforeGoToActionSystem(ReactiveProcessor):
         final_prompt = builtin_prompt.stage_entry_conditions_check_prompt(
             actor_name,
             target_stage_name,
-            self.get_actor_status_prompt(actor_entity),
+            self.get_actor_appearance_prompt(actor_entity),
             self.get_actor_props(actor_entity),
         )
 
@@ -268,23 +268,28 @@ class PreBeforeGoToActionSystem(ReactiveProcessor):
         return str(go_to_action.values[0])
 
     ###############################################################################################################################################
-    def get_actor_status_prompt(self, actor_entity: Entity) -> str:
+    def get_actor_appearance_prompt(self, actor_entity: Entity) -> str:
         assert actor_entity.has(ActorComponent)
         if not actor_entity.has(AppearanceComponent):
             return ""
 
         appearance_comp = actor_entity.get(AppearanceComponent)
-        return builtin_prompt.make_appearance_prompt(
-            appearance_comp.name, cast(str, appearance_comp.appearance)
-        )
+        return cast(str, appearance_comp.appearance)
+        # return builtin_prompt.make_appearance_prompt(
+        #     appearance_comp.name, cast(str, appearance_comp.appearance)
+        # )
 
     ###############################################################################################################################################
     def get_actor_props(self, actor_entity: Entity) -> List[PropFile]:
-        helper = CheckStatusActionHelper(self._context)
-        helper.check_status(actor_entity)
+
+        check_self = CheckSelfHelper(self._context, actor_entity)
         return (
-            helper._prop_files_as_weapon_clothes_non_consumable_item
-            + helper._prop_files_as_special
+            check_self.get_prop_files(PropFile.TYPE_SPECIAL)
+            + check_self.get_prop_files(PropFile.TYPE_WEAPON)
+            + check_self.get_prop_files(PropFile.TYPE_CLOTHES)
+            + check_self.get_prop_files(PropFile.TYPE_NON_CONSUMABLE_ITEM)
+            # helper._prop_files_as_weapon_clothes_non_consumable_item
+            # + helper._prop_files_as_special
         )
 
     ###############################################################################################################################################

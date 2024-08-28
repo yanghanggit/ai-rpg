@@ -4,6 +4,8 @@ from gameplay_systems.components import (
     ActorComponent,
     AutoPlanningComponent,
     StageGraphComponent,
+    RPGCurrentWeaponComponent,
+    RPGCurrentClothesComponent,
 )
 from gameplay_systems.action_components import (
     StageNarrateAction,
@@ -12,7 +14,7 @@ from gameplay_systems.action_components import (
 from my_agent.agent_plan import AgentPlan
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
-from typing import Dict, Set
+from typing import Dict, Set, List
 import gameplay_systems.planning_helper
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
 from my_agent.lang_serve_agent_request_task import (
@@ -20,12 +22,11 @@ from my_agent.lang_serve_agent_request_task import (
     LangServeAgentAsyncRequestTasksGather,
 )
 from rpg_game.rpg_game import RPGGame
+from gameplay_systems.check_self_action_system import CheckSelfHelper
+from file_system.files_def import PropFile
 
 
 class ActorPlanningSystem(ExecuteProcessor):
-    """
-    角色的计划系统，必须在StagePlanningSystem之后执行
-    """
 
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         self._context: RPGEntitasContext = context
@@ -39,7 +40,7 @@ class ActorPlanningSystem(ExecuteProcessor):
 
     #######################################################################################################################################
     @override
-    async def async_pre_execute(self) -> None:
+    async def pre_execute(self) -> None:
         # step1: 添加任务
         self._tasks.clear()
         self.fill_tasks(self._tasks)
@@ -98,23 +99,6 @@ class ActorPlanningSystem(ExecuteProcessor):
                 )
 
     #######################################################################################################################################
-    # 获取场景的环境描述
-    def get_stage_enviro_narrate(self, entity: Entity) -> tuple[str, str]:
-
-        stage_entity = self._context.safe_get_stage_entity(entity)
-        if stage_entity is None:
-            logger.error("stage is None, actor无所在场景是有问题的")
-            return "", ""
-
-        stage_name = self._context.safe_get_entity_name(stage_entity)
-        stage_enviro_narrate_content = ""
-        if stage_entity.has(StageNarrateAction):
-            stage_enviro_narrate_action = stage_entity.get(StageNarrateAction)
-            stage_enviro_narrate_content = " ".join(stage_enviro_narrate_action.values)
-
-        return stage_name, stage_enviro_narrate_content
-
-    #######################################################################################################################################
     def fill_tasks(
         self, out_put_request_tasks: Dict[str, LangServeAgentRequestTask]
     ) -> None:
@@ -131,25 +115,59 @@ class ActorPlanningSystem(ExecuteProcessor):
             if agent is None:
                 continue
 
-            tp = self.get_stage_enviro_narrate(actor_entity)
-            if tp[0] == "" or tp[1] == "":
-                logger.error(f"{actor_comp.name} get_stage_enviro_narrate error")
-                continue
-
+            check_self = CheckSelfHelper(self._context, actor_entity)
+            
             task = LangServeAgentRequestTask.create(
                 agent,
                 builtin_prompt.make_actor_plan_prompt(
-                    tp[0],
-                    tp[1],
-                    self.get_stages_actor_can_go_to(actor_entity),
-                    self._game.round,
+                    game_round = self._game.round,
+                    current_stage = self.get_stage_name(actor_entity),
+                    stage_enviro_narrate = self.get_stage_narrate(actor_entity),
+                    stage_graph = self.get_stage_graph(actor_entity),
+                    stage_props = self.get_stage_props(actor_entity),
+                    health = check_self.health,
+                    categorized_prop_files = check_self._categorized_prop_files,
+                    current_weapon = check_self._current_weapon,
+                    current_clothes = check_self._current_clothes,
                 ),
             )
             if task is not None:
                 out_put_request_tasks[actor_comp.name] = task
 
     #######################################################################################################################################
-    def get_stages_actor_can_go_to(self, actor_entity: Entity) -> Set[str]:
+    def get_stage_name(self, actor_entity: Entity) -> str:
+        stage_entity = self._context.safe_get_stage_entity(actor_entity)
+        if stage_entity is None:
+            logger.error("stage is None, actor无所在场景是有问题的")
+            return ""
+
+        return self._context.safe_get_entity_name(stage_entity)
+
+    #######################################################################################################################################
+    def get_stage_narrate(self, actor_entity: Entity) -> str:
+        stage_entity = self._context.safe_get_stage_entity(actor_entity)
+        if stage_entity is None:
+            logger.error("stage is None, actor无所在场景是有问题的")
+            return ""
+
+        if not stage_entity.has(StageNarrateAction):
+            return ""
+
+        stage_narrate_action = stage_entity.get(StageNarrateAction)
+        return " ".join(stage_narrate_action.values)
+
+    #######################################################################################################################################
+    def get_stage_props(self, actor_entity: Entity) -> List[PropFile]:
+        stage_entity = self._context.safe_get_stage_entity(actor_entity)
+        if stage_entity is None:
+            logger.error("stage is None, actor无所在场景是有问题的")
+            return []
+        return self._context._file_system.get_files(
+            PropFile, self._context.safe_get_entity_name(stage_entity)
+        )
+
+    #######################################################################################################################################
+    def get_stage_graph(self, actor_entity: Entity) -> Set[str]:
         stage_entity = self._context.safe_get_stage_entity(actor_entity)
         if stage_entity is None:
             logger.error("stage is None, actor无所在场景是有问题的")

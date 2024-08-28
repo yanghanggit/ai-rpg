@@ -3,7 +3,7 @@ from rpg_game.rpg_entitas_context import RPGEntitasContext
 from gameplay_systems.action_components import (
     PickUpPropAction,
     DeadAction,
-    CheckStatusAction,
+    CheckSelfAction,
 )
 from gameplay_systems.components import ActorComponent, StageComponent
 from loguru import logger
@@ -109,13 +109,13 @@ class PickUpPropActionSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     def on_success(self, entity: Entity) -> None:
-        if entity.has(CheckStatusAction):
+        if entity.has(CheckSelfAction):
             return
         actor_comp = entity.get(ActorComponent)
         entity.add(
-            CheckStatusAction,
+            CheckSelfAction,
             actor_comp.name,
-            CheckStatusAction.__name__,
+            CheckSelfAction.__name__,
             [actor_comp.name],
         )
 

@@ -29,10 +29,10 @@
   "MindVoiceAction":["你的内心独白",...],
   "BroadcastAction":["要公开说的内容"],
   "WhisperAction":["@角色名字(你要对谁说,只能是场景内的角色)>你想私下说(私语)的内容",...],
-  "PickUpPropAction":["在本场景内的道具的名字"]
-  "GivePropAction":["@将你的道具交付给的角色的名字>交付的道具的名称"],
+  "PickUpPropAction":["在本场景内的道具名字(表示你要拾取它)"]
+  "GivePropAction":["@将你的道具交付给的角色名字>交付的道具名字"],
   "PerceptionAction":["你所在的场景名字(即你意图查看场景内有哪些角色与哪些道具)"],
-  "CheckStatusAction":["你的名字(即你意图查看你拥有的道具及其信息)"]
+  "CheckSelfAction":["你的名字(即你意图查看你拥有的道具及其信息，以及自身的状态信息)"]
 }}
 ### 注意事项
 - 所有文本输出必须为第一人称。

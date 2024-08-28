@@ -18,25 +18,18 @@ class FileSystem:
 
     def __init__(self, name: str) -> None:
 
-        # 名字
         self._name: str = name
 
-        # 运行时路径
         self._runtime_dir: Optional[Path] = None
 
-        # 拥有的道具
         self._prop_files: Dict[str, List[PropFile]] = {}
 
-        # 知晓的Actor
         self._actor_archives: Dict[str, List[ActorArchiveFile]] = {}
 
-        # 知晓的Stage
         self._stage_archives: Dict[str, List[StageArchiveFile]] = {}
 
-        # 角色的属性的记录
         self._status_profile: Dict[str, StatusProfileFile] = {}
 
-        # 场景的角色的映射关系，全局唯一，空的
         self._stage_actors_map: StageActorsMapFile = StageActorsMapFile({})
 
     ###############################################################################################################################################

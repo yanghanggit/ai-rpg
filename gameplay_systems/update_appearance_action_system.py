@@ -169,7 +169,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
     def add_update_appearance_human_message(self, actor_entities: Set[Entity]) -> None:
         for actor_entity in actor_entities:
             appearance_comp = actor_entity.get(AppearanceComponent)
-            message = builtin_prompt.make_appearance_prompt(
+            message = builtin_prompt.make_on_update_appearance_event_prompt(
                 appearance_comp.name, appearance_comp.appearance
             )
             self._context.safe_add_human_message_to_entity(actor_entity, message)

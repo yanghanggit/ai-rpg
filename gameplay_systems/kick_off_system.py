@@ -67,7 +67,7 @@ class KickOffSystem(InitializeProcessor, ExecuteProcessor):
 
     ######################################################################################################################################################
     @override
-    async def async_pre_execute(self) -> None:
+    async def pre_execute(self) -> None:
 
         if len(self._tasks) == 0:
             return

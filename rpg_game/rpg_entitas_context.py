@@ -75,7 +75,6 @@ class RPGEntitasContext(Context):
         return None
 
     #############################################################################################################################
-    # 通过玩家名字来获得actor。
     def get_player_entity(self, player_name: str) -> Optional[Entity]:
         entities: Set[Entity] = self.get_group(
             Matcher(all_of=[PlayerComponent, ActorComponent])
@@ -144,7 +143,6 @@ class RPGEntitasContext(Context):
         return ret
 
     #############################################################################################################################
-    # 直接从实体中获取场景实体，如果是Actor，就获取当前场景，如果是场景，就是自己
     def safe_get_stage_entity(self, entity: Entity) -> Optional[Entity]:
         if entity.has(StageComponent):
             return entity
@@ -154,7 +152,6 @@ class RPGEntitasContext(Context):
         return None
 
     #############################################################################################################################
-    # 特定的如下几种类型来获取名字
     def safe_get_entity_name(self, entity: Entity) -> str:
         if entity.has(ActorComponent):
             actor_comp = entity.get(ActorComponent)

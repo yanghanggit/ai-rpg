@@ -5,7 +5,7 @@ root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 from game_sample.configuration import (
     GAME_NAME,
-    OUT_PUT_STAGE_SYS_PROMPT_DIR,
+    OUT_PUT_WORLD_SYS_PROMPT_DIR,
     OUT_PUT_AGENT_DIR,
 )
 import game_sample.utils
@@ -70,7 +70,7 @@ class ExcelDataWorldSystem:
         gen_py = gen_py.replace("<%RAG_MD_PATH>", f"""/{GAME_NAME}/{self.rag}""")
         gen_py = gen_py.replace(
             "<%SYS_PROMPT_MD_PATH>",
-            f"""/{GAME_NAME}/{OUT_PUT_STAGE_SYS_PROMPT_DIR}/{self.codename}_sys_prompt.md""",
+            f"""/{GAME_NAME}/{OUT_PUT_WORLD_SYS_PROMPT_DIR}/{self.codename}_sys_prompt.md""",
         )
         gen_py = gen_py.replace("<%PORT>", str(self.port))
         gen_py = gen_py.replace("<%API>", self.api)
@@ -79,7 +79,7 @@ class ExcelDataWorldSystem:
 
     ############################################################################################################
     def write_sys_prompt(self) -> None:
-        directory = Path(GAME_NAME) / OUT_PUT_STAGE_SYS_PROMPT_DIR
+        directory = Path(GAME_NAME) / OUT_PUT_WORLD_SYS_PROMPT_DIR
         game_sample.utils.write_text_file(
             directory, f"{self.codename}_sys_prompt.md", self._gen_sys_prompt
         )

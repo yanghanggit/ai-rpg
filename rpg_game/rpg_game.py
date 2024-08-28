@@ -33,6 +33,7 @@ from build_game.data_model import (
 )
 from build_game.data_model import AttributesIndex
 
+
 class RPGGame(BaseGame):
     """
     RPG 的测试类游戏
@@ -190,7 +191,7 @@ class RPGGame(BaseGame):
         # 创建player 本质就是创建Actor
         actor_entities = self.create_actor_entities(game_builder, actors_proxy)
 
-        # 为Actor添加PlayerComponent，此时默认名字是空
+        # 为Actor添加PlayerComponent
         for actor_entity in actor_entities:
 
             assert actor_entity is not None
@@ -291,7 +292,6 @@ class RPGGame(BaseGame):
                 prop_model.name, prop_model.codename
             )
 
-        # 初步建立关系网（在编辑文本中提到的Actor名字）
         file_system.helper.add_actor_archive_files(
             context._file_system, actor_model.name, set(actor_model.actor_archives)
         )
@@ -381,7 +381,7 @@ class RPGGame(BaseGame):
             stage_model.attributes[AttributesIndex.MAX_HP.value],
             stage_model.attributes[AttributesIndex.CUR_HP.value],
             stage_model.attributes[AttributesIndex.ATTACK.value],
-            stage_model.attributes[AttributesIndex.DEFENSE.value]
+            stage_model.attributes[AttributesIndex.DEFENSE.value],
         )
 
         ## 重新设置Actor和stage的关系

@@ -223,7 +223,7 @@ class ExcelEditorGame:
         output["database"] = self.data_base()
         output["about_game"] = self.about_game
 
-        version_sign = input("请输入版本号:")
+        version_sign = ""  # input("请输入版本号:")
         if version_sign == "":
             version_sign = "qwe"  # todo
             logger.warning(f"使用默认的版本号: {version_sign}")

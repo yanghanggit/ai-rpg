@@ -103,9 +103,9 @@ pm2 start game_sample/gen_agent/coffin_of_the_silent_one_agent.py game_sample/ge
 
 # 在当前场景内搜索叫'Name?'的道具
 
-/searchprop '道具名称'
+/pickup '道具名称'
 
-例如 /searchprop 腐朽的匕首
+例如 /pickup 腐朽的匕首
 
 # 在不知道去往哪里的情况下，'跳出'当前场景，如果当前场景没有连接场景则会失败。
 

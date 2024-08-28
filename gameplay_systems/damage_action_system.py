@@ -60,9 +60,13 @@ class DamageActionSystem(ReactiveProcessor):
             attrs_array = my_format_string.attrs_format_string.from_string_to_int_attrs(
                 target_and_message[1]
             )
-            assert len(attrs_array) > AttributesIndex.ATTACK.value, f"属性数组长度不够:{attrs_array}"
+            assert (
+                len(attrs_array) > AttributesIndex.ATTACK.value
+            ), f"属性数组长度不够:{attrs_array}"
             if len(attrs_array) > AttributesIndex.ATTACK.value:
-                self.handle_target_damage(from_name, target_entity, attrs_array[AttributesIndex.ATTACK.value])
+                self.handle_target_damage(
+                    from_name, target_entity, attrs_array[AttributesIndex.ATTACK.value]
+                )
 
     ######################################################################################################################################################
     def handle_target_damage(
@@ -93,7 +97,7 @@ class DamageActionSystem(ReactiveProcessor):
         )
 
         ##死亡是关键
-        is_dead = (left_hp <= 0)
+        is_dead = left_hp <= 0
 
         ## 死后处理大流程，step最后——死亡组件系统必须要添加
         if is_dead:
@@ -126,7 +130,7 @@ class DamageActionSystem(ReactiveProcessor):
             # 直接打死。
             self._context.add_agent_context_message(
                 set({current_stage_entity}),
-                builtin_prompt.make_kill_prompt(from_name, target_name),
+                builtin_prompt.make_kill_event_prompt(from_name, target_name),
             )
 
         else:

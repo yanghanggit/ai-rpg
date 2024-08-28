@@ -91,7 +91,7 @@ class PreConversationActionSystem(ReactiveProcessor):
         return copy.copy(whisper_action.values)
 
     #################################################################################################################################################
-    async def async_post_execute(self) -> None:
+    async def post_execute(self) -> None:
         if len(self._tasks) == 0:
             return
 

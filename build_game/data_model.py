@@ -2,6 +2,7 @@ from typing import List, Dict, List, Any
 from pydantic import BaseModel
 from enum import Enum
 
+
 class ActorModel(BaseModel):
     name: str
     codename: str
@@ -74,6 +75,7 @@ class GameBuilderModel(BaseModel):
     database: DataBaseSystemModel
     about_game: str
     version: str
+
 
 class AttributesIndex(Enum):
     MAX_HP = 0

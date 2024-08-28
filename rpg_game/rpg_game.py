@@ -1,4 +1,4 @@
-from entitas import Matcher  # type: ignore
+from entitas import Matcher, Entity  # type: ignore
 from typing import List, Optional, Set
 from overrides import override
 from loguru import logger
@@ -18,9 +18,6 @@ from gameplay_systems.components import (
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from build_game.game_builder import GameBuilder
-from entitas.entity import Entity
-
-# from gameplay_systems.stage_director_component import StageDirectorComponent
 from file_system.files_def import PropFile
 import shutil
 from rpg_game.base_game import BaseGame
@@ -34,7 +31,7 @@ from build_game.data_model import (
     WorldSystemModel,
     WorldSystemProxyModel,
 )
-
+from build_game.data_model import AttributesIndex
 
 class RPGGame(BaseGame):
     """
@@ -249,10 +246,10 @@ class RPGGame(BaseGame):
         actor_entity.add(
             RPGAttributesComponent,
             actor_model.name,
-            actor_model.attributes[0],
-            actor_model.attributes[1],
-            actor_model.attributes[2],
-            actor_model.attributes[3],
+            actor_model.attributes[AttributesIndex.MAX_HP.value],
+            actor_model.attributes[AttributesIndex.CUR_HP.value],
+            actor_model.attributes[AttributesIndex.ATTACK.value],
+            actor_model.attributes[AttributesIndex.DEFENSE.value],
         )
 
         hash_code = hash(actor_model.body)
@@ -377,15 +374,14 @@ class RPGGame(BaseGame):
         )
         stage_entity.add(StageComponent, stage_model.name)
         stage_entity.add(StageArchiveComponent, stage_model.name, "", 0)
-        # stage_entity.add(StageDirectorComponent, stage_model.name)
 
         stage_entity.add(
             RPGAttributesComponent,
             stage_model.name,
-            stage_model.attributes[0],
-            stage_model.attributes[1],
-            stage_model.attributes[2],
-            stage_model.attributes[3],
+            stage_model.attributes[AttributesIndex.MAX_HP.value],
+            stage_model.attributes[AttributesIndex.CUR_HP.value],
+            stage_model.attributes[AttributesIndex.ATTACK.value],
+            stage_model.attributes[AttributesIndex.DEFENSE.value]
         )
 
         ## 重新设置Actor和stage的关系

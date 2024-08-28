@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 from build_game.data_model import PropModel
 from pathlib import Path
 from loguru import logger
+from build_game.data_model import AttributesIndex
 
 
 ############################################################################################################
@@ -90,14 +91,6 @@ class PropFile(BaseFile):
         return self._prop_model.appearance
 
     ############################################################################################################
-    # @property
-    # def is_unique(self) -> bool:
-    #     return (
-    #         self._prop_model.isunique.lower() == "yes"
-    #         or self._prop_model.isunique.lower() == "true"
-    #     )
-
-    ############################################################################################################
     @property
     def is_special(self) -> bool:
         assert PropFile.TYPE_SPECIAL == "Special"
@@ -130,22 +123,22 @@ class PropFile(BaseFile):
     ############################################################################################################
     @property
     def max_hp(self) -> int:
-        return self._prop_model.attributes[0]
+        return self._prop_model.attributes[AttributesIndex.MAX_HP.value]
 
     ############################################################################################################
     @property
     def hp(self) -> int:
-        return self._prop_model.attributes[1]
+        return self._prop_model.attributes[AttributesIndex.CUR_HP.value]
 
     ############################################################################################################
     @property
     def attack(self) -> int:
-        return self._prop_model.attributes[2]
+        return self._prop_model.attributes[AttributesIndex.ATTACK.value]
 
     ############################################################################################################
     @property
     def defense(self) -> int:
-        return self._prop_model.attributes[3]
+        return self._prop_model.attributes[AttributesIndex.DEFENSE.value]
 
 
 ############################################################################################################

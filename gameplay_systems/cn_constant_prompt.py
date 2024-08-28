@@ -22,10 +22,6 @@ class CNConstantPrompt:
         return "无"
 
     @property
-    def NO_ACTOR_PROPS_PROMPT(self) -> str:
-        return "无任何道具或者特殊能力"
-
-    @property
     def USE_PROP_TO_STAGE_PROMPT_TAG(self) -> str:
         return "<%这是角色对场景使用道具>"
 

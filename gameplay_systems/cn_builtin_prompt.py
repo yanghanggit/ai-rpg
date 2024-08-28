@@ -72,7 +72,7 @@ def make_kick_off_stage_prompt(
 ## 当前游戏运行回合
 当前回合: {game_round}
 
-## 场景内道具
+## 场景内的可交互的道具(包括 可拾取，可与之交互)
 {props_prompt}
 
 ## 场景内角色
@@ -145,7 +145,7 @@ def make_stage_plan_prompt(
     stage_prop_files: List[PropFile], actors_in_stage: Set[str], game_round: int
 ) -> str:
 
-    ## 场景内道具
+    ## 场景内的可交互的道具(包括 可拾取，可与之交互)
     props_prompt = ""
     if len(stage_prop_files) > 0:
         for prop in stage_prop_files:
@@ -166,7 +166,7 @@ def make_stage_plan_prompt(
 ## 当前游戏运行回合
 当前回合: {game_round}
 
-## 场景内道具
+## 场景内的可交互的道具(包括 可拾取，可与之交互)
 {props_prompt}
 
 ## 场景内角色:
@@ -207,7 +207,7 @@ def make_perception_action_prompt(
     final_prompt = f"""# {ConstantPrompt.PERCEPTION_ACTION_TAG} {who} 在 {current_stage} 中执行感知行动({PerceptionAction.__name__})，结果如下:
 ## 场景内角色:
 {prompt_of_actor}
-## 场景内道具
+## 场景内的可交互的道具(包括 可拾取，可与之交互)
 {prompt_of_props}"""
     return final_prompt
 
@@ -218,9 +218,9 @@ def make_prop_type_prompt(prop_file: PropFile) -> str:
     ret = "未知"
 
     if prop_file.is_weapon:
-        ret = "武器(用于提高攻击力)"
+        ret = "武器"
     elif prop_file.is_clothes:
-        ret = "衣服(用于提高防御力与改变角色外观)"
+        ret = "衣服"
     elif prop_file.is_non_consumable_item:
         ret = "非消耗品"
     elif prop_file.is_special:
@@ -288,7 +288,7 @@ def make_check_status_action_prompt(
                 prop_file
             )
     else:
-        props_prompt_as_special_components = "- 无任何特殊能力。"
+        props_prompt_as_special_components = "- 无"
 
     # 组合最终的提示
     prompt = f"""# {ConstantPrompt.CHECK_STATUS_ACTION_TAG} {who} 正在查看自身状态({CheckStatusAction.__name__}):
@@ -484,7 +484,7 @@ def stage_exit_conditions_check_prompt(
 
 # 本次输出结果格式要求。需遵循 输出格式指南:
 {{
-    {WhisperAction.__name__}: ["@角色名字>你想私下说的内容，即描述允许离开或不允许的原因，使{actor_name}明白"],
+    {WhisperAction.__name__}: ["@角色名字(你要对谁说,只能是场景内的角色)>你想私下说的内容，即描述允许离开或不允许的原因，使{actor_name}明白"],
     {TagAction.__name__}: ["Yes/No"]
 }}
 ## 附注
@@ -529,7 +529,7 @@ def stage_entry_conditions_check_prompt(
 
 # 本次输出结果格式要求。需遵循 输出格式指南:
 {{
-    {WhisperAction.__name__}: ["@角色名字>你想私下说的内容，即描述允许进入或不允许的原因，使{actor_name}明白"],
+    {WhisperAction.__name__}: ["@角色名字(你要对谁说,只能是场景内的角色)>你想私下说的内容，即描述允许进入或不允许的原因，使{actor_name}明白"],
     {TagAction.__name__}: ["Yes/No"]
 }}
 ## 附注
@@ -702,12 +702,12 @@ def make_world_reasoning_release_skill_prompt(
 ## 施放技能
 {"\n".join(skill_prompt)}
 
-## 配置的道具(例如: 触媒，消耗品，强化等，武器或者衣服)
+## 配置的道具
 {"\n".join(prop_prompt)}
 
 ## 判断步骤
 步骤1: 如果 {actor_name} 自身不满足技能释放的条件，则技能释放失败。
-步骤2: 如果 施放技能 对配置的道具有 明确的需求（例如某些技能需要消耗品，或者需要特定的武器），如果道具不满足，则技能释放失败。
+步骤2: 如果 施放技能 对配置的道具有 明确的需求，如果道具不满足，则技能释放失败。
 步骤3: 如果 施放技能 对配置的道具无需求（或者不依赖任何道具），则技能释放成功。
 步骤4: 如果有 配置的道具。则按着技能在道具辅助下释放技能。例如提高技能的效果，或者减少技能的消耗。不是必须的，所以放到最后来判断。
 

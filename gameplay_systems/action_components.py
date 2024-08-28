@@ -18,7 +18,7 @@ TagAction = namedtuple("TagAction", "name action_name values")
 DeadAction = namedtuple("DeadAction", "name action_name values")
 # 离开当前场景并去往
 GoToAction = namedtuple("GoToAction", "name action_name values")
-# 寻找场景内道具
+# 从场景内可以拾取道具
 PickUpPropAction = namedtuple("PickUpPropAction", "name action_name values")
 # 从目标角色处偷取
 StealPropAction = namedtuple("StealPropAction", "name action_name values")

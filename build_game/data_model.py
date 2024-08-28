@@ -1,13 +1,12 @@
 from typing import List, Dict, List, Any
 from pydantic import BaseModel
-
+from enum import Enum
 
 class ActorModel(BaseModel):
     name: str
     codename: str
     url: str
     kick_off_message: str
-    # appearance: str
     actor_archives: List[str]
     stage_archives: List[str]
     attributes: List[int]
@@ -28,7 +27,6 @@ class PropModel(BaseModel):
     name: str
     codename: str
     description: str
-    # isunique: str
     type: str
     attributes: List[int]
     appearance: str
@@ -76,3 +74,10 @@ class GameBuilderModel(BaseModel):
     database: DataBaseSystemModel
     about_game: str
     version: str
+
+class AttributesIndex(Enum):
+    MAX_HP = 0
+    CUR_HP = 1
+    ATTACK = 2
+    DEFENSE = 3
+    MAX = 10

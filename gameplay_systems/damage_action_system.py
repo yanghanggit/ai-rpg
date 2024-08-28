@@ -11,6 +11,7 @@ from file_system.files_def import PropFile
 import my_format_string.target_and_message_format_string
 import my_format_string.attrs_format_string
 from rpg_game.rpg_game import RPGGame
+from build_game.data_model import AttributesIndex
 
 
 class DamageActionSystem(ReactiveProcessor):
@@ -59,9 +60,9 @@ class DamageActionSystem(ReactiveProcessor):
             attrs_array = my_format_string.attrs_format_string.from_string_to_int_attrs(
                 target_and_message[1]
             )
-            assert len(attrs_array) >= 3, f"属性数组长度不够:{attrs_array}"
-            if len(attrs_array) >= 3:
-                self.handle_target_damage(from_name, target_entity, attrs_array[2])
+            assert len(attrs_array) > AttributesIndex.ATTACK.value, f"属性数组长度不够:{attrs_array}"
+            if len(attrs_array) > AttributesIndex.ATTACK.value:
+                self.handle_target_damage(from_name, target_entity, attrs_array[AttributesIndex.ATTACK.value])
 
     ######################################################################################################################################################
     def handle_target_damage(
@@ -92,7 +93,7 @@ class DamageActionSystem(ReactiveProcessor):
         )
 
         ##死亡是关键
-        is_dead = left_hp <= 0
+        is_dead = (left_hp <= 0)
 
         ## 死后处理大流程，step最后——死亡组件系统必须要添加
         if is_dead:

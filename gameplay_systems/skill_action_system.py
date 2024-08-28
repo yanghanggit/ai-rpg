@@ -46,12 +46,12 @@ class WorldSkillSystemReasoningResponse(AgentPlan):
 class SkillActionSystem(ReactiveProcessor):
 
     def __init__(
-        self, context: RPGEntitasContext, rpg_game: RPGGame, world_system_name: str
+        self, context: RPGEntitasContext, rpg_game: RPGGame, system_name: str
     ) -> None:
         super().__init__(context)
         self._context: RPGEntitasContext = context
         self._game: RPGGame = rpg_game
-        self._world_system_name: str = world_system_name
+        self._system_name: str = system_name
 
     ######################################################################################################################################################
     @override
@@ -79,9 +79,9 @@ class SkillActionSystem(ReactiveProcessor):
         assert entity.has(SkillAction) and entity.has(SkillTargetAction)
 
         # 没有世界系统就是错误
-        world_entity = self._context.get_world_entity(self._world_system_name)
+        world_entity = self._context.get_world_entity(self._system_name)
         if world_entity is None:
-            logger.error(f"{self._world_system_name}, world_entity is None.")
+            logger.error(f"{self._system_name}, world_entity is None.")
             return
 
         # 准备数据

@@ -9,6 +9,7 @@ from gameplay_systems.components import (
     PlayerComponent,
 )
 from enum import Enum
+from rpg_game.rpg_game import RPGGame
 
 
 # 规划的策略
@@ -20,8 +21,9 @@ class PlanningStrategy(Enum):
 
 class PrePlanningSystem(InitializeProcessor, ExecuteProcessor):
 
-    def __init__(self, context: RPGEntitasContext) -> None:
+    def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         self._context: RPGEntitasContext = context
+        self._game: RPGGame = rpg_game
         self._strategy: PlanningStrategy = PlanningStrategy.STRATEGY_ALL
         self._execute_count: int = 0
 

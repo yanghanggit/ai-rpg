@@ -19,7 +19,7 @@ DeadAction = namedtuple("DeadAction", "name action_name values")
 # 离开当前场景并去往
 GoToAction = namedtuple("GoToAction", "name action_name values")
 # 寻找场景内道具
-SearchPropAction = namedtuple("SearchPropAction", "name action_name values")
+PickUpPropAction = namedtuple("PickUpPropAction", "name action_name values")
 # 从目标角色处偷取
 StealPropAction = namedtuple("StealPropAction", "name action_name values")
 # 将道具交给目标角色
@@ -60,7 +60,7 @@ ACTOR_AVAILABLE_ACTIONS_REGISTER = [
     MindVoiceAction,
     BroadcastAction,
     WhisperAction,
-    SearchPropAction,
+    PickUpPropAction,
     PerceptionAction,
     StealPropAction,
     GivePropAction,
@@ -75,7 +75,7 @@ ACTOR_AVAILABLE_ACTIONS_REGISTER = [
 
 # 角色交互类动作
 ACTOR_INTERACTIVE_ACTIONS_REGISTER = [
-    SearchPropAction,
+    PickUpPropAction,
     GoToAction,
     PerceptionAction,
     StealPropAction,

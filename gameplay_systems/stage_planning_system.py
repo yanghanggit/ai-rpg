@@ -13,6 +13,7 @@ from my_agent.lang_serve_agent_request_task import (
     LangServeAgentRequestTask,
     LangServeAgentAsyncRequestTasksGather,
 )
+from rpg_game.rpg_game import RPGGame
 
 
 #######################################################################################################################################
@@ -21,8 +22,9 @@ class StagePlanningSystem(ExecuteProcessor):
     场景计划系统
     """
 
-    def __init__(self, context: RPGEntitasContext) -> None:
-        self._context = context
+    def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
+        self._context: RPGEntitasContext = context
+        self._game: RPGGame = rpg_game
         self._tasks: Dict[str, LangServeAgentRequestTask] = {}
 
     #######################################################################################################################################
@@ -116,7 +118,7 @@ class StagePlanningSystem(ExecuteProcessor):
                         self._context.safe_get_entity_name(stage_entity),
                     ),
                     self._context.get_actor_names_in_stage(stage_entity),
-                    self._context._execute_count,
+                    self._game.round,
                 ),
             )
 

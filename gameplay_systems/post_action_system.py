@@ -6,12 +6,14 @@ from gameplay_systems.action_components import (
     ACTOR_AVAILABLE_ACTIONS_REGISTER,
 )
 import gameplay_systems.planning_helper
+from rpg_game.rpg_game import RPGGame
 
 
 class PostActionSystem(ExecuteProcessor):
     ############################################################################################################
-    def __init__(self, context: RPGEntitasContext) -> None:
+    def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         self._context: RPGEntitasContext = context
+        self._game: RPGGame = rpg_game
 
     ############################################################################################################
     @override

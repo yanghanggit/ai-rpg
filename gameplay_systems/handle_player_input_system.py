@@ -33,16 +33,16 @@ def split_command(input_val: str, split_str: str) -> str:
 class HandlePlayerInputSystem(ExecuteProcessor):
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         self._context: RPGEntitasContext = context
-        self._rpg_game: RPGGame = rpg_game
+        self._game: RPGGame = rpg_game
 
     ############################################################################################################
     @override
     def execute(self) -> None:
-        assert isinstance(self._rpg_game, WebServerMultiplayersRPGGame) or isinstance(
-            self._rpg_game, TerminalRPGGame
+        assert isinstance(self._game, WebServerMultiplayersRPGGame) or isinstance(
+            self._game, TerminalRPGGame
         )
-        # assert len(self._rpg_game.player_names) > 0
-        for player_name in self._rpg_game.player_names:
+        # assert len(self._game.player_names) > 0
+        for player_name in self._game.player_names:
             self.play_via_client_and_handle_player_input(player_name)
 
     ############################################################################################################
@@ -58,7 +58,7 @@ class HandlePlayerInputSystem(ExecuteProcessor):
 
             ## 处理玩家的输入
             create_any_player_command_by_input = self.handle_input(
-                self._rpg_game, player_proxy, command
+                self._game, player_proxy, command
             )
 
             if not create_any_player_command_by_input:

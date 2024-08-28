@@ -2,14 +2,16 @@ from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: igno
 from typing import override
 from gameplay_systems.action_components import TagAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
+from rpg_game.rpg_game import RPGGame
 
 
 ####################################################################################################
 class TagActionSystem(ReactiveProcessor):
 
-    def __init__(self, context: RPGEntitasContext) -> None:
+    def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         super().__init__(context)
         self._context: RPGEntitasContext = context
+        self._game: RPGGame = rpg_game
 
     ####################################################################################################
     @override

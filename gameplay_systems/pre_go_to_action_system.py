@@ -19,6 +19,7 @@ from gameplay_systems.check_status_action_system import CheckStatusActionHelper
 from my_agent.agent_plan import AgentPlan
 from my_agent.lang_serve_agent_request_task import LangServeAgentRequestTask
 from file_system.files_def import PropFile
+from rpg_game.rpg_game import RPGGame
 
 
 class StageCondCheckResponsePlan(AgentPlan):
@@ -47,9 +48,10 @@ class StageCondCheckResponsePlan(AgentPlan):
 ###############################################################################################################################################
 class PreBeforeGoToActionSystem(ReactiveProcessor):
 
-    def __init__(self, context: RPGEntitasContext) -> None:
+    def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         super().__init__(context)
         self._context: RPGEntitasContext = context
+        self._game: RPGGame = rpg_game
 
     ###############################################################################################################################################
     @override

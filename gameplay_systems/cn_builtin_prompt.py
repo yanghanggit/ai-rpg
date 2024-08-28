@@ -450,6 +450,7 @@ def make_damage_event_prompt(
     health_percent = max(0, (target_current_hp - damage) / target_max_hp * 100)
     return f"# {actor_name}对{target_name}发动了攻击,造成了{damage}点伤害,当前{target_name}的生命值剩余{health_percent}%。"
 
+
 ################################################################################################################################################
 def stage_exit_conditions_check_prompt(
     actor_name: str,

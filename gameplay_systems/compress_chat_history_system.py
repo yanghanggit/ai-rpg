@@ -3,11 +3,13 @@ from rpg_game.rpg_entitas_context import RPGEntitasContext
 from gameplay_systems.components import ActorComponent, StageComponent
 from typing import Set, override, Dict
 from gameplay_systems.cn_constant_prompt import _CNConstantPrompt_ as ConstantPrompt
+from rpg_game.rpg_game import RPGGame
 
 
 class CompressChatHistorySystem(ExecuteProcessor):
-    def __init__(self, context: RPGEntitasContext) -> None:
+    def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         self._context: RPGEntitasContext = context
+        self._game: RPGGame = rpg_game
 
     ############################################################################################################
     @override

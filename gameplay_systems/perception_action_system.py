@@ -6,6 +6,7 @@ from loguru import logger
 from typing import List, Dict, override
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
 from file_system.files_def import PropFile
+from rpg_game.rpg_game import RPGGame
 
 
 ####################################################################################################################################
@@ -62,9 +63,10 @@ class PerceptionActionSystem(ReactiveProcessor):
     处理PerceptionActionComponent行为的系统
     """
 
-    def __init__(self, context: RPGEntitasContext):
+    def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame):
         super().__init__(context)
         self._context: RPGEntitasContext = context
+        self._game: RPGGame = rpg_game
 
     ###################################################################################################################
     @override

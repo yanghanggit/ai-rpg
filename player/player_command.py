@@ -6,7 +6,7 @@ from gameplay_systems.action_components import (
     SpeakAction,
     GoToAction,
     WhisperAction,
-    SearchPropAction,
+    PickUpPropAction,
     PerceptionAction,
     StealPropAction,
     GivePropAction,
@@ -51,7 +51,9 @@ class PlayerCommand(ABC):
 
     # 为了方便，直接在这里添加消息，不然每个子类都要写一遍
     # player 控制的actor本质和其他actor没有什么不同，这里模拟一个plan的动作。因为每一个actor都是plan -> acton -> direction(同步上下文) -> 再次plan的循环
-    def simu_player_planning_input_message(self, entity: Entity, human_message_content: str) -> None:
+    def simu_player_planning_input_message(
+        self, entity: Entity, human_message_content: str
+    ) -> None:
         # self._rpggame._entitas_context.safe_add_human_message_to_entity(
         #     entity, human_message_content
         # )
@@ -341,7 +343,7 @@ class PlayerWhisper(PlayerCommand):
 ####################################################################################################################################
 class PlayerSearchProp(PlayerCommand):
     """
-    玩家搜索的行为：SearchPropAction
+    玩家搜索的行为：PickUpPropAction
     """
 
     def __init__(
@@ -360,14 +362,14 @@ class PlayerSearchProp(PlayerCommand):
         # 添加行动
         actor_comp = player_entity.get(ActorComponent)
         player_entity.add(
-            SearchPropAction,
+            PickUpPropAction,
             actor_comp.name,
-            SearchPropAction.__name__,
+            PickUpPropAction.__name__,
             [self._prop_name],
         )
 
         # 模拟添加一个plan的发起。
-        human_message = f"""{{"{SearchPropAction.__name__}": ["{self._prop_name}"]}}"""
+        human_message = f"""{{"{PickUpPropAction.__name__}": ["{self._prop_name}"]}}"""
         self.simu_player_planning_input_message(player_entity, human_message)
 
 

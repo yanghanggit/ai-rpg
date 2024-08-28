@@ -16,9 +16,9 @@ from rpg_game.rpg_game import RPGGame
 
 class DeadActionSystem(ExecuteProcessor):
 
-    def __init__(self, context: RPGEntitasContext, rpggame: RPGGame) -> None:
+    def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         self._context: RPGEntitasContext = context
-        self._rpg_game: RPGGame = rpggame
+        self._game: RPGGame = rpg_game
 
     ########################################################################################################################################################################
     @override
@@ -50,8 +50,8 @@ class DeadActionSystem(ExecuteProcessor):
         for entity in entities:
             if entity.has(PlayerComponent):
                 logger.warning(f"玩家死亡，游戏结束")
-                self._rpg_game.exited = True
-                self._rpg_game.on_exit()
+                self._game.exited = True
+                self._game.on_exit()
 
     ########################################################################################################################################################################
     def add_destory(self) -> None:

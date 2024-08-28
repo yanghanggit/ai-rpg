@@ -1,7 +1,7 @@
 from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity  # type: ignore
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from gameplay_systems.action_components import (
-    SearchPropAction,
+    PickUpPropAction,
     DeadAction,
     CheckStatusAction,
 )
@@ -11,24 +11,26 @@ from typing import List, override
 from file_system.files_def import PropFile
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
 import file_system.helper
+from rpg_game.rpg_game import RPGGame
 
 
-class SearchPropActionSystem(ReactiveProcessor):
+class PickUpPropActionSystem(ReactiveProcessor):
 
-    def __init__(self, context: RPGEntitasContext):
+    def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame):
         super().__init__(context)
-        self._context = context
+        self._context: RPGEntitasContext = context
+        self._game: RPGGame = rpg_game
 
     ####################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(SearchPropAction): GroupEvent.ADDED}
+        return {Matcher(PickUpPropAction): GroupEvent.ADDED}
 
     ####################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
         return (
-            entity.has(SearchPropAction)
+            entity.has(PickUpPropAction)
             and entity.has(ActorComponent)
             and not entity.has(DeadAction)
         )
@@ -55,7 +57,7 @@ class SearchPropActionSystem(ReactiveProcessor):
         # 场景有这些道具文件
         prop_files = self._context._file_system.get_files(PropFile, stage_comp.name)
         ###
-        search_action = entity.get(SearchPropAction)
+        search_action = entity.get(PickUpPropAction)
         # search_action: AgentAction = search_comp.action
         ###
         #

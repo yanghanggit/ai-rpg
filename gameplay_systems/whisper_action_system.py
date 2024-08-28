@@ -5,14 +5,16 @@ from typing import override
 import gameplay_systems.conversation_helper
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
 import my_format_string.target_and_message_format_string
+from rpg_game.rpg_game import RPGGame
 
 
 ####################################################################################################################################
 class WhisperActionSystem(ReactiveProcessor):
 
-    def __init__(self, context: RPGEntitasContext) -> None:
+    def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         super().__init__(context)
         self._context: RPGEntitasContext = context
+        self._game: RPGGame = rpg_game
 
     ####################################################################################################################################
     @override

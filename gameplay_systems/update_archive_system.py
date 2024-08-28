@@ -28,7 +28,7 @@ class UpdateArchiveHelper:
         self._actors: Set[str] = set()
         self._chat_history: Dict[str, str] = {}
         self._actor_prop_description: Dict[str, List[str]] = {}
-        self._rpg_game: RPGGame = rpg_game
+        self._game: RPGGame = rpg_game
 
         self.build()
 
@@ -68,7 +68,7 @@ class UpdateArchiveHelper:
     ###############################################################################################################################################
     def build_chat_history(self) -> Dict[str, str]:
         tags: Set[str] = {
-            self._rpg_game.about_game,
+            self._game.about_game,
             ConstantPrompt.BATCH_CONVERSATION_ACTION_EVENTS_TAG,
             ConstantPrompt.SPEAK_ACTION_TAG,
             ConstantPrompt.WHISPER_ACTION_TAG,
@@ -200,7 +200,7 @@ class UpdateArchiveHelper:
 class UpdateArchiveSystem(ExecuteProcessor):
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         self._context: RPGEntitasContext = context
-        self._rpg_game: RPGGame = rpg_game
+        self._game: RPGGame = rpg_game
 
     ###############################################################################################################################################
     @override
@@ -211,7 +211,7 @@ class UpdateArchiveSystem(ExecuteProcessor):
     def update_archive(self) -> None:
         # 建立数据
         context = self._context
-        archive_helper = UpdateArchiveHelper(self._context, self._rpg_game)
+        archive_helper = UpdateArchiveHelper(self._context, self._game)
         # 对Actor进行处理
         actor_entities: Set[Entity] = context.get_group(
             Matcher(all_of=[ActorComponent])

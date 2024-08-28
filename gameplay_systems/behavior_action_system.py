@@ -10,13 +10,15 @@ from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import override, Set
 from file_system.files_def import PropFile
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
+from rpg_game.rpg_game import RPGGame
 
 
 class BehaviorActionSystem(ReactiveProcessor):
 
-    def __init__(self, context: RPGEntitasContext) -> None:
+    def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         super().__init__(context)
         self._context: RPGEntitasContext = context
+        self._game: RPGGame = rpg_game
 
     ######################################################################################################################################################
     @override

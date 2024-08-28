@@ -14,13 +14,17 @@ import gameplay_systems.cn_builtin_prompt as builtin_prompt
 from file_system.files_def import PropFile
 from my_agent.lang_serve_agent_request_task import LangServeAgentRequestTask
 from gameplay_systems.action_components import UpdateAppearanceAction
+from rpg_game.rpg_game import RPGGame
 
 
 class UpdateAppearanceActionSystem(ReactiveProcessor):
 
-    def __init__(self, context: RPGEntitasContext, system_name: str) -> None:
+    def __init__(
+        self, context: RPGEntitasContext, rpg_game: RPGGame, system_name: str
+    ) -> None:
         super().__init__(context)
         self._context: RPGEntitasContext = context
+        self._game: RPGGame = rpg_game
         self._system_name: str = str(system_name)
 
     ####################################################################################################

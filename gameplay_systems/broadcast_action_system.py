@@ -4,13 +4,15 @@ from gameplay_systems.components import StageComponent
 from gameplay_systems.action_components import BroadcastAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
+from rpg_game.rpg_game import RPGGame
 
 
 class BroadcastActionSystem(ReactiveProcessor):
 
-    def __init__(self, context: RPGEntitasContext) -> None:
+    def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         super().__init__(context)
         self._context: RPGEntitasContext = context
+        self._game: RPGGame = rpg_game
 
     ####################################################################################################
     @override

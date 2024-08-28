@@ -19,6 +19,7 @@ from my_agent.lang_serve_agent_request_task import (
     LangServeAgentRequestTask,
     LangServeAgentAsyncRequestTasksGather,
 )
+from rpg_game.rpg_game import RPGGame
 
 
 class ActorPlanningSystem(ExecuteProcessor):
@@ -26,8 +27,9 @@ class ActorPlanningSystem(ExecuteProcessor):
     角色的计划系统，必须在StagePlanningSystem之后执行
     """
 
-    def __init__(self, context: RPGEntitasContext) -> None:
-        self._context = context
+    def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
+        self._context: RPGEntitasContext = context
+        self._game: RPGGame = rpg_game
         self._tasks: Dict[str, LangServeAgentRequestTask] = {}
 
     #######################################################################################################################################
@@ -140,7 +142,7 @@ class ActorPlanningSystem(ExecuteProcessor):
                     tp[0],
                     tp[1],
                     self.get_stages_actor_can_go_to(actor_entity),
-                    self._context._execute_count,
+                    self._game.round,
                 ),
             )
             if task is not None:

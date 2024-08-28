@@ -14,13 +14,15 @@ from my_agent.lang_serve_agent_request_task import (
 from typing import Dict, List
 import copy
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
+from rpg_game.rpg_game import RPGGame
 
 
 class PreConversationActionSystem(ReactiveProcessor):
 
-    def __init__(self, context: RPGEntitasContext) -> None:
+    def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         super().__init__(context)
         self._context: RPGEntitasContext = context
+        self._game: RPGGame = rpg_game
         self._tasks: Dict[str, LangServeAgentRequestTask] = {}
 
     #################################################################################################################################################

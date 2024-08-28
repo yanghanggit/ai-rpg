@@ -9,7 +9,7 @@ class SaveSystem(ExecuteProcessor, TearDownProcessor):
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         super().__init__()
         self._context: RPGEntitasContext = context
-        self._rpg_game: RPGGame = rpg_game
+        self._game: RPGGame = rpg_game
 
     ################################################################################################
     @override

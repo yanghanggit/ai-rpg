@@ -53,9 +53,6 @@ class RPGEntitasContext(Context):
         # guid 生成器
         self._guid_generator = guid_generator
 
-        # 世界运行的回合数
-        self._execute_count: int = 0
-
         #
         assert self._file_system is not None, "self.file_system is None"
         assert self._kick_off_message_system is not None, "self.memory_system is None"

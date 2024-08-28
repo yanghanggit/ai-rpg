@@ -24,16 +24,16 @@ import my_format_string.target_and_message_format_string
 class UpdateClientMessageSystem(ExecuteProcessor):
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         self._context: RPGEntitasContext = context
-        self._rpg_game: RPGGame = rpg_game
+        self._game: RPGGame = rpg_game
 
     ############################################################################################################
     @override
     def execute(self) -> None:
-        # assert len(self._rpg_game.player_names) > 0
-        assert isinstance(self._rpg_game, WebServerMultiplayersRPGGame) or isinstance(
-            self._rpg_game, TerminalRPGGame
+        # assert len(self._game.player_names) > 0
+        assert isinstance(self._game, WebServerMultiplayersRPGGame) or isinstance(
+            self._game, TerminalRPGGame
         )
-        for player_name in self._rpg_game.player_names:
+        for player_name in self._game.player_names:
             player_proxy = player.utils.get_player_proxy(player_name)
             player_entity = self._context.get_player_entity(player_name)
             if player_entity is None or player_proxy is None:
@@ -47,7 +47,7 @@ class UpdateClientMessageSystem(ExecuteProcessor):
         self, player_proxy: PlayerProxy, player_entity: Entity
     ) -> None:
 
-        player_proxy.add_system_message(f"游戏回合:{self._context._execute_count}")
+        player_proxy.add_system_message(f"游戏回合:{self._game.round}")
 
         self.stage_enviro_narrate_action_2_message(player_proxy, player_entity)
         self.handle_login_messages(

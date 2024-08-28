@@ -11,13 +11,15 @@ import gameplay_systems.cn_builtin_prompt as builtin_prompt
 import file_system.helper
 from file_system.files_def import PropFile
 import my_format_string.target_and_message_format_string
+from rpg_game.rpg_game import RPGGame
 
 
 class GivePropActionSystem(ReactiveProcessor):
 
-    def __init__(self, context: RPGEntitasContext):
+    def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame):
         super().__init__(context)
         self._context: RPGEntitasContext = context
+        self._game: RPGGame = rpg_game
 
     ####################################################################################################################################
     @override

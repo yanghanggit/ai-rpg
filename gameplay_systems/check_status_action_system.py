@@ -5,6 +5,7 @@ from gameplay_systems.components import RPGAttributesComponent, ActorComponent
 from typing import List, override
 from file_system.files_def import PropFile
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
+from rpg_game.rpg_game import RPGGame
 
 
 ####################################################################################################################################
@@ -62,43 +63,12 @@ class CheckStatusActionHelper:
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-# class ActorCheckStatusEvent(IStageDirectorEvent):
-
-#     def __init__(
-#         self,
-#         who: str,
-#         props: List[PropFile],
-#         health: float,
-#         special_components: List[PropFile],
-#     ) -> None:
-#         self._who: str = who
-#         self._prop_files_as_weapon_clothes_non_consumable_item: List[PropFile] = props
-#         self._health: float = health
-#         self._prop_files_as_special_components: List[PropFile] = special_components
-
-#     def to_actor(self, actor_name: str, extended_context: RPGEntitasContext) -> str:
-#         if actor_name != self._who:
-#             # 只有自己知道
-#             return ""
-#         return builtin_prompt.make_check_status_action_prompt(
-#             self._who,
-#             self._prop_files_as_weapon_clothes_non_consumable_item,
-#             self._health,
-#             self._prop_files_as_special_components,
-#         )
-
-#     def to_stage(self, stage_name: str, extended_context: RPGEntitasContext) -> str:
-#         return ""
-
-
-####################################################################################################################################
-####################################################################################################################################
-####################################################################################################################################
 class CheckStatusActionSystem(ReactiveProcessor):
 
-    def __init__(self, context: RPGEntitasContext):
+    def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame):
         super().__init__(context)
         self._context: RPGEntitasContext = context
+        self._game: RPGGame = rpg_game
 
     ####################################################################################################################################
     @override

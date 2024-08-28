@@ -19,12 +19,12 @@ import gameplay_systems.cn_builtin_prompt as builtin_prompt
 class TerminalPlayerTipsSystem(ExecuteProcessor):
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         self._context: RPGEntitasContext = context
-        self._rpg_game: RPGGame = rpg_game
+        self._game: RPGGame = rpg_game
 
     ############################################################################################################
     @override
     def execute(self) -> None:
-        if not isinstance(self._rpg_game, TerminalRPGGame):
+        if not isinstance(self._game, TerminalRPGGame):
             logger.debug("不是终端模式，不需要中断等待")
             return
 
@@ -33,7 +33,7 @@ class TerminalPlayerTipsSystem(ExecuteProcessor):
     ############################################################################################################
     def tips_stages(self) -> None:
 
-        for player_name in self._rpg_game.player_names:
+        for player_name in self._game.player_names:
 
             player_proxy = player.utils.get_player_proxy(player_name)
             if player_proxy is None:

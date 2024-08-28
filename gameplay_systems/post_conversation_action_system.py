@@ -7,12 +7,15 @@ from gameplay_systems.action_components import (
 )
 from gameplay_systems.components import PlayerComponent, ActorComponent
 from rpg_game.rpg_entitas_context import RPGEntitasContext
+from rpg_game.rpg_game import RPGGame
 
 
 #################################################################################################################################################
 class PostConversationActionSystem(ReactiveProcessor):
-    def __init__(self, context: RPGEntitasContext) -> None:
+    def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         super().__init__(context)
+        self._context: RPGEntitasContext = context
+        self._game: RPGGame = rpg_game
 
     #################################################################################################################################################
     @override

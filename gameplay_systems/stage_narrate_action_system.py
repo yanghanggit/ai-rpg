@@ -3,14 +3,16 @@ from typing import override
 from gameplay_systems.action_components import StageNarrateAction
 from gameplay_systems.components import StageArchiveComponent
 from rpg_game.rpg_entitas_context import RPGEntitasContext
+from rpg_game.rpg_game import RPGGame
 
 
 ############################################################################################################
 class StageNarrateActionSystem(ReactiveProcessor):
 
-    def __init__(self, context: RPGEntitasContext) -> None:
+    def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         super().__init__(context)
-        self._context = context
+        self._context: RPGEntitasContext = context
+        self._game: RPGGame = rpg_game
 
     ############################################################################################################
     @override
@@ -40,7 +42,7 @@ class StageNarrateActionSystem(ReactiveProcessor):
             StageArchiveComponent,
             stage_archive_comp.name,
             stage_narrate_content,
-            self._context._execute_count,
+            self._game.round,
         )
 
     ############################################################################################################

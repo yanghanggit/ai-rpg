@@ -11,12 +11,14 @@ from gameplay_systems.components import (
 
 from typing import Dict, override, List, Any
 import file_system.helper
+from rpg_game.rpg_game import RPGGame
 
 
 class EndSystem(InitializeProcessor, ExecuteProcessor):
     ############################################################################################################
-    def __init__(self, context: RPGEntitasContext) -> None:
+    def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         self._context: RPGEntitasContext = context
+        self._game: RPGGame = rpg_game
 
     ############################################################################################################
     @override

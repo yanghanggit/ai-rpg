@@ -20,6 +20,7 @@ from gameplay_systems.cn_constant_prompt import _CNConstantPrompt_ as ConstantPr
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
 import my_format_string.target_and_message_format_string
 import my_format_string.attrs_format_string
+from rpg_game.rpg_game import RPGGame
 
 
 class WorldSkillSystemReasoningResponse(AgentPlan):
@@ -44,9 +45,12 @@ class WorldSkillSystemReasoningResponse(AgentPlan):
 
 class SkillActionSystem(ReactiveProcessor):
 
-    def __init__(self, context: RPGEntitasContext, world_system_name: str) -> None:
+    def __init__(
+        self, context: RPGEntitasContext, rpg_game: RPGGame, world_system_name: str
+    ) -> None:
         super().__init__(context)
         self._context: RPGEntitasContext = context
+        self._game: RPGGame = rpg_game
         self._world_system_name: str = world_system_name
 
     ######################################################################################################################################################

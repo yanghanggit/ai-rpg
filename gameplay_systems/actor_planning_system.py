@@ -116,19 +116,19 @@ class ActorPlanningSystem(ExecuteProcessor):
                 continue
 
             check_self = CheckSelfHelper(self._context, actor_entity)
-            
+
             task = LangServeAgentRequestTask.create(
                 agent,
                 builtin_prompt.make_actor_plan_prompt(
-                    game_round = self._game.round,
-                    current_stage = self.get_stage_name(actor_entity),
-                    stage_enviro_narrate = self.get_stage_narrate(actor_entity),
-                    stage_graph = self.get_stage_graph(actor_entity),
-                    stage_props = self.get_stage_props(actor_entity),
-                    health = check_self.health,
-                    categorized_prop_files = check_self._categorized_prop_files,
-                    current_weapon = check_self._current_weapon,
-                    current_clothes = check_self._current_clothes,
+                    game_round=self._game.round,
+                    current_stage=self.get_stage_name(actor_entity),
+                    stage_enviro_narrate=self.get_stage_narrate(actor_entity),
+                    stage_graph=self.get_stage_graph(actor_entity),
+                    stage_props=self.get_stage_props(actor_entity),
+                    health=check_self.health,
+                    categorized_prop_files=check_self._categorized_prop_files,
+                    current_weapon=check_self._current_weapon,
+                    current_clothes=check_self._current_clothes,
                 ),
             )
             if task is not None:

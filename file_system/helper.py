@@ -97,21 +97,24 @@ def update_stage_actors_map_file(
 
 ##################################################################################################################################
 def give_prop_file(
-    file_system: FileSystem, from_owner: str, to_owner: str, prop_name: str
+    file_system: FileSystem, from_name: str, target_name: str, prop_name: str
 ) -> Optional[PropFile]:
-    find_owners_file = file_system.get_file(PropFile, from_owner, prop_name)
-    if find_owners_file is None:
-        logger.error(f"{from_owner}没有{prop_name}这个道具。")
+
+    found_file = file_system.get_file(PropFile, from_name, prop_name)
+    if found_file is None:
+        logger.error(f"{from_name}没有{prop_name}这个道具。")
         return None
+
     # 文件得从管理数据结构中移除掉
-    file_system.remove_file(find_owners_file)
+    file_system.remove_file(found_file)
+
     # 文件重新写入
     new_file = PropFile(
-        find_owners_file._guid,
+        found_file._guid,
         prop_name,
-        to_owner,
-        find_owners_file._prop_model,
-        find_owners_file._count,
+        target_name,
+        found_file._prop_model,
+        found_file._count,
     )
     file_system.add_file(new_file)
     file_system.write_file(new_file)

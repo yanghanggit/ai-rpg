@@ -310,23 +310,22 @@ def make_check_status_action_prompt(
 
 
 ###############################################################################################################################################
-def make_search_prop_action_failed_prompt(actor_name: str, prop_name: str) -> str:
-    return f"""# {actor_name} 无法找到道具 "{prop_name}"。
-## 可能原因:
-1. {prop_name} 不是一个可搜索的道具。
-2. 道具可能已被移出场景或被其他角色获取。
+def make_pick_up_prop_failed_prompt(actor_name: str, prop_name: str) -> str:
+    return f"""# {actor_name} 无法拾取道具 {prop_name}
+## 原因分析:
+- {prop_name} 不是一个可拾取的道具。
+- 该道具可能已被移出场景，或被其他角色拾取。
 ## 建议:
-1. 请{actor_name}重新考虑搜索目标。
-2. 使用 {PerceptionAction.__name__} 感知场景内的道具，确保目标的可搜索性。"""
+请{actor_name}重新考虑拾取的目标。"""
 
 
 ###############################################################################################################################################
-def make_search_prop_action_success_prompt(
-    actor_name: str, prop_name: str, stagename: str
+def make_pick_up_prop_success_prompt(
+    actor_name: str, prop_name: str, stage_name: str
 ) -> str:
-    return f"""# {actor_name}从{stagename}场景内成功找到并获取了道具:{prop_name}。
+    return f"""# {actor_name} 从 {stage_name} 场景内成功找到并获取了道具 {prop_name}。
 ## 导致结果:
-- {stagename} 此场景内不再有这个道具。"""
+- {stage_name} 此场景内不再有这个道具。"""
 
 
 ################################################################################################################################################

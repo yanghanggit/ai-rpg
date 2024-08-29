@@ -1,5 +1,5 @@
 from loguru import logger
-from build_game.game_builder import GameBuilder
+from my_data.game_resource import GameResource
 from typing import Any, Optional
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
 
@@ -12,13 +12,15 @@ class EmptyChaosEngineeringSystem(IChaosEngineering):
         self.name: str = name
 
     ##
-    def on_pre_create_game(self, extended_context: Any, worlddata: GameBuilder) -> None:
+    def on_pre_create_game(
+        self, extended_context: Any, worlddata: GameResource
+    ) -> None:
         pass
         # logger.debug(f" {self.name}: on_pre_create_world")
 
     ##
     def on_post_create_game(
-        self, extended_context: Any, worlddata: GameBuilder
+        self, extended_context: Any, worlddata: GameResource
     ) -> None:
         pass
         # logger.debug(f"{self.name}: on_post_create_world")

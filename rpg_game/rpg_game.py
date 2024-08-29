@@ -17,13 +17,13 @@ from gameplay_systems.components import (
     StageArchiveComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from build_game.game_builder import GameBuilder
+from my_data.game_resource import GameResource
 from file_system.files_def import PropFile
 import shutil
 from rpg_game.base_game import BaseGame
 import file_system.helper
 from rpg_game.rpg_entitas_processors import RPGEntitasProcessors
-from build_game.data_model import (
+from my_data.model_def import (
     ActorProxyModel,
     StageProxyModel,
     ActorModel,
@@ -31,7 +31,7 @@ from build_game.data_model import (
     WorldSystemModel,
     WorldSystemProxyModel,
 )
-from build_game.data_model import AttributesIndex
+from my_data.model_def import AttributesIndex
 
 
 class RPGGame(BaseGame):
@@ -45,7 +45,7 @@ class RPGGame(BaseGame):
 
         ## 尽量不要再加东西了，Game就只管上下文，创建世界的数据，和Processors。其中上下文可以做运行中的全局数据管理者
         self._entitas_context: RPGEntitasContext = context
-        self._game_builder: Optional[GameBuilder] = None
+        self._game_builder: Optional[GameResource] = None
         self._processors: RPGEntitasProcessors = RPGEntitasProcessors.create(
             self, context
         )
@@ -53,7 +53,7 @@ class RPGGame(BaseGame):
         self._round: int = 0
 
     ###############################################################################################################################################
-    def build(self, game_builder: GameBuilder) -> "RPGGame":
+    def build(self, game_builder: GameResource) -> "RPGGame":
 
         context = self._entitas_context
 
@@ -130,16 +130,16 @@ class RPGGame(BaseGame):
         logger.info(f"{self.name}, game over")
 
     ###############################################################################################################################################
-    def create_world_system_entities(self, game_builder: GameBuilder) -> List[Entity]:
+    def create_world_system_entities(self, game_builder: GameResource) -> List[Entity]:
 
         assert game_builder is not None
-        assert game_builder._data_base_system is not None
+        assert game_builder._data_base is not None
 
         ret: List[Entity] = []
 
         for world_system_proxy in game_builder.world_systems_proxy:
 
-            world_system_model = game_builder._data_base_system.get_world_system(
+            world_system_model = game_builder._data_base.get_world_system(
                 world_system_proxy.name
             )
             assert world_system_model is not None
@@ -183,7 +183,7 @@ class RPGGame(BaseGame):
 
     ###############################################################################################################################################
     def create_player_entities(
-        self, game_builder: GameBuilder, actors_proxy: List[ActorProxyModel]
+        self, game_builder: GameResource, actors_proxy: List[ActorProxyModel]
     ) -> List[Entity]:
 
         assert game_builder is not None
@@ -203,17 +203,17 @@ class RPGGame(BaseGame):
 
     ###############################################################################################################################################
     def create_actor_entities(
-        self, game_builder: GameBuilder, actors_proxy: List[ActorProxyModel]
+        self, game_builder: GameResource, actors_proxy: List[ActorProxyModel]
     ) -> List[Entity]:
 
         assert game_builder is not None
-        assert game_builder._data_base_system is not None
+        assert game_builder._data_base is not None
 
         ret: List[Entity] = []
 
         for actor_proxy in actors_proxy:
 
-            actor_model = game_builder._data_base_system.get_actor(actor_proxy.name)
+            actor_model = game_builder._data_base.get_actor(actor_proxy.name)
             assert actor_model is not None
 
             entity = self.create_actor_entity(
@@ -274,7 +274,7 @@ class RPGGame(BaseGame):
         for prop_proxy in actor_proxy.props:
             ## 重构
             assert self._game_builder is not None
-            prop_model = self._game_builder._data_base_system.get_prop(prop_proxy.name)
+            prop_model = self._game_builder._data_base.get_prop(prop_proxy.name)
             if prop_model is None:
                 logger.error(f"没有从数据库找到道具：{prop_proxy.name}")
                 continue
@@ -332,7 +332,7 @@ class RPGGame(BaseGame):
         return actor_entity
 
     ###############################################################################################################################################
-    def create_stage_entities(self, game_builder: GameBuilder) -> List[Entity]:
+    def create_stage_entities(self, game_builder: GameResource) -> List[Entity]:
 
         assert game_builder is not None
 
@@ -340,7 +340,7 @@ class RPGGame(BaseGame):
 
         for stage_proxy in game_builder.stages_proxy:
 
-            stage_model = game_builder._data_base_system.get_stage(stage_proxy.name)
+            stage_model = game_builder._data_base.get_stage(stage_proxy.name)
             assert stage_model is not None
 
             stage_entity = self.create_stage_entity(
@@ -397,7 +397,7 @@ class RPGGame(BaseGame):
         for prop_proxy in stage_proxy.props:
             # 直接使用文件系统
             assert self._game_builder is not None
-            prop_model = self._game_builder._data_base_system.get_prop(prop_proxy.name)
+            prop_model = self._game_builder._data_base.get_prop(prop_proxy.name)
             if prop_model is None:
                 logger.error(f"没有从数据库找到道具：{prop_proxy.name}")
                 continue

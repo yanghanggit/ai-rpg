@@ -72,6 +72,18 @@ class CNConstantPrompt:
     @property
     def BIG_FAILURE(self) -> str:
         return "</大失败>"
+    
+    @property
+    def ACTOR_KICK_OFF_MESSAGE_PROMPT_TAG(self) -> str:
+        return f"<%这是角色初始化>"
+    
+    @property
+    def STAGE_KICK_OFF_MESSAGE_PROMPT_TAG(self) -> str:
+        return f"<%这是场景初始化>"
+    
+    @property
+    def WORLD_SYSTEM_KICK_OFF_MESSAGE_PROMPT_TAG(self) -> str:
+        return f"<%这是世界系统初始化>"
 
 
 ###############################################################################################################################################

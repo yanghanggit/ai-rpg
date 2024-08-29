@@ -39,7 +39,7 @@ class WorldSystemModel(BaseModel):
     url: str
 
 
-class DataBaseSystemModel(BaseModel):
+class DataBaseModel(BaseModel):
     actors: List[ActorModel]
     stages: List[StageModel]
     props: List[PropModel]
@@ -67,12 +67,12 @@ class WorldSystemProxyModel(BaseModel):
     name: str
 
 
-class GameBuilderModel(BaseModel):
+class GameModel(BaseModel):
     players: List[ActorProxyModel]
     actors: List[ActorProxyModel]
     stages: List[StageProxyModel]
     world_systems: List[WorldSystemProxyModel]
-    database: DataBaseSystemModel
+    database: DataBaseModel
     about_game: str
     version: str
 
@@ -83,3 +83,11 @@ class AttributesIndex(Enum):
     ATTACK = 2
     DEFENSE = 3
     MAX = 10
+
+
+class PropType(Enum):
+    TYPE_SPECIAL = "Special"
+    TYPE_WEAPON = "Weapon"
+    TYPE_CLOTHES = "Clothes"
+    TYPE_NON_CONSUMABLE_ITEM = "NonConsumableItem"
+    TYPE_SKILL = "Skill"

@@ -1,6 +1,6 @@
 from typing import Optional, Any, cast
 from loguru import logger
-from build_game.game_builder import GameBuilder
+from my_data.game_resource import GameResource
 from rpg_game.rpg_game import RPGGame
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from file_system.file_system import FileSystem
@@ -67,7 +67,7 @@ def load_game_builder_file(game_build_file_path: Path, version: str) -> Any:
 
 #######################################################################################################################################
 ### （临时的）写死创建
-def create_game_builder(game_name: str, version: str) -> Optional[GameBuilder]:
+def create_game_builder(game_name: str, version: str) -> Optional[GameResource]:
 
     root_runtime_dir = GAME_SAMPLE_RUNTIME_DIR
     root_runtime_dir.mkdir(parents=True, exist_ok=True)
@@ -83,7 +83,7 @@ def create_game_builder(game_name: str, version: str) -> Optional[GameBuilder]:
         return None
 
     runtime_file_dir = root_runtime_dir / game_name
-    return GameBuilder(game_name, game_data, runtime_file_dir)
+    return GameResource(game_name, game_data, runtime_file_dir)
 
 
 #######################################################################################################################################
@@ -153,9 +153,7 @@ def create_rpg_game(
         "MyChaosEngineeringSystem"
     )
     assert chaos_engineering_system is not None, "chaos_engineering_system is None."
-    assert (
-        game_builder._data_base_system is not None
-    ), "game_builder.data_base_system is None."
+    assert game_builder._data_base is not None, "game_builder.data_base_system is None."
 
     rpg_game = _create_rpg_game_(
         game_name, chaos_engineering_system, rpg_game_client_type

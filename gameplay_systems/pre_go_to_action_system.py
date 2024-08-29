@@ -20,6 +20,7 @@ from my_agent.agent_plan import AgentPlan
 from my_agent.lang_serve_agent_request_task import LangServeAgentRequestTask
 from file_system.files_def import PropFile
 from rpg_game.rpg_game import RPGGame
+from my_data.model_def import PropType
 
 
 class StageCondCheckResponse(AgentPlan):
@@ -280,10 +281,10 @@ class PreBeforeGoToActionSystem(ReactiveProcessor):
 
         check_self = CheckSelfHelper(self._context, actor_entity)
         return (
-            check_self.get_prop_files(PropFile.TYPE_SPECIAL)
-            + check_self.get_prop_files(PropFile.TYPE_WEAPON)
-            + check_self.get_prop_files(PropFile.TYPE_CLOTHES)
-            + check_self.get_prop_files(PropFile.TYPE_NON_CONSUMABLE_ITEM)
+            check_self.get_prop_files(PropType.TYPE_SPECIAL.value)
+            + check_self.get_prop_files(PropType.TYPE_WEAPON.value)
+            + check_self.get_prop_files(PropType.TYPE_CLOTHES.value)
+            + check_self.get_prop_files(PropType.TYPE_NON_CONSUMABLE_ITEM.value)
         )
 
     ###############################################################################################################################################

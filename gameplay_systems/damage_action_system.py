@@ -11,7 +11,7 @@ from file_system.files_def import PropFile
 import my_format_string.target_and_message_format_string
 import my_format_string.attrs_format_string
 from rpg_game.rpg_game import RPGGame
-from build_game.data_model import AttributesIndex
+from my_data.model_def import AttributesIndex
 
 
 class DamageActionSystem(ReactiveProcessor):

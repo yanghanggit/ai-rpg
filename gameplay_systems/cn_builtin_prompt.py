@@ -13,6 +13,7 @@ from gameplay_systems.action_components import (
 )
 import json
 from gameplay_systems.cn_constant_prompt import _CNConstantPrompt_ as ConstantPrompt
+from my_data.model_def import PropType
 
 
 ###############################################################################################################################################
@@ -20,7 +21,7 @@ def make_kick_off_actor_prompt(
     kick_off_message: str, about_game: str, game_round: int
 ) -> str:
 
-    prompt = f"""# <%这是角色初始化> 游戏世界即将开始运行。这是你的初始设定，你将以此为起点进行游戏
+    prompt = f"""# {ConstantPrompt.ACTOR_KICK_OFF_MESSAGE_PROMPT_TAG} 游戏世界即将开始运行。这是你的初始设定，你将以此为起点进行游戏
 
 ## 游戏介绍
 {about_game}
@@ -66,7 +67,7 @@ def make_kick_off_stage_prompt(
     else:
         actors_prompt = "- 无任何角色。"
 
-    prompt = f"""# <%这是场景初始化> 游戏世界即将开始运行。这是你的初始设定，你将以此为起点进行游戏
+    prompt = f"""# {ConstantPrompt.STAGE_KICK_OFF_MESSAGE_PROMPT_TAG} 游戏世界即将开始运行。这是你的初始设定，你将以此为起点进行游戏
 
 ## 游戏介绍
 {about_game}
@@ -91,7 +92,7 @@ def make_kick_off_stage_prompt(
 
 ###############################################################################################################################################
 def make_kick_off_world_system_prompt(about_game: str, game_round: int) -> str:
-    prompt = f"""# <%这是世界系统初始化> 游戏世界即将开始运行，请简要回答你的职能与描述
+    prompt = f"""# {ConstantPrompt.WORLD_SYSTEM_KICK_OFF_MESSAGE_PROMPT_TAG} 游戏世界即将开始运行，请简要回答你的职能与描述
 
 ## 游戏介绍
 {about_game}
@@ -260,11 +261,11 @@ def make_prop_prompt(
 def make_categorized_prop_files_prompt_list(
     categorized_prop_files: Dict[str, List[PropFile]],
     sorted_keys: List[str] = [
-        PropFile.TYPE_SPECIAL,
-        PropFile.TYPE_WEAPON,
-        PropFile.TYPE_CLOTHES,
-        PropFile.TYPE_NON_CONSUMABLE_ITEM,
-        PropFile.TYPE_SKILL,
+        PropType.TYPE_SPECIAL.value,
+        PropType.TYPE_WEAPON.value,
+        PropType.TYPE_CLOTHES.value,
+        PropType.TYPE_NON_CONSUMABLE_ITEM.value,
+        PropType.TYPE_SKILL.value,
     ],
 ) -> List[str]:
 

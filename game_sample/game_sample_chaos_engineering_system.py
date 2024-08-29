@@ -9,7 +9,7 @@ sys.path.append(str(root_dir))
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
 
 # from loguru import logger
-from build_game.game_builder import GameBuilder
+from my_data.game_resource import GameResource
 from typing import Any, Optional
 
 
@@ -23,13 +23,15 @@ class GameSampleChaosEngineeringSystem(IChaosEngineering):
         self._on_actor_system_excute_count = 0
 
     ##
-    def on_pre_create_game(self, extended_context: Any, worlddata: GameBuilder) -> None:
+    def on_pre_create_game(
+        self, extended_context: Any, worlddata: GameResource
+    ) -> None:
         pass
         # logger.warning(f" {self._name}: on_pre_create_world")
 
     ##
     def on_post_create_game(
-        self, extended_context: Any, worlddata: GameBuilder
+        self, extended_context: Any, worlddata: GameResource
     ) -> None:
         pass
         # logger.warning(f" {self._name}: on_post_create_world")

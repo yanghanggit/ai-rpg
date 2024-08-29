@@ -2,10 +2,10 @@ from overrides import override
 import json
 from typing import Dict, Any, List
 from abc import ABC, abstractmethod
-from build_game.data_model import PropModel
+from my_data.model_def import PropModel
 from pathlib import Path
 from loguru import logger
-from build_game.data_model import AttributesIndex
+from my_data.model_def import AttributesIndex, PropType
 
 
 ############################################################################################################
@@ -47,13 +47,9 @@ class BaseFile(ABC):
 ############################################################################################################
 ############################################################################################################
 ## 表达一个道具.
-class PropFile(BaseFile):
 
-    TYPE_SPECIAL = "Special"
-    TYPE_WEAPON = "Weapon"
-    TYPE_CLOTHES = "Clothes"
-    TYPE_NON_CONSUMABLE_ITEM = "NonConsumableItem"
-    TYPE_SKILL = "Skill"
+
+class PropFile(BaseFile):
 
     def __init__(
         self, guid: int, name: str, owner_name: str, prop_model: PropModel, count: int
@@ -91,32 +87,27 @@ class PropFile(BaseFile):
     ############################################################################################################
     @property
     def is_special(self) -> bool:
-        assert PropFile.TYPE_SPECIAL == "Special"
-        return self._prop_model.type == PropFile.TYPE_SPECIAL
+        return self._prop_model.type == PropType.TYPE_SPECIAL.value
 
     ############################################################################################################
     @property
     def is_weapon(self) -> bool:
-        assert PropFile.TYPE_WEAPON == "Weapon"
-        return self._prop_model.type == PropFile.TYPE_WEAPON
+        return self._prop_model.type == PropType.TYPE_WEAPON.value
 
     ############################################################################################################
     @property
     def is_clothes(self) -> bool:
-        assert PropFile.TYPE_CLOTHES == "Clothes"
-        return self._prop_model.type == PropFile.TYPE_CLOTHES
+        return self._prop_model.type == PropType.TYPE_CLOTHES.value
 
     ############################################################################################################
     @property
     def is_non_consumable_item(self) -> bool:
-        assert PropFile.TYPE_NON_CONSUMABLE_ITEM == "NonConsumableItem"
-        return self._prop_model.type == PropFile.TYPE_NON_CONSUMABLE_ITEM
+        return self._prop_model.type == PropType.TYPE_NON_CONSUMABLE_ITEM.value
 
     ############################################################################################################
     @property
     def is_skill(self) -> bool:
-        assert PropFile.TYPE_SKILL == "Skill"
-        return self._prop_model.type == PropFile.TYPE_SKILL
+        return self._prop_model.type == PropType.TYPE_SKILL.value
 
     ############################################################################################################
     @property

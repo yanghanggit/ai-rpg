@@ -1,17 +1,19 @@
 from abc import ABC, abstractmethod
-from build_game.game_builder import GameBuilder
+from my_data.game_resource import GameResource
 from typing import Any, Optional
 
 
 class IChaosEngineering(ABC):
     # extended_context 不用Any会发生循环引用
     @abstractmethod
-    def on_pre_create_game(self, extended_context: Any, worlddata: GameBuilder) -> None:
+    def on_pre_create_game(
+        self, extended_context: Any, worlddata: GameResource
+    ) -> None:
         pass
 
     @abstractmethod
     def on_post_create_game(
-        self, extended_context: Any, worlddata: GameBuilder
+        self, extended_context: Any, worlddata: GameResource
     ) -> None:
         pass
 

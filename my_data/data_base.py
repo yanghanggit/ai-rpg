@@ -1,6 +1,6 @@
 from typing import Optional, Dict
-from build_game.data_model import (
-    DataBaseSystemModel,
+from my_data.model_def import (
+    DataBaseModel,
     ActorModel,
     PropModel,
     StageModel,
@@ -8,14 +8,14 @@ from build_game.data_model import (
 )
 
 
-class DataBaseSystem:
+class DataBase:
     """
     将所有的数据存储在这里，以便于在游戏中使用。
     """
 
-    def __init__(self, model: Optional[DataBaseSystemModel]) -> None:
+    def __init__(self, model: Optional[DataBaseModel]) -> None:
 
-        self._model: Optional[DataBaseSystemModel] = model
+        self._model: Optional[DataBaseModel] = model
         assert self._model is not None
 
         self._actors: Dict[str, ActorModel] = {}

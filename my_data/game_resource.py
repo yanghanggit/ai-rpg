@@ -1,21 +1,16 @@
 from typing import Any, List
-from build_game.data_model import (
+from my_data.model_def import (
     ActorProxyModel,
     StageProxyModel,
     WorldSystemProxyModel,
-    GameBuilderModel,
+    GameModel,
 )
-from build_game.data_base_system import DataBaseSystem
+from my_data.data_base import DataBase
 from pathlib import Path
 import json
 
 
-class GameBuilder:
-    """
-    这是一个分析游戏json的数据的类。
-    将游戏数据转换为游戏对象。
-    内部管理着WorldSystemBuilder，PlayerBuilder，ActorBuilder，StageBuilder，DataBaseSystem。
-    """
+class GameResource:
 
     def __init__(self, name: str, data: Any, runtime_file_dir: Path) -> None:
 
@@ -26,10 +21,10 @@ class GameBuilder:
         self._runtime_dir.mkdir(parents=True, exist_ok=True)
         assert self._runtime_dir.exists()
 
-        self._model = GameBuilderModel.model_validate_json(
+        self._model = GameModel.model_validate_json(
             json.dumps(data, ensure_ascii=False)
         )
-        self._data_base_system = DataBaseSystem(self._model.database)
+        self._data_base = DataBase(self._model.database)
 
     ###############################################################################################################################################
     @property

@@ -349,29 +349,40 @@ def make_speak_action_prompt(src_name: str, dest_name: str, content: str) -> str
 
 ################################################################################################################################################
 def make_steal_prop_action_prompt(
-    actor_name: str, target_name: str, prop_name: str, action_result: bool
+    from_name: str, target_name: str, prop_name: str, action_result: bool
 ) -> str:
     if not action_result:
-        return f"{actor_name}从{target_name}盗取{prop_name}, 失败了"
-    return f"{actor_name}从{target_name}成功盗取了{prop_name}"
+        return f"# {from_name} 试图从 {target_name} 盗取 {prop_name}, 但是失败了。"
+    return f"""# {from_name} 从 {target_name} 成功盗取了 {prop_name}。
+# 导致结果
+- {target_name} 现在不再拥有 {prop_name}。
+- {from_name} 现在拥有了 {prop_name}。"""
 
 
 ################################################################################################################################################
 def make_give_prop_action_prompt(
-    from_who: str, to_who: str, prop_name: str, action_result: bool
+    from_name: str, target_name: str, prop_name: str, action_result: bool
 ) -> str:
     if not action_result:
-        return f"{from_who}向{to_who}交换{prop_name}, 失败了"
-    return f"{from_who}向{to_who}成功交换了{prop_name}"
+        return f"# {from_name} 试图将 {prop_name} 给予 {target_name}, 但是失败了。"
+    
+    return f"""# {from_name} 将 {prop_name} 成功给予了 {target_name}。
+## 导致结果
+- {from_name} 现在不再拥有 {prop_name}。
+- {target_name} 现在拥有了 {prop_name}。"""
 
 
 ################################################################################################################################################
 def go_to_stage_failed_because_stage_is_invalid_prompt(
-    actor_name: str, stagename: str
+    actor_name: str, stage_name: str
 ) -> str:
-    return f"""#{actor_name}无法前往{stagename}，可能的原因包括:
-- {stagename}目前不可访问，可能未开放或已关闭。
-- 场景名称"{stagename}"格式不正确，如“xxx的深处/北部/边缘/附近/其他区域”，这样的表达可能导致无法正确识别。
+    return f"""# {actor_name} 无法前往 {stage_name}
+## 可能的原因
+1. {stage_name} 目前不可访问，可能未开放或已关闭。
+2. 场景名称"{stage_name}"格式不正确,如“xxx的深处/北部/边缘/附近/其他区域”，这样的表达可能导致无法正确识别。
+    - 必须根据 全局游戏设定 中 对场景名字严格匹配。
+3. {actor_name} 无法从当前场景去往 {stage_name}。即当前场景与目标场景{stage_name}之间没有连接。
+## 建议
 - 请 {actor_name} 重新考虑目的地。"""
 
 
@@ -379,7 +390,7 @@ def go_to_stage_failed_because_stage_is_invalid_prompt(
 def go_to_stage_failed_because_already_in_stage_prompt(
     actor_name: str, stage_name: str
 ) -> str:
-    return f"你已经在 {stage_name} 场景中。需要重新考虑去往的目的地"
+    return f"# 注意！{actor_name} 已经在 {stage_name} 场景中。需要重新考虑去往的目的地"
 
 
 ################################################################################################################################################
@@ -866,3 +877,17 @@ def make_equip_prop_clothes_prompt(actor_name: str, prop_file_clothes: PropFile)
 
 
 ################################################################################################################################################
+
+
+def make_last_impression_of_stage_prompt(
+    actor_name: str, stage_name: str, stage_narrate: str
+) -> str:
+    return f"""# {actor_name} 将要离开 {stage_name} 场景。
+## 对于 {stage_name} 最后的印象如下:
+{stage_narrate}"""
+
+
+################################################################################################################################################
+
+def make_equip_prop_not_found_prompt(actor_name: str, prop_name: str) -> str:
+    return f"""# {actor_name} 没有道具: {prop_name}。所以无法装备。"""

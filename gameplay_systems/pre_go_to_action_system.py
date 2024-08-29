@@ -9,13 +9,14 @@ from gameplay_systems.components import (
     StageComponent,
     ActorComponent,
     AppearanceComponent,
+    StageGraphComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
 from gameplay_systems.cn_constant_prompt import _CNConstantPrompt_ as ConstantPrompt
-from typing import cast, override, List
-from gameplay_systems.check_self_action_system import CheckSelfHelper
+from typing import cast, override, List, Set
+from gameplay_systems.check_self_helper import CheckSelfHelper
 from my_agent.agent_plan import AgentPlan
 from my_agent.lang_serve_agent_request_task import LangServeAgentRequestTask
 from file_system.files_def import PropFile
@@ -131,6 +132,20 @@ class PreBeforeGoToActionSystem(ReactiveProcessor):
             )
 
             return False
+        
+        assert current_stage_entity.has(StageGraphComponent)
+        stage_graph_comp = current_stage_entity.get(StageGraphComponent)
+        stage_graph: Set[str] = stage_graph_comp.stage_graph
+        if target_stage_name not in stage_graph:
+            ## 场景之间无连接就不能去。
+            self._context.add_agent_context_message(
+                set({actor_entity}),
+                builtin_prompt.go_to_stage_failed_because_stage_is_invalid_prompt(
+                    safe_actor_name, target_stage_name
+                ),
+            )
+            return False
+
 
         return True
 
@@ -177,20 +192,20 @@ class PreBeforeGoToActionSystem(ReactiveProcessor):
         if response is None:
             return False
 
-        plan = StageCondCheckResponse(current_stage_name, response)
+        response_plan = StageCondCheckResponse(current_stage_name, response)
         #
-        if not plan.allow:
+        if not response_plan.allow:
             # 通知事件
             self._context.add_agent_context_message(
                 set({actor_entity}),
                 builtin_prompt.exit_stage_failed_beacuse_stage_refuse_prompt(
-                    actor_name, current_stage_name, plan.show_tips
+                    actor_name, current_stage_name, response_plan.show_tips
                 ),
             )
 
             return False
 
-        logger.debug(f"允许通过！说明如下: {plan.show_tips}")
+        logger.debug(f"允许通过！说明如下: {response_plan.show_tips}")
         ## 可以删除，允许通过！这个上下文就拿掉，不需要了。
         self._context._langserve_agent_system.remove_last_conversation_between_human_and_ai(
             current_stage_name
@@ -236,8 +251,8 @@ class PreBeforeGoToActionSystem(ReactiveProcessor):
         if response is None:
             return False
 
-        plan = StageCondCheckResponse(target_stage_name, response)
-        if not plan.allow:
+        response_plan = StageCondCheckResponse(target_stage_name, response)
+        if not response_plan.allow:
             # 通知事件, 因为没动，得是当前场景需要通知
             current_stage_entity = self._context.safe_get_stage_entity(actor_entity)
             assert current_stage_entity is not None
@@ -245,13 +260,13 @@ class PreBeforeGoToActionSystem(ReactiveProcessor):
             self._context.add_agent_context_message(
                 set({actor_entity}),
                 builtin_prompt.enter_stage_failed_beacuse_stage_refuse_prompt(
-                    actor_name, target_stage_name, plan.show_tips
+                    actor_name, target_stage_name, response_plan.show_tips
                 ),
             )
 
             return False
 
-        logger.debug(f"允许通过！说明如下: {plan.show_tips}")
+        logger.debug(f"允许通过！说明如下: {response_plan.show_tips}")
         ## 可以删除，允许通过！这个上下文就拿掉，不需要了。
         self._context._langserve_agent_system.remove_last_conversation_between_human_and_ai(
             target_stage_name

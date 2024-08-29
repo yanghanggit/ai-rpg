@@ -53,6 +53,9 @@ class RPGEntitasContext(Context):
         # guid 生成器
         self._guid_generator = guid_generator
 
+        # 临时收集会话的历史
+        self._round_message_collect: Dict[str, List[str]] = {}
+
         #
         assert self._file_system is not None, "self.file_system is None"
         assert self._kick_off_message_system is not None, "self.memory_system is None"
@@ -298,12 +301,20 @@ class RPGEntitasContext(Context):
                 safe_name, replace_message
             )
 
+            # 记录历史
+            self._round_message_collect.get(safe_name, []).append(replace_message)
+
             # 如果是player 就特殊处理
             if entity.has(PlayerComponent):
                 player_comp = entity.get(PlayerComponent)
                 player_proxy = player.utils.get_player_proxy(player_comp.name)
                 if player_proxy is not None:
                     player_proxy.add_actor_message(safe_name, replace_message)
+
+    #############################################################################################################################
+    def get_round_messages(self, entity: Entity) -> List[str]:
+        safe_name = self.safe_get_entity_name(entity)
+        return self._round_message_collect.get(safe_name, [])
 
 
 #############################################################################################################################

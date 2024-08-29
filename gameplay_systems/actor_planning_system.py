@@ -20,7 +20,7 @@ from my_agent.lang_serve_agent_request_task import (
     LangServeAgentAsyncRequestTasksGather,
 )
 from rpg_game.rpg_game import RPGGame
-from gameplay_systems.check_self_action_system import CheckSelfHelper
+from gameplay_systems.check_self_helper import CheckSelfHelper
 from file_system.files_def import PropFile
 
 

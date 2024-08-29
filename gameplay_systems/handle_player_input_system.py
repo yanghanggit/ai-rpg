@@ -13,9 +13,8 @@ from player.player_command import (
     PlayerPickUpProp,
     PlayerSteal,
     PlayerGiveProp,
-    # PlayerPerception,
-    # PlayerCheckStatus,
     PlayerBehavior,
+    PlayerEquip,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from rpg_game.terminal_rpg_game import TerminalRPGGame
@@ -53,8 +52,11 @@ class HandlePlayerInputSystem(ExecuteProcessor):
             return
 
         for command in player_proxy._input_commands:
-            single_player = self._context.get_player_entity(player_name)
-            assert single_player is not None
+            player_entity = self._context.get_player_entity(player_name)
+            if player_entity is None:
+                #logger.warning("玩家实体不存在")
+                continue
+            assert player_entity is not None
 
             ## 处理玩家的输入
             create_any_player_command_by_input = self.handle_input(
@@ -77,11 +79,6 @@ class HandlePlayerInputSystem(ExecuteProcessor):
 
         if "/quit" in usr_input:
             rpg_game.exited = True
-
-        # elif "/attack" in usr_input:
-        #     command = "/attack"
-        #     targetname = split_command(usr_input, command)
-        #     PlayerAttack(command, rpg_game, player_proxy, targetname).execute()
 
         elif "/goto" in usr_input:
             command = "/goto"
@@ -108,36 +105,15 @@ class HandlePlayerInputSystem(ExecuteProcessor):
             prop_name = split_command(usr_input, command)
             PlayerPickUpProp(command, rpg_game, player_proxy, prop_name).execute()
 
-        # elif "/portalstep" in usr_input:
-        #     command = "/portalstep"
-        #     PlayerPortalStep(command, rpg_game, player_proxy).execute()
-
-        elif "/stealprop" in usr_input:
-            command = "/stealprop"
+        elif "/steal" in usr_input:
+            command = "/steal"
             prop_name = split_command(usr_input, command)
             PlayerSteal(command, rpg_game, player_proxy, prop_name).execute()
 
-        elif "/giveprop" in usr_input:
-            command = "/giveprop"
+        elif "/give" in usr_input:
+            command = "/give"
             prop_name = split_command(usr_input, command)
             PlayerGiveProp(command, rpg_game, player_proxy, prop_name).execute()
-
-        # elif "/perception" in usr_input:
-        #     command = "/perception"
-        #     # self.imme_handle_perception(playerproxy)
-        #     PlayerPerception(command, rpg_game, player_proxy).execute()
-        # return False
-
-        # elif "/checkstatus" in usr_input:
-        #     command = "/checkstatus"
-        #     # self.imme_handle_check_status(playerproxy)
-        #     PlayerCheckStatus(command, rpg_game, player_proxy).execute()
-        #     # return False
-
-        # elif "/useprop" in usr_input:
-        #     command = "/useprop"
-        #     content = split_command(usr_input, command)
-        #     PlayerUseProp(command, rpg_game, player_proxy, content).execute()
 
         elif "/behavior" in usr_input:
             PlayerBehavior(
@@ -145,6 +121,15 @@ class HandlePlayerInputSystem(ExecuteProcessor):
                 rpg_game,
                 player_proxy,
                 split_command(usr_input, "/behavior"),
+            ).execute()
+
+        elif "/equip" in usr_input:
+
+            PlayerEquip(
+                "/equip",
+                rpg_game,
+                player_proxy,
+                split_command(usr_input, "/equip"),
             ).execute()
 
         return True

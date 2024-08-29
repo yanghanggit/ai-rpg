@@ -112,19 +112,6 @@ def main(game_names: Set[str]) -> None:
             game_editor.write_game_editor(f"{GAME_NAME}/{OUTPUT_RUNTIMES_DIR}/")
             game_editor.write_agent_list(f"{GAME_NAME}/{OUTPUT_RUNTIMES_DIR}/")
 
-    # game_editor = create_game_editor(
-    #     str(sheet_name_as_game_name),
-    #     actor_data_base,
-    #     prop_data_base,
-    #     stage_data_base,
-    #     world_system_data_base,
-    # )
-    # assert game_editor is not None, "创建GameEditor失败"
-    # if game_editor is not None:
-    #     game_editor.write_game_editor(f"{GAME_NAME}/{OUTPUT_RUNTIMES_DIR}/")
-    #     game_editor.write_agent_list(f"{GAME_NAME}/{OUTPUT_RUNTIMES_DIR}/")
-
-
 ############################################################################################################
 if __name__ == "__main__":
     main(set({"World1", "World2"}))

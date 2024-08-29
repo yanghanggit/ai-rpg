@@ -37,10 +37,14 @@ class TerminalPlayerTipsSystem(ExecuteProcessor):
 
             player_proxy = player.utils.get_player_proxy(player_name)
             if player_proxy is None:
-                logger.warning("玩家不存在，或者玩家未加入游戏")
+                #logger.warning("玩家不存在，或者玩家未加入游戏")
                 continue
 
             player_entity = self._context.get_player_entity(player_name)
+            if player_entity is None:
+                #logger.warning("玩家实体不存在")
+                continue
+
             assert player_entity is not None
             assert player_entity.has(PlayerComponent)
             assert player_entity.has(ActorComponent)

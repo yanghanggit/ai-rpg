@@ -55,25 +55,6 @@ def add_stage_archive_files(
 
 
 ##################################################################################################################################
-
-
-def update_actor_archive_file(
-    file_system: FileSystem, owner_name: str, actor_name: str, appearance: str
-) -> Optional[ActorArchiveFile]:
-
-    file = file_system.get_file(ActorArchiveFile, owner_name, actor_name)
-    if file is None:
-        return None
-
-    file._appearance = appearance
-    file_system.write_file(file)
-    return file
-
-
-##################################################################################################################################
-
-
-##################################################################################################################################
 ## 更新角色的属性文件并记录下来～
 def update_status_profile_file(
     file_system: FileSystem, owner_name: str, update_data: Dict[str, Any]

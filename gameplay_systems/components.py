@@ -7,7 +7,7 @@ GUIDComponent = namedtuple("GUIDComponent", "name GUID")
 WorldComponent = namedtuple("WorldComponent", "name")
 # 场景标记
 StageComponent = namedtuple("StageComponent", "name")
-StageArchiveComponent = namedtuple("StageArchiveComponent", "name narrate round")
+# 场景可以去往的地方
 StageGraphComponent = namedtuple("StageGraphComponent", "name stage_graph")
 # 角色标记
 ActorComponent = namedtuple("ActorComponent", "name current_stage")
@@ -25,9 +25,6 @@ AutoPlanningComponent = namedtuple("AutoPlanningComponent", "name")
 AppearanceComponent = namedtuple("AppearanceComponent", "name appearance hash_code")
 # 裸身信息，用于和衣服组成完整的外观信息。如果是动物等，就是动物的外观信息
 BodyComponent = namedtuple("BodyComponent", "name body")
-
-
-##############################################################################################################################################
 
 ######################################### 测试组件（业务强相关）：RPG Game #######################################################################
 RPGAttributesComponent = namedtuple(

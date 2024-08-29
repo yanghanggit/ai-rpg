@@ -145,25 +145,18 @@ class RPGEntitasProcessors(Processors):
             )
         )  ### 更新外观
 
-        # processors.add(
-        #     CheckSelfActionSystem(context, input_rpg_game)
-        # )  # 道具交互类行为之后，可以发起自检
-
         # 场景切换类行为，非常重要而且必须在最后!
         processors.add(
             PreBeforeGoToActionSystem(context, input_rpg_game)
         )  # 去往场景之前的检查与实际的执行
         processors.add(GoToActionSystem(context, input_rpg_game))
-        # processors.add(
-        #     PerceptionActionSystem(context, input_rpg_game)
-        # )  # 场景切换类行为之后可以发起感知
-
-        # 更新档案
-        processors.add(UpdateArchiveSystem(context, input_rpg_game))
 
         processors.add(
             PostActionSystem(context, input_rpg_game)
         )  ####### <在所有行动之后> ##############################################################
+
+        # 更新档案
+        processors.add(UpdateArchiveSystem(context, input_rpg_game))
 
         ###最后删除entity与存储数据
         processors.add(DestroySystem(context, input_rpg_game))

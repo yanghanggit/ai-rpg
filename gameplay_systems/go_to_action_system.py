@@ -5,10 +5,12 @@ from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import override, Optional
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
 from rpg_game.rpg_game import RPGGame
+from file_system.files_def import StageArchiveFile
+from loguru import logger
 
 
 ###############################################################################################################################################
-class GoToActionHelper:
+class GoToHelper:
 
     def __init__(
         self, context: RPGEntitasContext, entity: Entity, target_stage_name: str
@@ -63,7 +65,7 @@ class GoToActionSystem(ReactiveProcessor):
         if len(go_to_action.values) == 0:
             return
 
-        helper = GoToActionHelper(self._context, entity, go_to_action.values[0])
+        helper = GoToHelper(self._context, entity, go_to_action.values[0])
         if (
             helper._target_stage_entity is None
             or helper._current_stage_entity is None
@@ -79,11 +81,9 @@ class GoToActionSystem(ReactiveProcessor):
 
         # 进入新的场景
         self.enter_target_stage(helper)
-        # 进入场景后的处理
-        # self.on_enter_target_stage(helper)
 
     ###############################################################################################################################################
-    def enter_target_stage(self, helper: GoToActionHelper) -> None:
+    def enter_target_stage(self, helper: GoToHelper) -> None:
 
         actor_comp = helper._entity.get(ActorComponent)
 
@@ -113,11 +113,27 @@ class GoToActionSystem(ReactiveProcessor):
         )
 
     ###############################################################################################################################################
-    def before_leave_current_stage(self, helper: GoToActionHelper) -> None:
-        pass
+    def before_leave_current_stage(self, helper: GoToHelper) -> None:
+
+        my_name = self._context.safe_get_entity_name(helper._entity)
+        stage_archive = self._context._file_system.get_file(
+            StageArchiveFile, my_name, helper._current_stage_name
+        )
+        if stage_archive is None:
+            return
+
+        logger.debug(
+            f"{my_name}离开{helper._current_stage_name}。留下最后的印象。{stage_archive._stage_narrate}"
+        )
+        self._context.add_agent_context_message(
+            set({helper._entity}),
+            builtin_prompt.make_last_impression_of_stage_prompt(
+                my_name, helper._current_stage_name, stage_archive._stage_narrate
+            ),
+        )
 
     ###############################################################################################################################################
-    def leave_current_stage(self, helper: GoToActionHelper) -> None:
+    def leave_current_stage(self, helper: GoToHelper) -> None:
 
         # 离开场景的事件需要通知相关的人
         assert helper._current_stage_entity is not None
@@ -136,20 +152,6 @@ class GoToActionSystem(ReactiveProcessor):
         self._context.change_stage_tag_component(
             helper._entity, helper._current_stage_name, ""
         )
-
-    ###############################################################################################################################################
-    # def on_enter_target_stage(self, helper: GoToActionHelper) -> None:
-    #     actor_comp = helper._entity.get(ActorComponent)
-    #     actor_entities = self._context._get_actors_in_stage(actor_comp.current_stage)
-    #     for actor_entity in actor_entities:
-    #         if not actor_entity.has(PerceptionAction):
-    #             # 进入新的场景之后，进入者与场景内所有人都加一次感知，这里会自动检查外观信息
-    #             actor_entity.add(
-    #                 PerceptionAction,
-    #                 actor_comp.name,
-    #                 PerceptionAction.__name__,
-    #                 [actor_comp.current_stage],
-    #             )
 
 
 ###############################################################################################################################################

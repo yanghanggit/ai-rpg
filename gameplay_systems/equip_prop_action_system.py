@@ -62,6 +62,12 @@ class EquipPropActionSystem(ReactiveProcessor):
                 logger.warning(
                     f"EquipPropActionSystem: {actor_name} can't find prop {prop_name}"
                 )
+
+                self._context.add_agent_context_message(
+                    set({entity}),
+                    builtin_prompt.make_equip_prop_not_found_prompt(actor_name, prop_name),
+                )
+
                 continue
 
             if prop_file.is_weapon:

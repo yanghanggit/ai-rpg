@@ -10,6 +10,7 @@ from gameplay_systems.action_components import (
     StealPropAction,
     GivePropAction,
     BehaviorAction,
+    EquipPropAction,
 )
 from gameplay_systems.components import (
     ActorComponent,
@@ -441,3 +442,39 @@ class PlayerBehavior(PlayerCommand):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
+class PlayerEquip(PlayerCommand):
+    """
+    玩家广播的行为：BroadcastAction
+    """
+
+    def __init__(
+        self,
+        name: str,
+        rpg_game: RPGGame,
+        player_proxy: PlayerProxy,
+        input_content: str,
+    ) -> None:
+        super().__init__(name, rpg_game, player_proxy)
+        self._input_content: str = input_content
+
+    def execute(self) -> None:
+        context = self._rpggame._entitas_context
+        player_entity = context.get_player_entity(self._player_proxy._name)
+        if player_entity is None:
+            logger.warning("debug_broadcast: player is None")
+            return
+
+        # 添加行动
+        actor_comp = player_entity.get(ActorComponent)
+        player_entity.add(
+            EquipPropAction,
+            actor_comp.name,
+            EquipPropAction.__name__,
+            [self._input_content],
+        )
+
+        # 模拟添加一个plan的发起。
+        self.simu_player_planning_input_message(
+            player_entity,
+            f"""{{"{EquipPropAction.__name__}": ["{self._input_content}"]}}""",
+        )

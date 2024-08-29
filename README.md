@@ -117,15 +117,15 @@ pm2 start game_sample/gen_agent/coffin_of_the_silent_one_agent.py game_sample/ge
 
 # 盗取对当前场景内的目标的道具
 
-/stealprop '@对谁>盗取的道具名字'
+/steal '@对谁>盗取的道具名字'
 
-例如 /stealprop @格雷>断指钥匙
+例如 /steal @格雷>断指钥匙
 
 # 将我身上的道具交给目标
 
-/giveprop '@对谁>我的道具的名字'
+/give '@对谁>我的道具的名字'
 
-例如 /giveprop @格雷>炉钩
+例如 /give @格雷>炉钩
 
 # 查看我身上有哪些道具？
 

@@ -4,7 +4,6 @@ from loguru import logger
 from gameplay_systems.components import (
     ActorComponent,
     StageComponent,
-    StageArchiveComponent,
 )
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
 from gameplay_systems.cn_constant_prompt import _CNConstantPrompt_ as ConstantPrompt
@@ -20,209 +19,137 @@ from file_system.files_def import (
 import file_system.helper
 
 
-###############################################################################################################################################
-class UpdateArchiveHelper:
-
-    def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
-        ##我的参数
-        self._context: RPGEntitasContext = context
-        self._stages: Set[str] = set()
-        self._actors: Set[str] = set()
-        self._chat_history: Dict[str, str] = {}
-        self._actor_prop_description: Dict[str, List[str]] = {}
-        self._game: RPGGame = rpg_game
-
-        self.build()
-
-    ###############################################################################################################################################
-    def build(self) -> None:
-        ## step1: 所有拥有初始化记忆的场景拿出来
-        self._stages = self.build_stages()
-        ## step2: 所有拥有初始化记忆的Actor拿出来
-        self._actors = self.build_actors()
-        ## step3: 打包Actor的对话历史，方便后续查找
-        self._chat_history = self.build_chat_history()
-        ## step4: 所有拥有初始化记忆的Actor的道具信息拿出来
-        self._actor_prop_description = self.build_actor_prop_description()
-
-    ###############################################################################################################################################
-    def build_stages(self) -> Set[str]:
-        ret: Set[str] = set()
-        stage_entities: Set[Entity] = self._context.get_group(
-            Matcher(StageComponent)
-        ).entities
-        for stage_entity in stage_entities:
-            stage_comp = stage_entity.get(StageComponent)
-            ret.add(stage_comp.name)
-        return ret
-
-    ###############################################################################################################################################
-    def build_actors(self) -> Set[str]:
-        ret: Set[str] = set()
-        actor_entities: Set[Entity] = self._context.get_group(
-            Matcher(ActorComponent)
-        ).entities
-        for actor_entity in actor_entities:
-            actor_comp = actor_entity.get(ActorComponent)
-            ret.add(actor_comp.name)
-        return ret
-
-    ###############################################################################################################################################
-    def build_chat_history(self) -> Dict[str, str]:
-        tags: Set[str] = {
-            self._game.about_game,
-            ConstantPrompt.BATCH_CONVERSATION_ACTION_EVENTS_TAG,
-            ConstantPrompt.SPEAK_ACTION_TAG,
-            ConstantPrompt.WHISPER_ACTION_TAG,
-            ConstantPrompt.BATCH_CONVERSATION_ACTION_EVENTS_TAG,
-        }
-
-        ret: Dict[str, str] = {}
-
-        actor_entities = self._context.get_group(Matcher(ActorComponent)).entities
-        for actor_entity in actor_entities:
-
-            actor_comp = actor_entity.get(ActorComponent)
-
-            filters = self._context._langserve_agent_system.filter_chat_history(
-                actor_comp.name, tags
-            )
-            content_list: List[str] = []
-            for filter in filters:
-                content_list.append(cast(str, filter.content))
-
-            ret[actor_comp.name] = " ".join(content_list)
-
-        return ret
-
-    ###############################################################################################################################################
-    def build_actor_prop_description(self) -> Dict[str, List[str]]:
-
-        ret: Dict[str, List[str]] = {}
-
-        actor_entities: Set[Entity] = self._context.get_group(
-            Matcher(ActorComponent)
-        ).entities
-
-        for actor_entity in actor_entities:
-            actor_comp = actor_entity.get(ActorComponent)
-
-            prop_files = self._context._file_system.get_files(PropFile, actor_comp.name)
-            desc: List[str] = []
-            for file in prop_files:
-                desc.append(f"{file.name}:{file.description}")
-
-            ret[actor_comp.name] = desc
-
-        return ret
-
-    ###############################################################################################################################################
-    @property
-    def stage_names(self) -> Set[str]:
-        return self._stages
-
-    ###############################################################################################################################################
-    @property
-    def actor_names(self) -> Set[str]:
-        return self._actors
-
-    ###############################################################################################################################################
-    def get_actor_prop_description(self, actor_name: str) -> List[str]:
-        return self._actor_prop_description.get(actor_name, [])
-
-    ###############################################################################################################################################
-    def get_stage_archive(self, actor_name: str) -> Set[str]:
-
-        ret = (
-            self.mentioned_in_prop_description(self.stage_names, actor_name)
-            | self.mentioned_in_kick_off_message(self.stage_names, actor_name)
-            | self.mentioned_in_chat_history(self.stage_names, actor_name)
-        )
-
-        # 当前场景总要加一个
-        actor_entity = self._context.get_actor_entity(actor_name)
-        assert actor_entity is not None
-        stage_entity = self._context.safe_get_stage_entity(actor_entity)
-        assert stage_entity is not None
-        safe_name = self._context.safe_get_entity_name(stage_entity)
-        ret.add(safe_name)
-
-        return ret
-
-    ###############################################################################################################################################
-    def get_actor_archive(self, actor_name: str) -> Set[str]:
-        # 取并集
-        ret = (
-            self.mentioned_in_prop_description(self.actor_names, actor_name)
-            | self.mentioned_in_kick_off_message(self.actor_names, actor_name)
-            | self.mentioned_in_chat_history(self.actor_names, actor_name)
-        )
-        ret.discard(actor_name)  ##去掉自己，没必要认识自己
-        return ret
-
-    ###############################################################################################################################################
-    def mentioned_in_prop_description(
-        self, check_names: Set[str], actor_name: str
-    ) -> Set[str]:
-        ret: Set[str] = set()
-        for prop_info in self._actor_prop_description.get(actor_name, []):
-            for name in check_names:
-                if prop_info.find(name) != -1:
-                    ret.add(name)
-        return ret
-
-    ###############################################################################################################################################
-    def mentioned_in_kick_off_message(
-        self, check_names: Set[str], actor_name: str
-    ) -> Set[str]:
-        ret: Set[str] = set()
-        kick_off_message = self._context._kick_off_message_system.get_message(
-            actor_name
-        )
-        for name in check_names:
-            if name in kick_off_message:
-                ret.add(name)
-        return ret
-
-    ###############################################################################################################################################
-    def mentioned_in_chat_history(
-        self, check_names: Set[str], actor_name: str
-    ) -> Set[str]:
-        ret: Set[str] = set()
-        chat_history = self._chat_history.get(actor_name, "")
-        for name in check_names:
-            if chat_history.find(name) != -1:
-                ret.add(name)
-        return ret
-
-
-###############################################################################################################################################
-
-
 class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
+
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         self._context: RPGEntitasContext = context
         self._game: RPGGame = rpg_game
 
     @override
     def initialize(self) -> None:
-        logger.debug("UpdateArchiveSystem initialize")
-
         all_actor_names = self.get_all_actor_names()
         all_stage_names = self.get_all_stage_names()
-
         self.add_kick_off_actor_archive_files(all_actor_names)
         self.add_kick_off_archive_files(all_stage_names)
 
     ###############################################################################################################################################
     @override
     def execute(self) -> None:
-        logger.debug("UpdateArchiveSystem execute")
+        self.add_archive_to_actors()
+        self.update_appearance_of_all_actor_archives()
 
-        # all_actor_names = self.get_all_actor_names()
-        # all_stage_names = self.get_all_stage_names()
-        # self.add_conversation_actor_archive_files(all_actor_names)
-        # self.add_conversation_stage_archive_files(all_stage_names)
+    ###############################################################################################################################################
+    def update_appearance_of_all_actor_archives(self) -> None:
+
+        stage_entities: Set[Entity] = self._context.get_group(
+            Matcher(all_of=[StageComponent])
+        ).entities
+
+        for stage_entity in stage_entities:
+            actor_entities = self._context.get_actors_in_stage(stage_entity)
+            if len(actor_entities) == 0:
+                continue
+            appearance_info = self._context.get_appearance_in_stage(stage_entity)
+            for actor_entity in actor_entities:
+                self.update_actor_appearance_of_archive(actor_entity, appearance_info)
+
+    ###############################################################################################################################################
+    def update_actor_appearance_of_archive(
+        self, actor_entity: Entity, appearance_info: Dict[str, str]
+    ) -> None:
+
+        my_name = self._context.safe_get_entity_name(actor_entity)
+        for actor_name, actor_appearance in appearance_info.items():
+            if actor_name == my_name:
+                continue
+
+            if not self._context._file_system.has_file(
+                ActorArchiveFile, my_name, actor_name
+            ):
+                file_system.helper.add_actor_archive_files(
+                    self._context._file_system, my_name, set({actor_name})
+                )
+
+            actor_archive = self._context._file_system.get_file(
+                ActorArchiveFile, my_name, actor_name
+            )
+            assert actor_archive is not None
+            if actor_archive._appearance != actor_appearance:
+                actor_archive._appearance = actor_appearance
+                self._context._file_system.write_file(actor_archive)
+
+    ###############################################################################################################################################
+    def add_archive_to_actors(self) -> None:
+
+        all_actor_names = self.get_all_actor_names()
+        all_stage_names = self.get_all_stage_names()
+
+        actor_entities: Set[Entity] = self._context.get_group(
+            Matcher(all_of=[ActorComponent])
+        ).entities
+
+        for actor_entity in actor_entities:
+
+            messages = self._context.get_round_messages(actor_entity)
+            if len(messages) == 0:
+                continue
+            batch_content = " ".join(messages)
+            self.add_actor_archive_files(actor_entity, batch_content, all_actor_names)
+            self.add_stage_archive_files(actor_entity, batch_content, all_stage_names)
+
+    ###############################################################################################################################################
+    def add_actor_archive_files(
+        self,
+        entity: Entity,
+        messages: str,
+        optional_range_actor_names: Set[str] = set(),
+    ) -> Dict[str, List[ActorArchiveFile]]:
+        ret: Dict[str, List[ActorArchiveFile]] = {}
+
+        safe_name = self._context.safe_get_entity_name(entity)
+        for archive_actor_name in optional_range_actor_names:
+
+            if safe_name == archive_actor_name:
+                continue
+
+            if archive_actor_name not in messages:
+                continue
+
+            add_archives = file_system.helper.add_actor_archive_files(
+                self._context._file_system, safe_name, {archive_actor_name}
+            )
+
+            if len(add_archives) > 0:
+                ret[safe_name] = add_archives
+
+        return ret
+
+    ###############################################################################################################################################
+    def add_stage_archive_files(
+        self,
+        entity: Entity,
+        messages: str,
+        optional_range_stage_names: Set[str] = set(),
+    ) -> Dict[str, List[StageArchiveFile]]:
+        ret: Dict[str, List[StageArchiveFile]] = {}
+
+        safe_name = self._context.safe_get_entity_name(entity)
+        for archive_stage_name in optional_range_stage_names:
+
+            if safe_name == archive_stage_name:
+                continue
+
+            if archive_stage_name not in messages:
+                continue
+
+            add_archives = file_system.helper.add_stage_archive_files(
+                self._context._file_system, safe_name, {archive_stage_name}
+            )
+
+            if len(add_archives) > 0:
+                ret[safe_name] = add_archives
+
+        return ret
 
     ###############################################################################################################################################
     def get_all_actor_names(self) -> Set[str]:
@@ -272,7 +199,8 @@ class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
                     self._context._file_system, actor_comp.name, {archive_actor_name}
                 )
 
-                ret[actor_comp.name] = add_archives
+                if len(add_archives) > 0:
+                    ret[actor_comp.name] = add_archives
 
         return ret
 
@@ -302,116 +230,9 @@ class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
                     self._context._file_system, actor_comp.name, {archive_stage_name}
                 )
 
-                ret[actor_comp.name] = add_archives
+                if len(add_archives) > 0:
+                    ret[actor_comp.name] = add_archives
 
         return ret
-
-    ###############################################################################################################################################
-    # def get_conversation_content(self, entity: Entity) -> List[str]:
-    #     return []
-
-    ###############################################################################################################################################
-    def update_archive(self) -> None:
-        # 建立数据
-        context = self._context
-        archive_helper = UpdateArchiveHelper(self._context, self._game)
-        # 对Actor进行处理
-        actor_entities: Set[Entity] = context.get_group(
-            Matcher(all_of=[ActorComponent])
-        ).entities
-        for actor_entity in actor_entities:
-            # 更新Actor的Actor档案，可能更新了谁认识谁，还有如果在场景中，外观是什么
-            self.update_actor_archive(actor_entity, archive_helper)
-            # 更新Actor的场景档案，
-            self.update_stage_archive(actor_entity, archive_helper)
-            self.update_stage_narrate_of_archive(actor_entity)
-
-    ###############################################################################################################################################
-    def update_actor_archive(
-        self, actor_entity: Entity, helper: UpdateArchiveHelper
-    ) -> None:
-        #
-        actor_comp = actor_entity.get(ActorComponent)
-        actor_archives: Set[str] = helper.get_actor_archive(actor_comp.name)
-        if len(actor_archives) == 0:
-            logger.warning(f"{actor_comp.name} 什么人都不认识，这个合理么？")
-            return
-
-        # 补充文件，有可能是新的人，也有可能全是旧的人
-        file_system.helper.add_actor_archive_files(
-            self._context._file_system, actor_comp.name, actor_archives
-        )
-
-        # 更新文件，只更新场景内我能看见的人
-        appearance_data = self._context.get_appearance_in_stage(actor_entity)
-        for name in actor_archives:
-            appearance = appearance_data.get(name, "")
-            if appearance != "":
-                file_system.helper.update_actor_archive_file(
-                    self._context._file_system, actor_comp.name, name, appearance
-                )
-
-        # 更新chat history
-        message = builtin_prompt.update_actor_archive_prompt(
-            actor_comp.name, actor_archives
-        )
-
-        filters = self._context._langserve_agent_system.filter_chat_history(
-            actor_comp.name, set({message})
-        )
-        self._context._langserve_agent_system.exclude_chat_history(
-            actor_comp.name, filters
-        )
-
-        # 添加新的
-        self._context.safe_add_human_message_to_entity(actor_entity, message)
-
-    ###############################################################################################################################################
-    def update_stage_archive(
-        self, actor_entity: Entity, helper: UpdateArchiveHelper
-    ) -> None:
-        actor_comp = actor_entity.get(ActorComponent)
-        stage_archives = helper.get_stage_archive(actor_comp.name)
-        if len(stage_archives) == 0:
-            logger.warning(f"{actor_comp.name} 什么地点都不知道，这个合理么？")
-            return
-
-        # 写文件
-        file_system.helper.add_stage_archive_files(
-            self._context._file_system, actor_comp.name, stage_archives
-        )
-
-        # 更新chat history
-        message = builtin_prompt.update_stage_archive_prompt(
-            actor_comp.name, stage_archives
-        )
-
-        filters = self._context._langserve_agent_system.filter_chat_history(
-            actor_comp.name, set({message})
-        )
-        self._context._langserve_agent_system.exclude_chat_history(
-            actor_comp.name, filters
-        )
-
-        # 添加新的
-        self._context.safe_add_human_message_to_entity(actor_entity, message)
-
-    ###############################################################################################################################################
-    def update_stage_narrate_of_archive(self, actor_entity: Entity) -> None:
-        current_stage_entity = self._context.safe_get_stage_entity(actor_entity)
-        if current_stage_entity is None:
-            return
-
-        actor_comp = actor_entity.get(ActorComponent)
-        stage_archive_comp = current_stage_entity.get(StageArchiveComponent)
-        stage_archive = self._context._file_system.get_file(
-            StageArchiveFile, actor_comp.name, stage_archive_comp.name
-        )
-        if stage_archive is None or stage_archive_comp.narrate == "":
-            assert stage_archive is not None
-            return
-
-        stage_archive._stage_narrate = str(stage_archive_comp.narrate)
-        self._context._file_system.write_file(stage_archive)
 
     ###############################################################################################################################################

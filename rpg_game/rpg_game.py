@@ -14,7 +14,7 @@ from gameplay_systems.components import (
     RPGCurrentWeaponComponent,
     RPGCurrentClothesComponent,
     StageGraphComponent,
-    StageArchiveComponent,
+    # StageArchiveComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from my_data.game_resource import GameResource
@@ -377,7 +377,7 @@ class RPGGame(BaseGame):
             GUIDComponent, stage_model.name, context._guid_generator.generate()
         )
         stage_entity.add(StageComponent, stage_model.name)
-        stage_entity.add(StageArchiveComponent, stage_model.name, "", 0)
+        # stage_entity.add(StageArchiveComponent, stage_model.name, "", 0)
 
         stage_entity.add(
             RPGAttributesComponent,

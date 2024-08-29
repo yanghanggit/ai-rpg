@@ -4,14 +4,13 @@ from gameplay_systems.components import (
     WorldComponent,
     StageComponent,
     ActorComponent,
-    PlayerComponent,
     AppearanceComponent,
     BodyComponent,
 )
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
-from typing import Dict, Set, List, Any
+from typing import Dict, Set, FrozenSet, Any
 from my_agent.lang_serve_agent_request_task import (
     LangServeAgentRequestTask,
     LangServeAgentAsyncRequestTasksGather,
@@ -54,7 +53,7 @@ class KickOffSystem(InitializeProcessor, ExecuteProcessor):
         self._world_tasks = self.create_world_system_tasks()
         self._stage_tasks = self.create_stage_tasks()
         self._actor_tasks = self.create_actor_tasks()
-        self.handle_players()
+        #self.handle_players()
         # 填进去
         self._tasks.update(self._world_tasks)
         self._tasks.update(self._stage_tasks)
@@ -150,7 +149,7 @@ class KickOffSystem(InitializeProcessor, ExecuteProcessor):
         ret: Dict[str, LangServeAgentRequestTask] = {}
 
         actor_entities: Set[Entity] = self._context.get_group(
-            Matcher(all_of=[ActorComponent], none_of=[PlayerComponent])
+            Matcher(all_of=[ActorComponent])
         ).entities
         for actor_entity in actor_entities:
 
@@ -180,26 +179,6 @@ class KickOffSystem(InitializeProcessor, ExecuteProcessor):
         return ret
 
     ######################################################################################################################################################
-    def handle_players(self) -> None:
-        actor_entities = self._context.get_group(
-            Matcher(all_of=[ActorComponent, PlayerComponent])
-        ).entities
-        for actor_entity in actor_entities:
-            actor_comp = actor_entity.get(ActorComponent)
-            kick_off_message = self._context._kick_off_message_system.get_message(
-                actor_comp.name
-            )
-            if kick_off_message == "":
-                logger.error(f"kick_off_message is empty: {actor_comp.name}")
-                continue
-            prompt = builtin_prompt.make_kick_off_actor_prompt(
-                kick_off_message,
-                self._game.about_game,
-                self._game.round,
-            )
-            self._context.safe_add_human_message_to_entity(actor_entity, prompt)
-
-    ######################################################################################################################################################
     def on_response(self, tasks: Dict[str, LangServeAgentRequestTask]) -> None:
 
         for name, task in tasks.items():
@@ -221,14 +200,8 @@ class KickOffSystem(InitializeProcessor, ExecuteProcessor):
                 logger.warning(f"ActorPlanningSystem: entity is None, {name}")
                 continue
 
-            actions_register: List[Any] = []
-            if name in self._stage_tasks:
-                actions_register = STAGE_AVAILABLE_ACTIONS_REGISTER
-            elif name in self._actor_tasks:
-                actions_register = ACTOR_AVAILABLE_ACTIONS_REGISTER
-
             if not gameplay_systems.planning_helper.check_plan(
-                entity, agent_planning, actions_register
+                entity, agent_planning, self.get_actions_register(name)
             ):
                 logger.warning(
                     f"ActorPlanningSystem: check_plan failed, {agent_planning}"
@@ -242,8 +215,16 @@ class KickOffSystem(InitializeProcessor, ExecuteProcessor):
             ## 不能停了，只能一直继续
             for action in agent_planning._actions:
                 gameplay_systems.planning_helper.add_action_component(
-                    entity, action, actions_register
+                    entity, action, self.get_actions_register(name)
                 )
+
+    ######################################################################################################################################################
+    def get_actions_register(self, name: str) -> FrozenSet[type[Any]]:
+        if name in self._stage_tasks:
+            return STAGE_AVAILABLE_ACTIONS_REGISTER
+        elif name in self._actor_tasks:
+            return ACTOR_AVAILABLE_ACTIONS_REGISTER
+        return frozenset()
 
     ######################################################################################################################################################
     def on_add_update_appearance_action(self) -> None:

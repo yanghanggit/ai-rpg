@@ -1,5 +1,5 @@
 from collections import namedtuple
-
+from typing import List, Dict, Any, Union, FrozenSet, Tuple
 
 ################################################ 动作组件： ####################################################################################
 # 场景环境的描述
@@ -24,11 +24,7 @@ PickUpPropAction = namedtuple("PickUpPropAction", "name action_name values")
 StealPropAction = namedtuple("StealPropAction", "name action_name values")
 # 将道具交给目标角色
 GivePropAction = namedtuple("GivePropAction", "name action_name values")
-# 感知场景内的信息（角色与道具）
-# PerceptionAction = namedtuple("PerceptionAction", "name action_name values")
-# 检查自身状态
-# CheckSelfAction = namedtuple("CheckSelfAction", "name action_name values")
-#
+# 行为动作与技能动作
 BehaviorAction = namedtuple("BehaviorAction", "name action_name values")
 SkillTargetAction = namedtuple("SkillTargetAction", "name action_name values")
 SkillAction = namedtuple("SkillAction", "name action_name values")
@@ -47,45 +43,46 @@ EquipPropAction = namedtuple("EquipPropAction", "name action_name values")
 
 
 # 场景可以用的所有动作
-STAGE_AVAILABLE_ACTIONS_REGISTER = [
-    TagAction,
-    MindVoiceAction,
-    WhisperAction,
-    StageNarrateAction,
-    DamageAction,
-]
+STAGE_AVAILABLE_ACTIONS_REGISTER: FrozenSet[type[Any]] = frozenset(
+    {TagAction, MindVoiceAction, WhisperAction, StageNarrateAction, DamageAction}
+)
+
 
 # 角色可以用的所有动作
-ACTOR_AVAILABLE_ACTIONS_REGISTER = [
-    GoToAction,
-    SpeakAction,
-    TagAction,
-    MindVoiceAction,
-    BroadcastAction,
-    WhisperAction,
-    PickUpPropAction,
-    StealPropAction,
-    GivePropAction,
-    BehaviorAction,
-    SkillTargetAction,
-    SkillAction,
-    SkillPropAction,
-    UpdateAppearanceAction,
-    DamageAction,
-    EquipPropAction,
-]
+ACTOR_AVAILABLE_ACTIONS_REGISTER: FrozenSet[type[Any]] = frozenset(
+    {
+        GoToAction,
+        SpeakAction,
+        TagAction,
+        MindVoiceAction,
+        BroadcastAction,
+        WhisperAction,
+        PickUpPropAction,
+        StealPropAction,
+        GivePropAction,
+        BehaviorAction,
+        SkillTargetAction,
+        SkillAction,
+        SkillPropAction,
+        UpdateAppearanceAction,
+        DamageAction,
+        EquipPropAction,
+    }
+)
 
 # 角色交互类动作
-ACTOR_INTERACTIVE_ACTIONS_REGISTER = [
-    PickUpPropAction,
-    GoToAction,
-    StealPropAction,
-    GivePropAction,
-    BehaviorAction,
-    SkillTargetAction,
-    SkillAction,
-    SkillPropAction,
-    UpdateAppearanceAction,
-    DamageAction,
-    EquipPropAction,
-]
+ACTOR_INTERACTIVE_ACTIONS_REGISTER: FrozenSet[type[Any]] = frozenset(
+    {
+        PickUpPropAction,
+        GoToAction,
+        StealPropAction,
+        GivePropAction,
+        BehaviorAction,
+        SkillTargetAction,
+        SkillAction,
+        SkillPropAction,
+        UpdateAppearanceAction,
+        DamageAction,
+        EquipPropAction,
+    }
+)

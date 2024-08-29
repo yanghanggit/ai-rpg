@@ -35,7 +35,7 @@ def make_kick_off_actor_prompt(
 
 ## 输出要求
 - 请遵循 输出格式指南。
-- 返回结果只带如下的键: {MindVoiceAction.__name__}, {TagAction.__name__}。"""
+- 返回结果只带如下的键:{MindVoiceAction.__name__}与{TagAction.__name__}。"""
 
     return prompt
 

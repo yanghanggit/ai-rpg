@@ -6,7 +6,7 @@ from typing import List, Dict, Any
 import json
 
 
-def main() -> None:
+def main(default_game_name: str) -> None:
     """
     直接根据一个游戏文件，执行文件内的所有agentpy程序。这样可以清晰一些，手动很麻烦。
     尤其是改了生成之后。
@@ -18,7 +18,7 @@ def main() -> None:
     # 读取世界资源文件
     game_name = input("请输入要进入的游戏名称(必须与自动化创建的名字一致):")
     if game_name == "":
-        game_name = "World2"
+        game_name = default_game_name
 
     directory = Path("game_sample/gen_runtimes")
     directory.mkdir(parents=True, exist_ok=True)
@@ -56,4 +56,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    main("World2")

@@ -19,9 +19,14 @@ class PostActionSystem(ExecuteProcessor):
     @override
     def execute(self) -> None:
         # 在这里清除所有的行动
+        # all_actions_register = (
+        #     ACTOR_AVAILABLE_ACTIONS_REGISTER + STAGE_AVAILABLE_ACTIONS_REGISTER
+        # )
+
         all_actions_register = (
-            ACTOR_AVAILABLE_ACTIONS_REGISTER + STAGE_AVAILABLE_ACTIONS_REGISTER
+            ACTOR_AVAILABLE_ACTIONS_REGISTER | STAGE_AVAILABLE_ACTIONS_REGISTER
         )
+
         gameplay_systems.planning_helper.remove_all(self._context, all_actions_register)
         self.test()
 

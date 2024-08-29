@@ -5,17 +5,17 @@ from player.player_command import PlayerLogin
 from rpg_game.create_rpg_game_util import create_rpg_game, RPGGameClientType
 
 
-async def main(input_actor_name_as_default: str) -> None:
+async def main(input_actor_name_as_default: str, default_game_name: str) -> None:
 
     log_start_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     logger.add(f"logs/{log_start_time}.log", level="DEBUG")
 
     # 读取世界资源文件
     game_name = input(
-        "请输入要进入的世界名称(必须与自动化创建的名字一致), 默认为 World2"
+        f"请输入要进入的世界名称(必须与自动化创建的名字一致), 默认为 {default_game_name} :"
     )
     if game_name == "":
-        game_name = "World2"
+        game_name = default_game_name
 
     rpg_game = create_rpg_game(game_name, "qwe", RPGGameClientType.TERMINAL)
     if rpg_game is None:
@@ -62,4 +62,4 @@ async def main(input_actor_name_as_default: str) -> None:
 if __name__ == "__main__":
     import asyncio
 
-    asyncio.run(main("人物.火十一"))  # todo
+    asyncio.run(main("人物.火十一", "World2"))  # todo

@@ -1,12 +1,14 @@
 from entitas import Entity, Matcher  # type: ignore
 from loguru import logger
-from typing import List, Any
+from typing import List, Any, FrozenSet
 from my_agent.agent_plan import AgentPlan, AgentAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 
 
 ######################################################################################################################################
-def check_component_register(class_name: str, actions_register: List[Any]) -> Any:
+def check_component_register(
+    class_name: str, actions_register: FrozenSet[type[Any]]
+) -> Any:
     for component in actions_register:
         if class_name == component.__name__:
             return component
@@ -15,7 +17,9 @@ def check_component_register(class_name: str, actions_register: List[Any]) -> An
 
 
 ######################################################################################################################################
-def check_plan(entity: Entity, plan: AgentPlan, actions_register: List[Any]) -> bool:
+def check_plan(
+    entity: Entity, plan: AgentPlan, actions_register: FrozenSet[type[Any]]
+) -> bool:
     if len(plan._actions) == 0:
         # 走到这里
         logger.warning(f"走到这里就是request过了，但是格式在load json的时候出了问题")
@@ -29,13 +33,15 @@ def check_plan(entity: Entity, plan: AgentPlan, actions_register: List[Any]) -> 
 
 
 #######################################################################################################################################
-def check_available(action: AgentAction, actions_register: List[Any]) -> bool:
+def check_available(
+    action: AgentAction, actions_register: FrozenSet[type[Any]]
+) -> bool:
     return check_component_register(action.action_name, actions_register) is not None
 
 
 #######################################################################################################################################
 def add_action_component(
-    entity: Entity, action: AgentAction, actions_register: List[Any]
+    entity: Entity, action: AgentAction, actions_register: FrozenSet[type[Any]]
 ) -> None:
     comp_class = check_component_register(action.action_name, actions_register)
     if comp_class is None:
@@ -45,7 +51,9 @@ def add_action_component(
 
 
 ######################################################################################################################################
-def remove_all(context: RPGEntitasContext, actions_register: List[Any]) -> None:
+def remove_all(
+    context: RPGEntitasContext, actions_register: FrozenSet[type[Any]]
+) -> None:
     action_entities = context.get_group(
         Matcher(any_of=actions_register)
     ).entities.copy()

@@ -48,8 +48,8 @@ async def create(clientip: str) -> List[TupleModel]:
     log_start_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     logger.add(f"logs/{log_start_time}.log", level="DEBUG")
 
-    worldname = "World2"
-    rpg_game = create_rpg_game(worldname, "qwe", RPGGameClientType.WEB_SERVER)
+    world_name = "World2"
+    rpg_game = create_rpg_game(world_name, "qwe", RPGGameClientType.WEB_SERVER)
     if rpg_game is None:
         logger.error("create_rpg_game 失败。")
         return []

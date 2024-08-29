@@ -70,6 +70,8 @@ class ExcelEditorActor:
             return
 
         for prop_info_string in data.split(";"):
+            if prop_info_string == "":
+                continue
             parse = game_sample.utils.parse_prop_string(prop_info_string)
             prop_name = parse[0]
             prop_count = parse[1]

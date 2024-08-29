@@ -12,6 +12,7 @@ from gameplay_systems.action_components import (
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from rpg_game.rpg_game import RPGGame
+from typing import FrozenSet, Any
 
 
 class DeadActionSystem(ExecuteProcessor):
@@ -31,7 +32,7 @@ class DeadActionSystem(ExecuteProcessor):
         self.add_destory()
 
     ########################################################################################################################################################################
-    def remove_actions(self, action_comps: List[Any]) -> None:
+    def remove_actions(self, action_comps: FrozenSet[type[Any]]) -> None:
         actor_entities = self._context.get_group(
             Matcher(
                 all_of=[ActorComponent, DeadAction],

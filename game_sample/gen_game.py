@@ -21,7 +21,7 @@ from game_sample.excel_data_prop import ExcelDataProp
 from game_sample.excel_data_world_system import ExcelDataWorldSystem
 from game_sample.excel_data_stage import ExcelDataStage
 from game_sample.game_editor import ExcelEditorGame
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Set
 from game_sample.excel_data_actor import ExcelDataActor
 
 
@@ -53,7 +53,7 @@ def create_game_editor(
 
 
 ############################################################################################################
-def main() -> None:
+def main(game_names: Set[str]) -> None:
 
     excel_path = f"{GAME_NAME}/{EXCEL_EDITOR}/{GAME_NAME}.xlsx"
     logger.info(f"开始读取Excel文件: {excel_path}")
@@ -88,7 +88,17 @@ def main() -> None:
     analyze_stage_relationship(stage_data_base, actor_data_base)
     analyze_relationship_between_actors_and_props(prop_data_base, actor_data_base)
 
-    gen_games: List[str] = ["World1", "World2"]
+    gen_games = game_names.copy()
+
+    # 测试这个世界编辑
+    if len(game_names) == 0:
+        sheet_name_as_game_name = input(
+            "输入要创建的World的名字(必须对应excel中的sheet名):"
+        )
+        if sheet_name_as_game_name != "":
+            gen_games.add(sheet_name_as_game_name)
+
+    # 创建GameEditor
     for sheet_name_as_game_name in gen_games:
         game_editor = create_game_editor(
             str(sheet_name_as_game_name),
@@ -101,14 +111,6 @@ def main() -> None:
         if game_editor is not None:
             game_editor.write_game_editor(f"{GAME_NAME}/{OUTPUT_RUNTIMES_DIR}/")
             game_editor.write_agent_list(f"{GAME_NAME}/{OUTPUT_RUNTIMES_DIR}/")
-
-    # 测试这个世界编辑
-    # sheet_name_as_game_name = input(
-    #     "输入要创建的World的名字(必须对应excel中的sheet名):"
-    # )
-    # if sheet_name_as_game_name == "":
-    #     sheet_name_as_game_name = "World2"
-    #     logger.warning(f"使用默认的World名称: {sheet_name_as_game_name}")
 
     # game_editor = create_game_editor(
     #     str(sheet_name_as_game_name),
@@ -125,4 +127,4 @@ def main() -> None:
 
 ############################################################################################################
 if __name__ == "__main__":
-    main()
+    main(set({"World1", "World2"}))

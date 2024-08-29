@@ -4,12 +4,12 @@ from gameplay_systems.action_components import (
     MindVoiceAction,
     StageNarrateAction,
     TagAction,
-    # PerceptionAction,
     BroadcastAction,
     BroadcastAction,
     SpeakAction,
     WhisperAction,
     GoToAction,
+    PickUpPropAction,
 )
 import json
 from gameplay_systems.cn_constant_prompt import _CNConstantPrompt_ as ConstantPrompt
@@ -74,7 +74,7 @@ def make_kick_off_stage_prompt(
 ## 当前游戏运行回合
 当前回合: {game_round}
 
-## 场景内的可交互的道具(包括 可拾取，可与之交互)
+## 位于场景内并可被 场景内角色 拾取的道具
 {props_prompt}
 
 ## 场景内角色
@@ -143,7 +143,7 @@ def make_actor_plan_prompt(
 ### 从本场景可以去往的场景
 {len(stage_graph) > 0 and "\n".join([f"- {stage}" for stage in stage_graph]) or "无可去往场景"}   
 
-## 场景内的可交互的道具(包括 可拾取，可与之交互)
+## 场景内的可交互的道具(包括‘可拾取’({PickUpPropAction.__name__}))
 {len(stage_props_prompt) > 0 and "\n".join(stage_props_prompt) or "- 无任何道具。"}
 
 ## 场景内活动的角色(你可以与之互动):
@@ -176,7 +176,6 @@ def make_stage_plan_prompt(
     stage_prop_files: List[PropFile], game_round: int, actors_info: Dict[str, str]
 ) -> str:
 
-    ## 场景内的可交互的道具(包括 可拾取，可与之交互)
     props_prompt = ""
     if len(stage_prop_files) > 0:
         for prop in stage_prop_files:
@@ -199,7 +198,7 @@ def make_stage_plan_prompt(
 ## 当前游戏运行回合
 当前回合: {game_round}
 
-## 场景内的可交互的道具(包括 可拾取，可与之交互)
+## 位于场景内并可被 场景内角色 拾取的道具
 {props_prompt}
 
 ## 场景内角色:
@@ -213,36 +212,6 @@ def make_stage_plan_prompt(
 - 返回结果必须包含 {StageNarrateAction.__name__} 和 {TagAction.__name__}。"""
 
     return prompt
-
-
-###############################################################################################################################################
-# def make_perception_action_prompt(
-#     who: str,
-#     current_stage: str,
-#     result_actor_names: Dict[str, str],
-#     result_props_names: List[str],
-# ) -> str:
-
-#     prompt_of_actor = ""
-#     if len(result_actor_names) > 0:
-#         for other_name, other_appearance in result_actor_names.items():
-#             prompt_of_actor += f"""### {other_name}\n- 角色外观:{other_appearance}\n"""
-#     else:
-#         prompt_of_actor = "- 无其他角色。"
-
-#     prompt_of_props = ""
-#     if len(result_props_names) > 0:
-#         for propname in result_props_names:
-#             prompt_of_props += f"- {propname}\n"
-#     else:
-#         prompt_of_props = "- 无任何道具。"
-
-#     final_prompt = f"""# {ConstantPrompt.PERCEPTION_ACTION_TAG} {who} 在 {current_stage} 中执行感知行动({PerceptionAction.__name__})，结果如下:
-# ## 场景内角色:
-# {prompt_of_actor}
-# ## 场景内的可交互的道具(包括 可拾取，可与之交互)
-# {prompt_of_props}"""
-#     return final_prompt
 
 
 ###############################################################################################################################################
@@ -323,29 +292,6 @@ def make_categorized_prop_files_prompt_list(
 
 
 ###############################################################################################################################################
-# def make_check_status_action_prompt(
-#     actor_name: str,
-#     health: float,
-#     categorized_prop_files: Dict[str, List[PropFile]],
-# ) -> str:
-
-#     health *= 100
-
-#     prop_files_prompt_list = make_categorized_prop_files_prompt_list(
-#         categorized_prop_files
-#     )
-
-#     # 组合最终的提示
-#     prompt = f"""# {ConstantPrompt.CHECK_STATUS_ACTION_TAG} {actor_name} 正在查看自身状态与拥有的道具
-# ## 健康状态:
-# {f"生命值: {health:.2f}%"}
-# ## 持有道具:
-# {len(prop_files_prompt_list) > 0 and "\n".join(prop_files_prompt_list) or "- 无任何道具。"}"""
-
-#     return prompt
-
-
-###############################################################################################################################################
 def make_pick_up_prop_failed_prompt(actor_name: str, prop_name: str) -> str:
     return f"""# {actor_name} 无法拾取道具 {prop_name}
 ## 原因分析:
@@ -381,22 +327,6 @@ def make_leave_stage_prompt(
     actor_name: str, current_stage_name: str, go_to_stage_name: str
 ) -> str:
     return f"# {actor_name}离开了{current_stage_name} 场景。"
-
-
-################################################################################################################################################
-# def make_stage_director_event_wrap_prompt(event: str, event_index: int) -> str:
-#     event_number = event_index + 1
-#     return f"""# 事件{event_number}\n{event}"""
-
-
-################################################################################################################################################
-# def make_stage_director_begin_prompt(stage_name: str, events_count: int) -> str:
-#     return f"""# 如下是{stage_name}场景内发生的事件，事件数量为{events_count}。"""
-
-
-################################################################################################################################################
-# def make_stage_director_end_prompt(stage_name: str, events_count: int) -> str:
-#     return f"""# 以上是{stage_name}场景内近期发生的{events_count}个事件。"""
 
 
 ################################################################################################################################################

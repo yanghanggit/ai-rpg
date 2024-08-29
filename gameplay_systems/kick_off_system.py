@@ -53,7 +53,7 @@ class KickOffSystem(InitializeProcessor, ExecuteProcessor):
         self._world_tasks = self.create_world_system_tasks()
         self._stage_tasks = self.create_stage_tasks()
         self._actor_tasks = self.create_actor_tasks()
-        #self.handle_players()
+        # self.handle_players()
         # 填进去
         self._tasks.update(self._world_tasks)
         self._tasks.update(self._stage_tasks)

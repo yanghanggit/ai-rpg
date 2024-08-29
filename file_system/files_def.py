@@ -156,13 +156,12 @@ class StageArchiveFile(BaseFile):
     def __init__(self, name: str, owner_name: str, stage_name: str) -> None:
         super().__init__(name, owner_name)
         self._stage_name: str = stage_name
-        self._last_stage_narrate: str = ""
-        self._last_stage_narrate_round: int = 0
+        self._stage_narrate: str = ""
 
     @override
     def serialization(self) -> str:
         seri: Dict[str, str] = {}
-        seri.setdefault(self._stage_name, self._last_stage_narrate)  # todo
+        seri.setdefault(self._stage_name, self._stage_narrate)  # todo
         return json.dumps(seri, ensure_ascii=False)
 
 

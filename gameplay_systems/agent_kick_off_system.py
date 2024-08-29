@@ -27,7 +27,7 @@ from gameplay_systems.action_components import UpdateAppearanceAction
 
 
 ######################################################################################################################################################
-class KickOffSystem(InitializeProcessor, ExecuteProcessor):
+class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         self._context: RPGEntitasContext = context
         self._game: RPGGame = rpg_game
@@ -121,14 +121,15 @@ class KickOffSystem(InitializeProcessor, ExecuteProcessor):
             if agent is None:
                 continue
 
-            kick_off_message = self._context._kick_off_message_system.get_message(
+            kick_off_messages = self._context._kick_off_message_system.get_message(
                 stage_comp.name
             )
-            if kick_off_message == "":
+            if len(kick_off_messages) == 0 or len(kick_off_messages) > 1:
+                logger.error(f"kick_off_messages is error: {stage_comp.name}")
                 continue
 
             kick_off_prompt = builtin_prompt.make_kick_off_stage_prompt(
-                kick_off_message,
+                kick_off_messages[0].content,
                 self._game.about_game,
                 self._context._file_system.get_files(
                     PropFile, self._context.safe_get_entity_name(stage_entity)
@@ -158,17 +159,17 @@ class KickOffSystem(InitializeProcessor, ExecuteProcessor):
             if agent is None:
                 continue
 
-            kick_off_message = self._context._kick_off_message_system.get_message(
+            kick_off_messages = self._context._kick_off_message_system.get_message(
                 actor_comp.name
             )
-            if kick_off_message == "":
-                logger.error(f"kick_off_message is empty: {actor_comp.name}")
+            if len(kick_off_messages) == 0 or len(kick_off_messages) > 1:
+                logger.error(f"kick_off_messages is error: {actor_comp.name}")
                 continue
 
             task = LangServeAgentRequestTask.create(
                 agent,
                 builtin_prompt.make_kick_off_actor_prompt(
-                    kick_off_message,
+                    kick_off_messages[0].content,
                     self._game.about_game,
                     self._game.round,
                 ),

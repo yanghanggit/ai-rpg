@@ -7,10 +7,8 @@ from gameplay_systems.action_components import (
     GoToAction,
     WhisperAction,
     PickUpPropAction,
-    # PerceptionAction,
     StealPropAction,
     GivePropAction,
-    # CheckSelfAction,
     BehaviorAction,
 )
 from gameplay_systems.components import (
@@ -45,14 +43,9 @@ class PlayerCommand(ABC):
     def execute(self) -> None:
         pass
 
-    # 为了方便，直接在这里添加消息，不然每个子类都要写一遍
-    # player 控制的actor本质和其他actor没有什么不同，这里模拟一个plan的动作。因为每一个actor都是plan -> acton -> direction(同步上下文) -> 再次plan的循环
     def simu_player_planning_input_message(
         self, entity: Entity, human_message_content: str
     ) -> None:
-        # self._rpggame._entitas_context.safe_add_human_message_to_entity(
-        #     entity, human_message_content
-        # )
         self._rpggame._entitas_context.safe_add_ai_message_to_entity(
             entity, human_message_content
         )
@@ -95,11 +88,13 @@ class PlayerLogin(PlayerCommand):
             logger.error(f"{player_name}, already login")
             return
 
-        player_comp = actor_entity.get(PlayerComponent)
-        if player_comp is None:
+        if not actor_entity.has(PlayerComponent):
             # 扮演的角色不是设定的玩家可控制Actor
             logger.error(f"{actor_name}, actor is not player ctrl actor, login failed")
             return
+
+        player_comp = actor_entity.get(PlayerComponent)
+        assert player_comp is not None
 
         if player_comp.name != "" and player_comp.name != player_name:
             # 已经有人控制了，但不是你
@@ -131,52 +126,14 @@ class PlayerLogin(PlayerCommand):
         )
 
         # actor的kickoff记忆到客户端消息中
-        kick_off_message = context._kick_off_message_system.get_message(
+        kick_off_messages = context._kick_off_message_system.get_message(
             self._actor_name
         )
-        assert kick_off_message != ""
-        self._player_proxy.add_login_message(self._actor_name, kick_off_message)
-
-
-####################################################################################################################################
-####################################################################################################################################
-####################################################################################################################################
-# class PlayerAttack(PlayerCommand):
-#     """
-#     玩家攻击的行为：AttackAction
-#     """
-
-#     def __init__(
-#         self, name: str, rpg_game: RPGGame, player_proxy: PlayerProxy, target_name: str
-#     ) -> None:
-#         super().__init__(name, rpg_game, player_proxy)
-#         self._target_name: str = target_name
-
-#     def execute(self) -> None:
-#         context = self._rpggame._entitas_context
-#         attack_target_name = self._target_name
-#         player_entity = context.get_player_entity(self._player_proxy._name)
-#         if player_entity is None:
-#             logger.warning("debug_attack: player is None")
-#             return
-
-#         if player_entity.has(ActorComponent):
-#             actor_comp = player_entity.get(ActorComponent)
-#             player_entity.add(
-#                 AttackAction,
-#                 actor_comp.name,
-#                 AttackAction.__name__,
-#                 [attack_target_name],
-#             )
-
-#         elif player_entity.has(StageComponent):
-#             stage_comp = player_entity.get(StageComponent)
-#             player_entity.add(
-#                 AttackAction,
-#                 stage_comp.name,
-#                 AttackAction.__name__,
-#                 [attack_target_name],
-#             )
+        if len(kick_off_messages) == 0 or len(kick_off_messages) > 1:
+            return
+        self._player_proxy.add_login_message(
+            self._actor_name, kick_off_messages[0].content
+        )
 
 
 ####################################################################################################################################
@@ -209,8 +166,10 @@ class PlayerGoTo(PlayerCommand):
         )
 
         # 模拟添加一个plan的发起。
-        human_message = f"""{{"{GoToAction.__name__}": ["{target_stage_name}"]}}"""
-        self.simu_player_planning_input_message(player_entity, human_message)
+
+        self.simu_player_planning_input_message(
+            player_entity, f"""{{"{GoToAction.__name__}": ["{target_stage_name}"]}}"""
+        )
 
 
 ####################################################################################################################################
@@ -248,10 +207,10 @@ class PlayerBroadcast(PlayerCommand):
         )
 
         # 模拟添加一个plan的发起。
-        human_message = (
-            f"""{{"{BroadcastAction.__name__}": ["{self._broadcast_content}"]}}"""
+        self.simu_player_planning_input_message(
+            player_entity,
+            f"""{{"{BroadcastAction.__name__}": ["{self._broadcast_content}"]}}""",
         )
-        self.simu_player_planning_input_message(player_entity, human_message)
 
 
 ####################################################################################################################################
@@ -285,9 +244,10 @@ class PlayerSpeak(PlayerCommand):
             SpeakAction, actor_comp.name, SpeakAction.__name__, [self._speak_content]
         )
 
-        # 模拟添加一个plan的发起。
-        human_message = f"""{{"{SpeakAction.__name__}": ["{self._speak_content}"]}}"""
-        self.simu_player_planning_input_message(player_entity, human_message)
+        self.simu_player_planning_input_message(
+            player_entity,
+            f"""{{"{SpeakAction.__name__}": ["{self._speak_content}"]}}""",
+        )
 
 
 ####################################################################################################################################
@@ -325,10 +285,10 @@ class PlayerWhisper(PlayerCommand):
         )
 
         # 模拟添加一个plan的发起。
-        human_message = (
-            f"""{{"{WhisperAction.__name__}": ["{self._whisper_content}"]}}"""
+        self.simu_player_planning_input_message(
+            player_entity,
+            f"""{{"{WhisperAction.__name__}": ["{self._whisper_content}"]}}""",
         )
-        self.simu_player_planning_input_message(player_entity, human_message)
 
 
 ####################################################################################################################################
@@ -359,41 +319,10 @@ class PlayerPickUpProp(PlayerCommand):
         )
 
         # 模拟添加一个plan的发起。
-        human_message = f"""{{"{PickUpPropAction.__name__}": ["{self._prop_name}"]}}"""
-        self.simu_player_planning_input_message(player_entity, human_message)
-
-
-####################################################################################################################################
-####################################################################################################################################
-####################################################################################################################################
-# class PlayerPerception(PlayerCommand):
-#     """
-#     玩家感知的行为：PerceptionAction
-#     """
-
-#     def __init__(self, name: str, rpg_game: RPGGame, player_proxy: PlayerProxy) -> None:
-#         super().__init__(name, rpg_game, player_proxy)
-
-#     def execute(self) -> None:
-#         context = self._rpggame._entitas_context
-#         player_entity = context.get_player_entity(self._player_proxy._name)
-#         if player_entity is None:
-#             return
-
-#         # 添加行动
-#         actor_comp = player_entity.get(ActorComponent)
-#         player_entity.add(
-#             PerceptionAction,
-#             actor_comp.name,
-#             PerceptionAction.__name__,
-#             [actor_comp.current_stage],
-#         )
-
-#         # 模拟添加一个plan的发起。
-#         human_message = (
-#             f"""{{"{PerceptionAction.__name__}": ["{actor_comp.current_stage}"]}}"""
-#         )
-#         self.simu_player_planning_input_message(player_entity, human_message)
+        self.simu_player_planning_input_message(
+            player_entity,
+            f"""{{"{PickUpPropAction.__name__}": ["{self._prop_name}"]}}""",
+        )
 
 
 ####################################################################################################################################
@@ -431,8 +360,10 @@ class PlayerSteal(PlayerCommand):
         )
 
         # 模拟添加一个plan的发起。
-        human_message = f"""{{"{StealPropAction.__name__}": ["{self._target_and_message_format_string}"]}}"""
-        self.simu_player_planning_input_message(player_entity, human_message)
+        self.simu_player_planning_input_message(
+            player_entity,
+            f"""{{"{StealPropAction.__name__}": ["{self._target_and_message_format_string}"]}}""",
+        )
 
 
 ####################################################################################################################################
@@ -469,79 +400,10 @@ class PlayerGiveProp(PlayerCommand):
             [self._target_and_message_format_string],
         )
 
-        # 模拟添加一个plan的发起。
-        human_message = f"""{{"{GivePropAction.__name__}": ["{self._target_and_message_format_string}"]}}"""
-        self.simu_player_planning_input_message(player_entity, human_message)
-
-
-####################################################################################################################################
-####################################################################################################################################
-####################################################################################################################################
-# class PlayerCheckStatus(PlayerCommand):
-
-#     def __init__(self, name: str, rpg_game: RPGGame, player_proxy: PlayerProxy) -> None:
-#         super().__init__(name, rpg_game, player_proxy)
-
-#     def execute(self) -> None:
-#         context = self._rpggame._entitas_context
-#         player_entity = context.get_player_entity(self._player_proxy._name)
-#         if player_entity is None:
-#             return
-
-#         if player_entity.has(CheckSelfAction):
-#             player_entity.remove(CheckSelfAction)
-
-#         # 添加行动
-#         actor_comp = player_entity.get(ActorComponent)
-#         player_entity.add(
-#             CheckSelfAction,
-#             actor_comp.name,
-#             CheckSelfAction.__name__,
-#             [actor_comp.name],
-#         )
-
-#         # 模拟添加一个plan的发起。
-#         human_message = f"""{{"{CheckSelfAction.__name__}": ["{actor_comp.name}"]}}"""
-#         self.simu_player_planning_input_message(player_entity, human_message)
-
-
-####################################################################################################################################
-####################################################################################################################################
-####################################################################################################################################
-# class PlayerUseProp(PlayerCommand):
-#     """
-#     玩家使用道具的行为：UsePropAction
-#     """
-
-#     def __init__(
-#         self,
-#         name: str,
-#         rpg_game: RPGGame,
-#         player_proxy: PlayerProxy,
-#         target_and_message_format_string: str,
-#     ) -> None:
-#         super().__init__(name, rpg_game, player_proxy)
-#         # "@使用道具对象>道具名"
-#         self._target_and_message_format_string: str = target_and_message_format_string
-
-#     def execute(self) -> None:
-#         context = self._rpggame._entitas_context
-#         player_entity = context.get_player_entity(self._player_proxy._name)
-#         if player_entity is None:
-#             return
-
-#         # 添加行动
-#         actor_comp = player_entity.get(ActorComponent)
-#         player_entity.add(
-#             UsePropAction,
-#             actor_comp.name,
-#             UsePropAction.__name__,
-#             [self._target_and_message_format_string],
-#         )
-
-#         # 模拟添加一个plan的发起。
-#         human_message = f"""{{"{UsePropAction.__name__}": ["{self._target_and_message_format_string}"]}}"""
-#         self.add_human_message(player_entity, human_message)
+        self.simu_player_planning_input_message(
+            player_entity,
+            f"""{{"{GivePropAction.__name__}": ["{self._target_and_message_format_string}"]}}""",
+        )
 
 
 ####################################################################################################################################
@@ -560,12 +422,9 @@ class PlayerBehavior(PlayerCommand):
         player_entity = context.get_player_entity(self._player_proxy._name)
         if player_entity is None:
             return
-        # /behavior 激活#黑火印记
-        # /behavior 攻击@冀州.中山.卢奴.秘密监狱.火字十一号牢房的腐化的木牌
-        # 添加行动
+
         logger.debug(f"PlayerBehavior, {self._player_proxy._name}: {self._sentence}")
         actor_comp = player_entity.get(ActorComponent)
-        # /behavior 对@冀州.中山.卢奴.秘密监狱.火字十一号牢房的铁栏门  使用/飞炎咒
 
         player_entity.add(
             BehaviorAction,
@@ -574,8 +433,9 @@ class PlayerBehavior(PlayerCommand):
             [self._sentence],
         )
 
-        human_message = f"""{{"{BehaviorAction.__name__}": ["{self._sentence}"]}}"""
-        self.simu_player_planning_input_message(player_entity, human_message)
+        self.simu_player_planning_input_message(
+            player_entity, f"""{{"{BehaviorAction.__name__}": ["{self._sentence}"]}}"""
+        )
 
 
 ####################################################################################################################################

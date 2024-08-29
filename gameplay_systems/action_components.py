@@ -86,3 +86,7 @@ ACTOR_INTERACTIVE_ACTIONS_REGISTER: FrozenSet[type[Any]] = frozenset(
         EquipPropAction,
     }
 )
+
+STAGE_OR_ACTOTR_CONTEXT_ACTIONS_REGISTER: FrozenSet[type[Any]] = frozenset(
+    {StageNarrateAction, MindVoiceAction, WhisperAction, BroadcastAction, SpeakAction}
+)

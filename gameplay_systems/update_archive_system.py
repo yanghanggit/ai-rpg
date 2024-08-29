@@ -1,4 +1,4 @@
-from entitas import ExecuteProcessor, Matcher, Entity  # type: ignore
+from entitas import ExecuteProcessor, Matcher, Entity, InitializeProcessor  # type: ignore
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from gameplay_systems.components import (
@@ -14,8 +14,10 @@ from file_system.files_def import PropFile
 from rpg_game.rpg_game import RPGGame
 from file_system.files_def import (
     PropFile,
+    ActorArchiveFile,
     StageArchiveFile,
 )
+import file_system.helper
 
 
 ###############################################################################################################################################
@@ -197,15 +199,116 @@ class UpdateArchiveHelper:
 ###############################################################################################################################################
 
 
-class UpdateArchiveSystem(ExecuteProcessor):
+class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         self._context: RPGEntitasContext = context
         self._game: RPGGame = rpg_game
 
+    @override
+    def initialize(self) -> None:
+        logger.debug("UpdateArchiveSystem initialize")
+
+        all_actor_names = self.get_all_actor_names()
+        all_stage_names = self.get_all_stage_names()
+
+        self.add_kick_off_actor_archive_files(all_actor_names)
+        self.add_kick_off_archive_files(all_stage_names)
+
     ###############################################################################################################################################
     @override
     def execute(self) -> None:
-        self.update_archive()
+        logger.debug("UpdateArchiveSystem execute")
+
+        # all_actor_names = self.get_all_actor_names()
+        # all_stage_names = self.get_all_stage_names()
+        # self.add_conversation_actor_archive_files(all_actor_names)
+        # self.add_conversation_stage_archive_files(all_stage_names)
+
+    ###############################################################################################################################################
+    def get_all_actor_names(self) -> Set[str]:
+        actor_entities: Set[Entity] = self._context.get_group(
+            Matcher(all_of=[ActorComponent])
+        ).entities
+        return {
+            actor_entity.get(ActorComponent).name for actor_entity in actor_entities
+        }
+
+    ###############################################################################################################################################
+    def get_all_stage_names(self) -> Set[str]:
+        stage_entities: Set[Entity] = self._context.get_group(
+            Matcher(all_of=[StageComponent])
+        ).entities
+        return {
+            stage_entity.get(StageComponent).name for stage_entity in stage_entities
+        }
+
+    ###############################################################################################################################################
+    def add_kick_off_actor_archive_files(
+        self, optional_range_actor_names: Set[str] = set()
+    ) -> Dict[str, List[ActorArchiveFile]]:
+
+        ret: Dict[str, List[ActorArchiveFile]] = {}
+
+        actor_entities: Set[Entity] = self._context.get_group(
+            Matcher(all_of=[ActorComponent])
+        ).entities
+
+        for actor_entity in actor_entities:
+
+            actor_comp = actor_entity.get(ActorComponent)
+            kick_off_messages = self._context._kick_off_message_system.get_message(
+                actor_comp.name
+            )
+
+            batch_cotent = ""
+            for message in kick_off_messages:
+                batch_cotent += message.content + " "
+
+            for archive_actor_name in optional_range_actor_names:
+                if archive_actor_name == actor_comp.name:
+                    continue
+
+                add_archives = file_system.helper.add_actor_archive_files(
+                    self._context._file_system, actor_comp.name, {archive_actor_name}
+                )
+
+                ret[actor_comp.name] = add_archives
+
+        return ret
+
+    ###############################################################################################################################################
+    def add_kick_off_archive_files(
+        self, optional_range_stage_names: Set[str] = set()
+    ) -> Dict[str, List[StageArchiveFile]]:
+        ret: Dict[str, List[StageArchiveFile]] = {}
+
+        actor_entities: Set[Entity] = self._context.get_group(
+            Matcher(all_of=[ActorComponent])
+        ).entities
+
+        for actor_entity in actor_entities:
+
+            actor_comp = actor_entity.get(ActorComponent)
+            kick_off_messages = self._context._kick_off_message_system.get_message(
+                actor_comp.name
+            )
+
+            batch_cotent = ""
+            for message in kick_off_messages:
+                batch_cotent += message.content + " "
+
+            for archive_stage_name in optional_range_stage_names:
+                add_archives = file_system.helper.add_stage_archive_files(
+                    self._context._file_system, actor_comp.name, {archive_stage_name}
+                )
+
+                ret[actor_comp.name] = add_archives
+
+        return ret
+
+    ###############################################################################################################################################
+    # def get_conversation_content(self, entity: Entity) -> List[str]:
+    #     return []
 
     ###############################################################################################################################################
     def update_archive(self) -> None:
@@ -308,8 +411,7 @@ class UpdateArchiveSystem(ExecuteProcessor):
             assert stage_archive is not None
             return
 
-        stage_archive._last_stage_narrate = str(stage_archive_comp.narrate)
-        stage_archive._last_stage_narrate_round = stage_archive_comp.round
+        stage_archive._stage_narrate = str(stage_archive_comp.narrate)
         self._context._file_system.write_file(stage_archive)
 
     ###############################################################################################################################################

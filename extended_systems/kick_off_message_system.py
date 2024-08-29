@@ -1,6 +1,12 @@
 from loguru import logger
 from typing import Dict, Optional, List
 from pathlib import Path
+from pydantic import BaseModel
+
+
+class MessageModel(BaseModel):
+    message_type: str
+    content: str
 
 
 ####################################################################################################################################
@@ -8,7 +14,7 @@ from pathlib import Path
 class KickOffMessageSystem:
     def __init__(self, name: str) -> None:
         self._name: str = name
-        self._messages: Dict[str, str] = {}
+        self._messages: Dict[str, List[MessageModel]] = {}
         self._runtime_dir: Optional[Path] = None
 
     ####################################################################################################################################
@@ -30,6 +36,9 @@ class KickOffMessageSystem:
 
     ####################################################################################################################################
     def add_message(self, actor_name: str, kick_off_message: str) -> None:
+
+        value = MessageModel(message_type="HumanMessage", content=kick_off_message)
+
         # 初始化
         self.write_md(actor_name, kick_off_message)
         # 初始化成功了
@@ -37,11 +46,12 @@ class KickOffMessageSystem:
         assert mm is not None
         if mm is not None:
             assert mm == kick_off_message
-            self._messages[actor_name] = mm
+            self._messages[actor_name] = [value]
+            # self._messages[actor_name] = mm
 
     ####################################################################################################################################
-    def get_message(self, actor_name: str) -> str:
-        return self._messages.get(actor_name, "")
+    def get_message(self, actor_name: str) -> List[MessageModel]:
+        return self._messages.get(actor_name, [])
 
     ####################################################################################################################################
     def read_md(self, actor_name: str) -> Optional[str]:

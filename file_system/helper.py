@@ -11,12 +11,9 @@ from loguru import logger
 
 
 ##################################################################################################################################
-# 为一个Actor添加他认识的其他Actor的文件
 def add_actor_archive_files(
     file_system: FileSystem, owners_name: str, actor_archive_names: Set[str]
 ) -> List[ActorArchiveFile]:
-
-    assert file_system is not None
 
     ret: List[ActorArchiveFile] = []
 
@@ -36,22 +33,6 @@ def add_actor_archive_files(
 
 
 ##################################################################################################################################
-# 更新一个Actor的档案文件
-def update_actor_archive_file(
-    file_system: FileSystem, owner_name: str, actor_name: str, appearance: str
-) -> Optional[ActorArchiveFile]:
-
-    file = file_system.get_file(ActorArchiveFile, owner_name, actor_name)
-    if file is None:
-        return None
-
-    file._appearance = appearance
-    file_system.write_file(file)
-    return file
-
-
-##################################################################################################################################
-## 为一个Actor添加他认识的Stage的文件
 def add_stage_archive_files(
     file_system: FileSystem, my_name: str, stage_names: Set[str]
 ) -> List[StageArchiveFile]:
@@ -71,6 +52,25 @@ def add_stage_archive_files(
         ret.append(file)
 
     return ret
+
+
+##################################################################################################################################
+
+
+def update_actor_archive_file(
+    file_system: FileSystem, owner_name: str, actor_name: str, appearance: str
+) -> Optional[ActorArchiveFile]:
+
+    file = file_system.get_file(ActorArchiveFile, owner_name, actor_name)
+    if file is None:
+        return None
+
+    file._appearance = appearance
+    file_system.write_file(file)
+    return file
+
+
+##################################################################################################################################
 
 
 ##################################################################################################################################

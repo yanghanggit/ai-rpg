@@ -70,7 +70,7 @@ class RPGEntitasProcessors(Processors):
             TerminalPlayerInputSystem,
         )
         from gameplay_systems.save_system import SaveSystem
-        from gameplay_systems.kick_off_system import KickOffSystem
+        from gameplay_systems.agent_kick_off_system import AgentKickOffSystem
         from gameplay_systems.update_archive_system import UpdateArchiveSystem
         from gameplay_systems.terminal_player_tips_system import (
             TerminalPlayerTipsSystem,
@@ -87,7 +87,7 @@ class RPGEntitasProcessors(Processors):
 
         # 初始化系统########################
         processors.add(ConnectAgentSystem(context, input_rpg_game))
-        processors.add(KickOffSystem(context, input_rpg_game))
+        processors.add(AgentKickOffSystem(context, input_rpg_game))
         #########################################
 
         ### 处理玩家输入!
@@ -158,12 +158,12 @@ class RPGEntitasProcessors(Processors):
         #     PerceptionActionSystem(context, input_rpg_game)
         # )  # 场景切换类行为之后可以发起感知
 
+        # 更新档案
+        processors.add(UpdateArchiveSystem(context, input_rpg_game))
+
         processors.add(
             PostActionSystem(context, input_rpg_game)
         )  ####### <在所有行动之后> ##############################################################
-
-        # 行动结束后更新关系网，因为依赖Director所以必须在后面
-        processors.add(UpdateArchiveSystem(context, input_rpg_game))
 
         ###最后删除entity与存储数据
         processors.add(DestroySystem(context, input_rpg_game))

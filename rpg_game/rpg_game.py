@@ -296,6 +296,10 @@ class RPGGame(BaseGame):
             context._file_system, actor_model.name, set(actor_model.actor_archives)
         )
 
+        file_system.helper.add_stage_archive_files(
+            context._file_system, actor_model.name, set(actor_model.stage_archives)
+        )
+
         weapon_prop_file: Optional[PropFile] = None
         clothes_prop_file: Optional[PropFile] = None
         for prop_name in actor_proxy.actor_current_using_prop:

@@ -12,6 +12,7 @@ import file_system.helper
 from file_system.files_def import PropFile
 import my_format_string.target_and_message_format_string
 from rpg_game.rpg_game import RPGGame
+from loguru import logger
 
 
 class StealActionSystem(ReactiveProcessor):
@@ -62,32 +63,40 @@ class StealActionSystem(ReactiveProcessor):
                 # 不能交谈就是不能偷
                 continue
 
-            safe_name = self._context.safe_get_entity_name(entity)
+            from_name = self._context.safe_get_entity_name(entity)
             target_entity = self._context.get_entity_by_name(tp[0])
             assert target_entity is not None
 
-            handle_result = self.steal(entity, tp[0], tp[1])
+            action_result = self.steal(entity, tp[0], tp[1])
 
             self._context.add_agent_context_message(
                 set({entity, target_entity}),
                 builtin_prompt.make_steal_prop_action_prompt(
-                    safe_name, tp[0], tp[1], handle_result
+                    from_name, tp[0], tp[1], action_result
                 ),
             )
 
     ####################################################################################################################################
-    def steal(self, entity: Entity, target_actor_name: str, prop_name: str) -> bool:
+    def steal(
+        self, entity: Entity, target_actor_name: str, target_prop_name: str
+    ) -> bool:
         prop_file = self._context._file_system.get_file(
-            PropFile, target_actor_name, prop_name
+            PropFile, target_actor_name, target_prop_name
         )
+
         if prop_file is None:
+            logger.info(
+                f"steal prop {target_prop_name} from {target_actor_name} failed"
+            )
             return False
+
         file_system.helper.give_prop_file(
             self._context._file_system,
             target_actor_name,
             self._context.safe_get_entity_name(entity),
-            prop_name,
+            target_prop_name,
         )
+
         return True
 
 

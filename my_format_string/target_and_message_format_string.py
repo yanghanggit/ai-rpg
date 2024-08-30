@@ -50,15 +50,15 @@ def make_target_and_message(
 #################################################################################################################################
 
 
-def target_and_message_values(values: List[str]) -> List[tuple[str, str]]:
+def target_and_message_values(values: List[str], symbol1: str = "@", symbol2: str = ">") -> List[tuple[str, str]]:
 
     result: List[tuple[str, str]] = []
 
     for value in values:
-        if not is_target_and_message(value):
+        if not is_target_and_message(value, symbol1, symbol2):
             continue
 
-        tp = parse_target_and_message(value)
+        tp = parse_target_and_message(value, symbol1, symbol2)
         target: Optional[str] = tp[0]
         message: Optional[str] = tp[1]
         if target is None or message is None:

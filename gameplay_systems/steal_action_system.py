@@ -4,7 +4,11 @@ from gameplay_systems.action_components import (
     StealPropAction,
     DeadAction,
 )
-from gameplay_systems.components import ActorComponent
+from gameplay_systems.components import (
+    ActorComponent,
+    RPGCurrentWeaponComponent,
+    RPGCurrentClothesComponent,
+)
 import gameplay_systems.conversation_helper
 from typing import override
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
@@ -63,23 +67,27 @@ class StealActionSystem(ReactiveProcessor):
                 # 不能交谈就是不能偷
                 continue
 
-            from_name = self._context.safe_get_entity_name(entity)
             target_entity = self._context.get_entity_by_name(tp[0])
-            assert target_entity is not None
+            if target_entity is None:
+                continue
 
-            action_result = self.steal(entity, tp[0], tp[1])
-
+            action_result = self.do_steal(entity, target_entity, tp[1])
             self._context.add_agent_context_message(
                 set({entity, target_entity}),
                 builtin_prompt.make_steal_prop_action_prompt(
-                    from_name, tp[0], tp[1], action_result
+                    self._context.safe_get_entity_name(entity),
+                    tp[0],
+                    tp[1],
+                    action_result,
                 ),
             )
 
     ####################################################################################################################################
-    def steal(
-        self, entity: Entity, target_actor_name: str, target_prop_name: str
+    def do_steal(
+        self, entity: Entity, target_entity: Entity, target_prop_name: str
     ) -> bool:
+
+        target_actor_name = self._context.safe_get_entity_name(target_entity)
         prop_file = self._context._file_system.get_file(
             PropFile, target_actor_name, target_prop_name
         )
@@ -90,12 +98,33 @@ class StealActionSystem(ReactiveProcessor):
             )
             return False
 
+        if not self.can_be_stolen(target_entity, prop_file):
+            return False
+
         file_system.helper.give_prop_file(
             self._context._file_system,
             target_actor_name,
             self._context.safe_get_entity_name(entity),
             target_prop_name,
         )
+
+        return True
+
+    ####################################################################################################################################
+    def can_be_stolen(self, target_entity: Entity, prop_file: PropFile) -> bool:
+
+        if not prop_file.can_exchange:
+            return False
+
+        if target_entity.has(RPGCurrentWeaponComponent):
+            current_weapon_comp = target_entity.get(RPGCurrentWeaponComponent)
+            if current_weapon_comp.propname == prop_file.name:
+                return False
+
+        if target_entity.has(RPGCurrentClothesComponent):
+            current_armor_comp = target_entity.get(RPGCurrentClothesComponent)
+            if current_armor_comp.propname == prop_file.name:
+                return False
 
         return True
 

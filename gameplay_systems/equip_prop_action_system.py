@@ -65,7 +65,9 @@ class EquipPropActionSystem(ReactiveProcessor):
 
                 self._context.add_agent_context_message(
                     set({entity}),
-                    builtin_prompt.make_equip_prop_not_found_prompt(actor_name, prop_name),
+                    builtin_prompt.make_equip_prop_not_found_prompt(
+                        actor_name, prop_name
+                    ),
                 )
 
                 continue

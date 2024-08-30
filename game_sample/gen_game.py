@@ -112,6 +112,7 @@ def main(game_names: Set[str]) -> None:
             game_editor.write_game_editor(f"{GAME_NAME}/{OUTPUT_RUNTIMES_DIR}/")
             game_editor.write_agent_list(f"{GAME_NAME}/{OUTPUT_RUNTIMES_DIR}/")
 
+
 ############################################################################################################
 if __name__ == "__main__":
     main(set({"World1", "World2"}))

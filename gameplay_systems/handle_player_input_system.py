@@ -54,7 +54,7 @@ class HandlePlayerInputSystem(ExecuteProcessor):
         for command in player_proxy._input_commands:
             player_entity = self._context.get_player_entity(player_name)
             if player_entity is None:
-                #logger.warning("玩家实体不存在")
+                # logger.warning("玩家实体不存在")
                 continue
             assert player_entity is not None
 

@@ -90,4 +90,5 @@ class PropType(Enum):
     TYPE_WEAPON = "Weapon"
     TYPE_CLOTHES = "Clothes"
     TYPE_NON_CONSUMABLE_ITEM = "NonConsumableItem"
+    TYPE_CONSUMABLE_ITEM = "ConsumableItem"
     TYPE_SKILL = "Skill"

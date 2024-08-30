@@ -30,7 +30,7 @@
   "BroadcastAction":["要公开说的内容"],
   "WhisperAction":["@角色名字(你要对谁说,只能是场景内的角色)>你想私下说(私语)的内容",...],
   "PickUpPropAction":["在本场景内的道具名字(表示你要拾取它)"]
-  "GivePropAction":["@将你的道具交付给的角色名字>交付的道具名字"],
+  "GivePropAction":["@将你的道具交付给的角色名字/交付的道具名字"],
   "EquipPropAction":["道具名字(武器)","道具名字(衣服)",...],
 }}
 

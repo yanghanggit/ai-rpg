@@ -5,9 +5,9 @@ from gameplay_systems.action_components import (
     SkillAction,
     SkillPropAction,
 )
-from gameplay_systems.components import StageComponent
+from gameplay_systems.components import StageComponent, RPGCurrentWeaponComponent
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from typing import override, Set
+from typing import override, Set, Optional
 from file_system.files_def import PropFile
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
 from rpg_game.rpg_game import RPGGame
@@ -47,20 +47,38 @@ class BehaviorActionSystem(ReactiveProcessor):
         if behavior_sentence == "":
             return
 
+        # 基础数据
         targets = self.parse_targets(entity, behavior_sentence)
         skills = self.parse_skills(entity, behavior_sentence)
         props = self.parse_props(entity, behavior_sentence)
+
+        # 默认会添加当前武器
+        weapon_prop = self.get_current_weapon(entity)
+        if weapon_prop is not None:
+            props.add(weapon_prop)
+
+        # 不用继续了
         if len(targets) == 0 or len(skills) == 0:
             self.on_behavior_check_event(entity, behavior_sentence, False)
             return
 
+        # 添加动作
         self.clear_action(entity)
         self.add_target_action(entity, targets)
         self.add_skill_action(entity, skills)
         self.add_prop_action(entity, props)
 
-        # 导演类来统筹
+        # 事件通知
         self.on_behavior_check_event(entity, behavior_sentence, True)
+
+    ######################################################################################################################################################
+    def get_current_weapon(self, entity: Entity) -> Optional[PropFile]:
+        if not entity.has(RPGCurrentWeaponComponent):
+            return None
+        current_weapon_comp = entity.get(RPGCurrentWeaponComponent)
+        return self._context._file_system.get_file(
+            PropFile, current_weapon_comp.name, current_weapon_comp.propname
+        )
 
     ######################################################################################################################################################
     def clear_action(self, entity: Entity) -> None:

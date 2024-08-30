@@ -10,6 +10,7 @@ class ExcelDataProp:
 
     def __init__(self, data: Any) -> None:
         self._data = data
+        assert self.type in [ "Special", "Weapon", "Clothes", "NonConsumableItem", "ConsumableItem", "Skill"], f"Invalid Prop type: {self.type}"
 
     @property
     def name(self) -> str:
@@ -44,6 +45,16 @@ class ExcelDataProp:
     @property
     def appearance(self) -> str:
         return str(self._data["appearance"])
+
+    ############################################################################################################
+    @property
+    def can_placed(self) -> bool:
+        return (
+            self.type == "Weapon"
+            or self.type == "Clothes"
+            or self.type == "NonConsumableItem"
+            or self.type == "ConsumableItem"
+        )
 
     ############################################################################################################
     def serialization(self) -> Dict[str, Any]:

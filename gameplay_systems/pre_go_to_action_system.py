@@ -132,7 +132,7 @@ class PreBeforeGoToActionSystem(ReactiveProcessor):
             )
 
             return False
-        
+
         assert current_stage_entity.has(StageGraphComponent)
         stage_graph_comp = current_stage_entity.get(StageGraphComponent)
         stage_graph: Set[str] = stage_graph_comp.stage_graph
@@ -145,7 +145,6 @@ class PreBeforeGoToActionSystem(ReactiveProcessor):
                 ),
             )
             return False
-
 
         return True
 

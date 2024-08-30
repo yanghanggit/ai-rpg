@@ -46,7 +46,6 @@ class BaseFile(ABC):
 ############################################################################################################
 ############################################################################################################
 ############################################################################################################
-## 表达一个道具.
 
 
 class PropFile(BaseFile):
@@ -56,13 +55,8 @@ class PropFile(BaseFile):
     ) -> None:
 
         super().__init__(name, owner_name)
-
         self._guid = guid
         self._prop_model: PropModel = prop_model
-        assert self._name == self._prop_model.name
-        assert self._prop_model.codename != ""
-        assert len(self._prop_model.attributes) >= 4
-
         self._count: int = count
 
     ############################################################################################################
@@ -106,8 +100,24 @@ class PropFile(BaseFile):
 
     ############################################################################################################
     @property
+    def is_consumable_item(self) -> bool:
+        return self._prop_model.type == PropType.TYPE_CONSUMABLE_ITEM.value
+
+    ############################################################################################################
+    @property
     def is_skill(self) -> bool:
         return self._prop_model.type == PropType.TYPE_SKILL.value
+
+    ############################################################################################################
+
+    @property
+    def can_exchange(self) -> bool:
+        return (
+            self.is_weapon
+            or self.is_clothes
+            or self.is_non_consumable_item
+            or self.is_consumable_item
+        )
 
     ############################################################################################################
     @property

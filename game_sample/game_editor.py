@@ -79,7 +79,7 @@ class ExcelEditorGame:
         allprops = (
             self.parse_props_from_actor(self._editor_players)
             + self.parse_props_from_actor(self._editor_actors)
-            + self.parse_props_from_stage(self._editor_stages)
+            + self.collect_props_from_stages(self._editor_stages)
         )
         globalnames: Set[str] = set()
         self._editor_props.clear()
@@ -119,16 +119,19 @@ class ExcelEditorGame:
         return res
 
     ############################################################################################################################
-    def parse_props_from_stage(
-        self, stages: List[ExcelEditorStage]
+    def collect_props_from_stages(
+        self, editor_stages: List[ExcelEditorStage]
     ) -> List[ExcelDataProp]:
-        res = []
-        for stage in stages:
+
+        ret = []
+
+        for stage in editor_stages:
             for tp in stage._stage_prop:
                 prop = tp[0]
-                if prop not in res:
-                    res.append(prop)
-        return res
+                if prop not in ret:
+                    ret.append(prop)
+
+        return ret
 
     ############################################################################################################################
     # 先将数据分类

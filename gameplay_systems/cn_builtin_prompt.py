@@ -365,7 +365,7 @@ def make_give_prop_action_prompt(
 ) -> str:
     if not action_result:
         return f"# {from_name} 试图将 {prop_name} 给予 {target_name}, 但是失败了。"
-    
+
     return f"""# {from_name} 将 {prop_name} 成功给予了 {target_name}。
 ## 导致结果
 - {from_name} 现在不再拥有 {prop_name}。
@@ -888,6 +888,7 @@ def make_last_impression_of_stage_prompt(
 
 
 ################################################################################################################################################
+
 
 def make_equip_prop_not_found_prompt(actor_name: str, prop_name: str) -> str:
     return f"""# {actor_name} 没有道具: {prop_name}。所以无法装备。"""

@@ -34,7 +34,7 @@ class ExcelEditorStage:
         self._stage_prop: List[tuple[ExcelDataProp, int]] = []
         self._actors_in_stage: List[ExcelDataActor] = []
         # 分析数据
-        self.parse_stage_prop()
+        self.parse_stage_props()
         self.parse_actors_in_stage()
 
     #################################################################################################################################
@@ -49,18 +49,26 @@ class ExcelEditorStage:
         return values
 
     ################################################################################################################################
-    def parse_stage_prop(self) -> None:
+    def parse_stage_props(self) -> None:
         data: Optional[str] = self._my_data["stage_prop"]
         if data is None:
             return
-        _str_ = data.split(";")
-        for _ss in _str_:
-            _tp = game_sample.utils.parse_prop_string(_ss)
-            _name = _tp[0]
-            _count = _tp[1]
-            if _name not in self._prop_data_base:
+
+        for prop_str in data.split(";"):
+            if prop_str == "":
                 continue
-            self._stage_prop.append((self._prop_data_base[_name], _count))
+
+            tp = game_sample.utils.parse_prop_string(prop_str)
+            if tp[0] not in self._prop_data_base:
+                assert False, f"Invalid prop: {tp[0]}"
+                continue
+
+            prop_data = self._prop_data_base[tp[0]]
+            if not prop_data.can_placed:
+                assert False, f"Invalid prop: {prop_data.name}"
+                continue
+
+            self._stage_prop.append((prop_data, tp[1]))
 
     ################################################################################################################################
     def parse_actors_in_stage(self) -> None:

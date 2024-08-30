@@ -8,7 +8,11 @@ from gameplay_systems.action_components import (
     BroadcastAction,
     DamageAction,
 )
-from gameplay_systems.components import BodyComponent
+from gameplay_systems.components import (
+    BodyComponent,
+    RPGAttributesComponent,
+    RPGCurrentWeaponComponent,
+)
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import override, List, cast, Optional, Set
 from loguru import logger
@@ -21,6 +25,7 @@ import gameplay_systems.cn_builtin_prompt as builtin_prompt
 import my_format_string.target_and_message_format_string
 import my_format_string.attrs_format_string
 from rpg_game.rpg_game import RPGGame
+from my_data.model_def import AttributesIndex
 
 
 class WorldSkillSystemReasoningResponse(AgentPlan):
@@ -129,7 +134,7 @@ class SkillActionSystem(ReactiveProcessor):
                 continue  # 目标是不是掉线了？
 
             # 加入伤害计算的逻辑
-            self.on_add_damage_action(entity, target)
+            self.on_add_action_to_target(entity, target)
 
             # 场景事件
             self.on_notify_release_skill_event(entity, target, world_response)
@@ -156,7 +161,23 @@ class SkillActionSystem(ReactiveProcessor):
         )
 
     ######################################################################################################################################################
-    def on_add_damage_action(self, entity: Entity, target: Entity) -> None:
+    def on_add_action_to_target(self, entity: Entity, target: Entity) -> None:
+
+        # 拿到原始的
+        skill_attrs: List[int] = self.get_skill_attrs(entity)
+        # 补充上发起者的攻击值
+        self.add_value_of_attr_component_to_skill_attrs(entity, target, skill_attrs)
+        # 补充上所有参与的道具的属性
+        self.add_values_from_prop_files(entity, target, skill_attrs)
+        # 最终添加到目标的伤害行为
+        self.on_add_damage_action_to_target(entity, target, skill_attrs)
+
+    ######################################################################################################################################################
+    def on_add_damage_action_to_target(
+        self, entity: Entity, target: Entity, skill_attrs: List[int]
+    ) -> None:
+        if skill_attrs[AttributesIndex.ATTACK.value] == 0:
+            return
 
         if not target.has(DamageAction):
             # 保底先有一个。
@@ -167,17 +188,38 @@ class SkillActionSystem(ReactiveProcessor):
                 [],
             )
 
-        damage_action = target.get(DamageAction)
-        final_attr: List[int] = self.get_skill_attrs(entity)
-        attr_list_string = (
-            my_format_string.attrs_format_string.from_int_attrs_to_string(final_attr)
-        )
-        safe_name = self._context.safe_get_entity_name(entity)
-        cast(List[str], damage_action.values).append(
+        cast(List[str], target.get(DamageAction).values).append(
             my_format_string.target_and_message_format_string.make_target_and_message(
-                safe_name, attr_list_string
+                self._context.safe_get_entity_name(entity),
+                my_format_string.attrs_format_string.from_int_attrs_to_string(
+                    skill_attrs
+                ),
             )
         )
+
+    ######################################################################################################################################################
+
+    def add_value_of_attr_component_to_skill_attrs(
+        self, entity: Entity, target: Entity, out_put_skill_attrs: List[int]
+    ) -> None:
+
+        if not entity.has(RPGAttributesComponent):
+            return
+
+        rpg_attr_comp = entity.get(RPGAttributesComponent)
+        out_put_skill_attrs[AttributesIndex.MAX_HP.value] += rpg_attr_comp.maxhp
+        out_put_skill_attrs[AttributesIndex.CUR_HP.value] += rpg_attr_comp.hp
+        out_put_skill_attrs[AttributesIndex.ATTACK.value] += rpg_attr_comp.attack
+        out_put_skill_attrs[AttributesIndex.DEFENSE.value] += rpg_attr_comp.defense
+
+    ######################################################################################################################################################
+    def add_values_from_prop_files(
+        self, entity: Entity, target: Entity, out_put_skill_attrs: List[int]
+    ) -> None:
+        prop_files = self.get_prop_files(entity)
+        for prop_file in prop_files:
+            for i in range(len(out_put_skill_attrs)):
+                out_put_skill_attrs[i] += prop_file._prop_model.attributes[i]
 
     ######################################################################################################################################################
     def get_skill_attrs(self, entity: Entity) -> List[int]:

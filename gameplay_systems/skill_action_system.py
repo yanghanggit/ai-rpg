@@ -3,7 +3,7 @@ from gameplay_systems.action_components import (
     BehaviorAction,
     SkillTargetAction,
     SkillAction,
-    SkillPropAction,
+    SkillUsePropAction,
     TagAction,
     BroadcastAction,
     DamageAction,
@@ -93,9 +93,10 @@ class SkillActionSystem(ReactiveProcessor):
         body = self.get_body(entity)
         skill_files = self.get_skill_files(entity)
         prop_files = self.get_prop_files(entity)
+        behavior_sentence = self.get_behavior_sentence(entity)
 
         world_response = self.request_world_skill_system_reasoning(
-            entity, world_entity, body, skill_files, prop_files
+            entity, world_entity, body, skill_files, prop_files, behavior_sentence
         )
 
         if world_response is None:
@@ -150,9 +151,10 @@ class SkillActionSystem(ReactiveProcessor):
         current_stage_entity = self._context.safe_get_stage_entity(entity)
         if current_stage_entity is None:
             return
-
+        
+        actors_in_stage = self._context.get_actors_in_stage(current_stage_entity)
         self._context.add_agent_context_message(
-            set({current_stage_entity}),
+            actors_in_stage,
             builtin_prompt.make_notify_release_skill_event_prompt(
                 self._context.safe_get_entity_name(entity),
                 self._context.safe_get_entity_name(target_entity),
@@ -207,10 +209,7 @@ class SkillActionSystem(ReactiveProcessor):
             return
 
         rpg_attr_comp = entity.get(RPGAttributesComponent)
-        out_put_skill_attrs[AttributesIndex.MAX_HP.value] += rpg_attr_comp.maxhp
-        out_put_skill_attrs[AttributesIndex.CUR_HP.value] += rpg_attr_comp.hp
         out_put_skill_attrs[AttributesIndex.ATTACK.value] += rpg_attr_comp.attack
-        out_put_skill_attrs[AttributesIndex.DEFENSE.value] += rpg_attr_comp.defense
 
     ######################################################################################################################################################
     def add_values_from_prop_files(
@@ -335,6 +334,7 @@ class SkillActionSystem(ReactiveProcessor):
         actor_info: str,
         skill_files: List[PropFile],
         prop_files: List[PropFile],
+        behavior_sentence: str,
     ) -> Optional[WorldSkillSystemReasoningResponse]:
 
         # 生成提示
@@ -343,6 +343,7 @@ class SkillActionSystem(ReactiveProcessor):
             actor_info,
             skill_files,
             prop_files,
+            behavior_sentence,
         )
 
         agent = self._context._langserve_agent_system.get_agent(
@@ -390,11 +391,11 @@ class SkillActionSystem(ReactiveProcessor):
 
     ######################################################################################################################################################
     def get_prop_files(self, entity: Entity) -> List[PropFile]:
-        if not entity.has(SkillPropAction):
+        if not entity.has(SkillUsePropAction):
             return []
 
         safe_name = self._context.safe_get_entity_name(entity)
-        prop_action = entity.get(SkillPropAction)
+        prop_action = entity.get(SkillUsePropAction)
         ret: List[PropFile] = []
         for prop_name in prop_action.values:
             prop_file = self._context._file_system.get_file(

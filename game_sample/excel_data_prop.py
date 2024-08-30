@@ -10,7 +10,14 @@ class ExcelDataProp:
 
     def __init__(self, data: Any) -> None:
         self._data = data
-        assert self.type in [ "Special", "Weapon", "Clothes", "NonConsumableItem", "ConsumableItem", "Skill"], f"Invalid Prop type: {self.type}"
+        assert self.type in [
+            "Special",
+            "Weapon",
+            "Clothes",
+            "NonConsumableItem",
+            "ConsumableItem",
+            "Skill",
+        ], f"Invalid Prop type: {self.type}"
 
     @property
     def name(self) -> str:

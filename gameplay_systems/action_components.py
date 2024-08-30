@@ -4,6 +4,8 @@ from typing import List, Dict, Any, Union, FrozenSet, Tuple
 ################################################ 动作组件： ####################################################################################
 # 场景环境的描述
 StageNarrateAction = namedtuple("StageNarrateAction", "name action_name values")
+# 场景内销毁道具
+StageDestoryPropAction = namedtuple("StageDestoryPropAction", "name action_name values")
 # 内心独白
 MindVoiceAction = namedtuple("MindVoiceAction", "name action_name values")
 # 场景内广播
@@ -28,7 +30,7 @@ GivePropAction = namedtuple("GivePropAction", "name action_name values")
 BehaviorAction = namedtuple("BehaviorAction", "name action_name values")
 SkillTargetAction = namedtuple("SkillTargetAction", "name action_name values")
 SkillAction = namedtuple("SkillAction", "name action_name values")
-SkillPropAction = namedtuple("SkillPropAction", "name action_name values")
+SkillUsePropAction = namedtuple("SkillUsePropAction", "name action_name values")
 
 
 # 更新外观
@@ -44,7 +46,7 @@ EquipPropAction = namedtuple("EquipPropAction", "name action_name values")
 
 # 场景可以用的所有动作
 STAGE_AVAILABLE_ACTIONS_REGISTER: FrozenSet[type[Any]] = frozenset(
-    {TagAction, MindVoiceAction, WhisperAction, StageNarrateAction, DamageAction}
+    {TagAction, MindVoiceAction, WhisperAction, StageNarrateAction, StageDestoryPropAction, DamageAction}
 )
 
 
@@ -63,7 +65,7 @@ ACTOR_AVAILABLE_ACTIONS_REGISTER: FrozenSet[type[Any]] = frozenset(
         BehaviorAction,
         SkillTargetAction,
         SkillAction,
-        SkillPropAction,
+        SkillUsePropAction,
         UpdateAppearanceAction,
         DamageAction,
         EquipPropAction,
@@ -80,7 +82,7 @@ ACTOR_INTERACTIVE_ACTIONS_REGISTER: FrozenSet[type[Any]] = frozenset(
         BehaviorAction,
         SkillTargetAction,
         SkillAction,
-        SkillPropAction,
+        SkillUsePropAction,
         UpdateAppearanceAction,
         DamageAction,
         EquipPropAction,

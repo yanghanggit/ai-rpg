@@ -33,12 +33,8 @@ class RPGEntitasProcessors(Processors):
         from gameplay_systems.post_planning_system import PostPlanningSystem
         from gameplay_systems.pre_action_system import PreActionSystem
         from gameplay_systems.post_action_system import PostActionSystem
-
-        # from gameplay_systems.perception_action_system import PerceptionActionSystem
         from gameplay_systems.steal_action_system import StealActionSystem
         from gameplay_systems.give_prop_action_system import GivePropActionSystem
-
-        # from gameplay_systems.check_self_action_system import CheckSelfActionSystem
         from gameplay_systems.connect_agent_system import ConnectAgentSystem
         from gameplay_systems.compress_chat_history_system import (
             CompressChatHistorySystem,
@@ -76,6 +72,9 @@ class RPGEntitasProcessors(Processors):
             TerminalPlayerTipsSystem,
         )
         from gameplay_systems.equip_prop_action_system import EquipPropActionSystem
+        from gameplay_systems.stage_destory_prop_action_system import (
+            StageDestoryPropActionSystem,
+        )
 
         ##
         input_rpg_game = cast(RPGGame, input_rpg_game)
@@ -144,6 +143,7 @@ class RPGEntitasProcessors(Processors):
                 builtin_world_systems.WORLD_APPEARANCE_SYSTEM_NAME,
             )
         )  ### 更新外观
+        processors.add(StageDestoryPropActionSystem(context, input_rpg_game))
 
         # 场景切换类行为，非常重要而且必须在最后!
         processors.add(

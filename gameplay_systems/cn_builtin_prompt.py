@@ -420,7 +420,7 @@ def update_stage_archive_prompt(actor_name: str, stage_archives: Set[str]) -> st
 
 ################################################################################################################################################
 def make_kill_event_prompt(actor_name: str, target_name: str) -> str:
-    return f"# {actor_name}对{target_name}发动了一次攻击,造成了{target_name}死亡。"
+    return f"# {actor_name} 对 {target_name} 的行动造成了{target_name}死亡。"
 
 
 ################################################################################################################################################
@@ -432,7 +432,7 @@ def make_damage_event_prompt(
     target_max_hp: int,
 ) -> str:
     health_percent = max(0, (target_current_hp - damage) / target_max_hp * 100)
-    return f"# {actor_name}对{target_name}发动了攻击,造成了{damage}点伤害,当前{target_name}的生命值剩余{health_percent}%。"
+    return f"# {actor_name} 对 {target_name} 的行动造成了{damage}点伤害, 当前 {target_name} 的生命值剩余 {health_percent}%。"
 
 
 ################################################################################################################################################
@@ -669,6 +669,7 @@ def make_world_reasoning_release_skill_prompt(
     actor_info: str,
     skill_files: List[PropFile],
     prop_files: List[PropFile],
+    behavior_sentence: str,
 ) -> str:
 
     skill_prompt: List[str] = []
@@ -704,6 +705,9 @@ def make_world_reasoning_release_skill_prompt(
 ## 配置的道具
 {"\n".join(prop_prompt)}
 
+## 行动内容语句
+{behavior_sentence}
+
 ## 判断步骤
 步骤1: 如果 {actor_name} 自身不满足技能释放的条件，则技能释放失败。
 步骤2: 如果 施放技能 对配置的道具有 明确的需求，如果道具不满足，则技能释放失败。
@@ -719,15 +723,18 @@ def make_world_reasoning_release_skill_prompt(
 }}
 
 ### 关于键值的补充规则说明
+
+- 关于 {BroadcastAction.__name__} 键值:
+    - 例句：{actor_name} 使用了xx道具,对xx目标(注意！在 行动内容语句 之中会提到，请仔细分析后做完整的引用),释放了xx技能,结果为xxx(注意{TagAction.__name__}键值),表现效果为xxx。
+    - 按着例句，输出逻辑合理且附带润色的句子描述，来表达 {actor_name} 使用技能的释放结果。
+    - 如果是失败，需要描述失败的原因。
+
 - 关于 {TagAction.__name__} 键值:
     - 只能是如下4个值: {ConstantPrompt.BIG_SUCCESS},{ConstantPrompt.SUCCESS},{ConstantPrompt.FAILURE},{ConstantPrompt.BIG_FAILURE}。
     - {ConstantPrompt.BIG_SUCCESS} 代表技能释放 不仅{ConstantPrompt.SUCCESS}，且效果超出预期。
     - {ConstantPrompt.FAILURE} 代表技能释放 不仅{ConstantPrompt.BIG_FAILURE}，且使用者会受到惩罚。
 
-- 关于 {BroadcastAction.__name__} 键值:
-    - 例句：{actor_name} 使用了xx道具,对xx目标,释放了xx技能,结果为xxx(注意{TagAction.__name__}键值),表现效果为xxx(逻辑合理且附带润色)。
-    - 按着例句，输出逻辑合理且附带润色的句子描述，来表达 {actor_name} 使用技能的释放结果。
-    - 如果是失败，需要描述失败的原因。
+
     
 ### 注意事项
 - 每个 JSON 对象必须包含上述键中的一个或多个，不得重复同一个键，也不得使用不在上述中的键。
@@ -892,3 +899,17 @@ def make_last_impression_of_stage_prompt(
 
 def make_equip_prop_not_found_prompt(actor_name: str, prop_name: str) -> str:
     return f"""# {actor_name} 没有道具: {prop_name}。所以无法装备。"""
+
+
+################################################################################################################################################
+
+
+def make_stage_prop_lost_prompt(stage_name: str, prop_name: str) -> str:
+    return f"""# 场景 {stage_name} 内的道具 {prop_name} 已经不在了。"""
+
+
+################################################################################################################################################
+
+
+def make_stage_prop_destory_prompt(stage_name: str, prop_name: str) -> str:
+    return f"""# 场景 {stage_name} 内的道具 {prop_name} 已经被销毁了。"""

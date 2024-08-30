@@ -383,7 +383,7 @@ class PlayerGiveProp(PlayerCommand):
         target_and_message_format_string: str,
     ) -> None:
         super().__init__(name, rpg_game, player_proxy)
-        # "@交易的对象>我的啥东西"
+        # "@交易的对象/我的啥东西"
         self._target_and_message_format_string: str = target_and_message_format_string
 
     def execute(self) -> None:
@@ -401,6 +401,8 @@ class PlayerGiveProp(PlayerCommand):
             [self._target_and_message_format_string],
         )
 
+        assert "@" in self._target_and_message_format_string
+        assert "/" in self._target_and_message_format_string
         self.simu_player_planning_input_message(
             player_entity,
             f"""{{"{GivePropAction.__name__}": ["{self._target_and_message_format_string}"]}}""",

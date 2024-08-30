@@ -195,6 +195,9 @@ class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
                 if archive_actor_name == actor_comp.name:
                     continue
 
+                if archive_actor_name not in batch_cotent:
+                    continue
+
                 add_archives = file_system.helper.add_actor_archive_files(
                     self._context._file_system, actor_comp.name, {archive_actor_name}
                 )
@@ -226,6 +229,13 @@ class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
                 batch_cotent += message.content + " "
 
             for archive_stage_name in optional_range_stage_names:
+
+                if archive_stage_name == actor_comp.name:
+                    continue
+                
+                if archive_stage_name not in batch_cotent:
+                    continue
+
                 add_archives = file_system.helper.add_stage_archive_files(
                     self._context._file_system, actor_comp.name, {archive_stage_name}
                 )

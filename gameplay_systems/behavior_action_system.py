@@ -3,7 +3,7 @@ from gameplay_systems.action_components import (
     BehaviorAction,
     SkillTargetAction,
     SkillAction,
-    SkillPropAction,
+    SkillUsePropAction,
 )
 from gameplay_systems.components import StageComponent, RPGCurrentWeaponComponent
 from rpg_game.rpg_entitas_context import RPGEntitasContext
@@ -66,7 +66,7 @@ class BehaviorActionSystem(ReactiveProcessor):
         self.clear_action(entity)
         self.add_target_action(entity, targets)
         self.add_skill_action(entity, skills)
-        self.add_prop_action(entity, props)
+        self.add_skill_use_prop_action(entity, props)
 
         # 事件通知
         self.on_behavior_check_event(entity, behavior_sentence, True)
@@ -89,8 +89,8 @@ class BehaviorActionSystem(ReactiveProcessor):
         if entity.has(SkillAction):
             entity.remove(SkillAction)
 
-        if entity.has(SkillPropAction):
-            entity.remove(SkillPropAction)
+        if entity.has(SkillUsePropAction):
+            entity.remove(SkillUsePropAction)
 
     ######################################################################################################################################################
     def parse_targets(self, entity: Entity, sentence: str) -> Set[str]:
@@ -160,12 +160,14 @@ class BehaviorActionSystem(ReactiveProcessor):
         return ret
 
     ######################################################################################################################################################
-    def add_prop_action(self, entity: Entity, props: Set[PropFile]) -> None:
+    def add_skill_use_prop_action(self, entity: Entity, props: Set[PropFile]) -> None:
         if len(props) == 0:
             return
         safe_name = self._context.safe_get_entity_name(entity)
         prop_names = [prop.name for prop in props]
-        entity.add(SkillPropAction, safe_name, SkillPropAction.__name__, prop_names)
+        entity.add(
+            SkillUsePropAction, safe_name, SkillUsePropAction.__name__, prop_names
+        )
 
     ######################################################################################################################################################
     def on_behavior_check_event(

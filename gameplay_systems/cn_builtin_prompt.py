@@ -719,7 +719,7 @@ def make_world_reasoning_release_skill_prompt(
 ### 请根据下面的示例, 确保你的输出严格遵守相应的结构。
 {{
   "{BroadcastAction.__name__}":["输出逻辑合理且附带润色的句子描述"],
-  "{TagAction.__name__}":["{ConstantPrompt.BIG_SUCCESS}或{ConstantPrompt.SUCCESS}或{ConstantPrompt.FAILURE}或{ConstantPrompt.BIG_FAILURE}"]
+  "{TagAction.__name__}":["{ConstantPrompt.CRITICAL_SUCCESS}或{ConstantPrompt.SUCCESS}或{ConstantPrompt.FAILURE}或{ConstantPrompt.CRITICAL_FAILURE}"]
 }}
 
 ### 关于键值的补充规则说明
@@ -730,9 +730,9 @@ def make_world_reasoning_release_skill_prompt(
     - 如果是失败，需要描述失败的原因。
 
 - 关于 {TagAction.__name__} 键值:
-    - 只能是如下4个值: {ConstantPrompt.BIG_SUCCESS},{ConstantPrompt.SUCCESS},{ConstantPrompt.FAILURE},{ConstantPrompt.BIG_FAILURE}。
-    - {ConstantPrompt.BIG_SUCCESS} 代表技能释放 不仅{ConstantPrompt.SUCCESS}，且效果超出预期。
-    - {ConstantPrompt.FAILURE} 代表技能释放 不仅{ConstantPrompt.BIG_FAILURE}，且使用者会受到惩罚。
+    - 只能是如下4个值: {ConstantPrompt.CRITICAL_SUCCESS},{ConstantPrompt.SUCCESS},{ConstantPrompt.FAILURE},{ConstantPrompt.CRITICAL_FAILURE}。
+    - {ConstantPrompt.CRITICAL_SUCCESS} 代表技能释放 不仅{ConstantPrompt.SUCCESS}，且效果超出预期。
+    - {ConstantPrompt.FAILURE} 代表技能释放 不仅{ConstantPrompt.CRITICAL_FAILURE}，且使用者会受到惩罚。
 
 
     
@@ -778,7 +778,7 @@ def make_reasoning_skill_target_reasoning_prompt(
 ################################################################################################################################################
 
 
-def make_behavior_check_prompt(
+def make_behavior_system_processed_result_notify_prompt(
     actor_name: str, behavior_sentence: str, allow: bool
 ) -> str:
     if allow:

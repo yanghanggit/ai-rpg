@@ -9,15 +9,15 @@ from gameplay_systems.action_components import (
     StageNarrateAction,
     ACTOR_AVAILABLE_ACTIONS_REGISTER,
 )
-from my_agent.agent_plan import AgentPlan
+from lang_serve_agent.agent_plan_and_action import AgentPlan
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from typing import Dict, Set, List
 import gameplay_systems.planning_helper
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
-from my_agent.lang_serve_agent_request_task import (
-    LangServeAgentRequestTask,
-    LangServeAgentAsyncRequestTasksGather,
+from lang_serve_agent.agent_task import (
+    AgentTask,
+    AgentTasksGather,
 )
 from rpg_game.rpg_game import RPGGame
 from gameplay_systems.check_self_helper import CheckSelfHelper
@@ -29,7 +29,7 @@ class ActorPlanningSystem(ExecuteProcessor):
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         self._context: RPGEntitasContext = context
         self._game: RPGGame = rpg_game
-        self._tasks: Dict[str, LangServeAgentRequestTask] = {}
+        self._tasks: Dict[str, AgentTask] = {}
 
     #######################################################################################################################################
     @override
@@ -38,7 +38,7 @@ class ActorPlanningSystem(ExecuteProcessor):
 
     #######################################################################################################################################
     @override
-    async def pre_execute(self) -> None:
+    async def a_execute1(self) -> None:
         # step1: 添加任务
         self._tasks.clear()
         self.fill_tasks(self._tasks)
@@ -50,7 +50,7 @@ class ActorPlanningSystem(ExecuteProcessor):
         if len(self._tasks) == 0:
             return
 
-        gather = LangServeAgentAsyncRequestTasksGather("", self._tasks)
+        gather = AgentTasksGather("", [task for task in self._tasks.values()])
         response = await gather.gather()
         if len(response) == 0:
             logger.warning(f"ActorPlanningSystem: request_result is empty.")
@@ -60,7 +60,7 @@ class ActorPlanningSystem(ExecuteProcessor):
         self._tasks.clear()
 
     #######################################################################################################################################
-    def handle(self, request_tasks: Dict[str, LangServeAgentRequestTask]) -> None:
+    def handle(self, request_tasks: Dict[str, AgentTask]) -> None:
 
         for name, task in request_tasks.items():
 
@@ -97,9 +97,7 @@ class ActorPlanningSystem(ExecuteProcessor):
                 )
 
     #######################################################################################################################################
-    def fill_tasks(
-        self, out_put_request_tasks: Dict[str, LangServeAgentRequestTask]
-    ) -> None:
+    def fill_tasks(self, out_put_request_tasks: Dict[str, AgentTask]) -> None:
 
         out_put_request_tasks.clear()
 
@@ -117,7 +115,7 @@ class ActorPlanningSystem(ExecuteProcessor):
             actors_appearance = self._context.get_appearance_in_stage(actor_entity)
             actors_appearance.pop(actor_comp.name, None)  # 自己不要
 
-            task = LangServeAgentRequestTask.create(
+            task = AgentTask.create(
                 agent,
                 builtin_prompt.make_actor_plan_prompt(
                     game_round=self._game.round,

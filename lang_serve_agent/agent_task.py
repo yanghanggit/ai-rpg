@@ -3,29 +3,40 @@ from typing import Dict, List, Union, Optional, cast, Any
 from langchain_core.messages import HumanMessage, AIMessage
 import asyncio
 import time
-from my_agent.lang_serve_agent import LangServeAgent
+from lang_serve_agent.agent import LangServeAgent
 
 
-class LangServeAgentRequestTask:
+class AgentTask:
 
+    ################################################################################################################################################################################
     @staticmethod
-    def create(
-        agent: LangServeAgent, prompt: str
-    ) -> Optional["LangServeAgentRequestTask"]:
+    def create(agent: LangServeAgent, prompt: str) -> Optional["AgentTask"]:
         if agent is None or prompt == "":
             return None
-        return LangServeAgentRequestTask(agent, prompt)
+        return AgentTask(agent, prompt)
 
+    ################################################################################################################################################################################
     @staticmethod
-    def create_without_context(
+    def create_standalone(agent: LangServeAgent, prompt: str) -> Optional["AgentTask"]:
+        ret = AgentTask.create(agent, prompt)
+        if ret is None:
+            return None
+
+        ret._input_chat_history = False
+        ret._add_prompt_to_chat_history = False
+        ret._add_response_to_chat_history = False
+        return ret
+
+    ################################################################################################################################################################################
+    @staticmethod
+    def create_process_context_without_saving(
         agent: LangServeAgent, prompt: str
-    ) -> Optional["LangServeAgentRequestTask"]:
-        request_task = LangServeAgentRequestTask.create(agent, prompt)
+    ) -> Optional["AgentTask"]:
+        request_task = AgentTask.create(agent, prompt)
         if request_task is None:
             return None
 
-        # 不用任何上下文，也不添加到chat history
-        request_task._input_chat_history = False
+        request_task._input_chat_history = True
         request_task._add_prompt_to_chat_history = False
         request_task._add_response_to_chat_history = False
         return request_task
@@ -41,6 +52,7 @@ class LangServeAgentRequestTask:
         self._add_prompt_to_chat_history: bool = True
         self._add_response_to_chat_history: bool = True
         self._response: Any = None
+        self._option_param: Dict[str, Any] = {}
 
     ################################################################################################################################################################################
     @property
@@ -68,8 +80,8 @@ class LangServeAgentRequestTask:
 
         if (
             self._agent is None
-            or self._agent._langserve_remote_runnable is None
-            or self._agent._langserve_remote_runnable._remote_runnable is None
+            or self._agent._remote_runnable_wrapper is None
+            or self._agent._remote_runnable_wrapper._remote_runnable is None
             or self._prompt == ""
         ):
             logger.error(f"request: no agent")
@@ -79,7 +91,7 @@ class LangServeAgentRequestTask:
 
             logger.info(f"{self.agent_name} request prompt:\n{self._prompt}")
             self._response = (
-                self._agent._langserve_remote_runnable._remote_runnable.invoke(
+                self._agent._remote_runnable_wrapper._remote_runnable.invoke(
                     {
                         "input": self._prompt,
                         "chat_history": self.input_chat_history_as_context(),
@@ -122,8 +134,8 @@ class LangServeAgentRequestTask:
 
         if (
             self._agent is None
-            or self._agent._langserve_remote_runnable is None
-            or self._agent._langserve_remote_runnable._remote_runnable is None
+            or self._agent._remote_runnable_wrapper is None
+            or self._agent._remote_runnable_wrapper._remote_runnable is None
             or self._prompt == ""
         ):
             logger.error(f"a_request: no agent")
@@ -133,7 +145,7 @@ class LangServeAgentRequestTask:
 
             logger.info(f"{self.agent_name} a_request prompt:\n{self._prompt}")
             self._response = (
-                await self._agent._langserve_remote_runnable._remote_runnable.ainvoke(
+                await self._agent._remote_runnable_wrapper._remote_runnable.ainvoke(
                     {
                         "input": self._prompt,
                         "chat_history": self.input_chat_history_as_context(),
@@ -159,17 +171,16 @@ class LangServeAgentRequestTask:
 ################################################################################################################################################################################
 ################################################################################################################################################################################
 ################################################################################################################################################################################
-class LangServeAgentAsyncRequestTasksGather:
+class AgentTasksGather:
 
-    def __init__(
-        self, name: str, request_tasks: Dict[str, LangServeAgentRequestTask]
-    ) -> None:
+    def __init__(self, name: str, tasks: List[AgentTask]) -> None:
         self._name: str = name
-        self._tasks: Dict[str, LangServeAgentRequestTask] = request_tasks
+        self._tasks: List[AgentTask] = tasks
 
     # 核心方法
     async def impl_gather(self) -> List[Optional[str]]:
-        tasks = [task.a_request() for task in self._tasks.values()]
+        # tasks = [task.a_request() for task in self._tasks.values()]
+        tasks = [task.a_request() for task in self._tasks if task is not None]
         future = await asyncio.gather(*tasks)
         return future
 

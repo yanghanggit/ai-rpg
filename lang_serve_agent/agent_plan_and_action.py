@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import List, Dict, Any, Optional
 import json
 from loguru import logger
-from my_agent.my_json import (
+from my_format_string.agent_response_json import (
     merge,
     is_repeat,
     is_markdown_json_block,

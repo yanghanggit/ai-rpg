@@ -4,7 +4,7 @@ from typing import List, Union, Optional
 from langchain_core.messages import HumanMessage, AIMessage
 
 
-class LangServeRemoteRunnable:
+class RemoteRunnableWrapper:
 
     def __init__(self, url: str) -> None:
         logger.info(f"LangServeRemoteRunnable: {url}")
@@ -32,11 +32,11 @@ class LangServeRemoteRunnable:
 class LangServeAgent:
 
     def __init__(
-        self, name: str, langserve_remote_runnable: LangServeRemoteRunnable
+        self, name: str, remote_runnable_wrapper: RemoteRunnableWrapper
     ) -> None:
         self._name: str = name
-        self._langserve_remote_runnable = langserve_remote_runnable
+        self._remote_runnable_wrapper = remote_runnable_wrapper
         self._chat_history: List[Union[HumanMessage, AIMessage]] = []
 
     def connect(self) -> None:
-        self._langserve_remote_runnable.connect()
+        self._remote_runnable_wrapper.connect()

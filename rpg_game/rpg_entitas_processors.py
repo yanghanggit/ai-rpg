@@ -225,9 +225,9 @@ class RPGEntitasProcessors(Processors):
             )
             start_time = time.time()
 
-            await processor.pre_execute()
+            await processor.a_execute1()
             processor.execute()
-            await processor.post_execute()
+            await processor.a_execute2()
 
             end_time = time.time()
             execution_time = end_time - start_time

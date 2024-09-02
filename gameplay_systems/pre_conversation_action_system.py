@@ -7,9 +7,9 @@ from gameplay_systems.action_components import (
 )
 from gameplay_systems.components import PlayerComponent, ActorComponent
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from my_agent.lang_serve_agent_request_task import (
-    LangServeAgentRequestTask,
-    LangServeAgentAsyncRequestTasksGather,
+from lang_serve_agent.agent_task import (
+    AgentTask,
+    AgentTasksGather,
 )
 from typing import Dict, List
 import copy
@@ -23,7 +23,7 @@ class PreConversationActionSystem(ReactiveProcessor):
         super().__init__(context)
         self._context: RPGEntitasContext = context
         self._game: RPGGame = rpg_game
-        self._tasks: Dict[str, LangServeAgentRequestTask] = {}
+        self._tasks: Dict[str, AgentTask] = {}
 
     #################################################################################################################################################
     @override
@@ -47,9 +47,7 @@ class PreConversationActionSystem(ReactiveProcessor):
             self.fill_task(player_entity, self._tasks)
 
     #################################################################################################################################################
-    def fill_task(
-        self, player_entity: Entity, tasks: Dict[str, LangServeAgentRequestTask]
-    ) -> None:
+    def fill_task(self, player_entity: Entity, tasks: Dict[str, AgentTask]) -> None:
         safe_name = self._context.safe_get_entity_name(player_entity)
         agent = self._context._langserve_agent_system.get_agent(safe_name)
         if agent is None:
@@ -63,7 +61,7 @@ class PreConversationActionSystem(ReactiveProcessor):
             broadcast_content, speak_content_list, whisper_content_list
         )
 
-        task = LangServeAgentRequestTask.create_without_context(agent, prompt)
+        task = AgentTask.create_standalone(agent, prompt)
         if task is None:
             return
 
@@ -91,11 +89,11 @@ class PreConversationActionSystem(ReactiveProcessor):
         return copy.copy(whisper_action.values)
 
     #################################################################################################################################################
-    async def post_execute(self) -> None:
+    async def a_execute2(self) -> None:
         if len(self._tasks) == 0:
             return
 
-        gather = LangServeAgentAsyncRequestTasksGather("", self._tasks)
+        gather = AgentTasksGather("", [task for task in self._tasks.values()])
 
         response = await gather.gather()
         if len(response) == 0:
@@ -130,7 +128,7 @@ class PreConversationActionSystem(ReactiveProcessor):
             player_entity.remove(WhisperAction)
 
     #################################################################################################################################################
-    def on_response(self, tasks: Dict[str, LangServeAgentRequestTask]) -> None:
+    def on_response(self, tasks: Dict[str, AgentTask]) -> None:
         for name, task in tasks.items():
 
             if task is None:

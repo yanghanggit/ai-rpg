@@ -3,7 +3,7 @@ from typing import Dict, List, Optional, Set, cast
 from langchain_core.messages import HumanMessage, AIMessage
 import json
 from pathlib import Path
-from my_agent.lang_serve_agent import LangServeAgent, LangServeRemoteRunnable
+from lang_serve_agent.agent import LangServeAgent, RemoteRunnableWrapper
 
 
 class LangServeAgentSystem:
@@ -12,7 +12,7 @@ class LangServeAgentSystem:
         self._name: str = name
         self._agents: Dict[str, LangServeAgent] = {}
         self._runtime_dir: Optional[Path] = None
-        self._remote_runnables: Dict[str, LangServeRemoteRunnable] = {}
+        self._remote_runnables: Dict[str, RemoteRunnableWrapper] = {}
 
     ################################################################################################################################################################################
     ### 必须设置根部的执行路行
@@ -28,14 +28,14 @@ class LangServeAgentSystem:
     ################################################################################################################################################################################
     def get_remote_runnable(
         self, url: str, create: bool = False
-    ) -> Optional[LangServeRemoteRunnable]:
+    ) -> Optional[RemoteRunnableWrapper]:
         if url in self._remote_runnables:
             return self._remote_runnables[url]
 
         if not create:
             return None
 
-        self._remote_runnables[url] = LangServeRemoteRunnable(url)
+        self._remote_runnables[url] = RemoteRunnableWrapper(url)
         return self._remote_runnables[url]
 
     ################################################################################################################################################################################

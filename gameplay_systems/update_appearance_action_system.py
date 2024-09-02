@@ -12,7 +12,7 @@ from gameplay_systems.components import (
 )
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
 from file_system.files_def import PropFile
-from my_agent.lang_serve_agent_request_task import LangServeAgentRequestTask
+from lang_serve_agent.agent_task import AgentTask
 from gameplay_systems.action_components import UpdateAppearanceAction
 from rpg_game.rpg_game import RPGGame
 
@@ -104,7 +104,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
             input_data
         )
 
-        task = LangServeAgentRequestTask.create_without_context(agent, prompt)
+        task = AgentTask.create_standalone(agent, prompt)
         if task is None:
             return False
 

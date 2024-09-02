@@ -11,9 +11,9 @@ import gameplay_systems.cn_builtin_prompt as builtin_prompt
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from typing import Dict, Set, FrozenSet, Any
-from my_agent.lang_serve_agent_request_task import (
-    LangServeAgentRequestTask,
-    LangServeAgentAsyncRequestTasksGather,
+from lang_serve_agent.agent_task import (
+    AgentTask,
+    AgentTasksGather,
 )
 from rpg_game.rpg_game import RPGGame
 from file_system.files_def import PropFile
@@ -22,7 +22,7 @@ from gameplay_systems.action_components import (
     ACTOR_AVAILABLE_ACTIONS_REGISTER,
 )
 import gameplay_systems.planning_helper
-from my_agent.agent_plan import AgentPlan
+from lang_serve_agent.agent_plan_and_action import AgentPlan
 from gameplay_systems.action_components import UpdateAppearanceAction
 
 
@@ -32,10 +32,10 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
         self._context: RPGEntitasContext = context
         self._game: RPGGame = rpg_game
 
-        self._tasks: Dict[str, LangServeAgentRequestTask] = {}
-        self._world_tasks: Dict[str, LangServeAgentRequestTask] = {}
-        self._stage_tasks: Dict[str, LangServeAgentRequestTask] = {}
-        self._actor_tasks: Dict[str, LangServeAgentRequestTask] = {}
+        self._tasks: Dict[str, AgentTask] = {}
+        self._world_tasks: Dict[str, AgentTask] = {}
+        self._stage_tasks: Dict[str, AgentTask] = {}
+        self._actor_tasks: Dict[str, AgentTask] = {}
 
     ######################################################################################################################################################
     def clear_tasks(self) -> None:
@@ -66,12 +66,12 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
 
     ######################################################################################################################################################
     @override
-    async def pre_execute(self) -> None:
+    async def a_execute1(self) -> None:
 
         if len(self._tasks) == 0:
             return
 
-        gather = LangServeAgentAsyncRequestTasksGather("", self._tasks)
+        gather = AgentTasksGather("", [task for task in self._tasks.values()])
         response = await gather.gather()
         if len(response) == 0:
             return
@@ -81,9 +81,9 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
         self.on_add_update_appearance_action()
 
     ######################################################################################################################################################
-    def create_world_system_tasks(self) -> Dict[str, LangServeAgentRequestTask]:
+    def create_world_system_tasks(self) -> Dict[str, AgentTask]:
 
-        ret: Dict[str, LangServeAgentRequestTask] = {}
+        ret: Dict[str, AgentTask] = {}
 
         world_entities: Set[Entity] = self._context.get_group(
             Matcher(WorldComponent)
@@ -95,7 +95,7 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
             if agent is None:
                 continue
 
-            task = LangServeAgentRequestTask.create(
+            task = AgentTask.create(
                 agent,
                 builtin_prompt.make_kick_off_world_system_prompt(
                     self._game.about_game, self._game.round
@@ -107,9 +107,9 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
         return ret
 
     ######################################################################################################################################################
-    def create_stage_tasks(self) -> Dict[str, LangServeAgentRequestTask]:
+    def create_stage_tasks(self) -> Dict[str, AgentTask]:
 
-        ret: Dict[str, LangServeAgentRequestTask] = {}
+        ret: Dict[str, AgentTask] = {}
 
         stage_entities: Set[Entity] = self._context.get_group(
             Matcher(StageComponent)
@@ -138,16 +138,16 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
                 self._game.round,
             )
 
-            task = LangServeAgentRequestTask.create(agent, kick_off_prompt)
+            task = AgentTask.create(agent, kick_off_prompt)
             if task is not None:
                 ret[stage_comp.name] = task
 
         return ret
 
     ######################################################################################################################################################
-    def create_actor_tasks(self) -> Dict[str, LangServeAgentRequestTask]:
+    def create_actor_tasks(self) -> Dict[str, AgentTask]:
 
-        ret: Dict[str, LangServeAgentRequestTask] = {}
+        ret: Dict[str, AgentTask] = {}
 
         actor_entities: Set[Entity] = self._context.get_group(
             Matcher(all_of=[ActorComponent])
@@ -166,7 +166,7 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
                 logger.error(f"kick_off_messages is error: {actor_comp.name}")
                 continue
 
-            task = LangServeAgentRequestTask.create(
+            task = AgentTask.create(
                 agent,
                 builtin_prompt.make_kick_off_actor_prompt(
                     kick_off_messages[0].content,
@@ -180,7 +180,7 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
         return ret
 
     ######################################################################################################################################################
-    def on_response(self, tasks: Dict[str, LangServeAgentRequestTask]) -> None:
+    def on_response(self, tasks: Dict[str, AgentTask]) -> None:
 
         for name, task in tasks.items():
 

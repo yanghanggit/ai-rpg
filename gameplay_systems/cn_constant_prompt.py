@@ -62,7 +62,7 @@ class CNConstantPrompt:
         return "</成功>"
 
     @property
-    def BIG_SUCCESS(self) -> str:
+    def CRITICAL_SUCCESS(self) -> str:
         return "</大成功>"
 
     @property
@@ -70,7 +70,7 @@ class CNConstantPrompt:
         return "</失败>"
 
     @property
-    def BIG_FAILURE(self) -> str:
+    def CRITICAL_FAILURE(self) -> str:
         return "</大失败>"
 
     @property

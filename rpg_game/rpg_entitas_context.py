@@ -11,7 +11,7 @@ from gameplay_systems.components import (
 from file_system.file_system import FileSystem
 from extended_systems.kick_off_message_system import KickOffMessageSystem
 from extended_systems.code_name_component_system import CodeNameComponentSystem
-from my_agent.lang_serve_agent_system import LangServeAgentSystem
+from lang_serve_agent.agent_system import LangServeAgentSystem
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from typing import Optional, Dict, List, Set, cast
 from extended_systems.guid_generator import GUIDGenerator

@@ -17,8 +17,8 @@ import gameplay_systems.cn_builtin_prompt as builtin_prompt
 from gameplay_systems.cn_constant_prompt import _CNConstantPrompt_ as ConstantPrompt
 from typing import cast, override, List, Set
 from gameplay_systems.check_self_helper import CheckSelfHelper
-from my_agent.agent_plan import AgentPlan
-from my_agent.lang_serve_agent_request_task import LangServeAgentRequestTask
+from lang_serve_agent.agent_plan_and_action import AgentPlan
+from lang_serve_agent.agent_task import AgentTask
 from file_system.files_def import PropFile
 from rpg_game.rpg_game import RPGGame
 from my_data.model_def import PropType
@@ -183,7 +183,7 @@ class PreBeforeGoToActionSystem(ReactiveProcessor):
         if agent is None:
             return False
 
-        task = LangServeAgentRequestTask.create(agent, final_prompt)
+        task = AgentTask.create(agent, final_prompt)
         if task is None:
             return False
 
@@ -242,7 +242,7 @@ class PreBeforeGoToActionSystem(ReactiveProcessor):
         if agent is None:
             return False
 
-        task = LangServeAgentRequestTask.create(agent, final_prompt)
+        task = AgentTask.create(agent, final_prompt)
         if task is None:
             return False
 

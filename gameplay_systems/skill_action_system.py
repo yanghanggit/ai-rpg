@@ -11,15 +11,15 @@ from gameplay_systems.action_components import (
 from gameplay_systems.components import (
     BodyComponent,
     RPGAttributesComponent,
-    RPGCurrentWeaponComponent,
+    # RPGCurrentWeaponComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from typing import override, List, cast, Optional, Set
+from typing import override, List, cast, Optional, Set, Dict
 from loguru import logger
 from file_system.files_def import PropFile
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
-from my_agent.lang_serve_agent_request_task import LangServeAgentRequestTask
-from my_agent.agent_plan import AgentPlan
+from lang_serve_agent.agent_task import AgentTask, AgentTasksGather
+from lang_serve_agent.agent_plan_and_action import AgentPlan
 from gameplay_systems.cn_constant_prompt import _CNConstantPrompt_ as ConstantPrompt
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
 import my_format_string.target_and_message_format_string
@@ -34,7 +34,7 @@ class WorldSkillSystemReasoningResponse(AgentPlan):
         super().__init__(name, input_str)
 
     @property
-    def result_description(self) -> str:
+    def out_come(self) -> str:
         tip_action = self.get_by_key(TagAction.__name__)
         if tip_action is None or len(tip_action.values) == 0:
             return ConstantPrompt.FAILURE
@@ -54,9 +54,11 @@ class SkillActionSystem(ReactiveProcessor):
         self, context: RPGEntitasContext, rpg_game: RPGGame, system_name: str
     ) -> None:
         super().__init__(context)
+
         self._context: RPGEntitasContext = context
         self._game: RPGGame = rpg_game
         self._system_name: str = system_name
+        self._entities: List[Entity] = []
 
     ######################################################################################################################################################
     @override
@@ -75,8 +77,86 @@ class SkillActionSystem(ReactiveProcessor):
     ######################################################################################################################################################
     @override
     def react(self, entities: list[Entity]) -> None:
+        self._entities = entities.copy()
+
+    ######################################################################################################################################################
+    def create_tasks_actor_can_use_skill(
+        self, entities: List[Entity]
+    ) -> Dict[str, AgentTask]:
+        ret: Dict[str, AgentTask] = {}
+
         for entity in entities:
-            self.handle(entity)
+
+            agent_name = self._context.safe_get_entity_name(entity)
+
+            agent = self._context._langserve_agent_system.get_agent(agent_name)
+            if agent is None:
+                continue
+
+            prompt = ""
+
+            task = AgentTask.create_process_context_without_saving(agent, prompt)
+            if task is None:
+                continue
+
+            ret[agent._name] = task
+
+        return ret
+
+    ######################################################################################################################################################
+    def create_tasks_world_skill_system_validate_skill_combo(
+        self, entities: List[Entity], world_skill_system_name: str
+    ) -> List[AgentTask]:
+
+        ret: List[AgentTask] = []
+
+        world_system_agent = self._context._langserve_agent_system.get_agent(
+            world_skill_system_name
+        )
+        if world_system_agent is None:
+            return ret
+
+        for entity in entities:
+
+            prompt = ""
+
+            task = AgentTask.create_process_context_without_saving(
+                world_system_agent, prompt
+            )
+            if task is None:
+                continue
+
+        return ret
+
+    ######################################################################################################################################################
+    async def a_execute2(self) -> None:
+
+        phase1_tasks = self.create_tasks_actor_can_use_skill(self._entities)
+        if len(phase1_tasks) == 0:
+            return
+
+        phase1_gather = AgentTasksGather(
+            "第一个阶段，检查角色自身是否可以使用技能",
+            [task for task in phase1_tasks.values()],
+        )
+        phase1_response = await phase1_gather.gather()
+        if len(phase1_response) == 0:
+            logger.debug(f"phase1_response is None.")
+            return
+
+        phase2_tasks = self.create_tasks_world_skill_system_validate_skill_combo(
+            self._entities, self._system_name
+        )
+        if len(phase2_tasks) == 0:
+            return
+
+        phase2_gather = AgentTasksGather(
+            "第二个阶段，检查技能组合是否合法", phase2_tasks
+        )
+        phase2_response = await phase2_gather.gather()
+        if len(phase2_response) == 0:
+            logger.debug(f"phase2_response is None.")
+            return
 
     ######################################################################################################################################################
     def handle(self, entity: Entity) -> None:
@@ -105,8 +185,8 @@ class SkillActionSystem(ReactiveProcessor):
 
         # 单独处理失败和大失败
         if (
-            world_response.result_description == ConstantPrompt.BIG_FAILURE
-            or world_response.result_description == ConstantPrompt.FAILURE
+            world_response.out_come == ConstantPrompt.CRITICAL_FAILURE
+            or world_response.out_come == ConstantPrompt.FAILURE
         ):
 
             self.on_world_skill_system_reasoning_result_is_failure(
@@ -249,7 +329,7 @@ class SkillActionSystem(ReactiveProcessor):
             set({entity}),
             builtin_prompt.make_world_skill_system_reasoning_result_is_failure_prompt(
                 self._context.safe_get_entity_name(entity),
-                world_response_plan.result_description,
+                world_response_plan.out_come,
                 self.get_behavior_sentence(entity),
                 world_response_plan.reasoning_sentence,
             ),
@@ -306,10 +386,10 @@ class SkillActionSystem(ReactiveProcessor):
             self._context.safe_get_entity_name(entity),
             agent_name,
             world_response_plan.reasoning_sentence,
-            world_response_plan.result_description,
+            world_response_plan.out_come,
         )
 
-        task = LangServeAgentRequestTask.create(
+        task = AgentTask.create(
             agent,
             builtin_prompt.replace_mentions_of_your_name_with_you_prompt(
                 prompt, agent_name
@@ -352,7 +432,7 @@ class SkillActionSystem(ReactiveProcessor):
         if agent is None:
             return None
 
-        task = LangServeAgentRequestTask.create_without_context(agent, prompt)
+        task = AgentTask.create_standalone(agent, prompt)
         if task is None:
             return None
 

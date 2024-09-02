@@ -7,7 +7,7 @@ from gameplay_systems.action_components import (
 )
 from gameplay_systems.components import StageComponent, RPGCurrentWeaponComponent
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from typing import override, Set, Optional
+from typing import override, Set, Optional, Any
 from file_system.files_def import PropFile
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
 from rpg_game.rpg_game import RPGGame
@@ -39,7 +39,7 @@ class BehaviorActionSystem(ReactiveProcessor):
     ######################################################################################################################################################
     def handle(self, entity: Entity) -> None:
 
-        behavior_action: BehaviorAction = entity.get(BehaviorAction)
+        behavior_action = entity.get(BehaviorAction)
         if len(behavior_action.values) == 0:
             return
 
@@ -48,28 +48,34 @@ class BehaviorActionSystem(ReactiveProcessor):
             return
 
         # 基础数据
-        targets = self.parse_targets(entity, behavior_sentence)
-        skills = self.parse_skills(entity, behavior_sentence)
-        props = self.parse_props(entity, behavior_sentence)
+        targets = self.extract_targets_info_from_sentence(entity, behavior_sentence)
+        skills = self.extract_skills_info_from_sentence(entity, behavior_sentence)
+        # 不用继续了
+        if len(targets) == 0 or len(skills) == 0:
+            self.on_behavior_system_processed_result_notify_event(
+                entity, behavior_sentence, False
+            )
+            return
+
+        props = self.extract_props_info_from_sentence(entity, behavior_sentence)
 
         # 默认会添加当前武器
         weapon_prop = self.get_current_weapon(entity)
         if weapon_prop is not None:
             props.add(weapon_prop)
 
-        # 不用继续了
-        if len(targets) == 0 or len(skills) == 0:
-            self.on_behavior_check_event(entity, behavior_sentence, False)
-            return
-
         # 添加动作
-        self.clear_action(entity)
-        self.add_target_action(entity, targets)
+        self.clear_action(
+            entity, set({SkillTargetAction, SkillAction, SkillUsePropAction})
+        )
+        self.add_skill_target_action(entity, targets)
         self.add_skill_action(entity, skills)
         self.add_skill_use_prop_action(entity, props)
 
         # 事件通知
-        self.on_behavior_check_event(entity, behavior_sentence, True)
+        self.on_behavior_system_processed_result_notify_event(
+            entity, behavior_sentence, True
+        )
 
     ######################################################################################################################################################
     def get_current_weapon(self, entity: Entity) -> Optional[PropFile]:
@@ -81,19 +87,23 @@ class BehaviorActionSystem(ReactiveProcessor):
         )
 
     ######################################################################################################################################################
-    def clear_action(self, entity: Entity) -> None:
+    def clear_action(
+        self,
+        entity: Entity,
+        actions_comp: Set[type[Any]] = set(
+            {SkillTargetAction, SkillAction, SkillUsePropAction}
+        ),
+    ) -> None:
 
-        if entity.has(SkillTargetAction):
-            entity.remove(SkillTargetAction)
-
-        if entity.has(SkillAction):
-            entity.remove(SkillAction)
-
-        if entity.has(SkillUsePropAction):
-            entity.remove(SkillUsePropAction)
+        for action_comp in actions_comp:
+            if entity.has(action_comp):
+                entity.remove(action_comp)
 
     ######################################################################################################################################################
-    def parse_targets(self, entity: Entity, sentence: str) -> Set[str]:
+
+    def extract_targets_info_from_sentence(
+        self, entity: Entity, sentence: str
+    ) -> Set[str]:
 
         current_stage_entity = self._context.safe_get_stage_entity(entity)
         assert current_stage_entity is not None
@@ -113,16 +123,18 @@ class BehaviorActionSystem(ReactiveProcessor):
         return ret
 
     ######################################################################################################################################################
-    def add_target_action(self, entity: Entity, targets: Set[str]) -> None:
-        if len(targets) == 0:
+    def add_skill_target_action(self, entity: Entity, target_names: Set[str]) -> None:
+        if len(target_names) == 0:
             return
         safe_name = self._context.safe_get_entity_name(entity)
         entity.add(
-            SkillTargetAction, safe_name, SkillTargetAction.__name__, list(targets)
+            SkillTargetAction, safe_name, SkillTargetAction.__name__, list(target_names)
         )
 
     ######################################################################################################################################################
-    def parse_skills(self, entity: Entity, sentence: str) -> Set[PropFile]:
+    def extract_skills_info_from_sentence(
+        self, entity: Entity, sentence: str
+    ) -> Set[PropFile]:
 
         safe_name = self._context.safe_get_entity_name(entity)
         skill_files = self._context._file_system.get_files(PropFile, safe_name)
@@ -138,15 +150,19 @@ class BehaviorActionSystem(ReactiveProcessor):
         return ret
 
     ######################################################################################################################################################
-    def add_skill_action(self, entity: Entity, skills: Set[PropFile]) -> None:
-        if len(skills) == 0:
+    def add_skill_action(
+        self, entity: Entity, prop_name_as_skill_name: Set[PropFile]
+    ) -> None:
+        if len(prop_name_as_skill_name) == 0:
             return
         safe_name = self._context.safe_get_entity_name(entity)
-        skill_names = [skill.name for skill in skills]
+        skill_names = [skill.name for skill in prop_name_as_skill_name]
         entity.add(SkillAction, safe_name, SkillAction.__name__, skill_names)
 
     ######################################################################################################################################################
-    def parse_props(self, entity: Entity, sentence: str) -> Set[PropFile]:
+    def extract_props_info_from_sentence(
+        self, entity: Entity, sentence: str
+    ) -> Set[PropFile]:
 
         safe_name = self._context.safe_get_entity_name(entity)
         prop_files = self._context._file_system.get_files(PropFile, safe_name)
@@ -170,14 +186,16 @@ class BehaviorActionSystem(ReactiveProcessor):
         )
 
     ######################################################################################################################################################
-    def on_behavior_check_event(
-        self, entity: Entity, behavior_sentence: str, allow: bool
+    def on_behavior_system_processed_result_notify_event(
+        self, entity: Entity, behavior_sentence: str, processed_result: bool
     ) -> None:
 
         self._context.add_agent_context_message(
             set({entity}),
-            builtin_prompt.make_behavior_check_prompt(
-                self._context.safe_get_entity_name(entity), behavior_sentence, allow
+            builtin_prompt.make_behavior_system_processed_result_notify_prompt(
+                self._context.safe_get_entity_name(entity),
+                behavior_sentence,
+                processed_result,
             ),
         )
 

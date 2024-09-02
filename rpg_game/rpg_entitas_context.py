@@ -268,7 +268,10 @@ class RPGEntitasContext(Context):
 
     #############################################################################################################################
     def add_agent_context_message(
-        self, entities: Set[Entity], message_content: str
+        self,
+        entities: Set[Entity],
+        message_content: str,
+        exclude_entities: Set[Entity] = set(),
     ) -> None:
 
         copy_entities = entities.copy()
@@ -279,6 +282,9 @@ class RPGEntitasContext(Context):
             if only_stage_entity.has(StageComponent):
                 actor_entities = self.get_actors_in_stage(only_stage_entity)
                 copy_entities.update(actor_entities)
+
+        if len(exclude_entities) > 0:
+            copy_entities = copy_entities - exclude_entities
 
         self._add_agent_context_message(copy_entities, message_content)
 

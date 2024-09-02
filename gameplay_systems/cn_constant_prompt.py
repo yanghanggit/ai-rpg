@@ -69,9 +69,9 @@ class CNConstantPrompt:
     def FAILURE(self) -> str:
         return "</失败>"
 
-    @property
-    def CRITICAL_FAILURE(self) -> str:
-        return "</大失败>"
+    # @property
+    # def CRITICAL_FAILURE(self) -> str:
+    #     return "</大失败>"
 
     @property
     def ACTOR_KICK_OFF_MESSAGE_PROMPT_TAG(self) -> str:

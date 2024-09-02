@@ -698,9 +698,9 @@ def make_skill_to_target_feedback_reasoning_prompt(
 
 
 def make_behavior_system_processed_result_notify_prompt(
-    actor_name: str, behavior_sentence: str, allow: bool
+    actor_name: str, behavior_sentence: str, result: bool
 ) -> str:
-    if allow:
+    if result:
         prompt1 = f"""# 这是一次 {actor_name} 的计划行动
 ## 行动内容语句
 {behavior_sentence}
@@ -937,7 +937,7 @@ def make_reasoning_world_skill_system_validate_skill_combo_prompt(
     else:
         props_prompt.append("- 无任何道具。")
 
-    ret_prompt = f"""# {actor_name} 准备使用技能，请你判断技能使用的合理性(是否符合游戏规则和世界观设计)。在尽量能保证游戏乐趣的情况下，来润色技能的产生结果。
+    ret_prompt = f"""# {actor_name} 准备使用技能，请你判断技能使用的合理性(是否符合游戏规则和世界观设计)。在尽量能保证游戏乐趣的情况下，来润色技能的描述。
 
 ## {actor_name} 自身信息
 {actor_body_info}
@@ -964,17 +964,17 @@ def make_reasoning_world_skill_system_validate_skill_combo_prompt(
 
 ### 请根据下面的示例, 确保你的输出严格遵守相应的结构。
 {{
-  "{BroadcastAction.__name__}":["你的判断结果描述"],
+  "{BroadcastAction.__name__}":["输出结果"],
   "{TagAction.__name__}":["{ConstantPrompt.CRITICAL_SUCCESS}或{ConstantPrompt.SUCCESS}或{ConstantPrompt.FAILURE}"]
 }}
 
 ### 关于键值的补充规则说明
 
 关于 {BroadcastAction.__name__} 键值:
-- 如果你的判断是 {ConstantPrompt.SUCCESS} 或 {ConstantPrompt.CRITICAL_FAILURE}。
-    - 则输出结果必须包含如下信息：{actor_name}的名字，释放的技能的描述，技能释放的目标的名字，配置的道具的信息。
-    - 做出逻辑合理的句子描述（可以适当润色），来表达 {actor_name} 使用技能的释放结果。
-    - 请注意，输出的信息必须是第三人称的描述。  
+- 如果你的判断是 {ConstantPrompt.SUCCESS} 或 {ConstantPrompt.CRITICAL_SUCCESS}。
+    - 必须包含如下信息：{actor_name}的名字（技能使用者），释放的技能的描述，技能释放的目标的名字，配置的道具的信息。
+    - 做出逻辑合理的句子描述（可以适当润色），来表达 {actor_name} 使用技能的使用过程。但不要判断技能命中目标之后，目标的可能反应。
+    - 请注意，用第三人称的描述。  
     
 - 如果你的判断是 {ConstantPrompt.FAILURE}。
     - 则输出结果需要描述为：技能释放失败的原因。

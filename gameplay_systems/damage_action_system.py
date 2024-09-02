@@ -3,6 +3,8 @@ from gameplay_systems.action_components import DamageAction, DeadAction
 from gameplay_systems.components import (
     RPGAttributesComponent,
     RPGCurrentClothesComponent,
+    ActorComponent,
+    StageComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import cast, override
@@ -29,7 +31,11 @@ class DamageActionSystem(ReactiveProcessor):
     ######################################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(DamageAction) and entity.has(RPGAttributesComponent)
+        return (
+            entity.has(DamageAction)
+            and entity.has(RPGAttributesComponent)
+            and (entity.has(StageComponent) or entity.has(ActorComponent))
+        )
 
     ######################################################################################################################################################
     @override
@@ -134,18 +140,19 @@ class DamageActionSystem(ReactiveProcessor):
             )
 
         else:
-            # 没有打死。
-            rpg_attr_comp = target_entity.get(RPGAttributesComponent)
-            self._context.add_agent_context_message(
-                set({current_stage_entity}),
-                builtin_prompt.make_damage_event_prompt(
-                    from_name,
-                    target_name,
-                    damage,
-                    rpg_attr_comp.hp,
-                    rpg_attr_comp.maxhp,
-                ),
-            )
+            # 没有打死。对于场景的伤害不要通知了。无意义。而且怕影响对话上下文。
+            if not target_entity.has(StageComponent):
+                rpg_attr_comp = target_entity.get(RPGAttributesComponent)
+                self._context.add_agent_context_message(
+                    set({current_stage_entity}),
+                    builtin_prompt.make_damage_event_prompt(
+                        from_name,
+                        target_name,
+                        damage,
+                        rpg_attr_comp.hp,
+                        rpg_attr_comp.maxhp,
+                    ),
+                )
 
     ######################################################################################################################################################
     def final_defense_val(self, entity: Entity) -> int:

@@ -1,5 +1,5 @@
 from entitas import Matcher, ExecuteProcessor  # type: ignore
-from typing import override, List, Any
+from typing import override, Any
 from gameplay_systems.components import (
     PlayerComponent,
     DestroyComponent,

@@ -911,5 +911,5 @@ def make_stage_prop_lost_prompt(stage_name: str, prop_name: str) -> str:
 ################################################################################################################################################
 
 
-def make_stage_prop_destory_prompt(stage_name: str, prop_name: str) -> str:
+def make_stage_prop_remove_prompt(stage_name: str, prop_name: str) -> str:
     return f"""# 场景 {stage_name} 内的道具 {prop_name} 已经被销毁了。"""

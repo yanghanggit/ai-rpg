@@ -232,7 +232,7 @@ class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
 
                 if archive_stage_name == actor_comp.name:
                     continue
-                
+
                 if archive_stage_name not in batch_cotent:
                     continue
 

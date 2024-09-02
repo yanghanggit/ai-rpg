@@ -151,7 +151,7 @@ class SkillActionSystem(ReactiveProcessor):
         current_stage_entity = self._context.safe_get_stage_entity(entity)
         if current_stage_entity is None:
             return
-        
+
         actors_in_stage = self._context.get_actors_in_stage(current_stage_entity)
         self._context.add_agent_context_message(
             actors_in_stage,

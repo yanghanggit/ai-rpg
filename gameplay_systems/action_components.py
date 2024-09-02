@@ -4,8 +4,6 @@ from typing import List, Dict, Any, Union, FrozenSet, Tuple
 ################################################ 动作组件： ####################################################################################
 # 场景环境的描述
 StageNarrateAction = namedtuple("StageNarrateAction", "name action_name values")
-# 场景内销毁道具
-StageDestoryPropAction = namedtuple("StageDestoryPropAction", "name action_name values")
 # 内心独白
 MindVoiceAction = namedtuple("MindVoiceAction", "name action_name values")
 # 场景内广播
@@ -41,12 +39,22 @@ DamageAction = namedtuple("DamageAction", "name action_name values")
 
 # 装备道具
 EquipPropAction = namedtuple("EquipPropAction", "name action_name values")
+
+# 场景内销毁道具
+RemovePropAction = namedtuple("RemovePropAction", "name action_name values")
 ##############################################################################################################################################
 
 
 # 场景可以用的所有动作
 STAGE_AVAILABLE_ACTIONS_REGISTER: FrozenSet[type[Any]] = frozenset(
-    {TagAction, MindVoiceAction, WhisperAction, StageNarrateAction, StageDestoryPropAction, DamageAction}
+    {
+        TagAction,
+        MindVoiceAction,
+        WhisperAction,
+        StageNarrateAction,
+        RemovePropAction,
+        DamageAction,
+    }
 )
 
 

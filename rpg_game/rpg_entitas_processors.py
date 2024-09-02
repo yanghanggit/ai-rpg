@@ -21,7 +21,7 @@ class RPGEntitasProcessors(Processors):
         from gameplay_systems.speak_action_system import SpeakActionSystem
         from gameplay_systems.go_to_action_system import GoToActionSystem
         from gameplay_systems.pre_go_to_action_system import PreBeforeGoToActionSystem
-        from gameplay_systems.destroy_system import DestroySystem
+        from gameplay_systems.destroy_entity_system import DestroyEntitySystem
         from gameplay_systems.tag_action_system import TagActionSystem
         from gameplay_systems.broadcast_action_system import BroadcastActionSystem
         from gameplay_systems.whisper_action_system import WhisperActionSystem
@@ -72,8 +72,8 @@ class RPGEntitasProcessors(Processors):
             TerminalPlayerTipsSystem,
         )
         from gameplay_systems.equip_prop_action_system import EquipPropActionSystem
-        from gameplay_systems.stage_destory_prop_action_system import (
-            StageDestoryPropActionSystem,
+        from gameplay_systems.remove_prop_action_system import (
+            RemovePropActionSystem,
         )
 
         ##
@@ -143,7 +143,7 @@ class RPGEntitasProcessors(Processors):
                 builtin_world_systems.WORLD_APPEARANCE_SYSTEM_NAME,
             )
         )  ### 更新外观
-        processors.add(StageDestoryPropActionSystem(context, input_rpg_game))
+        processors.add(RemovePropActionSystem(context, input_rpg_game))
 
         # 场景切换类行为，非常重要而且必须在最后!
         processors.add(
@@ -159,7 +159,7 @@ class RPGEntitasProcessors(Processors):
         processors.add(UpdateArchiveSystem(context, input_rpg_game))
 
         ###最后删除entity与存储数据
-        processors.add(DestroySystem(context, input_rpg_game))
+        processors.add(DestroyEntitySystem(context, input_rpg_game))
 
         ##测试的系统，移除掉不太重要的提示词，例如一些上行命令的。
         processors.add(

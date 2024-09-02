@@ -10,6 +10,7 @@ from gameplay_systems.action_components import (
     WhisperAction,
     GoToAction,
     PickUpPropAction,
+    RemovePropAction,
 )
 import json
 from gameplay_systems.cn_constant_prompt import _CNConstantPrompt_ as ConstantPrompt
@@ -207,6 +208,7 @@ def make_stage_plan_prompt(
 
 ## 关于’你的计划‘内容生成规则
 - 根据你作为场景受到了什么事件的影响，你可以制定计划，并决定下一步将要做什么。可根据 输出格式指南 选择相应的行动。
+- 如果场景内的道具产生损毁(请根据你的设定与对话上下文)，可以考虑使用{RemovePropAction.__name__}将其移除。
 
 ## 输出要求
 - 请遵循 输出格式指南。
@@ -664,90 +666,7 @@ def make_player_conversation_check_prompt(
 ################################################################################################################################################
 
 
-def make_world_reasoning_release_skill_prompt(
-    actor_name: str,
-    actor_info: str,
-    skill_files: List[PropFile],
-    prop_files: List[PropFile],
-    behavior_sentence: str,
-) -> str:
-
-    skill_prompt: List[str] = []
-    if len(skill_files) > 0:
-        for skill_file in skill_files:
-            skill_prompt.append(
-                make_prop_prompt(
-                    skill_file, description_prompt=True, appearance_prompt=True
-                )
-            )
-    else:
-        skill_prompt.append("- 无任何技能。")
-
-    prop_prompt: List[str] = []
-    if len(prop_files) > 0:
-        for prop_file in prop_files:
-            prop_prompt.append(
-                make_prop_prompt(
-                    prop_file, description_prompt=True, appearance_prompt=True
-                )
-            )
-    else:
-        prop_prompt.append("- 无任何道具。")
-
-    prompt = f"""# {actor_name} 准备使用技能，请你做出判断并推理结果。
-
-## {actor_name} 信息
-{actor_info}
-        
-## 施放技能
-{"\n".join(skill_prompt)}
-
-## 配置的道具
-{"\n".join(prop_prompt)}
-
-## 行动内容语句
-{behavior_sentence}
-
-## 判断步骤
-步骤1: 如果 {actor_name} 自身不满足技能释放的条件，则技能释放失败。
-步骤2: 如果 施放技能 对配置的道具有 明确的需求，如果道具不满足，则技能释放失败。
-步骤3: 如果 施放技能 对配置的道具无需求（或者不依赖任何道具），则技能释放成功。
-步骤4: 如果有 配置的道具。则按着技能在道具辅助下释放技能。例如提高技能的效果，或者减少技能的消耗。不是必须的，所以放到最后来判断。
-
-## 输出格式指南
-
-### 请根据下面的示例, 确保你的输出严格遵守相应的结构。
-{{
-  "{BroadcastAction.__name__}":["输出逻辑合理且附带润色的句子描述"],
-  "{TagAction.__name__}":["{ConstantPrompt.CRITICAL_SUCCESS}或{ConstantPrompt.SUCCESS}或{ConstantPrompt.FAILURE}或{ConstantPrompt.CRITICAL_FAILURE}"]
-}}
-
-### 关于键值的补充规则说明
-
-- 关于 {BroadcastAction.__name__} 键值:
-    - 例句：{actor_name} 使用了xx道具,对xx目标(注意！在 行动内容语句 之中会提到，请仔细分析后做完整的引用),释放了xx技能,结果为xxx(注意{TagAction.__name__}键值),表现效果为xxx。
-    - 按着例句，输出逻辑合理且附带润色的句子描述，来表达 {actor_name} 使用技能的释放结果。
-    - 如果是失败，需要描述失败的原因。
-
-- 关于 {TagAction.__name__} 键值:
-    - 只能是如下4个值: {ConstantPrompt.CRITICAL_SUCCESS},{ConstantPrompt.SUCCESS},{ConstantPrompt.FAILURE},{ConstantPrompt.CRITICAL_FAILURE}。
-    - {ConstantPrompt.CRITICAL_SUCCESS} 代表技能释放 不仅{ConstantPrompt.SUCCESS}，且效果超出预期。
-    - {ConstantPrompt.FAILURE} 代表技能释放 不仅{ConstantPrompt.CRITICAL_FAILURE}，且使用者会受到惩罚。
-
-
-    
-### 注意事项
-- 每个 JSON 对象必须包含上述键中的一个或多个，不得重复同一个键，也不得使用不在上述中的键。
-- 输出不应包含任何超出所需 JSON 格式的额外文本、解释或总结。
-- 不要使用```json```来封装内容。"""
-
-    return prompt
-
-
-################################################################################################################################################
-
-
-def make_reasoning_skill_target_reasoning_prompt(
+def make_skill_to_target_feedback_reasoning_prompt(
     actor_name: str,
     target_name: str,
     reasoning_sentence: str,
@@ -860,8 +779,8 @@ def make_notify_release_skill_event_prompt(
     actor_name: str, target_name: str, reasoning_sentence: str
 ) -> str:
 
-    prompt = f"""# {actor_name} 向 {target_name} 发动技能。
-## 事件描述
+    prompt = f"""# 注意场景内发生了如下事件: {actor_name} 向 {target_name} 发动了技能。
+## 关于事件描述
 {reasoning_sentence}
 """
     return prompt
@@ -913,3 +832,159 @@ def make_stage_prop_lost_prompt(stage_name: str, prop_name: str) -> str:
 
 def make_stage_prop_remove_prompt(stage_name: str, prop_name: str) -> str:
     return f"""# 场景 {stage_name} 内的道具 {prop_name} 已经被销毁了。"""
+
+
+################################################################################################################################################
+
+
+def make_reasoning_actor_can_use_skill_prompt(
+    actor_name: str,
+    actor_body_info: str,
+    skill_files: List[PropFile],
+    prop_files: List[PropFile],
+) -> str:
+
+    skills_prompt: List[str] = []
+    if len(skill_files) > 0:
+        for skill_file in skill_files:
+            skills_prompt.append(
+                make_prop_prompt(
+                    skill_file, description_prompt=True, appearance_prompt=False
+                )
+            )
+    else:
+
+        skills_prompt.append("- 无任何技能。")
+        assert False, "技能不能为空"
+
+    props_prompt: List[str] = []
+    if len(prop_files) > 0:
+        for prop_file in prop_files:
+            props_prompt.append(
+                make_prop_prompt(
+                    prop_file, description_prompt=True, appearance_prompt=False
+                )
+            )
+    else:
+        props_prompt.append("- 无任何道具。")
+
+    ret_prompt = f"""# {actor_name} 准备使用技能，请做出判断是否允许使用。
+
+## {actor_name} 自身信息
+{actor_body_info}
+        
+## 要使用的技能
+{"\n".join(skills_prompt)}
+
+## 使用技能时配置的道具
+{"\n".join(props_prompt)}
+
+## 判断的逻辑步骤
+1. 检查 要使用的技能 的信息。结合 {actor_name} 自身信息 判断 {actor_name} 是否满足技能释放的条件。如果不能则技能释放失败。不用继续判断。
+2. 检查 使用技能时配置的道具 的信息。结合 {actor_name} 自身信息 判断 {actor_name} 是否满足使用这些道具的条件。如果不能则技能释放失败。不用继续判断。
+3. 分支判断 是否存在 使用技能时配置的道具。
+    - 如存在。则结合 要使用的技能 与 使用技能时配置的道具 的信息进行综合半段。如果 技能对 配置的道具有明确的需求，且道具不满足，则技能释放失败。不用继续判断。
+    - 如不存在。则继续下面的步骤。
+4. 如果以上步骤都通过，则技能释放成功。
+
+## 输出格式指南
+
+### 请根据下面的示例, 确保你的输出严格遵守相应的结构。
+{{
+  "{MindVoiceAction.__name__}":["输入你的最终判断结果，技能是否可以使用成功或失败，并附带原因"],
+  "{TagAction.__name__}":["Yes/No"(即技能是否可以使用成功或失败)"]
+}}
+
+### 注意事项
+- 每个 JSON 对象必须包含上述键中的一个或多个，不得重复同一个键，也不得使用不在上述中的键。
+- 输出不应包含任何超出所需 JSON 格式的额外文本、解释或总结。
+- 不要使用```json```来封装内容。"""
+
+    return ret_prompt
+
+
+################################################################################################################################################
+
+
+def make_reasoning_world_skill_system_validate_skill_combo_prompt(
+    actor_name: str,
+    actor_body_info: str,
+    skill_files: List[PropFile],
+    prop_files: List[PropFile],
+    behavior_sentence: str,
+) -> str:
+
+    skills_prompt: List[str] = []
+    if len(skill_files) > 0:
+        for skill_file in skill_files:
+            skills_prompt.append(
+                make_prop_prompt(
+                    skill_file, description_prompt=True, appearance_prompt=False
+                )
+            )
+    else:
+        skills_prompt.append("- 无任何技能。")
+        assert False, "技能不能为空"
+
+    props_prompt: List[str] = []
+    if len(prop_files) > 0:
+        for prop_file in prop_files:
+            props_prompt.append(
+                make_prop_prompt(
+                    prop_file, description_prompt=True, appearance_prompt=False
+                )
+            )
+    else:
+        props_prompt.append("- 无任何道具。")
+
+    ret_prompt = f"""# {actor_name} 准备使用技能，请你判断技能使用的合理性(是否符合游戏规则和世界观设计)。在尽量能保证游戏乐趣的情况下，来润色技能的产生结果。
+
+## {actor_name} 自身信息
+{actor_body_info}
+        
+## 要使用的技能
+{"\n".join(skills_prompt)}
+
+## 使用技能时配置的道具
+{"\n".join(props_prompt)}
+
+## 行动内容语句(请在这段信息内提取 技能释放的目标 的信息，注意请完整引用)
+{behavior_sentence}
+
+## 判断的逻辑步骤
+1. 如果 配置的道具 存在。则需要将道具与技能的信息联合起来推理。
+    - 推理结果 违反了游戏规则或世界观设计。则技能释放失败。即{ConstantPrompt.FAILURE}。
+    - 推理结果合理的。则技能释放成功。即{ConstantPrompt.SUCCESS}。如果道具对技能有增益效果，则标记为{ConstantPrompt.CRITICAL_SUCCESS}。
+2. 如果 配置的道具 不存在。则继续下面的步骤。
+3. 结合 {actor_name} 的自身信息。判断是否符合技能释放的条件。
+    - 如果不符合。则技能释放失败。即{ConstantPrompt.FAILURE}。
+    - 如果符合。则技能释放成功。即{ConstantPrompt.SUCCESS}。如果 {actor_name} 的自身信息，对技能有增益效果，则标记为{ConstantPrompt.CRITICAL_SUCCESS}。
+
+## 输出格式指南
+
+### 请根据下面的示例, 确保你的输出严格遵守相应的结构。
+{{
+  "{BroadcastAction.__name__}":["你的判断结果描述"],
+  "{TagAction.__name__}":["{ConstantPrompt.CRITICAL_SUCCESS}或{ConstantPrompt.SUCCESS}或{ConstantPrompt.FAILURE}"]
+}}
+
+### 关于键值的补充规则说明
+
+关于 {BroadcastAction.__name__} 键值:
+- 如果你的判断是 {ConstantPrompt.SUCCESS} 或 {ConstantPrompt.CRITICAL_FAILURE}。
+    - 则输出结果必须包含如下信息：{actor_name}的名字，释放的技能的描述，技能释放的目标的名字，配置的道具的信息。
+    - 做出逻辑合理的句子描述（可以适当润色），来表达 {actor_name} 使用技能的释放结果。
+    - 请注意，输出的信息必须是第三人称的描述。  
+    
+- 如果你的判断是 {ConstantPrompt.FAILURE}。
+    - 则输出结果需要描述为：技能释放失败的原因。
+    
+### 注意事项
+- 每个 JSON 对象必须包含上述键中的一个或多个，不得重复同一个键，也不得使用不在上述中的键。
+- 输出不应包含任何超出所需 JSON 格式的额外文本、解释或总结。
+- 不要使用```json```来封装内容。"""
+
+    return ret_prompt
+
+
+################################################################################################################################################

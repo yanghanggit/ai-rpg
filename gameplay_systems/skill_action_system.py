@@ -7,12 +7,9 @@ from gameplay_systems.action_components import (
     TagAction,
     BroadcastAction,
     DamageAction,
+    MindVoiceAction,
 )
-from gameplay_systems.components import (
-    BodyComponent,
-    RPGAttributesComponent,
-    # RPGCurrentWeaponComponent,
-)
+from gameplay_systems.components import BodyComponent, RPGAttributesComponent
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import override, List, cast, Optional, Set, Dict
 from loguru import logger
@@ -28,24 +25,55 @@ from rpg_game.rpg_game import RPGGame
 from my_data.model_def import AttributesIndex
 
 
-class WorldSkillSystemReasoningResponse(AgentPlan):
+class ActorCanUseSkillResponse(AgentPlan):
 
     def __init__(self, name: str, input_str: str) -> None:
         super().__init__(name, input_str)
 
     @property
+    def tag(self) -> bool:
+        tag_action = self.get_by_key(TagAction.__name__)
+        if tag_action is None or len(tag_action.values) == 0:
+            return False
+        return (
+            tag_action.values[0].lower() == "yes"
+            or tag_action.values[0].lower() == "true"
+        )
+
+    @property
     def out_come(self) -> str:
+        mind_voice_action = self.get_by_key(MindVoiceAction.__name__)
+        if mind_voice_action is None or len(MindVoiceAction.values) == 0:
+            return ConstantPrompt.FAILURE
+        return " ".join(mind_voice_action.values)
+
+
+######################################################################################################################################################
+
+
+class WorldSkillSystemResponse(AgentPlan):
+
+    OPTION_PARAM_NAME: str = "actor"
+
+    def __init__(self, name: str, input_str: str) -> None:
+        super().__init__(name, input_str)
+
+    @property
+    def tag(self) -> str:
         tip_action = self.get_by_key(TagAction.__name__)
         if tip_action is None or len(tip_action.values) == 0:
             return ConstantPrompt.FAILURE
         return tip_action.values[0]
 
     @property
-    def reasoning_sentence(self) -> str:
+    def out_come(self) -> str:
         broadcast_action = self.get_by_key(BroadcastAction.__name__)
         if broadcast_action is None or len(broadcast_action.values) == 0:
             return ""
         return " ".join(broadcast_action.values)
+
+
+######################################################################################################################################################
 
 
 class SkillActionSystem(ReactiveProcessor):
@@ -83,6 +111,7 @@ class SkillActionSystem(ReactiveProcessor):
     def create_tasks_actor_can_use_skill(
         self, entities: List[Entity]
     ) -> Dict[str, AgentTask]:
+
         ret: Dict[str, AgentTask] = {}
 
         for entity in entities:
@@ -93,9 +122,14 @@ class SkillActionSystem(ReactiveProcessor):
             if agent is None:
                 continue
 
-            prompt = ""
+            prompt = builtin_prompt.make_reasoning_actor_can_use_skill_prompt(
+                agent_name,
+                self.extract_body_info(entity),
+                self.extract_skill_files(entity),
+                self.extract_prop_files(entity),
+            )
 
-            task = AgentTask.create_process_context_without_saving(agent, prompt)
+            task = AgentTask.create(agent, prompt)
             if task is None:
                 continue
 
@@ -118,7 +152,13 @@ class SkillActionSystem(ReactiveProcessor):
 
         for entity in entities:
 
-            prompt = ""
+            prompt = builtin_prompt.make_reasoning_world_skill_system_validate_skill_combo_prompt(
+                self._context.safe_get_entity_name(entity),
+                self.extract_body_info(entity),
+                self.extract_skill_files(entity),
+                self.extract_prop_files(entity),
+                self.extract_behavior_sentence(entity),
+            )
 
             task = AgentTask.create_process_context_without_saving(
                 world_system_agent, prompt
@@ -126,119 +166,234 @@ class SkillActionSystem(ReactiveProcessor):
             if task is None:
                 continue
 
+            safe_name = self._context.safe_get_entity_name(entity)
+            task._option_param.setdefault(
+                WorldSkillSystemResponse.OPTION_PARAM_NAME, safe_name
+            )
+            ret.append(task)
+
         return ret
 
     ######################################################################################################################################################
-    async def a_execute2(self) -> None:
+    async def _a_execute2(self) -> None:
 
-        phase1_tasks = self.create_tasks_actor_can_use_skill(self._entities)
-        if len(phase1_tasks) == 0:
+        if not self.is_system_enable() or len(self._entities) == 0:
             return
 
-        phase1_gather = AgentTasksGather(
+        # 第一个大阶段，角色自己检查是否可以使用技能
+        tasks1 = self.create_tasks_actor_can_use_skill(self._entities)
+        if len(tasks1) == 0:
+            return
+
+        gather1 = AgentTasksGather(
             "第一个阶段，检查角色自身是否可以使用技能",
-            [task for task in phase1_tasks.values()],
+            [task for task in tasks1.values()],
         )
-        phase1_response = await phase1_gather.gather()
-        if len(phase1_response) == 0:
+        response1 = await gather1.gather()
+        if len(response1) == 0:
             logger.debug(f"phase1_response is None.")
             return
 
-        phase2_tasks = self.create_tasks_world_skill_system_validate_skill_combo(
+        self.handle_actor_can_use_skill(tasks1, self._entities)
+
+        # 第二个大阶段，全局技能系统检查技能组合是否合法
+        tasks2 = self.create_tasks_world_skill_system_validate_skill_combo(
             self._entities, self._system_name
         )
-        if len(phase2_tasks) == 0:
+        if len(tasks2) == 0:
             return
 
-        phase2_gather = AgentTasksGather(
-            "第二个阶段，检查技能组合是否合法", phase2_tasks
-        )
-        phase2_response = await phase2_gather.gather()
-        if len(phase2_response) == 0:
+        gather2 = AgentTasksGather("第二个阶段，检查技能组合是否合法", tasks2)
+        response2 = await gather2.gather()
+        if len(response2) == 0:
             logger.debug(f"phase2_response is None.")
             return
 
-    ######################################################################################################################################################
-    def handle(self, entity: Entity) -> None:
-
-        assert entity.has(SkillAction) and entity.has(SkillTargetAction)
-
-        # 没有世界系统就是错误
-        world_entity = self._context.get_world_entity(self._system_name)
-        if world_entity is None:
-            logger.error(f"{self._system_name}, world_entity is None.")
-            return
-
-        # 准备数据
-        body = self.get_body(entity)
-        skill_files = self.get_skill_files(entity)
-        prop_files = self.get_prop_files(entity)
-        behavior_sentence = self.get_behavior_sentence(entity)
-
-        world_response = self.request_world_skill_system_reasoning(
-            entity, world_entity, body, skill_files, prop_files, behavior_sentence
+        world_ret: Dict[str, WorldSkillSystemResponse] = (
+            self.handle_world_skill_system_validate_skill_combo(tasks2, self._entities)
         )
 
-        if world_response is None:
-            self.on_world_skill_system_off_line_error(entity)
-            return  # 全局技能系统是不是掉线了？
-
-        # 单独处理失败和大失败
-        if (
-            world_response.out_come == ConstantPrompt.CRITICAL_FAILURE
-            or world_response.out_come == ConstantPrompt.FAILURE
-        ):
-
-            self.on_world_skill_system_reasoning_result_is_failure(
-                entity, world_response
-            )
-            return  # 不要再往下走了。全局技能系统推理出失败 就提示下一下截断掉
-
-        # 释放技能
-        self.handle_release_skill(entity, world_response)
+        # 第三个大阶段。
+        for actor_name, response_plan in world_ret.items():
+            entity = self._context.get_actor_entity(actor_name)
+            if entity is None:
+                continue
+            self.handle_skill_to_targets(entity, response_plan)
+    ######################################################################################################################################################
+    async def a_execute2(self) -> None:
+        if len(self._entities) == 0:
+            return
+        await self._a_execute2()
+        self._entities.clear()
 
     ######################################################################################################################################################
-    def handle_release_skill(
-        self, entity: Entity, world_response: WorldSkillSystemReasoningResponse
+    def handle_world_skill_system_validate_skill_combo(
+        self, tasks2: List[AgentTask], entities: List[Entity]
+    ) -> Dict[str, WorldSkillSystemResponse]:
+
+        ret: Dict[str, WorldSkillSystemResponse] = {}
+
+        for task in tasks2:
+
+            actor_name = task._option_param.get(
+                WorldSkillSystemResponse.OPTION_PARAM_NAME, ""
+            )
+            entity = self._context.get_actor_entity(actor_name)
+            if entity is None:
+                continue
+
+            if task.response_content == "":
+                self.on_world_skill_system_off_line_error(entity)
+                continue
+
+            response_plan = WorldSkillSystemResponse(
+                task.agent_name, task.response_content
+            )
+
+            # 单独处理失败和大失败
+            if response_plan.tag == ConstantPrompt.FAILURE:
+
+                # 不往下进行了。
+                entities.remove(entity)
+
+                # 剧情通知
+                self.on_world_skill_system_validate_skill_combo_failure(
+                    entity, response_plan
+                )
+
+                continue
+
+            ret[actor_name] = response_plan
+
+        return ret
+
+    ######################################################################################################################################################
+    def handle_actor_can_use_skill(
+        self, tasks1: Dict[str, AgentTask], entities: List[Entity]
+    ) -> None:
+
+        for agent_name, task in tasks1.items():
+
+            if task.response_content == "":
+                continue
+
+            entity = self._context.get_actor_entity(agent_name)
+            if entity is None:
+                continue
+
+            response_plan = ActorCanUseSkillResponse(agent_name, task.response_content)
+            if not response_plan.tag:
+                entities.remove(entity)
+                continue
+
+    ######################################################################################################################################################
+    def is_system_enable(self) -> bool:
+
+        world_system_entity = self._context.get_world_entity(self._system_name)
+        return world_system_entity is not None
+
+    ######################################################################################################################################################
+
+    def extract_behavior_sentence(self, entity: Entity) -> str:
+        behavior_action = entity.get(BehaviorAction)
+        if behavior_action is None or len(behavior_action.values) == 0:
+            return ""
+        return cast(str, behavior_action.values[0])
+
+    ######################################################################################################################################################
+    def extract_targets(self, entity: Entity) -> Set[Entity]:
+        assert entity.has(SkillTargetAction)
+        targets = set()
+        for target_name in entity.get(SkillTargetAction).values:
+            target = self._context.get_entity_by_name(target_name)
+            if target is not None:
+                targets.add(target)
+        return targets
+
+    ######################################################################################################################################################
+    def extract_skill_files(self, entity: Entity) -> List[PropFile]:
+        assert entity.has(SkillAction) and entity.has(SkillTargetAction)
+
+        ret: List[PropFile] = []
+
+        safe_name = self._context.safe_get_entity_name(entity)
+        skill_action = entity.get(SkillAction)
+        for skill_name in skill_action.values:
+
+            skill_file = self._context._file_system.get_file(
+                PropFile, safe_name, skill_name
+            )
+            if skill_file is None or not skill_file.is_skill:
+                continue
+
+            ret.append(skill_file)
+
+        return ret
+
+    ######################################################################################################################################################
+    def extract_body_info(self, entity: Entity) -> str:
+        assert entity.has(BodyComponent)
+        if not entity.has(BodyComponent):
+            return ""
+        return str(entity.get(BodyComponent).body)
+
+    ######################################################################################################################################################
+    def extract_prop_files(self, entity: Entity) -> List[PropFile]:
+        if not entity.has(SkillUsePropAction):
+            return []
+
+        safe_name = self._context.safe_get_entity_name(entity)
+        prop_action = entity.get(SkillUsePropAction)
+        ret: List[PropFile] = []
+        for prop_name in prop_action.values:
+            prop_file = self._context._file_system.get_file(
+                PropFile, safe_name, prop_name
+            )
+            if prop_file is None:
+                continue
+            ret.append(prop_file)
+
+        return ret
+
+    ######################################################################################################################################################
+    def handle_skill_to_targets(
+        self, entity: Entity, world_response: WorldSkillSystemResponse
     ) -> None:
         # 释放技能
-        for target in self.get_targets(entity):
+        for target in self.extract_targets(entity):
 
-            target_response = self.request_release_skill_to_target_reasoning(
+            target_response = self.request_skill_to_target_feedback_reasoning(
                 entity, target, world_response
             )
 
             if target_response is None:
-                self.on_skill_skill_target_agent_off_line_error(
-                    entity, target, world_response
-                )
+                self.on_target_agent_off_line_error(entity, target, world_response)
                 continue  # 目标是不是掉线了？
 
             # 加入伤害计算的逻辑
             self.on_add_action_to_target(entity, target)
 
             # 场景事件
-            self.on_notify_release_skill_event(entity, target, world_response)
+            self.on_notify_skill_event(entity, target, world_response)
 
     ######################################################################################################################################################
-    def on_notify_release_skill_event(
+    def on_notify_skill_event(
         self,
         entity: Entity,
         target_entity: Entity,
-        world_response: WorldSkillSystemReasoningResponse,
+        world_response: WorldSkillSystemResponse,
     ) -> None:
 
         current_stage_entity = self._context.safe_get_stage_entity(entity)
         if current_stage_entity is None:
             return
 
-        actors_in_stage = self._context.get_actors_in_stage(current_stage_entity)
         self._context.add_agent_context_message(
-            actors_in_stage,
+            set({current_stage_entity}),
             builtin_prompt.make_notify_release_skill_event_prompt(
                 self._context.safe_get_entity_name(entity),
                 self._context.safe_get_entity_name(target_entity),
-                world_response.reasoning_sentence,
+                world_response.out_come,
             ),
         )
 
@@ -246,9 +401,9 @@ class SkillActionSystem(ReactiveProcessor):
     def on_add_action_to_target(self, entity: Entity, target: Entity) -> None:
 
         # 拿到原始的
-        skill_attrs: List[int] = self.get_skill_attrs(entity)
+        skill_attrs: List[int] = self.extract_skill_attrs(entity)
         # 补充上发起者的攻击值
-        self.add_value_of_attr_component_to_skill_attrs(entity, target, skill_attrs)
+        self.add_values_of_attr_component_to_skill_attrs(entity, target, skill_attrs)
         # 补充上所有参与的道具的属性
         self.add_values_from_prop_files(entity, target, skill_attrs)
         # 最终添加到目标的伤害行为
@@ -281,7 +436,7 @@ class SkillActionSystem(ReactiveProcessor):
 
     ######################################################################################################################################################
 
-    def add_value_of_attr_component_to_skill_attrs(
+    def add_values_of_attr_component_to_skill_attrs(
         self, entity: Entity, target: Entity, out_put_skill_attrs: List[int]
     ) -> None:
 
@@ -295,15 +450,15 @@ class SkillActionSystem(ReactiveProcessor):
     def add_values_from_prop_files(
         self, entity: Entity, target: Entity, out_put_skill_attrs: List[int]
     ) -> None:
-        prop_files = self.get_prop_files(entity)
+        prop_files = self.extract_prop_files(entity)
         for prop_file in prop_files:
             for i in range(len(out_put_skill_attrs)):
                 out_put_skill_attrs[i] += prop_file._prop_model.attributes[i]
 
     ######################################################################################################################################################
-    def get_skill_attrs(self, entity: Entity) -> List[int]:
+    def extract_skill_attrs(self, entity: Entity) -> List[int]:
         final_attr: List[int] = []
-        for skill_file in self.get_skill_files(entity):
+        for skill_file in self.extract_skill_files(entity):
             if len(final_attr) == 0:
                 final_attr = skill_file._prop_model.attributes
             else:
@@ -317,64 +472,46 @@ class SkillActionSystem(ReactiveProcessor):
             set({entity}),
             builtin_prompt.make_world_skill_system_off_line_error_prompt(
                 self._context.safe_get_entity_name(entity),
-                self.get_behavior_sentence(entity),
+                self.extract_behavior_sentence(entity),
             ),
         )
 
     ######################################################################################################################################################
-    def on_world_skill_system_reasoning_result_is_failure(
-        self, entity: Entity, world_response_plan: WorldSkillSystemReasoningResponse
+    def on_world_skill_system_validate_skill_combo_failure(
+        self, entity: Entity, world_response_plan: WorldSkillSystemResponse
     ) -> None:
         self._context.add_agent_context_message(
             set({entity}),
             builtin_prompt.make_world_skill_system_reasoning_result_is_failure_prompt(
                 self._context.safe_get_entity_name(entity),
+                world_response_plan.tag,
+                self.extract_behavior_sentence(entity),
                 world_response_plan.out_come,
-                self.get_behavior_sentence(entity),
-                world_response_plan.reasoning_sentence,
             ),
         )
 
     ######################################################################################################################################################
-    def on_skill_skill_target_agent_off_line_error(
+    def on_target_agent_off_line_error(
         self,
         entity: Entity,
         target: Entity,
-        world_response_plan: WorldSkillSystemReasoningResponse,
+        world_response_plan: WorldSkillSystemResponse,
     ) -> None:
         self._context.add_agent_context_message(
             set({entity}),
             builtin_prompt.make_skill_skill_target_agent_off_line_error_prompt(
                 self._context.safe_get_entity_name(entity),
                 self._context.safe_get_entity_name(target),
-                world_response_plan.reasoning_sentence,
+                world_response_plan.out_come,
             ),
         )
 
     ######################################################################################################################################################
-
-    def get_behavior_sentence(self, entity: Entity) -> str:
-        behavior_action = entity.get(BehaviorAction)
-        if behavior_action is None or len(behavior_action.values) == 0:
-            return ""
-        return cast(str, behavior_action.values[0])
-
-    ######################################################################################################################################################
-    def get_targets(self, entity: Entity) -> Set[Entity]:
-        assert entity.has(SkillTargetAction)
-        targets = set()
-        for target_name in entity.get(SkillTargetAction).values:
-            target = self._context.get_entity_by_name(target_name)
-            if target is not None:
-                targets.add(target)
-        return targets
-
-    ######################################################################################################################################################
-    def request_release_skill_to_target_reasoning(
+    def request_skill_to_target_feedback_reasoning(
         self,
         entity: Entity,
         target: Entity,
-        world_response_plan: WorldSkillSystemReasoningResponse,
+        world_response_plan: WorldSkillSystemResponse,
     ) -> Optional[AgentPlan]:
 
         agent_name = self._context.safe_get_entity_name(target)
@@ -382,11 +519,11 @@ class SkillActionSystem(ReactiveProcessor):
         if agent is None:
             return None
 
-        prompt = builtin_prompt.make_reasoning_skill_target_reasoning_prompt(
+        prompt = builtin_prompt.make_skill_to_target_feedback_reasoning_prompt(
             self._context.safe_get_entity_name(entity),
             agent_name,
-            world_response_plan.reasoning_sentence,
             world_response_plan.out_come,
+            world_response_plan.tag,
         )
 
         task = AgentTask.create(
@@ -405,86 +542,5 @@ class SkillActionSystem(ReactiveProcessor):
             return None
 
         return AgentPlan(agent._name, response)
-
-    ######################################################################################################################################################
-    def request_world_skill_system_reasoning(
-        self,
-        entity: Entity,
-        world_entity: Entity,
-        actor_info: str,
-        skill_files: List[PropFile],
-        prop_files: List[PropFile],
-        behavior_sentence: str,
-    ) -> Optional[WorldSkillSystemReasoningResponse]:
-
-        # 生成提示
-        prompt = builtin_prompt.make_world_reasoning_release_skill_prompt(
-            self._context.safe_get_entity_name(entity),
-            actor_info,
-            skill_files,
-            prop_files,
-            behavior_sentence,
-        )
-
-        agent = self._context._langserve_agent_system.get_agent(
-            self._context.safe_get_entity_name(world_entity)
-        )
-        if agent is None:
-            return None
-
-        task = AgentTask.create_standalone(agent, prompt)
-        if task is None:
-            return None
-
-        response = task.request()
-        if response is None:
-            return None
-
-        return WorldSkillSystemReasoningResponse(agent._name, response)
-
-    ######################################################################################################################################################
-    def get_skill_files(self, entity: Entity) -> List[PropFile]:
-        assert entity.has(SkillAction) and entity.has(SkillTargetAction)
-
-        ret: List[PropFile] = []
-
-        safe_name = self._context.safe_get_entity_name(entity)
-        skill_action = entity.get(SkillAction)
-        for skill_name in skill_action.values:
-
-            skill_file = self._context._file_system.get_file(
-                PropFile, safe_name, skill_name
-            )
-            if skill_file is None or not skill_file.is_skill:
-                continue
-
-            ret.append(skill_file)
-
-        return ret
-
-    ######################################################################################################################################################
-    def get_body(self, entity: Entity) -> str:
-        assert entity.has(BodyComponent)
-        if not entity.has(BodyComponent):
-            return ""
-        return str(entity.get(BodyComponent).body)
-
-    ######################################################################################################################################################
-    def get_prop_files(self, entity: Entity) -> List[PropFile]:
-        if not entity.has(SkillUsePropAction):
-            return []
-
-        safe_name = self._context.safe_get_entity_name(entity)
-        prop_action = entity.get(SkillUsePropAction)
-        ret: List[PropFile] = []
-        for prop_name in prop_action.values:
-            prop_file = self._context._file_system.get_file(
-                PropFile, safe_name, prop_name
-            )
-            if prop_file is None:
-                continue
-            ret.append(prop_file)
-
-        return ret
 
     ######################################################################################################################################################

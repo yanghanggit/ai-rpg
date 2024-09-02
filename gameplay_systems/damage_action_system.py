@@ -140,7 +140,7 @@ class DamageActionSystem(ReactiveProcessor):
             )
 
         else:
-            # 没有打死。对于场景的伤害不要通知了。无意义。而且怕影响对话上下文。
+            # 没有打死。对于场景的伤害不要通知了，场景设定目前是打不死的。而且怕影响对话上下文。
             if not target_entity.has(StageComponent):
                 rpg_attr_comp = target_entity.get(RPGAttributesComponent)
                 self._context.add_agent_context_message(

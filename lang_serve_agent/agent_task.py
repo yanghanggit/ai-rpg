@@ -178,7 +178,7 @@ class AgentTasksGather:
         self._tasks: List[AgentTask] = tasks
 
     # 核心方法
-    async def impl_gather(self) -> List[Optional[str]]:
+    async def _gather(self) -> List[Optional[str]]:
         # tasks = [task.a_request() for task in self._tasks.values()]
         tasks = [task.a_request() for task in self._tasks if task is not None]
         future = await asyncio.gather(*tasks)
@@ -188,7 +188,7 @@ class AgentTasksGather:
     async def gather(self) -> List[Optional[str]]:
         start_time = time.time()
         result = (
-            await self.impl_gather()
+            await self._gather()
         )  # 调用async_gather，等待所有任务完成，并拿到任务结果
         end_time = time.time()
         logger.debug(

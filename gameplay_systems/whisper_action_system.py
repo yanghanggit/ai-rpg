@@ -53,7 +53,7 @@ class WhisperActionSystem(ReactiveProcessor):
 
             target_entity = self._context.get_entity_by_name(tp[0])
             assert target_entity is not None
-            self._context.add_agent_context_message(
+            self._context.add_event_to_agent(
                 set({entity, target_entity}),
                 builtin_prompt.make_whisper_action_prompt(safe_name, tp[0], tp[1]),
             )

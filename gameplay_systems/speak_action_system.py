@@ -52,8 +52,8 @@ class SpeakActionSystem(ReactiveProcessor):
 
             target_entity = self._context.get_entity_by_name(tp[0])
             assert target_entity is not None
-            self._context.add_agent_context_message(
-                set({entity, target_entity}),
+            self._context.add_event_to_agents_in_stage(
+                entity,
                 builtin_prompt.make_speak_action_prompt(safe_name, tp[0], tp[1]),
             )
 

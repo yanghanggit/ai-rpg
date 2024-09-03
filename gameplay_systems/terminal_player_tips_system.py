@@ -67,8 +67,8 @@ class TerminalPlayerTipsSystem(ExecuteProcessor):
         assert stage_entity is not None
 
         if not stage_entity.has(StageGraphComponent):
-            player_proxy.add_actor_message(
-                actor_name, "当前场景没有相连接的场景，无法离开"
+            player_proxy.add_stage_message(
+                self._context.safe_get_entity_name(stage_entity), "当前场景没有相连接的场景，无法离开"
             )
             return
 
@@ -115,8 +115,8 @@ class TerminalPlayerTipsSystem(ExecuteProcessor):
             stage_archive.name for stage_archive in stage_archives
         ]
 
-        player_proxy.add_actor_message(
-            actor_name, f"已知场景:\n{'\n'.join(stage_names)}"
+        player_proxy.add_system_message(
+            f"已知场景:\n{'\n'.join(stage_names)}"
         )
 
 

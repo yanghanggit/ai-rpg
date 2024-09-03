@@ -63,7 +63,7 @@ class EquipPropActionSystem(ReactiveProcessor):
                     f"EquipPropActionSystem: {actor_name} can't find prop {prop_name}"
                 )
 
-                self._context.add_agent_context_message(
+                self._context.add_event_to_agent(
                     set({entity}),
                     builtin_prompt.make_equip_prop_not_found_prompt(
                         actor_name, prop_name
@@ -78,7 +78,7 @@ class EquipPropActionSystem(ReactiveProcessor):
                     RPGCurrentWeaponComponent, equip_prop_action.name, prop_name
                 )
 
-                self._context.add_agent_context_message(
+                self._context.add_event_to_agent(
                     set({entity}),
                     builtin_prompt.make_equip_prop_weapon_prompt(actor_name, prop_file),
                 )
@@ -89,7 +89,7 @@ class EquipPropActionSystem(ReactiveProcessor):
                     RPGCurrentClothesComponent, equip_prop_action.name, prop_name
                 )
 
-                self._context.add_agent_context_message(
+                self._context.add_event_to_agent(
                     set({entity}),
                     builtin_prompt.make_equip_prop_clothes_prompt(
                         actor_name, prop_file

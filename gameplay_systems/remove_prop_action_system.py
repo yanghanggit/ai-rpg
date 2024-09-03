@@ -5,7 +5,7 @@ from rpg_game.rpg_entitas_context import RPGEntitasContext
 from rpg_game.rpg_game import RPGGame
 from file_system.files_def import PropFile
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
-from gameplay_systems.components import ActorComponent, StageComponent
+from gameplay_systems.components import StageComponent
 
 
 ############################################################################################################
@@ -24,9 +24,7 @@ class RemovePropActionSystem(ReactiveProcessor):
     ############################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(RemovePropAction) and (
-            entity.has(StageComponent) or entity.has(ActorComponent)
-        )
+        return entity.has(RemovePropAction) and entity.has(StageComponent)
 
     ############################################################################################################
     @override
@@ -55,21 +53,17 @@ class RemovePropActionSystem(ReactiveProcessor):
     ############################################################################################################
     def on_prop_lost_event(self, entity: Entity, prop_name: str) -> None:
         safe_name = self._context.safe_get_entity_name(entity)
-
-        if entity.has(StageComponent):
-            self._context.add_agent_context_message(
-                set({entity}),
-                builtin_prompt.make_stage_prop_lost_prompt(safe_name, prop_name),
-            )
+        self._context.add_event_to_agent(
+            set({entity}),
+            builtin_prompt.make_stage_prop_lost_prompt(safe_name, prop_name),
+        )
 
     ############################################################################################################
     def on_prop_remove_event(self, entity: Entity, prop_name: str) -> None:
         safe_name = self._context.safe_get_entity_name(entity)
-
-        if entity.has(StageComponent):
-            self._context.add_agent_context_message(
-                set({entity}),
-                builtin_prompt.make_stage_prop_remove_prompt(safe_name, prop_name),
-            )
+        self._context.add_event_to_agent(
+            set({entity}),
+            builtin_prompt.make_stage_remove_prop_success_prompt(safe_name, prop_name),
+        )
 
     ############################################################################################################

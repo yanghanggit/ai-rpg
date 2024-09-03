@@ -14,6 +14,8 @@ import my_format_string.target_and_message_format_string
 import my_format_string.attrs_format_string
 from rpg_game.rpg_game import RPGGame
 from my_data.model_def import AttributesIndex
+import file_system.helper
+from my_data.model_def import PropType
 
 
 class DamageActionSystem(ReactiveProcessor):
@@ -85,7 +87,7 @@ class DamageActionSystem(ReactiveProcessor):
         hp = target_rpg_comp.hp
 
         # 必须控制在0和最大值之间
-        final_damage = input_damage - self.final_defense_val(target_entity)
+        final_damage = input_damage - self.calculate_defense(target_entity)
         if final_damage < 0:
             final_damage = 0
 
@@ -107,7 +109,8 @@ class DamageActionSystem(ReactiveProcessor):
 
         ## 死后处理大流程，step最后——死亡组件系统必须要添加
         if is_dead:
-
+            
+            # 添加动作
             if not target_entity.has(DeadAction):
                 # 复制一个，不用以前的，怕GC不掉
                 target_entity.add(
@@ -115,13 +118,16 @@ class DamageActionSystem(ReactiveProcessor):
                     self._context.safe_get_entity_name(target_entity),
                     DeadAction.__name__,
                     [],
-                )
+                )   
+
+            # 死亡夺取
+            self.loot_on_death(from_name, target_entity)
 
         ## 导演系统，单独处理，有旧的代码
-        self.on_damage_event(from_name, target_entity, final_damage, is_dead)
+        self.on_add_damage_event_to_agent(from_name, target_entity, final_damage, is_dead)
 
     ######################################################################################################################################################
-    def on_damage_event(
+    def on_add_damage_event_to_agent(
         self, from_name: str, target_entity: Entity, damage: int, is_dead: bool
     ) -> None:
         pass
@@ -134,8 +140,8 @@ class DamageActionSystem(ReactiveProcessor):
         target_name = self._context.safe_get_entity_name(target_entity)
         if is_dead:
             # 直接打死。
-            self._context.add_agent_context_message(
-                set({current_stage_entity}),
+            self._context.add_event_to_agents_in_stage(
+                current_stage_entity,
                 builtin_prompt.make_kill_event_prompt(from_name, target_name),
             )
 
@@ -143,8 +149,8 @@ class DamageActionSystem(ReactiveProcessor):
             # 没有打死。对于场景的伤害不要通知了，场景设定目前是打不死的。而且怕影响对话上下文。
             if not target_entity.has(StageComponent):
                 rpg_attr_comp = target_entity.get(RPGAttributesComponent)
-                self._context.add_agent_context_message(
-                    set({current_stage_entity}),
+                self._context.add_event_to_agents_in_stage(
+                    current_stage_entity,
                     builtin_prompt.make_damage_event_prompt(
                         from_name,
                         target_name,
@@ -153,9 +159,21 @@ class DamageActionSystem(ReactiveProcessor):
                         rpg_attr_comp.maxhp,
                     ),
                 )
+    ######################################################################################################################################################
+    def loot_on_death(self, from_name: str, target_entity: Entity) -> None:
+        target_name = self._context.safe_get_entity_name(target_entity)
+        categorized_prop_files = file_system.helper.get_categorized_files_dict(
+            self._context._file_system, target_name
+        )
+
+        non_consumable_items = categorized_prop_files[PropType.TYPE_NON_CONSUMABLE_ITEM.value]
+        for prop_file in non_consumable_items:
+            file_system.helper.give_prop_file(
+                self._context._file_system, target_name, from_name, prop_file.name
+            )
 
     ######################################################################################################################################################
-    def final_defense_val(self, entity: Entity) -> int:
+    def calculate_defense(self, entity: Entity) -> int:
         # 输出的防御力
         final: int = 0
 

@@ -295,7 +295,7 @@ def make_categorized_prop_files_prompt_list(
 
 
 ###############################################################################################################################################
-def make_pick_up_prop_failed_prompt(actor_name: str, prop_name: str) -> str:
+def make_actor_pick_up_prop_failed_prompt(actor_name: str, prop_name: str) -> str:
     return f"""# {actor_name} 无法拾取道具 {prop_name}
 ## 原因分析:
 - {prop_name} 不是一个可拾取的道具。
@@ -303,7 +303,13 @@ def make_pick_up_prop_failed_prompt(actor_name: str, prop_name: str) -> str:
 ## 建议:
 请{actor_name}重新考虑拾取的目标。"""
 
+###############################################################################################################################################
 
+def make_stage_prop_lost_prompt(stage_name: str, prop_name: str) -> str:
+    return f"""# 场景 {stage_name} 内的道具 {prop_name} 已经不在了，所以无法对其进行任何操作。
+## 原因分析:
+- 该道具可能已被移出场景，或被其他角色拾取。
+"""
 ###############################################################################################################################################
 def make_pick_up_prop_success_prompt(
     actor_name: str, prop_name: str, stage_name: str
@@ -823,15 +829,16 @@ def make_equip_prop_not_found_prompt(actor_name: str, prop_name: str) -> str:
 ################################################################################################################################################
 
 
-def make_stage_prop_lost_prompt(stage_name: str, prop_name: str) -> str:
-    return f"""# 场景 {stage_name} 内的道具 {prop_name} 已经不在了。"""
+
 
 
 ################################################################################################################################################
 
 
-def make_stage_prop_remove_prompt(stage_name: str, prop_name: str) -> str:
-    return f"""# 场景 {stage_name} 内的道具 {prop_name} 已经被销毁了。"""
+def make_stage_remove_prop_success_prompt(stage_name: str, prop_name: str) -> str:
+    return f"""# 场景 {stage_name} 内的道具 {prop_name} 已经被 {stage_name} 成功移除。
+## 因果分析
+{prop_name} 已经因某种原因被摧毁。 {stage_name} 作为其拥有者，根据游戏机制，主动将其移除。"""
 
 
 ################################################################################################################################################

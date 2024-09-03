@@ -267,7 +267,26 @@ class RPGEntitasContext(Context):
         return None
 
     #############################################################################################################################
-    def add_agent_context_message(
+    def add_event_to_agents_in_stage(
+        self,
+        entity: Entity,
+        message_content: str,
+        exclude_entities: Set[Entity] = set(),
+    ) -> None:
+        stage_entity = self.safe_get_stage_entity(entity)
+        if stage_entity is None:
+            return
+
+        notify_entities = self.get_actors_in_stage(stage_entity)
+        notify_entities.add(stage_entity)
+
+        if len(exclude_entities) > 0:
+            notify_entities = notify_entities - exclude_entities
+
+        self._add_event_to_agent(notify_entities, message_content)
+
+    #############################################################################################################################
+    def add_event_to_agent(
         self,
         entities: Set[Entity],
         message_content: str,
@@ -275,23 +294,13 @@ class RPGEntitasContext(Context):
     ) -> None:
 
         copy_entities = entities.copy()
-
-        # 场景内群体广播，包括场景内所有的角色和场景自己
-        if len(copy_entities) == 1:
-            only_stage_entity = next(iter(copy_entities))
-            if only_stage_entity.has(StageComponent):
-                actor_entities = self.get_actors_in_stage(only_stage_entity)
-                copy_entities.update(actor_entities)
-
         if len(exclude_entities) > 0:
             copy_entities = copy_entities - exclude_entities
 
-        self._add_agent_context_message(copy_entities, message_content)
+        self._add_event_to_agent(copy_entities, message_content)
 
     #############################################################################################################################
-    def _add_agent_context_message(
-        self, entities: Set[Entity], message_content: str
-    ) -> None:
+    def _add_event_to_agent(self, entities: Set[Entity], message_content: str) -> None:
 
         for entity in entities:
 

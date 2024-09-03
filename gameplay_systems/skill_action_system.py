@@ -136,7 +136,7 @@ class SkillActionSystem(ReactiveProcessor):
             entity = self._context.get_actor_entity(actor_name)
             if entity is None:
                 continue
-            
+
             # 最终释放给目标，并获取目标的反馈
             self.phase3_skill_to_targets(entity, response_plan)
 
@@ -346,8 +346,8 @@ class SkillActionSystem(ReactiveProcessor):
         if current_stage_entity is None:
             return
 
-        self._context.add_agent_context_message(
-            set({current_stage_entity}),
+        self._context.add_event_to_agents_in_stage(
+            current_stage_entity,
             builtin_prompt.make_notify_release_skill_event_prompt(
                 self._context.safe_get_entity_name(from_entity),
                 self._context.safe_get_entity_name(target_entity),
@@ -427,7 +427,7 @@ class SkillActionSystem(ReactiveProcessor):
 
     ######################################################################################################################################################
     def on_world_skill_system_off_line_error(self, entity: Entity) -> None:
-        self._context.add_agent_context_message(
+        self._context.add_event_to_agent(
             set({entity}),
             builtin_prompt.make_world_skill_system_off_line_error_prompt(
                 self._context.safe_get_entity_name(entity),
@@ -439,7 +439,7 @@ class SkillActionSystem(ReactiveProcessor):
     def on_world_skill_system_validate_skill_combo_failure(
         self, entity: Entity, world_response_plan: WorldSkillSystemResponse
     ) -> None:
-        self._context.add_agent_context_message(
+        self._context.add_event_to_agent(
             set({entity}),
             builtin_prompt.make_world_skill_system_reasoning_result_is_failure_prompt(
                 self._context.safe_get_entity_name(entity),
@@ -456,7 +456,7 @@ class SkillActionSystem(ReactiveProcessor):
         target: Entity,
         world_response_plan: WorldSkillSystemResponse,
     ) -> None:
-        self._context.add_agent_context_message(
+        self._context.add_event_to_agent(
             set({entity}),
             builtin_prompt.make_skill_skill_target_agent_off_line_error_prompt(
                 self._context.safe_get_entity_name(entity),

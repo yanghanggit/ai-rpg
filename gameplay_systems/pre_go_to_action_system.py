@@ -114,7 +114,7 @@ class PreBeforeGoToActionSystem(ReactiveProcessor):
         )
         if target_stage_entity is None:
             # 无效的去往目标!
-            self._context.add_agent_context_message(
+            self._context.add_event_to_agent(
                 set({actor_entity}),
                 builtin_prompt.go_to_stage_failed_because_stage_is_invalid_prompt(
                     safe_actor_name, target_stage_name
@@ -124,7 +124,7 @@ class PreBeforeGoToActionSystem(ReactiveProcessor):
 
         if current_stage_entity == target_stage_entity:
             # 已经在这个场景里了，不要重复去了
-            self._context.add_agent_context_message(
+            self._context.add_event_to_agent(
                 set({actor_entity}),
                 builtin_prompt.go_to_stage_failed_because_already_in_stage_prompt(
                     safe_actor_name, target_stage_name
@@ -138,7 +138,7 @@ class PreBeforeGoToActionSystem(ReactiveProcessor):
         stage_graph: Set[str] = stage_graph_comp.stage_graph
         if target_stage_name not in stage_graph:
             ## 场景之间无连接就不能去。
-            self._context.add_agent_context_message(
+            self._context.add_event_to_agent(
                 set({actor_entity}),
                 builtin_prompt.go_to_stage_failed_because_stage_is_invalid_prompt(
                     safe_actor_name, target_stage_name
@@ -195,7 +195,7 @@ class PreBeforeGoToActionSystem(ReactiveProcessor):
         #
         if not response_plan.allow:
             # 通知事件
-            self._context.add_agent_context_message(
+            self._context.add_event_to_agent(
                 set({actor_entity}),
                 builtin_prompt.exit_stage_failed_beacuse_stage_refuse_prompt(
                     actor_name, current_stage_name, response_plan.show_tips
@@ -256,7 +256,7 @@ class PreBeforeGoToActionSystem(ReactiveProcessor):
             current_stage_entity = self._context.safe_get_stage_entity(actor_entity)
             assert current_stage_entity is not None
 
-            self._context.add_agent_context_message(
+            self._context.add_event_to_agent(
                 set({actor_entity}),
                 builtin_prompt.enter_stage_failed_beacuse_stage_refuse_prompt(
                     actor_name, target_stage_name, response_plan.show_tips

@@ -45,6 +45,6 @@ class BroadcastActionSystem(ReactiveProcessor):
             " ".join(broadcast_action.values),
         )
 
-        self._context.add_agent_context_message(set({current_stage_entity}), message)
+        self._context.add_event_to_agents_in_stage(current_stage_entity, message)
 
     ####################################################################################################

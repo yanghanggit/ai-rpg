@@ -5,23 +5,18 @@ from abc import ABC, abstractmethod
 class BaseGame(ABC):
 
     def __init__(self, name: str) -> None:
-        self.name = name
-        self.started: bool = False
-        self.inited: bool = False
-        self.exited: bool = False
+        self._name = name
+        self._started: bool = False
+        self._will_exit: bool = False
 
     @abstractmethod
     def execute(self) -> None:
         pass
 
     @abstractmethod
+    async def a_execute(self) -> None:
+        pass
+
+    @abstractmethod
     def exit(self) -> None:
-        pass
-
-    @abstractmethod
-    async def async_execute(self) -> None:
-        pass
-
-    @abstractmethod
-    def on_exit(self) -> None:
         pass

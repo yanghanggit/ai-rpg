@@ -78,7 +78,8 @@ class HandlePlayerInputSystem(ExecuteProcessor):
     ) -> bool:
 
         if "/quit" in usr_input:
-            rpg_game.exited = True
+            assert False, "玩家退出游戏"
+            # rpg_game.exit()
 
         elif "/goto" in usr_input:
             command = "/goto"

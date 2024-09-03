@@ -14,7 +14,6 @@ from gameplay_systems.components import (
     RPGCurrentWeaponComponent,
     RPGCurrentClothesComponent,
     StageGraphComponent,
-    # StageArchiveComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from my_data.game_resource import GameResource
@@ -97,37 +96,44 @@ class RPGGame(BaseGame):
     @override
     def execute(self) -> None:
 
-        self.started = True
+        self._started = True
 
         # 顺序不要动
-        if not self.inited:
-            self.inited = True
-            self._processors.activate_reactive_processors()
-            self._processors.initialize()
+        current_processors = self._processors
+        if not current_processors._initialized:
+            current_processors._initialized = True
+            current_processors.activate_reactive_processors()
+            current_processors.initialize()
 
-        self._processors.execute()
-        self._processors.cleanup()
+        current_processors.execute()
+        current_processors.cleanup()
 
     ###############################################################################################################################################
     @override
-    async def async_execute(self) -> None:
-        self.started = True
+    async def a_execute(self) -> None:
+
+        self._started = True
 
         # 顺序不要动
-        if not self.inited:
-            self.inited = True
-            self._processors.activate_reactive_processors()
-            self._processors.initialize()
+        current_processors = self._processors
+        if not current_processors._initialized:
+            current_processors._initialized = True
+            current_processors.activate_reactive_processors()
+            current_processors.initialize()
 
-        await self._processors.a_execute()
-        self._processors.cleanup()
+        await current_processors.a_execute()
+        current_processors.cleanup()
 
     ###############################################################################################################################################
     @override
     def exit(self) -> None:
-        self._processors.clear_reactive_processors()
-        self._processors.tear_down()
-        logger.info(f"{self.name}, game over")
+
+        all = [self._processors]
+        for processor in all:
+            processor.tear_down()
+            processor.clear_reactive_processors()
+
+        logger.info(f"{self._name}, game over!!!!!!!!!!!!!!!!!!!!")
 
     ###############################################################################################################################################
     def create_world_system_entities(self, game_builder: GameResource) -> List[Entity]:
@@ -496,11 +502,6 @@ class RPGGame(BaseGame):
             )
             if codecomp_class is not None:
                 stage_entity.add(codecomp_class, stage_comp.name)
-
-    ###############################################################################################################################################
-    @override
-    def on_exit(self) -> None:
-        logger.debug(f"{self.name} on_exit")
 
     ###############################################################################################################################################
     @property

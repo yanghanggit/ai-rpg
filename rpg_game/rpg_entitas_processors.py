@@ -197,10 +197,12 @@ class RPGEntitasProcessors(Processors):
     ###################################################################################################################################################################
     def __init__(self) -> None:
         super().__init__()
+        self._initialized: bool = False
 
     ###################################################################################################################################################################
     @override
     def initialize(self) -> None:
+
         for processor in self._initialize_processors:
             logger.debug(
                 f"<<<<<<<<<<<<< initialize: {processor.__class__.__name__}  >>>>>>>>>>>>>>>>>"

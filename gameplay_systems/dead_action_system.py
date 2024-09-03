@@ -50,9 +50,7 @@ class DeadActionSystem(ExecuteProcessor):
         entities = self._context.get_group(Matcher(DeadAction)).entities
         for entity in entities:
             if entity.has(PlayerComponent):
-                logger.warning(f"玩家死亡，游戏结束")
-                self._game.exited = True
-                self._game.on_exit()
+                assert False, "玩家死亡，游戏结束"  # todo
 
     ########################################################################################################################################################################
     def add_destory(self) -> None:

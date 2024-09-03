@@ -109,7 +109,7 @@ class DamageActionSystem(ReactiveProcessor):
 
         ## 死后处理大流程，step最后——死亡组件系统必须要添加
         if is_dead:
-            
+
             # 添加动作
             if not target_entity.has(DeadAction):
                 # 复制一个，不用以前的，怕GC不掉
@@ -118,13 +118,15 @@ class DamageActionSystem(ReactiveProcessor):
                     self._context.safe_get_entity_name(target_entity),
                     DeadAction.__name__,
                     [],
-                )   
+                )
 
             # 死亡夺取
             self.loot_on_death(from_name, target_entity)
 
         ## 导演系统，单独处理，有旧的代码
-        self.on_add_damage_event_to_agent(from_name, target_entity, final_damage, is_dead)
+        self.on_add_damage_event_to_agent(
+            from_name, target_entity, final_damage, is_dead
+        )
 
     ######################################################################################################################################################
     def on_add_damage_event_to_agent(
@@ -159,6 +161,7 @@ class DamageActionSystem(ReactiveProcessor):
                         rpg_attr_comp.maxhp,
                     ),
                 )
+
     ######################################################################################################################################################
     def loot_on_death(self, from_name: str, target_entity: Entity) -> None:
         target_name = self._context.safe_get_entity_name(target_entity)
@@ -166,7 +169,9 @@ class DamageActionSystem(ReactiveProcessor):
             self._context._file_system, target_name
         )
 
-        non_consumable_items = categorized_prop_files[PropType.TYPE_NON_CONSUMABLE_ITEM.value]
+        non_consumable_items = categorized_prop_files[
+            PropType.TYPE_NON_CONSUMABLE_ITEM.value
+        ]
         for prop_file in non_consumable_items:
             file_system.helper.give_prop_file(
                 self._context._file_system, target_name, from_name, prop_file.name

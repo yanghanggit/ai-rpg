@@ -9,7 +9,11 @@ from gameplay_systems.action_components import (
     DamageAction,
     MindVoiceAction,
 )
-from gameplay_systems.components import BodyComponent, RPGAttributesComponent
+from gameplay_systems.components import (
+    BodyComponent,
+    RPGAttributesComponent,
+    ActorComponent,
+)
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import override, List, cast, Optional, Set, Dict
 from loguru import logger
@@ -86,7 +90,7 @@ class SkillActionSystem(ReactiveProcessor):
         self._context: RPGEntitasContext = context
         self._game: RPGGame = rpg_game
         self._system_name: str = system_name
-        self._entities: List[Entity] = []
+        self._react_entities_copy: List[Entity] = []
 
     ######################################################################################################################################################
     @override
@@ -100,144 +104,147 @@ class SkillActionSystem(ReactiveProcessor):
             entity.has(SkillAction)
             and entity.has(SkillTargetAction)
             and entity.has(BehaviorAction)
+            and entity.has(ActorComponent)
         )
 
     ######################################################################################################################################################
     @override
     def react(self, entities: list[Entity]) -> None:
-        # 这么做很危险。
-        self._entities = entities.copy()
+        self._react_entities_copy = entities.copy()
 
     ######################################################################################################################################################
     async def a_execute2(self) -> None:
-        if len(self._entities) == 0:
-            return
-        await self.phase_execute()
-        self._entities.clear()
+
+        if (
+            self._context.get_world_entity(self._system_name) is not None
+            and len(self._react_entities_copy) > 0
+        ):
+            await self.phase_execute(self._react_entities_copy, self._system_name)
+
+        self._react_entities_copy.clear()
 
     ######################################################################################################################################################
-    def is_system_enable(self) -> bool:
-
-        world_system_entity = self._context.get_world_entity(self._system_name)
-        return world_system_entity is not None
-
-    ######################################################################################################################################################
-    async def phase_execute(self) -> None:
-
-        if not self.is_system_enable() or len(self._entities) == 0:
-            return
+    async def phase_execute(
+        self, entities: List[Entity], world_skill_system_name: str
+    ) -> None:
 
         # 结合自身条件进行判断
-        await self.phase1_actor_self_reasoning()
+        await self.phase1_actor_self_reasoning(entities)
 
         # 世界全局做合理性判断
-        world_skill_system_response = await self.phase2_world_skill_system_reasoning()
+        world_skill_system_response = await self.phase2_world_skill_system_reasoning(
+            entities, world_skill_system_name
+        )
         for actor_name, response_plan in world_skill_system_response.items():
-            entity = self._context.get_actor_entity(actor_name)
-            if entity is None:
+            actor_entity = self._context.get_actor_entity(actor_name)
+            if actor_entity is None:
                 continue
 
             # 最终释放给目标，并获取目标的反馈
-            self.phase3_skill_to_targets(entity, response_plan)
+            self.phase3_skill_to_targets(actor_entity, response_plan)
 
     ######################################################################################################################################################
-    async def phase1_actor_self_reasoning(self) -> None:
+    async def phase1_actor_self_reasoning(self, entities: List[Entity]) -> None:
 
-        if not self.is_system_enable() or len(self._entities) == 0:
+        if len(entities) == 0:
             return
 
         # 第一个大阶段，角色自己检查是否可以使用技能
-        tasks1 = self.create_tasks_actor_can_use_skill(self._entities)
-        if len(tasks1) == 0:
+        create_tasks = self.create_tasks_actor_can_use_skill(entities)
+        if len(create_tasks) == 0:
             return
 
-        gather1 = AgentTasksGather(
+        response = await AgentTasksGather(
             "第一个阶段，检查角色自身是否可以使用技能",
-            [task for task in tasks1.values()],
-        )
-        response1 = await gather1.gather()
-        if len(response1) == 0:
+            [task for task in create_tasks.values()],
+        ).gather()
+
+        if len(response) == 0:
             logger.debug(f"phase1_response is None.")
             return
 
-        self.handle_actor_can_use_skill(tasks1, self._entities)
+        self.handle_actor_can_use_skill(create_tasks, entities)
 
     ######################################################################################################################################################
     async def phase2_world_skill_system_reasoning(
         self,
+        entities: List[Entity],
+        world_skill_system_name: str,
     ) -> Dict[str, WorldSkillSystemResponse]:
 
-        if not self.is_system_enable() or len(self._entities) == 0:
+        if len(entities) == 0:
             return {}
 
         # 第二个大阶段，全局技能系统检查技能组合是否合法
-        tasks2 = self.create_tasks_world_skill_system_validate_skill_combo(
-            self._entities, self._system_name
+        create_tasks = self.create_tasks_world_skill_system_validate_skill_combo(
+            entities, world_skill_system_name
         )
-        if len(tasks2) == 0:
+        if len(create_tasks) == 0:
             return {}
 
-        gather2 = AgentTasksGather("第二个阶段，检查技能组合是否合法", tasks2)
-        response2 = await gather2.gather()
-        if len(response2) == 0:
+        response = await AgentTasksGather(
+            "第二个阶段，检查技能组合是否合法", create_tasks
+        ).gather()
+        if len(response) == 0:
             logger.debug(f"phase2_response is None.")
             return {}
 
-        if len(self._entities) == 0:
-            return {}
-
         return self.handle_world_skill_system_validate_skill_combo(
-            tasks2, self._entities
+            create_tasks, entities
         )
 
     ######################################################################################################################################################
     def phase3_skill_to_targets(
-        self, entity: Entity, world_response: WorldSkillSystemResponse
+        self, entity: Entity, world_skill_system_response: WorldSkillSystemResponse
     ) -> None:
         # 释放技能
         for target in self.extract_targets(entity):
 
             target_response = self.request_skill_to_target_feedback_reasoning(
-                entity, target, world_response
+                entity, target, world_skill_system_response
             )
 
             if target_response is None:
-                self.on_target_agent_off_line_error(entity, target, world_response)
-                continue  # 目标是不是掉线了？
+                self.add_target_agent_off_line_event(
+                    entity, target, world_skill_system_response
+                )
+                continue
 
             # 加入伤害计算的逻辑
-            self.add_action_to_target(entity, target)
+            self.calculate_and_add_action_to_target(entity, target)
 
             # 场景事件
-            self.on_notify_skill_event(entity, target, world_response)
+            self.add_notify_others_of_skill_use_event(
+                entity, target, world_skill_system_response
+            )
 
     ######################################################################################################################################################
     def handle_actor_can_use_skill(
-        self, tasks1: Dict[str, AgentTask], entities: List[Entity]
+        self, tasks: Dict[str, AgentTask], entities: List[Entity]
     ) -> None:
 
-        for agent_name, task in tasks1.items():
+        for agent_name, task in tasks.items():
 
             if task.response_content == "":
                 continue
 
-            entity = self._context.get_actor_entity(agent_name)
-            if entity is None:
+            actor_entity = self._context.get_actor_entity(agent_name)
+            if actor_entity is None:
                 continue
 
             response_plan = ActorCanUseSkillResponse(agent_name, task.response_content)
             if not response_plan.tag:
-                entities.remove(entity)
+                entities.remove(actor_entity)
                 continue
 
     ######################################################################################################################################################
     def handle_world_skill_system_validate_skill_combo(
-        self, tasks2: List[AgentTask], entities: List[Entity]
+        self, tasks: List[AgentTask], entities: List[Entity]
     ) -> Dict[str, WorldSkillSystemResponse]:
 
         ret: Dict[str, WorldSkillSystemResponse] = {}
 
-        for task in tasks2:
+        for task in tasks:
 
             actor_name = task._option_param.get(
                 WorldSkillSystemResponse.OPTION_PARAM_NAME, ""
@@ -247,7 +254,7 @@ class SkillActionSystem(ReactiveProcessor):
                 continue
 
             if task.response_content == "":
-                self.on_world_skill_system_off_line_error(entity)
+                self.add_world_skill_system_off_line_event(entity)
                 continue
 
             response_plan = WorldSkillSystemResponse(
@@ -261,7 +268,7 @@ class SkillActionSystem(ReactiveProcessor):
                 entities.remove(entity)
 
                 # 剧情通知
-                self.on_world_skill_system_validate_skill_combo_failure(
+                self.add_world_skill_system_validate_skill_combo_fail_event(
                     entity, response_plan
                 )
 
@@ -311,7 +318,6 @@ class SkillActionSystem(ReactiveProcessor):
 
     ######################################################################################################################################################
     def extract_body_info(self, entity: Entity) -> str:
-        assert entity.has(BodyComponent)
         if not entity.has(BodyComponent):
             return ""
         return str(entity.get(BodyComponent).body)
@@ -335,7 +341,8 @@ class SkillActionSystem(ReactiveProcessor):
         return ret
 
     ######################################################################################################################################################
-    def on_notify_skill_event(
+
+    def add_notify_others_of_skill_use_event(
         self,
         from_entity: Entity,
         target_entity: Entity,
@@ -348,7 +355,7 @@ class SkillActionSystem(ReactiveProcessor):
 
         self._context.add_event_to_agents_in_stage(
             current_stage_entity,
-            builtin_prompt.make_notify_release_skill_event_prompt(
+            builtin_prompt.make_notify_others_of_skill_use_prompt(
                 self._context.safe_get_entity_name(from_entity),
                 self._context.safe_get_entity_name(target_entity),
                 world_skill_system_response.out_come,
@@ -357,16 +364,18 @@ class SkillActionSystem(ReactiveProcessor):
         )
 
     ######################################################################################################################################################
-    def add_action_to_target(self, entity: Entity, target: Entity) -> None:
+    def calculate_and_add_action_to_target(
+        self, entity: Entity, target: Entity
+    ) -> None:
 
         # 拿到原始的
-        skill_attrs: List[int] = self.extract_skill_attrs(entity)
+        need_calculate_skill_attrs: List[int] = self.extract_skill_attrs(entity)
         # 补充上发起者的攻击值
-        self.add_values_of_attr_comp(entity, target, skill_attrs)
+        self.calculate_values_of_attr_comp(entity, target, need_calculate_skill_attrs)
         # 补充上所有参与的道具的属性
-        self.add_values_of_props(entity, target, skill_attrs)
+        self.calculate_values_of_props(entity, target, need_calculate_skill_attrs)
         # 最终添加到目标的伤害行为
-        self.add_damage_action(entity, target, skill_attrs)
+        self.add_damage_action(entity, target, need_calculate_skill_attrs)
 
     ######################################################################################################################################################
     def add_damage_action(
@@ -395,7 +404,7 @@ class SkillActionSystem(ReactiveProcessor):
 
     ######################################################################################################################################################
 
-    def add_values_of_attr_comp(
+    def calculate_values_of_attr_comp(
         self, entity: Entity, target: Entity, out_put_skill_attrs: List[int]
     ) -> None:
 
@@ -406,7 +415,7 @@ class SkillActionSystem(ReactiveProcessor):
         out_put_skill_attrs[AttributesIndex.ATTACK.value] += rpg_attr_comp.attack
 
     ######################################################################################################################################################
-    def add_values_of_props(
+    def calculate_values_of_props(
         self, entity: Entity, target: Entity, out_put_skill_attrs: List[int]
     ) -> None:
         prop_files = self.extract_prop_files(entity)
@@ -426,22 +435,22 @@ class SkillActionSystem(ReactiveProcessor):
         return final_attr
 
     ######################################################################################################################################################
-    def on_world_skill_system_off_line_error(self, entity: Entity) -> None:
+    def add_world_skill_system_off_line_event(self, entity: Entity) -> None:
         self._context.add_event_to_agent(
             set({entity}),
-            builtin_prompt.make_world_skill_system_off_line_error_prompt(
+            builtin_prompt.make_world_skill_system_off_line_prompt(
                 self._context.safe_get_entity_name(entity),
                 self.extract_behavior_sentence(entity),
             ),
         )
 
     ######################################################################################################################################################
-    def on_world_skill_system_validate_skill_combo_failure(
+    def add_world_skill_system_validate_skill_combo_fail_event(
         self, entity: Entity, world_response_plan: WorldSkillSystemResponse
     ) -> None:
         self._context.add_event_to_agent(
             set({entity}),
-            builtin_prompt.make_world_skill_system_reasoning_result_is_failure_prompt(
+            builtin_prompt.make_world_skill_system_validate_skill_combo_fail_prompt(
                 self._context.safe_get_entity_name(entity),
                 world_response_plan.tag,
                 self.extract_behavior_sentence(entity),
@@ -450,7 +459,7 @@ class SkillActionSystem(ReactiveProcessor):
         )
 
     ######################################################################################################################################################
-    def on_target_agent_off_line_error(
+    def add_target_agent_off_line_event(
         self,
         entity: Entity,
         target: Entity,
@@ -458,7 +467,7 @@ class SkillActionSystem(ReactiveProcessor):
     ) -> None:
         self._context.add_event_to_agent(
             set({entity}),
-            builtin_prompt.make_skill_skill_target_agent_off_line_error_prompt(
+            builtin_prompt.make_target_agent_off_line_prompt(
                 self._context.safe_get_entity_name(entity),
                 self._context.safe_get_entity_name(target),
                 world_response_plan.out_come,

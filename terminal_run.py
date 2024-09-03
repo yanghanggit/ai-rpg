@@ -51,9 +51,9 @@ async def main(input_actor_name_as_default: str, default_game_name: str) -> None
 
     # 核心循环
     while True:
-        if rpg_game.exited:
+        if rpg_game._will_exit:
             break
-        await rpg_game.async_execute()
+        await rpg_game.a_execute()
 
     # 退出操作
     rpg_game.exit()

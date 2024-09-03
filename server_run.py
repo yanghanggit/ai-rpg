@@ -113,7 +113,7 @@ async def pick_actor(clientip: str, actorname: str) -> List[TupleModel]:
         "/server_run_login", multiplayersgames[clientip], playerproxy, actorname, True
     )
     login_command.execute()
-    await multiplayersgames[clientip].async_execute()
+    await multiplayersgames[clientip].a_execute()
     logger.debug(f"pick actor finish")
 
     messages: List[TupleModel] = []
@@ -141,7 +141,6 @@ async def quitgame(clientip: str) -> List[TupleModel]:
         proxy = player.utils.get_player_proxy(clientip)
         assert proxy is not None
         player.utils.remove_player_proxy(proxy)
-        quitclient.exited = True
         quitclient.exit()
 
     messages: List[TupleModel] = []
@@ -230,7 +229,7 @@ async def handle_player_input(clientip: str, command: str) -> List[TupleModel]:
     elif "/perception" in command:
         await imme_handle_perception(rpg_game, player_proxy)
     else:
-        await rpg_game.async_execute()
+        await rpg_game.a_execute()
 
     messages: List[TupleModel] = []
     messages.append(TupleModel(who=clientip, what=f"发送 {command}"))

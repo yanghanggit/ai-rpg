@@ -84,9 +84,10 @@ class TerminalPlayerInputSystem(ExecuteProcessor):
         self, rpg_game: Any, player_proxy: PlayerProxy, usr_input: str
     ) -> None:
         if "/quit" in usr_input:
-            from rpg_game.rpg_game import RPGGame
+            assert False, "玩家退出游戏"
+            # from rpg_game.rpg_game import RPGGame
 
-            cast(RPGGame, rpg_game).exit()
+            # cast(RPGGame, rpg_game).exit()
         else:
             player_proxy._input_commands.append(str(usr_input))
 

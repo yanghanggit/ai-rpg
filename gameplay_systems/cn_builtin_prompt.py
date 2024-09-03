@@ -303,13 +303,17 @@ def make_actor_pick_up_prop_failed_prompt(actor_name: str, prop_name: str) -> st
 ## 建议:
 请{actor_name}重新考虑拾取的目标。"""
 
+
 ###############################################################################################################################################
+
 
 def make_stage_prop_lost_prompt(stage_name: str, prop_name: str) -> str:
     return f"""# 场景 {stage_name} 内的道具 {prop_name} 已经不在了，所以无法对其进行任何操作。
 ## 原因分析:
 - 该道具可能已被移出场景，或被其他角色拾取。
 """
+
+
 ###############################################################################################################################################
 def make_pick_up_prop_success_prompt(
     actor_name: str, prop_name: str, stage_name: str
@@ -727,7 +731,7 @@ def make_behavior_system_processed_result_notify_prompt(
 ################################################################################################################################################
 
 
-def make_world_skill_system_off_line_error_prompt(
+def make_world_skill_system_off_line_prompt(
     actor_name: str, behavior_sentence: str
 ) -> str:
 
@@ -742,7 +746,7 @@ def make_world_skill_system_off_line_error_prompt(
 ################################################################################################################################################
 
 
-def make_skill_skill_target_agent_off_line_error_prompt(
+def make_target_agent_off_line_prompt(
     actor_name: str, target_name: str, reasoning_sentence: str
 ) -> str:
 
@@ -754,7 +758,7 @@ def make_skill_skill_target_agent_off_line_error_prompt(
 
 
 ################################################################################################################################################
-def make_world_skill_system_reasoning_result_is_failure_prompt(
+def make_world_skill_system_validate_skill_combo_fail_prompt(
     actor_name: str,
     failure_desc: str,
     input_behavior_sentence: str,
@@ -781,7 +785,7 @@ def make_world_skill_system_reasoning_result_is_failure_prompt(
 ################################################################################################################################################
 
 
-def make_notify_release_skill_event_prompt(
+def make_notify_others_of_skill_use_prompt(
     actor_name: str, target_name: str, reasoning_sentence: str
 ) -> str:
 
@@ -827,9 +831,6 @@ def make_equip_prop_not_found_prompt(actor_name: str, prop_name: str) -> str:
 
 
 ################################################################################################################################################
-
-
-
 
 
 ################################################################################################################################################

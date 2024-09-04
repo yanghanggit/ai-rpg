@@ -62,7 +62,7 @@ def make_stage_kick_off_prompt(
         for actor_name in actors_in_stage:
             actors_prompt += f"- {actor_name}\n"
 
-    ret_prompt = f"""# {ConstantPrompt.STAGE_KICK_OFF_MESSAGE_PROMPT_TAG} 游戏世界即将开始运行。这是你的初始设定，你将以此为起点进行游戏并更新你的状态
+    ret_prompt = f"""# {ConstantPrompt.STAGE_KICK_OFF_MESSAGE_PROMPT_TAG} 游戏世界即将开始运行。这是你的初始设定，你将以此为起点进行游戏，并更新你的场景描述
 
 ## 游戏背景与风格设定
 {about_game}
@@ -78,25 +78,14 @@ def make_stage_kick_off_prompt(
 ## 你的初始设定
 {kick_off_message}
 
-## 生成内容规则
-- 不要对场景内角色未发生的对话，行为或心理活动进行任何猜测。
-- 注意！输出的 {StageNarrateAction.__name__} 场景描述中，需要移除所有场景内角色的描述。如果场景内存在道具，请结合道具信息进行状态更新。
+## {StageNarrateAction.__name__} 场景描述生成规则
+- 不要对场景内角色未发生的对话，行为或心理活动进行任何猜测与推理。
+- 注意！在输出内容中，移除所有与场景内角色相关的描述。
 
 ## 输出要求
 - 请遵循 输出格式指南。
-- 返回结果只包含如下:{StageNarrateAction.__name__} 和 {TagAction.__name__}。"""
+- 返回结果只包含:{StageNarrateAction.__name__} 和 {TagAction.__name__}。"""
     return ret_prompt
-
-
-# ### 关于键值的补充规则说明
-# - StageNarrateAction
-#   - 步骤1: 梳理 场景中发生的 角色相关事件 与 道具相关事件（如角色对道具的拾取、放置等）。注意！不要对角色未发生的对话，行为或心理活动进行任何猜测。
-#   - 步骤2: 根据 步骤1 ，并结合场景的历史，推理对场景产生的影响，做状态更新。生成 场景描述的初稿。
-#   - 步骤3: 如果已经成功移除了场景中的某道具，请在 场景描述的初稿 中移除所有相关 此道具 的文本。
-#   - 步骤4: 场景中未被移除的道具，其描述仍然需要 保留在 场景描述的初稿 中
-#   - 步骤5: 重要！从 场景描述的初稿 中移除所有与角色相关的描述。
-#   - 最终输出: 在以上步骤执行完毕之后，场景描述的初稿 就 转变为 最终 生成的场景描述(请将这个内容作为输出)。
-
 
 
 ###############################################################################################################################################
@@ -204,7 +193,7 @@ def make_stage_plan_prompt(
                 f"### {actor_name}\n- 角色外观:{actor_appearance}\n"
             )
 
-    ret_prompt = f"""# {ConstantPrompt.STAGE_PLAN_PROMPT_TAG} 请做出你的计划，决定你将要做什么
+    ret_prompt = f"""# {ConstantPrompt.STAGE_PLAN_PROMPT_TAG} 请做出你的计划，决定你将要做什么与更新你的场景描述
 
 ## 当前游戏运行回合: {game_round}
 
@@ -214,15 +203,17 @@ def make_stage_plan_prompt(
 ## 场景内的角色
 {actors_in_stage_prompt}
 
-## 生成内容规则
+## 你的计划生成规则
 - 结合以上信息，决定你的下一步行动。
-- 不要对场景内角色未发生的对话，行为或心理活动进行任何猜测。
-- 注意！输出的 {StageNarrateAction.__name__} 场景描述中，需要移除所有场景内角色的描述。如果场景内存在道具，请结合道具信息进行状态更新。
-- 如果 场景内的道具 产生损毁与破坏等事件 (请回顾你的历史消息)，则使用 {RemovePropAction.__name__} 将其移除，以此来保证你的逻辑的连贯与合理性。并在 场景描述中将其信息都移除。
+- 如果 场景内的道具 产生损毁与破坏等事件 (请回顾你的历史消息)，则使用 {RemovePropAction.__name__} 将其移除，以此来保证你的逻辑的连贯与合理性。
+
+## {StageNarrateAction.__name__} 场景描述生成规则
+- 不要对场景内角色未发生的对话，行为或心理活动进行任何猜测与推理。
+- 注意！在输出内容中，移除所有与场景内角色相关的描述。
 
 ## 输出要求
 - 请遵循 输出格式指南。
-- 返回结果必须包含 {StageNarrateAction.__name__} 和 {TagAction.__name__}。"""
+- 返回结果至少包含 {StageNarrateAction.__name__} 和 {TagAction.__name__}。"""
 
     return ret_prompt
 
@@ -843,9 +834,11 @@ def make_equip_prop_not_found_prompt(actor_name: str, prop_name: str) -> str:
 
 
 def make_stage_remove_prop_success_prompt(stage_name: str, prop_name: str) -> str:
-    return f"""# 场景 {stage_name} 内的道具 {prop_name} 已经被 {stage_name} 成功移除。
-## 因果分析
-{prop_name} 已经因某种原因被摧毁。 {stage_name} 作为其拥有者，根据游戏机制，主动将其移除。"""
+    return f"""# 场景 {stage_name} 的道具 {prop_name} 已经被 {stage_name} 成功移除。
+## 原因分析
+- {prop_name} 已经因某种原因被摧毁。 {stage_name} 作为其拥有者，根据游戏机制，主动将其移除，以保证逻辑的连贯性与合理性。
+## 造成结果
+- {stage_name} 后续的 {StageNarrateAction.__name__} 的内容生成将不再提及 {prop_name}（及任何相关信息）"""
 
 
 ################################################################################################################################################

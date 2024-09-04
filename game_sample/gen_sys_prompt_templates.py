@@ -106,7 +106,7 @@ STAGE_SYS_PROMPT_TEMPLATE = f"""# <%name>
   "{BroadcastAction.__name__}":["要公开说的内容(场景内所有人都会听到)"],
   "{WhisperAction.__name__}":["@角色名字(你要对谁说,只能是场景内的角色)>你想私下说的内容(其他人不会听见)",...],
   "{TagAction.__name__}":["与你相关的特征标签",...],
-  "{StageNarrateAction.__name__}":["你的场景描述"],
+  "{StageNarrateAction.__name__}":["你的描述与场景内道具的状态的描述"],
   "{RemovePropAction.__name__}":["场景内的道具的名字(你判断与确认它已经被损毁，所以将要移除它)"],
 {JSON_SAMPLE_END}
 

@@ -97,7 +97,7 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
 
             task = AgentTask.create(
                 agent,
-                builtin_prompt.make_kick_off_world_system_prompt(
+                builtin_prompt.make_world_system_kick_off_prompt(
                     self._game.about_game, self._game.round
                 ),
             )
@@ -128,7 +128,7 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
                 logger.error(f"kick_off_messages is error: {stage_comp.name}")
                 continue
 
-            kick_off_prompt = builtin_prompt.make_kick_off_stage_prompt(
+            kick_off_prompt = builtin_prompt.make_stage_kick_off_prompt(
                 kick_off_messages[0].content,
                 self._game.about_game,
                 self._context._file_system.get_files(
@@ -168,7 +168,7 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
 
             task = AgentTask.create(
                 agent,
-                builtin_prompt.make_kick_off_actor_prompt(
+                builtin_prompt.make_actor_kick_off_prompt(
                     kick_off_messages[0].content,
                     self._game.about_game,
                     self._game.round,

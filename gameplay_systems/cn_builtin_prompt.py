@@ -18,89 +18,96 @@ from my_data.model_def import PropType
 
 
 ###############################################################################################################################################
-def make_kick_off_actor_prompt(
+def make_actor_kick_off_prompt(
     kick_off_message: str, about_game: str, game_round: int
 ) -> str:
 
-    prompt = f"""# {ConstantPrompt.ACTOR_KICK_OFF_MESSAGE_PROMPT_TAG} 游戏世界即将开始运行。这是你的初始设定，你将以此为起点进行游戏
+    ret_prompt = f"""# {ConstantPrompt.ACTOR_KICK_OFF_MESSAGE_PROMPT_TAG} 游戏世界即将开始运行。这是你的初始设定，你将以此为起点进行游戏并更新你的状态
 
-## 游戏介绍
+## 游戏背景与风格设定
 {about_game}
 
-## 当前游戏运行回合
-当前回合: {game_round}
+## 当前游戏运行回合: {game_round}
 
-## 初始设定
+## 你的初始设定
 {kick_off_message}
-
-## 请结合你的角色设定,更新你的状态!
 
 ## 输出要求
 - 请遵循 输出格式指南。
 - 返回结果只带如下的键:{MindVoiceAction.__name__}与{TagAction.__name__}。"""
 
-    return prompt
+    return ret_prompt
 
 
 ###############################################################################################################################################
-def make_kick_off_stage_prompt(
+def make_stage_kick_off_prompt(
     kick_off_message: str,
     about_game: str,
-    stage_prop_files: List[PropFile],
+    props_in_stage: List[PropFile],
     actors_in_stage: Set[str],
     game_round: int,
 ) -> str:
 
-    props_prompt = ""
-    if len(stage_prop_files) > 0:
-        for prop_file in stage_prop_files:
+    props_prompt = "- 无任何道具。"
+    if len(props_in_stage) > 0:
+        props_prompt = ""
+        for prop_file in props_in_stage:
             props_prompt += make_prop_prompt(
                 prop_file, description_prompt=False, appearance_prompt=True
             )
-    else:
-        props_prompt = "- 无任何道具。"
 
-    ## 场景角色
-    actors_prompt = ""
+    actors_prompt = "- 无任何角色。"
     if len(actors_in_stage) > 0:
+        actors_prompt = ""
         for actor_name in actors_in_stage:
             actors_prompt += f"- {actor_name}\n"
-    else:
-        actors_prompt = "- 无任何角色。"
 
-    prompt = f"""# {ConstantPrompt.STAGE_KICK_OFF_MESSAGE_PROMPT_TAG} 游戏世界即将开始运行。这是你的初始设定，你将以此为起点进行游戏
+    ret_prompt = f"""# {ConstantPrompt.STAGE_KICK_OFF_MESSAGE_PROMPT_TAG} 游戏世界即将开始运行。这是你的初始设定，你将以此为起点进行游戏并更新你的状态
 
-## 游戏介绍
+## 游戏背景与风格设定
 {about_game}
 
-## 当前游戏运行回合
-当前回合: {game_round}
+## 当前游戏运行回合: {game_round}
 
-## 位于场景内并可被 场景内角色 拾取的道具
+## 场景内的道具
 {props_prompt}
 
-## 场景内角色
+## 场景内的角色
 {actors_prompt}
 
-## 初始设定
+## 你的初始设定
 {kick_off_message}
+
+## 生成内容规则
+- 不要对场景内角色未发生的对话，行为或心理活动进行任何猜测。
+- 注意！输出的 {StageNarrateAction.__name__} 场景描述中，需要移除所有场景内角色的描述。如果场景内存在道具，请结合道具信息进行状态更新。
 
 ## 输出要求
 - 请遵循 输出格式指南。
-- 返回结果只带如下的键:{StageNarrateAction.__name__} 和 {TagAction.__name__}。"""
-    return prompt
+- 返回结果只包含如下:{StageNarrateAction.__name__} 和 {TagAction.__name__}。"""
+    return ret_prompt
+
+
+# ### 关于键值的补充规则说明
+# - StageNarrateAction
+#   - 步骤1: 梳理 场景中发生的 角色相关事件 与 道具相关事件（如角色对道具的拾取、放置等）。注意！不要对角色未发生的对话，行为或心理活动进行任何猜测。
+#   - 步骤2: 根据 步骤1 ，并结合场景的历史，推理对场景产生的影响，做状态更新。生成 场景描述的初稿。
+#   - 步骤3: 如果已经成功移除了场景中的某道具，请在 场景描述的初稿 中移除所有相关 此道具 的文本。
+#   - 步骤4: 场景中未被移除的道具，其描述仍然需要 保留在 场景描述的初稿 中
+#   - 步骤5: 重要！从 场景描述的初稿 中移除所有与角色相关的描述。
+#   - 最终输出: 在以上步骤执行完毕之后，场景描述的初稿 就 转变为 最终 生成的场景描述(请将这个内容作为输出)。
+
 
 
 ###############################################################################################################################################
-def make_kick_off_world_system_prompt(about_game: str, game_round: int) -> str:
-    prompt = f"""# {ConstantPrompt.WORLD_SYSTEM_KICK_OFF_MESSAGE_PROMPT_TAG} 游戏世界即将开始运行，请简要回答你的职能与描述
+def make_world_system_kick_off_prompt(about_game: str, game_round: int) -> str:
+    ret_prompt = f"""# {ConstantPrompt.WORLD_SYSTEM_KICK_OFF_MESSAGE_PROMPT_TAG} 游戏世界即将开始运行。这是你的初始设定，请简要回答你的职能与描述
 
-## 游戏介绍
+## 游戏背景与风格设定
 {about_game}
 
-## 当前游戏运行回合
-当前回合: {game_round}"""
-    return prompt
+## 当前游戏运行回合: {game_round}"""
+    return ret_prompt
 
 
 ###############################################################################################################################################
@@ -109,34 +116,34 @@ def make_actor_plan_prompt(
     current_stage: str,
     stage_enviro_narrate: str,
     stage_graph: Set[str],
-    stage_props: List[PropFile],
-    stage_actors_info: Dict[str, str],
+    props_in_stage: List[PropFile],
+    info_of_actors_in_stage: Dict[str, str],
     health: float,
-    categorized_prop_files: Dict[str, List[PropFile]],
+    actor_props: Dict[str, List[PropFile]],
     current_weapon: Optional[PropFile],
     current_clothes: Optional[PropFile],
 ) -> str:
 
     health *= 100
 
-    prop_files_prompts = make_categorized_prop_files_prompt_list(categorized_prop_files)
+    actor_props_prompt = make_props_prompt_list_for_actor_plan(actor_props)
 
-    stage_props_prompt = [
+    props_in_stage_prompt = [
         make_prop_prompt(prop, description_prompt=False, appearance_prompt=True)
-        for prop in stage_props
+        for prop in props_in_stage
     ]
 
-    stage_actors_prompt = ""
-    if len(stage_actors_info) > 0:
-        for actor_name, actor_appearance in stage_actors_info.items():
-            stage_actors_prompt += f"### {actor_name}\n- 角色外观:{actor_appearance}\n"
-    else:
-        stage_actors_prompt = "- 无任何角色。"
+    actors_in_stage_prompt = "- 无任何角色。"
+    if len(info_of_actors_in_stage) > 0:
+        actors_in_stage_prompt = ""
+        for actor_name, actor_appearance in info_of_actors_in_stage.items():
+            actors_in_stage_prompt += (
+                f"### {actor_name}\n- 角色外观:{actor_appearance}\n"
+            )
 
-    prompt = f"""# {ConstantPrompt.ACTOR_PLAN_PROMPT_TAG} 请做出你的计划，决定你将要做什么
+    ret_prompt = f"""# {ConstantPrompt.ACTOR_PLAN_PROMPT_TAG} 请做出你的计划，决定你将要做什么
 
-## 当前游戏运行回合
-当前回合: {game_round}
+## 当前游戏运行回合: {game_round}
 
 ## 你当前所在的场景
 {current_stage != "" and current_stage or "未知"}
@@ -145,17 +152,17 @@ def make_actor_plan_prompt(
 ### 从本场景可以去往的场景
 {len(stage_graph) > 0 and "\n".join([f"- {stage}" for stage in stage_graph]) or "无可去往场景"}   
 
-## 场景内的可交互的道具(包括‘可拾取’({PickUpPropAction.__name__}))
-{len(stage_props_prompt) > 0 and "\n".join(stage_props_prompt) or "- 无任何道具。"}
+## 场景内的道具(可以进行交互，如: {PickUpPropAction.__name__})
+{len(props_in_stage_prompt) > 0 and "\n".join(props_in_stage_prompt) or "- 无任何道具。"}
 
-## 场景内活动的角色(你可以与之互动):
-{stage_actors_prompt}
+## 场景内的角色
+{actors_in_stage_prompt}
 
-## 你的健康状态:
+## 你的健康状态
 {f"生命值: {health:.2f}%"}
 
-## 你自身持有道具:
-{len(prop_files_prompts) > 0 and "\n".join(prop_files_prompts) or "- 无任何道具。"}
+## 你当前持有的道具
+{len(actor_props_prompt) > 0 and "\n".join(actor_props_prompt) or "- 无任何道具。"}
 
 ## 你当前装备的道具
 - 武器: {current_weapon is not None and current_weapon.name or "无"}
@@ -163,77 +170,80 @@ def make_actor_plan_prompt(
 
 ## 建议与注意事项
 - 结合以上信息，决定你的下一步行动。
-- 随时保持装备武器与衣服的状态(前提是你自身有的话）。
-- 注意！如果 从本场景可以去往的场景 为 ‘无可去往场景’，你就不可以执行{GoToAction.__name__}，因为系统的设计规则如此。
+- 随时保持装备武器与衣服的状态(前提是你有对应的道具）。
+- 注意！如果 从本场景可以去往的场景 为 无可去往场景，你就不可以执行{GoToAction.__name__}，因为系统的设计规则如此。
 
 ## 输出要求
 - 请遵循 输出格式指南。
 - 结果中要附带 {TagAction.__name__}。"""
 
-    return prompt
+    return ret_prompt
 
 
 ###############################################################################################################################################
 def make_stage_plan_prompt(
-    stage_prop_files: List[PropFile], game_round: int, actors_info: Dict[str, str]
+    props_in_stage: List[PropFile],
+    game_round: int,
+    info_of_actors_in_stage: Dict[str, str],
 ) -> str:
 
-    props_prompt = ""
-    if len(stage_prop_files) > 0:
-        for prop in stage_prop_files:
-            props_prompt += make_prop_prompt(
+    props_in_stage_prompt = "- 无任何道具。"
+    if len(props_in_stage) > 0:
+        props_in_stage_prompt = ""
+        for prop in props_in_stage:
+            props_in_stage_prompt += make_prop_prompt(
                 prop, description_prompt=False, appearance_prompt=True
             )
-    else:
-        props_prompt = "- 无任何道具。"
 
     ## 场景角色
-    actors_prompt = ""
-    if len(actors_info) > 0:
-        for actor_name, actor_appearance in actors_info.items():
-            actors_prompt += f"### {actor_name}\n- 角色外观:{actor_appearance}\n"
-    else:
-        actors_prompt = "- 无任何角色。"
+    actors_in_stage_prompt = "- 无任何角色。"
+    if len(info_of_actors_in_stage) > 0:
+        actors_in_stage_prompt = ""
+        for actor_name, actor_appearance in info_of_actors_in_stage.items():
+            actors_in_stage_prompt += (
+                f"### {actor_name}\n- 角色外观:{actor_appearance}\n"
+            )
 
-    prompt = f"""# {ConstantPrompt.STAGE_PLAN_PROMPT_TAG} 请输出'场景描述'和'你的计划'
+    ret_prompt = f"""# {ConstantPrompt.STAGE_PLAN_PROMPT_TAG} 请做出你的计划，决定你将要做什么
 
-## 当前游戏运行回合
-当前回合: {game_round}
+## 当前游戏运行回合: {game_round}
 
-## 位于场景内并可被 场景内角色 拾取的道具
-{props_prompt}
+## 场景内的道具
+{props_in_stage_prompt}
 
-## 场景内角色:
-{actors_prompt}
+## 场景内的角色
+{actors_in_stage_prompt}
 
-## 关于’你的计划‘内容生成规则
-- 根据你作为场景受到了什么事件的影响，你可以制定计划，并决定下一步将要做什么。可根据 输出格式指南 选择相应的行动。
-- 如果场景内的道具产生损毁(请根据你的设定与对话上下文)，可以考虑使用{RemovePropAction.__name__}将其移除。
+## 生成内容规则
+- 结合以上信息，决定你的下一步行动。
+- 不要对场景内角色未发生的对话，行为或心理活动进行任何猜测。
+- 注意！输出的 {StageNarrateAction.__name__} 场景描述中，需要移除所有场景内角色的描述。如果场景内存在道具，请结合道具信息进行状态更新。
+- 如果 场景内的道具 产生损毁与破坏等事件 (请回顾你的历史消息)，则使用 {RemovePropAction.__name__} 将其移除，以此来保证你的逻辑的连贯与合理性。并在 场景描述中将其信息都移除。
 
 ## 输出要求
 - 请遵循 输出格式指南。
 - 返回结果必须包含 {StageNarrateAction.__name__} 和 {TagAction.__name__}。"""
 
-    return prompt
+    return ret_prompt
 
 
 ###############################################################################################################################################
 def make_prop_type_prompt(prop_file: PropFile) -> str:
 
-    ret = "未知"
+    ret_prompt = "未知"
 
     if prop_file.is_weapon:
-        ret = "武器"
+        ret_prompt = "武器"
     elif prop_file.is_clothes:
-        ret = "衣服"
+        ret_prompt = "衣服"
     elif prop_file.is_non_consumable_item:
-        ret = "非消耗品"
+        ret_prompt = "非消耗品"
     elif prop_file.is_special:
-        ret = "特殊能力"
+        ret_prompt = "特殊能力"
     elif prop_file.is_skill:
-        ret = "技能"
+        ret_prompt = "技能"
 
-    return ret
+    return ret_prompt
 
 
 ###############################################################################################################################################
@@ -260,9 +270,9 @@ def make_prop_prompt(
 
 
 ###############################################################################################################################################
-def make_categorized_prop_files_prompt_list(
-    categorized_prop_files: Dict[str, List[PropFile]],
-    sorted_keys: List[str] = [
+def make_props_prompt_list_for_actor_plan(
+    props_dict: Dict[str, List[PropFile]],
+    order_keys: List[str] = [
         PropType.TYPE_SPECIAL.value,
         PropType.TYPE_WEAPON.value,
         PropType.TYPE_CLOTHES.value,
@@ -273,15 +283,11 @@ def make_categorized_prop_files_prompt_list(
 
     ret: List[str] = []
 
-    for key in sorted_keys:
-        if key not in categorized_prop_files:
+    for key in order_keys:
+        if key not in props_dict:
             continue
 
-        prop_files = categorized_prop_files[key]
-        if len(prop_files) == 0:
-            continue
-
-        for prop_file in prop_files:
+        for prop_file in props_dict[key]:
             ret.append(
                 make_prop_prompt(
                     prop_file,

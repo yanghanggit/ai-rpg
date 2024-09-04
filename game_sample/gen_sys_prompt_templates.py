@@ -21,8 +21,12 @@ from gameplay_systems.action_components import (
 )
 
 from loguru import logger
-from game_sample.romance_of_the_three_kingdoms_builtin_prompt import GAME_BACKGROUND_AND_STYLE_SETTING as game_background_and_style_setting
-from game_sample.romance_of_the_three_kingdoms_builtin_prompt import GAME_RULES_SETTING as game_rules_setting
+from game_sample.romance_of_the_three_kingdoms_builtin_prompt import (
+    GAME_BACKGROUND_AND_STYLE_SETTING as game_background_and_style_setting,
+)
+from game_sample.romance_of_the_three_kingdoms_builtin_prompt import (
+    GAME_RULES_SETTING as game_rules_setting,
+)
 
 ADDITIONAL_JSON_OUTPUT_FORMAT_REQUIREMENTS1 = f"""- 所有文本输出必须为第一人称。
 - 每个 JSON 对象必须包含上述键中的一个或多个，不得重复同一个键，也不得使用不在上述中的键。
@@ -99,11 +103,11 @@ STAGE_SYS_PROMPT_TEMPLATE = f"""# <%name>
 
 ### 请根据下面的示例, 确保你的输出严格遵守相应的结构
 {JSON_SAMPLE_BEGINE}
-  "{BroadcastAction.__name__}":["要公开说的内容"],
-  "{WhisperAction.__name__}":["@角色名字(你要对谁说,只能是场景内的角色)>你想私下说的内容",...],
+  "{BroadcastAction.__name__}":["要公开说的内容(场景内所有人都会听到)"],
+  "{WhisperAction.__name__}":["@角色名字(你要对谁说,只能是场景内的角色)>你想私下说的内容(其他人不会听见)",...],
   "{TagAction.__name__}":["与你相关的特征标签",...],
-  "{StageNarrateAction.__name__}":["生成你场景描述(仅保留你的描述与‘未被你移除的道具’的描述，不要提及场景内角色的任何信息与描述)"],
-  "{RemovePropAction.__name__}":["场景内的道具的名字(即你将要移除它)"],
+  "{StageNarrateAction.__name__}":["你的场景描述"],
+  "{RemovePropAction.__name__}":["场景内的道具的名字(你判断与确认它已经被损毁，所以将要移除它)"],
 {JSON_SAMPLE_END}
 
 

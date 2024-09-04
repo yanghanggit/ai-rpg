@@ -23,6 +23,7 @@ from game_sample.excel_data_stage import ExcelDataStage
 from game_sample.game_editor import ExcelEditorGame
 from typing import List, Dict, Any, Set
 from game_sample.excel_data_actor import ExcelDataActor
+from game_sample.gen_sys_prompt_templates import gen_sys_prompt_templates
 
 
 ############################################################################################################
@@ -76,6 +77,9 @@ def main(game_names: Set[str]) -> None:
     stage_data_base: Dict[str, ExcelDataStage] = {}
     prop_data_base: Dict[str, ExcelDataProp] = {}
     world_system_data_base: Dict[str, ExcelDataWorldSystem] = {}
+
+    # 准备基础数据
+    gen_sys_prompt_templates()
 
     # 分析必要数据
     gen_all_actors(actor_sheet, actor_data_base)

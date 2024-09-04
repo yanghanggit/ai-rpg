@@ -87,7 +87,7 @@ def make_kick_off_stage_prompt(
 
 ## 输出要求
 - 请遵循 输出格式指南。
-- 返回结果只带如下的键: {StageNarrateAction.__name__} 和 {TagAction.__name__}。"""
+- 返回结果只带如下的键:{StageNarrateAction.__name__} 和 {TagAction.__name__}。"""
     return prompt
 
 
@@ -392,7 +392,7 @@ def go_to_stage_failed_because_stage_is_invalid_prompt(
 ## 可能的原因
 1. {stage_name} 目前不可访问，可能未开放或已关闭。
 2. 场景名称"{stage_name}"格式不正确,如“xxx的深处/北部/边缘/附近/其他区域”，这样的表达可能导致无法正确识别。
-    - 必须根据 全局游戏设定 中 对场景名字严格匹配。
+    - 必须根据 游戏规则设定 中 对场景名字严格匹配。
 3. {actor_name} 无法从当前场景去往 {stage_name}。即当前场景与目标场景{stage_name}之间没有连接。
 ## 建议
 - 请 {actor_name} 重新考虑目的地。"""
@@ -976,14 +976,11 @@ def make_reasoning_world_skill_system_validate_skill_combo_prompt(
   "{TagAction.__name__}":["{ConstantPrompt.CRITICAL_SUCCESS}或{ConstantPrompt.SUCCESS}或{ConstantPrompt.FAILURE}"]
 }}
 
-### 关于键值的补充规则说明
-
-关于 {BroadcastAction.__name__} 键值:
+### 关于 {BroadcastAction.__name__} 的输出结果的规则如下
 - 如果你的判断是 {ConstantPrompt.SUCCESS} 或 {ConstantPrompt.CRITICAL_SUCCESS}。
     - 必须包含如下信息：{actor_name}的名字（技能使用者），释放的技能的描述，技能释放的目标的名字，配置的道具的信息。
     - 做出逻辑合理的句子描述（可以适当润色），来表达 {actor_name} 使用技能的使用过程。但不要判断技能命中目标之后，目标的可能反应。
     - 请注意，用第三人称的描述。  
-    
 - 如果你的判断是 {ConstantPrompt.FAILURE}。
     - 则输出结果需要描述为：技能释放失败的原因。
     

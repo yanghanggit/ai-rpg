@@ -6,4 +6,5 @@ game_sample/gen_runtimes
 game_sample/gen_actor_sys_prompt
 game_sample/gen_world_sys_prompt
 game_sample/gen_agent
+game_sample/gen_sys_prompt_templates
 .VSCodeCounter

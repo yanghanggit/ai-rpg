@@ -569,29 +569,22 @@ def make_world_system_reasoning_appearance_prompt(
     actors_body_and_clothe: Dict[str, tuple[str, str]]
 ) -> str:
     appearance_info_list: List[str] = []
-    actor_names: List[str] = []
+    actor_name_list: List[str] = []
     for name, (body, clothe) in actors_body_and_clothe.items():
-        if clothe == "":
-            continue
-        appearance_info = f"""### {name}
+        appearance_info_list.append(
+            f"""### {name}
 - 裸身:{body}
 - 衣服:{clothe}
 """
-        appearance_info_list.append(appearance_info)
-        actor_names.append(name)
+        )
+        actor_name_list.append(name)
 
-    #
-    final_input_prompt = "\n".join(appearance_info_list)
-    assert len(final_input_prompt) > 0
-    #
-    dumps_as_format = json.dumps(
-        {name: "?" for name in actor_names}, ensure_ascii=False
-    )
+    dumps = json.dumps({name: "?" for name in actor_name_list}, ensure_ascii=False)
 
     # 最后的合并
     ret_prompt = f"""# 请根据 裸身 与 衣服，生成当前的角色外观的描述。
 ## 提供给你的信息
-{final_input_prompt}
+{"\n".join(appearance_info_list)}
 
 ## 推理逻辑
 - 第1步:如角色有衣服。则代表“角色穿着衣服”。最终推理结果为:裸身的信息结合衣服信息。并且是以第三者视角能看到的样子去描述。
@@ -608,7 +601,7 @@ def make_world_system_reasoning_appearance_prompt(
 ## 输出格式指南
 
 ### 输出格式（请根据下面的示意, 确保你的输出严格遵守相应的结构)
-{dumps_as_format}
+{dumps}
 
 ### 注意事项
 - '?'就是你推理出来的结果(结果中可以不用再提及角色名字)，你需要将其替换为你的推理结果。

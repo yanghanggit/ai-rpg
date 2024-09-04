@@ -69,11 +69,11 @@ class DamageActionSystem(ReactiveProcessor):
                 target_and_message[1]
             )
             assert (
-                len(attrs_array) > AttributesIndex.ATTACK.value
+                len(attrs_array) > AttributesIndex.DAMAGE.value
             ), f"属性数组长度不够:{attrs_array}"
-            if len(attrs_array) > AttributesIndex.ATTACK.value:
+            if len(attrs_array) > AttributesIndex.DAMAGE.value:
                 self.handle_target_damage(
-                    from_name, target_entity, attrs_array[AttributesIndex.ATTACK.value]
+                    from_name, target_entity, attrs_array[AttributesIndex.DAMAGE.value]
                 )
 
     ######################################################################################################################################################

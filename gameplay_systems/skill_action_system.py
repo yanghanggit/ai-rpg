@@ -381,7 +381,7 @@ class SkillActionSystem(ReactiveProcessor):
     def add_damage_action(
         self, entity: Entity, target: Entity, skill_attrs: List[int]
     ) -> None:
-        if skill_attrs[AttributesIndex.ATTACK.value] == 0:
+        if skill_attrs[AttributesIndex.DAMAGE.value] == 0:
             return
 
         if not target.has(DamageAction):
@@ -412,7 +412,7 @@ class SkillActionSystem(ReactiveProcessor):
             return
 
         rpg_attr_comp = entity.get(RPGAttributesComponent)
-        out_put_skill_attrs[AttributesIndex.ATTACK.value] += rpg_attr_comp.attack
+        out_put_skill_attrs[AttributesIndex.DAMAGE.value] += rpg_attr_comp.attack
 
     ######################################################################################################################################################
     def calculate_values_of_props(

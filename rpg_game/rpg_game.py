@@ -255,7 +255,7 @@ class RPGGame(BaseGame):
             actor_model.name,
             actor_model.attributes[AttributesIndex.MAX_HP.value],
             actor_model.attributes[AttributesIndex.CUR_HP.value],
-            actor_model.attributes[AttributesIndex.ATTACK.value],
+            actor_model.attributes[AttributesIndex.DAMAGE.value],
             actor_model.attributes[AttributesIndex.DEFENSE.value],
         )
 
@@ -390,7 +390,7 @@ class RPGGame(BaseGame):
             stage_model.name,
             stage_model.attributes[AttributesIndex.MAX_HP.value],
             stage_model.attributes[AttributesIndex.CUR_HP.value],
-            stage_model.attributes[AttributesIndex.ATTACK.value],
+            stage_model.attributes[AttributesIndex.DAMAGE.value],
             stage_model.attributes[AttributesIndex.DEFENSE.value],
         )
 

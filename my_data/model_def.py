@@ -80,7 +80,7 @@ class GameModel(BaseModel):
 class AttributesIndex(Enum):
     MAX_HP = 0
     CUR_HP = 1
-    ATTACK = 2
+    DAMAGE = 2
     DEFENSE = 3
     MAX = 10
 

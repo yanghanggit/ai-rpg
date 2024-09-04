@@ -115,35 +115,35 @@ def exchange_prop_file(
     right_prop_name: str,
 ) -> None:
 
-    from_file = file_system.get_file(PropFile, left_owner_name, left_prop_name)
-    if from_file is not None:
+    left_prop_file = file_system.get_file(PropFile, left_owner_name, left_prop_name)
+    if left_prop_file is not None:
 
-        file_system.remove_file(from_file)
+        file_system.remove_file(left_prop_file)
 
         # 文件重新写入
         new_file1 = PropFile(
-            from_file._guid,
-            from_file.name,
+            left_prop_file._guid,
+            left_prop_file.name,
             right_owner_name,  ###!!!!!!
-            from_file._prop_model,
-            from_file._count,
+            left_prop_file._prop_model,
+            left_prop_file._count,
         )
 
         file_system.add_file(new_file1)
         file_system.write_file(new_file1)
 
-    target_file = file_system.get_file(PropFile, right_owner_name, right_prop_name)
-    if target_file is not None:
+    right_prop_file = file_system.get_file(PropFile, right_owner_name, right_prop_name)
+    if right_prop_file is not None:
 
-        file_system.remove_file(target_file)
+        file_system.remove_file(right_prop_file)
 
         # 文件重新写入
         new_file2 = PropFile(
-            target_file._guid,
-            target_file.name,
+            right_prop_file._guid,
+            right_prop_file.name,
             left_owner_name,  ###!!!!!!
-            target_file._prop_model,
-            target_file._count,
+            right_prop_file._prop_model,
+            right_prop_file._count,
         )
 
         file_system.add_file(new_file2)

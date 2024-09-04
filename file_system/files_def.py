@@ -132,7 +132,7 @@ class PropFile(BaseFile):
     ############################################################################################################
     @property
     def attack(self) -> int:
-        return self._prop_model.attributes[AttributesIndex.ATTACK.value]
+        return self._prop_model.attributes[AttributesIndex.DAMAGE.value]
 
     ############################################################################################################
     @property

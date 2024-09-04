@@ -11,8 +11,8 @@ from gameplay_systems.components import (
     RPGCurrentClothesComponent,
 )
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
-from file_system.files_def import PropFile
-from lang_serve_agent.agent_task import AgentTask
+from extended_systems.files_def import PropFile
+from my_agent.agent_task import AgentTask
 from gameplay_systems.action_components import UpdateAppearanceAction
 from rpg_game.rpg_game import RPGGame
 

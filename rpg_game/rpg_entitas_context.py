@@ -8,10 +8,10 @@ from gameplay_systems.components import (
     AppearanceComponent,
     GUIDComponent,
 )
-from file_system.file_system import FileSystem
+from extended_systems.file_system import FileSystem
 from extended_systems.kick_off_message_system import KickOffMessageSystem
 from extended_systems.code_name_component_system import CodeNameComponentSystem
-from lang_serve_agent.agent_system import LangServeAgentSystem
+from my_agent.agent_system import LangServeAgentSystem
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from typing import Optional, Dict, List, Set, cast
 from extended_systems.guid_generator import GUIDGenerator

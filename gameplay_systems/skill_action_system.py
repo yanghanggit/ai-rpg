@@ -17,10 +17,10 @@ from gameplay_systems.components import (
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import override, List, cast, Optional, Set, Dict
 from loguru import logger
-from file_system.files_def import PropFile
+from extended_systems.files_def import PropFile
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
-from lang_serve_agent.agent_task import AgentTask, AgentTasksGather
-from lang_serve_agent.agent_plan_and_action import AgentPlan
+from my_agent.agent_task import AgentTask, AgentTasksGather
+from my_agent.agent_plan_and_action import AgentPlan
 from gameplay_systems.cn_constant_prompt import _CNConstantPrompt_ as ConstantPrompt
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
 import my_format_string.target_and_message_format_string

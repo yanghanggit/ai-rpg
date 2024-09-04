@@ -11,7 +11,7 @@ from gameplay_systems.components import (
     StageGraphComponent,
     GUIDComponent,
 )
-from file_system.files_def import StageArchiveFile
+from extended_systems.files_def import StageArchiveFile
 from player.player_proxy import PlayerProxy
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
 

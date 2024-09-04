@@ -2,14 +2,14 @@ from entitas import Matcher, ExecuteProcessor  # type: ignore
 from overrides import override
 from gameplay_systems.components import StageComponent, AutoPlanningComponent
 from gameplay_systems.action_components import STAGE_AVAILABLE_ACTIONS_REGISTER
-from lang_serve_agent.agent_plan_and_action import AgentPlan
+from my_agent.agent_plan_and_action import AgentPlan
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from typing import Dict
 import gameplay_systems.planning_helper
-from file_system.files_def import PropFile
+from extended_systems.files_def import PropFile
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
-from lang_serve_agent.agent_task import (
+from my_agent.agent_task import (
     AgentTask,
     AgentTasksGather,
 )

@@ -3,7 +3,7 @@ from typing import Dict, List, Optional, Set, cast
 from langchain_core.messages import HumanMessage, AIMessage
 import json
 from pathlib import Path
-from lang_serve_agent.agent import LangServeAgent, RemoteRunnableWrapper
+from my_agent.agent import LangServeAgent, RemoteRunnableWrapper
 
 
 class LangServeAgentSystem:

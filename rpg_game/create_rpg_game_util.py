@@ -3,10 +3,10 @@ from loguru import logger
 from my_data.game_resource import GameResource
 from rpg_game.rpg_game import RPGGame
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from file_system.file_system import FileSystem
+from extended_systems.file_system import FileSystem
 from extended_systems.kick_off_message_system import KickOffMessageSystem
 from typing import Optional
-from lang_serve_agent.agent_system import LangServeAgentSystem
+from my_agent.agent_system import LangServeAgentSystem
 from extended_systems.code_name_component_system import CodeNameComponentSystem
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from chaos_engineering.empty_engineering_system import EmptyChaosEngineeringSystem

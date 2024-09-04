@@ -17,9 +17,9 @@ import gameplay_systems.cn_builtin_prompt as builtin_prompt
 from gameplay_systems.cn_constant_prompt import _CNConstantPrompt_ as ConstantPrompt
 from typing import cast, override, List, Set
 from gameplay_systems.check_self_helper import CheckSelfHelper
-from lang_serve_agent.agent_plan_and_action import AgentPlan
-from lang_serve_agent.agent_task import AgentTask
-from file_system.files_def import PropFile
+from my_agent.agent_plan_and_action import AgentPlan
+from my_agent.agent_task import AgentTask
+from extended_systems.files_def import PropFile
 from rpg_game.rpg_game import RPGGame
 from my_data.model_def import PropType
 

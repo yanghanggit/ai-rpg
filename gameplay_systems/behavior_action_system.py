@@ -8,7 +8,7 @@ from gameplay_systems.action_components import (
 from gameplay_systems.components import StageComponent, RPGCurrentWeaponComponent
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import override, Set, Optional, Any
-from file_system.files_def import PropFile
+from extended_systems.files_def import PropFile
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
 from rpg_game.rpg_game import RPGGame
 

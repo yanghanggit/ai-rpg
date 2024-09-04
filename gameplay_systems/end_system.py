@@ -10,7 +10,7 @@ from gameplay_systems.components import (
 )
 
 from typing import Dict, override, List, Any
-import file_system.helper
+import extended_systems.file_system_helper
 from rpg_game.rpg_game import RPGGame
 
 
@@ -50,7 +50,7 @@ class EndSystem(InitializeProcessor, ExecuteProcessor):
         else:
             logger.warning("/dump_stages_and_actors: No stages and actors now")
 
-        file_system.helper.update_stage_actors_map_file(
+        extended_systems.file_system_helper.update_stage_actors_map_file(
             self._context._file_system, simple_dump
         )
 
@@ -117,7 +117,7 @@ class EndSystem(InitializeProcessor, ExecuteProcessor):
                 final_dict.update(armor_dict)
 
             ret.append(final_dict)
-            file_system.helper.update_status_profile_file(
+            extended_systems.file_system_helper.update_status_profile_file(
                 self._context._file_system, rpg_attr_comp.name, final_dict
             )
 

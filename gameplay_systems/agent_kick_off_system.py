@@ -11,18 +11,18 @@ import gameplay_systems.cn_builtin_prompt as builtin_prompt
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from typing import Dict, Set, FrozenSet, Any
-from lang_serve_agent.agent_task import (
+from my_agent.agent_task import (
     AgentTask,
     AgentTasksGather,
 )
 from rpg_game.rpg_game import RPGGame
-from file_system.files_def import PropFile
+from extended_systems.files_def import PropFile
 from gameplay_systems.action_components import (
     STAGE_AVAILABLE_ACTIONS_REGISTER,
     ACTOR_AVAILABLE_ACTIONS_REGISTER,
 )
 import gameplay_systems.planning_helper
-from lang_serve_agent.agent_plan_and_action import AgentPlan
+from my_agent.agent_plan_and_action import AgentPlan
 from gameplay_systems.action_components import UpdateAppearanceAction
 
 

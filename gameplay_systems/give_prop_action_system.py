@@ -8,8 +8,8 @@ from gameplay_systems.components import ActorComponent
 import gameplay_systems.conversation_helper
 from typing import override
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
-import file_system.helper
-from file_system.files_def import PropFile
+import extended_systems.file_system_helper
+from extended_systems.files_def import PropFile
 import my_format_string.target_and_message_format_string
 from rpg_game.rpg_game import RPGGame
 
@@ -85,7 +85,7 @@ class GivePropActionSystem(ReactiveProcessor):
         if prop_file is None:
             return False
 
-        file_system.helper.give_prop_file(
+        extended_systems.file_system_helper.give_prop_file(
             self._context._file_system, safe_name, target_actor_name, prop_name
         )
         return True

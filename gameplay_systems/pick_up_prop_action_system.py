@@ -4,9 +4,9 @@ from gameplay_systems.action_components import PickUpPropAction, DeadAction
 from gameplay_systems.components import ActorComponent, StageComponent
 from loguru import logger
 from typing import override
-from file_system.files_def import PropFile
+from extended_systems.files_def import PropFile
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
-import file_system.helper
+import extended_systems.file_system_helper
 from rpg_game.rpg_game import RPGGame
 
 
@@ -66,7 +66,7 @@ class PickUpPropActionSystem(ReactiveProcessor):
                 )
                 continue
 
-            file_system.helper.give_prop_file(
+            extended_systems.file_system_helper.give_prop_file(
                 self._context._file_system,
                 stage_comp.name,
                 pick_up_prop_action.name,

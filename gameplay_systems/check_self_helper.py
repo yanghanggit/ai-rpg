@@ -6,8 +6,8 @@ from gameplay_systems.components import (
     RPGCurrentWeaponComponent,
 )
 from typing import List, Dict, Optional
-from file_system.files_def import PropFile
-import file_system.helper
+from extended_systems.files_def import PropFile
+import extended_systems.file_system_helper
 
 
 ####################################################################################################################################
@@ -32,8 +32,10 @@ class CheckSelfHelper:
 
     def check_props(self, context: RPGEntitasContext, entity: Entity) -> None:
         safe_name = context.safe_get_entity_name(entity)
-        self._categorized_prop_files = file_system.helper.get_categorized_files_dict(
-            context._file_system, safe_name
+        self._categorized_prop_files = (
+            extended_systems.file_system_helper.get_categorized_files_dict(
+                context._file_system, safe_name
+            )
         )
 
     def check_health(self, entity: Entity) -> None:

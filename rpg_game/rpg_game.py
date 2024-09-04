@@ -17,10 +17,10 @@ from gameplay_systems.components import (
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from my_data.game_resource import GameResource
-from file_system.files_def import PropFile
+from extended_systems.files_def import PropFile
 import shutil
 from rpg_game.base_game import BaseGame
-import file_system.helper
+import extended_systems.file_system_helper
 from rpg_game.rpg_entitas_processors import RPGEntitasProcessors
 from my_data.model_def import (
     ActorProxyModel,
@@ -298,11 +298,11 @@ class RPGGame(BaseGame):
                 prop_model.name, prop_model.codename
             )
 
-        file_system.helper.add_actor_archive_files(
+        extended_systems.file_system_helper.add_actor_archive_files(
             context._file_system, actor_model.name, set(actor_model.actor_archives)
         )
 
-        file_system.helper.add_stage_archive_files(
+        extended_systems.file_system_helper.add_stage_archive_files(
             context._file_system, actor_model.name, set(actor_model.stage_archives)
         )
 

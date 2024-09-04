@@ -1,5 +1,5 @@
 from typing import Dict, List, Set, Optional
-from file_system.files_def import PropFile
+from extended_systems.files_def import PropFile
 from gameplay_systems.action_components import (
     MindVoiceAction,
     StageNarrateAction,
@@ -80,7 +80,7 @@ def make_stage_kick_off_prompt(
 
 ## {StageNarrateAction.__name__} 场景描述生成规则
 - 不要对场景内角色未发生的对话，行为或心理活动进行任何猜测与推理。
-- 注意！在输出内容中，移除所有与场景内角色相关的描述。
+- 注意！在输出内容中，移除所有与 场景内的角色 相关的描述。
 
 ## 输出要求
 - 请遵循 输出格式指南。
@@ -209,7 +209,7 @@ def make_stage_plan_prompt(
 
 ## {StageNarrateAction.__name__} 场景描述生成规则
 - 不要对场景内角色未发生的对话，行为或心理活动进行任何猜测与推理。
-- 注意！在输出内容中，移除所有与场景内角色相关的描述。
+- 注意！在输出内容中，移除所有与 场景内的角色 相关的描述。
 
 ## 输出要求
 - 请遵循 输出格式指南。

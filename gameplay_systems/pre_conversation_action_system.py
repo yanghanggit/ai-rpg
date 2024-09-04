@@ -7,7 +7,7 @@ from gameplay_systems.action_components import (
 )
 from gameplay_systems.components import PlayerComponent, ActorComponent
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from lang_serve_agent.agent_task import (
+from my_agent.agent_task import (
     AgentTask,
     AgentTasksGather,
 )

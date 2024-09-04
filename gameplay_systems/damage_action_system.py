@@ -9,12 +9,12 @@ from gameplay_systems.components import (
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import cast, override
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
-from file_system.files_def import PropFile
+from extended_systems.files_def import PropFile
 import my_format_string.target_and_message_format_string
 import my_format_string.attrs_format_string
 from rpg_game.rpg_game import RPGGame
 from my_data.model_def import AttributesIndex
-import file_system.helper
+import extended_systems.file_system_helper
 from my_data.model_def import PropType
 
 
@@ -165,15 +165,17 @@ class DamageActionSystem(ReactiveProcessor):
     ######################################################################################################################################################
     def loot_on_death(self, from_name: str, target_entity: Entity) -> None:
         target_name = self._context.safe_get_entity_name(target_entity)
-        categorized_prop_files = file_system.helper.get_categorized_files_dict(
-            self._context._file_system, target_name
+        categorized_prop_files = (
+            extended_systems.file_system_helper.get_categorized_files_dict(
+                self._context._file_system, target_name
+            )
         )
 
         non_consumable_items = categorized_prop_files[
             PropType.TYPE_NON_CONSUMABLE_ITEM.value
         ]
         for prop_file in non_consumable_items:
-            file_system.helper.give_prop_file(
+            extended_systems.file_system_helper.give_prop_file(
                 self._context._file_system, target_name, from_name, prop_file.name
             )
 

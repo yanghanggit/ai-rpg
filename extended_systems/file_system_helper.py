@@ -1,12 +1,12 @@
 from typing import Set, Optional, List, Any, Dict
-from file_system.files_def import (
+from extended_systems.files_def import (
     PropFile,
     ActorArchiveFile,
     StageArchiveFile,
     StatusProfileFile,
     StageActorsMapFile,
 )
-from file_system.file_system import FileSystem
+from extended_systems.file_system import FileSystem
 from loguru import logger
 
 
@@ -82,26 +82,6 @@ def give_prop_file(
 ) -> None:
 
     exchange_prop_file(file_system, from_name, target_name, prop_name, "")
-
-    # found_file = file_system.get_file(PropFile, from_name, prop_name)
-    # if found_file is None:
-    #     logger.error(f"{from_name}没有{prop_name}这个道具。")
-    #     return None
-
-    # # 文件得从管理数据结构中移除掉
-    # file_system.remove_file(found_file)
-
-    # # 文件重新写入
-    # new_file = PropFile(
-    #     found_file._guid,
-    #     prop_name,
-    #     target_name,
-    #     found_file._prop_model,
-    #     found_file._count,
-    # )
-    # file_system.add_file(new_file)
-    # file_system.write_file(new_file)
-    # return new_file
 
 
 ##################################################################################################################################

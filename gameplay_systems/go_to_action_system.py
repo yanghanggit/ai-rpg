@@ -5,7 +5,7 @@ from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import override, Optional
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
 from rpg_game.rpg_game import RPGGame
-from file_system.files_def import StageArchiveFile
+from extended_systems.files_def import StageArchiveFile
 from loguru import logger
 
 

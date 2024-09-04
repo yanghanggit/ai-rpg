@@ -3,8 +3,8 @@ from typing import override
 from gameplay_systems.action_components import StageNarrateAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from rpg_game.rpg_game import RPGGame
-from file_system.files_def import StageArchiveFile
-import file_system.helper
+from extended_systems.files_def import StageArchiveFile
+import extended_systems.file_system_helper
 
 
 ############################################################################################################
@@ -47,7 +47,7 @@ class StageNarrateActionSystem(ReactiveProcessor):
                 StageArchiveFile, actor_name, stage_narrate_action.name
             ):
                 # 保证必须有
-                file_system.helper.add_stage_archive_files(
+                extended_systems.file_system_helper.add_stage_archive_files(
                     self._context._file_system,
                     actor_name,
                     set({stage_narrate_action.name}),

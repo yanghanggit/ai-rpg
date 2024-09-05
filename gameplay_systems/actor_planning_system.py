@@ -2,7 +2,7 @@ from entitas import Entity, Matcher, ExecuteProcessor  # type: ignore
 from overrides import override
 from gameplay_systems.components import (
     ActorComponent,
-    AutoPlanningComponent,
+    PlanningAllowedComponent,
     StageGraphComponent,
     PlayerComponent,
 )
@@ -104,7 +104,7 @@ class ActorPlanningSystem(ExecuteProcessor):
 
         actor_entities = self._context.get_group(
             Matcher(
-                all_of=[ActorComponent, AutoPlanningComponent],
+                all_of=[ActorComponent, PlanningAllowedComponent],
                 none_of=[PlayerComponent],
             )
         ).entities

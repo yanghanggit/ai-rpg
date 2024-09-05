@@ -45,7 +45,7 @@ class UpdateClientMessageSystem(ExecuteProcessor):
         self, player_proxy: PlayerProxy, player_entity: Entity
     ) -> None:
 
-        player_proxy.add_system_message(f"游戏回合:{self._game.round}")
+        player_proxy.add_system_message(f"游戏运行次数:{self._game.round}")
 
         self.stage_enviro_narrate_action_2_message(player_proxy, player_entity)
         self.handle_login_messages(

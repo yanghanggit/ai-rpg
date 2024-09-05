@@ -15,6 +15,7 @@ from player.player_command import (
     PlayerBehavior,
     PlayerEquip,
 )
+import terminal_player_helper
 
 LOGIN_PLAYER_NAME = "北京柏林互动科技有限公司"
 DEFAULT_GAME_NAME = "World1"
@@ -125,7 +126,7 @@ def player_login(
 
 def add_player_command(
     game_name: RPGGame, player_proxy: PlayerProxy, usr_input: str
-) -> None:
+) -> bool:
 
     if "/goto" in usr_input:
         player_proxy.add_command(PlayerGoTo("/goto", usr_input))
@@ -155,22 +156,36 @@ def add_player_command(
         player_proxy.add_command(PlayerEquip("/equip", usr_input))
     else:
         logger.error(f"无法识别的命令 = {usr_input}")
+        return False
+
+    return True
 
 
 ###############################################################################################################################################
 
 
-async def player_input(game_name: RPGGame, player_proxy: PlayerProxy, show_messages: int = 20) -> None:
+async def player_input(
+    game_name: RPGGame, player_proxy: PlayerProxy, show_messages: int = 20
+) -> None:
+
     while True:
 
         player_proxy.show_messages(show_messages)
         usr_input = input(f"[{player_proxy._name}]:")
         if usr_input == "/quit":
-            player_proxy.add_system_message("玩家退出游戏")
+            logger.info(f"玩家退出游戏 = {player_proxy._name}")
             game_name._will_exit = True
+            break
+
+        elif usr_input == "/watch" or usr_input == "/w":
+            terminal_player_helper.handle_player_input_watch(game_name, player_proxy)
+
+        elif usr_input == "/check" or usr_input == "/c":
+            terminal_player_helper.handle_player_input_check(game_name, player_proxy)
+
         elif usr_input != "":
-            add_player_command(game_name, player_proxy, usr_input)
-        break
+            if add_player_command(game_name, player_proxy, usr_input):
+                break
 
 
 ###############################################################################################################################################

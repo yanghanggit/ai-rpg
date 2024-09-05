@@ -27,8 +27,6 @@ def make_actor_kick_off_prompt(
 ## 游戏背景与风格设定
 {about_game}
 
-## 当前游戏运行回合: {game_round}
-
 ## 你的初始设定
 {kick_off_message}
 
@@ -67,8 +65,6 @@ def make_stage_kick_off_prompt(
 ## 游戏背景与风格设定
 {about_game}
 
-## 当前游戏运行回合: {game_round}
-
 ## 场景内的道具
 {props_prompt}
 
@@ -93,9 +89,7 @@ def make_world_system_kick_off_prompt(about_game: str, game_round: int) -> str:
     ret_prompt = f"""# {ConstantPrompt.WORLD_SYSTEM_KICK_OFF_MESSAGE_PROMPT_TAG} 游戏世界即将开始运行。这是你的初始设定，请简要回答你的职能与描述
 
 ## 游戏背景与风格设定
-{about_game}
-
-## 当前游戏运行回合: {game_round}"""
+{about_game}"""
     return ret_prompt
 
 
@@ -131,8 +125,6 @@ def make_actor_plan_prompt(
             )
 
     ret_prompt = f"""# {ConstantPrompt.ACTOR_PLAN_PROMPT_TAG} 请做出你的计划，决定你将要做什么
-
-## 当前游戏运行回合: {game_round}
 
 ## 你当前所在的场景
 {current_stage != "" and current_stage or "未知"}
@@ -194,8 +186,6 @@ def make_stage_plan_prompt(
             )
 
     ret_prompt = f"""# {ConstantPrompt.STAGE_PLAN_PROMPT_TAG} 请做出你的计划，决定你将要做什么与更新你的场景描述
-
-## 当前游戏运行回合: {game_round}
 
 ## 场景内的道具
 {props_in_stage_prompt}

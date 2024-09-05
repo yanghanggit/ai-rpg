@@ -16,7 +16,7 @@ PlayerComponent = namedtuple("PlayerComponent", "name")
 # 摧毁Entity标记
 DestroyComponent = namedtuple("DestroyComponent", "name")
 # 自动规划行为的标记
-AutoPlanningComponent = namedtuple("AutoPlanningComponent", "name")
+PlanningAllowedComponent = namedtuple("PlanningAllowedComponent", "name")
 # 角色外观信息
 AppearanceComponent = namedtuple("AppearanceComponent", "name appearance hash_code")
 # 裸身信息，用于和衣服组成完整的外观信息。如果是动物等，就是动物的外观信息

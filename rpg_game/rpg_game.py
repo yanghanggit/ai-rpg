@@ -14,7 +14,7 @@ from gameplay_systems.components import (
     RPGCurrentWeaponComponent,
     RPGCurrentClothesComponent,
     StageGraphComponent,
-    AutoPlanningComponent,
+    PlanningAllowedComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from my_data.game_resource import GameResource
@@ -562,7 +562,7 @@ class RPGGame(BaseGame):
         if player_entity is None:
             return False
 
-        return player_entity.has(AutoPlanningComponent)
+        return player_entity.has(PlanningAllowedComponent)
 
 
 ############################################################################################################################################### d

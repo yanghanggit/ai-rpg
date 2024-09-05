@@ -1,6 +1,6 @@
 from entitas import Matcher, ExecuteProcessor  # type: ignore
 from overrides import override
-from gameplay_systems.components import StageComponent, AutoPlanningComponent
+from gameplay_systems.components import StageComponent, PlanningAllowedComponent
 from gameplay_systems.action_components import STAGE_AVAILABLE_ACTIONS_REGISTER
 from my_agent.agent_plan_and_action import AgentPlan
 from rpg_game.rpg_entitas_context import RPGEntitasContext
@@ -99,7 +99,7 @@ class StagePlanningSystem(ExecuteProcessor):
         out_put_request_tasks.clear()
 
         stage_entities = self._context.get_group(
-            Matcher(all_of=[StageComponent, AutoPlanningComponent])
+            Matcher(all_of=[StageComponent, PlanningAllowedComponent])
         ).entities
         for stage_entity in stage_entities:
 

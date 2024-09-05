@@ -3,7 +3,7 @@ from overrides import override
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from gameplay_systems.components import (
-    AutoPlanningComponent,
+    PlanningAllowedComponent,
     StageComponent,
     ActorComponent,
     EnterStageComponent,
@@ -59,7 +59,7 @@ class ActorPlanningStrategySystem(InitializeProcessor, ExecuteProcessor):
     ############################################################################################################
     def handle_add_auto_planning_component(self) -> None:
         stage_entities = self._context.get_group(
-            Matcher(StageComponent, AutoPlanningComponent)
+            Matcher(StageComponent, PlanningAllowedComponent)
         ).entities
 
         for stage_entity in stage_entities:
@@ -78,9 +78,9 @@ class ActorPlanningStrategySystem(InitializeProcessor, ExecuteProcessor):
                 continue
 
             assert pop_actor_entity.has(ActorComponent)
-            if not pop_actor_entity.has(AutoPlanningComponent):
+            if not pop_actor_entity.has(PlanningAllowedComponent):
                 actor_comp = pop_actor_entity.get(ActorComponent)
-                pop_actor_entity.add(AutoPlanningComponent, actor_comp.name)
+                pop_actor_entity.add(PlanningAllowedComponent, actor_comp.name)
 
     ############################################################################################################
     def extend_order_queue(

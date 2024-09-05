@@ -1,4 +1,6 @@
 from typing import List, Optional
+from player.player_command import PlayerCommand
+from loguru import logger
 
 
 ### 简单的类定义，后续再加
@@ -6,9 +8,12 @@ class PlayerProxy:
 
     def __init__(self, name: str) -> None:
         self._name: str = name
-        self._input_commands: List[str] = []
+        self._commands: List[PlayerCommand] = []
         self._client_messages: List[tuple[str, str]] = []
         self._login_messages: List[tuple[str, str]] = []
+
+    def add_command(self, command: PlayerCommand) -> None:
+        self._commands.append(command)
 
     def add_message(
         self, sender: str, message: str, target: List[tuple[str, str]]
@@ -32,6 +37,12 @@ class PlayerProxy:
 
     def add_login_message(self, actor_name: str, message: str) -> None:
         self.add_message(f"{actor_name}", message, self._login_messages)
+
+    def show_messages(self, count: int) -> None:
+        for message in self._client_messages[-count:]:
+            tag = message[0]
+            content = message[1]
+            logger.warning(f"{tag}=>{content}")
 
 
 ##########################################################################################################################################################

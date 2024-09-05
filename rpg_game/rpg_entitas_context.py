@@ -13,10 +13,11 @@ from extended_systems.kick_off_message_system import KickOffMessageSystem
 from extended_systems.code_name_component_system import CodeNameComponentSystem
 from my_agent.agent_system import LangServeAgentSystem
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
-from typing import Optional, Dict, List, Set, cast
+from typing import Optional, Dict, List, Set, cast, Any
 from extended_systems.guid_generator import GUIDGenerator
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
-import player.utils
+
+# import player.utils
 
 
 class RPGEntitasContext(Context):
@@ -55,6 +56,9 @@ class RPGEntitasContext(Context):
 
         # 临时收集会话的历史
         self._round_message_collect: Dict[str, List[str]] = {}
+
+        #
+        self._game: Any = None
 
         #
         assert self._file_system is not None, "self.file_system is None"
@@ -320,9 +324,13 @@ class RPGEntitasContext(Context):
             self._round_message_collect.get(safe_name, []).append(replace_message)
 
             # 如果是player 就特殊处理
-            if entity.has(PlayerComponent):
+            if self._game is not None and entity.has(PlayerComponent):
+                from rpg_game.rpg_game import RPGGame
+
                 player_comp = entity.get(PlayerComponent)
-                player_proxy = player.utils.get_player_proxy(player_comp.name)
+                player_proxy = cast(RPGGame, self._game).get_player(
+                    player_comp.name
+                )  # player.utils.get_player_proxy(player_comp.name)
                 if player_proxy is not None:
                     player_proxy.add_actor_message(safe_name, replace_message)
 

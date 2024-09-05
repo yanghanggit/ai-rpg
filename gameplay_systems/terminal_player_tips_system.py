@@ -1,10 +1,7 @@
 from entitas import Entity, ExecuteProcessor  # type: ignore
 from typing import override, Set, List, cast
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from loguru import logger
 from rpg_game.rpg_game import RPGGame
-from rpg_game.terminal_rpg_game import TerminalRPGGame
-import player.utils
 from gameplay_systems.components import (
     PlayerComponent,
     ActorComponent,
@@ -24,25 +21,18 @@ class TerminalPlayerTipsSystem(ExecuteProcessor):
     ############################################################################################################
     @override
     def execute(self) -> None:
-        if not isinstance(self._game, TerminalRPGGame):
-            logger.debug("不是终端模式，不需要中断等待")
-            return
-
         self.tips_stages()
 
     ############################################################################################################
     def tips_stages(self) -> None:
 
-        for player_name in self._game.player_names:
+        for player_proxy in self._game.players:
 
-            player_proxy = player.utils.get_player_proxy(player_name)
             if player_proxy is None:
-                # logger.warning("玩家不存在，或者玩家未加入游戏")
                 continue
 
-            player_entity = self._context.get_player_entity(player_name)
+            player_entity = self._context.get_player_entity(player_proxy._name)
             if player_entity is None:
-                # logger.warning("玩家实体不存在")
                 continue
 
             assert player_entity is not None

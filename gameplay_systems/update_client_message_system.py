@@ -1,7 +1,8 @@
 from entitas import ExecuteProcessor, Entity, Matcher  # type: ignore
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from player.player_proxy import PlayerProxy
-import player.utils
+
+# import player.utils
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from gameplay_systems.action_components import (
     MindVoiceAction,
@@ -29,15 +30,12 @@ class UpdateClientMessageSystem(ExecuteProcessor):
     ############################################################################################################
     @override
     def execute(self) -> None:
-        # assert len(self._game.player_names) > 0
-        assert isinstance(self._game, WebServerMultiplayersRPGGame) or isinstance(
-            self._game, TerminalRPGGame
-        )
-        for player_name in self._game.player_names:
-            player_proxy = player.utils.get_player_proxy(player_name)
-            player_entity = self._context.get_player_entity(player_name)
+
+        for player_proxy in self._game.players:
+            # player_proxy = player.utils.get_player_proxy(player_name)
+            player_entity = self._context.get_player_entity(player_proxy._name)
             if player_entity is None or player_proxy is None:
-                logger.error(f"玩家{player_name}不存在，或者玩家未加入游戏")
+                logger.error(f"玩家{player_proxy._name}不存在，或者玩家未加入游戏")
                 continue
 
             self.add_message_to_player_proxy(player_proxy, player_entity)

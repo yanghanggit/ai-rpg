@@ -14,6 +14,7 @@ from gameplay_systems.components import (
     RPGCurrentWeaponComponent,
     RPGCurrentClothesComponent,
     StageGraphComponent,
+    AutoPlanningComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from my_data.game_resource import GameResource
@@ -31,6 +32,7 @@ from my_data.model_def import (
     WorldSystemProxyModel,
 )
 from my_data.model_def import AttributesIndex
+from player.player_proxy import PlayerProxy
 
 
 class RPGGame(BaseGame):
@@ -44,11 +46,13 @@ class RPGGame(BaseGame):
 
         ## 尽量不要再加东西了，Game就只管上下文，创建世界的数据，和Processors。其中上下文可以做运行中的全局数据管理者
         self._entitas_context: RPGEntitasContext = context
+        self._entitas_context._game = self
+
         self._game_builder: Optional[GameResource] = None
         self._processors: RPGEntitasProcessors = RPGEntitasProcessors.create(
             self, context
         )
-        self._player_names: List[str] = []
+        self._players: List[PlayerProxy] = []
         self._round: int = 0
 
     ###############################################################################################################################################
@@ -511,26 +515,53 @@ class RPGGame(BaseGame):
         return self._game_builder.about_game
 
     ###############################################################################################################################################
-    def add_player(self, name: str) -> None:
-        assert name not in self._player_names
-        if name not in self._player_names:
-            self._player_names.append(name)
+    def add_player(self, player_proxy: PlayerProxy) -> None:
+        assert player_proxy not in self._players
+        if player_proxy not in self._players:
+            self._players.append(player_proxy)
 
     ###############################################################################################################################################
-    def single_player(self) -> str:
-        if len(self._player_names) == 0:
-            return ""
-        return self._player_names[0]
+    def single_player(self) -> Optional[PlayerProxy]:
+        if len(self._players) == 0:
+            return None
+        return self._players[0]
 
     ###############################################################################################################################################
     @property
-    def player_names(self) -> List[str]:
-        return self._player_names
+    def players(self) -> List[PlayerProxy]:
+        return self._players
+
+    ###############################################################################################################################################
+    def get_player(self, player_name: str) -> Optional[PlayerProxy]:
+        for player in self._players:
+            if player._name == player_name:
+                return player
+        return None
 
     ###############################################################################################################################################
     @property
     def round(self) -> int:
         return self._round
 
+    ###############################################################################################################################################
+    def get_all_player_controlled_actor_names(self) -> List[str]:
+        actor_entities = self._entitas_context.get_group(
+            Matcher(all_of=[ActorComponent, PlayerComponent])
+        ).entities
+
+        ret: List[str] = []
+        for actor_entity in actor_entities:
+            actor_comp = actor_entity.get(ActorComponent)
+            ret.append(actor_comp.name)
+
+        return ret
+    
+    ###############################################################################################################################################
+    def is_player_input_allowed(self, player_proxy: PlayerProxy) -> bool:
+        player_entity = self._entitas_context.get_player_entity(player_proxy._name)
+        if player_entity is None:
+            return False
+        
+        return player_entity.has(AutoPlanningComponent)
 
 ############################################################################################################################################### d

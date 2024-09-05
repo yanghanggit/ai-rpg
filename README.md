@@ -24,7 +24,7 @@ pip install langchain langchain_core langserve fastapi langchain_openai sse_star
 - mypy --strict terminal_run.py
 - mypy --strict server_run.py
 - mypy --strict game_sample/gen_game.py
-- mypy --strict terminal_run.py game_sample/gen_game.py server_run.py batch_run_agents.py
+- mypy --strict terminal_run.py game_sample/gen_game.py server_run.py batch_run_agents.py terminal2.py
 
 ### 说明
 

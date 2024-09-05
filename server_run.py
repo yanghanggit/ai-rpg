@@ -11,8 +11,9 @@ from fastapi.templating import Jinja2Templates
 from loguru import logger
 from pydantic import BaseModel
 from rpg_game.web_server_multi_players_rpg_game import WebServerMultiplayersRPGGame
-from player.player_command import PlayerLogin
-import player.utils
+
+# from player.player_command import PlayerLogin
+# import player.utils
 from rpg_game.create_rpg_game_util import create_rpg_game, RPGGameClientType
 from rpg_game.rpg_game import RPGGame
 from player.player_proxy import PlayerProxy
@@ -45,32 +46,33 @@ multiplayersgames: Dict[str, WebServerMultiplayersRPGGame] = {}
 
 
 async def create(clientip: str) -> List[TupleModel]:
-    log_start_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    logger.add(f"logs/{log_start_time}.log", level="DEBUG")
+    # log_start_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    # logger.add(f"logs/{log_start_time}.log", level="DEBUG")
 
-    world_name = "World2"
-    rpg_game = create_rpg_game(world_name, "qwe", RPGGameClientType.WEB_SERVER)
-    if rpg_game is None:
-        logger.error("create_rpg_game 失败。")
-        return []
+    # world_name = "World2"
+    # rpg_game = create_rpg_game(world_name, "qwe", RPGGameClientType.WEB_SERVER)
+    # if rpg_game is None:
+    #     logger.error("create_rpg_game 失败。")
+    #     return []
 
-    assert isinstance(rpg_game, WebServerMultiplayersRPGGame)
-    #
-    web_server_multi_player_game: WebServerMultiplayersRPGGame = (
-        rpg_game  # WebServerMultiplayersRPGGame(clientip, rpg_game)
-    )
-    if web_server_multi_player_game is not None:
-        # 设置主机
-        web_server_multi_player_game.set_host(clientip)
-        global multiplayersgames
-        multiplayersgames[clientip] = web_server_multi_player_game
-        multiplayersgames[clientip].add_player(clientip)
-        player.utils.create_player_proxy(clientip)
+    # assert isinstance(rpg_game, WebServerMultiplayersRPGGame)
+    # #
+    # web_server_multi_player_game: WebServerMultiplayersRPGGame = (
+    #     rpg_game  # WebServerMultiplayersRPGGame(clientip, rpg_game)
+    # )
+    # if web_server_multi_player_game is not None:
+    #     # 设置主机
+    #     web_server_multi_player_game.set_host(clientip)
+    #     global multiplayersgames
+    #     multiplayersgames[clientip] = web_server_multi_player_game
+    #     multiplayersgames[clientip].add_player(clientip)
+    #     player.utils.create_player_proxy(clientip)
 
-    messages: List[TupleModel] = []
-    messages.append(TupleModel(who=clientip, what=f"创建房间IP:{clientip}."))
+    # messages: List[TupleModel] = []
+    # messages.append(TupleModel(who=clientip, what=f"创建房间IP:{clientip}."))
 
-    return messages
+    # return messages
+    return []
 
 
 def parse_join_multi_game_params(command: str) -> str:
@@ -88,65 +90,69 @@ def parse_join_multi_game_params(command: str) -> str:
 
 
 async def join(clientip: str, hostip: str) -> List[TupleModel]:
-    messages: List[TupleModel] = []
-    for userip, game in multiplayersgames.copy().items():
-        if game._host == hostip:
-            client_game = game  # WebServerMultiplayersRPGGame(hostip, game._rpggame)
-            multiplayersgames[clientip] = client_game
-            messages.append(TupleModel(who=clientip, what=f"加入房间IP:{hostip}成功."))
-            multiplayersgames[clientip].add_player(clientip)
-            player.utils.create_player_proxy(clientip)
+    # messages: List[TupleModel] = []
+    # for userip, game in multiplayersgames.copy().items():
+    #     if game._host == hostip:
+    #         client_game = game  # WebServerMultiplayersRPGGame(hostip, game._rpggame)
+    #         multiplayersgames[clientip] = client_game
+    #         messages.append(TupleModel(who=clientip, what=f"加入房间IP:{hostip}成功."))
+    #         multiplayersgames[clientip].add_player(clientip)
+    #         player.utils.create_player_proxy(clientip)
 
-    if len(messages) == 0:
-        messages.append(
-            TupleModel(who=clientip, what=f"加入房间IP:{hostip}失败,请检查房间IP.")
-        )
+    # if len(messages) == 0:
+    #     messages.append(
+    #         TupleModel(who=clientip, what=f"加入房间IP:{hostip}失败,请检查房间IP.")
+    #     )
 
-    return messages
+    # return messages
+    return []
 
 
 async def pick_actor(clientip: str, actorname: str) -> List[TupleModel]:
-    global multiplayersgames
-    playerproxy = player.utils.get_player_proxy(clientip)
-    assert playerproxy is not None
-    login_command = PlayerLogin(
-        "/server_run_login", multiplayersgames[clientip], playerproxy, actorname, True
-    )
-    login_command.execute()
-    await multiplayersgames[clientip].a_execute()
-    logger.debug(f"pick actor finish")
+    return []
+    # global multiplayersgames
+    # playerproxy = player.utils.get_player_proxy(clientip)
+    # assert playerproxy is not None
+    # login_command = PlayerLogin(
+    #     "/server_run_login", multiplayersgames[clientip], playerproxy, actorname, True
+    # )
+    # login_command.execute()
+    # await multiplayersgames[clientip].a_execute()
+    # logger.debug(f"pick actor finish")
 
-    messages: List[TupleModel] = []
-    messages.append(TupleModel(who=clientip, what=f"选择了角色:{actorname}"))
+    # messages: List[TupleModel] = []
+    # messages.append(TupleModel(who=clientip, what=f"选择了角色:{actorname}"))
 
-    return messages
+    # return messages
 
 
 async def request_game_messages(clientip: str) -> List[TupleModel]:
-    messages: List[TupleModel] = []
-    player_proxy = player.utils.get_player_proxy(clientip)
-    if player_proxy is not None:
-        for message in player_proxy._client_messages[-20:]:
-            messages.append(TupleModel(who=message[0], what=message[1]))
-    else:
-        messages.append(TupleModel(who=clientip, what="请先创建游戏或加入游戏."))
+    # messages: List[TupleModel] = []
+    # player_proxy = player.utils.get_player_proxy(clientip)
+    # if player_proxy is not None:
+    #     for message in player_proxy._client_messages[-20:]:
+    #         messages.append(TupleModel(who=message[0], what=message[1]))
+    # else:
+    #     messages.append(TupleModel(who=clientip, what="请先创建游戏或加入游戏."))
 
-    return messages
+    # return messages
+    return []
 
 
 async def quitgame(clientip: str) -> List[TupleModel]:
-    quitclient = multiplayersgames.pop(clientip, None)
-    if quitclient is not None:
-        logger.debug(f"User IP:{clientip} quit a game.")
-        proxy = player.utils.get_player_proxy(clientip)
-        assert proxy is not None
-        player.utils.remove_player_proxy(proxy)
-        quitclient.exit()
+    # quitclient = multiplayersgames.pop(clientip, None)
+    # if quitclient is not None:
+    #     logger.debug(f"User IP:{clientip} quit a game.")
+    #     proxy = player.utils.get_player_proxy(clientip)
+    #     assert proxy is not None
+    #     player.utils.remove_player_proxy(proxy)
+    #     quitclient.exit()
 
-    messages: List[TupleModel] = []
-    messages.append(TupleModel(who=clientip, what="Quit Success"))
+    # messages: List[TupleModel] = []
+    # messages.append(TupleModel(who=clientip, what="Quit Success"))
 
-    return messages
+    # return messages
+    return []
 
 
 ############################################################################################################
@@ -210,31 +216,32 @@ async def imme_handle_check_status(rpg_game: RPGGame, playerproxy: PlayerProxy) 
 
 async def handle_player_input(clientip: str, command: str) -> List[TupleModel]:
     #
-    player_proxy = player.utils.get_player_proxy(clientip)
-    assert player_proxy is not None
-    player_proxy._input_commands.append(command)
+    # player_proxy = player.utils.get_player_proxy(clientip)
+    # assert player_proxy is not None
+    # player_proxy._input_commands.append(command)
 
-    #
-    rpg_game = multiplayersgames[clientip]
-    player_entity = rpg_game._entitas_context.get_player_entity(player_proxy._name)
-    assert player_entity is not None
-    safe_name = rpg_game._entitas_context.safe_get_entity_name(player_entity)
-    player_proxy.add_actor_message(
-        f"{player_proxy._name}/{safe_name}:", f"input = {command}"
-    )
+    # #
+    # rpg_game = multiplayersgames[clientip]
+    # player_entity = rpg_game._entitas_context.get_player_entity(player_proxy._name)
+    # assert player_entity is not None
+    # safe_name = rpg_game._entitas_context.safe_get_entity_name(player_entity)
+    # player_proxy.add_actor_message(
+    #     f"{player_proxy._name}/{safe_name}:", f"input = {command}"
+    # )
 
-    #
-    if "/checkstatus" in command:
-        await imme_handle_check_status(rpg_game, player_proxy)
-    elif "/perception" in command:
-        await imme_handle_perception(rpg_game, player_proxy)
-    else:
-        await rpg_game.a_execute()
+    # #
+    # if "/checkstatus" in command:
+    #     await imme_handle_check_status(rpg_game, player_proxy)
+    # elif "/perception" in command:
+    #     await imme_handle_perception(rpg_game, player_proxy)
+    # else:
+    #     await rpg_game.a_execute()
 
-    messages: List[TupleModel] = []
-    messages.append(TupleModel(who=clientip, what=f"发送 {command}"))
+    # messages: List[TupleModel] = []
+    # messages.append(TupleModel(who=clientip, what=f"发送 {command}"))
 
-    return messages
+    # return messages
+    return []
 
 
 async def main(clientip: str, command: str) -> List[TupleModel]:

@@ -47,7 +47,7 @@ async def main() -> None:
 
         while True:
             for index, actor_name in enumerate(all_player_controlled_actor_names):
-                logger.debug(f"{index+1}. {actor_name}")
+                logger.warning(f"{index+1}. {actor_name}")
             input_actor_index = input("请选择要控制的角色(输入序号):")
             if input_actor_index.isdigit():
                 actor_index = int(input_actor_index)
@@ -65,9 +65,7 @@ async def main() -> None:
             return
 
         logger.info(f"{LOGIN_PLAYER_NAME}:{game_name}:{player_controlled_actor_name}")
-        player_proxy = PlayerProxy(
-            LOGIN_PLAYER_NAME
-        )  # player.utils.create_player_proxy(LOGIN_PLAYER_NAME)
+        player_proxy = PlayerProxy(LOGIN_PLAYER_NAME)
         assert player_proxy is not None
         rpg_game.add_player(player_proxy)
 
@@ -78,7 +76,7 @@ async def main() -> None:
 
         if rpg_game._will_exit:
             break
-        
+
         await rpg_game.a_execute()
 
         if rpg_game.is_player_input_allowed(player_proxy):
@@ -162,10 +160,10 @@ def add_player_command(
 ###############################################################################################################################################
 
 
-async def player_input(game_name: RPGGame, player_proxy: PlayerProxy) -> None:
+async def player_input(game_name: RPGGame, player_proxy: PlayerProxy, show_messages: int = 20) -> None:
     while True:
 
-        player_proxy.show_messages(10)
+        player_proxy.show_messages(show_messages)
         usr_input = input(f"[{player_proxy._name}]:")
         if usr_input == "/quit":
             player_proxy.add_system_message("玩家退出游戏")
@@ -174,11 +172,13 @@ async def player_input(game_name: RPGGame, player_proxy: PlayerProxy) -> None:
             add_player_command(game_name, player_proxy, usr_input)
         break
 
+
 ###############################################################################################################################################
 async def player_wait(game_name: RPGGame, player_proxy: PlayerProxy) -> None:
     while True:
         input(f"player_wait 。。。。。。。。。。。。")
         break
+
 
 ###############################################################################################################################################
 

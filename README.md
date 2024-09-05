@@ -20,15 +20,13 @@ pip install langchain langchain_core langserve fastapi langchain_openai sse_star
 - Agent运行的设备需要挂代理；
 
 ## 严格模式检查
-
-- mypy --strict terminal_run.py
 - mypy --strict server_run.py
 - mypy --strict game_sample/gen_game.py
-- mypy --strict terminal_run.py game_sample/gen_game.py server_run.py batch_run_agents.py terminal2.py
+- mypy --strict game_sample/gen_game.py server_run.py batch_run_agents.py terminal2.py
 
 ### 说明
 
-- terminal_run.py 是通过终端进行访问测试游戏。默认会写死使用‘无名的复活者’这个测试的角色。
+- terminal2.py 是通过终端进行访问测试游戏。默认会写死使用‘无名的复活者’这个测试的角色。
 - server_run.py 是使用测试网页进行游戏。必须开启ipv6
 - game_sample/gen_game.py。是利用gameP_sample.xlsx来构建游戏世界的构建数据的程序（入口）
 

@@ -555,13 +555,14 @@ class RPGGame(BaseGame):
             ret.append(actor_comp.name)
 
         return ret
-    
+
     ###############################################################################################################################################
     def is_player_input_allowed(self, player_proxy: PlayerProxy) -> bool:
         player_entity = self._entitas_context.get_player_entity(player_proxy._name)
         if player_entity is None:
             return False
-        
+
         return player_entity.has(AutoPlanningComponent)
+
 
 ############################################################################################################################################### d

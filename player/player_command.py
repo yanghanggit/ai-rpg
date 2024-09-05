@@ -1,5 +1,4 @@
-from entitas import Entity  # type: ignore
-from rpg_game.rpg_game import RPGGame
+from rpg_game.base_game import BaseGame
 from loguru import logger
 from gameplay_systems.action_components import (
     BroadcastAction,
@@ -16,33 +15,10 @@ from gameplay_systems.action_components import (
 from overrides import override
 from gameplay_systems.components import ActorComponent
 from player.player_proxy import PlayerProxy
-from abc import ABC, abstractmethod
+from typing import cast
+from player.base_command import PlayerCommand
 
 
-####################################################################################################################################
-####################################################################################################################################
-####################################################################################################################################
-class PlayerCommand(ABC):
-
-    def __init__(self, name: str, input_val: str) -> None:
-        self._name: str = name
-        self._input_val: str = input_val
-
-    @abstractmethod
-    def execute(self, rpg_game: RPGGame, player_proxy: PlayerProxy) -> None:
-        pass
-
-    def add_player_planning_message(
-        self, entity: Entity, human_message_content: str, rpg_game: RPGGame
-    ) -> None:
-        rpg_game._entitas_context.safe_add_ai_message_to_entity(
-            entity, human_message_content
-        )
-
-    def split_command(self, input_val: str, split_str: str) -> str:
-        if split_str in input_val:
-            return input_val.split(split_str)[1].strip()
-        return input_val
 
 
 ####################################################################################################################################
@@ -55,7 +31,10 @@ class PlayerGoTo(PlayerCommand):
         return self.split_command(self._input_val, self._name)
 
     @override
-    def execute(self, rpg_game: RPGGame, player_proxy: PlayerProxy) -> None:
+    def execute(self, game: BaseGame, player_proxy: PlayerProxy) -> None:
+        from rpg_game.rpg_game import RPGGame
+
+        rpg_game = cast(RPGGame, game)
         player_entity = rpg_game._entitas_context.get_player_entity(player_proxy._name)
         if player_entity is None:
             return
@@ -82,8 +61,10 @@ class PlayerBroadcast(PlayerCommand):
         return self.split_command(self._input_val, self._name)
 
     @override
-    def execute(self, rpg_game: RPGGame, player_proxy: PlayerProxy) -> None:
+    def execute(self, game: BaseGame, player_proxy: PlayerProxy) -> None:
+        from rpg_game.rpg_game import RPGGame
 
+        rpg_game = cast(RPGGame, game)
         player_entity = rpg_game._entitas_context.get_player_entity(player_proxy._name)
         if player_entity is None:
             return
@@ -113,7 +94,10 @@ class PlayerSpeak(PlayerCommand):
         return self.split_command(self._input_val, self._name)
 
     @override
-    def execute(self, rpg_game: RPGGame, player_proxy: PlayerProxy) -> None:
+    def execute(self, game: BaseGame, player_proxy: PlayerProxy) -> None:
+        from rpg_game.rpg_game import RPGGame
+
+        rpg_game = cast(RPGGame, game)
         player_entity = rpg_game._entitas_context.get_player_entity(player_proxy._name)
         if player_entity is None:
             return
@@ -140,8 +124,10 @@ class PlayerWhisper(PlayerCommand):
         return self.split_command(self._input_val, self._name)
 
     @override
-    def execute(self, rpg_game: RPGGame, player_proxy: PlayerProxy) -> None:
+    def execute(self, game: BaseGame, player_proxy: PlayerProxy) -> None:
+        from rpg_game.rpg_game import RPGGame
 
+        rpg_game = cast(RPGGame, game)
         player_entity = rpg_game._entitas_context.get_player_entity(player_proxy._name)
         if player_entity is None:
             return
@@ -171,8 +157,10 @@ class PlayerPickUpProp(PlayerCommand):
         return self.split_command(self._input_val, self._name)
 
     @override
-    def execute(self, rpg_game: RPGGame, player_proxy: PlayerProxy) -> None:
+    def execute(self, game: BaseGame, player_proxy: PlayerProxy) -> None:
+        from rpg_game.rpg_game import RPGGame
 
+        rpg_game = cast(RPGGame, game)
         player_entity = rpg_game._entitas_context.get_player_entity(player_proxy._name)
         if player_entity is None:
             return
@@ -203,8 +191,10 @@ class PlayerSteal(PlayerCommand):
         return self.split_command(self._input_val, self._name)
 
     @override
-    def execute(self, rpg_game: RPGGame, player_proxy: PlayerProxy) -> None:
+    def execute(self, game: BaseGame, player_proxy: PlayerProxy) -> None:
+        from rpg_game.rpg_game import RPGGame
 
+        rpg_game = cast(RPGGame, game)
         player_entity = rpg_game._entitas_context.get_player_entity(player_proxy._name)
         if player_entity is None:
             return
@@ -234,8 +224,10 @@ class PlayerGiveProp(PlayerCommand):
         return self.split_command(self._input_val, self._name)
 
     @override
-    def execute(self, rpg_game: RPGGame, player_proxy: PlayerProxy) -> None:
+    def execute(self, game: BaseGame, player_proxy: PlayerProxy) -> None:
+        from rpg_game.rpg_game import RPGGame
 
+        rpg_game = cast(RPGGame, game)
         player_entity = rpg_game._entitas_context.get_player_entity(player_proxy._name)
         if player_entity is None:
             return
@@ -268,8 +260,10 @@ class PlayerBehavior(PlayerCommand):
         return self.split_command(self._input_val, self._name)
 
     @override
-    def execute(self, rpg_game: RPGGame, player_proxy: PlayerProxy) -> None:
+    def execute(self, game: BaseGame, player_proxy: PlayerProxy) -> None:
+        from rpg_game.rpg_game import RPGGame
 
+        rpg_game = cast(RPGGame, game)
         player_entity = rpg_game._entitas_context.get_player_entity(player_proxy._name)
         if player_entity is None:
             return
@@ -301,8 +295,10 @@ class PlayerEquip(PlayerCommand):
         return self.split_command(self._input_val, self._name)
 
     @override
-    def execute(self, rpg_game: RPGGame, player_proxy: PlayerProxy) -> None:
+    def execute(self, game: BaseGame, player_proxy: PlayerProxy) -> None:
+        from rpg_game.rpg_game import RPGGame
 
+        rpg_game = cast(RPGGame, game)
         player_entity = rpg_game._entitas_context.get_player_entity(player_proxy._name)
         if player_entity is None:
             return

@@ -20,4 +20,5 @@ class TerminalPlayerInterruptAndWaitSystem(ExecuteProcessor):
             input(f"请任意键继续")
             break
 
+
 ############################################################################################################

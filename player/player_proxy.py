@@ -1,5 +1,5 @@
-from typing import List, Optional
-from player.player_command import PlayerCommand
+from typing import List, Any
+
 from loguru import logger
 
 
@@ -8,11 +8,14 @@ class PlayerProxy:
 
     def __init__(self, name: str) -> None:
         self._name: str = name
+        
+        from player.base_command import PlayerCommand
         self._commands: List[PlayerCommand] = []
+
         self._client_messages: List[tuple[str, str]] = []
         self._login_messages: List[tuple[str, str]] = []
 
-    def add_command(self, command: PlayerCommand) -> None:
+    def add_command(self, command: Any) -> None:
         self._commands.append(command)
 
     def add_message(

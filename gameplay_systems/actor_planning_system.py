@@ -103,7 +103,10 @@ class ActorPlanningSystem(ExecuteProcessor):
         out_put_request_tasks.clear()
 
         actor_entities = self._context.get_group(
-            Matcher(all_of=[ActorComponent, AutoPlanningComponent], none_of=[PlayerComponent])
+            Matcher(
+                all_of=[ActorComponent, AutoPlanningComponent],
+                none_of=[PlayerComponent],
+            )
         ).entities
         for actor_entity in actor_entities:
 

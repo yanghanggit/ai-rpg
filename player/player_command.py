@@ -34,11 +34,11 @@ class PlayerCommand(ABC):
     """
 
     def __init__(
-        self, description: str, rpg_game: RPGGame, playerproxy: PlayerProxy
+        self, description: str, rpg_game: RPGGame, player_proxy: PlayerProxy
     ) -> None:
         self._description: str = description
         self._rpggame: RPGGame = rpg_game
-        self._player_proxy: PlayerProxy = playerproxy
+        self._player_proxy: PlayerProxy = player_proxy
 
     @abstractmethod
     def execute(self) -> None:

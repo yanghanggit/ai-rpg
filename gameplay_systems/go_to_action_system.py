@@ -1,6 +1,6 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: ignore
 from gameplay_systems.action_components import GoToAction, DeadAction
-from gameplay_systems.components import ActorComponent
+from gameplay_systems.components import ActorComponent, EnterStageComponent
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import override, Optional
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
@@ -90,6 +90,11 @@ class GoToActionSystem(ReactiveProcessor):
         # 真正的进入场景
         helper._entity.replace(
             ActorComponent, actor_comp.name, helper._target_stage_name
+        )
+
+        # 标记一下
+        helper._entity.replace(
+            EnterStageComponent, actor_comp.name, helper._target_stage_name
         )
 
         # 更新场景标记

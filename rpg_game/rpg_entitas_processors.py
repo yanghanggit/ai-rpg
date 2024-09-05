@@ -30,6 +30,13 @@ class RPGEntitasProcessors(Processors):
         from gameplay_systems.begin_system import BeginSystem
         from gameplay_systems.end_system import EndSystem
         from gameplay_systems.pre_planning_system import PrePlanningSystem
+        from gameplay_systems.stage_planning_strategy_system import (
+            StagePlanningStrategySystem,
+        )
+        from gameplay_systems.actor_planning_strategy_system import (
+            ActorPlanningStrategySystem,
+        )
+
         from gameplay_systems.post_planning_system import PostPlanningSystem
         from gameplay_systems.pre_action_system import PreActionSystem
         from gameplay_systems.post_action_system import PostActionSystem
@@ -179,6 +186,10 @@ class RPGEntitasProcessors(Processors):
         processors.add(
             PrePlanningSystem(context, input_rpg_game)
         )  ######## 在所有规划之前!
+
+        processors.add(StagePlanningStrategySystem(context, input_rpg_game))
+        processors.add(ActorPlanningStrategySystem(context, input_rpg_game))
+
         processors.add(StagePlanningSystem(context, input_rpg_game))
         processors.add(ActorPlanningSystem(context, input_rpg_game))
         processors.add(

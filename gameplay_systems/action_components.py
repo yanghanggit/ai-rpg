@@ -50,6 +50,8 @@ STAGE_AVAILABLE_ACTIONS_REGISTER: FrozenSet[type[Any]] = frozenset(
     {
         TagAction,
         MindVoiceAction,
+        SpeakAction,
+        BroadcastAction,
         WhisperAction,
         StageNarrateAction,
         RemovePropAction,
@@ -61,12 +63,12 @@ STAGE_AVAILABLE_ACTIONS_REGISTER: FrozenSet[type[Any]] = frozenset(
 # 角色可以用的所有动作
 ACTOR_AVAILABLE_ACTIONS_REGISTER: FrozenSet[type[Any]] = frozenset(
     {
-        GoToAction,
-        SpeakAction,
         TagAction,
         MindVoiceAction,
+        SpeakAction,
         BroadcastAction,
         WhisperAction,
+        GoToAction,
         PickUpPropAction,
         StealPropAction,
         GivePropAction,
@@ -95,8 +97,4 @@ ACTOR_INTERACTIVE_ACTIONS_REGISTER: FrozenSet[type[Any]] = frozenset(
         DamageAction,
         EquipPropAction,
     }
-)
-
-STAGE_OR_ACTOTR_CONTEXT_ACTIONS_REGISTER: FrozenSet[type[Any]] = frozenset(
-    {StageNarrateAction, MindVoiceAction, WhisperAction, BroadcastAction, SpeakAction}
 )

@@ -1,6 +1,5 @@
-from entitas import ExecuteProcessor, Matcher  # type: ignore
+from entitas import ExecuteProcessor  # type: ignore
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from gameplay_systems.components import AutoPlanningComponent
 from typing import override
 from rpg_game.rpg_game import RPGGame
 
@@ -13,11 +12,7 @@ class PostPlanningSystem(ExecuteProcessor):
     ############################################################################################################
     @override
     def execute(self) -> None:
-        entities = self._context.get_group(
-            Matcher(AutoPlanningComponent)
-        ).entities.copy()
-        for entity in entities:
-            entity.remove(AutoPlanningComponent)
-
+        # 啥也不做
+        pass
 
 ############################################################################################################

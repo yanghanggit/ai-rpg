@@ -19,6 +19,7 @@ from player.player_command import (
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from rpg_game.terminal_rpg_game import TerminalRPGGame
 from rpg_game.web_server_multi_players_rpg_game import WebServerMultiplayersRPGGame
+from gameplay_systems.components import AutoPlanningComponent
 
 
 ############################################################################################################
@@ -56,7 +57,9 @@ class HandlePlayerInputSystem(ExecuteProcessor):
             if player_entity is None:
                 # logger.warning("玩家实体不存在")
                 continue
-            assert player_entity is not None
+           
+            if not player_entity.has(AutoPlanningComponent):
+                continue
 
             ## 处理玩家的输入
             create_any_player_command_by_input = self.handle_input(

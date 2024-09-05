@@ -25,6 +25,9 @@ AutoPlanningComponent = namedtuple("AutoPlanningComponent", "name")
 AppearanceComponent = namedtuple("AppearanceComponent", "name appearance hash_code")
 # 裸身信息，用于和衣服组成完整的外观信息。如果是动物等，就是动物的外观信息
 BodyComponent = namedtuple("BodyComponent", "name body")
+# 标记进入新的舞台
+EnterStageComponent = namedtuple("EnterStageComponent", "name enter_stage")
+
 
 ######################################### 测试组件（业务强相关）：RPG Game #######################################################################
 RPGAttributesComponent = namedtuple(

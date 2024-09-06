@@ -190,7 +190,7 @@ class BehaviorActionSystem(ReactiveProcessor):
         self, entity: Entity, behavior_sentence: str, processed_result: bool
     ) -> None:
 
-        self._context.add_event_to_agent(
+        self._context.notify_event_to_entity(
             set({entity}),
             builtin_prompt.make_behavior_system_processed_result_notify_prompt(
                 self._context.safe_get_entity_name(entity),

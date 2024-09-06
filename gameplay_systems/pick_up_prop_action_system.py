@@ -58,7 +58,7 @@ class PickUpPropActionSystem(ReactiveProcessor):
                 PropFile, stage_comp.name, prop_name
             )
             if prop_file is None:
-                self._context.add_event_to_agent(
+                self._context.notify_event_to_entity(
                     set({entity}),
                     builtin_prompt.make_actor_pick_up_prop_failed_prompt(
                         actor_name, prop_name
@@ -73,7 +73,7 @@ class PickUpPropActionSystem(ReactiveProcessor):
                 prop_name,
             )
 
-            self._context.add_event_to_agents_in_stage(
+            self._context.notify_event_to_all_entities_in_stage(
                 current_stage_entity,
                 builtin_prompt.make_pick_up_prop_success_prompt(
                     actor_name, prop_name, stage_comp.name

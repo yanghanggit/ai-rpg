@@ -53,7 +53,7 @@ class RemovePropActionSystem(ReactiveProcessor):
     ############################################################################################################
     def on_prop_lost_event(self, entity: Entity, prop_name: str) -> None:
         safe_name = self._context.safe_get_entity_name(entity)
-        self._context.add_event_to_agent(
+        self._context.notify_event_to_entity(
             set({entity}),
             builtin_prompt.make_stage_prop_lost_prompt(safe_name, prop_name),
         )
@@ -61,7 +61,7 @@ class RemovePropActionSystem(ReactiveProcessor):
     ############################################################################################################
     def on_prop_remove_event(self, entity: Entity, prop_name: str) -> None:
         safe_name = self._context.safe_get_entity_name(entity)
-        self._context.add_event_to_agent(
+        self._context.notify_event_to_entity(
             set({entity}),
             builtin_prompt.make_stage_remove_prop_success_prompt(safe_name, prop_name),
         )

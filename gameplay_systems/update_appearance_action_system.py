@@ -174,7 +174,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
                 continue
 
             appearance_comp = actor_entity.get(AppearanceComponent)
-            self._context.add_event_to_agents_in_stage(
+            self._context.notify_event_to_all_entities_in_stage(
                 current_stage_entity,
                 builtin_prompt.make_on_update_appearance_event_prompt(
                     appearance_comp.name, appearance_comp.appearance

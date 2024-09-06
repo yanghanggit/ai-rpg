@@ -271,7 +271,7 @@ class RPGEntitasContext(Context):
         return None
 
     #############################################################################################################################
-    def add_event_to_agents_in_stage(
+    def notify_event_to_all_entities_in_stage(
         self,
         entity: Entity,
         message_content: str,
@@ -287,10 +287,10 @@ class RPGEntitasContext(Context):
         if len(exclude_entities) > 0:
             notify_entities = notify_entities - exclude_entities
 
-        self._add_event_to_agent(notify_entities, message_content)
+        self._notify_event_to_entity(notify_entities, message_content)
 
     #############################################################################################################################
-    def add_event_to_agent(
+    def notify_event_to_entity(
         self,
         entities: Set[Entity],
         message_content: str,
@@ -301,10 +301,10 @@ class RPGEntitasContext(Context):
         if len(exclude_entities) > 0:
             copy_entities = copy_entities - exclude_entities
 
-        self._add_event_to_agent(copy_entities, message_content)
+        self._notify_event_to_entity(copy_entities, message_content)
 
     #############################################################################################################################
-    def _add_event_to_agent(self, entities: Set[Entity], message_content: str) -> None:
+    def _notify_event_to_entity(self, entities: Set[Entity], message_content: str) -> None:
 
         for entity in entities:
 

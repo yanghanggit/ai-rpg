@@ -103,14 +103,14 @@ class GoToActionSystem(ReactiveProcessor):
         )
 
         assert helper._target_stage_entity is not None
-        self._context.add_event_to_agents_in_stage(
+        self._context.notify_event_to_all_entities_in_stage(
             helper._target_stage_entity,
             builtin_prompt.make_enter_stage_prompt1(
                 actor_comp.name, helper._target_stage_name
             ),
         )
 
-        self._context.add_event_to_agent(
+        self._context.notify_event_to_entity(
             set({helper._entity}),
             builtin_prompt.make_enter_stage_prompt2(
                 actor_comp.name, helper._target_stage_name, helper._current_stage_name
@@ -130,7 +130,7 @@ class GoToActionSystem(ReactiveProcessor):
         logger.debug(
             f"{my_name}离开{helper._current_stage_name}。留下最后的印象。{stage_archive._stage_narrate}"
         )
-        self._context.add_event_to_agent(
+        self._context.notify_event_to_entity(
             set({helper._entity}),
             builtin_prompt.make_last_impression_of_stage_prompt(
                 my_name, helper._current_stage_name, stage_archive._stage_narrate
@@ -143,7 +143,7 @@ class GoToActionSystem(ReactiveProcessor):
         # 离开场景的事件需要通知相关的人
         assert helper._current_stage_entity is not None
         actor_comp = helper._entity.get(ActorComponent)
-        self._context.add_event_to_agents_in_stage(
+        self._context.notify_event_to_all_entities_in_stage(
             helper._current_stage_entity,
             builtin_prompt.make_leave_stage_prompt(
                 actor_comp.name, helper._current_stage_name, helper._target_stage_name

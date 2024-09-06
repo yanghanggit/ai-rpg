@@ -353,7 +353,7 @@ class SkillActionSystem(ReactiveProcessor):
         if current_stage_entity is None:
             return
 
-        self._context.add_event_to_agents_in_stage(
+        self._context.notify_event_to_all_entities_in_stage(
             current_stage_entity,
             builtin_prompt.make_notify_others_of_skill_use_prompt(
                 self._context.safe_get_entity_name(from_entity),
@@ -436,7 +436,7 @@ class SkillActionSystem(ReactiveProcessor):
 
     ######################################################################################################################################################
     def add_world_skill_system_off_line_event(self, entity: Entity) -> None:
-        self._context.add_event_to_agent(
+        self._context.notify_event_to_entity(
             set({entity}),
             builtin_prompt.make_world_skill_system_off_line_prompt(
                 self._context.safe_get_entity_name(entity),
@@ -448,7 +448,7 @@ class SkillActionSystem(ReactiveProcessor):
     def add_world_skill_system_validate_skill_combo_fail_event(
         self, entity: Entity, world_response_plan: WorldSkillSystemResponse
     ) -> None:
-        self._context.add_event_to_agent(
+        self._context.notify_event_to_entity(
             set({entity}),
             builtin_prompt.make_world_skill_system_validate_skill_combo_fail_prompt(
                 self._context.safe_get_entity_name(entity),
@@ -465,7 +465,7 @@ class SkillActionSystem(ReactiveProcessor):
         target: Entity,
         world_response_plan: WorldSkillSystemResponse,
     ) -> None:
-        self._context.add_event_to_agent(
+        self._context.notify_event_to_entity(
             set({entity}),
             builtin_prompt.make_target_agent_off_line_prompt(
                 self._context.safe_get_entity_name(entity),

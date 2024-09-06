@@ -72,7 +72,7 @@ class StealActionSystem(ReactiveProcessor):
                 continue
 
             action_result = self.do_steal(entity, target_entity, tp[1])
-            self._context.notify_event_to_entity(
+            self._context.notify_event_to_entities(
                 set({entity, target_entity}),
                 builtin_prompt.make_steal_prop_action_prompt(
                     self._context.safe_get_entity_name(entity),

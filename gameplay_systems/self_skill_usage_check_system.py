@@ -76,6 +76,7 @@ class SelfSkillUsageCheckSystem(ReactiveProcessor):
         self._react_entities_copy = entities.copy()
 
     ######################################################################################################################################################
+    @override
     async def a_execute2(self) -> None:
         await self._execute(self._react_entities_copy)
         self._react_entities_copy.clear()
@@ -209,9 +210,7 @@ class SelfSkillUsageCheckSystem(ReactiveProcessor):
 
             task = AgentTask.create(
                 agent,
-                builtin_prompt.replace_mentions_of_your_name_with_you_prompt(
-                    prompt, agent_name
-                ),
+                builtin_prompt.replace_you(prompt, agent_name),
             )
             if task is None:
                 continue

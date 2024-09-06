@@ -393,7 +393,7 @@ def go_to_stage_failed_because_already_in_stage_prompt(
 
 
 ################################################################################################################################################
-def replace_mentions_of_your_name_with_you_prompt(content: str, your_name: str) -> str:
+def replace_you(content: str, your_name: str) -> str:
     if len(content) == 0 or your_name not in content:
         return content
     return content.replace(your_name, "你")
@@ -656,7 +656,7 @@ def make_player_conversation_check_prompt(
 ################################################################################################################################################
 
 
-def make_skill_to_target_feedback_reasoning_prompt(
+def make_skill_hit_feedback_prompt(
     actor_name: str,
     target_name: str,
     reasoning_sentence: str,
@@ -742,18 +742,22 @@ def make_target_agent_off_line_prompt(
 
 
 ################################################################################################################################################
-def make_world_skill_system_validate_skill_combo_fail_prompt(
+def make_world_skill_system_rule_fail_prompt(
     actor_name: str,
-    failure_desc: str,
+    failure_result: str,
     input_behavior_sentence: str,
     reasoning_sentence: str,
 ) -> str:
 
-    prompt = f"""# 全局技能系统 推理与判断之后，判断结果为 {failure_desc}
+    prompt = f"""# 全局技能系统 推理与判断之后，判断结果为 {failure_result}
+
 ## 行动(技能)发起者: {actor_name}
-## 失败类型: {failure_desc}
+
+## 失败类型: {failure_result}
+
 ## 原始的行动内容语句
 {input_behavior_sentence}
+
 ## 系统推理后的结果
 {reasoning_sentence}
 
@@ -769,7 +773,7 @@ def make_world_skill_system_validate_skill_combo_fail_prompt(
 ################################################################################################################################################
 
 
-def make_notify_others_of_skill_use_prompt(
+def make_notify_others_in_stage_of_skill_event_prompt(
     actor_name: str, target_name: str, reasoning_sentence: str
 ) -> str:
 

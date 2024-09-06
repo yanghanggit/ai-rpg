@@ -285,10 +285,10 @@ class RPGEntitasContext(Context):
         if len(exclude_entities) > 0:
             notify_entities = notify_entities - exclude_entities
 
-        self._notify_event_to_entity(notify_entities, message_content)
+        self._notify_event_to_entities(notify_entities, message_content)
 
     #############################################################################################################################
-    def notify_event_to_entity(
+    def notify_event_to_entities(
         self,
         entities: Set[Entity],
         message_content: str,
@@ -299,21 +299,17 @@ class RPGEntitasContext(Context):
         if len(exclude_entities) > 0:
             copy_entities = copy_entities - exclude_entities
 
-        self._notify_event_to_entity(copy_entities, message_content)
+        self._notify_event_to_entities(copy_entities, message_content)
 
     #############################################################################################################################
-    def _notify_event_to_entity(
+    def _notify_event_to_entities(
         self, entities: Set[Entity], message_content: str
     ) -> None:
 
         for entity in entities:
 
             safe_name = self.safe_get_entity_name(entity)
-            replace_message = (
-                builtin_prompt.replace_mentions_of_your_name_with_you_prompt(
-                    message_content, safe_name
-                )
-            )
+            replace_message = builtin_prompt.replace_you(message_content, safe_name)
 
             #
             self._langserve_agent_system.add_human_message_to_chat_history(

@@ -110,7 +110,7 @@ class GoToActionSystem(ReactiveProcessor):
             ),
         )
 
-        self._context.notify_event_to_entity(
+        self._context.notify_event_to_entities(
             set({helper._entity}),
             builtin_prompt.make_enter_stage_prompt2(
                 actor_comp.name, helper._target_stage_name, helper._current_stage_name
@@ -130,7 +130,7 @@ class GoToActionSystem(ReactiveProcessor):
         logger.debug(
             f"{my_name}离开{helper._current_stage_name}。留下最后的印象。{stage_archive._stage_narrate}"
         )
-        self._context.notify_event_to_entity(
+        self._context.notify_event_to_entities(
             set({helper._entity}),
             builtin_prompt.make_last_impression_of_stage_prompt(
                 my_name, helper._current_stage_name, stage_archive._stage_narrate

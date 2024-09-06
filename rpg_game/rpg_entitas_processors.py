@@ -57,7 +57,7 @@ class RPGEntitasProcessors(Processors):
             StageNarrateActionSystem,
         )
         from gameplay_systems.behavior_action_system import BehaviorActionSystem
-        from gameplay_systems.skill_action_system import SkillActionSystem
+        from gameplay_systems.apply_skill_effect_system import ApplySkillEffectSystem
         from gameplay_systems.damage_action_system import DamageActionSystem
         from gameplay_systems.handle_player_input_system import HandlePlayerInputSystem
         from gameplay_systems.update_client_message_system import (
@@ -81,6 +81,7 @@ class RPGEntitasProcessors(Processors):
         from gameplay_systems.self_skill_usage_check_system import (
             SelfSkillUsageCheckSystem,
         )
+        from gameplay_systems.world_skill_rule_system import WorldSkillRuleSystem
 
         ##
         rpg_game = cast(RPGGame, game)
@@ -127,10 +128,12 @@ class RPGEntitasProcessors(Processors):
         processors.add(BehaviorActionSystem(context, rpg_game))
         processors.add(SelfSkillUsageCheckSystem(context, rpg_game))
         processors.add(
-            SkillActionSystem(
+            WorldSkillRuleSystem(
                 context, rpg_game, builtin_world_systems.WORLD_SKILL_SYSTEM_NAME
             )
         )
+
+        processors.add(ApplySkillEffectSystem(context, rpg_game))
         processors.add(DamageActionSystem(context, rpg_game))
         processors.add(
             DeadActionSystem(context, rpg_game)

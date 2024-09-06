@@ -29,6 +29,9 @@ BehaviorAction = namedtuple("BehaviorAction", "name action_name values")
 SkillTargetAction = namedtuple("SkillTargetAction", "name action_name values")
 SkillAction = namedtuple("SkillAction", "name action_name values")
 SkillUsePropAction = namedtuple("SkillUsePropAction", "name action_name values")
+WorldSkillSystemRuleAction = namedtuple(
+    "WorldSkillSystemRuleAction", "name action_name values"
+)
 
 
 # 更新外观
@@ -76,6 +79,7 @@ ACTOR_AVAILABLE_ACTIONS_REGISTER: FrozenSet[type[Any]] = frozenset(
         SkillTargetAction,
         SkillAction,
         SkillUsePropAction,
+        WorldSkillSystemRuleAction,
         UpdateAppearanceAction,
         DamageAction,
         EquipPropAction,
@@ -93,6 +97,7 @@ ACTOR_INTERACTIVE_ACTIONS_REGISTER: FrozenSet[type[Any]] = frozenset(
         SkillTargetAction,
         SkillAction,
         SkillUsePropAction,
+        WorldSkillSystemRuleAction,
         UpdateAppearanceAction,
         DamageAction,
         EquipPropAction,

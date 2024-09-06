@@ -687,23 +687,27 @@ def make_skill_to_target_feedback_reasoning_prompt(
 ################################################################################################################################################
 
 
-def make_behavior_system_processed_result_notify_prompt(
+def make_behavior_action_result_prompt(
     actor_name: str, behavior_sentence: str, result: bool
 ) -> str:
     if result:
-        prompt1 = f"""# 这是一次 {actor_name} 的计划行动
-## 行动内容语句
+        prompt1 = f"""# {actor_name} 准备发起一次使用技能的行动。
+## 输入语句
 {behavior_sentence}
+## 分析过程
+输入语句中应至少包含一个技能与一个目标。可以选择性的包含道具。
 ## 结果
-- 系统经过分析之后允许通过。也就是执行后续的处理步骤。"""
+系统经过分析之后允许了这次行动。"""
         return prompt1
 
-    prompt2 = f""" # 这是一次 {actor_name} 的计划行动
-## 行动内容语句
+    prompt2 = f""" #{actor_name} 准备发起一次使用技能的行动。
+## 输入语句
 {behavior_sentence}
+## 分析过程
+输入语句中应至少包含一个技能与一个目标。可以选择性的包含道具。
 ## 结果
-- 系统判断后，拒绝！不通过。
-- 请检查行动内容，必须至少有一个技能与一个目标。"""
+- 注意！系统经过分析之后拒绝了这次行动。
+- 请 {actor_name} 检查 输入语句。是否满足 分析过程 中提到的要求。"""
 
     return prompt2
 
@@ -827,7 +831,7 @@ def make_stage_remove_prop_success_prompt(stage_name: str, prop_name: str) -> st
 ################################################################################################################################################
 
 
-def make_reasoning_actor_can_use_skill_prompt(
+def make_skill_usage_reasoning_prompt(
     actor_name: str,
     actor_body_info: str,
     skill_files: List[PropFile],
@@ -858,7 +862,7 @@ def make_reasoning_actor_can_use_skill_prompt(
     else:
         props_prompt.append("- 无任何道具。")
 
-    ret_prompt = f"""# {actor_name} 准备使用技能，请做出判断是否允许使用。
+    ret_prompt = f"""# {actor_name} 计划使用技能，请做出判断是否允许使用。
 
 ## {actor_name} 自身信息
 {actor_body_info}

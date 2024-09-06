@@ -45,6 +45,8 @@ class BroadcastActionSystem(ReactiveProcessor):
             " ".join(broadcast_action.values),
         )
 
-        self._context.notify_event_to_all_entities_in_stage(current_stage_entity, message)
+        self._context.notify_event_to_all_entities_in_stage(
+            current_stage_entity, message
+        )
 
     ####################################################################################################

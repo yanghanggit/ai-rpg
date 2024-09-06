@@ -52,9 +52,7 @@ class BehaviorActionSystem(ReactiveProcessor):
         skills = self.extract_skills_info_from_sentence(entity, behavior_sentence)
         # 不用继续了
         if len(targets) == 0 or len(skills) == 0:
-            self.on_behavior_system_processed_result_notify_event(
-                entity, behavior_sentence, False
-            )
+            self.on_behavior_action_result_event(entity, behavior_sentence, False)
             return
 
         props = self.extract_props_info_from_sentence(entity, behavior_sentence)
@@ -73,9 +71,7 @@ class BehaviorActionSystem(ReactiveProcessor):
         self.add_skill_use_prop_action(entity, props)
 
         # 事件通知
-        self.on_behavior_system_processed_result_notify_event(
-            entity, behavior_sentence, True
-        )
+        self.on_behavior_action_result_event(entity, behavior_sentence, True)
 
     ######################################################################################################################################################
     def get_current_weapon(self, entity: Entity) -> Optional[PropFile]:
@@ -186,13 +182,13 @@ class BehaviorActionSystem(ReactiveProcessor):
         )
 
     ######################################################################################################################################################
-    def on_behavior_system_processed_result_notify_event(
+    def on_behavior_action_result_event(
         self, entity: Entity, behavior_sentence: str, processed_result: bool
     ) -> None:
 
         self._context.notify_event_to_entity(
             set({entity}),
-            builtin_prompt.make_behavior_system_processed_result_notify_prompt(
+            builtin_prompt.make_behavior_action_result_prompt(
                 self._context.safe_get_entity_name(entity),
                 behavior_sentence,
                 processed_result,

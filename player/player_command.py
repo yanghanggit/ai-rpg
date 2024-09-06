@@ -238,7 +238,6 @@ class PlayerGiveProp(PlayerCommand):
         if player_entity is None:
             return
 
-        # 添加行动
         actor_comp = player_entity.get(ActorComponent)
         player_entity.add(
             GivePropAction,

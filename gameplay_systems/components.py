@@ -15,7 +15,7 @@ ActorComponent = namedtuple("ActorComponent", "name current_stage")
 PlayerComponent = namedtuple("PlayerComponent", "name")
 # 摧毁Entity标记
 DestroyComponent = namedtuple("DestroyComponent", "name")
-# 自动规划行为的标记
+# 自动规划的标记
 PlanningAllowedComponent = namedtuple("PlanningAllowedComponent", "name")
 # 角色外观信息
 AppearanceComponent = namedtuple("AppearanceComponent", "name appearance hash_code")

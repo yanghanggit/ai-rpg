@@ -29,27 +29,27 @@ from rpg_game.rpg_game import RPGGame
 from my_data.model_def import AttributesIndex
 
 
-class ActorCanUseSkillResponse(AgentPlan):
+# class ActorCanUseSkillResponse(AgentPlan):
 
-    def __init__(self, name: str, input_str: str) -> None:
-        super().__init__(name, input_str)
+#     def __init__(self, name: str, input_str: str) -> None:
+#         super().__init__(name, input_str)
 
-    @property
-    def tag(self) -> bool:
-        tag_action = self.get_by_key(TagAction.__name__)
-        if tag_action is None or len(tag_action.values) == 0:
-            return False
-        return (
-            tag_action.values[0].lower() == "yes"
-            or tag_action.values[0].lower() == "true"
-        )
+#     @property
+#     def tag(self) -> bool:
+#         tag_action = self.get_by_key(TagAction.__name__)
+#         if tag_action is None or len(tag_action.values) == 0:
+#             return False
+#         return (
+#             tag_action.values[0].lower() == "yes"
+#             or tag_action.values[0].lower() == "true"
+#         )
 
-    @property
-    def out_come(self) -> str:
-        mind_voice_action = self.get_by_key(MindVoiceAction.__name__)
-        if mind_voice_action is None or len(MindVoiceAction.values) == 0:
-            return ConstantPrompt.FAILURE
-        return " ".join(mind_voice_action.values)
+#     @property
+#     def out_come(self) -> str:
+#         mind_voice_action = self.get_by_key(MindVoiceAction.__name__)
+#         if mind_voice_action is None or len(MindVoiceAction.values) == 0:
+#             return ConstantPrompt.FAILURE
+#         return " ".join(mind_voice_action.values)
 
 
 ######################################################################################################################################################
@@ -129,7 +129,7 @@ class SkillActionSystem(ReactiveProcessor):
     ) -> None:
 
         # 结合自身条件进行判断
-        await self.phase1_actor_self_reasoning(entities)
+        #await self.phase1_actor_self_reasoning(entities)
 
         # 世界全局做合理性判断
         world_skill_system_response = await self.phase2_world_skill_system_reasoning(
@@ -144,26 +144,26 @@ class SkillActionSystem(ReactiveProcessor):
             self.phase3_skill_to_targets(actor_entity, response_plan)
 
     ######################################################################################################################################################
-    async def phase1_actor_self_reasoning(self, entities: List[Entity]) -> None:
+    # async def phase1_actor_self_reasoning(self, entities: List[Entity]) -> None:
 
-        if len(entities) == 0:
-            return
+    #     if len(entities) == 0:
+    #         return
 
-        # 第一个大阶段，角色自己检查是否可以使用技能
-        create_tasks = self.create_tasks_actor_can_use_skill(entities)
-        if len(create_tasks) == 0:
-            return
+    #     # 第一个大阶段，角色自己检查是否可以使用技能
+    #     create_tasks = self.create_tasks_actor_can_use_skill(entities)
+    #     if len(create_tasks) == 0:
+    #         return
 
-        response = await AgentTasksGather(
-            "第一个阶段，检查角色自身是否可以使用技能",
-            [task for task in create_tasks.values()],
-        ).gather()
+    #     response = await AgentTasksGather(
+    #         "第一个阶段，检查角色自身是否可以使用技能",
+    #         [task for task in create_tasks.values()],
+    #     ).gather()
 
-        if len(response) == 0:
-            logger.debug(f"phase1_response is None.")
-            return
+    #     if len(response) == 0:
+    #         logger.debug(f"phase1_response is None.")
+    #         return
 
-        self.handle_actor_can_use_skill(create_tasks, entities)
+    #     self.handle_actor_can_use_skill(create_tasks, entities)
 
     ######################################################################################################################################################
     async def phase2_world_skill_system_reasoning(
@@ -219,23 +219,23 @@ class SkillActionSystem(ReactiveProcessor):
             )
 
     ######################################################################################################################################################
-    def handle_actor_can_use_skill(
-        self, tasks: Dict[str, AgentTask], entities: List[Entity]
-    ) -> None:
+    # def handle_actor_can_use_skill(
+    #     self, tasks: Dict[str, AgentTask], entities: List[Entity]
+    # ) -> None:
 
-        for agent_name, task in tasks.items():
+    #     for agent_name, task in tasks.items():
 
-            if task.response_content == "":
-                continue
+    #         if task.response_content == "":
+    #             continue
 
-            actor_entity = self._context.get_actor_entity(agent_name)
-            if actor_entity is None:
-                continue
+    #         actor_entity = self._context.get_actor_entity(agent_name)
+    #         if actor_entity is None:
+    #             continue
 
-            response_plan = ActorCanUseSkillResponse(agent_name, task.response_content)
-            if not response_plan.tag:
-                entities.remove(actor_entity)
-                continue
+    #         response_plan = ActorCanUseSkillResponse(agent_name, task.response_content)
+    #         if not response_plan.tag:
+    #             entities.remove(actor_entity)
+    #             continue
 
     ######################################################################################################################################################
     def handle_world_skill_system_validate_skill_combo(
@@ -374,7 +374,7 @@ class SkillActionSystem(ReactiveProcessor):
         self.calculate_values_of_attr_comp(entity, target, need_calculate_skill_attrs)
         # 补充上所有参与的道具的属性
         self.calculate_values_of_props(entity, target, need_calculate_skill_attrs)
-        # 最终添加到目标的伤害行为
+        # 最终添加到目标的伤害
         self.add_damage_action(entity, target, need_calculate_skill_attrs)
 
     ######################################################################################################################################################
@@ -526,7 +526,7 @@ class SkillActionSystem(ReactiveProcessor):
             if agent is None:
                 continue
 
-            prompt = builtin_prompt.make_reasoning_actor_can_use_skill_prompt(
+            prompt = builtin_prompt.make_skill_usage_reasoning_prompt(
                 agent_name,
                 self.extract_body_info(entity),
                 self.extract_skill_files(entity),

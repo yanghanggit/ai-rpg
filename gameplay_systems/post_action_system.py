@@ -18,10 +18,6 @@ class PostActionSystem(ExecuteProcessor):
     ############################################################################################################
     @override
     def execute(self) -> None:
-        # 在这里清除所有的行动
-        # all_actions_register = (
-        #     ACTOR_AVAILABLE_ACTIONS_REGISTER + STAGE_AVAILABLE_ACTIONS_REGISTER
-        # )
 
         all_actions_register = (
             ACTOR_AVAILABLE_ACTIONS_REGISTER | STAGE_AVAILABLE_ACTIONS_REGISTER

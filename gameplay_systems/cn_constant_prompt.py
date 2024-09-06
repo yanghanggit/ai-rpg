@@ -25,13 +25,13 @@ class CNConstantPrompt:
     def USE_PROP_TO_STAGE_PROMPT_TAG(self) -> str:
         return "<%这是角色对场景使用道具>"
 
-    @property
-    def PERCEPTION_ACTION_TAG(self) -> str:
-        return "<%这是感知行动结果>"
+    # @property
+    # def PERCEPTION_ACTION_TAG(self) -> str:
+    #     return "<%这是感知行动结果>"
 
-    @property
-    def CHECK_STATUS_ACTION_TAG(self) -> str:
-        return "<%这是查看自身状态行动结果>"
+    # @property
+    # def CHECK_STATUS_ACTION_TAG(self) -> str:
+    #     return "<%这是查看自身状态行动结果>"
 
     @property
     def BROADCASE_ACTION_TAG(self) -> str:

@@ -17,8 +17,6 @@ from typing import Optional, Dict, List, Set, cast, Any
 from extended_systems.guid_generator import GUIDGenerator
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
 
-# import player.utils
-
 
 class RPGEntitasContext(Context):
 
@@ -304,7 +302,9 @@ class RPGEntitasContext(Context):
         self._notify_event_to_entity(copy_entities, message_content)
 
     #############################################################################################################################
-    def _notify_event_to_entity(self, entities: Set[Entity], message_content: str) -> None:
+    def _notify_event_to_entity(
+        self, entities: Set[Entity], message_content: str
+    ) -> None:
 
         for entity in entities:
 

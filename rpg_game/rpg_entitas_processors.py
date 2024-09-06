@@ -78,6 +78,9 @@ class RPGEntitasProcessors(Processors):
         from gameplay_systems.remove_prop_action_system import (
             RemovePropActionSystem,
         )
+        from gameplay_systems.self_skill_usage_check_system import (
+            SelfSkillUsageCheckSystem,
+        )
 
         ##
         rpg_game = cast(RPGGame, game)
@@ -122,6 +125,7 @@ class RPGEntitasProcessors(Processors):
 
         # 战斗类的行为!
         processors.add(BehaviorActionSystem(context, rpg_game))
+        processors.add(SelfSkillUsageCheckSystem(context, rpg_game))
         processors.add(
             SkillActionSystem(
                 context, rpg_game, builtin_world_systems.WORLD_SKILL_SYSTEM_NAME

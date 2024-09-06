@@ -194,7 +194,7 @@ class BehaviorActionSystem(ReactiveProcessor):
         self, entity: Entity, behavior_sentence: str, processed_result: bool
     ) -> None:
 
-        self._context.notify_event_to_entities(
+        self._context.broadcast_entities(
             set({entity}),
             builtin_prompt.make_behavior_action_result_prompt(
                 self._context.safe_get_entity_name(entity),

@@ -53,7 +53,7 @@ class RPGEntitasContext(Context):
         self._guid_generator = guid_generator
 
         # 临时收集会话的历史
-        self._round_message_collect: Dict[str, List[str]] = {}
+        self._round_messages: Dict[str, List[str]] = {}
 
         #
         self._game: Any = None
@@ -269,7 +269,7 @@ class RPGEntitasContext(Context):
         return None
 
     #############################################################################################################################
-    def notify_event_to_all_entities_in_stage(
+    def broadcast_entities_in_stage(
         self,
         entity: Entity,
         message_content: str,
@@ -285,10 +285,10 @@ class RPGEntitasContext(Context):
         if len(exclude_entities) > 0:
             notify_entities = notify_entities - exclude_entities
 
-        self._notify_event_to_entities(notify_entities, message_content)
+        self._broadcast_entities(notify_entities, message_content)
 
     #############################################################################################################################
-    def notify_event_to_entities(
+    def broadcast_entities(
         self,
         entities: Set[Entity],
         message_content: str,
@@ -299,12 +299,10 @@ class RPGEntitasContext(Context):
         if len(exclude_entities) > 0:
             copy_entities = copy_entities - exclude_entities
 
-        self._notify_event_to_entities(copy_entities, message_content)
+        self._broadcast_entities(copy_entities, message_content)
 
     #############################################################################################################################
-    def _notify_event_to_entities(
-        self, entities: Set[Entity], message_content: str
-    ) -> None:
+    def _broadcast_entities(self, entities: Set[Entity], message_content: str) -> None:
 
         for entity in entities:
 
@@ -317,23 +315,21 @@ class RPGEntitasContext(Context):
             )
 
             # 记录历史
-            self._round_message_collect.get(safe_name, []).append(replace_message)
+            self._round_messages.get(safe_name, []).append(replace_message)
 
             # 如果是player 就特殊处理
             if self._game is not None and entity.has(PlayerComponent):
                 from rpg_game.rpg_game import RPGGame
 
                 player_comp = entity.get(PlayerComponent)
-                player_proxy = cast(RPGGame, self._game).get_player(
-                    player_comp.name
-                )  # player.utils.get_player_proxy(player_comp.name)
+                player_proxy = cast(RPGGame, self._game).get_player(player_comp.name)
                 if player_proxy is not None:
                     player_proxy.add_actor_message(safe_name, replace_message)
 
     #############################################################################################################################
     def get_round_messages(self, entity: Entity) -> List[str]:
         safe_name = self.safe_get_entity_name(entity)
-        return self._round_message_collect.get(safe_name, [])
+        return self._round_messages.get(safe_name, [])
 
 
 #############################################################################################################################

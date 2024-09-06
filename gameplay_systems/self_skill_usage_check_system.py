@@ -119,9 +119,18 @@ class SelfSkillUsageCheckSystem(ReactiveProcessor):
             response_plan = SelfSkillUsageCheckResponse(
                 agent_name, task.response_content
             )
+
             if not response_plan.bool_tag:
+                # 失败就不用继续了，直接清除所有的action
                 self.on_remove_actions(actor_entity)
-                continue
+
+            # 通知actor
+            self._context.broadcast_entities(
+                set({actor_entity}),
+                builtin_prompt.make_self_skill_usage_check_prompt(
+                    agent_name, response_plan.out_come, response_plan.bool_tag
+                ),
+            )
 
     ######################################################################################################################################################
     def on_remove_actions(

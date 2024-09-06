@@ -23,7 +23,7 @@ class BeginSystem(InitializeProcessor, ExecuteProcessor):
         self._game._round += 1
         logger.debug(f"self._context._execute_count = {self._game._round}")
 
-        self._context._round_message_collect = {}
+        self._context._round_messages = {}
 
 
 ############################################################################################################

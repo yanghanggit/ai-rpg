@@ -110,7 +110,6 @@ class WorldSkillRuleSystem(ReactiveProcessor):
 
         response = await AgentTasksGather("", tasks).gather()
         if len(response) == 0:
-            logger.debug(f"phase2_response is None.")
             self.on_remove_all_actions(entities)
             return
 
@@ -121,6 +120,7 @@ class WorldSkillRuleSystem(ReactiveProcessor):
     def handle_responses(
         self, response_plans: Dict[str, WorldSkillRuleResponse]
     ) -> None:
+
         for actor_name, response_plan in response_plans.items():
             actor_entity = self._context.get_actor_entity(actor_name)
             if actor_entity is None:
@@ -268,7 +268,7 @@ class WorldSkillRuleSystem(ReactiveProcessor):
 
     ######################################################################################################################################################
     def on_world_skill_system_off_line_event(self, entity: Entity) -> None:
-        self._context.notify_event_to_entities(
+        self._context.broadcast_entities(
             set({entity}),
             builtin_prompt.make_world_skill_system_off_line_prompt(
                 self._context.safe_get_entity_name(entity),
@@ -280,14 +280,28 @@ class WorldSkillRuleSystem(ReactiveProcessor):
     def on_world_skill_system_rule_success_event(
         self, entity: Entity, world_response_plan: WorldSkillRuleResponse
     ) -> None:
-        assert False, "Not implemented"
-        pass
+
+        target_entities = self.extract_targets(entity)
+        target_names: Set[str] = set()
+        for target_entity in target_entities:
+            target_names.add(self._context.safe_get_entity_name(target_entity))
+
+        self._context.broadcast_entities(
+            set({entity}),
+            builtin_prompt.make_world_skill_system_rule_success_prompt(
+                self._context.safe_get_entity_name(entity),
+                target_names,
+                world_response_plan.result_tag,
+                self.extract_behavior_sentence(entity),
+                world_response_plan.out_come,
+            ),
+        )
 
     ######################################################################################################################################################
     def on_world_skill_system_rule_fail_event(
         self, entity: Entity, world_response_plan: WorldSkillRuleResponse
     ) -> None:
-        self._context.notify_event_to_entities(
+        self._context.broadcast_entities(
             set({entity}),
             builtin_prompt.make_world_skill_system_rule_fail_prompt(
                 self._context.safe_get_entity_name(entity),
@@ -312,7 +326,7 @@ class WorldSkillRuleSystem(ReactiveProcessor):
 
         for entity in entities:
 
-            prompt = builtin_prompt.make_reasoning_world_skill_system_validate_skill_combo_prompt(
+            prompt = builtin_prompt.make_world_skill_system_rule_prompt(
                 self._context.safe_get_entity_name(entity),
                 self.extract_body_info(entity),
                 self.extract_skill_files(entity),
@@ -335,3 +349,11 @@ class WorldSkillRuleSystem(ReactiveProcessor):
         return ret
 
     ######################################################################################################################################################
+    def extract_targets(self, entity: Entity) -> Set[Entity]:
+        assert entity.has(SkillTargetAction)
+        targets = set()
+        for target_name in entity.get(SkillTargetAction).values:
+            target = self._context.get_entity_by_name(target_name)
+            if target is not None:
+                targets.add(target)
+        return targets

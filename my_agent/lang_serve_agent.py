@@ -14,7 +14,7 @@ class RemoteRunnableWrapper:
     def connect(self) -> None:
 
         if self._remote_runnable is not None:
-            logger.error(f"connect: {self._url} already connected.")
+            logger.warning(f"connect: {self._url} already connected.")
             return
 
         if self._url == "":

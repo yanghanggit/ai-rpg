@@ -6,7 +6,7 @@ from rpg_game.rpg_entitas_context import RPGEntitasContext
 from extended_systems.file_system import FileSystem
 from extended_systems.kick_off_message_system import KickOffMessageSystem
 from typing import Optional
-from my_agent.agent_system import LangServeAgentSystem
+from my_agent.lang_serve_agent_system import LangServeAgentSystem
 from extended_systems.code_name_component_system import CodeNameComponentSystem
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from chaos_engineering.empty_engineering_system import EmptyChaosEngineeringSystem
@@ -17,14 +17,14 @@ from pathlib import Path
 import json
 import shutil
 from enum import Enum
-from rpg_game.terminal_rpg_game import TerminalRPGGame
-from rpg_game.web_server_multi_players_rpg_game import WebServerMultiplayersRPGGame
+from rpg_game.terminal_game import TerminalGame
+from rpg_game.web_game import WebGame
 from extended_systems.guid_generator import GUIDGenerator
 
 
-class RPGGameClientType(Enum):
+class GameClientType(Enum):
     INVALID = (0,)
-    WEB_SERVER = 1000
+    WEB = 1000
     TERMINAL = 2000
 
 
@@ -91,7 +91,7 @@ def create_game_builder(game_name: str, version: str) -> Optional[GameResource]:
 def _create_rpg_game_(
     game_name: str,
     chaos_engineering: Optional[IChaosEngineering],
-    rpg_game_client_type: RPGGameClientType,
+    rpg_game_client_type: GameClientType,
 ) -> Optional[RPGGame]:
 
     # 依赖注入的特殊系统
@@ -126,10 +126,10 @@ def _create_rpg_game_(
     )
 
     match rpg_game_client_type:
-        case RPGGameClientType.WEB_SERVER:
-            return WebServerMultiplayersRPGGame(game_name, context)
-        case RPGGameClientType.TERMINAL:
-            return TerminalRPGGame(game_name, context)
+        case GameClientType.WEB:
+            return WebGame(game_name, context)
+        case GameClientType.TERMINAL:
+            return TerminalGame(game_name, context)
         case _:
             assert False, "Not implemented."
 
@@ -140,7 +140,7 @@ def _create_rpg_game_(
 #######################################################################################################################################
 ## 创建RPG Game + 读取数据
 def create_rpg_game(
-    game_name: str, version: str, rpg_game_client_type: RPGGameClientType
+    game_name: str, version: str, rpg_game_client_type: GameClientType
 ) -> Optional[RPGGame]:
 
     game_builder = create_game_builder(game_name, version)

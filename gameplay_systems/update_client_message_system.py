@@ -17,8 +17,8 @@ from loguru import logger
 import gameplay_systems.conversation_helper
 import my_format_string.target_and_message_format_string
 from rpg_game.rpg_game import RPGGame
-from rpg_game.terminal_rpg_game import TerminalRPGGame
-from rpg_game.web_server_multi_players_rpg_game import WebServerMultiplayersRPGGame
+from rpg_game.terminal_game import TerminalGame
+from rpg_game.web_game import WebGame
 import my_format_string.target_and_message_format_string
 
 
@@ -52,10 +52,10 @@ class UpdateClientMessageSystem(ExecuteProcessor):
             player_proxy, player_entity
         )  # 先把缓存的消息推送出去，在场景描述之后
 
-        self.mind_voice_action_2_message(player_proxy, player_entity)
-        self.whisper_action_2_message(player_proxy, player_entity)
-        self.broadcast_action_2_message(player_proxy, player_entity)
-        self.speak_action_2_message(player_proxy, player_entity)
+        # self.mind_voice_action_2_message(player_proxy, player_entity)
+        # self.whisper_action_2_message(player_proxy, player_entity)
+        # self.broadcast_action_2_message(player_proxy, player_entity)
+        # self.speak_action_2_message(player_proxy, player_entity)
         self.go_to_action_2_message(player_proxy, player_entity)
 
     ############################################################################################################

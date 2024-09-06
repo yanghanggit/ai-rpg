@@ -14,6 +14,9 @@ class PlayerProxy:
         self._client_messages: List[tuple[str, str]] = []
         self._login_messages: List[tuple[str, str]] = []
 
+        self._over: bool = False
+        self.is_message_queue_dirty = False
+
     ##########################################################################################################################################################
     def add_command(self, command: Any) -> None:
         self._commands.append(command)
@@ -22,6 +25,7 @@ class PlayerProxy:
     def add_message(
         self, sender: str, message: str, target: List[tuple[str, str]]
     ) -> None:
+        self.is_message_queue_dirty = True
         target.append((sender, message))
 
     ##########################################################################################################################################################
@@ -52,3 +56,9 @@ class PlayerProxy:
             tag = message[0]
             content = message[1]
             logger.warning(f"{tag}=>{content}")
+
+    ##########################################################################################################################################################
+    def on_dead(self) -> None:
+        self._over = True
+
+    ##########################################################################################################################################################

@@ -10,11 +10,11 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from loguru import logger
 from pydantic import BaseModel
-from rpg_game.web_server_multi_players_rpg_game import WebServerMultiplayersRPGGame
+from rpg_game.web_game import WebGame
 
 # from player.player_command import PlayerLogin
 # import player.utils
-from rpg_game.create_rpg_game_util import create_rpg_game, RPGGameClientType
+from rpg_game.create_rpg_game_util import create_rpg_game, GameClientType
 from rpg_game.rpg_game import RPGGame
 from player.player_proxy import PlayerProxy
 
@@ -42,7 +42,7 @@ app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-multiplayersgames: Dict[str, WebServerMultiplayersRPGGame] = {}
+multiplayersgames: Dict[str, WebGame] = {}
 
 
 async def create(clientip: str) -> List[TupleModel]:

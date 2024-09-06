@@ -64,11 +64,11 @@ class RPGEntitasProcessors(Processors):
             UpdateClientMessageSystem,
         )
         from gameplay_systems.dead_action_system import DeadActionSystem
-        from gameplay_systems.terminal_player_interrupt_and_wait_system import (
-            TerminalPlayerInterruptAndWaitSystem,
+        from gameplay_systems.terminal_player_interrupt_wait_system import (
+            TerminalPlayerInterruptWaitSystem,
         )
 
-        from gameplay_systems.save_system import SaveSystem
+        # from gameplay_systems.save_system import SaveSystem
         from gameplay_systems.agent_kick_off_system import AgentKickOffSystem
         from gameplay_systems.update_archive_system import UpdateArchiveSystem
         from gameplay_systems.terminal_player_tips_system import (
@@ -169,10 +169,10 @@ class RPGEntitasProcessors(Processors):
         processors.add(EndSystem(context, rpg_game))
 
         # 保存系统，在所有系统之后
-        processors.add(SaveSystem(context, rpg_game))
+        # processors.add(SaveSystem(context, rpg_game))
 
         # 开发专用，网页版本不需要
-        processors.add(TerminalPlayerInterruptAndWaitSystem(context, rpg_game))
+        processors.add(TerminalPlayerInterruptWaitSystem(context, rpg_game))
 
         # 规划逻辑
         processors.add(PrePlanningSystem(context, rpg_game))  ######## 在所有规划之前!

@@ -44,7 +44,8 @@ class PlayerGoTo(PlayerCommand):
 
         self.add_player_planning_message(
             player_entity,
-            f"""{{"{GoToAction.__name__}": ["{self.stage_name}"]}}""",
+            self.make_simple_message(GoToAction.__name__, [self.stage_name]),
+            # f"""{{"{GoToAction.__name__}": ["{self.stage_name}"]}}""",
             rpg_game,
         )
 
@@ -77,7 +78,10 @@ class PlayerBroadcast(PlayerCommand):
 
         self.add_player_planning_message(
             player_entity,
-            f"""{{"{BroadcastAction.__name__}": ["{self.broadcast_content}"]}}""",
+            self.make_simple_message(
+                BroadcastAction.__name__, [self.broadcast_content]
+            ),
+            # f"""{{"{BroadcastAction.__name__}": ["{self.broadcast_content}"]}}""",
             rpg_game,
         )
 
@@ -107,7 +111,8 @@ class PlayerSpeak(PlayerCommand):
 
         self.add_player_planning_message(
             player_entity,
-            f"""{{"{SpeakAction.__name__}": ["{self.speak_content}"]}}""",
+            self.make_simple_message(SpeakAction.__name__, [self.speak_content]),
+            # f"""{{"{SpeakAction.__name__}": ["{self.speak_content}"]}}""",
             rpg_game,
         )
 
@@ -140,7 +145,8 @@ class PlayerWhisper(PlayerCommand):
 
         self.add_player_planning_message(
             player_entity,
-            f"""{{"{WhisperAction.__name__}": ["{self.whisper_content}"]}}""",
+            self.make_simple_message(WhisperAction.__name__, [self.whisper_content]),
+            # f"""{{"{WhisperAction.__name__}": ["{self.whisper_content}"]}}""",
             rpg_game,
         )
 
@@ -174,7 +180,8 @@ class PlayerPickUpProp(PlayerCommand):
         # 模拟添加一个plan的发起。
         self.add_player_planning_message(
             player_entity,
-            f"""{{"{PickUpPropAction.__name__}": ["{self.prop_name}"]}}""",
+            self.make_simple_message(PickUpPropAction.__name__, [self.prop_name]),
+            # f"""{{"{PickUpPropAction.__name__}": ["{self.prop_name}"]}}""",
             rpg_game,
         )
 
@@ -207,7 +214,8 @@ class PlayerSteal(PlayerCommand):
 
         self.add_player_planning_message(
             player_entity,
-            f"""{{"{StealPropAction.__name__}": ["{self.format_string}"]}}""",
+            self.make_simple_message(StealPropAction.__name__, [self.format_string]),
+            # f"""{{"{StealPropAction.__name__}": ["{self.format_string}"]}}""",
             rpg_game,
         )
 
@@ -243,7 +251,8 @@ class PlayerGiveProp(PlayerCommand):
         assert "/" in self.format_string
         self.add_player_planning_message(
             player_entity,
-            f"""{{"{GivePropAction.__name__}": ["{self.format_string}"]}}""",
+            self.make_simple_message(GivePropAction.__name__, [self.format_string]),
+            # f"""{{"{GivePropAction.__name__}": ["{self.format_string}"]}}""",
             rpg_game,
         )
 
@@ -278,7 +287,8 @@ class PlayerBehavior(PlayerCommand):
 
         self.add_player_planning_message(
             player_entity,
-            f"""{{"{BehaviorAction.__name__}": ["{self.behavior_sentence}"]}}""",
+            self.make_simple_message(BehaviorAction.__name__, [self.behavior_sentence]),
+            # f"""{{"{BehaviorAction.__name__}": ["{self.behavior_sentence}"]}}""",
             rpg_game,
         )
 
@@ -311,7 +321,8 @@ class PlayerEquip(PlayerCommand):
 
         self.add_player_planning_message(
             player_entity,
-            f"""{{"{EquipPropAction.__name__}": ["{self.equip_name}"]}}""",
+            self.make_simple_message(EquipPropAction.__name__, [self.equip_name]),
+            # f"""{{"{EquipPropAction.__name__}": ["{self.equip_name}"]}}""",
             rpg_game,
         )
 

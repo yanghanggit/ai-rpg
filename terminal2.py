@@ -1,7 +1,7 @@
 from loguru import logger
 import datetime
 from player.player_proxy import PlayerProxy
-from rpg_game.create_rpg_game_util import create_rpg_game, RPGGameClientType
+from rpg_game.create_rpg_game_util import create_rpg_game, GameClientType
 from rpg_game.rpg_game import RPGGame
 from gameplay_systems.components import PlayerComponent
 from player.player_command import (
@@ -20,6 +20,7 @@ import terminal_player_helper
 LOGIN_PLAYER_NAME = "北京柏林互动科技有限公司"
 DEFAULT_GAME_NAME = "World1"
 DEFAULT_VERSION = "qwe"
+SHOW_CLIENT_MESSAGES = 20
 
 
 async def main() -> None:
@@ -34,7 +35,7 @@ async def main() -> None:
     if game_name == "":
         game_name = DEFAULT_GAME_NAME
 
-    rpg_game = create_rpg_game(game_name, DEFAULT_VERSION, RPGGameClientType.TERMINAL)
+    rpg_game = create_rpg_game(game_name, DEFAULT_VERSION, GameClientType.TERMINAL)
     if rpg_game is None:
         logger.error(f"create_rpg_game 失败 = {game_name}")
         return
@@ -79,6 +80,16 @@ async def main() -> None:
             break
 
         await rpg_game.a_execute()
+
+        if player_proxy.is_message_queue_dirty:
+            player_proxy.is_message_queue_dirty = False
+            player_proxy.show_messages(SHOW_CLIENT_MESSAGES)
+
+        # 如果死了就退出。
+        if player_proxy._over:
+            rpg_game._will_exit = True
+            save_game(rpg_game, player_proxy)
+            break
 
         if rpg_game.is_player_input_allowed(player_proxy):
             await player_input(rpg_game, player_proxy)
@@ -125,7 +136,7 @@ def player_login(
 
 
 def add_player_command(
-    game_name: RPGGame, player_proxy: PlayerProxy, usr_input: str
+    rpg_game: RPGGame, player_proxy: PlayerProxy, usr_input: str
 ) -> bool:
 
     if "/goto" in usr_input:
@@ -162,29 +173,38 @@ def add_player_command(
 
 
 ###############################################################################################################################################
+def save_game(game_name: RPGGame, player_proxy: PlayerProxy) -> None:
+    pass
 
 
-async def player_input(
-    game_name: RPGGame, player_proxy: PlayerProxy, show_messages: int = 20
-) -> None:
+###############################################################################################################################################
+async def player_input(rpg_game: RPGGame, player_proxy: PlayerProxy) -> None:
 
     while True:
 
-        player_proxy.show_messages(show_messages)
         usr_input = input(f"[{player_proxy._name}]:")
         if usr_input == "/quit":
             logger.info(f"玩家退出游戏 = {player_proxy._name}")
-            game_name._will_exit = True
+            rpg_game._will_exit = True
+            save_game(rpg_game, player_proxy)
+            break
+
+        elif usr_input == "/save":
+            save_game(rpg_game, player_proxy)
             break
 
         elif usr_input == "/watch" or usr_input == "/w":
-            terminal_player_helper.handle_player_input_watch(game_name, player_proxy)
+            terminal_player_helper.handle_player_input_watch(rpg_game, player_proxy)
 
         elif usr_input == "/check" or usr_input == "/c":
-            terminal_player_helper.handle_player_input_check(game_name, player_proxy)
+            terminal_player_helper.handle_player_input_check(rpg_game, player_proxy)
+
+        elif "/show" in usr_input:
+            # global SHOW_CLIENT_MESSAGES
+            SHOW_CLIENT_MESSAGES = usr_input.split("/show")[1].strip()
 
         elif usr_input != "":
-            if add_player_command(game_name, player_proxy, usr_input):
+            if add_player_command(rpg_game, player_proxy, usr_input):
                 break
 
 

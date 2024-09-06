@@ -2,7 +2,8 @@ from entitas import Entity  # type: ignore
 from rpg_game.base_game import BaseGame
 from player.player_proxy import PlayerProxy
 from abc import ABC, abstractmethod
-from typing import cast
+from typing import cast, List, Dict
+import json
 
 
 ####################################################################################################################################
@@ -32,3 +33,9 @@ class PlayerCommand(ABC):
         if split_str in input_val:
             return input_val.split(split_str)[1].strip()
         return input_val
+
+    def make_simple_message(self, action_name: str, values: List[str]) -> str:
+        ret: Dict[str, List[str]] = {}
+        ret[action_name] = values
+        json_str = json.dumps(ret, ensure_ascii=False)
+        return json_str

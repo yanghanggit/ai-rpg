@@ -27,7 +27,7 @@ class DeadActionSystem(ExecuteProcessor):
         # 移除后续动作
         self.remove_actions(ACTOR_INTERACTIVE_ACTIONS_REGISTER)
         # 玩家死亡就游戏结束
-        self.is_player_dead_then_game_over()
+        self.handle_player_dead()
         # 添加销毁
         self.add_destory()
 
@@ -46,11 +46,16 @@ class DeadActionSystem(ExecuteProcessor):
                     entity.remove(action_class)
 
     ########################################################################################################################################################################
-    def is_player_dead_then_game_over(self) -> None:
-        entities = self._context.get_group(Matcher(DeadAction)).entities
-        for entity in entities:
-            if entity.has(PlayerComponent):
-                assert False, "玩家死亡，游戏结束"  # todo
+    def handle_player_dead(self) -> None:
+        player_entities = self._context.get_group(
+            Matcher(DeadAction, PlayerComponent)
+        ).entities
+        for player_entity in player_entities:
+            player_comp = player_entity.get(PlayerComponent)
+            player_proxy = self._game.get_player(player_comp.name)
+            if player_proxy is None:
+                continue
+            player_proxy.on_dead()
 
     ########################################################################################################################################################################
     def add_destory(self) -> None:

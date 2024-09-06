@@ -787,10 +787,7 @@ def make_world_skill_system_rule_success_prompt(
 
 ## 成功类型: {success_result}
 
-## 技能目标
-{", ".join(list(target_names))}
-
-## 原始行动语句
+## 原始行动语句(在其中可以分析出技能的目标)
 {input_behavior_sentence}
 
 ## 系统推理并润色后的结果
@@ -803,14 +800,18 @@ def make_world_skill_system_rule_success_prompt(
 
 
 def make_notify_others_in_stage_of_skill_event_prompt(
-    actor_name: str, target_name: str, reasoning_sentence: str
+    actor_name: str, target_name: str, reasoning_sentence: str, feedback_sentence: str
 ) -> str:
 
-    prompt = f"""# 注意场景内发生了如下事件: {actor_name} 向 {target_name} 发动了技能。
-## 关于事件描述
+    ret_prompt = f"""# 注意场景内发生了如下事件: {actor_name} 向 {target_name} 发动了技能。
+
+## 技能发动的过程描述
 {reasoning_sentence}
-"""
-    return prompt
+
+## {target_name} 受到技能后的反馈
+{feedback_sentence}"""
+
+    return ret_prompt
 
 
 ################################################################################################################################################
@@ -1008,19 +1009,6 @@ def make_world_skill_system_rule_prompt(
 - 输出不应包含任何超出所需 JSON 格式的额外文本、解释或总结。
 - 不要使用```json```来封装内容。"""
 
-    return ret_prompt
-
-
-################################################################################################################################################
-def make_self_skill_usage_check_prompt(
-    actor_name: str, out_come: str, bool_tag: bool
-) -> str:
-
-    ret_prompt = f"""# {actor_name} 对自己使用技能的结果判断如下:
-## 结果判断: { bool_tag and "成功" or "失败" }
-## 你的判断过程与理由
-{out_come}
-"""
     return ret_prompt
 
 

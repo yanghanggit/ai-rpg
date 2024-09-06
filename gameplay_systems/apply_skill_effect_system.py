@@ -6,6 +6,7 @@ from gameplay_systems.action_components import (
     SkillUsePropAction,
     DamageAction,
     WorldSkillSystemRuleAction,
+    BroadcastAction,
 )
 from gameplay_systems.components import (
     BodyComponent,
@@ -23,6 +24,16 @@ import my_format_string.target_and_message_format_string
 import my_format_string.attrs_format_string
 from rpg_game.rpg_game import RPGGame
 from my_data.model_def import AttributesIndex
+
+
+class SkillFeedbackAgentPlan(AgentPlan):
+
+    @property
+    def feedback(self) -> str:
+        broadcast_action = self.get_by_key(BroadcastAction.__name__)
+        if broadcast_action is None or len(broadcast_action.values) == 0:
+            return ""
+        return " ".join(broadcast_action.values)
 
 
 class ApplySkillEffectSystem(ReactiveProcessor):
@@ -82,7 +93,7 @@ class ApplySkillEffectSystem(ReactiveProcessor):
             self.calculate_and_add_action(entity, target)
 
             # 场景事件
-            self.on_notify_others_of_skill_event(entity, target)
+            self.on_notify_others_of_skill_event(entity, target, response_plan.feedback)
 
     ######################################################################################################################################################
 
@@ -149,7 +160,7 @@ class ApplySkillEffectSystem(ReactiveProcessor):
     ######################################################################################################################################################
 
     def on_notify_others_of_skill_event(
-        self, from_entity: Entity, target_entity: Entity
+        self, from_entity: Entity, target_entity: Entity, target_feedback: str
     ) -> None:
 
         current_stage_entity = self._context.safe_get_stage_entity(from_entity)
@@ -166,8 +177,9 @@ class ApplySkillEffectSystem(ReactiveProcessor):
                 self._context.safe_get_entity_name(from_entity),
                 self._context.safe_get_entity_name(target_entity),
                 world_skill_system_rule_out_come,
+                target_feedback,
             ),
-            set({from_entity, target_entity}),  # 已经参与的双方不需要再被通知了。
+            set({target_entity}),  # 已经参与的双方不需要再被通知了。
         )
 
     ######################################################################################################################################################
@@ -259,9 +271,11 @@ class ApplySkillEffectSystem(ReactiveProcessor):
     ######################################################################################################################################################
     def create_task(self, entity: Entity, target: Entity) -> Optional[AgentTask]:
 
-        agent_name = self._context.safe_get_entity_name(target)
-        agent = self._context._langserve_agent_system.get_agent(agent_name)
-        if agent is None:
+        target_agent_name = self._context.safe_get_entity_name(target)
+        target_agent = self._context._langserve_agent_system.get_agent(
+            target_agent_name
+        )
+        if target_agent is None:
             return None
 
         world_skill_system_rule_tag, world_skill_system_rule_out_come = (
@@ -269,25 +283,24 @@ class ApplySkillEffectSystem(ReactiveProcessor):
         )
         prompt = builtin_prompt.make_skill_hit_feedback_prompt(
             self._context.safe_get_entity_name(entity),
-            agent_name,
+            target_agent_name,
             world_skill_system_rule_out_come,
             world_skill_system_rule_tag,
         )
 
         return AgentTask.create(
-            agent,
-            builtin_prompt.replace_you(prompt, agent_name),
+            target_agent,
+            builtin_prompt.replace_you(prompt, target_agent_name),
         )
 
     ######################################################################################################################################################
-    def handle_task(self, task: AgentTask) -> Optional[AgentPlan]:
+    def handle_task(self, task: AgentTask) -> Optional[SkillFeedbackAgentPlan]:
 
         response = task.request()
         if response is None:
-            logger.debug(f"{task._agent._name}, response is None.")
             return None
 
-        return AgentPlan(task._agent._name, response)
+        return SkillFeedbackAgentPlan(task._agent._name, response)
 
     ######################################################################################################################################################
     def extract_world_skill_system_rule(self, entity: Entity) -> tuple[str, str]:

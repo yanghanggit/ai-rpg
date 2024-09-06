@@ -199,10 +199,6 @@ async def player_input(rpg_game: RPGGame, player_proxy: PlayerProxy) -> None:
         elif usr_input == "/check" or usr_input == "/c":
             terminal_player_helper.handle_player_input_check(rpg_game, player_proxy)
 
-        elif "/show" in usr_input:
-            # global SHOW_CLIENT_MESSAGES
-            SHOW_CLIENT_MESSAGES = usr_input.split("/show")[1].strip()
-
         elif usr_input != "":
             if add_player_command(rpg_game, player_proxy, usr_input):
                 break

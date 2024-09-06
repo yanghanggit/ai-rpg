@@ -194,6 +194,7 @@ class BehaviorActionSystem(ReactiveProcessor):
         self, entity: Entity, behavior_sentence: str, processed_result: bool
     ) -> None:
 
+        # 需要给到agent
         self._context.broadcast_entities(
             set({entity}),
             builtin_prompt.make_behavior_action_result_prompt(

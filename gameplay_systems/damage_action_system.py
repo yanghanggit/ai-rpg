@@ -124,12 +124,10 @@ class DamageActionSystem(ReactiveProcessor):
             self.loot_on_death(from_name, target_entity)
 
         ## 导演系统，单独处理，有旧的代码
-        self.on_add_damage_event_to_agent(
-            from_name, target_entity, final_damage, is_dead
-        )
+        self.on_damage_result_event(from_name, target_entity, final_damage, is_dead)
 
     ######################################################################################################################################################
-    def on_add_damage_event_to_agent(
+    def on_damage_result_event(
         self, from_name: str, target_entity: Entity, damage: int, is_dead: bool
     ) -> None:
         pass

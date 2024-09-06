@@ -6,20 +6,19 @@ from gameplay_systems.action_components import (
     SkillUsePropAction,
     TagAction,
     MindVoiceAction,
+    WorldSkillSystemRuleAction,
 )
 from gameplay_systems.components import (
     BodyComponent,
     ActorComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from typing import override, List, Set, Dict, Any
+from typing import override, List, Set, Dict, Any, cast
 from loguru import logger
 from extended_systems.files_def import PropFile
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
 from my_agent.agent_task import AgentTask, AgentTasksGather
 from my_agent.agent_plan_and_action import AgentPlan
-from gameplay_systems.cn_constant_prompt import _CNConstantPrompt_ as ConstantPrompt
-import gameplay_systems.cn_builtin_prompt as builtin_prompt
 from rpg_game.rpg_game import RPGGame
 
 
@@ -41,8 +40,8 @@ class SelfSkillUsageCheckResponse(AgentPlan):
     @property
     def out_come(self) -> str:
         mind_voice_action = self.get_by_key(MindVoiceAction.__name__)
-        if mind_voice_action is None or len(MindVoiceAction.values) == 0:
-            return ConstantPrompt.FAILURE
+        if mind_voice_action is None or len(mind_voice_action.values) == 0:
+            return ""
         return " ".join(mind_voice_action.values)
 
 
@@ -109,11 +108,13 @@ class SelfSkillUsageCheckSystem(ReactiveProcessor):
 
         for agent_name, task in tasks.items():
 
-            if task.response_content == "":
-                continue
-
             actor_entity = self._context.get_actor_entity(agent_name)
             if actor_entity is None:
+                continue
+
+            if task.response_content == "":
+                # 没有回答，直接清除所有的action
+                self.on_remove_actions(actor_entity)
                 continue
 
             response_plan = SelfSkillUsageCheckResponse(
@@ -124,14 +125,6 @@ class SelfSkillUsageCheckSystem(ReactiveProcessor):
                 # 失败就不用继续了，直接清除所有的action
                 self.on_remove_actions(actor_entity)
 
-            # 通知actor
-            self._context.broadcast_entities(
-                set({actor_entity}),
-                builtin_prompt.make_self_skill_usage_check_prompt(
-                    agent_name, response_plan.out_come, response_plan.bool_tag
-                ),
-            )
-
     ######################################################################################################################################################
     def on_remove_actions(
         self,
@@ -141,6 +134,7 @@ class SelfSkillUsageCheckSystem(ReactiveProcessor):
             SkillAction,
             SkillTargetAction,
             SkillUsePropAction,
+            WorldSkillSystemRuleAction,
         },
     ) -> None:
 
@@ -217,6 +211,7 @@ class SelfSkillUsageCheckSystem(ReactiveProcessor):
                 self.extract_prop_files(entity),
             )
 
+            # 会添加上下文的！！！！
             task = AgentTask.create(
                 agent,
                 builtin_prompt.replace_you(prompt, agent_name),

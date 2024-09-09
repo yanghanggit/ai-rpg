@@ -86,11 +86,9 @@ def make_stage_kick_off_prompt(
 
 ###############################################################################################################################################
 def make_world_system_kick_off_prompt(about_game: str, game_round: int) -> str:
-    ret_prompt = f"""# {ConstantPrompt.WORLD_SYSTEM_KICK_OFF_MESSAGE_PROMPT_TAG} 游戏世界即将开始运行。这是你的初始设定，请简要回答你的职能与描述
-
+    return f"""# {ConstantPrompt.WORLD_SYSTEM_KICK_OFF_MESSAGE_PROMPT_TAG} 游戏世界即将开始运行。这是你的初始设定，请简要回答你的职能与描述
 ## 游戏背景与风格设定
 {about_game}"""
-    return ret_prompt
 
 
 ###############################################################################################################################################
@@ -609,12 +607,12 @@ def make_unknown_guid_stage_name_prompt(guid: int) -> str:
 
 
 ################################################################################################################################################
-def is_unknown_guid_stage_name_prompt(stage_name: str) -> bool:
+def is_unknown_guid_stage_name(stage_name: str) -> bool:
     return "未知场景" in stage_name
 
 
 ################################################################################################################################################
-def extract_from_unknown_guid_stage_name_prompt(stage_name: str) -> int:
+def extract_from_unknown_guid_stage_name(stage_name: str) -> int:
     return int(stage_name.split(":")[1])
 
 

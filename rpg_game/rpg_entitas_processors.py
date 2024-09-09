@@ -19,6 +19,14 @@ class RPGEntitasProcessors(Processors):
         from gameplay_systems.speak_action_system import SpeakActionSystem
         from gameplay_systems.go_to_action_system import GoToActionSystem
         from gameplay_systems.pre_go_to_action_system import PreBeforeGoToActionSystem
+        from gameplay_systems.stage_validator_system import StageValidatorSystem
+        from gameplay_systems.stage_departure_checker_system import (
+            StageDepartureCheckerSystem,
+        )
+        from gameplay_systems.stage_entrance_checker_system import (
+            StageEntranceCheckerSystem,
+        )
+
         from gameplay_systems.destroy_entity_system import DestroyEntitySystem
         from gameplay_systems.tag_action_system import TagActionSystem
         from gameplay_systems.broadcast_action_system import BroadcastActionSystem
@@ -140,6 +148,7 @@ class RPGEntitasProcessors(Processors):
         )  ## 战斗类行为产生结果可能有死亡，死亡之后，后面的行为都不可以做。
 
         # 交互类的行为（交换数据），在死亡之后，因为死了就不能执行
+        processors.add(RemovePropActionSystem(context, rpg_game))
         processors.add(PickUpPropActionSystem(context, rpg_game))
         processors.add(StealActionSystem(context, rpg_game))
         processors.add(GivePropActionSystem(context, rpg_game))
@@ -151,12 +160,14 @@ class RPGEntitasProcessors(Processors):
                 builtin_world_systems.WORLD_APPEARANCE_SYSTEM_NAME,
             )
         )  ### 更新外观
-        processors.add(RemovePropActionSystem(context, rpg_game))
 
         # 场景切换类行为，非常重要而且必须在最后!
-        processors.add(
-            PreBeforeGoToActionSystem(context, rpg_game)
-        )  # 去往场景之前的检查与实际的执行
+        # processors.add(
+        #     PreBeforeGoToActionSystem(context, rpg_game)
+        # )  # 去往场景之前的检查与实际的执行
+        processors.add(StageValidatorSystem(context, rpg_game))
+        processors.add(StageDepartureCheckerSystem(context, rpg_game))
+        processors.add(StageEntranceCheckerSystem(context, rpg_game))
         processors.add(GoToActionSystem(context, rpg_game))
 
         processors.add(

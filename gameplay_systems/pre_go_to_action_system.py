@@ -15,10 +15,10 @@ from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
 from gameplay_systems.cn_constant_prompt import _CNConstantPrompt_ as ConstantPrompt
-from typing import cast, override, List, Set
+from typing import cast, override, List, Set, Any, Dict, Optional
 from gameplay_systems.check_self_helper import CheckSelfHelper
+from my_agent.agent_task import AgentTask, AgentTasksGather
 from my_agent.agent_plan_and_action import AgentPlan
-from my_agent.agent_task import AgentTask
 from extended_systems.files_def import PropFile
 from rpg_game.rpg_game import RPGGame
 from my_data.model_def import PropType
@@ -38,7 +38,7 @@ class StageCondCheckResponse(AgentPlan):
         return first_value == "yes" or first_value == "true"
 
     @property
-    def show_tips(self) -> str:
+    def tips(self) -> str:
         whisper_action = self.get_by_key(WhisperAction.__name__)
         if whisper_action is None or len(whisper_action.values) == 0:
             return ""
@@ -198,13 +198,13 @@ class PreBeforeGoToActionSystem(ReactiveProcessor):
             self._context.broadcast_entities(
                 set({actor_entity}),
                 builtin_prompt.exit_stage_failed_beacuse_stage_refuse_prompt(
-                    actor_name, current_stage_name, response_plan.show_tips
+                    actor_name, current_stage_name, response_plan.tips
                 ),
             )
 
             return False
 
-        logger.debug(f"允许通过！说明如下: {response_plan.show_tips}")
+        logger.debug(f"允许通过！说明如下: {response_plan.tips}")
         ## 可以删除，允许通过！这个上下文就拿掉，不需要了。
         self._context._langserve_agent_system.remove_last_conversation_between_human_and_ai(
             current_stage_name
@@ -259,13 +259,13 @@ class PreBeforeGoToActionSystem(ReactiveProcessor):
             self._context.broadcast_entities(
                 set({actor_entity}),
                 builtin_prompt.enter_stage_failed_beacuse_stage_refuse_prompt(
-                    actor_name, target_stage_name, response_plan.show_tips
+                    actor_name, target_stage_name, response_plan.tips
                 ),
             )
 
             return False
 
-        logger.debug(f"允许通过！说明如下: {response_plan.show_tips}")
+        logger.debug(f"允许通过！说明如下: {response_plan.tips}")
         ## 可以删除，允许通过！这个上下文就拿掉，不需要了。
         self._context._langserve_agent_system.remove_last_conversation_between_human_and_ai(
             target_stage_name
@@ -315,13 +315,11 @@ class PreBeforeGoToActionSystem(ReactiveProcessor):
         if len(go_to_action.values) == 0:
             return
         check_unknown_guid_stage_name = go_to_action.values[0]
-        if not builtin_prompt.is_unknown_guid_stage_name_prompt(
-            check_unknown_guid_stage_name
-        ):
+        if not builtin_prompt.is_unknown_guid_stage_name(check_unknown_guid_stage_name):
             return
 
         logger.debug(f"current_name = {check_unknown_guid_stage_name}")
-        guid = builtin_prompt.extract_from_unknown_guid_stage_name_prompt(
+        guid = builtin_prompt.extract_from_unknown_guid_stage_name(
             check_unknown_guid_stage_name
         )
         stage_entity = self._context.get_entity_by_guid(guid)

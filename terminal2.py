@@ -114,6 +114,7 @@ def player_login(
 
     # 更改算作登陆成功
     actor_entity.replace(PlayerComponent, player_proxy._name)
+    player_proxy._controlled_actor_name = player_controlled_actor_name
 
     player_proxy.add_system_message(rpg_game.about_game)
 

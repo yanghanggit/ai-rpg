@@ -18,7 +18,8 @@ class RPGEntitasProcessors(Processors):
         from gameplay_systems.actor_planning_system import ActorPlanningSystem
         from gameplay_systems.speak_action_system import SpeakActionSystem
         from gameplay_systems.go_to_action_system import GoToActionSystem
-        from gameplay_systems.pre_go_to_action_system import PreBeforeGoToActionSystem
+
+        # from gameplay_systems.pre_go_to_action_system import PreBeforeGoToActionSystem
         from gameplay_systems.stage_validator_system import StageValidatorSystem
         from gameplay_systems.stage_departure_checker_system import (
             StageDepartureCheckerSystem,

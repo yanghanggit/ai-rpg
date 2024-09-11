@@ -37,7 +37,7 @@ class StageDepartureCheckResponse(AgentPlan):
         whisper_action = self.get_by_key(WhisperAction.__name__)
         if whisper_action is None or len(whisper_action.values) == 0:
             return ""
-        return " ".join(whisper_action.values)
+        return whisper_action.values[0]
 
 
 ###############################################################################################################################################
@@ -123,7 +123,7 @@ class StageDepartureCheckerSystem(ReactiveProcessor):
         #
         current_stage_entity = self._context.safe_get_stage_entity(actor_entity)
         assert current_stage_entity is not None
- 
+
         current_stage_name = self._context.safe_get_entity_name(current_stage_entity)
         stage_agent = self._context._langserve_agent_system.get_agent(
             current_stage_name
@@ -165,12 +165,10 @@ class StageDepartureCheckerSystem(ReactiveProcessor):
                     ),
                 )
 
-                # 必须移除GoToAction
                 self.on_remove_action(actor_entity)
 
             else:
 
-                # 成功可以不要这个对话了
                 self._context._langserve_agent_system.remove_last_conversation_between_human_and_ai(
                     task.agent_name
                 )

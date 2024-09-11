@@ -48,43 +48,22 @@ RemovePropAction = namedtuple("RemovePropAction", "name action_name values")
 ##############################################################################################################################################
 
 
+CONVERSATION_ACTIONS_REGISTER: FrozenSet[type[Any]] = frozenset(
+    {TagAction, MindVoiceAction, SpeakAction, BroadcastAction, WhisperAction}
+)
+
 # 场景可以用的所有动作
-STAGE_AVAILABLE_ACTIONS_REGISTER: FrozenSet[type[Any]] = frozenset(
-    {
-        TagAction,
-        MindVoiceAction,
-        SpeakAction,
-        BroadcastAction,
-        WhisperAction,
-        StageNarrateAction,
-        RemovePropAction,
-        DamageAction,
-    }
+STAGE_AVAILABLE_ACTIONS_REGISTER: FrozenSet[type[Any]] = (
+    frozenset(
+        {
+            StageNarrateAction,
+            RemovePropAction,
+            DamageAction,
+        }
+    )
+    | CONVERSATION_ACTIONS_REGISTER
 )
 
-
-# 角色可以用的所有动作
-ACTOR_AVAILABLE_ACTIONS_REGISTER: FrozenSet[type[Any]] = frozenset(
-    {
-        TagAction,
-        MindVoiceAction,
-        SpeakAction,
-        BroadcastAction,
-        WhisperAction,
-        GoToAction,
-        PickUpPropAction,
-        StealPropAction,
-        GivePropAction,
-        BehaviorAction,
-        SkillTargetAction,
-        SkillAction,
-        SkillUsePropAction,
-        WorldSkillSystemRuleAction,
-        UpdateAppearanceAction,
-        DamageAction,
-        EquipPropAction,
-    }
-)
 
 # 角色交互类动作
 ACTOR_INTERACTIVE_ACTIONS_REGISTER: FrozenSet[type[Any]] = frozenset(
@@ -102,4 +81,9 @@ ACTOR_INTERACTIVE_ACTIONS_REGISTER: FrozenSet[type[Any]] = frozenset(
         DamageAction,
         EquipPropAction,
     }
+)
+
+# 角色可以用的所有动作
+ACTOR_AVAILABLE_ACTIONS_REGISTER: FrozenSet[type[Any]] = (
+    ACTOR_INTERACTIVE_ACTIONS_REGISTER | CONVERSATION_ACTIONS_REGISTER
 )

@@ -1,6 +1,10 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: ignore
 from gameplay_systems.action_components import GoToAction, DeadAction
-from gameplay_systems.components import ActorComponent, EnterStageComponent, StageComponent
+from gameplay_systems.components import (
+    ActorComponent,
+    EnterStageComponent,
+    StageComponent,
+)
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import override, Optional
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
@@ -24,17 +28,16 @@ class GoToHelper:
         )
         assert self._current_stage_entity is not None
         self._target_stage_name: str = target_stage_name
-  
 
     @property
     def target_stage_entity(self) -> Optional[Entity]:
         stage_name = self._get_target_stage_name(self._entity)
         return self._context.get_stage_entity(stage_name)
-    
+
     @property
     def target_stage_name(self) -> str:
         return self._get_target_stage_name(self._entity)
-        
+
     def _get_target_stage_name(self, actor_entity: Entity) -> str:
         assert actor_entity.has(ActorComponent)
         assert actor_entity.has(GoToAction)
@@ -52,7 +55,6 @@ class GoToHelper:
                 return self._context.safe_get_entity_name(stage_entity)
 
         return str(go_to_action.values[0])
-
 
 
 class GoToActionSystem(ReactiveProcessor):

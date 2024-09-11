@@ -57,7 +57,6 @@ class StageValidatorSystem(ReactiveProcessor):
             self.get_target_stage_name(entity)
         )
         if target_stage_entity is None:
-            # 无效的去往目标!
             self._context.broadcast_entities(
                 set({entity}),
                 builtin_prompt.go_to_stage_failed_because_stage_is_invalid_prompt(
@@ -67,7 +66,6 @@ class StageValidatorSystem(ReactiveProcessor):
             return False
 
         if current_stage_entity == target_stage_entity:
-            # 已经在这个场景里了，不要重复去了
             self._context.broadcast_entities(
                 set({entity}),
                 builtin_prompt.go_to_stage_failed_because_already_in_stage_prompt(
@@ -82,7 +80,6 @@ class StageValidatorSystem(ReactiveProcessor):
         stage_graph: Set[str] = stage_graph_comp.stage_graph
         if len(stage_graph) > 0:
             if target_stage_name not in stage_graph:
-                ## 场景之间无连接就不能去。
                 self._context.broadcast_entities(
                     set({entity}),
                     builtin_prompt.go_to_stage_failed_because_stage_is_invalid_prompt(

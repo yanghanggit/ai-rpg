@@ -58,23 +58,14 @@ class BehaviorActionSystem(ReactiveProcessor):
 
         props = self.extract_props_info(entity, behavior_sentence)
 
-        # 默认会添加当前武器
+        # 默认会添加当前武器? 先不用。
         weapon_prop = self.get_current_weapon(entity)
         if weapon_prop is not None:
-            props.add(weapon_prop)
+            pass
+            # props.add(weapon_prop)
 
         # 添加动作
-        self.clear_action(
-            entity,
-            set(
-                {
-                    SkillTargetAction,
-                    SkillAction,
-                    SkillUsePropAction,
-                    WorldSkillSystemRuleAction,
-                }
-            ),
-        )
+        self.clear_action(entity)
         self.add_skill_target_action(entity, targets)
         self.add_skill_action(entity, skills)
         self.add_skill_use_prop_action(entity, props)

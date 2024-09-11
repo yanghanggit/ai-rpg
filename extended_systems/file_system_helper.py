@@ -145,3 +145,19 @@ def get_categorized_files_dict(
 
 
 ##################################################################################################################################
+def consume_consumable(
+    file_system: FileSystem, prop: PropFile, consume_count: int = 1
+) -> bool:
+    if not prop.is_consumable_item:
+        return False
+
+    if prop._count < consume_count:
+        logger.error(f"consume_consumable: {prop.name} count is not enough.")
+        return False
+
+    prop._count -= consume_count
+    file_system.write_file(prop)
+    return True
+
+
+##################################################################################################################################

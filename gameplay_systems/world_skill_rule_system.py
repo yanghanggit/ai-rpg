@@ -22,6 +22,7 @@ from my_agent.agent_plan_and_action import AgentPlan
 from gameplay_systems.cn_constant_prompt import _CNConstantPrompt_ as ConstantPrompt
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
 from rpg_game.rpg_game import RPGGame
+import extended_systems.file_system_helper
 
 
 class WorldSkillRuleResponse(AgentPlan):
@@ -135,7 +136,6 @@ class WorldSkillRuleSystem(ReactiveProcessor):
                     self.on_world_skill_system_rule_fail_event(
                         actor_entity, response_plan
                     )
-
                     self.on_remove_actions(actor_entity)
                 case ConstantPrompt.SUCCESS:
                     self.on_world_skill_system_rule_success_event(
@@ -144,6 +144,7 @@ class WorldSkillRuleSystem(ReactiveProcessor):
                     self.add_world_skill_system_rule_success_action(
                         actor_entity, response_plan
                     )
+                    self.consume_consumable_props(actor_entity)
 
                 case ConstantPrompt.CRITICAL_SUCCESS:
                     self.on_world_skill_system_rule_success_event(
@@ -152,9 +153,19 @@ class WorldSkillRuleSystem(ReactiveProcessor):
                     self.add_world_skill_system_rule_success_action(
                         actor_entity, response_plan
                     )
+                    self.consume_consumable_props(actor_entity)
 
                 case _:
                     logger.error(f"Unknown tag: {response_plan.result_tag}")
+
+    ######################################################################################################################################################
+    def consume_consumable_props(self, entity: Entity) -> None:
+        prop_files = self.extract_prop_files(entity)
+        for prop_file in prop_files:
+            if prop_file.is_consumable_item:
+                extended_systems.file_system_helper.consume_consumable(
+                    self._context._file_system, prop_file
+                )
 
     ######################################################################################################################################################
     def add_world_skill_system_rule_success_action(
@@ -357,3 +368,5 @@ class WorldSkillRuleSystem(ReactiveProcessor):
             if target is not None:
                 targets.add(target)
         return targets
+
+    ######################################################################################################################################################

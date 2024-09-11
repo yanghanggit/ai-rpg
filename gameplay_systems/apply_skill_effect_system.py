@@ -24,6 +24,7 @@ import my_format_string.target_and_message_format_string
 import my_format_string.attrs_format_string
 from rpg_game.rpg_game import RPGGame
 from my_data.model_def import AttributesIndex
+from gameplay_systems.cn_constant_prompt import _CNConstantPrompt_ as ConstantPrompt
 
 
 class SkillFeedbackAgentPlan(AgentPlan):
@@ -192,14 +193,20 @@ class ApplySkillEffectSystem(ReactiveProcessor):
         # 补充上所有参与的道具的属性
         self.calculate_props(entity, target, calculate_attrs)
         # 最终添加到目标的伤害
-        self.add_damage(entity, target, calculate_attrs)
+        self.add_damage(entity, target, calculate_attrs, self.get_damage_buff(entity))
+
+    ######################################################################################################################################################
 
     ######################################################################################################################################################
     def add_damage(
-        self, entity: Entity, target: Entity, skill_attrs: List[int]
+        self, entity: Entity, target: Entity, skill_attrs: List[int], buff: float = 1.0
     ) -> None:
         if skill_attrs[AttributesIndex.DAMAGE.value] == 0:
             return
+
+        skill_attrs[AttributesIndex.DAMAGE.value] = int(
+            skill_attrs[AttributesIndex.DAMAGE.value] * buff
+        )
 
         if not target.has(DamageAction):
             target.add(
@@ -314,5 +321,17 @@ class ApplySkillEffectSystem(ReactiveProcessor):
         return cast(str, world_skill_system_rule_action.values[0]), cast(
             str, world_skill_system_rule_action.values[1]
         )
+
+    ######################################################################################################################################################
+    def get_damage_buff(self, entity: Entity) -> float:
+
+        world_skill_system_rule_tag, world_skill_system_rule_out_come = (
+            self.extract_world_skill_system_rule(entity)
+        )
+
+        if world_skill_system_rule_tag == ConstantPrompt.CRITICAL_SUCCESS:
+            return 1.5
+
+        return 1.0
 
     ######################################################################################################################################################

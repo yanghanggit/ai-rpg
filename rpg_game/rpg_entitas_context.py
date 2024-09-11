@@ -16,6 +16,7 @@ from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from typing import Optional, Dict, List, Set, cast, Any
 from extended_systems.guid_generator import GUIDGenerator
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
+from player.player_proxy import PlayerProxy
 
 
 class RPGEntitasContext(Context):
@@ -292,14 +293,73 @@ class RPGEntitasContext(Context):
         self,
         entities: Set[Entity],
         message_content: str,
-        exclude_entities: Set[Entity] = set(),
     ) -> None:
 
-        copy_entities = entities.copy()
-        if len(exclude_entities) > 0:
-            copy_entities = copy_entities - exclude_entities
+        # 可能做点啥。目前没想好todo
+        ##.....
 
-        self._broadcast_entities(copy_entities, message_content)
+        ## 真正的实现。
+        self._broadcast_entities(entities, message_content)
+
+        ##
+        self._broadcast_players(entities, message_content)
+
+    #############################################################################################################################
+    def _broadcast_players(self, entities: Set[Entity], message_content: str) -> None:
+
+        if len(entities) == 0:
+            return
+
+        first_entity = next(iter(entities))
+        player_entities_in_stage = self.get_players_in_stage(first_entity)
+
+        player_proxies: Set[PlayerProxy] = set()
+        for player_entity in player_entities_in_stage:
+            player_proxy = self.get_player_proxy(player_entity)
+            if player_proxy is None:
+                continue
+            player_proxies.add(player_proxy)
+
+        for player_proxy in player_proxies:
+            for entity in entities:
+                safe_name = self.safe_get_entity_name(entity)
+                replace_message = builtin_prompt.replace_you(
+                    message_content, player_proxy._controlled_actor_name
+                )
+                if entity.has(ActorComponent):
+                    player_proxy.add_actor_message(safe_name, replace_message)
+                elif entity.has(StageComponent):
+                    player_proxy.add_stage_message(safe_name, replace_message)
+                else:
+                    assert False, "不应该到这里"
+
+    #############################################################################################################################
+    def get_players_in_stage(self, stage_entity: Entity) -> Set[Entity]:
+
+        ret: Set[Entity] = set()
+
+        actor_entities_in_stage = self.get_actors_in_stage(stage_entity)
+        for actor_entity in actor_entities_in_stage:
+            if not actor_entity.has(PlayerComponent):
+                continue
+            ret.add(actor_entity)
+
+        return ret
+
+    #############################################################################################################################
+    def get_player_proxy(self, player_entity: Entity) -> Optional[PlayerProxy]:
+        if not player_entity.has(PlayerComponent):
+            return None
+        player_comp = player_entity.get(PlayerComponent)
+        return self._get_player_proxy(player_comp.name)
+
+    #############################################################################################################################
+    def _get_player_proxy(self, player_name: str) -> Optional[PlayerProxy]:
+        from rpg_game.rpg_game import RPGGame
+
+        if self._game is None:
+            return None
+        return cast(RPGGame, self._game).get_player(player_name)
 
     #############################################################################################################################
     def _broadcast_entities(self, entities: Set[Entity], message_content: str) -> None:
@@ -317,14 +377,14 @@ class RPGEntitasContext(Context):
             # 记录历史
             self._round_messages.get(safe_name, []).append(replace_message)
 
-            # 如果是player 就特殊处理
-            if self._game is not None and entity.has(PlayerComponent):
-                from rpg_game.rpg_game import RPGGame
+            # 如果是player 就特殊处理 todo
+            # if self._game is not None and entity.has(PlayerComponent):
+            #     from rpg_game.rpg_game import RPGGame
 
-                player_comp = entity.get(PlayerComponent)
-                player_proxy = cast(RPGGame, self._game).get_player(player_comp.name)
-                if player_proxy is not None:
-                    player_proxy.add_actor_message(safe_name, replace_message)
+            #     player_comp = entity.get(PlayerComponent)
+            #     player_proxy = cast(RPGGame, self._game).get_player(player_comp.name)
+            #     if player_proxy is not None:
+            #         player_proxy.add_actor_message(safe_name, replace_message)
 
     #############################################################################################################################
     def get_round_messages(self, entity: Entity) -> List[str]:

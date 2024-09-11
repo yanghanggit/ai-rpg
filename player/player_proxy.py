@@ -12,10 +12,12 @@ class PlayerProxy:
         self._commands: List[PlayerCommand] = []
 
         self._client_messages: List[tuple[str, str]] = []
-        self._login_messages: List[tuple[str, str]] = []
+        self._delayed_show_login_messages: List[tuple[str, str]] = []
 
         self._over: bool = False
         self.is_message_queue_dirty = False
+
+        self._controlled_actor_name: str = ""
 
     ##########################################################################################################################################################
     def add_command(self, command: Any) -> None:
@@ -48,7 +50,7 @@ class PlayerProxy:
 
     ##########################################################################################################################################################
     def add_login_message(self, actor_name: str, message: str) -> None:
-        self.add_message(f"{actor_name}", message, self._login_messages)
+        self.add_message(f"{actor_name}", message, self._delayed_show_login_messages)
 
     ##########################################################################################################################################################
     def show_messages(self, count: int) -> None:

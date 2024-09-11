@@ -11,7 +11,6 @@ from gameplay_systems.components import (
     StageComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from loguru import logger
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
 from gameplay_systems.cn_constant_prompt import _CNConstantPrompt_ as ConstantPrompt
 from typing import cast, override, List, Set, Any, Dict, Optional
@@ -41,7 +40,7 @@ class StageEntranceCheckResponse(AgentPlan):
         whisper_action = self.get_by_key(WhisperAction.__name__)
         if whisper_action is None or len(whisper_action.values) == 0:
             return ""
-        return " ".join(whisper_action.values)
+        return whisper_action.values[0]
 
 
 ###############################################################################################################################################
@@ -96,7 +95,6 @@ class StageEntranceCheckerSystem(ReactiveProcessor):
         ).gather()
 
         if len(response) == 0:
-            logger.debug(f"phase1_response is None.")
             self.on_remove_all(entities)
             return
 
@@ -116,7 +114,6 @@ class StageEntranceCheckerSystem(ReactiveProcessor):
             if not self.has_conditions(target_stage_entity):
                 continue
 
-            ###
             task = self.create_task(entity)
             if task is not None:
                 ret[self._context.safe_get_entity_name(entity)] = task
@@ -138,7 +135,6 @@ class StageEntranceCheckerSystem(ReactiveProcessor):
         if agent is None:
             return None
 
-        ##
         actor_name = self._context.safe_get_entity_name(actor_entity)
         prompt = builtin_prompt.stage_entry_conditions_check_prompt(
             actor_name,

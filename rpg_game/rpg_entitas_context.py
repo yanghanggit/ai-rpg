@@ -280,13 +280,14 @@ class RPGEntitasContext(Context):
         if stage_entity is None:
             return
 
-        notify_entities = self.get_actors_in_stage(stage_entity)
-        notify_entities.add(stage_entity)
+        need_broadcast_entities = self.get_actors_in_stage(stage_entity)
+        need_broadcast_entities.add(stage_entity)
 
         if len(exclude_entities) > 0:
-            notify_entities = notify_entities - exclude_entities
+            need_broadcast_entities = need_broadcast_entities - exclude_entities
 
-        self._broadcast_entities(notify_entities, message_content)
+        self._broadcast_entities(need_broadcast_entities, message_content)
+        self._broadcast_players(need_broadcast_entities, message_content)
 
     #############################################################################################################################
     def broadcast_entities(
@@ -295,13 +296,7 @@ class RPGEntitasContext(Context):
         message_content: str,
     ) -> None:
 
-        # 可能做点啥。目前没想好todo
-        ##.....
-
-        ## 真正的实现。
         self._broadcast_entities(entities, message_content)
-
-        ##
         self._broadcast_players(entities, message_content)
 
     #############################################################################################################################
@@ -323,13 +318,21 @@ class RPGEntitasContext(Context):
         for player_proxy in player_proxies:
             for entity in entities:
                 safe_name = self.safe_get_entity_name(entity)
-                replace_message = builtin_prompt.replace_you(
-                    message_content, player_proxy._controlled_actor_name
-                )
+
                 if entity.has(ActorComponent):
-                    player_proxy.add_actor_message(safe_name, replace_message)
+
+                    if safe_name == player_proxy._controlled_actor_name:
+                        player_proxy.add_actor_message(
+                            safe_name,
+                            builtin_prompt.replace_you(
+                                message_content, player_proxy._controlled_actor_name
+                            ),
+                        )
+                    else:
+                        player_proxy.add_actor_message(safe_name, message_content)
+
                 elif entity.has(StageComponent):
-                    player_proxy.add_stage_message(safe_name, replace_message)
+                    player_proxy.add_stage_message(safe_name, message_content)
                 else:
                     assert False, "不应该到这里"
 
@@ -376,15 +379,6 @@ class RPGEntitasContext(Context):
 
             # 记录历史
             self._round_messages.get(safe_name, []).append(replace_message)
-
-            # 如果是player 就特殊处理 todo
-            # if self._game is not None and entity.has(PlayerComponent):
-            #     from rpg_game.rpg_game import RPGGame
-
-            #     player_comp = entity.get(PlayerComponent)
-            #     player_proxy = cast(RPGGame, self._game).get_player(player_comp.name)
-            #     if player_proxy is not None:
-            #         player_proxy.add_actor_message(safe_name, replace_message)
 
     #############################################################################################################################
     def get_round_messages(self, entity: Entity) -> List[str]:

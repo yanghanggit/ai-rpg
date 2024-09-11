@@ -181,7 +181,7 @@ class ApplySkillEffectSystem(ReactiveProcessor):
                 world_skill_system_rule_out_come,
                 target_feedback,
             ),
-            set({target_entity}),  #已经参与的双方不需要再被通知了。
+            set({target_entity}),  # 已经参与的双方不需要再被通知了。
         )
 
     ######################################################################################################################################################
@@ -200,7 +200,7 @@ class ApplySkillEffectSystem(ReactiveProcessor):
     def add_damage(
         self, entity: Entity, target: Entity, skill_attrs: List[int], buff: float = 1.0
     ) -> None:
-        
+
         skill_attrs[AttributesIndex.DAMAGE.value] = int(
             skill_attrs[AttributesIndex.DAMAGE.value] * buff
         )
@@ -212,7 +212,6 @@ class ApplySkillEffectSystem(ReactiveProcessor):
             target.add(
                 DamageAction,
                 self._context.safe_get_entity_name(target),
-                DamageAction.__name__,
                 [],
             )
 
@@ -330,8 +329,8 @@ class ApplySkillEffectSystem(ReactiveProcessor):
         )
 
         if world_skill_system_rule_tag == ConstantPrompt.CRITICAL_SUCCESS:
-            return 1.5 #先写死，测试的时候再改。todo
+            return 1.5  # 先写死，测试的时候再改。todo
 
-        return 1.0 #默认的。
+        return 1.0  # 默认的。
 
     ######################################################################################################################################################

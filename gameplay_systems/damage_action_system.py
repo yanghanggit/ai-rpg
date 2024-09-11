@@ -116,7 +116,6 @@ class DamageActionSystem(ReactiveProcessor):
                 target_entity.add(
                     DeadAction,
                     self._context.safe_get_entity_name(target_entity),
-                    DeadAction.__name__,
                     [],
                 )
 

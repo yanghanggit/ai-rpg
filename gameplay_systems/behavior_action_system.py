@@ -125,9 +125,10 @@ class BehaviorActionSystem(ReactiveProcessor):
     def add_skill_target_action(self, entity: Entity, target_names: Set[str]) -> None:
         if len(target_names) == 0:
             return
-        safe_name = self._context.safe_get_entity_name(entity)
         entity.add(
-            SkillTargetAction, safe_name, SkillTargetAction.__name__, list(target_names)
+            SkillTargetAction,
+            self._context.safe_get_entity_name(entity),
+            list(target_names),
         )
 
     ######################################################################################################################################################
@@ -152,9 +153,8 @@ class BehaviorActionSystem(ReactiveProcessor):
     ) -> None:
         if len(prop_name_as_skill_name) == 0:
             return
-        safe_name = self._context.safe_get_entity_name(entity)
         skill_names = [skill.name for skill in prop_name_as_skill_name]
-        entity.add(SkillAction, safe_name, SkillAction.__name__, skill_names)
+        entity.add(SkillAction, self._context.safe_get_entity_name(entity), skill_names)
 
     ######################################################################################################################################################
     def extract_props_info(self, entity: Entity, sentence: str) -> Set[PropFile]:
@@ -174,10 +174,9 @@ class BehaviorActionSystem(ReactiveProcessor):
     def add_skill_use_prop_action(self, entity: Entity, props: Set[PropFile]) -> None:
         if len(props) == 0:
             return
-        safe_name = self._context.safe_get_entity_name(entity)
         prop_names = [prop.name for prop in props]
         entity.add(
-            SkillUsePropAction, safe_name, SkillUsePropAction.__name__, prop_names
+            SkillUsePropAction, self._context.safe_get_entity_name(entity), prop_names
         )
 
     ######################################################################################################################################################

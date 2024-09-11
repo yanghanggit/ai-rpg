@@ -38,9 +38,7 @@ class PlayerGoTo(PlayerCommand):
             return
 
         actor_comp = player_entity.get(ActorComponent)
-        player_entity.add(
-            GoToAction, actor_comp.name, GoToAction.__name__, [self.stage_name]
-        )
+        player_entity.add(GoToAction, actor_comp.name, [self.stage_name])
 
         self.add_player_planning_message(
             player_entity,
@@ -72,7 +70,6 @@ class PlayerBroadcast(PlayerCommand):
         player_entity.add(
             BroadcastAction,
             actor_comp.name,
-            BroadcastAction.__name__,
             [self.broadcast_content],
         )
 
@@ -105,9 +102,7 @@ class PlayerSpeak(PlayerCommand):
             return
 
         actor_comp = player_entity.get(ActorComponent)
-        player_entity.add(
-            SpeakAction, actor_comp.name, SpeakAction.__name__, [self.speak_content]
-        )
+        player_entity.add(SpeakAction, actor_comp.name, [self.speak_content])
 
         self.add_player_planning_message(
             player_entity,
@@ -139,7 +134,6 @@ class PlayerWhisper(PlayerCommand):
         player_entity.add(
             WhisperAction,
             actor_comp.name,
-            WhisperAction.__name__,
             [self.whisper_content],
         )
 
@@ -173,7 +167,6 @@ class PlayerPickUpProp(PlayerCommand):
         player_entity.add(
             PickUpPropAction,
             actor_comp.name,
-            PickUpPropAction.__name__,
             [self.prop_name],
         )
 
@@ -208,7 +201,6 @@ class PlayerSteal(PlayerCommand):
         player_entity.add(
             StealPropAction,
             actor_comp.name,
-            StealPropAction.__name__,
             [self.format_string],
         )
 
@@ -242,7 +234,6 @@ class PlayerGiveProp(PlayerCommand):
         player_entity.add(
             GivePropAction,
             actor_comp.name,
-            GivePropAction.__name__,
             [self.format_string],
         )
 
@@ -280,7 +271,6 @@ class PlayerBehavior(PlayerCommand):
         player_entity.add(
             BehaviorAction,
             actor_comp.name,
-            BehaviorAction.__name__,
             [self.behavior_sentence],
         )
 
@@ -314,7 +304,6 @@ class PlayerEquip(PlayerCommand):
         player_entity.add(
             EquipPropAction,
             actor_comp.name,
-            EquipPropAction.__name__,
             [self.equip_name],
         )
 

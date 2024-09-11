@@ -172,7 +172,6 @@ class WorldSkillRuleSystem(ReactiveProcessor):
         entity.replace(
             WorldSkillSystemRuleAction,
             actor_name,
-            WorldSkillSystemRuleAction.__name__,
             [response_plan.result_tag, response_plan.out_come],
         )
 

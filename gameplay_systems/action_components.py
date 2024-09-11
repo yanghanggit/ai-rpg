@@ -3,48 +3,46 @@ from typing import Any, FrozenSet
 
 ################################################ 动作组件： ####################################################################################
 # 场景环境的描述
-StageNarrateAction = namedtuple("StageNarrateAction", "name action_name values")
+StageNarrateAction = namedtuple("StageNarrateAction", "name values")
 # 内心独白
-MindVoiceAction = namedtuple("MindVoiceAction", "name action_name values")
+MindVoiceAction = namedtuple("MindVoiceAction", "name values")
 # 场景内广播
-BroadcastAction = namedtuple("BroadcastAction", "name action_name values")
+BroadcastAction = namedtuple("BroadcastAction", "name values")
 # 私下交流
-WhisperAction = namedtuple("WhisperAction", "name action_name values")
+WhisperAction = namedtuple("WhisperAction", "name values")
 # 对谁说（场景内其他角色能听到）
-SpeakAction = namedtuple("SpeakAction", "name action_name values")
+SpeakAction = namedtuple("SpeakAction", "name values")
 # 标签
-TagAction = namedtuple("TagAction", "name action_name values")
+TagAction = namedtuple("TagAction", "name values")
 # 死亡
-DeadAction = namedtuple("DeadAction", "name action_name values")
+DeadAction = namedtuple("DeadAction", "name values")
 # 离开当前场景并去往
-GoToAction = namedtuple("GoToAction", "name action_name values")
+GoToAction = namedtuple("GoToAction", "name values")
 # 从场景内可以拾取道具
-PickUpPropAction = namedtuple("PickUpPropAction", "name action_name values")
+PickUpPropAction = namedtuple("PickUpPropAction", "name values")
 # 从目标角色处偷取
-StealPropAction = namedtuple("StealPropAction", "name action_name values")
+StealPropAction = namedtuple("StealPropAction", "name values")
 # 将道具交给目标角色
-GivePropAction = namedtuple("GivePropAction", "name action_name values")
+GivePropAction = namedtuple("GivePropAction", "name values")
 # 行为动作与技能动作
-BehaviorAction = namedtuple("BehaviorAction", "name action_name values")
-SkillTargetAction = namedtuple("SkillTargetAction", "name action_name values")
-SkillAction = namedtuple("SkillAction", "name action_name values")
-SkillUsePropAction = namedtuple("SkillUsePropAction", "name action_name values")
-WorldSkillSystemRuleAction = namedtuple(
-    "WorldSkillSystemRuleAction", "name action_name values"
-)
+BehaviorAction = namedtuple("BehaviorAction", "name values")
+SkillTargetAction = namedtuple("SkillTargetAction", "name values")
+SkillAction = namedtuple("SkillAction", "name values")
+SkillUsePropAction = namedtuple("SkillUsePropAction", "name values")
+WorldSkillSystemRuleAction = namedtuple("WorldSkillSystemRuleAction", "name values")
 
 
 # 更新外观
-UpdateAppearanceAction = namedtuple("UpdateAppearanceAction", "name action_name values")
+UpdateAppearanceAction = namedtuple("UpdateAppearanceAction", "name values")
 
 # 处理伤害逻辑
-DamageAction = namedtuple("DamageAction", "name action_name values")
+DamageAction = namedtuple("DamageAction", "name values")
 
 # 装备道具
-EquipPropAction = namedtuple("EquipPropAction", "name action_name values")
+EquipPropAction = namedtuple("EquipPropAction", "name values")
 
 # 场景内销毁道具
-RemovePropAction = namedtuple("RemovePropAction", "name action_name values")
+RemovePropAction = namedtuple("RemovePropAction", "name values")
 ##############################################################################################################################################
 
 

@@ -237,11 +237,9 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
 
         for actor_entity in actor_entities:
             if not actor_entity.has(UpdateAppearanceAction):
-                safe_name = self._context.safe_get_entity_name(actor_entity)
                 actor_entity.add(
                     UpdateAppearanceAction,
-                    safe_name,
-                    UpdateAppearanceAction.__name__,
+                    self._context.safe_get_entity_name(actor_entity),
                     [],
                 )
 

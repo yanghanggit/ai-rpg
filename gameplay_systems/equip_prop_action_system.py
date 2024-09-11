@@ -104,7 +104,6 @@ class EquipPropActionSystem(ReactiveProcessor):
             entity.add(
                 UpdateAppearanceAction,
                 self._context.safe_get_entity_name(entity),
-                UpdateAppearanceAction.__name__,
                 [],
             )
 

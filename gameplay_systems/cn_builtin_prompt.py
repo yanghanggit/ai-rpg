@@ -548,7 +548,7 @@ def enter_stage_failed_beacuse_stage_refuse_prompt(
 ################################################################################################################################################
 def make_on_update_appearance_event_prompt(safe_name: str, appearance: str) -> str:
     return f"""# {safe_name} 的外观信息已更新
-## 你的当前 角色外观
+## 角色外观信息
 {appearance}"""
 
 

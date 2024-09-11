@@ -88,7 +88,7 @@ class SelfSkillUsageCheckSystem(ReactiveProcessor):
 
         tasks = self.create_tasks(entities)
         if len(tasks) == 0:
-            self.on_remove_all_actions(entities)
+            self.on_remove_all(entities)
             return
 
         response = await AgentTasksGather(
@@ -98,7 +98,7 @@ class SelfSkillUsageCheckSystem(ReactiveProcessor):
 
         if len(response) == 0:
             logger.debug(f"phase1_response is None.")
-            self.on_remove_all_actions(entities)
+            self.on_remove_all(entities)
             return
 
         self.handle_tasks(tasks)
@@ -114,7 +114,7 @@ class SelfSkillUsageCheckSystem(ReactiveProcessor):
 
             if task.response_content == "":
                 # 没有回答，直接清除所有的action
-                self.on_remove_actions(actor_entity)
+                self.on_remove_action(actor_entity)
                 continue
 
             response_plan = SelfSkillUsageCheckResponse(
@@ -123,10 +123,10 @@ class SelfSkillUsageCheckSystem(ReactiveProcessor):
 
             if not response_plan.bool_tag:
                 # 失败就不用继续了，直接清除所有的action
-                self.on_remove_actions(actor_entity)
+                self.on_remove_action(actor_entity)
 
     ######################################################################################################################################################
-    def on_remove_actions(
+    def on_remove_action(
         self,
         entity: Entity,
         action_comps: Set[type[Any]] = {
@@ -143,9 +143,9 @@ class SelfSkillUsageCheckSystem(ReactiveProcessor):
                 entity.remove(action_comp)
 
     ######################################################################################################################################################
-    def on_remove_all_actions(self, entities: List[Entity]) -> None:
+    def on_remove_all(self, entities: List[Entity]) -> None:
         for entity in entities:
-            self.on_remove_actions(entity)
+            self.on_remove_action(entity)
 
     ######################################################################################################################################################
     def extract_skill_files(self, entity: Entity) -> List[PropFile]:

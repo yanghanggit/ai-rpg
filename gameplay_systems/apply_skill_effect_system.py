@@ -58,8 +58,9 @@ class ApplySkillEffectSystem(ReactiveProcessor):
             entity.has(SkillAction)
             and entity.has(SkillTargetAction)
             and entity.has(BehaviorAction)
+            and entity.has(WorldSkillSystemRuleAction)
             and entity.has(ActorComponent)
-        )
+        ) or entity.has(SkillUsePropAction)
 
     ######################################################################################################################################################
     @override
@@ -94,7 +95,7 @@ class ApplySkillEffectSystem(ReactiveProcessor):
             self.calculate_and_add_action(entity, target)
 
             # 场景事件
-            self.on_notify_others_of_skill_event(entity, target, response_plan.feedback)
+            self.on_broadcast_skill_event(entity, target, response_plan.feedback)
 
     ######################################################################################################################################################
 
@@ -146,9 +147,9 @@ class ApplySkillEffectSystem(ReactiveProcessor):
             return []
 
         safe_name = self._context.safe_get_entity_name(entity)
-        prop_action = entity.get(SkillUsePropAction)
+        skill_use_prop_action = entity.get(SkillUsePropAction)
         ret: List[PropFile] = []
-        for prop_name in prop_action.values:
+        for prop_name in skill_use_prop_action.values:
             prop_file = self._context._file_system.get_file(
                 PropFile, safe_name, prop_name
             )
@@ -160,7 +161,7 @@ class ApplySkillEffectSystem(ReactiveProcessor):
 
     ######################################################################################################################################################
 
-    def on_notify_others_of_skill_event(
+    def on_broadcast_skill_event(
         self, from_entity: Entity, target_entity: Entity, target_feedback: str
     ) -> None:
 
@@ -174,13 +175,13 @@ class ApplySkillEffectSystem(ReactiveProcessor):
 
         self._context.broadcast_entities_in_stage(
             current_stage_entity,
-            builtin_prompt.make_notify_others_in_stage_of_skill_event_prompt(
+            builtin_prompt.make_broadcast_skill_event_prompt(
                 self._context.safe_get_entity_name(from_entity),
                 self._context.safe_get_entity_name(target_entity),
                 world_skill_system_rule_out_come,
                 target_feedback,
             ),
-            set({target_entity}),  # 已经参与的双方不需要再被通知了。
+            set({target_entity}),  #已经参与的双方不需要再被通知了。
         )
 
     ######################################################################################################################################################
@@ -196,17 +197,16 @@ class ApplySkillEffectSystem(ReactiveProcessor):
         self.add_damage(entity, target, calculate_attrs, self.get_damage_buff(entity))
 
     ######################################################################################################################################################
-
-    ######################################################################################################################################################
     def add_damage(
         self, entity: Entity, target: Entity, skill_attrs: List[int], buff: float = 1.0
     ) -> None:
-        if skill_attrs[AttributesIndex.DAMAGE.value] == 0:
-            return
-
+        
         skill_attrs[AttributesIndex.DAMAGE.value] = int(
             skill_attrs[AttributesIndex.DAMAGE.value] * buff
         )
+
+        if skill_attrs[AttributesIndex.DAMAGE.value] == 0:
+            return
 
         if not target.has(DamageAction):
             target.add(
@@ -304,7 +304,7 @@ class ApplySkillEffectSystem(ReactiveProcessor):
     def handle_task(self, task: AgentTask) -> Optional[SkillFeedbackAgentPlan]:
 
         response = task.request()
-        if response is None:
+        if response is None or task.response_content == "":
             return None
 
         return SkillFeedbackAgentPlan(task._agent._name, response)
@@ -330,8 +330,8 @@ class ApplySkillEffectSystem(ReactiveProcessor):
         )
 
         if world_skill_system_rule_tag == ConstantPrompt.CRITICAL_SUCCESS:
-            return 1.5
+            return 1.5 #先写死，测试的时候再改。todo
 
-        return 1.0
+        return 1.0 #默认的。
 
     ######################################################################################################################################################

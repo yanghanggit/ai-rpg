@@ -797,7 +797,7 @@ def make_world_skill_system_rule_success_prompt(
 ################################################################################################################################################
 
 
-def make_notify_others_in_stage_of_skill_event_prompt(
+def make_broadcast_skill_event_prompt(
     actor_name: str, target_name: str, reasoning_sentence: str, feedback_sentence: str
 ) -> str:
 

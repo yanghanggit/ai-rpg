@@ -18,22 +18,6 @@ class CNConstantPrompt:
         return "请输出'你的当前描述'和'你的计划'"
 
     @property
-    def NONE_PROMPT(self) -> str:
-        return "无"
-
-    @property
-    def USE_PROP_TO_STAGE_PROMPT_TAG(self) -> str:
-        return "<%这是角色对场景使用道具>"
-
-    # @property
-    # def PERCEPTION_ACTION_TAG(self) -> str:
-    #     return "<%这是感知行动结果>"
-
-    # @property
-    # def CHECK_STATUS_ACTION_TAG(self) -> str:
-    #     return "<%这是查看自身状态行动结果>"
-
-    @property
     def BROADCASE_ACTION_TAG(self) -> str:
         return "<%这是广播行动结果>"
 
@@ -68,10 +52,6 @@ class CNConstantPrompt:
     @property
     def FAILURE(self) -> str:
         return "</失败>"
-
-    # @property
-    # def CRITICAL_FAILURE(self) -> str:
-    #     return "</大失败>"
 
     @property
     def ACTOR_KICK_OFF_MESSAGE_PROMPT_TAG(self) -> str:

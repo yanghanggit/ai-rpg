@@ -92,29 +92,28 @@ class StageDepartureCheckerSystem(ReactiveProcessor):
         ).gather()
 
         if len(response) == 0:
-            logger.debug(f"phase1_response is None.")
             self.on_remove_all(entities)
             return
 
         self.handle_tasks(tasks)
 
     ######################################################################################################################################################
-    def create_tasks(self, entities: List[Entity]) -> Dict[str, AgentTask]:
+    def create_tasks(self, actor_entities: List[Entity]) -> Dict[str, AgentTask]:
 
         ret: Dict[str, AgentTask] = {}
 
-        for entity in entities:
+        for actor_entity in actor_entities:
 
-            current_stage_entity = self._context.safe_get_stage_entity(entity)
+            current_stage_entity = self._context.safe_get_stage_entity(actor_entity)
             assert current_stage_entity is not None
             if not self.has_conditions(current_stage_entity):
                 continue
 
-            task = self.create_task(entity)
+            task = self.create_task(actor_entity)
             if task is not None:
-                ret[self._context.safe_get_entity_name(entity)] = task
+                ret[self._context.safe_get_entity_name(actor_entity)] = task
             else:
-                self.on_remove_action(entity)
+                self.on_remove_action(actor_entity)
 
         return ret
 
@@ -144,24 +143,23 @@ class StageDepartureCheckerSystem(ReactiveProcessor):
     ######################################################################################################################################################
     def handle_tasks(self, tasks: Dict[str, AgentTask]) -> None:
 
-        for actor_name, task in tasks.items():
-            if task.response_content == "":
+        for actor_name, stage_agent_task in tasks.items():
+            if stage_agent_task.response_content == "":
                 continue
 
             response_plan = StageDepartureCheckResponse(
-                task.agent_name, task.response_content
+                stage_agent_task.agent_name, stage_agent_task.response_content
             )
 
             if not response_plan.allow:
 
                 actor_entity = self._context.get_actor_entity(actor_name)
-                if actor_entity is None:
-                    continue
+                assert actor_entity is not None
 
                 self._context.broadcast_entities(
                     set({actor_entity}),
                     builtin_prompt.exit_stage_failed_beacuse_stage_refuse_prompt(
-                        actor_name, task.agent_name, response_plan.tips
+                        actor_name, stage_agent_task.agent_name, response_plan.tips
                     ),
                 )
 
@@ -170,7 +168,7 @@ class StageDepartureCheckerSystem(ReactiveProcessor):
             else:
 
                 self._context._langserve_agent_system.remove_last_conversation_between_human_and_ai(
-                    task.agent_name
+                    stage_agent_task.agent_name
                 )
 
     ###############################################################################################################################################

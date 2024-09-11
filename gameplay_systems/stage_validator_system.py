@@ -49,6 +49,7 @@ class StageValidatorSystem(ReactiveProcessor):
         safe_actor_name = self._context.safe_get_entity_name(entity)
         current_stage_entity = self._context.safe_get_stage_entity(entity)
         if current_stage_entity is None:
+            # assert False, f"{safe_actor_name}没有当前场景，这是个错误"
             logger.error(f"{safe_actor_name}没有当前场景，这是个错误")
             return False
 
@@ -63,6 +64,7 @@ class StageValidatorSystem(ReactiveProcessor):
                     safe_actor_name, target_stage_name
                 ),
             )
+
             return False
 
         if current_stage_entity == target_stage_entity:

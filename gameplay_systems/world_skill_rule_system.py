@@ -106,12 +106,12 @@ class WorldSkillRuleSystem(ReactiveProcessor):
         # 第二个大阶段，全局技能系统检查技能组合是否合法
         tasks = self.create_tasks(entities, world_skill_system_name)
         if len(tasks) == 0:
-            self.on_remove_all_actions(entities)
+            self.on_remove_all(entities)
             return
 
         response = await AgentTasksGather("", tasks).gather()
         if len(response) == 0:
-            self.on_remove_all_actions(entities)
+            self.on_remove_all(entities)
             return
 
         response_plans = self.create_responses(tasks)
@@ -136,23 +136,19 @@ class WorldSkillRuleSystem(ReactiveProcessor):
                     self.on_world_skill_system_rule_fail_event(
                         actor_entity, response_plan
                     )
-                    self.on_remove_actions(actor_entity)
+                    self.on_remove_action(actor_entity)
                 case ConstantPrompt.SUCCESS:
                     self.on_world_skill_system_rule_success_event(
                         actor_entity, response_plan
                     )
-                    self.add_world_skill_system_rule_success_action(
-                        actor_entity, response_plan
-                    )
+                    self.add_world_skill_system_rule_action(actor_entity, response_plan)
                     self.consume_consumable_props(actor_entity)
 
                 case ConstantPrompt.CRITICAL_SUCCESS:
                     self.on_world_skill_system_rule_success_event(
                         actor_entity, response_plan
                     )
-                    self.add_world_skill_system_rule_success_action(
-                        actor_entity, response_plan
-                    )
+                    self.add_world_skill_system_rule_action(actor_entity, response_plan)
                     self.consume_consumable_props(actor_entity)
 
                 case _:
@@ -168,7 +164,7 @@ class WorldSkillRuleSystem(ReactiveProcessor):
                 )
 
     ######################################################################################################################################################
-    def add_world_skill_system_rule_success_action(
+    def add_world_skill_system_rule_action(
         self, entity: Entity, response_plan: WorldSkillRuleResponse
     ) -> None:
 
@@ -182,30 +178,31 @@ class WorldSkillRuleSystem(ReactiveProcessor):
 
     ######################################################################################################################################################
     def create_responses(
-        self, tasks: List[AgentTask]
+        self, world_system_agent_tasks: List[AgentTask]
     ) -> Dict[str, WorldSkillRuleResponse]:
 
         ret: Dict[str, WorldSkillRuleResponse] = {}
 
-        for task in tasks:
+        for world_system_agent_task in world_system_agent_tasks:
 
-            actor_name = task._option_param.get(
+            actor_name = world_system_agent_task._option_param.get(
                 WorldSkillRuleResponse.OPTION_PARAM_NAME, ""
             )
+
             entity = self._context.get_actor_entity(actor_name)
             if entity is None:
                 continue
 
-            response_plan = WorldSkillRuleResponse(
-                task.agent_name, task.response_content, task
+            ret[actor_name] = WorldSkillRuleResponse(
+                world_system_agent_task.agent_name,
+                world_system_agent_task.response_content,
+                world_system_agent_task,
             )
-
-            ret[actor_name] = response_plan
 
         return ret
 
     ######################################################################################################################################################
-    def on_remove_actions(
+    def on_remove_action(
         self,
         entity: Entity,
         action_comps: Set[type[Any]] = {
@@ -213,6 +210,7 @@ class WorldSkillRuleSystem(ReactiveProcessor):
             SkillAction,
             SkillTargetAction,
             SkillUsePropAction,
+            WorldSkillSystemRuleAction,
         },
     ) -> None:
 
@@ -221,9 +219,9 @@ class WorldSkillRuleSystem(ReactiveProcessor):
                 entity.remove(action_comp)
 
     ######################################################################################################################################################
-    def on_remove_all_actions(self, entities: List[Entity]) -> None:
+    def on_remove_all(self, entities: List[Entity]) -> None:
         for entity in entities:
-            self.on_remove_actions(entity)
+            self.on_remove_action(entity)
 
     ######################################################################################################################################################
 
@@ -265,9 +263,10 @@ class WorldSkillRuleSystem(ReactiveProcessor):
             return []
 
         safe_name = self._context.safe_get_entity_name(entity)
-        prop_action = entity.get(SkillUsePropAction)
+        skill_use_prop_action = entity.get(SkillUsePropAction)
+
         ret: List[PropFile] = []
-        for prop_name in prop_action.values:
+        for prop_name in skill_use_prop_action.values:
             prop_file = self._context._file_system.get_file(
                 PropFile, safe_name, prop_name
             )
@@ -324,7 +323,7 @@ class WorldSkillRuleSystem(ReactiveProcessor):
 
     ######################################################################################################################################################
     def create_tasks(
-        self, entities: List[Entity], world_skill_system_name: str
+        self, actor_entities: List[Entity], world_skill_system_name: str
     ) -> List[AgentTask]:
 
         ret: List[AgentTask] = []
@@ -335,38 +334,40 @@ class WorldSkillRuleSystem(ReactiveProcessor):
         if world_system_agent is None:
             return ret
 
-        for entity in entities:
+        for actor_entity in actor_entities:
 
             prompt = builtin_prompt.make_world_skill_system_rule_prompt(
-                self._context.safe_get_entity_name(entity),
-                self.extract_body_info(entity),
-                self.extract_skill_files(entity),
-                self.extract_prop_files(entity),
-                self.extract_behavior_sentence(entity),
+                self._context.safe_get_entity_name(actor_entity),
+                self.extract_body_info(actor_entity),
+                self.extract_skill_files(actor_entity),
+                self.extract_prop_files(actor_entity),
+                self.extract_behavior_sentence(actor_entity),
             )
 
-            task = AgentTask.create_process_context_without_saving(
+            world_system_agent_task = AgentTask.create_process_context_without_saving(
                 world_system_agent, prompt
             )
-            if task is None:
+            if world_system_agent_task is None:
                 continue
 
-            safe_name = self._context.safe_get_entity_name(entity)
-            task._option_param.setdefault(
-                WorldSkillRuleResponse.OPTION_PARAM_NAME, safe_name
+            world_system_agent_task._option_param.setdefault(
+                WorldSkillRuleResponse.OPTION_PARAM_NAME,
+                self._context.safe_get_entity_name(actor_entity),
             )
-            ret.append(task)
+            ret.append(world_system_agent_task)
 
         return ret
 
     ######################################################################################################################################################
     def extract_targets(self, entity: Entity) -> Set[Entity]:
         assert entity.has(SkillTargetAction)
+
         targets = set()
         for target_name in entity.get(SkillTargetAction).values:
             target = self._context.get_entity_by_name(target_name)
             if target is not None:
                 targets.add(target)
+
         return targets
 
     ######################################################################################################################################################

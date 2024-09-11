@@ -101,24 +101,27 @@ class StageEntranceCheckerSystem(ReactiveProcessor):
         self.handle_tasks(tasks)
 
     ######################################################################################################################################################
-    def create_tasks(self, entities: List[Entity]) -> Dict[str, AgentTask]:
+    def create_tasks(self, actor_entities: List[Entity]) -> Dict[str, AgentTask]:
 
         ret: Dict[str, AgentTask] = {}
 
-        for entity in entities:
+        for actor_entity in actor_entities:
 
             target_stage_entity = self._context.get_stage_entity(
-                self.get_target_stage_name(entity)
+                self.get_target_stage_name(actor_entity)
             )
-            assert target_stage_entity is not None
+
+            if target_stage_entity is None:
+                continue
+
             if not self.has_conditions(target_stage_entity):
                 continue
 
-            task = self.create_task(entity)
+            task = self.create_task(actor_entity)
             if task is not None:
-                ret[self._context.safe_get_entity_name(entity)] = task
+                ret[self._context.safe_get_entity_name(actor_entity)] = task
             else:
-                self.on_remove_action(entity)
+                self.on_remove_action(actor_entity)
 
         return ret
 
@@ -128,16 +131,17 @@ class StageEntranceCheckerSystem(ReactiveProcessor):
         target_stage_entity = self._context.get_stage_entity(
             self.get_target_stage_name(actor_entity)
         )
-        assert target_stage_entity is not None
+
+        if target_stage_entity is None:
+            return None
 
         target_stage_name = self._context.safe_get_entity_name(target_stage_entity)
         agent = self._context._langserve_agent_system.get_agent(target_stage_name)
         if agent is None:
             return None
 
-        actor_name = self._context.safe_get_entity_name(actor_entity)
         prompt = builtin_prompt.stage_entry_conditions_check_prompt(
-            actor_name,
+            self._context.safe_get_entity_name(actor_entity),
             target_stage_name,
             self.get_actor_appearance_prompt(actor_entity),
             self.get_actor_props(actor_entity),
@@ -165,15 +169,15 @@ class StageEntranceCheckerSystem(ReactiveProcessor):
         return str(go_to_action.values[0])
 
     ######################################################################################################################################################
-    def handle_tasks(self, tasks: Dict[str, AgentTask]) -> None:
+    def handle_tasks(self, stage_agent_tasks: Dict[str, AgentTask]) -> None:
 
-        for actor_name, task in tasks.items():
+        for actor_name, stage_agent_task in stage_agent_tasks.items():
 
-            if task.response_content == "":
+            if stage_agent_task.response_content == "":
                 continue
 
             response_plan = StageEntranceCheckResponse(
-                task.agent_name, task.response_content
+                stage_agent_task.agent_name, stage_agent_task.response_content
             )
             if not response_plan.allow:
 
@@ -182,7 +186,7 @@ class StageEntranceCheckerSystem(ReactiveProcessor):
                     self._context.broadcast_entities(
                         set({actor_entity}),
                         builtin_prompt.enter_stage_failed_beacuse_stage_refuse_prompt(
-                            actor_name, task.agent_name, response_plan.tips
+                            actor_name, stage_agent_task.agent_name, response_plan.tips
                         ),
                     )
 
@@ -191,7 +195,7 @@ class StageEntranceCheckerSystem(ReactiveProcessor):
             else:
 
                 self._context._langserve_agent_system.remove_last_conversation_between_human_and_ai(
-                    task.agent_name
+                    stage_agent_task.agent_name
                 )
 
     ###############################################################################################################################################

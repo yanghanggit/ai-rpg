@@ -9,8 +9,6 @@ class MessageModel(BaseModel):
     content: str
 
 
-####################################################################################################################################
-## 第一次初始化的时候，会做读取来确定角色初始上下文（记忆）
 class KickOffMessageSystem:
     def __init__(self, name: str) -> None:
         self._name: str = name
@@ -47,7 +45,6 @@ class KickOffMessageSystem:
         if mm is not None:
             assert mm == kick_off_message
             self._messages[actor_name] = [value]
-            # self._messages[actor_name] = mm
 
     ####################################################################################################################################
     def get_message(self, actor_name: str) -> List[MessageModel]:

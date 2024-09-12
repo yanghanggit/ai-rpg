@@ -1,6 +1,6 @@
 from entitas import Entity, Matcher  # type: ignore
 from loguru import logger
-from typing import List, Any, FrozenSet
+from typing import Any, FrozenSet
 from my_agent.agent_plan_and_action import AgentPlan, AgentAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 

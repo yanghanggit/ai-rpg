@@ -252,11 +252,11 @@ def make_prop_prompt(
 def make_props_prompt_list_for_actor_plan(
     props_dict: Dict[str, List[PropFile]],
     order_keys: List[str] = [
-        PropType.TYPE_SPECIAL.value,
-        PropType.TYPE_WEAPON.value,
-        PropType.TYPE_CLOTHES.value,
-        PropType.TYPE_NON_CONSUMABLE_ITEM.value,
-        PropType.TYPE_SKILL.value,
+        PropType.TYPE_SPECIAL,
+        PropType.TYPE_WEAPON,
+        PropType.TYPE_CLOTHES,
+        PropType.TYPE_NON_CONSUMABLE_ITEM,
+        PropType.TYPE_SKILL,
     ],
 ) -> List[str]:
 

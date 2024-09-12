@@ -5,7 +5,7 @@ from collections import namedtuple
 class CodeNameComponentSystem:
 
     def __init__(self, name: str) -> None:
-        self._name = name
+        self._name: str = name
         self._name2codename: Dict[str, str] = {}
         self._codename2component: Dict[str, Any] = {}
         self._name2stagetag: Dict[str, str] = {}

@@ -81,32 +81,32 @@ class PropFile(BaseFile):
     ############################################################################################################
     @property
     def is_special(self) -> bool:
-        return self._prop_model.type == PropType.TYPE_SPECIAL.value
+        return self._prop_model.type == PropType.TYPE_SPECIAL
 
     ############################################################################################################
     @property
     def is_weapon(self) -> bool:
-        return self._prop_model.type == PropType.TYPE_WEAPON.value
+        return self._prop_model.type == PropType.TYPE_WEAPON
 
     ############################################################################################################
     @property
     def is_clothes(self) -> bool:
-        return self._prop_model.type == PropType.TYPE_CLOTHES.value
+        return self._prop_model.type == PropType.TYPE_CLOTHES
 
     ############################################################################################################
     @property
     def is_non_consumable_item(self) -> bool:
-        return self._prop_model.type == PropType.TYPE_NON_CONSUMABLE_ITEM.value
+        return self._prop_model.type == PropType.TYPE_NON_CONSUMABLE_ITEM
 
     ############################################################################################################
     @property
     def is_consumable_item(self) -> bool:
-        return self._prop_model.type == PropType.TYPE_CONSUMABLE_ITEM.value
+        return self._prop_model.type == PropType.TYPE_CONSUMABLE_ITEM
 
     ############################################################################################################
     @property
     def is_skill(self) -> bool:
-        return self._prop_model.type == PropType.TYPE_SKILL.value
+        return self._prop_model.type == PropType.TYPE_SKILL
 
     ############################################################################################################
 

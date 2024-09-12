@@ -23,7 +23,7 @@ from extended_systems.guid_generator import GUIDGenerator
 
 
 class GameClientType(Enum):
-    INVALID = (0,)
+    INVALID = 0
     WEB = 1000
     TERMINAL = 2000
 

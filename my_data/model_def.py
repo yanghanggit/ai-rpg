@@ -1,6 +1,6 @@
 from typing import List, Dict, List, Any
 from pydantic import BaseModel
-from enum import Enum
+from enum import Enum, StrEnum
 
 
 class ActorModel(BaseModel):
@@ -85,7 +85,7 @@ class AttributesIndex(Enum):
     MAX = 10
 
 
-class PropType(Enum):
+class PropType(StrEnum):
     TYPE_SPECIAL = "Special"
     TYPE_WEAPON = "Weapon"
     TYPE_CLOTHES = "Clothes"

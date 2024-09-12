@@ -207,10 +207,10 @@ class StageDepartureCheckerSystem(ReactiveProcessor):
 
         check_self = CheckSelfHelper(self._context, actor_entity)
         return (
-            check_self.get_prop_files(PropType.TYPE_SPECIAL.value)
-            + check_self.get_prop_files(PropType.TYPE_WEAPON.value)
-            + check_self.get_prop_files(PropType.TYPE_CLOTHES.value)
-            + check_self.get_prop_files(PropType.TYPE_NON_CONSUMABLE_ITEM.value)
+            check_self.get_prop_files(PropType.TYPE_SPECIAL)
+            + check_self.get_prop_files(PropType.TYPE_WEAPON)
+            + check_self.get_prop_files(PropType.TYPE_CLOTHES)
+            + check_self.get_prop_files(PropType.TYPE_NON_CONSUMABLE_ITEM)
         )
 
     ###############################################################################################################################################

@@ -1,7 +1,6 @@
 from enum import StrEnum
 
 
-
 # 全局的常量，一些Tag类的可以做标记用于后续的提示词压缩
 class CNConstantPrompt(StrEnum):
 
@@ -36,5 +35,6 @@ class CNConstantPrompt(StrEnum):
     STAGE_KICK_OFF_MESSAGE_PROMPT_TAG = "<%这是场景初始化>"
 
     WORLD_SYSTEM_KICK_OFF_MESSAGE_PROMPT_TAG = "<%这是世界系统初始化>"
+
 
 ###############################################################################################################################################

@@ -133,7 +133,7 @@ def exchange_prop_file(
 
 
 ##################################################################################################################################
-def get_categorized_files_dict(
+def get_categorized_files(
     file_system: FileSystem, from_owner: str
 ) -> Dict[str, List[PropFile]]:
     ret: Dict[str, List[PropFile]] = {}

@@ -33,7 +33,7 @@ class CheckSelfHelper:
     def check_props(self, context: RPGEntitasContext, entity: Entity) -> None:
         safe_name = context.safe_get_entity_name(entity)
         self._categorized_prop_files = (
-            extended_systems.file_system_helper.get_categorized_files_dict(
+            extended_systems.file_system_helper.get_categorized_files(
                 context._file_system, safe_name
             )
         )

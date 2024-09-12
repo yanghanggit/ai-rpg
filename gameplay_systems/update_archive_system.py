@@ -6,7 +6,7 @@ from gameplay_systems.components import (
     StageComponent,
 )
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
-from gameplay_systems.cn_constant_prompt import _CNConstantPrompt_ as ConstantPrompt
+from gameplay_systems.cn_constant_prompt import CNConstantPrompt as ConstantPrompt
 from typing import Set, override, Dict, List, cast
 import extended_systems.file_system_helper
 from extended_systems.files_def import PropFile

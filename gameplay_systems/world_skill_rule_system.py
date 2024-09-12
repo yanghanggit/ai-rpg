@@ -19,7 +19,7 @@ from extended_systems.files_def import PropFile
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
 from my_agent.agent_task import AgentTask, AgentTasksGather
 from my_agent.agent_plan_and_action import AgentPlan
-from gameplay_systems.cn_constant_prompt import _CNConstantPrompt_ as ConstantPrompt
+from gameplay_systems.cn_constant_prompt import CNConstantPrompt as ConstantPrompt
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
 from rpg_game.rpg_game import RPGGame
 import extended_systems.file_system_helper

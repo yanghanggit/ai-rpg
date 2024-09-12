@@ -24,7 +24,7 @@ import my_format_string.target_and_message_format_string
 import my_format_string.attrs_format_string
 from rpg_game.rpg_game import RPGGame
 from my_data.model_def import AttributesIndex
-from gameplay_systems.cn_constant_prompt import _CNConstantPrompt_ as ConstantPrompt
+from gameplay_systems.cn_constant_prompt import CNConstantPrompt as ConstantPrompt
 
 
 class SkillFeedbackAgentPlan(AgentPlan):

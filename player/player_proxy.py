@@ -38,9 +38,9 @@ class PlayerProxy:
     def add_actor_message(self, actor_name: str, message: str) -> None:
 
         # 暂时先不做重复添加 todo
-        for current_content in self._client_messages:
-            if current_content[1] == message:
-                return
+        # for current_content in self._client_messages:
+        #     if current_content[1] == message:
+        #         return
 
         self.add_message(f"[{actor_name}]", message, self._client_messages)
 

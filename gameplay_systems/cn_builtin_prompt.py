@@ -13,7 +13,7 @@ from gameplay_systems.action_components import (
     RemovePropAction,
 )
 import json
-from gameplay_systems.cn_constant_prompt import _CNConstantPrompt_ as ConstantPrompt
+from gameplay_systems.cn_constant_prompt import CNConstantPrompt as ConstantPrompt
 from my_data.model_def import PropType
 
 

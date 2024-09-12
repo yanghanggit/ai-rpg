@@ -12,7 +12,7 @@ from gameplay_systems.components import (
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 import gameplay_systems.cn_builtin_prompt as builtin_prompt
-from gameplay_systems.cn_constant_prompt import _CNConstantPrompt_ as ConstantPrompt
+from gameplay_systems.cn_constant_prompt import CNConstantPrompt as ConstantPrompt
 from typing import cast, override, List, Set, Any, Dict, Optional
 from gameplay_systems.check_self_helper import CheckSelfHelper
 from my_agent.agent_task import AgentTask, AgentTasksGather

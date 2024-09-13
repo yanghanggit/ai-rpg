@@ -16,9 +16,10 @@ from player.player_command import (
     PlayerEquip,
 )
 import terminal_player_helper
+from typing import Optional
 
 LOGIN_PLAYER_NAME = "北京柏林互动科技有限公司"
-DEFAULT_GAME_NAME = "World1"
+DEFAULT_GAME_NAME = "World3"
 DEFAULT_VERSION = "qwe"
 SHOW_CLIENT_MESSAGES = 20
 
@@ -39,6 +40,8 @@ async def main() -> None:
     if rpg_game is None:
         logger.error(f"create_rpg_game 失败 = {game_name}")
         return
+
+    player_proxy: Optional[PlayerProxy] = None
 
     all_player_controlled_actor_names = rpg_game.get_all_player_controlled_actor_names()
     if len(all_player_controlled_actor_names) == 0:
@@ -81,22 +84,23 @@ async def main() -> None:
 
         await rpg_game.a_execute()
 
-        if player_proxy.is_message_queue_dirty:
-            player_proxy.is_message_queue_dirty = False
-            player_proxy.show_messages(SHOW_CLIENT_MESSAGES)
+        if player_proxy is not None:
 
-        # 如果死了就退出。
-        if player_proxy._over:
-            rpg_game._will_exit = True
-            save_game(rpg_game, player_proxy)
-            break
+            if player_proxy.is_message_queue_dirty:
+                player_proxy.is_message_queue_dirty = False
+                player_proxy.show_messages(SHOW_CLIENT_MESSAGES)
 
-        if rpg_game.is_player_input_allowed(player_proxy):
-            await player_input(rpg_game, player_proxy)
-        else:
-            await player_wait(rpg_game, player_proxy)
+            # 如果死了就退出。
+            if player_proxy._over:
+                rpg_game._will_exit = True
+                save_game(rpg_game, player_proxy)
+                break
 
-    # 退出操作
+            if rpg_game.is_player_input_allowed(player_proxy):
+                await player_input(rpg_game, player_proxy)
+            else:
+                await player_wait(rpg_game, player_proxy)
+
     rpg_game.exit()
 
 

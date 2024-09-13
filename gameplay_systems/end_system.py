@@ -1,4 +1,4 @@
-from entitas import ExecuteProcessor, Matcher, InitializeProcessor  # type: ignore
+from entitas import ExecuteProcessor, Matcher  # type: ignore
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from gameplay_systems.components import (
@@ -14,16 +14,11 @@ import extended_systems.file_system_helper
 from rpg_game.rpg_game import RPGGame
 
 
-class EndSystem(InitializeProcessor, ExecuteProcessor):
-    ############################################################################################################
+class EndSystem(ExecuteProcessor):
+
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         self._context: RPGEntitasContext = context
         self._game: RPGGame = rpg_game
-
-    ############################################################################################################
-    @override
-    def initialize(self) -> None:
-        pass
 
     ############################################################################################################
     @override
@@ -46,9 +41,9 @@ class EndSystem(InitializeProcessor, ExecuteProcessor):
     def dump_stages_and_actors(self) -> None:
         simple_dump = self.simple_dump_stages_and_actors()
         if len(simple_dump.keys()) > 0:
-            logger.debug(f"/dump_stages_and_actors: \n{simple_dump}")
-        else:
-            logger.warning("/dump_stages_and_actors: No stages and actors now")
+            logger.info(f"/dump_stages_and_actors: \n{simple_dump}")
+        # else:
+        #     logger.warning("/dump_stages_and_actors: No stages and actors now")
 
         extended_systems.file_system_helper.update_stage_actors_map_file(
             self._context._file_system, simple_dump

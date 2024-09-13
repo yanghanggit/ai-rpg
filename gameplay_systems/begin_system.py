@@ -1,20 +1,15 @@
-from entitas import InitializeProcessor, ExecuteProcessor  # type: ignore
+from entitas import ExecuteProcessor  # type: ignore
 from typing import override
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from rpg_game.rpg_game import RPGGame
 
 
-class BeginSystem(InitializeProcessor, ExecuteProcessor):
+class BeginSystem(ExecuteProcessor):
     ############################################################################################################
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         self._context: RPGEntitasContext = context
         self._game: RPGGame = rpg_game
-
-    ############################################################################################################
-    @override
-    def initialize(self) -> None:
-        pass
 
     ############################################################################################################
     @override

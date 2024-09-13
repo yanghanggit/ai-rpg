@@ -19,7 +19,9 @@ class ExcelEditorActor:
         prop_data_base: Dict[str, ExcelDataProp],
     ) -> None:
         #
-        if my_data["type"] not in ["Player", "Actor"]:
+        from game_sample.game_editor import EditorEntityType
+
+        if my_data["type"] not in [EditorEntityType.Player, EditorEntityType.Actor]:
             assert False, f"Invalid actor type: {my_data['type']}"
         #
         self._my_data: Any = my_data

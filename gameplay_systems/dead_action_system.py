@@ -54,6 +54,7 @@ class DeadActionSystem(ExecuteProcessor):
             player_comp = player_entity.get(PlayerComponent)
             player_proxy = self._game.get_player(player_comp.name)
             if player_proxy is None:
+                assert False, f"没有找到玩家 = {player_comp.name}!!!!!!"
                 continue
             player_proxy.on_dead()
 

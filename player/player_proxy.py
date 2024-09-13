@@ -18,6 +18,8 @@ class PlayerProxy:
         self.is_message_queue_dirty = False
 
         self._controlled_actor_name: str = ""
+        self._need_show_stage_messages: bool = False
+        self._need_show_actors_in_stage_messages: bool = False
 
     ##########################################################################################################################################################
     def add_command(self, command: Any) -> None:
@@ -36,12 +38,6 @@ class PlayerProxy:
 
     ##########################################################################################################################################################
     def add_actor_message(self, actor_name: str, message: str) -> None:
-
-        # 暂时先不做重复添加 todo
-        # for current_content in self._client_messages:
-        #     if current_content[1] == message:
-        #         return
-
         self.add_message(f"[{actor_name}]", message, self._client_messages)
 
     ##########################################################################################################################################################
@@ -62,5 +58,6 @@ class PlayerProxy:
     ##########################################################################################################################################################
     def on_dead(self) -> None:
         self._over = True
+        logger.warning(f"{self._name} : {self._controlled_actor_name}, 死亡了!!!!!")
 
     ##########################################################################################################################################################

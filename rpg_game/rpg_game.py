@@ -544,7 +544,7 @@ class RPGGame(BaseGame):
         return self._round
 
     ###############################################################################################################################################
-    def get_all_player_controlled_actor_names(self) -> List[str]:
+    def get_player_controlled_actors(self) -> List[str]:
         actor_entities = self._entitas_context.get_group(
             Matcher(all_of=[ActorComponent, PlayerComponent])
         ).entities

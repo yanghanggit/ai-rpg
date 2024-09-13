@@ -182,15 +182,15 @@ class StageEntranceCheckerSystem(ReactiveProcessor):
             if not response_plan.allow:
 
                 actor_entity = self._context.get_actor_entity(actor_name)
-                if actor_entity is not None:
-                    self._context.broadcast_entities(
-                        set({actor_entity}),
-                        builtin_prompt.enter_stage_failed_beacuse_stage_refuse_prompt(
-                            actor_name, stage_agent_task.agent_name, response_plan.tips
-                        ),
-                    )
+                assert actor_entity is not None
+                self._context.broadcast_entities(
+                    set({actor_entity}),
+                    builtin_prompt.enter_stage_failed_beacuse_stage_refuse_prompt(
+                        actor_name, stage_agent_task.agent_name, response_plan.tips
+                    ),
+                )
 
-                    self.on_remove_action(actor_entity)
+                self.on_remove_action(actor_entity)
 
             else:
 
@@ -219,7 +219,9 @@ class StageEntranceCheckerSystem(ReactiveProcessor):
     def has_conditions(self, stage_entity: Entity) -> bool:
         safe_name = self._context.safe_get_entity_name(stage_entity)
         kickoff = self._context._kick_off_message_system.get_message(safe_name)
-        return ConstantPrompt.STAGE_ENTRY_TAG in kickoff
+        if len(kickoff) == 0:
+            return False
+        return ConstantPrompt.STAGE_ENTRY_TAG in kickoff[0].content
 
     ###############################################################################################################################################
     def get_actor_appearance_prompt(self, actor_entity: Entity) -> str:

@@ -42,8 +42,6 @@ class EndSystem(ExecuteProcessor):
         simple_dump = self.simple_dump_stages_and_actors()
         if len(simple_dump.keys()) > 0:
             logger.info(f"/dump_stages_and_actors: \n{simple_dump}")
-        # else:
-        #     logger.warning("/dump_stages_and_actors: No stages and actors now")
 
         extended_systems.file_system_helper.update_stage_actors_map_file(
             self._context._file_system, simple_dump

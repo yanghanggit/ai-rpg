@@ -328,11 +328,12 @@ class RPGEntitasContext(Context):
                                 message_content, player_proxy._controlled_actor_name
                             ),
                         )
-                    else:
+                    elif player_proxy._need_show_actors_in_stage_messages:
                         player_proxy.add_actor_message(safe_name, message_content)
 
                 elif entity.has(StageComponent):
-                    player_proxy.add_stage_message(safe_name, message_content)
+                    if player_proxy._need_show_stage_messages:
+                        player_proxy.add_stage_message(safe_name, message_content)
                 else:
                     assert False, "不应该到这里"
 

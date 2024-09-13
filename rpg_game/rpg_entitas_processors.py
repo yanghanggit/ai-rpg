@@ -18,8 +18,6 @@ class RPGEntitasProcessors(Processors):
         from gameplay_systems.actor_planning_system import ActorPlanningSystem
         from gameplay_systems.speak_action_system import SpeakActionSystem
         from gameplay_systems.go_to_action_system import GoToActionSystem
-
-        # from gameplay_systems.pre_go_to_action_system import PreBeforeGoToActionSystem
         from gameplay_systems.stage_validator_system import StageValidatorSystem
         from gameplay_systems.stage_departure_checker_system import (
             StageDepartureCheckerSystem,
@@ -122,16 +120,16 @@ class RPGEntitasProcessors(Processors):
         )  ### 更新外观
 
         # 交流（与说话类）的行为!
-        processors.add(PreConversationActionSystem(context, rpg_game))  # 所有对话之前
+        processors.add(
+            PreConversationActionSystem(context, rpg_game)
+        )  # 所有对话之前目前是防止用户用对话行为说出不符合政策的话
         processors.add(StageNarrateActionSystem(context, rpg_game))
         processors.add(TagActionSystem(context, rpg_game))
         processors.add(MindVoiceActionSystem(context, rpg_game))
         processors.add(WhisperActionSystem(context, rpg_game))
         processors.add(BroadcastActionSystem(context, rpg_game))
         processors.add(SpeakActionSystem(context, rpg_game))
-        processors.add(
-            PostConversationActionSystem(context, rpg_game)
-        )  # 所有对话之后，目前是防止用户用对话行为说出不符合政策的话
+        processors.add(PostConversationActionSystem(context, rpg_game))
 
         # 战斗类的行为!
         processors.add(BehaviorActionSystem(context, rpg_game))
@@ -162,10 +160,7 @@ class RPGEntitasProcessors(Processors):
             )
         )  ### 更新外观
 
-        # 场景切换类行为，非常重要而且必须在最后!
-        # processors.add(
-        #     PreBeforeGoToActionSystem(context, rpg_game)
-        # )  # 去往场景之前的检查与实际的执行
+        # 场景切换类行为，非常重要而且必须在最后，在正式执行之前有3个系统负责检查与提示。
         processors.add(StageValidatorSystem(context, rpg_game))
         processors.add(StageDepartureCheckerSystem(context, rpg_game))
         processors.add(StageEntranceCheckerSystem(context, rpg_game))
@@ -187,9 +182,6 @@ class RPGEntitasProcessors(Processors):
         ##调试用的系统。监视进入运行之后的状态
         processors.add(EndSystem(context, rpg_game))
 
-        # 保存系统，在所有系统之后
-        # processors.add(SaveSystem(context, rpg_game))
-
         # 开发专用，网页版本不需要
         processors.add(TerminalPlayerInterruptWaitSystem(context, rpg_game))
 
@@ -206,9 +198,6 @@ class RPGEntitasProcessors(Processors):
         ## 第一次抓可以被player看到的信息
         processors.add(UpdateClientMessageSystem(context, rpg_game))
         processors.add(TerminalPlayerTipsSystem(context, rpg_game))
-
-        ## 开发专用，网页版本不需要
-        # processors.add(TerminalPlayerInputSystem(context, input_rpg_game))
 
         return processors
 

@@ -18,7 +18,7 @@ class TerminalPlayerInterruptWaitSystem(ExecuteProcessor):
             return
 
         while True:
-            input(f"........请任意键继续........")
+            input(f"........请任意键继续........将要进入agent做计划的环节")
             break
 
 

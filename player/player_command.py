@@ -10,6 +10,7 @@ from gameplay_systems.action_components import (
     GivePropAction,
     BehaviorAction,
     EquipPropAction,
+    DeadAction,
 )
 
 from overrides import override
@@ -43,7 +44,6 @@ class PlayerGoTo(PlayerCommand):
         self.add_player_planning_message(
             player_entity,
             self.make_simple_message(GoToAction.__name__, [self.stage_name]),
-            # f"""{{"{GoToAction.__name__}": ["{self.stage_name}"]}}""",
             rpg_game,
         )
 
@@ -78,7 +78,6 @@ class PlayerBroadcast(PlayerCommand):
             self.make_simple_message(
                 BroadcastAction.__name__, [self.broadcast_content]
             ),
-            # f"""{{"{BroadcastAction.__name__}": ["{self.broadcast_content}"]}}""",
             rpg_game,
         )
 
@@ -107,7 +106,6 @@ class PlayerSpeak(PlayerCommand):
         self.add_player_planning_message(
             player_entity,
             self.make_simple_message(SpeakAction.__name__, [self.speak_content]),
-            # f"""{{"{SpeakAction.__name__}": ["{self.speak_content}"]}}""",
             rpg_game,
         )
 
@@ -140,7 +138,6 @@ class PlayerWhisper(PlayerCommand):
         self.add_player_planning_message(
             player_entity,
             self.make_simple_message(WhisperAction.__name__, [self.whisper_content]),
-            # f"""{{"{WhisperAction.__name__}": ["{self.whisper_content}"]}}""",
             rpg_game,
         )
 
@@ -174,7 +171,6 @@ class PlayerPickUpProp(PlayerCommand):
         self.add_player_planning_message(
             player_entity,
             self.make_simple_message(PickUpPropAction.__name__, [self.prop_name]),
-            # f"""{{"{PickUpPropAction.__name__}": ["{self.prop_name}"]}}""",
             rpg_game,
         )
 
@@ -207,7 +203,6 @@ class PlayerSteal(PlayerCommand):
         self.add_player_planning_message(
             player_entity,
             self.make_simple_message(StealPropAction.__name__, [self.format_string]),
-            # f"""{{"{StealPropAction.__name__}": ["{self.format_string}"]}}""",
             rpg_game,
         )
 
@@ -242,7 +237,6 @@ class PlayerGiveProp(PlayerCommand):
         self.add_player_planning_message(
             player_entity,
             self.make_simple_message(GivePropAction.__name__, [self.format_string]),
-            # f"""{{"{GivePropAction.__name__}": ["{self.format_string}"]}}""",
             rpg_game,
         )
 
@@ -277,7 +271,6 @@ class PlayerBehavior(PlayerCommand):
         self.add_player_planning_message(
             player_entity,
             self.make_simple_message(BehaviorAction.__name__, [self.behavior_sentence]),
-            # f"""{{"{BehaviorAction.__name__}": ["{self.behavior_sentence}"]}}""",
             rpg_game,
         )
 
@@ -310,7 +303,6 @@ class PlayerEquip(PlayerCommand):
         self.add_player_planning_message(
             player_entity,
             self.make_simple_message(EquipPropAction.__name__, [self.equip_name]),
-            # f"""{{"{EquipPropAction.__name__}": ["{self.equip_name}"]}}""",
             rpg_game,
         )
 
@@ -318,3 +310,32 @@ class PlayerEquip(PlayerCommand):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
+class PlayerKill(PlayerCommand):
+
+    @property
+    def target_name(self) -> str:
+        return self.split_command(self._input_val, self._name)
+
+    @override
+    def execute(self, game: BaseGame, player_proxy: PlayerProxy) -> None:
+        from rpg_game.rpg_game import RPGGame
+
+        rpg_game = cast(RPGGame, game)
+        player_entity = rpg_game._entitas_context.get_player_entity(player_proxy._name)
+        if player_entity is None:
+            return
+
+        target_entity = rpg_game._entitas_context.get_entity_by_name(self.target_name)
+        if target_entity is None:
+            logger.error(f"没有找到目标:{self.target_name}")
+            return
+
+        if not target_entity.has(ActorComponent):
+            logger.error(f"目标没有ActorComponent:{self.target_name}， 无法杀死")
+            return
+
+        actor_comp = target_entity.get(ActorComponent)
+        target_entity.add(DeadAction, actor_comp.name, [])

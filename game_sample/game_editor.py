@@ -15,12 +15,15 @@ from game_sample.stage_editor import ExcelEditorStage
 from game_sample.world_system_editor import ExcelEditorWorldSystem
 import pandas as pd
 import game_sample.utils
+from enum import StrEnum
 
-EDITOR_WORLD_SYSTEM_TYPE = "WorldSystem"
-EDITOR_PLAYER_TYPE = "Player"
-EDITOR_ACTOR_TYPE = "Actor"
-EDITOR_STAGE_TYPE = "Stage"
-EDITOR_ABOUT_GAME_TYPE = "AboutGame"
+
+class EditorEntityType(StrEnum):
+    WorldSystem = "WorldSystem"
+    Player = "Player"
+    Actor = "Actor"
+    Stage = "Stage"
+    AboutGame = "AboutGame"
 
 
 ################################################################################################################
@@ -150,15 +153,15 @@ class ExcelEditorGame:
         out_stages.clear()
         #
         for item in self._data:
-            if item["type"] == EDITOR_WORLD_SYSTEM_TYPE:
+            if item["type"] == EditorEntityType.WorldSystem:
                 out_worlds.append(item)
-            elif item["type"] == EDITOR_PLAYER_TYPE:
+            elif item["type"] == EditorEntityType.Player:
                 out_players.append(item)
-            elif item["type"] == EDITOR_ACTOR_TYPE:
+            elif item["type"] == EditorEntityType.Actor:
                 out_actors.append(item)
-            elif item["type"] == EDITOR_STAGE_TYPE:
+            elif item["type"] == EditorEntityType.Stage:
                 out_stages.append(item)
-            elif item["type"] == EDITOR_ABOUT_GAME_TYPE:
+            elif item["type"] == EditorEntityType.AboutGame:
                 out_config.append(item)
             else:
                 logger.error(f"Invalid type: {item['type']}")

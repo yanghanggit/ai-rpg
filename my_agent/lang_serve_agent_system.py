@@ -49,13 +49,11 @@ class LangServeAgentSystem:
     def connect_agent(self, name: str) -> None:
         if name in self._agents:
             self._agents[name].connect()
-        # logger.error(f"connect_actor_agent: {name} is not registered.")
 
     ################################################################################################################################################################################
     def get_agent(self, name: str) -> Optional[LangServeAgent]:
         if name in self._agents:
             return self._agents[name]
-        # logger.error(f"get_actor_agent: {name} is not registered.")
         return None
 
     ################################################################################################################################################################################
@@ -103,7 +101,6 @@ class LangServeAgentSystem:
         return dir / f"chat_history.json"
 
     ################################################################################################################################################################################
-    ### 所有的agent的chat history dump写入文件
     def dump_chat_history(self) -> None:
         for name in self._agents.keys():
             dump = self.create_chat_history_dump(name)
@@ -113,7 +110,6 @@ class LangServeAgentSystem:
             self.write_chat_history_dump(name, content)
 
     ################################################################################################################################################################################
-    # 创建一个agent的所有chat history的数据结构
     def create_chat_history_dump(self, name: str) -> List[Dict[str, str]]:
 
         if name not in self._agents:
@@ -130,7 +126,6 @@ class LangServeAgentSystem:
         return ret
 
     ################################################################################################################################################################################
-    ##强制写入
     def write_chat_history_dump(self, agent_name: str, content: str) -> int:
         try:
             path = self.chat_history_dump_path(agent_name)
@@ -141,7 +136,6 @@ class LangServeAgentSystem:
         return -1
 
     ################################################################################################################################################################################
-    # 替换chat history中的内容
     def replace_chat_history(self, name: str, replace_data: Dict[str, str]) -> None:
         if not name in self._agents:
             return

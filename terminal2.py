@@ -14,6 +14,7 @@ from player.player_command import (
     PlayerGiveProp,
     PlayerBehavior,
     PlayerEquip,
+    PlayerKill,
 )
 import terminal_player_helper
 from typing import Optional
@@ -43,7 +44,7 @@ async def main() -> None:
 
     player_proxy: Optional[PlayerProxy] = None
 
-    all_player_controlled_actor_names = rpg_game.get_all_player_controlled_actor_names()
+    all_player_controlled_actor_names = rpg_game.get_player_controlled_actors()
     if len(all_player_controlled_actor_names) == 0:
         logger.error("没有找到可以控制的角色。可能全部是AI角色。")
     else:
@@ -73,7 +74,10 @@ async def main() -> None:
         player_proxy = PlayerProxy(LOGIN_PLAYER_NAME)
         assert player_proxy is not None
         rpg_game.add_player(player_proxy)
-
+        # todo
+        # player_proxy._need_show_stage_messages = True
+        # player_proxy._need_show_actors_in_stage_messages = True
+        #
         player_login(rpg_game, player_proxy, player_controlled_actor_name)
 
     # 核心循环
@@ -170,6 +174,10 @@ def add_player_command(
 
     elif "/equip" in usr_input:
         player_proxy.add_command(PlayerEquip("/equip", usr_input))
+
+    elif "/kill" in usr_input:
+        player_proxy.add_command(PlayerKill("/kill", usr_input))
+
     else:
         logger.error(f"无法识别的命令 = {usr_input}")
         return False
@@ -179,7 +187,7 @@ def add_player_command(
 
 ###############################################################################################################################################
 def save_game(game_name: RPGGame, player_proxy: PlayerProxy) -> None:
-    pass
+    logger.warning(f"保存游戏 = {game_name._name}, player_proxy = {player_proxy._name}")
 
 
 ###############################################################################################################################################

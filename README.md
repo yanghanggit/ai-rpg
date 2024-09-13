@@ -15,19 +15,13 @@ pip install langchain langchain_core langserve fastapi langchain_openai sse_star
 # 如果用vscode 进行代码调试，需要用 >Python Interpreter. 将python环境指向这个Name代表的环境
 ```
 
-## 代理
-
-- Agent运行的设备需要挂代理；
-
 ## 严格模式检查
-- mypy --strict server_run.py
-- mypy --strict game_sample/gen_game.py
-- mypy --strict game_sample/gen_game.py batch_run_agents.py terminal2.py
+- mypy --strict game_sample/gen_game.py batch_run_agents.py terminal2.py server2.py web2.py
+
 
 ### 说明
 
 - terminal2.py 是通过终端进行访问测试游戏。默认会写死使用‘无名的复活者’这个测试的角色。
-- server_run.py 是使用测试网页进行游戏。必须开启ipv6
 - game_sample/gen_game.py。是利用gameP_sample.xlsx来构建游戏世界的构建数据的程序（入口）
 
 ## 运行步骤
@@ -38,97 +32,12 @@ pip install langchain langchain_core langserve fastapi langchain_openai sse_star
 4. 或者通过'/login'命令通过玩家身份登陆游戏游玩。
 
 ## 启动所有agents（方便复制粘贴）
-
-```shell
-# 以ubuntu/macOS下pm2为例
-
-cd multi-agents-game-framework
-
-pm2 start game_sample/gen_agent/coffin_of_the_silent_one_agent.py game_sample/gen_agent/gray_chapel_agent.py game_sample/gen_agent/nameless_resurrector_agent.py game_sample/gen_agent/rat_king_agent.py game_sample/gen_agent/elias_gray_agent.py game_sample/gen_agent/moore_dog_agent.py game_sample/gen_agent/papal_emissary_agent.py game_sample/gen_agent/the_incinerator_agent.py game_sample/gen_agent/gray_cemetery_agent.py game_sample/gen_agent/mr_lucky_agent.py game_sample/gen_agent/rancid_cellar_agent.py game_sample/gen_agent/square_front_of_cemetery_agent.py game_sample/gen_agent/world_system_appearance_builder_agent.py
-```
-
-### 也可以直接调用 batch_run_agents.py来自动化运行（需要输入游戏名字, 例如，输入World2，就是执行'game_sample/gen_runtimes/World2_agents.json'）
+可以直接调用 batch_run_agents.py来自动化运行（需要输入游戏名字, 例如，输入World2，就是执行'game_sample/gen_runtimes/World2_agents.json'）
 
 
 # 可用指令
+见 terminal2.py 的 add_player_command
 
-```
-# 退出游戏
-
-/quit
-
-# 创建游戏房间
-
-/create
-
-# 加入已经存在的房间
-
-/join @'host_ip'
-
-例如 /join @127.0.0.1
-
-# 选择角色
-
-/pickactor @'角色名称'
-
-例如 /pickactor @无名的复活者
-
-例如 /pickactor @教廷密使
-
-# 离开当前场景，去往Name?的场景
-
-/goto '场景名称'
-
-例如 /goto 灰颜墓地
-
-# 在当前场景内广播内容。场景内所有Actor都能听见
-
-/broadcast '说的内容'
-
-例如 /broadcast 大家好！
-
-# 对当前场景内的目标说话
-
-/speak '@对谁>说话内容'
-
-例如 /speak @格雷>我这是在哪？
-
-# 对当前场景内的目标私语
-
-/whisper '@对谁>说话内容'
-
-例如 /whisper @摩尔>嘘，别吵。
-
-# 在当前场景内搜索叫'Name?'的道具
-
-/pickup '道具名称'
-
-例如 /pickup 腐朽的匕首
-
-# 在不知道去往哪里的情况下，'跳出'当前场景，如果当前场景没有连接场景则会失败。
-
-/portalstep
-
-# 感知当前场景内有哪些人？事？道具？
-
-/perception
-
-# 盗取对当前场景内的目标的道具
-
-/steal '@对谁>盗取的道具名字'
-
-例如 /steal @格雷>断指钥匙
-
-# 将我身上的道具交给目标
-
-/give '@对谁>我的道具的名字'
-
-例如 /give @格雷>炉钩
-
-# 查看我身上有哪些道具？
-
-/checkstatus
-```
 
 
 ### Windows平台运行问题

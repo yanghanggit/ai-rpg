@@ -4,22 +4,22 @@ from typing import Any, Optional
 
 
 class IChaosEngineering(ABC):
-    # extended_context 不用Any会发生循环引用
+
     @abstractmethod
     def on_pre_create_game(
-        self, extended_context: Any, worlddata: GameResource
+        self, extended_context: Any, game_resource: GameResource
     ) -> None:
         pass
 
     @abstractmethod
     def on_post_create_game(
-        self, extended_context: Any, worlddata: GameResource
+        self, extended_context: Any, game_resource: GameResource
     ) -> None:
         pass
 
     @abstractmethod
     def on_read_memory_failed(
-        self, extended_context: Any, name: str, readarchprompt: str
+        self, extended_context: Any, name: str, prompt: str
     ) -> None:
         pass
 
@@ -33,12 +33,12 @@ class IChaosEngineering(ABC):
 
     @abstractmethod
     def hack_stage_planning(
-        self, extended_context: Any, stagename: str, planprompt: str
+        self, extended_context: Any, stage_name: str, prompt: str
     ) -> Optional[str]:
         pass
 
     @abstractmethod
     def hack_actor_planning(
-        self, extended_context: Any, actor_name: str, planprompt: str
+        self, extended_context: Any, actor_name: str, prompt: str
     ) -> Optional[str]:
         pass

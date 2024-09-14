@@ -36,22 +36,24 @@ class RPGEntitasContext(Context):
         super().__init__()
 
         # 文件系统
-        self._file_system = file_system
+        self._file_system: FileSystem = file_system
 
         # 读取启动记忆系统
-        self._kick_off_message_system = kick_off_message_system
+        self._kick_off_message_system: KickOffMessageSystem = kick_off_message_system
 
         # agent 系统
-        self._langserve_agent_system = langserve_agent_system
+        self._langserve_agent_system: LangServeAgentSystem = langserve_agent_system
 
         # 代码名字组件系统（方便快速查找用）
-        self._codename_component_system = codename_component_system
+        self._codename_component_system: CodeNameComponentSystem = (
+            codename_component_system
+        )
 
         # 混沌工程系统
-        self._chaos_engineering_system = chaos_engineering_system
+        self._chaos_engineering_system: IChaosEngineering = chaos_engineering_system
 
         # guid 生成器
-        self._guid_generator = guid_generator
+        self._guid_generator: GUIDGenerator = guid_generator
 
         # 临时收集会话的历史
         self._round_messages: Dict[str, List[str]] = {}

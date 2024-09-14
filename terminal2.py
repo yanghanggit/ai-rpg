@@ -1,226 +1,144 @@
 from loguru import logger
 import datetime
 from player.player_proxy import PlayerProxy
-from rpg_game.create_rpg_game_util import create_rpg_game, GameClientType
+import rpg_game.rpg_game_helper
 from rpg_game.rpg_game import RPGGame
-from gameplay_systems.components import PlayerComponent
-from player.player_command import (
-    PlayerGoTo,
-    PlayerBroadcast,
-    PlayerSpeak,
-    PlayerWhisper,
-    PlayerPickUpProp,
-    PlayerSteal,
-    PlayerGiveProp,
-    PlayerBehavior,
-    PlayerEquip,
-    PlayerKill,
-)
-import terminal_player_helper
 from typing import Optional
-
-LOGIN_PLAYER_NAME = "北京柏林互动科技有限公司"
-DEFAULT_GAME_NAME = "World3"
-DEFAULT_VERSION = "qwe"
-SHOW_CLIENT_MESSAGES = 20
+from dataclasses import dataclass
 
 
-async def main() -> None:
+@dataclass
+class TerminalRunOption:
+    login_player_name: str
+    default_game_name: str
+    check_game_resource_version: str
+    show_client_message_count: int = 20
 
-    log_start_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    logger.add(f"logs/{log_start_time}.log", level="DEBUG")
+
+async def terminal_run(option: TerminalRunOption) -> None:
 
     # 读取世界资源文件
     game_name = input(
-        f"请输入要进入的世界名称(必须与自动化创建的名字一致), 默认为 {DEFAULT_GAME_NAME}:"
+        f"请输入要进入的世界名称(必须与自动化创建的名字一致), 默认为 {option.default_game_name}:"
     )
     if game_name == "":
-        game_name = DEFAULT_GAME_NAME
+        game_name = option.default_game_name
 
-    rpg_game = create_rpg_game(game_name, DEFAULT_VERSION, GameClientType.TERMINAL)
-    if rpg_game is None:
+    # 创建游戏
+    new_game = rpg_game.rpg_game_helper.create_terminal_rpg_game(
+        game_name, option.check_game_resource_version
+    )
+    if new_game is None:
         logger.error(f"create_rpg_game 失败 = {game_name}")
         return
 
+    # 模拟一个客户端
     player_proxy: Optional[PlayerProxy] = None
 
-    all_player_controlled_actor_names = rpg_game.get_player_controlled_actors()
-    if len(all_player_controlled_actor_names) == 0:
-        logger.error("没有找到可以控制的角色。可能全部是AI角色。")
+    # 是否是控制actor游戏
+    player_controlled_actor_name = terminal_player_input_select_controlled_actor(
+        new_game
+    )
+    if player_controlled_actor_name != "":
+        logger.info(
+            f"{option.login_player_name}:{game_name}:{player_controlled_actor_name}"
+        )
+        player_proxy = PlayerProxy(option.login_player_name)
+        new_game.add_player(player_proxy)
+
+        rpg_game.rpg_game_helper.player_login(
+            new_game, player_proxy, player_controlled_actor_name
+        )
     else:
-
-        player_controlled_actor_name: str = ""
-
-        while True:
-            for index, actor_name in enumerate(all_player_controlled_actor_names):
-                logger.warning(f"{index+1}. {actor_name}")
-            input_actor_index = input("请选择要控制的角色(输入序号):")
-            if input_actor_index.isdigit():
-                actor_index = int(input_actor_index)
-                if actor_index > 0 and actor_index <= len(
-                    all_player_controlled_actor_names
-                ):
-                    player_controlled_actor_name = all_player_controlled_actor_names[
-                        actor_index - 1
-                    ]
-                    break
-            logger.debug("输入错误，请重新输入。")
-
-        if player_controlled_actor_name == "":
-            logger.error("没有选择角色!!!!!!")
-            return
-
-        logger.info(f"{LOGIN_PLAYER_NAME}:{game_name}:{player_controlled_actor_name}")
-        player_proxy = PlayerProxy(LOGIN_PLAYER_NAME)
-        assert player_proxy is not None
-        rpg_game.add_player(player_proxy)
-        # todo
-        # player_proxy._need_show_stage_messages = True
-        # player_proxy._need_show_actors_in_stage_messages = True
-        #
-        player_login(rpg_game, player_proxy, player_controlled_actor_name)
+        logger.info(
+            "没有找到可以控制的角色，可能是game resource里没设置Player，此时就是观看。"
+        )
 
     # 核心循环
     while True:
 
-        if rpg_game._will_exit:
+        if new_game._will_exit:
             break
 
-        await rpg_game.a_execute()
+        # 运行一个回合
+        await new_game.a_execute()
 
+        # 有客户端才进行控制。
         if player_proxy is not None:
 
             if player_proxy.is_message_queue_dirty:
                 player_proxy.is_message_queue_dirty = False
-                player_proxy.show_messages(SHOW_CLIENT_MESSAGES)
+                player_proxy.show_messages(option.show_client_message_count)
 
             # 如果死了就退出。
             if player_proxy._over:
-                rpg_game._will_exit = True
-                save_game(rpg_game, player_proxy)
+                new_game._will_exit = True
+                rpg_game.rpg_game_helper.save_game(new_game, player_proxy)
                 break
 
-            if rpg_game.is_player_input_allowed(player_proxy):
-                await player_input(rpg_game, player_proxy)
+            if new_game.is_player_input_allowed(player_proxy):
+                await terminal_player_input(new_game, player_proxy)
             else:
-                await player_wait(rpg_game, player_proxy)
+                await terminal_player_wait(new_game, player_proxy)
 
-    rpg_game.exit()
-
-
-###############################################################################################################################################
-def player_login(
-    rpg_game: RPGGame, player_proxy: PlayerProxy, player_controlled_actor_name: str
-) -> None:
-    logger.debug("player_login")
-    actor_entity = rpg_game._entitas_context.get_actor_entity(
-        player_controlled_actor_name
-    )
-    if actor_entity is None or not actor_entity.has(PlayerComponent):
-        logger.error(f"没有找到角色 = {player_controlled_actor_name}")
-        return
-
-    # 更改算作登陆成功
-    actor_entity.replace(PlayerComponent, player_proxy._name)
-    player_proxy._controlled_actor_name = player_controlled_actor_name
-
-    player_proxy.add_system_message(rpg_game.about_game)
-
-    # todo 添加登陆新的信息到客户端消息中
-    time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    player_proxy.add_system_message(
-        f"login: {player_proxy._name}, time = {time}, 控制角色 = {player_controlled_actor_name}"
-    )
-    kick_off_messages = rpg_game._entitas_context._kick_off_message_system.get_message(
-        player_controlled_actor_name
-    )
-    if len(kick_off_messages) == 0 or len(kick_off_messages) > 1:
-        return
-    player_proxy.add_login_message(
-        player_controlled_actor_name, kick_off_messages[0].content
-    )
+    new_game.exit()
 
 
 ###############################################################################################################################################
+def terminal_player_input_select_controlled_actor(game: RPGGame) -> str:
+    all_names = game.get_player_controlled_actors()
+    if len(all_names) == 0:
+        return ""
 
+    while True:
+        for index, actor_name in enumerate(all_names):
+            logger.warning(f"{index+1}. {actor_name}")
 
-def add_player_command(
-    rpg_game: RPGGame, player_proxy: PlayerProxy, usr_input: str
-) -> bool:
+        input_actor_index = input("请选择要控制的角色(输入序号):")
+        if input_actor_index.isdigit():
+            actor_index = int(input_actor_index)
+            if actor_index > 0 and actor_index <= len(all_names):
+                return all_names[actor_index - 1]
+        else:
+            logger.debug("输入错误，请重新输入。")
 
-    if "/goto" in usr_input:
-        player_proxy.add_command(PlayerGoTo("/goto", usr_input))
-
-    elif "/broadcast" in usr_input:
-        player_proxy.add_command(PlayerBroadcast("/broadcast", usr_input))
-
-    elif "/speak" in usr_input:
-        player_proxy.add_command(PlayerSpeak("/speak", usr_input))
-
-    elif "/whisper" in usr_input:
-        player_proxy.add_command(PlayerWhisper("/whisper", usr_input))
-
-    elif "/pickup" in usr_input:
-        player_proxy.add_command(PlayerPickUpProp("/pickup", usr_input))
-
-    elif "/steal" in usr_input:
-        player_proxy.add_command(PlayerSteal("/steal", usr_input))
-
-    elif "/give" in usr_input:
-        player_proxy.add_command(PlayerGiveProp("/give", usr_input))
-
-    elif "/behavior" in usr_input:
-        player_proxy.add_command(PlayerBehavior("/behavior", usr_input))
-
-    elif "/equip" in usr_input:
-        player_proxy.add_command(PlayerEquip("/equip", usr_input))
-
-    elif "/kill" in usr_input:
-        player_proxy.add_command(PlayerKill("/kill", usr_input))
-
-    else:
-        logger.error(f"无法识别的命令 = {usr_input}")
-        return False
-
-    return True
+    return ""
 
 
 ###############################################################################################################################################
-def save_game(game_name: RPGGame, player_proxy: PlayerProxy) -> None:
-    logger.warning(f"保存游戏 = {game_name._name}, player_proxy = {player_proxy._name}")
-
-
-###############################################################################################################################################
-async def player_input(rpg_game: RPGGame, player_proxy: PlayerProxy) -> None:
+async def terminal_player_input(game: RPGGame, player_proxy: PlayerProxy) -> None:
 
     while True:
 
         usr_input = input(f"[{player_proxy._name}]:")
+        if usr_input == "":
+            break
+
         if usr_input == "/quit":
             logger.info(f"玩家退出游戏 = {player_proxy._name}")
-            rpg_game._will_exit = True
-            save_game(rpg_game, player_proxy)
+            game._will_exit = True
+            rpg_game.rpg_game_helper.save_game(game, player_proxy)
             break
 
         elif usr_input == "/save":
-            save_game(rpg_game, player_proxy)
+            rpg_game.rpg_game_helper.save_game(game, player_proxy)
             break
 
         elif usr_input == "/watch" or usr_input == "/w":
-            terminal_player_helper.handle_player_input_watch(rpg_game, player_proxy)
+            rpg_game.rpg_game_helper.handle_player_input_watch(game, player_proxy)
 
         elif usr_input == "/check" or usr_input == "/c":
-            terminal_player_helper.handle_player_input_check(rpg_game, player_proxy)
+            rpg_game.rpg_game_helper.handle_player_input_check(game, player_proxy)
 
-        elif usr_input != "":
-            if add_player_command(rpg_game, player_proxy, usr_input):
-                break
+        else:
+            rpg_game.rpg_game_helper.add_player_command(game, player_proxy, usr_input)
+            break
 
 
 ###############################################################################################################################################
-async def player_wait(game_name: RPGGame, player_proxy: PlayerProxy) -> None:
+async def terminal_player_wait(game_name: RPGGame, player_proxy: PlayerProxy) -> None:
     while True:
-        input(f"player_wait 。。。。。。。。。。。。")
+        input(f"terminal_player_wait 。。。。。。。。。。。。")
         break
 
 
@@ -230,4 +148,13 @@ async def player_wait(game_name: RPGGame, player_proxy: PlayerProxy) -> None:
 if __name__ == "__main__":
     import asyncio
 
-    asyncio.run(main())  # todo
+    log_start_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    logger.add(f"logs/{log_start_time}.log", level="DEBUG")
+
+    option = TerminalRunOption(
+        login_player_name="北京柏林互动科技有限公司",
+        default_game_name="World3",
+        check_game_resource_version="qwe",
+        show_client_message_count=20,
+    )
+    asyncio.run(terminal_run(option))  # todo

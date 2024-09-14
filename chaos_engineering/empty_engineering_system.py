@@ -8,8 +8,8 @@ from chaos_engineering.chaos_engineering_system import IChaosEngineering
 class EmptyChaosEngineeringSystem(IChaosEngineering):
 
     ##
-    def __init__(self, name: str) -> None:
-        self.name: str = name
+    def __init__(self, name: str = "") -> None:
+        self._name: str = name
 
     ##
     def on_pre_create_game(
@@ -29,26 +29,26 @@ class EmptyChaosEngineeringSystem(IChaosEngineering):
     def on_read_memory_failed(
         self, extended_context: Any, name: str, readarchprompt: str
     ) -> None:
-        logger.debug(f"{self.name}: on_read_memory_failed {name} {readarchprompt}")
+        logger.debug(f"{self._name}: on_read_memory_failed {name} {readarchprompt}")
 
     ##
     def hack_stage_planning(
         self, extended_context: Any, stagename: str, planprompt: str
     ) -> Optional[str]:
-        logger.debug(f"{self.name}: hack_stage_planning {stagename} {planprompt}")
+        logger.debug(f"{self._name}: hack_stage_planning {stagename} {planprompt}")
         return None
 
     ##
     def hack_actor_planning(
         self, extended_context: Any, actor_name: str, planprompt: str
     ) -> Optional[str]:
-        logger.debug(f"{self.name}: hack_actor_planning {actor_name} {planprompt}")
+        logger.debug(f"{self._name}: hack_actor_planning {actor_name} {planprompt}")
         return None
 
     ##
     def on_stage_planning_system_excute(self, extended_context: Any) -> None:
-        logger.debug(f"{self.name}: on_stage_planning_system_excute")
+        logger.debug(f"{self._name}: on_stage_planning_system_excute")
 
     ##
     def on_actor_planning_system_execute(self, extended_context: Any) -> None:
-        logger.debug(f"{self.name}: on_actor_planning_system_execute")
+        logger.debug(f"{self._name}: on_actor_planning_system_execute")

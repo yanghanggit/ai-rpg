@@ -1,12 +1,14 @@
 import requests
-from ws_config import WS_CONFIG
+from ws_config import WS_CONFIG, TestData
 
 
 # 定义请求的URL
 url = f"http://{WS_CONFIG.Host.value}:{WS_CONFIG.Port.value}/process/"
 
 # 要发送的数据
-data = {"message": "你好，服务器！"}
+# data = {"message": "你好，服务器！"}
+
+data = TestData(message="你好，服务器！")
 
 
 if __name__ == "__main__":

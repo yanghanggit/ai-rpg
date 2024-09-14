@@ -1,19 +1,21 @@
 from fastapi import FastAPI
-from pydantic import BaseModel
-from ws_config import WS_CONFIG
+
+# from pydantic import BaseModel
+from ws_config import WS_CONFIG, TestData
+from typing import Dict, Any
 
 app = FastAPI()
 
 
-# 定义接收的数据模型
-class Data(BaseModel):
-    message: str
+# # 定义接收的数据模型
+# class Data(BaseModel):
+#     message: str
 
 
 # 定义一个POST接口
 @app.post("/process/")
-async def process_data(data: Data) -> dict[str, str]:
-    response_message = f"服务器收到消息：{data.message}"
+async def process_data(data: TestData) -> Dict[str, Any]:
+    response_message = f"服务器收到消息：{data.message}, 1231234"
     return {"response": response_message}
 
 

@@ -1,22 +1,23 @@
 from fastapi import FastAPI
-
-# from pydantic import BaseModel
-from ws_config import WS_CONFIG, TestData
+from loguru import logger
+from ws_config import WS_CONFIG, GameStageManager, LoginData
 from typing import Dict, Any
+import datetime
+
+
+
+
 
 app = FastAPI()
 
 
-# # 定义接收的数据模型
-# class Data(BaseModel):
-#     message: str
+game_stage_mamager = GameStageManager()
 
 
-# 定义一个POST接口
-@app.post("/process/")
-async def process_data(data: TestData) -> Dict[str, Any]:
-    response_message = f"服务器收到消息：{data.message}, 1231234"
-    return {"response": response_message}
+@app.post("/login/")
+async def login(data: LoginData) -> Dict[str, Any]:
+    time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    return LoginData(username=data.username, response=str(time)).model_dump()
 
 
 if __name__ == "__main__":

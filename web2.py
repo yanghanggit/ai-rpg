@@ -1,19 +1,14 @@
 import requests
-from ws_config import WS_CONFIG, TestData
+from ws_config import WS_CONFIG, LoginData
+from loguru import logger
 
-
-# 定义请求的URL
-url = f"http://{WS_CONFIG.Host.value}:{WS_CONFIG.Port.value}/process/"
-
-# 要发送的数据
-# data = {"message": "你好，服务器！"}
-
-data = TestData(message="你好，服务器！")
-
+my_username = "北京柏林互动科技有限公司"
+url_login = f"http://{WS_CONFIG.Host.value}:{WS_CONFIG.Port.value}/login/"
 
 if __name__ == "__main__":
-    # 发送POST请求
-    response = requests.post(url, json=data)
 
-    # 输出服务器的响应
-    print("服务器响应：", response.json())
+    response2 = requests.post(
+        url_login, json=LoginData(username=my_username, response="").model_dump()
+    )
+    login_response = LoginData.model_validate(response2.json())
+    logger.info(f"response2: {login_response}")

@@ -1,6 +1,6 @@
 from enum import Enum
 from pydantic import BaseModel
-from typing import Dict, Set
+from typing import Dict, Set, List
 
 
 class WS_CONFIG(Enum):
@@ -58,31 +58,32 @@ class GameStateWrapper:
 ###############################################################################################################################################
 class LoginData(BaseModel):
     response: bool = False
-    username: str = ""
+    user_name: str = ""
 
 
 class CreateData(BaseModel):
     response: bool = False
-    username: str = ""
+    user_name: str = ""
     game_name: str = ""
+    selectable_actor_names: List[str] = []
 
 
 class JoinData(BaseModel):
     response: bool = False
-    username: str = ""
+    user_name: str = ""
     game_name: str = ""
-    actor_name: str = ""
+    ctrl_actor_name: str = ""
 
 
 class StartData(BaseModel):
     response: bool = False
-    username: str = ""
+    user_name: str = ""
     game_name: str = ""
-    actor_name: str = ""
+    ctrl_actor_name: str = ""
 
 
 class ExitData(BaseModel):
     response: bool = False
-    username: str = ""
+    user_name: str = ""
     game_name: str = ""
-    actor_name: str = ""
+    ctrl_actor_name: str = ""

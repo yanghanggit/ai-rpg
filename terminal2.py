@@ -46,7 +46,7 @@ async def terminal_run(option: TerminalRunOption) -> None:
         player_proxy = PlayerProxy(option.login_player_name)
         new_game.add_player(player_proxy)
 
-        rpg_game.rpg_game_helper.player_login(
+        rpg_game.rpg_game_helper.player_join(
             new_game, player_proxy, player_controlled_actor_name
         )
     else:

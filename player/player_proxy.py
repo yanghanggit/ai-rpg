@@ -17,7 +17,7 @@ class PlayerProxy:
         self._over: bool = False
         self.is_message_queue_dirty = False
 
-        self._controlled_actor_name: str = ""
+        self._ctrl_actor_name: str = ""
         self._need_show_stage_messages: bool = False
         self._need_show_actors_in_stage_messages: bool = False
 
@@ -58,6 +58,6 @@ class PlayerProxy:
     ##########################################################################################################################################################
     def on_dead(self) -> None:
         self._over = True
-        logger.warning(f"{self._name} : {self._controlled_actor_name}, 死亡了!!!!!")
+        logger.warning(f"{self._name} : {self._ctrl_actor_name}, 死亡了!!!!!")
 
     ##########################################################################################################################################################

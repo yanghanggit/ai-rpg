@@ -323,11 +323,11 @@ class RPGEntitasContext(Context):
 
                 if entity.has(ActorComponent):
 
-                    if safe_name == player_proxy._controlled_actor_name:
+                    if safe_name == player_proxy._ctrl_actor_name:
                         player_proxy.add_actor_message(
                             safe_name,
                             builtin_prompt.replace_you(
-                                message_content, player_proxy._controlled_actor_name
+                                message_content, player_proxy._ctrl_actor_name
                             ),
                         )
                     elif player_proxy._need_show_actors_in_stage_messages:

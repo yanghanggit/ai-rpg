@@ -194,7 +194,7 @@ def _create_entitas_context(
 
 
 #######################################################################################################################################
-def create_terminal_rpg_game(game_name: str, version: str) -> Optional[RPGGame]:
+def create_terminal_rpg_game(game_name: str, version: str) -> Optional[TerminalGame]:
 
     game_resource = _create_game_resource(game_name, version)
     if game_resource is None:
@@ -211,7 +211,7 @@ def create_terminal_rpg_game(game_name: str, version: str) -> Optional[RPGGame]:
 
 
 #######################################################################################################################################
-def create_web_rpg_game(game_name: str, version: str) -> Optional[RPGGame]:
+def create_web_rpg_game(game_name: str, version: str) -> Optional[WebGame]:
     game_resource = _create_game_resource(game_name, version)
     if game_resource is None:
         logger.error(f"create_web_rpg_game 创建{game_name} 失败。")
@@ -458,7 +458,7 @@ def add_player_command(
 
 
 #######################################################################################################################################
-def player_login(
+def player_join(
     rpg_game: RPGGame, player_proxy: PlayerProxy, player_controlled_actor_name: str
 ) -> None:
     logger.debug("player_login")
@@ -471,7 +471,7 @@ def player_login(
 
     # 更改算作登陆成功
     actor_entity.replace(PlayerComponent, player_proxy._name)
-    player_proxy._controlled_actor_name = player_controlled_actor_name
+    player_proxy._ctrl_actor_name = player_controlled_actor_name
 
     player_proxy.add_system_message(rpg_game.about_game)
 

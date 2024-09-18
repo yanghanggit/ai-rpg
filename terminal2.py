@@ -73,15 +73,16 @@ async def terminal_run(option: TerminalRunOption) -> None:
             # 如果死了就退出。
             if player_proxy._over:
                 new_game._will_exit = True
-                rpg_game.rpg_game_helper.save_game(new_game, player_proxy)
-                break
+                continue
 
             if new_game.is_player_input_allowed(player_proxy):
                 await terminal_player_input(new_game, player_proxy)
             else:
                 await terminal_player_wait(new_game, player_proxy)
 
+    rpg_game.rpg_game_helper.save_game(new_game)
     new_game.exit()
+    new_game = None
 
 
 ###############################################################################################################################################
@@ -117,18 +118,17 @@ async def terminal_player_input(game: RPGGame, player_proxy: PlayerProxy) -> Non
         if usr_input == "/quit":
             logger.info(f"玩家退出游戏 = {player_proxy._name}")
             game._will_exit = True
-            rpg_game.rpg_game_helper.save_game(game, player_proxy)
-            break
-
-        elif usr_input == "/save":
-            rpg_game.rpg_game_helper.save_game(game, player_proxy)
             break
 
         elif usr_input == "/watch" or usr_input == "/w":
-            rpg_game.rpg_game_helper.handle_player_input_watch(game, player_proxy)
+            rpg_game.rpg_game_helper.handle_terminal_player_input_watch(
+                game, player_proxy
+            )
 
         elif usr_input == "/check" or usr_input == "/c":
-            rpg_game.rpg_game_helper.handle_player_input_check(game, player_proxy)
+            rpg_game.rpg_game_helper.handle_terminal_player_input_check(
+                game, player_proxy
+            )
 
         else:
             rpg_game.rpg_game_helper.add_player_command(game, player_proxy, usr_input)

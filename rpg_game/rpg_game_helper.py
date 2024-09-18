@@ -88,55 +88,6 @@ def _create_game_resource(game_name: str, version: str) -> Optional[GameResource
 
 
 #######################################################################################################################################
-# def _create_rpg_game(
-#     game_name: str,
-#     chaos_engineering: Optional[IChaosEngineering],
-#     rpg_game_client_type: GameClientType,
-# ) -> Optional[RPGGame]:
-
-#     # 依赖注入的特殊系统
-#     file_system = FileSystem(
-#         "FileSystem Because it involves IO operations, an independent system is more convenient."
-#     )
-#     memory_system = KickOffMessageSystem(
-#         "KickOffMessageSystem Because it involves IO operations, an independent system is more convenient."
-#     )
-#     agent_connect_system = LangServeAgentSystem(
-#         "LangServeAgentSystem Because it involves net operations, an independent system is more convenient."
-#     )
-#     code_name_component_system = CodeNameComponentSystem(
-#         "CodeNameComponentSystem, Build components by codename for special purposes"
-#     )
-#     guid_generator = GUIDGenerator("GUIDGenerator")
-
-#     ### 混沌工程系统
-#     if chaos_engineering is not None:
-#         chaos_engineering_system = chaos_engineering
-#     else:
-#         chaos_engineering_system = EmptyChaosEngineeringSystem("empty_chaos")
-
-#     # 创建上下文
-#     context = RPGEntitasContext(
-#         file_system,
-#         memory_system,
-#         agent_connect_system,
-#         code_name_component_system,
-#         chaos_engineering_system,
-#         guid_generator,
-#     )
-
-#     match rpg_game_client_type:
-#         case GameClientType.WEB:
-#             return WebGame(game_name, context)
-#         case GameClientType.TERMINAL:
-#             return TerminalGame(game_name, context)
-#         case _:
-#             assert False, "Not implemented."
-
-#     return None
-
-
-#######################################################################################################################################
 def _create_entitas_context(
     option_chaos_engineering: Optional[IChaosEngineering],
 ) -> RPGEntitasContext:
@@ -166,31 +117,6 @@ def _create_entitas_context(
     )
 
     return context
-
-
-#######################################################################################################################################
-# def create_rpg_game(
-#     game_name: str, version: str, game_client_type: GameClientType
-# ) -> Optional[RPGGame]:
-
-#     game_resource = create_game_resource(game_name, version)
-#     if game_resource is None:
-#         logger.error("create_world_data_builder 失败。")
-#         return None
-
-#     rpg_game = _create_rpg_game(
-#         game_name,
-#         GameSampleChaosEngineeringSystem("MyChaosEngineeringSystem"),
-#         game_client_type,
-#     )
-
-#     if rpg_game is None:
-#         logger.error("_create_rpg_game 失败。")
-#         return None
-
-#     # 执行创建游戏的所有动作
-#     rpg_game.build(game_resource)
-#     return rpg_game
 
 
 #######################################################################################################################################
@@ -224,44 +150,6 @@ def create_web_rpg_game(game_name: str, version: str) -> Optional[WebGame]:
     rpg_game = WebGame(game_name, rpg_context)
     rpg_game.build(game_resource)
     return rpg_game
-
-
-#######################################################################################################################################
-# todo
-# def test_save(game_name: str) -> None:
-
-#     copy2_path = GAME_SAMPLE_RUNTIME_DIR / f"{game_name}"
-#     if not copy2_path.exists():
-#         logger.error("未找到存档，请检查存档是否存在。")
-#         return None
-
-#     start_json_file = GAME_SAMPLE_RUNTIME_DIR / f"{game_name}.json"
-#     if not start_json_file.exists():
-#         logger.error("未找到存档，请检查存档是否存在。")
-#         return None
-
-#     # 拷贝运行时文件夹到另一个地方
-#     to_save_path = GAME_SAMPLE_RUNTIME_DIR / f"{game_name}_save"
-#     to_save_path.mkdir(parents=True, exist_ok=True)
-#     shutil.copytree(copy2_path, to_save_path, dirs_exist_ok=True)
-
-#     # 拷贝原始的运行文件
-#     target_file = to_save_path / f"{game_name}.json"
-#     if target_file.exists():
-#         target_file.unlink()
-#     shutil.copy(start_json_file, to_save_path / f"{game_name}.json")
-
-#     if not target_file.exists():
-#         logger.error(f"File not found: {target_file}")
-#         return None
-
-#     logger.info(f"Save to: {to_save_path}")
-#     txt = target_file.read_text(encoding="utf-8")
-#     obj = json.loads(txt)
-#     return None
-
-
-#######################################################################################################################################
 
 
 #######################################################################################################################################
@@ -320,10 +208,21 @@ def get_player_entity_stage_actor_info(
 
 
 #######################################################################################################################################
-def handle_player_input_watch(game_name: RPGGame, player_proxy: PlayerProxy) -> None:
+def handle_terminal_player_input_watch(
+    game_name: RPGGame, player_proxy: PlayerProxy
+) -> None:
+    message = gen_player_watch_message(game_name, player_proxy)
+    while True:
+        logger.info(message)
+        input(f"按任意键继续")
+        break
+
+
+#######################################################################################################################################
+def gen_player_watch_message(game_name: RPGGame, player_proxy: PlayerProxy) -> str:
     player_entity = game_name._entitas_context.get_player_entity(player_proxy._name)
     if player_entity is None:
-        return
+        return ""
 
     stage_narrate_content = get_player_entity_stage_narrate_content(
         game_name, player_entity
@@ -365,6 +264,14 @@ def handle_player_input_watch(game_name: RPGGame, player_proxy: PlayerProxy) -> 
 ## 场景内道具
 {"\n".join(props_in_stage_prompts)}"""
 
+    return message
+
+
+#######################################################################################################################################
+def handle_terminal_player_input_check(
+    game_name: RPGGame, player_proxy: PlayerProxy
+) -> None:
+    message = gen_player_check_message(game_name, player_proxy)
     while True:
         logger.info(message)
         input(f"按任意键继续")
@@ -372,10 +279,10 @@ def handle_player_input_watch(game_name: RPGGame, player_proxy: PlayerProxy) -> 
 
 
 #######################################################################################################################################
-def handle_player_input_check(game_name: RPGGame, player_proxy: PlayerProxy) -> None:
+def gen_player_check_message(game_name: RPGGame, player_proxy: PlayerProxy) -> str:
     player_entity = game_name._entitas_context.get_player_entity(player_proxy._name)
     if player_entity is None:
-        return
+        return ""
 
     stage_entity = game_name._entitas_context.safe_get_stage_entity(player_entity)
     assert stage_entity is not None
@@ -404,15 +311,12 @@ def handle_player_input_check(game_name: RPGGame, player_proxy: PlayerProxy) -> 
 
 """
 
-    while True:
-        logger.info(message)
-        input(f"按任意键继续")
-        break
+    return message
 
 
 #######################################################################################################################################
-def save_game(game_name: RPGGame, player_proxy: PlayerProxy) -> None:
-    logger.warning(f"保存游戏 = {game_name._name}, player_proxy = {player_proxy._name}")
+def save_game(game_name: RPGGame) -> None:
+    logger.warning(f"保存游戏 = {game_name._name}")
 
 
 #######################################################################################################################################

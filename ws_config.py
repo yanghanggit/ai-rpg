@@ -87,3 +87,29 @@ class ExitData(BaseModel):
     user_name: str = ""
     game_name: str = ""
     ctrl_actor_name: str = ""
+
+
+class ExecuteData(BaseModel):
+    response: bool = False
+    error: str = ""
+    user_name: str = ""
+    game_name: str = ""
+    ctrl_actor_name: str = ""
+    user_input: List[str] = []
+    messages: List[str] = []
+
+
+class WatchData(BaseModel):
+    response: bool = False
+    user_name: str = ""
+    game_name: str = ""
+    ctrl_actor_name: str = ""
+    message: str = ""
+
+
+class CheckData(BaseModel):
+    response: bool = False
+    user_name: str = ""
+    game_name: str = ""
+    ctrl_actor_name: str = ""
+    message: str = ""

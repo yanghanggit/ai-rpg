@@ -9,8 +9,11 @@ from ws_config import (
     JoinData,
     StartData,
     ExitData,
+    ExecuteData,
+    WatchData,
+    CheckData,
 )
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 import rpg_game.rpg_game_helper
 from rpg_game.web_game import WebGame
 from player.player_proxy import PlayerProxy
@@ -83,12 +86,11 @@ async def create(data: CreateData) -> Dict[str, Any]:
     server_state.transition(GameState.CREATE)
 
     game_room._game = new_game
-    actor_names = new_game.get_player_controlled_actors()
 
     return CreateData(
         user_name=data.user_name,
         game_name=data.game_name,
-        selectable_actor_names=actor_names,
+        selectable_actor_names=new_game.get_player_controlled_actors(),
         response=True,
     ).model_dump()
 
@@ -165,10 +167,139 @@ async def exit(data: ExitData) -> Dict[str, Any]:
     server_state.transition(GameState.EXIT)
 
     # 直接杀掉游戏
+    game_room._game._will_exit = True
+    rpg_game.rpg_game_helper.save_game(game_room._game)
+    game_room._game.exit()
     game_room._game = None
 
     return ExitData(
         user_name=data.user_name, game_name=data.game_name, response=True
+    ).model_dump()
+
+
+###############################################################################################################################################
+@app.post("/execute/")
+async def execute(data: ExecuteData) -> Dict[str, Any]:
+
+    global game_room
+    assert game_room is not None, "game_room is None"
+    assert game_room._game is not None, "game_room._game is None"
+
+    if game_room._game._will_exit:
+        return ExecuteData(
+            user_name=data.user_name, response=False, error="game_room._game._will_exit"
+        ).model_dump()
+
+    player_proxy = game_room.get_player()
+    if player_proxy is not None:
+
+        if player_proxy._over:
+            return ExecuteData(
+                user_name=data.user_name, response=False, error="player_proxy._over"
+            ).model_dump()
+
+        # 如果有输入命令，就要加
+        for usr_input in data.user_input:
+            assert usr_input != "/watch" and usr_input != "/w", "不应该有这个命令"
+            assert usr_input != "/check" and usr_input != "/c", "不应该有这个命令"
+            rpg_game.rpg_game_helper.add_player_command(
+                game_room._game, player_proxy, usr_input
+            )
+
+    # 运行一个回合
+    send_client_messages: List[str] = []
+
+    # 核心循环
+    while True:
+
+        if game_room._game._will_exit:
+            break
+
+        # 运行一个回合
+        await game_room._game.a_execute()
+
+        # 有客户端才进行控制。
+        if player_proxy is not None:
+
+            # 如果死了就退出。
+            if player_proxy._over:
+                game_room._game._will_exit = True
+                continue
+
+            if game_room._game.is_player_input_allowed(player_proxy):
+                player_proxy.is_message_queue_dirty = False
+                send_client_messages = player_proxy.send_messages(20)
+                break
+        else:
+            send_client_messages = ["观察的模式，没有控制权。"]
+            break
+
+    return ExecuteData(
+        user_name=data.user_name,
+        response=True,
+        game_name=data.game_name,
+        ctrl_actor_name=game_room.get_player_ctrl_actor_name(),
+        messages=send_client_messages,
+    ).model_dump()
+
+
+###############################################################################################################################################
+@app.post("/watch/")
+async def watch(data: WatchData) -> Dict[str, Any]:
+
+    global game_room
+    assert game_room is not None, "game_room is None"
+    assert game_room._game is not None, "game_room._game is None"
+
+    player_proxy = game_room.get_player()
+    if player_proxy is None:
+        return WatchData(
+            user_name=data.user_name,
+            game_name=data.game_name,
+            ctrl_actor_name=data.ctrl_actor_name,
+            response=False,
+        ).model_dump()
+
+    gen_message = rpg_game.rpg_game_helper.gen_player_watch_message(
+        game_room._game, player_proxy
+    )
+
+    return WatchData(
+        user_name=data.user_name,
+        game_name=data.game_name,
+        ctrl_actor_name=data.ctrl_actor_name,
+        message=gen_message,
+        response=True,
+    ).model_dump()
+
+
+###############################################################################################################################################
+@app.post("/check/")
+async def check(data: CheckData) -> Dict[str, Any]:
+
+    global game_room
+    assert game_room is not None, "game_room is None"
+    assert game_room._game is not None, "game_room._game is None"
+
+    player_proxy = game_room.get_player()
+    if player_proxy is None:
+        return CheckData(
+            user_name=data.user_name,
+            game_name=data.game_name,
+            ctrl_actor_name=data.ctrl_actor_name,
+            response=False,
+        ).model_dump()
+
+    gen_message = rpg_game.rpg_game_helper.gen_player_check_message(
+        game_room._game, player_proxy
+    )
+
+    return CheckData(
+        user_name=data.user_name,
+        game_name=data.game_name,
+        ctrl_actor_name=data.ctrl_actor_name,
+        message=gen_message,
+        response=True,
     ).model_dump()
 
 

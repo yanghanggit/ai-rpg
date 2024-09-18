@@ -100,8 +100,6 @@ class RPGGame(BaseGame):
     @override
     def execute(self) -> None:
 
-        self._started = True
-
         # 顺序不要动
         current_processors = self._processors
         if not current_processors._initialized:
@@ -115,8 +113,6 @@ class RPGGame(BaseGame):
     ###############################################################################################################################################
     @override
     async def a_execute(self) -> None:
-
-        self._started = True
 
         # 顺序不要动
         current_processors = self._processors

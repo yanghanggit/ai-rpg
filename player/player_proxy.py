@@ -1,4 +1,4 @@
-from typing import List, Any
+from typing import List, Any, cast
 from loguru import logger
 
 
@@ -23,6 +23,9 @@ class PlayerProxy:
 
     ##########################################################################################################################################################
     def add_command(self, command: Any) -> None:
+        from player.base_command import PlayerCommand
+
+        assert isinstance(command, PlayerCommand)
         self._commands.append(command)
 
     ##########################################################################################################################################################
@@ -54,6 +57,16 @@ class PlayerProxy:
             tag = message[0]
             content = message[1]
             logger.warning(f"{tag}=>{content}")
+
+    ##########################################################################################################################################################
+    def send_messages(self, count: int) -> List[str]:
+        ret: List[str] = []
+        for message in self._client_messages[-count:]:
+            tag = message[0]
+            content = message[1]
+            # logger.warning(f"{tag}=>{content}")
+            ret.append(f"{tag}=>{content}")
+        return ret
 
     ##########################################################################################################################################################
     def on_dead(self) -> None:

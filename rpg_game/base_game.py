@@ -6,7 +6,6 @@ class BaseGame(ABC):
 
     def __init__(self, name: str) -> None:
         self._name = name
-        self._started: bool = False
         self._will_exit: bool = False
 
     @abstractmethod

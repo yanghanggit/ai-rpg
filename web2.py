@@ -8,11 +8,12 @@ from ws_config import (
     ExitData,
     GameStateWrapper,
     GameState,
+    ExecuteData,
+    WatchData,
+    CheckData,
 )
 from loguru import logger
 from typing import List
-
-###############################################################################################################################################
 
 
 class GameClientContext:
@@ -27,10 +28,10 @@ class GameClientContext:
 
 ###############################################################################################################################################
 def next_login_state(
-    client_context: GameClientContext, stage_wrapper: GameStateWrapper
+    client_context: GameClientContext, state_wrapper: GameStateWrapper
 ) -> None:
 
-    if not stage_wrapper.can_transition(GameState.LOGIN):
+    if not state_wrapper.can_transition(GameState.LOGIN):
         return
 
     input_username = input(
@@ -53,19 +54,19 @@ def next_login_state(
         logger.warning(f"登录失败 = {login_response.user_name}")
         return
 
-    stage_wrapper.transition(GameState.LOGIN)
+    state_wrapper.transition(GameState.LOGIN)
     client_context._user_name = input_username
     logger.info(f"登录成功: {login_response.user_name}")
 
 
 ###############################################################################################################################################
 def next_create_state(
-    client_context: GameClientContext, stage_wrapper: GameStateWrapper
+    client_context: GameClientContext, state_wrapper: GameStateWrapper
 ) -> None:
 
     assert client_context._user_name != ""
 
-    if not stage_wrapper.can_transition(GameState.CREATE):
+    if not state_wrapper.can_transition(GameState.CREATE):
         return
 
     input_game_name = input(
@@ -87,7 +88,7 @@ def next_create_state(
         )
         return
 
-    stage_wrapper.transition(GameState.CREATE)
+    state_wrapper.transition(GameState.CREATE)
     client_context._game_name = input_game_name
     assert create_response.user_name == client_context._user_name
     client_context._selectable_actor_names = create_response.selectable_actor_names
@@ -98,10 +99,10 @@ def next_create_state(
 
 ###############################################################################################################################################
 def next_join_state(
-    client_context: GameClientContext, stage_wrapper: GameStateWrapper
+    client_context: GameClientContext, state_wrapper: GameStateWrapper
 ) -> None:
 
-    if not stage_wrapper.can_transition(GameState.JOIN):
+    if not state_wrapper.can_transition(GameState.JOIN):
         return
 
     input_actor_name: str = ""
@@ -151,7 +152,7 @@ def next_join_state(
         )
         return
 
-    stage_wrapper.transition(GameState.JOIN)
+    state_wrapper.transition(GameState.JOIN)
     assert join_response.user_name == client_context._user_name
     assert join_response.game_name == client_context._game_name
     client_context._ctrl_actor_name = input_actor_name
@@ -162,10 +163,10 @@ def next_join_state(
 
 ###############################################################################################################################################
 def next_start_state(
-    client_context: GameClientContext, stage_wrapper: GameStateWrapper
+    client_context: GameClientContext, state_wrapper: GameStateWrapper
 ) -> None:
 
-    if not stage_wrapper.can_transition(GameState.START):
+    if not state_wrapper.can_transition(GameState.START):
         return
 
     url_start = f"http://{WS_CONFIG.Host.value}:{WS_CONFIG.Port.value}/start/"
@@ -185,7 +186,7 @@ def next_start_state(
         )
         return
 
-    stage_wrapper.transition(GameState.START)
+    state_wrapper.transition(GameState.START)
     assert start_response.user_name == client_context._user_name
     assert start_response.game_name == client_context._game_name
     assert start_response.ctrl_actor_name == client_context._ctrl_actor_name
@@ -193,13 +194,129 @@ def next_start_state(
         f"开始游戏: {start_response.user_name}, {start_response.game_name}, {start_response.ctrl_actor_name}"
     )
 
+    game_execute(client_context, state_wrapper, [])
+
+
+###############################################################################################################################################
+def game_execute(
+    client_context: GameClientContext,
+    state_wrapper: GameStateWrapper,
+    usr_input: List[str],
+) -> None:
+
+    assert state_wrapper.state == GameState.START
+
+    url_execute = f"http://{WS_CONFIG.Host.value}:{WS_CONFIG.Port.value}/execute/"
+    response = requests.post(
+        url_execute,
+        json=ExecuteData(
+            user_name=client_context._user_name,
+            game_name=client_context._game_name,
+            ctrl_actor_name=client_context._ctrl_actor_name,
+            user_input=usr_input,
+        ).model_dump(),
+    )
+
+    execute_response = ExecuteData.model_validate(response.json())
+    if not execute_response.response:
+        logger.warning(
+            f"执行游戏失败: {execute_response.user_name}, {execute_response.game_name}, {execute_response.ctrl_actor_name}"
+        )
+        return
+
+    for message in execute_response.messages:
+        logger.warning(message)
+
+
+###############################################################################################################################################
+def handle_game_execute(
+    client_context: GameClientContext, state_wrapper: GameStateWrapper
+) -> None:
+
+    assert client_context._user_name != ""
+    assert client_context._game_name != ""
+
+    while True:
+
+        usr_input = input(f"[{client_context._user_name}]:")
+        if usr_input == "":
+            logger.warning("输入不能为空")
+            continue
+
+        if usr_input == "/quit":
+            next_exit_state(client_context, state_wrapper)
+            break
+
+        elif usr_input == "/watch" or usr_input == "/w":
+            handle_web_player_input_watch(client_context, state_wrapper)
+            break
+
+        elif usr_input == "/check" or usr_input == "/c":
+            handle_web_player_input_check(client_context, state_wrapper)
+            break
+
+        else:
+            game_execute(client_context, state_wrapper, [usr_input])
+            break
+
+
+###############################################################################################################################################
+def handle_web_player_input_watch(
+    client_context: GameClientContext, state_wrapper: GameStateWrapper
+) -> None:
+    url_watch = f"http://{WS_CONFIG.Host.value}:{WS_CONFIG.Port.value}/watch/"
+    response = requests.post(
+        url_watch,
+        json=WatchData(
+            user_name=client_context._user_name,
+            game_name=client_context._game_name,
+            ctrl_actor_name=client_context._ctrl_actor_name,
+        ).model_dump(),
+    )
+
+    watch_response = WatchData.model_validate(response.json())
+    if not watch_response.response:
+        logger.warning(
+            f"观察游戏失败: {watch_response.user_name}, {watch_response.game_name}, {watch_response.ctrl_actor_name}"
+        )
+        return
+
+    logger.warning(
+        f"观察游戏: {watch_response.user_name}, {watch_response.game_name}, {watch_response.ctrl_actor_name}\n{watch_response.message}"
+    )
+
+###############################################################################################################################################
+def handle_web_player_input_check(
+    client_context: GameClientContext, state_wrapper: GameStateWrapper
+) -> None:
+    url_check = f"http://{WS_CONFIG.Host.value}:{WS_CONFIG.Port.value}/check/"
+    response = requests.post(
+        url_check,
+        json=CheckData(
+            user_name=client_context._user_name,
+            game_name=client_context._game_name,
+            ctrl_actor_name=client_context._ctrl_actor_name,
+        ).model_dump(),
+    )
+
+    check_response = CheckData.model_validate(response.json())
+    if not check_response.response:
+        logger.warning(
+            f"检查游戏失败: {check_response.user_name}, {check_response.game_name}, {check_response.ctrl_actor_name}"
+        )
+        return
+
+    logger.warning(
+        f"检查游戏: {check_response.user_name}, {check_response.game_name}, {check_response.ctrl_actor_name}\n{check_response.message}"
+    )
+
 
 ###############################################################################################################################################
 def next_exit_state(
-    client_context: GameClientContext, stage_wrapper: GameStateWrapper
+    client_context: GameClientContext, state_wrapper: GameStateWrapper
 ) -> None:
 
-    if not stage_wrapper.can_transition(GameState.EXIT):
+    if not state_wrapper.can_transition(GameState.EXIT):
         return
     url_exit = f"http://{WS_CONFIG.Host.value}:{WS_CONFIG.Port.value}/exit/"
     response = requests.post(
@@ -216,14 +333,15 @@ def next_exit_state(
         )
         return
 
-    stage_wrapper.transition(GameState.EXIT)
+    state_wrapper.transition(GameState.EXIT)
 
     # 清理数据
-    logger.info(f"退出游戏: {exit_response.user_name}, {client_context._game_name}, {client_context._ctrl_actor_name } 清除相关数据")
+    logger.info(
+        f"退出游戏: {exit_response.user_name}, {client_context._game_name}, {client_context._ctrl_actor_name } 清除相关数据"
+    )
     client_context._game_name = ""
     client_context._selectable_actor_names = []
     client_context._ctrl_actor_name = ""
-    
 
 
 ###############################################################################################################################################
@@ -251,7 +369,7 @@ def web_run() -> None:
                 next_start_state(client_context, client_state)
 
             case GameState.START:
-                next_exit_state(client_context, client_state)
+                handle_game_execute(client_context, client_state)
 
             case GameState.EXIT:
                 next_create_state(client_context, client_state)

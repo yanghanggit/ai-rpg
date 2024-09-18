@@ -14,38 +14,40 @@ class WS_CONFIG(Enum):
 
 
 class GameState(Enum):
-    NOTHING = 0
+    LOGOUT = 0
     LOGIN = 1
-    WAIT = 2
     CREATE = 3
     JOIN = 4
     START = 5
     EXIT = 6
 
 
-class GameStageManager:
+class GameStateWrapper:
 
-    def __init__(self) -> None:
-        self._state: GameState = GameState.NOTHING
+    def __init__(self, game_stage: GameState) -> None:
+        self._state: GameState = game_stage
 
-        self._stage_transition: Dict[GameState, Set[GameState]] = {
-            GameState.NOTHING: {GameState.LOGIN},
-            GameState.LOGIN: {GameState.WAIT},
-            GameState.WAIT: {GameState.CREATE},
+        self._state_transition_protocol: Dict[GameState, Set[GameState]] = {
+            GameState.LOGOUT: {GameState.LOGIN},
+            GameState.LOGIN: {GameState.CREATE},
             GameState.CREATE: {GameState.JOIN},
             GameState.JOIN: {GameState.START},
             GameState.START: {GameState.EXIT},
-            GameState.EXIT: {GameState.WAIT},
+            GameState.EXIT: {GameState.CREATE},
         }
 
-    def can_transition(self, src: GameState, dst: GameState) -> bool:
-        return dst in self._stage_transition[src]
+    @property
+    def state(self) -> GameState:
+        return self._state
 
-    def set_state(self, state: GameState) -> None:
-        self._state = state
+    def can_transition(self, dst: GameState) -> bool:
+        return self._can_transition(self._state, dst)
+
+    def _can_transition(self, src: GameState, dst: GameState) -> bool:
+        return dst in self._state_transition_protocol[src]
 
     def transition(self, dst: GameState) -> None:
-        if self.can_transition(self._state, dst):
+        if self.can_transition(dst):
             self._state = dst
         else:
             raise ValueError(f"Can't transition from {self._state} to {dst}")
@@ -55,5 +57,32 @@ class GameStageManager:
 ###############################################################################################################################################
 ###############################################################################################################################################
 class LoginData(BaseModel):
-    username: str
-    response: str = ""
+    response: bool = False
+    username: str = ""
+
+
+class CreateData(BaseModel):
+    response: bool = False
+    username: str = ""
+    game_name: str = ""
+
+
+class JoinData(BaseModel):
+    response: bool = False
+    username: str = ""
+    game_name: str = ""
+    actor_name: str = ""
+
+
+class StartData(BaseModel):
+    response: bool = False
+    username: str = ""
+    game_name: str = ""
+    actor_name: str = ""
+
+
+class ExitData(BaseModel):
+    response: bool = False
+    username: str = ""
+    game_name: str = ""
+    actor_name: str = ""

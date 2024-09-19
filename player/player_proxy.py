@@ -15,7 +15,6 @@ class PlayerProxy:
         self._delayed_show_login_messages: List[tuple[str, str]] = []
 
         self._over: bool = False
-        self.is_message_queue_dirty = False
 
         self._ctrl_actor_name: str = ""
         self._need_show_stage_messages: bool = False
@@ -29,27 +28,26 @@ class PlayerProxy:
         self._commands.append(command)
 
     ##########################################################################################################################################################
-    def add_message(
+    def _add_message(
         self, sender: str, message: str, target: List[tuple[str, str]]
     ) -> None:
-        self.is_message_queue_dirty = True
         target.append((sender, message))
 
     ##########################################################################################################################################################
     def add_system_message(self, message: str) -> None:
-        self.add_message(f"[system]", message, self._client_messages)
+        self._add_message(f"[system]", message, self._client_messages)
 
     ##########################################################################################################################################################
     def add_actor_message(self, actor_name: str, message: str) -> None:
-        self.add_message(f"[{actor_name}]", message, self._client_messages)
+        self._add_message(f"[{actor_name}]", message, self._client_messages)
 
     ##########################################################################################################################################################
     def add_stage_message(self, stage_name: str, message: str) -> None:
-        self.add_message(f"[{stage_name}]", message, self._client_messages)
+        self._add_message(f"[{stage_name}]", message, self._client_messages)
 
     ##########################################################################################################################################################
     def add_login_message(self, actor_name: str, message: str) -> None:
-        self.add_message(f"{actor_name}", message, self._delayed_show_login_messages)
+        self._add_message(f"{actor_name}", message, self._delayed_show_login_messages)
 
     ##########################################################################################################################################################
     def show_messages(self, count: int) -> None:
@@ -66,15 +64,6 @@ class PlayerProxy:
             content = message[1]
             ret.append(f"{tag}=>{content}")
         return ret
-
-    ##########################################################################################################################################################
-    # def send_messages2(self, start_index: int, count: int) -> List[str]:
-    #     ret: List[str] = []
-    #     for message in self._client_messages[start_index:start_index+count]:
-    #         tag = message[0]
-    #         content = message[1]
-    #         ret.append(f"{tag}=>{content}")
-    #     return ret
 
     ##########################################################################################################################################################
     def on_dead(self) -> None:

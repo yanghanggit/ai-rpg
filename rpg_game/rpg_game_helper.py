@@ -16,7 +16,6 @@ from game_sample.game_sample_chaos_engineering_system import (
 )
 from pathlib import Path
 import json
-import shutil
 from rpg_game.terminal_game import TerminalGame
 from rpg_game.web_game import WebGame
 from extended_systems.guid_generator import GUIDGenerator
@@ -28,6 +27,7 @@ from gameplay_systems.components import (
     ActorComponent,
     AppearanceComponent,
     PlayerComponent,
+    PlanningAllowedComponent,
 )
 from gameplay_systems.check_self_helper import CheckSelfHelper
 from player.player_command import (
@@ -153,9 +153,7 @@ def create_web_rpg_game(game_name: str, version: str) -> Optional[WebGame]:
 
 
 #######################################################################################################################################
-def get_player_entity_stage_props(
-    game_name: RPGGame, player_entity: Entity
-) -> List[PropFile]:
+def get_props_in_stage(game_name: RPGGame, player_entity: Entity) -> List[PropFile]:
     stage_entity = game_name._entitas_context.safe_get_stage_entity(player_entity)
     if stage_entity is None:
         return []
@@ -164,9 +162,7 @@ def get_player_entity_stage_props(
 
 
 #######################################################################################################################################
-def get_player_entity_stage_narrate_content(
-    game_name: RPGGame, player_entity: Entity
-) -> str:
+def get_stage_narrate_content(game_name: RPGGame, player_entity: Entity) -> str:
 
     stage_entity = game_name._entitas_context.safe_get_stage_entity(player_entity)
     if stage_entity is None:
@@ -190,7 +186,7 @@ def get_player_entity_stage_narrate_content(
 
 
 #######################################################################################################################################
-def get_player_entity_stage_actor_info(
+def get_info_of_actors_in_stage(
     game_name: RPGGame, player_entity: Entity
 ) -> Dict[str, str]:
     stage_entity = game_name._entitas_context.safe_get_stage_entity(player_entity)
@@ -208,36 +204,21 @@ def get_player_entity_stage_actor_info(
 
 
 #######################################################################################################################################
-def handle_terminal_player_input_watch(
-    game_name: RPGGame, player_proxy: PlayerProxy
-) -> None:
-    message = gen_player_watch_message(game_name, player_proxy)
-    while True:
-        logger.info(message)
-        input(f"按任意键继续")
-        break
-
-
-#######################################################################################################################################
 def gen_player_watch_message(game_name: RPGGame, player_proxy: PlayerProxy) -> str:
     player_entity = game_name._entitas_context.get_player_entity(player_proxy._name)
     if player_entity is None:
         return ""
 
-    stage_narrate_content = get_player_entity_stage_narrate_content(
-        game_name, player_entity
-    )
+    stage_narrate_content = get_stage_narrate_content(game_name, player_entity)
 
-    actors_info: Dict[str, str] = get_player_entity_stage_actor_info(
-        game_name, player_entity
-    )
+    actors_info: Dict[str, str] = get_info_of_actors_in_stage(game_name, player_entity)
 
     actors_info_prompts = [
         f"""{actor_name}: {appearance}"""
         for actor_name, appearance in actors_info.items()
     ]
 
-    props_in_stage = get_player_entity_stage_props(game_name, player_entity)
+    props_in_stage = get_props_in_stage(game_name, player_entity)
     props_in_stage_prompts = [
         builtin_prompt.make_prop_prompt(
             prop, description_prompt=False, appearance_prompt=True, attr_prompt=False
@@ -265,17 +246,6 @@ def gen_player_watch_message(game_name: RPGGame, player_proxy: PlayerProxy) -> s
 {"\n".join(props_in_stage_prompts)}"""
 
     return message
-
-
-#######################################################################################################################################
-def handle_terminal_player_input_check(
-    game_name: RPGGame, player_proxy: PlayerProxy
-) -> None:
-    message = gen_player_check_message(game_name, player_proxy)
-    while True:
-        logger.info(message)
-        input(f"按任意键继续")
-        break
 
 
 #######################################################################################################################################
@@ -395,3 +365,21 @@ def player_join(
 
 
 #######################################################################################################################################
+def get_player_ctrl_actor_names(rpg_game: RPGGame) -> List[str]:
+
+    actor_entities = rpg_game._entitas_context.get_player_entities()
+    ret: List[str] = []
+    for actor_entity in actor_entities:
+        actor_comp = actor_entity.get(ActorComponent)
+        ret.append(actor_comp.name)
+
+    return ret
+
+
+#######################################################################################################################################
+def is_player_turn(rpg_game: RPGGame, player_proxy: PlayerProxy) -> bool:
+    player_entity = rpg_game._entitas_context.get_player_entity(player_proxy._name)
+    if player_entity is None:
+        return False
+
+    return player_entity.has(PlanningAllowedComponent)

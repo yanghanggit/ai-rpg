@@ -64,9 +64,17 @@ class PlayerProxy:
         for message in self._client_messages[-count:]:
             tag = message[0]
             content = message[1]
-            # logger.warning(f"{tag}=>{content}")
             ret.append(f"{tag}=>{content}")
         return ret
+
+    ##########################################################################################################################################################
+    # def send_messages2(self, start_index: int, count: int) -> List[str]:
+    #     ret: List[str] = []
+    #     for message in self._client_messages[start_index:start_index+count]:
+    #         tag = message[0]
+    #         content = message[1]
+    #         ret.append(f"{tag}=>{content}")
+    #     return ret
 
     ##########################################################################################################################################################
     def on_dead(self) -> None:

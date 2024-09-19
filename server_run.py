@@ -1,284 +1,330 @@
-# 修复windows上默认不使用utf-8格式的问题导致langserve的server代码报错
-import sys
-
-sys.stdout.reconfigure(encoding="utf-8")  # type: ignore
-import datetime
-import re
-from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
+from fastapi import FastAPI
 from loguru import logger
-from pydantic import BaseModel
+from ws_config import (
+    WS_CONFIG,
+    GameState,
+    GameStateWrapper,
+    LoginData,
+    CreateData,
+    JoinData,
+    StartData,
+    ExitData,
+    ExecuteData,
+    WatchData,
+    CheckData,
+)
+from typing import Dict, Any, Optional, List
+import rpg_game.rpg_game_helper
 from rpg_game.web_game import WebGame
-
-# from player.player_command import PlayerLogin
-# import player.utils
-# from rpg_game.create_rpg_game_util import create_rpg_game, GameClientType
-from rpg_game.rpg_game import RPGGame
 from player.player_proxy import PlayerProxy
 
-# from gameplay_systems.check_status_action_system import (
-#     CheckStatusActionHelper,
-#     # ActorCheckStatusEvent,
-# )
-# from gameplay_systems.perception_action_system import (
-#     PerceptionActionHelper,
-#     # ActorPerceptionEvent,
-# )
-from typing import List, Dict
+fastapi_app = FastAPI()
+
+server_state = GameStateWrapper(GameState.UNLOGGED)
 
 
-class TextInput(BaseModel):
-    text_input: str
+class GameRoom:
+
+    def __init__(self, user_name: str) -> None:
+        self._user_name = user_name
+        self._game: Optional[WebGame] = None
+
+    def get_player(self) -> Optional[PlayerProxy]:
+        if self._game is None:
+            return None
+        return self._game.get_player(self._user_name)
+
+    def get_player_ctrl_actor_name(self) -> str:
+        player = self.get_player()
+        if player is None:
+            return ""
+        return player._ctrl_actor_name
 
 
-class TupleModel(BaseModel):
-    who: str
-    what: str
+game_room: Optional[GameRoom] = None
 
 
-app = FastAPI()
-templates = Jinja2Templates(directory="templates")
-app.mount("/static", StaticFiles(directory="static"), name="static")
+###############################################################################################################################################
+@fastapi_app.post("/login/")
+async def login(data: LoginData) -> Dict[str, Any]:
 
-multiplayersgames: Dict[str, WebGame] = {}
+    global game_room
+    assert game_room is None, "game_room is not None"
 
+    if not server_state.can_transition(GameState.LOGGED_IN):
+        return LoginData(user_name=data.user_name, response=False).model_dump()
 
-async def create(clientip: str) -> List[TupleModel]:
-    # log_start_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    # logger.add(f"logs/{log_start_time}.log", level="DEBUG")
+    logger.info(f"login: {data.user_name}")
 
-    # world_name = "World2"
-    # rpg_game = create_rpg_game(world_name, "qwe", RPGGameClientType.WEB_SERVER)
-    # if rpg_game is None:
-    #     logger.error("create_rpg_game 失败。")
-    #     return []
+    # 切换状态到登陆完成并创建一个房间
+    server_state.transition(GameState.LOGGED_IN)
+    game_room = GameRoom(data.user_name)
 
-    # assert isinstance(rpg_game, WebServerMultiplayersRPGGame)
-    # #
-    # web_server_multi_player_game: WebServerMultiplayersRPGGame = (
-    #     rpg_game  # WebServerMultiplayersRPGGame(clientip, rpg_game)
-    # )
-    # if web_server_multi_player_game is not None:
-    #     # 设置主机
-    #     web_server_multi_player_game.set_host(clientip)
-    #     global multiplayersgames
-    #     multiplayersgames[clientip] = web_server_multi_player_game
-    #     multiplayersgames[clientip].add_player(clientip)
-    #     player.utils.create_player_proxy(clientip)
-
-    # messages: List[TupleModel] = []
-    # messages.append(TupleModel(who=clientip, what=f"创建房间IP:{clientip}."))
-
-    # return messages
-    return []
+    return LoginData(user_name=data.user_name, response=True).model_dump()
 
 
-def parse_join_multi_game_params(command: str) -> str:
-
-    # 使用正则表达式匹配@之后的内容
-    # 这个正则表达式匹配@符号后面的非空白字符
-    match = re.search(r"@(\S+)", command)
-
-    if match:
-        content = match.group(1)  # 使用group(1)获取第一个括号中匹配的内容
-        return content
-    else:
-        logger.debug("在字符串中没有找到匹配的内容")
-        return ""
+###############################################################################################################################################
 
 
-async def join(clientip: str, hostip: str) -> List[TupleModel]:
-    # messages: List[TupleModel] = []
-    # for userip, game in multiplayersgames.copy().items():
-    #     if game._host == hostip:
-    #         client_game = game  # WebServerMultiplayersRPGGame(hostip, game._rpggame)
-    #         multiplayersgames[clientip] = client_game
-    #         messages.append(TupleModel(who=clientip, what=f"加入房间IP:{hostip}成功."))
-    #         multiplayersgames[clientip].add_player(clientip)
-    #         player.utils.create_player_proxy(clientip)
+@fastapi_app.post("/create/")
+async def create(data: CreateData) -> Dict[str, Any]:
 
-    # if len(messages) == 0:
-    #     messages.append(
-    #         TupleModel(who=clientip, what=f"加入房间IP:{hostip}失败,请检查房间IP.")
-    #     )
+    global game_room
+    assert game_room is not None, "game_room is None"
+    assert game_room._game is None, "game_room._game is not None"
 
-    # return messages
-    return []
+    if not server_state.can_transition(GameState.GAME_CREATED):
+        return CreateData(
+            user_name=data.user_name, game_name=data.game_name, response=False
+        ).model_dump()
 
+    new_game = rpg_game.rpg_game_helper.create_web_rpg_game(data.game_name, "qwe")
+    if new_game is None or new_game._game_resource is None:
+        logger.error(f"create_rpg_game 失败 = {data.game_name}")
+        return CreateData(
+            user_name=data.user_name, game_name=data.game_name, response=False
+        ).model_dump()
 
-async def pick_actor(clientip: str, actorname: str) -> List[TupleModel]:
-    return []
-    # global multiplayersgames
-    # playerproxy = player.utils.get_player_proxy(clientip)
-    # assert playerproxy is not None
-    # login_command = PlayerLogin(
-    #     "/server_run_login", multiplayersgames[clientip], playerproxy, actorname, True
-    # )
-    # login_command.execute()
-    # await multiplayersgames[clientip].a_execute()
-    # logger.debug(f"pick actor finish")
+    # 检查是否有可以控制的角色, 没有就不让玩。
+    ctrl_actors = rpg_game.rpg_game_helper.get_player_ctrl_actor_names(new_game)
+    if len(ctrl_actors) == 0:
+        logger.warning(f"create_rpg_game 没有可以控制的角色 = {data.game_name}")
+        return CreateData(
+            user_name=data.user_name, game_name=data.game_name, response=False
+        ).model_dump()
 
-    # messages: List[TupleModel] = []
-    # messages.append(TupleModel(who=clientip, what=f"选择了角色:{actorname}"))
+    logger.info(f"create: {data.user_name}, {data.game_name}")
 
-    # return messages
+    # 切换状态到游戏创建完成
+    server_state.transition(GameState.GAME_CREATED)
+    game_room._game = new_game
+    assert new_game._game_resource is not None, "new_game._game_resource is None"
 
-
-async def request_game_messages(clientip: str) -> List[TupleModel]:
-    # messages: List[TupleModel] = []
-    # player_proxy = player.utils.get_player_proxy(clientip)
-    # if player_proxy is not None:
-    #     for message in player_proxy._client_messages[-20:]:
-    #         messages.append(TupleModel(who=message[0], what=message[1]))
-    # else:
-    #     messages.append(TupleModel(who=clientip, what="请先创建游戏或加入游戏."))
-
-    # return messages
-    return []
+    return CreateData(
+        user_name=data.user_name,
+        game_name=data.game_name,
+        selectable_actor_names=ctrl_actors,
+        response=True,
+        game_model=new_game._game_resource._model,
+    ).model_dump()
 
 
-async def quitgame(clientip: str) -> List[TupleModel]:
-    # quitclient = multiplayersgames.pop(clientip, None)
-    # if quitclient is not None:
-    #     logger.debug(f"User IP:{clientip} quit a game.")
-    #     proxy = player.utils.get_player_proxy(clientip)
-    #     assert proxy is not None
-    #     player.utils.remove_player_proxy(proxy)
-    #     quitclient.exit()
+###############################################################################################################################################
+@fastapi_app.post("/join/")
+async def join(data: JoinData) -> Dict[str, Any]:
 
-    # messages: List[TupleModel] = []
-    # messages.append(TupleModel(who=clientip, what="Quit Success"))
+    global game_room
+    assert game_room is not None, "game_room is None"
+    assert game_room._game is not None, "game_room._game is None"
 
-    # return messages
-    return []
+    if not server_state.can_transition(GameState.GAME_JOINED):
+        return JoinData(user_name=data.user_name, response=False).model_dump()
 
+    if data.ctrl_actor_name == "":
+        return JoinData(user_name=data.user_name, response=False).model_dump()
 
-############################################################################################################
-# player 可以是立即模式
-async def imme_handle_perception(rpg_game: RPGGame, playerproxy: PlayerProxy) -> None:
-    pass
+    logger.info(f"join: {data.user_name}, {data.game_name}, {data.ctrl_actor_name}")
 
-    # context = rpg_game._entitas_context
-    # playerentity = context.get_player_entity(playerproxy._name)
-    # if playerentity is None:
-    #     return
-    # #
-    # helper = PerceptionActionHelper(context)
-    # helper.perception(playerentity)
-    # #
-    # safe_actor_name = context.safe_get_entity_name(playerentity)
-    # stageentity = context.safe_get_stage_entity(playerentity)
-    # assert stageentity is not None
-    # safe_stage_name = context.safe_get_entity_name(stageentity)
-    # #
-    # event = ActorPerceptionEvent(
-    #     safe_actor_name,
-    #     safe_stage_name,
-    #     helper._actors_in_stage,
-    #     helper._props_in_stage,
-    # )
-    # message = event.to_actor(safe_actor_name, context)
-    # #
-    # playerproxy.add_actor_message(safe_actor_name, message)
+    # 切换状态到游戏加入完成
+    server_state.transition(GameState.GAME_JOINED)
+    player_proxy = PlayerProxy(data.user_name)
+    game_room._game.add_player(player_proxy)
+    # 加入游戏
+    rpg_game.rpg_game_helper.player_join(
+        game_room._game, player_proxy, data.ctrl_actor_name
+    )
+
+    return JoinData(
+        user_name=data.user_name,
+        game_name=data.game_name,
+        ctrl_actor_name=data.ctrl_actor_name,
+        response=True,
+    ).model_dump()
 
 
-############################################################################################################
-# player 可以是立即模式
-async def imme_handle_check_status(rpg_game: RPGGame, playerproxy: PlayerProxy) -> None:
-    pass
+###############################################################################################################################################
+@fastapi_app.post("/start/")
+async def start(data: StartData) -> Dict[str, Any]:
 
-    # context = rpg_game._entitas_context
-    # player_entity = context.get_player_entity(playerproxy._name)
-    # if player_entity is None:
-    #     return
-    # #
-    # context = rpg_game._entitas_context
-    # helper = CheckStatusActionHelper(context)
-    # helper.check_status(player_entity)
-    # #
-    # safe_name = context.safe_get_entity_name(player_entity)
-    # #
-    # event = ActorCheckStatusEvent(
-    #     safe_name,
-    #     helper._prop_files_as_weapon_clothes_non_consumable_item,
-    #     helper.health,
-    #     helper._prop_files_as_special,
-    # )
-    # message = event.to_actor(safe_name, context)
-    # #
-    # playerproxy.add_actor_message(safe_name, message)
+    global game_room
+    assert game_room is not None, "game_room is None"
+    assert game_room._game is not None, "game_room._game is None"
+
+    if not server_state.can_transition(GameState.PLAYING):
+        return StartData(user_name=data.user_name, response=False).model_dump()
+
+    logger.info(f"start: {data.user_name}, {data.game_name}, {data.ctrl_actor_name}")
+
+    # 切换状态到游戏开始
+    server_state.transition(GameState.PLAYING)
+
+    return StartData(
+        user_name=data.user_name,
+        game_name=data.game_name,
+        ctrl_actor_name=data.ctrl_actor_name,
+        response=True,
+    ).model_dump()
 
 
-############################################################################################################
+###############################################################################################################################################
+@fastapi_app.post("/exit/")
+async def exit(data: ExitData) -> Dict[str, Any]:
+
+    global game_room
+    assert game_room is not None, "game_room is None"
+    assert game_room._game is not None, "game_room._game is None"
+
+    if not server_state.can_transition(GameState.REQUESTING_EXIT):
+        return ExitData(user_name=data.user_name, response=False).model_dump()
+
+    logger.info(f"exit: {data.user_name}")
+
+    # 切换状态到游戏退出
+    server_state.transition(GameState.REQUESTING_EXIT)
+    # 当前的游戏杀掉
+    assert game_room._game is not None, "game_room._game is None"
+    if game_room._game is not None:
+        game_room._game._will_exit = True
+        rpg_game.rpg_game_helper.save_game(game_room._game)
+        game_room._game.exit()
+        game_room._game = None
+
+    return ExitData(
+        user_name=data.user_name, game_name=data.game_name, response=True
+    ).model_dump()
 
 
-async def handle_player_input(clientip: str, command: str) -> List[TupleModel]:
-    #
-    # player_proxy = player.utils.get_player_proxy(clientip)
-    # assert player_proxy is not None
-    # player_proxy._input_commands.append(command)
+###############################################################################################################################################
+@fastapi_app.post("/execute/")
+async def execute(data: ExecuteData) -> Dict[str, Any]:
 
-    # #
-    # rpg_game = multiplayersgames[clientip]
-    # player_entity = rpg_game._entitas_context.get_player_entity(player_proxy._name)
-    # assert player_entity is not None
-    # safe_name = rpg_game._entitas_context.safe_get_entity_name(player_entity)
-    # player_proxy.add_actor_message(
-    #     f"{player_proxy._name}/{safe_name}:", f"input = {command}"
-    # )
+    global game_room
+    assert game_room is not None, "game_room is None"
+    assert game_room._game is not None, "game_room._game is None"
 
-    # #
-    # if "/checkstatus" in command:
-    #     await imme_handle_check_status(rpg_game, player_proxy)
-    # elif "/perception" in command:
-    #     await imme_handle_perception(rpg_game, player_proxy)
-    # else:
-    #     await rpg_game.a_execute()
+    if game_room._game._will_exit:
+        return ExecuteData(
+            user_name=data.user_name, response=False, error="game_room._game._will_exit"
+        ).model_dump()
 
-    # messages: List[TupleModel] = []
-    # messages.append(TupleModel(who=clientip, what=f"发送 {command}"))
+    player_proxy = game_room.get_player()
+    if player_proxy is None:
+        return ExecuteData(
+            user_name=data.user_name,
+            response=False,
+            error="game_room.get_player() is None",
+        ).model_dump()
 
-    # return messages
-    return []
+    if player_proxy._over:
+        return ExecuteData(
+            user_name=data.user_name, response=False, error="player_proxy._over"
+        ).model_dump()
+
+    # 如果有输入命令，就要加
+    for usr_input in data.user_input:
+        assert usr_input != "/watch" and usr_input != "/w", "不应该有这个命令"
+        assert usr_input != "/check" and usr_input != "/c", "不应该有这个命令"
+        rpg_game.rpg_game_helper.add_player_command(
+            game_room._game, player_proxy, usr_input
+        )
+
+    # 运行一个回合
+    send_client_messages: List[str] = []
+
+    # 核心循环
+    while True:
+
+        if game_room._game._will_exit:
+            break
+
+        # 运行一个回合
+        await game_room._game.a_execute()
+
+        # 如果死了就退出。
+        if player_proxy._over:
+            game_room._game._will_exit = True
+            break
+
+        # 允许玩家输入的时候，才放松消息。
+        if rpg_game.rpg_game_helper.is_player_turn(game_room._game, player_proxy):
+            player_proxy.is_message_queue_dirty = False
+            send_client_messages = player_proxy.send_messages(
+                WS_CONFIG.SEND_MESSAGES_COUNT
+            )
+            break
+
+    return ExecuteData(
+        user_name=data.user_name,
+        response=True,
+        game_name=data.game_name,
+        ctrl_actor_name=game_room.get_player_ctrl_actor_name(),
+        messages=send_client_messages,
+    ).model_dump()
 
 
-async def main(clientip: str, command: str) -> List[TupleModel]:
-    if "/quit" in command:
-        return await quitgame(clientip)
-    elif "/create" in command:
-        return await create(clientip)
-    elif "/join" in command:
-        hostip = parse_join_multi_game_params(command)
-        return await join(clientip, hostip)
-    elif "/pickactor" in command:
-        actorname = parse_join_multi_game_params(command)
-        return await pick_actor(clientip, actorname)
-    elif "/run" in command:
-        return await request_game_messages(clientip)
-    else:
-        return await handle_player_input(clientip, command)
+###############################################################################################################################################
+@fastapi_app.post("/watch/")
+async def watch(data: WatchData) -> Dict[str, Any]:
+
+    global game_room
+    assert game_room is not None, "game_room is None"
+    assert game_room._game is not None, "game_room._game is None"
+
+    player_proxy = game_room.get_player()
+    if player_proxy is None:
+        return WatchData(
+            user_name=data.user_name,
+            game_name=data.game_name,
+            ctrl_actor_name=data.ctrl_actor_name,
+            response=False,
+        ).model_dump()
+
+    gen_message = rpg_game.rpg_game_helper.gen_player_watch_message(
+        game_room._game, player_proxy
+    )
+
+    return WatchData(
+        user_name=data.user_name,
+        game_name=data.game_name,
+        ctrl_actor_name=data.ctrl_actor_name,
+        message=gen_message,
+        response=True,
+    ).model_dump()
 
 
-@app.get("/")
-async def read_root(request: Request) -> templates.TemplateResponse:  # type: ignore
-    return templates.TemplateResponse("index.html", {"request": request})
+###############################################################################################################################################
+@fastapi_app.post("/check/")
+async def check(data: CheckData) -> Dict[str, Any]:
+
+    global game_room
+    assert game_room is not None, "game_room is None"
+    assert game_room._game is not None, "game_room._game is None"
+
+    player_proxy = game_room.get_player()
+    if player_proxy is None:
+        return CheckData(
+            user_name=data.user_name,
+            game_name=data.game_name,
+            ctrl_actor_name=data.ctrl_actor_name,
+            response=False,
+        ).model_dump()
+
+    gen_message = rpg_game.rpg_game_helper.gen_player_check_message(
+        game_room._game, player_proxy
+    )
+
+    return CheckData(
+        user_name=data.user_name,
+        game_name=data.game_name,
+        ctrl_actor_name=data.ctrl_actor_name,
+        message=gen_message,
+        response=True,
+    ).model_dump()
 
 
-@app.post("/submit")
-async def submit_form(request: Request) -> JSONResponse:
-    json_data = await request.json()
-    input_data: TextInput = TextInput(**json_data)
-    user_command: str = str(input_data.text_input)
-    assert request.client is not None
-    user_ip = request.client.host
-    results = await main(user_ip, user_command)
-    messages = [message_model.dict() for message_model in results]
-    return JSONResponse(content={"command": user_command, "messages": messages})
-
+###############################################################################################################################################
 
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=8080)
+    uvicorn.run(fastapi_app, host=WS_CONFIG.LOCAL_HOST, port=WS_CONFIG.PORT)

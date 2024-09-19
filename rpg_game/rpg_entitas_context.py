@@ -94,6 +94,13 @@ class RPGEntitasContext(Context):
         return None
 
     #############################################################################################################################
+    def get_player_entities(self) -> Set[Entity]:
+        entities: Set[Entity] = self.get_group(
+            Matcher(all_of=[PlayerComponent, ActorComponent])
+        ).entities
+        return entities
+
+    #############################################################################################################################
     def get_entity_by_name(self, name: str) -> Optional[Entity]:
         comp_class = self._codename_component_system.get_component_class_by_name(name)
         if comp_class is None:

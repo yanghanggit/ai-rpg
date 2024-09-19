@@ -1,12 +1,13 @@
 from enum import Enum
 from pydantic import BaseModel
-from typing import Dict, Set, List
+from typing import Dict, Set, List, Optional
+from my_data.model_def import GameModel
 
 
-class WS_CONFIG(Enum):
-    Host = "127.0.0.1"
-    Port = 8080
-
+class WS_CONFIG:
+    LOCAL_HOST: str = "127.0.0.1"
+    PORT: int = 8080
+    SEND_MESSAGES_COUNT: int = 20
 
 ###############################################################################################################################################
 ###############################################################################################################################################
@@ -14,26 +15,27 @@ class WS_CONFIG(Enum):
 
 
 class GameState(Enum):
-    LOGOUT = 0
-    LOGIN = 1
-    CREATE = 3
-    JOIN = 4
-    START = 5
-    EXIT = 6
+    UNLOGGED = 0
+    LOGGED_IN = 1
+    GAME_CREATED = 3
+    GAME_JOINED = 4
+    PLAYING = 5
+    REQUESTING_EXIT = 6
 
 
 class GameStateWrapper:
 
     def __init__(self, game_stage: GameState) -> None:
+
         self._state: GameState = game_stage
 
-        self._state_transition_protocol: Dict[GameState, Set[GameState]] = {
-            GameState.LOGOUT: {GameState.LOGIN},
-            GameState.LOGIN: {GameState.CREATE},
-            GameState.CREATE: {GameState.JOIN},
-            GameState.JOIN: {GameState.START},
-            GameState.START: {GameState.EXIT},
-            GameState.EXIT: {GameState.CREATE},
+        self._transition_protocol: Dict[GameState, Set[GameState]] = {
+            GameState.UNLOGGED: {GameState.LOGGED_IN},
+            GameState.LOGGED_IN: {GameState.GAME_CREATED},
+            GameState.GAME_CREATED: {GameState.GAME_JOINED},
+            GameState.GAME_JOINED: {GameState.PLAYING},
+            GameState.PLAYING: {GameState.REQUESTING_EXIT},
+            GameState.REQUESTING_EXIT: {GameState.GAME_CREATED},
         }
 
     @property
@@ -41,10 +43,7 @@ class GameStateWrapper:
         return self._state
 
     def can_transition(self, dst: GameState) -> bool:
-        return self._can_transition(self._state, dst)
-
-    def _can_transition(self, src: GameState, dst: GameState) -> bool:
-        return dst in self._state_transition_protocol[src]
+        return dst in self._transition_protocol.get(self._state, set())
 
     def transition(self, dst: GameState) -> None:
         if self.can_transition(dst):
@@ -56,18 +55,24 @@ class GameStateWrapper:
 ###############################################################################################################################################
 ###############################################################################################################################################
 ###############################################################################################################################################
+
+
+# 测试用
 class LoginData(BaseModel):
     response: bool = False
     user_name: str = ""
 
 
+# 测试用
 class CreateData(BaseModel):
     response: bool = False
     user_name: str = ""
     game_name: str = ""
     selectable_actor_names: List[str] = []
+    game_model: Optional[GameModel] = None
 
 
+# 测试用
 class JoinData(BaseModel):
     response: bool = False
     user_name: str = ""
@@ -75,6 +80,7 @@ class JoinData(BaseModel):
     ctrl_actor_name: str = ""
 
 
+# 测试用
 class StartData(BaseModel):
     response: bool = False
     user_name: str = ""
@@ -82,6 +88,7 @@ class StartData(BaseModel):
     ctrl_actor_name: str = ""
 
 
+# 测试用
 class ExitData(BaseModel):
     response: bool = False
     user_name: str = ""
@@ -89,6 +96,7 @@ class ExitData(BaseModel):
     ctrl_actor_name: str = ""
 
 
+# 测试用
 class ExecuteData(BaseModel):
     response: bool = False
     error: str = ""
@@ -99,6 +107,7 @@ class ExecuteData(BaseModel):
     messages: List[str] = []
 
 
+# 测试用
 class WatchData(BaseModel):
     response: bool = False
     user_name: str = ""
@@ -107,6 +116,7 @@ class WatchData(BaseModel):
     message: str = ""
 
 
+# 测试用
 class CheckData(BaseModel):
     response: bool = False
     user_name: str = ""

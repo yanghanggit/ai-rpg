@@ -6,20 +6,8 @@ from typing import List, Dict, Any
 import json
 
 
-def main(default_game_name: str) -> None:
-    """
-    直接根据一个游戏文件，执行文件内的所有agentpy程序。这样可以清晰一些，手动很麻烦。
-    尤其是改了生成之后。
-    """
-
-    log_start_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    logger.add(f"logs/{log_start_time}.log", level="DEBUG")
-
-    # 读取世界资源文件
-    game_name = input("请输入要进入的游戏名称(必须与自动化创建的名字一致):")
-    if game_name == "":
-        game_name = default_game_name
-
+####################################################################################################################################
+def run_agents(game_name: str) -> None:
     directory = Path("game_sample/gen_runtimes")
     directory.mkdir(parents=True, exist_ok=True)
     if not directory.exists() or not directory.is_dir():
@@ -53,6 +41,26 @@ def main(default_game_name: str) -> None:
 
     except Exception as e:
         logger.error(e)
+
+
+####################################################################################################################################
+
+
+def main(default_game_name: str) -> None:
+    """
+    直接根据一个游戏文件，执行文件内的所有agentpy程序。这样可以清晰一些，手动很麻烦。
+    尤其是改了生成之后。
+    """
+
+    log_start_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    logger.add(f"logs/{log_start_time}.log", level="DEBUG")
+
+    # 读取世界资源文件
+    game_name = input("请输入要进入的游戏名称(必须与自动化创建的名字一致):")
+    if game_name == "":
+        game_name = default_game_name
+
+    run_agents(game_name)
 
 
 if __name__ == "__main__":

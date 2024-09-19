@@ -75,19 +75,19 @@ async def terminal_run(option: TerminalRunOption) -> None:
                 new_game._will_exit = True
                 continue
 
-            if new_game.is_player_input_allowed(player_proxy):
+            if rpg_game.rpg_game_helper.is_player_turn(new_game, player_proxy):
                 await terminal_player_input(new_game, player_proxy)
             else:
                 await terminal_player_wait(new_game, player_proxy)
 
     rpg_game.rpg_game_helper.save_game(new_game)
     new_game.exit()
-    new_game = None
+    new_game = None  # 其实是废话，习惯性写着吧
 
 
 ###############################################################################################################################################
 def terminal_player_input_select_controlled_actor(game: RPGGame) -> str:
-    all_names = game.get_player_controlled_actors()
+    all_names = rpg_game.rpg_game_helper.get_player_ctrl_actor_names(game)
     if len(all_names) == 0:
         return ""
 
@@ -106,6 +106,15 @@ def terminal_player_input_select_controlled_actor(game: RPGGame) -> str:
     return ""
 
 
+#######################################################################################################################################
+def terminal_player_input_watch(game_name: RPGGame, player_proxy: PlayerProxy) -> None:
+    message = rpg_game.rpg_game_helper.gen_player_watch_message(game_name, player_proxy)
+    while True:
+        logger.info(message)
+        input(f"按任意键继续")
+        break
+
+
 ###############################################################################################################################################
 async def terminal_player_input(game: RPGGame, player_proxy: PlayerProxy) -> None:
 
@@ -121,18 +130,23 @@ async def terminal_player_input(game: RPGGame, player_proxy: PlayerProxy) -> Non
             break
 
         elif usr_input == "/watch" or usr_input == "/w":
-            rpg_game.rpg_game_helper.handle_terminal_player_input_watch(
-                game, player_proxy
-            )
+            terminal_player_input_watch(game, player_proxy)
 
         elif usr_input == "/check" or usr_input == "/c":
-            rpg_game.rpg_game_helper.handle_terminal_player_input_check(
-                game, player_proxy
-            )
+            terminal_player_input_check(game, player_proxy)
 
         else:
             rpg_game.rpg_game_helper.add_player_command(game, player_proxy, usr_input)
             break
+
+
+#######################################################################################################################################
+def terminal_player_input_check(game_name: RPGGame, player_proxy: PlayerProxy) -> None:
+    message = rpg_game.rpg_game_helper.gen_player_check_message(game_name, player_proxy)
+    while True:
+        logger.info(message)
+        input(f"按任意键继续")
+        break
 
 
 ###############################################################################################################################################

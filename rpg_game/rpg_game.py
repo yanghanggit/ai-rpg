@@ -14,7 +14,6 @@ from gameplay_systems.components import (
     RPGCurrentWeaponComponent,
     RPGCurrentClothesComponent,
     StageGraphComponent,
-    PlanningAllowedComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from my_data.game_resource import GameResource
@@ -48,7 +47,7 @@ class RPGGame(BaseGame):
         self._entitas_context: RPGEntitasContext = context
         self._entitas_context._game = self
 
-        self._game_builder: Optional[GameResource] = None
+        self._game_resource: Optional[GameResource] = None
         self._processors: RPGEntitasProcessors = RPGEntitasProcessors.create(
             self, context
         )
@@ -56,43 +55,43 @@ class RPGGame(BaseGame):
         self._round: int = 0
 
     ###############################################################################################################################################
-    def build(self, game_builder: GameResource) -> "RPGGame":
+    def build(self, game_resource: GameResource) -> "RPGGame":
 
         context = self._entitas_context
 
         # 第0步，yh 目前用于测试!!!!!!!，直接删worlddata.name的文件夹，保证每次都是新的 删除runtime_dir_for_world的文件夹
-        if game_builder._runtime_dir.exists():
+        if game_resource._runtime_dir.exists():
             # todo
             logger.warning(
-                f"删除文件夹：{game_builder._runtime_dir}, 这是为了测试，后续得改！！！"
+                f"删除文件夹：{game_resource._runtime_dir}, 这是为了测试，后续得改！！！"
             )
-            shutil.rmtree(game_builder._runtime_dir)
+            shutil.rmtree(game_resource._runtime_dir)
 
         # 混沌系统，准备测试
-        context._chaos_engineering_system.on_pre_create_game(context, game_builder)
+        context._chaos_engineering_system.on_pre_create_game(context, game_resource)
 
         ## 第1步，设置根路径
-        self._game_builder = game_builder
-        context._langserve_agent_system.set_runtime_dir(game_builder._runtime_dir)
-        context._kick_off_message_system.set_runtime_dir(game_builder._runtime_dir)
-        context._file_system.set_runtime_dir(game_builder._runtime_dir)
+        self._game_resource = game_resource
+        context._langserve_agent_system.set_runtime_dir(game_resource._runtime_dir)
+        context._kick_off_message_system.set_runtime_dir(game_resource._runtime_dir)
+        context._file_system.set_runtime_dir(game_resource._runtime_dir)
 
         ## 第2步 创建管理员类型的角色，全局的AI
-        self.create_world_system_entities(game_builder)
+        self.create_world_system_entities(game_resource)
 
         ## 第3步，创建actor，player是特殊的actor
-        self.create_player_entities(game_builder, game_builder.players_proxy)
-        self.create_actor_entities(game_builder, game_builder.actors_proxy)
+        self.create_player_entities(game_resource, game_resource.players_proxy)
+        self.create_actor_entities(game_resource, game_resource.actors_proxy)
         self.add_code_name_component_to_world_and_actors()
 
         ## 第4步，创建stage
-        self.create_stage_entities(game_builder)
+        self.create_stage_entities(game_resource)
 
         ## 第5步，最后处理因为需要上一阶段的注册流程
         self.add_code_name_component_to_stages()
 
         ## 最后！混沌系统，准备测试
-        context._chaos_engineering_system.on_post_create_game(context, game_builder)
+        context._chaos_engineering_system.on_post_create_game(context, game_resource)
 
         return self
 
@@ -136,16 +135,16 @@ class RPGGame(BaseGame):
         logger.info(f"{self._name}, game over!!!!!!!!!!!!!!!!!!!!")
 
     ###############################################################################################################################################
-    def create_world_system_entities(self, game_builder: GameResource) -> List[Entity]:
+    def create_world_system_entities(self, game_resource: GameResource) -> List[Entity]:
 
-        assert game_builder is not None
-        assert game_builder._data_base is not None
+        assert game_resource is not None
+        assert game_resource._data_base is not None
 
         ret: List[Entity] = []
 
-        for world_system_proxy in game_builder.world_systems_proxy:
+        for world_system_proxy in game_resource.world_systems_proxy:
 
-            world_system_model = game_builder._data_base.get_world_system(
+            world_system_model = game_resource._data_base.get_world_system(
                 world_system_proxy.name
             )
             assert world_system_model is not None
@@ -189,13 +188,13 @@ class RPGGame(BaseGame):
 
     ###############################################################################################################################################
     def create_player_entities(
-        self, game_builder: GameResource, actors_proxy: List[ActorProxyModel]
+        self, game_resource: GameResource, actors_proxy: List[ActorProxyModel]
     ) -> List[Entity]:
 
-        assert game_builder is not None
+        assert game_resource is not None
 
         # 创建player 本质就是创建Actor
-        actor_entities = self.create_actor_entities(game_builder, actors_proxy)
+        actor_entities = self.create_actor_entities(game_resource, actors_proxy)
 
         # 为Actor添加PlayerComponent
         for actor_entity in actor_entities:
@@ -209,17 +208,17 @@ class RPGGame(BaseGame):
 
     ###############################################################################################################################################
     def create_actor_entities(
-        self, game_builder: GameResource, actors_proxy: List[ActorProxyModel]
+        self, game_resource: GameResource, actors_proxy: List[ActorProxyModel]
     ) -> List[Entity]:
 
-        assert game_builder is not None
-        assert game_builder._data_base is not None
+        assert game_resource is not None
+        assert game_resource._data_base is not None
 
         ret: List[Entity] = []
 
         for actor_proxy in actors_proxy:
 
-            actor_model = game_builder._data_base.get_actor(actor_proxy.name)
+            actor_model = game_resource._data_base.get_actor(actor_proxy.name)
             assert actor_model is not None
 
             entity = self.create_actor_entity(
@@ -279,8 +278,8 @@ class RPGGame(BaseGame):
         # 添加道具
         for prop_proxy in actor_proxy.props:
             ## 重构
-            assert self._game_builder is not None
-            prop_model = self._game_builder._data_base.get_prop(prop_proxy.name)
+            assert self._game_resource is not None
+            prop_model = self._game_resource._data_base.get_prop(prop_proxy.name)
             if prop_model is None:
                 logger.error(f"没有从数据库找到道具：{prop_proxy.name}")
                 continue
@@ -342,15 +341,15 @@ class RPGGame(BaseGame):
         return actor_entity
 
     ###############################################################################################################################################
-    def create_stage_entities(self, game_builder: GameResource) -> List[Entity]:
+    def create_stage_entities(self, game_resource: GameResource) -> List[Entity]:
 
-        assert game_builder is not None
+        assert game_resource is not None
 
         ret: List[Entity] = []
 
-        for stage_proxy in game_builder.stages_proxy:
+        for stage_proxy in game_resource.stages_proxy:
 
-            stage_model = game_builder._data_base.get_stage(stage_proxy.name)
+            stage_model = game_resource._data_base.get_stage(stage_proxy.name)
             assert stage_model is not None
 
             stage_entity = self.create_stage_entity(
@@ -406,8 +405,8 @@ class RPGGame(BaseGame):
         # 场景内添加道具
         for prop_proxy in stage_proxy.props:
             # 直接使用文件系统
-            assert self._game_builder is not None
-            prop_model = self._game_builder._data_base.get_prop(prop_proxy.name)
+            assert self._game_resource is not None
+            prop_model = self._game_resource._data_base.get_prop(prop_proxy.name)
             if prop_model is None:
                 logger.error(f"没有从数据库找到道具：{prop_proxy.name}")
                 continue
@@ -506,21 +505,15 @@ class RPGGame(BaseGame):
     ###############################################################################################################################################
     @property
     def about_game(self) -> str:
-        if self._game_builder is None:
+        if self._game_resource is None:
             return ""
-        return self._game_builder.about_game
+        return self._game_resource.about_game
 
     ###############################################################################################################################################
     def add_player(self, player_proxy: PlayerProxy) -> None:
         assert player_proxy not in self._players
         if player_proxy not in self._players:
             self._players.append(player_proxy)
-
-    ###############################################################################################################################################
-    def single_player(self) -> Optional[PlayerProxy]:
-        if len(self._players) == 0:
-            return None
-        return self._players[0]
 
     ###############################################################################################################################################
     @property
@@ -540,25 +533,3 @@ class RPGGame(BaseGame):
         return self._round
 
     ###############################################################################################################################################
-    def get_player_controlled_actors(self) -> List[str]:
-        actor_entities = self._entitas_context.get_group(
-            Matcher(all_of=[ActorComponent, PlayerComponent])
-        ).entities
-
-        ret: List[str] = []
-        for actor_entity in actor_entities:
-            actor_comp = actor_entity.get(ActorComponent)
-            ret.append(actor_comp.name)
-
-        return ret
-
-    ###############################################################################################################################################
-    def is_player_input_allowed(self, player_proxy: PlayerProxy) -> bool:
-        player_entity = self._entitas_context.get_player_entity(player_proxy._name)
-        if player_entity is None:
-            return False
-
-        return player_entity.has(PlanningAllowedComponent)
-
-
-############################################################################################################################################### d

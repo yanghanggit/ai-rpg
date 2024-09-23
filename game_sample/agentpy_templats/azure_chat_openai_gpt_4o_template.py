@@ -1,6 +1,7 @@
 import sys
 import os
 from pathlib import Path
+
 root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 from typing import List, Union
@@ -21,10 +22,9 @@ from typing import Optional
 
 RAG_MD_PATH: str = f"""<%RAG_MD_PATH>"""
 SYS_PROMPT_MD_PATH: str = f"""<%SYS_PROMPT_MD_PATH>"""
-# fmt: off
-PORT: int = <%PORT>
-# fmt: on
+PORT: int = int(f"""<%PORT>""")
 API: str = f"""<%API>"""
+
 
 def read_md(filepath: str) -> Optional[str]:
     fullpath = os.getcwd() + filepath
@@ -33,11 +33,12 @@ def read_md(filepath: str) -> Optional[str]:
         assert False, f"File not found: {fullpath}"
         return None
     try:
-        content = path.read_text(encoding='utf-8')
+        content = path.read_text(encoding="utf-8")
         return content
     except Exception as e:
         assert False, f"An error occurred: {e}"
         return None
+
 
 _rag_ = read_md(RAG_MD_PATH)
 assert _rag_ is not None, f"RAG_MD_PATH:{RAG_MD_PATH} is None"
@@ -56,19 +57,23 @@ prompt = ChatPromptTemplate.from_messages(
     ]
 )
 
-print(f'endpoint:{os.getenv("AZURE_OPENAI_ENDPOINT")}\n key:{os.getenv("AZURE_OPENAI_API_KEY")}')
+print(
+    f'endpoint:{os.getenv("AZURE_OPENAI_ENDPOINT")}\n key:{os.getenv("AZURE_OPENAI_API_KEY")}'
+)
 
 llm = AzureChatOpenAI(
-    azure_endpoint= os.getenv("AZURE_OPENAI_ENDPOINT"),
-    api_key= os.getenv("AZURE_OPENAI_API_KEY"),
+    azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+    api_key=os.getenv("AZURE_OPENAI_API_KEY"),
     azure_deployment="gpt-4o",
-    api_version="2024-02-01"
+    api_version="2024-02-01",
 )
+
 
 @tool
 def debug_tool():
     """debug"""
     return "Debug tool"
+
 
 tools = [debug_tool]
 
@@ -82,6 +87,7 @@ app = FastAPI(
     description="Gen chat",
 )
 
+
 class Input(BaseModel):
     input: str
     chat_history: List[Union[HumanMessage, AIMessage, FunctionMessage]] = Field(
@@ -89,15 +95,16 @@ class Input(BaseModel):
         extra={"widget": {"type": "chat", "input": "input", "output": "output"}},
     )
 
+
 class Output(BaseModel):
     output: str
 
+
 add_routes(
-    app,
-    agent_executor.with_types(input_type=Input, output_type=Output),
-    path= API
+    app, agent_executor.with_types(input_type=Input, output_type=Output), path=API
 )
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="localhost", port = PORT)
+
+    uvicorn.run(app, host="localhost", port=PORT)

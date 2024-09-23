@@ -1,13 +1,13 @@
 from enum import Enum
 from pydantic import BaseModel
-from typing import Dict, Set, List, Optional
+from typing import Dict, Set, List, Optional, Final
 from my_data.model_def import GameModel
 
 
 class WS_CONFIG:
-    LOCAL_HOST: str = "127.0.0.1"
-    PORT: int = 8080
-    SEND_MESSAGES_COUNT: int = 20
+    LOCAL_HOST: Final[str] = "127.0.0.1"
+    PORT: Final[int] = 8080
+    SEND_MESSAGES_COUNT: Final[int] = 20
 
 
 ###############################################################################################################################################

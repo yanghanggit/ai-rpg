@@ -1,7 +1,8 @@
 from entitas import InitializeProcessor, ExecuteProcessor, Matcher, Entity  # type: ignore
 from overrides import override
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from loguru import logger
+
+# from loguru import logger
 from gameplay_systems.components import (
     PlanningAllowedComponent,
     StageComponent,
@@ -10,6 +11,7 @@ from gameplay_systems.components import (
 )
 from rpg_game.rpg_game import RPGGame
 from typing import List, Dict, Optional, cast
+from queue import Queue
 
 
 class ActorPlanningStrategySystem(InitializeProcessor, ExecuteProcessor):
@@ -17,7 +19,7 @@ class ActorPlanningStrategySystem(InitializeProcessor, ExecuteProcessor):
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         self._context: RPGEntitasContext = context
         self._game: RPGGame = rpg_game
-        self._order_queue: Dict[str, List[str]] = {}
+        self._order_queue: Dict[str, Queue[str]] = {}
 
     ############################################################################################################
     @override
@@ -85,7 +87,7 @@ class ActorPlanningStrategySystem(InitializeProcessor, ExecuteProcessor):
     ############################################################################################################
     def extend_order_queue(
         self,
-        order_queue: Dict[str, List[str]],
+        order_queue: Dict[str, Queue[str]],
         stage_entity: Entity,
         append_recent_stage_transition_actors: List[str],
     ) -> None:
@@ -98,13 +100,13 @@ class ActorPlanningStrategySystem(InitializeProcessor, ExecuteProcessor):
             actor_names = actor_names - set(append_recent_stage_transition_actors)
 
         # step2: 重建一组新的
-        order_queue.setdefault(stage_name, []).extend(list(actor_names))
+        dq = order_queue.get(stage_name, Queue[str]())
+        for actor_name in actor_names:
+            dq.put(actor_name)
 
         # step3: 新进入场景的加入到队列尾部
-        if len(append_recent_stage_transition_actors) > 0:
-            order_queue.get(stage_name, []).extend(
-                append_recent_stage_transition_actors
-            )
+        for actor_name in append_recent_stage_transition_actors:
+            dq.put(actor_name)
 
     ############################################################################################################
     def analyze_recent_stage_transition_actors(self) -> Dict[str, List[str]]:
@@ -130,13 +132,13 @@ class ActorPlanningStrategySystem(InitializeProcessor, ExecuteProcessor):
 
     ############################################################################################################
     def pop_first_executable_actor_from_order_queue(
-        self, order_queue: Dict[str, List[str]], stage_entity: Entity
+        self, order_queue: Dict[str, Queue[str]], stage_entity: Entity
     ) -> Optional[Entity]:
 
         stage_name = cast(str, stage_entity.get(StageComponent).name)
-        order_queue_list = order_queue.get(stage_name, [])
-        while len(order_queue_list) > 0:
-            actor_name = order_queue_list.pop(0)
+        order_queue_list = order_queue.get(stage_name, Queue[str]())
+        while not order_queue_list.empty():
+            actor_name = order_queue_list.get()
             actor_entity = self._context.get_actor_entity(actor_name)
             if actor_entity is None:
                 # 不存在的

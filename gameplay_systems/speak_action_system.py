@@ -3,9 +3,13 @@ from gameplay_systems.action_components import SpeakAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 import gameplay_systems.conversation_helper
 from typing import override
-import gameplay_systems.cn_builtin_prompt as builtin_prompt
 import my_format_string.target_and_message_format_string
 from rpg_game.rpg_game import RPGGame
+import gameplay_systems.public_builtin_prompt as public_builtin_prompt
+
+
+def _generate_speak_prompt(src_name: str, dest_name: str, content: str) -> str:
+    return f"# {public_builtin_prompt.ConstantPrompt.SPEAK_ACTION_TAG} {src_name}对{dest_name}说:{content}"
 
 
 ####################################################################################################################################
@@ -54,7 +58,7 @@ class SpeakActionSystem(ReactiveProcessor):
             assert target_entity is not None
             self._context.broadcast_entities_in_stage(
                 entity,
-                builtin_prompt.make_speak_action_prompt(safe_name, tp[0], tp[1]),
+                _generate_speak_prompt(safe_name, tp[0], tp[1]),
             )
 
 

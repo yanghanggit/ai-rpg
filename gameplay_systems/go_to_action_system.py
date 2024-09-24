@@ -7,10 +7,40 @@ from gameplay_systems.components import (
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import override, Optional
-import gameplay_systems.cn_builtin_prompt as builtin_prompt
+import gameplay_systems.public_builtin_prompt as public_builtin_prompt
 from rpg_game.rpg_game import RPGGame
 from extended_systems.files_def import StageArchiveFile
 from loguru import logger
+
+
+################################################################################################################################################
+def _generate_stage_entry_prompt1(actor_name: str, target_stage_name: str) -> str:
+    return f"# {actor_name}进入了场景 {target_stage_name}。"
+
+
+################################################################################################################################################
+def _generate_stage_entry_prompt2(
+    actor_name: str, target_stage_name: str, last_stage_name: str
+) -> str:
+    return f"# {actor_name} 离开了 {last_stage_name}, 进入了{target_stage_name}。"
+
+
+################################################################################################################################################
+def _generate_leave_stage_prompt(
+    actor_name: str, current_stage_name: str, go_to_stage_name: str
+) -> str:
+    return f"# {actor_name}离开了{current_stage_name} 场景。"
+
+
+################################################################################################################################################
+
+
+def _generate_last_impression_of_stage_prompt(
+    actor_name: str, stage_name: str, stage_narrate: str
+) -> str:
+    return f"""# {actor_name} 将要离开 {stage_name} 场景。
+## 对于 {stage_name} 最后的印象如下:
+{stage_narrate}"""
 
 
 ###############################################################################################################################################
@@ -46,10 +76,8 @@ class GoToHelper:
         if len(go_to_action.values) == 0:
             return ""
 
-        if builtin_prompt.is_unknown_guid_stage_name(go_to_action.values[0]):
-            guid = builtin_prompt.extract_from_unknown_guid_stage_name(
-                go_to_action.values[0]
-            )
+        if public_builtin_prompt.is_stage_name_unknown(go_to_action.values[0]):
+            guid = public_builtin_prompt.extract_stage_guid(go_to_action.values[0])
             stage_entity = self._context.get_entity_by_guid(guid)
             if stage_entity is not None and stage_entity.has(StageComponent):
                 return self._context.safe_get_entity_name(stage_entity)
@@ -132,14 +160,12 @@ class GoToActionSystem(ReactiveProcessor):
         assert helper.target_stage_entity is not None
         self._context.broadcast_entities_in_stage(
             helper.target_stage_entity,
-            builtin_prompt.make_enter_stage_prompt1(
-                actor_comp.name, helper.target_stage_name
-            ),
+            _generate_stage_entry_prompt1(actor_comp.name, helper.target_stage_name),
         )
 
         self._context.broadcast_entities(
             set({helper._entity}),
-            builtin_prompt.make_enter_stage_prompt2(
+            _generate_stage_entry_prompt2(
                 actor_comp.name, helper.target_stage_name, helper._current_stage_name
             ),
         )
@@ -159,7 +185,7 @@ class GoToActionSystem(ReactiveProcessor):
         )
         self._context.broadcast_entities(
             set({helper._entity}),
-            builtin_prompt.make_last_impression_of_stage_prompt(
+            _generate_last_impression_of_stage_prompt(
                 my_name, helper._current_stage_name, stage_archive._stage_narrate
             ),
         )
@@ -172,7 +198,7 @@ class GoToActionSystem(ReactiveProcessor):
         actor_comp = helper._entity.get(ActorComponent)
         self._context.broadcast_entities_in_stage(
             helper._current_stage_entity,
-            builtin_prompt.make_leave_stage_prompt(
+            _generate_leave_stage_prompt(
                 actor_comp.name, helper._current_stage_name, helper.target_stage_name
             ),
         )

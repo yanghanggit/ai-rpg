@@ -5,14 +5,10 @@ from gameplay_systems.components import (
     ActorComponent,
     StageComponent,
 )
-import gameplay_systems.cn_builtin_prompt as builtin_prompt
-from gameplay_systems.cn_constant_prompt import CNConstantPrompt as ConstantPrompt
-from typing import Set, override, Dict, List, cast
+from typing import Set, override, Dict, List
 import extended_systems.file_system_helper
-from extended_systems.files_def import PropFile
 from rpg_game.rpg_game import RPGGame
 from extended_systems.files_def import (
-    PropFile,
     ActorArchiveFile,
     StageArchiveFile,
 )

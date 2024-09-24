@@ -16,15 +16,161 @@ from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import override, List, cast, Set, Dict, Any
 from loguru import logger
 from extended_systems.files_def import PropFile
-import gameplay_systems.cn_builtin_prompt as builtin_prompt
+import gameplay_systems.public_builtin_prompt as public_builtin_prompt
 from my_agent.agent_task import AgentTask, AgentTasksGather
 from my_agent.agent_plan_and_action import AgentPlan
-from gameplay_systems.cn_constant_prompt import CNConstantPrompt as ConstantPrompt
-import gameplay_systems.cn_builtin_prompt as builtin_prompt
 from rpg_game.rpg_game import RPGGame
 import extended_systems.file_system_helper
 
 
+################################################################################################################################################
+def _generate_offline_prompt(actor_name: str, behavior_sentence: str) -> str:
+
+    prompt = f"""# 注意! 全局技能系统 处于离线状态或者出错，无法使用技能，请一会再试。
+## 行动内容语句({actor_name} 发起)
+{behavior_sentence}
+## 以上的行动将无法执行（被系统强制取消），因为技能系统处于离线状态或者出错。
+"""
+    return prompt
+
+
+################################################################################################################################################
+def _generate_rule_failure_prompt(
+    actor_name: str,
+    failure_result: str,
+    input_behavior_sentence: str,
+    reasoning_sentence: str,
+) -> str:
+
+    prompt = f"""# 全局技能系统 推理与判断之后，判断结果为 {failure_result}
+
+## 行动(技能)发起者: {actor_name}
+
+## 失败类型: {failure_result}
+
+## 原始的行动内容语句
+{input_behavior_sentence}
+
+## 系统推理后的结果
+{reasoning_sentence}
+
+## 错误分析与提示
+- 请检查行动内容，必须至少有一个技能与一个目标。
+- 如果 技能的释放目标 不合理会被系统拒绝。
+- 虽然道具可用来配合技能使用，但使用必须合理(请注意道具的说明，使用限制等)
+- 道具，技能和对象之间的关系如果不合理（违反游戏世界的运行规律与常识）。也会被系统拒绝。
+"""
+    return prompt
+
+
+################################################################################################################################################
+
+
+def _generate_rule_success_prompt(
+    actor_name: str,
+    target_names: Set[str],
+    success_result: str,
+    input_behavior_sentence: str,
+    reasoning_sentence: str,
+) -> str:
+
+    ret_prompt = f"""# 全局技能系统 推理与判断之后，判断结果为 {success_result}
+
+## 行动(技能)发起者: {actor_name}
+
+## 成功类型: {success_result}
+
+## 原始行动语句(在其中可以分析出技能的目标)
+{input_behavior_sentence}
+
+## 系统推理并润色后的结果
+{reasoning_sentence}"""
+
+    return ret_prompt
+
+
+################################################################################################################################################
+
+
+def _generate_rule_prompt(
+    actor_name: str,
+    actor_body_info: str,
+    skill_files: List[PropFile],
+    prop_files: List[PropFile],
+    behavior_sentence: str,
+) -> str:
+
+    skills_prompt: List[str] = []
+    if len(skill_files) > 0:
+        for skill_file in skill_files:
+            skills_prompt.append(
+                public_builtin_prompt.generate_prop_prompt(
+                    skill_file, description_prompt=True, appearance_prompt=False
+                )
+            )
+    else:
+        skills_prompt.append("- 无任何技能。")
+        assert False, "技能不能为空"
+
+    props_prompt: List[str] = []
+    if len(prop_files) > 0:
+        for prop_file in prop_files:
+            props_prompt.append(
+                public_builtin_prompt.generate_prop_prompt(
+                    prop_file, description_prompt=True, appearance_prompt=False
+                )
+            )
+    else:
+        props_prompt.append("- 无任何道具。")
+
+    ret_prompt = f"""# {actor_name} 准备使用技能，请你判断技能使用的合理性(是否符合游戏规则和世界观设计)。在尽量能保证游戏乐趣的情况下，来润色技能的描述。
+
+## {actor_name} 自身信息
+{actor_body_info}
+        
+## 要使用的技能
+{"\n".join(skills_prompt)}
+
+## 使用技能时配置的道具
+{"\n".join(props_prompt)}
+
+## 行动内容语句(请在这段信息内提取 技能释放的目标 的信息，注意请完整引用)
+{behavior_sentence}
+
+## 判断的逻辑步骤
+1. 如果 配置的道具 存在。则需要将道具与技能的信息联合起来推理。
+    - 推理结果 违反了游戏规则或世界观设计。则技能释放失败。即{public_builtin_prompt.ConstantPrompt.FAILURE}。
+    - 推理结果合理的。则技能释放成功。即{public_builtin_prompt.ConstantPrompt.SUCCESS}。如果道具对技能有增益效果，则标记为{public_builtin_prompt.ConstantPrompt.CRITICAL_SUCCESS}。
+2. 如果 配置的道具 不存在。则继续下面的步骤。
+3. 结合 {actor_name} 的自身信息。判断是否符合技能释放的条件。
+    - 如果不符合。则技能释放失败。即{public_builtin_prompt.ConstantPrompt.FAILURE}。
+    - 如果符合。则技能释放成功。即{public_builtin_prompt.ConstantPrompt.SUCCESS}。如果 {actor_name} 的自身信息，对技能有增益效果，则标记为{public_builtin_prompt.ConstantPrompt.CRITICAL_SUCCESS}。
+
+## 输出格式指南
+
+### 请根据下面的示例, 确保你的输出严格遵守相应的结构。
+{{
+  "{BroadcastAction.__name__}":["输出结果"],
+  "{TagAction.__name__}":["{public_builtin_prompt.ConstantPrompt.CRITICAL_SUCCESS}或{public_builtin_prompt.ConstantPrompt.SUCCESS}或{public_builtin_prompt.ConstantPrompt.FAILURE}"]
+}}
+
+### 关于 {BroadcastAction.__name__} 的输出结果的规则如下
+- 如果你的判断是 {public_builtin_prompt.ConstantPrompt.SUCCESS} 或 {public_builtin_prompt.ConstantPrompt.CRITICAL_SUCCESS}。
+    - 必须包含如下信息：{actor_name}的名字（技能使用者），释放的技能的描述，技能释放的目标的名字，配置的道具的信息。
+    - 做出逻辑合理的句子描述（可以适当润色），来表达 {actor_name} 使用技能的使用过程。但不要判断技能命中目标之后，目标的可能反应。
+    - 请注意，用第三人称的描述。  
+- 如果你的判断是 {public_builtin_prompt.ConstantPrompt.FAILURE}。
+    - 则输出结果需要描述为：技能释放失败的原因。
+    
+### 注意事项
+- 每个 JSON 对象必须包含上述键中的一个或多个，不得重复同一个键，也不得使用不在上述中的键。
+- 输出不应包含任何超出所需 JSON 格式的额外文本、解释或总结。
+- 不要使用```json```来封装内容。"""
+
+    return ret_prompt
+
+
+######################################################################################################################################################
 class WorldSkillRuleResponse(AgentPlan):
 
     OPTION_PARAM_NAME: str = "actor_name"
@@ -37,7 +183,7 @@ class WorldSkillRuleResponse(AgentPlan):
     def result_tag(self) -> str:
         tip_action = self.get_by_key(TagAction.__name__)
         if tip_action is None or len(tip_action.values) == 0:
-            return ConstantPrompt.FAILURE
+            return public_builtin_prompt.ConstantPrompt.FAILURE
         return tip_action.values[0]
 
     @property
@@ -132,19 +278,19 @@ class WorldSkillRuleSystem(ReactiveProcessor):
                 continue
 
             match (response_plan.result_tag):
-                case ConstantPrompt.FAILURE:
+                case public_builtin_prompt.ConstantPrompt.FAILURE:
                     self.on_world_skill_system_rule_fail_event(
                         actor_entity, response_plan
                     )
                     self.on_remove_action(actor_entity)
-                case ConstantPrompt.SUCCESS:
+                case public_builtin_prompt.ConstantPrompt.SUCCESS:
                     self.on_world_skill_system_rule_success_event(
                         actor_entity, response_plan
                     )
                     self.add_world_skill_system_rule_action(actor_entity, response_plan)
                     self.consume_consumable_props(actor_entity)
 
-                case ConstantPrompt.CRITICAL_SUCCESS:
+                case public_builtin_prompt.ConstantPrompt.CRITICAL_SUCCESS:
                     self.on_world_skill_system_rule_success_event(
                         actor_entity, response_plan
                     )
@@ -279,7 +425,7 @@ class WorldSkillRuleSystem(ReactiveProcessor):
     def on_world_skill_system_off_line_event(self, entity: Entity) -> None:
         self._context.broadcast_entities(
             set({entity}),
-            builtin_prompt.make_world_skill_system_off_line_prompt(
+            _generate_offline_prompt(
                 self._context.safe_get_entity_name(entity),
                 self.extract_behavior_sentence(entity),
             ),
@@ -297,7 +443,7 @@ class WorldSkillRuleSystem(ReactiveProcessor):
 
         self._context.broadcast_entities(
             set({entity}),
-            builtin_prompt.make_world_skill_system_rule_success_prompt(
+            _generate_rule_success_prompt(
                 self._context.safe_get_entity_name(entity),
                 target_names,
                 world_response_plan.result_tag,
@@ -312,7 +458,7 @@ class WorldSkillRuleSystem(ReactiveProcessor):
     ) -> None:
         self._context.broadcast_entities(
             set({entity}),
-            builtin_prompt.make_world_skill_system_rule_fail_prompt(
+            _generate_rule_failure_prompt(
                 self._context.safe_get_entity_name(entity),
                 world_response_plan.result_tag,
                 self.extract_behavior_sentence(entity),
@@ -335,7 +481,7 @@ class WorldSkillRuleSystem(ReactiveProcessor):
 
         for actor_entity in actor_entities:
 
-            prompt = builtin_prompt.make_world_skill_system_rule_prompt(
+            prompt = _generate_rule_prompt(
                 self._context.safe_get_entity_name(actor_entity),
                 self.extract_body_info(actor_entity),
                 self.extract_skill_files(actor_entity),

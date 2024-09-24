@@ -11,8 +11,7 @@ from gameplay_systems.components import (
     StageComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-import gameplay_systems.cn_builtin_prompt as builtin_prompt
-from gameplay_systems.cn_constant_prompt import CNConstantPrompt as ConstantPrompt
+import gameplay_systems.public_builtin_prompt as public_builtin_prompt
 from typing import cast, override, List, Set, Any, Dict, Optional
 from gameplay_systems.check_self_helper import CheckSelfHelper
 from my_agent.agent_task import AgentTask, AgentTasksGather
@@ -22,6 +21,65 @@ from rpg_game.rpg_game import RPGGame
 from my_data.model_def import PropType
 
 
+################################################################################################################################################
+def _generate_stage_entry_conditions_prompt(
+    actor_name: str,
+    current_stage_name: str,
+    actor_status_prompt: str,
+    prop_files: List[PropFile],
+) -> str:
+
+    prop_prompt_list = "无"
+    if len(prop_files) > 0:
+        prop_prompt_list = "\n".join(
+            [
+                public_builtin_prompt.generate_prop_prompt(
+                    prop, description_prompt=True, appearance_prompt=True
+                )
+                for prop in prop_files
+            ]
+        )
+
+    ret_prompt = f"""# {actor_name} 想要进入场景: {current_stage_name}。
+## 第1步: 请回顾你的 {public_builtin_prompt.ConstantPrompt.STAGE_EXIT_TAG}
+
+## 第2步: 根据当前‘你的状态’判断是否满足允许{actor_name}进入
+当前状态可能由于事件而变化，请仔细考虑。
+
+## 第3步: 检查{actor_name}的状态是否符合进入的需求:
+### 当前角色状态: 
+{actor_status_prompt if actor_status_prompt != "" else "无"}
+
+## 第4步: 检查{actor_name}的道具(与拥有的特殊能力)是否符合以下要求:
+### 当前角色道具与特殊能力信息: 
+{prop_prompt_list}
+
+# 判断结果
+- 完成以上步骤后，决定是否允许 {actor_name} 进入 {current_stage_name}。
+
+# 本次输出结果格式要求。需遵循 输出格式指南:
+{{
+    {WhisperAction.__name__}: ["@角色名字(你要对谁说,只能是场景内的角色)>你想私下说的内容，即描述允许进入或不允许的原因，使{actor_name}明白"],
+    {TagAction.__name__}: ["Yes/No"]
+}}
+## 附注
+- {WhisperAction.__name__} 中描述的判断理由。如果不允许进入，就只说哪一条不符合要求，不要都说出来，否则会让{actor_name}迷惑，和造成不必要的提示，影响玩家解谜的乐趣。
+- Yes: 允许进入
+- No: 不允许进入
+"""
+    return ret_prompt
+
+
+################################################################################################################################################
+def _generate_stage_entry_failure_prompt(
+    actor_name: str, stage_name: str, show_tips: str
+) -> str:
+    return f"""# {actor_name} 想要进入场景: {stage_name}，但是失败了。
+## 说明:
+{show_tips}"""
+
+
+################################################################################################################################################
 class StageEntranceCheckResponse(AgentPlan):
 
     def __init__(self, name: str, input_str: str) -> None:
@@ -140,7 +198,7 @@ class StageEntranceCheckerSystem(ReactiveProcessor):
         if agent is None:
             return None
 
-        prompt = builtin_prompt.stage_entry_conditions_check_prompt(
+        prompt = _generate_stage_entry_conditions_prompt(
             self._context.safe_get_entity_name(actor_entity),
             target_stage_name,
             self.get_actor_appearance_prompt(actor_entity),
@@ -158,10 +216,8 @@ class StageEntranceCheckerSystem(ReactiveProcessor):
         if len(go_to_action.values) == 0:
             return ""
 
-        if builtin_prompt.is_unknown_guid_stage_name(go_to_action.values[0]):
-            guid = builtin_prompt.extract_from_unknown_guid_stage_name(
-                go_to_action.values[0]
-            )
+        if public_builtin_prompt.is_stage_name_unknown(go_to_action.values[0]):
+            guid = public_builtin_prompt.extract_stage_guid(go_to_action.values[0])
             stage_entity = self._context.get_entity_by_guid(guid)
             if stage_entity is not None and stage_entity.has(StageComponent):
                 return self._context.safe_get_entity_name(stage_entity)
@@ -185,7 +241,7 @@ class StageEntranceCheckerSystem(ReactiveProcessor):
                 assert actor_entity is not None
                 self._context.broadcast_entities(
                     set({actor_entity}),
-                    builtin_prompt.enter_stage_failed_beacuse_stage_refuse_prompt(
+                    _generate_stage_entry_failure_prompt(
                         actor_name, stage_agent_task.agent_name, response_plan.tips
                     ),
                 )
@@ -221,7 +277,9 @@ class StageEntranceCheckerSystem(ReactiveProcessor):
         kickoff = self._context._kick_off_message_system.get_message(safe_name)
         if len(kickoff) == 0:
             return False
-        return ConstantPrompt.STAGE_ENTRY_TAG in kickoff[0].content
+        return (
+            public_builtin_prompt.ConstantPrompt.STAGE_ENTRY_TAG in kickoff[0].content
+        )
 
     ###############################################################################################################################################
     def get_actor_appearance_prompt(self, actor_entity: Entity) -> str:

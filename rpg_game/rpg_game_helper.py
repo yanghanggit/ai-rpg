@@ -19,7 +19,7 @@ import json
 from rpg_game.terminal_game import TerminalGame
 from rpg_game.web_game import WebGame
 from extended_systems.guid_generator import GUIDGenerator
-import gameplay_systems.cn_builtin_prompt as builtin_prompt
+import gameplay_systems.public_builtin_prompt as public_builtin_prompt
 
 from player.player_proxy import PlayerProxy
 from extended_systems.files_def import StageArchiveFile, PropFile
@@ -30,6 +30,7 @@ from gameplay_systems.components import (
     PlanningAllowedComponent,
 )
 from gameplay_systems.check_self_helper import CheckSelfHelper
+import gameplay_systems.actor_planning_system
 from player.player_command import (
     PlayerGoTo,
     PlayerBroadcast,
@@ -220,7 +221,7 @@ def gen_player_watch_message(game_name: RPGGame, player_proxy: PlayerProxy) -> s
 
     props_in_stage = get_props_in_stage(game_name, player_entity)
     props_in_stage_prompts = [
-        builtin_prompt.make_prop_prompt(
+        public_builtin_prompt.generate_prop_prompt(
             prop, description_prompt=False, appearance_prompt=True, attr_prompt=False
         )
         for prop in props_in_stage
@@ -265,8 +266,10 @@ def gen_player_check_message(game_name: RPGGame, player_proxy: PlayerProxy) -> s
     check_self = CheckSelfHelper(game_name._entitas_context, player_entity)
     health = check_self.health * 100
 
-    actor_props_prompt = builtin_prompt.make_props_prompt_list_for_actor_plan(
-        check_self._categorized_prop_files
+    actor_props_prompt = (
+        gameplay_systems.actor_planning_system._generate_actor_props_prompts(
+            check_self._categorized_prop_files
+        )
     )
 
     message = f"""# {player_proxy._name} | {controlled_actor_name} 自身检查

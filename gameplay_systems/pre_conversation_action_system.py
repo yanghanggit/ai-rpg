@@ -13,8 +13,42 @@ from my_agent.agent_task import (
 )
 from typing import Dict, List
 import copy
-import gameplay_systems.cn_builtin_prompt as builtin_prompt
 from rpg_game.rpg_game import RPGGame
+
+
+################################################################################################################################################
+def _generate_conversation_check_prompt(
+    input_broadcast_content: str,
+    input_speak_content_list: List[str],
+    input_whisper_content_list: List[str],
+) -> str:
+
+    broadcast_prompt = input_broadcast_content != "" and input_broadcast_content or "无"
+    speak_content_prompt = (
+        len(input_speak_content_list) > 0
+        and "\n".join(input_speak_content_list)
+        or "无"
+    )
+    whisper_content_prompt = (
+        len(input_whisper_content_list) > 0
+        and "\n".join(input_whisper_content_list)
+        or "无"
+    )
+
+    prompt = f"""# 玩家输入了如下对话类型事件，请你检查
+
+## {BroadcastAction.__name__}
+{broadcast_prompt}
+## {SpeakAction.__name__}
+{speak_content_prompt}
+## {WhisperAction.__name__}
+{whisper_content_prompt}
+## 检查规则
+- 对话内容是否违反政策。
+- 对话内容是否有不当的内容。
+- 对话对容是否有超出游戏范围的内容。例如，玩家说了一些关于游戏外的事情，或者说出不符合游戏世界观与历史背景的事件。
+"""
+    return prompt
 
 
 class PreConversationActionSystem(ReactiveProcessor):
@@ -57,7 +91,7 @@ class PreConversationActionSystem(ReactiveProcessor):
         speak_content_list = self.get_speak_content(player_entity)
         whisper_content_list = self.get_whisper_content(player_entity)
 
-        prompt = builtin_prompt.make_player_conversation_check_prompt(
+        prompt = _generate_conversation_check_prompt(
             broadcast_content, speak_content_list, whisper_content_list
         )
 

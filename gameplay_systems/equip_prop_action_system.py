@@ -13,8 +13,31 @@ from gameplay_systems.components import (
 from loguru import logger
 from typing import override
 from extended_systems.files_def import PropFile
-import gameplay_systems.cn_builtin_prompt as builtin_prompt
 from rpg_game.rpg_game import RPGGame
+
+
+def _generate_equipment_not_found_prompt(actor_name: str, prop_name: str) -> str:
+    return f"""# {actor_name} 没有道具: {prop_name}。所以无法装备。"""
+
+
+################################################################################################################################################
+
+
+def _generate_equipment_weapon_prompt(
+    actor_name: str, prop_file_weapon: PropFile
+) -> str:
+    assert prop_file_weapon.is_weapon
+    return f"""# {actor_name} 装备了武器: {prop_file_weapon.name} """
+
+
+################################################################################################################################################
+
+
+def _generate_equipment_clothing_prompt(
+    actor_name: str, prop_file_clothes: PropFile
+) -> str:
+    assert prop_file_clothes.is_clothes
+    return f"""# {actor_name} 装备了衣服: {prop_file_clothes.name} """
 
 
 class EquipPropActionSystem(ReactiveProcessor):
@@ -65,9 +88,7 @@ class EquipPropActionSystem(ReactiveProcessor):
 
                 self._context.broadcast_entities(
                     set({entity}),
-                    builtin_prompt.make_equip_prop_not_found_prompt(
-                        actor_name, prop_name
-                    ),
+                    _generate_equipment_not_found_prompt(actor_name, prop_name),
                 )
 
                 continue
@@ -80,7 +101,7 @@ class EquipPropActionSystem(ReactiveProcessor):
 
                 self._context.broadcast_entities(
                     set({entity}),
-                    builtin_prompt.make_equip_prop_weapon_prompt(actor_name, prop_file),
+                    _generate_equipment_weapon_prompt(actor_name, prop_file),
                 )
 
             elif prop_file.is_clothes:
@@ -91,9 +112,7 @@ class EquipPropActionSystem(ReactiveProcessor):
 
                 self._context.broadcast_entities(
                     set({entity}),
-                    builtin_prompt.make_equip_prop_clothes_prompt(
-                        actor_name, prop_file
-                    ),
+                    _generate_equipment_clothing_prompt(actor_name, prop_file),
                 )
 
                 self.on_add_update_apperance_action(entity)

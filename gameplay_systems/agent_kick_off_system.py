@@ -7,10 +7,10 @@ from gameplay_systems.components import (
     AppearanceComponent,
     BodyComponent,
 )
-import gameplay_systems.cn_builtin_prompt as builtin_prompt
+import gameplay_systems.public_builtin_prompt as public_builtin_prompt
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
-from typing import Dict, Set, FrozenSet, Any
+from typing import Dict, Set, FrozenSet, Any, List
 from my_agent.agent_task import (
     AgentTask,
     AgentTasksGather,
@@ -20,10 +20,87 @@ from extended_systems.files_def import PropFile
 from gameplay_systems.action_components import (
     STAGE_AVAILABLE_ACTIONS_REGISTER,
     ACTOR_AVAILABLE_ACTIONS_REGISTER,
+    MindVoiceAction,
+    TagAction,
+    StageNarrateAction,
 )
 import gameplay_systems.planning_helper
 from my_agent.agent_plan_and_action import AgentPlan
 from gameplay_systems.action_components import UpdateAppearanceAction
+
+
+###############################################################################################################################################
+def _generate_actor_kick_off_prompt(
+    kick_off_message: str, about_game: str, game_round: int
+) -> str:
+
+    ret_prompt = f"""# {public_builtin_prompt.ConstantPrompt.ACTOR_KICK_OFF_MESSAGE_PROMPT_TAG} 游戏世界即将开始运行。这是你的初始设定，你将以此为起点进行游戏并更新你的状态
+
+## 游戏背景与风格设定
+{about_game}
+
+## 你的初始设定
+{kick_off_message}
+
+## 输出要求
+- 请遵循 输出格式指南。
+- 返回结果只带如下的键:{MindVoiceAction.__name__}与{TagAction.__name__}。"""
+
+    return ret_prompt
+
+
+###############################################################################################################################################
+def _generate_stage_kick_off_prompt(
+    kick_off_message: str,
+    about_game: str,
+    props_in_stage: List[PropFile],
+    actors_in_stage: Set[str],
+    game_round: int,
+) -> str:
+
+    props_prompt = "- 无任何道具。"
+    if len(props_in_stage) > 0:
+        props_prompt = ""
+        for prop_file in props_in_stage:
+            props_prompt += public_builtin_prompt.generate_prop_prompt(
+                prop_file, description_prompt=False, appearance_prompt=True
+            )
+
+    actors_prompt = "- 无任何角色。"
+    if len(actors_in_stage) > 0:
+        actors_prompt = ""
+        for actor_name in actors_in_stage:
+            actors_prompt += f"- {actor_name}\n"
+
+    ret_prompt = f"""# {public_builtin_prompt.ConstantPrompt.STAGE_KICK_OFF_MESSAGE_PROMPT_TAG} 游戏世界即将开始运行。这是你的初始设定，你将以此为起点进行游戏，并更新你的场景描述
+
+## 游戏背景与风格设定
+{about_game}
+
+## 场景内的道具
+{props_prompt}
+
+## 场景内的角色
+{actors_prompt}
+
+## 你的初始设定
+{kick_off_message}
+
+## {StageNarrateAction.__name__} 场景描述生成规则
+- 不要对场景内角色未发生的对话，行为或心理活动进行任何猜测与推理。
+- 注意！在输出内容中，移除所有与 场景内的角色 相关的描述。
+
+## 输出要求
+- 请遵循 输出格式指南。
+- 返回结果只包含:{StageNarrateAction.__name__} 和 {TagAction.__name__}。"""
+    return ret_prompt
+
+
+###############################################################################################################################################
+def _generate_world_system_kick_off_prompt(about_game: str, game_round: int) -> str:
+    return f"""# {public_builtin_prompt.ConstantPrompt.WORLD_SYSTEM_KICK_OFF_MESSAGE_PROMPT_TAG} 游戏世界即将开始运行。这是你的初始设定，请简要回答你的职能与描述
+## 游戏背景与风格设定
+{about_game}"""
 
 
 ######################################################################################################################################################
@@ -97,7 +174,7 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
 
             ret[world_comp.name] = AgentTask.create(
                 agent,
-                builtin_prompt.make_world_system_kick_off_prompt(
+                _generate_world_system_kick_off_prompt(
                     self._game.about_game, self._game.round
                 ),
             )
@@ -126,7 +203,7 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
                 logger.error(f"kick_off_messages is error: {stage_comp.name}")
                 continue
 
-            kick_off_prompt = builtin_prompt.make_stage_kick_off_prompt(
+            kick_off_prompt = _generate_stage_kick_off_prompt(
                 kick_off_messages[0].content,
                 self._game.about_game,
                 self._context._file_system.get_files(
@@ -164,7 +241,7 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
 
             ret[actor_comp.name] = AgentTask.create(
                 agent,
-                builtin_prompt.make_actor_kick_off_prompt(
+                _generate_actor_kick_off_prompt(
                     kick_off_messages[0].content,
                     self._game.about_game,
                     self._game.round,

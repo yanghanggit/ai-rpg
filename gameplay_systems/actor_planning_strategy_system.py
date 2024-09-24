@@ -1,8 +1,6 @@
 from entitas import InitializeProcessor, ExecuteProcessor, Matcher, Entity  # type: ignore
 from overrides import override
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-
-# from loguru import logger
 from gameplay_systems.components import (
     PlanningAllowedComponent,
     StageComponent,

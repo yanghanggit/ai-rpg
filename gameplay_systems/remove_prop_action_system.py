@@ -1,11 +1,28 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: ignore
 from typing import override, cast, List
-from gameplay_systems.action_components import RemovePropAction
+from gameplay_systems.action_components import RemovePropAction, StageNarrateAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from rpg_game.rpg_game import RPGGame
 from extended_systems.files_def import PropFile
-import gameplay_systems.cn_builtin_prompt as builtin_prompt
 from gameplay_systems.components import StageComponent
+
+
+def _generate_prop_lost_prompt(stage_name: str, prop_name: str) -> str:
+    return f"""# 场景 {stage_name} 内的道具 {prop_name} 已经不在了，所以无法对其进行任何操作。
+## 原因分析:
+- 该道具可能已被移出场景，或被其他角色拾取。
+"""
+
+
+################################################################################################################################################
+
+
+def _generate_successful_prop_removal_prompt(stage_name: str, prop_name: str) -> str:
+    return f"""# 场景 {stage_name} 的道具 {prop_name} 已经被 {stage_name} 成功移除。
+## 原因分析
+- {prop_name} 已经因某种原因被摧毁。 {stage_name} 作为其拥有者，根据游戏机制，主动将其移除，以保证逻辑的连贯性与合理性。
+## 造成结果
+- {stage_name} 后续的 {StageNarrateAction.__name__} 的内容生成将不再提及 {prop_name}（及任何相关信息）"""
 
 
 ############################################################################################################
@@ -55,7 +72,7 @@ class RemovePropActionSystem(ReactiveProcessor):
         safe_name = self._context.safe_get_entity_name(entity)
         self._context.broadcast_entities(
             set({entity}),
-            builtin_prompt.make_stage_prop_lost_prompt(safe_name, prop_name),
+            _generate_prop_lost_prompt(safe_name, prop_name),
         )
 
     ############################################################################################################
@@ -63,7 +80,7 @@ class RemovePropActionSystem(ReactiveProcessor):
         safe_name = self._context.safe_get_entity_name(entity)
         self._context.broadcast_entities(
             set({entity}),
-            builtin_prompt.make_stage_remove_prop_success_prompt(safe_name, prop_name),
+            _generate_successful_prop_removal_prompt(safe_name, prop_name),
         )
 
     ############################################################################################################

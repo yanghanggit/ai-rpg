@@ -2,8 +2,8 @@ from entitas import ExecuteProcessor, Matcher, Entity  # type: ignore
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from gameplay_systems.components import ActorComponent, StageComponent
 from typing import Set, override, Dict
-from gameplay_systems.cn_constant_prompt import CNConstantPrompt as ConstantPrompt
 from rpg_game.rpg_game import RPGGame
+import gameplay_systems.public_builtin_prompt as public_builtin_prompt
 
 
 class CompressChatHistorySystem(ExecuteProcessor):
@@ -22,8 +22,8 @@ class CompressChatHistorySystem(ExecuteProcessor):
     def handle_exclude_chat_history(self) -> None:
 
         tags: Set[str] = {
-            ConstantPrompt.ACTOR_PLAN_PROMPT_TAG,
-            ConstantPrompt.STAGE_PLAN_PROMPT_TAG,
+            public_builtin_prompt.ConstantPrompt.ACTOR_PLAN_PROMPT_TAG,
+            public_builtin_prompt.ConstantPrompt.STAGE_PLAN_PROMPT_TAG,
         }
 
         entities: Set[Entity] = self._context.get_group(
@@ -44,8 +44,8 @@ class CompressChatHistorySystem(ExecuteProcessor):
     def handle_compress_chat_history(self) -> None:
         context = self._context
         replace_data: Dict[str, str] = {
-            ConstantPrompt.ACTOR_PLAN_PROMPT_TAG: ConstantPrompt.COMPRESS_ACTOR_PLAN_PROMPT,
-            ConstantPrompt.STAGE_PLAN_PROMPT_TAG: ConstantPrompt.COMPRESS_STAGE_PLAN_PROMPT,
+            public_builtin_prompt.ConstantPrompt.ACTOR_PLAN_PROMPT_TAG: public_builtin_prompt.ConstantPrompt.COMPRESS_ACTOR_PLAN_PROMPT,
+            public_builtin_prompt.ConstantPrompt.STAGE_PLAN_PROMPT_TAG: public_builtin_prompt.ConstantPrompt.COMPRESS_STAGE_PLAN_PROMPT,
         }
 
         entities = context.get_group(

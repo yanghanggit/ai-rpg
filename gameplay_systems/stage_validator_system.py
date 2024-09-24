@@ -10,9 +10,26 @@ from gameplay_systems.components import (
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
-import gameplay_systems.cn_builtin_prompt as builtin_prompt
+import gameplay_systems.public_builtin_prompt as public_builtin_prompt
 from typing import override, Set, Any
 from rpg_game.rpg_game import RPGGame
+
+
+################################################################################################################################################
+def _generate_stage_validation_error_prompt(actor_name: str, stage_name: str) -> str:
+    return f"""# {actor_name} 无法前往 {stage_name}
+## 可能的原因
+1. {stage_name} 目前不可访问，可能未开放或已关闭。
+2. 场景名称"{stage_name}"格式不正确,如“xxx的深处/北部/边缘/附近/其他区域”，这样的表达可能导致无法正确识别。
+    - 必须根据 游戏规则设定 中 对场景名字严格匹配。
+3. {actor_name} 无法从当前场景去往 {stage_name}。即当前场景与目标场景{stage_name}之间没有连接。
+## 建议
+- 请 {actor_name} 重新考虑目的地。"""
+
+
+################################################################################################################################################
+def _generate_stage_already_in_prompt(actor_name: str, stage_name: str) -> str:
+    return f"# 注意！{actor_name} 已经在 {stage_name} 场景中。需要重新考虑去往的目的地"
 
 
 class StageValidatorSystem(ReactiveProcessor):
@@ -60,7 +77,7 @@ class StageValidatorSystem(ReactiveProcessor):
         if target_stage_entity is None:
             self._context.broadcast_entities(
                 set({entity}),
-                builtin_prompt.go_to_stage_failed_because_stage_is_invalid_prompt(
+                _generate_stage_validation_error_prompt(
                     safe_actor_name, target_stage_name
                 ),
             )
@@ -70,9 +87,7 @@ class StageValidatorSystem(ReactiveProcessor):
         if current_stage_entity == target_stage_entity:
             self._context.broadcast_entities(
                 set({entity}),
-                builtin_prompt.go_to_stage_failed_because_already_in_stage_prompt(
-                    safe_actor_name, target_stage_name
-                ),
+                _generate_stage_already_in_prompt(safe_actor_name, target_stage_name),
             )
 
             return False
@@ -84,7 +99,7 @@ class StageValidatorSystem(ReactiveProcessor):
             if target_stage_name not in stage_graph:
                 self._context.broadcast_entities(
                     set({entity}),
-                    builtin_prompt.go_to_stage_failed_because_stage_is_invalid_prompt(
+                    _generate_stage_validation_error_prompt(
                         safe_actor_name, target_stage_name
                     ),
                 )
@@ -101,10 +116,8 @@ class StageValidatorSystem(ReactiveProcessor):
         if len(go_to_action.values) == 0:
             return ""
 
-        if builtin_prompt.is_unknown_guid_stage_name(go_to_action.values[0]):
-            guid = builtin_prompt.extract_from_unknown_guid_stage_name(
-                go_to_action.values[0]
-            )
+        if public_builtin_prompt.is_stage_name_unknown(go_to_action.values[0]):
+            guid = public_builtin_prompt.extract_stage_guid(go_to_action.values[0])
             stage_entity = self._context.get_entity_by_guid(guid)
             if stage_entity is not None and stage_entity.has(StageComponent):
                 return self._context.safe_get_entity_name(stage_entity)

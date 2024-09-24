@@ -3,8 +3,12 @@ from typing import override, cast
 from gameplay_systems.components import StageComponent
 from gameplay_systems.action_components import BroadcastAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-import gameplay_systems.cn_builtin_prompt as builtin_prompt
 from rpg_game.rpg_game import RPGGame
+import gameplay_systems.public_builtin_prompt as public_builtin_prompt
+
+
+def _generate_broadcast_prompt(src_name: str, dest_name: str, content: str) -> str:
+    return f"# {public_builtin_prompt.ConstantPrompt.BROADCASE_ACTION_TAG} {src_name}对{dest_name}里的所有人说:{content}"
 
 
 class BroadcastActionSystem(ReactiveProcessor):
@@ -39,7 +43,7 @@ class BroadcastActionSystem(ReactiveProcessor):
 
         broadcast_action = entity.get(BroadcastAction)
 
-        message = builtin_prompt.make_broadcast_action_prompt(
+        message = _generate_broadcast_prompt(
             broadcast_action.name,
             cast(str, current_stage_entity.get(StageComponent).name),
             " ".join(broadcast_action.values),

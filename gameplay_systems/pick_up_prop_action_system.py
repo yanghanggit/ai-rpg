@@ -5,9 +5,30 @@ from gameplay_systems.components import ActorComponent, StageComponent
 from loguru import logger
 from typing import override
 from extended_systems.files_def import PropFile
-import gameplay_systems.cn_builtin_prompt as builtin_prompt
 import extended_systems.file_system_helper
 from rpg_game.rpg_game import RPGGame
+
+
+###############################################################################################################################################
+def _generate_failed_pickup_prompt(actor_name: str, prop_name: str) -> str:
+    return f"""# {actor_name} 无法拾取道具 {prop_name}
+## 原因分析:
+- {prop_name} 不是一个可拾取的道具。
+- 该道具可能已被移出场景，或被其他角色拾取。
+## 建议:
+请{actor_name}重新考虑拾取的目标。"""
+
+
+###############################################################################################################################################
+def _generate_success_pickup_prompt(
+    actor_name: str, prop_name: str, stage_name: str
+) -> str:
+    return f"""# {actor_name} 从 {stage_name} 场景内成功找到并获取了道具 {prop_name}。
+## 导致结果:
+- {stage_name} 此场景内不再有这个道具。"""
+
+
+###############################################################################################################################################
 
 
 class PickUpPropActionSystem(ReactiveProcessor):
@@ -60,9 +81,7 @@ class PickUpPropActionSystem(ReactiveProcessor):
             if prop_file is None:
                 self._context.broadcast_entities(
                     set({entity}),
-                    builtin_prompt.make_actor_pick_up_prop_failed_prompt(
-                        actor_name, prop_name
-                    ),
+                    _generate_failed_pickup_prompt(actor_name, prop_name),
                 )
                 continue
 
@@ -75,9 +94,7 @@ class PickUpPropActionSystem(ReactiveProcessor):
 
             self._context.broadcast_entities_in_stage(
                 current_stage_entity,
-                builtin_prompt.make_pick_up_prop_success_prompt(
-                    actor_name, prop_name, stage_comp.name
-                ),
+                _generate_success_pickup_prompt(actor_name, prop_name, stage_comp.name),
             )
 
             # 写死的，只能拾取一次。

@@ -10,7 +10,7 @@ from gameplay_systems.components import (
 )
 from extended_systems.files_def import StageArchiveFile
 from player.player_proxy import PlayerProxy
-import gameplay_systems.cn_builtin_prompt as builtin_prompt
+import gameplay_systems.public_builtin_prompt as public_builtin_prompt
 
 
 class TerminalPlayerTipsSystem(ExecuteProcessor):
@@ -88,7 +88,9 @@ class TerminalPlayerTipsSystem(ExecuteProcessor):
 
         assert stage_entity.has(GUIDComponent)
         guid_comp = stage_entity.get(GUIDComponent)
-        return builtin_prompt.make_unknown_guid_stage_name_prompt(guid_comp.GUID)
+        return public_builtin_prompt.generate_unknown_guid_stage_name_prompt(
+            guid_comp.GUID
+        )
 
     ############################################################################################################
     def tip_stage_archives(

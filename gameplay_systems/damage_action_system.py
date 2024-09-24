@@ -8,7 +8,6 @@ from gameplay_systems.components import (
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import cast, override
-import gameplay_systems.cn_builtin_prompt as builtin_prompt
 from extended_systems.files_def import PropFile
 import my_format_string.target_and_message_format_string
 import my_format_string.attrs_format_string
@@ -16,6 +15,23 @@ from rpg_game.rpg_game import RPGGame
 from my_data.model_def import AttributesIndex
 import extended_systems.file_system_helper
 from my_data.model_def import PropType
+
+
+################################################################################################################################################
+def _generate_kill_event_prompt(actor_name: str, target_name: str) -> str:
+    return f"# {actor_name} 对 {target_name} 的行动造成了{target_name}死亡。"
+
+
+################################################################################################################################################
+def _generate_damage_event_prompt(
+    actor_name: str,
+    target_name: str,
+    damage: int,
+    target_current_hp: int,
+    target_max_hp: int,
+) -> str:
+    health_percent = max(0, (target_current_hp - damage) / target_max_hp * 100)
+    return f"# {actor_name} 对 {target_name} 的行动造成了{damage}点伤害, 当前 {target_name} 的生命值剩余 {health_percent}%。"
 
 
 class DamageActionSystem(ReactiveProcessor):
@@ -141,7 +157,7 @@ class DamageActionSystem(ReactiveProcessor):
             # 直接打死。
             self._context.broadcast_entities_in_stage(
                 current_stage_entity,
-                builtin_prompt.make_kill_event_prompt(from_name, target_name),
+                _generate_kill_event_prompt(from_name, target_name),
             )
 
         else:
@@ -150,7 +166,7 @@ class DamageActionSystem(ReactiveProcessor):
                 rpg_attr_comp = target_entity.get(RPGAttributesComponent)
                 self._context.broadcast_entities_in_stage(
                     current_stage_entity,
-                    builtin_prompt.make_damage_event_prompt(
+                    _generate_damage_event_prompt(
                         from_name,
                         target_name,
                         damage,

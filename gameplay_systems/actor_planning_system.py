@@ -9,13 +9,16 @@ from gameplay_systems.components import (
 from gameplay_systems.action_components import (
     StageNarrateAction,
     ACTOR_AVAILABLE_ACTIONS_REGISTER,
+    PickUpPropAction,
+    GoToAction,
+    TagAction,
 )
 from my_agent.agent_plan_and_action import AgentPlan
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
-from typing import Dict, Set, List
+from typing import Dict, Set, List, Optional
 import gameplay_systems.planning_helper
-import gameplay_systems.cn_builtin_prompt as builtin_prompt
+import gameplay_systems.public_builtin_prompt as public_builtin_prompt
 from my_agent.agent_task import (
     AgentTask,
     AgentTasksGather,
@@ -23,6 +26,108 @@ from my_agent.agent_task import (
 from rpg_game.rpg_game import RPGGame
 from gameplay_systems.check_self_helper import CheckSelfHelper
 from extended_systems.files_def import PropFile
+from my_data.model_def import PropType
+
+
+###############################################################################################################################################
+def _generate_actor_props_prompts(
+    props_dict: Dict[str, List[PropFile]],
+    order_keys: List[str] = [
+        PropType.TYPE_SPECIAL,
+        PropType.TYPE_WEAPON,
+        PropType.TYPE_CLOTHES,
+        PropType.TYPE_NON_CONSUMABLE_ITEM,
+        PropType.TYPE_SKILL,
+    ],
+) -> List[str]:
+
+    ret: List[str] = []
+
+    for key in order_keys:
+        if key not in props_dict:
+            continue
+
+        for prop_file in props_dict[key]:
+            ret.append(
+                public_builtin_prompt.generate_prop_prompt(
+                    prop_file,
+                    description_prompt=True,
+                    appearance_prompt=True,
+                    attr_prompt=True,
+                )
+            )
+
+    return ret
+
+
+###############################################################################################################################################
+def _generate_actor_plan_prompt(
+    game_round: int,
+    current_stage: str,
+    stage_enviro_narrate: str,
+    stage_graph: Set[str],
+    props_in_stage: List[PropFile],
+    info_of_actors_in_stage: Dict[str, str],
+    health: float,
+    actor_props: Dict[str, List[PropFile]],
+    current_weapon: Optional[PropFile],
+    current_clothes: Optional[PropFile],
+) -> str:
+
+    health *= 100
+
+    actor_props_prompt = _generate_actor_props_prompts(actor_props)
+
+    props_in_stage_prompt = [
+        public_builtin_prompt.generate_prop_prompt(
+            prop, description_prompt=False, appearance_prompt=True
+        )
+        for prop in props_in_stage
+    ]
+
+    actors_in_stage_prompt = "- 无任何角色。"
+    if len(info_of_actors_in_stage) > 0:
+        actors_in_stage_prompt = ""
+        for actor_name, actor_appearance in info_of_actors_in_stage.items():
+            actors_in_stage_prompt += (
+                f"### {actor_name}\n- 角色外观:{actor_appearance}\n"
+            )
+
+    ret_prompt = f"""# {public_builtin_prompt.ConstantPrompt.ACTOR_PLAN_PROMPT_TAG} 请做出你的计划，决定你将要做什么
+
+## 你当前所在的场景
+{current_stage != "" and current_stage or "未知"}
+### 场景描述
+{stage_enviro_narrate != "" and stage_enviro_narrate or "无"}
+### 从本场景可以去往的场景
+{len(stage_graph) > 0 and "\n".join([f"- {stage}" for stage in stage_graph]) or "无可去往场景"}   
+
+## 场景内的道具(可以进行交互，如: {PickUpPropAction.__name__})
+{len(props_in_stage_prompt) > 0 and "\n".join(props_in_stage_prompt) or "- 无任何道具。"}
+
+## 场景内的角色
+{actors_in_stage_prompt}
+
+## 你的健康状态
+{f"生命值: {health:.2f}%"}
+
+## 你当前持有的道具
+{len(actor_props_prompt) > 0 and "\n".join(actor_props_prompt) or "- 无任何道具。"}
+
+## 你当前装备的道具
+- 武器: {current_weapon is not None and current_weapon.name or "无"}
+- 衣服: {current_clothes is not None and current_clothes.name or "无"}
+
+## 建议与注意事项
+- 结合以上信息，决定你的下一步行动。
+- 随时保持装备武器与衣服的状态(前提是你有对应的道具）。
+- 注意！如果 从本场景可以去往的场景 为 无可去往场景，你就不可以执行{GoToAction.__name__}，因为系统的设计规则如此。
+
+## 输出要求
+- 请遵循 输出格式指南。
+- 结果中要附带 {TagAction.__name__}。"""
+
+    return ret_prompt
 
 
 class ActorPlanningSystem(ExecuteProcessor):
@@ -121,7 +226,7 @@ class ActorPlanningSystem(ExecuteProcessor):
 
             out_put_request_tasks[actor_comp.name] = AgentTask.create(
                 agent,
-                builtin_prompt.make_actor_plan_prompt(
+                _generate_actor_plan_prompt(
                     game_round=self._game.round,
                     current_stage=self.get_stage_name(actor_entity),
                     stage_enviro_narrate=self.get_stage_narrate(actor_entity),

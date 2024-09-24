@@ -3,9 +3,14 @@ from gameplay_systems.action_components import WhisperAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import override
 import gameplay_systems.conversation_helper
-import gameplay_systems.cn_builtin_prompt as builtin_prompt
 import my_format_string.target_and_message_format_string
 from rpg_game.rpg_game import RPGGame
+import gameplay_systems.public_builtin_prompt as public_builtin_prompt
+
+
+################################################################################################################################################
+def _generate_whisper_prompt(src_name: str, dest_name: str, content: str) -> str:
+    return f"# {public_builtin_prompt.ConstantPrompt.WHISPER_ACTION_TAG} {src_name}对{dest_name}私语道:{content}"
 
 
 ####################################################################################################################################
@@ -55,7 +60,7 @@ class WhisperActionSystem(ReactiveProcessor):
             assert target_entity is not None
             self._context.broadcast_entities(
                 set({entity, target_entity}),
-                builtin_prompt.make_whisper_action_prompt(safe_name, tp[0], tp[1]),
+                _generate_whisper_prompt(safe_name, tp[0], tp[1]),
             )
 
 

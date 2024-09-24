@@ -11,12 +11,27 @@ from gameplay_systems.components import (
 )
 import gameplay_systems.conversation_helper
 from typing import override
-import gameplay_systems.cn_builtin_prompt as builtin_prompt
 import extended_systems.file_system_helper
 from extended_systems.files_def import PropFile
 import my_format_string.target_and_message_format_string
 from rpg_game.rpg_game import RPGGame
 from loguru import logger
+
+####################################################################################################################################
+
+
+def _generate_steal_prompt(
+    from_name: str, target_name: str, prop_name: str, action_result: bool
+) -> str:
+    if not action_result:
+        return f"# {from_name} 试图从 {target_name} 盗取 {prop_name}, 但是失败了。"
+    return f"""# {from_name} 从 {target_name} 成功盗取了 {prop_name}。
+# 导致结果
+- {target_name} 现在不再拥有 {prop_name}。
+- {from_name} 现在拥有了 {prop_name}。"""
+
+
+####################################################################################################################################
 
 
 class StealActionSystem(ReactiveProcessor):
@@ -74,7 +89,7 @@ class StealActionSystem(ReactiveProcessor):
             action_result = self.do_steal(entity, target_entity, tp[1])
             self._context.broadcast_entities(
                 set({entity, target_entity}),
-                builtin_prompt.make_steal_prop_action_prompt(
+                _generate_steal_prompt(
                     self._context.safe_get_entity_name(entity),
                     tp[0],
                     tp[1],

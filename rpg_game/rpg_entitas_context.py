@@ -15,7 +15,7 @@ from my_agent.lang_serve_agent_system import LangServeAgentSystem
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from typing import Optional, Dict, List, Set, cast, Any
 from extended_systems.guid_generator import GUIDGenerator
-import gameplay_systems.cn_builtin_prompt as builtin_prompt
+import gameplay_systems.public_builtin_prompt as public_builtin_prompt
 from player.player_proxy import PlayerProxy
 
 
@@ -333,7 +333,7 @@ class RPGEntitasContext(Context):
                     if safe_name == player_proxy._ctrl_actor_name:
                         player_proxy.add_actor_message(
                             safe_name,
-                            builtin_prompt.replace_you(
+                            public_builtin_prompt.replace_you(
                                 message_content, player_proxy._ctrl_actor_name
                             ),
                         )
@@ -380,7 +380,9 @@ class RPGEntitasContext(Context):
         for entity in entities:
 
             safe_name = self.safe_get_entity_name(entity)
-            replace_message = builtin_prompt.replace_you(message_content, safe_name)
+            replace_message = public_builtin_prompt.replace_you(
+                message_content, safe_name
+            )
 
             #
             self._langserve_agent_system.add_human_message_to_chat_history(

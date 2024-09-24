@@ -10,8 +10,35 @@ from gameplay_systems.components import StageComponent, RPGCurrentWeaponComponen
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import override, Set, Optional, Any
 from extended_systems.files_def import PropFile
-import gameplay_systems.cn_builtin_prompt as builtin_prompt
 from rpg_game.rpg_game import RPGGame
+
+
+################################################################################################################################################
+
+
+def _generate_behavior_result_prompt(
+    actor_name: str, behavior_sentence: str, result: bool
+) -> str:
+    if result:
+        prompt1 = f"""# {actor_name} 准备发起一次使用技能的行动。
+## 输入语句
+{behavior_sentence}
+## 分析过程
+输入语句中应至少包含一个技能与一个目标。可以选择性的包含道具。
+## 结果
+系统经过分析之后允许了这次行动。"""
+        return prompt1
+
+    prompt2 = f""" #{actor_name} 准备发起一次使用技能的行动。
+## 输入语句
+{behavior_sentence}
+## 分析过程
+输入语句中应至少包含一个技能与一个目标。可以选择性的包含道具。
+## 结果
+- 注意！系统经过分析之后拒绝了这次行动。
+- 请 {actor_name} 检查 输入语句。是否满足 分析过程 中提到的要求。"""
+
+    return prompt2
 
 
 class BehaviorActionSystem(ReactiveProcessor):
@@ -187,7 +214,7 @@ class BehaviorActionSystem(ReactiveProcessor):
         # 需要给到agent
         self._context.broadcast_entities(
             set({entity}),
-            builtin_prompt.make_behavior_action_result_prompt(
+            _generate_behavior_result_prompt(
                 self._context.safe_get_entity_name(entity),
                 behavior_sentence,
                 processed_result,

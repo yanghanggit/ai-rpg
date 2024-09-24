@@ -10,7 +10,6 @@ from gameplay_systems.action_components import (
     ACTOR_INTERACTIVE_ACTIONS_REGISTER,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from loguru import logger
 from rpg_game.rpg_game import RPGGame
 from typing import FrozenSet, Any
 

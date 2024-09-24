@@ -10,13 +10,69 @@ from gameplay_systems.components import (
     ActorComponent,
     RPGCurrentClothesComponent,
 )
-import gameplay_systems.cn_builtin_prompt as builtin_prompt
 from extended_systems.files_def import PropFile
 from my_agent.agent_task import AgentTask
 from gameplay_systems.action_components import UpdateAppearanceAction
 from rpg_game.rpg_game import RPGGame
 
 
+################################################################################################################################################
+def _generate_appearance_update_prompt(actor_name: str, appearance: str) -> str:
+    return f"""# {actor_name} 的外观信息已更新
+## 角色外观信息
+{appearance}"""
+
+
+################################################################################################################################################
+def _generate_reasoning_appearance_prompt(
+    actors_body_and_clothe: Dict[str, tuple[str, str]]
+) -> str:
+    appearance_info_list: List[str] = []
+    actor_name_list: List[str] = []
+    for name, (body, clothe) in actors_body_and_clothe.items():
+        appearance_info_list.append(
+            f"""### {name}
+- 裸身:{body}
+- 衣服:{clothe}
+"""
+        )
+        actor_name_list.append(name)
+
+    dumps = json.dumps({name: "?" for name in actor_name_list}, ensure_ascii=False)
+
+    # 最后的合并
+    ret_prompt = f"""# 请根据 裸身 与 衣服，生成当前的角色外观的描述。
+## 提供给你的信息
+{"\n".join(appearance_info_list)}
+
+## 推理逻辑
+- 第1步:如角色有衣服。则代表“角色穿着衣服”。最终推理结果为:裸身的信息结合衣服信息。并且是以第三者视角能看到的样子去描述。
+    - 注意！部分身体部位会因穿着衣服被遮蔽。请根据衣服的信息进行推理。
+    - 衣服的样式，袖子与裤子等信息都会影响最终外观。
+    - 面具（遮住脸），帽子（遮住头部，或部分遮住脸）等头部装饰物也会影响最终外观。
+    - 被遮住的部位（因为站在第三者视角就无法看见），不需要再次提及，不要出现在推理结果中，如果有，需要删除。
+    - 注意！错误的句子：胸前的黑色印记被衣服遮盖住，无法看见。
+- 第2步:如角色无衣服，推理结果为角色当前为裸身。
+    - 注意！如果是人形角色，裸身意味着穿着内衣!
+    - 如果是动物，怪物等非人角色，就是最终外观信息。
+- 第3步:将推理结果进行适度润色。
+
+## 输出格式指南
+
+### 输出格式（请根据下面的示意, 确保你的输出严格遵守相应的结构)
+{dumps}
+
+### 注意事项
+- '?'就是你推理出来的结果(结果中可以不用再提及角色名字)，你需要将其替换为你的推理结果。
+- 所有文本输出必须为第3人称。
+- 每个 JSON 对象必须包含上述键中的一个或多个，不得重复同一个键，也不得使用不在上述中的键。
+- 输出不应包含任何超出所需 JSON 格式的额外文本、解释或总结。
+- 不要使用```json```来封装内容。
+"""
+    return ret_prompt
+
+
+####################################################################################################
 class UpdateAppearanceActionSystem(ReactiveProcessor):
 
     def __init__(
@@ -100,9 +156,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
         if agent is None:
             return False
 
-        prompt = builtin_prompt.make_world_system_reasoning_appearance_prompt(
-            input_data
-        )
+        prompt = _generate_reasoning_appearance_prompt(input_data)
 
         task = AgentTask.create_standalone(agent, prompt)
         if task.request() is None:
@@ -179,7 +233,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
             appearance_comp = actor_entity.get(AppearanceComponent)
             self._context.broadcast_entities_in_stage(
                 current_stage_entity,
-                builtin_prompt.make_on_update_appearance_event_prompt(
+                _generate_appearance_update_prompt(
                     appearance_comp.name, appearance_comp.appearance
                 ),
             )

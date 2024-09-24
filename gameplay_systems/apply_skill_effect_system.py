@@ -7,6 +7,7 @@ from gameplay_systems.action_components import (
     DamageAction,
     WorldSkillSystemRuleAction,
     BroadcastAction,
+    TagAction,
 )
 from gameplay_systems.components import (
     BodyComponent,
@@ -15,18 +16,79 @@ from gameplay_systems.components import (
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import override, List, cast, Optional, Set
-from loguru import logger
 from extended_systems.files_def import PropFile
-import gameplay_systems.cn_builtin_prompt as builtin_prompt
+import gameplay_systems.public_builtin_prompt as public_builtin_prompt
 from my_agent.agent_task import AgentTask
 from my_agent.agent_plan_and_action import AgentPlan
 import my_format_string.target_and_message_format_string
 import my_format_string.attrs_format_string
 from rpg_game.rpg_game import RPGGame
 from my_data.model_def import AttributesIndex
-from gameplay_systems.cn_constant_prompt import CNConstantPrompt as ConstantPrompt
+
+################################################################################################################################################
 
 
+def _generate_skill_hit_feedback_prompt(
+    actor_name: str,
+    target_name: str,
+    reasoning_sentence: str,
+    result_desc: str,
+) -> str:
+
+    prompt = f"""# {actor_name} 向 {target_name} 发动技能。
+## 事件描述
+ {reasoning_sentence}
+
+## 系统判断结果
+{result_desc}
+
+## 判断步骤
+第1步:回顾 {target_name} 的当前状态。
+第2步:结合 事件描述 与 系统判断结果，推理技能对 {target_name} 的影响。例如改变你的状态，或者对你造成伤害等。
+第3步:更新 {target_name} 的状态，作为最终输出。
+
+## 输出要求
+- 请遵循 输出格式指南。
+- 返回结果只带如下的键: {BroadcastAction.__name__} 和 {TagAction.__name__}。
+- {BroadcastAction.__name__} 的内容格式要求为: "{target_name}对技能的反馈与更新后的状态描述"。
+"""
+
+    return prompt
+
+
+################################################################################################################################################
+
+
+def _generate_offline_prompt(
+    actor_name: str, target_name: str, reasoning_sentence: str
+) -> str:
+
+    prompt = f"""# 注意! {actor_name} 无法对 {target_name} 使用技能，本次技能释放被系统取消。
+## 行动内容语句({actor_name} 发起)
+{reasoning_sentence}
+"""
+    return prompt
+
+
+################################################################################################################################################
+
+
+def _generate_skill_event_notification_prompt(
+    actor_name: str, target_name: str, reasoning_sentence: str, feedback_sentence: str
+) -> str:
+
+    ret_prompt = f"""# 注意场景内发生了如下事件: {actor_name} 向 {target_name} 发动了技能。
+
+## 技能发动的过程描述
+{reasoning_sentence}
+
+## {target_name} 受到技能后的反馈
+{feedback_sentence}"""
+
+    return ret_prompt
+
+
+################################################################################################################################################
 class SkillFeedbackAgentResponse(AgentPlan):
 
     @property
@@ -177,7 +239,7 @@ class ApplySkillEffectSystem(ReactiveProcessor):
 
         self._context.broadcast_entities_in_stage(
             current_stage_entity,
-            builtin_prompt.make_broadcast_skill_event_prompt(
+            _generate_skill_event_notification_prompt(
                 self._context.safe_get_entity_name(from_entity),
                 self._context.safe_get_entity_name(target_entity),
                 world_skill_system_rule_out_come,
@@ -269,7 +331,7 @@ class ApplySkillEffectSystem(ReactiveProcessor):
 
         self._context.broadcast_entities(
             set({entity}),
-            builtin_prompt.make_target_agent_off_line_prompt(
+            _generate_offline_prompt(
                 self._context.safe_get_entity_name(entity),
                 self._context.safe_get_entity_name(target),
                 world_skill_system_rule_out_come,
@@ -289,7 +351,7 @@ class ApplySkillEffectSystem(ReactiveProcessor):
         world_skill_system_rule_tag, world_skill_system_rule_out_come = (
             self.extract_world_skill_system_rule(entity)
         )
-        prompt = builtin_prompt.make_skill_hit_feedback_prompt(
+        prompt = _generate_skill_hit_feedback_prompt(
             self._context.safe_get_entity_name(entity),
             target_agent_name,
             world_skill_system_rule_out_come,
@@ -298,7 +360,7 @@ class ApplySkillEffectSystem(ReactiveProcessor):
 
         return AgentTask.create(
             target_agent,
-            builtin_prompt.replace_you(prompt, target_agent_name),
+            public_builtin_prompt.replace_you(prompt, target_agent_name),
         )
 
     ######################################################################################################################################################
@@ -321,7 +383,10 @@ class ApplySkillEffectSystem(ReactiveProcessor):
             self.extract_world_skill_system_rule(entity)
         )
 
-        if world_skill_system_rule_tag == ConstantPrompt.CRITICAL_SUCCESS:
+        if (
+            world_skill_system_rule_tag
+            == public_builtin_prompt.ConstantPrompt.CRITICAL_SUCCESS
+        ):
             return 1.5  # 先写死，测试的时候再改。todo
 
         return 1.0  # 默认的。

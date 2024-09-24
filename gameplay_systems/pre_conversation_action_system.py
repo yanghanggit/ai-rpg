@@ -61,11 +61,7 @@ class PreConversationActionSystem(ReactiveProcessor):
             broadcast_content, speak_content_list, whisper_content_list
         )
 
-        task = AgentTask.create_standalone(agent, prompt)
-        if task is None:
-            return
-
-        tasks[safe_name] = task
+        tasks[safe_name] = AgentTask.create_standalone(agent, prompt)
 
     #################################################################################################################################################
     def get_broadcast_content(self, player_entity: Entity) -> str:
@@ -95,8 +91,8 @@ class PreConversationActionSystem(ReactiveProcessor):
 
         gather = AgentTasksGather("", [task for task in self._tasks.values()])
 
-        response = await gather.gather()
-        if len(response) == 0:
+        responses = await gather.gather()
+        if len(responses) == 0:
             self.remove_all()
             return
 
@@ -130,9 +126,6 @@ class PreConversationActionSystem(ReactiveProcessor):
     #################################################################################################################################################
     def on_response(self, tasks: Dict[str, AgentTask]) -> None:
         for name, task in tasks.items():
-
-            if task is None:
-                continue
 
             player_entity = self._context.get_actor_entity(name)
             if player_entity is None:

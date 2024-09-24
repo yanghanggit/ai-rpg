@@ -52,8 +52,8 @@ class ActorPlanningSystem(ExecuteProcessor):
             return
 
         gather = AgentTasksGather("", [task for task in self._tasks.values()])
-        response = await gather.gather()
-        if len(response) == 0:
+        responses = await gather.gather()
+        if len(responses) == 0:
             logger.warning(f"ActorPlanningSystem: request_result is empty.")
             return
 
@@ -119,7 +119,7 @@ class ActorPlanningSystem(ExecuteProcessor):
             actors_appearance = self._context.get_appearance_in_stage(actor_entity)
             actors_appearance.pop(actor_comp.name, None)  # 自己不要
 
-            task = AgentTask.create(
+            out_put_request_tasks[actor_comp.name] = AgentTask.create(
                 agent,
                 builtin_prompt.make_actor_plan_prompt(
                     game_round=self._game.round,
@@ -134,8 +134,6 @@ class ActorPlanningSystem(ExecuteProcessor):
                     current_clothes=check_self._current_clothes,
                 ),
             )
-            if task is not None:
-                out_put_request_tasks[actor_comp.name] = task
 
     #######################################################################################################################################
     def get_stage_name(self, actor_entity: Entity) -> str:

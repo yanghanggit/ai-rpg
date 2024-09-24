@@ -47,8 +47,8 @@ class StagePlanningSystem(ExecuteProcessor):
             return
 
         gather = AgentTasksGather("", [task for task in self._tasks.values()])
-        response = await gather.gather()
-        if len(response) == 0:
+        responses = await gather.gather()
+        if len(responses) == 0:
             logger.warning(f"StagePlanningSystem: request_result is empty.")
             return
 
@@ -108,7 +108,7 @@ class StagePlanningSystem(ExecuteProcessor):
             if agent is None:
                 continue
 
-            task = AgentTask.create(
+            out_put_request_tasks[stage_comp.name] = AgentTask.create(
                 agent,
                 builtin_prompt.make_stage_plan_prompt(
                     self._context._file_system.get_files(
@@ -119,9 +119,6 @@ class StagePlanningSystem(ExecuteProcessor):
                     self._context.get_appearance_in_stage(stage_entity),
                 ),
             )
-
-            if task is not None:
-                out_put_request_tasks[stage_comp.name] = task
 
 
 #######################################################################################################################################

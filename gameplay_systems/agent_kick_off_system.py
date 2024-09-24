@@ -72,8 +72,8 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
             return
 
         gather = AgentTasksGather("", [task for task in self._tasks.values()])
-        response = await gather.gather()
-        if len(response) == 0:
+        responses = await gather.gather()
+        if len(responses) == 0:
             return
 
         self.on_response(self._tasks)
@@ -95,14 +95,12 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
             if agent is None:
                 continue
 
-            task = AgentTask.create(
+            ret[world_comp.name] = AgentTask.create(
                 agent,
                 builtin_prompt.make_world_system_kick_off_prompt(
                     self._game.about_game, self._game.round
                 ),
             )
-            if task is not None:
-                ret[world_comp.name] = task
 
         return ret
 
@@ -138,9 +136,7 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
                 self._game.round,
             )
 
-            task = AgentTask.create(agent, kick_off_prompt)
-            if task is not None:
-                ret[stage_comp.name] = task
+            ret[stage_comp.name] = AgentTask.create(agent, kick_off_prompt)
 
         return ret
 
@@ -166,7 +162,7 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
                 logger.error(f"kick_off_messages is error: {actor_comp.name}")
                 continue
 
-            task = AgentTask.create(
+            ret[actor_comp.name] = AgentTask.create(
                 agent,
                 builtin_prompt.make_actor_kick_off_prompt(
                     kick_off_messages[0].content,
@@ -174,8 +170,6 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
                     self._game.round,
                 ),
             )
-            if task is not None:
-                ret[actor_comp.name] = task
 
         return ret
 

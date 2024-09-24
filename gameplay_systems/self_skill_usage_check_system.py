@@ -91,12 +91,12 @@ class SelfSkillUsageCheckSystem(ReactiveProcessor):
             self.on_remove_all(entities)
             return
 
-        response = await AgentTasksGather(
+        responses = await AgentTasksGather(
             "",
             [task for task in tasks.values()],
         ).gather()
 
-        if len(response) == 0:
+        if len(responses) == 0:
             logger.debug(f"phase1_response is None.")
             self.on_remove_all(entities)
             return
@@ -212,14 +212,10 @@ class SelfSkillUsageCheckSystem(ReactiveProcessor):
             )
 
             # 会添加上下文的！！！！
-            task = AgentTask.create(
+            ret[agent._name] = AgentTask.create(
                 agent,
                 builtin_prompt.replace_you(prompt, agent_name),
             )
-            if task is None:
-                continue
-
-            ret[agent._name] = task
 
         return ret
 

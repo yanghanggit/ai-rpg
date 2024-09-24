@@ -12,7 +12,7 @@ class LangServeAgentSystem:
         self._name: str = name
         self._agents: Dict[str, LangServeAgent] = {}
         self._runtime_dir: Optional[Path] = None
-        self._remote_runnables: Dict[str, RemoteRunnableWrapper] = {}
+        self._remote_runnable_wrappers: Dict[str, RemoteRunnableWrapper] = {}
 
     ################################################################################################################################################################################
     ### 必须设置根部的执行路行
@@ -26,35 +26,25 @@ class LangServeAgentSystem:
         ), f"Directory is not a directory: {self._runtime_dir}"
 
     ################################################################################################################################################################################
-    def get_remote_runnable(
-        self, url: str, create: bool = False
-    ) -> Optional[RemoteRunnableWrapper]:
-        if url in self._remote_runnables:
-            return self._remote_runnables[url]
-
-        if not create:
-            return None
-
-        self._remote_runnables[url] = RemoteRunnableWrapper(url)
-        return self._remote_runnables[url]
-
-    ################################################################################################################################################################################
     def register_agent(self, name: str, url: str) -> None:
 
-        remote_runnable = self.get_remote_runnable(url, create=True)
-        assert remote_runnable is not None
+        assert not name in self._agents
+
+        remote_runnable = self._remote_runnable_wrappers.get(url, None)
+        if remote_runnable is None:
+            remote_runnable = RemoteRunnableWrapper(url)
+            self._remote_runnable_wrappers[url] = remote_runnable
+
         self._agents[name] = LangServeAgent(name, remote_runnable)
 
     ################################################################################################################################################################################
     def connect_agent(self, name: str) -> None:
         if name in self._agents:
-            self._agents[name].connect()
+            self._agents[name].initialize_connection()
 
     ################################################################################################################################################################################
     def get_agent(self, name: str) -> Optional[LangServeAgent]:
-        if name in self._agents:
-            return self._agents[name]
-        return None
+        return self._agents.get(name, None)
 
     ################################################################################################################################################################################
     def add_human_message_to_chat_history(self, name: str, chat: str) -> None:

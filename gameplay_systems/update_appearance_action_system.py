@@ -105,16 +105,19 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
         )
 
         task = AgentTask.create_standalone(agent, prompt)
-        if task is None:
-            return False
-
-        response = task.request()
-        if response is None:
+        if task.request() is None:
             logger.error(f"{agent_name} request response is None.")
             return False
 
-        _json_: Dict[str, str] = json.loads(response)
-        self.on_success(_json_)
+        try:
+
+            json_obj: Dict[str, str] = json.loads(task.response_content)
+            self.on_success(json_obj)
+
+        except Exception as e:
+            logger.error(f"json.loads error: {e}")
+            return False
+
         return True
 
     ###############################################################################################################################################

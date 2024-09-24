@@ -109,8 +109,8 @@ class WorldSkillRuleSystem(ReactiveProcessor):
             self.on_remove_all(entities)
             return
 
-        response = await AgentTasksGather("", tasks).gather()
-        if len(response) == 0:
+        responses = await AgentTasksGather("", tasks).gather()
+        if len(responses) == 0:
             self.on_remove_all(entities)
             return
 
@@ -184,7 +184,7 @@ class WorldSkillRuleSystem(ReactiveProcessor):
 
         for world_system_agent_task in world_system_agent_tasks:
 
-            actor_name = world_system_agent_task._option_param.get(
+            actor_name = world_system_agent_task._extend_params.get(
                 WorldSkillRuleResponse.OPTION_PARAM_NAME, ""
             )
 
@@ -346,10 +346,8 @@ class WorldSkillRuleSystem(ReactiveProcessor):
             world_system_agent_task = AgentTask.create_process_context_without_saving(
                 world_system_agent, prompt
             )
-            if world_system_agent_task is None:
-                continue
 
-            world_system_agent_task._option_param.setdefault(
+            world_system_agent_task._extend_params.setdefault(
                 WorldSkillRuleResponse.OPTION_PARAM_NAME,
                 self._context.safe_get_entity_name(actor_entity),
             )

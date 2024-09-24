@@ -86,12 +86,12 @@ class StageDepartureCheckerSystem(ReactiveProcessor):
         if len(tasks) == 0:
             return
 
-        response = await AgentTasksGather(
+        responses = await AgentTasksGather(
             "",
             [task for task in tasks.values()],
         ).gather()
 
-        if len(response) == 0:
+        if len(responses) == 0:
             self.on_remove_all(entities)
             return
 

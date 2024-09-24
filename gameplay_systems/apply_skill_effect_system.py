@@ -27,7 +27,7 @@ from my_data.model_def import AttributesIndex
 from gameplay_systems.cn_constant_prompt import CNConstantPrompt as ConstantPrompt
 
 
-class SkillFeedbackAgentPlan(AgentPlan):
+class SkillFeedbackAgentResponse(AgentPlan):
 
     @property
     def feedback(self) -> str:
@@ -86,8 +86,7 @@ class ApplySkillEffectSystem(ReactiveProcessor):
                 self.on_skill_target_agent_off_line_event(entity, target)
                 continue
 
-            response_plan = self.handle_task(task)
-            if response_plan is None:
+            if task.request() is None:
                 self.on_skill_target_agent_off_line_event(entity, target)
                 continue
 
@@ -95,6 +94,9 @@ class ApplySkillEffectSystem(ReactiveProcessor):
             self.calculate_and_add_action(entity, target)
 
             # 场景事件
+            response_plan = SkillFeedbackAgentResponse(
+                task.agent_name, task.response_content
+            )
             self.on_broadcast_skill_event(entity, target, response_plan.feedback)
 
     ######################################################################################################################################################
@@ -298,15 +300,6 @@ class ApplySkillEffectSystem(ReactiveProcessor):
             target_agent,
             builtin_prompt.replace_you(prompt, target_agent_name),
         )
-
-    ######################################################################################################################################################
-    def handle_task(self, task: AgentTask) -> Optional[SkillFeedbackAgentPlan]:
-
-        response = task.request()
-        if response is None or task.response_content == "":
-            return None
-
-        return SkillFeedbackAgentPlan(task._agent._name, response)
 
     ######################################################################################################################################################
     def extract_world_skill_system_rule(self, entity: Entity) -> tuple[str, str]:

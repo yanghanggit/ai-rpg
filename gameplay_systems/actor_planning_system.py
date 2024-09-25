@@ -13,7 +13,7 @@ from gameplay_systems.action_components import (
     GoToAction,
     TagAction,
 )
-from my_agent.agent_plan_and_action import AgentPlan
+from my_agent.agent_plan import AgentPlanResponse
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from typing import Dict, Set, List, Optional
@@ -21,7 +21,6 @@ import gameplay_systems.planning_helper
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt
 from my_agent.agent_task import (
     AgentTask,
-    AgentTasksGather,
 )
 from rpg_game.rpg_game import RPGGame
 from gameplay_systems.check_self_helper import CheckSelfHelper
@@ -156,8 +155,7 @@ class ActorPlanningSystem(ExecuteProcessor):
         if len(self._tasks) == 0:
             return
 
-        gather = AgentTasksGather("", [task for task in self._tasks.values()])
-        responses = await gather.gather()
+        responses = await AgentTask.gather([task for task in self._tasks.values()])
         if len(responses) == 0:
             logger.warning(f"ActorPlanningSystem: request_result is empty.")
             return
@@ -183,7 +181,7 @@ class ActorPlanningSystem(ExecuteProcessor):
                 continue
 
             actor_comp = entity.get(ActorComponent)
-            actor_planning = AgentPlan(actor_comp.name, task.response_content)
+            actor_planning = AgentPlanResponse(actor_comp.name, task.response_content)
             if not gameplay_systems.planning_helper.check_plan(
                 entity, actor_planning, ACTOR_AVAILABLE_ACTIONS_REGISTER
             ):
@@ -191,7 +189,7 @@ class ActorPlanningSystem(ExecuteProcessor):
                     f"ActorPlanningSystem: check_plan failed, {actor_planning}"
                 )
                 ## 需要失忆!
-                self._context._langserve_agent_system.remove_last_conversation_between_human_and_ai(
+                self._context._langserve_agent_system.remove_last_human_ai_conversation(
                     actor_comp.name
                 )
                 continue

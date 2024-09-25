@@ -1,7 +1,7 @@
 from entitas import Entity, Matcher  # type: ignore
 from loguru import logger
 from typing import Any, FrozenSet
-from my_agent.agent_plan_and_action import AgentPlan, AgentAction
+from my_agent.agent_plan import AgentPlanResponse, AgentAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 
 
@@ -18,7 +18,7 @@ def check_component_register(
 
 ######################################################################################################################################
 def check_plan(
-    entity: Entity, plan: AgentPlan, actions_register: FrozenSet[type[Any]]
+    entity: Entity, plan: AgentPlanResponse, actions_register: FrozenSet[type[Any]]
 ) -> bool:
     if len(plan._actions) == 0:
         # 走到这里

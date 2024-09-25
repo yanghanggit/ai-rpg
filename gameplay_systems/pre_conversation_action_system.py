@@ -7,10 +7,7 @@ from gameplay_systems.action_components import (
 )
 from gameplay_systems.components import PlayerComponent, ActorComponent
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from my_agent.agent_task import (
-    AgentTask,
-    AgentTasksGather,
-)
+from my_agent.agent_task import AgentTask
 from typing import Dict, List
 import copy
 from rpg_game.rpg_game import RPGGame
@@ -123,9 +120,7 @@ class PreConversationActionSystem(ReactiveProcessor):
         if len(self._tasks) == 0:
             return
 
-        gather = AgentTasksGather("", [task for task in self._tasks.values()])
-
-        responses = await gather.gather()
+        responses = await AgentTask.gather([task for task in self._tasks.values()])
         if len(responses) == 0:
             self.remove_all()
             return

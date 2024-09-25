@@ -17,8 +17,8 @@ from typing import override, List, Set, Dict, Any
 from loguru import logger
 from extended_systems.files_def import PropFile
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt
-from my_agent.agent_task import AgentTask, AgentTasksGather
-from my_agent.agent_plan_and_action import AgentPlan
+from my_agent.agent_task import AgentTask
+from my_agent.agent_plan import AgentPlanResponse
 from rpg_game.rpg_game import RPGGame
 
 
@@ -91,27 +91,18 @@ def _generate_skill_usage_reasoning_prompt(
     return ret_prompt
 
 
-class SelfSkillUsageCheckResponse(AgentPlan):
+class SelfUsageCheckResponse(AgentPlanResponse):
 
     def __init__(self, name: str, input_str: str) -> None:
         super().__init__(name, input_str)
 
     @property
-    def bool_tag(self) -> bool:
-        tag_action = self.get_by_key(TagAction.__name__)
-        if tag_action is None or len(tag_action.values) == 0:
-            return False
-        return (
-            tag_action.values[0].lower() == "yes"
-            or tag_action.values[0].lower() == "true"
-        )
+    def boolean_value(self) -> bool:
+        return self._parse_boolean(TagAction.__name__)
 
     @property
     def out_come(self) -> str:
-        mind_voice_action = self.get_by_key(MindVoiceAction.__name__)
-        if mind_voice_action is None or len(mind_voice_action.values) == 0:
-            return ""
-        return " ".join(mind_voice_action.values)
+        return self._concatenate_values(MindVoiceAction.__name__)
 
 
 class SelfSkillUsageCheckSystem(ReactiveProcessor):
@@ -160,11 +151,7 @@ class SelfSkillUsageCheckSystem(ReactiveProcessor):
             self.on_remove_all(entities)
             return
 
-        responses = await AgentTasksGather(
-            "",
-            [task for task in tasks.values()],
-        ).gather()
-
+        responses = await AgentTask.gather([task for task in tasks.values()])
         if len(responses) == 0:
             logger.debug(f"phase1_response is None.")
             self.on_remove_all(entities)
@@ -186,11 +173,9 @@ class SelfSkillUsageCheckSystem(ReactiveProcessor):
                 self.on_remove_action(actor_entity)
                 continue
 
-            response_plan = SelfSkillUsageCheckResponse(
-                agent_name, task.response_content
-            )
+            response_plan = SelfUsageCheckResponse(agent_name, task.response_content)
 
-            if not response_plan.bool_tag:
+            if not response_plan.boolean_value:
                 # 失败就不用继续了，直接清除所有的action
                 self.on_remove_action(actor_entity)
 

@@ -10,8 +10,8 @@ from rpg_game.rpg_entitas_context import RPGEntitasContext
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt
 from typing import cast, override, List, Set, Any, Dict, Optional
 from gameplay_systems.check_self_helper import CheckSelfHelper
-from my_agent.agent_task import AgentTask, AgentTasksGather
-from my_agent.agent_plan_and_action import AgentPlan
+from my_agent.agent_task import AgentTask
+from my_agent.agent_plan import AgentPlanResponse
 from extended_systems.files_def import PropFile
 from rpg_game.rpg_game import RPGGame
 from my_data.model_def import PropType
@@ -75,25 +75,18 @@ def _generate_stage_exit_failure_prompt(
 {show_tips}"""
 
 
-class StageDepartureCheckResponse(AgentPlan):
+class StageDepartureResponse(AgentPlanResponse):
 
     def __init__(self, name: str, input_str: str) -> None:
         super().__init__(name, input_str)
 
     @property
     def allow(self) -> bool:
-        tip_action = self.get_by_key(TagAction.__name__)
-        if tip_action is None or len(tip_action.values) == 0:
-            return False
-        first_value = tip_action.values[0].lower()
-        return first_value == "yes" or first_value == "true"
+        return self._parse_boolean(TagAction.__name__)
 
     @property
     def tips(self) -> str:
-        whisper_action = self.get_by_key(WhisperAction.__name__)
-        if whisper_action is None or len(whisper_action.values) == 0:
-            return ""
-        return whisper_action.values[0]
+        return self._concatenate_values(WhisperAction.__name__)
 
 
 ###############################################################################################################################################
@@ -142,10 +135,9 @@ class StageDepartureCheckerSystem(ReactiveProcessor):
         if len(tasks) == 0:
             return
 
-        responses = await AgentTasksGather(
-            "",
+        responses = await AgentTask.gather(
             [task for task in tasks.values()],
-        ).gather()
+        )
 
         if len(responses) == 0:
             self.on_remove_all(entities)
@@ -203,7 +195,7 @@ class StageDepartureCheckerSystem(ReactiveProcessor):
             if stage_agent_task.response_content == "":
                 continue
 
-            response_plan = StageDepartureCheckResponse(
+            response_plan = StageDepartureResponse(
                 stage_agent_task.agent_name, stage_agent_task.response_content
             )
 
@@ -223,7 +215,7 @@ class StageDepartureCheckerSystem(ReactiveProcessor):
 
             else:
 
-                self._context._langserve_agent_system.remove_last_conversation_between_human_and_ai(
+                self._context._langserve_agent_system.remove_last_human_ai_conversation(
                     stage_agent_task.agent_name
                 )
 

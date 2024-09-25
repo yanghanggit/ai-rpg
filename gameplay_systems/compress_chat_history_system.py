@@ -33,10 +33,10 @@ class CompressChatHistorySystem(ExecuteProcessor):
         for entity in entities:
 
             safe_name = self._context.safe_get_entity_name(entity)
-            filters = self._context._langserve_agent_system.filter_chat_history(
+            filters = self._context._langserve_agent_system.filter_messages_by_keywords(
                 safe_name, tags
             )
-            self._context._langserve_agent_system.exclude_chat_history(
+            self._context._langserve_agent_system.filter_chat_history(
                 safe_name, filters
             )
 
@@ -56,7 +56,7 @@ class CompressChatHistorySystem(ExecuteProcessor):
             safename = context.safe_get_entity_name(entity)
             if safename == "":
                 continue
-            context._langserve_agent_system.replace_chat_history(safename, replace_data)
+            context._langserve_agent_system.modify_chat_history(safename, replace_data)
 
 
 ############################################################################################################

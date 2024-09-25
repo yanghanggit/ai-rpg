@@ -6,7 +6,7 @@ import re
 
 ############################################################################################################
 ## 当LLM穿回来的json是重复的错误的时候，可以尝试做合并处理
-def merge(json_str: str) -> Optional[Dict[str, List[str]]]:
+def _merge(json_str: str) -> Optional[Dict[str, List[str]]]:
     try:
         # 清理干净
         _copy = str(json_str).strip()
@@ -54,27 +54,50 @@ def merge(json_str: str) -> Optional[Dict[str, List[str]]]:
 
 ############################################################################################################
 ## 检查是否是“当LLM穿回来的json是重复的错误的时候，可以尝试做合并处理”
-def is_repeat(errorjson: str) -> bool:
+def _is_repeat(errorjson: str) -> bool:
     json_parts = re.split(r"}\s*{", errorjson)
     return len(json_parts) > 1
 
 
 ############################################################################################################
 ## 是否是MD的JSON块
-def is_markdown_json_block(md_json_block: str) -> bool:
-    return "```json" in md_json_block
+def _has_json_block(mark_down_content: str) -> bool:
+    return "```json" in mark_down_content
 
 
 ############################################################################################################
 ## 提取MD的JSON块内容
-def extract_markdown_json_block(jsonblock: str) -> str:
+def _extract_json_block(mark_down_content: str) -> str:
 
-    if "```json" in jsonblock:
-        copyvalue = str(jsonblock).strip()
+    if "```json" in mark_down_content:
+        copyvalue = str(mark_down_content).strip()
         copyvalue = copyvalue.replace("```json", "").replace("```", "").strip()
         return copyvalue
 
-    return jsonblock
+    return mark_down_content
 
 
 ############################################################################################################
+
+
+class PlanResponseFormatJSON:
+
+    def __init__(self, input_str: str) -> None:
+        self._input: str = str(input_str)
+        self._output: str = str(input_str)
+
+    def extract_md_json_block(self) -> "PlanResponseFormatJSON":
+        if _has_json_block(self._output):
+            self._output = _extract_json_block(self._output)
+        return self
+
+    def merge_repeat_json(self) -> "PlanResponseFormatJSON":
+        if _is_repeat(self._output):
+            merge_res = _merge(self._output)
+            if merge_res is not None:
+                self._output = json.dumps(merge_res, ensure_ascii=False)
+        return self
+
+    @property
+    def output(self) -> str:
+        return self._output

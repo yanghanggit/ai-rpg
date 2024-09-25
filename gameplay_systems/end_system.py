@@ -32,7 +32,7 @@ class EndSystem(ExecuteProcessor):
         self.dump_stages_and_actors()
 
         # 打印一下所有的agent信息
-        self._context._langserve_agent_system.dump_chat_history()
+        self._context._langserve_agent_system.dump_chat_histories()
 
         # 打印所有的角色的状态信息（例如属性）
         self.dump_status_profile()

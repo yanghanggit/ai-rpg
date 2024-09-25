@@ -17,8 +17,8 @@ from typing import override, List, cast, Set, Dict, Any
 from loguru import logger
 from extended_systems.files_def import PropFile
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt
-from my_agent.agent_task import AgentTask, AgentTasksGather
-from my_agent.agent_plan_and_action import AgentPlan
+from my_agent.agent_task import AgentTask
+from my_agent.agent_plan import AgentPlanResponse
 from rpg_game.rpg_game import RPGGame
 import extended_systems.file_system_helper
 
@@ -171,7 +171,7 @@ def _generate_rule_prompt(
 
 
 ######################################################################################################################################################
-class WorldSkillRuleResponse(AgentPlan):
+class WorldSkillRuleResponse(AgentPlanResponse):
 
     OPTION_PARAM_NAME: str = "actor_name"
 
@@ -180,18 +180,15 @@ class WorldSkillRuleResponse(AgentPlan):
         self._task: AgentTask = task
 
     @property
-    def result_tag(self) -> str:
-        tip_action = self.get_by_key(TagAction.__name__)
-        if tip_action is None or len(tip_action.values) == 0:
+    def result(self) -> str:
+        action = self.get_action(TagAction.__name__)
+        if action is None or len(action.values) == 0:
             return public_builtin_prompt.ConstantPrompt.FAILURE
-        return tip_action.values[0]
+        return action.values[0]
 
     @property
     def out_come(self) -> str:
-        broadcast_action = self.get_by_key(BroadcastAction.__name__)
-        if broadcast_action is None or len(broadcast_action.values) == 0:
-            return ""
-        return " ".join(broadcast_action.values)
+        return self._concatenate_values(BroadcastAction.__name__)
 
 
 ######################################################################################################################################################
@@ -255,7 +252,7 @@ class WorldSkillRuleSystem(ReactiveProcessor):
             self.on_remove_all(entities)
             return
 
-        responses = await AgentTasksGather("", tasks).gather()
+        responses = await AgentTask.gather(tasks)
         if len(responses) == 0:
             self.on_remove_all(entities)
             return
@@ -277,7 +274,7 @@ class WorldSkillRuleSystem(ReactiveProcessor):
                 self.on_world_skill_system_off_line_event(actor_entity)
                 continue
 
-            match (response_plan.result_tag):
+            match (response_plan.result):
                 case public_builtin_prompt.ConstantPrompt.FAILURE:
                     self.on_world_skill_system_rule_fail_event(
                         actor_entity, response_plan
@@ -298,7 +295,7 @@ class WorldSkillRuleSystem(ReactiveProcessor):
                     self.consume_consumable_props(actor_entity)
 
                 case _:
-                    logger.error(f"Unknown tag: {response_plan.result_tag}")
+                    logger.error(f"Unknown tag: {response_plan.result}")
 
     ######################################################################################################################################################
     def consume_consumable_props(self, entity: Entity) -> None:
@@ -318,7 +315,7 @@ class WorldSkillRuleSystem(ReactiveProcessor):
         entity.replace(
             WorldSkillSystemRuleAction,
             actor_name,
-            [response_plan.result_tag, response_plan.out_come],
+            [response_plan.result, response_plan.out_come],
         )
 
     ######################################################################################################################################################
@@ -446,7 +443,7 @@ class WorldSkillRuleSystem(ReactiveProcessor):
             _generate_rule_success_prompt(
                 self._context.safe_get_entity_name(entity),
                 target_names,
-                world_response_plan.result_tag,
+                world_response_plan.result,
                 self.extract_behavior_sentence(entity),
                 world_response_plan.out_come,
             ),
@@ -460,7 +457,7 @@ class WorldSkillRuleSystem(ReactiveProcessor):
             set({entity}),
             _generate_rule_failure_prompt(
                 self._context.safe_get_entity_name(entity),
-                world_response_plan.result_tag,
+                world_response_plan.result,
                 self.extract_behavior_sentence(entity),
                 world_response_plan.out_come,
             ),

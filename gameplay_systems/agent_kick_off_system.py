@@ -11,10 +11,7 @@ import gameplay_systems.public_builtin_prompt as public_builtin_prompt
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from typing import Dict, Set, FrozenSet, Any, List
-from my_agent.agent_task import (
-    AgentTask,
-    AgentTasksGather,
-)
+from my_agent.agent_task import AgentTask
 from rpg_game.rpg_game import RPGGame
 from extended_systems.files_def import PropFile
 from gameplay_systems.action_components import (
@@ -25,7 +22,7 @@ from gameplay_systems.action_components import (
     StageNarrateAction,
 )
 import gameplay_systems.planning_helper
-from my_agent.agent_plan_and_action import AgentPlan
+from my_agent.agent_plan import AgentPlanResponse
 from gameplay_systems.action_components import UpdateAppearanceAction
 
 
@@ -148,8 +145,7 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
         if len(self._tasks) == 0:
             return
 
-        gather = AgentTasksGather("", [task for task in self._tasks.values()])
-        responses = await gather.gather()
+        responses = await AgentTask.gather([task for task in self._tasks.values()])
         if len(responses) == 0:
             return
 
@@ -264,7 +260,7 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
             if name in self._world_tasks:
                 continue
 
-            agent_planning = AgentPlan(name, task.response_content)
+            agent_planning = AgentPlanResponse(name, task.response_content)
             entity = self._context.get_actor_entity(
                 name
             ) or self._context.get_stage_entity(name)
@@ -279,7 +275,7 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
                     f"ActorPlanningSystem: check_plan failed, {agent_planning}"
                 )
                 ## 需要失忆!
-                self._context._langserve_agent_system.remove_last_conversation_between_human_and_ai(
+                self._context._langserve_agent_system.remove_last_human_ai_conversation(
                     name
                 )
                 continue

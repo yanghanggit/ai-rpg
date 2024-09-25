@@ -48,8 +48,6 @@ def make_target_and_message(
 
 
 #################################################################################################################################
-
-
 def target_and_message_values(
     values: List[str], symbol1: str = "@", symbol2: str = ">"
 ) -> List[tuple[str, str]]:

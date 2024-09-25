@@ -7,7 +7,7 @@ from gameplay_systems.action_components import (
     StageNarrateAction,
     TagAction,
 )
-from my_agent.agent_plan_and_action import AgentPlan
+from my_agent.agent_plan import AgentPlanResponse
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from typing import Dict, List
@@ -16,7 +16,6 @@ from extended_systems.files_def import PropFile
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt
 from my_agent.agent_task import (
     AgentTask,
-    AgentTasksGather,
 )
 from rpg_game.rpg_game import RPGGame
 
@@ -98,8 +97,7 @@ class StagePlanningSystem(ExecuteProcessor):
         if len(self._tasks) == 0:
             return
 
-        gather = AgentTasksGather("", [task for task in self._tasks.values()])
-        responses = await gather.gather()
+        responses = await AgentTask.gather([task for task in self._tasks.values()])
         if len(responses) == 0:
             logger.warning(f"StagePlanningSystem: request_result is empty.")
             return
@@ -127,7 +125,7 @@ class StagePlanningSystem(ExecuteProcessor):
                 logger.warning(f"StagePlanningSystem: stage_entity is None, {name}")
                 continue
 
-            stage_planning = AgentPlan(name, task.response_content)
+            stage_planning = AgentPlanResponse(name, task.response_content)
             if not gameplay_systems.planning_helper.check_plan(
                 stage_entity, stage_planning, STAGE_AVAILABLE_ACTIONS_REGISTER
             ):
@@ -135,7 +133,7 @@ class StagePlanningSystem(ExecuteProcessor):
                     f"StagePlanningSystem: check_plan failed, {stage_planning}"
                 )
                 ## 需要失忆!
-                self._context._langserve_agent_system.remove_last_conversation_between_human_and_ai(
+                self._context._langserve_agent_system.remove_last_human_ai_conversation(
                     name
                 )
                 continue

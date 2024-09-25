@@ -19,7 +19,7 @@ from typing import override, List, cast, Optional, Set
 from extended_systems.files_def import PropFile
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt
 from my_agent.agent_task import AgentTask
-from my_agent.agent_plan_and_action import AgentPlan
+from my_agent.agent_plan import AgentPlanResponse
 import my_format_string.target_and_message_format_string
 import my_format_string.attrs_format_string
 from rpg_game.rpg_game import RPGGame
@@ -89,14 +89,14 @@ def _generate_skill_event_notification_prompt(
 
 
 ################################################################################################################################################
-class SkillFeedbackAgentResponse(AgentPlan):
+class SkillFeedbackResponse(AgentPlanResponse):
 
     @property
     def feedback(self) -> str:
-        broadcast_action = self.get_by_key(BroadcastAction.__name__)
-        if broadcast_action is None or len(broadcast_action.values) == 0:
-            return ""
-        return " ".join(broadcast_action.values)
+        return self._concatenate_values(BroadcastAction.__name__)
+
+
+################################################################################################################################################
 
 
 class ApplySkillEffectSystem(ReactiveProcessor):
@@ -156,7 +156,7 @@ class ApplySkillEffectSystem(ReactiveProcessor):
             self.calculate_and_add_action(entity, target)
 
             # 场景事件
-            response_plan = SkillFeedbackAgentResponse(
+            response_plan = SkillFeedbackResponse(
                 task.agent_name, task.response_content
             )
             self.on_broadcast_skill_event(entity, target, response_plan.feedback)

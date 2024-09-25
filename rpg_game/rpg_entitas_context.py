@@ -194,7 +194,7 @@ class RPGEntitasContext(Context):
             logger.error("实体没有名字，无法添加记忆")
             return False
 
-        self._langserve_agent_system.add_human_message_to_chat_history(
+        self._langserve_agent_system.append_human_message_to_chat_history(
             name, message_content
         )
         return True
@@ -213,7 +213,7 @@ class RPGEntitasContext(Context):
             logger.error("实体没有名字，无法添加记忆")
             return False
 
-        self._langserve_agent_system.add_ai_message_to_chat_history(
+        self._langserve_agent_system.append_ai_message_to_chat_history(
             name, message_content
         )
         return True
@@ -385,7 +385,7 @@ class RPGEntitasContext(Context):
             )
 
             #
-            self._langserve_agent_system.add_human_message_to_chat_history(
+            self._langserve_agent_system.append_human_message_to_chat_history(
                 safe_name, replace_message
             )
 

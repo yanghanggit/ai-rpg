@@ -29,7 +29,7 @@ from gameplay_systems.components import (
     PlayerComponent,
     PlanningAllowedComponent,
 )
-from gameplay_systems.check_self_helper import CheckSelfHelper
+from gameplay_systems.check_self_helper import SelfChecker
 import gameplay_systems.actor_planning_system
 from player.player_command import (
     PlayerGoTo,
@@ -263,12 +263,12 @@ def gen_player_check_message(game_name: RPGGame, player_proxy: PlayerProxy) -> s
         player_entity
     )
 
-    check_self = CheckSelfHelper(game_name._entitas_context, player_entity)
+    check_self = SelfChecker(game_name._entitas_context, player_entity)
     health = check_self.health * 100
 
     actor_props_prompt = (
         gameplay_systems.actor_planning_system._generate_actor_props_prompts(
-            check_self._categorized_prop_files
+            check_self._category_prop_files
         )
     )
 

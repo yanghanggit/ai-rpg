@@ -21,7 +21,7 @@ from gameplay_systems.action_components import (
     TagAction,
     StageNarrateAction,
 )
-import gameplay_systems.planning_helper
+import gameplay_systems.action_helper
 from my_agent.agent_plan import AgentPlanResponse
 from gameplay_systems.action_components import UpdateAppearanceAction
 
@@ -268,8 +268,8 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
                 logger.warning(f"ActorPlanningSystem: entity is None, {name}")
                 continue
 
-            if not gameplay_systems.planning_helper.check_plan(
-                entity, agent_planning, self.get_actions_register(name)
+            if not gameplay_systems.action_helper.validate_actions(
+                agent_planning, self.get_actions_register(name)
             ):
                 logger.warning(
                     f"ActorPlanningSystem: check_plan failed, {agent_planning}"
@@ -282,7 +282,7 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
 
             ## 不能停了，只能一直继续
             for action in agent_planning._actions:
-                gameplay_systems.planning_helper.add_action_component(
+                gameplay_systems.action_helper.add_action(
                     entity, action, self.get_actions_register(name)
                 )
 

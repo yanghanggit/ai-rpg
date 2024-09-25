@@ -74,10 +74,10 @@ class StealActionSystem(ReactiveProcessor):
         for tp in target_and_message:
 
             if (
-                gameplay_systems.conversation_helper.check_conversation(
+                gameplay_systems.conversation_helper.validate_conversation(
                     self._context, entity, tp[0]
                 )
-                != gameplay_systems.conversation_helper.ErrorConversation.VALID
+                != gameplay_systems.conversation_helper.ConversationError.VALID
             ):
                 # 不能交谈就是不能偷
                 continue

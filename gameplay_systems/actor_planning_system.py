@@ -17,13 +17,13 @@ from my_agent.agent_plan import AgentPlanResponse
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from typing import Dict, Set, List, Optional
-import gameplay_systems.planning_helper
+import gameplay_systems.action_helper
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt
 from my_agent.agent_task import (
     AgentTask,
 )
 from rpg_game.rpg_game import RPGGame
-from gameplay_systems.check_self_helper import CheckSelfHelper
+from gameplay_systems.check_self_helper import SelfChecker
 from extended_systems.files_def import PropFile
 from my_data.model_def import PropType
 
@@ -182,8 +182,8 @@ class ActorPlanningSystem(ExecuteProcessor):
 
             actor_comp = entity.get(ActorComponent)
             actor_planning = AgentPlanResponse(actor_comp.name, task.response_content)
-            if not gameplay_systems.planning_helper.check_plan(
-                entity, actor_planning, ACTOR_AVAILABLE_ACTIONS_REGISTER
+            if not gameplay_systems.action_helper.validate_actions(
+                actor_planning, ACTOR_AVAILABLE_ACTIONS_REGISTER
             ):
                 logger.warning(
                     f"ActorPlanningSystem: check_plan failed, {actor_planning}"
@@ -196,7 +196,7 @@ class ActorPlanningSystem(ExecuteProcessor):
 
             ## 不能停了，只能一直继续
             for action in actor_planning._actions:
-                gameplay_systems.planning_helper.add_action_component(
+                gameplay_systems.action_helper.add_action(
                     entity, action, ACTOR_AVAILABLE_ACTIONS_REGISTER
                 )
 
@@ -218,7 +218,7 @@ class ActorPlanningSystem(ExecuteProcessor):
             if agent is None:
                 continue
 
-            check_self = CheckSelfHelper(self._context, actor_entity)
+            check_self = SelfChecker(self._context, actor_entity)
             actors_appearance = self._context.get_appearance_in_stage(actor_entity)
             actors_appearance.pop(actor_comp.name, None)  # 自己不要
 
@@ -232,7 +232,7 @@ class ActorPlanningSystem(ExecuteProcessor):
                     props_in_stage=self.get_stage_props(actor_entity),
                     info_of_actors_in_stage=actors_appearance,
                     health=check_self.health,
-                    actor_props=check_self._categorized_prop_files,
+                    actor_props=check_self._category_prop_files,
                     current_weapon=check_self._current_weapon,
                     current_clothes=check_self._current_clothes,
                 ),

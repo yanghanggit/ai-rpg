@@ -6,44 +6,41 @@ from rpg_game.rpg_entitas_context import RPGEntitasContext
 
 
 ######################################################################################################################################
-def check_component_register(
-    class_name: str, actions_register: FrozenSet[type[Any]]
+def retrieve_registered_component(
+    class_name: str, registered_components: FrozenSet[type[Any]]
 ) -> Any:
-    for component in actions_register:
+    for component in registered_components:
         if class_name == component.__name__:
             return component
-    logger.warning(f"{class_name}不在{actions_register}中")
+    logger.warning(f"{class_name}不在{registered_components}中")
     return None
 
 
 ######################################################################################################################################
-def check_plan(
-    entity: Entity, plan: AgentPlanResponse, actions_register: FrozenSet[type[Any]]
+def validate_actions(
+    plan_response: AgentPlanResponse,
+    registered_actions: FrozenSet[type[Any]],
 ) -> bool:
-    if len(plan._actions) == 0:
+    if len(plan_response._actions) == 0:
         # 走到这里
         logger.warning(f"走到这里就是request过了，但是格式在load json的时候出了问题")
         return False
 
-    for action in plan._actions:
-        if not check_available(action, actions_register):
-            logger.warning(f"ActorPlanningSystem: action is not correct, {action}")
+    for action in plan_response._actions:
+        if (
+            retrieve_registered_component(action.action_name, registered_actions)
+            is None
+        ):
+            logger.warning(f"action is not correct, {action}")
             return False
     return True
 
 
 #######################################################################################################################################
-def check_available(
-    action: AgentAction, actions_register: FrozenSet[type[Any]]
-) -> bool:
-    return check_component_register(action.action_name, actions_register) is not None
-
-
-#######################################################################################################################################
-def add_action_component(
-    entity: Entity, action: AgentAction, actions_register: FrozenSet[type[Any]]
+def add_action(
+    entity: Entity, action: AgentAction, registered_actions: FrozenSet[type[Any]]
 ) -> None:
-    comp_class = check_component_register(action.action_name, actions_register)
+    comp_class = retrieve_registered_component(action.action_name, registered_actions)
     if comp_class is None:
         return
     if not entity.has(comp_class):
@@ -51,14 +48,12 @@ def add_action_component(
 
 
 ######################################################################################################################################
-def remove_all(
-    context: RPGEntitasContext, actions_register: FrozenSet[type[Any]]
+def remove_actions(
+    context: RPGEntitasContext, registered_actions: FrozenSet[type[Any]]
 ) -> None:
-    action_entities = context.get_group(
-        Matcher(any_of=actions_register)
-    ).entities.copy()
-    for entity in action_entities:
-        for action_class in actions_register:
+    entities = context.get_group(Matcher(any_of=registered_actions)).entities.copy()
+    for entity in entities:
+        for action_class in registered_actions:
             if entity.has(action_class):
                 entity.remove(action_class)
 

@@ -11,7 +11,7 @@ from my_agent.agent_plan import AgentPlanResponse
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from typing import Dict, List
-import gameplay_systems.planning_helper
+import gameplay_systems.action_helper
 from extended_systems.files_def import PropFile
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt
 from my_agent.agent_task import (
@@ -126,8 +126,8 @@ class StagePlanningSystem(ExecuteProcessor):
                 continue
 
             stage_planning = AgentPlanResponse(name, task.response_content)
-            if not gameplay_systems.planning_helper.check_plan(
-                stage_entity, stage_planning, STAGE_AVAILABLE_ACTIONS_REGISTER
+            if not gameplay_systems.action_helper.validate_actions(
+                stage_planning, STAGE_AVAILABLE_ACTIONS_REGISTER
             ):
                 logger.warning(
                     f"StagePlanningSystem: check_plan failed, {stage_planning}"
@@ -140,7 +140,7 @@ class StagePlanningSystem(ExecuteProcessor):
 
             ## 不能停了，只能一直继续
             for action in stage_planning._actions:
-                gameplay_systems.planning_helper.add_action_component(
+                gameplay_systems.action_helper.add_action(
                     stage_entity, action, STAGE_AVAILABLE_ACTIONS_REGISTER
                 )
 

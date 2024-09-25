@@ -5,7 +5,7 @@ from gameplay_systems.action_components import (
     STAGE_AVAILABLE_ACTIONS_REGISTER,
     ACTOR_AVAILABLE_ACTIONS_REGISTER,
 )
-import gameplay_systems.planning_helper
+import gameplay_systems.action_helper
 from rpg_game.rpg_game import RPGGame
 
 
@@ -23,7 +23,9 @@ class PostActionSystem(ExecuteProcessor):
             ACTOR_AVAILABLE_ACTIONS_REGISTER | STAGE_AVAILABLE_ACTIONS_REGISTER
         )
 
-        gameplay_systems.planning_helper.remove_all(self._context, all_actions_register)
+        gameplay_systems.action_helper.remove_actions(
+            self._context, all_actions_register
+        )
         self.test()
 
     ############################################################################################################

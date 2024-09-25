@@ -17,16 +17,16 @@ class ActorPlanningStrategySystem(InitializeProcessor, ExecuteProcessor):
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         self._context: RPGEntitasContext = context
         self._game: RPGGame = rpg_game
-        self._order_queue: Dict[str, Queue[str]] = {}
+        self._order_queues: Dict[str, Queue[str]] = {}
 
     ############################################################################################################
     @override
     def initialize(self) -> None:
 
-        self._order_queue.clear()
+        self._order_queues.clear()
         stage_entities = self._context.get_group(Matcher(StageComponent)).entities
         for stage_entity in stage_entities:
-            self.extend_order_queue(self._order_queue, stage_entity, [])
+            self.extend_order_queue(self._order_queues, stage_entity, [])
 
     ############################################################################################################
     @override
@@ -51,7 +51,7 @@ class ActorPlanningStrategySystem(InitializeProcessor, ExecuteProcessor):
 
             stage_comp = stage_entity.get(StageComponent)
             self.extend_order_queue(
-                self._order_queue,
+                self._order_queues,
                 stage_entity,
                 recent_stage_transition_actors.get(stage_comp.name, []),
             )
@@ -65,13 +65,13 @@ class ActorPlanningStrategySystem(InitializeProcessor, ExecuteProcessor):
         for stage_entity in stage_entities:
 
             pop_actor_entity = self.pop_first_executable_actor_from_order_queue(
-                self._order_queue, stage_entity
+                self._order_queues, stage_entity
             )
             if pop_actor_entity is None:
                 # try to fill again
-                self.extend_order_queue(self._order_queue, stage_entity, [])
+                self.extend_order_queue(self._order_queues, stage_entity, [])
                 pop_actor_entity = self.pop_first_executable_actor_from_order_queue(
-                    self._order_queue, stage_entity
+                    self._order_queues, stage_entity
                 )
 
             if pop_actor_entity is None:
@@ -98,7 +98,7 @@ class ActorPlanningStrategySystem(InitializeProcessor, ExecuteProcessor):
             actor_names = actor_names - set(append_recent_stage_transition_actors)
 
         # step2: 重建一组新的
-        dq = order_queue.get(stage_name, Queue[str]())
+        dq = order_queue.setdefault(stage_name, Queue[str]())
         for actor_name in actor_names:
             dq.put(actor_name)
 
@@ -134,7 +134,7 @@ class ActorPlanningStrategySystem(InitializeProcessor, ExecuteProcessor):
     ) -> Optional[Entity]:
 
         stage_name = cast(str, stage_entity.get(StageComponent).name)
-        order_queue_list = order_queue.get(stage_name, Queue[str]())
+        order_queue_list = order_queue.setdefault(stage_name, Queue[str]())
         while not order_queue_list.empty():
             actor_name = order_queue_list.get()
             actor_entity = self._context.get_actor_entity(actor_name)

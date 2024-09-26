@@ -1,12 +1,12 @@
 from typing import List, Dict, Any, Optional, cast
 import json
-from loguru import logger
 import re
 
 
 ############################################################################################################
 ## 当LLM穿回来的json是重复的错误的时候，可以尝试做合并处理
 def _merge(json_str: str) -> Optional[Dict[str, List[str]]]:
+
     try:
         # 清理干净
         _copy = str(json_str).strip()
@@ -47,8 +47,8 @@ def _merge(json_str: str) -> Optional[Dict[str, List[str]]]:
         return cast(Dict[str, List[str]], merged_json)
 
     except Exception as e:
-        logger.error(f"merge_json_strings failed. {e}")
-        # return None
+        pass
+
     return None
 
 
@@ -86,12 +86,12 @@ class PlanResponseFormatJSON:
         self._input: str = str(input_str)
         self._output: str = str(input_str)
 
-    def extract_md_json_block(self) -> "PlanResponseFormatJSON":
+    def extract_json_block(self) -> "PlanResponseFormatJSON":
         if _has_json_block(self._output):
             self._output = _extract_json_block(self._output)
         return self
 
-    def merge_repeat_json(self) -> "PlanResponseFormatJSON":
+    def merge_repeat(self) -> "PlanResponseFormatJSON":
         if _is_repeat(self._output):
             merge_res = _merge(self._output)
             if merge_res is not None:

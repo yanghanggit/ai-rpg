@@ -4,7 +4,7 @@ from overrides import override
 import time
 from typing import Any, cast
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-import rpg_game.rpg_entitas_builtin_world_system as builtin_world_systems
+from rpg_game.rpg_game_config import RPGGameConfig
 
 
 class RPGEntitasProcessors(Processors):
@@ -14,8 +14,12 @@ class RPGEntitasProcessors(Processors):
 
         ### 不这样就循环引用
         from rpg_game.rpg_game import RPGGame
-        from gameplay_systems.stage_planning_system import StagePlanningSystem
-        from gameplay_systems.actor_planning_system import ActorPlanningSystem
+        from gameplay_systems.stage_planning_execution_system import (
+            StagePlanningExecutionSystem,
+        )
+        from gameplay_systems.actor_planning_execution_system import (
+            ActorPlanningExecutionSystem,
+        )
         from gameplay_systems.speak_action_system import SpeakActionSystem
         from gameplay_systems.go_to_action_system import GoToActionSystem
         from gameplay_systems.stage_validator_system import StageValidatorSystem
@@ -115,7 +119,7 @@ class RPGEntitasProcessors(Processors):
             UpdateAppearanceActionSystem(
                 context,
                 rpg_game,
-                builtin_world_systems.WORLD_APPEARANCE_SYSTEM_NAME,
+                RPGGameConfig.WORLD_APPEARANCE_SYSTEM_NAME,
             )
         )  ### 更新外观
 
@@ -136,7 +140,7 @@ class RPGEntitasProcessors(Processors):
         processors.add(SelfSkillUsageCheckSystem(context, rpg_game))
         processors.add(
             WorldSkillRuleSystem(
-                context, rpg_game, builtin_world_systems.WORLD_SKILL_SYSTEM_NAME
+                context, rpg_game, RPGGameConfig.WORLD_SKILL_SYSTEM_NAME
             )
         )
 
@@ -156,7 +160,7 @@ class RPGEntitasProcessors(Processors):
             UpdateAppearanceActionSystem(
                 context,
                 rpg_game,
-                builtin_world_systems.WORLD_APPEARANCE_SYSTEM_NAME,
+                RPGGameConfig.WORLD_APPEARANCE_SYSTEM_NAME,
             )
         )  ### 更新外观
 
@@ -191,8 +195,8 @@ class RPGEntitasProcessors(Processors):
         processors.add(StagePlanningStrategySystem(context, rpg_game))
         processors.add(ActorPlanningStrategySystem(context, rpg_game))
 
-        processors.add(StagePlanningSystem(context, rpg_game))
-        processors.add(ActorPlanningSystem(context, rpg_game))
+        processors.add(StagePlanningExecutionSystem(context, rpg_game))
+        processors.add(ActorPlanningExecutionSystem(context, rpg_game))
         processors.add(PostPlanningSystem(context, rpg_game))  ####### 在所有规划之后!
 
         ## 第一次抓可以被player看到的信息

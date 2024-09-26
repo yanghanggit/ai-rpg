@@ -27,8 +27,8 @@ class AgentPlanResponse:
         # GPT4 也有可能输出重复的json。我们合并一下。有可能上面的json block的错误也犯了，所以放到第二个步骤来做
         fmt_string = (
             PlanResponseFormatJSON(response_content)
-            .extract_md_json_block()
-            .merge_repeat_json()
+            .extract_json_block()
+            .merge_repeat()
             .output
         )
 

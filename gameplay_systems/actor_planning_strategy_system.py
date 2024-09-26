@@ -8,12 +8,14 @@ from gameplay_systems.components import (
     EnterStageComponent,
 )
 from rpg_game.rpg_game import RPGGame
-from typing import List, Dict, Optional, cast
+from typing import List, Dict, Optional, cast, final
 from queue import Queue
 
 
+@final
 class ActorPlanningStrategySystem(InitializeProcessor, ExecuteProcessor):
 
+    @override
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         self._context: RPGEntitasContext = context
         self._game: RPGGame = rpg_game
@@ -26,22 +28,22 @@ class ActorPlanningStrategySystem(InitializeProcessor, ExecuteProcessor):
         self._order_queues.clear()
         stage_entities = self._context.get_group(Matcher(StageComponent)).entities
         for stage_entity in stage_entities:
-            self.extend_order_queue(self._order_queues, stage_entity, [])
+            self._extend_order_queue(self._order_queues, stage_entity, [])
 
     ############################################################################################################
     @override
     def execute(self) -> None:
         # 如果有最近的舞台转换，就处理
-        self.handle_recent_stage_transition_actors()
+        self._handle_recent_stage_transition_actors()
         # 添加自动规划组件
-        self.handle_add_auto_planning_component()
+        self._handle_add_planning_component()
         # 删除
-        self.handle_remove_enter_stage_component()
+        self._handle_remove_enter_stage_component()
 
     ############################################################################################################
-    def handle_recent_stage_transition_actors(self) -> None:
+    def _handle_recent_stage_transition_actors(self) -> None:
         recent_stage_transition_actors: Dict[str, List[str]] = (
-            self.analyze_recent_stage_transition_actors()
+            self._analyze_recent_stage_transition_actors()
         )
         if len(recent_stage_transition_actors) == 0:
             return
@@ -50,27 +52,27 @@ class ActorPlanningStrategySystem(InitializeProcessor, ExecuteProcessor):
         for stage_entity in stage_entities:
 
             stage_comp = stage_entity.get(StageComponent)
-            self.extend_order_queue(
+            self._extend_order_queue(
                 self._order_queues,
                 stage_entity,
                 recent_stage_transition_actors.get(stage_comp.name, []),
             )
 
     ############################################################################################################
-    def handle_add_auto_planning_component(self) -> None:
+    def _handle_add_planning_component(self) -> None:
         stage_entities = self._context.get_group(
             Matcher(StageComponent, PlanningAllowedComponent)
         ).entities
 
         for stage_entity in stage_entities:
 
-            pop_actor_entity = self.pop_first_executable_actor_from_order_queue(
+            pop_actor_entity = self._pop_first_executable_actor_from_order_queue(
                 self._order_queues, stage_entity
             )
             if pop_actor_entity is None:
                 # try to fill again
-                self.extend_order_queue(self._order_queues, stage_entity, [])
-                pop_actor_entity = self.pop_first_executable_actor_from_order_queue(
+                self._extend_order_queue(self._order_queues, stage_entity, [])
+                pop_actor_entity = self._pop_first_executable_actor_from_order_queue(
                     self._order_queues, stage_entity
                 )
 
@@ -83,7 +85,7 @@ class ActorPlanningStrategySystem(InitializeProcessor, ExecuteProcessor):
                 pop_actor_entity.add(PlanningAllowedComponent, actor_comp.name)
 
     ############################################################################################################
-    def extend_order_queue(
+    def _extend_order_queue(
         self,
         order_queue: Dict[str, Queue[str]],
         stage_entity: Entity,
@@ -107,7 +109,7 @@ class ActorPlanningStrategySystem(InitializeProcessor, ExecuteProcessor):
             dq.put(actor_name)
 
     ############################################################################################################
-    def analyze_recent_stage_transition_actors(self) -> Dict[str, List[str]]:
+    def _analyze_recent_stage_transition_actors(self) -> Dict[str, List[str]]:
         ret: Dict[str, List[str]] = {}
 
         actor_entities = self._context.get_group(Matcher(EnterStageComponent)).entities
@@ -121,7 +123,7 @@ class ActorPlanningStrategySystem(InitializeProcessor, ExecuteProcessor):
         return ret
 
     ############################################################################################################
-    def handle_remove_enter_stage_component(self) -> None:
+    def _handle_remove_enter_stage_component(self) -> None:
         actor_entities = self._context.get_group(
             Matcher(EnterStageComponent)
         ).entities.copy()
@@ -129,7 +131,7 @@ class ActorPlanningStrategySystem(InitializeProcessor, ExecuteProcessor):
             actor_entity.remove(EnterStageComponent)
 
     ############################################################################################################
-    def pop_first_executable_actor_from_order_queue(
+    def _pop_first_executable_actor_from_order_queue(
         self, order_queue: Dict[str, Queue[str]], stage_entity: Entity
     ) -> Optional[Entity]:
 

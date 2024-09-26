@@ -10,7 +10,7 @@ from gameplay_systems.action_components import (
 from my_agent.agent_plan import AgentPlanResponse
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
-from typing import Dict, List
+from typing import Dict, List, final
 import gameplay_systems.action_helper
 from extended_systems.files_def import PropFile
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt
@@ -68,11 +68,10 @@ def _generate_stage_plan_prompt(
 
 
 #######################################################################################################################################
-class StagePlanningSystem(ExecuteProcessor):
-    """
-    场景计划系统
-    """
+@final
+class StagePlanningExecutionSystem(ExecuteProcessor):
 
+    @override
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         self._context: RPGEntitasContext = context
         self._game: RPGGame = rpg_game
@@ -88,7 +87,7 @@ class StagePlanningSystem(ExecuteProcessor):
     async def a_execute1(self) -> None:
         # step1: 添加任务
         self._tasks.clear()
-        self.fill_tasks(self._tasks)
+        self._fill_tasks(self._tasks)
         # step可选：混沌工程做测试
         self._context._chaos_engineering_system.on_stage_planning_system_excute(
             self._context
@@ -103,11 +102,11 @@ class StagePlanningSystem(ExecuteProcessor):
             return
 
         # step3: 处理结果
-        self.handle(self._tasks)
+        self._handle_tasks(self._tasks)
         self._tasks.clear()
 
     #######################################################################################################################################
-    def handle(self, request_tasks: Dict[str, AgentTask]) -> None:
+    def _handle_tasks(self, request_tasks: Dict[str, AgentTask]) -> None:
 
         for name, task in request_tasks.items():
 
@@ -145,7 +144,7 @@ class StagePlanningSystem(ExecuteProcessor):
                 )
 
     #######################################################################################################################################
-    def fill_tasks(self, out_put_request_tasks: Dict[str, AgentTask]) -> None:
+    def _fill_tasks(self, out_put_request_tasks: Dict[str, AgentTask]) -> None:
         out_put_request_tasks.clear()
 
         stage_entities = self._context.get_group(

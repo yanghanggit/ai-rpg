@@ -1,19 +1,18 @@
-from entitas import InitializeProcessor, ExecuteProcessor, Matcher, Entity  # type: ignore
+from entitas import ExecuteProcessor, Matcher  # type: ignore
 from overrides import override
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from loguru import logger
 from gameplay_systems.components import (
     PlanningAllowedComponent,
     StageComponent,
-    ActorComponent,
-    EnterStageComponent,
 )
 from rpg_game.rpg_game import RPGGame
-from typing import List, Dict, Optional, cast
+from typing import final
 
 
+@final
 class StagePlanningStrategySystem(ExecuteProcessor):
 
+    @override
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         self._context: RPGEntitasContext = context
         self._game: RPGGame = rpg_game

@@ -1,5 +1,4 @@
-from typing import Optional, List
-from loguru import logger
+from typing import List
 
 
 def from_int_attrs_to_string(values: List[int], symbol: str = ",") -> str:

@@ -81,6 +81,9 @@ class LangServeAgentSystem:
             return []
 
         chat_history = agent._chat_history
+        if len(chat_history) == 0:
+            return []
+
         if not isinstance(chat_history[-1], AIMessage):
             ## 最后一次不是AI的回答，就跳出，因为可能是有问题的。ai还没有回答，只有人的问题
             return []

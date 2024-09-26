@@ -30,7 +30,7 @@ from gameplay_systems.components import (
     PlanningAllowedComponent,
 )
 from gameplay_systems.check_self_helper import SelfChecker
-import gameplay_systems.actor_planning_system
+import gameplay_systems.actor_planning_execution_system
 from player.player_command import (
     PlayerGoTo,
     PlayerBroadcast,
@@ -44,9 +44,7 @@ from player.player_command import (
     PlayerKill,
 )
 import datetime
-
-# todo
-GAME_SAMPLE_RUNTIME_DIR = Path("game_sample/gen_runtimes")
+from rpg_game.rpg_game_config import RPGGameConfig
 
 
 #######################################################################################################################################
@@ -73,7 +71,7 @@ def _load_game_resource_file(file_path: Path, version: str) -> Any:
 #######################################################################################################################################
 def _create_game_resource(game_name: str, version: str) -> Optional[GameResource]:
 
-    root_runtime_dir = GAME_SAMPLE_RUNTIME_DIR
+    root_runtime_dir = Path(RPGGameConfig.GAME_SAMPLE_RUNTIME_DIR)
     root_runtime_dir.mkdir(parents=True, exist_ok=True)
 
     game_resource_file_path = root_runtime_dir / f"{game_name}.json"
@@ -267,7 +265,7 @@ def gen_player_check_message(game_name: RPGGame, player_proxy: PlayerProxy) -> s
     health = check_self.health * 100
 
     actor_props_prompt = (
-        gameplay_systems.actor_planning_system._generate_actor_props_prompts(
+        gameplay_systems.actor_planning_execution_system._generate_actor_props_prompts(
             check_self._category_prop_files
         )
     )

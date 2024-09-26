@@ -1,5 +1,4 @@
 from typing import Optional, List
-from loguru import logger
 
 
 #################################################################################################################################
@@ -62,7 +61,7 @@ def target_and_message_values(
         target: Optional[str] = tp[0]
         message: Optional[str] = tp[1]
         if target is None or message is None:
-            logger.error(f"target is None: {value}")
+            # logger.error(f"target is None: {value}")
             continue
 
         result.append((target, message))

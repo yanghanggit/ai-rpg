@@ -70,7 +70,7 @@ class DamageActionSystem(ReactiveProcessor):
 
         for val in damage_action.values:
             target_and_message = my_format_string.target_and_message_format_string.parse_target_and_message(
-                cast(str, val)
+                val
             )
             if target_and_message[0] is None or target_and_message[1] is None:
                 continue
@@ -197,7 +197,7 @@ class DamageActionSystem(ReactiveProcessor):
 
         # 基础防御力
         rpg_attr_comp = entity.get(RPGAttributesComponent)
-        final += cast(int, rpg_attr_comp.defense)
+        final += rpg_attr_comp.defense
 
         # 计算衣服带来的防御力
         if entity.has(RPGCurrentClothesComponent):

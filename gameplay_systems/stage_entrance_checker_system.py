@@ -279,7 +279,7 @@ class StageEntranceCheckerSystem(ReactiveProcessor):
         if not actor_entity.has(AppearanceComponent):
             return ""
         appearance_comp = actor_entity.get(AppearanceComponent)
-        return cast(str, appearance_comp.appearance)
+        return appearance_comp.appearance
 
     ###############################################################################################################################################
     def get_actor_props(self, actor_entity: Entity) -> List[PropFile]:

@@ -167,7 +167,7 @@ class ApplySkillEffectSystem(ReactiveProcessor):
         behavior_action = entity.get(BehaviorAction)
         if behavior_action is None or len(behavior_action.values) == 0:
             return ""
-        return cast(str, behavior_action.values[0])
+        return behavior_action.values[0]
 
     ######################################################################################################################################################
     def extract_targets(self, entity: Entity) -> Set[Entity]:
@@ -279,7 +279,7 @@ class ApplySkillEffectSystem(ReactiveProcessor):
                 [],
             )
 
-        cast(List[str], target.get(DamageAction).values).append(
+        target.get(DamageAction).values.append(
             my_format_string.target_and_message_format_string.make_target_and_message(
                 self._context.safe_get_entity_name(entity),
                 my_format_string.attrs_format_string.from_int_attrs_to_string(
@@ -372,8 +372,9 @@ class ApplySkillEffectSystem(ReactiveProcessor):
         if len(world_skill_system_rule_action.values) < 2:
             return "", ""
         # [response_plan.result_tag, response_plan.out_come]
-        return cast(str, world_skill_system_rule_action.values[0]), cast(
-            str, world_skill_system_rule_action.values[1]
+        return (
+            world_skill_system_rule_action.values[0],
+            world_skill_system_rule_action.values[1],
         )
 
     ######################################################################################################################################################

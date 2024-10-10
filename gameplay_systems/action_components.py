@@ -1,49 +1,109 @@
-from collections import namedtuple
-from typing import Any, FrozenSet
+from typing import Any, FrozenSet, NamedTuple, List
 
-################################################ 动作组件： ####################################################################################
+
+class ActionComponent(NamedTuple):
+    name: str
+    values: List[str]
+
+
 # 场景环境的描述
-StageNarrateAction = namedtuple("StageNarrateAction", "name values")
+class StageNarrateAction(ActionComponent):
+    pass
+
+
 # 内心独白
-MindVoiceAction = namedtuple("MindVoiceAction", "name values")
+class MindVoiceAction(ActionComponent):
+    pass
+
+
 # 场景内广播
-BroadcastAction = namedtuple("BroadcastAction", "name values")
+class BroadcastAction(ActionComponent):
+    pass
+
+
 # 私下交流
-WhisperAction = namedtuple("WhisperAction", "name values")
+class WhisperAction(ActionComponent):
+    pass
+
+
 # 对谁说（场景内其他角色能听到）
-SpeakAction = namedtuple("SpeakAction", "name values")
+class SpeakAction(ActionComponent):
+    pass
+
+
 # 标签
-TagAction = namedtuple("TagAction", "name values")
+class TagAction(ActionComponent):
+    pass
+
+
 # 死亡
-DeadAction = namedtuple("DeadAction", "name values")
+class DeadAction(ActionComponent):
+    pass
+
+
 # 离开当前场景并去往
-GoToAction = namedtuple("GoToAction", "name values")
+class GoToAction(ActionComponent):
+    pass
+
+
 # 从场景内可以拾取道具
-PickUpPropAction = namedtuple("PickUpPropAction", "name values")
+class PickUpPropAction(ActionComponent):
+    pass
+
+
 # 从目标角色处偷取
-StealPropAction = namedtuple("StealPropAction", "name values")
+class StealPropAction(ActionComponent):
+    pass
+
+
 # 将道具交给目标角色
-GivePropAction = namedtuple("GivePropAction", "name values")
+class GivePropAction(ActionComponent):
+    pass
+
+
 # 行为动作与技能动作
-BehaviorAction = namedtuple("BehaviorAction", "name values")
-SkillTargetAction = namedtuple("SkillTargetAction", "name values")
-SkillAction = namedtuple("SkillAction", "name values")
-SkillUsePropAction = namedtuple("SkillUsePropAction", "name values")
-WorldSkillSystemRuleAction = namedtuple("WorldSkillSystemRuleAction", "name values")
+class BehaviorAction(ActionComponent):
+    pass
+
+
+# 技能目标动作
+class SkillTargetAction(ActionComponent):
+    pass
+
+
+# 技能动作
+class SkillAction(ActionComponent):
+    pass
+
+
+# 使用技能道具动作
+class SkillUsePropAction(ActionComponent):
+    pass
+
+
+# 世界技能系统规则动作
+class WorldSkillSystemRuleAction(ActionComponent):
+    pass
 
 
 # 更新外观
-UpdateAppearanceAction = namedtuple("UpdateAppearanceAction", "name values")
+class UpdateAppearanceAction(ActionComponent):
+    pass
+
 
 # 处理伤害逻辑
-DamageAction = namedtuple("DamageAction", "name values")
+class DamageAction(ActionComponent):
+    pass
+
 
 # 装备道具
-EquipPropAction = namedtuple("EquipPropAction", "name values")
+class EquipPropAction(ActionComponent):
+    pass
+
 
 # 场景内销毁道具
-RemovePropAction = namedtuple("RemovePropAction", "name values")
-##############################################################################################################################################
+class RemovePropAction(ActionComponent):
+    pass
 
 
 CONVERSATION_ACTIONS_REGISTER: FrozenSet[type[Any]] = frozenset(

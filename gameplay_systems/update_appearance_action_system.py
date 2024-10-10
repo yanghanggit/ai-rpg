@@ -220,7 +220,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
         if not entity.has(BodyComponent):
             return ""
         body_comp = entity.get(BodyComponent)
-        return cast(str, body_comp.body)
+        return body_comp.body
 
     ###############################################################################################################################################
 

@@ -273,7 +273,7 @@ class RPGEntitasContext(Context):
 
         for entity in self.get_group(Matcher(GUIDComponent)).entities:
             guid_comp = entity.get(GUIDComponent)
-            if cast(int, guid_comp.GUID) == guid:
+            if guid_comp.GUID == guid:
                 return entity
 
         return None

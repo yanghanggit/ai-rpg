@@ -371,7 +371,7 @@ class WorldSkillRuleSystem(ReactiveProcessor):
         behavior_action = entity.get(BehaviorAction)
         if behavior_action is None or len(behavior_action.values) == 0:
             return ""
-        return cast(str, behavior_action.values[0])
+        return behavior_action.values[0]
 
     ######################################################################################################################################################
     def extract_skill_files(self, entity: Entity) -> List[PropFile]:

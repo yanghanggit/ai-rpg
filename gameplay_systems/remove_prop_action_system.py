@@ -55,7 +55,7 @@ class RemovePropActionSystem(ReactiveProcessor):
         if len(remove_prop_action.values) == 0:
             return
 
-        for prop_name in cast(List[str], remove_prop_action.values):
+        for prop_name in remove_prop_action.values:
 
             prop_file = self._context._file_system.get_file(
                 PropFile, remove_prop_action.name, prop_name

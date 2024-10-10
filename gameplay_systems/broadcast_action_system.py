@@ -45,7 +45,7 @@ class BroadcastActionSystem(ReactiveProcessor):
 
         message = _generate_broadcast_prompt(
             broadcast_action.name,
-            cast(str, current_stage_entity.get(StageComponent).name),
+            current_stage_entity.get(StageComponent).name,
             " ".join(broadcast_action.values),
         )
 

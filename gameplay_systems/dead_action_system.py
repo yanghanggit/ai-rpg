@@ -4,6 +4,8 @@ from gameplay_systems.components import (
     PlayerComponent,
     DestroyComponent,
     ActorComponent,
+    RPGAttributesComponent,
+    ActorComponent,
 )
 from gameplay_systems.action_components import (
     DeadAction,
@@ -23,12 +25,24 @@ class DeadActionSystem(ExecuteProcessor):
     ########################################################################################################################################################################
     @override
     def execute(self) -> None:
+        # 处理血量为0的情况
+        self.handle_zero_hp_attributes()
         # 移除后续动作
         self.remove_actions(ACTOR_INTERACTIVE_ACTIONS_REGISTER)
         # 玩家死亡就游戏结束
         self.handle_player_dead()
         # 添加销毁
         self.add_destory()
+
+    ########################################################################################################################################################################
+    def handle_zero_hp_attributes(self) -> None:
+        entities = self._context.get_group(
+            Matcher(all_of=[RPGAttributesComponent], none_of=[DeadAction])
+        ).entities
+        for entity in entities:
+            rpg_attributes = entity.get(RPGAttributesComponent)
+            if rpg_attributes.hp <= 0:
+                entity.add(DeadAction, rpg_attributes.name, [])
 
     ########################################################################################################################################################################
     def remove_actions(self, action_comps: FrozenSet[type[Any]]) -> None:

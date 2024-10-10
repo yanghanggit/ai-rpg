@@ -1,32 +1,84 @@
-from collections import namedtuple
+from typing import NamedTuple, Set
 
-############################################# 核心组件（相对通用的？） ############################################################################
+
 # 全局唯一标识符
-GUIDComponent = namedtuple("GUIDComponent", "name GUID")
-# 管理员标记，世界级别的AI
-WorldComponent = namedtuple("WorldComponent", "name")
+class GUIDComponent(NamedTuple):
+    name: str
+    GUID: int
+
+
+# 例如，世界级的entity就标记这个组件
+class WorldComponent(NamedTuple):
+    name: str
+
+
 # 场景标记
-StageComponent = namedtuple("StageComponent", "name")
+class StageComponent(NamedTuple):
+    name: str
+
+
 # 场景可以去往的地方
-StageGraphComponent = namedtuple("StageGraphComponent", "name stage_graph")
+class StageGraphComponent(NamedTuple):
+    name: str
+    stage_graph: Set[str]
+
+
 # 角色标记
-ActorComponent = namedtuple("ActorComponent", "name current_stage")
+class ActorComponent(NamedTuple):
+    name: str
+    current_stage: str
+
+
 # 玩家标记
-PlayerComponent = namedtuple("PlayerComponent", "name")
+class PlayerComponent(NamedTuple):
+    name: str
+
+
 # 摧毁Entity标记
-DestroyComponent = namedtuple("DestroyComponent", "name")
+class DestroyComponent(NamedTuple):
+    name: str
+
+
 # 自动规划的标记
-PlanningAllowedComponent = namedtuple("PlanningAllowedComponent", "name")
+class PlanningAllowedComponent(NamedTuple):
+    name: str
+
+
 # 角色外观信息
-AppearanceComponent = namedtuple("AppearanceComponent", "name appearance hash_code")
-# 裸身信息，用于和衣服组成完整的外观信息。如果是动物等，就是动物的外观信息
-BodyComponent = namedtuple("BodyComponent", "name body")
+class AppearanceComponent(NamedTuple):
+    name: str
+    appearance: str
+    hash_code: str
+
+
+# 身体信息，用于和衣服组成完整的外观信息。如果是动物等，就是动物的外观信息
+class BodyComponent(NamedTuple):
+    name: str
+    body: str
+
+
 # 标记进入新的舞台
-EnterStageComponent = namedtuple("EnterStageComponent", "name enter_stage")
-######################################### 测试组件（业务强相关）：RPG Game #######################################################################
-RPGAttributesComponent = namedtuple(
-    "RPGAttributesComponent", "name maxhp hp attack defense"
-)
-RPGCurrentWeaponComponent = namedtuple("RPGCurrentWeaponComponent", "name propname")
-RPGCurrentClothesComponent = namedtuple("RPGCurrentClothesComponent", "name propname")
-##############################################################################################################################################
+class EnterStageComponent(NamedTuple):
+    name: str
+    enter_stage: str
+
+
+# RPG游戏的属性组件
+class RPGAttributesComponent(NamedTuple):
+    name: str
+    maxhp: int
+    hp: int
+    attack: int
+    defense: int
+
+
+# RPG游戏的当前武器组件
+class RPGCurrentWeaponComponent(NamedTuple):
+    name: str
+    propname: str
+
+
+# RPG游戏的当前衣服组件
+class RPGCurrentClothesComponent(NamedTuple):
+    name: str
+    propname: str

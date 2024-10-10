@@ -135,7 +135,7 @@ class ActorPlanningStrategySystem(InitializeProcessor, ExecuteProcessor):
         self, order_queue: Dict[str, Queue[str]], stage_entity: Entity
     ) -> Optional[Entity]:
 
-        stage_name = cast(str, stage_entity.get(StageComponent).name)
+        stage_name = stage_entity.get(StageComponent).name
         order_queue_list = order_queue.setdefault(stage_name, Queue[str]())
         while not order_queue_list.empty():
             actor_name = order_queue_list.get()

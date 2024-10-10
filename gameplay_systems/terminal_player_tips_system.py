@@ -68,7 +68,7 @@ class TerminalPlayerTipsSystem(ExecuteProcessor):
 
         stage_names: List[str] = [
             self.parse_stage_name(stage_name, actor_name)
-            for stage_name in cast(Set[str], stage_graph_comp.stage_graph)
+            for stage_name in stage_graph_comp.stage_graph
         ]
         player_proxy.add_stage_message(
             self._context.safe_get_entity_name(stage_entity),

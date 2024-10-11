@@ -169,14 +169,11 @@ class RPGEntitasContext(Context):
     #############################################################################################################################
     def safe_get_entity_name(self, entity: Entity) -> str:
         if entity.has(ActorComponent):
-            actor_comp = entity.get(ActorComponent)
-            return str(actor_comp.name)
+            return entity.get(ActorComponent).name
         elif entity.has(StageComponent):
-            stage_comp = entity.get(StageComponent)
-            return str(stage_comp.name)
+            return entity.get(StageComponent).name
         elif entity.has(WorldComponent):
-            world_comp = entity.get(WorldComponent)
-            return str(world_comp.name)
+            return entity.get(WorldComponent).name
         return ""
 
     #############################################################################################################################

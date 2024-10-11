@@ -30,7 +30,7 @@ class KickOffMessageSystem:
         assert self._runtime_dir is not None
         dir = self._runtime_dir / f"{actor_name}"
         dir.mkdir(parents=True, exist_ok=True)
-        return dir / f"kick_off_message.md"
+        return dir / f"kick_off.md"
 
     ####################################################################################################################################
     def add_message(self, actor_name: str, kick_off_message: str) -> None:

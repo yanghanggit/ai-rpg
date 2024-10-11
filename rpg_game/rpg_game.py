@@ -429,10 +429,8 @@ class RPGGame(BaseGame):
             logger.debug(
                 f"场景：{stage_model.name}，可去往的场景：{stage_model.stage_graph}"
             )
-        stage_graph: Set[str] = (
-            len(stage_model.stage_graph) > 0 and set(stage_model.stage_graph) or set()
-        )
-        stage_entity.add(StageGraphComponent, stage_model.name, stage_graph)
+
+        stage_entity.add(StageGraphComponent, stage_model.name, stage_model.stage_graph)
 
         # 添加子系统！
         context._langserve_agent_system.register_agent(

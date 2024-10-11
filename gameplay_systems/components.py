@@ -1,4 +1,4 @@
-from typing import NamedTuple, Set
+from typing import NamedTuple, List
 
 
 # 全局唯一标识符
@@ -20,7 +20,7 @@ class StageComponent(NamedTuple):
 # 场景可以去往的地方
 class StageGraphComponent(NamedTuple):
     name: str
-    stage_graph: Set[str]
+    stage_graph: List[str]
 
 
 # 角色标记

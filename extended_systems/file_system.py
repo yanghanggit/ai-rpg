@@ -5,8 +5,8 @@ from extended_systems.files_def import (
     PropFile,
     ActorArchiveFile,
     StageArchiveFile,
-    StatusProfileFile,
-    StageActorsMapFile,
+    EntityDumpFile,
+    MapFile,
 )
 from pathlib import Path
 
@@ -28,9 +28,9 @@ class FileSystem:
 
         self._stage_archives: Dict[str, List[StageArchiveFile]] = {}
 
-        self._status_profile: Dict[str, StatusProfileFile] = {}
+        self._status_profile: Dict[str, EntityDumpFile] = {}
 
-        self._stage_actors_map: StageActorsMapFile = StageActorsMapFile({})
+        self._stage_actors_map: MapFile = MapFile({})
 
     ###############################################################################################################################################
     def parse_path(self, file: BaseFile) -> Optional[Path]:
@@ -43,24 +43,24 @@ class FileSystem:
             return dir / f"{file._name}.json"
 
         elif isinstance(file, ActorArchiveFile):
-            dir = self._runtime_dir / f"{file._owner_name}/actors_archive"
+            dir = self._runtime_dir / f"{file._owner_name}/actor_archives"
             dir.mkdir(parents=True, exist_ok=True)
             return dir / f"{file._name}.json"
 
         elif isinstance(file, StageArchiveFile):
-            dir = self._runtime_dir / f"{file._owner_name}/stages_archive"
+            dir = self._runtime_dir / f"{file._owner_name}/stage_archives"
             dir.mkdir(parents=True, exist_ok=True)
             return dir / f"{file._name}.json"
 
-        elif isinstance(file, StatusProfileFile):
+        elif isinstance(file, EntityDumpFile):
             dir = self._runtime_dir / f"{file._owner_name}"
             dir.mkdir(parents=True, exist_ok=True)
-            return dir / f"status_profile.json"
+            return dir / f"entity.json"
 
-        elif isinstance(file, StageActorsMapFile):
+        elif isinstance(file, MapFile):
             dir = self._runtime_dir
             dir.mkdir(parents=True, exist_ok=True)
-            return dir / f"stage_actors_map.json"
+            return dir / f"map.json"
 
         return None
 
@@ -106,10 +106,10 @@ class FileSystem:
             return self.add_file_2_base_file_dict(
                 cast(Dict[str, List[BaseFile]], self._stage_archives), file
             )
-        elif isinstance(file, StatusProfileFile):
+        elif isinstance(file, EntityDumpFile):
             self._status_profile[file._owner_name] = file
             return True
-        elif isinstance(file, StageActorsMapFile):
+        elif isinstance(file, MapFile):
             self._stage_actors_map = file
             return True
         else:
@@ -126,10 +126,10 @@ class FileSystem:
             self._actor_archives[file._owner_name].remove(file)
         elif isinstance(file, StageArchiveFile):
             self._stage_archives[file._owner_name].remove(file)
-        elif isinstance(file, StatusProfileFile):
+        elif isinstance(file, EntityDumpFile):
             self._status_profile.pop(file._owner_name, None)
-        elif isinstance(file, StageActorsMapFile):
-            self._stage_actors_map = StageActorsMapFile({})
+        elif isinstance(file, MapFile):
+            self._stage_actors_map = MapFile({})
         else:
             logger.error(f"file type {type(file)} not support")
             return False
@@ -173,9 +173,9 @@ class FileSystem:
                     file_name,
                 ),
             )
-        elif file_type == StatusProfileFile:
+        elif file_type == EntityDumpFile:
             return cast(Optional[FileType], self._status_profile.get(owner_name, None))
-        elif file_type == StageActorsMapFile:
+        elif file_type == MapFile:
             return cast(Optional[FileType], self._stage_actors_map)
         else:
             logger.error(f"file type {file_type} not support")
@@ -191,9 +191,9 @@ class FileSystem:
             return cast(List[FileType], self._actor_archives.get(owner_name, []))
         elif file_type == StageArchiveFile:
             return cast(List[FileType], self._stage_archives.get(owner_name, []))
-        elif file_type == StatusProfileFile:
+        elif file_type == EntityDumpFile:
             return cast(List[FileType], [self._status_profile.get(owner_name, None)])
-        elif file_type == StageActorsMapFile:
+        elif file_type == MapFile:
             return cast(List[FileType], [self._stage_actors_map])
         else:
             logger.error(f"file type {file_type} not support")
@@ -211,9 +211,9 @@ class FileSystem:
             return self.get_file(ActorArchiveFile, owner_name, file_name) is not None
         elif file_type == StageArchiveFile:
             return self.get_file(StageArchiveFile, owner_name, file_name) is not None
-        elif file_type == StatusProfileFile:
+        elif file_type == EntityDumpFile:
             return owner_name in self._status_profile
-        elif file_type == StageActorsMapFile:
+        elif file_type == MapFile:
             return self._stage_actors_map is not None
         else:
             logger.error(f"file type {file_type} not support")

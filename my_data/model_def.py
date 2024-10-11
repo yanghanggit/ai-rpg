@@ -92,3 +92,13 @@ class PropType(StrEnum):
     TYPE_NON_CONSUMABLE_ITEM = "NonConsumableItem"
     TYPE_CONSUMABLE_ITEM = "ConsumableItem"
     TYPE_SKILL = "Skill"
+
+
+class ComponentDumpModel(BaseModel):
+    name: str
+    data: Dict[str, Any]
+
+
+class EntityDumpModel(BaseModel):
+    name: str
+    components: List[ComponentDumpModel]

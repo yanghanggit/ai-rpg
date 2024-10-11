@@ -18,7 +18,9 @@ class TerminalPlayerInterruptWaitSystem(ExecuteProcessor):
             return
 
         while True:
-            input(f"........请任意键继续........将要进入agent做计划的环节，因为会执行推理会有token的消耗，可以在这里停止程序")
+            input(
+                f"........请任意键继续........将要进入agent做计划的环节，因为会执行推理会有token的消耗，可以在这里停止程序"
+            )
             break
 
 

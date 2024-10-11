@@ -94,9 +94,8 @@ class StageValidatorSystem(ReactiveProcessor):
 
         assert current_stage_entity.has(StageGraphComponent)
         stage_graph_comp = current_stage_entity.get(StageGraphComponent)
-        stage_graph: Set[str] = stage_graph_comp.stage_graph
-        if len(stage_graph) > 0:
-            if target_stage_name not in stage_graph:
+        if len(stage_graph_comp.stage_graph) > 0:
+            if target_stage_name not in stage_graph_comp.stage_graph:
                 self._context.broadcast_entities(
                     set({entity}),
                     _generate_stage_validation_error_prompt(

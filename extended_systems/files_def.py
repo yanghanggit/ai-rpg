@@ -2,7 +2,7 @@ from overrides import override
 import json
 from typing import Dict, Any, List
 from abc import ABC, abstractmethod
-from my_data.model_def import PropModel
+from my_data.model_def import PropModel, EntityDumpModel
 from pathlib import Path
 from loguru import logger
 from my_data.model_def import AttributesIndex, PropType
@@ -179,22 +179,29 @@ class StageArchiveFile(BaseFile):
 ############################################################################################################
 ############################################################################################################
 ## 表达一个一个角色的属性等信息的文件
-class StatusProfileFile(BaseFile):
-    def __init__(self, name: str, owner_name: str, data: Dict[str, Any]) -> None:
+class EntityDumpFile(BaseFile):
+    def __init__(self, name: str, owner_name: str, data: EntityDumpModel) -> None:
         super().__init__(name, owner_name)
-        self._data: Dict[str, Any] = data
+        self._dump_model: EntityDumpModel = data
+        assert self._dump_model is not None
 
     @override
     def serialization(self) -> str:
-        assert self._data is not None
-        return json.dumps(self._data, ensure_ascii=False)
+        if self._dump_model is None:
+            return ""
+        try:
+            model_dump = self._dump_model.model_dump()
+            return json.dumps(model_dump, ensure_ascii=False)
+        except Exception as e:
+            logger.error(f"{e}")
+        return ""
 
 
 ############################################################################################################
 ############################################################################################################
 ############################################################################################################
 ## 场景与场景中的角色的映射文件。
-class StageActorsMapFile(BaseFile):
+class MapFile(BaseFile):
     def __init__(self, data: Dict[str, List[str]]) -> None:
         super().__init__("", "")
         self._data: Dict[str, List[str]] = data

@@ -230,7 +230,7 @@ class ActorPlanningExecutionSystem(ExecuteProcessor):
                     game_round=self._game.round,
                     current_stage=self._get_stage_name(actor_entity),
                     stage_enviro_narrate=self._get_stage_narrate(actor_entity),
-                    stage_graph=self._get_stage_graph(actor_entity),
+                    stage_graph=set(self._get_stage_graph(actor_entity)),
                     props_in_stage=self._get_stage_props(actor_entity),
                     info_of_actors_in_stage=actors_appearance,
                     health=check_self.health,
@@ -273,16 +273,15 @@ class ActorPlanningExecutionSystem(ExecuteProcessor):
         )
 
     #######################################################################################################################################
-    def _get_stage_graph(self, actor_entity: Entity) -> Set[str]:
+    def _get_stage_graph(self, actor_entity: Entity) -> List[str]:
         stage_entity = self._context.safe_get_stage_entity(actor_entity)
         if stage_entity is None:
             logger.error("stage is None, actor无所在场景是有问题的")
-            return set()
+            return []
 
         if not stage_entity.has(StageGraphComponent):
-            return set()
+            return []
 
-        stage_graph: Set[str] = stage_entity.get(StageGraphComponent).stage_graph
-        return stage_graph.copy()
+        return stage_entity.get(StageGraphComponent).stage_graph
 
     #######################################################################################################################################

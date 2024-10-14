@@ -231,7 +231,7 @@ class StageEntranceCheckerSystem(ReactiveProcessor):
 
                 actor_entity = self._context.get_actor_entity(actor_name)
                 assert actor_entity is not None
-                self._context.broadcast_entities(
+                self._context.broadcast_event(
                     set({actor_entity}),
                     _generate_stage_entry_failure_prompt(
                         actor_name, stage_agent_task.agent_name, response_plan.tips

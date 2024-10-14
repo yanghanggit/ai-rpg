@@ -56,7 +56,7 @@ class SpeakActionSystem(ReactiveProcessor):
 
             target_entity = self._context.get_entity_by_name(tp[0])
             assert target_entity is not None
-            self._context.broadcast_entities_in_stage(
+            self._context.broadcast_event_in_stage(
                 entity,
                 _generate_speak_prompt(safe_name, tp[0], tp[1]),
             )

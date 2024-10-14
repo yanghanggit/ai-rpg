@@ -155,7 +155,7 @@ class DamageActionSystem(ReactiveProcessor):
         target_name = self._context.safe_get_entity_name(target_entity)
         if is_dead:
             # 直接打死。
-            self._context.broadcast_entities_in_stage(
+            self._context.broadcast_event_in_stage(
                 current_stage_entity,
                 _generate_kill_event_prompt(from_name, target_name),
             )
@@ -164,7 +164,7 @@ class DamageActionSystem(ReactiveProcessor):
             # 没有打死。对于场景的伤害不要通知了，场景设定目前是打不死的。而且怕影响对话上下文。
             if not target_entity.has(StageComponent):
                 rpg_attr_comp = target_entity.get(RPGAttributesComponent)
-                self._context.broadcast_entities_in_stage(
+                self._context.broadcast_event_in_stage(
                     current_stage_entity,
                     _generate_damage_event_prompt(
                         from_name,

@@ -420,7 +420,7 @@ class WorldSkillRuleSystem(ReactiveProcessor):
 
     ######################################################################################################################################################
     def on_world_skill_system_off_line_event(self, entity: Entity) -> None:
-        self._context.broadcast_entities(
+        self._context.broadcast_event(
             set({entity}),
             _generate_offline_prompt(
                 self._context.safe_get_entity_name(entity),
@@ -438,7 +438,7 @@ class WorldSkillRuleSystem(ReactiveProcessor):
         for target_entity in target_entities:
             target_names.add(self._context.safe_get_entity_name(target_entity))
 
-        self._context.broadcast_entities(
+        self._context.broadcast_event(
             set({entity}),
             _generate_rule_success_prompt(
                 self._context.safe_get_entity_name(entity),
@@ -453,7 +453,7 @@ class WorldSkillRuleSystem(ReactiveProcessor):
     def on_world_skill_system_rule_fail_event(
         self, entity: Entity, world_response_plan: WorldSkillRuleResponse
     ) -> None:
-        self._context.broadcast_entities(
+        self._context.broadcast_event(
             set({entity}),
             _generate_rule_failure_prompt(
                 self._context.safe_get_entity_name(entity),

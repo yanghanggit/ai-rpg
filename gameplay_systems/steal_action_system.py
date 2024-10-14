@@ -87,7 +87,7 @@ class StealActionSystem(ReactiveProcessor):
                 continue
 
             action_result = self.do_steal(entity, target_entity, tp[1])
-            self._context.broadcast_entities(
+            self._context.broadcast_event(
                 set({entity, target_entity}),
                 _generate_steal_prompt(
                     self._context.safe_get_entity_name(entity),

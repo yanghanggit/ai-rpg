@@ -79,7 +79,7 @@ class PickUpPropActionSystem(ReactiveProcessor):
                 PropFile, stage_comp.name, prop_name
             )
             if prop_file is None:
-                self._context.broadcast_entities(
+                self._context.broadcast_event(
                     set({entity}),
                     _generate_failed_pickup_prompt(actor_name, prop_name),
                 )
@@ -92,7 +92,7 @@ class PickUpPropActionSystem(ReactiveProcessor):
                 prop_name,
             )
 
-            self._context.broadcast_entities_in_stage(
+            self._context.broadcast_event_in_stage(
                 current_stage_entity,
                 _generate_success_pickup_prompt(actor_name, prop_name, stage_comp.name),
             )

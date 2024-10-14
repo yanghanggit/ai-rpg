@@ -212,7 +212,7 @@ class BehaviorActionSystem(ReactiveProcessor):
     ) -> None:
 
         # 需要给到agent
-        self._context.broadcast_entities(
+        self._context.broadcast_event(
             set({entity}),
             _generate_behavior_result_prompt(
                 self._context.safe_get_entity_name(entity),

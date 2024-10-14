@@ -237,7 +237,7 @@ class ApplySkillEffectSystem(ReactiveProcessor):
             self.extract_world_skill_system_rule(from_entity)
         )
 
-        self._context.broadcast_entities_in_stage(
+        self._context.broadcast_event_in_stage(
             current_stage_entity,
             _generate_skill_event_notification_prompt(
                 self._context.safe_get_entity_name(from_entity),
@@ -329,7 +329,7 @@ class ApplySkillEffectSystem(ReactiveProcessor):
             self.extract_world_skill_system_rule(entity)
         )
 
-        self._context.broadcast_entities(
+        self._context.broadcast_event(
             set({entity}),
             _generate_offline_prompt(
                 self._context.safe_get_entity_name(entity),

@@ -102,7 +102,7 @@ class RPGEntitasContext(Context):
 
     #############################################################################################################################
     def get_entity_by_name(self, name: str) -> Optional[Entity]:
-        comp_class = self._codename_component_system.get_component_class_by_name(name)
+        comp_class = self._codename_component_system.get_code_name_component_class(name)
         if comp_class is None:
             return None
         find_entities = self.get_group(Matcher(comp_class)).entities
@@ -129,9 +129,7 @@ class RPGEntitasContext(Context):
     def _get_actors_in_stage(self, stage_name: str) -> Set[Entity]:
         # 测试！！！
         stage_tag_component = (
-            self._codename_component_system.get_stage_tag_component_class_by_name(
-                stage_name
-            )
+            self._codename_component_system.get_stage_tag_component_class(stage_name)
         )
         entities = self.get_group(
             Matcher(all_of=[ActorComponent, stage_tag_component])
@@ -231,7 +229,7 @@ class RPGEntitasContext(Context):
 
         # 删除旧的
         from_stagetag_comp_class = (
-            self._codename_component_system.get_stage_tag_component_class_by_name(
+            self._codename_component_system.get_stage_tag_component_class(
                 from_stage_name
             )
         )
@@ -242,9 +240,7 @@ class RPGEntitasContext(Context):
 
         # 添加新的
         to_stagetag_comp_class = (
-            self._codename_component_system.get_stage_tag_component_class_by_name(
-                to_stage_name
-            )
+            self._codename_component_system.get_stage_tag_component_class(to_stage_name)
         )
         if to_stagetag_comp_class is not None and not entity.has(
             to_stagetag_comp_class
@@ -276,7 +272,7 @@ class RPGEntitasContext(Context):
         return None
 
     #############################################################################################################################
-    def broadcast_entities_in_stage(
+    def broadcast_event_in_stage(
         self,
         entity: Entity,
         message_content: str,
@@ -292,21 +288,23 @@ class RPGEntitasContext(Context):
         if len(exclude_entities) > 0:
             need_broadcast_entities = need_broadcast_entities - exclude_entities
 
-        self._broadcast_entities(need_broadcast_entities, message_content)
-        self._broadcast_players(need_broadcast_entities, message_content)
+        self._broadcast_event(need_broadcast_entities, message_content)
+        self._broadcast_event_to_player(need_broadcast_entities, message_content)
 
     #############################################################################################################################
-    def broadcast_entities(
+    def broadcast_event(
         self,
         entities: Set[Entity],
         message_content: str,
     ) -> None:
 
-        self._broadcast_entities(entities, message_content)
-        self._broadcast_players(entities, message_content)
+        self._broadcast_event(entities, message_content)
+        self._broadcast_event_to_player(entities, message_content)
 
     #############################################################################################################################
-    def _broadcast_players(self, entities: Set[Entity], message_content: str) -> None:
+    def _broadcast_event_to_player(
+        self, entities: Set[Entity], message_content: str
+    ) -> None:
 
         if len(entities) == 0:
             return
@@ -372,7 +370,7 @@ class RPGEntitasContext(Context):
         return cast(RPGGame, self._game).get_player(player_name)
 
     #############################################################################################################################
-    def _broadcast_entities(self, entities: Set[Entity], message_content: str) -> None:
+    def _broadcast_event(self, entities: Set[Entity], message_content: str) -> None:
 
         for entity in entities:
 

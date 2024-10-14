@@ -75,7 +75,7 @@ class StageValidatorSystem(ReactiveProcessor):
             self.get_target_stage_name(entity)
         )
         if target_stage_entity is None:
-            self._context.broadcast_entities(
+            self._context.broadcast_event(
                 set({entity}),
                 _generate_stage_validation_error_prompt(
                     safe_actor_name, target_stage_name
@@ -85,7 +85,7 @@ class StageValidatorSystem(ReactiveProcessor):
             return False
 
         if current_stage_entity == target_stage_entity:
-            self._context.broadcast_entities(
+            self._context.broadcast_event(
                 set({entity}),
                 _generate_stage_already_in_prompt(safe_actor_name, target_stage_name),
             )
@@ -96,7 +96,7 @@ class StageValidatorSystem(ReactiveProcessor):
         stage_graph_comp = current_stage_entity.get(StageGraphComponent)
         if len(stage_graph_comp.stage_graph) > 0:
             if target_stage_name not in stage_graph_comp.stage_graph:
-                self._context.broadcast_entities(
+                self._context.broadcast_event(
                     set({entity}),
                     _generate_stage_validation_error_prompt(
                         safe_actor_name, target_stage_name

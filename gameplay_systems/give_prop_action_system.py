@@ -79,7 +79,7 @@ class GivePropActionSystem(ReactiveProcessor):
             target_entity = self._context.get_actor_entity(tp[0])
             assert target_entity is not None
 
-            self._context.broadcast_entities(
+            self._context.broadcast_event(
                 set({entity, target_entity}),
                 _generate_give_prompt(
                     self._context.safe_get_entity_name(entity),

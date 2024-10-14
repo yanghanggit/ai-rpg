@@ -49,6 +49,6 @@ class BroadcastActionSystem(ReactiveProcessor):
             " ".join(broadcast_action.values),
         )
 
-        self._context.broadcast_entities_in_stage(current_stage_entity, message)
+        self._context.broadcast_event_in_stage(current_stage_entity, message)
 
     ####################################################################################################

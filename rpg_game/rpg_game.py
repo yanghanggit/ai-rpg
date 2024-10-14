@@ -457,7 +457,7 @@ class RPGGame(BaseGame):
         ).entities
         for world_entity in world_entities:
             world_comp = world_entity.get(WorldComponent)
-            codecomp_class = self._entitas_context._codename_component_system.get_component_class_by_name(
+            codecomp_class = self._entitas_context._codename_component_system.get_code_name_component_class(
                 world_comp.name
             )
             if codecomp_class is not None:
@@ -469,7 +469,7 @@ class RPGGame(BaseGame):
         ).entities
         for actor_entity in actor_entities:
             actor_comp = actor_entity.get(ActorComponent)
-            codecomp_class = self._entitas_context._codename_component_system.get_component_class_by_name(
+            codecomp_class = self._entitas_context._codename_component_system.get_code_name_component_class(
                 actor_comp.name
             )
             if codecomp_class is not None:
@@ -494,7 +494,7 @@ class RPGGame(BaseGame):
         ).entities
         for stage_entity in stage_entities:
             stage_comp = stage_entity.get(StageComponent)
-            codecomp_class = self._entitas_context._codename_component_system.get_component_class_by_name(
+            codecomp_class = self._entitas_context._codename_component_system.get_code_name_component_class(
                 stage_comp.name
             )
             if codecomp_class is not None:

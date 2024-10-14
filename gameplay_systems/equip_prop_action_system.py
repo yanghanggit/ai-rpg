@@ -86,7 +86,7 @@ class EquipPropActionSystem(ReactiveProcessor):
                     f"EquipPropActionSystem: {actor_name} can't find prop {prop_name}"
                 )
 
-                self._context.broadcast_entities(
+                self._context.broadcast_event(
                     set({entity}),
                     _generate_equipment_not_found_prompt(actor_name, prop_name),
                 )
@@ -99,7 +99,7 @@ class EquipPropActionSystem(ReactiveProcessor):
                     RPGCurrentWeaponComponent, equip_prop_action.name, prop_name
                 )
 
-                self._context.broadcast_entities(
+                self._context.broadcast_event(
                     set({entity}),
                     _generate_equipment_weapon_prompt(actor_name, prop_file),
                 )
@@ -110,7 +110,7 @@ class EquipPropActionSystem(ReactiveProcessor):
                     RPGCurrentClothesComponent, equip_prop_action.name, prop_name
                 )
 
-                self._context.broadcast_entities(
+                self._context.broadcast_event(
                     set({entity}),
                     _generate_equipment_clothing_prompt(actor_name, prop_file),
                 )

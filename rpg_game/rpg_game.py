@@ -1,5 +1,5 @@
 from entitas import Matcher, Entity  # type: ignore
-from typing import List, Optional, Set
+from typing import List, Optional
 from overrides import override
 from loguru import logger
 from gameplay_systems.components import (
@@ -18,7 +18,6 @@ from gameplay_systems.components import (
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from my_data.game_resource import GameResource
 from extended_systems.files_def import PropFile
-import shutil
 from rpg_game.base_game import BaseGame
 import extended_systems.file_system_helper
 from rpg_game.rpg_entitas_processors import RPGEntitasProcessors
@@ -60,13 +59,13 @@ class RPGGame(BaseGame):
         context = self._entitas_context
 
         # 第0步，yh 目前用于测试!!!!!!!，直接删worlddata.name的文件夹，保证每次都是新的 删除runtime_dir_for_world的文件夹
-        if game_resource._runtime_dir.exists():
-            # todo
-            logger.warning(
-                f"删除文件夹：{game_resource._runtime_dir}, 这是为了测试，后续得改！！！"
-            )
-            shutil.rmtree(game_resource._runtime_dir)
-            game_resource._runtime_dir.mkdir(parents=True, exist_ok=True)
+        # if game_resource._runtime_dir.exists():
+        #     # todo
+        #     logger.warning(
+        #         f"删除文件夹：{game_resource._runtime_dir}, 这是为了测试，后续得改！！！"
+        #     )
+        #     shutil.rmtree(game_resource._runtime_dir)
+        #     game_resource._runtime_dir.mkdir(parents=True, exist_ok=True)
 
         # 混沌系统，准备测试
         context._chaos_engineering_system.on_pre_create_game(context, game_resource)

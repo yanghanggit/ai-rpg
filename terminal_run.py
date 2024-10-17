@@ -5,6 +5,9 @@ import rpg_game.rpg_game_helper
 from rpg_game.rpg_game import RPGGame
 from typing import Optional
 from dataclasses import dataclass
+from rpg_game.rpg_game_config import RPGGameConfig
+from pathlib import Path
+import shutil
 
 
 @dataclass
@@ -24,9 +27,17 @@ async def terminal_run(option: TerminalRunOption) -> None:
     if game_name == "":
         game_name = option.default_game_name
 
+    rpg_game.rpg_game_helper.prepare_runtime_dir(game_name)
+    game_resource_file_path = rpg_game.rpg_game_helper.parse_game_resource_file_path(
+        game_name
+    )
+    if game_resource_file_path is None:
+        logger.error(f"找不到游戏资源文件 = {game_name}")
+        return
+
     # 创建游戏
     new_game = rpg_game.rpg_game_helper.create_terminal_rpg_game(
-        game_name, option.check_game_resource_version
+        game_resource_file_path, option.check_game_resource_version
     )
     if new_game is None:
         logger.error(f"create_rpg_game 失败 = {game_name}")

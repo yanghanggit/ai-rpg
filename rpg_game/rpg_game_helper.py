@@ -69,12 +69,10 @@ def _load_game_resource_file(file_path: Path, version: str) -> Any:
 
 
 #######################################################################################################################################
-def _create_game_resource(game_name: str, version: str) -> Optional[GameResource]:
+def _create_game_resource(
+    game_resource_file_path: Path, version: str
+) -> Optional[GameResource]:
 
-    root_runtime_dir = Path(RPGGameConfig.GAME_SAMPLE_RUNTIME_DIR)
-    root_runtime_dir.mkdir(parents=True, exist_ok=True)
-
-    game_resource_file_path = root_runtime_dir / f"{game_name}.json"
     if not game_resource_file_path.exists():
         return None
 
@@ -82,7 +80,9 @@ def _create_game_resource(game_name: str, version: str) -> Optional[GameResource
     if game_data is None:
         return None
 
-    runtime_file_dir = root_runtime_dir / game_name
+    game_name = game_resource_file_path.stem
+    runtime_file_dir = game_resource_file_path.parent / game_name
+
     return GameResource(game_name, game_data, runtime_file_dir)
 
 
@@ -118,34 +118,64 @@ def _create_entitas_context(
 
 
 #######################################################################################################################################
-def create_terminal_rpg_game(game_name: str, version: str) -> Optional[TerminalGame]:
+def prepare_runtime_dir(game_name: str) -> Path:
+    root_runtime_dir = Path(f"{RPGGameConfig.GAME_SAMPLE_RUNTIME_DIR}/{game_name}")
+    if root_runtime_dir.exists():
+        # todo
+        logger.warning(f"删除文件夹：{root_runtime_dir}, 这是为了测试，后续得改！！！")
+        shutil.rmtree(root_runtime_dir)
 
-    game_resource = _create_game_resource(game_name, version)
+    root_runtime_dir.mkdir(parents=True, exist_ok=True)
+    assert root_runtime_dir.exists()
+    return root_runtime_dir
+
+
+#######################################################################################################################################
+def parse_game_resource_file_path(game_name: str) -> Optional[Path]:
+    game_resource_file_path = (
+        Path(f"{RPGGameConfig.GAME_SAMPLE_RUNTIME_DIR}") / f"{game_name}.json"
+    )
+
+    if not game_resource_file_path.exists():
+        assert False, f"找不到游戏资源文件 = {game_resource_file_path}"
+        return None
+
+    return game_resource_file_path
+
+
+#######################################################################################################################################
+def create_terminal_rpg_game(
+    game_resource_file_path: Path, version: str
+) -> Optional[TerminalGame]:
+
+    game_resource = _create_game_resource(game_resource_file_path, version)
     if game_resource is None:
-        logger.error(f"create_terminal_rpg_game 创建{game_name} 失败。")
+        logger.error(f"create_terminal_rpg_game 创建{game_resource_file_path} 失败。")
         return None
 
     rpg_context = _create_entitas_context(
         GameSampleChaosEngineeringSystem("terminal_rpg_game_chaos")
     )
 
-    rpg_game = TerminalGame(game_name, rpg_context)
+    rpg_game = TerminalGame(game_resource._game_name, rpg_context)
     rpg_game.build(game_resource)
     return rpg_game
 
 
 #######################################################################################################################################
-def create_web_rpg_game(game_name: str, version: str) -> Optional[WebGame]:
-    game_resource = _create_game_resource(game_name, version)
+def create_web_rpg_game(
+    game_resource_file_path: Path, version: str
+) -> Optional[WebGame]:
+    game_resource = _create_game_resource(game_resource_file_path, version)
     if game_resource is None:
-        logger.error(f"create_web_rpg_game 创建{game_name} 失败。")
+        logger.error(f"create_web_rpg_game 创建{game_resource_file_path} 失败。")
         return None
 
     rpg_context = _create_entitas_context(
         GameSampleChaosEngineeringSystem("web_rpg_game_chaos")
     )
 
-    rpg_game = WebGame(game_name, rpg_context)
+    rpg_game = WebGame(game_resource._game_name, rpg_context)
     rpg_game.build(game_resource)
     return rpg_game
 
@@ -292,14 +322,17 @@ def save_game(rpg_game: RPGGame) -> None:
     logger.info(
         f"保存游戏 = {rpg_game._name}, _runtime_dir = {rpg_game._game_resource._runtime_dir}"
     )
-    
-    zip_file_path = shutil.make_archive(rpg_game._name, 'zip', rpg_game._game_resource._runtime_dir)
+
+    zip_file_path = shutil.make_archive(
+        rpg_game._name, "zip", rpg_game._game_resource._runtime_dir
+    )
 
     archive_dir = Path("game_archive")
     archive_dir.mkdir(parents=True, exist_ok=True)
     shutil.move(zip_file_path, archive_dir / f"{rpg_game._name}.zip")
 
     logger.info(f"游戏已保存到 {archive_dir / f'{rpg_game._name}.zip'}")
+
 
 #######################################################################################################################################
 def add_player_command(

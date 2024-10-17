@@ -17,6 +17,9 @@ from typing import Dict, Any, Optional, List
 import rpg_game.rpg_game_helper
 from rpg_game.web_game import WebGame
 from player.player_proxy import PlayerProxy
+from rpg_game.rpg_game_config import RPGGameConfig
+from pathlib import Path
+import shutil
 
 fastapi_app = FastAPI()
 
@@ -78,7 +81,18 @@ async def create(data: CreateData) -> Dict[str, Any]:
             user_name=data.user_name, game_name=data.game_name, response=False
         ).model_dump()
 
-    new_game = rpg_game.rpg_game_helper.create_web_rpg_game(data.game_name, "qwe")
+    rpg_game.rpg_game_helper.prepare_runtime_dir(data.game_name)
+    game_resource_file_path = rpg_game.rpg_game_helper.parse_game_resource_file_path(
+        data.game_name
+    )
+    if game_resource_file_path is None:
+        return CreateData(
+            user_name=data.user_name, game_name=data.game_name, response=False
+        ).model_dump()
+
+    new_game = rpg_game.rpg_game_helper.create_web_rpg_game(
+        game_resource_file_path, "qwe"
+    )
     if new_game is None or new_game._game_resource is None:
         logger.error(f"create_rpg_game 失败 = {data.game_name}")
         return CreateData(

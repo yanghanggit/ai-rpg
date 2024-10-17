@@ -6,6 +6,7 @@ sys.path.append(str(root_dir))
 from loguru import logger
 from typing import Dict, Any
 from game_sample.excel_data_world_system import ExcelDataWorldSystem
+from game_sample.editor_guid_generator import editor_guid_generator
 
 
 ######################################################################################################################
@@ -39,6 +40,9 @@ class ExcelEditorWorldSystem:
     def proxy(self) -> Dict[str, Any]:
         output: Dict[str, Any] = {}
         output["name"] = self.excel_data.name
+        output["guid"] = editor_guid_generator.gen_world_system_guid(
+            self.excel_data.name
+        )
         return output
 
     ######################################################################################################################

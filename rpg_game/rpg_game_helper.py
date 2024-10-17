@@ -18,7 +18,6 @@ from pathlib import Path
 import json
 from rpg_game.terminal_game import TerminalGame
 from rpg_game.web_game import WebGame
-from extended_systems.guid_generator import GUIDGenerator
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt
 
 from player.player_proxy import PlayerProxy
@@ -112,7 +111,6 @@ def _create_entitas_context(
             "CodeNameComponentSystem, Build components by codename for special purposes"
         ),
         chaos_engineering_system,
-        GUIDGenerator("GUIDGenerator"),
     )
 
     return context

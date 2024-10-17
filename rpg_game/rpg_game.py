@@ -172,7 +172,7 @@ class RPGGame(BaseGame):
 
         # 必要组件
         world_system_entity.add(
-            GUIDComponent, world_system_model.name, context._guid_generator.generate()
+            GUIDComponent, world_system_model.name, world_system_proxy.guid
         )
         world_system_entity.add(WorldComponent, world_system_model.name)
 
@@ -242,9 +242,7 @@ class RPGGame(BaseGame):
         actor_entity = context.create_entity()
 
         # 必要组件
-        actor_entity.add(
-            GUIDComponent, actor_model.name, context._guid_generator.generate()
-        )
+        actor_entity.add(GUIDComponent, actor_model.name, actor_proxy.guid)
 
         assert actor_proxy.name == actor_model.name
         actor_entity.add(ActorComponent, actor_model.name, "")
@@ -285,7 +283,7 @@ class RPGGame(BaseGame):
                 continue
 
             new_prop_file = PropFile(
-                context._guid_generator.generate(),
+                prop_proxy.guid,
                 prop_model.name,
                 actor_proxy.name,
                 prop_model,
@@ -378,11 +376,8 @@ class RPGGame(BaseGame):
         stage_entity = context.create_entity()
 
         # 必要组件
-        stage_entity.add(
-            GUIDComponent, stage_model.name, context._guid_generator.generate()
-        )
+        stage_entity.add(GUIDComponent, stage_model.name, stage_proxy.guid)
         stage_entity.add(StageComponent, stage_model.name)
-        # stage_entity.add(StageArchiveComponent, stage_model.name, "", 0)
 
         stage_entity.add(
             RPGAttributesComponent,
@@ -412,7 +407,7 @@ class RPGGame(BaseGame):
                 continue
 
             prop_file = PropFile(
-                context._guid_generator.generate(),
+                prop_proxy.guid,
                 prop_proxy.name,
                 stage_model.name,
                 prop_model,

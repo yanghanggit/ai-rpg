@@ -10,6 +10,7 @@ from typing import Dict, override, List, Any, FrozenSet
 import extended_systems.file_system_helper
 from rpg_game.rpg_game import RPGGame
 from my_data.model_def import ComponentDumpModel, EntityDumpModel
+from collections import OrderedDict
 
 
 class EndSystem(ExecuteProcessor):
@@ -48,12 +49,12 @@ class EndSystem(ExecuteProcessor):
             )
 
     ############################################################################################################
-    def _get_map_dumps(self) -> Dict[str, List[str]]:
+    def _get_map_dumps(self) -> OrderedDict[str, List[str]]:
 
         stage_entities = self._context.get_group(Matcher(StageComponent)).entities
         actor_entities = self._context.get_group(Matcher(ActorComponent)).entities
 
-        ret: Dict[str, List[str]] = {}
+        ret: OrderedDict[str, List[str]] = OrderedDict()
         for stage_entity in stage_entities:
 
             stage_comp = stage_entity.get(StageComponent)
@@ -69,9 +70,9 @@ class EndSystem(ExecuteProcessor):
     ############################################################################################################
     def _get_entity_dumps(
         self, component_types: FrozenSet[type[Any]]
-    ) -> Dict[str, EntityDumpModel]:
+    ) -> OrderedDict[str, EntityDumpModel]:
 
-        ret: Dict[str, EntityDumpModel] = {}
+        ret: OrderedDict[str, EntityDumpModel] = OrderedDict()
 
         entities = self._context.get_group(Matcher(any_of=component_types)).entities
 

@@ -10,8 +10,10 @@ from typing import List, Dict, Any, Optional, cast
 from game_sample.excel_data_prop import ExcelDataProp
 from game_sample.excel_data_actor import ExcelDataActor
 from game_sample.excel_data_stage import ExcelDataStage
-import pandas as pd
+
+# import pandas as pd
 import game_sample.utils
+from game_sample.editor_guid_generator import editor_guid_generator
 
 
 class ExcelEditorStage:
@@ -116,8 +118,9 @@ class ExcelEditorStage:
         for tp in props:
             prop = tp[0]
             count = tp[1]
-            _dt = prop.proxy()  # proxy_prop(prop) #代理即可
+            _dt = prop.proxy()
             _dt["count"] = str(count)
+            _dt["guid"] = editor_guid_generator.gen_prop_guid(prop.name)
             ls.append(_dt)
         return ls
 
@@ -153,6 +156,7 @@ class ExcelEditorStage:
         data_stage: ExcelDataStage = self._stage_data_base[self._my_data["name"]]
         output: Dict[str, Any] = {}
         output["name"] = data_stage.name
+        output["guid"] = editor_guid_generator.gen_stage_guid(data_stage.name)
         #
         props = self.stage_props_proxy(self._stage_prop)
         output["props"] = props

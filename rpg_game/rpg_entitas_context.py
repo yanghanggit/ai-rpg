@@ -14,7 +14,6 @@ from extended_systems.code_name_component_system import CodeNameComponentSystem
 from my_agent.lang_serve_agent_system import LangServeAgentSystem
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from typing import Optional, Dict, List, Set, cast, Any
-from extended_systems.guid_generator import GUIDGenerator
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt
 from player.player_proxy import PlayerProxy
 
@@ -29,7 +28,6 @@ class RPGEntitasContext(Context):
         langserve_agent_system: LangServeAgentSystem,
         codename_component_system: CodeNameComponentSystem,
         chaos_engineering_system: IChaosEngineering,
-        guid_generator: GUIDGenerator,
     ) -> None:
 
         #
@@ -51,9 +49,6 @@ class RPGEntitasContext(Context):
 
         # 混沌工程系统
         self._chaos_engineering_system: IChaosEngineering = chaos_engineering_system
-
-        # guid 生成器
-        self._guid_generator: GUIDGenerator = guid_generator
 
         # 临时收集会话的历史
         self._round_messages: Dict[str, List[str]] = {}

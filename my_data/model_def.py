@@ -48,23 +48,27 @@ class DataBaseModel(BaseModel):
 
 class PropProxyModel(BaseModel):
     name: str
+    guid: int
     count: int
 
 
 class ActorProxyModel(BaseModel):
     name: str
+    guid: int
     props: List[PropProxyModel]
     actor_current_using_prop: List[str]
 
 
 class StageProxyModel(BaseModel):
     name: str
+    guid: int
     props: List[PropProxyModel]
     actors: List[Dict[str, Any]]
 
 
 class WorldSystemProxyModel(BaseModel):
     name: str
+    guid: int
 
 
 class GameModel(BaseModel):

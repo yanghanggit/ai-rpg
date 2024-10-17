@@ -8,6 +8,7 @@ from typing import List, Dict, Any, Optional, cast
 from game_sample.excel_data_prop import ExcelDataProp
 import game_sample.utils
 from game_sample.excel_data_actor import ExcelDataActor
+from game_sample.editor_guid_generator import editor_guid_generator
 
 
 class ExcelEditorActor:
@@ -110,11 +111,13 @@ class ExcelEditorActor:
         #
         assert self.excel_data is not None
         output["name"] = self.excel_data.name
+        output["guid"] = editor_guid_generator.gen_actor_guid(self.excel_data.name)
         #
         props_data: List[Dict[str, Any]] = []
         for tp in self._prop_data:
             dt = tp[0].proxy()
             dt["count"] = tp[1]
+            dt["guid"] = editor_guid_generator.gen_prop_guid(tp[0].name)
             props_data.append(dt)
         #
         output["props"] = props_data

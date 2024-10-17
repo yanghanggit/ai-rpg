@@ -44,6 +44,7 @@ from player.player_command import (
 )
 import datetime
 from rpg_game.rpg_game_config import RPGGameConfig
+import shutil
 
 
 #######################################################################################################################################
@@ -284,9 +285,21 @@ def gen_player_check_message(game_name: RPGGame, player_proxy: PlayerProxy) -> s
 
 
 #######################################################################################################################################
-def save_game(game_name: RPGGame) -> None:
-    logger.warning(f"保存游戏 = {game_name._name}")
+def save_game(rpg_game: RPGGame) -> None:
 
+    assert rpg_game._game_resource is not None
+
+    logger.info(
+        f"保存游戏 = {rpg_game._name}, _runtime_dir = {rpg_game._game_resource._runtime_dir}"
+    )
+    
+    zip_file_path = shutil.make_archive(rpg_game._name, 'zip', rpg_game._game_resource._runtime_dir)
+
+    archive_dir = Path("game_archive")
+    archive_dir.mkdir(parents=True, exist_ok=True)
+    shutil.move(zip_file_path, archive_dir / f"{rpg_game._name}.zip")
+
+    logger.info(f"游戏已保存到 {archive_dir / f'{rpg_game._name}.zip'}")
 
 #######################################################################################################################################
 def add_player_command(

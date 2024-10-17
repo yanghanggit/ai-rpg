@@ -93,6 +93,7 @@ class RPGEntitasProcessors(Processors):
             SelfSkillUsageCheckSystem,
         )
         from gameplay_systems.world_skill_rule_system import WorldSkillRuleSystem
+        from gameplay_systems.save_game_resource_system import SaveGameResourceSystem
 
         ##
         rpg_game = cast(RPGGame, game)
@@ -187,6 +188,7 @@ class RPGEntitasProcessors(Processors):
         processors.add(EndSystem(context, rpg_game))
 
         # 开发专用，网页版本不需要
+        processors.add(SaveGameResourceSystem(context, rpg_game))
         processors.add(TerminalPlayerInterruptWaitSystem(context, rpg_game))
 
         # 规划逻辑

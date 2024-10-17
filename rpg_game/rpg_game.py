@@ -66,12 +66,15 @@ class RPGGame(BaseGame):
                 f"删除文件夹：{game_resource._runtime_dir}, 这是为了测试，后续得改！！！"
             )
             shutil.rmtree(game_resource._runtime_dir)
+            game_resource._runtime_dir.mkdir(parents=True, exist_ok=True)
 
         # 混沌系统，准备测试
         context._chaos_engineering_system.on_pre_create_game(context, game_resource)
 
         ## 第1步，设置根路径
         self._game_resource = game_resource
+        self.save_game_resource()
+        ##
         context._langserve_agent_system.set_runtime_dir(game_resource._runtime_dir)
         context._kick_off_message_system.set_runtime_dir(game_resource._runtime_dir)
         context._file_system.set_runtime_dir(game_resource._runtime_dir)
@@ -94,6 +97,26 @@ class RPGGame(BaseGame):
         context._chaos_engineering_system.on_post_create_game(context, game_resource)
 
         return self
+
+    ############################################################################################################
+    def save_game_resource(self) -> int:
+
+        assert self._game_resource is not None
+        assert self._game_resource._runtime_dir.exists()
+
+        try:
+
+            dump_json = self._game_resource._model.model_dump_json()
+            write_path = (
+                self._game_resource._runtime_dir
+                / f"{self._game_resource._game_name}.json"
+            )
+            return write_path.write_text(dump_json, encoding="utf-8")
+
+        except Exception as e:
+            logger.error(f"写文件失败: {write_path}, e = {e}")
+
+        return -1
 
     ###############################################################################################################################################
     @override

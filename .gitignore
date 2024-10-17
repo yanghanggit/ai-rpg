@@ -8,3 +8,4 @@ game_sample/gen_world_sys_prompt
 game_sample/gen_agent
 game_sample/gen_sys_prompt_templates
 .VSCodeCounter
+game_archive/

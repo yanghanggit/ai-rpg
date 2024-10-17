@@ -119,7 +119,7 @@ class ExcelEditorStage:
             prop = tp[0]
             count = tp[1]
             _dt = prop.proxy()
-            _dt["count"] = str(count)
+            _dt["count"] = count
             _dt["guid"] = editor_guid_generator.gen_prop_guid(prop.name)
             ls.append(_dt)
         return ls

@@ -5,7 +5,11 @@ from gameplay_systems.action_components import (
     DeadAction,
     WhisperAction,
 )
-from gameplay_systems.components import ActorComponent, AppearanceComponent
+from gameplay_systems.components import (
+    ActorComponent,
+    AppearanceComponent,
+    KickOffComponent,
+)
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt
 from typing import cast, override, List, Set, Any, Dict, Optional
@@ -238,11 +242,13 @@ class StageDepartureCheckerSystem(ReactiveProcessor):
 
     ###############################################################################################################################################
     def has_conditions(self, stage_entity: Entity) -> bool:
-        safe_name = self._context.safe_get_entity_name(stage_entity)
-        kickoff = self._context._kick_off_message_system.get_message(safe_name)
-        if len(kickoff) == 0:
+        if not stage_entity.has(KickOffComponent):
             return False
-        return public_builtin_prompt.ConstantPrompt.STAGE_EXIT_TAG in kickoff[0].content
+
+        kick_off_comp = stage_entity.get(KickOffComponent)
+        return (
+            public_builtin_prompt.ConstantPrompt.STAGE_EXIT_TAG in kick_off_comp.content
+        )
 
     ###############################################################################################################################################
     def get_actor_appearance_prompt(self, actor_entity: Entity) -> str:

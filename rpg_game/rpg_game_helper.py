@@ -5,7 +5,8 @@ from my_data.game_resource import GameResource
 from rpg_game.rpg_game import RPGGame
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from extended_systems.file_system import FileSystem
-from extended_systems.kick_off_message_system import KickOffMessageSystem
+
+# from extended_systems.kick_off_message_system import KickOffMessageSystem
 from typing import Optional
 from my_agent.lang_serve_agent_system import LangServeAgentSystem
 from extended_systems.code_name_component_system import CodeNameComponentSystem
@@ -27,6 +28,7 @@ from gameplay_systems.components import (
     AppearanceComponent,
     PlayerComponent,
     PlanningAllowedComponent,
+    KickOffComponent,
 )
 from gameplay_systems.check_self_helper import SelfChecker
 import gameplay_systems.actor_planning_execution_system
@@ -69,21 +71,16 @@ def _load_game_resource_file(file_path: Path, version: str) -> Any:
 
 
 #######################################################################################################################################
-def _create_game_resource(
-    game_resource_file_path: Path, version: str
+def create_game_resource(
+    game_resource_file_path: Path, runtime_file_dir: Path, check_version: str
 ) -> Optional[GameResource]:
 
-    if not game_resource_file_path.exists():
-        return None
-
-    game_data = _load_game_resource_file(game_resource_file_path, version)
+    assert game_resource_file_path.exists()
+    game_data = _load_game_resource_file(game_resource_file_path, check_version)
     if game_data is None:
         return None
 
-    game_name = game_resource_file_path.stem
-    runtime_file_dir = game_resource_file_path.parent / game_name
-
-    return GameResource(game_name, game_data, runtime_file_dir)
+    return GameResource(game_resource_file_path.stem, game_data, runtime_file_dir)
 
 
 #######################################################################################################################################
@@ -102,9 +99,9 @@ def _create_entitas_context(
         FileSystem(
             "FileSystem Because it involves IO operations, an independent system is more convenient."
         ),
-        KickOffMessageSystem(
-            "KickOffMessageSystem Because it involves IO operations, an independent system is more convenient."
-        ),
+        # KickOffMessageSystem(
+        #     "KickOffMessageSystem Because it involves IO operations, an independent system is more convenient."
+        # ),
         LangServeAgentSystem(
             "LangServeAgentSystem Because it involves net operations, an independent system is more convenient."
         ),
@@ -118,40 +115,7 @@ def _create_entitas_context(
 
 
 #######################################################################################################################################
-def prepare_runtime_dir(game_name: str) -> Path:
-    root_runtime_dir = Path(f"{RPGGameConfig.GAME_SAMPLE_RUNTIME_DIR}/{game_name}")
-    if root_runtime_dir.exists():
-        # todo
-        logger.warning(f"删除文件夹：{root_runtime_dir}, 这是为了测试，后续得改！！！")
-        shutil.rmtree(root_runtime_dir)
-
-    root_runtime_dir.mkdir(parents=True, exist_ok=True)
-    assert root_runtime_dir.exists()
-    return root_runtime_dir
-
-
-#######################################################################################################################################
-def parse_game_resource_file_path(game_name: str) -> Optional[Path]:
-    game_resource_file_path = (
-        Path(f"{RPGGameConfig.GAME_SAMPLE_RUNTIME_DIR}") / f"{game_name}.json"
-    )
-
-    if not game_resource_file_path.exists():
-        assert False, f"找不到游戏资源文件 = {game_resource_file_path}"
-        return None
-
-    return game_resource_file_path
-
-
-#######################################################################################################################################
-def create_terminal_rpg_game(
-    game_resource_file_path: Path, version: str
-) -> Optional[TerminalGame]:
-
-    game_resource = _create_game_resource(game_resource_file_path, version)
-    if game_resource is None:
-        logger.error(f"create_terminal_rpg_game 创建{game_resource_file_path} 失败。")
-        return None
+def create_terminal_rpg_game(game_resource: GameResource) -> Optional[TerminalGame]:
 
     rpg_context = _create_entitas_context(
         GameSampleChaosEngineeringSystem("terminal_rpg_game_chaos")
@@ -163,13 +127,7 @@ def create_terminal_rpg_game(
 
 
 #######################################################################################################################################
-def create_web_rpg_game(
-    game_resource_file_path: Path, version: str
-) -> Optional[WebGame]:
-    game_resource = _create_game_resource(game_resource_file_path, version)
-    if game_resource is None:
-        logger.error(f"create_web_rpg_game 创建{game_resource_file_path} 失败。")
-        return None
+def create_web_rpg_game(game_resource: GameResource) -> Optional[WebGame]:
 
     rpg_context = _create_entitas_context(
         GameSampleChaosEngineeringSystem("web_rpg_game_chaos")
@@ -399,14 +357,9 @@ def player_join(
     player_proxy.add_system_message(
         f"login: {player_proxy._name}, time = {time}, 控制角色 = {player_controlled_actor_name}"
     )
-    kick_off_messages = rpg_game._entitas_context._kick_off_message_system.get_message(
-        player_controlled_actor_name
-    )
-    if len(kick_off_messages) == 0 or len(kick_off_messages) > 1:
-        return
-    player_proxy.add_login_message(
-        player_controlled_actor_name, kick_off_messages[0].content
-    )
+
+    kick_off_comp = actor_entity.get(KickOffComponent)
+    player_proxy.add_login_message(player_controlled_actor_name, kick_off_comp.content)
 
 
 #######################################################################################################################################

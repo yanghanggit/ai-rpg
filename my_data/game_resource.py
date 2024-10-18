@@ -27,7 +27,7 @@ class GameResource:
         self._data_base = DataBase(self._model.database)
 
         #
-        self._save_model = self._model.model_copy()
+        self._runtime_model = self._model.model_copy()
 
     ###############################################################################################################################################
     @property

@@ -103,6 +103,12 @@ class ComponentDumpModel(BaseModel):
     data: Dict[str, Any]
 
 
-class EntityDumpModel(BaseModel):
+class EntityProfileModel(BaseModel):
     name: str
     components: List[ComponentDumpModel]
+
+
+class AgentMessageType(StrEnum):
+    STSTEM = "SystemMessage"
+    HUMAN = "HumanMessage"
+    AI = "AIMessage"

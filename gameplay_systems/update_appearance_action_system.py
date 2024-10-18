@@ -24,6 +24,11 @@ def _generate_appearance_update_prompt(actor_name: str, appearance: str) -> str:
 
 
 ################################################################################################################################################
+def _generate_default_appearance_prompt(body: str, clothe: str) -> str:
+    return body + f"""\n衣着:{clothe}""" if clothe != "" else " "
+
+
+################################################################################################################################################
 def _generate_reasoning_appearance_prompt(
     actors_body_and_clothe: Dict[str, tuple[str, str]]
 ) -> str:
@@ -126,17 +131,17 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
         self.add_update_appearance_human_message(actor_entities)
 
     ###############################################################################################################################################
-    # 没有衣服的，就直接更新外观，一般是动物类的，或者非人类的。
     def default_update(self, input_data: Dict[str, tuple[str, str]]) -> None:
 
         context = self._context
         for name, (body, clothe) in input_data.items():
 
             if body == "":
-                assert False, f"body is empty, name: {name}"
+                # assert False, f"body is empty, name: {name}"
+                logger.error(f"body is empty, name: {name}")
                 continue
 
-            default_appearance = body + clothe if clothe != "" else " "
+            default_appearance = _generate_default_appearance_prompt(body, clothe)
 
             entity = context.get_actor_entity(name)
             assert entity is not None, f"entity is None, name: {name}"
@@ -146,7 +151,6 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
             )
 
     ###############################################################################################################################################
-    # 有衣服的，请求更新，通过LLM来推理外观。
     def request(self, input_data: Dict[str, tuple[str, str]], agent_name: str) -> bool:
 
         if len(input_data) == 0:
@@ -175,7 +179,6 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
         return True
 
     ###############################################################################################################################################
-    # 请求成功后的处理，就是把AppearanceComponent 设置一遍
     def on_success(self, _json_: Dict[str, str]) -> None:
         context = self._context
         for name, appearance in _json_.items():
@@ -186,7 +189,6 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
             entity.replace(AppearanceComponent, name, appearance, hash_code)
 
     ###############################################################################################################################################
-    # 获取所有的角色的身体和衣服
     def make_data(self, actor_entities: Set[Entity]) -> Dict[str, tuple[str, str]]:
 
         ret: Dict[str, tuple[str, str]] = {}
@@ -200,7 +202,6 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
         return ret
 
     ###############################################################################################################################################
-    # 获取衣服的描述 todo。现在就返回了第一个衣服的描述
     def get_current_clothe(self, entity: Entity) -> str:
         if not entity.has(RPGCurrentClothesComponent):
             return ""
@@ -215,7 +216,6 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
         return current_clothe_prop_file.appearance
 
     ###############################################################################################################################################
-    # 获取身体的描述。
     def get_body(self, entity: Entity) -> str:
         if not entity.has(BodyComponent):
             return ""
@@ -223,7 +223,6 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
         return body_comp.body
 
     ###############################################################################################################################################
-
     def add_update_appearance_human_message(self, actor_entities: Set[Entity]) -> None:
         for actor_entity in actor_entities:
             current_stage_entity = self._context.safe_get_stage_entity(actor_entity)

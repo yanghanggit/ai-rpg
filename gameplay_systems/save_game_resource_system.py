@@ -33,15 +33,17 @@ class SaveGameResourceSystem(ExecuteProcessor):
     @override
     def execute(self) -> None:
 
+        self._context._langserve_agent_system.dump_chat_histories()
+
         assert self._game._game_resource is not None
-        save_model = self._game._game_resource._save_model
+        runtime_model = self._game._game_resource._runtime_model
 
         # 把save_model改掉，然后重新写入
-        self._save_players(save_model)
-        self._save_actors(save_model)
-        self._save_stages(save_model)
-        self._save_world_systems(save_model)
-        self._write_model(save_model, self._parse_write_path())
+        self._save_players(runtime_model)
+        self._save_actors(runtime_model)
+        self._save_stages(runtime_model)
+        self._save_world_systems(runtime_model)
+        self._write_model(runtime_model, self._parse_write_path())
 
     ############################################################################################################
     def _save_players(self, game_model: GameModel) -> None:
@@ -180,7 +182,7 @@ class SaveGameResourceSystem(ExecuteProcessor):
         game_resouce = self._game._game_resource
         assert game_resouce is not None
         assert game_resouce._runtime_dir.exists()
-        return game_resouce._runtime_dir / f"""{game_resouce._game_name}_save.json"""
+        return game_resouce._runtime_dir / f"""{game_resouce._game_name}_runtime.json"""
 
 
 ############################################################################################################

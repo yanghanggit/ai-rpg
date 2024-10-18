@@ -9,6 +9,7 @@ from gameplay_systems.components import (
     ActorComponent,
     AppearanceComponent,
     StageComponent,
+    KickOffComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt
@@ -265,12 +266,14 @@ class StageEntranceCheckerSystem(ReactiveProcessor):
 
     ###############################################################################################################################################
     def has_conditions(self, stage_entity: Entity) -> bool:
-        safe_name = self._context.safe_get_entity_name(stage_entity)
-        kickoff = self._context._kick_off_message_system.get_message(safe_name)
-        if len(kickoff) == 0:
+
+        if not stage_entity.has(KickOffComponent):
             return False
+
+        kick_off_comp = stage_entity.get(KickOffComponent)
         return (
-            public_builtin_prompt.ConstantPrompt.STAGE_ENTRY_TAG in kickoff[0].content
+            public_builtin_prompt.ConstantPrompt.STAGE_ENTRY_TAG
+            in kick_off_comp.content
         )
 
     ###############################################################################################################################################

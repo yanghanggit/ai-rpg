@@ -3,12 +3,12 @@ from extended_systems.files_def import (
     PropFile,
     ActorArchiveFile,
     StageArchiveFile,
-    EntityDumpFile,
-    MapFile,
+    EntityProfileFile,
+    # MapFile,
 )
 from extended_systems.file_system import FileSystem
 from loguru import logger
-from my_data.model_def import EntityDumpModel
+from my_data.model_def import EntityProfileModel
 
 
 ##################################################################################################################################
@@ -57,10 +57,10 @@ def add_stage_archive_files(
 
 ##################################################################################################################################
 ## 更新角色的属性文件并记录下来～
-def update_entity_dump_file(
-    file_system: FileSystem, owner_name: str, entity_dump_model: EntityDumpModel
-) -> Optional[EntityDumpFile]:
-    file = EntityDumpFile(owner_name, owner_name, entity_dump_model)
+def update_entity_profile_file(
+    file_system: FileSystem, owner_name: str, entity_dump_model: EntityProfileModel
+) -> Optional[EntityProfileFile]:
+    file = EntityProfileFile(owner_name, owner_name, entity_dump_model)
     file_system.add_file(file)
     file_system.write_file(file)
     return file
@@ -68,13 +68,13 @@ def update_entity_dump_file(
 
 ##################################################################################################################################
 # 场景中有哪些人的总文件。
-def update_map_file(
-    file_system: FileSystem, update_data: Dict[str, List[str]]
-) -> Optional[MapFile]:
-    file = MapFile(update_data)
-    file_system.add_file(file)
-    file_system.write_file(file)
-    return file
+# def update_map_file(
+#     file_system: FileSystem, update_data: Dict[str, List[str]]
+# ) -> Optional[MapFile]:
+#     file = MapFile(update_data)
+#     file_system.add_file(file)
+#     file_system.write_file(file)
+#     return file
 
 
 ##################################################################################################################################

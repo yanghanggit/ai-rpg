@@ -9,7 +9,8 @@ from gameplay_systems.components import (
     GUIDComponent,
 )
 from extended_systems.file_system import FileSystem
-from extended_systems.kick_off_message_system import KickOffMessageSystem
+
+# from extended_systems.kick_off_message_system import KickOffMessageSystem
 from extended_systems.code_name_component_system import CodeNameComponentSystem
 from my_agent.lang_serve_agent_system import LangServeAgentSystem
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
@@ -24,7 +25,7 @@ class RPGEntitasContext(Context):
     def __init__(
         self,
         file_system: FileSystem,
-        kick_off_message_system: KickOffMessageSystem,
+        # kick_off_message_system: KickOffMessageSystem,
         langserve_agent_system: LangServeAgentSystem,
         codename_component_system: CodeNameComponentSystem,
         chaos_engineering_system: IChaosEngineering,
@@ -35,9 +36,6 @@ class RPGEntitasContext(Context):
 
         # 文件系统
         self._file_system: FileSystem = file_system
-
-        # 读取启动记忆系统
-        self._kick_off_message_system: KickOffMessageSystem = kick_off_message_system
 
         # agent 系统
         self._langserve_agent_system: LangServeAgentSystem = langserve_agent_system
@@ -58,7 +56,6 @@ class RPGEntitasContext(Context):
 
         #
         assert self._file_system is not None, "self.file_system is None"
-        assert self._kick_off_message_system is not None, "self.memory_system is None"
         assert (
             self._langserve_agent_system is not None
         ), "self.agent_connect_system is None"

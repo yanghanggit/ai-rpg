@@ -7,6 +7,12 @@ class GUIDComponent(NamedTuple):
     GUID: int
 
 
+# 记录kick off信息
+class KickOffComponent(NamedTuple):
+    name: str
+    content: str
+
+
 # 例如，世界级的entity就标记这个组件
 class WorldComponent(NamedTuple):
     name: str

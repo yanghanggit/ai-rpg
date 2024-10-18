@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 from my_agent.lang_serve_agent import LangServeAgent
 from my_agent.remote_runnable_wrapper import RemoteRunnableWrapper
+from my_data.model_def import AgentMessageType
 
 
 class LangServeAgentSystem:
@@ -130,9 +131,9 @@ class LangServeAgentSystem:
         ret: List[Dict[str, str]] = []
         for chat in agent._chat_history:
             if isinstance(chat, HumanMessage):
-                ret.append({"HumanMessage": cast(str, chat.content)})
+                ret.append({AgentMessageType.HUMAN: cast(str, chat.content)})
             elif isinstance(chat, AIMessage):
-                ret.append({"AIMessage": cast(str, chat.content)})
+                ret.append({AgentMessageType.AI: cast(str, chat.content)})
 
         return ret
 

@@ -94,6 +94,7 @@ class RPGEntitasProcessors(Processors):
         )
         from gameplay_systems.world_skill_rule_system import WorldSkillRuleSystem
         from gameplay_systems.save_game_resource_system import SaveGameResourceSystem
+        from gameplay_systems.save_entity_system import SaveEntitySystem
 
         ##
         rpg_game = cast(RPGGame, game)
@@ -187,8 +188,11 @@ class RPGEntitasProcessors(Processors):
         ##调试用的系统。监视进入运行之后的状态
         processors.add(EndSystem(context, rpg_game))
 
-        # 开发专用，网页版本不需要
+        # 存储系统
+        processors.add(SaveEntitySystem(context, rpg_game))
         processors.add(SaveGameResourceSystem(context, rpg_game))
+
+        # 开发专用，网页版本不需要
         processors.add(TerminalPlayerInterruptWaitSystem(context, rpg_game))
 
         # 规划逻辑

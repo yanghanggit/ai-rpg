@@ -20,25 +20,47 @@ class TerminalRunOption:
 
 async def terminal_run(option: TerminalRunOption) -> None:
 
-    # 读取世界资源文件
+    # 输入要进入的世界名称
     game_name = input(
         f"请输入要进入的世界名称(必须与自动化创建的名字一致), 默认为 {option.default_game_name}:"
     )
+
+    # 如果没有输入就用默认的
     if game_name == "":
         game_name = option.default_game_name
 
-    rpg_game.rpg_game_helper.prepare_runtime_dir(game_name)
-    game_resource_file_path = rpg_game.rpg_game_helper.parse_game_resource_file_path(
-        game_name
+    # 创建游戏运行时目录，每一次运行都会删除
+    game_runtime_dir = Path(f"{RPGGameConfig.GAME_SAMPLE_RUNTIME_DIR}/{game_name}")
+    if game_runtime_dir.exists():
+        logger.warning(f"删除文件夹：{game_runtime_dir}, 这是为了测试，后续得改！！！")
+        shutil.rmtree(game_runtime_dir)
+
+    game_runtime_dir.mkdir(parents=True, exist_ok=True)
+    assert game_runtime_dir.exists()
+
+    # 读取游戏资源文件
+    game_resource_file_path = (
+        Path(f"{RPGGameConfig.GAME_SAMPLE_RUNTIME_DIR}") / f"{game_name}.json"
     )
-    if game_resource_file_path is None:
-        logger.error(f"找不到游戏资源文件 = {game_name}")
+
+    # 如果找不到游戏资源文件就退出
+    if not game_resource_file_path.exists():
+        logger.error(f"找不到游戏资源文件 = {game_resource_file_path}")
         return
 
-    # 创建游戏
-    new_game = rpg_game.rpg_game_helper.create_terminal_rpg_game(
-        game_resource_file_path, option.check_game_resource_version
+    # 创建游戏资源
+    game_resource = rpg_game.rpg_game_helper.create_game_resource(
+        game_resource_file_path, game_runtime_dir, option.check_game_resource_version
     )
+    if game_resource is None:
+        logger.error(f"create_terminal_rpg_game 创建{game_resource_file_path} 失败。")
+        return None
+
+    # 游戏资源可以被创建，则将game_resource_file_path这个文件拷贝一份到root_runtime_dir下
+    shutil.copy(game_resource_file_path, game_runtime_dir / game_resource_file_path.name)
+
+    # 创建游戏
+    new_game = rpg_game.rpg_game_helper.create_terminal_rpg_game(game_resource)
     if new_game is None:
         logger.error(f"create_rpg_game 失败 = {game_name}")
         return
@@ -176,7 +198,7 @@ if __name__ == "__main__":
 
     option = TerminalRunOption(
         login_player_name="北京柏林互动科技有限公司",
-        default_game_name="World3",
+        default_game_name="World1",
         check_game_resource_version="qwe",
         show_client_message_count=20,
     )

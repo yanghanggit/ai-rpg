@@ -1,17 +1,11 @@
 from entitas import ExecuteProcessor, Matcher, Entity, InitializeProcessor  # type: ignore
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
-from gameplay_systems.components import (
-    ActorComponent,
-    StageComponent,
-)
+from gameplay_systems.components import ActorComponent, StageComponent, KickOffComponent
 from typing import Set, override, Dict, List
 import extended_systems.file_system_helper
 from rpg_game.rpg_game import RPGGame
-from extended_systems.files_def import (
-    ActorArchiveFile,
-    StageArchiveFile,
-)
+from extended_systems.files_def import ActorArchiveFile, StageArchiveFile
 import extended_systems.file_system_helper
 
 
@@ -173,25 +167,19 @@ class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
         ret: Dict[str, List[ActorArchiveFile]] = {}
 
         actor_entities: Set[Entity] = self._context.get_group(
-            Matcher(all_of=[ActorComponent])
+            Matcher(all_of=[ActorComponent, KickOffComponent])
         ).entities
 
         for actor_entity in actor_entities:
 
             actor_comp = actor_entity.get(ActorComponent)
-            kick_off_messages = self._context._kick_off_message_system.get_message(
-                actor_comp.name
-            )
-
-            batch_cotent = ""
-            for message in kick_off_messages:
-                batch_cotent += message.content + " "
+            kick_off_comp = actor_entity.get(KickOffComponent)
 
             for archive_actor_name in optional_range_actor_names:
                 if archive_actor_name == actor_comp.name:
                     continue
 
-                if archive_actor_name not in batch_cotent:
+                if archive_actor_name not in kick_off_comp.content:
                     continue
 
                 add_archives = (
@@ -214,26 +202,20 @@ class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
         ret: Dict[str, List[StageArchiveFile]] = {}
 
         actor_entities: Set[Entity] = self._context.get_group(
-            Matcher(all_of=[ActorComponent])
+            Matcher(all_of=[ActorComponent, KickOffComponent])
         ).entities
 
         for actor_entity in actor_entities:
 
             actor_comp = actor_entity.get(ActorComponent)
-            kick_off_messages = self._context._kick_off_message_system.get_message(
-                actor_comp.name
-            )
-
-            batch_cotent = ""
-            for message in kick_off_messages:
-                batch_cotent += message.content + " "
+            kick_off_comp = actor_entity.get(KickOffComponent)
 
             for archive_stage_name in optional_range_stage_names:
 
                 if archive_stage_name == actor_comp.name:
                     continue
 
-                if archive_stage_name not in batch_cotent:
+                if archive_stage_name not in kick_off_comp.content:
                     continue
 
                 add_archives = (

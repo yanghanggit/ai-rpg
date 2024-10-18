@@ -6,6 +6,7 @@ from gameplay_systems.components import (
     ActorComponent,
     AppearanceComponent,
     BodyComponent,
+    KickOffComponent,
 )
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt
 from rpg_game.rpg_entitas_context import RPGEntitasContext
@@ -159,7 +160,7 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
         ret: Dict[str, AgentTask] = {}
 
         world_entities: Set[Entity] = self._context.get_group(
-            Matcher(WorldComponent)
+            Matcher(all_of=[WorldComponent, KickOffComponent])
         ).entities
         for world_entity in world_entities:
 
@@ -183,7 +184,7 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
         ret: Dict[str, AgentTask] = {}
 
         stage_entities: Set[Entity] = self._context.get_group(
-            Matcher(StageComponent)
+            Matcher(all_of=[StageComponent, KickOffComponent])
         ).entities
         for stage_entity in stage_entities:
 
@@ -192,15 +193,9 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
             if agent is None:
                 continue
 
-            kick_off_messages = self._context._kick_off_message_system.get_message(
-                stage_comp.name
-            )
-            if len(kick_off_messages) == 0 or len(kick_off_messages) > 1:
-                logger.error(f"kick_off_messages is error: {stage_comp.name}")
-                continue
-
+            kick_off_comp = stage_entity.get(KickOffComponent)
             kick_off_prompt = _generate_stage_kick_off_prompt(
-                kick_off_messages[0].content,
+                kick_off_comp.content,
                 self._game.about_game,
                 self._context._file_system.get_files(
                     PropFile, self._context.safe_get_entity_name(stage_entity)
@@ -219,7 +214,7 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
         ret: Dict[str, AgentTask] = {}
 
         actor_entities: Set[Entity] = self._context.get_group(
-            Matcher(all_of=[ActorComponent])
+            Matcher(all_of=[ActorComponent, KickOffComponent])
         ).entities
         for actor_entity in actor_entities:
 
@@ -228,17 +223,11 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
             if agent is None:
                 continue
 
-            kick_off_messages = self._context._kick_off_message_system.get_message(
-                actor_comp.name
-            )
-            if len(kick_off_messages) == 0 or len(kick_off_messages) > 1:
-                logger.error(f"kick_off_messages is error: {actor_comp.name}")
-                continue
-
+            kick_off_comp = actor_entity.get(KickOffComponent)
             ret[actor_comp.name] = AgentTask.create(
                 agent,
                 _generate_actor_kick_off_prompt(
-                    kick_off_messages[0].content,
+                    kick_off_comp.content,
                     self._game.about_game,
                     self._game.round,
                 ),

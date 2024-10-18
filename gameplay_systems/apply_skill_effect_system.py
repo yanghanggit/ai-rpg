@@ -307,17 +307,17 @@ class ApplySkillEffectSystem(ReactiveProcessor):
         prop_files = self.extract_prop_files(entity)
         for prop_file in prop_files:
             for i in range(len(out_put_skill_attrs)):
-                out_put_skill_attrs[i] += prop_file._prop_model.attributes[i]
+                out_put_skill_attrs[i] += prop_file.prop_model.attributes[i]
 
     ######################################################################################################################################################
     def gen_skill_attrs(self, entity: Entity) -> List[int]:
         final_attr: List[int] = []
         for skill_file in self.extract_skill_files(entity):
             if len(final_attr) == 0:
-                final_attr = skill_file._prop_model.attributes
+                final_attr = skill_file.prop_model.attributes
             else:
                 for i in range(len(final_attr)):
-                    final_attr[i] += skill_file._prop_model.attributes[i]
+                    final_attr[i] += skill_file.prop_model.attributes[i]
         return final_attr
 
     ######################################################################################################################################################

@@ -5,8 +5,6 @@ from my_data.game_resource import GameResource
 from rpg_game.rpg_game import RPGGame
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from extended_systems.file_system import FileSystem
-
-# from extended_systems.kick_off_message_system import KickOffMessageSystem
 from typing import Optional
 from my_agent.lang_serve_agent_system import LangServeAgentSystem
 from extended_systems.code_name_component_system import CodeNameComponentSystem
@@ -47,6 +45,7 @@ from player.player_command import (
 import datetime
 from rpg_game.rpg_game_config import RPGGameConfig
 import shutil
+import zipfile
 
 
 #######################################################################################################################################
@@ -65,6 +64,7 @@ def _load_game_resource_file(file_path: Path, version: str) -> Any:
 
     version = cast(str, data["version"])
     if version != version:
+        logger.error(f"版本不匹配，期望版本 = {version}, 实际版本 = {version}")
         return None
 
     return data
@@ -72,7 +72,7 @@ def _load_game_resource_file(file_path: Path, version: str) -> Any:
 
 #######################################################################################################################################
 def create_game_resource(
-    game_resource_file_path: Path, runtime_file_dir: Path, check_version: str
+    game_resource_file_path: Path, game_runtime_dir: Path, check_version: str
 ) -> Optional[GameResource]:
 
     assert game_resource_file_path.exists()
@@ -80,7 +80,39 @@ def create_game_resource(
     if game_data is None:
         return None
 
-    return GameResource(game_resource_file_path.stem, game_data, runtime_file_dir)
+    return GameResource(game_resource_file_path.stem, game_data, game_runtime_dir)
+
+
+#######################################################################################################################################
+def load_game_resource(
+    load_archive_zip_path: Path, game_runtime_dir: Path, check_version: str
+) -> Optional[GameResource]:
+
+    assert load_archive_zip_path.exists()
+
+    game_name = load_archive_zip_path.stem
+    logger.info(f"加载游戏资源 = {game_name}, path = {load_archive_zip_path}")
+
+    with zipfile.ZipFile(load_archive_zip_path, "r") as zip_ref:
+        extract_dir = load_archive_zip_path.parent / game_name
+        if extract_dir.exists():
+            shutil.rmtree(extract_dir)
+        zip_ref.extractall(extract_dir)
+
+    game_archive_file_path = extract_dir / GameResource.generate_runtime_file_name(
+        game_name
+    )
+    if not game_archive_file_path.exists():
+        assert False, f"找不到游戏资源文件 = {game_archive_file_path}"
+        return None
+
+    game_data = _load_game_resource_file(game_archive_file_path, check_version)
+    if game_data is None:
+        return None
+
+    load_game_resource = GameResource(game_name, game_data, game_runtime_dir)
+    load_game_resource.load(extract_dir)
+    return load_game_resource
 
 
 #######################################################################################################################################
@@ -99,9 +131,6 @@ def _create_entitas_context(
         FileSystem(
             "FileSystem Because it involves IO operations, an independent system is more convenient."
         ),
-        # KickOffMessageSystem(
-        #     "KickOffMessageSystem Because it involves IO operations, an independent system is more convenient."
-        # ),
         LangServeAgentSystem(
             "LangServeAgentSystem Because it involves net operations, an independent system is more convenient."
         ),
@@ -166,7 +195,7 @@ def get_stage_narrate_content(game_name: RPGGame, player_entity: Entity) -> str:
         )
 
         if stage_archive is not None:
-            return stage_archive._stage_narrate
+            return stage_archive.stage_narrate
 
     return ""
 
@@ -285,7 +314,7 @@ def save_game(rpg_game: RPGGame) -> None:
         rpg_game._name, "zip", rpg_game._game_resource._runtime_dir
     )
 
-    archive_dir = Path("game_archive")
+    archive_dir = Path(RPGGameConfig.GAME_ARCHIVE_DIR)
     archive_dir.mkdir(parents=True, exist_ok=True)
     shutil.move(zip_file_path, archive_dir / f"{rpg_game._name}.zip")
 

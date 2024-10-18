@@ -21,6 +21,7 @@ from my_data.model_def import (
 )
 from extended_systems.files_def import PropFile
 from pathlib import Path
+from my_data.game_resource import GameResource
 
 
 class SaveGameResourceSystem(ExecuteProcessor):
@@ -106,7 +107,7 @@ class SaveGameResourceSystem(ExecuteProcessor):
 
         for prop_file in prop_files:
             new_model = PropProxyModel(
-                name=prop_file.name, guid=prop_file._guid, count=prop_file._count
+                name=prop_file.name, guid=prop_file.guid, count=prop_file.count
             )
             ret.append(new_model)
 
@@ -182,7 +183,9 @@ class SaveGameResourceSystem(ExecuteProcessor):
         game_resouce = self._game._game_resource
         assert game_resouce is not None
         assert game_resouce._runtime_dir.exists()
-        return game_resouce._runtime_dir / f"""{game_resouce._game_name}_runtime.json"""
+        return game_resouce._runtime_dir / GameResource.generate_runtime_file_name(
+            game_resouce._game_name
+        )
 
 
 ############################################################################################################

@@ -111,8 +111,10 @@ async def create(data: CreateData) -> Dict[str, Any]:
         ).model_dump()
 
     # 游戏资源可以被创建，则将game_resource_file_path这个文件拷贝一份到root_runtime_dir下
-    shutil.copy(game_resource_file_path, game_runtime_dir / game_resource_file_path.name)
-    
+    shutil.copy(
+        game_resource_file_path, game_runtime_dir / game_resource_file_path.name
+    )
+
     # 创建游戏
     new_game = rpg_game.rpg_game_helper.create_web_rpg_game(game_resource)
     if new_game is None or new_game._game_resource is None:

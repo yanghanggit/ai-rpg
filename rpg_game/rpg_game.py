@@ -29,6 +29,7 @@ from my_data.model_def import (
     StageModel,
     WorldSystemModel,
     WorldSystemProxyModel,
+    PropFileModel,
 )
 from my_data.model_def import AttributesIndex
 from player.player_proxy import PlayerProxy
@@ -278,11 +279,11 @@ class RPGGame(BaseGame):
                 continue
 
             new_prop_file = PropFile(
-                prop_proxy.guid,
-                prop_model.name,
-                actor_proxy.name,
-                prop_model,
-                prop_proxy.count,
+                PropFileModel(
+                    owner=actor_model.name,
+                    prop_model=prop_model,
+                    prop_proxy_model=prop_proxy,
+                )
             )
             context._file_system.add_file(new_prop_file)
             context._file_system.write_file(new_prop_file)
@@ -402,11 +403,11 @@ class RPGGame(BaseGame):
                 continue
 
             prop_file = PropFile(
-                prop_proxy.guid,
-                prop_proxy.name,
-                stage_model.name,
-                prop_model,
-                prop_proxy.count,
+                PropFileModel(
+                    owner=stage_model.name,
+                    prop_model=prop_model,
+                    prop_proxy_model=prop_proxy,
+                )
             )
             context._file_system.add_file(prop_file)
             context._file_system.write_file(prop_file)

@@ -32,7 +32,7 @@ class SaveEntitySystem(ExecuteProcessor):
         )
         for key, value in entity_dumps.items():
             extended_systems.file_system_helper.update_entity_profile_file(
-                self._context._file_system, key, value
+                self._context._file_system, value
             )
 
     ############################################################################################################

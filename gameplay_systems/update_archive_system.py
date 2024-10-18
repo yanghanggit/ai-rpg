@@ -64,8 +64,8 @@ class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
                 ActorArchiveFile, my_name, actor_name
             )
             assert actor_archive is not None
-            if actor_archive._appearance != actor_appearance:
-                actor_archive._appearance = actor_appearance
+            if actor_archive.appearance != actor_appearance:
+                actor_archive.set_appearance(actor_appearance)
                 self._context._file_system.write_file(actor_archive)
 
     ###############################################################################################################################################

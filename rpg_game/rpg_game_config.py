@@ -8,3 +8,5 @@ class RPGGameConfig(StrEnum):
     WORLD_SKILL_SYSTEM_NAME = "技能系统"
 
     GAME_SAMPLE_RUNTIME_DIR = "game_sample/gen_runtimes"
+
+    GAME_ARCHIVE_DIR = "game_archive"

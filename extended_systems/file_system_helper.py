@@ -4,11 +4,10 @@ from extended_systems.files_def import (
     ActorArchiveFile,
     StageArchiveFile,
     EntityProfileFile,
-    # MapFile,
 )
 from extended_systems.file_system import FileSystem
 from loguru import logger
-from my_data.model_def import EntityProfileModel
+from my_data.model_def import EntityProfileModel, PropFileModel
 
 
 ##################################################################################################################################
@@ -58,24 +57,12 @@ def add_stage_archive_files(
 ##################################################################################################################################
 ## 更新角色的属性文件并记录下来～
 def update_entity_profile_file(
-    file_system: FileSystem, owner_name: str, entity_dump_model: EntityProfileModel
+    file_system: FileSystem, entity_profile_model: EntityProfileModel
 ) -> Optional[EntityProfileFile]:
-    file = EntityProfileFile(owner_name, owner_name, entity_dump_model)
+    file = EntityProfileFile(entity_profile_model)
     file_system.add_file(file)
     file_system.write_file(file)
     return file
-
-
-##################################################################################################################################
-# 场景中有哪些人的总文件。
-# def update_map_file(
-#     file_system: FileSystem, update_data: Dict[str, List[str]]
-# ) -> Optional[MapFile]:
-#     file = MapFile(update_data)
-#     file_system.add_file(file)
-#     file_system.write_file(file)
-#     return file
-
 
 ##################################################################################################################################
 def give_prop_file(
@@ -103,11 +90,11 @@ def exchange_prop_file(
 
         # 文件重新写入
         new_file1 = PropFile(
-            left_prop_file._guid,
-            left_prop_file.name,
-            right_owner_name,  ###!!!!!!
-            left_prop_file._prop_model,
-            left_prop_file._count,
+            PropFileModel(
+                owner=right_owner_name,
+                prop_model=left_prop_file.prop_model,
+                prop_proxy_model=left_prop_file.prop_proxy_model,
+            ),
         )
 
         file_system.add_file(new_file1)
@@ -120,11 +107,11 @@ def exchange_prop_file(
 
         # 文件重新写入
         new_file2 = PropFile(
-            right_prop_file._guid,
-            right_prop_file.name,
-            left_owner_name,  ###!!!!!!
-            right_prop_file._prop_model,
-            right_prop_file._count,
+            PropFileModel(
+                owner=left_owner_name,
+                prop_model=right_prop_file.prop_model,
+                prop_proxy_model=right_prop_file.prop_proxy_model,
+            ),
         )
 
         file_system.add_file(new_file2)
@@ -139,9 +126,9 @@ def get_categorized_files(
 ) -> Dict[str, List[PropFile]]:
     ret: Dict[str, List[PropFile]] = {}
     for file in file_system.get_files(PropFile, from_owner):
-        if file._prop_model.type not in ret:
-            ret[file._prop_model.type] = []
-        ret[file._prop_model.type].append(file)
+        if file.prop_model.type not in ret:
+            ret[file.prop_model.type] = []
+        ret[file.prop_model.type].append(file)
     return ret
 
 
@@ -152,11 +139,16 @@ def consume_consumable(
     if not prop.is_consumable_item:
         return False
 
-    if prop._count < consume_count:
+    if prop.count < consume_count:
         logger.error(f"consume_consumable: {prop.name} count is not enough.")
         return False
 
-    prop._count -= consume_count
+    # prop._count -= consume_count
+    prop.decrease_count(consume_count)
+    if prop.count == 0:
+        file_system.remove_file(prop)
+        return True
+
     file_system.write_file(prop)
     return True
 

@@ -58,8 +58,8 @@ class StageNarrateActionSystem(ReactiveProcessor):
             )
 
             assert stage_archive is not None
-            if stage_archive._stage_narrate != stage_narrate_content:
-                stage_archive._stage_narrate = stage_narrate_content
+            if stage_archive.stage_narrate != stage_narrate_content:
+                stage_archive.set_stage_narrate(stage_narrate_content)
                 self._context._file_system.write_file(stage_archive)
 
     ############################################################################################################

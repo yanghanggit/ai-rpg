@@ -112,3 +112,21 @@ class AgentMessageType(StrEnum):
     STSTEM = "SystemMessage"
     HUMAN = "HumanMessage"
     AI = "AIMessage"
+
+
+class StageArchiveModel(BaseModel):
+    name: str
+    owner: str
+    stage_narrate: str
+
+
+class ActorArchiveModel(BaseModel):
+    name: str
+    owner: str
+    appearance: str
+
+
+class PropFileModel(BaseModel):
+    owner: str
+    prop_model: PropModel
+    prop_proxy_model: PropProxyModel

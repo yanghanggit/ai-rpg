@@ -6,7 +6,6 @@ from extended_systems.files_def import (
     ActorArchiveFile,
     StageArchiveFile,
     EntityProfileFile,
-    # MapFile,
 )
 from pathlib import Path
 
@@ -28,9 +27,7 @@ class FileSystem:
 
         self._stage_archives: Dict[str, List[StageArchiveFile]] = {}
 
-        self._status_profile: Dict[str, EntityProfileFile] = {}
-
-        # self._stage_actors_map: MapFile = MapFile({})
+        self._entity_profiles: Dict[str, EntityProfileFile] = {}
 
     ###############################################################################################################################################
     def parse_path(self, file: BaseFile) -> Optional[Path]:
@@ -56,11 +53,6 @@ class FileSystem:
             dir = self._runtime_dir / f"{file._owner_name}"
             dir.mkdir(parents=True, exist_ok=True)
             return dir / f"entity.json"
-
-        # elif isinstance(file, MapFile):
-        #     dir = self._runtime_dir
-        #     dir.mkdir(parents=True, exist_ok=True)
-        #     return dir / f"map.json"
 
         return None
 
@@ -92,7 +84,8 @@ class FileSystem:
                 exist_file = self.get_file(PropFile, file._owner_name, file._name)
                 if exist_file is not None:
                     assert exist_file.is_consumable_item
-                    exist_file._count += file._count
+                    # exist_file._count += file._count
+                    exist_file.increase_count(file.count)
                     return True
 
             return self.add_file_2_base_file_dict(
@@ -107,11 +100,8 @@ class FileSystem:
                 cast(Dict[str, List[BaseFile]], self._stage_archives), file
             )
         elif isinstance(file, EntityProfileFile):
-            self._status_profile[file._owner_name] = file
+            self._entity_profiles[file._owner_name] = file
             return True
-        # elif isinstance(file, MapFile):
-        #     self._stage_actors_map = file
-        #     return True
         else:
             logger.error(f"file type {type(file)} not support")
 
@@ -127,9 +117,7 @@ class FileSystem:
         elif isinstance(file, StageArchiveFile):
             self._stage_archives[file._owner_name].remove(file)
         elif isinstance(file, EntityProfileFile):
-            self._status_profile.pop(file._owner_name, None)
-        # elif isinstance(file, MapFile):
-        #     self._stage_actors_map = MapFile({})
+            self._entity_profiles.pop(file._owner_name, None)
         else:
             logger.error(f"file type {type(file)} not support")
             return False
@@ -174,9 +162,7 @@ class FileSystem:
                 ),
             )
         elif file_type == EntityProfileFile:
-            return cast(Optional[FileType], self._status_profile.get(owner_name, None))
-        # elif file_type == MapFile:
-        #     return cast(Optional[FileType], self._stage_actors_map)
+            return cast(Optional[FileType], self._entity_profiles.get(owner_name, None))
         else:
             logger.error(f"file type {file_type} not support")
 
@@ -192,9 +178,7 @@ class FileSystem:
         elif file_type == StageArchiveFile:
             return cast(List[FileType], self._stage_archives.get(owner_name, []))
         elif file_type == EntityProfileFile:
-            return cast(List[FileType], [self._status_profile.get(owner_name, None)])
-        # elif file_type == MapFile:
-        #     return cast(List[FileType], [self._stage_actors_map])
+            return cast(List[FileType], [self._entity_profiles.get(owner_name, None)])
         else:
             logger.error(f"file type {file_type} not support")
 
@@ -212,9 +196,7 @@ class FileSystem:
         elif file_type == StageArchiveFile:
             return self.get_file(StageArchiveFile, owner_name, file_name) is not None
         elif file_type == EntityProfileFile:
-            return owner_name in self._status_profile
-        # elif file_type == MapFile:
-        #     return self._stage_actors_map is not None
+            return owner_name in self._entity_profiles
         else:
             logger.error(f"file type {file_type} not support")
 

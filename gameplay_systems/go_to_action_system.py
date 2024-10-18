@@ -181,12 +181,12 @@ class GoToActionSystem(ReactiveProcessor):
             return
 
         logger.debug(
-            f"{my_name}离开{helper._current_stage_name}。留下最后的印象。{stage_archive._stage_narrate}"
+            f"{my_name}离开{helper._current_stage_name}。留下最后的印象。{stage_archive.stage_narrate}"
         )
         self._context.broadcast_event(
             set({helper._entity}),
             _generate_last_impression_of_stage_prompt(
-                my_name, helper._current_stage_name, stage_archive._stage_narrate
+                my_name, helper._current_stage_name, stage_archive.stage_narrate
             ),
         )
 

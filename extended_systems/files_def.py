@@ -4,8 +4,8 @@ from abc import ABC, abstractmethod
 from my_data.model_def import (
     PropModel,
     EntityProfileModel,
-    StageArchiveModel,
-    ActorArchiveModel,
+    StageArchiveFileModel,
+    ActorArchiveFileModel,
     PropProxyModel,
 )
 from pathlib import Path
@@ -76,8 +76,9 @@ class PropFile(BaseFile):
     ############################################################################################################
     @override
     def deserialization(self, content: str) -> None:
-        # pass
         self._model = PropFileModel.model_validate_json(content)
+        self._name = self._model.prop_proxy_model.name
+        self._owner_name = self._model.owner
 
     ############################################################################################################
     @property
@@ -186,12 +187,11 @@ class PropFile(BaseFile):
 ############################################################################################################
 class ActorArchiveFile(BaseFile):
     def __init__(
-        self, name: str, owner_name: str, actor_name: str, appearance: str
+        self,
+        model: ActorArchiveFileModel,
     ) -> None:
-        super().__init__(name, owner_name)
-        self._model = ActorArchiveModel(
-            name=actor_name, owner=owner_name, appearance=appearance
-        )
+        super().__init__(model.name, model.owner)
+        self._model = model
 
     @override
     def serialization(self) -> str:
@@ -199,7 +199,9 @@ class ActorArchiveFile(BaseFile):
 
     @override
     def deserialization(self, content: str) -> None:
-        self._model = ActorArchiveModel.model_validate_json(content)
+        self._model = ActorArchiveFileModel.model_validate_json(content)
+        self._name = self._model.name
+        self._owner_name = self._model.owner
 
     @property
     def appearance(self) -> str:
@@ -214,11 +216,9 @@ class ActorArchiveFile(BaseFile):
 ############################################################################################################
 ## 表达一个Stage的档案，有这个档案说明你知道这个Stage
 class StageArchiveFile(BaseFile):
-    def __init__(self, name: str, owner_name: str, stage_name: str) -> None:
-        super().__init__(name, owner_name)
-        self._model: StageArchiveModel = StageArchiveModel(
-            name=stage_name, owner=owner_name, stage_narrate=""
-        )
+    def __init__(self, model: StageArchiveFileModel) -> None:
+        super().__init__(model.name, model.owner)
+        self._model: StageArchiveFileModel = model
 
     @override
     def serialization(self) -> str:
@@ -226,7 +226,9 @@ class StageArchiveFile(BaseFile):
 
     @override
     def deserialization(self, content: str) -> None:
-        self._model = StageArchiveModel.model_validate_json(content)
+        self._model = StageArchiveFileModel.model_validate_json(content)
+        self._name = self._model.name
+        self._owner_name = self._model.owner
 
     @property
     def stage_narrate(self) -> str:
@@ -259,6 +261,8 @@ class EntityProfileFile(BaseFile):
     @override
     def deserialization(self, content: str) -> None:
         self._model = EntityProfileModel.model_validate_json(content)
+        self._name = self._model.name
+        self._owner_name = self._model.name
 
 
 ############################################################################################################

@@ -5,12 +5,13 @@ from my_data.model_def import (
     WorldSystemProxyModel,
     GameModel,
     EntityProfileModel,
+    StageArchiveFileModel,
+    ActorArchiveFileModel,
 )
 from my_data.data_base import DataBase
 from pathlib import Path
 import json
 from loguru import logger
-from extended_systems.files_def import ActorArchiveFile, StageArchiveFile
 
 
 class GameResource:
@@ -39,12 +40,12 @@ class GameResource:
         # 运行时模型，用于后续的存储时候用。
         self._runtime_model = self._model.model_copy()
 
-        #
+        # load 相关的数据结构
         self._load_dir: Optional[Path] = None
         self._load_chat_history_dict: Dict[str, List[Dict[str, str]]] = {}
         self._load_entity_profile_dict: Dict[str, EntityProfileModel] = {}
-        self._load_actor_archive_dict: Dict[str, List[ActorArchiveFile]] = {}
-        self._load_stage_archive_dict: Dict[str, List[StageArchiveFile]] = {}
+        self._load_actor_archive_dict: Dict[str, List[ActorArchiveFileModel]] = {}
+        self._load_stage_archive_dict: Dict[str, List[StageArchiveFileModel]] = {}
 
     ###############################################################################################################################################
     @property
@@ -208,21 +209,15 @@ class GameResource:
         )
 
     ###############################################################################################################################################
-    def _load_actor_archive_file(
-        self, name: str, load_dir: Path
-    ) -> List[ActorArchiveFile]:
-        return []
-
-    ###############################################################################################################################################
     def _load_stage_archive_file(
         self, name: str, load_dir: Path
-    ) -> List[StageArchiveFile]:
+    ) -> List[StageArchiveFileModel]:
 
         stage_archives_dir = load_dir / f"{name}/stage_archives"
         if not stage_archives_dir.exists():
             return []
 
-        ret: List[StageArchiveFile] = []
+        ret: List[StageArchiveFileModel] = []
 
         # 获得 stage_archives_dir 这个dir 下的所有后缀为.json的文件。并输入到一个列表里
         stage_archive_files = list(stage_archives_dir.glob("*.json"))
@@ -231,15 +226,32 @@ class GameResource:
             if content is None:
                 continue
 
-            data = json.loads(content)
-            if data is None:
-                continue
+            new_model = StageArchiveFileModel.model_validate_json(content)
 
-            name = stage_archive_file.stem
-            new_file = StageArchiveFile(name=name, owner_name=name, stage_name=name)
-            new_file.deserialization(content)
-            ret.append(new_file)
+            ret.append(new_model)
 
         return ret
+
+    ###############################################################################################################################################
+    def _load_actor_archive_file(
+        self, name: str, load_dir: Path
+    ) -> List[ActorArchiveFileModel]:
+
+        actor_archives_dir = load_dir / f"{name}/actor_archives"
+        if not actor_archives_dir.exists():
+            return []
+
+        ret: List[ActorArchiveFileModel] = []
+        actor_archive_files = list(actor_archives_dir.glob("*.json"))
+        for actor_archive_file in actor_archive_files:
+            content = actor_archive_file.read_text(encoding="utf-8")
+            if content is None:
+                continue
+
+            new_model = ActorArchiveFileModel.model_validate_json(content)
+
+            ret.append(new_model)
+
+        return []
 
     ###############################################################################################################################################

@@ -114,13 +114,13 @@ class AgentMessageType(StrEnum):
     AI = "AIMessage"
 
 
-class StageArchiveModel(BaseModel):
+class StageArchiveFileModel(BaseModel):
     name: str
     owner: str
     stage_narrate: str
 
 
-class ActorArchiveModel(BaseModel):
+class ActorArchiveFileModel(BaseModel):
     name: str
     owner: str
     appearance: str

@@ -7,7 +7,12 @@ from extended_systems.files_def import (
 )
 from extended_systems.file_system import FileSystem
 from loguru import logger
-from my_data.model_def import EntityProfileModel, PropFileModel
+from my_data.model_def import (
+    EntityProfileModel,
+    PropFileModel,
+    ActorArchiveFileModel,
+    StageArchiveFileModel,
+)
 
 
 ##################################################################################################################################
@@ -24,7 +29,9 @@ def add_actor_archive_files(
         ):
             continue
 
-        archive_file = ActorArchiveFile(actor_name, owners_name, actor_name, "")
+        archive_file = ActorArchiveFile(
+            ActorArchiveFileModel(name=actor_name, owner=owners_name, appearance="")
+        )
         file_system.add_file(archive_file)
         file_system.write_file(archive_file)
         ret.append(archive_file)
@@ -46,7 +53,9 @@ def add_stage_archive_files(
         ):
             continue
 
-        file = StageArchiveFile(stage_name, my_name, stage_name)
+        file = StageArchiveFile(
+            StageArchiveFileModel(name=stage_name, owner=my_name, stage_narrate="")
+        )
         file_system.add_file(file)
         file_system.write_file(file)
         ret.append(file)
@@ -55,7 +64,6 @@ def add_stage_archive_files(
 
 
 ##################################################################################################################################
-## 更新角色的属性文件并记录下来～
 def update_entity_profile_file(
     file_system: FileSystem, entity_profile_model: EntityProfileModel
 ) -> Optional[EntityProfileFile]:
@@ -63,6 +71,7 @@ def update_entity_profile_file(
     file_system.add_file(file)
     file_system.write_file(file)
     return file
+
 
 ##################################################################################################################################
 def give_prop_file(
@@ -73,8 +82,6 @@ def give_prop_file(
 
 
 ##################################################################################################################################
-
-
 def exchange_prop_file(
     file_system: FileSystem,
     left_owner_name: str,
@@ -143,7 +150,6 @@ def consume_consumable(
         logger.error(f"consume_consumable: {prop.name} count is not enough.")
         return False
 
-    # prop._count -= consume_count
     prop.decrease_count(consume_count)
     if prop.count == 0:
         file_system.remove_file(prop)

@@ -38,13 +38,12 @@ async def terminal_run(option: TerminalRunOption) -> None:
     game_runtime_dir.mkdir(parents=True, exist_ok=True)
     assert game_runtime_dir.exists()
 
-    #
-    # load_archive_zip_path = Path(f"{RPGGameConfig.GAME_ARCHIVE_DIR}/World1.zip")
-    # assert load_archive_zip_path.exists()
-
-    # load_game_resource = rpg_game.rpg_game_helper.load_game_resource(
-    #     load_archive_zip_path, game_runtime_dir, option.check_game_resource_version
-    # )
+    # 测试用的load!!!!!!!!!!!!!!!!
+    # load_archive_zip_path = Path(f"{RPGGameConfig.GAME_ARCHIVE_DIR}/{game_name}.zip")
+    # if load_archive_zip_path.exists():
+    #     load_game_resource = rpg_game.rpg_game_helper.load_game_resource(
+    #         load_archive_zip_path, game_runtime_dir, option.check_game_resource_version
+    #     )
 
     # 读取游戏资源文件
     game_resource_file_path = (

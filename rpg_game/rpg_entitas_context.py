@@ -321,19 +321,19 @@ class RPGEntitasContext(Context):
 
                 if entity.has(ActorComponent):
 
-                    if safe_name == player_proxy._ctrl_actor_name:
+                    if safe_name == player_proxy.ctrl_actor_name:
 
                         agent_event.message_content = public_builtin_prompt.replace_you(
                             agent_event.message_content,
-                            player_proxy._ctrl_actor_name,
+                            player_proxy.ctrl_actor_name,
                         )
 
                         player_proxy.add_actor_message(safe_name, agent_event)
-                    elif player_proxy._need_show_actors_in_stage_messages:
+                    elif player_proxy.need_show_actors_in_stage_messages:
                         player_proxy.add_actor_message(safe_name, agent_event)
 
                 elif entity.has(StageComponent):
-                    if player_proxy._need_show_stage_messages:
+                    if player_proxy.need_show_stage_messages:
                         player_proxy.add_stage_message(safe_name, agent_event)
                 else:
                     assert False, "不应该到这里"

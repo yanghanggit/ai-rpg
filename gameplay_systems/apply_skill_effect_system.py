@@ -333,7 +333,7 @@ class ApplySkillEffectSystem(ReactiveProcessor):
         world_skill_system_rule_tag, world_skill_system_rule_out_come = (
             self.extract_world_skill_system_rule(entity)
         )
-        
+
         logger.debug(f"world_skill_system_rule_tag: {world_skill_system_rule_tag}")
 
         self._context.notify_event(

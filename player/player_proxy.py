@@ -2,27 +2,67 @@ from typing import List, Any
 from loguru import logger
 from player.player_message import PlayerClientMessage, PlayerClientMessageTag
 from my_data.model_def import AgentEvent
+from pydantic import BaseModel
+
+
+class PlayerProxyModel(BaseModel):
+    name: str = ""
+    client_messages: List[PlayerClientMessage] = []
+    login_messages: List[PlayerClientMessage] = []
+    over: bool = False
+    ctrl_actor_name: str = ""
+    need_show_stage_messages: bool = False
+    need_show_actors_in_stage_messages: bool = False
 
 
 class PlayerProxy:
 
     SYSTEM_MESSAGE_SENDER = f"[system]"
 
-    def __init__(self, name: str) -> None:
-        self._name: str = name
+    def __init__(
+        self,
+        player_proxy_model: PlayerProxyModel,
+    ) -> None:
+
+        self._model = player_proxy_model
 
         from player.base_command import PlayerCommand
 
         self._commands: List[PlayerCommand] = []
 
-        self._client_messages: List[PlayerClientMessage] = []
-        self._login_messages: List[PlayerClientMessage] = []
+    ##########################################################################################################################################################
+    @property
+    def model(self) -> PlayerProxyModel:
+        return self._model
 
-        self._over: bool = False
+    ##########################################################################################################################################################
+    @property
+    def name(self) -> str:
+        return self._model.name
 
-        self._ctrl_actor_name: str = ""
-        self._need_show_stage_messages: bool = False
-        self._need_show_actors_in_stage_messages: bool = False
+    ##########################################################################################################################################################
+    @property
+    def ctrl_actor_name(self) -> str:
+        return self._model.ctrl_actor_name
+
+    ##########################################################################################################################################################
+    @property
+    def need_show_actors_in_stage_messages(self) -> bool:
+        return self._model.need_show_actors_in_stage_messages
+
+    ##########################################################################################################################################################
+    @property
+    def need_show_stage_messages(self) -> bool:
+        return self._model.need_show_stage_messages
+
+    ##########################################################################################################################################################
+    @property
+    def over(self) -> bool:
+        return self._model.over
+
+    ##########################################################################################################################################################
+    def ctrl_actor(self, actor_name: str) -> None:
+        self._model.ctrl_actor_name = actor_name
 
     ##########################################################################################################################################################
     def add_command(self, command: Any) -> None:
@@ -48,7 +88,7 @@ class PlayerProxy:
             PlayerClientMessageTag.SYSTEM,
             PlayerProxy.SYSTEM_MESSAGE_SENDER,
             agent_event,
-            self._client_messages,
+            self._model.client_messages,
         )
 
     ##########################################################################################################################################################
@@ -57,7 +97,7 @@ class PlayerProxy:
             PlayerClientMessageTag.ACTOR,
             actor_name,
             agent_event,
-            self._client_messages,
+            self._model.client_messages,
         )
 
     ##########################################################################################################################################################
@@ -66,7 +106,7 @@ class PlayerProxy:
             PlayerClientMessageTag.STAGE,
             stage_name,
             agent_event,
-            self._client_messages,
+            self._model.client_messages,
         )
 
     ##########################################################################################################################################################
@@ -75,13 +115,13 @@ class PlayerProxy:
             PlayerClientMessageTag.ACTOR,
             actor_name,
             agent_event,
-            self._login_messages,
+            self._model.login_messages,
         )
 
     ##########################################################################################################################################################
     def send_client_messages(self, send_count: int) -> List[str]:
         ret: List[str] = []
-        for client_message in self._client_messages[-send_count:]:
+        for client_message in self._model.client_messages[-send_count:]:
             json_str = client_message.model_dump_json()
             ret.append(json_str)
             logger.warning(json_str)
@@ -89,7 +129,16 @@ class PlayerProxy:
 
     ##########################################################################################################################################################
     def on_dead(self) -> None:
-        self._over = True
-        logger.warning(f"{self._name} : {self._ctrl_actor_name}, 死亡了!!!!!")
+        self.model.over = True
+        logger.warning(
+            f"{self._model.name} : {self._model.ctrl_actor_name}, 死亡了!!!!!"
+        )
+
+    ##########################################################################################################################################################
+    # todo
+    def flush_login_messages(self) -> None:
+        for message in self._model.login_messages:
+            self.add_actor_message(message.sender, message.event)
+        self._model.login_messages.clear()
 
     ##########################################################################################################################################################

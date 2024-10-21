@@ -1,6 +1,6 @@
 from loguru import logger
 import datetime
-from player.player_proxy import PlayerProxy
+from player.player_proxy import PlayerProxy, PlayerProxyModel
 import rpg_game.rpg_game_helper
 from rpg_game.rpg_game import RPGGame
 from typing import Optional
@@ -99,10 +99,10 @@ async def terminal_run(option: TerminalRunOption) -> None:
             logger.info(
                 f"{option.login_player_name}:{game_name}:{player_controlled_actor_name}"
             )
-            player_proxy = PlayerProxy(option.login_player_name)
+            player_proxy = PlayerProxy(PlayerProxyModel(name=option.login_player_name))
             new_game.add_player(player_proxy)
 
-            rpg_game.rpg_game_helper.player_join_new_game(
+            rpg_game.rpg_game_helper.player_play_new_game(
                 new_game, player_proxy, player_controlled_actor_name
             )
         else:
@@ -110,8 +110,10 @@ async def terminal_run(option: TerminalRunOption) -> None:
                 "没有找到可以控制的角色，可能是game resource里没设置Player，此时就是观看。"
             )
     else:
-        # assert False, "load的时候还没写"
-        return
+
+        player_proxy = rpg_game.rpg_game_helper.player_play_again(
+            new_game, option.login_player_name
+        )
 
     # 核心循环
     while True:
@@ -128,7 +130,7 @@ async def terminal_run(option: TerminalRunOption) -> None:
             player_proxy.send_client_messages(option.show_client_message_count)
 
             # 如果死了就退出。
-            if player_proxy._over:
+            if player_proxy.over:
                 new_game._will_exit = True
                 continue
 
@@ -177,12 +179,12 @@ async def terminal_player_input(game: RPGGame, player_proxy: PlayerProxy) -> Non
 
     while True:
 
-        usr_input = input(f"[{player_proxy._name}]:")
+        usr_input = input(f"[{player_proxy.name}]:")
         if usr_input == "":
             break
 
         if usr_input == "/quit":
-            logger.info(f"玩家退出游戏 = {player_proxy._name}")
+            logger.info(f"玩家退出游戏 = {player_proxy.name}")
             game._will_exit = True
             break
 

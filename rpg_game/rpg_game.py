@@ -53,12 +53,7 @@ class RPGGame(BaseGame):
             self, context
         )
         self._players: List[PlayerProxy] = []
-        self._round: int = 0
-
-    ###############################################################################################################################################
-    @property
-    def round(self) -> int:
-        return self._round
+        self._runtime_game_round: int = 0
 
     ###############################################################################################################################################
     @property
@@ -90,7 +85,7 @@ class RPGGame(BaseGame):
         self.create_world_system_entities(game_resource)
 
         ## 第3步，创建actor，player是特殊的actor
-        self.create_player_entities(game_resource, game_resource.players_proxy)
+        self.create_player_entities(game_resource, game_resource.players_actor_proxy)
         self.create_actor_entities(game_resource, game_resource.actors_proxy)
         self.add_code_name_component_to_world_and_actors()
 
@@ -523,7 +518,7 @@ class RPGGame(BaseGame):
     ###############################################################################################################################################
     def get_player(self, player_name: str) -> Optional[PlayerProxy]:
         for player in self._players:
-            if player._name == player_name:
+            if player.name == player_name:
                 return player
         return None
 
@@ -532,9 +527,14 @@ class RPGGame(BaseGame):
         self, context: RPGEntitasContext, game_resource: GameResource
     ) -> None:
 
+        # 存储的局数拿回来
+        self._runtime_game_round = game_resource.save_round
+
+        # 重新加载相关的对像
         self.load_entities(context, game_resource)
         self.load_agents(context, game_resource)
         self.load_archives(context, game_resource)
+        self.load_players(context, game_resource)  # 必须在最后！
 
     ###############################################################################################################################################
     def load_entities(
@@ -640,3 +640,23 @@ class RPGGame(BaseGame):
             extended_systems.file_system_helper.load_stage_archive_files(
                 context._file_system, safe_name, stage_archives
             )
+
+    ###############################################################################################################################################
+    def load_players(
+        self, context: RPGEntitasContext, game_resource: GameResource
+    ) -> None:
+
+        assert game_resource.is_load
+        player_entities = context.get_group(Matcher(any_of=[PlayerComponent])).entities
+
+        for player_entity in player_entities:
+
+            player_comp = player_entity.get(PlayerComponent)
+            player_proxy_model = game_resource.get_player_proxy(player_comp.name)
+            if player_proxy_model is None:
+                continue
+
+            player_proxy = PlayerProxy(player_proxy_model)
+            self.add_player(player_proxy)
+
+    ###############################################################################################################################################

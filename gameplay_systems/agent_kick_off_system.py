@@ -177,7 +177,7 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
             ret[world_comp.name] = AgentTask.create(
                 agent,
                 _generate_world_system_kick_off_prompt(
-                    self._game.about_game, self._game.round
+                    self._game.about_game, self._game._runtime_game_round
                 ),
             )
 
@@ -210,7 +210,7 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
                     PropFile, self._context.safe_get_entity_name(stage_entity)
                 ),
                 self._context.get_actor_names_in_stage(stage_entity),
-                self._game.round,
+                self._game._runtime_game_round,
             )
 
             ret[stage_comp.name] = AgentTask.create(agent, kick_off_prompt)
@@ -242,7 +242,7 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
                 _generate_actor_kick_off_prompt(
                     kick_off_comp.content,
                     self._game.about_game,
-                    self._game.round,
+                    self._game._runtime_game_round,
                 ),
             )
 

@@ -15,8 +15,8 @@ class BeginSystem(ExecuteProcessor):
     @override
     def execute(self) -> None:
 
-        self._game._round += 1
-        logger.debug(f"self._context._execute_count = {self._game._round}")
+        self._game._runtime_game_round += 1
+        logger.debug(f"self._context._execute_count = {self._game._runtime_game_round}")
 
         self._context._round_messages = {}
 

@@ -16,7 +16,7 @@ from ws_config import (
 from typing import Dict, Any, Optional, List
 import rpg_game.rpg_game_helper
 from rpg_game.web_game import WebGame
-from player.player_proxy import PlayerProxy
+from player.player_proxy import PlayerProxy, PlayerProxyModel
 from rpg_game.rpg_game_config import RPGGameConfig
 from pathlib import Path
 import shutil
@@ -41,7 +41,7 @@ class GameRoom:
         player = self.get_player()
         if player is None:
             return ""
-        return player._ctrl_actor_name
+        return player.ctrl_actor_name
 
 
 game_room: Optional[GameRoom] = None
@@ -167,10 +167,11 @@ async def join(data: JoinData) -> Dict[str, Any]:
 
     # 切换状态到游戏加入完成
     server_state.transition(GameState.GAME_JOINED)
-    player_proxy = PlayerProxy(data.user_name)
+    player_proxy = PlayerProxy(PlayerProxyModel(name=data.user_name))
     game_room._game.add_player(player_proxy)
+
     # 加入游戏
-    rpg_game.rpg_game_helper.player_join_new_game(
+    rpg_game.rpg_game_helper.player_play_new_game(
         game_room._game, player_proxy, data.ctrl_actor_name
     )
 
@@ -257,7 +258,7 @@ async def execute(data: ExecuteData) -> Dict[str, Any]:
             error="game_room.get_player() is None",
         ).model_dump()
 
-    if player_proxy._over:
+    if player_proxy.over:
         return ExecuteData(
             user_name=data.user_name, response=False, error="player_proxy._over"
         ).model_dump()
@@ -283,7 +284,7 @@ async def execute(data: ExecuteData) -> Dict[str, Any]:
         await game_room._game.a_execute()
 
         # 如果死了就退出。
-        if player_proxy._over:
+        if player_proxy.over:
             game_room._game._will_exit = True
             break
 

@@ -13,6 +13,7 @@ from my_data.data_base import DataBase
 from pathlib import Path
 import json
 from loguru import logger
+from player.player_proxy import PlayerProxyModel
 
 
 class GameResource:
@@ -48,6 +49,7 @@ class GameResource:
         self._load_entity_profile_dict: Dict[str, EntityProfileModel] = {}
         self._load_actor_archive_dict: Dict[str, List[ActorArchiveFileModel]] = {}
         self._load_stage_archive_dict: Dict[str, List[StageArchiveFileModel]] = {}
+        self._load_player_proxy_dict: Dict[str, PlayerProxyModel] = {}
 
     ###############################################################################################################################################
     @property
@@ -61,12 +63,17 @@ class GameResource:
 
     ###############################################################################################################################################
     @property
+    def save_round(self) -> int:
+        return self._model.save_round
+
+    ###############################################################################################################################################
+    @property
     def world_systems_proxy(self) -> List[WorldSystemProxyModel]:
         return self._model.world_systems
 
     ###############################################################################################################################################
     @property
-    def players_proxy(self) -> List[ActorProxyModel]:
+    def players_actor_proxy(self) -> List[ActorProxyModel]:
         return self._model.players
 
     ###############################################################################################################################################
@@ -101,6 +108,10 @@ class GameResource:
         return self._load_stage_archive_dict.get(name, [])
 
     ###############################################################################################################################################
+    def get_player_proxy(self, name: str) -> Optional[PlayerProxyModel]:
+        return self._load_player_proxy_dict.get(name, None)
+
+    ###############################################################################################################################################
     def load(self, load_dir: Path, load_zip_file_path: Path) -> None:
         assert self._load_dir is None
 
@@ -113,9 +124,10 @@ class GameResource:
         logger.info(f"load = {load_dir}")
 
         self._load_world_systems()
-        self._load_players()
+        self._load_player_actors()
         self._load_actors()
         self._load_stages()
+        self._load_player_proxy()
 
         logger.info(f"load = {load_dir} done.")
 
@@ -136,32 +148,36 @@ class GameResource:
                 )
 
     ###############################################################################################################################################
-    def _load_players(self) -> None:
+    def _load_player_actors(self) -> None:
 
         assert self._load_dir is not None and self._load_dir.exists()
 
-        for player in self.players_proxy:
+        for player_actor_proxy in self.players_actor_proxy:
 
             # 载入聊天记录
             chat_history_dump_model = self._load_chat_history(
-                player.name, self._load_dir
+                player_actor_proxy.name, self._load_dir
             )
             if chat_history_dump_model is not None:
-                self._load_chat_history_dict[player.name] = chat_history_dump_model
+                self._load_chat_history_dict[player_actor_proxy.name] = (
+                    chat_history_dump_model
+                )
 
             # 载入实体的profile
-            entity_profile = self._load_entity_profile(player.name, self._load_dir)
+            entity_profile = self._load_entity_profile(
+                player_actor_proxy.name, self._load_dir
+            )
             if entity_profile is not None:
-                self._load_entity_profile_dict[player.name] = entity_profile
+                self._load_entity_profile_dict[player_actor_proxy.name] = entity_profile
 
             # 载入actor的存档
-            self._load_actor_archive_dict[player.name] = self._load_actor_archive_file(
-                player.name, self._load_dir
+            self._load_actor_archive_dict[player_actor_proxy.name] = (
+                self._load_actor_archive_file(player_actor_proxy.name, self._load_dir)
             )
 
             # 载入stage的存档
-            self._load_stage_archive_dict[player.name] = self._load_stage_archive_file(
-                player.name, self._load_dir
+            self._load_stage_archive_dict[player_actor_proxy.name] = (
+                self._load_stage_archive_file(player_actor_proxy.name, self._load_dir)
             )
 
     ###############################################################################################################################################
@@ -169,29 +185,29 @@ class GameResource:
 
         assert self._load_dir is not None and self._load_dir.exists()
 
-        for actor in self.actors_proxy:
+        for actor_proxy in self.actors_proxy:
 
             # 载入聊天记录
             chat_history_dump_model = self._load_chat_history(
-                actor.name, self._load_dir
+                actor_proxy.name, self._load_dir
             )
 
             if chat_history_dump_model is not None:
-                self._load_chat_history_dict[actor.name] = chat_history_dump_model
+                self._load_chat_history_dict[actor_proxy.name] = chat_history_dump_model
 
             # 载入实体的profile
-            entity_profile = self._load_entity_profile(actor.name, self._load_dir)
+            entity_profile = self._load_entity_profile(actor_proxy.name, self._load_dir)
             if entity_profile is not None:
-                self._load_entity_profile_dict[actor.name] = entity_profile
+                self._load_entity_profile_dict[actor_proxy.name] = entity_profile
 
             # 载入actor的存档
-            self._load_actor_archive_dict[actor.name] = self._load_actor_archive_file(
-                actor.name, self._load_dir
+            self._load_actor_archive_dict[actor_proxy.name] = (
+                self._load_actor_archive_file(actor_proxy.name, self._load_dir)
             )
 
             # 载入stage的存档
-            self._load_stage_archive_dict[actor.name] = self._load_stage_archive_file(
-                actor.name, self._load_dir
+            self._load_stage_archive_dict[actor_proxy.name] = (
+                self._load_stage_archive_file(actor_proxy.name, self._load_dir)
             )
 
     ###############################################################################################################################################
@@ -199,28 +215,28 @@ class GameResource:
 
         assert self._load_dir is not None and self._load_dir.exists()
 
-        for stage in self.stages_proxy:
+        for stage_proxy in self.stages_proxy:
 
             # 载入聊天记录
             chat_history_dump_model = self._load_chat_history(
-                stage.name, self._load_dir
+                stage_proxy.name, self._load_dir
             )
             if chat_history_dump_model is not None:
-                self._load_chat_history_dict[stage.name] = chat_history_dump_model
+                self._load_chat_history_dict[stage_proxy.name] = chat_history_dump_model
 
             # 载入实体的profile
-            entity_profile = self._load_entity_profile(stage.name, self._load_dir)
+            entity_profile = self._load_entity_profile(stage_proxy.name, self._load_dir)
             if entity_profile is not None:
-                self._load_entity_profile_dict[stage.name] = entity_profile
+                self._load_entity_profile_dict[stage_proxy.name] = entity_profile
 
             # 载入actor的存档
-            self._load_actor_archive_dict[stage.name] = self._load_actor_archive_file(
-                stage.name, self._load_dir
+            self._load_actor_archive_dict[stage_proxy.name] = (
+                self._load_actor_archive_file(stage_proxy.name, self._load_dir)
             )
 
             # 载入stage的存档
-            self._load_stage_archive_dict[stage.name] = self._load_stage_archive_file(
-                stage.name, self._load_dir
+            self._load_stage_archive_dict[stage_proxy.name] = (
+                self._load_stage_archive_file(stage_proxy.name, self._load_dir)
             )
 
     ###############################################################################################################################################
@@ -302,5 +318,32 @@ class GameResource:
             ret.append(new_model)
 
         return []
+
+    ###############################################################################################################################################
+    def resolve_player_proxy_save_file_path(self, player_name: str) -> Path:
+        assert self._runtime_dir.exists()
+        dir = self._runtime_dir / "players"
+        dir.mkdir(parents=True, exist_ok=True)
+        return dir / f"""{player_name}.json"""
+
+    ###############################################################################################################################################
+    def _load_player_proxy(self) -> None:
+
+        assert self._load_dir is not None and self._load_dir.exists()
+
+        self._load_player_proxy_dict.clear()
+
+        players_dir = self._load_dir / f"players"
+        if not players_dir.exists():
+            return
+
+        player_proxy_files = list(players_dir.glob("*.json"))
+        for player_proxy_file in player_proxy_files:
+            content = player_proxy_file.read_text(encoding="utf-8")
+            if content is None:
+                continue
+
+            model = PlayerProxyModel.model_validate_json(content)
+            self._load_player_proxy_dict[model.name] = model
 
     ###############################################################################################################################################

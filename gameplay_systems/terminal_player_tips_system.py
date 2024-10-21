@@ -32,7 +32,7 @@ class TerminalPlayerTipsSystem(ExecuteProcessor):
             if player_proxy is None:
                 continue
 
-            player_entity = self._context.get_player_entity(player_proxy._name)
+            player_entity = self._context.get_player_entity(player_proxy.name)
             if player_entity is None:
                 continue
 

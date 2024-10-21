@@ -72,6 +72,7 @@ class WorldSystemProxyModel(BaseModel):
 
 
 class GameModel(BaseModel):
+    save_round: int = 0
     players: List[ActorProxyModel]
     actors: List[ActorProxyModel]
     stages: List[StageProxyModel]

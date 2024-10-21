@@ -222,7 +222,7 @@ def get_info_of_actors_in_stage(
 
 #######################################################################################################################################
 def gen_player_watch_message(game_name: RPGGame, player_proxy: PlayerProxy) -> str:
-    player_entity = game_name._entitas_context.get_player_entity(player_proxy._name)
+    player_entity = game_name._entitas_context.get_player_entity(player_proxy.name)
     if player_entity is None:
         return ""
 
@@ -251,7 +251,7 @@ def gen_player_watch_message(game_name: RPGGame, player_proxy: PlayerProxy) -> s
         player_entity
     )
 
-    message = f"""# {player_proxy._name} | {controlled_actor_name} 获取场景信息
+    message = f"""# {player_proxy.name} | {controlled_actor_name} 获取场景信息
 
 ## 场景描述: {stage_name}
 {stage_narrate_content}
@@ -267,7 +267,7 @@ def gen_player_watch_message(game_name: RPGGame, player_proxy: PlayerProxy) -> s
 
 #######################################################################################################################################
 def gen_player_check_message(game_name: RPGGame, player_proxy: PlayerProxy) -> str:
-    player_entity = game_name._entitas_context.get_player_entity(player_proxy._name)
+    player_entity = game_name._entitas_context.get_player_entity(player_proxy.name)
     if player_entity is None:
         return ""
 
@@ -288,7 +288,7 @@ def gen_player_check_message(game_name: RPGGame, player_proxy: PlayerProxy) -> s
         )
     )
 
-    message = f"""# {player_proxy._name} | {controlled_actor_name} 自身检查
+    message = f"""# {player_proxy.name} | {controlled_actor_name} 自身检查
 
 ## 你当前所在的场景：{stage_name}
 
@@ -367,7 +367,7 @@ def add_player_command(
 
 
 #######################################################################################################################################
-def player_join_new_game(
+def player_play_new_game(
     rpg_game: RPGGame, player_proxy: PlayerProxy, player_controlled_actor_name: str
 ) -> None:
 
@@ -379,29 +379,42 @@ def player_join_new_game(
         return
 
     # 更改算作登陆成功
-    actor_entity.replace(PlayerComponent, player_proxy._name)
-    player_proxy._ctrl_actor_name = player_controlled_actor_name
+    actor_entity.replace(PlayerComponent, player_proxy.name)
+    player_proxy.ctrl_actor(player_controlled_actor_name)
 
-    player_proxy.add_system_message(
-        # rpg_game.about_game
-        AgentEvent(message_content=rpg_game.about_game)
-    )
+    player_proxy.add_system_message(AgentEvent(message_content=rpg_game.about_game))
 
     # todo 添加登陆新的信息到客户端消息中
     time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     player_proxy.add_system_message(
-        # f"login: {player_proxy._name}, time = {time}, 控制角色 = {player_controlled_actor_name}"
         AgentEvent(
-            message_content=f"login: {player_proxy._name}, time = {time}, 控制角色 = {player_controlled_actor_name}"
+            message_content=f"login: {player_proxy.name}, time = {time}, 控制角色 = {player_controlled_actor_name}"
         )
     )
 
     kick_off_comp = actor_entity.get(KickOffComponent)
     player_proxy.add_login_message(
         player_controlled_actor_name,
-        # kick_off_comp.content
         AgentEvent(message_content=kick_off_comp.content),
     )
+
+
+#######################################################################################################################################
+def player_play_again(rpg_game: RPGGame, player_name: str) -> Optional[PlayerProxy]:
+
+    player_proxy = rpg_game.get_player(player_name)
+    if player_proxy is None:
+        return None
+
+    time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    player_proxy.add_login_message(
+        player_proxy.ctrl_actor_name,
+        AgentEvent(
+            message_content=f"再次游玩 {rpg_game._name} : {player_proxy.name}, time = {time}, 控制角色 = {player_proxy.ctrl_actor_name}"
+        ),
+    )
+
+    return player_proxy
 
 
 #######################################################################################################################################
@@ -418,7 +431,7 @@ def get_player_ctrl_actor_names(rpg_game: RPGGame) -> List[str]:
 
 #######################################################################################################################################
 def is_player_turn(rpg_game: RPGGame, player_proxy: PlayerProxy) -> bool:
-    player_entity = rpg_game._entitas_context.get_player_entity(player_proxy._name)
+    player_entity = rpg_game._entitas_context.get_player_entity(player_proxy.name)
     if player_entity is None:
         return False
 

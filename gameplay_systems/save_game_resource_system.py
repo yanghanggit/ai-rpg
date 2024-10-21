@@ -40,6 +40,7 @@ class SaveGameResourceSystem(ExecuteProcessor):
         runtime_model = self._game._game_resource._runtime_model
 
         # 把save_model改掉，然后重新写入
+        runtime_model.save_round = self._game._runtime_game_round
         self._save_players(runtime_model)
         self._save_actors(runtime_model)
         self._save_stages(runtime_model)

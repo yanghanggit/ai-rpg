@@ -12,7 +12,6 @@ from rpg_game.rpg_game import RPGGame
 from my_data.model_def import AgentEvent
 
 
-
 class UpdateClientMessageSystem(ExecuteProcessor):
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         self._context: RPGEntitasContext = context
@@ -23,7 +22,7 @@ class UpdateClientMessageSystem(ExecuteProcessor):
     def execute(self) -> None:
 
         for player_proxy in self._game.players:
-            player_entity = self._context.get_player_entity(player_proxy._name)
+            player_entity = self._context.get_player_entity(player_proxy.name)
             if player_entity is None or player_proxy is None:
                 continue
 
@@ -35,14 +34,15 @@ class UpdateClientMessageSystem(ExecuteProcessor):
     ) -> None:
 
         player_proxy.add_system_message(
-            AgentEvent(message_content=f"游戏运行次数:{self._game.round}")
+            AgentEvent(message_content=f"游戏运行次数:{self._game._runtime_game_round}")
         )
 
         self._stage_enviro_narrate_action_2_message(player_proxy, player_entity)
-        self._show_login_messages_then_clear(
-            player_proxy, player_entity
-        )  # 先把缓存的消息推送出去，在场景描述之后
-        
+        # self._show_login_messages_then_clear(
+        #     player_proxy, player_entity
+        # )  # 先把缓存的消息推送出去，在场景描述之后
+        player_proxy.flush_login_messages()
+
         self._go_to_action_2_message(player_proxy, player_entity)
 
     ############################################################################################################
@@ -91,12 +91,13 @@ class UpdateClientMessageSystem(ExecuteProcessor):
             )
 
     ############################################################################################################
-    def _show_login_messages_then_clear(
-        self, player_proxy: PlayerProxy, player_entity: Entity
-    ) -> None:
-        for message in player_proxy._login_messages:
-            player_proxy.add_actor_message(message.sender, message.event)
-        player_proxy._login_messages.clear()
+    # def _show_login_messages_then_clear(
+    #     self, player_proxy: PlayerProxy, player_entity: Entity
+    # ) -> None:
+    #     # todo
+    #     for message in player_proxy.model.login_messages:
+    #         player_proxy.add_actor_message(message.sender, message.event)
+    #     player_proxy.model.login_messages.clear()
 
 
 ############################################################################################################

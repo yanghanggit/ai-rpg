@@ -113,25 +113,19 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
         self._actor_tasks: Dict[str, AgentTask] = {}
 
     ######################################################################################################################################################
-    def clear_tasks(self) -> None:
-        self._tasks.clear()
-        self._world_tasks.clear()
-        self._stage_tasks.clear()
-        self._actor_tasks.clear()
-
-    ######################################################################################################################################################
     @override
     def initialize(self) -> None:
+
         # 清除
-        self.clear_tasks()
+        self._clear_tasks()
 
         # 生成任务，world system 不存上下文所以需要kickoff 一下
-        self._world_tasks = self.create_world_system_tasks()
+        self._world_tasks = self._initialize_world_system_tasks()
 
         # actor 与 stage 因为会有存储上下文的情况，如果是载入的游戏，就直接使用，不要再发任务做推理了。
-        if not self.is_game_loaded():
-            self._stage_tasks = self.create_stage_tasks()
-            self._actor_tasks = self.create_actor_tasks()
+        if not self._check_game_loaded():
+            self._stage_tasks = self._initialize_stage_tasks()
+            self._actor_tasks = self._initialize_actor_tasks()
 
         # 填进去
         self._tasks.update(self._world_tasks)
@@ -154,12 +148,19 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
         if len(responses) == 0:
             return
 
-        self.on_response(self._tasks)
-        self.clear_tasks()  # 这句必须得走.
-        self.on_add_update_appearance_action()
+        self._handle_response(self._tasks)
+        self._clear_tasks()  # 这句必须得走.
+        self._initialize_appearance_update_action()
 
     ######################################################################################################################################################
-    def create_world_system_tasks(self) -> Dict[str, AgentTask]:
+    def _clear_tasks(self) -> None:
+        self._tasks.clear()
+        self._world_tasks.clear()
+        self._stage_tasks.clear()
+        self._actor_tasks.clear()
+
+    ######################################################################################################################################################
+    def _initialize_world_system_tasks(self) -> Dict[str, AgentTask]:
 
         ret: Dict[str, AgentTask] = {}
 
@@ -183,7 +184,7 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
         return ret
 
     ######################################################################################################################################################
-    def create_stage_tasks(self) -> Dict[str, AgentTask]:
+    def _initialize_stage_tasks(self) -> Dict[str, AgentTask]:
 
         ret: Dict[str, AgentTask] = {}
 
@@ -217,7 +218,7 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
         return ret
 
     ######################################################################################################################################################
-    def create_actor_tasks(self) -> Dict[str, AgentTask]:
+    def _initialize_actor_tasks(self) -> Dict[str, AgentTask]:
 
         ret: Dict[str, AgentTask] = {}
 
@@ -248,7 +249,7 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
         return ret
 
     ######################################################################################################################################################
-    def on_response(self, tasks: Dict[str, AgentTask]) -> None:
+    def _handle_response(self, tasks: Dict[str, AgentTask]) -> None:
 
         for name, task in tasks.items():
 
@@ -270,25 +271,24 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
                 continue
 
             if not gameplay_systems.action_helper.validate_actions(
-                agent_planning, self.get_actions_register(name)
+                agent_planning, self._resolve_actions_register(name)
             ):
                 logger.warning(
                     f"ActorPlanningSystem: check_plan failed, {agent_planning}"
                 )
-                ## 需要失忆!
+
                 self._context._langserve_agent_system.remove_last_human_ai_conversation(
                     name
                 )
                 continue
 
-            ## 不能停了，只能一直继续
             for action in agent_planning._actions:
                 gameplay_systems.action_helper.add_action(
-                    entity, action, self.get_actions_register(name)
+                    entity, action, self._resolve_actions_register(name)
                 )
 
     ######################################################################################################################################################
-    def get_actions_register(self, name: str) -> FrozenSet[type[Any]]:
+    def _resolve_actions_register(self, name: str) -> FrozenSet[type[Any]]:
         if name in self._stage_tasks:
             return STAGE_AVAILABLE_ACTIONS_REGISTER
         elif name in self._actor_tasks:
@@ -296,9 +296,8 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
         return frozenset()
 
     ######################################################################################################################################################
-    def on_add_update_appearance_action(self) -> None:
+    def _initialize_appearance_update_action(self) -> None:
 
-        ## 第一次强制更新外观
         actor_entities = self._context.get_group(
             Matcher(all_of=[ActorComponent, AppearanceComponent, BodyComponent])
         ).entities
@@ -312,7 +311,7 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
                 )
 
     ######################################################################################################################################################
-    def is_game_loaded(self) -> bool:
+    def _check_game_loaded(self) -> bool:
         assert self._game._game_resource is not None
         return self._game._game_resource.is_load
 

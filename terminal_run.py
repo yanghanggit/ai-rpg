@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from rpg_game.rpg_game_config import RPGGameConfig
 from pathlib import Path
 import shutil
+from my_data.game_resource import GameResource
 
 
 @dataclass
@@ -16,6 +17,7 @@ class TerminalRunOption:
     default_game_name: str
     check_game_resource_version: str
     show_client_message_count: int = 20
+    new_game: bool = True
 
 
 async def terminal_run(option: TerminalRunOption) -> None:
@@ -38,35 +40,47 @@ async def terminal_run(option: TerminalRunOption) -> None:
     game_runtime_dir.mkdir(parents=True, exist_ok=True)
     assert game_runtime_dir.exists()
 
-    # 测试用的load!!!!!!!!!!!!!!!!
-    # load_archive_zip_path = Path(f"{RPGGameConfig.GAME_ARCHIVE_DIR}/{game_name}.zip")
-    # if load_archive_zip_path.exists():
-    #     load_game_resource = rpg_game.rpg_game_helper.load_game_resource(
-    #         load_archive_zip_path, game_runtime_dir, option.check_game_resource_version
-    #     )
+    # 根据创建还是载入进行不同的处理
+    game_resource: Optional[GameResource] = None
+    if option.new_game:
+        # 读取游戏资源文件
+        game_resource_file_path = (
+            Path(f"{RPGGameConfig.GAME_SAMPLE_RUNTIME_DIR}") / f"{game_name}.json"
+        )
 
-    # 读取游戏资源文件
-    game_resource_file_path = (
-        Path(f"{RPGGameConfig.GAME_SAMPLE_RUNTIME_DIR}") / f"{game_name}.json"
-    )
+        # 如果找不到游戏资源文件就退出
+        if not game_resource_file_path.exists():
+            logger.error(f"找不到游戏资源文件 = {game_resource_file_path}")
+            return
 
-    # 如果找不到游戏资源文件就退出
-    if not game_resource_file_path.exists():
-        logger.error(f"找不到游戏资源文件 = {game_resource_file_path}")
-        return
+        # 创建游戏资源
+        game_resource = rpg_game.rpg_game_helper.create_game_resource(
+            game_resource_file_path,
+            game_runtime_dir,
+            option.check_game_resource_version,
+        )
 
-    # 创建游戏资源
-    game_resource = rpg_game.rpg_game_helper.create_game_resource(
-        game_resource_file_path, game_runtime_dir, option.check_game_resource_version
-    )
+        # 游戏资源可以被创建，则将game_resource_file_path这个文件拷贝一份到root_runtime_dir下
+        shutil.copy(
+            game_resource_file_path, game_runtime_dir / game_resource_file_path.name
+        )
+
+    else:
+        # 测试用的load!!!!!!!!!!!!!!!!
+        load_archive_zip_path = Path(
+            f"{RPGGameConfig.GAME_ARCHIVE_DIR}/{game_name}.zip"
+        )
+        if load_archive_zip_path.exists():
+            game_resource = rpg_game.rpg_game_helper.load_game_resource(
+                load_archive_zip_path,
+                game_runtime_dir,
+                option.check_game_resource_version,
+            )
+
+    # 如果创建game_resource失败就退出
     if game_resource is None:
-        logger.error(f"create_terminal_rpg_game 创建{game_resource_file_path} 失败。")
-        return None
-
-    # 游戏资源可以被创建，则将game_resource_file_path这个文件拷贝一份到root_runtime_dir下
-    shutil.copy(
-        game_resource_file_path, game_runtime_dir / game_resource_file_path.name
-    )
+        logger.error(f"create_terminal_rpg_game 创建失败。")
+        return
 
     # 创建游戏
     new_game = rpg_game.rpg_game_helper.create_terminal_rpg_game(game_resource)
@@ -76,25 +90,28 @@ async def terminal_run(option: TerminalRunOption) -> None:
 
     # 模拟一个客户端
     player_proxy: Optional[PlayerProxy] = None
-
-    # 是否是控制actor游戏
-    player_controlled_actor_name = terminal_player_input_select_controlled_actor(
-        new_game
-    )
-    if player_controlled_actor_name != "":
-        logger.info(
-            f"{option.login_player_name}:{game_name}:{player_controlled_actor_name}"
+    if option.new_game:
+        # 是否是控制actor游戏
+        player_controlled_actor_name = terminal_player_input_select_controlled_actor(
+            new_game
         )
-        player_proxy = PlayerProxy(option.login_player_name)
-        new_game.add_player(player_proxy)
+        if player_controlled_actor_name != "":
+            logger.info(
+                f"{option.login_player_name}:{game_name}:{player_controlled_actor_name}"
+            )
+            player_proxy = PlayerProxy(option.login_player_name)
+            new_game.add_player(player_proxy)
 
-        rpg_game.rpg_game_helper.player_join(
-            new_game, player_proxy, player_controlled_actor_name
-        )
+            rpg_game.rpg_game_helper.player_join_new_game(
+                new_game, player_proxy, player_controlled_actor_name
+            )
+        else:
+            logger.info(
+                "没有找到可以控制的角色，可能是game resource里没设置Player，此时就是观看。"
+            )
     else:
-        logger.info(
-            "没有找到可以控制的角色，可能是game resource里没设置Player，此时就是观看。"
-        )
+        # assert False, "load的时候还没写"
+        return
 
     # 核心循环
     while True:
@@ -120,7 +137,7 @@ async def terminal_run(option: TerminalRunOption) -> None:
             else:
                 await terminal_player_wait(new_game, player_proxy)
 
-    rpg_game.rpg_game_helper.save_game(new_game)
+    rpg_game.rpg_game_helper.save_game(new_game, RPGGameConfig.GAME_ARCHIVE_DIR)
     new_game.exit()
     new_game = None  # 其实是废话，习惯性写着吧
 
@@ -208,7 +225,7 @@ if __name__ == "__main__":
     option = TerminalRunOption(
         login_player_name="北京柏林互动科技有限公司",
         default_game_name="World1",
-        check_game_resource_version="qwe",
+        check_game_resource_version=RPGGameConfig.CHECK_GAME_RESOURCE_VERSION,
         show_client_message_count=20,
     )
     asyncio.run(terminal_run(option))  # todo

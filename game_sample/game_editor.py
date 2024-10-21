@@ -16,6 +16,7 @@ from game_sample.world_system_editor import ExcelEditorWorldSystem
 import pandas as pd
 import game_sample.utils
 from enum import StrEnum
+from rpg_game.rpg_game_config import RPGGameConfig
 
 
 class EditorEntityType(StrEnum):
@@ -231,7 +232,7 @@ class ExcelEditorGame:
 
         version_sign = ""  # input("请输入版本号:")
         if version_sign == "":
-            version_sign = "qwe"  # todo
+            version_sign = RPGGameConfig.CHECK_GAME_RESOURCE_VERSION  # todo
             logger.warning(f"使用默认的版本号: {version_sign}")
 
         output["version"] = version_sign

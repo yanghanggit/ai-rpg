@@ -10,3 +10,5 @@ class RPGGameConfig(StrEnum):
     GAME_SAMPLE_RUNTIME_DIR = "game_sample/gen_runtimes"
 
     GAME_ARCHIVE_DIR = "game_archive"
+
+    CHECK_GAME_RESOURCE_VERSION = "0.0.1"

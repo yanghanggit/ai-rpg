@@ -103,7 +103,9 @@ async def create(data: CreateData) -> Dict[str, Any]:
 
     # 创建游戏资源
     game_resource = rpg_game.rpg_game_helper.create_game_resource(
-        game_resource_file_path, game_runtime_dir, "qwe"
+        game_resource_file_path,
+        game_runtime_dir,
+        RPGGameConfig.CHECK_GAME_RESOURCE_VERSION,
     )
     if game_resource is None:
         return CreateData(
@@ -168,7 +170,7 @@ async def join(data: JoinData) -> Dict[str, Any]:
     player_proxy = PlayerProxy(data.user_name)
     game_room._game.add_player(player_proxy)
     # 加入游戏
-    rpg_game.rpg_game_helper.player_join(
+    rpg_game.rpg_game_helper.player_join_new_game(
         game_room._game, player_proxy, data.ctrl_actor_name
     )
 
@@ -223,7 +225,9 @@ async def exit(data: ExitData) -> Dict[str, Any]:
     assert game_room._game is not None, "game_room._game is None"
     if game_room._game is not None:
         game_room._game._will_exit = True
-        rpg_game.rpg_game_helper.save_game(game_room._game)
+        rpg_game.rpg_game_helper.save_game(
+            game_room._game, RPGGameConfig.GAME_ARCHIVE_DIR
+        )
         game_room._game.exit()
         game_room._game = None
 

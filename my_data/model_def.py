@@ -108,12 +108,6 @@ class EntityProfileModel(BaseModel):
     components: List[ComponentDumpModel]
 
 
-class AgentMessageType(StrEnum):
-    STSTEM = "SystemMessage"
-    HUMAN = "HumanMessage"
-    AI = "AIMessage"
-
-
 class StageArchiveFileModel(BaseModel):
     name: str
     owner: str
@@ -130,3 +124,20 @@ class PropFileModel(BaseModel):
     owner: str
     prop_model: PropModel
     prop_proxy_model: PropProxyModel
+
+
+class AgentMessageType(StrEnum):
+    STSTEM = "SystemMessage"
+    HUMAN = "HumanMessage"
+    AI = "AIMessage"
+
+
+class AgentMessageModel(BaseModel):
+    message_type: AgentMessageType
+    content: str
+
+
+class AgentChatHistoryDumpModel(BaseModel):
+    name: str
+    url: str
+    chat_history: List[AgentMessageModel]

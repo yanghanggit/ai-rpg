@@ -210,6 +210,11 @@ class ActorArchiveFile(BaseFile):
     def set_appearance(self, appearance: str) -> None:
         self._model.appearance = appearance
 
+    def update(self, model: ActorArchiveFileModel) -> None:
+        self._model = model
+        self._name = model.name
+        self._owner_name = model.owner
+
 
 ############################################################################################################
 ############################################################################################################
@@ -236,6 +241,11 @@ class StageArchiveFile(BaseFile):
 
     def set_stage_narrate(self, narrate: str) -> None:
         self._model.stage_narrate = narrate
+
+    def update(self, model: StageArchiveFileModel) -> None:
+        self._model = model
+        self._name = model.name
+        self._owner_name = model.owner
 
 
 ############################################################################################################

@@ -56,6 +56,23 @@ class RPGGame(BaseGame):
         self._round: int = 0
 
     ###############################################################################################################################################
+    @property
+    def round(self) -> int:
+        return self._round
+
+    ###############################################################################################################################################
+    @property
+    def players(self) -> List[PlayerProxy]:
+        return self._players
+
+    ###############################################################################################################################################
+    @property
+    def about_game(self) -> str:
+        if self._game_resource is None:
+            return ""
+        return self._game_resource.about_game
+
+    ###############################################################################################################################################
     def build(self, game_resource: GameResource) -> "RPGGame":
 
         context = self._entitas_context
@@ -82,6 +99,10 @@ class RPGGame(BaseGame):
 
         ## 第5步，最后处理因为需要上一阶段的注册流程
         self.add_code_name_component_to_stages()
+
+        ## 第6步，如果是载入的文件，就需要直接修改一些值
+        if game_resource.is_load:
+            self.load_game(context, game_resource)
 
         ## 最后！混沌系统，准备测试
         context._chaos_engineering_system.on_post_create_game(context, game_resource)
@@ -168,6 +189,7 @@ class RPGGame(BaseGame):
             GUIDComponent, world_system_model.name, world_system_proxy.guid
         )
         world_system_entity.add(WorldComponent, world_system_model.name)
+        world_system_entity.add(KickOffComponent, world_system_model.name, "")
 
         # 添加扩展子系统的功能
         context._langserve_agent_system.register_agent(
@@ -177,7 +199,6 @@ class RPGGame(BaseGame):
             world_system_model.name, world_system_model.codename
         )
 
-        world_system_entity.add(KickOffComponent, world_system_model.name, "")
         return world_system_entity
 
     ###############################################################################################################################################
@@ -256,13 +277,13 @@ class RPGGame(BaseGame):
         )
         actor_entity.add(BodyComponent, actor_model.name, actor_model.body)
 
+        actor_entity.add(
+            KickOffComponent, actor_model.name, actor_model.kick_off_message
+        )
+
         # 添加扩展子系统的
         context._langserve_agent_system.register_agent(
             actor_model.name, actor_model.url
-        )
-
-        actor_entity.add(
-            KickOffComponent, actor_model.name, actor_model.kick_off_message
         )
 
         context._codename_component_system.register_code_name_component_class(
@@ -384,6 +405,10 @@ class RPGGame(BaseGame):
             stage_model.attributes[AttributesIndex.DEFENSE.value],
         )
 
+        stage_entity.add(
+            KickOffComponent, stage_model.name, stage_model.kick_off_message
+        )
+
         ## 重新设置Actor和stage的关系
         for actor_proxy in stage_proxy.actors:
 
@@ -426,10 +451,6 @@ class RPGGame(BaseGame):
         # 添加子系统！
         context._langserve_agent_system.register_agent(
             stage_model.name, stage_model.url
-        )
-
-        stage_entity.add(
-            KickOffComponent, stage_model.name, stage_model.kick_off_message
         )
 
         context._codename_component_system.register_code_name_component_class(
@@ -494,22 +515,10 @@ class RPGGame(BaseGame):
                 stage_entity.add(codecomp_class, stage_comp.name)
 
     ###############################################################################################################################################
-    @property
-    def about_game(self) -> str:
-        if self._game_resource is None:
-            return ""
-        return self._game_resource.about_game
-
-    ###############################################################################################################################################
     def add_player(self, player_proxy: PlayerProxy) -> None:
         assert player_proxy not in self._players
         if player_proxy not in self._players:
             self._players.append(player_proxy)
-
-    ###############################################################################################################################################
-    @property
-    def players(self) -> List[PlayerProxy]:
-        return self._players
 
     ###############################################################################################################################################
     def get_player(self, player_name: str) -> Optional[PlayerProxy]:
@@ -519,8 +528,115 @@ class RPGGame(BaseGame):
         return None
 
     ###############################################################################################################################################
-    @property
-    def round(self) -> int:
-        return self._round
+    def load_game(
+        self, context: RPGEntitasContext, game_resource: GameResource
+    ) -> None:
+
+        self.load_entities(context, game_resource)
+        self.load_agents(context, game_resource)
+        self.load_archives(context, game_resource)
 
     ###############################################################################################################################################
+    def load_entities(
+        self, context: RPGEntitasContext, game_resource: GameResource
+    ) -> None:
+
+        assert game_resource.is_load
+
+        load_entities = context.get_group(
+            Matcher(
+                any_of=[RPGAttributesComponent, AppearanceComponent, PlayerComponent]
+            )
+        ).entities
+
+        for load_entity in load_entities:
+
+            safe_name = context.safe_get_entity_name(load_entity)
+            if safe_name == "":
+                continue
+
+            model = game_resource.get_entity_profile(safe_name)
+            if model is None:
+                continue
+
+            assert model.name == safe_name
+
+            for comp in model.components:
+
+                # 只有这些组件需要处理
+                match (comp.name):
+
+                    case RPGAttributesComponent.__name__:
+                        rpg_attr_comp = RPGAttributesComponent(**comp.data)
+                        load_entity.replace(
+                            RPGAttributesComponent,
+                            rpg_attr_comp.name,
+                            rpg_attr_comp.maxhp,
+                            rpg_attr_comp.hp,
+                            rpg_attr_comp.attack,
+                            rpg_attr_comp.defense,
+                        )
+
+                    case AppearanceComponent.__name__:
+                        appearance_comp = AppearanceComponent(**comp.data)
+                        load_entity.replace(
+                            AppearanceComponent,
+                            appearance_comp.name,
+                            appearance_comp.appearance,
+                            appearance_comp.hash_code,
+                        )
+
+                    case PlayerComponent.__name__:
+                        player_comp = PlayerComponent(**comp.data)
+                        load_entity.replace(PlayerComponent, player_comp.name)
+
+                    case _:
+                        pass
+
+    ###############################################################################################################################################
+    def load_agents(
+        self, context: RPGEntitasContext, game_resource: GameResource
+    ) -> None:
+
+        assert game_resource.is_load
+
+        load_entities = context.get_group(
+            Matcher(any_of=[ActorComponent, StageComponent])
+        ).entities
+
+        for load_entity in load_entities:
+            safe_name = context.safe_get_entity_name(load_entity)
+            if safe_name == "":
+                continue
+
+            chat_history = game_resource.get_chat_history(safe_name)
+            if chat_history is None:
+                continue
+
+            context._langserve_agent_system.fill_chat_history(safe_name, chat_history)
+
+    ###############################################################################################################################################
+    def load_archives(
+        self, context: RPGEntitasContext, game_resource: GameResource
+    ) -> None:
+
+        assert game_resource.is_load
+
+        load_entities = context.get_group(
+            Matcher(any_of=[ActorComponent, StageComponent])
+        ).entities
+
+        for load_entity in load_entities:
+            safe_name = context.safe_get_entity_name(load_entity)
+            if safe_name == "":
+                continue
+
+            actor_archives = game_resource.get_actor_archives(safe_name)
+            extended_systems.file_system_helper.load_actor_archive_files(
+                context._file_system, safe_name, actor_archives
+            )
+
+            stage_archives = game_resource.get_stage_archives(safe_name)
+            extended_systems.file_system_helper.load_stage_archive_files(
+                context._file_system, safe_name, stage_archives
+            )

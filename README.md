@@ -26,7 +26,7 @@ pip install langchain langchain_core langserve fastapi langchain_openai sse_star
 
 ## 运行步骤
 
-1. 进入`multi-agents-game-framework/game_sample/`文件夹，运行`python gen_game.py`,输入世界名(game_sample.xlsx内的创建世界的sheet页名, 如World2, World3),输入版本号:`qwe`(目前builder的解析版本是qwe). 附注：game_sample.xlsx 尽量每次都从飞书在线表格中下载，并覆盖multi-agents-game-framework/game_sample/excel/game_sample.xlsx，以保持最新。
+1. 进入`multi-agents-game-framework/game_sample/`文件夹，运行`python gen_game.py`,输入世界名(game_sample.xlsx内的创建世界的sheet页名, 如World2, World3),输入版本号:`0.0.1`(目前builder的解析版本是qwe). 附注：game_sample.xlsx 尽量每次都从飞书在线表格中下载，并覆盖multi-agents-game-framework/game_sample/excel/game_sample.xlsx，以保持最新。
 2. 运行`multi-agents-game-framework/game_sample/gen_agent`下面的全部agent，启动agents服务器; 见下‘启动所有agents’
 3. 然后运行terminal_run.py进行对话,先输入第1步创建的世界名(如World2？), 然后便可进行游戏。
 4. 或者通过'/login'命令通过玩家身份登陆游戏游玩。

@@ -5,7 +5,11 @@ import json
 from pathlib import Path
 from my_agent.lang_serve_agent import LangServeAgent
 from my_agent.remote_runnable_wrapper import RemoteRunnableWrapper
-from my_data.model_def import AgentMessageType
+from my_data.model_def import (
+    AgentMessageType,
+    AgentMessageModel,
+    AgentChatHistoryDumpModel,
+)
 
 
 class LangServeAgentSystem:
@@ -113,39 +117,57 @@ class LangServeAgentSystem:
         return dir / f"chat_history.json"
 
     ################################################################################################################################################################################
-    def dump_chat_histories(self) -> None:
+    def dump_chat_histories(self) -> Dict[str, int]:
+
+        ret: Dict[str, int] = {}
+
         for agent_name in self._agents.keys():
-            dump = self._dump_chat_history(agent_name)
-            if len(dump) == 0:
+
+            chat_history_model = self._dump_chat_history(agent_name)
+            if chat_history_model is None:
                 continue
-            json_string = json.dumps(dump, ensure_ascii=False)
-            self._save_chat_history_dump(agent_name, json_string)
 
-    ################################################################################################################################################################################
-    def _dump_chat_history(self, agent_name: str) -> List[Dict[str, str]]:
+            try:
+                json_string = chat_history_model.model_dump_json()
+                path = self._get_chat_history_dump_path(agent_name)
+                write_res = path.write_text(json_string, encoding="utf-8")
+                ret.setdefault(agent_name, write_res)
 
-        agent = self.get_agent(agent_name)
-        if agent is None:
-            return []
-
-        ret: List[Dict[str, str]] = []
-        for chat in agent._chat_history:
-            if isinstance(chat, HumanMessage):
-                ret.append({AgentMessageType.HUMAN: cast(str, chat.content)})
-            elif isinstance(chat, AIMessage):
-                ret.append({AgentMessageType.AI: cast(str, chat.content)})
+            except Exception as e:
+                logger.error(f"[{agent_name}]写入chat history dump失败。{e}")
 
         return ret
 
     ################################################################################################################################################################################
-    def _save_chat_history_dump(self, agent_name: str, content: str) -> int:
-        try:
-            path = self._get_chat_history_dump_path(agent_name)
-            return path.write_text(content, encoding="utf-8")
-        except Exception as e:
-            logger.error(f"[{agent_name}]写入chat history dump失败。{e}")
+    def _dump_chat_history(
+        self, agent_name: str
+    ) -> Optional[AgentChatHistoryDumpModel]:
 
-        return -1
+        agent = self.get_agent(agent_name)
+        if agent is None:
+            return None
+
+        ret: AgentChatHistoryDumpModel = AgentChatHistoryDumpModel(
+            name=agent_name, url=agent._remote_runnable_wrapper._url, chat_history=[]
+        )
+
+        for chat in agent._chat_history:
+            if isinstance(chat, HumanMessage):
+                ret.chat_history.append(
+                    AgentMessageModel(
+                        message_type=AgentMessageType.HUMAN,
+                        content=cast(str, chat.content),
+                    )
+                )
+            elif isinstance(chat, AIMessage):
+                ret.chat_history.append(
+                    AgentMessageModel(
+                        message_type=AgentMessageType.AI,
+                        content=cast(str, chat.content),
+                    )
+                )
+
+        return ret
 
     ################################################################################################################################################################################
     def modify_chat_history(self, name: str, modify_data: Dict[str, str]) -> None:
@@ -188,5 +210,21 @@ class LangServeAgentSystem:
         for message in excluded_messages:
             if message in shallow_copy:
                 shallow_copy.remove(message)
+
+    ################################################################################################################################################################################
+    def fill_chat_history(
+        self, name: str, chat_history_dump_model: AgentChatHistoryDumpModel
+    ) -> None:
+        agent = self.get_agent(name)
+        if agent is None:
+            return
+
+        assert len(agent._chat_history) == 0
+        agent._chat_history.clear()
+        for message in chat_history_dump_model.chat_history:
+            if message.message_type == AgentMessageType.HUMAN:
+                agent._chat_history.extend([HumanMessage(content=message.content)])
+            elif message.message_type == AgentMessageType.AI:
+                agent._chat_history.extend([AIMessage(content=message.content)])
 
     ################################################################################################################################################################################

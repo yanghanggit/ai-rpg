@@ -88,15 +88,15 @@ class FileSystem:
                     exist_file.increase_count(file.count)
                     return True
 
-            return self.add_file_2_base_file_dict(
+            return self._add_file_2_base_file_dict(
                 cast(Dict[str, List[BaseFile]], self._prop_files), file
             )
         elif isinstance(file, ActorArchiveFile):
-            return self.add_file_2_base_file_dict(
+            return self._add_file_2_base_file_dict(
                 cast(Dict[str, List[BaseFile]], self._actor_archives), file
             )
         elif isinstance(file, StageArchiveFile):
-            return self.add_file_2_base_file_dict(
+            return self._add_file_2_base_file_dict(
                 cast(Dict[str, List[BaseFile]], self._stage_archives), file
             )
         elif isinstance(file, EntityProfileFile):
@@ -137,7 +137,7 @@ class FileSystem:
         if file_type == PropFile:
             return cast(
                 Optional[FileType],
-                self.get_file_from_base_file_dict(
+                self._get_file_from_base_file_dict(
                     cast(Dict[str, List[BaseFile]], self._prop_files),
                     owner_name,
                     file_name,
@@ -146,7 +146,7 @@ class FileSystem:
         elif file_type == ActorArchiveFile:
             return cast(
                 Optional[FileType],
-                self.get_file_from_base_file_dict(
+                self._get_file_from_base_file_dict(
                     cast(Dict[str, List[BaseFile]], self._actor_archives),
                     owner_name,
                     file_name,
@@ -155,7 +155,7 @@ class FileSystem:
         elif file_type == StageArchiveFile:
             return cast(
                 Optional[FileType],
-                self.get_file_from_base_file_dict(
+                self._get_file_from_base_file_dict(
                     cast(Dict[str, List[BaseFile]], self._stage_archives),
                     owner_name,
                     file_name,
@@ -203,7 +203,7 @@ class FileSystem:
         return False
 
     ###############################################################################################################################################
-    def add_file_2_base_file_dict(
+    def _add_file_2_base_file_dict(
         self, data: Dict[str, List[BaseFile]], new_file: BaseFile
     ) -> bool:
         files = data.setdefault(new_file._owner_name, [])
@@ -214,7 +214,7 @@ class FileSystem:
         return True
 
     ###############################################################################################################################################
-    def get_file_from_base_file_dict(
+    def _get_file_from_base_file_dict(
         self, data: Dict[str, List[BaseFile]], owner_name: str, file_name: str
     ) -> Optional[BaseFile]:
         files = data.get(owner_name, [])
@@ -224,18 +224,3 @@ class FileSystem:
         return None
 
     ###############################################################################################################################################
-    def get_base_file_dict(
-        self, file_type: Type[FileType]
-    ) -> Dict[str, List[BaseFile]]:
-        if file_type == PropFile:
-            return cast(Dict[str, List[BaseFile]], self._prop_files)
-        elif file_type == ActorArchiveFile:
-            return cast(Dict[str, List[BaseFile]], self._actor_archives)
-        elif file_type == StageArchiveFile:
-            return cast(Dict[str, List[BaseFile]], self._stage_archives)
-        else:
-            logger.error(f"file type {file_type} not support")
-        return {}
-
-
-###############################################################################################################################################

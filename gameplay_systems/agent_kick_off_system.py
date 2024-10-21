@@ -124,10 +124,14 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
     def initialize(self) -> None:
         # 清除
         self.clear_tasks()
-        # 生成任务
+
+        # 生成任务，world system 不存上下文所以需要kickoff 一下
         self._world_tasks = self.create_world_system_tasks()
-        self._stage_tasks = self.create_stage_tasks()
-        self._actor_tasks = self.create_actor_tasks()
+
+        # actor 与 stage 因为会有存储上下文的情况，如果是载入的游戏，就直接使用，不要再发任务做推理了。
+        if not self.is_game_loaded():
+            self._stage_tasks = self.create_stage_tasks()
+            self._actor_tasks = self.create_actor_tasks()
 
         # 填进去
         self._tasks.update(self._world_tasks)
@@ -193,6 +197,10 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
             if agent is None:
                 continue
 
+            assert (
+                len(agent._chat_history) == 0
+            ), f"chat_history is not empty, {agent._chat_history}"
+
             kick_off_comp = stage_entity.get(KickOffComponent)
             kick_off_prompt = _generate_stage_kick_off_prompt(
                 kick_off_comp.content,
@@ -222,6 +230,10 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
             agent = self._context._langserve_agent_system.get_agent(actor_comp.name)
             if agent is None:
                 continue
+
+            assert (
+                len(agent._chat_history) == 0
+            ), f"chat_history is not empty, {agent._chat_history}"
 
             kick_off_comp = actor_entity.get(KickOffComponent)
             ret[actor_comp.name] = AgentTask.create(
@@ -298,5 +310,10 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
                     self._context.safe_get_entity_name(actor_entity),
                     [],
                 )
+
+    ######################################################################################################################################################
+    def is_game_loaded(self) -> bool:
+        assert self._game._game_resource is not None
+        return self._game._game_resource.is_load
 
     ######################################################################################################################################################

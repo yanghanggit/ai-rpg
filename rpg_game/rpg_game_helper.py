@@ -111,7 +111,7 @@ def load_game_resource(
         return None
 
     load_game_resource = GameResource(game_name, game_data, game_runtime_dir)
-    load_game_resource.load(extract_dir)
+    load_game_resource.load(extract_dir, game_archive_file_path)
     return load_game_resource
 
 
@@ -302,7 +302,7 @@ def gen_player_check_message(game_name: RPGGame, player_proxy: PlayerProxy) -> s
 
 
 #######################################################################################################################################
-def save_game(rpg_game: RPGGame) -> None:
+def save_game(rpg_game: RPGGame, save_dir: str, format: str = "zip") -> None:
 
     assert rpg_game._game_resource is not None
 
@@ -311,13 +311,14 @@ def save_game(rpg_game: RPGGame) -> None:
     )
 
     zip_file_path = shutil.make_archive(
-        rpg_game._name, "zip", rpg_game._game_resource._runtime_dir
+        rpg_game._name, format, rpg_game._game_resource._runtime_dir
     )
 
-    archive_dir = Path(RPGGameConfig.GAME_ARCHIVE_DIR)
+    archive_dir = Path(save_dir)
     archive_dir.mkdir(parents=True, exist_ok=True)
-    shutil.move(zip_file_path, archive_dir / f"{rpg_game._name}.zip")
+    assert archive_dir.exists()
 
+    shutil.move(zip_file_path, archive_dir / f"{rpg_game._name}.zip")
     logger.info(f"游戏已保存到 {archive_dir / f'{rpg_game._name}.zip'}")
 
 
@@ -364,10 +365,10 @@ def add_player_command(
 
 
 #######################################################################################################################################
-def player_join(
+def player_join_new_game(
     rpg_game: RPGGame, player_proxy: PlayerProxy, player_controlled_actor_name: str
 ) -> None:
-    logger.debug("player_login")
+
     actor_entity = rpg_game._entitas_context.get_actor_entity(
         player_controlled_actor_name
     )
@@ -410,3 +411,6 @@ def is_player_turn(rpg_game: RPGGame, player_proxy: PlayerProxy) -> bool:
         return False
 
     return player_entity.has(PlanningAllowedComponent)
+
+
+#######################################################################################################################################

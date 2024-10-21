@@ -13,7 +13,7 @@ from gameplay_systems.components import (
     ActorComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from typing import override, List, cast, Set, Dict, Any
+from typing import override, List, Set, Dict, Any
 from loguru import logger
 from extended_systems.files_def import PropFile
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt
@@ -21,6 +21,7 @@ from my_agent.agent_task import AgentTask
 from my_agent.agent_plan import AgentPlanResponse
 from rpg_game.rpg_game import RPGGame
 import extended_systems.file_system_helper
+from gameplay_systems.gameplay_event import GamePlayEvent
 
 
 ################################################################################################################################################
@@ -420,11 +421,14 @@ class WorldSkillRuleSystem(ReactiveProcessor):
 
     ######################################################################################################################################################
     def on_world_skill_system_off_line_event(self, entity: Entity) -> None:
-        self._context.broadcast_event(
+
+        self._context.notify_event(
             set({entity}),
-            _generate_offline_prompt(
-                self._context.safe_get_entity_name(entity),
-                self.extract_behavior_sentence(entity),
+            GamePlayEvent(
+                message_content=_generate_offline_prompt(
+                    self._context.safe_get_entity_name(entity),
+                    self.extract_behavior_sentence(entity),
+                )
             ),
         )
 
@@ -438,14 +442,16 @@ class WorldSkillRuleSystem(ReactiveProcessor):
         for target_entity in target_entities:
             target_names.add(self._context.safe_get_entity_name(target_entity))
 
-        self._context.broadcast_event(
+        self._context.notify_event(
             set({entity}),
-            _generate_rule_success_prompt(
-                self._context.safe_get_entity_name(entity),
-                target_names,
-                world_response_plan.result,
-                self.extract_behavior_sentence(entity),
-                world_response_plan.out_come,
+            GamePlayEvent(
+                message_content=_generate_rule_success_prompt(
+                    self._context.safe_get_entity_name(entity),
+                    target_names,
+                    world_response_plan.result,
+                    self.extract_behavior_sentence(entity),
+                    world_response_plan.out_come,
+                )
             ),
         )
 
@@ -453,13 +459,16 @@ class WorldSkillRuleSystem(ReactiveProcessor):
     def on_world_skill_system_rule_fail_event(
         self, entity: Entity, world_response_plan: WorldSkillRuleResponse
     ) -> None:
-        self._context.broadcast_event(
+
+        self._context.notify_event(
             set({entity}),
-            _generate_rule_failure_prompt(
-                self._context.safe_get_entity_name(entity),
-                world_response_plan.result,
-                self.extract_behavior_sentence(entity),
-                world_response_plan.out_come,
+            GamePlayEvent(
+                message_content=_generate_rule_failure_prompt(
+                    self._context.safe_get_entity_name(entity),
+                    world_response_plan.result,
+                    self.extract_behavior_sentence(entity),
+                    world_response_plan.out_come,
+                )
             ),
         )
 

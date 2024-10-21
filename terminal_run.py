@@ -125,7 +125,7 @@ async def terminal_run(option: TerminalRunOption) -> None:
         # 有客户端才进行控制。
         if player_proxy is not None:
 
-            player_proxy.show_messages(option.show_client_message_count)
+            player_proxy.send_client_messages(option.show_client_message_count)
 
             # 如果死了就退出。
             if player_proxy._over:

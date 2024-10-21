@@ -11,6 +11,7 @@ from gameplay_systems.components import (
 from extended_systems.files_def import StageArchiveFile
 from player.player_proxy import PlayerProxy
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt
+from my_data.model_def import AgentEvent
 
 
 class TerminalPlayerTipsSystem(ExecuteProcessor):
@@ -59,7 +60,8 @@ class TerminalPlayerTipsSystem(ExecuteProcessor):
         if not stage_entity.has(StageGraphComponent):
             player_proxy.add_stage_message(
                 self._context.safe_get_entity_name(stage_entity),
-                "当前场景没有相连接的场景，无法离开",
+                # "当前场景没有相连接的场景，无法离开",
+                AgentEvent(message_content="当前场景没有相连接的场景，无法离开"),
             )
             return
 
@@ -72,7 +74,8 @@ class TerminalPlayerTipsSystem(ExecuteProcessor):
         ]
         player_proxy.add_stage_message(
             self._context.safe_get_entity_name(stage_entity),
-            f"可去往场景:\n{'\n'.join(stage_names)}",
+            # f"可去往场景:\n{'\n'.join(stage_names)}",
+            AgentEvent(message_content=f"可去往场景:\n{'\n'.join(stage_names)}"),
         )
 
     ############################################################################################################
@@ -108,7 +111,10 @@ class TerminalPlayerTipsSystem(ExecuteProcessor):
             stage_archive.name for stage_archive in stage_archives
         ]
 
-        player_proxy.add_system_message(f"已知场景:\n{'\n'.join(stage_names)}")
+        player_proxy.add_system_message(
+            # f"已知场景:\n{'\n'.join(stage_names)}"
+            AgentEvent(message_content=f"已知场景:\n{'\n'.join(stage_names)}")
+        )
 
 
 ############################################################################################################

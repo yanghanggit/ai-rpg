@@ -7,6 +7,7 @@ from typing import override
 from extended_systems.files_def import PropFile
 import extended_systems.file_system_helper
 from rpg_game.rpg_game import RPGGame
+from gameplay_systems.gameplay_event import GamePlayEvent
 
 
 ###############################################################################################################################################
@@ -79,9 +80,14 @@ class PickUpPropActionSystem(ReactiveProcessor):
                 PropFile, stage_comp.name, prop_name
             )
             if prop_file is None:
-                self._context.broadcast_event(
+
+                self._context.notify_event(
                     set({entity}),
-                    _generate_failed_pickup_prompt(actor_name, prop_name),
+                    GamePlayEvent(
+                        message_content=_generate_failed_pickup_prompt(
+                            actor_name, prop_name
+                        )
+                    ),
                 )
                 continue
 
@@ -94,7 +100,11 @@ class PickUpPropActionSystem(ReactiveProcessor):
 
             self._context.broadcast_event_in_stage(
                 current_stage_entity,
-                _generate_success_pickup_prompt(actor_name, prop_name, stage_comp.name),
+                GamePlayEvent(
+                    message_content=_generate_success_pickup_prompt(
+                        actor_name, prop_name, stage_comp.name
+                    )
+                ),
             )
 
             # 写死的，只能拾取一次。

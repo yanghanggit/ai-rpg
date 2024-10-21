@@ -24,6 +24,8 @@ import my_format_string.target_and_message_format_string
 import my_format_string.attrs_format_string
 from rpg_game.rpg_game import RPGGame
 from my_data.model_def import AttributesIndex
+from gameplay_systems.gameplay_event import GamePlayEvent
+from loguru import logger
 
 ################################################################################################################################################
 
@@ -236,14 +238,17 @@ class ApplySkillEffectSystem(ReactiveProcessor):
         world_skill_system_rule_tag, world_skill_system_rule_out_come = (
             self.extract_world_skill_system_rule(from_entity)
         )
+        logger.debug(f"world_skill_system_rule_tag: {world_skill_system_rule_tag}")
 
         self._context.broadcast_event_in_stage(
             current_stage_entity,
-            _generate_skill_event_notification_prompt(
-                self._context.safe_get_entity_name(from_entity),
-                self._context.safe_get_entity_name(target_entity),
-                world_skill_system_rule_out_come,
-                target_feedback,
+            GamePlayEvent(
+                message_content=_generate_skill_event_notification_prompt(
+                    self._context.safe_get_entity_name(from_entity),
+                    self._context.safe_get_entity_name(target_entity),
+                    world_skill_system_rule_out_come,
+                    target_feedback,
+                )
             ),
             set({target_entity}),  # 已经参与的双方不需要再被通知了。
         )
@@ -328,13 +333,17 @@ class ApplySkillEffectSystem(ReactiveProcessor):
         world_skill_system_rule_tag, world_skill_system_rule_out_come = (
             self.extract_world_skill_system_rule(entity)
         )
+        
+        logger.debug(f"world_skill_system_rule_tag: {world_skill_system_rule_tag}")
 
-        self._context.broadcast_event(
+        self._context.notify_event(
             set({entity}),
-            _generate_offline_prompt(
-                self._context.safe_get_entity_name(entity),
-                self._context.safe_get_entity_name(target),
-                world_skill_system_rule_out_come,
+            GamePlayEvent(
+                message_content=_generate_offline_prompt(
+                    self._context.safe_get_entity_name(entity),
+                    self._context.safe_get_entity_name(target),
+                    world_skill_system_rule_out_come,
+                )
             ),
         )
 

@@ -43,9 +43,11 @@ from player.player_command import (
     PlayerKill,
 )
 import datetime
-from rpg_game.rpg_game_config import RPGGameConfig
+
+# from rpg_game.rpg_game_config import RPGGameConfig
 import shutil
 import zipfile
+from my_data.model_def import AgentEvent
 
 
 #######################################################################################################################################
@@ -380,16 +382,26 @@ def player_join_new_game(
     actor_entity.replace(PlayerComponent, player_proxy._name)
     player_proxy._ctrl_actor_name = player_controlled_actor_name
 
-    player_proxy.add_system_message(rpg_game.about_game)
+    player_proxy.add_system_message(
+        # rpg_game.about_game
+        AgentEvent(message_content=rpg_game.about_game)
+    )
 
     # todo 添加登陆新的信息到客户端消息中
     time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     player_proxy.add_system_message(
-        f"login: {player_proxy._name}, time = {time}, 控制角色 = {player_controlled_actor_name}"
+        # f"login: {player_proxy._name}, time = {time}, 控制角色 = {player_controlled_actor_name}"
+        AgentEvent(
+            message_content=f"login: {player_proxy._name}, time = {time}, 控制角色 = {player_controlled_actor_name}"
+        )
     )
 
     kick_off_comp = actor_entity.get(KickOffComponent)
-    player_proxy.add_login_message(player_controlled_actor_name, kick_off_comp.content)
+    player_proxy.add_login_message(
+        player_controlled_actor_name,
+        # kick_off_comp.content
+        AgentEvent(message_content=kick_off_comp.content),
+    )
 
 
 #######################################################################################################################################

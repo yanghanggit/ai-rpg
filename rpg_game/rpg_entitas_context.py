@@ -9,14 +9,13 @@ from gameplay_systems.components import (
     GUIDComponent,
 )
 from extended_systems.file_system import FileSystem
-
-# from extended_systems.kick_off_message_system import KickOffMessageSystem
 from extended_systems.code_name_component_system import CodeNameComponentSystem
 from my_agent.lang_serve_agent_system import LangServeAgentSystem
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from typing import Optional, Dict, List, Set, cast, Any
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt
 from player.player_proxy import PlayerProxy
+from my_data.model_def import AgentEvent
 
 
 class RPGEntitasContext(Context):
@@ -25,7 +24,6 @@ class RPGEntitasContext(Context):
     def __init__(
         self,
         file_system: FileSystem,
-        # kick_off_message_system: KickOffMessageSystem,
         langserve_agent_system: LangServeAgentSystem,
         codename_component_system: CodeNameComponentSystem,
         chaos_engineering_system: IChaosEngineering,
@@ -53,18 +51,6 @@ class RPGEntitasContext(Context):
 
         #
         self._game: Any = None
-
-        #
-        assert self._file_system is not None, "self.file_system is None"
-        assert (
-            self._langserve_agent_system is not None
-        ), "self.agent_connect_system is None"
-        assert (
-            self._codename_component_system is not None
-        ), "self.code_name_component_system is None"
-        assert (
-            self._chaos_engineering_system is not None
-        ), "self.chaos_engineering_system is None"
 
     #############################################################################################################################
 
@@ -267,9 +253,10 @@ class RPGEntitasContext(Context):
     def broadcast_event_in_stage(
         self,
         entity: Entity,
-        message_content: str,
+        agent_event: AgentEvent,
         exclude_entities: Set[Entity] = set(),
     ) -> None:
+
         stage_entity = self.safe_get_stage_entity(entity)
         if stage_entity is None:
             return
@@ -280,22 +267,39 @@ class RPGEntitasContext(Context):
         if len(exclude_entities) > 0:
             need_broadcast_entities = need_broadcast_entities - exclude_entities
 
-        self._broadcast_event(need_broadcast_entities, message_content)
-        self._broadcast_event_to_player(need_broadcast_entities, message_content)
+        self.notify_event(need_broadcast_entities, agent_event)
 
     #############################################################################################################################
-    def broadcast_event(
+    def notify_event(
         self,
         entities: Set[Entity],
-        message_content: str,
+        agent_event: AgentEvent,
     ) -> None:
 
-        self._broadcast_event(entities, message_content)
-        self._broadcast_event_to_player(entities, message_content)
+        self._notify_event(entities, agent_event)
+        self._notify_event_to_player(entities, agent_event)
 
     #############################################################################################################################
-    def _broadcast_event_to_player(
-        self, entities: Set[Entity], message_content: str
+    def _notify_event(self, entities: Set[Entity], agent_event: AgentEvent) -> None:
+
+        for entity in entities:
+
+            safe_name = self.safe_get_entity_name(entity)
+            replace_message = public_builtin_prompt.replace_you(
+                agent_event.message_content, safe_name
+            )
+
+            #
+            self._langserve_agent_system.append_human_message_to_chat_history(
+                safe_name, replace_message
+            )
+
+            # 记录历史
+            self._round_messages.get(safe_name, []).append(replace_message)
+
+    #############################################################################################################################
+    def _notify_event_to_player(
+        self, entities: Set[Entity], agent_event: AgentEvent
     ) -> None:
 
         if len(entities) == 0:
@@ -318,18 +322,19 @@ class RPGEntitasContext(Context):
                 if entity.has(ActorComponent):
 
                     if safe_name == player_proxy._ctrl_actor_name:
-                        player_proxy.add_actor_message(
-                            safe_name,
-                            public_builtin_prompt.replace_you(
-                                message_content, player_proxy._ctrl_actor_name
-                            ),
+
+                        agent_event.message_content = public_builtin_prompt.replace_you(
+                            agent_event.message_content,
+                            player_proxy._ctrl_actor_name,
                         )
+
+                        player_proxy.add_actor_message(safe_name, agent_event)
                     elif player_proxy._need_show_actors_in_stage_messages:
-                        player_proxy.add_actor_message(safe_name, message_content)
+                        player_proxy.add_actor_message(safe_name, agent_event)
 
                 elif entity.has(StageComponent):
                     if player_proxy._need_show_stage_messages:
-                        player_proxy.add_stage_message(safe_name, message_content)
+                        player_proxy.add_stage_message(safe_name, agent_event)
                 else:
                     assert False, "不应该到这里"
 
@@ -360,24 +365,6 @@ class RPGEntitasContext(Context):
         if self._game is None:
             return None
         return cast(RPGGame, self._game).get_player(player_name)
-
-    #############################################################################################################################
-    def _broadcast_event(self, entities: Set[Entity], message_content: str) -> None:
-
-        for entity in entities:
-
-            safe_name = self.safe_get_entity_name(entity)
-            replace_message = public_builtin_prompt.replace_you(
-                message_content, safe_name
-            )
-
-            #
-            self._langserve_agent_system.append_human_message_to_chat_history(
-                safe_name, replace_message
-            )
-
-            # 记录历史
-            self._round_messages.get(safe_name, []).append(replace_message)
 
     #############################################################################################################################
     def get_round_messages(self, entity: Entity) -> List[str]:

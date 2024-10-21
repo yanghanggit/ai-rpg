@@ -11,6 +11,7 @@ from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import override, Set, Optional, Any
 from extended_systems.files_def import PropFile
 from rpg_game.rpg_game import RPGGame
+from gameplay_systems.gameplay_event import GamePlayEvent
 
 
 ################################################################################################################################################
@@ -212,12 +213,14 @@ class BehaviorActionSystem(ReactiveProcessor):
     ) -> None:
 
         # 需要给到agent
-        self._context.broadcast_event(
+        self._context.notify_event(
             set({entity}),
-            _generate_behavior_result_prompt(
-                self._context.safe_get_entity_name(entity),
-                behavior_sentence,
-                processed_result,
+            GamePlayEvent(
+                message_content=_generate_behavior_result_prompt(
+                    self._context.safe_get_entity_name(entity),
+                    behavior_sentence,
+                    processed_result,
+                )
             ),
         )
 

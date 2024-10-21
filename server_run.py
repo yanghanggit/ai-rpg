@@ -289,7 +289,7 @@ async def execute(data: ExecuteData) -> Dict[str, Any]:
 
         # 允许玩家输入的时候，才放松消息。
         if rpg_game.rpg_game_helper.is_player_turn(game_room._game, player_proxy):
-            send_client_messages = player_proxy.send_messages(
+            send_client_messages = player_proxy.send_client_messages(
                 WS_CONFIG.SEND_MESSAGES_COUNT
             )
             break

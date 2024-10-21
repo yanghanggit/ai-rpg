@@ -141,3 +141,7 @@ class AgentChatHistoryDumpModel(BaseModel):
     name: str
     url: str
     chat_history: List[AgentMessageModel]
+
+
+class AgentEvent(BaseModel):
+    message_content: str

@@ -11,6 +11,7 @@ import gameplay_systems.public_builtin_prompt as public_builtin_prompt
 from rpg_game.rpg_game import RPGGame
 from extended_systems.files_def import StageArchiveFile
 from loguru import logger
+from gameplay_systems.gameplay_event import GamePlayEvent
 
 
 ################################################################################################################################################
@@ -160,13 +161,21 @@ class GoToActionSystem(ReactiveProcessor):
         assert helper.target_stage_entity is not None
         self._context.broadcast_event_in_stage(
             helper.target_stage_entity,
-            _generate_stage_entry_prompt1(actor_comp.name, helper.target_stage_name),
+            GamePlayEvent(
+                message_content=_generate_stage_entry_prompt1(
+                    actor_comp.name, helper.target_stage_name
+                )
+            ),
         )
 
-        self._context.broadcast_event(
+        self._context.notify_event(
             set({helper._entity}),
-            _generate_stage_entry_prompt2(
-                actor_comp.name, helper.target_stage_name, helper._current_stage_name
+            GamePlayEvent(
+                message_content=_generate_stage_entry_prompt2(
+                    actor_comp.name,
+                    helper.target_stage_name,
+                    helper._current_stage_name,
+                )
             ),
         )
 
@@ -183,10 +192,12 @@ class GoToActionSystem(ReactiveProcessor):
         logger.debug(
             f"{my_name}离开{helper._current_stage_name}。留下最后的印象。{stage_archive.stage_narrate}"
         )
-        self._context.broadcast_event(
+        self._context.notify_event(
             set({helper._entity}),
-            _generate_last_impression_of_stage_prompt(
-                my_name, helper._current_stage_name, stage_archive.stage_narrate
+            GamePlayEvent(
+                message_content=_generate_last_impression_of_stage_prompt(
+                    my_name, helper._current_stage_name, stage_archive.stage_narrate
+                )
             ),
         )
 
@@ -198,8 +209,12 @@ class GoToActionSystem(ReactiveProcessor):
         actor_comp = helper._entity.get(ActorComponent)
         self._context.broadcast_event_in_stage(
             helper._current_stage_entity,
-            _generate_leave_stage_prompt(
-                actor_comp.name, helper._current_stage_name, helper.target_stage_name
+            GamePlayEvent(
+                message_content=_generate_leave_stage_prompt(
+                    actor_comp.name,
+                    helper._current_stage_name,
+                    helper.target_stage_name,
+                )
             ),
         )
 

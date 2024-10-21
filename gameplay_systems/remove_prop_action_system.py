@@ -5,6 +5,7 @@ from rpg_game.rpg_entitas_context import RPGEntitasContext
 from rpg_game.rpg_game import RPGGame
 from extended_systems.files_def import PropFile
 from gameplay_systems.components import StageComponent
+from gameplay_systems.gameplay_event import GamePlayEvent
 
 
 def _generate_prop_lost_prompt(stage_name: str, prop_name: str) -> str:
@@ -70,17 +71,23 @@ class RemovePropActionSystem(ReactiveProcessor):
     ############################################################################################################
     def on_prop_lost_event(self, entity: Entity, prop_name: str) -> None:
         safe_name = self._context.safe_get_entity_name(entity)
-        self._context.broadcast_event(
+        self._context.notify_event(
             set({entity}),
-            _generate_prop_lost_prompt(safe_name, prop_name),
+            GamePlayEvent(
+                message_content=_generate_prop_lost_prompt(safe_name, prop_name)
+            ),
         )
 
     ############################################################################################################
     def on_prop_remove_event(self, entity: Entity, prop_name: str) -> None:
         safe_name = self._context.safe_get_entity_name(entity)
-        self._context.broadcast_event(
+        self._context.notify_event(
             set({entity}),
-            _generate_successful_prop_removal_prompt(safe_name, prop_name),
+            GamePlayEvent(
+                message_content=_generate_successful_prop_removal_prompt(
+                    safe_name, prop_name
+                )
+            ),
         )
 
     ############################################################################################################

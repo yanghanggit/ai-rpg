@@ -14,6 +14,7 @@ from loguru import logger
 from typing import override
 from extended_systems.files_def import PropFile
 from rpg_game.rpg_game import RPGGame
+from gameplay_systems.gameplay_event import GamePlayEvent
 
 
 def _generate_equipment_not_found_prompt(actor_name: str, prop_name: str) -> str:
@@ -86,9 +87,13 @@ class EquipPropActionSystem(ReactiveProcessor):
                     f"EquipPropActionSystem: {actor_name} can't find prop {prop_name}"
                 )
 
-                self._context.broadcast_event(
+                self._context.notify_event(
                     set({entity}),
-                    _generate_equipment_not_found_prompt(actor_name, prop_name),
+                    GamePlayEvent(
+                        message_content=_generate_equipment_not_found_prompt(
+                            actor_name, prop_name
+                        )
+                    ),
                 )
 
                 continue
@@ -99,9 +104,13 @@ class EquipPropActionSystem(ReactiveProcessor):
                     RPGCurrentWeaponComponent, equip_prop_action.name, prop_name
                 )
 
-                self._context.broadcast_event(
+                self._context.notify_event(
                     set({entity}),
-                    _generate_equipment_weapon_prompt(actor_name, prop_file),
+                    GamePlayEvent(
+                        message_content=_generate_equipment_weapon_prompt(
+                            actor_name, prop_file
+                        )
+                    ),
                 )
 
             elif prop_file.is_clothes:
@@ -110,9 +119,13 @@ class EquipPropActionSystem(ReactiveProcessor):
                     RPGCurrentClothesComponent, equip_prop_action.name, prop_name
                 )
 
-                self._context.broadcast_event(
+                self._context.notify_event(
                     set({entity}),
-                    _generate_equipment_clothing_prompt(actor_name, prop_file),
+                    GamePlayEvent(
+                        message_content=_generate_equipment_clothing_prompt(
+                            actor_name, prop_file
+                        )
+                    ),
                 )
 
                 self.on_add_update_apperance_action(entity)

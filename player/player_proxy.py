@@ -1,8 +1,12 @@
 from typing import List, Any
 from loguru import logger
+from player.player_message import PlayerClientMessage, PlayerClientMessageTag
+from my_data.model_def import AgentEvent
 
 
 class PlayerProxy:
+
+    SYSTEM_MESSAGE_SENDER = f"[system]"
 
     def __init__(self, name: str) -> None:
         self._name: str = name
@@ -11,8 +15,8 @@ class PlayerProxy:
 
         self._commands: List[PlayerCommand] = []
 
-        self._client_messages: List[tuple[str, str]] = []
-        self._delayed_show_login_messages: List[tuple[str, str]] = []
+        self._client_messages: List[PlayerClientMessage] = []
+        self._login_messages: List[PlayerClientMessage] = []
 
         self._over: bool = False
 
@@ -28,41 +32,59 @@ class PlayerProxy:
         self._commands.append(command)
 
     ##########################################################################################################################################################
-    def _add_message(
-        self, sender: str, message: str, target: List[tuple[str, str]]
+    def _add_client_message(
+        self,
+        tag: PlayerClientMessageTag,
+        sender: str,
+        agent_event: AgentEvent,
+        target: List[PlayerClientMessage],
     ) -> None:
-        target.append((sender, message))
+
+        target.append(PlayerClientMessage(tag=tag, sender=sender, event=agent_event))
 
     ##########################################################################################################################################################
-    def add_system_message(self, message: str) -> None:
-        self._add_message(f"[system]", message, self._client_messages)
+    def add_system_message(self, agent_event: AgentEvent) -> None:
+        self._add_client_message(
+            PlayerClientMessageTag.SYSTEM,
+            PlayerProxy.SYSTEM_MESSAGE_SENDER,
+            agent_event,
+            self._client_messages,
+        )
 
     ##########################################################################################################################################################
-    def add_actor_message(self, actor_name: str, message: str) -> None:
-        self._add_message(f"[{actor_name}]", message, self._client_messages)
+    def add_actor_message(self, actor_name: str, agent_event: AgentEvent) -> None:
+        self._add_client_message(
+            PlayerClientMessageTag.ACTOR,
+            actor_name,
+            agent_event,
+            self._client_messages,
+        )
 
     ##########################################################################################################################################################
-    def add_stage_message(self, stage_name: str, message: str) -> None:
-        self._add_message(f"[{stage_name}]", message, self._client_messages)
+    def add_stage_message(self, stage_name: str, agent_event: AgentEvent) -> None:
+        self._add_client_message(
+            PlayerClientMessageTag.STAGE,
+            stage_name,
+            agent_event,
+            self._client_messages,
+        )
 
     ##########################################################################################################################################################
-    def add_login_message(self, actor_name: str, message: str) -> None:
-        self._add_message(f"{actor_name}", message, self._delayed_show_login_messages)
+    def add_login_message(self, actor_name: str, agent_event: AgentEvent) -> None:
+        self._add_client_message(
+            PlayerClientMessageTag.ACTOR,
+            actor_name,
+            agent_event,
+            self._login_messages,
+        )
 
     ##########################################################################################################################################################
-    def show_messages(self, count: int) -> None:
-        for message in self._client_messages[-count:]:
-            tag = message[0]
-            content = message[1]
-            logger.warning(f"{tag}=>{content}")
-
-    ##########################################################################################################################################################
-    def send_messages(self, count: int) -> List[str]:
+    def send_client_messages(self, send_count: int) -> List[str]:
         ret: List[str] = []
-        for message in self._client_messages[-count:]:
-            tag = message[0]
-            content = message[1]
-            ret.append(f"{tag}=>{content}")
+        for client_message in self._client_messages[-send_count:]:
+            json_str = client_message.model_dump_json()
+            ret.append(json_str)
+            logger.warning(json_str)
         return ret
 
     ##########################################################################################################################################################

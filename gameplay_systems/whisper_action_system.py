@@ -6,6 +6,7 @@ import gameplay_systems.conversation_helper
 import my_format_string.target_and_message_format_string
 from rpg_game.rpg_game import RPGGame
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt
+from gameplay_systems.gameplay_event import GamePlayEvent
 
 
 ################################################################################################################################################
@@ -58,9 +59,12 @@ class WhisperActionSystem(ReactiveProcessor):
 
             target_entity = self._context.get_entity_by_name(tp[0])
             assert target_entity is not None
-            self._context.broadcast_event(
+
+            self._context.notify_event(
                 set({entity, target_entity}),
-                _generate_whisper_prompt(safe_name, tp[0], tp[1]),
+                GamePlayEvent(
+                    message_content=_generate_whisper_prompt(safe_name, tp[0], tp[1])
+                ),
             )
 
 

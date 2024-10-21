@@ -16,6 +16,7 @@ from extended_systems.files_def import PropFile
 import my_format_string.target_and_message_format_string
 from rpg_game.rpg_game import RPGGame
 from loguru import logger
+from gameplay_systems.gameplay_event import GamePlayEvent
 
 ####################################################################################################################################
 
@@ -87,13 +88,15 @@ class StealActionSystem(ReactiveProcessor):
                 continue
 
             action_result = self.do_steal(entity, target_entity, tp[1])
-            self._context.broadcast_event(
+            self._context.notify_event(
                 set({entity, target_entity}),
-                _generate_steal_prompt(
-                    self._context.safe_get_entity_name(entity),
-                    tp[0],
-                    tp[1],
-                    action_result,
+                GamePlayEvent(
+                    message_content=_generate_steal_prompt(
+                        self._context.safe_get_entity_name(entity),
+                        tp[0],
+                        tp[1],
+                        action_result,
+                    )
                 ),
             )
 

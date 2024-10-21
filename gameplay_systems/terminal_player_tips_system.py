@@ -1,5 +1,5 @@
 from entitas import Entity, ExecuteProcessor  # type: ignore
-from typing import override, Set, List, cast
+from typing import override, List
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from rpg_game.rpg_game import RPGGame
 from gameplay_systems.components import (
@@ -40,6 +40,8 @@ class TerminalPlayerTipsSystem(ExecuteProcessor):
             assert player_entity.has(PlayerComponent)
             assert player_entity.has(ActorComponent)
 
+            player_proxy.remove_tip_message()
+
             # 当前场景能去往的场景
             self.tips_next_stages(player_proxy, player_entity)
 
@@ -58,7 +60,7 @@ class TerminalPlayerTipsSystem(ExecuteProcessor):
         assert stage_entity is not None
 
         if not stage_entity.has(StageGraphComponent):
-            player_proxy.add_stage_message(
+            player_proxy.add_tip_message(
                 self._context.safe_get_entity_name(stage_entity),
                 # "当前场景没有相连接的场景，无法离开",
                 AgentEvent(message_content="当前场景没有相连接的场景，无法离开"),
@@ -72,9 +74,8 @@ class TerminalPlayerTipsSystem(ExecuteProcessor):
             self.parse_stage_name(stage_name, actor_name)
             for stage_name in stage_graph_comp.stage_graph
         ]
-        player_proxy.add_stage_message(
+        player_proxy.add_tip_message(
             self._context.safe_get_entity_name(stage_entity),
-            # f"可去往场景:\n{'\n'.join(stage_names)}",
             AgentEvent(message_content=f"可去往场景:\n{'\n'.join(stage_names)}"),
         )
 
@@ -111,10 +112,16 @@ class TerminalPlayerTipsSystem(ExecuteProcessor):
             stage_archive.name for stage_archive in stage_archives
         ]
 
-        player_proxy.add_system_message(
-            # f"已知场景:\n{'\n'.join(stage_names)}"
-            AgentEvent(message_content=f"已知场景:\n{'\n'.join(stage_names)}")
-        )
+        if len(stage_names) > 0:
+
+            player_proxy.add_tip_message(
+                actor_name,
+                AgentEvent(message_content=f"已知场景:\n{'\n'.join(stage_names)}"),
+            )
+        else:
+            player_proxy.add_tip_message(
+                actor_name, AgentEvent(message_content="没有已知场景")
+            )
 
 
 ############################################################################################################

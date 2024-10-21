@@ -7,6 +7,8 @@ class PlayerClientMessageTag(StrEnum):
     SYSTEM = "SYSTEM"
     ACTOR = "ACTOR"
     STAGE = "STAGE"
+    KICKOFF = "KICKOFF"
+    TIP = "TIP"
 
 
 class PlayerClientMessage(BaseModel):

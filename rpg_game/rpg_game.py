@@ -659,4 +659,7 @@ class RPGGame(BaseGame):
             player_proxy = PlayerProxy(player_proxy_model)
             self.add_player(player_proxy)
 
+            # 放弃掉tip消息
+            player_proxy.remove_tip_message()
+
     ###############################################################################################################################################

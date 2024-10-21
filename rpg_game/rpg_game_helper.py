@@ -393,7 +393,7 @@ def player_play_new_game(
     )
 
     kick_off_comp = actor_entity.get(KickOffComponent)
-    player_proxy.add_login_message(
+    player_proxy.cache_kickoff_message(
         player_controlled_actor_name,
         AgentEvent(message_content=kick_off_comp.content),
     )
@@ -407,11 +407,15 @@ def player_play_again(rpg_game: RPGGame, player_name: str) -> Optional[PlayerPro
         return None
 
     time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    player_proxy.add_login_message(
-        player_proxy.ctrl_actor_name,
+    player_proxy.add_system_message(
         AgentEvent(
-            message_content=f"再次游玩 {rpg_game._name} : {player_proxy.name}, time = {time}, 控制角色 = {player_proxy.ctrl_actor_name}"
-        ),
+            message_content=f"load & login: {player_proxy.name}, time = {time}, 控制角色 = {player_proxy.ctrl_actor_name}"
+        )
+    )
+
+    player_proxy.cache_kickoff_message(
+        player_proxy.ctrl_actor_name,
+        AgentEvent(message_content=f"你回忆起了你的经历: {rpg_game._name}。"),
     )
 
     return player_proxy

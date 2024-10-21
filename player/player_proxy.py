@@ -8,7 +8,7 @@ from pydantic import BaseModel
 class PlayerProxyModel(BaseModel):
     name: str = ""
     client_messages: List[PlayerClientMessage] = []
-    login_messages: List[PlayerClientMessage] = []
+    cache_kickoff_messages: List[PlayerClientMessage] = []
     over: bool = False
     ctrl_actor_name: str = ""
     need_show_stage_messages: bool = False
@@ -93,6 +93,7 @@ class PlayerProxy:
 
     ##########################################################################################################################################################
     def add_actor_message(self, actor_name: str, agent_event: AgentEvent) -> None:
+
         self._add_client_message(
             PlayerClientMessageTag.ACTOR,
             actor_name,
@@ -110,13 +111,30 @@ class PlayerProxy:
         )
 
     ##########################################################################################################################################################
-    def add_login_message(self, actor_name: str, agent_event: AgentEvent) -> None:
+    def cache_kickoff_message(self, actor_name: str, agent_event: AgentEvent) -> None:
         self._add_client_message(
-            PlayerClientMessageTag.ACTOR,
+            PlayerClientMessageTag.KICKOFF,
             actor_name,
             agent_event,
-            self._model.login_messages,
+            self._model.cache_kickoff_messages,
         )
+
+    ##########################################################################################################################################################
+    def add_tip_message(self, sender_name: str, agent_event: AgentEvent) -> None:
+        self._add_client_message(
+            PlayerClientMessageTag.TIP,
+            sender_name,
+            agent_event,
+            self._model.client_messages,
+        )
+
+    ##########################################################################################################################################################
+    def remove_tip_message(self) -> None:
+        self._model.client_messages = [
+            message
+            for message in self._model.client_messages
+            if message.tag != PlayerClientMessageTag.TIP
+        ]
 
     ##########################################################################################################################################################
     def send_client_messages(self, send_count: int) -> List[str]:
@@ -136,9 +154,16 @@ class PlayerProxy:
 
     ##########################################################################################################################################################
     # todo
-    def flush_login_messages(self) -> None:
-        for message in self._model.login_messages:
-            self.add_actor_message(message.sender, message.event)
-        self._model.login_messages.clear()
+    def flush_kickoff_messages(self) -> None:
+        for message in self._model.cache_kickoff_messages:
+
+            self._add_client_message(
+                message.tag,
+                message.sender,
+                message.event,
+                self._model.client_messages,
+            )
+
+        self._model.cache_kickoff_messages.clear()
 
     ##########################################################################################################################################################

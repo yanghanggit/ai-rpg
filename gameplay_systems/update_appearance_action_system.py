@@ -14,7 +14,7 @@ from extended_systems.files_def import PropFile
 from my_agent.agent_task import AgentTask
 from gameplay_systems.action_components import UpdateAppearanceAction
 from rpg_game.rpg_game import RPGGame
-from gameplay_systems.gameplay_event import GamePlayEvent
+from gameplay_systems.gameplay_event import UpdateAppearanceEvent
 
 
 ################################################################################################################################################
@@ -233,7 +233,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
             appearance_comp = actor_entity.get(AppearanceComponent)
             self._context.broadcast_event_in_stage(
                 current_stage_entity,
-                GamePlayEvent(
+                UpdateAppearanceEvent(
                     message_content=_generate_appearance_update_prompt(
                         appearance_comp.name, appearance_comp.appearance
                     )

@@ -33,16 +33,13 @@ class UpdateClientMessageSystem(ExecuteProcessor):
         self, player_proxy: PlayerProxy, player_entity: Entity
     ) -> None:
 
-        player_proxy.add_system_message(
-            AgentEvent(message_content=f"游戏运行次数:{self._game._runtime_game_round}")
-        )
-
+        # 环境描写
         self._stage_enviro_narrate_action_2_message(player_proxy, player_entity)
-        # self._show_login_messages_then_clear(
-        #     player_proxy, player_entity
-        # )  # 先把缓存的消息推送出去，在场景描述之后
-        player_proxy.flush_login_messages()
 
+        # 如果有登陆信息就直接上登陆信息
+        player_proxy.flush_kickoff_messages()
+
+        # 去往信息？
         self._go_to_action_2_message(player_proxy, player_entity)
 
     ############################################################################################################
@@ -89,15 +86,6 @@ class UpdateClientMessageSystem(ExecuteProcessor):
                 go_to_action.name,
                 AgentEvent(message_content=f"""准备去往{stage_name}"""),
             )
-
-    ############################################################################################################
-    # def _show_login_messages_then_clear(
-    #     self, player_proxy: PlayerProxy, player_entity: Entity
-    # ) -> None:
-    #     # todo
-    #     for message in player_proxy.model.login_messages:
-    #         player_proxy.add_actor_message(message.sender, message.event)
-    #     player_proxy.model.login_messages.clear()
 
 
 ############################################################################################################

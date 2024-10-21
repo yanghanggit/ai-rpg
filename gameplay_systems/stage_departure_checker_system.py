@@ -19,7 +19,7 @@ from my_agent.agent_plan import AgentPlanResponse
 from extended_systems.files_def import PropFile
 from rpg_game.rpg_game import RPGGame
 from my_data.model_def import PropType
-from gameplay_systems.gameplay_event import GamePlayEvent
+from gameplay_systems.gameplay_event import AgentEvent
 
 
 def _generate_exit_conditions_prompt(
@@ -211,7 +211,7 @@ class StageDepartureCheckerSystem(ReactiveProcessor):
 
                 self._context.notify_event(
                     set({actor_entity}),
-                    GamePlayEvent(
+                    AgentEvent(
                         message_content=_generate_stage_exit_failure_prompt(
                             actor_name, stage_agent_task.agent_name, response_plan.tips
                         )

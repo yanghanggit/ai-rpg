@@ -13,7 +13,7 @@ from loguru import logger
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt
 from typing import override, Set, Any
 from rpg_game.rpg_game import RPGGame
-from gameplay_systems.gameplay_event import GamePlayEvent
+from gameplay_systems.gameplay_event import AgentEvent
 
 
 ################################################################################################################################################
@@ -79,7 +79,7 @@ class StageValidatorSystem(ReactiveProcessor):
 
             self._context.notify_event(
                 set({entity}),
-                GamePlayEvent(
+                AgentEvent(
                     message_content=_generate_stage_validation_error_prompt(
                         safe_actor_name, target_stage_name
                     )
@@ -92,7 +92,7 @@ class StageValidatorSystem(ReactiveProcessor):
 
             self._context.notify_event(
                 set({entity}),
-                GamePlayEvent(
+                AgentEvent(
                     message_content=_generate_stage_already_in_prompt(
                         safe_actor_name, target_stage_name
                     )
@@ -108,7 +108,7 @@ class StageValidatorSystem(ReactiveProcessor):
 
                 self._context.notify_event(
                     set({entity}),
-                    GamePlayEvent(
+                    AgentEvent(
                         message_content=_generate_stage_validation_error_prompt(
                             safe_actor_name, target_stage_name
                         )

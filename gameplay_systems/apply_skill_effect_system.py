@@ -24,7 +24,7 @@ import my_format_string.target_and_message_format_string
 import my_format_string.attrs_format_string
 from rpg_game.rpg_game import RPGGame
 from my_data.model_def import AttributesIndex
-from gameplay_systems.gameplay_event import GamePlayEvent
+from gameplay_systems.gameplay_event import AgentEvent
 from loguru import logger
 
 ################################################################################################################################################
@@ -242,7 +242,7 @@ class ApplySkillEffectSystem(ReactiveProcessor):
 
         self._context.broadcast_event_in_stage(
             current_stage_entity,
-            GamePlayEvent(
+            AgentEvent(
                 message_content=_generate_skill_event_notification_prompt(
                     self._context.safe_get_entity_name(from_entity),
                     self._context.safe_get_entity_name(target_entity),
@@ -338,7 +338,7 @@ class ApplySkillEffectSystem(ReactiveProcessor):
 
         self._context.notify_event(
             set({entity}),
-            GamePlayEvent(
+            AgentEvent(
                 message_content=_generate_offline_prompt(
                     self._context.safe_get_entity_name(entity),
                     self._context.safe_get_entity_name(target),

@@ -1,7 +1,7 @@
 from typing import List, Any
 from loguru import logger
 from player.player_message import PlayerClientMessage, PlayerClientMessageTag
-from my_data.model_def import AgentEvent
+from my_data.model_def import BaseAgentEvent
 from pydantic import BaseModel
 
 
@@ -76,14 +76,16 @@ class PlayerProxy:
         self,
         tag: PlayerClientMessageTag,
         sender: str,
-        agent_event: AgentEvent,
+        agent_event: BaseAgentEvent,
         target: List[PlayerClientMessage],
     ) -> None:
 
-        target.append(PlayerClientMessage(tag=tag, sender=sender, event=agent_event))
+        target.append(
+            PlayerClientMessage(tag=tag, sender=sender, agent_event=agent_event)
+        )
 
     ##########################################################################################################################################################
-    def add_system_message(self, agent_event: AgentEvent) -> None:
+    def add_system_message(self, agent_event: BaseAgentEvent) -> None:
         self._add_client_message(
             PlayerClientMessageTag.SYSTEM,
             PlayerProxy.SYSTEM_MESSAGE_SENDER,
@@ -92,7 +94,7 @@ class PlayerProxy:
         )
 
     ##########################################################################################################################################################
-    def add_actor_message(self, actor_name: str, agent_event: AgentEvent) -> None:
+    def add_actor_message(self, actor_name: str, agent_event: BaseAgentEvent) -> None:
 
         self._add_client_message(
             PlayerClientMessageTag.ACTOR,
@@ -102,7 +104,7 @@ class PlayerProxy:
         )
 
     ##########################################################################################################################################################
-    def add_stage_message(self, stage_name: str, agent_event: AgentEvent) -> None:
+    def add_stage_message(self, stage_name: str, agent_event: BaseAgentEvent) -> None:
         self._add_client_message(
             PlayerClientMessageTag.STAGE,
             stage_name,
@@ -111,7 +113,9 @@ class PlayerProxy:
         )
 
     ##########################################################################################################################################################
-    def cache_kickoff_message(self, actor_name: str, agent_event: AgentEvent) -> None:
+    def cache_kickoff_message(
+        self, actor_name: str, agent_event: BaseAgentEvent
+    ) -> None:
         self._add_client_message(
             PlayerClientMessageTag.KICKOFF,
             actor_name,
@@ -120,7 +124,7 @@ class PlayerProxy:
         )
 
     ##########################################################################################################################################################
-    def add_tip_message(self, sender_name: str, agent_event: AgentEvent) -> None:
+    def add_tip_message(self, sender_name: str, agent_event: BaseAgentEvent) -> None:
         self._add_client_message(
             PlayerClientMessageTag.TIP,
             sender_name,
@@ -160,7 +164,7 @@ class PlayerProxy:
             self._add_client_message(
                 message.tag,
                 message.sender,
-                message.event,
+                message.agent_event,
                 self._model.client_messages,
             )
 

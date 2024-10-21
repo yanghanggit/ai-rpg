@@ -21,7 +21,7 @@ from my_agent.agent_task import AgentTask
 from my_agent.agent_plan import AgentPlanResponse
 from rpg_game.rpg_game import RPGGame
 import extended_systems.file_system_helper
-from gameplay_systems.gameplay_event import GamePlayEvent
+from gameplay_systems.gameplay_event import AgentEvent
 
 
 ################################################################################################################################################
@@ -424,7 +424,7 @@ class WorldSkillRuleSystem(ReactiveProcessor):
 
         self._context.notify_event(
             set({entity}),
-            GamePlayEvent(
+            AgentEvent(
                 message_content=_generate_offline_prompt(
                     self._context.safe_get_entity_name(entity),
                     self.extract_behavior_sentence(entity),
@@ -444,7 +444,7 @@ class WorldSkillRuleSystem(ReactiveProcessor):
 
         self._context.notify_event(
             set({entity}),
-            GamePlayEvent(
+            AgentEvent(
                 message_content=_generate_rule_success_prompt(
                     self._context.safe_get_entity_name(entity),
                     target_names,
@@ -462,7 +462,7 @@ class WorldSkillRuleSystem(ReactiveProcessor):
 
         self._context.notify_event(
             set({entity}),
-            GamePlayEvent(
+            AgentEvent(
                 message_content=_generate_rule_failure_prompt(
                     self._context.safe_get_entity_name(entity),
                     world_response_plan.result,

@@ -7,7 +7,7 @@ from typing import override
 from extended_systems.files_def import PropFile
 import extended_systems.file_system_helper
 from rpg_game.rpg_game import RPGGame
-from gameplay_systems.gameplay_event import GamePlayEvent
+from gameplay_systems.gameplay_event import AgentEvent
 
 
 ###############################################################################################################################################
@@ -83,7 +83,7 @@ class PickUpPropActionSystem(ReactiveProcessor):
 
                 self._context.notify_event(
                     set({entity}),
-                    GamePlayEvent(
+                    AgentEvent(
                         message_content=_generate_failed_pickup_prompt(
                             actor_name, prop_name
                         )
@@ -100,7 +100,7 @@ class PickUpPropActionSystem(ReactiveProcessor):
 
             self._context.broadcast_event_in_stage(
                 current_stage_entity,
-                GamePlayEvent(
+                AgentEvent(
                     message_content=_generate_success_pickup_prompt(
                         actor_name, prop_name, stage_comp.name
                     )

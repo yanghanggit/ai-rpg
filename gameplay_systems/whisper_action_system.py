@@ -6,7 +6,7 @@ import gameplay_systems.conversation_helper
 import my_format_string.target_and_message_format_string
 from rpg_game.rpg_game import RPGGame
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt
-from gameplay_systems.gameplay_event import GamePlayEvent
+from gameplay_systems.gameplay_event import AgentEvent
 
 
 ################################################################################################################################################
@@ -62,7 +62,7 @@ class WhisperActionSystem(ReactiveProcessor):
 
             self._context.notify_event(
                 set({entity, target_entity}),
-                GamePlayEvent(
+                AgentEvent(
                     message_content=_generate_whisper_prompt(safe_name, tp[0], tp[1])
                 ),
             )

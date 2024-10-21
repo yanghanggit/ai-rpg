@@ -47,7 +47,9 @@ import datetime
 # from rpg_game.rpg_game_config import RPGGameConfig
 import shutil
 import zipfile
-from my_data.model_def import AgentEvent
+
+# from my_data.model_def import AgentEvent
+from gameplay_systems.gameplay_event import AgentEvent
 
 
 #######################################################################################################################################

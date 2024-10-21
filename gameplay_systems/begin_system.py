@@ -3,7 +3,7 @@ from typing import override
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from rpg_game.rpg_game import RPGGame
-from my_data.model_def import AgentEvent
+from gameplay_systems.gameplay_event import AgentEvent
 
 
 class BeginSystem(ExecuteProcessor):

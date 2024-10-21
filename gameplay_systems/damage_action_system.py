@@ -15,7 +15,7 @@ from rpg_game.rpg_game import RPGGame
 from my_data.model_def import AttributesIndex
 import extended_systems.file_system_helper
 from my_data.model_def import PropType
-from gameplay_systems.gameplay_event import GamePlayEvent
+from gameplay_systems.gameplay_event import AgentEvent
 
 
 ################################################################################################################################################
@@ -158,7 +158,7 @@ class DamageActionSystem(ReactiveProcessor):
             # 直接打死。
             self._context.broadcast_event_in_stage(
                 current_stage_entity,
-                GamePlayEvent(
+                AgentEvent(
                     message_content=_generate_kill_event_prompt(from_name, target_name)
                 ),
             )
@@ -169,7 +169,7 @@ class DamageActionSystem(ReactiveProcessor):
                 rpg_attr_comp = target_entity.get(RPGAttributesComponent)
                 self._context.broadcast_event_in_stage(
                     current_stage_entity,
-                    GamePlayEvent(
+                    AgentEvent(
                         message_content=_generate_damage_event_prompt(
                             from_name,
                             target_name,

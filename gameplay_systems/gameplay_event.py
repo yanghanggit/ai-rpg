@@ -1,10 +1,10 @@
-from my_data.model_def import AgentEvent
+from my_data.model_def import BaseAgentEvent
 
 
 # 临时测试重构用！
-class GamePlayEvent(AgentEvent):
+class AgentEvent(BaseAgentEvent):
     pass
 
 
-class UpdateAppearanceEvent(GamePlayEvent):
+class UpdateAppearanceEvent(AgentEvent):
     pass

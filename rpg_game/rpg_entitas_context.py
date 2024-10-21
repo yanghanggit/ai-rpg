@@ -15,8 +15,7 @@ from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from typing import Optional, Dict, List, Set, cast, Any
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt
 from player.player_proxy import PlayerProxy
-from my_data.model_def import AgentEvent
-from gameplay_systems.gameplay_event import GamePlayEvent, UpdateAppearanceEvent
+from gameplay_systems.gameplay_event import AgentEvent
 
 
 class RPGEntitasContext(Context):
@@ -306,9 +305,9 @@ class RPGEntitasContext(Context):
         if len(entities) == 0:
             return
 
-        if isinstance(agent_event, UpdateAppearanceEvent):
-            logger.debug("UpdateAppearanceEvent ????")
-            # return
+        # if isinstance(agent_event, UpdateAppearanceEvent):
+        #     logger.debug("UpdateAppearanceEvent ????")
+        #     # return
 
         first_entity = next(iter(entities))
         player_entities_in_stage = self.get_players_in_stage(first_entity)

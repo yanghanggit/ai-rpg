@@ -144,5 +144,5 @@ class AgentChatHistoryDumpModel(BaseModel):
     chat_history: List[AgentMessageModel]
 
 
-class AgentEvent(BaseModel):
+class BaseAgentEvent(BaseModel):
     message_content: str

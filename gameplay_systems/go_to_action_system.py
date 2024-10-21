@@ -11,7 +11,7 @@ import gameplay_systems.public_builtin_prompt as public_builtin_prompt
 from rpg_game.rpg_game import RPGGame
 from extended_systems.files_def import StageArchiveFile
 from loguru import logger
-from gameplay_systems.gameplay_event import GamePlayEvent
+from gameplay_systems.gameplay_event import AgentEvent
 
 
 ################################################################################################################################################
@@ -161,7 +161,7 @@ class GoToActionSystem(ReactiveProcessor):
         assert helper.target_stage_entity is not None
         self._context.broadcast_event_in_stage(
             helper.target_stage_entity,
-            GamePlayEvent(
+            AgentEvent(
                 message_content=_generate_stage_entry_prompt1(
                     actor_comp.name, helper.target_stage_name
                 )
@@ -170,7 +170,7 @@ class GoToActionSystem(ReactiveProcessor):
 
         self._context.notify_event(
             set({helper._entity}),
-            GamePlayEvent(
+            AgentEvent(
                 message_content=_generate_stage_entry_prompt2(
                     actor_comp.name,
                     helper.target_stage_name,
@@ -194,7 +194,7 @@ class GoToActionSystem(ReactiveProcessor):
         )
         self._context.notify_event(
             set({helper._entity}),
-            GamePlayEvent(
+            AgentEvent(
                 message_content=_generate_last_impression_of_stage_prompt(
                     my_name, helper._current_stage_name, stage_archive.stage_narrate
                 )
@@ -209,7 +209,7 @@ class GoToActionSystem(ReactiveProcessor):
         actor_comp = helper._entity.get(ActorComponent)
         self._context.broadcast_event_in_stage(
             helper._current_stage_entity,
-            GamePlayEvent(
+            AgentEvent(
                 message_content=_generate_leave_stage_prompt(
                     actor_comp.name,
                     helper._current_stage_name,

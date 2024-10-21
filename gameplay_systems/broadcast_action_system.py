@@ -5,7 +5,7 @@ from gameplay_systems.action_components import BroadcastAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from rpg_game.rpg_game import RPGGame
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt
-from gameplay_systems.gameplay_event import GamePlayEvent
+from gameplay_systems.gameplay_event import AgentEvent
 
 
 def _generate_broadcast_prompt(src_name: str, dest_name: str, content: str) -> str:
@@ -45,7 +45,7 @@ class BroadcastActionSystem(ReactiveProcessor):
         broadcast_action = entity.get(BroadcastAction)
         self._context.broadcast_event_in_stage(
             current_stage_entity,
-            GamePlayEvent(
+            AgentEvent(
                 message_content=_generate_broadcast_prompt(
                     broadcast_action.name,
                     current_stage_entity.get(StageComponent).name,

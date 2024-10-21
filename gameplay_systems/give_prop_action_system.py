@@ -6,7 +6,7 @@ from gameplay_systems.action_components import (
 )
 from gameplay_systems.components import ActorComponent
 import gameplay_systems.conversation_helper
-from typing import override
+from typing import final, override
 import extended_systems.file_system_helper
 from extended_systems.files_def import PropFile
 import my_format_string.target_and_message_format_string
@@ -27,6 +27,7 @@ def _generate_give_prompt(
 - {target_name} 现在拥有了 {prop_name}。"""
 
 
+@final
 class GivePropActionSystem(ReactiveProcessor):
 
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame):

@@ -1,11 +1,12 @@
 from entitas import ExecuteProcessor  # type: ignore
-from typing import override
+from typing import final, override
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from rpg_game.rpg_game import RPGGame
 from gameplay_systems.gameplay_event import AgentEvent
 
 
+@final
 class BeginSystem(ExecuteProcessor):
     ############################################################################################################
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:

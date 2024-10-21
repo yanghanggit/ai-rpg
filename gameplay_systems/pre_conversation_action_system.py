@@ -8,7 +8,7 @@ from gameplay_systems.action_components import (
 from gameplay_systems.components import PlayerComponent, ActorComponent
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from my_agent.agent_task import AgentTask
-from typing import Dict, List
+from typing import Dict, List, final
 import copy
 from rpg_game.rpg_game import RPGGame
 
@@ -48,6 +48,7 @@ def _generate_conversation_check_prompt(
     return prompt
 
 
+@final
 class PreConversationActionSystem(ReactiveProcessor):
 
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:

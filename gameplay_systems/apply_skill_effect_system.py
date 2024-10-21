@@ -15,7 +15,7 @@ from gameplay_systems.components import (
     ActorComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from typing import override, List, cast, Optional, Set
+from typing import final, override, List, Optional, Set
 from extended_systems.files_def import PropFile
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt
 from my_agent.agent_task import AgentTask
@@ -91,6 +91,7 @@ def _generate_skill_event_notification_prompt(
 
 
 ################################################################################################################################################
+@final
 class SkillFeedbackResponse(AgentPlanResponse):
 
     @property
@@ -101,6 +102,7 @@ class SkillFeedbackResponse(AgentPlanResponse):
 ################################################################################################################################################
 
 
+@final
 class ApplySkillEffectSystem(ReactiveProcessor):
 
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:

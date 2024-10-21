@@ -8,7 +8,7 @@ from gameplay_systems.action_components import (
 )
 from gameplay_systems.components import StageComponent, RPGCurrentWeaponComponent
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from typing import override, Set, Optional, Any
+from typing import final, override, Set, Optional, Any
 from extended_systems.files_def import PropFile
 from rpg_game.rpg_game import RPGGame
 from gameplay_systems.gameplay_event import AgentEvent
@@ -42,6 +42,7 @@ def _generate_behavior_result_prompt(
     return prompt2
 
 
+@final
 class BehaviorActionSystem(ReactiveProcessor):
 
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:

@@ -1,5 +1,5 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: ignore
-from typing import override
+from typing import final, override
 from gameplay_systems.action_components import StageNarrateAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from rpg_game.rpg_game import RPGGame
@@ -8,6 +8,7 @@ import extended_systems.file_system_helper
 
 
 ############################################################################################################
+@final
 class StageNarrateActionSystem(ReactiveProcessor):
 
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:

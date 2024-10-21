@@ -1,4 +1,4 @@
-from typing import Any, FrozenSet, NamedTuple, List
+from typing import Any, FrozenSet, NamedTuple, List, final
 
 
 class ActionComponent(NamedTuple):
@@ -7,101 +7,121 @@ class ActionComponent(NamedTuple):
 
 
 # 场景环境的描述
+@final
 class StageNarrateAction(ActionComponent):
     pass
 
 
 # 内心独白
+@final
 class MindVoiceAction(ActionComponent):
     pass
 
 
 # 场景内广播
+@final
 class BroadcastAction(ActionComponent):
     pass
 
 
 # 私下交流
+@final
 class WhisperAction(ActionComponent):
     pass
 
 
 # 对谁说（场景内其他角色能听到）
+@final
 class SpeakAction(ActionComponent):
     pass
 
 
 # 标签
+@final
 class TagAction(ActionComponent):
     pass
 
 
 # 死亡
+@final
 class DeadAction(ActionComponent):
     pass
 
 
 # 离开当前场景并去往
+@final
 class GoToAction(ActionComponent):
     pass
 
 
 # 从场景内可以拾取道具
+@final
 class PickUpPropAction(ActionComponent):
     pass
 
 
 # 从目标角色处偷取
+@final
 class StealPropAction(ActionComponent):
     pass
 
 
 # 将道具交给目标角色
+@final
 class GivePropAction(ActionComponent):
     pass
 
 
 # 行为动作与技能动作
+@final
 class BehaviorAction(ActionComponent):
     pass
 
 
 # 技能目标动作
+@final
 class SkillTargetAction(ActionComponent):
     pass
 
 
 # 技能动作
+@final
 class SkillAction(ActionComponent):
     pass
 
 
 # 使用技能道具动作
+@final
 class SkillUsePropAction(ActionComponent):
     pass
 
 
 # 世界技能系统规则动作
+@final
 class WorldSkillSystemRuleAction(ActionComponent):
     pass
 
 
 # 更新外观
+@final
 class UpdateAppearanceAction(ActionComponent):
     pass
 
 
 # 处理伤害逻辑
+@final
 class DamageAction(ActionComponent):
     pass
 
 
 # 装备道具
+@final
 class EquipPropAction(ActionComponent):
     pass
 
 
 # 场景内销毁道具
+@final
 class RemovePropAction(ActionComponent):
     pass
 

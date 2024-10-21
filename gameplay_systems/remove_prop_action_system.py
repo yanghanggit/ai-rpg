@@ -1,5 +1,5 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: ignore
-from typing import override, cast, List
+from typing import final, override
 from gameplay_systems.action_components import RemovePropAction, StageNarrateAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from rpg_game.rpg_game import RPGGame
@@ -27,6 +27,7 @@ def _generate_successful_prop_removal_prompt(stage_name: str, prop_name: str) ->
 
 
 ############################################################################################################
+@final
 class RemovePropActionSystem(ReactiveProcessor):
 
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:

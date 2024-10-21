@@ -1,5 +1,5 @@
 from entitas import Entity, ExecuteProcessor  # type: ignore
-from typing import override, List
+from typing import final, override, List
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from rpg_game.rpg_game import RPGGame
 from gameplay_systems.components import (
@@ -11,11 +11,10 @@ from gameplay_systems.components import (
 from extended_systems.files_def import StageArchiveFile
 from player.player_proxy import PlayerProxy
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt
-
-# from my_data.model_def import AgentEvent
 from gameplay_systems.gameplay_event import AgentEvent
 
 
+@final
 class TerminalPlayerTipsSystem(ExecuteProcessor):
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         self._context: RPGEntitasContext = context

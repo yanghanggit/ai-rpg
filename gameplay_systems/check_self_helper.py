@@ -64,6 +64,7 @@ class SelfChecker:
     def get_prop_files(self, prop_type: PropType) -> List[PropFile]:
         return self._category_prop_files.get(prop_type, [])
 
+    ######################################################################################################################################
     @property
     def health(self) -> float:
         return self._hp / self._maxhp

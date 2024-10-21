@@ -2,7 +2,7 @@ from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: igno
 from gameplay_systems.action_components import SpeakAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 import gameplay_systems.conversation_helper
-from typing import override
+from typing import final, override
 import my_format_string.target_and_message_format_string
 from rpg_game.rpg_game import RPGGame
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt
@@ -14,6 +14,7 @@ def _generate_speak_prompt(src_name: str, dest_name: str, content: str) -> str:
 
 
 ####################################################################################################################################
+@final
 class SpeakActionSystem(ReactiveProcessor):
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         super().__init__(context)

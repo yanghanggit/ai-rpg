@@ -1,10 +1,11 @@
 from entitas import Matcher, InitializeProcessor  # type: ignore
-from typing import override
+from typing import final, override
 from gameplay_systems.components import WorldComponent, StageComponent, ActorComponent
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from rpg_game.rpg_game import RPGGame
 
 
+@final
 class ConnectAgentSystem(InitializeProcessor):
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         self._context: RPGEntitasContext = context

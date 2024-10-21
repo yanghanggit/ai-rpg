@@ -1,5 +1,5 @@
 from entitas import ExecuteProcessor, Matcher  # type: ignore
-from typing import override
+from typing import final, override
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from gameplay_systems.action_components import (
     STAGE_AVAILABLE_ACTIONS_REGISTER,
@@ -9,6 +9,7 @@ import gameplay_systems.action_helper
 from rpg_game.rpg_game import RPGGame
 
 
+@final
 class PostActionSystem(ExecuteProcessor):
     ############################################################################################################
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:

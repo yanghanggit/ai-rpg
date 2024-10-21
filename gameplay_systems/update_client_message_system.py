@@ -6,14 +6,13 @@ from gameplay_systems.action_components import (
     StageNarrateAction,
     GoToAction,
 )
-from typing import override
+from typing import final, override
 from loguru import logger
 from rpg_game.rpg_game import RPGGame
-
-# from my_data.model_def import AgentEvent
 from gameplay_systems.gameplay_event import AgentEvent
 
 
+@final
 class UpdateClientMessageSystem(ExecuteProcessor):
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         self._context: RPGEntitasContext = context

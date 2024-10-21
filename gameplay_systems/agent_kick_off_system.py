@@ -11,7 +11,7 @@ from gameplay_systems.components import (
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
-from typing import Dict, Set, FrozenSet, Any, List
+from typing import Dict, Set, FrozenSet, Any, List, final
 from my_agent.agent_task import AgentTask
 from rpg_game.rpg_game import RPGGame
 from extended_systems.files_def import PropFile
@@ -102,6 +102,7 @@ def _generate_world_system_kick_off_prompt(about_game: str, game_round: int) -> 
 
 
 ######################################################################################################################################################
+@final
 class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         self._context: RPGEntitasContext = context

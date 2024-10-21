@@ -12,7 +12,7 @@ from gameplay_systems.components import (
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt
-from typing import cast, override, List, Set, Any, Dict, Optional
+from typing import final, override, List, Set, Any, Dict, Optional
 from gameplay_systems.check_self_helper import SelfChecker
 from my_agent.agent_task import AgentTask
 from my_agent.agent_plan import AgentPlanResponse
@@ -80,6 +80,8 @@ def _generate_stage_exit_failure_prompt(
 {show_tips}"""
 
 
+###############################################################################################################################################
+@final
 class StageDepartureResponse(AgentPlanResponse):
 
     def __init__(self, name: str, input_str: str) -> None:
@@ -97,6 +99,7 @@ class StageDepartureResponse(AgentPlanResponse):
 ###############################################################################################################################################
 
 
+@final
 class StageDepartureCheckerSystem(ReactiveProcessor):
 
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:

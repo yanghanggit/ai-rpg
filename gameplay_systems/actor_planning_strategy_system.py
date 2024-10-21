@@ -8,7 +8,7 @@ from gameplay_systems.components import (
     EnterStageComponent,
 )
 from rpg_game.rpg_game import RPGGame
-from typing import List, Dict, Optional, cast, final
+from typing import List, Dict, Optional, final
 from queue import Queue
 
 

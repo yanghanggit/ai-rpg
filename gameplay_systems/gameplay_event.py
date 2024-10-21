@@ -1,3 +1,4 @@
+from typing import final
 from my_data.model_def import BaseAgentEvent
 
 
@@ -6,5 +7,6 @@ class AgentEvent(BaseAgentEvent):
     pass
 
 
+@final
 class UpdateAppearanceEvent(AgentEvent):
     pass

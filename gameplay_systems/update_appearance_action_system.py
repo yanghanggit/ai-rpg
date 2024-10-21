@@ -2,7 +2,7 @@ from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: igno
 from overrides import override
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
-from typing import Dict, Set, List
+from typing import Dict, Set, List, final
 import json
 from gameplay_systems.components import (
     AppearanceComponent,
@@ -79,6 +79,7 @@ def _generate_reasoning_appearance_prompt(
 
 
 ####################################################################################################
+@final
 class UpdateAppearanceActionSystem(ReactiveProcessor):
 
     def __init__(

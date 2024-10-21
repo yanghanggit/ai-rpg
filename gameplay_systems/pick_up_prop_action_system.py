@@ -3,7 +3,7 @@ from rpg_game.rpg_entitas_context import RPGEntitasContext
 from gameplay_systems.action_components import PickUpPropAction, DeadAction
 from gameplay_systems.components import ActorComponent, StageComponent
 from loguru import logger
-from typing import override
+from typing import final, override
 from extended_systems.files_def import PropFile
 import extended_systems.file_system_helper
 from rpg_game.rpg_game import RPGGame
@@ -32,6 +32,7 @@ def _generate_success_pickup_prompt(
 ###############################################################################################################################################
 
 
+@final
 class PickUpPropActionSystem(ReactiveProcessor):
 
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame):

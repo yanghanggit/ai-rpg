@@ -7,7 +7,7 @@ from gameplay_systems.components import (
     StageComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from typing import cast, override
+from typing import final, override
 from extended_systems.files_def import PropFile
 import my_format_string.target_and_message_format_string
 import my_format_string.attrs_format_string
@@ -35,6 +35,7 @@ def _generate_damage_event_prompt(
     return f"# {actor_name} 对 {target_name} 的行动造成了{damage}点伤害, 当前 {target_name} 的生命值剩余 {health_percent}%。"
 
 
+@final
 class DamageActionSystem(ReactiveProcessor):
 
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:

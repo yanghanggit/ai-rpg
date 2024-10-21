@@ -13,7 +13,7 @@ from gameplay_systems.components import (
     ActorComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from typing import override, List, Set, Dict, Any
+from typing import final, override, List, Set, Dict, Any
 from loguru import logger
 from extended_systems.files_def import PropFile
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt
@@ -172,6 +172,7 @@ def _generate_rule_prompt(
 
 
 ######################################################################################################################################################
+@final
 class WorldSkillRuleResponse(AgentPlanResponse):
 
     OPTION_PARAM_NAME: str = "actor_name"
@@ -195,6 +196,7 @@ class WorldSkillRuleResponse(AgentPlanResponse):
 ######################################################################################################################################################
 
 
+@final
 class WorldSkillRuleSystem(ReactiveProcessor):
 
     def __init__(

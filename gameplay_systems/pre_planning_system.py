@@ -1,3 +1,4 @@
+from typing import final
 from entitas import ExecuteProcessor, Matcher  # type: ignore
 from overrides import override
 from rpg_game.rpg_entitas_context import RPGEntitasContext
@@ -7,6 +8,7 @@ from gameplay_systems.components import (
 from rpg_game.rpg_game import RPGGame
 
 
+@final
 class PrePlanningSystem(ExecuteProcessor):
 
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:

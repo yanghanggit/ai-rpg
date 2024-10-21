@@ -10,7 +10,7 @@ from gameplay_systems.components import (
     RPGCurrentClothesComponent,
 )
 import gameplay_systems.conversation_helper
-from typing import override
+from typing import final, override
 import extended_systems.file_system_helper
 from extended_systems.files_def import PropFile
 import my_format_string.target_and_message_format_string
@@ -35,6 +35,7 @@ def _generate_steal_prompt(
 ####################################################################################################################################
 
 
+@final
 class StealActionSystem(ReactiveProcessor):
 
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame):

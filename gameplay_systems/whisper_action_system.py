@@ -1,7 +1,7 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: ignore
 from gameplay_systems.action_components import WhisperAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from typing import override
+from typing import final, override
 import gameplay_systems.conversation_helper
 import my_format_string.target_and_message_format_string
 from rpg_game.rpg_game import RPGGame
@@ -15,6 +15,7 @@ def _generate_whisper_prompt(src_name: str, dest_name: str, content: str) -> str
 
 
 ####################################################################################################################################
+@final
 class WhisperActionSystem(ReactiveProcessor):
 
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:

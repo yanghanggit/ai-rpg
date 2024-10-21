@@ -11,7 +11,7 @@ from gameplay_systems.components import (
     RPGCurrentClothesComponent,
 )
 from loguru import logger
-from typing import override
+from typing import final, override
 from extended_systems.files_def import PropFile
 from rpg_game.rpg_game import RPGGame
 from gameplay_systems.gameplay_event import AgentEvent
@@ -41,6 +41,7 @@ def _generate_equipment_clothing_prompt(
     return f"""# {actor_name} 装备了衣服: {prop_file_clothes.name} """
 
 
+@final
 class EquipPropActionSystem(ReactiveProcessor):
 
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame):

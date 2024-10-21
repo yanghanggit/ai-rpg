@@ -11,7 +11,7 @@ from gameplay_systems.components import (
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt
-from typing import override, Set, Any
+from typing import final, override, Set, Any
 from rpg_game.rpg_game import RPGGame
 from gameplay_systems.gameplay_event import AgentEvent
 
@@ -33,6 +33,8 @@ def _generate_stage_already_in_prompt(actor_name: str, stage_name: str) -> str:
     return f"# 注意！{actor_name} 已经在 {stage_name} 场景中。需要重新考虑去往的目的地"
 
 
+###############################################################################################################################################
+@final
 class StageValidatorSystem(ReactiveProcessor):
 
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:

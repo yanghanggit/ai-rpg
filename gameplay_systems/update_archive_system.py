@@ -2,13 +2,14 @@ from entitas import ExecuteProcessor, Matcher, Entity, InitializeProcessor  # ty
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from gameplay_systems.components import ActorComponent, StageComponent, KickOffComponent
-from typing import Set, override, Dict, List
+from typing import Set, final, override, Dict, List
 import extended_systems.file_system_helper
 from rpg_game.rpg_game import RPGGame
 from extended_systems.files_def import ActorArchiveFile, StageArchiveFile
 import extended_systems.file_system_helper
 
 
+@final
 class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
 
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:

@@ -5,11 +5,12 @@ from gameplay_systems.components import (
     StageComponent,
     ActorComponent,
 )
-from typing import override, List
+from typing import final, override, List
 from rpg_game.rpg_game import RPGGame
 from collections import OrderedDict
 
 
+@final
 class EndSystem(ExecuteProcessor):
 
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:

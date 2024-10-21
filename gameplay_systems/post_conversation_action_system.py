@@ -1,3 +1,4 @@
+from typing import final
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: ignore
 from overrides import override
 from gameplay_systems.action_components import (
@@ -11,6 +12,7 @@ from rpg_game.rpg_game import RPGGame
 
 
 #################################################################################################################################################
+@final
 class PostConversationActionSystem(ReactiveProcessor):
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         super().__init__(context)

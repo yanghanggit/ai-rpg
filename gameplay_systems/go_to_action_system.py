@@ -6,7 +6,7 @@ from gameplay_systems.components import (
     StageComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from typing import override, Optional
+from typing import final, override, Optional
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt
 from rpg_game.rpg_game import RPGGame
 from extended_systems.files_def import StageArchiveFile
@@ -86,6 +86,7 @@ class GoToHelper:
         return str(go_to_action.values[0])
 
 
+@final
 class GoToActionSystem(ReactiveProcessor):
 
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:

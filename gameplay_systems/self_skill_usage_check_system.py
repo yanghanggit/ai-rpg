@@ -13,7 +13,7 @@ from gameplay_systems.components import (
     ActorComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from typing import override, List, Set, Dict, Any
+from typing import final, override, List, Set, Dict, Any
 from loguru import logger
 from extended_systems.files_def import PropFile
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt
@@ -91,6 +91,7 @@ def _generate_skill_usage_reasoning_prompt(
     return ret_prompt
 
 
+@final
 class SelfUsageCheckResponse(AgentPlanResponse):
 
     def __init__(self, name: str, input_str: str) -> None:
@@ -105,6 +106,7 @@ class SelfUsageCheckResponse(AgentPlanResponse):
         return self._concatenate_values(MindVoiceAction.__name__)
 
 
+@final
 class SelfSkillUsageCheckSystem(ReactiveProcessor):
 
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:

@@ -1,5 +1,5 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: ignore
-from typing import override, cast
+from typing import final, override
 from gameplay_systems.components import StageComponent
 from gameplay_systems.action_components import BroadcastAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
@@ -12,6 +12,7 @@ def _generate_broadcast_prompt(src_name: str, dest_name: str, content: str) -> s
     return f"# {public_builtin_prompt.ConstantPrompt.BROADCASE_ACTION_TAG} {src_name}对{dest_name}里的所有人说:{content}"
 
 
+@final
 class BroadcastActionSystem(ReactiveProcessor):
 
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:

@@ -1,11 +1,12 @@
 from entitas import ExecuteProcessor, Matcher, Entity  # type: ignore
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from gameplay_systems.components import ActorComponent, StageComponent
-from typing import Set, override, Dict
+from typing import Set, final, override, Dict
 from rpg_game.rpg_game import RPGGame
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt
 
 
+@final
 class CompressChatHistorySystem(ExecuteProcessor):
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         self._context: RPGEntitasContext = context

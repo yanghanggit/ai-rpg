@@ -1,10 +1,11 @@
 from entitas import Matcher, ExecuteProcessor  # type: ignore
-from typing import override
+from typing import final, override
 from gameplay_systems.components import DestroyComponent
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from rpg_game.rpg_game import RPGGame
 
 
+@final
 class DestroyEntitySystem(ExecuteProcessor):
 
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:

@@ -10,7 +10,7 @@ from gameplay_systems.components import (
     RPGCurrentClothesComponent,
     WorldComponent,
 )
-from typing import Dict, override, List, Any
+from typing import Dict, final, override, List, Any
 from rpg_game.rpg_game import RPGGame
 from my_data.model_def import (
     GameModel,
@@ -24,6 +24,7 @@ from pathlib import Path
 from my_data.game_resource import GameResource
 
 
+@final
 class SaveGameResourceSystem(ExecuteProcessor):
 
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:

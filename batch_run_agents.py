@@ -2,13 +2,14 @@ from loguru import logger
 import datetime
 from pathlib import Path
 import os
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Set
 import json
+from rpg_game.rpg_game_config import RPGGameConfig
 
 
 ####################################################################################################################################
 def run_agents(game_name: str) -> None:
-    directory = Path("game_sample/gen_runtimes")
+    directory = Path(RPGGameConfig.GAME_SAMPLE_RUNTIME_DIR)
     directory.mkdir(parents=True, exist_ok=True)
     if not directory.exists() or not directory.is_dir():
         logger.error(f"Directory does not exist: {directory}")
@@ -25,19 +26,23 @@ def run_agents(game_name: str) -> None:
         content: str = file_path.read_text(encoding="utf-8")
         data: Dict[str, List[Dict[str, Any]]] = json.loads(content)
 
-        agentpy_list: List[str] = []
+        agentpy_paths: Set[str] = set()
         for key1, value1 in data.items():
             for dict1 in value1:
                 for key2, value2 in dict1.items():
-                    agentpy_list.append(value2)
+                    agentpy_paths.add(value2)
 
-        logger.debug(f"agentpy_list: {agentpy_list}")
-        command = f"pm2 start {' '.join(agentpy_list)}"
-        logger.debug(command)
+        if len(agentpy_paths) == 0:
+            logger.error("No agentpy paths found.")
+            return None
+
+        logger.debug(f"agentpy_paths: {agentpy_paths}")
+        terminal_start_command = f"pm2 start {' '.join(agentpy_paths)}"
+        logger.debug(terminal_start_command)
 
         os.system("pm2 list")
         os.system("pm2 delete all")
-        os.system(command)
+        os.system(terminal_start_command)
 
     except Exception as e:
         logger.error(e)
@@ -64,4 +69,4 @@ def main(default_game_name: str) -> None:
 
 
 if __name__ == "__main__":
-    main("World2")
+    main("World1")

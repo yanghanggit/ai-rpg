@@ -1,4 +1,5 @@
 from enum import StrEnum
+from typing import List
 
 
 class RPGGameConfig(StrEnum):
@@ -12,3 +13,7 @@ class RPGGameConfig(StrEnum):
     GAME_ARCHIVE_DIR = "game_archive"
 
     CHECK_GAME_RESOURCE_VERSION = "0.0.1"
+
+
+# 临时
+GAME_LIST: List[str] = ["World1", "World2", "World3"]

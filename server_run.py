@@ -4,20 +4,28 @@ from ws_config import (
     WS_CONFIG,
     GameState,
     GameStateWrapper,
-    LoginData,
-    CreateData,
-    JoinData,
-    StartData,
-    ExitData,
-    ExecuteData,
-    WatchData,
-    CheckData,
+    LoginRequest,
+    LoginResponse,
+    CreateRequest,
+    CreateResponse,
+    JoinRequest,
+    JoinResponse,
+    StartRequest,
+    StartResponse,
+    ExitRequest,
+    ExitResponse,
+    ExecuteRequest,
+    ExecuteResponse,
+    WatchRequest,
+    WatchResponse,
+    CheckRequest,
+    CheckResponse,
 )
 from typing import Dict, Any, Optional, List
 import rpg_game.rpg_game_helper
 from rpg_game.web_game import WebGame
 from player.player_proxy import PlayerProxy, PlayerProxyModel
-from rpg_game.rpg_game_config import RPGGameConfig
+from rpg_game.rpg_game_config import RPGGameConfig, GAME_LIST
 from pathlib import Path
 import shutil
 
@@ -49,42 +57,51 @@ game_room: Optional[GameRoom] = None
 
 ###############################################################################################################################################
 @fastapi_app.post("/login/")
-async def login(data: LoginData) -> Dict[str, Any]:
+async def login(data: LoginRequest) -> Dict[str, Any]:
 
     global game_room
     assert game_room is None, "game_room is not None"
 
     if not server_state.can_transition(GameState.LOGGED_IN):
-        return LoginData(user_name=data.user_name, response=False).model_dump()
+        return LoginResponse(
+            user_name=data.user_name,
+            error=1,
+            message=f"not server_state.can_transition(GameState.LOGGED_IN), current state = {server_state.state}",
+        ).model_dump()
 
-    logger.info(f"login: {data.user_name}")
+    logger.info(f"login success, user_name = {data.user_name}")
 
     # 切换状态到登陆完成并创建一个房间
     server_state.transition(GameState.LOGGED_IN)
     game_room = GameRoom(data.user_name)
 
-    return LoginData(user_name=data.user_name, response=True).model_dump()
+    return LoginResponse(
+        user_name=data.user_name,
+        game_list=GAME_LIST,
+    ).model_dump()
 
 
 ###############################################################################################################################################
 
 
 @fastapi_app.post("/create/")
-async def create(data: CreateData) -> Dict[str, Any]:
+async def create(data: CreateRequest) -> Dict[str, Any]:
 
     global game_room
     assert game_room is not None, "game_room is None"
     assert game_room._game is None, "game_room._game is not None"
 
     if not server_state.can_transition(GameState.GAME_CREATED):
-        return CreateData(
-            user_name=data.user_name, game_name=data.game_name, response=False
+        return CreateResponse(
+            user_name=data.user_name,
+            game_name=data.game_name,
+            error=1,
+            message=f"not server_state.can_transition(GameState.GAME_CREATED), current state = {server_state.state}",
         ).model_dump()
 
     # app 运行时路径
     game_runtime_dir = Path(f"{RPGGameConfig.GAME_SAMPLE_RUNTIME_DIR}/{data.game_name}")
     if game_runtime_dir.exists():
-        # todo
         logger.warning(f"删除文件夹：{game_runtime_dir}, 这是为了测试，后续得改！！！")
         shutil.rmtree(game_runtime_dir)
 
@@ -97,8 +114,11 @@ async def create(data: CreateData) -> Dict[str, Any]:
     )
 
     if not game_resource_file_path.exists():
-        return CreateData(
-            user_name=data.user_name, game_name=data.game_name, response=False
+        return CreateResponse(
+            user_name=data.user_name,
+            game_name=data.game_name,
+            error=2,
+            message=f"game_resource_file_path not exists = {game_resource_file_path}",
         ).model_dump()
 
     # 创建游戏资源
@@ -108,8 +128,11 @@ async def create(data: CreateData) -> Dict[str, Any]:
         RPGGameConfig.CHECK_GAME_RESOURCE_VERSION,
     )
     if game_resource is None:
-        return CreateData(
-            user_name=data.user_name, game_name=data.game_name, response=False
+        return CreateResponse(
+            user_name=data.user_name,
+            game_name=data.game_name,
+            error=3,
+            message=f"game_resource is None",
         ).model_dump()
 
     # 游戏资源可以被创建，则将game_resource_file_path这个文件拷贝一份到root_runtime_dir下
@@ -121,16 +144,22 @@ async def create(data: CreateData) -> Dict[str, Any]:
     new_game = rpg_game.rpg_game_helper.create_web_rpg_game(game_resource)
     if new_game is None or new_game._game_resource is None:
         logger.error(f"create_rpg_game 失败 = {data.game_name}")
-        return CreateData(
-            user_name=data.user_name, game_name=data.game_name, response=False
+        return CreateResponse(
+            user_name=data.user_name,
+            game_name=data.game_name,
+            error=4,
+            message=f"create_rpg_game 失败 = {data.game_name}",
         ).model_dump()
 
     # 检查是否有可以控制的角色, 没有就不让玩。
     ctrl_actors = rpg_game.rpg_game_helper.get_player_ctrl_actor_names(new_game)
     if len(ctrl_actors) == 0:
         logger.warning(f"create_rpg_game 没有可以控制的角色 = {data.game_name}")
-        return CreateData(
-            user_name=data.user_name, game_name=data.game_name, response=False
+        return CreateResponse(
+            user_name=data.user_name,
+            game_name=data.game_name,
+            error=5,
+            message=f"create_rpg_game 没有可以控制的角色 = {data.game_name}",
         ).model_dump()
 
     logger.info(f"create: {data.user_name}, {data.game_name}")
@@ -140,28 +169,27 @@ async def create(data: CreateData) -> Dict[str, Any]:
     game_room._game = new_game
     assert new_game._game_resource is not None, "new_game._game_resource is None"
 
-    return CreateData(
+    return CreateResponse(
         user_name=data.user_name,
         game_name=data.game_name,
         selectable_actor_names=ctrl_actors,
-        response=True,
         game_model=new_game._game_resource._model,
     ).model_dump()
 
 
 ###############################################################################################################################################
 @fastapi_app.post("/join/")
-async def join(data: JoinData) -> Dict[str, Any]:
+async def join(data: JoinRequest) -> Dict[str, Any]:
 
     global game_room
     assert game_room is not None, "game_room is None"
     assert game_room._game is not None, "game_room._game is None"
 
     if not server_state.can_transition(GameState.GAME_JOINED):
-        return JoinData(user_name=data.user_name, response=False).model_dump()
+        return JoinResponse(user_name=data.user_name, error=1, message="").model_dump()
 
     if data.ctrl_actor_name == "":
-        return JoinData(user_name=data.user_name, response=False).model_dump()
+        return JoinResponse(user_name=data.user_name, error=2, message="").model_dump()
 
     logger.info(f"join: {data.user_name}, {data.game_name}, {data.ctrl_actor_name}")
 
@@ -175,48 +203,46 @@ async def join(data: JoinData) -> Dict[str, Any]:
         game_room._game, player_proxy, data.ctrl_actor_name
     )
 
-    return JoinData(
+    return JoinRequest(
         user_name=data.user_name,
         game_name=data.game_name,
         ctrl_actor_name=data.ctrl_actor_name,
-        response=True,
     ).model_dump()
 
 
 ###############################################################################################################################################
 @fastapi_app.post("/start/")
-async def start(data: StartData) -> Dict[str, Any]:
+async def start(data: StartRequest) -> Dict[str, Any]:
 
     global game_room
     assert game_room is not None, "game_room is None"
     assert game_room._game is not None, "game_room._game is None"
 
     if not server_state.can_transition(GameState.PLAYING):
-        return StartData(user_name=data.user_name, response=False).model_dump()
+        return StartResponse(user_name=data.user_name, error=1, message="").model_dump()
 
     logger.info(f"start: {data.user_name}, {data.game_name}, {data.ctrl_actor_name}")
 
     # 切换状态到游戏开始
     server_state.transition(GameState.PLAYING)
 
-    return StartData(
+    return StartRequest(
         user_name=data.user_name,
         game_name=data.game_name,
         ctrl_actor_name=data.ctrl_actor_name,
-        response=True,
     ).model_dump()
 
 
 ###############################################################################################################################################
 @fastapi_app.post("/exit/")
-async def exit(data: ExitData) -> Dict[str, Any]:
+async def exit(data: ExitRequest) -> Dict[str, Any]:
 
     global game_room
     assert game_room is not None, "game_room is None"
     assert game_room._game is not None, "game_room._game is None"
 
     if not server_state.can_transition(GameState.REQUESTING_EXIT):
-        return ExitData(user_name=data.user_name, response=False).model_dump()
+        return ExitResponse(user_name=data.user_name, error=1, message="").model_dump()
 
     logger.info(f"exit: {data.user_name}")
 
@@ -232,35 +258,31 @@ async def exit(data: ExitData) -> Dict[str, Any]:
         game_room._game.exit()
         game_room._game = None
 
-    return ExitData(
-        user_name=data.user_name, game_name=data.game_name, response=True
-    ).model_dump()
+    return ExitResponse(user_name=data.user_name, game_name=data.game_name).model_dump()
 
 
 ###############################################################################################################################################
 @fastapi_app.post("/execute/")
-async def execute(data: ExecuteData) -> Dict[str, Any]:
+async def execute(data: ExecuteRequest) -> Dict[str, Any]:
 
     global game_room
     assert game_room is not None, "game_room is None"
     assert game_room._game is not None, "game_room._game is None"
 
     if game_room._game._will_exit:
-        return ExecuteData(
-            user_name=data.user_name, response=False, error="game_room._game._will_exit"
+        return ExecuteResponse(
+            user_name=data.user_name, error=1, message="game_room._game._will_exit"
         ).model_dump()
 
     player_proxy = game_room.get_player()
     if player_proxy is None:
-        return ExecuteData(
-            user_name=data.user_name,
-            response=False,
-            error="game_room.get_player() is None",
+        return ExecuteResponse(
+            user_name=data.user_name, error=2, message="player_proxy is None"
         ).model_dump()
 
     if player_proxy.over:
-        return ExecuteData(
-            user_name=data.user_name, response=False, error="player_proxy._over"
+        return ExecuteResponse(
+            user_name=data.user_name, error=3, message="player_proxy.over"
         ).model_dump()
 
     # 如果有输入命令，就要加
@@ -295,9 +317,8 @@ async def execute(data: ExecuteData) -> Dict[str, Any]:
             )
             break
 
-    return ExecuteData(
+    return ExecuteResponse(
         user_name=data.user_name,
-        response=True,
         game_name=data.game_name,
         ctrl_actor_name=game_room.get_player_ctrl_actor_name(),
         messages=send_client_messages,
@@ -306,7 +327,7 @@ async def execute(data: ExecuteData) -> Dict[str, Any]:
 
 ###############################################################################################################################################
 @fastapi_app.post("/watch/")
-async def watch(data: WatchData) -> Dict[str, Any]:
+async def watch(data: WatchRequest) -> Dict[str, Any]:
 
     global game_room
     assert game_room is not None, "game_room is None"
@@ -314,29 +335,29 @@ async def watch(data: WatchData) -> Dict[str, Any]:
 
     player_proxy = game_room.get_player()
     if player_proxy is None:
-        return WatchData(
+        return WatchResponse(
             user_name=data.user_name,
             game_name=data.game_name,
             ctrl_actor_name=data.ctrl_actor_name,
-            response=False,
+            error=1,
+            message="player_proxy is None",
         ).model_dump()
 
     gen_message = rpg_game.rpg_game_helper.gen_player_watch_message(
         game_room._game, player_proxy
     )
 
-    return WatchData(
+    return WatchResponse(
         user_name=data.user_name,
         game_name=data.game_name,
         ctrl_actor_name=data.ctrl_actor_name,
         message=gen_message,
-        response=True,
     ).model_dump()
 
 
 ###############################################################################################################################################
 @fastapi_app.post("/check/")
-async def check(data: CheckData) -> Dict[str, Any]:
+async def check(data: CheckRequest) -> Dict[str, Any]:
 
     global game_room
     assert game_room is not None, "game_room is None"
@@ -344,23 +365,23 @@ async def check(data: CheckData) -> Dict[str, Any]:
 
     player_proxy = game_room.get_player()
     if player_proxy is None:
-        return CheckData(
+        return CheckResponse(
             user_name=data.user_name,
             game_name=data.game_name,
             ctrl_actor_name=data.ctrl_actor_name,
-            response=False,
+            error=1,
+            message="player_proxy is None",
         ).model_dump()
 
     gen_message = rpg_game.rpg_game_helper.gen_player_check_message(
         game_room._game, player_proxy
     )
 
-    return CheckData(
+    return CheckResponse(
         user_name=data.user_name,
         game_name=data.game_name,
         ctrl_actor_name=data.ctrl_actor_name,
         message=gen_message,
-        response=True,
     ).model_dump()
 
 

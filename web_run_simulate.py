@@ -1,16 +1,24 @@
 import requests
 from ws_config import (
     WS_CONFIG,
-    LoginData,
-    CreateData,
-    JoinData,
-    StartData,
-    ExitData,
+    LoginRequest,
+    LoginResponse,
+    CreateResponse,
+    CreateRequest,
+    JoinRequest,
+    JoinResponse,
+    StartRequest,
+    StartResponse,
+    ExitRequest,
+    ExitResponse,
     GameStateWrapper,
     GameState,
-    ExecuteData,
-    WatchData,
-    CheckData,
+    ExecuteRequest,
+    ExecuteResponse,
+    WatchRequest,
+    WatchResponse,
+    CheckRequest,
+    CheckResponse,
 )
 from loguru import logger
 from typing import List
@@ -54,12 +62,14 @@ def _login(
 
     url_login = f"http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/login/"
     response = requests.post(
-        url_login, json=LoginData(user_name=input_username).model_dump()
+        url_login, json=LoginRequest(user_name=input_username).model_dump()
     )
 
-    login_response = LoginData.model_validate(response.json())
-    if not login_response.response:
-        logger.warning(f"登录失败 = {login_response.user_name}")
+    login_response = LoginResponse.model_validate(response.json())
+    if login_response.error > 0:
+        logger.warning(
+            f"登录失败 = {login_response.user_name}, error = {login_response.error}, message = {login_response.message}"
+        )
         return
 
     assert login_response.user_name == input_username
@@ -86,15 +96,15 @@ def _create_game(
     url_create = f"http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/create/"
     response = requests.post(
         url_create,
-        json=CreateData(
+        json=CreateRequest(
             user_name=client_context._user_name, game_name=input_game_name
         ).model_dump(),
     )
 
-    create_response = CreateData.model_validate(response.json())
-    if not create_response.response:
+    create_response = CreateResponse.model_validate(response.json())
+    if create_response.error > 0:
         logger.warning(
-            f"{create_response.user_name} 创建失败 = {create_response.game_name}, {create_response.selectable_actor_names}"
+            f"创建失败 = {create_response.user_name}, error = {create_response.error}, message = {create_response.message}"
         )
         return
 
@@ -147,17 +157,17 @@ def _join_game(
     url_join = f"http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/join/"
     response = requests.post(
         url_join,
-        json=JoinData(
+        json=JoinRequest(
             user_name=client_context._user_name,
             game_name=client_context._game_name,
             ctrl_actor_name=input_actor_name,
         ).model_dump(),
     )
 
-    join_response = JoinData.model_validate(response.json())
-    if not join_response.response:
+    join_response = JoinResponse.model_validate(response.json())
+    if join_response.error > 0:
         logger.warning(
-            f"加入游戏失败: {join_response.user_name}, {join_response.game_name}, {join_response.ctrl_actor_name}"
+            f"加入游戏失败 = {join_response.user_name}, error = {join_response.error}, message = {join_response.message}"
         )
         return
 
@@ -180,17 +190,20 @@ def _play(client_context: GameClientContext, state_wrapper: GameStateWrapper) ->
     url_start = f"http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/start/"
     response = requests.post(
         url_start,
-        json=StartData(
+        json=StartRequest(
             user_name=client_context._user_name,
             game_name=client_context._game_name,
             ctrl_actor_name=client_context._ctrl_actor_name,
         ).model_dump(),
     )
 
-    start_response = StartData.model_validate(response.json())
-    if not start_response.response:
+    start_response = StartResponse.model_validate(response.json())
+    if start_response.error > 0:
+        # logger.warning(
+        #     f"开始游戏失败: {start_response.user_name}, {start_response.game_name}, {start_response.ctrl_actor_name}"
+        # )
         logger.warning(
-            f"开始游戏失败: {start_response.user_name}, {start_response.game_name}, {start_response.ctrl_actor_name}"
+            f"开始游戏失败 = {start_response.user_name}, error = {start_response.error}, message = {start_response.message}"
         )
         return
 
@@ -218,7 +231,7 @@ def _request_game_execute(
     url_execute = f"http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/execute/"
     response = requests.post(
         url_execute,
-        json=ExecuteData(
+        json=ExecuteRequest(
             user_name=client_context._user_name,
             game_name=client_context._game_name,
             ctrl_actor_name=client_context._ctrl_actor_name,
@@ -226,11 +239,12 @@ def _request_game_execute(
         ).model_dump(),
     )
 
-    execute_response = ExecuteData.model_validate(response.json())
-    if not execute_response.response:
-        logger.warning(
-            f"执行游戏失败: {execute_response.user_name}, {execute_response.game_name}, {execute_response.ctrl_actor_name}"
-        )
+    execute_response = ExecuteResponse.model_validate(response.json())
+    if execute_response.error > 0:
+        # logger.warning(
+        #     f"执行游戏失败: {execute_response.user_name}, {execute_response.game_name}, {execute_response.ctrl_actor_name}"
+        # )
+        logger.warning(f"执行游戏失败: {execute_response.message}")
         return
 
     for message in execute_response.messages:
@@ -279,15 +293,15 @@ def _web_player_input_watch(
     url_watch = f"http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/watch/"
     response = requests.post(
         url_watch,
-        json=WatchData(
+        json=WatchRequest(
             user_name=client_context._user_name,
             game_name=client_context._game_name,
             ctrl_actor_name=client_context._ctrl_actor_name,
         ).model_dump(),
     )
 
-    watch_response = WatchData.model_validate(response.json())
-    if not watch_response.response:
+    watch_response = WatchResponse.model_validate(response.json())
+    if watch_response.error > 0:
         logger.warning(
             f"观察游戏失败: {watch_response.user_name}, {watch_response.game_name}, {watch_response.ctrl_actor_name}"
         )
@@ -305,15 +319,15 @@ def _web_player_input_check(
     url_check = f"http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/check/"
     response = requests.post(
         url_check,
-        json=CheckData(
+        json=CheckRequest(
             user_name=client_context._user_name,
             game_name=client_context._game_name,
             ctrl_actor_name=client_context._ctrl_actor_name,
         ).model_dump(),
     )
 
-    check_response = CheckData.model_validate(response.json())
-    if not check_response.response:
+    check_response = CheckResponse.model_validate(response.json())
+    if check_response.error > 0:
         logger.warning(
             f"检查游戏失败: {check_response.user_name}, {check_response.game_name}, {check_response.ctrl_actor_name}"
         )
@@ -334,13 +348,13 @@ def _requesting_exit(
     url_exit = f"http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/exit/"
     response = requests.post(
         url_exit,
-        json=ExitData(
+        json=ExitRequest(
             user_name=client_context._user_name, game_name=client_context._game_name
         ).model_dump(),
     )
 
-    exit_response = ExitData.model_validate(response.json())
-    if not exit_response.response:
+    exit_response = ExitResponse.model_validate(response.json())
+    if exit_response.error > 0:
         logger.warning(
             f"退出游戏失败: {exit_response.user_name}, {exit_response.game_name}"
         )

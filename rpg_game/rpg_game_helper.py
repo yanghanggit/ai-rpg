@@ -381,7 +381,7 @@ def player_play_new_game(
 
     # 更改算作登陆成功
     actor_entity.replace(PlayerComponent, player_proxy.name)
-    player_proxy.ctrl_actor(player_controlled_actor_name)
+    player_proxy.set_actor(player_controlled_actor_name)
 
     player_proxy.add_system_message(AgentEvent(message_content=rpg_game.about_game))
 
@@ -423,7 +423,7 @@ def player_play_again(rpg_game: RPGGame, player_name: str) -> Optional[PlayerPro
 
 
 #######################################################################################################################################
-def get_player_ctrl_actor_names(rpg_game: RPGGame) -> List[str]:
+def get_player_actor_names(rpg_game: RPGGame) -> List[str]:
 
     actor_entities = rpg_game._entitas_context.get_player_entities()
     ret: List[str] = []

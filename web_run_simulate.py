@@ -19,6 +19,8 @@ from ws_config import (
     WatchResponse,
     CheckRequest,
     CheckResponse,
+    FetchMessagesRequest,
+    FetchMessagesResponse,
 )
 from loguru import logger
 from typing import List
@@ -29,13 +31,14 @@ class GameClientContext:
     def __init__(self) -> None:
         self._user_name: str = ""
         self._game_name: str = ""
-        self._selectable_actor_names: List[str] = []
-        self._ctrl_actor_name: str = ""
+        self._selectable_actors: List[str] = []
+        self._actor_name: str = ""
+        self._input_enable = False
 
     def on_exit_game(self) -> None:
         self._game_name = ""
-        self._selectable_actor_names = []
-        self._ctrl_actor_name = ""
+        self._selectable_actors = []
+        self._actor_name = ""
 
 
 ###############################################################################################################################################
@@ -109,13 +112,13 @@ def _create_game(
         return
 
     assert create_response.user_name == client_context._user_name
-    assert len(create_response.selectable_actor_names) > 0
+    assert len(create_response.selectable_actors) > 0
 
     state_wrapper.transition(GameState.GAME_CREATED)
     client_context._game_name = create_response.game_name
-    client_context._selectable_actor_names = create_response.selectable_actor_names
+    client_context._selectable_actors = create_response.selectable_actors
     logger.info(
-        f"创建游戏: {create_response.user_name}, {create_response.game_name}, {create_response.selectable_actor_names}"
+        f"创建游戏: {create_response.user_name}, {create_response.game_name}, {create_response.selectable_actors}"
     )
 
     assert create_response.game_model is not None
@@ -131,12 +134,12 @@ def _join_game(
     if not state_wrapper.can_transition(GameState.GAME_JOINED):
         return
 
-    assert len(client_context._selectable_actor_names) > 0
-    if len(client_context._selectable_actor_names) == 0:
+    assert len(client_context._selectable_actors) > 0
+    if len(client_context._selectable_actors) == 0:
         return
 
     while True:
-        for index, actor_name in enumerate(client_context._selectable_actor_names):
+        for index, actor_name in enumerate(client_context._selectable_actors):
             logger.warning(f"{index+1}. {actor_name}")
 
         input_actor_index = input(
@@ -145,11 +148,9 @@ def _join_game(
         if input_actor_index.isdigit():
             actor_index = int(input_actor_index)
             if actor_index > 0 and actor_index <= len(
-                client_context._selectable_actor_names
+                client_context._selectable_actors
             ):
-                input_actor_name = client_context._selectable_actor_names[
-                    actor_index - 1
-                ]
+                input_actor_name = client_context._selectable_actors[actor_index - 1]
                 break
         else:
             logger.debug("输入错误，请重新输入。")
@@ -175,7 +176,7 @@ def _join_game(
     assert join_response.game_name == client_context._game_name
 
     state_wrapper.transition(GameState.GAME_JOINED)
-    client_context._ctrl_actor_name = join_response.actor_name
+    client_context._actor_name = join_response.actor_name
     logger.info(
         f"加入游戏: {join_response.user_name}, {join_response.game_name}, {join_response.actor_name}"
     )
@@ -193,7 +194,7 @@ def _play(client_context: GameClientContext, state_wrapper: GameStateWrapper) ->
         json=StartRequest(
             user_name=client_context._user_name,
             game_name=client_context._game_name,
-            actor_name=client_context._ctrl_actor_name,
+            actor_name=client_context._actor_name,
         ).model_dump(),
     )
 
@@ -206,14 +207,12 @@ def _play(client_context: GameClientContext, state_wrapper: GameStateWrapper) ->
 
     assert start_response.user_name == client_context._user_name
     assert start_response.game_name == client_context._game_name
-    assert start_response.actor_name == client_context._ctrl_actor_name
+    assert start_response.actor_name == client_context._actor_name
 
     state_wrapper.transition(GameState.PLAYING)
     logger.info(
         f"开始游戏: {start_response.user_name}, {start_response.game_name}, {start_response.actor_name}"
     )
-
-    _request_game_execute(client_context, state_wrapper, [])
 
 
 ###############################################################################################################################################
@@ -225,13 +224,14 @@ def _request_game_execute(
 
     assert state_wrapper.state == GameState.PLAYING
 
+    # 推动游戏执行一次
     url_execute = f"http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/execute/"
     response = requests.post(
         url_execute,
         json=ExecuteRequest(
             user_name=client_context._user_name,
             game_name=client_context._game_name,
-            actor_name=client_context._ctrl_actor_name,
+            actor_name=client_context._actor_name,
             user_input=usr_input,
         ).model_dump(),
     )
@@ -241,8 +241,39 @@ def _request_game_execute(
         logger.warning(f"执行游戏失败: {execute_response.message}")
         return
 
-    for message in execute_response.messages:
-        logger.warning(message)
+    client_context._input_enable = execute_response.player_input_enable
+
+
+###############################################################################################################################################
+def _request_fetch_messages(
+    client_context: GameClientContext, state_wrapper: GameStateWrapper, fetch_count: int
+) -> None:
+    url_fetch_messages = (
+        f"http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/fetch_messages/"
+    )
+    response = requests.post(
+        url_fetch_messages,
+        json=FetchMessagesRequest(
+            user_name=client_context._user_name,
+            game_name=client_context._game_name,
+            actor_name=client_context._actor_name,
+            index=-1,
+            count=fetch_count,
+        ).model_dump(),
+    )
+
+    fetch_messages_response = FetchMessagesResponse.model_validate(response.json())
+    if fetch_messages_response.error > 0:
+        logger.warning(
+            f"观察游戏失败: {fetch_messages_response.user_name}, {fetch_messages_response.game_name}, {fetch_messages_response.actor_name}"
+        )
+        return
+
+    logger.warning(f"total = {fetch_messages_response.total}")
+
+    for show_message in fetch_messages_response.messages:
+        json_str = show_message.model_dump_json()
+        logger.warning(json_str)
 
 
 ###############################################################################################################################################
@@ -252,12 +283,27 @@ def _web_player_input(
 
     assert client_context._user_name != ""
     assert client_context._game_name != ""
-    assert client_context._ctrl_actor_name != ""
+    assert client_context._actor_name != ""
 
+    # 如果没有输入权限，就等待，推动游戏执行一次
+    if not client_context._input_enable:
+        while True:
+            input(
+                f"[{client_context._user_name}|{client_context._actor_name}]! 按任意键推动游戏执行一次:"
+            )
+            _request_game_execute(client_context, state_wrapper, [])
+            _request_fetch_messages(
+                client_context, state_wrapper, WS_CONFIG.SEND_MESSAGES_COUNT
+            )
+            break
+
+        return
+
+    # 正式输入
     while True:
 
         usr_input = input(
-            f"[{client_context._user_name}|{client_context._ctrl_actor_name}]:"
+            f"[{client_context._user_name}|{client_context._actor_name}]:"
         )
         if usr_input == "":
             logger.warning("输入不能为空")
@@ -268,20 +314,23 @@ def _web_player_input(
             break
 
         elif usr_input == "/watch" or usr_input == "/w":
-            _web_player_input_watch(client_context, state_wrapper)
+            _requesting_watch(client_context, state_wrapper)
             break
 
         elif usr_input == "/check" or usr_input == "/c":
-            _web_player_input_check(client_context, state_wrapper)
+            _requesting_check(client_context, state_wrapper)
             break
 
         else:
             _request_game_execute(client_context, state_wrapper, [usr_input])
+            _request_fetch_messages(
+                client_context, state_wrapper, WS_CONFIG.SEND_MESSAGES_COUNT
+            )
             break
 
 
 ###############################################################################################################################################
-def _web_player_input_watch(
+def _requesting_watch(
     client_context: GameClientContext, state_wrapper: GameStateWrapper
 ) -> None:
     url_watch = f"http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/watch/"
@@ -290,7 +339,7 @@ def _web_player_input_watch(
         json=WatchRequest(
             user_name=client_context._user_name,
             game_name=client_context._game_name,
-            actor_name=client_context._ctrl_actor_name,
+            actor_name=client_context._actor_name,
         ).model_dump(),
     )
 
@@ -307,7 +356,7 @@ def _web_player_input_watch(
 
 
 ###############################################################################################################################################
-def _web_player_input_check(
+def _requesting_check(
     client_context: GameClientContext, state_wrapper: GameStateWrapper
 ) -> None:
     url_check = f"http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/check/"
@@ -316,7 +365,7 @@ def _web_player_input_check(
         json=CheckRequest(
             user_name=client_context._user_name,
             game_name=client_context._game_name,
-            actor_name=client_context._ctrl_actor_name,
+            actor_name=client_context._actor_name,
         ).model_dump(),
     )
 
@@ -358,7 +407,7 @@ def _requesting_exit(
 
     # 清理数据
     logger.info(
-        f"退出游戏: {exit_response.user_name}, {client_context._game_name}, {client_context._ctrl_actor_name } 清除相关数据"
+        f"退出游戏: {exit_response.user_name}, {client_context._game_name}, {client_context._actor_name } 清除相关数据"
     )
     client_context.on_exit_game()
 

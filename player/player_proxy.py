@@ -61,7 +61,7 @@ class PlayerProxy:
         return self._model.over
 
     ##########################################################################################################################################################
-    def ctrl_actor(self, actor_name: str) -> None:
+    def set_actor(self, actor_name: str) -> None:
         self._model.actor_name = actor_name
 
     ##########################################################################################################################################################
@@ -141,13 +141,27 @@ class PlayerProxy:
         ]
 
     ##########################################################################################################################################################
-    def send_client_messages(self, send_count: int) -> List[str]:
-        ret: List[str] = []
+    def debug_client_messages(self, send_count: int) -> None:
         for client_message in self._model.client_messages[-send_count:]:
             json_str = client_message.model_dump_json()
-            ret.append(json_str)
             logger.warning(json_str)
-        return ret
+
+    ##########################################################################################################################################################
+    def fetch_client_messages(
+        self, index: int, count: int
+    ) -> List[PlayerClientMessage]:
+
+        if count < 0:
+            count = 0
+
+        if index < 0:
+            return self._fetch_last_client_messages(count)
+
+        return self._model.client_messages[index : index + count]
+
+    ##########################################################################################################################################################
+    def _fetch_last_client_messages(self, count: int) -> List[PlayerClientMessage]:
+        return self._model.client_messages[-count:]
 
     ##########################################################################################################################################################
     def on_dead(self) -> None:

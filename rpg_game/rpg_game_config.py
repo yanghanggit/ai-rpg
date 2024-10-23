@@ -16,4 +16,4 @@ class RPGGameConfig(StrEnum):
 
 
 # 临时
-GAME_LIST: List[str] = ["World1", "World2", "World3"]
+GEN_GAMES: List[str] = ["World1", "World2", "World3"]

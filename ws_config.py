@@ -2,6 +2,7 @@ from enum import Enum
 from pydantic import BaseModel
 from typing import Dict, Set, List, Optional, Final
 from my_data.model_def import GameModel, WatchActionModel, CheckActionModel
+from player.player_message import PlayerClientMessage
 
 
 class WS_CONFIG:
@@ -78,7 +79,7 @@ class CreateRequest(BaseModel):
 class CreateResponse(BaseModel):
     user_name: str = ""
     game_name: str = ""
-    selectable_actor_names: List[str] = []
+    selectable_actors: List[str] = []
     game_model: Optional[GameModel] = None
     error: int = 0
     message: str = ""
@@ -157,8 +158,7 @@ class ExecuteResponse(BaseModel):
     user_name: str = ""
     game_name: str = ""
     actor_name: str = ""
-    user_input: List[str] = []
-    messages: List[str] = []
+    player_input_enable: bool = False
     error: int = 0
     message: str = ""
 
@@ -199,6 +199,29 @@ class CheckResponse(BaseModel):
     game_name: str = ""
     actor_name: str = ""
     action_model: CheckActionModel = CheckActionModel()
+    error: int = 0
+    message: str = ""
+
+
+###############################################################################################################################################
+###############################################################################################################################################
+###############################################################################################################################################
+
+
+class FetchMessagesRequest(BaseModel):
+    user_name: str = ""
+    game_name: str = ""
+    actor_name: str = ""
+    index: int = 0
+    count: int = 10
+
+
+class FetchMessagesResponse(BaseModel):
+    user_name: str = ""
+    game_name: str = ""
+    actor_name: str = ""
+    messages: List[PlayerClientMessage] = []
+    total: int = 0
     error: int = 0
     message: str = ""
 

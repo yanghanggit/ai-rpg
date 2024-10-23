@@ -20,12 +20,14 @@ from ws_config import (
     WatchResponse,
     CheckRequest,
     CheckResponse,
+    FetchMessagesRequest,
+    FetchMessagesResponse,
 )
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional
 import rpg_game.rpg_game_helper
 from rpg_game.web_game import WebGame
 from player.player_proxy import PlayerProxy, PlayerProxyModel
-from rpg_game.rpg_game_config import RPGGameConfig, GAME_LIST
+from rpg_game.rpg_game_config import RPGGameConfig, GEN_GAMES
 from pathlib import Path
 import shutil
 
@@ -45,7 +47,7 @@ class GameRoom:
             return None
         return self._game.get_player(self._user_name)
 
-    def get_player_ctrl_actor_name(self) -> str:
+    def get_player_actor_name(self) -> str:
         player = self.get_player()
         if player is None:
             return ""
@@ -57,27 +59,28 @@ game_room: Optional[GameRoom] = None
 
 ###############################################################################################################################################
 @fastapi_app.post("/login/")
-async def login(data: LoginRequest) -> Dict[str, Any]:
+async def login(request_data: LoginRequest) -> Dict[str, Any]:
 
     global game_room
-    assert game_room is None, "game_room is not None"
 
+    # 不能切换状态，到登陆完成
     if not server_state.can_transition(GameState.LOGGED_IN):
         return LoginResponse(
-            user_name=data.user_name,
+            user_name=request_data.user_name,
             error=1,
             message=f"not server_state.can_transition(GameState.LOGGED_IN), current state = {server_state.state}",
         ).model_dump()
 
-    logger.info(f"login success, user_name = {data.user_name}")
+    logger.info(f"login success, user_name = {request_data.user_name}")
 
     # 切换状态到登陆完成并创建一个房间
     server_state.transition(GameState.LOGGED_IN)
-    game_room = GameRoom(data.user_name)
+    game_room = GameRoom(request_data.user_name)
 
+    # 返回游戏列表
     return LoginResponse(
-        user_name=data.user_name,
-        game_list=GAME_LIST,
+        user_name=request_data.user_name,
+        game_list=GEN_GAMES,
     ).model_dump()
 
 
@@ -85,22 +88,32 @@ async def login(data: LoginRequest) -> Dict[str, Any]:
 
 
 @fastapi_app.post("/create/")
-async def create(data: CreateRequest) -> Dict[str, Any]:
+async def create(request_data: CreateRequest) -> Dict[str, Any]:
 
     global game_room
-    assert game_room is not None, "game_room is None"
-    assert game_room._game is None, "game_room._game is not None"
 
-    if not server_state.can_transition(GameState.GAME_CREATED):
+    # 不能转化到创建一个新游戏的状态！
+    if not server_state.can_transition(GameState.GAME_CREATED) or game_room is None:
         return CreateResponse(
-            user_name=data.user_name,
-            game_name=data.game_name,
+            user_name=request_data.user_name,
+            game_name=request_data.game_name,
             error=1,
             message=f"not server_state.can_transition(GameState.GAME_CREATED), current state = {server_state.state}",
         ).model_dump()
 
-    # app 运行时路径
-    game_runtime_dir = Path(f"{RPGGameConfig.GAME_SAMPLE_RUNTIME_DIR}/{data.game_name}")
+    # 不是一个可以选择的游戏！
+    if request_data.game_name not in GEN_GAMES:
+        return CreateResponse(
+            user_name=request_data.user_name,
+            game_name=request_data.game_name,
+            error=2,
+            message=f"game_name not in GAME_LIST = {request_data.game_name}",
+        ).model_dump()
+
+    # 准备这个app的运行时路径
+    game_runtime_dir = Path(
+        f"{RPGGameConfig.GAME_SAMPLE_RUNTIME_DIR}/{request_data.game_name}"
+    )
     if game_runtime_dir.exists():
         logger.warning(f"删除文件夹：{game_runtime_dir}, 这是为了测试，后续得改！！！")
         shutil.rmtree(game_runtime_dir)
@@ -110,14 +123,15 @@ async def create(data: CreateRequest) -> Dict[str, Any]:
 
     # 游戏启动资源路径
     game_resource_file_path = (
-        Path(f"{RPGGameConfig.GAME_SAMPLE_RUNTIME_DIR}") / f"{data.game_name}.json"
+        Path(f"{RPGGameConfig.GAME_SAMPLE_RUNTIME_DIR}")
+        / f"{request_data.game_name}.json"
     )
 
     if not game_resource_file_path.exists():
         return CreateResponse(
-            user_name=data.user_name,
-            game_name=data.game_name,
-            error=2,
+            user_name=request_data.user_name,
+            game_name=request_data.game_name,
+            error=3,
             message=f"game_resource_file_path not exists = {game_resource_file_path}",
         ).model_dump()
 
@@ -129,9 +143,9 @@ async def create(data: CreateRequest) -> Dict[str, Any]:
     )
     if game_resource is None:
         return CreateResponse(
-            user_name=data.user_name,
-            game_name=data.game_name,
-            error=3,
+            user_name=request_data.user_name,
+            game_name=request_data.game_name,
+            error=4,
             message=f"game_resource is None",
         ).model_dump()
 
@@ -143,263 +157,329 @@ async def create(data: CreateRequest) -> Dict[str, Any]:
     # 创建游戏
     new_game = rpg_game.rpg_game_helper.create_web_rpg_game(game_resource)
     if new_game is None or new_game._game_resource is None:
-        logger.error(f"create_rpg_game 失败 = {data.game_name}")
+        logger.error(f"create_rpg_game 失败 = {request_data.game_name}")
         return CreateResponse(
-            user_name=data.user_name,
-            game_name=data.game_name,
-            error=4,
-            message=f"create_rpg_game 失败 = {data.game_name}",
+            user_name=request_data.user_name,
+            game_name=request_data.game_name,
+            error=6,
+            message=f"create_rpg_game 失败 = {request_data.game_name}",
         ).model_dump()
 
-    # 检查是否有可以控制的角色, 没有就不让玩。
-    ctrl_actors = rpg_game.rpg_game_helper.get_player_ctrl_actor_names(new_game)
+    # 检查是否有可以控制的角色, 没有就不让玩, 因为是客户端进来的。没有可以控制的觉得暂时就不允许玩。
+    ctrl_actors = rpg_game.rpg_game_helper.get_player_actor_names(new_game)
     if len(ctrl_actors) == 0:
-        logger.warning(f"create_rpg_game 没有可以控制的角色 = {data.game_name}")
+        logger.warning(f"create_rpg_game 没有可以控制的角色 = {request_data.game_name}")
         return CreateResponse(
-            user_name=data.user_name,
-            game_name=data.game_name,
+            user_name=request_data.user_name,
+            game_name=request_data.game_name,
             error=5,
-            message=f"create_rpg_game 没有可以控制的角色 = {data.game_name}",
+            message=f"create_rpg_game 没有可以控制的角色 = {request_data.game_name}",
         ).model_dump()
 
-    logger.info(f"create: {data.user_name}, {data.game_name}")
+    logger.info(f"create: {request_data.user_name}, {request_data.game_name}")
 
     # 切换状态到游戏创建完成
     server_state.transition(GameState.GAME_CREATED)
     game_room._game = new_game
-    assert new_game._game_resource is not None, "new_game._game_resource is None"
 
+    # 返回可以选择的角色，以及游戏模型
     return CreateResponse(
-        user_name=data.user_name,
-        game_name=data.game_name,
-        selectable_actor_names=ctrl_actors,
+        user_name=request_data.user_name,
+        game_name=request_data.game_name,
+        selectable_actors=ctrl_actors,
         game_model=new_game._game_resource._model,
     ).model_dump()
 
 
 ###############################################################################################################################################
 @fastapi_app.post("/join/")
-async def join(data: JoinRequest) -> Dict[str, Any]:
+async def join(request_data: JoinRequest) -> Dict[str, Any]:
 
     global game_room
-    assert game_room is not None, "game_room is None"
-    assert game_room._game is not None, "game_room._game is None"
 
-    if not server_state.can_transition(GameState.GAME_JOINED):
-        return JoinResponse(user_name=data.user_name, error=1, message="").model_dump()
+    if (
+        not server_state.can_transition(GameState.GAME_JOINED)
+        or game_room is None
+        or game_room._game is None
+    ):
+        return JoinResponse(
+            user_name=request_data.user_name, error=1, message=""
+        ).model_dump()
 
-    if data.actor_name == "":
-        return JoinResponse(user_name=data.user_name, error=2, message="").model_dump()
+    if request_data.actor_name == "":
+        return JoinResponse(
+            user_name=request_data.user_name, error=2, message=""
+        ).model_dump()
 
-    logger.info(f"join: {data.user_name}, {data.game_name}, {data.actor_name}")
+    logger.info(
+        f"join: {request_data.user_name}, {request_data.game_name}, {request_data.actor_name}"
+    )
 
     # 切换状态到游戏加入完成
     server_state.transition(GameState.GAME_JOINED)
-    player_proxy = PlayerProxy(PlayerProxyModel(name=data.user_name))
+    player_proxy = PlayerProxy(PlayerProxyModel(name=request_data.user_name))
     game_room._game.add_player(player_proxy)
 
     # 加入游戏
     rpg_game.rpg_game_helper.player_play_new_game(
-        game_room._game, player_proxy, data.actor_name
+        game_room._game, player_proxy, request_data.actor_name
     )
 
+    # 返回加入游戏的信息
     return JoinRequest(
-        user_name=data.user_name,
-        game_name=data.game_name,
-        actor_name=data.actor_name,
+        user_name=request_data.user_name,
+        game_name=request_data.game_name,
+        actor_name=request_data.actor_name,
     ).model_dump()
 
 
 ###############################################################################################################################################
 @fastapi_app.post("/start/")
-async def start(data: StartRequest) -> Dict[str, Any]:
+async def start(request_data: StartRequest) -> Dict[str, Any]:
 
     global game_room
-    assert game_room is not None, "game_room is None"
-    assert game_room._game is not None, "game_room._game is None"
 
+    # 不能切换状态到游戏开始
     if not server_state.can_transition(GameState.PLAYING):
-        return StartResponse(user_name=data.user_name, error=1, message="").model_dump()
+        return StartResponse(
+            user_name=request_data.user_name, error=1, message=""
+        ).model_dump()
 
-    logger.info(f"start: {data.user_name}, {data.game_name}, {data.actor_name}")
+    logger.info(
+        f"start: {request_data.user_name}, {request_data.game_name}, {request_data.actor_name}"
+    )
 
     # 切换状态到游戏开始
     server_state.transition(GameState.PLAYING)
 
+    # 返回开始游戏的信息
     return StartRequest(
-        user_name=data.user_name,
-        game_name=data.game_name,
-        actor_name=data.actor_name,
+        user_name=request_data.user_name,
+        game_name=request_data.game_name,
+        actor_name=request_data.actor_name,
     ).model_dump()
 
 
 ###############################################################################################################################################
 @fastapi_app.post("/exit/")
-async def exit(data: ExitRequest) -> Dict[str, Any]:
+async def exit(request_data: ExitRequest) -> Dict[str, Any]:
 
     global game_room
-    assert game_room is not None, "game_room is None"
-    assert game_room._game is not None, "game_room._game is None"
 
-    if not server_state.can_transition(GameState.REQUESTING_EXIT):
-        return ExitResponse(user_name=data.user_name, error=1, message="").model_dump()
+    # 不能切换状态到游戏退出
+    if (
+        not server_state.can_transition(GameState.REQUESTING_EXIT)
+        or game_room is None
+        or game_room._game is None
+    ):
+        return ExitResponse(
+            user_name=request_data.user_name, error=1, message=""
+        ).model_dump()
 
-    logger.info(f"exit: {data.user_name}")
+    logger.info(f"exit: {request_data.user_name}")
 
     # 切换状态到游戏退出
     server_state.transition(GameState.REQUESTING_EXIT)
-    # 当前的游戏杀掉
-    assert game_room._game is not None, "game_room._game is None"
-    if game_room._game is not None:
-        game_room._game._will_exit = True
-        rpg_game.rpg_game_helper.save_game(
-            game_room._game, RPGGameConfig.GAME_ARCHIVE_DIR
-        )
-        game_room._game.exit()
-        game_room._game = None
 
-    return ExitResponse(user_name=data.user_name, game_name=data.game_name).model_dump()
+    # 当前的游戏杀掉
+    game_room._game._will_exit = True
+    rpg_game.rpg_game_helper.save_game(game_room._game, RPGGameConfig.GAME_ARCHIVE_DIR)
+    game_room._game.exit()
+    game_room._game = None
+
+    # 返回退出游戏的信息
+    return ExitResponse(
+        user_name=request_data.user_name, game_name=request_data.game_name
+    ).model_dump()
 
 
 ###############################################################################################################################################
 @fastapi_app.post("/execute/")
-async def execute(data: ExecuteRequest) -> Dict[str, Any]:
+async def execute(request_data: ExecuteRequest) -> Dict[str, Any]:
 
     global game_room
-    assert game_room is not None, "game_room is None"
-    assert game_room._game is not None, "game_room._game is None"
-
-    if game_room._game._will_exit:
+    if game_room is None or game_room._game is None:
         return ExecuteResponse(
-            user_name=data.user_name, error=1, message="game_room._game._will_exit"
+            user_name=request_data.user_name,
+            error=100,
+            message="game_room._game is None",
         ).model_dump()
 
+    # 不能切换状态到游戏退出
+    if game_room._game._will_exit:
+        return ExecuteResponse(
+            user_name=request_data.user_name,
+            error=1,
+            message="game_room._game._will_exit",
+        ).model_dump()
+
+    #  没有游戏角色不能推动游戏，这里规定必须要有客户端和角色才能推动游戏
     player_proxy = game_room.get_player()
     if player_proxy is None:
         return ExecuteResponse(
-            user_name=data.user_name, error=2, message="player_proxy is None"
+            user_name=request_data.user_name, error=2, message="player_proxy is None"
         ).model_dump()
 
+    # 人物死亡了，不能推动游戏
     if player_proxy.over:
         return ExecuteResponse(
-            user_name=data.user_name, error=3, message="player_proxy.over"
+            user_name=request_data.user_name, error=3, message="player_proxy.over"
         ).model_dump()
 
     # 如果有输入命令，就要加
-    for usr_input in data.user_input:
+    for usr_input in request_data.user_input:
         assert usr_input != "/watch" and usr_input != "/w", "不应该有这个命令"
         assert usr_input != "/check" and usr_input != "/c", "不应该有这个命令"
         rpg_game.rpg_game_helper.add_player_command(
             game_room._game, player_proxy, usr_input
         )
 
-    # 运行一个回合
-    send_client_messages: List[str] = []
-
-    # 核心循环
-    while True:
-
-        if game_room._game._will_exit:
-            break
-
-        # 运行一个回合
+    if not game_room._game._will_exit:
         await game_room._game.a_execute()
 
-        # 如果死了就退出。
-        if player_proxy.over:
-            game_room._game._will_exit = True
-            break
+    if player_proxy.over:
+        game_room._game._will_exit = True
 
-        # 允许玩家输入的时候，才放松消息。
-        if rpg_game.rpg_game_helper.is_player_turn(game_room._game, player_proxy):
-            send_client_messages = player_proxy.send_client_messages(
-                WS_CONFIG.SEND_MESSAGES_COUNT
-            )
-            break
-
+    # 返回执行游戏的信息
     return ExecuteResponse(
-        user_name=data.user_name,
-        game_name=data.game_name,
-        actor_name=game_room.get_player_ctrl_actor_name(),
-        messages=send_client_messages,
+        user_name=request_data.user_name,
+        game_name=request_data.game_name,
+        actor_name=game_room.get_player_actor_name(),
+        player_input_enable=rpg_game.rpg_game_helper.is_player_turn(
+            game_room._game, player_proxy
+        ),
     ).model_dump()
 
 
 ###############################################################################################################################################
 @fastapi_app.post("/watch/")
-async def watch(data: WatchRequest) -> Dict[str, Any]:
+async def watch(request_data: WatchRequest) -> Dict[str, Any]:
 
     global game_room
-    assert game_room is not None, "game_room is None"
-    assert game_room._game is not None, "game_room._game is None"
+    if game_room is None or game_room._game is None:
+        return WatchResponse(
+            user_name=request_data.user_name,
+            game_name=request_data.game_name,
+            actor_name=request_data.actor_name,
+            error=100,
+            message="game_room._game is None",
+        ).model_dump()
 
+    # 没有客户端就不能看
     player_proxy = game_room.get_player()
     if player_proxy is None:
         return WatchResponse(
-            user_name=data.user_name,
-            game_name=data.game_name,
-            actor_name=data.actor_name,
+            user_name=request_data.user_name,
+            game_name=request_data.game_name,
+            actor_name=request_data.actor_name,
             error=1,
             message="player_proxy is None",
         ).model_dump()
 
+    # 获得消息
     watch_action_model = rpg_game.rpg_game_helper.gen_player_watch_action_model(
         game_room._game, player_proxy
     )
 
     if watch_action_model is None:
         return WatchResponse(
-            user_name=data.user_name,
-            game_name=data.game_name,
-            actor_name=data.actor_name,
+            user_name=request_data.user_name,
+            game_name=request_data.game_name,
+            actor_name=request_data.actor_name,
             error=2,
             message="watch_action_model is None",
         ).model_dump()
 
+    # 返回观察游戏的信息
     return WatchResponse(
-        user_name=data.user_name,
-        game_name=data.game_name,
-        actor_name=data.actor_name,
+        user_name=request_data.user_name,
+        game_name=request_data.game_name,
+        actor_name=request_data.actor_name,
         action_model=watch_action_model,
     ).model_dump()
 
 
 ###############################################################################################################################################
 @fastapi_app.post("/check/")
-async def check(data: CheckRequest) -> Dict[str, Any]:
+async def check(request_data: CheckRequest) -> Dict[str, Any]:
 
     global game_room
-    assert game_room is not None, "game_room is None"
-    assert game_room._game is not None, "game_room._game is None"
+    if game_room is None or game_room._game is None:
+        return CheckResponse(
+            user_name=request_data.user_name,
+            game_name=request_data.game_name,
+            actor_name=request_data.actor_name,
+            error=100,
+            message="game_room._game is None",
+        ).model_dump()
 
+    # 没有客户端就不能看
     player_proxy = game_room.get_player()
     if player_proxy is None:
         return CheckResponse(
-            user_name=data.user_name,
-            game_name=data.game_name,
-            actor_name=data.actor_name,
+            user_name=request_data.user_name,
+            game_name=request_data.game_name,
+            actor_name=request_data.actor_name,
             error=1,
             message="player_proxy is None",
         ).model_dump()
 
+    # 获得消息
     check_action_model = rpg_game.rpg_game_helper.gen_player_check_action_model(
         game_room._game, player_proxy
     )
 
     if check_action_model is None:
         return CheckResponse(
-            user_name=data.user_name,
-            game_name=data.game_name,
-            actor_name=data.actor_name,
+            user_name=request_data.user_name,
+            game_name=request_data.game_name,
+            actor_name=request_data.actor_name,
             error=2,
             message="check_action_model is None",
         ).model_dump()
 
+    # 返回检查游戏的信息
     return CheckResponse(
-        user_name=data.user_name,
-        game_name=data.game_name,
-        actor_name=data.actor_name,
+        user_name=request_data.user_name,
+        game_name=request_data.game_name,
+        actor_name=request_data.actor_name,
         action_model=check_action_model,
+    ).model_dump()
+
+
+###############################################################################################################################################
+@fastapi_app.post("/fetch_messages/")
+async def fetch_messages(request_data: FetchMessagesRequest) -> Dict[str, Any]:
+
+    global game_room
+    if game_room is None or game_room._game is None:
+        return FetchMessagesResponse(
+            user_name=request_data.user_name,
+            game_name=request_data.game_name,
+            actor_name=request_data.actor_name,
+            error=100,
+            message="game_room._game is None",
+        ).model_dump()
+
+    # 没有客户端就不能看
+    player_proxy = game_room.get_player()
+    if player_proxy is None:
+        return FetchMessagesResponse(
+            user_name=request_data.user_name,
+            game_name=request_data.game_name,
+            actor_name=request_data.actor_name,
+            error=1,
+            message="player_proxy is None",
+        ).model_dump()
+
+    return FetchMessagesResponse(
+        user_name=request_data.user_name,
+        game_name=request_data.game_name,
+        actor_name=request_data.actor_name,
+        messages=player_proxy.fetch_client_messages(
+            request_data.index, request_data.count
+        ),
+        total=len(player_proxy._model.client_messages),
     ).model_dump()
 
 

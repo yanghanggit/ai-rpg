@@ -92,18 +92,14 @@ async def terminal_run(option: TerminalRunOption) -> None:
     player_proxy: Optional[PlayerProxy] = None
     if option.new_game:
         # 是否是控制actor游戏
-        player_controlled_actor_name = terminal_player_input_select_controlled_actor(
-            new_game
-        )
-        if player_controlled_actor_name != "":
-            logger.info(
-                f"{option.login_player_name}:{game_name}:{player_controlled_actor_name}"
-            )
+        player_actor_name = terminal_player_input_select_actor(new_game)
+        if player_actor_name != "":
+            logger.info(f"{option.login_player_name}:{game_name}:{player_actor_name}")
             player_proxy = PlayerProxy(PlayerProxyModel(name=option.login_player_name))
             new_game.add_player(player_proxy)
 
             rpg_game.rpg_game_helper.player_play_new_game(
-                new_game, player_proxy, player_controlled_actor_name
+                new_game, player_proxy, player_actor_name
             )
         else:
             logger.info(
@@ -124,20 +120,25 @@ async def terminal_run(option: TerminalRunOption) -> None:
         # 运行一个回合
         await new_game.a_execute()
 
+        # 如果没有客户端就继续
+        if player_proxy is None:
+            # 游戏的进程可以看log
+            await terminal_continue(new_game)
+            continue
+
         # 有客户端才进行控制。
-        if player_proxy is not None:
-
-            player_proxy.send_client_messages(option.show_client_message_count)
-
+        player_proxy.debug_client_messages(option.show_client_message_count)
+        if player_proxy.over:
             # 如果死了就退出。
-            if player_proxy.over:
-                new_game._will_exit = True
-                continue
+            new_game._will_exit = True
+            continue
 
-            if rpg_game.rpg_game_helper.is_player_turn(new_game, player_proxy):
-                await terminal_player_input(new_game, player_proxy)
-            else:
-                await terminal_player_wait(new_game, player_proxy)
+        if rpg_game.rpg_game_helper.is_player_turn(new_game, player_proxy):
+            # 是你的输入回合
+            await terminal_player_input(new_game, player_proxy)
+        else:
+            # 不是你的输入回合
+            await terminal_player_wait(new_game, player_proxy)
 
     rpg_game.rpg_game_helper.save_game(new_game, RPGGameConfig.GAME_ARCHIVE_DIR)
     new_game.exit()
@@ -145,8 +146,8 @@ async def terminal_run(option: TerminalRunOption) -> None:
 
 
 ###############################################################################################################################################
-def terminal_player_input_select_controlled_actor(game: RPGGame) -> str:
-    all_names = rpg_game.rpg_game_helper.get_player_ctrl_actor_names(game)
+def terminal_player_input_select_actor(game: RPGGame) -> str:
+    all_names = rpg_game.rpg_game_helper.get_player_actor_names(game)
     if len(all_names) == 0:
         return ""
 
@@ -220,9 +221,18 @@ def terminal_player_input_check(game_name: RPGGame, player_proxy: PlayerProxy) -
 
 
 ###############################################################################################################################################
-async def terminal_player_wait(game_name: RPGGame, player_proxy: PlayerProxy) -> None:
+async def terminal_player_wait(game: RPGGame, player_proxy: PlayerProxy) -> None:
     while True:
-        input(f"terminal_player_wait 。。。。。。。。。。。。")
+        input(
+            f"不是你{player_proxy.name},{player_proxy.actor_name}的回合，按任意键继续游戏:{game._name}"
+        )
+        break
+
+
+###############################################################################################################################################
+async def terminal_continue(game: RPGGame) -> None:
+    while True:
+        input(f"{game._name} 游戏继续，没有玩家")
         break
 
 

@@ -4,7 +4,7 @@ from pathlib import Path
 import os
 from typing import List, Dict, Any, Set
 import json
-from rpg_game.rpg_game_config import GAME_LIST, RPGGameConfig
+from rpg_game.rpg_game_config import GEN_GAMES, RPGGameConfig
 
 
 ####################################################################################################################################
@@ -61,4 +61,4 @@ def main(games: List[str]) -> None:
 
 ####################################################################################################################################
 if __name__ == "__main__":
-    main(GAME_LIST)
+    main(GEN_GAMES)

@@ -1,4 +1,5 @@
 from typing import List, Dict, List, Any
+from overrides import final
 from pydantic import BaseModel
 from enum import Enum, StrEnum
 
@@ -148,9 +149,43 @@ class BaseAgentEvent(BaseModel):
     message_content: str
 
 
+class PlayerClientMessageTag(StrEnum):
+    SYSTEM = "SYSTEM"
+    ACTOR = "ACTOR"
+    STAGE = "STAGE"
+    KICKOFF = "KICKOFF"
+    TIP = "TIP"
+
+
+class PlayerClientMessage(BaseModel):
+    tag: str
+    sender: str
+    agent_event: BaseAgentEvent  # 要根部的类，其实只需要它的序列化能力，其余的不要，所以不要出现具体类型的调用！
+
+
+class PlayerProxyModel(BaseModel):
+    name: str = ""
+    client_messages: List[PlayerClientMessage] = []
+    cache_kickoff_messages: List[PlayerClientMessage] = []
+    over: bool = False
+    actor_name: str = ""
+    need_show_stage_messages: bool = False
+    need_show_actors_in_stage_messages: bool = False
+
+
 class WatchActionModel(BaseModel):
     content: str = ""
 
 
 class CheckActionModel(BaseModel):
     content: str = ""
+
+
+# 临时测试重构用！
+class AgentEvent(BaseAgentEvent):
+    pass
+
+
+@final
+class UpdateAppearanceEvent(AgentEvent):
+    pass

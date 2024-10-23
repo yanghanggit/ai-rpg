@@ -8,12 +8,12 @@ from my_data.model_def import (
     StageArchiveFileModel,
     ActorArchiveFileModel,
     AgentChatHistoryDumpModel,
+    PlayerProxyModel,
 )
 from my_data.data_base import DataBase
 from pathlib import Path
 import json
 from loguru import logger
-from player.player_proxy import PlayerProxyModel
 
 
 class GameResource:

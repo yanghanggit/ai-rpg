@@ -5,7 +5,7 @@ from rpg_game.rpg_entitas_context import RPGEntitasContext
 from rpg_game.rpg_game import RPGGame
 from extended_systems.files_def import PropFile
 from gameplay_systems.components import StageComponent
-from gameplay_systems.gameplay_event import AgentEvent
+from my_data.model_def import AgentEvent
 
 
 def _generate_prop_lost_prompt(stage_name: str, prop_name: str) -> str:

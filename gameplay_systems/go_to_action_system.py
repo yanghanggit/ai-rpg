@@ -11,7 +11,7 @@ import gameplay_systems.public_builtin_prompt as public_builtin_prompt
 from rpg_game.rpg_game import RPGGame
 from extended_systems.files_def import StageArchiveFile
 from loguru import logger
-from gameplay_systems.gameplay_event import AgentEvent
+from my_data.model_def import AgentEvent
 
 
 ################################################################################################################################################

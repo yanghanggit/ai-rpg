@@ -14,7 +14,7 @@ from loguru import logger
 from typing import final, override
 from extended_systems.files_def import PropFile
 from rpg_game.rpg_game import RPGGame
-from gameplay_systems.gameplay_event import AgentEvent
+from my_data.model_def import AgentEvent
 
 
 def _generate_equipment_not_found_prompt(actor_name: str, prop_name: str) -> str:

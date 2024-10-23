@@ -11,7 +11,7 @@ from gameplay_systems.components import (
 from extended_systems.files_def import StageArchiveFile
 from player.player_proxy import PlayerProxy
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt
-from gameplay_systems.gameplay_event import AgentEvent
+from my_data.model_def import AgentEvent
 
 
 @final

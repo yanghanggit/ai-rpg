@@ -3,7 +3,7 @@ from typing import final, override
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from rpg_game.rpg_game import RPGGame
 from pathlib import Path
-from player.player_proxy import PlayerProxyModel
+from my_data.model_def import PlayerProxyModel
 from loguru import logger
 
 

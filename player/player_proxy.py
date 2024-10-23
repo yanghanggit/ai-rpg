@@ -1,18 +1,11 @@
 from typing import List, Any
 from loguru import logger
-from player.player_message import PlayerClientMessage, PlayerClientMessageTag
-from my_data.model_def import BaseAgentEvent
-from pydantic import BaseModel
-
-
-class PlayerProxyModel(BaseModel):
-    name: str = ""
-    client_messages: List[PlayerClientMessage] = []
-    cache_kickoff_messages: List[PlayerClientMessage] = []
-    over: bool = False
-    actor_name: str = ""
-    need_show_stage_messages: bool = False
-    need_show_actors_in_stage_messages: bool = False
+from my_data.model_def import (
+    PlayerClientMessage,
+    PlayerClientMessageTag,
+    BaseAgentEvent,
+    PlayerProxyModel,
+)
 
 
 class PlayerProxy:
@@ -74,7 +67,7 @@ class PlayerProxy:
     ##########################################################################################################################################################
     def _add_client_message(
         self,
-        tag: PlayerClientMessageTag,
+        tag: str,
         sender: str,
         agent_event: BaseAgentEvent,
         target: List[PlayerClientMessage],
@@ -151,17 +144,11 @@ class PlayerProxy:
         self, index: int, count: int
     ) -> List[PlayerClientMessage]:
 
-        if count < 0:
-            count = 0
-
+        abs_count = abs(count)
         if index < 0:
-            return self._fetch_last_client_messages(count)
+            return self._model.client_messages[-abs_count:]
 
-        return self._model.client_messages[index : index + count]
-
-    ##########################################################################################################################################################
-    def _fetch_last_client_messages(self, count: int) -> List[PlayerClientMessage]:
-        return self._model.client_messages[-count:]
+        return self._model.client_messages[index : index + abs_count]
 
     ##########################################################################################################################################################
     def on_dead(self) -> None:

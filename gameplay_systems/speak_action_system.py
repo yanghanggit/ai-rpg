@@ -6,7 +6,7 @@ from typing import final, override
 import my_format_string.target_and_message_format_string
 from rpg_game.rpg_game import RPGGame
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt
-from gameplay_systems.gameplay_event import AgentEvent
+from my_data.model_def import AgentEvent
 
 
 def _generate_speak_prompt(src_name: str, dest_name: str, content: str) -> str:

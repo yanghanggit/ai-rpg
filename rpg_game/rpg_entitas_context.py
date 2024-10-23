@@ -15,7 +15,7 @@ from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from typing import Optional, Dict, List, Set, cast, Any
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt
 from player.player_proxy import PlayerProxy
-from gameplay_systems.gameplay_event import AgentEvent
+from my_data.model_def import AgentEvent
 
 
 class RPGEntitasContext(Context):

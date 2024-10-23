@@ -1,6 +1,6 @@
 from loguru import logger
 import datetime
-from player.player_proxy import PlayerProxy, PlayerProxyModel
+from player.player_proxy import PlayerProxy
 import rpg_game.rpg_game_helper
 from rpg_game.rpg_game import RPGGame
 from typing import Optional
@@ -9,6 +9,7 @@ from rpg_game.rpg_game_config import RPGGameConfig
 from pathlib import Path
 import shutil
 from my_data.game_resource import GameResource
+from my_data.model_def import PlayerProxyModel
 
 
 @dataclass

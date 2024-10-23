@@ -21,7 +21,7 @@ from my_agent.agent_task import AgentTask
 from my_agent.agent_plan import AgentPlanResponse
 from rpg_game.rpg_game import RPGGame
 import extended_systems.file_system_helper
-from gameplay_systems.gameplay_event import AgentEvent
+from my_data.model_def import AgentEvent
 
 
 ################################################################################################################################################

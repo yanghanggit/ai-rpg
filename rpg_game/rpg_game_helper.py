@@ -45,7 +45,7 @@ from player.player_command import (
 import datetime
 import shutil
 import zipfile
-from gameplay_systems.gameplay_event import AgentEvent
+from my_data.model_def import AgentEvent
 from my_data.model_def import GameModel, WatchActionModel, CheckActionModel
 
 

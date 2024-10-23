@@ -26,10 +26,11 @@ from ws_config import (
 from typing import Dict, Any, Optional
 import rpg_game.rpg_game_helper
 from rpg_game.web_game import WebGame
-from player.player_proxy import PlayerProxy, PlayerProxyModel
+from player.player_proxy import PlayerProxy
 from rpg_game.rpg_game_config import RPGGameConfig, GEN_GAMES
 from pathlib import Path
 import shutil
+from my_data.model_def import PlayerProxyModel
 
 fastapi_app = FastAPI()
 

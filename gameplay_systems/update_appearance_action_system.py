@@ -14,7 +14,7 @@ from extended_systems.files_def import PropFile
 from my_agent.agent_task import AgentTask
 from gameplay_systems.action_components import UpdateAppearanceAction
 from rpg_game.rpg_game import RPGGame
-from gameplay_systems.gameplay_event import UpdateAppearanceEvent
+from my_data.model_def import UpdateAppearanceEvent
 
 
 ################################################################################################################################################

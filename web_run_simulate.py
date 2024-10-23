@@ -160,7 +160,7 @@ def _join_game(
         json=JoinRequest(
             user_name=client_context._user_name,
             game_name=client_context._game_name,
-            ctrl_actor_name=input_actor_name,
+            actor_name=input_actor_name,
         ).model_dump(),
     )
 
@@ -175,9 +175,9 @@ def _join_game(
     assert join_response.game_name == client_context._game_name
 
     state_wrapper.transition(GameState.GAME_JOINED)
-    client_context._ctrl_actor_name = join_response.ctrl_actor_name
+    client_context._ctrl_actor_name = join_response.actor_name
     logger.info(
-        f"加入游戏: {join_response.user_name}, {join_response.game_name}, {join_response.ctrl_actor_name}"
+        f"加入游戏: {join_response.user_name}, {join_response.game_name}, {join_response.actor_name}"
     )
 
 
@@ -193,15 +193,12 @@ def _play(client_context: GameClientContext, state_wrapper: GameStateWrapper) ->
         json=StartRequest(
             user_name=client_context._user_name,
             game_name=client_context._game_name,
-            ctrl_actor_name=client_context._ctrl_actor_name,
+            actor_name=client_context._ctrl_actor_name,
         ).model_dump(),
     )
 
     start_response = StartResponse.model_validate(response.json())
     if start_response.error > 0:
-        # logger.warning(
-        #     f"开始游戏失败: {start_response.user_name}, {start_response.game_name}, {start_response.ctrl_actor_name}"
-        # )
         logger.warning(
             f"开始游戏失败 = {start_response.user_name}, error = {start_response.error}, message = {start_response.message}"
         )
@@ -209,11 +206,11 @@ def _play(client_context: GameClientContext, state_wrapper: GameStateWrapper) ->
 
     assert start_response.user_name == client_context._user_name
     assert start_response.game_name == client_context._game_name
-    assert start_response.ctrl_actor_name == client_context._ctrl_actor_name
+    assert start_response.actor_name == client_context._ctrl_actor_name
 
     state_wrapper.transition(GameState.PLAYING)
     logger.info(
-        f"开始游戏: {start_response.user_name}, {start_response.game_name}, {start_response.ctrl_actor_name}"
+        f"开始游戏: {start_response.user_name}, {start_response.game_name}, {start_response.actor_name}"
     )
 
     _request_game_execute(client_context, state_wrapper, [])
@@ -234,16 +231,13 @@ def _request_game_execute(
         json=ExecuteRequest(
             user_name=client_context._user_name,
             game_name=client_context._game_name,
-            ctrl_actor_name=client_context._ctrl_actor_name,
+            actor_name=client_context._ctrl_actor_name,
             user_input=usr_input,
         ).model_dump(),
     )
 
     execute_response = ExecuteResponse.model_validate(response.json())
     if execute_response.error > 0:
-        # logger.warning(
-        #     f"执行游戏失败: {execute_response.user_name}, {execute_response.game_name}, {execute_response.ctrl_actor_name}"
-        # )
         logger.warning(f"执行游戏失败: {execute_response.message}")
         return
 
@@ -296,19 +290,19 @@ def _web_player_input_watch(
         json=WatchRequest(
             user_name=client_context._user_name,
             game_name=client_context._game_name,
-            ctrl_actor_name=client_context._ctrl_actor_name,
+            actor_name=client_context._ctrl_actor_name,
         ).model_dump(),
     )
 
     watch_response = WatchResponse.model_validate(response.json())
     if watch_response.error > 0:
         logger.warning(
-            f"观察游戏失败: {watch_response.user_name}, {watch_response.game_name}, {watch_response.ctrl_actor_name}"
+            f"观察游戏失败: {watch_response.user_name}, {watch_response.game_name}, {watch_response.actor_name}"
         )
         return
 
     logger.warning(
-        f"观察游戏: {watch_response.user_name}, {watch_response.game_name}, {watch_response.ctrl_actor_name}\n{watch_response.message}"
+        f"观察游戏: {watch_response.user_name}, {watch_response.game_name}, {watch_response.actor_name}\n{watch_response.message}"
     )
 
 
@@ -322,19 +316,19 @@ def _web_player_input_check(
         json=CheckRequest(
             user_name=client_context._user_name,
             game_name=client_context._game_name,
-            ctrl_actor_name=client_context._ctrl_actor_name,
+            actor_name=client_context._ctrl_actor_name,
         ).model_dump(),
     )
 
     check_response = CheckResponse.model_validate(response.json())
     if check_response.error > 0:
         logger.warning(
-            f"检查游戏失败: {check_response.user_name}, {check_response.game_name}, {check_response.ctrl_actor_name}"
+            f"检查游戏失败: {check_response.user_name}, {check_response.game_name}, {check_response.actor_name}"
         )
         return
 
     logger.warning(
-        f"检查游戏: {check_response.user_name}, {check_response.game_name}, {check_response.ctrl_actor_name}\n{check_response.message}"
+        f"检查游戏: {check_response.user_name}, {check_response.game_name}, {check_response.actor_name}\n{check_response.message}"
     )
 
 

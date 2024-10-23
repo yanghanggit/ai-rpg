@@ -146,3 +146,11 @@ class AgentChatHistoryDumpModel(BaseModel):
 
 class BaseAgentEvent(BaseModel):
     message_content: str
+
+
+class WatchActionModel(BaseModel):
+    content: str = ""
+
+
+class CheckActionModel(BaseModel):
+    content: str = ""

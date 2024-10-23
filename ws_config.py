@@ -1,7 +1,7 @@
 from enum import Enum
 from pydantic import BaseModel
 from typing import Dict, Set, List, Optional, Final
-from my_data.model_def import GameModel
+from my_data.model_def import GameModel, WatchActionModel, CheckActionModel
 
 
 class WS_CONFIG:
@@ -92,13 +92,13 @@ class CreateResponse(BaseModel):
 class JoinRequest(BaseModel):
     user_name: str = ""
     game_name: str = ""
-    ctrl_actor_name: str = ""
+    actor_name: str = ""
 
 
 class JoinResponse(BaseModel):
     user_name: str = ""
     game_name: str = ""
-    ctrl_actor_name: str = ""
+    actor_name: str = ""
     error: int = 0
     message: str = ""
 
@@ -111,13 +111,13 @@ class JoinResponse(BaseModel):
 class StartRequest(BaseModel):
     user_name: str = ""
     game_name: str = ""
-    ctrl_actor_name: str = ""
+    actor_name: str = ""
 
 
 class StartResponse(BaseModel):
     user_name: str = ""
     game_name: str = ""
-    ctrl_actor_name: str = ""
+    actor_name: str = ""
     error: int = 0
     message: str = ""
 
@@ -130,13 +130,13 @@ class StartResponse(BaseModel):
 class ExitRequest(BaseModel):
     user_name: str = ""
     game_name: str = ""
-    ctrl_actor_name: str = ""
+    actor_name: str = ""
 
 
 class ExitResponse(BaseModel):
     user_name: str = ""
     game_name: str = ""
-    ctrl_actor_name: str = ""
+    actor_name: str = ""
     error: int = 0
     message: str = ""
 
@@ -149,14 +149,14 @@ class ExitResponse(BaseModel):
 class ExecuteRequest(BaseModel):
     user_name: str = ""
     game_name: str = ""
-    ctrl_actor_name: str = ""
+    actor_name: str = ""
     user_input: List[str] = []
 
 
 class ExecuteResponse(BaseModel):
     user_name: str = ""
     game_name: str = ""
-    ctrl_actor_name: str = ""
+    actor_name: str = ""
     user_input: List[str] = []
     messages: List[str] = []
     error: int = 0
@@ -171,14 +171,14 @@ class ExecuteResponse(BaseModel):
 class WatchRequest(BaseModel):
     user_name: str = ""
     game_name: str = ""
-    ctrl_actor_name: str = ""
+    actor_name: str = ""
 
 
 class WatchResponse(BaseModel):
     user_name: str = ""
     game_name: str = ""
-    ctrl_actor_name: str = ""
-    result: str = ""
+    actor_name: str = ""
+    action_model: WatchActionModel = WatchActionModel()
     error: int = 0
     message: str = ""
 
@@ -191,14 +191,14 @@ class WatchResponse(BaseModel):
 class CheckRequest(BaseModel):
     user_name: str = ""
     game_name: str = ""
-    ctrl_actor_name: str = ""
+    actor_name: str = ""
 
 
 class CheckResponse(BaseModel):
     user_name: str = ""
     game_name: str = ""
-    ctrl_actor_name: str = ""
-    result: str = ""
+    actor_name: str = ""
+    action_model: CheckActionModel = CheckActionModel()
     error: int = 0
     message: str = ""
 

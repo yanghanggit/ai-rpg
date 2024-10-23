@@ -325,11 +325,11 @@ class RPGEntitasContext(Context):
 
                 if entity.has(ActorComponent):
 
-                    if safe_name == player_proxy.ctrl_actor_name:
+                    if safe_name == player_proxy.actor_name:
 
                         agent_event.message_content = public_builtin_prompt.replace_you(
                             agent_event.message_content,
-                            player_proxy.ctrl_actor_name,
+                            player_proxy.actor_name,
                         )
 
                         player_proxy.add_actor_message(safe_name, agent_event)

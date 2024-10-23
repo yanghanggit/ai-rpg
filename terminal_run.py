@@ -167,9 +167,14 @@ def terminal_player_input_select_controlled_actor(game: RPGGame) -> str:
 
 #######################################################################################################################################
 def terminal_player_input_watch(game_name: RPGGame, player_proxy: PlayerProxy) -> None:
-    message = rpg_game.rpg_game_helper.gen_player_watch_message(game_name, player_proxy)
+    watch_action_model = rpg_game.rpg_game_helper.gen_player_watch_action_model(
+        game_name, player_proxy
+    )
+    if watch_action_model is None:
+        return
+
     while True:
-        logger.info(message)
+        logger.info(watch_action_model.model_dump_json())
         input(f"按任意键继续")
         break
 
@@ -201,9 +206,15 @@ async def terminal_player_input(game: RPGGame, player_proxy: PlayerProxy) -> Non
 
 #######################################################################################################################################
 def terminal_player_input_check(game_name: RPGGame, player_proxy: PlayerProxy) -> None:
-    message = rpg_game.rpg_game_helper.gen_player_check_message(game_name, player_proxy)
+    check_action_model = rpg_game.rpg_game_helper.gen_player_check_action_model(
+        game_name, player_proxy
+    )
+
+    if check_action_model is None:
+        return
+
     while True:
-        logger.info(message)
+        logger.info(check_action_model.model_dump_json())
         input(f"按任意键继续")
         break
 

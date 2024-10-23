@@ -49,7 +49,7 @@ class GameRoom:
         player = self.get_player()
         if player is None:
             return ""
-        return player.ctrl_actor_name
+        return player.actor_name
 
 
 game_room: Optional[GameRoom] = None
@@ -188,10 +188,10 @@ async def join(data: JoinRequest) -> Dict[str, Any]:
     if not server_state.can_transition(GameState.GAME_JOINED):
         return JoinResponse(user_name=data.user_name, error=1, message="").model_dump()
 
-    if data.ctrl_actor_name == "":
+    if data.actor_name == "":
         return JoinResponse(user_name=data.user_name, error=2, message="").model_dump()
 
-    logger.info(f"join: {data.user_name}, {data.game_name}, {data.ctrl_actor_name}")
+    logger.info(f"join: {data.user_name}, {data.game_name}, {data.actor_name}")
 
     # 切换状态到游戏加入完成
     server_state.transition(GameState.GAME_JOINED)
@@ -200,13 +200,13 @@ async def join(data: JoinRequest) -> Dict[str, Any]:
 
     # 加入游戏
     rpg_game.rpg_game_helper.player_play_new_game(
-        game_room._game, player_proxy, data.ctrl_actor_name
+        game_room._game, player_proxy, data.actor_name
     )
 
     return JoinRequest(
         user_name=data.user_name,
         game_name=data.game_name,
-        ctrl_actor_name=data.ctrl_actor_name,
+        actor_name=data.actor_name,
     ).model_dump()
 
 
@@ -221,7 +221,7 @@ async def start(data: StartRequest) -> Dict[str, Any]:
     if not server_state.can_transition(GameState.PLAYING):
         return StartResponse(user_name=data.user_name, error=1, message="").model_dump()
 
-    logger.info(f"start: {data.user_name}, {data.game_name}, {data.ctrl_actor_name}")
+    logger.info(f"start: {data.user_name}, {data.game_name}, {data.actor_name}")
 
     # 切换状态到游戏开始
     server_state.transition(GameState.PLAYING)
@@ -229,7 +229,7 @@ async def start(data: StartRequest) -> Dict[str, Any]:
     return StartRequest(
         user_name=data.user_name,
         game_name=data.game_name,
-        ctrl_actor_name=data.ctrl_actor_name,
+        actor_name=data.actor_name,
     ).model_dump()
 
 
@@ -320,7 +320,7 @@ async def execute(data: ExecuteRequest) -> Dict[str, Any]:
     return ExecuteResponse(
         user_name=data.user_name,
         game_name=data.game_name,
-        ctrl_actor_name=game_room.get_player_ctrl_actor_name(),
+        actor_name=game_room.get_player_ctrl_actor_name(),
         messages=send_client_messages,
     ).model_dump()
 
@@ -338,20 +338,29 @@ async def watch(data: WatchRequest) -> Dict[str, Any]:
         return WatchResponse(
             user_name=data.user_name,
             game_name=data.game_name,
-            ctrl_actor_name=data.ctrl_actor_name,
+            actor_name=data.actor_name,
             error=1,
             message="player_proxy is None",
         ).model_dump()
 
-    gen_message = rpg_game.rpg_game_helper.gen_player_watch_message(
+    watch_action_model = rpg_game.rpg_game_helper.gen_player_watch_action_model(
         game_room._game, player_proxy
     )
+
+    if watch_action_model is None:
+        return WatchResponse(
+            user_name=data.user_name,
+            game_name=data.game_name,
+            actor_name=data.actor_name,
+            error=2,
+            message="watch_action_model is None",
+        ).model_dump()
 
     return WatchResponse(
         user_name=data.user_name,
         game_name=data.game_name,
-        ctrl_actor_name=data.ctrl_actor_name,
-        message=gen_message,
+        actor_name=data.actor_name,
+        action_model=watch_action_model,
     ).model_dump()
 
 
@@ -368,20 +377,29 @@ async def check(data: CheckRequest) -> Dict[str, Any]:
         return CheckResponse(
             user_name=data.user_name,
             game_name=data.game_name,
-            ctrl_actor_name=data.ctrl_actor_name,
+            actor_name=data.actor_name,
             error=1,
             message="player_proxy is None",
         ).model_dump()
 
-    gen_message = rpg_game.rpg_game_helper.gen_player_check_message(
+    check_action_model = rpg_game.rpg_game_helper.gen_player_check_action_model(
         game_room._game, player_proxy
     )
+
+    if check_action_model is None:
+        return CheckResponse(
+            user_name=data.user_name,
+            game_name=data.game_name,
+            actor_name=data.actor_name,
+            error=2,
+            message="check_action_model is None",
+        ).model_dump()
 
     return CheckResponse(
         user_name=data.user_name,
         game_name=data.game_name,
-        ctrl_actor_name=data.ctrl_actor_name,
-        message=gen_message,
+        actor_name=data.actor_name,
+        action_model=check_action_model,
     ).model_dump()
 
 

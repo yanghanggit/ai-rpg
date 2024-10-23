@@ -46,6 +46,7 @@ import datetime
 import shutil
 import zipfile
 from gameplay_systems.gameplay_event import AgentEvent
+from my_data.model_def import GameModel, WatchActionModel, CheckActionModel
 
 
 #######################################################################################################################################
@@ -219,10 +220,12 @@ def get_info_of_actors_in_stage(
 
 
 #######################################################################################################################################
-def gen_player_watch_message(game_name: RPGGame, player_proxy: PlayerProxy) -> str:
+def gen_player_watch_action_model(
+    game_name: RPGGame, player_proxy: PlayerProxy
+) -> Optional[WatchActionModel]:
     player_entity = game_name._entitas_context.get_player_entity(player_proxy.name)
     if player_entity is None:
-        return ""
+        return None
 
     stage_narrate_content = get_stage_narrate_content(game_name, player_entity)
 
@@ -245,11 +248,9 @@ def gen_player_watch_message(game_name: RPGGame, player_proxy: PlayerProxy) -> s
     assert stage_entity is not None
     stage_name = game_name._entitas_context.safe_get_entity_name(stage_entity)
 
-    controlled_actor_name = game_name._entitas_context.safe_get_entity_name(
-        player_entity
-    )
+    player_actor_name = game_name._entitas_context.safe_get_entity_name(player_entity)
 
-    message = f"""# {player_proxy.name} | {controlled_actor_name} 获取场景信息
+    message = f"""# {player_proxy.name} | {player_actor_name} 获取场景信息
 
 ## 场景描述: {stage_name}
 {stage_narrate_content}
@@ -260,14 +261,16 @@ def gen_player_watch_message(game_name: RPGGame, player_proxy: PlayerProxy) -> s
 ## 场景内道具
 {"\n".join(props_in_stage_prompts)}"""
 
-    return message
+    return WatchActionModel(content=message)
 
 
 #######################################################################################################################################
-def gen_player_check_message(game_name: RPGGame, player_proxy: PlayerProxy) -> str:
+def gen_player_check_action_model(
+    game_name: RPGGame, player_proxy: PlayerProxy
+) -> Optional[CheckActionModel]:
     player_entity = game_name._entitas_context.get_player_entity(player_proxy.name)
     if player_entity is None:
-        return ""
+        return None
 
     stage_entity = game_name._entitas_context.safe_get_stage_entity(player_entity)
     assert stage_entity is not None
@@ -298,7 +301,7 @@ def gen_player_check_message(game_name: RPGGame, player_proxy: PlayerProxy) -> s
 
 """
 
-    return message
+    return CheckActionModel(content=message)
 
 
 #######################################################################################################################################
@@ -407,12 +410,12 @@ def player_play_again(rpg_game: RPGGame, player_name: str) -> Optional[PlayerPro
     time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     player_proxy.add_system_message(
         AgentEvent(
-            message_content=f"load & login: {player_proxy.name}, time = {time}, 控制角色 = {player_proxy.ctrl_actor_name}"
+            message_content=f"load & login: {player_proxy.name}, time = {time}, 控制角色 = {player_proxy.actor_name}"
         )
     )
 
     player_proxy.cache_kickoff_message(
-        player_proxy.ctrl_actor_name,
+        player_proxy.actor_name,
         AgentEvent(message_content=f"你回忆起了你的经历: {rpg_game._name}。"),
     )
 

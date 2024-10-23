@@ -10,7 +10,7 @@ class PlayerProxyModel(BaseModel):
     client_messages: List[PlayerClientMessage] = []
     cache_kickoff_messages: List[PlayerClientMessage] = []
     over: bool = False
-    ctrl_actor_name: str = ""
+    actor_name: str = ""
     need_show_stage_messages: bool = False
     need_show_actors_in_stage_messages: bool = False
 
@@ -42,8 +42,8 @@ class PlayerProxy:
 
     ##########################################################################################################################################################
     @property
-    def ctrl_actor_name(self) -> str:
-        return self._model.ctrl_actor_name
+    def actor_name(self) -> str:
+        return self._model.actor_name
 
     ##########################################################################################################################################################
     @property
@@ -62,7 +62,7 @@ class PlayerProxy:
 
     ##########################################################################################################################################################
     def ctrl_actor(self, actor_name: str) -> None:
-        self._model.ctrl_actor_name = actor_name
+        self._model.actor_name = actor_name
 
     ##########################################################################################################################################################
     def add_command(self, command: Any) -> None:
@@ -152,9 +152,7 @@ class PlayerProxy:
     ##########################################################################################################################################################
     def on_dead(self) -> None:
         self.model.over = True
-        logger.warning(
-            f"{self._model.name} : {self._model.ctrl_actor_name}, 死亡了!!!!!"
-        )
+        logger.warning(f"{self._model.name} : {self._model.actor_name}, 死亡了!!!!!")
 
     ##########################################################################################################################################################
     # todo

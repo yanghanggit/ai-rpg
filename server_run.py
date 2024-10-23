@@ -227,7 +227,7 @@ async def join(request_data: JoinRequest) -> Dict[str, Any]:
     )
 
     # 返回加入游戏的信息
-    return JoinRequest(
+    return JoinResponse(
         user_name=request_data.user_name,
         game_name=request_data.game_name,
         actor_name=request_data.actor_name,
@@ -254,7 +254,7 @@ async def start(request_data: StartRequest) -> Dict[str, Any]:
     server_state.transition(GameState.PLAYING)
 
     # 返回开始游戏的信息
-    return StartRequest(
+    return StartResponse(
         user_name=request_data.user_name,
         game_name=request_data.game_name,
         actor_name=request_data.actor_name,

@@ -305,7 +305,7 @@ def gen_player_check_action_model(
 
 
 #######################################################################################################################################
-def save_game(rpg_game: RPGGame, save_dir: str, format: str = "zip") -> None:
+def save_game(rpg_game: RPGGame, archive_dir: Path, format: str = "zip") -> None:
 
     assert rpg_game._game_resource is not None
 
@@ -317,7 +317,7 @@ def save_game(rpg_game: RPGGame, save_dir: str, format: str = "zip") -> None:
         rpg_game._name, format, rpg_game._game_resource._runtime_dir
     )
 
-    archive_dir = Path(save_dir)
+    # archive_dir = Path(save_dir)
     archive_dir.mkdir(parents=True, exist_ok=True)
     assert archive_dir.exists()
 

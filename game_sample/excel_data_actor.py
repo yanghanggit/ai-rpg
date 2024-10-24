@@ -92,8 +92,7 @@ class ExcelDataActor:
     ############################################################################################################
     @property
     def gen_agentpy_path(self) -> Path:
-        directory = Path(configuration.GAME_NAME) / configuration.OUT_PUT_AGENT_DIR
-        return directory / f"{self.codename}_agent.py"
+        return configuration.OUT_PUT_AGENT_DIR / f"{self.codename}_agent.py"
 
     ############################################################################################################
     @property
@@ -115,11 +114,16 @@ class ExcelDataActor:
     def gen_agentpy(self, agent_py_template: str) -> str:
         gen_py = str(agent_py_template)
         gen_py = gen_py.replace(
-            "<%RAG_MD_PATH>", f"""/{configuration.GAME_NAME}/{self.rag}"""
+            "<%RAG_MD_PATH>",
+            str(configuration.GAME_SAMPLE_DIR / self.rag),
         )
+
         gen_py = gen_py.replace(
             "<%SYS_PROMPT_MD_PATH>",
-            f"""/{configuration.GAME_NAME}/{configuration.OUT_PUT_ACTOR_SYS_PROMPT_DIR}/{self.codename}_sys_prompt.md""",
+            str(
+                configuration.OUT_PUT_ACTOR_SYS_PROMPT_DIR
+                / f"{self.codename}_sys_prompt.md"
+            ),
         )
         gen_py = gen_py.replace("<%PORT>", str(self.port))
         gen_py = gen_py.replace("<%API>", self.api)
@@ -128,18 +132,18 @@ class ExcelDataActor:
 
     ############################################################################################################
     def write_sys_prompt(self) -> None:
-        directory = (
-            Path(configuration.GAME_NAME) / configuration.OUT_PUT_ACTOR_SYS_PROMPT_DIR
-        )
         game_sample.utils.write_text_file(
-            directory, f"{self.codename}_sys_prompt.md", self._gen_system_prompt
+            configuration.OUT_PUT_ACTOR_SYS_PROMPT_DIR,
+            f"{self.codename}_sys_prompt.md",
+            self._gen_system_prompt,
         )
 
     ############################################################################################################
     def write_agentpy(self) -> None:
-        directory = Path(configuration.GAME_NAME) / configuration.OUT_PUT_AGENT_DIR
         game_sample.utils.write_text_file(
-            directory, f"{self.codename}_agent.py", self._gen_agentpy
+            configuration.OUT_PUT_AGENT_DIR,
+            f"{self.codename}_agent.py",
+            self._gen_agentpy,
         )
 
     ############################################################################################################

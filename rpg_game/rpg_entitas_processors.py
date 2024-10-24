@@ -4,7 +4,7 @@ from overrides import override
 import time
 from typing import Any, cast
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from rpg_game.rpg_game_config import RPGGameConfig
+from rpg_game.rpg_game_config import WorldSystemNames
 
 
 class RPGEntitasProcessors(Processors):
@@ -122,7 +122,7 @@ class RPGEntitasProcessors(Processors):
             UpdateAppearanceActionSystem(
                 context,
                 rpg_game,
-                RPGGameConfig.WORLD_APPEARANCE_SYSTEM_NAME,
+                WorldSystemNames.WORLD_APPEARANCE_SYSTEM_NAME,
             )
         )  ### 更新外观
 
@@ -143,7 +143,7 @@ class RPGEntitasProcessors(Processors):
         processors.add(SelfSkillUsageCheckSystem(context, rpg_game))
         processors.add(
             WorldSkillRuleSystem(
-                context, rpg_game, RPGGameConfig.WORLD_SKILL_SYSTEM_NAME
+                context, rpg_game, WorldSystemNames.WORLD_SKILL_SYSTEM_NAME
             )
         )
 
@@ -163,7 +163,7 @@ class RPGEntitasProcessors(Processors):
             UpdateAppearanceActionSystem(
                 context,
                 rpg_game,
-                RPGGameConfig.WORLD_APPEARANCE_SYSTEM_NAME,
+                WorldSystemNames.WORLD_APPEARANCE_SYSTEM_NAME,
             )
         )  ### 更新外观
 

@@ -32,7 +32,7 @@ pip install langchain langchain_core langserve fastapi langchain_openai sse_star
 4. 或者通过'/login'命令通过玩家身份登陆游戏游玩。
 
 ## 启动所有agents（方便复制粘贴）
-可以直接调用 batch_run_agents.py来自动化运行（需要输入游戏名字, 例如，输入World2，就是执行'game_sample/gen_runtimes/World2_agents.json'）
+可以直接调用 batch_run_agents.py来自动化运行（需要输入游戏名字, 例如，输入World2）
 
 
 # 可用指令

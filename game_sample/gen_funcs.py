@@ -12,8 +12,8 @@ from game_sample.excel_data_world_system import ExcelDataWorldSystem
 from game_sample.excel_data_stage import ExcelDataStage
 from pathlib import Path
 import game_sample.utils
-from game_sample.configuration import GAME_NAME
 from game_sample.excel_data_actor import ExcelDataActor
+import game_sample.configuration as configuration
 
 
 ############################################################################################################
@@ -25,14 +25,18 @@ def gen_actors_data_base(sheet: DataFrame, output: Dict[str, ExcelDataActor]) ->
 
         excel_actor = ExcelDataActor(row)
         #
-        system_prompt_path = Path(GAME_NAME) / excel_actor.sys_prompt_template_path
+        system_prompt_path = (
+            configuration.GAME_SAMPLE_DIR / excel_actor.sys_prompt_template_path
+        )
         assert system_prompt_path.exists(), f"File not found: {system_prompt_path}"
         excel_actor.gen_sys_prompt(
             game_sample.utils.read_system_prompt_md(system_prompt_path)
         )
         excel_actor.write_sys_prompt()
         #
-        agentpy_template_path = Path(GAME_NAME) / excel_actor.agentpy_template_path
+        agentpy_template_path = (
+            configuration.GAME_SAMPLE_DIR / excel_actor.agentpy_template_path
+        )
         assert (
             agentpy_template_path.exists()
         ), f"File not found: {agentpy_template_path}"
@@ -53,14 +57,18 @@ def gen_stages_data_base(sheet: DataFrame, output: Dict[str, ExcelDataStage]) ->
 
         excel_stage = ExcelDataStage(row)
         #
-        system_prompt_path = Path(GAME_NAME) / excel_stage.sys_prompt_template_path
+        system_prompt_path = (
+            configuration.GAME_SAMPLE_DIR / excel_stage.sys_prompt_template_path
+        )
         assert system_prompt_path.exists(), f"File not found: {system_prompt_path}"
         excel_stage.gen_sys_prompt(
             game_sample.utils.read_system_prompt_md(system_prompt_path)
         )
         excel_stage.write_sys_prompt()
         #
-        agentpy_template_path = Path(GAME_NAME) / excel_stage.agentpy_template_path
+        agentpy_template_path = (
+            configuration.GAME_SAMPLE_DIR / excel_stage.agentpy_template_path
+        )
         assert (
             agentpy_template_path.exists()
         ), f"File not found: {agentpy_template_path}"
@@ -84,7 +92,7 @@ def gen_world_system_data_base(
         excel_world_system = ExcelDataWorldSystem(row)
         #
         system_prompt_path = (
-            Path(GAME_NAME) / excel_world_system.sys_prompt_template_path
+            configuration.GAME_SAMPLE_DIR / excel_world_system.sys_prompt_template_path
         )
         assert system_prompt_path.exists(), f"File not found: {system_prompt_path}"
         excel_world_system.gen_sys_prompt(
@@ -93,7 +101,7 @@ def gen_world_system_data_base(
         excel_world_system.write_sys_prompt()
         #
         agentpy_template_path = (
-            Path(GAME_NAME) / excel_world_system.agentpy_template_path
+            configuration.GAME_SAMPLE_DIR / excel_world_system.agentpy_template_path
         )
         assert (
             agentpy_template_path.exists()

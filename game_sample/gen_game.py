@@ -7,7 +7,8 @@ import pandas as pd
 from loguru import logger
 from pandas.core.frame import DataFrame
 import json
-from game_sample.configuration import EXCEL_EDITOR, GAME_NAME, OUTPUT_RUNTIMES_DIR
+
+import game_sample.configuration as configuration
 from game_sample.gen_funcs import (
     gen_actors_data_base,
     gen_stages_data_base,
@@ -24,7 +25,9 @@ from game_sample.game_editor import ExcelEditorGame
 from typing import List, Dict, Any, Set
 from game_sample.excel_data_actor import ExcelDataActor
 from game_sample.gen_sys_prompt_templates import gen_sys_prompt_templates
-from rpg_game.rpg_game_config import RPGGameConfig, GEN_GAMES
+from rpg_game.rpg_game_config import GAME_NAMES
+import shutil
+import rpg_game.rpg_game_config as rpg_game_config
 
 
 ############################################################################################################
@@ -37,7 +40,7 @@ def create_game_editor(
 ) -> ExcelEditorGame:
     ####测试的一个世界编辑
     data_frame: DataFrame = pd.read_excel(
-        f"{GAME_NAME}/{EXCEL_EDITOR}/{GAME_NAME}.xlsx",
+        configuration.GAME_SAMPLE_EXCEL_FILE_PATH,
         sheet_name=sheet_name_as_game_name,
         engine="openpyxl",
     )
@@ -46,7 +49,7 @@ def create_game_editor(
     list_data: List[Any] = json.loads(json_data)
     return ExcelEditorGame(
         sheet_name_as_game_name,
-        RPGGameConfig.CHECK_GAME_RESOURCE_VERSION,
+        "0.0.1",
         list_data,
         actor_data_base,
         prop_data_base,
@@ -58,20 +61,25 @@ def create_game_editor(
 ############################################################################################################
 def main(game_names: Set[str]) -> None:
 
-    excel_path = f"{GAME_NAME}/{EXCEL_EDITOR}/{GAME_NAME}.xlsx"
-    logger.info(f"开始读取Excel文件: {excel_path}")
-    #
     actor_sheet: DataFrame = pd.read_excel(
-        excel_path, sheet_name="Actor", engine="openpyxl"
+        configuration.GAME_SAMPLE_EXCEL_FILE_PATH,
+        sheet_name=configuration.ACTOR_SHEET_NAME,
+        engine="openpyxl",
     )
     stage_sheet: DataFrame = pd.read_excel(
-        excel_path, sheet_name="Stage", engine="openpyxl"
+        configuration.GAME_SAMPLE_EXCEL_FILE_PATH,
+        sheet_name=configuration.STAGE_SHEET_NAME,
+        engine="openpyxl",
     )
     prop_sheet: DataFrame = pd.read_excel(
-        excel_path, sheet_name="Prop", engine="openpyxl"
+        configuration.GAME_SAMPLE_EXCEL_FILE_PATH,
+        sheet_name=configuration.PROP_SHEET_NAME,
+        engine="openpyxl",
     )
     world_system_sheet: DataFrame = pd.read_excel(
-        excel_path, sheet_name="WorldSystem", engine="openpyxl"
+        configuration.GAME_SAMPLE_EXCEL_FILE_PATH,
+        sheet_name=configuration.WORLD_SYSTEM_SHEET_NAME,
+        engine="openpyxl",
     )
 
     #
@@ -116,13 +124,20 @@ def main(game_names: Set[str]) -> None:
         assert game_editor is not None, "创建GameEditor失败"
         if game_editor is not None:
 
-            if game_editor.write(f"{GAME_NAME}/{OUTPUT_RUNTIMES_DIR}/") > 0:
+            if game_editor.write(configuration.OUT_PUT_GEN_GAMES_DIR) > 0:
                 logger.warning(f"game_editor.write: {sheet_name_as_game_name}")
 
-            if game_editor.write_agents(f"{GAME_NAME}/{OUTPUT_RUNTIMES_DIR}/") > 0:
+            if game_editor.write_agents(configuration.OUT_PUT_GEN_GAMES_DIR) > 0:
                 logger.warning(f"game_editor.write_agents: {sheet_name_as_game_name}")
+
+    root_gen_games_dir = rpg_game_config.GEN_GAMES_DIR
+    if root_gen_games_dir.exists():
+        shutil.rmtree(root_gen_games_dir)
+    shutil.copytree(
+        configuration.OUT_PUT_GEN_GAMES_DIR, root_gen_games_dir, dirs_exist_ok=True
+    )
 
 
 ############################################################################################################
 if __name__ == "__main__":
-    main(set(GEN_GAMES))
+    main(set(GAME_NAMES))

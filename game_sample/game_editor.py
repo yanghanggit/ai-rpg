@@ -3,7 +3,6 @@ from pathlib import Path
 
 root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
-import json
 from typing import List, Dict, Any, Optional
 from game_sample.excel_data_prop import ExcelDataProp
 from game_sample.excel_data_world_system import ExcelDataWorldSystem
@@ -248,15 +247,15 @@ class ExcelEditorGame:
         )
 
     ############################################################################################################################
-    def write(self, directory: str) -> int:
+    def write(self, directory: Path) -> int:
         return game_sample.utils.write_text_file(
-            Path(directory),
+            directory,
             f"{self._name}.json",
             self.gen_model().model_dump_json(),
         )
 
     ############################################################################################################################
-    def write_agents(self, directory: str) -> int:
+    def write_agents(self, directory: Path) -> int:
 
         model = GameAgentsConfigModel(
             actors=[
@@ -274,7 +273,7 @@ class ExcelEditorGame:
         )
 
         return game_sample.utils.write_text_file(
-            Path(directory),
+            directory,
             f"{self._name}_agents.json",
             model.model_dump_json(),
         )

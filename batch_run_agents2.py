@@ -1,27 +1,21 @@
 from loguru import logger
 import datetime
-from pathlib import Path
 import os
 from typing import List, Set
 import json
-from rpg_game.rpg_game_config import GEN_GAMES, RPGGameConfig
+import rpg_game.rpg_game_config as rpg_game_config
 from my_data.model_def import GameAgentsConfigModel
 
 
 ####################################################################################################################################
 def run_agents(games: List[str]) -> None:
-    directory = Path(RPGGameConfig.GAME_SAMPLE_RUNTIME_DIR)
-    directory.mkdir(parents=True, exist_ok=True)
-    if not directory.exists() or not directory.is_dir():
-        logger.error(f"Directory does not exist: {directory}")
-        return None
 
     agentpy_paths: Set[str] = set()
 
     for game_name in games:
 
         file_name = f"{game_name}_agents.json"
-        file_path = directory / file_name
+        file_path = rpg_game_config.GEN_GAMES_DIR / file_name
         if not file_path.exists() or not file_path.is_file():
             logger.error(f"File does not exist: {file_path}")
             continue
@@ -72,4 +66,4 @@ def main(games: List[str]) -> None:
 
 ####################################################################################################################################
 if __name__ == "__main__":
-    main(GEN_GAMES)
+    main(rpg_game_config.GAME_NAMES)

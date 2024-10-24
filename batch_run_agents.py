@@ -1,23 +1,17 @@
 from loguru import logger
 import datetime
-from pathlib import Path
 import os
 from typing import Set
 import json
-from rpg_game.rpg_game_config import RPGGameConfig
 from my_data.model_def import GameAgentsConfigModel
+import rpg_game.rpg_game_config as rpg_game_config
 
 
 ####################################################################################################################################
 def run_agents(game_name: str) -> None:
-    directory = Path(RPGGameConfig.GAME_SAMPLE_RUNTIME_DIR)
-    directory.mkdir(parents=True, exist_ok=True)
-    if not directory.exists() or not directory.is_dir():
-        logger.error(f"Directory does not exist: {directory}")
-        return None
 
     file_name = f"{game_name}_agents.json"
-    file_path = directory / file_name
+    file_path = rpg_game_config.GEN_GAMES_DIR / file_name
     if not file_path.exists() or not file_path.is_file():
         logger.error(f"File does not exist: {file_path}")
         return None

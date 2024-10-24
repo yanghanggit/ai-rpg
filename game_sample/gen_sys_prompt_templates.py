@@ -5,7 +5,7 @@ root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 from pathlib import Path
 import game_sample.utils
-from game_sample.configuration import GAME_NAME, OUT_PUT_SYS_PROMPT_TEMPLATES_DIR
+import game_sample.configuration as configuration
 from gameplay_systems.action_components import (
     SpeakAction,
     GoToAction,
@@ -137,20 +137,20 @@ WORLD_SYSTEM_SYS_PROMPT_TEMPLATE = f"""# <%name>
 ############################################################################################################
 
 
-# todo
 def gen_sys_prompt_templates() -> None:
 
-    directory = Path(GAME_NAME) / OUT_PUT_SYS_PROMPT_TEMPLATES_DIR
-    directory.mkdir(parents=True, exist_ok=True)
-
     game_sample.utils.write_text_file(
-        directory, "actor_sys_prompt_template.md", ACTOR_SYS_PROMPT_TEMPLATE
+        configuration.OUT_PUT_SYS_PROMPT_TEMPLATES_DIR,
+        "actor_sys_prompt_template.md",
+        ACTOR_SYS_PROMPT_TEMPLATE,
     )
     game_sample.utils.write_text_file(
-        directory, "stage_sys_prompt_template.md", STAGE_SYS_PROMPT_TEMPLATE
+        configuration.OUT_PUT_SYS_PROMPT_TEMPLATES_DIR,
+        "stage_sys_prompt_template.md",
+        STAGE_SYS_PROMPT_TEMPLATE,
     )
     game_sample.utils.write_text_file(
-        directory,
+        configuration.OUT_PUT_SYS_PROMPT_TEMPLATES_DIR,
         "world_system_sys_prompt_template.md",
         WORLD_SYSTEM_SYS_PROMPT_TEMPLATE,
     )

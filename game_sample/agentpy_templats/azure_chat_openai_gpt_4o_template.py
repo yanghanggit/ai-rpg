@@ -26,11 +26,11 @@ PORT: int = int(f"""<%PORT>""")
 API: str = f"""<%API>"""
 
 
-def read_md(filepath: str) -> Optional[str]:
-    fullpath = os.getcwd() + filepath
-    path = Path(fullpath)
+def read_md(file_path: str) -> Optional[str]:
+    # fullpath = os.getcwd() + filepath
+    path = Path(file_path)
     if not path.exists():
-        assert False, f"File not found: {fullpath}"
+        assert False, f"File not found: {path}"
         return None
     try:
         content = path.read_text(encoding="utf-8")

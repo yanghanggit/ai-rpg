@@ -27,7 +27,7 @@ from typing import Dict, Any, Optional
 import rpg_game.rpg_game_helper
 from rpg_game.web_game import WebGame
 from player.player_proxy import PlayerProxy
-from rpg_game.rpg_game_config import RPGGameConfig, GEN_GAMES
+import rpg_game.rpg_game_config as rpg_game_config
 from pathlib import Path
 import shutil
 from my_data.model_def import PlayerProxyModel
@@ -81,7 +81,7 @@ async def login(request_data: LoginRequest) -> Dict[str, Any]:
     # 返回游戏列表
     return LoginResponse(
         user_name=request_data.user_name,
-        game_list=GEN_GAMES,
+        game_list=rpg_game_config.GAME_NAMES,
     ).model_dump()
 
 
@@ -103,7 +103,7 @@ async def create(request_data: CreateRequest) -> Dict[str, Any]:
         ).model_dump()
 
     # 不是一个可以选择的游戏！
-    if request_data.game_name not in GEN_GAMES:
+    if request_data.game_name not in rpg_game_config.GAME_NAMES:
         return CreateResponse(
             user_name=request_data.user_name,
             game_name=request_data.game_name,
@@ -112,9 +112,7 @@ async def create(request_data: CreateRequest) -> Dict[str, Any]:
         ).model_dump()
 
     # 准备这个app的运行时路径
-    game_runtime_dir = Path(
-        f"{RPGGameConfig.GAME_SAMPLE_RUNTIME_DIR}/{request_data.game_name}"
-    )
+    game_runtime_dir = rpg_game_config.GAMES_RUNTIME_DIR / request_data.game_name
     if game_runtime_dir.exists():
         logger.warning(f"删除文件夹：{game_runtime_dir}, 这是为了测试，后续得改！！！")
         shutil.rmtree(game_runtime_dir)
@@ -124,8 +122,7 @@ async def create(request_data: CreateRequest) -> Dict[str, Any]:
 
     # 游戏启动资源路径
     game_resource_file_path = (
-        Path(f"{RPGGameConfig.GAME_SAMPLE_RUNTIME_DIR}")
-        / f"{request_data.game_name}.json"
+        rpg_game_config.GEN_GAMES_DIR / f"{request_data.game_name}.json"
     )
 
     if not game_resource_file_path.exists():
@@ -140,7 +137,7 @@ async def create(request_data: CreateRequest) -> Dict[str, Any]:
     game_resource = rpg_game.rpg_game_helper.create_game_resource(
         game_resource_file_path,
         game_runtime_dir,
-        RPGGameConfig.CHECK_GAME_RESOURCE_VERSION,
+        rpg_game_config.CHECK_GAME_RESOURCE_VERSION,
     )
     if game_resource is None:
         return CreateResponse(
@@ -284,7 +281,9 @@ async def exit(request_data: ExitRequest) -> Dict[str, Any]:
 
     # 当前的游戏杀掉
     game_room._game._will_exit = True
-    rpg_game.rpg_game_helper.save_game(game_room._game, RPGGameConfig.GAME_ARCHIVE_DIR)
+    rpg_game.rpg_game_helper.save_game(
+        game_room._game, rpg_game_config.GAMES_ARCHIVE_DIR
+    )
     game_room._game.exit()
     game_room._game = None
 

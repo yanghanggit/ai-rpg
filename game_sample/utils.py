@@ -55,7 +55,7 @@ def read_agentpy_template(path: Path) -> str:
 
 
 ############################################################################################################
-def parse_prop_string(data: str) -> tuple[str, int]:
+def parse_prop_info(data: str) -> tuple[str, int]:
     # 例子: "道具", "道具#999"
     if "#" not in data:
         # 默认就是一个

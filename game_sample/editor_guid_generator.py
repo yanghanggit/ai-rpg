@@ -1,7 +1,7 @@
-from enum import Enum
+from enum import Enum, IntEnum
 
 
-class GUIDType(Enum):
+class GUIDType(IntEnum):
     ACTOR_TYPE = 10000
     STAGE_TYPE = 20000
     PROP_TYPE = 30000

@@ -17,7 +17,7 @@ from game_sample.excel_data_actor import ExcelDataActor
 
 
 ############################################################################################################
-def gen_all_actors(sheet: DataFrame, output: Dict[str, ExcelDataActor]) -> None:
+def gen_actors_data_base(sheet: DataFrame, output: Dict[str, ExcelDataActor]) -> None:
     ## 读取Excel文件
     for index, row in sheet.iterrows():
         if pd.isna(row["name"]):
@@ -45,7 +45,7 @@ def gen_all_actors(sheet: DataFrame, output: Dict[str, ExcelDataActor]) -> None:
 
 
 ############################################################################################################
-def gen_all_stages(sheet: DataFrame, output: Dict[str, ExcelDataStage]) -> None:
+def gen_stages_data_base(sheet: DataFrame, output: Dict[str, ExcelDataStage]) -> None:
     ## 读取Excel文件
     for index, row in sheet.iterrows():
         if pd.isna(row["name"]):
@@ -73,7 +73,7 @@ def gen_all_stages(sheet: DataFrame, output: Dict[str, ExcelDataStage]) -> None:
 
 
 ############################################################################################################
-def gen_all_world_system(
+def gen_world_system_data_base(
     sheet: DataFrame, output: Dict[str, ExcelDataWorldSystem]
 ) -> None:
     ## 读取Excel文件
@@ -107,7 +107,7 @@ def gen_all_world_system(
 
 
 ############################################################################################################
-def gen_all_props(sheet: DataFrame, output: Dict[str, ExcelDataProp]) -> None:
+def gen_prop_data_base(sheet: DataFrame, output: Dict[str, ExcelDataProp]) -> None:
     ## 读取Excel文件
     for index, row in sheet.iterrows():
         if pd.isna(row["name"]):
@@ -117,7 +117,7 @@ def gen_all_props(sheet: DataFrame, output: Dict[str, ExcelDataProp]) -> None:
 
 
 ############################################################################################################
-def analyze_actor_relationship(analyze_data: Dict[str, ExcelDataActor]) -> None:
+def build_actor_relationships(analyze_data: Dict[str, ExcelDataActor]) -> None:
     # 先构建
     for _me in analyze_data.values():
         _me._actor_archives.clear()
@@ -127,16 +127,16 @@ def analyze_actor_relationship(analyze_data: Dict[str, ExcelDataActor]) -> None:
     # 再检查
     for _me in analyze_data.values():
         for _other in analyze_data.values():
-            if _me.check_actor_archive(_other.name) and not _other.check_actor_archive(
-                _me.name
-            ):
+            if _me.has_actor_in_archives(
+                _other.name
+            ) and not _other.has_actor_in_archives(_me.name):
                 logger.warning(
                     f"{_me.name} mentioned {_other.name}, but {_other.name} did not mention {_me.name}"
                 )
 
 
 ############################################################################################################
-def analyze_stage_relationship(
+def build_stage_relationship(
     analyze_stage_data: Dict[str, ExcelDataStage],
     analyze_actor_data: Dict[str, ExcelDataActor],
 ) -> None:
@@ -147,7 +147,7 @@ def analyze_stage_relationship(
 
 
 ################################################################################################################
-def analyze_relationship_between_actors_and_props(
+def build_relationship_between_actors_and_props(
     analyze_props_data: Dict[str, ExcelDataProp],
     analyze_actor_data: Dict[str, ExcelDataActor],
 ) -> None:

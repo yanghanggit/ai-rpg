@@ -1,8 +1,8 @@
 from typing import Any, List, Optional, Dict
 from my_data.model_def import (
-    ActorProxyModel,
-    StageProxyModel,
-    WorldSystemProxyModel,
+    ActorInstanceModel,
+    StageInstanceModel,
+    WorldSystemInstanceModel,
     GameModel,
     EntityProfileModel,
     StageArchiveFileModel,
@@ -68,22 +68,22 @@ class GameResource:
 
     ###############################################################################################################################################
     @property
-    def world_systems_proxy(self) -> List[WorldSystemProxyModel]:
+    def world_systems_proxy(self) -> List[WorldSystemInstanceModel]:
         return self._model.world_systems
 
     ###############################################################################################################################################
     @property
-    def players_actor_proxy(self) -> List[ActorProxyModel]:
+    def players_actor_proxy(self) -> List[ActorInstanceModel]:
         return self._model.players
 
     ###############################################################################################################################################
     @property
-    def actors_proxy(self) -> List[ActorProxyModel]:
+    def actors_proxy(self) -> List[ActorInstanceModel]:
         return self._model.actors
 
     ###############################################################################################################################################
     @property
-    def stages_proxy(self) -> List[StageProxyModel]:
+    def stages_proxy(self) -> List[StageInstanceModel]:
         return self._model.stages
 
     ###############################################################################################################################################

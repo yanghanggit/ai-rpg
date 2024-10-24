@@ -3,9 +3,8 @@ from pathlib import Path
 
 root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
-from loguru import logger
 import json
-from typing import List, Dict, Any, Set, Optional
+from typing import List, Dict, Any, Optional
 from game_sample.excel_data_prop import ExcelDataProp
 from game_sample.excel_data_world_system import ExcelDataWorldSystem
 from game_sample.excel_data_stage import ExcelDataStage
@@ -15,31 +14,38 @@ from game_sample.stage_editor import ExcelEditorStage
 from game_sample.world_system_editor import ExcelEditorWorldSystem
 import pandas as pd
 import game_sample.utils
-from enum import StrEnum
-from rpg_game.rpg_game_config import RPGGameConfig
-
-
-class EditorEntityType(StrEnum):
-    WorldSystem = "WorldSystem"
-    Player = "Player"
-    Actor = "Actor"
-    Stage = "Stage"
-    AboutGame = "AboutGame"
+from my_data.model_def import (
+    EditorEntityType,
+    EditorProperty,
+    GameModel,
+    DataBaseModel,
+    GameAgentsConfigModel,
+)
 
 
 ################################################################################################################
 class ExcelEditorGame:
     def __init__(
         self,
-        worldname: str,
+        game_name: str,
+        version: str,
         data: List[Any],
         actor_data_base: Dict[str, ExcelDataActor],
         prop_data_base: Dict[str, ExcelDataProp],
         stage_data_base: Dict[str, ExcelDataStage],
         world_system_data_base: Dict[str, ExcelDataWorldSystem],
     ) -> None:
-        # 根数据
-        self._name: str = worldname
+
+        #
+        assert data is not None
+        assert actor_data_base is not None
+        assert prop_data_base is not None
+        assert stage_data_base is not None
+        assert world_system_data_base is not None
+
+        #
+        self._name: str = game_name
+        self._version: str = version
         self._data: List[Any] = data
         self._actor_data_base: Dict[str, ExcelDataActor] = actor_data_base
         self._prop_data_base: Dict[str, ExcelDataProp] = prop_data_base
@@ -48,277 +54,250 @@ class ExcelEditorGame:
             world_system_data_base
         )
 
-        # 笨一点，先留着吧。。。
-        self._raw_world_systems: List[Any] = []
-        self._raw_players: List[Any] = []
-        self._raw_actors: List[Any] = []
-        self._raw_stages: List[Any] = []
-        self._raw_config: List[Any] = []
-
-        # 真正的构建数据
-        self._editor_players: List[ExcelEditorActor] = []
-        self._editor_actors: List[ExcelEditorActor] = []
-        self._editor_stages: List[ExcelEditorStage] = []
-        self._editor_props: List[ExcelDataProp] = []
-        self._editor_world_systems: List[ExcelEditorWorldSystem] = []
-
-        ##把数据分类
-        self.classify(
-            self._raw_world_systems,
-            self._raw_players,
-            self._raw_actors,
-            self._raw_stages,
-            self._raw_config,
-        )
-        ##根据分类各种处理。。。
-
-        # 生成角色的数据
-        self._editor_players = self.create_players(self._raw_players)
-        self._editor_actors = self.create_actors(self._raw_actors)
-
-        # 生成场景的数据
-        self._editor_stages = self.create_stages(self._raw_stages)
-
-        # 生成道具的数据
-        allprops = (
-            self.parse_props_from_actor(self._editor_players)
-            + self.parse_props_from_actor(self._editor_actors)
-            + self.collect_props_from_stages(self._editor_stages)
-        )
-        globalnames: Set[str] = set()
-        self._editor_props.clear()
-        for prop in allprops:
-            if prop.name not in globalnames:
-                self._editor_props.append(prop)
-                globalnames.add(prop.name)
-        logger.debug(f"World: {self._name} has {len(self._editor_props)} props.")
-
-        # 生成世界系统的数据
-        self._editor_world_systems = self.create_world_systems(self._raw_world_systems)
+        # 缓存数据
+        self._cache_world_systems: Optional[List[ExcelEditorWorldSystem]] = None
+        self._cache_players: Optional[List[ExcelEditorActor]] = None
+        self._cache_actors: Optional[List[ExcelEditorActor]] = None
+        self._cache_stages: Optional[List[ExcelEditorStage]] = None
+        self._cache_props: Optional[List[ExcelDataProp]] = None
+        self._cache_configs: Optional[List[Any]] = None
 
         # 构建场景的图关系。
-        self.make_stage_graph()
+        self._build_stage_graph()
+
+    ############################################################################################################################
+    @property
+    def editor_props(self) -> List[ExcelDataProp]:
+
+        if self._cache_props is not None:
+            assert isinstance(self._cache_props, list)
+            return self._cache_props
+
+        all_props = (
+            self._parse_props_from_actors(self.editor_players)
+            + self._parse_props_from_actors(self.editor_actors)
+            + self._parse_props_from_stages(self.editor_stages)
+        )
+
+        self._cache_props = list(set(all_props))
+
+        return self._cache_props
+
+    ############################################################################################################################
+    @property
+    def editor_world_systems(self) -> List[ExcelEditorWorldSystem]:
+
+        if self._cache_world_systems is None:
+            self._cache_world_systems = []
+            for item in self._data:
+                if item[EditorProperty.TYPE] != EditorEntityType.WorldSystem:
+                    continue
+
+                if item[EditorProperty.NAME] not in self._world_system_data_base:
+                    assert (
+                        False
+                    ), f"Invalid WorldSystem name: {item[EditorProperty.NAME]}"
+                    continue
+
+                self._cache_world_systems.append(
+                    ExcelEditorWorldSystem(item, self._world_system_data_base)
+                )
+
+        return self._cache_world_systems
+
+    ############################################################################################################################
+    @property
+    def editor_players(self) -> List[ExcelEditorActor]:
+        if self._cache_players is None:
+            self._cache_players = []
+            for item in self._data:
+                if item[EditorProperty.TYPE] != EditorEntityType.Player:
+                    continue
+
+                if item[EditorProperty.NAME] not in self._actor_data_base:
+                    assert False, f"Invalid Player name: {item[EditorProperty.NAME]}"
+                    continue
+
+                self._cache_players.append(
+                    ExcelEditorActor(item, self._actor_data_base, self._prop_data_base)
+                )
+
+        return self._cache_players
+
+    ############################################################################################################################
+    @property
+    def editor_actors(self) -> List[ExcelEditorActor]:
+        if self._cache_actors is None:
+            self._cache_actors = []
+            for item in self._data:
+                if item[EditorProperty.TYPE] != EditorEntityType.Actor:
+                    continue
+
+                if item[EditorProperty.NAME] not in self._actor_data_base:
+                    assert False, f"Invalid Actor name: {item[EditorProperty.NAME]}"
+                    continue
+
+                self._cache_actors.append(
+                    ExcelEditorActor(item, self._actor_data_base, self._prop_data_base)
+                )
+
+        return self._cache_actors
+
+    ############################################################################################################################
+    @property
+    def editor_stages(self) -> List[ExcelEditorStage]:
+
+        if self._cache_stages is None:
+            self._cache_stages = []
+            for item in self._data:
+                if item[EditorProperty.TYPE] != EditorEntityType.Stage:
+                    continue
+
+                if item[EditorProperty.NAME] not in self._stage_data_base:
+                    assert False, f"Invalid Stage name: {item[EditorProperty.NAME]}"
+                    continue
+
+                self._cache_stages.append(
+                    ExcelEditorStage(
+                        item,
+                        self._actor_data_base,
+                        self._prop_data_base,
+                        self._stage_data_base,
+                    )
+                )
+
+        return self._cache_stages
+
+    ############################################################################################################################
+    @property
+    def editor_configs(self) -> List[Any]:
+        if self._cache_configs is None:
+            self._cache_configs = []
+            for item in self._data:
+                if item[EditorProperty.TYPE] != EditorEntityType.AboutGame:
+                    continue
+                self._cache_configs.append(item)
+        return self._cache_configs
 
     ############################################################################################################################
     @property
     def about_game(self) -> str:
-        if len(self._raw_config) == 0:
+        if len(self.editor_configs) == 0:
             return ""
-        data = self._raw_config[0]
-        about_game: str = ""
-        if not pd.isna(data["description"]):
-            about_game = data["description"]
-        return about_game
+        data = self.editor_configs[0]
+        if not pd.isna(data[EditorProperty.DESCRIPTION]):
+            return str(data[EditorProperty.DESCRIPTION])
+        return ""
 
     ############################################################################################################################
-    def parse_props_from_actor(
+    def _parse_props_from_actors(
         self, actors: List[ExcelEditorActor]
-    ) -> List[ExcelDataProp]:
-        res = []
-        for _d in actors:
-            for tp in _d._prop_data:
-                prop = tp[0]
-                if prop not in res:
-                    res.append(prop)
-        return res
-
-    ############################################################################################################################
-    def collect_props_from_stages(
-        self, editor_stages: List[ExcelEditorStage]
     ) -> List[ExcelDataProp]:
 
         ret = []
-
-        for stage in editor_stages:
-            for tp in stage._stage_prop:
+        for actor in actors:
+            for tp in actor.parse_actor_prop():
                 prop = tp[0]
+                assert prop not in ret
+                if prop not in ret:
+                    ret.append(prop)
+        return ret
+
+    ############################################################################################################################
+    def _parse_props_from_stages(
+        self, stages: List[ExcelEditorStage]
+    ) -> List[ExcelDataProp]:
+
+        ret = []
+        for stage in stages:
+            for tp in stage.parse_props_in_stage():
+                prop = tp[0]
+                assert prop not in ret
                 if prop not in ret:
                     ret.append(prop)
 
         return ret
 
     ############################################################################################################################
-    # 先将数据分类
-    def classify(
-        self,
-        out_worlds: List[Any],
-        out_players: List[Any],
-        out_actors: List[Any],
-        out_stages: List[Any],
-        out_config: List[Any],
-    ) -> None:
-        #
-        out_worlds.clear()
-        out_players.clear()
-        out_actors.clear()
-        out_stages.clear()
-        #
-        for item in self._data:
-            if item["type"] == EditorEntityType.WorldSystem:
-                out_worlds.append(item)
-            elif item["type"] == EditorEntityType.Player:
-                out_players.append(item)
-            elif item["type"] == EditorEntityType.Actor:
-                out_actors.append(item)
-            elif item["type"] == EditorEntityType.Stage:
-                out_stages.append(item)
-            elif item["type"] == EditorEntityType.AboutGame:
-                out_config.append(item)
-            else:
-                logger.error(f"Invalid type: {item['type']}")
+    def gen_model(self) -> GameModel:
+
+        return GameModel(
+            save_round=0,
+            players=[editor_actor.instance() for editor_actor in self.editor_players],
+            actors=[editor_actor.instance() for editor_actor in self.editor_actors],
+            stages=[editor_stage.instance() for editor_stage in self.editor_stages],
+            world_systems=[
+                editor_world_system.instance()
+                for editor_world_system in self.editor_world_systems
+            ],
+            database=self._data_base(),
+            about_game=self.about_game,
+            version=self._version,
+        )
 
     ############################################################################################################################
-    def create_world_systems(
-        self, raw_world_systems: List[Any]
-    ) -> List[ExcelEditorWorldSystem]:
-        res: List[ExcelEditorWorldSystem] = []
-        for item in raw_world_systems:
-            if item["name"] not in self._world_system_data_base:
-                logger.error(f"Invalid WorldSystem name: {item['name']}")
-                continue
-            res.append(ExcelEditorWorldSystem(item, self._world_system_data_base))
-        return res
+    def _data_base(self) -> DataBaseModel:
+
+        return DataBaseModel(
+            actors=[
+                data.gen_model() for data in self.editor_players + self.editor_actors
+            ],
+            stages=[data.gen_model() for data in self.editor_stages],
+            props=[data.gen_model() for data in self.editor_props],
+            world_systems=[data.gen_model() for data in self.editor_world_systems],
+        )
 
     ############################################################################################################################
-    def create_players(self, players: List[Any]) -> List[ExcelEditorActor]:
-        return self.create_actors(players)
-
-    ############################################################################################################################
-    def create_actors(self, actors: List[Any]) -> List[ExcelEditorActor]:
-        ret: List[ExcelEditorActor] = []
-        for item in actors:
-            if item["name"] not in self._actor_data_base:
-                logger.error(f"Invalid  name: {item['name']}")
-                continue
-            editor_actor = ExcelEditorActor(
-                item, self._actor_data_base, self._prop_data_base
-            )
-            ret.append(editor_actor)
-        return ret
-
-    ############################################################################################################################
-    def create_stages(self, stages: List[Any]) -> List[ExcelEditorStage]:
-        ret: List[ExcelEditorStage] = []
-        for item in stages:
-            if item["name"] not in self._stage_data_base:
-                logger.error(f"Invalid Stage name: {item['name']}")
-                continue
-            editor_stage = ExcelEditorStage(
-                item, self._actor_data_base, self._prop_data_base, self._stage_data_base
-            )
-            ret.append(editor_stage)
-        return ret
-
-    ############################################################################################################################
-    # 最后生成JSON
-    def serialization(self) -> Dict[str, Any]:
-
-        output: Dict[str, Any] = {}
-        output["players"] = [
-            editor_actor.proxy() for editor_actor in self._editor_players
-        ]
-        output["actors"] = [
-            editor_actor.proxy() for editor_actor in self._editor_actors
-        ]
-        output["stages"] = [
-            editor_stage.proxy() for editor_stage in self._editor_stages
-        ]
-        output["world_systems"] = [
-            editor_world_system.proxy()
-            for editor_world_system in self._editor_world_systems
-        ]
-        output["database"] = self.data_base()
-        output["about_game"] = self.about_game
-
-        version_sign = ""  # input("请输入版本号:")
-        if version_sign == "":
-            version_sign = RPGGameConfig.CHECK_GAME_RESOURCE_VERSION  # todo
-            logger.warning(f"使用默认的版本号: {version_sign}")
-
-        output["version"] = version_sign
-        return output
-
-    ############################################################################################################################
-    def data_base(self) -> Dict[str, Any]:
-
-        output: Dict[str, Any] = {}
-
-        # 角色
-        actor_data_base = self._editor_players + self._editor_actors
-        output["actors"] = [data.serialization() for data in actor_data_base]
-
-        # 场景
-        output["stages"] = [data.serialization() for data in self._editor_stages]
-
-        # 道具
-        output["props"] = []
-        for prop in self._editor_props:
-            output["props"].append(prop.serialization())  # 要全的道具数据
-
-        # 世界系统
-        output["world_systems"] = [
-            data.serialization() for data in self._editor_world_systems
-        ]
-        return output
-
-    ############################################################################################################################
-    def write_game_editor(self, directory: str) -> int:
+    def write(self, directory: str) -> int:
         return game_sample.utils.write_text_file(
             Path(directory),
             f"{self._name}.json",
-            json.dumps(self.serialization(), indent=2, ensure_ascii=False),
+            self.gen_model().model_dump_json(),
         )
 
     ############################################################################################################################
-    def write_agent_list(self, directory: str) -> int:
+    def write_agents(self, directory: str) -> int:
 
-        actors = self._editor_players + self._editor_actors
-        actor_list: List[Dict[str, str]] = []
-        for actor in actors:
-            actor_list.append({actor.name: str(actor.gen_agentpy_path)})
-
-        stage_list: List[Dict[str, str]] = []
-        for stage in self._editor_stages:
-            stage_list.append({stage.name: str(stage.gen_agentpy_path)})
-
-        world_system_list: List[Dict[str, str]] = []
-        for world_system in self._editor_world_systems:
-            world_system_list.append(
+        model = GameAgentsConfigModel(
+            actors=[
+                {actor.name: str(actor.gen_agentpy_path)}
+                for actor in self.editor_players + self.editor_actors
+            ],
+            stages=[
+                {stage.name: str(stage.gen_agentpy_path)}
+                for stage in self.editor_stages
+            ],
+            world_systems=[
                 {world_system.name: str(world_system.gen_agentpy_path)}
-            )
+                for world_system in self.editor_world_systems
+            ],
+        )
 
-        final = {
-            "actors": actor_list,
-            "stages": stage_list,
-            "world_systems": world_system_list,
-        }
         return game_sample.utils.write_text_file(
             Path(directory),
             f"{self._name}_agents.json",
-            json.dumps(final, indent=2, ensure_ascii=False),
+            model.model_dump_json(),
         )
 
     ############################################################################################################################
-    def get_stage_editor(self, stage_name: str) -> Optional[ExcelEditorStage]:
-        for stage in self._editor_stages:
+    def _get_stage_editor(self, stage_name: str) -> Optional[ExcelEditorStage]:
+        for stage in self.editor_stages:
             if stage.name == stage_name:
                 return stage
         return None
 
     ############################################################################################################################
-    def make_stage_graph(self) -> None:
+    def _build_stage_graph(self) -> None:
+        for stage_editor in self.editor_stages:
 
-        for stage_editor in self._editor_stages:
+            for stage_name in stage_editor.stage_graph:
 
-            stage_graph = stage_editor.stage_graph
-            for stage_name_in_graph in stage_graph:
-
-                find_stage = self.get_stage_editor(stage_name_in_graph)
-                if find_stage is None:
-                    logger.error(f"Invalid stage name: {stage_name_in_graph}")
+                matching_stage = self._get_stage_editor(stage_name)
+                if matching_stage is None:
+                    assert False, f"Invalid stage name: {stage_name}"
                     continue
 
-                find_stage.add_stage_graph(stage_editor.name)
+                matching_stage.add_stage_graph(stage_editor.name)
 
 
 ############################################################################################################################

@@ -3,82 +3,102 @@ from pathlib import Path
 
 root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
-from typing import Any, Dict, List, cast
+from typing import Any, List, cast
+from my_data.model_def import PropModel, PropType, AttributesIndex
+from enum import StrEnum, unique
+
+
+@unique
+class DataPropProperty(StrEnum):
+    NAME = "name"
+    CODE_NAME = "codename"
+    DESCRIPTION = "description"
+    RAG = "RAG"
+    TYPE = "type"
+    ATTRIBUTES = "attributes"
+    APPEARANCE = "appearance"
+
+
+############################################################################################################
 
 
 class ExcelDataProp:
 
     def __init__(self, data: Any) -> None:
+        assert data is not None
         self._data = data
+
         assert self.type in [
-            "Special",
-            "Weapon",
-            "Clothes",
-            "NonConsumableItem",
-            "ConsumableItem",
-            "Skill",
+            PropType.TYPE_SPECIAL,
+            PropType.TYPE_WEAPON,
+            PropType.TYPE_CLOTHES,
+            PropType.TYPE_NON_CONSUMABLE_ITEM,
+            PropType.TYPE_CONSUMABLE_ITEM,
+            PropType.TYPE_SKILL,
         ], f"Invalid Prop type: {self.type}"
 
+    ############################################################################################################
     @property
     def name(self) -> str:
-        return str(self._data["name"])
+        return str(self._data[DataPropProperty.NAME])
 
+    ############################################################################################################
     @property
     def codename(self) -> str:
-        return str(self._data["codename"])
+        return str(self._data[DataPropProperty.CODE_NAME])
 
+    ############################################################################################################
     @property
     def description(self) -> str:
-        return str(self._data["description"])
+        return str(self._data[DataPropProperty.DESCRIPTION])
 
+    ############################################################################################################
     @property
     def rag(self) -> str:
-        return str(self._data["RAG"])
+        return str(self._data[DataPropProperty.RAG])
 
+    ############################################################################################################
     @property
     def type(self) -> str:
-        return str(self._data["type"])
+        return str(self._data[DataPropProperty.TYPE])
 
+    ############################################################################################################
     @property
     def attributes(self) -> List[int]:
         assert self._data is not None
-        data = cast(str, self._data["attributes"])
+        data = cast(str, self._data[DataPropProperty.ATTRIBUTES])
         assert "," in data, f"raw_string_val: {data} is not valid."
         values = [int(attr) for attr in data.split(",")]
-        if len(values) < 10:
-            values.extend([0] * (10 - len(values)))
+        if len(values) < AttributesIndex.MAX.value:
+            values.extend([0] * (AttributesIndex.MAX.value - len(values)))
         return values
 
+    ############################################################################################################
     @property
     def appearance(self) -> str:
-        return str(self._data["appearance"])
+        return str(self._data[DataPropProperty.APPEARANCE])
 
     ############################################################################################################
     @property
     def can_placed(self) -> bool:
-        return (
-            self.type == "Weapon"
-            or self.type == "Clothes"
-            or self.type == "NonConsumableItem"
-            or self.type == "ConsumableItem"
+        return self.type in [
+            PropType.TYPE_WEAPON,
+            PropType.TYPE_CLOTHES,
+            PropType.TYPE_NON_CONSUMABLE_ITEM,
+            PropType.TYPE_CONSUMABLE_ITEM,
+        ]
+
+    ############################################################################################################
+    def gen_model(self) -> PropModel:
+
+        return PropModel(
+            name=self.name,
+            codename=self.codename,
+            description=self.description,
+            type=self.type,
+            attributes=self.attributes,
+            appearance=self.appearance,
         )
-
-    ############################################################################################################
-    def serialization(self) -> Dict[str, Any]:
-        output: Dict[str, Any] = {}
-        output["name"] = self.name
-        output["codename"] = self.codename
-        output["description"] = self.description
-        output["type"] = self.type
-        output["attributes"] = self.attributes
-        output["appearance"] = self.appearance
-        return output
-
-    ############################################################################################################
-    def proxy(self) -> Dict[str, Any]:
-        output: Dict[str, str] = {}
-        output["name"] = self.name
-        return output
 
 
 ############################################################################################################

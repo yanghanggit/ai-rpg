@@ -2,9 +2,10 @@ from loguru import logger
 import datetime
 from pathlib import Path
 import os
-from typing import List, Dict, Any, Set
+from typing import Set
 import json
 from rpg_game.rpg_game_config import RPGGameConfig
+from my_data.model_def import GameAgentsConfigModel
 
 
 ####################################################################################################################################
@@ -24,13 +25,22 @@ def run_agents(game_name: str) -> None:
     try:
 
         content: str = file_path.read_text(encoding="utf-8")
-        data: Dict[str, List[Dict[str, Any]]] = json.loads(content)
+        game_agents_config_model: GameAgentsConfigModel = (
+            GameAgentsConfigModel.model_validate(json.loads(content))
+        )
 
         agentpy_paths: Set[str] = set()
-        for key1, value1 in data.items():
-            for dict1 in value1:
-                for key2, value2 in dict1.items():
-                    agentpy_paths.add(value2)
+        for dict1 in game_agents_config_model.actors:
+            for key1, value1 in dict1.items():
+                agentpy_paths.add(value1)
+
+        for dict2 in game_agents_config_model.stages:
+            for key2, value2 in dict2.items():
+                agentpy_paths.add(value2)
+
+        for dict3 in game_agents_config_model.world_systems:
+            for key3, value3 in dict3.items():
+                agentpy_paths.add(value3)
 
         if len(agentpy_paths) == 0:
             logger.error("No agentpy paths found.")

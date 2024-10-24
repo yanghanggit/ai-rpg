@@ -14,10 +14,10 @@ from typing import Dict, final, override, List, Any
 from rpg_game.rpg_game import RPGGame
 from my_data.model_def import (
     GameModel,
-    ActorProxyModel,
-    PropProxyModel,
-    StageProxyModel,
-    WorldSystemProxyModel,
+    ActorInstanceModel,
+    PropInstanceModel,
+    StageInstanceModel,
+    WorldSystemInstanceModel,
 )
 from extended_systems.files_def import PropFile
 from pathlib import Path
@@ -78,9 +78,9 @@ class SaveGameResourceSystem(ExecuteProcessor):
             game_model.actors.append(actor_proxy_model)
 
     ############################################################################################################
-    def _create_actor_proxy_model(self, actor_entity: Entity) -> ActorProxyModel:
+    def _create_actor_proxy_model(self, actor_entity: Entity) -> ActorInstanceModel:
 
-        ret = ActorProxyModel(name="", guid=0, props=[], actor_current_using_prop=[])
+        ret = ActorInstanceModel(name="", guid=0, props=[], actor_current_using_prop=[])
 
         actor_comp = actor_entity.get(ActorComponent)
         ret.name = actor_comp.name
@@ -101,14 +101,14 @@ class SaveGameResourceSystem(ExecuteProcessor):
         return ret
 
     ############################################################################################################
-    def _create_prop_proxy_model(self, entity: Entity) -> List[PropProxyModel]:
+    def _create_prop_proxy_model(self, entity: Entity) -> List[PropInstanceModel]:
 
-        ret: List[PropProxyModel] = []
+        ret: List[PropInstanceModel] = []
         safe_name = self._context.safe_get_entity_name(entity)
         prop_files = self._context._file_system.get_files(PropFile, safe_name)
 
         for prop_file in prop_files:
-            new_model = PropProxyModel(
+            new_model = PropInstanceModel(
                 name=prop_file.name, guid=prop_file.guid, count=prop_file.count
             )
             ret.append(new_model)
@@ -129,9 +129,11 @@ class SaveGameResourceSystem(ExecuteProcessor):
             game_model.stages.append(stage_proxy_model)
 
     ############################################################################################################
-    def _create_stage_proxy_model(self, stage_entity: Entity) -> StageProxyModel:
+    def _create_stage_proxy_model(self, stage_entity: Entity) -> StageInstanceModel:
 
-        ret: StageProxyModel = StageProxyModel(name="", guid=0, props=[], actors=[])
+        ret: StageInstanceModel = StageInstanceModel(
+            name="", guid=0, props=[], actors=[]
+        )
 
         stage_comp = stage_entity.get(StageComponent)
         ret.name = stage_comp.name
@@ -157,7 +159,7 @@ class SaveGameResourceSystem(ExecuteProcessor):
         ).entities
         for world_system_entity in world_system_entities:
 
-            new_model = WorldSystemProxyModel(name="", guid=0)
+            new_model = WorldSystemInstanceModel(name="", guid=0)
 
             world_comp = world_system_entity.get(WorldComponent)
             new_model.name = world_comp.name

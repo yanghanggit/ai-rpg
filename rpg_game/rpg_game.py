@@ -23,12 +23,12 @@ from rpg_game.base_game import BaseGame
 import extended_systems.file_system_helper
 from rpg_game.rpg_entitas_processors import RPGEntitasProcessors
 from my_data.model_def import (
-    ActorProxyModel,
-    StageProxyModel,
+    ActorInstanceModel,
+    StageInstanceModel,
     ActorModel,
     StageModel,
     WorldSystemModel,
-    WorldSystemProxyModel,
+    WorldSystemInstanceModel,
     PropFileModel,
 )
 from my_data.model_def import AttributesIndex
@@ -170,7 +170,7 @@ class RPGGame(BaseGame):
     ###############################################################################################################################################
     def create_world_system_entity(
         self,
-        world_system_proxy: WorldSystemProxyModel,
+        world_system_proxy: WorldSystemInstanceModel,
         world_system_model: WorldSystemModel,
         context: RPGEntitasContext,
     ) -> Entity:
@@ -198,7 +198,7 @@ class RPGGame(BaseGame):
 
     ###############################################################################################################################################
     def create_player_entities(
-        self, game_resource: GameResource, actors_proxy: List[ActorProxyModel]
+        self, game_resource: GameResource, actors_proxy: List[ActorInstanceModel]
     ) -> List[Entity]:
 
         assert game_resource is not None
@@ -218,7 +218,7 @@ class RPGGame(BaseGame):
 
     ###############################################################################################################################################
     def create_actor_entities(
-        self, game_resource: GameResource, actors_proxy: List[ActorProxyModel]
+        self, game_resource: GameResource, actors_proxy: List[ActorInstanceModel]
     ) -> List[Entity]:
 
         assert game_resource is not None
@@ -243,7 +243,7 @@ class RPGGame(BaseGame):
     ###############################################################################################################################################
     def create_actor_entity(
         self,
-        actor_proxy: ActorProxyModel,
+        actor_proxy: ActorInstanceModel,
         actor_model: ActorModel,
         context: RPGEntitasContext,
     ) -> Entity:
@@ -374,7 +374,7 @@ class RPGGame(BaseGame):
     ###############################################################################################################################################
     def create_stage_entity(
         self,
-        stage_proxy: StageProxyModel,
+        stage_proxy: StageInstanceModel,
         stage_model: StageModel,
         context: RPGEntitasContext,
     ) -> Entity:

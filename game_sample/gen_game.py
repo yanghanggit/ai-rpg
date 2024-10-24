@@ -9,13 +9,13 @@ from pandas.core.frame import DataFrame
 import json
 from game_sample.configuration import EXCEL_EDITOR, GAME_NAME, OUTPUT_RUNTIMES_DIR
 from game_sample.gen_funcs import (
-    gen_all_actors,
-    gen_all_stages,
-    gen_all_props,
-    analyze_actor_relationship,
-    analyze_stage_relationship,
-    analyze_relationship_between_actors_and_props,
-    gen_all_world_system,
+    gen_actors_data_base,
+    gen_stages_data_base,
+    gen_prop_data_base,
+    build_actor_relationships,
+    build_stage_relationship,
+    build_relationship_between_actors_and_props,
+    gen_world_system_data_base,
 )
 from game_sample.excel_data_prop import ExcelDataProp
 from game_sample.excel_data_world_system import ExcelDataWorldSystem
@@ -24,6 +24,7 @@ from game_sample.game_editor import ExcelEditorGame
 from typing import List, Dict, Any, Set
 from game_sample.excel_data_actor import ExcelDataActor
 from game_sample.gen_sys_prompt_templates import gen_sys_prompt_templates
+from rpg_game.rpg_game_config import RPGGameConfig, GEN_GAMES
 
 
 ############################################################################################################
@@ -45,6 +46,7 @@ def create_game_editor(
     list_data: List[Any] = json.loads(json_data)
     return ExcelEditorGame(
         sheet_name_as_game_name,
+        RPGGameConfig.CHECK_GAME_RESOURCE_VERSION,
         list_data,
         actor_data_base,
         prop_data_base,
@@ -82,15 +84,15 @@ def main(game_names: Set[str]) -> None:
     gen_sys_prompt_templates()
 
     # 分析必要数据
-    gen_all_actors(actor_sheet, actor_data_base)
-    gen_all_stages(stage_sheet, stage_data_base)
-    gen_all_props(prop_sheet, prop_data_base)
-    gen_all_world_system(world_system_sheet, world_system_data_base)
+    gen_actors_data_base(actor_sheet, actor_data_base)
+    gen_stages_data_base(stage_sheet, stage_data_base)
+    gen_prop_data_base(prop_sheet, prop_data_base)
+    gen_world_system_data_base(world_system_sheet, world_system_data_base)
 
     # 尝试分析之间的关系并做一定的自我检查，这里是例子，实际应用中，可以根据需求做更多的检查
-    analyze_actor_relationship(actor_data_base)
-    analyze_stage_relationship(stage_data_base, actor_data_base)
-    analyze_relationship_between_actors_and_props(prop_data_base, actor_data_base)
+    build_actor_relationships(actor_data_base)
+    build_stage_relationship(stage_data_base, actor_data_base)
+    build_relationship_between_actors_and_props(prop_data_base, actor_data_base)
 
     gen_games = game_names.copy()
 
@@ -113,10 +115,14 @@ def main(game_names: Set[str]) -> None:
         )
         assert game_editor is not None, "创建GameEditor失败"
         if game_editor is not None:
-            game_editor.write_game_editor(f"{GAME_NAME}/{OUTPUT_RUNTIMES_DIR}/")
-            game_editor.write_agent_list(f"{GAME_NAME}/{OUTPUT_RUNTIMES_DIR}/")
+
+            if game_editor.write(f"{GAME_NAME}/{OUTPUT_RUNTIMES_DIR}/") > 0:
+                logger.warning(f"game_editor.write: {sheet_name_as_game_name}")
+
+            if game_editor.write_agents(f"{GAME_NAME}/{OUTPUT_RUNTIMES_DIR}/") > 0:
+                logger.warning(f"game_editor.write_agents: {sheet_name_as_game_name}")
 
 
 ############################################################################################################
 if __name__ == "__main__":
-    main(set({"World1", "World2", "World3"}))
+    main(set(GEN_GAMES))

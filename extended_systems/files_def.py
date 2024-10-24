@@ -6,7 +6,7 @@ from my_data.model_def import (
     EntityProfileModel,
     StageArchiveFileModel,
     ActorArchiveFileModel,
-    PropProxyModel,
+    PropInstanceModel,
 )
 from pathlib import Path
 from loguru import logger
@@ -87,7 +87,7 @@ class PropFile(BaseFile):
 
     ############################################################################################################
     @property
-    def prop_proxy_model(self) -> PropProxyModel:
+    def prop_proxy_model(self) -> PropInstanceModel:
         return self._model.prop_proxy_model
 
     ############################################################################################################

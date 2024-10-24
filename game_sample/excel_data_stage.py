@@ -3,69 +3,89 @@ from pathlib import Path
 
 root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
-from game_sample.configuration import (
-    GAME_NAME,
-    OUT_PUT_STAGE_SYS_PROMPT_DIR,
-    OUT_PUT_AGENT_DIR,
-)
+import game_sample.configuration as configuration
 import game_sample.utils
 from typing import Any
+from enum import StrEnum, unique
 
 
-############################################################################################################
-############################################################################################################
+@unique
+class DataStageProperty(StrEnum):
+    NAME = "name"
+    CODENAME = "codename"
+    DESCRIPTION = "description"
+    PORT = "PORT"
+    API = "API"
+    RAG = "RAG"
+    SYS_PROMPT_TEMPLATE = "sys_prompt_template"
+    AGENTPY_TEMPLATE = "agentpy_template"
+    CONVERSATION_EXAMPLE = "conversation_example"
+
+
 ############################################################################################################
 class ExcelDataStage:
 
     def __init__(self, data: Any) -> None:
+        assert data is not None
         self._data = data
         self._gen_system_prompt: str = ""
         self._gen_agentpy: str = ""
 
+    ############################################################################################################
     @property
     def name(self) -> str:
-        return str(self._data["name"])
+        return str(self._data[DataStageProperty.NAME])
 
+    ############################################################################################################
     @property
     def codename(self) -> str:
-        return str(self._data["codename"])
+        return str(self._data[DataStageProperty.CODENAME])
 
+    ############################################################################################################
     @property
     def description(self) -> str:
-        return str(self._data["description"])
+        return str(self._data[DataStageProperty.DESCRIPTION])
 
+    ############################################################################################################
     @property
     def port(self) -> int:
-        return int(self._data["PORT"])
+        return int(self._data[DataStageProperty.PORT])
 
+    ############################################################################################################
     @property
     def api(self) -> str:
-        return str(self._data["API"])
+        return str(self._data[DataStageProperty.API])
 
+    ############################################################################################################
     @property
     def rag(self) -> str:
-        return str(self._data["RAG"])
+        return str(self._data[DataStageProperty.RAG])
 
+    ############################################################################################################
     @property
     def sys_prompt_template_path(self) -> str:
-        return str(self._data["sys_prompt_template"])
+        return str(self._data[DataStageProperty.SYS_PROMPT_TEMPLATE])
 
+    ############################################################################################################
     @property
     def agentpy_template_path(self) -> str:
-        return str(self._data["agentpy_template"])
+        return str(self._data[DataStageProperty.AGENTPY_TEMPLATE])
 
+    ############################################################################################################
+    @property
+    def conversation_example(self) -> str:
+        return str(self._data[DataStageProperty.CONVERSATION_EXAMPLE])
+
+    ############################################################################################################
     @property
     def localhost(self) -> str:
         return f"http://localhost:{self.port}{self.api}/"
 
+    ############################################################################################################
     @property
     def gen_agentpy_path(self) -> Path:
-        directory = Path(GAME_NAME) / OUT_PUT_AGENT_DIR
+        directory = Path(configuration.GAME_NAME) / configuration.OUT_PUT_AGENT_DIR
         return directory / f"{self.codename}_agent.py"
-
-    @property
-    def conversation_example(self) -> str:
-        return str(self._data["conversation_example"])
 
     ############################################################################################################
     def gen_sys_prompt(self, sys_prompt_template: str) -> str:
@@ -81,10 +101,12 @@ class ExcelDataStage:
     ############################################################################################################
     def gen_agentpy(self, agent_py_template: str) -> str:
         gen_py = str(agent_py_template)
-        gen_py = gen_py.replace("<%RAG_MD_PATH>", f"""/{GAME_NAME}/{self.rag}""")
+        gen_py = gen_py.replace(
+            "<%RAG_MD_PATH>", f"""/{configuration.GAME_NAME}/{self.rag}"""
+        )
         gen_py = gen_py.replace(
             "<%SYS_PROMPT_MD_PATH>",
-            f"""/{GAME_NAME}/{OUT_PUT_STAGE_SYS_PROMPT_DIR}/{self.codename}_sys_prompt.md""",
+            f"""/{configuration.GAME_NAME}/{configuration.OUT_PUT_STAGE_SYS_PROMPT_DIR}/{self.codename}_sys_prompt.md""",
         )
         gen_py = gen_py.replace("<%PORT>", str(self.port))
         gen_py = gen_py.replace("<%API>", self.api)
@@ -93,19 +115,16 @@ class ExcelDataStage:
 
     ############################################################################################################
     def write_sys_prompt(self) -> None:
-        directory = Path(GAME_NAME) / OUT_PUT_STAGE_SYS_PROMPT_DIR
+        directory = (
+            Path(configuration.GAME_NAME) / configuration.OUT_PUT_STAGE_SYS_PROMPT_DIR
+        )
         game_sample.utils.write_text_file(
             directory, f"{self.codename}_sys_prompt.md", self._gen_system_prompt
         )
 
     ############################################################################################################
     def write_agentpy(self) -> None:
-        directory = Path(GAME_NAME) / OUT_PUT_AGENT_DIR
+        directory = Path(configuration.GAME_NAME) / configuration.OUT_PUT_AGENT_DIR
         game_sample.utils.write_text_file(
             directory, f"{self.codename}_agent.py", self._gen_agentpy
         )
-
-
-############################################################################################################
-############################################################################################################
-############################################################################################################

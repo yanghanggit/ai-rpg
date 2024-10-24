@@ -16,7 +16,7 @@ pip install langchain langchain_core langserve fastapi langchain_openai sse_star
 ```
 
 ## 严格模式检查
-- mypy --strict game_sample/gen_game.py batch_run_agents.py terminal_run.py server_run.py web_run_simulate.py batch_run_agents2.py
+- mypy --strict game_sample/gen_game.py batch_run_agents.py terminal_run.py server_run.py web_run_simulate.py
 
 
 ### 说明

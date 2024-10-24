@@ -13,7 +13,7 @@ from loguru import logger
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt
 from typing import final, override, Set, Any
 from rpg_game.rpg_game import RPGGame
-from my_data.model_def import AgentEvent
+from my_models.models_def import AgentEvent
 
 
 ################################################################################################################################################

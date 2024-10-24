@@ -8,7 +8,7 @@ from game_sample.excel_data_prop import ExcelDataProp
 import game_sample.utils
 from game_sample.excel_data_actor import ExcelDataActor
 from game_sample.editor_guid_generator import editor_guid_generator
-from my_data.model_def import (
+from my_models.models_def import (
     EditorEntityType,
     EditorProperty,
     ActorModel,

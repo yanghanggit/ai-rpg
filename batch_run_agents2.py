@@ -4,7 +4,7 @@ import os
 from typing import List, Set
 import json
 import rpg_game.rpg_game_config as rpg_game_config
-from my_data.model_def import GameAgentsConfigModel
+from my_models.models_def import GameAgentsConfigModel
 
 
 ####################################################################################################################################

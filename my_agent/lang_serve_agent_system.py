@@ -1,11 +1,10 @@
 from loguru import logger
 from typing import Dict, List, Optional, Set, cast
 from langchain_core.messages import HumanMessage, AIMessage
-import json
 from pathlib import Path
 from my_agent.lang_serve_agent import LangServeAgent
 from my_agent.remote_runnable_wrapper import RemoteRunnableWrapper
-from my_data.model_def import (
+from my_models.models_def import (
     AgentMessageType,
     AgentMessageModel,
     AgentChatHistoryDumpModel,

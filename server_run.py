@@ -30,7 +30,7 @@ from player.player_proxy import PlayerProxy
 import rpg_game.rpg_game_config as rpg_game_config
 from pathlib import Path
 import shutil
-from my_data.model_def import PlayerProxyModel
+from my_models.models_def import PlayerProxyModel
 
 fastapi_app = FastAPI()
 

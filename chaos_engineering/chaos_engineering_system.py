@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from my_data.game_resource import GameResource
+from rpg_game.rpg_game_resource import RPGGameResource
 from typing import Any, Optional
 
 
@@ -7,13 +7,13 @@ class IChaosEngineering(ABC):
 
     @abstractmethod
     def on_pre_create_game(
-        self, extended_context: Any, game_resource: GameResource
+        self, extended_context: Any, game_resource: RPGGameResource
     ) -> None:
         pass
 
     @abstractmethod
     def on_post_create_game(
-        self, extended_context: Any, game_resource: GameResource
+        self, extended_context: Any, game_resource: RPGGameResource
     ) -> None:
         pass
 

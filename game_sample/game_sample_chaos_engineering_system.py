@@ -5,7 +5,7 @@ from pathlib import Path
 root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
-from my_data.game_resource import GameResource
+from rpg_game.rpg_game_resource import RPGGameResource
 from typing import Any, Optional
 
 
@@ -15,12 +15,12 @@ class GameSampleChaosEngineeringSystem(IChaosEngineering):
         self._name: str = name
 
     def on_pre_create_game(
-        self, extended_context: Any, game_resource: GameResource
+        self, extended_context: Any, game_resource: RPGGameResource
     ) -> None:
         pass
 
     def on_post_create_game(
-        self, extended_context: Any, game_resource: GameResource
+        self, extended_context: Any, game_resource: RPGGameResource
     ) -> None:
         pass
 

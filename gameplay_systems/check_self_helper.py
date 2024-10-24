@@ -8,7 +8,7 @@ from gameplay_systems.components import (
 from typing import List, Dict, Optional
 from extended_systems.files_def import PropFile
 import extended_systems.file_system_helper
-from my_data.model_def import PropType
+from my_models.models_def import PropType
 
 
 class SelfChecker:

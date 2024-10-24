@@ -1,8 +1,8 @@
 from enum import Enum
 from pydantic import BaseModel
 from typing import Dict, Set, List, Optional, Final
-from my_data.model_def import GameModel, WatchActionModel, CheckActionModel
-from my_data.model_def import PlayerClientMessage
+from my_models.models_def import GameModel, WatchActionModel, CheckActionModel
+from my_models.models_def import PlayerClientMessage
 
 
 class WS_CONFIG:

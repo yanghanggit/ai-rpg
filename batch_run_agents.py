@@ -3,7 +3,7 @@ import datetime
 import os
 from typing import Set
 import json
-from my_data.model_def import GameAgentsConfigModel
+from my_models.models_def import GameAgentsConfigModel
 import rpg_game.rpg_game_config as rpg_game_config
 
 

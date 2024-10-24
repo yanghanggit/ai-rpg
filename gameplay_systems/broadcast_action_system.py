@@ -5,7 +5,7 @@ from gameplay_systems.action_components import BroadcastAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from rpg_game.rpg_game import RPGGame
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt
-from my_data.model_def import AgentEvent
+from my_models.models_def import AgentEvent
 
 
 def _generate_broadcast_prompt(src_name: str, dest_name: str, content: str) -> str:

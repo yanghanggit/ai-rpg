@@ -11,7 +11,7 @@ import extended_systems.file_system_helper
 from extended_systems.files_def import PropFile
 import my_format_string.target_and_message_format_string
 from rpg_game.rpg_game import RPGGame
-from my_data.model_def import AgentEvent
+from my_models.models_def import AgentEvent
 
 
 ################################################################################################################################################

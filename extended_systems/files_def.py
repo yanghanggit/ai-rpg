@@ -1,7 +1,7 @@
 from overrides import override
 import json
 from abc import ABC, abstractmethod
-from my_data.model_def import (
+from my_models.models_def import (
     PropModel,
     EntityProfileModel,
     StageArchiveFileModel,
@@ -10,7 +10,7 @@ from my_data.model_def import (
 )
 from pathlib import Path
 from loguru import logger
-from my_data.model_def import AttributesIndex, PropType, PropFileModel
+from my_models.models_def import AttributesIndex, PropType, PropFileModel
 
 
 ############################################################################################################

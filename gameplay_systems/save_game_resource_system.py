@@ -12,7 +12,7 @@ from gameplay_systems.components import (
 )
 from typing import Dict, final, override, List, Any
 from rpg_game.rpg_game import RPGGame
-from my_data.model_def import (
+from my_models.models_def import (
     GameModel,
     ActorInstanceModel,
     PropInstanceModel,
@@ -21,7 +21,7 @@ from my_data.model_def import (
 )
 from extended_systems.files_def import PropFile
 from pathlib import Path
-from my_data.game_resource import GameResource
+from rpg_game.rpg_game_resource import RPGGameResource
 
 
 @final
@@ -187,7 +187,7 @@ class SaveGameResourceSystem(ExecuteProcessor):
         game_resouce = self._game._game_resource
         assert game_resouce is not None
         assert game_resouce._runtime_dir.exists()
-        return game_resouce._runtime_dir / GameResource.generate_runtime_file_name(
+        return game_resouce._runtime_dir / RPGGameResource.generate_runtime_file_name(
             game_resouce._game_name
         )
 

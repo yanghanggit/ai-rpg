@@ -7,8 +7,8 @@ from typing import Optional
 from dataclasses import dataclass
 import rpg_game.rpg_game_config as rpg_game_config
 import shutil
-from my_data.game_resource import GameResource
-from my_data.model_def import PlayerProxyModel
+from rpg_game.rpg_game_resource import RPGGameResource
+from my_models.models_def import PlayerProxyModel
 
 
 @dataclass
@@ -41,7 +41,7 @@ async def terminal_run(option: TerminalRunOption) -> None:
     assert game_runtime_dir.exists()
 
     # 根据创建还是载入进行不同的处理
-    game_resource: Optional[GameResource] = None
+    game_resource: Optional[RPGGameResource] = None
     if option.new_game:
         game_resource_file_path = rpg_game_config.GEN_GAMES_DIR / f"{game_name}.json"
 

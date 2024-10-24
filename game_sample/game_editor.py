@@ -13,7 +13,7 @@ from game_sample.stage_editor import ExcelEditorStage
 from game_sample.world_system_editor import ExcelEditorWorldSystem
 import pandas as pd
 import game_sample.utils
-from my_data.model_def import (
+from my_models.models_def import (
     EditorEntityType,
     EditorProperty,
     GameModel,

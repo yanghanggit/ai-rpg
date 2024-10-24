@@ -1,7 +1,7 @@
 from entitas import Entity  # type: ignore
 from typing import Optional, Any, cast, List, Dict
 from loguru import logger
-from my_data.game_resource import GameResource
+from rpg_game.rpg_game_resource import RPGGameResource
 from rpg_game.rpg_game import RPGGame
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from extended_systems.file_system import FileSystem
@@ -45,8 +45,8 @@ from player.player_command import (
 import datetime
 import shutil
 import zipfile
-from my_data.model_def import AgentEvent
-from my_data.model_def import GameModel, WatchActionModel, CheckActionModel
+from my_models.models_def import AgentEvent
+from my_models.models_def import GameModel, WatchActionModel, CheckActionModel
 
 
 #######################################################################################################################################
@@ -74,20 +74,20 @@ def _load_game_resource_file(file_path: Path, version: str) -> Any:
 #######################################################################################################################################
 def create_game_resource(
     game_resource_file_path: Path, game_runtime_dir: Path, check_version: str
-) -> Optional[GameResource]:
+) -> Optional[RPGGameResource]:
 
     assert game_resource_file_path.exists()
     game_data = _load_game_resource_file(game_resource_file_path, check_version)
     if game_data is None:
         return None
 
-    return GameResource(game_resource_file_path.stem, game_data, game_runtime_dir)
+    return RPGGameResource(game_resource_file_path.stem, game_data, game_runtime_dir)
 
 
 #######################################################################################################################################
 def load_game_resource(
     load_archive_zip_path: Path, game_runtime_dir: Path, check_version: str
-) -> Optional[GameResource]:
+) -> Optional[RPGGameResource]:
 
     assert load_archive_zip_path.exists()
 
@@ -100,7 +100,7 @@ def load_game_resource(
             shutil.rmtree(extract_dir)
         zip_ref.extractall(extract_dir)
 
-    game_archive_file_path = extract_dir / GameResource.generate_runtime_file_name(
+    game_archive_file_path = extract_dir / RPGGameResource.generate_runtime_file_name(
         game_name
     )
     if not game_archive_file_path.exists():
@@ -111,7 +111,7 @@ def load_game_resource(
     if game_data is None:
         return None
 
-    load_game_resource = GameResource(game_name, game_data, game_runtime_dir)
+    load_game_resource = RPGGameResource(game_name, game_data, game_runtime_dir)
     load_game_resource.load(extract_dir, game_archive_file_path)
     return load_game_resource
 
@@ -145,7 +145,7 @@ def _create_entitas_context(
 
 
 #######################################################################################################################################
-def create_terminal_rpg_game(game_resource: GameResource) -> Optional[TerminalGame]:
+def create_terminal_rpg_game(game_resource: RPGGameResource) -> Optional[TerminalGame]:
 
     rpg_context = _create_entitas_context(
         GameSampleChaosEngineeringSystem("terminal_rpg_game_chaos")
@@ -157,7 +157,7 @@ def create_terminal_rpg_game(game_resource: GameResource) -> Optional[TerminalGa
 
 
 #######################################################################################################################################
-def create_web_rpg_game(game_resource: GameResource) -> Optional[WebGame]:
+def create_web_rpg_game(game_resource: RPGGameResource) -> Optional[WebGame]:
 
     rpg_context = _create_entitas_context(
         GameSampleChaosEngineeringSystem("web_rpg_game_chaos")

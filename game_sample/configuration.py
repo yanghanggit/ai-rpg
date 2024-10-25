@@ -1,4 +1,23 @@
 from pathlib import Path
+from enum import StrEnum, unique
+
+
+# 文件内容替换的标记
+@unique
+class GenSystemPromptSymbol(StrEnum):
+    NAME = "<%name>"
+    DESCRIPTION = "<%description>"
+    CONVERSATION_EXAMPLE = "<%conversation_example>"
+
+
+# 文件内容替换的标记
+@unique
+class GenAgentAppContentSymbol(StrEnum):
+    SYSTEM_PROMPT_CONTENT = "<%SYSTEM_PROMPT_CONTENT>"
+    RAG_CONTENT = "<%RAG_CONTENT>"
+    PORT = "<%PORT>"
+    API = "<%API>"
+
 
 # Excel文件中的Sheet名称
 ACTOR_SHEET_NAME = "Actor"

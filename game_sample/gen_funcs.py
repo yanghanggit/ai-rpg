@@ -29,9 +29,7 @@ def gen_actors_data_base(sheet: DataFrame, output: Dict[str, ExcelDataActor]) ->
             configuration.GAME_SAMPLE_DIR / excel_actor.sys_prompt_template_path
         )
         assert system_prompt_path.exists(), f"File not found: {system_prompt_path}"
-        excel_actor.gen_sys_prompt(
-            game_sample.utils.read_system_prompt_md(system_prompt_path)
-        )
+        excel_actor.gen_sys_prompt(game_sample.utils.read_text_file(system_prompt_path))
         excel_actor.write_sys_prompt()
         #
         agentpy_template_path = (
@@ -40,9 +38,7 @@ def gen_actors_data_base(sheet: DataFrame, output: Dict[str, ExcelDataActor]) ->
         assert (
             agentpy_template_path.exists()
         ), f"File not found: {agentpy_template_path}"
-        excel_actor.gen_agentpy(
-            game_sample.utils.read_agentpy_template(agentpy_template_path)
-        )
+        excel_actor.gen_agentpy(game_sample.utils.read_text_file(agentpy_template_path))
         excel_actor.write_agentpy()
         #
         output[excel_actor.name] = excel_actor
@@ -61,9 +57,7 @@ def gen_stages_data_base(sheet: DataFrame, output: Dict[str, ExcelDataStage]) ->
             configuration.GAME_SAMPLE_DIR / excel_stage.sys_prompt_template_path
         )
         assert system_prompt_path.exists(), f"File not found: {system_prompt_path}"
-        excel_stage.gen_sys_prompt(
-            game_sample.utils.read_system_prompt_md(system_prompt_path)
-        )
+        excel_stage.gen_sys_prompt(game_sample.utils.read_text_file(system_prompt_path))
         excel_stage.write_sys_prompt()
         #
         agentpy_template_path = (
@@ -72,9 +66,7 @@ def gen_stages_data_base(sheet: DataFrame, output: Dict[str, ExcelDataStage]) ->
         assert (
             agentpy_template_path.exists()
         ), f"File not found: {agentpy_template_path}"
-        excel_stage.gen_agentpy(
-            game_sample.utils.read_agentpy_template(agentpy_template_path)
-        )
+        excel_stage.gen_agentpy(game_sample.utils.read_text_file(agentpy_template_path))
         excel_stage.write_agentpy()
         #
         output[excel_stage.name] = excel_stage
@@ -96,7 +88,7 @@ def gen_world_system_data_base(
         )
         assert system_prompt_path.exists(), f"File not found: {system_prompt_path}"
         excel_world_system.gen_sys_prompt(
-            game_sample.utils.read_system_prompt_md(system_prompt_path)
+            game_sample.utils.read_text_file(system_prompt_path)
         )
         excel_world_system.write_sys_prompt()
         #
@@ -107,7 +99,7 @@ def gen_world_system_data_base(
             agentpy_template_path.exists()
         ), f"File not found: {agentpy_template_path}"
         excel_world_system.gen_agentpy(
-            game_sample.utils.read_agentpy_template(agentpy_template_path)
+            game_sample.utils.read_text_file(agentpy_template_path)
         )
         excel_world_system.write_agentpy()
         #

@@ -14,42 +14,37 @@ from langchain_openai import AzureChatOpenAI
 from langserve import add_routes
 from langserve.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import tool
-from typing import Optional
 
 """
 这是一个Azure Chat OpenAI GPT-4o模板
 """
+############################################################################################################
+############################################################################################################
+############################################################################################################
+PORT: int = int("""<%PORT>""")
+API: str = """<%API>"""
+############################################################################################################
+############################################################################################################
+############################################################################################################
+SYSTEM_PROMPT: str = """
+<%SYSTEM_PROMPT_CONTENT>
+"""
+############################################################################################################
+############################################################################################################
+############################################################################################################
+RAG_CONTENT: str = """
+<%RAG_CONTENT>
+"""
+############################################################################################################
+############################################################################################################
+############################################################################################################
 
-RAG_MD_PATH: str = f"""<%RAG_MD_PATH>"""
-SYS_PROMPT_MD_PATH: str = f"""<%SYS_PROMPT_MD_PATH>"""
-PORT: int = int(f"""<%PORT>""")
-API: str = f"""<%API>"""
-
-
-def read_md(file_path: str) -> Optional[str]:
-    # fullpath = os.getcwd() + filepath
-    path = Path(file_path)
-    if not path.exists():
-        assert False, f"File not found: {path}"
-        return None
-    try:
-        content = path.read_text(encoding="utf-8")
-        return content
-    except Exception as e:
-        assert False, f"An error occurred: {e}"
-        return None
-
-
-_rag_ = read_md(RAG_MD_PATH)
-assert _rag_ is not None, f"RAG_MD_PATH:{RAG_MD_PATH} is None"
-_sys_prompt_ = read_md(SYS_PROMPT_MD_PATH)
-assert _sys_prompt_ is not None, f"SYS_PROMPT_MD_PATH:{SYS_PROMPT_MD_PATH} is None"
 
 prompt = ChatPromptTemplate.from_messages(
     [
         (
             "system",
-            f"""{_sys_prompt_}""",
+            SYSTEM_PROMPT,
         ),
         MessagesPlaceholder(variable_name="chat_history"),
         ("user", "{input}"),

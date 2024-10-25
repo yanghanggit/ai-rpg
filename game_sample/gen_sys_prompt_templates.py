@@ -28,7 +28,7 @@ from game_sample.romance_of_the_three_kingdoms_builtin_prompt import (
     GAME_RULES_SETTING as game_rules_setting,
 )
 
-ADDITIONAL_JSON_OUTPUT_FORMAT_REQUIREMENTS1 = f"""- 所有文本输出必须为第一人称。
+ADDITIONAL_JSON_OUTPUT_FORMAT_REQUIREMENTS1 = """- 所有文本输出必须为第一人称。
 - 每个 JSON 对象必须包含上述键中的一个或多个，不得重复同一个键，也不得使用不在上述中的键。
 - 输出不应包含任何超出所需 JSON 格式的额外文本、解释或总结。
 - 不要使用```json```来封装内容。"""
@@ -39,15 +39,15 @@ ADDITIONAL_JSON_OUTPUT_FORMAT_REQUIREMENTS3 = """- 所有文本输出必须为�
 - 不要使用```json```来封装内容。"""
 
 
-JSON_SAMPLE_BEGINE = "{{"
-JSON_SAMPLE_END = "}}"
+JSON_SAMPLE_BEGINE = r"{{"
+JSON_SAMPLE_END = r"}}"
 
 
 ############################################################################################################
 ############################################################################################################
 ############################################################################################################
-ACTOR_SYS_PROMPT_TEMPLATE = f"""# <%name>
-- 你将扮演这个游戏世界中一个特定的角色，名叫: <%name>。
+ACTOR_SYS_PROMPT_TEMPLATE = f"""# {configuration.GenSystemPromptSymbol.NAME}
+- 你将扮演这个游戏世界中一个特定的角色，名叫: {configuration.GenSystemPromptSymbol.NAME}。
 
 ## 游戏背景与风格设定
 {game_background_and_style_setting}
@@ -56,10 +56,10 @@ ACTOR_SYS_PROMPT_TEMPLATE = f"""# <%name>
 {game_rules_setting}
 
 ## 角色设定
-<%description>
+{configuration.GenSystemPromptSymbol.DESCRIPTION}
 
 ## 你的说话风格与语气
-<%conversation_example>
+{configuration.GenSystemPromptSymbol.CONVERSATION_EXAMPLE}
 
 ## 输出格式指南
 
@@ -84,8 +84,8 @@ ACTOR_SYS_PROMPT_TEMPLATE = f"""# <%name>
 ############################################################################################################
 ############################################################################################################
 
-STAGE_SYS_PROMPT_TEMPLATE = f"""# <%name>
-- 你将扮演这个游戏世界中一个特定的场景，名叫: <%name>。
+STAGE_SYS_PROMPT_TEMPLATE = f"""# {configuration.GenSystemPromptSymbol.NAME}
+- 你将扮演这个游戏世界中一个特定的场景，名叫: {configuration.GenSystemPromptSymbol.NAME}。
 
 ## 游戏背景与风格设定
 {game_background_and_style_setting}
@@ -94,10 +94,10 @@ STAGE_SYS_PROMPT_TEMPLATE = f"""# <%name>
 {game_rules_setting}
 
 ## 场景设定
-<%description>
+{configuration.GenSystemPromptSymbol.DESCRIPTION}
 
 ## 你的说话风格与语气
-<%conversation_example>
+{configuration.GenSystemPromptSymbol.CONVERSATION_EXAMPLE}
 
 ## 输出格式指南
 
@@ -119,8 +119,8 @@ STAGE_SYS_PROMPT_TEMPLATE = f"""# <%name>
 ############################################################################################################
 ############################################################################################################
 
-WORLD_SYSTEM_SYS_PROMPT_TEMPLATE = f"""# <%name>
-- 你将扮演这个游戏世界中一个特定的规则系统，名叫: <%name>。
+WORLD_SYSTEM_SYS_PROMPT_TEMPLATE = f"""# {configuration.GenSystemPromptSymbol.NAME}
+- 你将扮演这个游戏世界中一个特定的规则系统，名叫: {configuration.GenSystemPromptSymbol.NAME}。
 
 ## 游戏背景与风格设定
 {game_background_and_style_setting}
@@ -129,7 +129,7 @@ WORLD_SYSTEM_SYS_PROMPT_TEMPLATE = f"""# <%name>
 {game_rules_setting}
 
 ## 你的设定
-<%description>"""
+{configuration.GenSystemPromptSymbol.DESCRIPTION}"""
 
 
 ############################################################################################################

@@ -45,16 +45,6 @@ def read_text_file(path: Path) -> str:
 
 
 ############################################################################################################
-def read_system_prompt_md(path: Path) -> str:
-    return read_text_file(path)
-
-
-############################################################################################################
-def read_agentpy_template(path: Path) -> str:
-    return read_text_file(path)
-
-
-############################################################################################################
 def parse_prop_info(data: str) -> tuple[str, int]:
     # 例子: "道具", "道具#999"
     if "#" not in data:

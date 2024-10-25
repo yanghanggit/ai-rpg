@@ -7,6 +7,7 @@ import game_sample.configuration as configuration
 import game_sample.utils
 from typing import Any
 from enum import StrEnum, unique
+from loguru import logger
 
 
 @unique
@@ -29,7 +30,7 @@ class ExcelDataWorldSystem:
     def __init__(self, data: Any) -> None:
         assert data is not None
         self._data: Any = data
-        self._gen_sys_prompt: str = ""
+        self._gen_system_prompt: str = ""
         self._gen_agentpy: str = ""
 
     ############################################################################################################
@@ -85,27 +86,31 @@ class ExcelDataWorldSystem:
     ############################################################################################################
     def gen_sys_prompt(self, sys_prompt_template: str) -> str:
         gen_prompt = str(sys_prompt_template)
-        gen_prompt = gen_prompt.replace("<%name>", self.name)
-        gen_prompt = gen_prompt.replace("<%description>", self.description)
-        self._gen_sys_prompt = gen_prompt
-        return self._gen_sys_prompt
+        gen_prompt = gen_prompt.replace(
+            configuration.GenSystemPromptSymbol.NAME, self.name
+        )
+        gen_prompt = gen_prompt.replace(
+            configuration.GenSystemPromptSymbol.DESCRIPTION, self.description
+        )
+        self._gen_system_prompt = gen_prompt
+        return self._gen_system_prompt
 
     ############################################################################################################
     def gen_agentpy(self, agent_py_template: str) -> str:
         gen_py = str(agent_py_template)
         gen_py = gen_py.replace(
-            "<%RAG_MD_PATH>",
-            str(configuration.GAME_SAMPLE_DIR / self.rag),
+            configuration.GenAgentAppContentSymbol.SYSTEM_PROMPT_CONTENT,
+            self._gen_system_prompt,
+        )
+
+        gen_py = gen_py.replace(
+            configuration.GenAgentAppContentSymbol.RAG_CONTENT,
+            game_sample.utils.read_text_file(configuration.GAME_SAMPLE_DIR / self.rag),
         )
         gen_py = gen_py.replace(
-            "<%SYS_PROMPT_MD_PATH>",
-            str(
-                configuration.OUT_PUT_WORLD_SYS_PROMPT_DIR
-                / f"{self.codename}_sys_prompt.md"
-            ),
+            configuration.GenAgentAppContentSymbol.PORT, str(self.port)
         )
-        gen_py = gen_py.replace("<%PORT>", str(self.port))
-        gen_py = gen_py.replace("<%API>", self.api)
+        gen_py = gen_py.replace(configuration.GenAgentAppContentSymbol.API, self.api)
         self._gen_agentpy = gen_py
         return self._gen_agentpy
 
@@ -114,7 +119,7 @@ class ExcelDataWorldSystem:
         game_sample.utils.write_text_file(
             configuration.OUT_PUT_WORLD_SYS_PROMPT_DIR,
             f"{self.codename}_sys_prompt.md",
-            self._gen_sys_prompt,
+            self._gen_system_prompt,
         )
 
     ############################################################################################################

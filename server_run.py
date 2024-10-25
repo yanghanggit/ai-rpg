@@ -122,7 +122,7 @@ async def create(request_data: CreateRequest) -> Dict[str, Any]:
 
     # 游戏启动资源路径
     game_resource_file_path = (
-        rpg_game_config.GEN_GAMES_DIR / f"{request_data.game_name}.json"
+        rpg_game_config.ROOT_GEN_GAMES_DIR / f"{request_data.game_name}.json"
     )
 
     if not game_resource_file_path.exists():

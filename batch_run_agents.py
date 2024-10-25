@@ -5,55 +5,107 @@ from typing import Set, List
 import json
 from my_models.models_def import GameAgentsConfigModel
 import rpg_game.rpg_game_config as rpg_game_config
+from pathlib import Path
 
 
 ####################################################################################################################################
-def _run_agents(game_names: List[str]) -> None:
+def _get_unique_agentpy_names(game_names: List[str]) -> Set[str]:
 
-    agentpy_paths: Set[str] = set()
+    ret_unique_agentpy_names: Set[str] = set()
 
     for game_name in game_names:
 
-        file_name = f"{game_name}_agents.json"
-        file_path = rpg_game_config.GEN_GAMES_DIR / file_name
-        if not file_path.exists() or not file_path.is_file():
-            logger.error(f"File does not exist: {file_path}")
+        agents_config_file_path = (
+            rpg_game_config.ROOT_GEN_GAMES_DIR / f"{game_name}_agents.json"
+        )
+        if (
+            not agents_config_file_path.exists()
+            or not agents_config_file_path.is_file()
+        ):
+            logger.error(f"File does not exist: {agents_config_file_path}")
             continue
 
         try:
 
-            content: str = file_path.read_text(encoding="utf-8")
+            content: str = agents_config_file_path.read_text(encoding="utf-8")
             game_agents_config_model: GameAgentsConfigModel = (
                 GameAgentsConfigModel.model_validate(json.loads(content))
             )
 
             for dict1 in game_agents_config_model.actors:
                 for key1, value1 in dict1.items():
-                    agentpy_paths.add(value1)
+                    ret_unique_agentpy_names.add(value1)
 
             for dict2 in game_agents_config_model.stages:
                 for key2, value2 in dict2.items():
-                    agentpy_paths.add(value2)
+                    ret_unique_agentpy_names.add(value2)
 
             for dict3 in game_agents_config_model.world_systems:
                 for key3, value3 in dict3.items():
-                    agentpy_paths.add(value3)
+                    ret_unique_agentpy_names.add(value3)
 
         except Exception as e:
             logger.error(e)
-            return None
+            assert False, e
 
-    if len(agentpy_paths) == 0:
-        logger.error("No agentpy paths found.")
+    return ret_unique_agentpy_names
+
+
+####################################################################################################################################
+def _get_unique_agentpy_file_paths(unique_agentpy_names: Set[str]) -> List[Path]:
+
+    ## 只读这个目录下的agentpy文件
+    final_gen_agents_dir = (
+        rpg_game_config.ROOT_GEN_AGENTS_DIR
+        / rpg_game_config.CHECK_GAME_RESOURCE_VERSION
+    )
+    if not final_gen_agents_dir.exists():
+        assert False, f"final_gen_agents_dir does not exist: {final_gen_agents_dir}"
+        return []
+
+    unique_agentpy_file_paths: List[Path] = []
+    for agentpy_name in unique_agentpy_names:
+        agentpy_file_path = final_gen_agents_dir / agentpy_name
+        if not agentpy_file_path.exists() or not agentpy_file_path.is_file():
+            assert False, f"File does not exist: {agentpy_file_path}"
+            continue
+
+        unique_agentpy_file_paths.append(agentpy_file_path)
+
+    return unique_agentpy_file_paths
+
+
+####################################################################################################################################
+def _run_agents(game_names: List[str]) -> None:
+
+    # 抽取所有的agentpy文件的名字
+    unique_agentpy_names: Set[str] = _get_unique_agentpy_names(game_names)
+    if len(unique_agentpy_names) == 0:
+        assert False, "unique_agentpy_names == 0"
         return None
 
-    logger.debug(f"agentpy_paths: {agentpy_paths}")
-    terminal_start_command = f"pm2 start {' '.join(agentpy_paths)}"
-    logger.debug(terminal_start_command)
+    # 合成所有的agentpy文件的路径
+    unique_agentpy_file_paths: List[Path] = _get_unique_agentpy_file_paths(
+        unique_agentpy_names
+    )
+    if len(unique_agentpy_file_paths) == 0:
+        assert False, "unique_agentpy_file_paths == 0"
+        return None
 
+    # 转化成字符串路径
+    termianl_commands: List[str] = []
+    for agentpy_file_path in unique_agentpy_file_paths:
+        termianl_commands.append(str(agentpy_file_path))
+
+    # 最后执行组成指令
+    # logger.debug(f"agentpy_paths: {termianl_commands}")
+    terminal_batch_start_command = f"pm2 start {' '.join(termianl_commands)}"
+    logger.debug(terminal_batch_start_command)
+
+    # 执行！！！！！！
     os.system("pm2 list")
     os.system("pm2 delete all")
-    os.system(terminal_start_command)
+    os.system(terminal_batch_start_command)
 
 
 ####################################################################################################################################

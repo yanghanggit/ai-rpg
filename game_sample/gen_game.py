@@ -33,6 +33,7 @@ import rpg_game.rpg_game_config as rpg_game_config
 ############################################################################################################
 def create_game_editor(
     sheet_name_as_game_name: str,
+    version: str,
     actor_data_base: Dict[str, ExcelDataActor],
     prop_data_base: Dict[str, ExcelDataProp],
     stage_data_base: Dict[str, ExcelDataStage],
@@ -49,7 +50,7 @@ def create_game_editor(
     list_data: List[Any] = json.loads(json_data)
     return ExcelEditorGame(
         sheet_name_as_game_name,
-        "0.0.1",
+        version,
         list_data,
         actor_data_base,
         prop_data_base,
@@ -112,10 +113,13 @@ def main(game_names: Set[str]) -> None:
         if sheet_name_as_game_name != "":
             gen_games.add(sheet_name_as_game_name)
 
+    # version: str = "0.0.1"
+
     # 创建GameEditor
     for sheet_name_as_game_name in gen_games:
         game_editor = create_game_editor(
             str(sheet_name_as_game_name),
+            rpg_game_config.CHECK_GAME_RESOURCE_VERSION,
             actor_data_base,
             prop_data_base,
             stage_data_base,
@@ -124,17 +128,40 @@ def main(game_names: Set[str]) -> None:
         assert game_editor is not None, "创建GameEditor失败"
         if game_editor is not None:
 
-            if game_editor.write(configuration.OUT_PUT_GEN_GAMES_DIR) > 0:
+            if game_editor.write(configuration.GAME_SAMPLE_OUT_PUT_GAME_DIR) > 0:
                 logger.warning(f"game_editor.write: {sheet_name_as_game_name}")
 
-            if game_editor.write_agents(configuration.OUT_PUT_GEN_GAMES_DIR) > 0:
+            if (
+                game_editor.write_agents_config(
+                    configuration.GAME_SAMPLE_OUT_PUT_GAME_DIR
+                )
+                > 0
+            ):
                 logger.warning(f"game_editor.write_agents: {sheet_name_as_game_name}")
 
-    root_gen_games_dir = rpg_game_config.GEN_GAMES_DIR
-    if root_gen_games_dir.exists():
-        shutil.rmtree(root_gen_games_dir)
+    # game最后拷贝到项目根部
+    if rpg_game_config.ROOT_GEN_GAMES_DIR.exists():
+        shutil.rmtree(rpg_game_config.ROOT_GEN_GAMES_DIR)
+
     shutil.copytree(
-        configuration.OUT_PUT_GEN_GAMES_DIR, root_gen_games_dir, dirs_exist_ok=True
+        configuration.GAME_SAMPLE_OUT_PUT_GAME_DIR,
+        rpg_game_config.ROOT_GEN_GAMES_DIR,
+        dirs_exist_ok=True,
+    )
+
+    # agentpy最后拷贝到项目根部
+    final_gen_agents_path = (
+        rpg_game_config.ROOT_GEN_AGENTS_DIR
+        / rpg_game_config.CHECK_GAME_RESOURCE_VERSION
+    )
+    if final_gen_agents_path.exists():
+        shutil.rmtree(final_gen_agents_path)
+    final_gen_agents_path.mkdir(parents=True, exist_ok=True)
+
+    shutil.copytree(
+        configuration.GAME_SAMPLE_OUT_PUT_AGENT_DIR,
+        final_gen_agents_path,
+        dirs_exist_ok=True,
     )
 
 

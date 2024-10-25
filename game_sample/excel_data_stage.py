@@ -82,11 +82,6 @@ class ExcelDataStage:
         return f"http://localhost:{self.port}{self.api}/"
 
     ############################################################################################################
-    @property
-    def gen_agentpy_path(self) -> Path:
-        return configuration.OUT_PUT_AGENT_DIR / f"{self.codename}_agent.py"
-
-    ############################################################################################################
     def gen_sys_prompt(self, sys_prompt_template: str) -> str:
         gen_prompt = str(sys_prompt_template)
         gen_prompt = gen_prompt.replace(
@@ -124,7 +119,7 @@ class ExcelDataStage:
     ############################################################################################################
     def write_sys_prompt(self) -> None:
         game_sample.utils.write_text_file(
-            configuration.OUT_PUT_STAGE_SYS_PROMPT_DIR,
+            configuration.GAME_SAMPLE_OUT_PUT_STAGE_SYS_PROMPT_DIR,
             f"{self.codename}_sys_prompt.md",
             self._gen_system_prompt,
         )
@@ -132,7 +127,7 @@ class ExcelDataStage:
     ############################################################################################################
     def write_agentpy(self) -> None:
         game_sample.utils.write_text_file(
-            configuration.OUT_PUT_AGENT_DIR,
+            configuration.GAME_SAMPLE_OUT_PUT_AGENT_DIR,
             f"{self.codename}_agent.py",
             self._gen_agentpy,
         )

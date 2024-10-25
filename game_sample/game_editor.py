@@ -255,25 +255,29 @@ class ExcelEditorGame:
         )
 
     ############################################################################################################################
-    def write_agents(self, directory: Path) -> int:
+    def write_agents_config(self, dir: Path) -> int:
 
-        model = GameAgentsConfigModel(
-            actors=[
-                {actor.name: str(actor.gen_agentpy_path)}
-                for actor in self.editor_players + self.editor_actors
-            ],
-            stages=[
-                {stage.name: str(stage.gen_agentpy_path)}
-                for stage in self.editor_stages
-            ],
-            world_systems=[
-                {world_system.name: str(world_system.gen_agentpy_path)}
-                for world_system in self.editor_world_systems
-            ],
-        )
+        model = GameAgentsConfigModel(actors=[], stages=[], world_systems=[])
+
+        for actor in self.editor_players + self.editor_actors:
+            if actor.excel_data is None:
+                continue
+            model.actors.append({actor.name: f"{actor.excel_data.codename}_agent.py"})
+
+        for stage in self.editor_stages:
+            if stage.excel_data is None:
+                continue
+            model.stages.append({stage.name: f"{stage.excel_data.codename}_agent.py"})
+
+        for world_system in self.editor_world_systems:
+            if world_system.excel_data is None:
+                continue
+            model.world_systems.append(
+                {world_system.name: f"{world_system.excel_data.codename}_agent.py"}
+            )
 
         return game_sample.utils.write_text_file(
-            directory,
+            dir,
             f"{self._name}_agents.json",
             model.model_dump_json(),
         )

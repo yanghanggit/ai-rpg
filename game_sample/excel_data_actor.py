@@ -91,11 +91,6 @@ class ExcelDataActor:
 
     ############################################################################################################
     @property
-    def gen_agentpy_path(self) -> Path:
-        return configuration.OUT_PUT_AGENT_DIR / f"{self.codename}_agent.py"
-
-    ############################################################################################################
-    @property
     def localhost(self) -> str:
         return f"http://localhost:{self.port}{self.api}/"
 
@@ -137,7 +132,7 @@ class ExcelDataActor:
     ############################################################################################################
     def write_sys_prompt(self) -> None:
         game_sample.utils.write_text_file(
-            configuration.OUT_PUT_ACTOR_SYS_PROMPT_DIR,
+            configuration.GAME_SAMPLE_OUT_PUT_ACTOR_SYS_PROMPT_DIR,
             f"{self.codename}_sys_prompt.md",
             self._gen_system_prompt,
         )
@@ -145,7 +140,7 @@ class ExcelDataActor:
     ############################################################################################################
     def write_agentpy(self) -> None:
         game_sample.utils.write_text_file(
-            configuration.OUT_PUT_AGENT_DIR,
+            configuration.GAME_SAMPLE_OUT_PUT_AGENT_DIR,
             f"{self.codename}_agent.py",
             self._gen_agentpy,
         )

@@ -43,7 +43,9 @@ async def terminal_run(option: TerminalRunOption) -> None:
     # 根据创建还是载入进行不同的处理
     game_resource: Optional[RPGGameResource] = None
     if option.new_game:
-        game_resource_file_path = rpg_game_config.GEN_GAMES_DIR / f"{game_name}.json"
+        game_resource_file_path = (
+            rpg_game_config.ROOT_GEN_GAMES_DIR / f"{game_name}.json"
+        )
 
         # 如果找不到游戏资源文件就退出
         if not game_resource_file_path.exists():

@@ -88,12 +88,6 @@ class ExcelEditorActor:
 
     #################################################################################################################################
     @property
-    def gen_agentpy_path(self) -> Path:
-        assert self.excel_data is not None
-        return self.excel_data.gen_agentpy_path
-
-    #################################################################################################################################
-    @property
     def name(self) -> str:
         assert self.excel_data is not None
         return self.excel_data.name

@@ -140,17 +140,17 @@ WORLD_SYSTEM_SYS_PROMPT_TEMPLATE = f"""# {configuration.GenSystemPromptSymbol.NA
 def gen_sys_prompt_templates() -> None:
 
     game_sample.utils.write_text_file(
-        configuration.OUT_PUT_SYS_PROMPT_TEMPLATES_DIR,
+        configuration.GAME_SAMPLE_OUT_PUT_SYS_PROMPT_TEMPLATES_DIR,
         "actor_sys_prompt_template.md",
         ACTOR_SYS_PROMPT_TEMPLATE,
     )
     game_sample.utils.write_text_file(
-        configuration.OUT_PUT_SYS_PROMPT_TEMPLATES_DIR,
+        configuration.GAME_SAMPLE_OUT_PUT_SYS_PROMPT_TEMPLATES_DIR,
         "stage_sys_prompt_template.md",
         STAGE_SYS_PROMPT_TEMPLATE,
     )
     game_sample.utils.write_text_file(
-        configuration.OUT_PUT_SYS_PROMPT_TEMPLATES_DIR,
+        configuration.GAME_SAMPLE_OUT_PUT_SYS_PROMPT_TEMPLATES_DIR,
         "world_system_sys_prompt_template.md",
         WORLD_SYSTEM_SYS_PROMPT_TEMPLATE,
     )

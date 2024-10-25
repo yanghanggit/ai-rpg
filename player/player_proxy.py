@@ -118,20 +118,13 @@ class PlayerProxy:
 
     ##########################################################################################################################################################
     def add_tip_message(self, sender_name: str, agent_event: BaseAgentEvent) -> None:
+
         self._add_client_message(
             PlayerClientMessageTag.TIP,
             sender_name,
             agent_event,
             self._model.client_messages,
         )
-
-    ##########################################################################################################################################################
-    def remove_tip_message(self) -> None:
-        self._model.client_messages = [
-            message
-            for message in self._model.client_messages
-            if message.tag != PlayerClientMessageTag.TIP
-        ]
 
     ##########################################################################################################################################################
     def debug_client_messages(self, send_count: int) -> None:

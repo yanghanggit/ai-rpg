@@ -119,6 +119,7 @@ class StartResponse(BaseModel):
     user_name: str = ""
     game_name: str = ""
     actor_name: str = ""
+    total: int = 0
     error: int = 0
     message: str = ""
 
@@ -159,6 +160,7 @@ class ExecuteResponse(BaseModel):
     game_name: str = ""
     actor_name: str = ""
     player_input_enable: bool = False
+    total: int = 0
     error: int = 0
     message: str = ""
 

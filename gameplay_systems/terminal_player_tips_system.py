@@ -41,8 +41,6 @@ class TerminalPlayerTipsSystem(ExecuteProcessor):
             assert player_entity.has(PlayerComponent)
             assert player_entity.has(ActorComponent)
 
-            player_proxy.remove_tip_message()
-
             # 当前场景能去往的场景
             self.tips_next_stages(player_proxy, player_entity)
 
@@ -63,7 +61,6 @@ class TerminalPlayerTipsSystem(ExecuteProcessor):
         if not stage_entity.has(StageGraphComponent):
             player_proxy.add_tip_message(
                 self._context.safe_get_entity_name(stage_entity),
-                # "当前场景没有相连接的场景，无法离开",
                 AgentEvent(message_content="当前场景没有相连接的场景，无法离开"),
             )
             return

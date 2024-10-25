@@ -28,7 +28,8 @@ import rpg_game.rpg_game_helper
 from rpg_game.web_game import WebGame
 from player.player_proxy import PlayerProxy
 import rpg_game.rpg_game_config as rpg_game_config
-from pathlib import Path
+
+# from pathlib import Path
 import shutil
 from my_models.models_def import PlayerProxyModel
 
@@ -61,6 +62,7 @@ game_room: Optional[GameRoom] = None
 ###############################################################################################################################################
 @fastapi_app.post("/login/")
 async def login(request_data: LoginRequest) -> Dict[str, Any]:
+    logger.info(f"login: {request_data.user_name}")
 
     global game_room
 
@@ -90,6 +92,7 @@ async def login(request_data: LoginRequest) -> Dict[str, Any]:
 
 @fastapi_app.post("/create/")
 async def create(request_data: CreateRequest) -> Dict[str, Any]:
+    logger.info(f"create: {request_data.user_name}, {request_data.game_name}")
 
     global game_room
 
@@ -192,6 +195,9 @@ async def create(request_data: CreateRequest) -> Dict[str, Any]:
 ###############################################################################################################################################
 @fastapi_app.post("/join/")
 async def join(request_data: JoinRequest) -> Dict[str, Any]:
+    logger.info(
+        f"join: {request_data.user_name}, {request_data.game_name}, {request_data.actor_name}"
+    )
 
     global game_room
 
@@ -234,11 +240,18 @@ async def join(request_data: JoinRequest) -> Dict[str, Any]:
 ###############################################################################################################################################
 @fastapi_app.post("/start/")
 async def start(request_data: StartRequest) -> Dict[str, Any]:
+    logger.info(
+        f"start: {request_data.user_name}, {request_data.game_name}, {request_data.actor_name}"
+    )
 
     global game_room
 
     # 不能切换状态到游戏开始
-    if not server_state.can_transition(GameState.PLAYING):
+    if (
+        not server_state.can_transition(GameState.PLAYING)
+        or game_room is None
+        or game_room._game is None
+    ):
         return StartResponse(
             user_name=request_data.user_name, error=1, message=""
         ).model_dump()
@@ -250,59 +263,44 @@ async def start(request_data: StartRequest) -> Dict[str, Any]:
     # 切换状态到游戏开始
     server_state.transition(GameState.PLAYING)
 
+    player_proxy = game_room.get_player()
+    if player_proxy is None:
+        return StartResponse(
+            user_name=request_data.user_name, error=2, message=""
+        ).model_dump()
+
     # 返回开始游戏的信息
     return StartResponse(
         user_name=request_data.user_name,
         game_name=request_data.game_name,
         actor_name=request_data.actor_name,
-    ).model_dump()
-
-
-###############################################################################################################################################
-@fastapi_app.post("/exit/")
-async def exit(request_data: ExitRequest) -> Dict[str, Any]:
-
-    global game_room
-
-    # 不能切换状态到游戏退出
-    if (
-        not server_state.can_transition(GameState.REQUESTING_EXIT)
-        or game_room is None
-        or game_room._game is None
-    ):
-        return ExitResponse(
-            user_name=request_data.user_name, error=1, message=""
-        ).model_dump()
-
-    logger.info(f"exit: {request_data.user_name}")
-
-    # 切换状态到游戏退出
-    server_state.transition(GameState.REQUESTING_EXIT)
-
-    # 当前的游戏杀掉
-    game_room._game._will_exit = True
-    rpg_game.rpg_game_helper.save_game(
-        game_room._game, rpg_game_config.GAMES_ARCHIVE_DIR
-    )
-    game_room._game.exit()
-    game_room._game = None
-
-    # 返回退出游戏的信息
-    return ExitResponse(
-        user_name=request_data.user_name, game_name=request_data.game_name
+        total=len(player_proxy._model.client_messages),
     ).model_dump()
 
 
 ###############################################################################################################################################
 @fastapi_app.post("/execute/")
 async def execute(request_data: ExecuteRequest) -> Dict[str, Any]:
+    logger.info(
+        f"execute: {request_data.user_name}, {request_data.game_name}, {request_data.user_input}"
+    )
 
     global game_room
+
+    # 数据不对不能运行
     if game_room is None or game_room._game is None:
         return ExecuteResponse(
             user_name=request_data.user_name,
             error=100,
             message="game_room._game is None",
+        ).model_dump()
+
+    # 状态不对不能运行
+    if server_state.state != GameState.PLAYING:
+        return ExecuteResponse(
+            user_name=request_data.user_name,
+            error=101,
+            message=f"server_state.state != GameState.PLAYING, current state = {server_state.state}",
         ).model_dump()
 
     # 不能切换状态到游戏退出
@@ -348,6 +346,7 @@ async def execute(request_data: ExecuteRequest) -> Dict[str, Any]:
         player_input_enable=rpg_game.rpg_game_helper.is_player_turn(
             game_room._game, player_proxy
         ),
+        total=len(player_proxy._model.client_messages),
     ).model_dump()
 
 
@@ -480,6 +479,41 @@ async def fetch_messages(request_data: FetchMessagesRequest) -> Dict[str, Any]:
             request_data.index, request_data.count
         ),
         total=len(player_proxy._model.client_messages),
+    ).model_dump()
+
+
+###############################################################################################################################################
+@fastapi_app.post("/exit/")
+async def exit(request_data: ExitRequest) -> Dict[str, Any]:
+
+    global game_room
+
+    # 不能切换状态到游戏退出
+    if (
+        not server_state.can_transition(GameState.REQUESTING_EXIT)
+        or game_room is None
+        or game_room._game is None
+    ):
+        return ExitResponse(
+            user_name=request_data.user_name, error=1, message=""
+        ).model_dump()
+
+    logger.info(f"exit: {request_data.user_name}")
+
+    # 切换状态到游戏退出
+    server_state.transition(GameState.REQUESTING_EXIT)
+
+    # 当前的游戏杀掉
+    game_room._game._will_exit = True
+    rpg_game.rpg_game_helper.save_game(
+        game_room._game, rpg_game_config.GAMES_ARCHIVE_DIR
+    )
+    game_room._game.exit()
+    game_room._game = None
+
+    # 返回退出游戏的信息
+    return ExitResponse(
+        user_name=request_data.user_name, game_name=request_data.game_name
     ).model_dump()
 
 

@@ -189,6 +189,7 @@ class PlayerClientMessageTag(StrEnum):
 class PlayerClientMessage(BaseModel):
     tag: str
     sender: str
+    index: int = 0
     agent_event: BaseAgentEvent  # 要根部的类，其实只需要它的序列化能力，其余的不要，所以不要出现具体类型的调用！
 
 

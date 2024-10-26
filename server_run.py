@@ -274,7 +274,7 @@ async def start(request_data: StartRequest) -> Dict[str, Any]:
         user_name=request_data.user_name,
         game_name=request_data.game_name,
         actor_name=request_data.actor_name,
-        total=len(player_proxy._model.client_messages),
+        total=len(player_proxy.model.client_messages),
     ).model_dump()
 
 
@@ -346,7 +346,7 @@ async def execute(request_data: ExecuteRequest) -> Dict[str, Any]:
         player_input_enable=rpg_game.rpg_game_helper.is_player_turn(
             game_room._game, player_proxy
         ),
-        total=len(player_proxy._model.client_messages),
+        total=len(player_proxy.model.client_messages),
     ).model_dump()
 
 
@@ -451,13 +451,18 @@ async def check(request_data: CheckRequest) -> Dict[str, Any]:
 async def fetch_messages(request_data: FetchMessagesRequest) -> Dict[str, Any]:
 
     global game_room
-    if game_room is None or game_room._game is None:
+    if (
+        game_room is None
+        or game_room._game is None
+        or request_data.index < 0
+        or request_data.count <= 0
+    ):
         return FetchMessagesResponse(
             user_name=request_data.user_name,
             game_name=request_data.game_name,
             actor_name=request_data.actor_name,
             error=100,
-            message="game_room._game is None",
+            message=f"game_room._game is None, request_data.index = {request_data.index}, request_data.count = {request_data.count}",
         ).model_dump()
 
     # 没有客户端就不能看
@@ -478,7 +483,7 @@ async def fetch_messages(request_data: FetchMessagesRequest) -> Dict[str, Any]:
         messages=player_proxy.fetch_client_messages(
             request_data.index, request_data.count
         ),
-        total=len(player_proxy._model.client_messages),
+        total=len(player_proxy.model.client_messages),
     ).model_dump()
 
 

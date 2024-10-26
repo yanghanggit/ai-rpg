@@ -65,65 +65,49 @@ class PlayerProxy:
         self._commands.append(command)
 
     ##########################################################################################################################################################
-    def _add_client_message(
-        self,
-        tag: str,
-        sender: str,
-        agent_event: BaseAgentEvent,
-        target: List[PlayerClientMessage],
-    ) -> None:
-
-        target.append(
-            PlayerClientMessage(tag=tag, sender=sender, agent_event=agent_event)
-        )
+    def _add_client_message(self, new_message: PlayerClientMessage) -> None:
+        index = len(self._model.client_messages)
+        new_message.index = index
+        self._model.client_messages.append(new_message)
 
     ##########################################################################################################################################################
     def add_system_message(self, agent_event: BaseAgentEvent) -> None:
         self._add_client_message(
-            PlayerClientMessageTag.SYSTEM,
-            PlayerProxy.SYSTEM_MESSAGE_SENDER,
-            agent_event,
-            self._model.client_messages,
+            PlayerClientMessage(
+                tag=PlayerClientMessageTag.SYSTEM,
+                sender=PlayerProxy.SYSTEM_MESSAGE_SENDER,
+                agent_event=agent_event,
+            )
         )
 
     ##########################################################################################################################################################
     def add_actor_message(self, actor_name: str, agent_event: BaseAgentEvent) -> None:
-
         self._add_client_message(
-            PlayerClientMessageTag.ACTOR,
-            actor_name,
-            agent_event,
-            self._model.client_messages,
+            PlayerClientMessage(
+                tag=PlayerClientMessageTag.ACTOR,
+                sender=actor_name,
+                agent_event=agent_event,
+            )
         )
 
     ##########################################################################################################################################################
     def add_stage_message(self, stage_name: str, agent_event: BaseAgentEvent) -> None:
         self._add_client_message(
-            PlayerClientMessageTag.STAGE,
-            stage_name,
-            agent_event,
-            self._model.client_messages,
-        )
-
-    ##########################################################################################################################################################
-    def cache_kickoff_message(
-        self, actor_name: str, agent_event: BaseAgentEvent
-    ) -> None:
-        self._add_client_message(
-            PlayerClientMessageTag.KICKOFF,
-            actor_name,
-            agent_event,
-            self._model.cache_kickoff_messages,
+            PlayerClientMessage(
+                tag=PlayerClientMessageTag.STAGE,
+                sender=stage_name,
+                agent_event=agent_event,
+            )
         )
 
     ##########################################################################################################################################################
     def add_tip_message(self, sender_name: str, agent_event: BaseAgentEvent) -> None:
-
         self._add_client_message(
-            PlayerClientMessageTag.TIP,
-            sender_name,
-            agent_event,
-            self._model.client_messages,
+            PlayerClientMessage(
+                tag=PlayerClientMessageTag.TIP,
+                sender=sender_name,
+                agent_event=agent_event,
+            )
         )
 
     ##########################################################################################################################################################
@@ -136,12 +120,7 @@ class PlayerProxy:
     def fetch_client_messages(
         self, index: int, count: int
     ) -> List[PlayerClientMessage]:
-
-        abs_count = abs(count)
-        if index < 0:
-            return self._model.client_messages[-abs_count:]
-
-        return self._model.client_messages[index : index + abs_count]
+        return self._model.client_messages[index : index + count]
 
     ##########################################################################################################################################################
     def on_dead(self) -> None:
@@ -149,17 +128,29 @@ class PlayerProxy:
         logger.warning(f"{self._model.name} : {self._model.actor_name}, 死亡了!!!!!")
 
     ##########################################################################################################################################################
+    def on_load(self) -> None:
+        logger.warning(f"{self._model.name} : {self._model.actor_name}, 加载了!!!!!")
+
+    ##########################################################################################################################################################
     # todo
     def flush_kickoff_messages(self) -> None:
-        for message in self._model.cache_kickoff_messages:
 
-            self._add_client_message(
-                message.tag,
-                message.sender,
-                message.agent_event,
-                self._model.client_messages,
-            )
+        for message in self._model.cache_kickoff_messages:
+            self._add_client_message(message)
 
         self._model.cache_kickoff_messages.clear()
+
+    ##########################################################################################################################################################
+    def cache_kickoff_message(
+        self, actor_name: str, agent_event: BaseAgentEvent
+    ) -> None:
+
+        self._model.cache_kickoff_messages.append(
+            PlayerClientMessage(
+                tag=PlayerClientMessageTag.KICKOFF,
+                sender=actor_name,
+                agent_event=agent_event,
+            )
+        )
 
     ##########################################################################################################################################################

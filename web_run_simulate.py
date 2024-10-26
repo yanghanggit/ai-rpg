@@ -269,8 +269,6 @@ def _request_fetch_messages(
         )
         return
 
-    logger.warning(f"total = {fetch_messages_response.total}")
-
     for show_message in fetch_messages_response.messages:
         json_str = show_message.model_dump_json()
         logger.warning(json_str)

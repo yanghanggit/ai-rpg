@@ -215,7 +215,7 @@ class FetchMessagesRequest(BaseModel):
     game_name: str = ""
     actor_name: str = ""
     index: int = 0
-    count: int = 10
+    count: int = 1
 
 
 class FetchMessagesResponse(BaseModel):

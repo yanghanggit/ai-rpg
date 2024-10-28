@@ -12,6 +12,8 @@ from extended_systems.files_def import StageArchiveFile
 from player.player_proxy import PlayerProxy
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt
 from my_models.models_def import AgentEvent
+from rpg_game.terminal_game import TerminalGame
+from loguru import logger
 
 
 @final
@@ -23,6 +25,9 @@ class TerminalPlayerTipsSystem(ExecuteProcessor):
     ############################################################################################################
     @override
     def execute(self) -> None:
+        if not isinstance(self._game, TerminalGame):
+            logger.warning("不是终端游戏，无法使用这个系统")
+            return
         self.tips_stages()
 
     ############################################################################################################

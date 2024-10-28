@@ -96,6 +96,7 @@ class RPGEntitasProcessors(Processors):
         from gameplay_systems.save_game_resource_system import SaveGameResourceSystem
         from gameplay_systems.save_entity_system import SaveEntitySystem
         from gameplay_systems.save_player_system import SavePlayerSystem
+        from gameplay_systems.web_player_tips_system import WebPlayerTipsSystem
 
         ##
         rpg_game = cast(RPGGame, game)
@@ -209,6 +210,7 @@ class RPGEntitasProcessors(Processors):
         ## 第一次抓可以被player看到的信息
         processors.add(UpdateClientMessageSystem(context, rpg_game))
         processors.add(TerminalPlayerTipsSystem(context, rpg_game))
+        processors.add(WebPlayerTipsSystem(context, rpg_game))
 
         # 在这里记录，不然少message
         processors.add(SavePlayerSystem(context, rpg_game))

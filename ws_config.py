@@ -161,6 +161,7 @@ class ExecuteResponse(BaseModel):
     actor_name: str = ""
     player_input_enable: bool = False
     total: int = 0
+    game_round: int = 0
     error: int = 0
     message: str = ""
 
@@ -224,6 +225,7 @@ class FetchMessagesResponse(BaseModel):
     actor_name: str = ""
     messages: List[PlayerClientMessage] = []
     total: int = 0
+    game_round: int = 0
     error: int = 0
     message: str = ""
 

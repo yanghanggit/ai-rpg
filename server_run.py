@@ -347,6 +347,7 @@ async def execute(request_data: ExecuteRequest) -> Dict[str, Any]:
             game_room._game, player_proxy
         ),
         total=len(player_proxy.model.client_messages),
+        game_round=game_room._game._runtime_game_round,
     ).model_dump()
 
 
@@ -476,14 +477,26 @@ async def fetch_messages(request_data: FetchMessagesRequest) -> Dict[str, Any]:
             message="player_proxy is None",
         ).model_dump()
 
+    #
+    fetch_messages = player_proxy.fetch_client_messages(
+        request_data.index, request_data.count
+    )
+
+    # 临时输出一下。
+    logger.warning(
+        f"fetch_messages, player = {player_proxy.name}, count = {len(fetch_messages)}"
+    )
+    for fetch_message in fetch_messages:
+        json_str = fetch_message.model_dump_json()
+        logger.warning(json_str)
+
     return FetchMessagesResponse(
         user_name=request_data.user_name,
         game_name=request_data.game_name,
         actor_name=request_data.actor_name,
-        messages=player_proxy.fetch_client_messages(
-            request_data.index, request_data.count
-        ),
+        messages=fetch_messages,
         total=len(player_proxy.model.client_messages),
+        game_round=game_room._game._runtime_game_round,
     ).model_dump()
 
 

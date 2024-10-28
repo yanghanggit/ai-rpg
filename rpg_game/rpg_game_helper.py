@@ -387,10 +387,14 @@ def player_play_new_game(
 
     # todo 添加登陆新的信息到客户端消息中
     time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    player_proxy.add_system_message(
-        AgentEvent(
-            message_content=f"login: {player_proxy.name}, time = {time}, 控制角色 = {player_controlled_actor_name}"
-        )
+    # player_proxy.add_system_message(
+    #     AgentEvent(
+    #         message_content=f"login: {player_proxy.name}, time = {time}, 控制角色 = {player_controlled_actor_name}"
+    #     )
+    # )
+
+    logger.info(
+        f"time = {time}, 玩家登陆游戏 = {player_proxy.name}, 控制角色 = {player_controlled_actor_name}"
     )
 
     kick_off_comp = actor_entity.get(KickOffComponent)

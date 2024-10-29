@@ -21,6 +21,10 @@ from ws_config import (
     CheckResponse,
     FetchMessagesRequest,
     FetchMessagesResponse,
+    GetActorArchivesRequest,
+    GetActorArchivesResponse,
+    GetStageArchivesRequest,
+    GetStageArchivesResponse,
 )
 from loguru import logger
 from typing import List
@@ -246,7 +250,10 @@ def _request_game_execute(
 
 ###############################################################################################################################################
 def _request_fetch_messages(
-    client_context: GameClientContext, state_wrapper: GameStateWrapper, fetch_count: int
+    client_context: GameClientContext,
+    state_wrapper: GameStateWrapper,
+    fetch_begin_index: int,
+    fetch_count: int,
 ) -> None:
     url_fetch_messages = (
         f"http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/fetch_messages/"
@@ -257,7 +264,7 @@ def _request_fetch_messages(
             user_name=client_context._user_name,
             game_name=client_context._game_name,
             actor_name=client_context._actor_name,
-            index=-1,
+            index=fetch_begin_index,  # 测试用
             count=fetch_count,
         ).model_dump(),
     )
@@ -291,7 +298,7 @@ def _web_player_input(
             )
             _request_game_execute(client_context, state_wrapper, [])
             _request_fetch_messages(
-                client_context, state_wrapper, WS_CONFIG.SEND_MESSAGES_COUNT
+                client_context, state_wrapper, 0, WS_CONFIG.FETCH_MESSAGES_COUNT
             )
             break
 
@@ -319,10 +326,18 @@ def _web_player_input(
             _requesting_check(client_context, state_wrapper)
             break
 
+        elif usr_input == "/get_actor_archives" or usr_input == "/gaa":
+            _requesting_get_actor_archives(client_context, state_wrapper)
+            break
+
+        elif usr_input == "/get_stage_archives" or usr_input == "/gsa":
+            _requesting_get_stage_archives(client_context, state_wrapper)
+            break
+
         else:
             _request_game_execute(client_context, state_wrapper, [usr_input])
             _request_fetch_messages(
-                client_context, state_wrapper, WS_CONFIG.SEND_MESSAGES_COUNT
+                client_context, state_wrapper, 0, WS_CONFIG.FETCH_MESSAGES_COUNT
             )
             break
 
@@ -377,6 +392,60 @@ def _requesting_check(
     logger.warning(
         f"检查游戏: {check_response.user_name}, {check_response.game_name}, {check_response.actor_name}\n{check_response.message}"
     )
+
+
+###############################################################################################################################################
+def _requesting_get_actor_archives(
+    client_context: GameClientContext, state_wrapper: GameStateWrapper
+) -> None:
+
+    url_get_actor_archives = (
+        f"http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/get_actor_archives/"
+    )
+    response = requests.post(
+        url_get_actor_archives,
+        json=GetActorArchivesRequest(
+            user_name=client_context._user_name,
+            game_name=client_context._game_name,
+            actor_name=client_context._actor_name,
+        ).model_dump(),
+    )
+
+    actor_archives_response = GetActorArchivesResponse.model_validate(response.json())
+    if actor_archives_response.error > 0:
+        logger.warning(
+            f"获取角色档案失败: {actor_archives_response.user_name}, {actor_archives_response.game_name}, {actor_archives_response.actor_name}"
+        )
+        return
+
+    logger.warning(f"获取角色档案: {actor_archives_response.model_dump_json()}")
+
+
+###############################################################################################################################################
+def _requesting_get_stage_archives(
+    client_context: GameClientContext, state_wrapper: GameStateWrapper
+) -> None:
+
+    url_get_stage_archives = (
+        f"http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/get_stage_archives/"
+    )
+    response = requests.post(
+        url_get_stage_archives,
+        json=GetStageArchivesRequest(
+            user_name=client_context._user_name,
+            game_name=client_context._game_name,
+            actor_name=client_context._actor_name,
+        ).model_dump(),
+    )
+
+    stage_archives_response = GetStageArchivesResponse.model_validate(response.json())
+    if stage_archives_response.error > 0:
+        logger.warning(
+            f"获取舞台档案失败: {stage_archives_response.user_name}, {stage_archives_response.game_name}, {stage_archives_response.actor_name}"
+        )
+        return
+
+    logger.warning(f"获取舞台档案: {stage_archives_response.model_dump_json()}")
 
 
 ###############################################################################################################################################

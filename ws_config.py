@@ -1,14 +1,20 @@
 from enum import Enum
 from pydantic import BaseModel
 from typing import Dict, Set, List, Optional, Final
-from my_models.models_def import GameModel, WatchActionModel, CheckActionModel
+from my_models.models_def import (
+    GameModel,
+    WatchActionModel,
+    CheckActionModel,
+    GetActorArchivesActionModel,
+    GetStageArchivesActionModel,
+)
 from my_models.models_def import PlayerClientMessage
 
 
 class WS_CONFIG:
     LOCAL_HOST: Final[str] = "127.0.0.1"
     PORT: Final[int] = 8080
-    SEND_MESSAGES_COUNT: Final[int] = 20
+    FETCH_MESSAGES_COUNT: Final[int] = 9999  # 多要一点得了。
 
 
 ###############################################################################################################################################
@@ -37,7 +43,7 @@ class GameStateWrapper:
             GameState.GAME_CREATED: {GameState.GAME_JOINED},
             GameState.GAME_JOINED: {GameState.PLAYING},
             GameState.PLAYING: {GameState.REQUESTING_EXIT},
-            GameState.REQUESTING_EXIT: {GameState.GAME_CREATED},
+            GameState.REQUESTING_EXIT: {GameState.UNLOGGED},
         }
 
     @property
@@ -226,6 +232,46 @@ class FetchMessagesResponse(BaseModel):
     messages: List[PlayerClientMessage] = []
     total: int = 0
     game_round: int = 0
+    error: int = 0
+    message: str = ""
+
+
+###############################################################################################################################################
+###############################################################################################################################################
+###############################################################################################################################################
+
+
+class GetActorArchivesRequest(BaseModel):
+    user_name: str = ""
+    game_name: str = ""
+    actor_name: str = ""
+
+
+class GetActorArchivesResponse(BaseModel):
+    user_name: str = ""
+    game_name: str = ""
+    actor_name: str = ""
+    action_model: GetActorArchivesActionModel = GetActorArchivesActionModel()
+    error: int = 0
+    message: str = ""
+
+
+###############################################################################################################################################
+###############################################################################################################################################
+###############################################################################################################################################
+
+
+class GetStageArchivesRequest(BaseModel):
+    user_name: str = ""
+    game_name: str = ""
+    actor_name: str = ""
+
+
+class GetStageArchivesResponse(BaseModel):
+    user_name: str = ""
+    game_name: str = ""
+    actor_name: str = ""
+    action_model: GetStageArchivesActionModel = GetStageArchivesActionModel()
     error: int = 0
     message: str = ""
 

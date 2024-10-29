@@ -22,20 +22,22 @@ from ws_config import (
     CheckResponse,
     FetchMessagesRequest,
     FetchMessagesResponse,
+    GetActorArchivesRequest,
+    GetActorArchivesResponse,
+    GetStageArchivesRequest,
+    GetStageArchivesResponse,
 )
 from typing import Dict, Any, Optional
 import rpg_game.rpg_game_helper
 from rpg_game.web_game import WebGame
 from player.player_proxy import PlayerProxy
 import rpg_game.rpg_game_config as rpg_game_config
-
-# from pathlib import Path
 import shutil
 from my_models.models_def import PlayerProxyModel
 
-fastapi_app = FastAPI()
 
-server_state = GameStateWrapper(GameState.UNLOGGED)
+# 核心的fastapi_app
+fastapi_app = FastAPI()
 
 
 class GameRoom:
@@ -57,6 +59,8 @@ class GameRoom:
 
 
 game_room: Optional[GameRoom] = None
+
+server_state: GameStateWrapper = GameStateWrapper(GameState.UNLOGGED)
 
 
 ###############################################################################################################################################
@@ -328,6 +332,13 @@ async def execute(request_data: ExecuteRequest) -> Dict[str, Any]:
     for usr_input in request_data.user_input:
         assert usr_input != "/watch" and usr_input != "/w", "不应该有这个命令"
         assert usr_input != "/check" and usr_input != "/c", "不应该有这个命令"
+        assert (
+            usr_input != "/get_actor_archives" and usr_input != "/gaa"
+        ), "不应该有这个命令"
+        assert (
+            usr_input != "/get_stage_archives" and usr_input != "/gsa"
+        ), "不应该有这个命令"
+
         rpg_game.rpg_game_helper.add_player_command(
             game_room._game, player_proxy, usr_input
         )
@@ -501,10 +512,107 @@ async def fetch_messages(request_data: FetchMessagesRequest) -> Dict[str, Any]:
 
 
 ###############################################################################################################################################
+@fastapi_app.post("/get_actor_archives/")
+async def get_actor_archives(request_data: GetActorArchivesRequest) -> Dict[str, Any]:
+
+    global game_room
+    if game_room is None or game_room._game is None:
+        return GetActorArchivesResponse(
+            user_name=request_data.user_name,
+            game_name=request_data.game_name,
+            actor_name=request_data.actor_name,
+            error=100,
+            message="game_room._game is None",
+        ).model_dump()
+
+    # 没有客户端就不能看
+    player_proxy = game_room.get_player()
+    if player_proxy is None:
+        return GetActorArchivesResponse(
+            user_name=request_data.user_name,
+            game_name=request_data.game_name,
+            actor_name=request_data.actor_name,
+            error=1,
+            message="player_proxy is None",
+        ).model_dump()
+
+    # 获得消息
+    get_actor_archives_action_model = (
+        rpg_game.rpg_game_helper.gen_player_get_actor_archives_action_model(
+            game_room._game, player_proxy
+        )
+    )
+
+    if get_actor_archives_action_model is None:
+        return GetActorArchivesResponse(
+            user_name=request_data.user_name,
+            game_name=request_data.game_name,
+            actor_name=request_data.actor_name,
+            error=2,
+            message="get_actor_archives_model is None",
+        ).model_dump()
+
+    return GetActorArchivesResponse(
+        user_name=request_data.user_name,
+        game_name=request_data.game_name,
+        actor_name=request_data.actor_name,
+        action_model=get_actor_archives_action_model,
+    ).model_dump()
+
+
+###############################################################################################################################################
+@fastapi_app.post("/get_stage_archives/")
+async def get_stage_archives(request_data: GetStageArchivesRequest) -> Dict[str, Any]:
+
+    global game_room
+    if game_room is None or game_room._game is None:
+        return GetStageArchivesResponse(
+            user_name=request_data.user_name,
+            game_name=request_data.game_name,
+            actor_name=request_data.actor_name,
+            error=100,
+            message="game_room._game is None",
+        ).model_dump()
+
+    player_proxy = game_room.get_player()
+    if player_proxy is None:
+        return GetStageArchivesResponse(
+            user_name=request_data.user_name,
+            game_name=request_data.game_name,
+            actor_name=request_data.actor_name,
+            error=1,
+            message="player_proxy is None",
+        ).model_dump()
+
+    get_stage_archives_action_model = (
+        rpg_game.rpg_game_helper.gen_player_get_stage_archives_action_model(
+            game_room._game, player_proxy
+        )
+    )
+
+    if get_stage_archives_action_model is None:
+        return GetStageArchivesResponse(
+            user_name=request_data.user_name,
+            game_name=request_data.game_name,
+            actor_name=request_data.actor_name,
+            error=2,
+            message="get_stage_archives_model is None",
+        ).model_dump()
+
+    return GetStageArchivesResponse(
+        user_name=request_data.user_name,
+        game_name=request_data.game_name,
+        actor_name=request_data.actor_name,
+        action_model=get_stage_archives_action_model,
+    ).model_dump()
+
+
+###############################################################################################################################################
 @fastapi_app.post("/exit/")
 async def exit(request_data: ExitRequest) -> Dict[str, Any]:
 
     global game_room
+    global server_state
 
     # 不能切换状态到游戏退出
     if (
@@ -527,7 +635,11 @@ async def exit(request_data: ExitRequest) -> Dict[str, Any]:
         game_room._game, rpg_game_config.GAMES_ARCHIVE_DIR
     )
     game_room._game.exit()
-    game_room._game = None
+
+    # 清空这2个变量
+    game_room = None
+    assert server_state.can_transition(GameState.UNLOGGED)
+    server_state.transition(GameState.UNLOGGED)
 
     # 返回退出游戏的信息
     return ExitResponse(

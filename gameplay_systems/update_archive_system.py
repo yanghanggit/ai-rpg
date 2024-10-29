@@ -18,19 +18,23 @@ class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
 
     @override
     def initialize(self) -> None:
-        all_actor_names = self.get_all_actor_names()
-        all_stage_names = self.get_all_stage_names()
-        self.add_kick_off_actor_archive_files(all_actor_names)
-        self.add_kick_off_archive_files(all_stage_names)
+        all_actor_names = self._get_all_actor_names()
+        all_stage_names = self._get_all_stage_names()
+        self._add_kick_off_actor_archive_files(all_actor_names)
+        self._add_kick_off_stage_archive_files(all_stage_names)
 
     ###############################################################################################################################################
     @override
     def execute(self) -> None:
-        self.add_archive_to_actors()
-        self.update_appearance_of_all_actor_archives()
+        # todo
+        # 自己的当前场景如果没有就加一个档案
+        self._ensure_archive_for_current_stage()
+        # 从本轮消息中提取出所有的档案
+        self._extract_and_add_archives_from_rounds()
+        self._update_appearance_of_all_actor_archives()
 
     ###############################################################################################################################################
-    def update_appearance_of_all_actor_archives(self) -> None:
+    def _update_appearance_of_all_actor_archives(self) -> None:
 
         stage_entities: Set[Entity] = self._context.get_group(
             Matcher(all_of=[StageComponent])
@@ -42,10 +46,10 @@ class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
                 continue
             appearance_info = self._context.get_appearance_in_stage(stage_entity)
             for actor_entity in actor_entities:
-                self.update_actor_appearance_of_archive(actor_entity, appearance_info)
+                self._update_actor_appearance_of_archive(actor_entity, appearance_info)
 
     ###############################################################################################################################################
-    def update_actor_appearance_of_archive(
+    def _update_actor_appearance_of_archive(
         self, actor_entity: Entity, appearance_info: Dict[str, str]
     ) -> None:
 
@@ -70,10 +74,10 @@ class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
                 self._context._file_system.write_file(actor_archive)
 
     ###############################################################################################################################################
-    def add_archive_to_actors(self) -> None:
+    def _extract_and_add_archives_from_rounds(self) -> None:
 
-        all_actor_names = self.get_all_actor_names()
-        all_stage_names = self.get_all_stage_names()
+        all_actor_names = self._get_all_actor_names()
+        all_stage_names = self._get_all_stage_names()
 
         actor_entities: Set[Entity] = self._context.get_group(
             Matcher(all_of=[ActorComponent])
@@ -85,11 +89,42 @@ class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
             if len(messages) == 0:
                 continue
             batch_content = " ".join(messages)
-            self.add_actor_archive_files(actor_entity, batch_content, all_actor_names)
-            self.add_stage_archive_files(actor_entity, batch_content, all_stage_names)
+            self._add_actor_archive_files(actor_entity, batch_content, all_actor_names)
+            self._add_stage_archive_files(actor_entity, batch_content, all_stage_names)
 
     ###############################################################################################################################################
-    def add_actor_archive_files(
+    def _ensure_archive_for_current_stage(self) -> Dict[str, StageArchiveFile]:
+
+        ret: Dict[str, StageArchiveFile] = {}
+
+        actor_entities: Set[Entity] = self._context.get_group(
+            Matcher(all_of=[ActorComponent])
+        ).entities
+
+        for actor_entity in actor_entities:
+
+            stage_entity = self._context.safe_get_stage_entity(actor_entity)
+            if stage_entity is None:
+                continue
+
+            stage_name = self._context.safe_get_entity_name(stage_entity)
+            actor_name = self._context.safe_get_entity_name(actor_entity)
+            exist_file = self._context._file_system.get_file(
+                StageArchiveFile, actor_name, stage_name
+            )
+            if exist_file is not None:
+                continue
+
+            new_archive = extended_systems.file_system_helper.add_stage_archive_files(
+                self._context._file_system, actor_name, {stage_name}
+            )
+
+            ret[actor_name] = new_archive[0]
+
+        return ret
+
+    ###############################################################################################################################################
+    def _add_actor_archive_files(
         self,
         entity: Entity,
         messages: str,
@@ -116,7 +151,7 @@ class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
         return ret
 
     ###############################################################################################################################################
-    def add_stage_archive_files(
+    def _add_stage_archive_files(
         self,
         entity: Entity,
         messages: str,
@@ -143,7 +178,7 @@ class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
         return ret
 
     ###############################################################################################################################################
-    def get_all_actor_names(self) -> Set[str]:
+    def _get_all_actor_names(self) -> Set[str]:
         actor_entities: Set[Entity] = self._context.get_group(
             Matcher(all_of=[ActorComponent])
         ).entities
@@ -152,7 +187,7 @@ class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
         }
 
     ###############################################################################################################################################
-    def get_all_stage_names(self) -> Set[str]:
+    def _get_all_stage_names(self) -> Set[str]:
         stage_entities: Set[Entity] = self._context.get_group(
             Matcher(all_of=[StageComponent])
         ).entities
@@ -161,8 +196,8 @@ class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
         }
 
     ###############################################################################################################################################
-    def add_kick_off_actor_archive_files(
-        self, optional_range_actor_names: Set[str] = set()
+    def _add_kick_off_actor_archive_files(
+        self, add_actor_names: Set[str]
     ) -> Dict[str, List[ActorArchiveFile]]:
 
         ret: Dict[str, List[ActorArchiveFile]] = {}
@@ -176,7 +211,7 @@ class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
             actor_comp = actor_entity.get(ActorComponent)
             kick_off_comp = actor_entity.get(KickOffComponent)
 
-            for archive_actor_name in optional_range_actor_names:
+            for archive_actor_name in add_actor_names:
                 if archive_actor_name == actor_comp.name:
                     continue
 
@@ -197,8 +232,8 @@ class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
         return ret
 
     ###############################################################################################################################################
-    def add_kick_off_archive_files(
-        self, optional_range_stage_names: Set[str] = set()
+    def _add_kick_off_stage_archive_files(
+        self, add_stage_names: Set[str]
     ) -> Dict[str, List[StageArchiveFile]]:
         ret: Dict[str, List[StageArchiveFile]] = {}
 
@@ -211,7 +246,7 @@ class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
             actor_comp = actor_entity.get(ActorComponent)
             kick_off_comp = actor_entity.get(KickOffComponent)
 
-            for archive_stage_name in optional_range_stage_names:
+            for archive_stage_name in add_stage_names:
 
                 if archive_stage_name == actor_comp.name:
                     continue

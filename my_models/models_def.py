@@ -211,6 +211,16 @@ class CheckActionModel(BaseModel):
     content: str = ""
 
 
+class GetActorArchivesActionModel(BaseModel):
+    message: str = ""
+    archives: List[ActorArchiveFileModel] = []
+
+
+class GetStageArchivesActionModel(BaseModel):
+    message: str = ""
+    archives: List[StageArchiveFileModel] = []
+
+
 # 临时测试重构用！
 class AgentEvent(BaseAgentEvent):
     pass

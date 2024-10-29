@@ -111,8 +111,9 @@ class PlayerProxy:
         )
 
     ##########################################################################################################################################################
-    def debug_client_messages(self, send_count: int) -> None:
-        for client_message in self._model.client_messages[-send_count:]:
+    def log_recent_client_messages(self, send_count: int) -> None:
+        abs_count = abs(send_count)
+        for client_message in self._model.client_messages[-abs_count:]:
             json_str = client_message.model_dump_json()
             logger.warning(json_str)
 

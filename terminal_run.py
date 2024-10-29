@@ -124,7 +124,7 @@ async def terminal_run(option: TerminalRunOption) -> None:
             continue
 
         # 有客户端才进行控制。
-        player_proxy.debug_client_messages(option.show_client_message_count)
+        player_proxy.log_recent_client_messages(option.show_client_message_count)
         if player_proxy.over:
             # 如果死了就退出。
             new_game._will_exit = True
@@ -197,6 +197,12 @@ async def terminal_player_input(game: RPGGame, player_proxy: PlayerProxy) -> Non
         elif usr_input == "/check" or usr_input == "/c":
             terminal_player_input_check(game, player_proxy)
 
+        elif usr_input == "/get_actor_archives" or usr_input == "/gaa":
+            terminal_player_input_get_actor_archives(game, player_proxy)
+
+        elif usr_input == "/get_stage_archives" or usr_input == "/gsa":
+            terminal_player_input_get_stage_archives(game, player_proxy)
+
         else:
             rpg_game.rpg_game_helper.add_player_command(game, player_proxy, usr_input)
             break
@@ -213,6 +219,44 @@ def terminal_player_input_check(game_name: RPGGame, player_proxy: PlayerProxy) -
 
     while True:
         logger.info(check_action_model.model_dump_json())
+        input(f"按任意键继续")
+        break
+
+
+#######################################################################################################################################
+def terminal_player_input_get_actor_archives(
+    game_name: RPGGame, player_proxy: PlayerProxy
+) -> None:
+    get_actor_archives_model = (
+        rpg_game.rpg_game_helper.gen_player_get_actor_archives_action_model(
+            game_name, player_proxy
+        )
+    )
+
+    if get_actor_archives_model is None:
+        return
+
+    while True:
+        logger.info(get_actor_archives_model.model_dump_json())
+        input(f"按任意键继续")
+        break
+
+
+#######################################################################################################################################
+def terminal_player_input_get_stage_archives(
+    game_name: RPGGame, player_proxy: PlayerProxy
+) -> None:
+    get_stage_archives_model = (
+        rpg_game.rpg_game_helper.gen_player_get_stage_archives_action_model(
+            game_name, player_proxy
+        )
+    )
+
+    if get_stage_archives_model is None:
+        return
+
+    while True:
+        logger.info(get_stage_archives_model.model_dump_json())
         input(f"按任意键继续")
         break
 

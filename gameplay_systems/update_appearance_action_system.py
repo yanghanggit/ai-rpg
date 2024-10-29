@@ -15,6 +15,7 @@ from my_agent.agent_task import AgentTask
 from gameplay_systems.action_components import UpdateAppearanceAction
 from rpg_game.rpg_game import RPGGame
 from my_models.models_def import UpdateAppearanceEvent
+import gameplay_systems.public_builtin_prompt as public_builtin_prompt
 
 
 ################################################################################################################################################
@@ -232,13 +233,22 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
                 continue
 
             appearance_comp = actor_entity.get(AppearanceComponent)
+            message_content = _generate_appearance_update_prompt(
+                appearance_comp.name, appearance_comp.appearance
+            )
+
+            # 自己知道就好
+            self._context.safe_add_human_message_to_entity(
+                actor_entity, public_builtin_prompt.replace_you(
+                message_content, appearance_comp.name
+            )
+            )
+
+            # 广播给别人。
             self._context.broadcast_event_in_stage(
                 current_stage_entity,
-                UpdateAppearanceEvent(
-                    message_content=_generate_appearance_update_prompt(
-                        appearance_comp.name, appearance_comp.appearance
-                    )
-                ),
+                UpdateAppearanceEvent(message_content=message_content),
+                set({actor_entity}),
             )
 
     ###############################################################################################################################################

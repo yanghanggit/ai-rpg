@@ -20,7 +20,7 @@ from rpg_game.web_game import WebGame
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt
 
 from player.player_proxy import PlayerProxy
-from extended_systems.files_def import StageArchiveFile, PropFile
+from extended_systems.files_def import ActorArchiveFile, StageArchiveFile, PropFile
 from gameplay_systems.components import (
     ActorComponent,
     AppearanceComponent,
@@ -46,7 +46,15 @@ import datetime
 import shutil
 import zipfile
 from my_models.models_def import AgentEvent
-from my_models.models_def import GameModel, WatchActionModel, CheckActionModel
+from my_models.models_def import (
+    # GameModel,
+    WatchActionModel,
+    CheckActionModel,
+    GetActorArchivesActionModel,
+    GetStageArchivesActionModel,
+    ActorArchiveFileModel,
+    StageArchiveFileModel,
+)
 
 
 #######################################################################################################################################
@@ -302,6 +310,54 @@ def gen_player_check_action_model(
 """
 
     return CheckActionModel(content=message)
+
+
+#######################################################################################################################################
+def gen_player_get_actor_archives_action_model(
+    game_name: RPGGame, player_proxy: PlayerProxy
+) -> Optional[GetActorArchivesActionModel]:
+
+    player_entity = game_name._entitas_context.get_player_entity(player_proxy.name)
+    if player_entity is None:
+        return None
+
+    file_owner_name = game_name._entitas_context.safe_get_entity_name(player_entity)
+    archive_files = game_name._entitas_context._file_system.get_files(
+        ActorArchiveFile, file_owner_name
+    )
+
+    ret: GetActorArchivesActionModel = GetActorArchivesActionModel(
+        message="这是角色档案！！！！", archives=[]
+    )
+
+    for archive_file in archive_files:
+        ret.archives.append(archive_file._model)
+
+    return ret
+
+
+#######################################################################################################################################
+def gen_player_get_stage_archives_action_model(
+    game_name: RPGGame, player_proxy: PlayerProxy
+) -> Optional[GetStageArchivesActionModel]:
+
+    player_entity = game_name._entitas_context.get_player_entity(player_proxy.name)
+    if player_entity is None:
+        return None
+
+    file_owner_name = game_name._entitas_context.safe_get_entity_name(player_entity)
+    archive_files = game_name._entitas_context._file_system.get_files(
+        StageArchiveFile, file_owner_name
+    )
+
+    ret: GetStageArchivesActionModel = GetStageArchivesActionModel(
+        message="这是场景档案！！！！", archives=[]
+    )
+
+    for archive_file in archive_files:
+        ret.archives.append(archive_file._model)
+
+    return ret
 
 
 #######################################################################################################################################

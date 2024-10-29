@@ -6,14 +6,16 @@ sys.path.append(str(root_dir))
 import pandas as pd
 from loguru import logger
 from pandas.core.frame import DataFrame
-from typing import Dict
+from typing import Dict, List
 from game_sample.excel_data_prop import ExcelDataProp
 from game_sample.excel_data_world_system import ExcelDataWorldSystem
 from game_sample.excel_data_stage import ExcelDataStage
 from pathlib import Path
 import game_sample.utils
 from game_sample.excel_data_actor import ExcelDataActor
+from game_sample.game_editor import ExcelEditorGame
 import game_sample.configuration as configuration
+from my_models.models_def import GenGamesConfigModel, OneGameConfigModel
 
 
 ############################################################################################################
@@ -160,6 +162,25 @@ def build_relationship_between_actors_and_props(
     for _me in analyze_actor_data.values():
         if len(_me._prop_archives) > 0:
             logger.warning(f"{_me.name}: {_me._prop_archives}")
+
+
+################################################################################################################
+def gen_games_config(gen_games: List[ExcelEditorGame]) -> GenGamesConfigModel:
+
+    ret: GenGamesConfigModel = GenGamesConfigModel()
+
+    for game_editor in gen_games:
+
+        one_game_config = OneGameConfigModel()
+        one_game_config.game_name = game_editor._name
+        one_game_config.about_game = game_editor.about_game
+
+        for player in game_editor.editor_players:
+            one_game_config.players.setdefault(player.name, "")
+
+        ret.game_configs.append(one_game_config)
+
+    return ret
 
 
 ################################################################################################################

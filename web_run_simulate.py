@@ -11,7 +11,7 @@ from ws_config import (
     StartResponse,
     ExitRequest,
     ExitResponse,
-    GameStateWrapper,
+    GameStateManager,
     GameState,
     ExecuteRequest,
     ExecuteResponse,
@@ -25,9 +25,13 @@ from ws_config import (
     GetActorArchivesResponse,
     GetStageArchivesRequest,
     GetStageArchivesResponse,
+    APIRoutesConfigRequest,
+    APIRoutesConfigResponse,
 )
 from loguru import logger
 from typing import List
+from my_models.models_def import APIRoutesConfigModel
+import datetime
 
 
 class GameClientContext:
@@ -38,21 +42,48 @@ class GameClientContext:
         self._selectable_actors: List[str] = []
         self._actor_name: str = ""
         self._input_enable = False
+        self._api_routes = APIRoutesConfigModel()
 
     def on_exit_game(self) -> None:
         self._game_name = ""
         self._selectable_actors = []
         self._actor_name = ""
 
+    @property
+    def api_routes(self) -> APIRoutesConfigModel:
+        return self._api_routes
+
+
+###############################################################################################################################################
+def _api_routes(
+    client_context: GameClientContext, state_manager: GameStateManager
+) -> None:
+
+    time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    response = requests.get(
+        f"""http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/api_routes/""",
+        json=APIRoutesConfigRequest(content=f"time = {time}").model_dump(),
+    )
+
+    api_routes_config_response = APIRoutesConfigResponse.model_validate(response.json())
+    if api_routes_config_response.error > 0:
+        assert False, f"获取API路由失败: {api_routes_config_response.message}"
+        return
+
+    client_context._api_routes = api_routes_config_response.api_routes
+    logger.info(
+        f"获取API路由成功: {api_routes_config_response.api_routes.model_dump_json()}"
+    )
+
 
 ###############################################################################################################################################
 def _login(
     client_context: GameClientContext,
-    state_wrapper: GameStateWrapper,
+    state_manager: GameStateManager,
     default_user_name: str,
 ) -> None:
 
-    if not state_wrapper.can_transition(GameState.LOGGED_IN):
+    if not state_manager.can_transition(GameState.LOGGED_IN):
         return
 
     input_username = input(
@@ -67,9 +98,9 @@ def _login(
         logger.error("用户名不能为空!")
         return
 
-    url_login = f"http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/login/"
     response = requests.post(
-        url_login, json=LoginRequest(user_name=input_username).model_dump()
+        client_context.api_routes.LOGIN,
+        json=LoginRequest(user_name=input_username).model_dump(),
     )
 
     login_response = LoginResponse.model_validate(response.json())
@@ -81,28 +112,27 @@ def _login(
 
     assert login_response.user_name == input_username
 
-    state_wrapper.transition(GameState.LOGGED_IN)
+    state_manager.transition(GameState.LOGGED_IN)
     client_context._user_name = login_response.user_name
     logger.info(f"登录成功: {login_response.user_name}")
 
 
 ###############################################################################################################################################
 def _create_game(
-    client_context: GameClientContext, state_wrapper: GameStateWrapper
+    client_context: GameClientContext, state_manager: GameStateManager
 ) -> None:
 
     assert client_context._user_name != ""
 
-    if not state_wrapper.can_transition(GameState.GAME_CREATED):
+    if not state_manager.can_transition(GameState.GAME_CREATED):
         return
 
     input_game_name = input(
         f"{client_context._user_name} 准备创建一个游戏,请输入游戏的名字(建议是 World1/World2/World3 之一):"
     )
 
-    url_create = f"http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/create/"
     response = requests.post(
-        url_create,
+        client_context.api_routes.CREATE,
         json=CreateRequest(
             user_name=client_context._user_name, game_name=input_game_name
         ).model_dump(),
@@ -118,7 +148,7 @@ def _create_game(
     assert create_response.user_name == client_context._user_name
     assert len(create_response.selectable_actors) > 0
 
-    state_wrapper.transition(GameState.GAME_CREATED)
+    state_manager.transition(GameState.GAME_CREATED)
     client_context._game_name = create_response.game_name
     client_context._selectable_actors = create_response.selectable_actors
     logger.info(
@@ -132,10 +162,10 @@ def _create_game(
 
 ###############################################################################################################################################
 def _join_game(
-    client_context: GameClientContext, state_wrapper: GameStateWrapper
+    client_context: GameClientContext, state_manager: GameStateManager
 ) -> None:
 
-    if not state_wrapper.can_transition(GameState.GAME_JOINED):
+    if not state_manager.can_transition(GameState.GAME_JOINED):
         return
 
     assert len(client_context._selectable_actors) > 0
@@ -159,9 +189,8 @@ def _join_game(
         else:
             logger.debug("输入错误，请重新输入。")
 
-    url_join = f"http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/join/"
     response = requests.post(
-        url_join,
+        client_context.api_routes.JOIN,
         json=JoinRequest(
             user_name=client_context._user_name,
             game_name=client_context._game_name,
@@ -179,7 +208,7 @@ def _join_game(
     assert join_response.user_name == client_context._user_name
     assert join_response.game_name == client_context._game_name
 
-    state_wrapper.transition(GameState.GAME_JOINED)
+    state_manager.transition(GameState.GAME_JOINED)
     client_context._actor_name = join_response.actor_name
     logger.info(
         f"加入游戏: {join_response.user_name}, {join_response.game_name}, {join_response.actor_name}"
@@ -187,14 +216,13 @@ def _join_game(
 
 
 ###############################################################################################################################################
-def _play(client_context: GameClientContext, state_wrapper: GameStateWrapper) -> None:
+def _play(client_context: GameClientContext, state_manager: GameStateManager) -> None:
 
-    if not state_wrapper.can_transition(GameState.PLAYING):
+    if not state_manager.can_transition(GameState.PLAYING):
         return
 
-    url_start = f"http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/start/"
     response = requests.post(
-        url_start,
+        client_context.api_routes.START,
         json=StartRequest(
             user_name=client_context._user_name,
             game_name=client_context._game_name,
@@ -213,7 +241,7 @@ def _play(client_context: GameClientContext, state_wrapper: GameStateWrapper) ->
     assert start_response.game_name == client_context._game_name
     assert start_response.actor_name == client_context._actor_name
 
-    state_wrapper.transition(GameState.PLAYING)
+    state_manager.transition(GameState.PLAYING)
     logger.info(
         f"开始游戏: {start_response.user_name}, {start_response.game_name}, {start_response.actor_name}"
     )
@@ -222,16 +250,15 @@ def _play(client_context: GameClientContext, state_wrapper: GameStateWrapper) ->
 ###############################################################################################################################################
 def _request_game_execute(
     client_context: GameClientContext,
-    state_wrapper: GameStateWrapper,
+    state_manager: GameStateManager,
     usr_input: List[str],
 ) -> None:
 
-    assert state_wrapper.state == GameState.PLAYING
+    assert state_manager.state == GameState.PLAYING
 
     # 推动游戏执行一次
-    url_execute = f"http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/execute/"
     response = requests.post(
-        url_execute,
+        client_context.api_routes.EXECUTE,
         json=ExecuteRequest(
             user_name=client_context._user_name,
             game_name=client_context._game_name,
@@ -251,15 +278,13 @@ def _request_game_execute(
 ###############################################################################################################################################
 def _request_fetch_messages(
     client_context: GameClientContext,
-    state_wrapper: GameStateWrapper,
+    state_manager: GameStateManager,
     fetch_begin_index: int,
     fetch_count: int,
 ) -> None:
-    url_fetch_messages = (
-        f"http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/fetch_messages/"
-    )
+
     response = requests.get(
-        url_fetch_messages,
+        client_context.api_routes.FETCH_MESSAGES,
         json=FetchMessagesRequest(
             user_name=client_context._user_name,
             game_name=client_context._game_name,
@@ -283,7 +308,7 @@ def _request_fetch_messages(
 
 ###############################################################################################################################################
 def _web_player_input(
-    client_context: GameClientContext, state_wrapper: GameStateWrapper
+    client_context: GameClientContext, state_manager: GameStateManager
 ) -> None:
 
     assert client_context._user_name != ""
@@ -296,9 +321,9 @@ def _web_player_input(
             input(
                 f"[{client_context._user_name}|{client_context._actor_name}]! 按任意键推动游戏执行一次:"
             )
-            _request_game_execute(client_context, state_wrapper, [])
+            _request_game_execute(client_context, state_manager, [])
             _request_fetch_messages(
-                client_context, state_wrapper, 0, WS_CONFIG.FETCH_MESSAGES_COUNT
+                client_context, state_manager, 0, WS_CONFIG.FETCH_MESSAGES_COUNT
             )
             break
 
@@ -315,40 +340,40 @@ def _web_player_input(
             continue
 
         if usr_input == "/quit":
-            _requesting_exit(client_context, state_wrapper)
+            _requesting_exit(client_context, state_manager)
             break
 
         elif usr_input == "/watch" or usr_input == "/w":
-            _requesting_watch(client_context, state_wrapper)
+            _requesting_watch(client_context, state_manager)
             break
 
         elif usr_input == "/check" or usr_input == "/c":
-            _requesting_check(client_context, state_wrapper)
+            _requesting_check(client_context, state_manager)
             break
 
         elif usr_input == "/get_actor_archives" or usr_input == "/gaa":
-            _requesting_get_actor_archives(client_context, state_wrapper)
+            _requesting_get_actor_archives(client_context, state_manager)
             break
 
         elif usr_input == "/get_stage_archives" or usr_input == "/gsa":
-            _requesting_get_stage_archives(client_context, state_wrapper)
+            _requesting_get_stage_archives(client_context, state_manager)
             break
 
         else:
-            _request_game_execute(client_context, state_wrapper, [usr_input])
+            _request_game_execute(client_context, state_manager, [usr_input])
             _request_fetch_messages(
-                client_context, state_wrapper, 0, WS_CONFIG.FETCH_MESSAGES_COUNT
+                client_context, state_manager, 0, WS_CONFIG.FETCH_MESSAGES_COUNT
             )
             break
 
 
 ###############################################################################################################################################
 def _requesting_watch(
-    client_context: GameClientContext, state_wrapper: GameStateWrapper
+    client_context: GameClientContext, state_manager: GameStateManager
 ) -> None:
-    url_watch = f"http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/watch/"
+
     response = requests.get(
-        url_watch,
+        client_context.api_routes.WATCH,
         json=WatchRequest(
             user_name=client_context._user_name,
             game_name=client_context._game_name,
@@ -368,11 +393,11 @@ def _requesting_watch(
 
 ###############################################################################################################################################
 def _requesting_check(
-    client_context: GameClientContext, state_wrapper: GameStateWrapper
+    client_context: GameClientContext, state_manager: GameStateManager
 ) -> None:
-    url_check = f"http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/check/"
+
     response = requests.get(
-        url_check,
+        client_context.api_routes.CHECK,
         json=CheckRequest(
             user_name=client_context._user_name,
             game_name=client_context._game_name,
@@ -392,14 +417,11 @@ def _requesting_check(
 
 ###############################################################################################################################################
 def _requesting_get_actor_archives(
-    client_context: GameClientContext, state_wrapper: GameStateWrapper
+    client_context: GameClientContext, state_manager: GameStateManager
 ) -> None:
 
-    url_get_actor_archives = (
-        f"http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/get_actor_archives/"
-    )
     response = requests.get(
-        url_get_actor_archives,
+        client_context.api_routes.GET_ACTOR_ARCHIVES,
         json=GetActorArchivesRequest(
             user_name=client_context._user_name,
             game_name=client_context._game_name,
@@ -419,14 +441,11 @@ def _requesting_get_actor_archives(
 
 ###############################################################################################################################################
 def _requesting_get_stage_archives(
-    client_context: GameClientContext, state_wrapper: GameStateWrapper
+    client_context: GameClientContext, state_manager: GameStateManager
 ) -> None:
 
-    url_get_stage_archives = (
-        f"http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/get_stage_archives/"
-    )
     response = requests.get(
-        url_get_stage_archives,
+        client_context.api_routes.GET_STAGE_ARCHIVES,
         json=GetStageArchivesRequest(
             user_name=client_context._user_name,
             game_name=client_context._game_name,
@@ -446,14 +465,14 @@ def _requesting_get_stage_archives(
 
 ###############################################################################################################################################
 def _requesting_exit(
-    client_context: GameClientContext, state_wrapper: GameStateWrapper
+    client_context: GameClientContext, state_manager: GameStateManager
 ) -> None:
 
-    if not state_wrapper.can_transition(GameState.REQUESTING_EXIT):
+    if not state_manager.can_transition(GameState.REQUESTING_EXIT):
         return
-    url_exit = f"http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/exit/"
+
     response = requests.post(
-        url_exit,
+        client_context.api_routes.EXECUTE,
         json=ExitRequest(
             user_name=client_context._user_name, game_name=client_context._game_name
         ).model_dump(),
@@ -466,7 +485,7 @@ def _requesting_exit(
         )
         return
 
-    state_wrapper.transition(GameState.REQUESTING_EXIT)
+    state_manager.transition(GameState.REQUESTING_EXIT)
 
     # 清理数据
     logger.info(
@@ -480,7 +499,7 @@ def _requesting_exit(
 
 def web_run() -> None:
 
-    client_state = GameStateWrapper(GameState.UNLOGGED)
+    client_state = GameStateManager(GameState.UNLOGGED)
     client_context = GameClientContext()
     default_user_name = "北京柏林互动科技有限公司"
 
@@ -488,6 +507,7 @@ def web_run() -> None:
 
         match client_state.state:
             case GameState.UNLOGGED:
+                _api_routes(client_context, client_state)
                 _login(client_context, client_state, default_user_name)
 
             case GameState.LOGGED_IN:

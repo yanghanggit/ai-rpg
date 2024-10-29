@@ -9,9 +9,6 @@ class WorldSystemNames(StrEnum):
     WORLD_SKILL_SYSTEM_NAME = "技能系统"
 
 
-# 临时
-GAME_NAMES: List[str] = ["World1", "World2", "World3"]
-
 # 检查版本，因为gen_game.py先写死了。
 CHECK_GAME_RESOURCE_VERSION = "0.0.1"
 

@@ -1,16 +1,21 @@
+from dataclasses import dataclass
 from enum import Enum
 from pydantic import BaseModel
-from typing import Dict, Set, List, Optional, Final
+from typing import Dict, Set, List, Optional, Final, final
 from my_models.models_def import (
     GameModel,
     WatchActionModel,
     CheckActionModel,
     GetActorArchivesActionModel,
     GetStageArchivesActionModel,
+    GenGamesConfigModel,
+    APIRoutesConfigModel,
 )
 from my_models.models_def import PlayerClientMessage
+from loguru import logger
 
 
+@dataclass
 class WS_CONFIG:
     LOCAL_HOST: Final[str] = "127.0.0.1"
     PORT: Final[int] = 8080
@@ -31,7 +36,7 @@ class GameState(Enum):
     REQUESTING_EXIT = 6
 
 
-class GameStateWrapper:
+class GameStateManager:
 
     def __init__(self, game_stage: GameState) -> None:
 
@@ -63,13 +68,27 @@ class GameStateWrapper:
 ###############################################################################################################################################
 ###############################################################################################################################################
 ###############################################################################################################################################
+class APIRoutesConfigRequest(BaseModel):
+    content: str = ""
+
+
+class APIRoutesConfigResponse(BaseModel):
+    content: str = ""
+    api_routes: APIRoutesConfigModel = APIRoutesConfigModel()
+    error: int = 0
+    message: str = ""
+
+
+###############################################################################################################################################
+###############################################################################################################################################
+###############################################################################################################################################
 class LoginRequest(BaseModel):
     user_name: str = ""
 
 
 class LoginResponse(BaseModel):
     user_name: str = ""
-    game_list: List[str] = []
+    game_config: GenGamesConfigModel = GenGamesConfigModel()
     error: int = 0
     message: str = ""
 

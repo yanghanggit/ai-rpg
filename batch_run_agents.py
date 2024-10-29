@@ -3,7 +3,7 @@ import datetime
 import os
 from typing import Set, List
 import json
-from my_models.models_def import GameAgentsConfigModel
+from my_models.models_def import GameAgentsConfigModel, GenGamesConfigModel
 import rpg_game.rpg_game_config as rpg_game_config
 from pathlib import Path
 
@@ -120,15 +120,29 @@ def main() -> None:
 
     final_game_names: List[str] = []
 
+    # 读config.json
+    config_file_config = rpg_game_config.ROOT_GEN_GAMES_DIR / f"config.json"
+    assert config_file_config.exists()
+    read_config_content = config_file_config.read_text(encoding="utf-8")
+    gen_games_config_model = GenGamesConfigModel.model_validate_json(
+        read_config_content
+    )
+
+    #
+    available_games: List[str] = []
+    for game_config in gen_games_config_model.game_configs:
+        available_games.append(game_config.game_name)
+
+    #
     while True:
 
         usr_input = input(
-            f"请输入要进入的游戏名称(必须与自动化创建的名字一致), 可以是{rpg_game_config.GAME_NAMES}之一，空输入为全部生成:"
+            f"请输入要进入的游戏名称(必须与自动化创建的名字一致), 可以是{available_games}之一，空输入为全部生成:"
         )
         if usr_input == "":
-            final_game_names = rpg_game_config.GAME_NAMES.copy()
+            final_game_names = available_games.copy()
             break
-        elif usr_input in rpg_game_config.GAME_NAMES:
+        elif usr_input in available_games:
             final_game_names.append(usr_input)
             break
         else:

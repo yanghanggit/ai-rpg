@@ -1,5 +1,5 @@
 from entitas import Matcher, ReactiveProcessor, GroupEvent, Entity  # type: ignore
-from gameplay_systems.action_components import (
+from my_components.action_components import (
     BehaviorAction,
     SkillTargetAction,
     SkillAction,
@@ -8,7 +8,7 @@ from gameplay_systems.action_components import (
     BroadcastAction,
     WorldSkillSystemRuleAction,
 )
-from gameplay_systems.components import (
+from my_components.components import (
     BodyComponent,
     ActorComponent,
 )

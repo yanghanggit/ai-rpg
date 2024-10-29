@@ -1,10 +1,10 @@
 from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity  # type: ignore
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from gameplay_systems.action_components import (
+from my_components.action_components import (
     StealPropAction,
     DeadAction,
 )
-from gameplay_systems.components import (
+from my_components.components import (
     ActorComponent,
     RPGCurrentWeaponComponent,
     RPGCurrentClothesComponent,

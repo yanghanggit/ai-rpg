@@ -1,7 +1,7 @@
 from entitas import ExecuteProcessor, Matcher, Entity  # type: ignore
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
-from gameplay_systems.components import (
+from my_components.components import (
     StageComponent,
     ActorComponent,
     PlayerComponent,

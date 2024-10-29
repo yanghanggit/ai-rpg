@@ -1,11 +1,11 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: ignore
-from gameplay_systems.action_components import (
+from my_components.action_components import (
     GoToAction,
     TagAction,
     DeadAction,
     WhisperAction,
 )
-from gameplay_systems.components import (
+from my_components.components import (
     ActorComponent,
     AppearanceComponent,
     KickOffComponent,
@@ -13,7 +13,7 @@ from gameplay_systems.components import (
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt
 from typing import final, override, List, Set, Any, Dict, Optional
-from gameplay_systems.check_self_helper import SelfChecker
+from gameplay_systems.actor_checker import ActorChecker
 from my_agent.agent_task import AgentTask
 from my_agent.agent_plan import AgentPlanResponse
 from extended_systems.files_def import PropFile
@@ -267,7 +267,7 @@ class StageDepartureCheckerSystem(ReactiveProcessor):
     ###############################################################################################################################################
     def get_actor_props(self, actor_entity: Entity) -> List[PropFile]:
 
-        check_self = SelfChecker(self._context, actor_entity)
+        check_self = ActorChecker(self._context, actor_entity)
         return (
             check_self.get_prop_files(PropType.TYPE_SPECIAL)
             + check_self.get_prop_files(PropType.TYPE_WEAPON)

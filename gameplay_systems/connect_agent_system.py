@@ -1,6 +1,6 @@
 from entitas import Matcher, InitializeProcessor  # type: ignore
 from typing import final, override
-from gameplay_systems.components import WorldComponent, StageComponent, ActorComponent
+from my_components.components import WorldComponent, StageComponent, ActorComponent
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from rpg_game.rpg_game import RPGGame
 

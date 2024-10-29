@@ -1,6 +1,6 @@
 from entitas import Entity, Matcher, InitializeProcessor, ExecuteProcessor  # type: ignore
 from overrides import override
-from gameplay_systems.components import (
+from my_components.components import (
     WorldComponent,
     StageComponent,
     ActorComponent,
@@ -15,7 +15,7 @@ from typing import Dict, Set, FrozenSet, Any, List, final
 from my_agent.agent_task import AgentTask
 from rpg_game.rpg_game import RPGGame
 from extended_systems.files_def import PropFile
-from gameplay_systems.action_components import (
+from my_components.action_components import (
     STAGE_AVAILABLE_ACTIONS_REGISTER,
     ACTOR_AVAILABLE_ACTIONS_REGISTER,
     MindVoiceAction,
@@ -24,7 +24,7 @@ from gameplay_systems.action_components import (
 )
 import gameplay_systems.action_helper
 from my_agent.agent_plan import AgentPlanResponse
-from gameplay_systems.action_components import UpdateAppearanceAction
+from my_components.action_components import UpdateAppearanceAction
 
 
 ###############################################################################################################################################

@@ -1,12 +1,12 @@
 from entitas import Matcher, ReactiveProcessor, GroupEvent, Entity  # type: ignore
-from gameplay_systems.action_components import (
+from my_components.action_components import (
     BehaviorAction,
     SkillTargetAction,
     SkillAction,
     SkillUsePropAction,
     WorldSkillSystemRuleAction,
 )
-from gameplay_systems.components import StageComponent, RPGCurrentWeaponComponent
+from my_components.components import StageComponent, RPGCurrentWeaponComponent
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import final, override, Set, Optional, Any
 from extended_systems.files_def import PropFile

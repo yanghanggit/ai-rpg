@@ -1,7 +1,7 @@
 from entitas import InitializeProcessor, ExecuteProcessor, Matcher, Entity  # type: ignore
 from overrides import override
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from gameplay_systems.components import (
+from my_components.components import (
     PlanningAllowedComponent,
     StageComponent,
     ActorComponent,

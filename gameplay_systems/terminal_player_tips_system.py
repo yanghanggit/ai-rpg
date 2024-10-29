@@ -2,7 +2,7 @@ from entitas import Entity, ExecuteProcessor  # type: ignore
 from typing import final, override, List
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from rpg_game.rpg_game import RPGGame
-from gameplay_systems.components import (
+from my_components.components import (
     PlayerComponent,
     ActorComponent,
     StageGraphComponent,

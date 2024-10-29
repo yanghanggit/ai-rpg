@@ -1,7 +1,7 @@
 from entitas import Matcher, ExecuteProcessor  # type: ignore
 from overrides import override
-from gameplay_systems.components import StageComponent, PlanningAllowedComponent
-from gameplay_systems.action_components import (
+from my_components.components import StageComponent, PlanningAllowedComponent
+from my_components.action_components import (
     STAGE_AVAILABLE_ACTIONS_REGISTER,
     RemovePropAction,
     StageNarrateAction,

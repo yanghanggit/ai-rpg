@@ -21,14 +21,14 @@ import gameplay_systems.public_builtin_prompt as public_builtin_prompt
 
 from player.player_proxy import PlayerProxy
 from extended_systems.files_def import ActorArchiveFile, StageArchiveFile, PropFile
-from gameplay_systems.components import (
+from my_components.components import (
     ActorComponent,
     AppearanceComponent,
     PlayerComponent,
     PlanningAllowedComponent,
     KickOffComponent,
 )
-from gameplay_systems.check_self_helper import SelfChecker
+from gameplay_systems.actor_checker import ActorChecker
 import gameplay_systems.actor_planning_execution_system
 from player.player_command import (
     PlayerGoTo,
@@ -52,8 +52,8 @@ from my_models.models_def import (
     CheckActionModel,
     GetActorArchivesActionModel,
     GetStageArchivesActionModel,
-    ActorArchiveFileModel,
-    StageArchiveFileModel,
+    # ActorArchiveFileModel,
+    # StageArchiveFileModel,
 )
 
 
@@ -291,34 +291,33 @@ def gen_player_check_action_model(
     if player_entity is None:
         return None
 
-    stage_entity = game_name._entitas_context.safe_get_stage_entity(player_entity)
-    assert stage_entity is not None
-    stage_name = game_name._entitas_context.safe_get_entity_name(stage_entity)
-
-    controlled_actor_name = game_name._entitas_context.safe_get_entity_name(
-        player_entity
-    )
-
-    check_self = SelfChecker(game_name._entitas_context, player_entity)
+    #
+    check_self = ActorChecker(game_name._entitas_context, player_entity)
     health = check_self.health * 100
 
+    # 道具信息
     actor_props_prompt = (
         gameplay_systems.actor_planning_execution_system._generate_actor_props_prompts(
             check_self._category_prop_files
         )
     )
 
-    message = f"""# {player_proxy.name} | {controlled_actor_name} 自身检查
+    if len(actor_props_prompt) == 0:
+        actor_props_prompt.append("- 无任何道具。")
 
-## 你当前所在的场景：{stage_name}
+    # 最终返回
+    message = f"""# {player_proxy.name} | {player_proxy.actor_name} 自身检查
+
+## 你当前所在的场景：{check_self.stage_name}
 
 ## 你的健康状态
 {f"生命值: {health:.2f}%"}
 
 ## 你当前持有的道具
-{len(actor_props_prompt) > 0 and "\n".join(actor_props_prompt) or "- 无任何道具。"}
+{len(actor_props_prompt)}
 
-"""
+## 你的外貌
+{check_self._appearance}"""
 
     return CheckActionModel(content=message)
 

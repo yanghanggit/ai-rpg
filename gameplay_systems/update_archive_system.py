@@ -1,7 +1,7 @@
 from entitas import ExecuteProcessor, Matcher, Entity, InitializeProcessor  # type: ignore
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
-from gameplay_systems.components import ActorComponent, StageComponent, KickOffComponent
+from my_components.components import ActorComponent, StageComponent, KickOffComponent
 from typing import Set, final, override, Dict, List
 import extended_systems.file_system_helper
 from rpg_game.rpg_game import RPGGame

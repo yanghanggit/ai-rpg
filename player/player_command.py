@@ -1,6 +1,6 @@
 from rpg_game.base_game import BaseGame
 from loguru import logger
-from gameplay_systems.action_components import (
+from my_components.action_components import (
     BroadcastAction,
     SpeakAction,
     GoToAction,
@@ -14,7 +14,7 @@ from gameplay_systems.action_components import (
 )
 
 from overrides import override
-from gameplay_systems.components import ActorComponent
+from my_components.components import ActorComponent
 from player.player_proxy import PlayerProxy
 from typing import cast
 from player.base_command import PlayerCommand

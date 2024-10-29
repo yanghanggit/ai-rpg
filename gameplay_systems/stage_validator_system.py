@@ -1,9 +1,9 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: ignore
-from gameplay_systems.action_components import (
+from my_components.action_components import (
     GoToAction,
     DeadAction,
 )
-from gameplay_systems.components import (
+from my_components.components import (
     StageComponent,
     ActorComponent,
     StageGraphComponent,

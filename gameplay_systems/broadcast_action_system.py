@@ -1,7 +1,7 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: ignore
 from typing import final, override
-from gameplay_systems.components import StageComponent
-from gameplay_systems.action_components import BroadcastAction
+from my_components.components import StageComponent
+from my_components.action_components import BroadcastAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from rpg_game.rpg_game import RPGGame
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt

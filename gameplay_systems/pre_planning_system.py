@@ -2,7 +2,7 @@ from typing import final
 from entitas import ExecuteProcessor, Matcher  # type: ignore
 from overrides import override
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from gameplay_systems.components import (
+from my_components.components import (
     PlanningAllowedComponent,
 )
 from rpg_game.rpg_game import RPGGame

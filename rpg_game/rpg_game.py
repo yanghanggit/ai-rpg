@@ -2,7 +2,7 @@ from entitas import Matcher, Entity  # type: ignore
 from typing import List, Optional
 from overrides import override
 from loguru import logger
-from gameplay_systems.components import (
+from my_components.components import (
     WorldComponent,
     StageComponent,
     ActorComponent,

@@ -1,12 +1,12 @@
 from entitas import Entity, Matcher, ExecuteProcessor  # type: ignore
 from overrides import override
-from gameplay_systems.components import (
+from my_components.components import (
     ActorComponent,
     PlanningAllowedComponent,
     StageGraphComponent,
     PlayerComponent,
 )
-from gameplay_systems.action_components import (
+from my_components.action_components import (
     StageNarrateAction,
     ACTOR_AVAILABLE_ACTIONS_REGISTER,
     PickUpPropAction,
@@ -23,7 +23,7 @@ from my_agent.agent_task import (
     AgentTask,
 )
 from rpg_game.rpg_game import RPGGame
-from gameplay_systems.check_self_helper import SelfChecker
+from gameplay_systems.actor_checker import ActorChecker
 from extended_systems.files_def import PropFile
 from my_models.models_def import PropType
 
@@ -220,7 +220,7 @@ class ActorPlanningExecutionSystem(ExecuteProcessor):
             if agent is None:
                 continue
 
-            check_self = SelfChecker(self._context, actor_entity)
+            check_self = ActorChecker(self._context, actor_entity)
             actors_appearance = self._context.get_appearance_in_stage(actor_entity)
             actors_appearance.pop(actor_comp.name, None)  # 自己不要
 

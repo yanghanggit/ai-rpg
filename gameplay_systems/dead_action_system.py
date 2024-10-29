@@ -1,13 +1,13 @@
 from entitas import Matcher, ExecuteProcessor  # type: ignore
 from typing import final, override, Any
-from gameplay_systems.components import (
+from my_components.components import (
     PlayerComponent,
     DestroyComponent,
     ActorComponent,
     RPGAttributesComponent,
     ActorComponent,
 )
-from gameplay_systems.action_components import (
+from my_components.action_components import (
     DeadAction,
     ACTOR_INTERACTIVE_ACTIONS_REGISTER,
 )

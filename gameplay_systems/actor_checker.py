@@ -1,9 +1,10 @@
 from entitas import Entity  # type: ignore
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from gameplay_systems.components import (
+from my_components.components import (
     RPGAttributesComponent,
     RPGCurrentClothesComponent,
     RPGCurrentWeaponComponent,
+    AppearanceComponent,
 )
 from typing import List, Dict, Optional
 from extended_systems.files_def import PropFile
@@ -11,23 +12,68 @@ import extended_systems.file_system_helper
 from my_models.models_def import PropType
 
 
-class SelfChecker:
+# 简单方便的一次性获取需要的信息。这个类是一个工具类。
+class ActorChecker:
 
     def __init__(self, context: RPGEntitasContext, entity: Entity) -> None:
+
         self._maxhp: int = 0
         self._hp: int = 0
         self._category_prop_files: Dict[str, List[PropFile]] = {}
         self._current_weapon: Optional[PropFile] = None
         self._current_clothes: Optional[PropFile] = None
+        self._stage_name: str = ""
+        self._appearance: str = ""
 
-        #
+        # 直接调用_check方法，获取所有需要的信息。
         self._check(context, entity)
 
     ######################################################################################################################################
+    @property
+    def health(self) -> float:
+        return self._hp / self._maxhp
+
+    ######################################################################################################################################
+    @property
+    def stage_name(self) -> str:
+        return self._stage_name
+
+    ######################################################################################################################################
+    @property
+    def appearance(self) -> str:
+        return self._appearance
+
+    ######################################################################################################################################
+
+    ######################################################################################################################################
     def _check(self, context: RPGEntitasContext, entity: Entity) -> None:
+        # 检查场景信息
+        self._check_stage(context, entity)
+        # 检查道具信息
         self._check_props(context, entity)
+        # 检查生命值信息
         self._check_health(entity)
+        # 检查装备信息
         self._check_equipments(context, entity)
+        # 检查外观信息
+        self._check_appearance(context, entity)
+
+    ######################################################################################################################################
+    def _check_appearance(self, context: RPGEntitasContext, entity: Entity) -> None:
+        if not entity.has(AppearanceComponent):
+            return None
+        appearance_comp = entity.get(AppearanceComponent)
+        # 害怕，就拷贝了。
+        self._appearance = str(appearance_comp.appearance)
+
+    ######################################################################################################################################
+    def _check_stage(self, context: RPGEntitasContext, entity: Entity) -> None:
+        stage_entity = context.safe_get_stage_entity(entity)
+        if stage_entity is None:
+            return
+
+        # 害怕，就拷贝了。
+        self._stage_name = str(context.safe_get_entity_name(stage_entity))
 
     ######################################################################################################################################
     def _check_props(self, context: RPGEntitasContext, entity: Entity) -> None:
@@ -65,6 +111,3 @@ class SelfChecker:
         return self._category_prop_files.get(prop_type, [])
 
     ######################################################################################################################################
-    @property
-    def health(self) -> float:
-        return self._hp / self._maxhp

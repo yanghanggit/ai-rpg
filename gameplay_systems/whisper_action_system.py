@@ -1,5 +1,5 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: ignore
-from gameplay_systems.action_components import WhisperAction
+from my_components.action_components import WhisperAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import final, override
 import gameplay_systems.conversation_helper

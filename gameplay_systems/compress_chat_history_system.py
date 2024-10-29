@@ -1,6 +1,6 @@
 from entitas import ExecuteProcessor, Matcher, Entity  # type: ignore
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from gameplay_systems.components import ActorComponent, StageComponent
+from my_components.components import ActorComponent, StageComponent
 from typing import Set, final, override, Dict
 from rpg_game.rpg_game import RPGGame
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt

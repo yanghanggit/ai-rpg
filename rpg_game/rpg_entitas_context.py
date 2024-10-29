@@ -1,6 +1,6 @@
 from entitas import Entity, Matcher, Context  # type: ignore
 from loguru import logger
-from gameplay_systems.components import (
+from my_components.components import (
     WorldComponent,
     StageComponent,
     ActorComponent,

@@ -1,7 +1,7 @@
 from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity  # type: ignore
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from gameplay_systems.action_components import PickUpPropAction, DeadAction
-from gameplay_systems.components import ActorComponent, StageComponent
+from my_components.action_components import PickUpPropAction, DeadAction
+from my_components.components import ActorComponent, StageComponent
 from loguru import logger
 from typing import final, override
 from extended_systems.files_def import PropFile

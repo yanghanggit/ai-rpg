@@ -1,10 +1,10 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: ignore
 from typing import final, override
-from gameplay_systems.action_components import RemovePropAction, StageNarrateAction
+from my_components.action_components import RemovePropAction, StageNarrateAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from rpg_game.rpg_game import RPGGame
 from extended_systems.files_def import PropFile
-from gameplay_systems.components import StageComponent
+from my_components.components import StageComponent
 from my_models.models_def import AgentEvent
 
 

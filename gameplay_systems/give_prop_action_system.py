@@ -1,10 +1,10 @@
 from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity  # type: ignore
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from gameplay_systems.action_components import (
+from my_components.action_components import (
     GivePropAction,
     DeadAction,
 )
-from gameplay_systems.components import ActorComponent
+from my_components.components import ActorComponent
 import gameplay_systems.conversation_helper
 from typing import final, override
 import extended_systems.file_system_helper

@@ -186,7 +186,9 @@ def get_props_in_stage(game_name: RPGGame, player_entity: Entity) -> List[PropFi
 
 
 #######################################################################################################################################
-def get_stage_narrate_content(game_name: RPGGame, player_entity: Entity) -> str:
+def get_stage_narrate_content_from_stage_archive_file(
+    game_name: RPGGame, player_entity: Entity
+) -> str:
 
     stage_entity = game_name._entitas_context.safe_get_stage_entity(player_entity)
     if stage_entity is None:
@@ -235,15 +237,24 @@ def gen_player_watch_action_model(
     if player_entity is None:
         return None
 
-    stage_narrate_content = get_stage_narrate_content(game_name, player_entity)
+    # 场景本身的描述
+    stage_narrate_content = get_stage_narrate_content_from_stage_archive_file(
+        game_name, player_entity
+    )
 
+    ## 场景内的角色信息获取
     actors_info: Dict[str, str] = get_info_of_actors_in_stage(game_name, player_entity)
+    actors_info.pop(game_name._entitas_context.safe_get_entity_name(player_entity))
 
     actors_info_prompts = [
         f"""{actor_name}: {appearance}"""
         for actor_name, appearance in actors_info.items()
     ]
 
+    if len(actors_info_prompts) == 0:
+        actors_info_prompts.append("- 场景内无其他角色。")
+
+    # 场景内的道具信息获取
     props_in_stage = get_props_in_stage(game_name, player_entity)
     props_in_stage_prompts = [
         public_builtin_prompt.generate_prop_prompt(
@@ -252,13 +263,13 @@ def gen_player_watch_action_model(
         for prop in props_in_stage
     ]
 
+    # 场景名称
     stage_entity = game_name._entitas_context.safe_get_stage_entity(player_entity)
     assert stage_entity is not None
     stage_name = game_name._entitas_context.safe_get_entity_name(stage_entity)
 
-    player_actor_name = game_name._entitas_context.safe_get_entity_name(player_entity)
-
-    message = f"""# {player_proxy.name} | {player_actor_name} 获取场景信息
+    # 最终返回
+    message = f"""# {player_proxy.name} | {player_proxy.actor_name} 获取场景信息
 
 ## 场景描述: {stage_name}
 {stage_narrate_content}

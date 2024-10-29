@@ -363,7 +363,7 @@ async def execute(request_data: ExecuteRequest) -> Dict[str, Any]:
 
 
 ###############################################################################################################################################
-@fastapi_app.post("/watch/")
+@fastapi_app.get("/watch/")
 async def watch(request_data: WatchRequest) -> Dict[str, Any]:
 
     global game_room
@@ -411,7 +411,7 @@ async def watch(request_data: WatchRequest) -> Dict[str, Any]:
 
 
 ###############################################################################################################################################
-@fastapi_app.post("/check/")
+@fastapi_app.get("/check/")
 async def check(request_data: CheckRequest) -> Dict[str, Any]:
 
     global game_room
@@ -459,7 +459,7 @@ async def check(request_data: CheckRequest) -> Dict[str, Any]:
 
 
 ###############################################################################################################################################
-@fastapi_app.post("/fetch_messages/")
+@fastapi_app.get("/fetch_messages/")
 async def fetch_messages(request_data: FetchMessagesRequest) -> Dict[str, Any]:
 
     global game_room
@@ -512,7 +512,7 @@ async def fetch_messages(request_data: FetchMessagesRequest) -> Dict[str, Any]:
 
 
 ###############################################################################################################################################
-@fastapi_app.post("/get_actor_archives/")
+@fastapi_app.get("/get_actor_archives/")
 async def get_actor_archives(request_data: GetActorArchivesRequest) -> Dict[str, Any]:
 
     global game_room
@@ -561,7 +561,7 @@ async def get_actor_archives(request_data: GetActorArchivesRequest) -> Dict[str,
 
 
 ###############################################################################################################################################
-@fastapi_app.post("/get_stage_archives/")
+@fastapi_app.get("/get_stage_archives/")
 async def get_stage_archives(request_data: GetStageArchivesRequest) -> Dict[str, Any]:
 
     global game_room

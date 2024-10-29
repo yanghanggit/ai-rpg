@@ -258,7 +258,7 @@ def _request_fetch_messages(
     url_fetch_messages = (
         f"http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/fetch_messages/"
     )
-    response = requests.post(
+    response = requests.get(
         url_fetch_messages,
         json=FetchMessagesRequest(
             user_name=client_context._user_name,
@@ -347,7 +347,7 @@ def _requesting_watch(
     client_context: GameClientContext, state_wrapper: GameStateWrapper
 ) -> None:
     url_watch = f"http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/watch/"
-    response = requests.post(
+    response = requests.get(
         url_watch,
         json=WatchRequest(
             user_name=client_context._user_name,
@@ -363,9 +363,7 @@ def _requesting_watch(
         )
         return
 
-    logger.warning(
-        f"观察游戏: {watch_response.user_name}, {watch_response.game_name}, {watch_response.actor_name}\n{watch_response.message}"
-    )
+    logger.warning(f"观察游戏: {watch_response.model_dump_json()}")
 
 
 ###############################################################################################################################################
@@ -373,7 +371,7 @@ def _requesting_check(
     client_context: GameClientContext, state_wrapper: GameStateWrapper
 ) -> None:
     url_check = f"http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/check/"
-    response = requests.post(
+    response = requests.get(
         url_check,
         json=CheckRequest(
             user_name=client_context._user_name,
@@ -389,9 +387,7 @@ def _requesting_check(
         )
         return
 
-    logger.warning(
-        f"检查游戏: {check_response.user_name}, {check_response.game_name}, {check_response.actor_name}\n{check_response.message}"
-    )
+    logger.warning(f"""检查游戏:\n{check_response.model_dump_json()}""")
 
 
 ###############################################################################################################################################
@@ -402,7 +398,7 @@ def _requesting_get_actor_archives(
     url_get_actor_archives = (
         f"http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/get_actor_archives/"
     )
-    response = requests.post(
+    response = requests.get(
         url_get_actor_archives,
         json=GetActorArchivesRequest(
             user_name=client_context._user_name,
@@ -429,7 +425,7 @@ def _requesting_get_stage_archives(
     url_get_stage_archives = (
         f"http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/get_stage_archives/"
     )
-    response = requests.post(
+    response = requests.get(
         url_get_stage_archives,
         json=GetStageArchivesRequest(
             user_name=client_context._user_name,

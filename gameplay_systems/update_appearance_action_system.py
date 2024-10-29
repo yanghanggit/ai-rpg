@@ -239,9 +239,10 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
 
             # 自己知道就好
             self._context.safe_add_human_message_to_entity(
-                actor_entity, public_builtin_prompt.replace_you(
-                message_content, appearance_comp.name
-            )
+                actor_entity,
+                public_builtin_prompt.replace_you(
+                    message_content, appearance_comp.name
+                ),
             )
 
             # 广播给别人。

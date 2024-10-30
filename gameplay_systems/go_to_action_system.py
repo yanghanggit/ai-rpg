@@ -10,8 +10,15 @@ from typing import final, override, Optional
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt
 from rpg_game.rpg_game import RPGGame
 from extended_systems.files_def import StageArchiveFile
-from loguru import logger
+#from loguru import logger
 from my_models.models_def import AgentEvent
+
+
+################################################################################################################################################
+def _generate_leave_stage_prompt(
+    actor_name: str, current_stage_name: str, go_to_stage_name: str
+) -> str:
+    return f"# {actor_name}离开了{current_stage_name} 场景。"
 
 
 ################################################################################################################################################
@@ -24,13 +31,6 @@ def _generate_stage_entry_prompt2(
     actor_name: str, target_stage_name: str, last_stage_name: str
 ) -> str:
     return f"# {actor_name} 离开了 {last_stage_name}, 进入了{target_stage_name}。"
-
-
-################################################################################################################################################
-def _generate_leave_stage_prompt(
-    actor_name: str, current_stage_name: str, go_to_stage_name: str
-) -> str:
-    return f"# {actor_name}离开了{current_stage_name} 场景。"
 
 
 ################################################################################################################################################
@@ -167,6 +167,7 @@ class GoToActionSystem(ReactiveProcessor):
                     actor_comp.name, helper.target_stage_name
                 )
             ),
+            set({helper._entity}),
         )
 
         self._context.notify_event(
@@ -184,22 +185,24 @@ class GoToActionSystem(ReactiveProcessor):
     def before_leave_current_stage(self, helper: GoToHelper) -> None:
 
         my_name = self._context.safe_get_entity_name(helper._entity)
+
         stage_archive = self._context._file_system.get_file(
             StageArchiveFile, my_name, helper._current_stage_name
         )
-        if stage_archive is None:
+
+        if stage_archive is None or stage_archive.stage_narrate == "":
             return
 
-        logger.debug(
-            f"{my_name}离开{helper._current_stage_name}。留下最后的印象。{stage_archive.stage_narrate}"
-        )
-        self._context.notify_event(
-            set({helper._entity}),
-            AgentEvent(
-                message_content=_generate_last_impression_of_stage_prompt(
-                    my_name, helper._current_stage_name, stage_archive.stage_narrate
-                )
+        message_content = public_builtin_prompt.replace_you(
+            _generate_last_impression_of_stage_prompt(
+                my_name, helper._current_stage_name, stage_archive.stage_narrate
             ),
+            my_name,
+        )
+
+        self._context.safe_add_human_message_to_entity(
+            helper._entity,
+            message_content,
         )
 
     ###############################################################################################################################################
@@ -217,6 +220,7 @@ class GoToActionSystem(ReactiveProcessor):
                     helper.target_stage_name,
                 )
             ),
+            set({helper._entity}),
         )
 
         # 离开场景 设置成空

@@ -41,6 +41,9 @@ from my_models.models_def import (
     OneGameConfigModel,
     APIRoutesConfigModel,
 )
+from fastapi.middleware.cors import CORSMiddleware
+
+# 配置允许的 CORS 来源
 
 
 class GameRoom:
@@ -63,6 +66,14 @@ class GameRoom:
 
 # 核心的fastapi_app
 fastapi_app = FastAPI()
+fastapi_app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # 在此添加你的 Unity Web 应用运行的地址
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 global_game_room: Optional[GameRoom] = None
 
@@ -86,7 +97,7 @@ global_api_routes_config: APIRoutesConfigModel = APIRoutesConfigModel(
 
 
 ###############################################################################################################################################
-@fastapi_app.get("/api_routes/")
+@fastapi_app.post("/api_routes/")
 async def api_routes(request_data: APIRoutesConfigRequest) -> Dict[str, Any]:
     logger.info(f"api_routes: {request_data.content}")
 
@@ -421,7 +432,7 @@ async def execute(request_data: ExecuteRequest) -> Dict[str, Any]:
 
 
 ###############################################################################################################################################
-@fastapi_app.get("/watch/")
+@fastapi_app.post("/watch/")
 async def watch(request_data: WatchRequest) -> Dict[str, Any]:
 
     global global_game_room
@@ -469,7 +480,7 @@ async def watch(request_data: WatchRequest) -> Dict[str, Any]:
 
 
 ###############################################################################################################################################
-@fastapi_app.get("/check/")
+@fastapi_app.post("/check/")
 async def check(request_data: CheckRequest) -> Dict[str, Any]:
 
     global global_game_room
@@ -517,7 +528,7 @@ async def check(request_data: CheckRequest) -> Dict[str, Any]:
 
 
 ###############################################################################################################################################
-@fastapi_app.get("/fetch_messages/")
+@fastapi_app.post("/fetch_messages/")
 async def fetch_messages(request_data: FetchMessagesRequest) -> Dict[str, Any]:
 
     global global_game_room
@@ -570,7 +581,7 @@ async def fetch_messages(request_data: FetchMessagesRequest) -> Dict[str, Any]:
 
 
 ###############################################################################################################################################
-@fastapi_app.get("/get_actor_archives/")
+@fastapi_app.post("/get_actor_archives/")
 async def get_actor_archives(request_data: GetActorArchivesRequest) -> Dict[str, Any]:
 
     global global_game_room
@@ -619,7 +630,7 @@ async def get_actor_archives(request_data: GetActorArchivesRequest) -> Dict[str,
 
 
 ###############################################################################################################################################
-@fastapi_app.get("/get_stage_archives/")
+@fastapi_app.post("/get_stage_archives/")
 async def get_stage_archives(request_data: GetStageArchivesRequest) -> Dict[str, Any]:
 
     global global_game_room

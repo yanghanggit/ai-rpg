@@ -34,7 +34,6 @@ class WebPlayerTipsSystem(ExecuteProcessor):
             logger.warning("不是终端游戏，无法使用这个系统")
             return
 
-       
         self._add_tips()
 
     ############################################################################################################

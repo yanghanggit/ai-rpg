@@ -103,3 +103,10 @@ class RPGCurrentWeaponComponent(NamedTuple):
 class RPGCurrentClothesComponent(NamedTuple):
     name: str
     propname: str
+
+
+# 每一局的消息记录下来，为了处理archives的问题
+@final
+class RoundEventsComponent(NamedTuple):
+    name: str
+    events: List[str]

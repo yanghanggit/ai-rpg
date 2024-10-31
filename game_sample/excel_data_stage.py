@@ -13,7 +13,7 @@ from enum import StrEnum, unique
 class DataStageProperty(StrEnum):
     NAME = "name"
     CODENAME = "codename"
-    DESCRIPTION = "description"
+    SYSTEM_PROMPT = "system_prompt"
     PORT = "PORT"
     API = "API"
     RAG = "RAG"
@@ -43,8 +43,8 @@ class ExcelDataStage:
 
     ############################################################################################################
     @property
-    def description(self) -> str:
-        return str(self._data[DataStageProperty.DESCRIPTION])
+    def system_prompt(self) -> str:
+        return str(self._data[DataStageProperty.SYSTEM_PROMPT])
 
     ############################################################################################################
     @property
@@ -88,7 +88,7 @@ class ExcelDataStage:
             configuration.GenSystemPromptSymbol.NAME, self.name
         )
         gen_prompt = gen_prompt.replace(
-            configuration.GenSystemPromptSymbol.DESCRIPTION, self.description
+            configuration.GenSystemPromptSymbol.SYSTEM_PROMPT, self.system_prompt
         )
         gen_prompt = gen_prompt.replace(
             configuration.GenSystemPromptSymbol.CONVERSATION_EXAMPLE,

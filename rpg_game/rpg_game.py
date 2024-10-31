@@ -1,5 +1,5 @@
 from entitas import Matcher, Entity  # type: ignore
-from typing import List, Optional
+from typing import List, Optional, Set
 from overrides import override
 from loguru import logger
 from my_components.components import (
@@ -15,6 +15,7 @@ from my_components.components import (
     RPGCurrentClothesComponent,
     StageGraphComponent,
     KickOffComponent,
+    RoundEventsComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from rpg_game.rpg_game_resource import RPGGameResource
@@ -30,9 +31,11 @@ from my_models.models_def import (
     WorldSystemModel,
     WorldSystemInstanceModel,
     PropFileModel,
+    AgentEvent,
 )
 from my_models.models_def import AttributesIndex
 from player.player_proxy import PlayerProxy
+import gameplay_systems.public_builtin_prompt as public_builtin_prompt
 
 
 class RPGGame(BaseGame):
@@ -192,6 +195,7 @@ class RPGGame(BaseGame):
         )
         world_system_entity.add(WorldComponent, world_system_model.name)
         world_system_entity.add(KickOffComponent, world_system_model.name, "")
+        world_system_entity.add(RoundEventsComponent, world_system_model.name, [])
 
         # 添加扩展子系统的功能
         context._langserve_agent_system.register_agent(
@@ -282,6 +286,8 @@ class RPGGame(BaseGame):
         actor_entity.add(
             KickOffComponent, actor_model.name, actor_model.kick_off_message
         )
+
+        actor_entity.add(RoundEventsComponent, actor_model.name, [])
 
         # 添加扩展子系统的
         context._langserve_agent_system.register_agent(
@@ -410,6 +416,8 @@ class RPGGame(BaseGame):
         stage_entity.add(
             KickOffComponent, stage_model.name, stage_model.kick_off_message
         )
+
+        stage_entity.add(RoundEventsComponent, stage_model.name, [])
 
         ## 重新设置Actor和stage的关系
         for actor_proxy in stage_proxy.actors:
@@ -666,5 +674,29 @@ class RPGGame(BaseGame):
             player_proxy = PlayerProxy(player_proxy_model)
             self.add_player(player_proxy)
             player_proxy.on_load()
+
+    ###############################################################################################################################################
+    def add_message_to_players(
+        self, player_entities: Set[Entity], agent_event: AgentEvent
+    ) -> None:
+
+        if len(player_entities) == 0:
+            return
+
+        for player_entity in player_entities:
+            assert player_entity.has(PlayerComponent)
+            player_comp = player_entity.get(PlayerComponent)
+            player_proxy = self.get_player(player_comp.name)
+            if player_proxy is None:
+                assert False, f"没有找到玩家：{player_comp.name}"
+                continue
+
+            assert player_proxy.actor_name != ""
+            agent_event.message_content = public_builtin_prompt.replace_you(
+                agent_event.message_content,
+                player_proxy.actor_name,
+            )
+
+            player_proxy.add_actor_message(player_proxy.actor_name, agent_event)
 
     ###############################################################################################################################################

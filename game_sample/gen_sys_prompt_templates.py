@@ -56,7 +56,7 @@ ACTOR_SYS_PROMPT_TEMPLATE = f"""# {configuration.GenSystemPromptSymbol.NAME}
 {game_rules_setting}
 
 ## 角色设定
-{configuration.GenSystemPromptSymbol.DESCRIPTION}
+{configuration.GenSystemPromptSymbol.SYSTEM_PROMPT}
 
 ## 你的说话风格与语气
 {configuration.GenSystemPromptSymbol.CONVERSATION_EXAMPLE}
@@ -94,7 +94,7 @@ STAGE_SYS_PROMPT_TEMPLATE = f"""# {configuration.GenSystemPromptSymbol.NAME}
 {game_rules_setting}
 
 ## 场景设定
-{configuration.GenSystemPromptSymbol.DESCRIPTION}
+{configuration.GenSystemPromptSymbol.SYSTEM_PROMPT}
 
 ## 你的说话风格与语气
 {configuration.GenSystemPromptSymbol.CONVERSATION_EXAMPLE}
@@ -129,7 +129,7 @@ WORLD_SYSTEM_SYS_PROMPT_TEMPLATE = f"""# {configuration.GenSystemPromptSymbol.NA
 {game_rules_setting}
 
 ## 你的设定
-{configuration.GenSystemPromptSymbol.DESCRIPTION}"""
+{configuration.GenSystemPromptSymbol.SYSTEM_PROMPT}"""
 
 
 ############################################################################################################

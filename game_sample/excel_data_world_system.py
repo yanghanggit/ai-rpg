@@ -14,7 +14,7 @@ from loguru import logger
 class DataWorldSystemProperty(StrEnum):
     NAME = "name"
     CODENAME = "codename"
-    DESCRIPTION = "description"
+    SYSTEM_PROMPT = "system_prompt"
     PORT = "PORT"
     API = "API"
     RAG = "RAG"
@@ -45,8 +45,8 @@ class ExcelDataWorldSystem:
 
     ############################################################################################################
     @property
-    def description(self) -> str:
-        return str(self._data[DataWorldSystemProperty.DESCRIPTION])
+    def system_prompt(self) -> str:
+        return str(self._data[DataWorldSystemProperty.SYSTEM_PROMPT])
 
     ############################################################################################################
     @property
@@ -85,7 +85,7 @@ class ExcelDataWorldSystem:
             configuration.GenSystemPromptSymbol.NAME, self.name
         )
         gen_prompt = gen_prompt.replace(
-            configuration.GenSystemPromptSymbol.DESCRIPTION, self.description
+            configuration.GenSystemPromptSymbol.SYSTEM_PROMPT, self.system_prompt
         )
         self._gen_system_prompt = gen_prompt
         return self._gen_system_prompt

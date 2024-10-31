@@ -311,7 +311,7 @@ def gen_player_check_action_model(
 {f"生命值: {health:.2f}%"}
 
 ## 你当前持有的道具
-{len(actor_props_prompt)}
+{"\n".join(actor_props_prompt)}
 
 ## 你的外貌
 {check_self._appearance}"""

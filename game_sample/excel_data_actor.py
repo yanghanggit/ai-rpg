@@ -13,7 +13,7 @@ import game_sample.configuration as configuration
 class DataActorProperty(StrEnum):
     NAME = "name"
     CODENAME = "codename"
-    DESCRIPTION = "description"
+    SYSTEM_PROMPT = "system_prompt"
     CONVERSATION_EXAMPLE = "conversation_example"
     PORT = "PORT"
     API = "API"
@@ -51,8 +51,8 @@ class ExcelDataActor:
 
     ############################################################################################################
     @property
-    def description(self) -> str:
-        return str(self._data[DataActorProperty.DESCRIPTION])
+    def system_prompt(self) -> str:
+        return str(self._data[DataActorProperty.SYSTEM_PROMPT])
 
     ############################################################################################################
     @property
@@ -101,7 +101,7 @@ class ExcelDataActor:
             configuration.GenSystemPromptSymbol.NAME, self.name
         )
         gen_prompt = gen_prompt.replace(
-            configuration.GenSystemPromptSymbol.DESCRIPTION, self.description
+            configuration.GenSystemPromptSymbol.SYSTEM_PROMPT, self.system_prompt
         )
         gen_prompt = gen_prompt.replace(
             configuration.GenSystemPromptSymbol.CONVERSATION_EXAMPLE,
@@ -154,7 +154,7 @@ class ExcelDataActor:
         if actor_name in self._actor_archives:
             return True
 
-        if actor_name in self.description:
+        if actor_name in self.system_prompt:
             self._actor_archives.append(actor_name)
             return True
 
@@ -166,7 +166,7 @@ class ExcelDataActor:
         if stage_name in self._stage_archives:
             return True
 
-        if stage_name in self.description:
+        if stage_name in self.system_prompt:
             self._stage_archives.append(stage_name)
             return True
 
@@ -182,7 +182,7 @@ class ExcelDataActor:
         if prop_name in self._prop_archives:
             return True
 
-        if prop_name in self.description:
+        if prop_name in self.system_prompt:
             self._prop_archives.append(prop_name)
             return True
 

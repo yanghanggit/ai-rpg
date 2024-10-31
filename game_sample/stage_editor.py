@@ -183,7 +183,7 @@ class ExcelEditorStage:
         return StageModel(
             name=self.excel_data.name,
             codename=self.excel_data.codename,
-            description=self.excel_data.description,
+            system_prompt=self.excel_data.system_prompt,
             url=self.excel_data.localhost,
             kick_off_message=self.kick_off_message,
             stage_graph=self.stage_graph,

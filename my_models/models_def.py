@@ -65,7 +65,7 @@ class ActorModel(BaseModel):
 class StageModel(BaseModel):
     name: str
     codename: str
-    description: str
+    system_prompt: str
     url: str
     kick_off_message: str
     stage_graph: List[str]
@@ -223,8 +223,8 @@ class PlayerProxyModel(BaseModel):
     cache_kickoff_messages: List[PlayerClientMessage] = []
     over: bool = False
     actor_name: str = ""
-    need_show_stage_messages: bool = False
-    need_show_actors_in_stage_messages: bool = False
+    # need_show_stage_messages: bool = False
+    # need_show_actors_in_stage_messages: bool = False
 
 
 class WatchActionModel(BaseModel):

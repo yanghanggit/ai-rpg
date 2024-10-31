@@ -1,7 +1,13 @@
 from entitas import ExecuteProcessor, Matcher, Entity, InitializeProcessor  # type: ignore
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from loguru import logger
-from my_components.components import ActorComponent, StageComponent, KickOffComponent
+
+# from loguru import logger
+from my_components.components import (
+    ActorComponent,
+    StageComponent,
+    KickOffComponent,
+    RoundEventsComponent,
+)
 from typing import Set, final, override, Dict, List
 import extended_systems.file_system_helper
 from rpg_game.rpg_game import RPGGame
@@ -80,12 +86,13 @@ class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
         all_stage_names = self._get_all_stage_names()
 
         actor_entities: Set[Entity] = self._context.get_group(
-            Matcher(all_of=[ActorComponent])
+            Matcher(all_of=[ActorComponent, RoundEventsComponent])
         ).entities
 
         for actor_entity in actor_entities:
 
-            messages = self._context.get_round_messages(actor_entity)
+            round_events_comp = actor_entity.get(RoundEventsComponent)
+            messages = round_events_comp.events
             if len(messages) == 0:
                 continue
             batch_content = " ".join(messages)

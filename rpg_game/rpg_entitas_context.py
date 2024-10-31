@@ -7,14 +7,14 @@ from my_components.components import (
     PlayerComponent,
     AppearanceComponent,
     GUIDComponent,
+    RoundEventsComponent,
 )
 from extended_systems.file_system import FileSystem
 from extended_systems.code_name_component_system import CodeNameComponentSystem
 from my_agent.lang_serve_agent_system import LangServeAgentSystem
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
-from typing import Optional, Dict, List, Set, cast, Any
+from typing import Optional, Dict, Set, cast, Any
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt
-from player.player_proxy import PlayerProxy
 from my_models.models_def import AgentEvent
 
 
@@ -45,9 +45,6 @@ class RPGEntitasContext(Context):
 
         # 混沌工程系统
         self._chaos_engineering_system: IChaosEngineering = chaos_engineering_system
-
-        # 临时收集会话的历史
-        self._round_messages: Dict[str, List[str]] = {}
 
         #
         self._game: Any = None
@@ -277,7 +274,7 @@ class RPGEntitasContext(Context):
     ) -> None:
 
         self._notify_event(entities, agent_event)
-        self._send_message_to_player(entities, agent_event)
+        self._notify_event_players(entities, agent_event)
 
     #############################################################################################################################
     def _notify_event(self, entities: Set[Entity], agent_event: AgentEvent) -> None:
@@ -295,85 +292,25 @@ class RPGEntitasContext(Context):
             )
 
             # 记录历史
-            self._round_messages.get(safe_name, []).append(replace_message)
+            if entity.has(RoundEventsComponent):
+                round_events_comp = entity.get(RoundEventsComponent)
+                round_events_comp.events.append(replace_message)
 
     #############################################################################################################################
-    def _send_message_to_player(
+    def _notify_event_players(
         self, entities: Set[Entity], agent_event: AgentEvent
     ) -> None:
 
         if len(entities) == 0:
             return
 
-        # if isinstance(agent_event, UpdateAppearanceEvent):
-        #     logger.debug("UpdateAppearanceEvent ????")
-        #     # return
+        player_entities: Set[Entity] = set()
+        for entity in entities:
+            if entity.has(PlayerComponent):
+                player_entities.add(entity)
 
-        first_entity = next(iter(entities))
-        player_entities_in_stage = self.get_players_in_stage(first_entity)
-
-        player_proxies: Set[PlayerProxy] = set()
-        for player_entity in player_entities_in_stage:
-            player_proxy = self.get_player_proxy(player_entity)
-            if player_proxy is None:
-                continue
-            player_proxies.add(player_proxy)
-
-        for player_proxy in player_proxies:
-            for entity in entities:
-                safe_name = self.safe_get_entity_name(entity)
-
-                if entity.has(ActorComponent):
-
-                    if safe_name == player_proxy.actor_name:
-
-                        agent_event.message_content = public_builtin_prompt.replace_you(
-                            agent_event.message_content,
-                            player_proxy.actor_name,
-                        )
-
-                        player_proxy.add_actor_message(safe_name, agent_event)
-                    elif player_proxy.need_show_actors_in_stage_messages:
-                        player_proxy.add_actor_message(safe_name, agent_event)
-
-                elif entity.has(StageComponent):
-                    if player_proxy.need_show_stage_messages:
-                        player_proxy.add_stage_message(safe_name, agent_event)
-                else:
-                    assert False, "不应该到这里"
-
-    #############################################################################################################################
-    def get_players_in_stage(self, stage_entity: Entity) -> Set[Entity]:
-
-        ret: Set[Entity] = set()
-
-        actor_entities_in_stage = self.get_actors_in_stage(stage_entity)
-        for actor_entity in actor_entities_in_stage:
-            if not actor_entity.has(PlayerComponent):
-                continue
-            ret.add(actor_entity)
-
-        return ret
-
-    #############################################################################################################################
-    def get_player_proxy(self, player_entity: Entity) -> Optional[PlayerProxy]:
-        if not player_entity.has(PlayerComponent):
-            return None
-        player_comp = player_entity.get(PlayerComponent)
-        return self._get_player_proxy(player_comp.name)
-
-    #############################################################################################################################
-    def _get_player_proxy(self, player_name: str) -> Optional[PlayerProxy]:
         from rpg_game.rpg_game import RPGGame
 
-        if self._game is None:
-            return None
-        return cast(RPGGame, self._game).get_player(player_name)
+        cast(RPGGame, self._game).add_message_to_players(player_entities, agent_event)
 
     #############################################################################################################################
-    def get_round_messages(self, entity: Entity) -> List[str]:
-        safe_name = self.safe_get_entity_name(entity)
-        return self._round_messages.get(safe_name, [])
-
-
-#############################################################################################################################

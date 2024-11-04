@@ -59,6 +59,12 @@ class ExcelEditorStage:
 
     #################################################################################################################################
     @property
+    def codename(self) -> str:
+        assert self.excel_data is not None
+        return self.excel_data.codename
+
+    #################################################################################################################################
+    @property
     def type(self) -> str:
         assert self._data is not None
         return cast(str, self._data[EditorProperty.TYPE])

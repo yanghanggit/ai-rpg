@@ -260,20 +260,14 @@ class ExcelEditorGame:
         model = GameAgentsConfigModel(actors=[], stages=[], world_systems=[])
 
         for actor in self.editor_players + self.editor_actors:
-            if actor.excel_data is None:
-                continue
-            model.actors.append({actor.name: f"{actor.excel_data.codename}_agent.py"})
+            model.actors.append({actor.name: f"{actor.codename}_agent.py"})
 
         for stage in self.editor_stages:
-            if stage.excel_data is None:
-                continue
-            model.stages.append({stage.name: f"{stage.excel_data.codename}_agent.py"})
+            model.stages.append({stage.name: f"{stage.codename}_agent.py"})
 
         for world_system in self.editor_world_systems:
-            if world_system.excel_data is None:
-                continue
             model.world_systems.append(
-                {world_system.name: f"{world_system.excel_data.codename}_agent.py"}
+                {world_system.name: f"{world_system.codename}_agent.py"}
             )
 
         return game_sample.utils.write_text_file(

@@ -190,7 +190,7 @@ async def create(request_data: CreateRequest) -> Dict[str, Any]:
     # 准备这个app的运行时路径
     game_runtime_dir = rpg_game_config.GAMES_RUNTIME_DIR / request_data.game_name
     if game_runtime_dir.exists():
-        logger.warning(f"删除文件夹：{game_runtime_dir}, 这是为了测试，后续得改！！！")
+        # logger.warning(f"删除文件夹：{game_runtime_dir}, 这是为了测试，后续得改！！！")
         shutil.rmtree(game_runtime_dir)
 
     game_runtime_dir.mkdir(parents=True, exist_ok=True)

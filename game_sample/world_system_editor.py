@@ -48,6 +48,12 @@ class ExcelEditorWorldSystem:
         return self.excel_data.name
 
     ######################################################################################################################
+    @property
+    def codename(self) -> str:
+        assert self.excel_data is not None
+        return self.excel_data.codename
+
+    ######################################################################################################################
     def gen_model(self) -> WorldSystemModel:
 
         return WorldSystemModel(

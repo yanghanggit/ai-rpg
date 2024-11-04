@@ -451,10 +451,10 @@ class RPGGame(BaseGame):
             )
 
         # 场景图的设置
-        if len(stage_model.stage_graph) > 0:
-            logger.debug(
-                f"场景：{stage_model.name}，可去往的场景：{stage_model.stage_graph}"
-            )
+        # if len(stage_model.stage_graph) > 0:
+        #     logger.debug(
+        #         f"场景：{stage_model.name}，可去往的场景：{stage_model.stage_graph}"
+        #     )
 
         stage_entity.add(StageGraphComponent, stage_model.name, stage_model.stage_graph)
 

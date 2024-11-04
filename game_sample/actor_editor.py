@@ -93,6 +93,12 @@ class ExcelEditorActor:
         return self.excel_data.name
 
     #################################################################################################################################
+    @property
+    def codename(self) -> str:
+        assert self.excel_data is not None
+        return self.excel_data.codename
+
+    #################################################################################################################################
     def parse_actor_prop(self) -> List[tuple[ExcelDataProp, int]]:
 
         ret: List[tuple[ExcelDataProp, int]] = []

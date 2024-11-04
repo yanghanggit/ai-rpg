@@ -18,6 +18,7 @@ from my_models.models_def import (
     StageModel,
     StageInstanceModel,
 )
+from game_sample.group_editor import ExcelEditorGroup
 
 
 class ExcelEditorStage:
@@ -40,8 +41,9 @@ class ExcelEditorStage:
         self._actor_data_base: Dict[str, ExcelDataActor] = actor_data_base
         self._prop_data_base: Dict[str, ExcelDataProp] = prop_data_base
         self._stage_data_base: Dict[str, ExcelDataStage] = stage_data_base
+        self._editor_groups: List[ExcelEditorGroup] = []
 
-        if self.type not in [EditorEntityType.Stage]:
+        if self.type not in [EditorEntityType.STAGE]:
             assert False, f"Invalid Stage type: {self.type}"
 
     #################################################################################################################################
@@ -176,11 +178,17 @@ class ExcelEditorStage:
 
     ################################################################################################################################
     def gen_actors_instances_in_stage(
-        self, actors: List[ExcelDataActor]
+        self, actors: List[ExcelDataActor], groups: List[ExcelEditorGroup]
     ) -> List[Dict[str, str]]:
         ret: List[Dict[str, str]] = []
+
         for actor in actors:
             ret.append({EditorProperty.NAME: actor.name})
+
+        for group in groups:
+            for spawn_actor in group.spawn_actors:
+                ret.append({EditorProperty.NAME: spawn_actor.name})
+
         return ret
 
     ################################################################################################################################
@@ -197,14 +205,34 @@ class ExcelEditorStage:
         )
 
     ################################################################################################################################
-    def instance(self) -> StageInstanceModel:
+    def gen_instance(self) -> StageInstanceModel:
         assert self.excel_data is not None
-        return StageInstanceModel(
+        #
+        ret: StageInstanceModel = StageInstanceModel(
             name=self.excel_data.name,
             guid=editor_guid_generator.gen_stage_guid(self.excel_data.name),
             props=self.gen_prop_instances_in_stage(self.parse_props_in_stage()),
-            actors=self.gen_actors_instances_in_stage(self.parse_actors_in_stage()),
+            actors=self.gen_actors_instances_in_stage(
+                self.parse_actors_in_stage(), self._editor_groups
+            ),
         )
 
+        return ret
 
-################################################################################################################################
+    ################################################################################################################################
+    @property
+    def groups_in_stage(self) -> List[str]:
+        org_data: Optional[str] = self._data[EditorProperty.GROUPS_IN_STAGE]
+        if org_data is None:
+            return []
+        ret = org_data.split(";")
+        return ret
+
+    ################################################################################################################################
+    def match_group(self, editor_group: ExcelEditorGroup) -> None:
+        for group in self.groups_in_stage:
+            if editor_group.equal(group):
+                self._editor_groups.append(editor_group)
+                break
+
+    ################################################################################################################################

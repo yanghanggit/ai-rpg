@@ -88,3 +88,6 @@ GAME_SAMPLE_OUT_PUT_GAME_DIR.mkdir(parents=True, exist_ok=True)
 assert (
     GAME_SAMPLE_OUT_PUT_GAME_DIR.exists()
 ), f"找不到目录: {GAME_SAMPLE_OUT_PUT_GAME_DIR}"
+
+
+EN_ACTOR_GROUP_FEATURE: bool = False

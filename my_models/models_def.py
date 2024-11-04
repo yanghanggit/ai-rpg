@@ -6,11 +6,12 @@ from enum import Enum, StrEnum, unique
 
 @unique
 class EditorEntityType(StrEnum):
-    WorldSystem = "WorldSystem"
-    Player = "Player"
-    Actor = "Actor"
-    Stage = "Stage"
-    AboutGame = "AboutGame"
+    WORLD_SYSTEM = "WorldSystem"
+    PLAYER = "Player"
+    ACTOR = "Actor"
+    STAGE = "Stage"
+    ABOUT_GAME = "AboutGame"
+    ACTOR_GROUP = "ActorGroup"
 
 
 @unique
@@ -24,6 +25,7 @@ class EditorProperty(StrEnum):
     STAGE_PROP = "stage_prop"
     STAGE_GRAPH = "stage_graph"
     ACTORS_IN_STAGE = "actors_in_stage"
+    GROUPS_IN_STAGE = "groups_in_stage"
     DESCRIPTION = "description"
 
 

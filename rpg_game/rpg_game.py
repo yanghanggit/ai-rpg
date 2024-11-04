@@ -32,6 +32,7 @@ from my_models.models_def import (
     WorldSystemInstanceModel,
     PropFileModel,
     AgentEvent,
+    UpdateAppearanceEvent,
 )
 from my_models.models_def import AttributesIndex
 from player.player_proxy import PlayerProxy
@@ -93,8 +94,8 @@ class RPGGame(BaseGame):
         self.create_world_system_entities(game_resource)
 
         ## 第3步，创建actor，player是特殊的actor
-        self.create_player_entities(game_resource, game_resource.players_actor_proxy)
-        self.create_actor_entities(game_resource, game_resource.actors_proxy)
+        self.create_player_entities(game_resource, game_resource.player_instances)
+        self.create_actor_entities(game_resource, game_resource.actor_instances)
         self.add_code_name_component_to_world_and_actors()
 
         ## 第4步，创建stage
@@ -180,7 +181,7 @@ class RPGGame(BaseGame):
     ###############################################################################################################################################
     def create_world_system_entity(
         self,
-        world_system_proxy: WorldSystemInstanceModel,
+        world_system_instance: WorldSystemInstanceModel,
         world_system_model: WorldSystemModel,
         context: RPGEntitasContext,
     ) -> Entity:
@@ -191,7 +192,7 @@ class RPGGame(BaseGame):
 
         # 必要组件
         world_system_entity.add(
-            GUIDComponent, world_system_model.name, world_system_proxy.guid
+            GUIDComponent, world_system_model.name, world_system_instance.guid
         )
         world_system_entity.add(WorldComponent, world_system_model.name)
         world_system_entity.add(KickOffComponent, world_system_model.name, "")
@@ -202,7 +203,8 @@ class RPGGame(BaseGame):
             world_system_model.name, world_system_model.url
         )
         context._codename_component_system.register_code_name_component_class(
-            world_system_model.name, world_system_model.codename
+            world_system_model.name,
+            f"""{world_system_model.codename}{world_system_instance.guid}""",
         )
 
         return world_system_entity
@@ -229,7 +231,7 @@ class RPGGame(BaseGame):
 
     ###############################################################################################################################################
     def create_actor_entities(
-        self, game_resource: RPGGameResource, actors_proxy: List[ActorInstanceModel]
+        self, game_resource: RPGGameResource, actor_instances: List[ActorInstanceModel]
     ) -> List[Entity]:
 
         assert game_resource is not None
@@ -237,13 +239,13 @@ class RPGGame(BaseGame):
 
         ret: List[Entity] = []
 
-        for actor_proxy in actors_proxy:
+        for actor_instance in actor_instances:
 
-            actor_model = game_resource.data_base.get_actor(actor_proxy.name)
+            actor_model = game_resource.data_base.get_actor(actor_instance.name)
             assert actor_model is not None
 
             entity = self.create_actor_entity(
-                actor_proxy, actor_model, self._entitas_context
+                actor_instance, actor_model, self._entitas_context
             )
             assert entity is not None
 
@@ -254,86 +256,91 @@ class RPGGame(BaseGame):
     ###############################################################################################################################################
     def create_actor_entity(
         self,
-        actor_proxy: ActorInstanceModel,
+        actor_instance: ActorInstanceModel,
         actor_model: ActorModel,
         context: RPGEntitasContext,
     ) -> Entity:
+
+        if actor_instance.name != actor_model.name:
+            assert (
+                actor_instance.name == f"""{actor_model.name}#{actor_instance.guid}"""
+            ), """注意！你做了批量生成的actor但是生成出现了错误！"""
 
         # 创建实体
         actor_entity = context.create_entity()
 
         # 必要组件
-        actor_entity.add(GUIDComponent, actor_model.name, actor_proxy.guid)
+        actor_entity.add(GUIDComponent, actor_instance.name, actor_instance.guid)
 
-        assert actor_proxy.name == actor_model.name
-        actor_entity.add(ActorComponent, actor_model.name, "")
+        actor_entity.add(ActorComponent, actor_instance.name, "")
 
         actor_entity.add(
             RPGAttributesComponent,
-            actor_model.name,
+            actor_instance.name,
             actor_model.attributes[AttributesIndex.MAX_HP.value],
             actor_model.attributes[AttributesIndex.CUR_HP.value],
             actor_model.attributes[AttributesIndex.DAMAGE.value],
             actor_model.attributes[AttributesIndex.DEFENSE.value],
         )
 
-        hash_code = hash(actor_model.body)
         actor_entity.add(
-            AppearanceComponent, actor_model.name, actor_model.body, hash_code
+            AppearanceComponent,
+            actor_instance.name,
+            actor_model.body,
+            hash(actor_model.body),
         )
-        actor_entity.add(BodyComponent, actor_model.name, actor_model.body)
+        actor_entity.add(BodyComponent, actor_instance.name, actor_model.body)
 
         actor_entity.add(
-            KickOffComponent, actor_model.name, actor_model.kick_off_message
+            KickOffComponent, actor_instance.name, actor_model.kick_off_message
         )
 
-        actor_entity.add(RoundEventsComponent, actor_model.name, [])
+        actor_entity.add(RoundEventsComponent, actor_instance.name, [])
 
         # 添加扩展子系统的
         context._langserve_agent_system.register_agent(
-            actor_model.name, actor_model.url
+            actor_instance.name, actor_model.url
         )
 
         context._codename_component_system.register_code_name_component_class(
-            actor_model.name, actor_model.codename
+            actor_instance.name, f"""{actor_model.codename}{actor_instance.guid}"""
         )
 
         # 添加道具
-        for prop_proxy in actor_proxy.props:
+        for prop_instance in actor_instance.props:
             ## 重构
             assert self._game_resource is not None
-            prop_model = self._game_resource.data_base.get_prop(prop_proxy.name)
+            prop_model = self._game_resource.data_base.get_prop(prop_instance.name)
             if prop_model is None:
-                logger.error(f"没有从数据库找到道具：{prop_proxy.name}")
+                logger.error(f"没有从数据库找到道具：{prop_instance.name}")
                 continue
 
             new_prop_file = PropFile(
                 PropFileModel(
-                    owner=actor_model.name,
+                    owner=actor_instance.name,
                     prop_model=prop_model,
-                    prop_proxy_model=prop_proxy,
+                    prop_proxy_model=prop_instance,
                 )
             )
             context._file_system.add_file(new_prop_file)
             context._file_system.write_file(new_prop_file)
-            context._codename_component_system.register_code_name_component_class(
-                prop_model.name, prop_model.codename
-            )
 
+        # 添加档案
         extended_systems.file_system_helper.add_actor_archive_files(
-            context._file_system, actor_model.name, set(actor_model.actor_archives)
+            context._file_system, actor_instance.name, set(actor_model.actor_archives)
         )
 
         extended_systems.file_system_helper.add_stage_archive_files(
-            context._file_system, actor_model.name, set(actor_model.stage_archives)
+            context._file_system, actor_instance.name, set(actor_model.stage_archives)
         )
 
+        # 添加当前使用的道具/装备
         weapon_prop_file: Optional[PropFile] = None
         clothes_prop_file: Optional[PropFile] = None
-        for prop_name in actor_proxy.actor_current_using_prop:
+        for prop_name in actor_instance.actor_current_using_prop:
 
             find_prop_file_weapon_or_clothes = context._file_system.get_file(
-                PropFile, actor_model.name, prop_name
+                PropFile, actor_instance.name, prop_name
             )
             if find_prop_file_weapon_or_clothes is None:
                 logger.error(f"没有找到道具文件：{prop_name}")
@@ -351,14 +358,14 @@ class RPGGame(BaseGame):
             RPGCurrentWeaponComponent
         ):
             actor_entity.add(
-                RPGCurrentWeaponComponent, actor_model.name, weapon_prop_file.name
+                RPGCurrentWeaponComponent, actor_instance.name, weapon_prop_file.name
             )
 
         if clothes_prop_file is not None and not actor_entity.has(
             RPGCurrentClothesComponent
         ):
             actor_entity.add(
-                RPGCurrentClothesComponent, actor_model.name, clothes_prop_file.name
+                RPGCurrentClothesComponent, actor_instance.name, clothes_prop_file.name
             )
 
         return actor_entity
@@ -370,7 +377,7 @@ class RPGGame(BaseGame):
 
         ret: List[Entity] = []
 
-        for stage_proxy in game_resource.stages_proxy:
+        for stage_proxy in game_resource.stages_instances:
 
             stage_model = game_resource.data_base.get_stage(stage_proxy.name)
             assert stage_model is not None
@@ -387,21 +394,21 @@ class RPGGame(BaseGame):
     ###############################################################################################################################################
     def create_stage_entity(
         self,
-        stage_proxy: StageInstanceModel,
+        stage_instance: StageInstanceModel,
         stage_model: StageModel,
         context: RPGEntitasContext,
     ) -> Entity:
 
-        assert stage_proxy is not None
+        assert stage_instance is not None
         assert stage_model is not None
-        assert stage_proxy.name == stage_model.name
+        assert stage_instance.name == stage_model.name
         assert context is not None
 
         # 创建实体
         stage_entity = context.create_entity()
 
         # 必要组件
-        stage_entity.add(GUIDComponent, stage_model.name, stage_proxy.guid)
+        stage_entity.add(GUIDComponent, stage_model.name, stage_instance.guid)
         stage_entity.add(StageComponent, stage_model.name)
 
         stage_entity.add(
@@ -420,7 +427,7 @@ class RPGGame(BaseGame):
         stage_entity.add(RoundEventsComponent, stage_model.name, [])
 
         ## 重新设置Actor和stage的关系
-        for actor_proxy in stage_proxy.actors:
+        for actor_proxy in stage_instance.actors:
 
             actor_name = actor_proxy["name"]
             actor_entity: Optional[Entity] = context.get_actor_entity(actor_name)
@@ -429,7 +436,7 @@ class RPGGame(BaseGame):
             actor_entity.replace(ActorComponent, actor_name, stage_model.name)
 
         # 场景内添加道具
-        for prop_proxy in stage_proxy.props:
+        for prop_proxy in stage_instance.props:
             # 直接使用文件系统
             assert self._game_resource is not None
             prop_model = self._game_resource.data_base.get_prop(prop_proxy.name)
@@ -446,16 +453,8 @@ class RPGGame(BaseGame):
             )
             context._file_system.add_file(prop_file)
             context._file_system.write_file(prop_file)
-            context._codename_component_system.register_code_name_component_class(
-                prop_model.name, prop_model.codename
-            )
 
-        # 场景图的设置
-        # if len(stage_model.stage_graph) > 0:
-        #     logger.debug(
-        #         f"场景：{stage_model.name}，可去往的场景：{stage_model.stage_graph}"
-        #     )
-
+        # 添加场景可以连接的场景
         stage_entity.add(StageGraphComponent, stage_model.name, stage_model.stage_graph)
 
         # 添加子系统！
@@ -467,7 +466,7 @@ class RPGGame(BaseGame):
             stage_model.name, stage_model.codename
         )
         context._codename_component_system.register_stage_tag_component_class(
-            stage_model.name, stage_model.codename
+            stage_model.name, f"""{stage_model.codename}{stage_instance.guid}"""
         )
 
         return stage_entity
@@ -475,7 +474,6 @@ class RPGGame(BaseGame):
     ###############################################################################################################################################
     def add_code_name_component_to_world_and_actors(self) -> None:
 
-        #
         world_entities = self._entitas_context.get_group(
             Matcher(WorldComponent)
         ).entities
@@ -680,7 +678,8 @@ class RPGGame(BaseGame):
         self, player_entities: Set[Entity], agent_event: AgentEvent
     ) -> None:
 
-        if len(player_entities) == 0:
+        if self._ignore_agent_event(agent_event):
+            logger.debug(f"忽略的消息：{agent_event}")
             return
 
         for player_entity in player_entities:
@@ -698,5 +697,9 @@ class RPGGame(BaseGame):
             )
 
             player_proxy.add_actor_message(player_proxy.actor_name, agent_event)
+
+    ###############################################################################################################################################
+    def _ignore_agent_event(self, agent_event: AgentEvent) -> bool:
+        return isinstance(agent_event, UpdateAppearanceEvent)
 
     ###############################################################################################################################################

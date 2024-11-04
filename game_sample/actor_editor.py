@@ -25,6 +25,8 @@ class ExcelEditorActor:
         data: Any,
         actor_data_base: Dict[str, ExcelDataActor],
         prop_data_base: Dict[str, ExcelDataProp],
+        editor_group: Any = None,
+        spawn_guid: int = 0,
     ) -> None:
         assert data is not None
         assert actor_data_base is not None
@@ -34,21 +36,48 @@ class ExcelEditorActor:
         self._data: Any = data
         self._actor_data_base: Dict[str, ExcelDataActor] = actor_data_base
         self._prop_data_base: Dict[str, ExcelDataProp] = prop_data_base
+        self._editor_group = editor_group
+        self._spawn_guid = spawn_guid
 
-        if self.type not in [EditorEntityType.Player, EditorEntityType.Actor]:
+        if self.type not in [
+            EditorEntityType.PLAYER,
+            EditorEntityType.ACTOR,
+            EditorEntityType.ACTOR_GROUP,
+        ]:
             assert False, f"Invalid actor type: {self.type}"
+
+    #################################################################################################################################
+
+    @property
+    def name(self) -> str:
+
+        if self._editor_group is not None:
+            assert self._spawn_guid > 0
+            return f"""{self._editor_group.actor_name}#{self._spawn_guid}"""
+
+        return str(self._data[EditorProperty.NAME])
+
+    #################################################################################################################################
+    @property
+    def data_base_name(self) -> str:
+        if self._editor_group is not None:
+            from game_sample.group_editor import ExcelEditorGroup
+
+            return cast(ExcelEditorGroup, self._editor_group).actor_name
+
+        return self.name
+
+    #################################################################################################################################
+    @property
+    def excel_data(self) -> Optional[ExcelDataActor]:
+        assert self._data is not None
+        return self._actor_data_base[self.data_base_name]
 
     #################################################################################################################################
     @property
     def type(self) -> str:
         assert self._data is not None
         return cast(str, self._data[EditorProperty.TYPE])
-
-    #################################################################################################################################
-    @property
-    def excel_data(self) -> Optional[ExcelDataActor]:
-        assert self._data is not None
-        return self._actor_data_base[self._data[EditorProperty.NAME]]
 
     #################################################################################################################################
     @property
@@ -88,12 +117,6 @@ class ExcelEditorActor:
 
     #################################################################################################################################
     @property
-    def name(self) -> str:
-        assert self.excel_data is not None
-        return self.excel_data.name
-
-    #################################################################################################################################
-    @property
     def codename(self) -> str:
         assert self.excel_data is not None
         return self.excel_data.codename
@@ -127,8 +150,8 @@ class ExcelEditorActor:
         assert self.excel_data is not None
 
         return ActorModel(
-            name=self.excel_data.name,
-            codename=self.excel_data.codename,
+            name=self.data_base_name,
+            codename=self.codename,
             url=self.excel_data.localhost,
             kick_off_message=self.kick_off_message,
             actor_archives=self.excel_data._actor_archives,
@@ -138,14 +161,20 @@ class ExcelEditorActor:
         )
 
     #################################################################################################################################
-    def instance(self) -> ActorInstanceModel:
+    def gen_instance(self) -> ActorInstanceModel:
         assert self.excel_data is not None
         ret: ActorInstanceModel = ActorInstanceModel(
-            name=self.excel_data.name,
-            guid=editor_guid_generator.gen_actor_guid(self.excel_data.name),
+            name=self.name,
+            guid=0,
             props=[],
             actor_current_using_prop=self.actor_current_using_prop,
         )
+
+        if self._editor_group is not None:
+            assert self._spawn_guid > 0
+            ret.guid = self._spawn_guid
+        else:
+            ret.guid = editor_guid_generator.gen_actor_guid(self.name)
 
         for tp in self.parse_actor_prop():
             ret.props.append(

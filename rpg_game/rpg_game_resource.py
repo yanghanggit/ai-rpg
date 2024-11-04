@@ -20,6 +20,27 @@ import json
 from loguru import logger
 
 
+class ActorInstanceName:
+
+    def __init__(self, original_name: str) -> None:
+        self._original_name: str = original_name
+
+    @property
+    def original_name(self) -> str:
+        return self._original_name
+
+    @property
+    def real_name(self) -> str:
+        return self._original_name.split("#")[0]
+
+    @property
+    def guid(self) -> int:
+        return int(self._original_name.split("#")[1])
+
+
+###############################################################################################################################################
+
+
 class DataBase:
     """
     将所有的数据存储在这里，以便于在游戏中使用。
@@ -64,7 +85,8 @@ class DataBase:
 
     ###############################################################################################################################################
     def get_actor(self, actor_name: str) -> Optional[ActorModel]:
-        return self._actors.get(actor_name, None)
+        instance_name = ActorInstanceName(actor_name)
+        return self._actors.get(instance_name.real_name, None)
 
     ###############################################################################################################################################
     def get_stage(self, stage_name: str) -> Optional[StageModel]:
@@ -147,17 +169,17 @@ class RPGGameResource:
 
     ###############################################################################################################################################
     @property
-    def players_actor_proxy(self) -> List[ActorInstanceModel]:
+    def player_instances(self) -> List[ActorInstanceModel]:
         return self._model.players
 
     ###############################################################################################################################################
     @property
-    def actors_proxy(self) -> List[ActorInstanceModel]:
+    def actor_instances(self) -> List[ActorInstanceModel]:
         return self._model.actors
 
     ###############################################################################################################################################
     @property
-    def stages_proxy(self) -> List[StageInstanceModel]:
+    def stages_instances(self) -> List[StageInstanceModel]:
         return self._model.stages
 
     ###############################################################################################################################################
@@ -226,32 +248,32 @@ class RPGGameResource:
 
         assert self._load_dir is not None and self._load_dir.exists()
 
-        for player_actor_proxy in self.players_actor_proxy:
+        for player_instance in self.player_instances:
 
             # 载入聊天记录
             chat_history_dump_model = self._load_chat_history(
-                player_actor_proxy.name, self._load_dir
+                player_instance.name, self._load_dir
             )
             if chat_history_dump_model is not None:
-                self._load_chat_history_dict[player_actor_proxy.name] = (
+                self._load_chat_history_dict[player_instance.name] = (
                     chat_history_dump_model
                 )
 
             # 载入实体的profile
             entity_profile = self._load_entity_profile(
-                player_actor_proxy.name, self._load_dir
+                player_instance.name, self._load_dir
             )
             if entity_profile is not None:
-                self._load_entity_profile_dict[player_actor_proxy.name] = entity_profile
+                self._load_entity_profile_dict[player_instance.name] = entity_profile
 
             # 载入actor的存档
-            self._load_actor_archive_dict[player_actor_proxy.name] = (
-                self._load_actor_archive_file(player_actor_proxy.name, self._load_dir)
+            self._load_actor_archive_dict[player_instance.name] = (
+                self._load_actor_archive_file(player_instance.name, self._load_dir)
             )
 
             # 载入stage的存档
-            self._load_stage_archive_dict[player_actor_proxy.name] = (
-                self._load_stage_archive_file(player_actor_proxy.name, self._load_dir)
+            self._load_stage_archive_dict[player_instance.name] = (
+                self._load_stage_archive_file(player_instance.name, self._load_dir)
             )
 
     ###############################################################################################################################################
@@ -259,29 +281,33 @@ class RPGGameResource:
 
         assert self._load_dir is not None and self._load_dir.exists()
 
-        for actor_proxy in self.actors_proxy:
+        for actor_instance in self.actor_instances:
 
             # 载入聊天记录
             chat_history_dump_model = self._load_chat_history(
-                actor_proxy.name, self._load_dir
+                actor_instance.name, self._load_dir
             )
 
             if chat_history_dump_model is not None:
-                self._load_chat_history_dict[actor_proxy.name] = chat_history_dump_model
+                self._load_chat_history_dict[actor_instance.name] = (
+                    chat_history_dump_model
+                )
 
             # 载入实体的profile
-            entity_profile = self._load_entity_profile(actor_proxy.name, self._load_dir)
+            entity_profile = self._load_entity_profile(
+                actor_instance.name, self._load_dir
+            )
             if entity_profile is not None:
-                self._load_entity_profile_dict[actor_proxy.name] = entity_profile
+                self._load_entity_profile_dict[actor_instance.name] = entity_profile
 
             # 载入actor的存档
-            self._load_actor_archive_dict[actor_proxy.name] = (
-                self._load_actor_archive_file(actor_proxy.name, self._load_dir)
+            self._load_actor_archive_dict[actor_instance.name] = (
+                self._load_actor_archive_file(actor_instance.name, self._load_dir)
             )
 
             # 载入stage的存档
-            self._load_stage_archive_dict[actor_proxy.name] = (
-                self._load_stage_archive_file(actor_proxy.name, self._load_dir)
+            self._load_stage_archive_dict[actor_instance.name] = (
+                self._load_stage_archive_file(actor_instance.name, self._load_dir)
             )
 
     ###############################################################################################################################################
@@ -289,7 +315,7 @@ class RPGGameResource:
 
         assert self._load_dir is not None and self._load_dir.exists()
 
-        for stage_proxy in self.stages_proxy:
+        for stage_proxy in self.stages_instances:
 
             # 载入聊天记录
             chat_history_dump_model = self._load_chat_history(

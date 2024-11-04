@@ -26,7 +26,7 @@ class ExcelEditorWorldSystem:
         self._data: Any = data
         self._world_system_data_base = world_system_data_base
 
-        if self.type not in [EditorEntityType.WorldSystem]:
+        if self.type not in [EditorEntityType.WORLD_SYSTEM]:
             assert False, f"Invalid type: {self.type}"
 
     ######################################################################################################################
@@ -64,7 +64,7 @@ class ExcelEditorWorldSystem:
 
     ######################################################################################################################
     # 我的代理
-    def instance(self) -> WorldSystemInstanceModel:
+    def gen_instance(self) -> WorldSystemInstanceModel:
         return WorldSystemInstanceModel(
             name=self.excel_data.name,
             guid=editor_guid_generator.gen_world_system_guid(self.excel_data.name),

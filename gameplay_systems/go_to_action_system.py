@@ -201,6 +201,7 @@ class GoToActionSystem(ReactiveProcessor):
             my_name,
         )
 
+        # 慎用！！！！
         self._context.safe_add_human_message_to_entity(
             helper._entity,
             message_content,

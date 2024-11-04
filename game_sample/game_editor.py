@@ -9,6 +9,7 @@ from game_sample.excel_data_world_system import ExcelDataWorldSystem
 from game_sample.excel_data_stage import ExcelDataStage
 from game_sample.excel_data_actor import ExcelDataActor
 from game_sample.actor_editor import ExcelEditorActor
+from game_sample.group_editor import ExcelEditorGroup
 from game_sample.stage_editor import ExcelEditorStage
 from game_sample.world_system_editor import ExcelEditorWorldSystem
 import pandas as pd
@@ -20,6 +21,8 @@ from my_models.models_def import (
     DataBaseModel,
     GameAgentsConfigModel,
 )
+
+# from loguru import logger
 
 
 ################################################################################################################
@@ -60,6 +63,7 @@ class ExcelEditorGame:
         self._cache_stages: Optional[List[ExcelEditorStage]] = None
         self._cache_props: Optional[List[ExcelDataProp]] = None
         self._cache_configs: Optional[List[Any]] = None
+        self._cache_groups: Optional[List[ExcelEditorGroup]] = None
 
         # 构建场景的图关系。
         self._build_stage_graph()
@@ -89,7 +93,7 @@ class ExcelEditorGame:
         if self._cache_world_systems is None:
             self._cache_world_systems = []
             for item in self._data:
-                if item[EditorProperty.TYPE] != EditorEntityType.WorldSystem:
+                if item[EditorProperty.TYPE] != EditorEntityType.WORLD_SYSTEM:
                     continue
 
                 if item[EditorProperty.NAME] not in self._world_system_data_base:
@@ -110,7 +114,7 @@ class ExcelEditorGame:
         if self._cache_players is None:
             self._cache_players = []
             for item in self._data:
-                if item[EditorProperty.TYPE] != EditorEntityType.Player:
+                if item[EditorProperty.TYPE] != EditorEntityType.PLAYER:
                     continue
 
                 if item[EditorProperty.NAME] not in self._actor_data_base:
@@ -128,8 +132,9 @@ class ExcelEditorGame:
     def editor_actors(self) -> List[ExcelEditorActor]:
         if self._cache_actors is None:
             self._cache_actors = []
+
             for item in self._data:
-                if item[EditorProperty.TYPE] != EditorEntityType.Actor:
+                if item[EditorProperty.TYPE] != EditorEntityType.ACTOR:
                     continue
 
                 if item[EditorProperty.NAME] not in self._actor_data_base:
@@ -140,7 +145,33 @@ class ExcelEditorGame:
                     ExcelEditorActor(item, self._actor_data_base, self._prop_data_base)
                 )
 
+            # 扩展生成！
+            self._cache_actors.extend(self._extend_group())
+
         return self._cache_actors
+
+    ############################################################################################################################
+    def _extend_group(self) -> List[ExcelEditorActor]:
+        ret: List[ExcelEditorActor] = []
+        for group in self.editor_groups:
+            ret.extend(group.spawn_actors)
+        return ret
+
+    ############################################################################################################################
+    @property
+    def editor_groups(self) -> List[ExcelEditorGroup]:
+
+        if self._cache_groups is None:
+            self._cache_groups = []
+            for item in self._data:
+                if item[EditorProperty.TYPE] != EditorEntityType.ACTOR_GROUP:
+                    continue
+
+                self._cache_groups.append(
+                    ExcelEditorGroup(item, self._actor_data_base, self._prop_data_base)
+                )
+
+        return self._cache_groups
 
     ############################################################################################################################
     @property
@@ -149,7 +180,7 @@ class ExcelEditorGame:
         if self._cache_stages is None:
             self._cache_stages = []
             for item in self._data:
-                if item[EditorProperty.TYPE] != EditorEntityType.Stage:
+                if item[EditorProperty.TYPE] != EditorEntityType.STAGE:
                     continue
 
                 if item[EditorProperty.NAME] not in self._stage_data_base:
@@ -173,7 +204,7 @@ class ExcelEditorGame:
         if self._cache_configs is None:
             self._cache_configs = []
             for item in self._data:
-                if item[EditorProperty.TYPE] != EditorEntityType.AboutGame:
+                if item[EditorProperty.TYPE] != EditorEntityType.ABOUT_GAME:
                     continue
                 self._cache_configs.append(item)
         return self._cache_configs
@@ -220,13 +251,21 @@ class ExcelEditorGame:
     ############################################################################################################################
     def gen_model(self) -> GameModel:
 
-        return GameModel(
+        # 匹配组
+        for group in self.editor_groups:
+            for stage in self.editor_stages:
+                stage.match_group(group)
+
+        # 准备返回数据，但是 actors 与 stages 需要后续加工
+        ret: GameModel = GameModel(
             save_round=0,
-            players=[editor_actor.instance() for editor_actor in self.editor_players],
-            actors=[editor_actor.instance() for editor_actor in self.editor_actors],
-            stages=[editor_stage.instance() for editor_stage in self.editor_stages],
+            players=[
+                editor_actor.gen_instance() for editor_actor in self.editor_players
+            ],
+            actors=[],
+            stages=[],
             world_systems=[
-                editor_world_system.instance()
+                editor_world_system.gen_instance()
                 for editor_world_system in self.editor_world_systems
             ],
             database=self._data_base(),
@@ -234,17 +273,38 @@ class ExcelEditorGame:
             version=self._version,
         )
 
+        # 添加角色的数据
+        for editor_actor in self.editor_actors:
+            ret.actors.append(editor_actor.gen_instance())
+
+        # 添加场景的数据
+        for editor_stage in self.editor_stages:
+            ret.stages.append(editor_stage.gen_instance())
+
+        return ret
+
     ############################################################################################################################
     def _data_base(self) -> DataBaseModel:
 
-        return DataBaseModel(
-            actors=[
-                data.gen_model() for data in self.editor_players + self.editor_actors
-            ],
+        # 准备返回数据
+        ret: DataBaseModel = DataBaseModel(
+            actors=[],
             stages=[data.gen_model() for data in self.editor_stages],
             props=[data.gen_model() for data in self.editor_props],
             world_systems=[data.gen_model() for data in self.editor_world_systems],
         )
+
+        # 生成唯一的actor模型
+        unique_actor_model: Dict[str, ExcelEditorActor] = {}
+        for data in self.editor_players + self.editor_actors:
+            if data.data_base_name in unique_actor_model:
+                continue
+            unique_actor_model[data.data_base_name] = data
+
+        for data in unique_actor_model.values():
+            ret.actors.append(data.gen_model())
+
+        return ret
 
     ############################################################################################################################
     def write(self, directory: Path) -> int:

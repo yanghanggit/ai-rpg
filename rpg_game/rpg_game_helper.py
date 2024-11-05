@@ -26,7 +26,7 @@ from my_components.components import (
     AppearanceComponent,
     PlayerComponent,
     PlanningAllowedComponent,
-    KickOffComponent,
+    KickOffContentComponent,
 )
 from gameplay_systems.actor_checker import ActorChecker
 import gameplay_systems.actor_planning_execution_system
@@ -460,7 +460,7 @@ def player_play_new_game(
         f"time = {time}, 玩家登陆游戏 = {player_proxy.name}, 控制角色 = {player_controlled_actor_name}"
     )
 
-    kick_off_comp = actor_entity.get(KickOffComponent)
+    kick_off_comp = actor_entity.get(KickOffContentComponent)
     player_proxy.cache_kickoff_message(
         player_controlled_actor_name,
         AgentEvent(message_content=kick_off_comp.content),

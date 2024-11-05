@@ -1,9 +1,10 @@
 from langserve import RemoteRunnable  # type: ignore
-from typing import List, Union, Optional
+from typing import List, Union, Optional, final
 from langchain_core.messages import HumanMessage, AIMessage
 from my_agent.remote_runnable_wrapper import RemoteRunnableWrapper
 
 
+@final
 class LangServeAgent:
 
     def __init__(
@@ -12,9 +13,6 @@ class LangServeAgent:
         self._name: str = name
         self._remote_runnable_wrapper: RemoteRunnableWrapper = remote_runnable_wrapper
         self._chat_history: List[Union[HumanMessage, AIMessage]] = []
-
-    def initialize_connection(self) -> None:
-        self._remote_runnable_wrapper._initialize_connection()
 
     @property
     def remote_runnable(self) -> Optional[RemoteRunnable]:

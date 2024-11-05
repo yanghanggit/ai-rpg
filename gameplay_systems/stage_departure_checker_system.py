@@ -8,7 +8,7 @@ from my_components.action_components import (
 from my_components.components import (
     ActorComponent,
     AppearanceComponent,
-    KickOffComponent,
+    KickOffContentComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt
@@ -248,10 +248,10 @@ class StageDepartureCheckerSystem(ReactiveProcessor):
 
     ###############################################################################################################################################
     def has_conditions(self, stage_entity: Entity) -> bool:
-        if not stage_entity.has(KickOffComponent):
+        if not stage_entity.has(KickOffContentComponent):
             return False
 
-        kick_off_comp = stage_entity.get(KickOffComponent)
+        kick_off_comp = stage_entity.get(KickOffContentComponent)
         return (
             public_builtin_prompt.ConstantPrompt.STAGE_EXIT_TAG in kick_off_comp.content
         )

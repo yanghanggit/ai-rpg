@@ -2,10 +2,10 @@ from enum import IntEnum
 
 
 class GUIDType(IntEnum):
-    ACTOR_TYPE = 100000000
-    STAGE_TYPE = 200000000
-    PROP_TYPE = 300000000
-    WORLD_SYSTEM_TYPE = 400000000
+    ACTOR_TYPE = 1 * 100 * 100
+    STAGE_TYPE = 2 * 100 * 100
+    PROP_TYPE = 3 * 100 * 100
+    WORLD_SYSTEM_TYPE = 4 * 100 * 100
 
 
 class EditorGUIDGenerator:

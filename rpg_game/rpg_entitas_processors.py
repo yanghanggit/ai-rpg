@@ -51,7 +51,7 @@ class RPGEntitasProcessors(Processors):
         from gameplay_systems.post_action_system import PostActionSystem
         from gameplay_systems.steal_action_system import StealActionSystem
         from gameplay_systems.give_prop_action_system import GivePropActionSystem
-        from gameplay_systems.connect_agent_system import ConnectAgentSystem
+        from gameplay_systems.agent_connect_system import AgentConnectSystem
         from gameplay_systems.compress_chat_history_system import (
             CompressChatHistorySystem,
         )
@@ -79,7 +79,6 @@ class RPGEntitasProcessors(Processors):
             TerminalPlayerInterruptWaitSystem,
         )
 
-        # from gameplay_systems.save_system import SaveSystem
         from gameplay_systems.agent_kick_off_system import AgentKickOffSystem
         from gameplay_systems.update_archive_system import UpdateArchiveSystem
         from gameplay_systems.terminal_player_tips_system import (
@@ -107,7 +106,7 @@ class RPGEntitasProcessors(Processors):
         processors.add(BeginSystem(context, rpg_game))
 
         # 初始化系统########################
-        processors.add(ConnectAgentSystem(context, rpg_game))
+        processors.add(AgentConnectSystem(context, rpg_game))
         processors.add(AgentKickOffSystem(context, rpg_game))
         #########################################
 

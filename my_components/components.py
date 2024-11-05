@@ -10,9 +10,21 @@ class GUIDComponent(NamedTuple):
 
 # 记录kick off信息
 @final
-class KickOffComponent(NamedTuple):
+class AgentConnectionFlag(NamedTuple):
+    name: str
+
+
+# 记录kick off信息
+@final
+class KickOffContentComponent(NamedTuple):
     name: str
     content: str
+
+
+# 标记kick off已经完成
+@final
+class KickOffFlagComponent(NamedTuple):
+    name: str
 
 
 # 例如，世界级的entity就标记这个组件

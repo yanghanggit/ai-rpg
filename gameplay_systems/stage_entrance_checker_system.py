@@ -9,7 +9,7 @@ from my_components.components import (
     ActorComponent,
     AppearanceComponent,
     StageComponent,
-    KickOffComponent,
+    KickOffContentComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt
@@ -273,10 +273,10 @@ class StageEntranceCheckerSystem(ReactiveProcessor):
     ###############################################################################################################################################
     def has_conditions(self, stage_entity: Entity) -> bool:
 
-        if not stage_entity.has(KickOffComponent):
+        if not stage_entity.has(KickOffContentComponent):
             return False
 
-        kick_off_comp = stage_entity.get(KickOffComponent)
+        kick_off_comp = stage_entity.get(KickOffContentComponent)
         return (
             public_builtin_prompt.ConstantPrompt.STAGE_ENTRY_TAG
             in kick_off_comp.content

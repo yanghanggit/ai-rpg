@@ -1,4 +1,4 @@
-from entitas import Entity, Matcher, InitializeProcessor, ExecuteProcessor  # type: ignore
+from entitas import Entity, Matcher, ExecuteProcessor  # type: ignore
 from overrides import override
 from my_components.components import (
     WorldComponent,
@@ -6,7 +6,8 @@ from my_components.components import (
     ActorComponent,
     AppearanceComponent,
     BodyComponent,
-    KickOffComponent,
+    KickOffContentComponent,
+    KickOffFlagComponent,
 )
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt
 from rpg_game.rpg_entitas_context import RPGEntitasContext
@@ -103,35 +104,25 @@ def _generate_world_system_kick_off_prompt(about_game: str, game_round: int) -> 
 
 ######################################################################################################################################################
 @final
-class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
+class AgentKickOffSystem(ExecuteProcessor):
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         self._context: RPGEntitasContext = context
         self._game: RPGGame = rpg_game
 
-        self._tasks: Dict[str, AgentTask] = {}
-        self._world_tasks: Dict[str, AgentTask] = {}
-        self._stage_tasks: Dict[str, AgentTask] = {}
-        self._actor_tasks: Dict[str, AgentTask] = {}
-
     ######################################################################################################################################################
-    @override
-    def initialize(self) -> None:
+    def _create_tasks(self) -> Dict[str, AgentTask]:
 
-        # 清除
-        self._clear_tasks()
+        ret: Dict[str, AgentTask] = {}
 
-        # 生成任务，world system 不存上下文所以需要kickoff 一下
-        self._world_tasks = self._initialize_world_system_tasks()
+        world_tasks = self._create_world_system_tasks()
+        stage_tasks = self._create_stage_tasks()
+        actor_tasks = self._create_actor_tasks()
 
-        # actor 与 stage 因为会有存储上下文的情况，如果是载入的游戏，就直接使用，不要再发任务做推理了。
-        if not self._check_game_loaded():
-            self._stage_tasks = self._initialize_stage_tasks()
-            self._actor_tasks = self._initialize_actor_tasks()
+        ret.update(world_tasks)
+        ret.update(stage_tasks)
+        ret.update(actor_tasks)
 
-        # 填进去
-        self._tasks.update(self._world_tasks)
-        self._tasks.update(self._stage_tasks)
-        self._tasks.update(self._actor_tasks)
+        return ret
 
     ######################################################################################################################################################
     @override
@@ -142,31 +133,31 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
     @override
     async def a_execute1(self) -> None:
 
-        if len(self._tasks) == 0:
+        tasks: Dict[str, AgentTask] = self._create_tasks()
+        if len(tasks) == 0:
             return
 
-        responses = await AgentTask.gather([task for task in self._tasks.values()])
-        if len(responses) == 0:
-            return
+        logger.debug(f"AgentKickOffSystem tasks: {tasks}")
 
-        self._handle_response(self._tasks)
-        self._clear_tasks()  # 这句必须得走.
-        self._initialize_appearance_update_action()
+        # 执行全部的任务
+        await AgentTask.gather([task for task in tasks.values()])
 
-    ######################################################################################################################################################
-    def _clear_tasks(self) -> None:
-        self._tasks.clear()
-        self._world_tasks.clear()
-        self._stage_tasks.clear()
-        self._actor_tasks.clear()
+        # 处理结果
+        self._handle_responses(tasks)
+
+        # 初始化更新外观的action
+        self._initialize_appearance_update_action(tasks)
 
     ######################################################################################################################################################
-    def _initialize_world_system_tasks(self) -> Dict[str, AgentTask]:
+    def _create_world_system_tasks(self) -> Dict[str, AgentTask]:
 
         ret: Dict[str, AgentTask] = {}
 
         world_entities: Set[Entity] = self._context.get_group(
-            Matcher(all_of=[WorldComponent, KickOffComponent])
+            Matcher(
+                all_of=[WorldComponent, KickOffContentComponent],
+                none_of=[KickOffFlagComponent],
+            )
         ).entities
         for world_entity in world_entities:
 
@@ -185,12 +176,15 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
         return ret
 
     ######################################################################################################################################################
-    def _initialize_stage_tasks(self) -> Dict[str, AgentTask]:
+    def _create_stage_tasks(self) -> Dict[str, AgentTask]:
 
         ret: Dict[str, AgentTask] = {}
 
         stage_entities: Set[Entity] = self._context.get_group(
-            Matcher(all_of=[StageComponent, KickOffComponent])
+            Matcher(
+                all_of=[StageComponent, KickOffContentComponent],
+                none_of=[KickOffFlagComponent],
+            )
         ).entities
         for stage_entity in stage_entities:
 
@@ -203,7 +197,7 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
                 len(agent._chat_history) == 0
             ), f"chat_history is not empty, {agent._chat_history}"
 
-            kick_off_comp = stage_entity.get(KickOffComponent)
+            kick_off_comp = stage_entity.get(KickOffContentComponent)
             kick_off_prompt = _generate_stage_kick_off_prompt(
                 kick_off_comp.content,
                 self._game.about_game,
@@ -219,12 +213,15 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
         return ret
 
     ######################################################################################################################################################
-    def _initialize_actor_tasks(self) -> Dict[str, AgentTask]:
+    def _create_actor_tasks(self) -> Dict[str, AgentTask]:
 
         ret: Dict[str, AgentTask] = {}
 
         actor_entities: Set[Entity] = self._context.get_group(
-            Matcher(all_of=[ActorComponent, KickOffComponent])
+            Matcher(
+                all_of=[ActorComponent, KickOffContentComponent],
+                none_of=[KickOffFlagComponent],
+            )
         ).entities
         for actor_entity in actor_entities:
 
@@ -237,7 +234,7 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
                 len(agent._chat_history) == 0
             ), f"chat_history is not empty, {agent._chat_history}"
 
-            kick_off_comp = actor_entity.get(KickOffComponent)
+            kick_off_comp = actor_entity.get(KickOffContentComponent)
             ret[actor_comp.name] = AgentTask.create(
                 agent,
                 _generate_actor_kick_off_prompt(
@@ -250,70 +247,88 @@ class AgentKickOffSystem(InitializeProcessor, ExecuteProcessor):
         return ret
 
     ######################################################################################################################################################
-    def _handle_response(self, tasks: Dict[str, AgentTask]) -> None:
+    def _handle_responses(self, tasks: Dict[str, AgentTask]) -> None:
 
-        for name, task in tasks.items():
+        for agent_name, agent_task in tasks.items():
 
-            if task is None:
-                logger.warning(
-                    f"ActorPlanningSystem: response is None or empty, so we can't get the planning."
-                )
-                continue
-
-            if name in self._world_tasks:
-                continue
-
-            agent_planning = AgentPlanResponse(name, task.response_content)
-            entity = self._context.get_actor_entity(
-                name
-            ) or self._context.get_stage_entity(name)
+            entity = self._context.get_entity_by_name(agent_name)
             if entity is None:
-                logger.warning(f"ActorPlanningSystem: entity is None, {name}")
+                assert False, f"entity is None, {agent_name}"
                 continue
 
+            actions_register = self._resolve_actions_register(agent_name)
+            if len(actions_register) == 0:
+
+                assert entity.has(
+                    WorldComponent
+                ), f"entity has no world component, {agent_name}"
+
+                self._add_kick_off_flag(entity, agent_name)
+                continue
+
+            assert entity.has(StageComponent) or entity.has(
+                ActorComponent
+            ), f"entity has no stage or actor component, {agent_name}"
+
+            agent_planning = AgentPlanResponse(agent_name, agent_task.response_content)
             if not gameplay_systems.action_helper.validate_actions(
-                agent_planning, self._resolve_actions_register(name)
+                agent_planning, actions_register
             ):
                 logger.warning(
                     f"ActorPlanningSystem: check_plan failed, {agent_planning}"
                 )
 
                 self._context._langserve_agent_system.remove_last_human_ai_conversation(
-                    name
+                    agent_name
                 )
                 continue
 
             for action in agent_planning._actions:
                 gameplay_systems.action_helper.add_action(
-                    entity, action, self._resolve_actions_register(name)
+                    entity, action, actions_register
                 )
+
+            self._add_kick_off_flag(entity, agent_name)
+
+    ######################################################################################################################################################
+    def _add_kick_off_flag(self, entity: Entity, agent_name: str) -> None:
+        if not entity.has(KickOffFlagComponent):
+            entity.add(KickOffFlagComponent, agent_name)
 
     ######################################################################################################################################################
     def _resolve_actions_register(self, name: str) -> FrozenSet[type[Any]]:
-        if name in self._stage_tasks:
-            return STAGE_AVAILABLE_ACTIONS_REGISTER
-        elif name in self._actor_tasks:
+
+        entity = self._context.get_entity_by_name(name)
+        if entity is None:
+            return frozenset()
+
+        if entity.has(ActorComponent):
             return ACTOR_AVAILABLE_ACTIONS_REGISTER
+        elif entity.has(StageComponent):
+            return STAGE_AVAILABLE_ACTIONS_REGISTER
+        else:
+            assert entity.has(WorldComponent), f"entity has no world component, {name}"
+
         return frozenset()
 
     ######################################################################################################################################################
-    def _initialize_appearance_update_action(self) -> None:
+    def _initialize_appearance_update_action(self, tasks: Dict[str, AgentTask]) -> None:
 
         actor_entities = self._context.get_group(
             Matcher(all_of=[ActorComponent, AppearanceComponent, BodyComponent])
         ).entities
 
         for actor_entity in actor_entities:
+
+            safe_name = self._context.safe_get_entity_name(actor_entity)
+            if safe_name not in tasks:
+                continue
+
             if not actor_entity.has(UpdateAppearanceAction):
                 actor_entity.add(
                     UpdateAppearanceAction,
                     self._context.safe_get_entity_name(actor_entity),
                     [],
                 )
-
-    ######################################################################################################################################################
-    def _check_game_loaded(self) -> bool:
-        assert self._game._game_resource is not None
-        return self._game._game_resource.is_load
 
     ######################################################################################################################################################

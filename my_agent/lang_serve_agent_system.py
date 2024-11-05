@@ -1,5 +1,5 @@
 from loguru import logger
-from typing import Dict, List, Optional, Set, cast
+from typing import Dict, List, Optional, Set, cast, final
 from langchain_core.messages import HumanMessage, AIMessage
 from pathlib import Path
 from my_agent.lang_serve_agent import LangServeAgent
@@ -11,6 +11,7 @@ from my_models.models_def import (
 )
 
 
+@final
 class LangServeAgentSystem:
 
     def __init__(self, name: str) -> None:
@@ -48,10 +49,11 @@ class LangServeAgentSystem:
         return new_agent
 
     ################################################################################################################################################################################
-    def connect_agent(self, agent_name: str) -> None:
+    def connect_agent(self, agent_name: str) -> bool:
         agent = self.get_agent(agent_name)
         if agent is not None:
-            agent.initialize_connection()
+            return agent._remote_runnable_wrapper.initialize_connection()
+        return False
 
     ################################################################################################################################################################################
     def get_agent(self, agent_name: str) -> Optional[LangServeAgent]:

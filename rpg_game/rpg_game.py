@@ -14,8 +14,9 @@ from my_components.components import (
     RPGCurrentWeaponComponent,
     RPGCurrentClothesComponent,
     StageGraphComponent,
-    KickOffComponent,
+    KickOffContentComponent,
     RoundEventsComponent,
+    KickOffFlagComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from rpg_game.rpg_game_resource import RPGGameResource
@@ -195,7 +196,7 @@ class RPGGame(BaseGame):
             GUIDComponent, world_system_model.name, world_system_instance.guid
         )
         world_system_entity.add(WorldComponent, world_system_model.name)
-        world_system_entity.add(KickOffComponent, world_system_model.name, "")
+        world_system_entity.add(KickOffContentComponent, world_system_model.name, "")
         world_system_entity.add(RoundEventsComponent, world_system_model.name, [])
 
         # 添加扩展子系统的功能
@@ -292,7 +293,7 @@ class RPGGame(BaseGame):
         actor_entity.add(BodyComponent, actor_instance.name, actor_model.body)
 
         actor_entity.add(
-            KickOffComponent, actor_instance.name, actor_model.kick_off_message
+            KickOffContentComponent, actor_instance.name, actor_model.kick_off_message
         )
 
         actor_entity.add(RoundEventsComponent, actor_instance.name, [])
@@ -306,7 +307,7 @@ class RPGGame(BaseGame):
             actor_instance.name, f"""{actor_model.codename}{actor_instance.guid}"""
         )
 
-        # 添加道具
+        # 文件系统：添加道具
         for prop_instance in actor_instance.props:
             ## 重构
             assert self._game_resource is not None
@@ -325,7 +326,7 @@ class RPGGame(BaseGame):
             context._file_system.add_file(new_prop_file)
             context._file_system.write_file(new_prop_file)
 
-        # 添加档案
+        # 文件系统：添加档案
         extended_systems.file_system_helper.add_actor_archive_files(
             context._file_system, actor_instance.name, set(actor_model.actor_archives)
         )
@@ -334,7 +335,7 @@ class RPGGame(BaseGame):
             context._file_system, actor_instance.name, set(actor_model.stage_archives)
         )
 
-        # 添加当前使用的道具/装备
+        # 文件系统准备好之后，设置当前使用的道具
         weapon_prop_file: Optional[PropFile] = None
         clothes_prop_file: Optional[PropFile] = None
         for prop_name in actor_instance.actor_current_using_prop:
@@ -421,7 +422,7 @@ class RPGGame(BaseGame):
         )
 
         stage_entity.add(
-            KickOffComponent, stage_model.name, stage_model.kick_off_message
+            KickOffContentComponent, stage_model.name, stage_model.kick_off_message
         )
 
         stage_entity.add(RoundEventsComponent, stage_model.name, [])
@@ -602,6 +603,12 @@ class RPGGame(BaseGame):
                     case PlayerComponent.__name__:
                         player_comp = PlayerComponent(**comp.data)
                         load_entity.replace(PlayerComponent, player_comp.name)
+
+                    case KickOffFlagComponent.__name__:
+                        kick_off_flag_comp = KickOffFlagComponent(**comp.data)
+                        load_entity.replace(
+                            KickOffFlagComponent, kick_off_flag_comp.name
+                        )
 
                     case _:
                         pass

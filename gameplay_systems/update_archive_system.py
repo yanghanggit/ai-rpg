@@ -1,11 +1,9 @@
 from entitas import ExecuteProcessor, Matcher, Entity, InitializeProcessor  # type: ignore
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-
-# from loguru import logger
 from my_components.components import (
     ActorComponent,
     StageComponent,
-    KickOffComponent,
+    KickOffContentComponent,
     RoundEventsComponent,
 )
 from typing import Set, final, override, Dict, List
@@ -22,6 +20,7 @@ class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
         self._context: RPGEntitasContext = context
         self._game: RPGGame = rpg_game
 
+    ###############################################################################################################################################
     @override
     def initialize(self) -> None:
         all_actor_names = self._get_all_actor_names()
@@ -210,13 +209,13 @@ class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
         ret: Dict[str, List[ActorArchiveFile]] = {}
 
         actor_entities: Set[Entity] = self._context.get_group(
-            Matcher(all_of=[ActorComponent, KickOffComponent])
+            Matcher(all_of=[ActorComponent, KickOffContentComponent])
         ).entities
 
         for actor_entity in actor_entities:
 
             actor_comp = actor_entity.get(ActorComponent)
-            kick_off_comp = actor_entity.get(KickOffComponent)
+            kick_off_comp = actor_entity.get(KickOffContentComponent)
 
             for archive_actor_name in add_actor_names:
                 if archive_actor_name == actor_comp.name:
@@ -245,13 +244,13 @@ class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
         ret: Dict[str, List[StageArchiveFile]] = {}
 
         actor_entities: Set[Entity] = self._context.get_group(
-            Matcher(all_of=[ActorComponent, KickOffComponent])
+            Matcher(all_of=[ActorComponent, KickOffContentComponent])
         ).entities
 
         for actor_entity in actor_entities:
 
             actor_comp = actor_entity.get(ActorComponent)
-            kick_off_comp = actor_entity.get(KickOffComponent)
+            kick_off_comp = actor_entity.get(KickOffContentComponent)
 
             for archive_stage_name in add_stage_names:
 

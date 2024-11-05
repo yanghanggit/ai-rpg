@@ -14,6 +14,7 @@ from my_models.models_def import (
     PropModel,
     StageModel,
     WorldSystemModel,
+    SpawnerModel,
 )
 from pathlib import Path
 import json
@@ -55,6 +56,7 @@ class DataBase:
         self._stages: Dict[str, StageModel] = {}
         self._props: Dict[str, PropModel] = {}
         self._world_systems: Dict[str, WorldSystemModel] = {}
+        self._spawners: Dict[str, SpawnerModel] = {}
 
         self.make_dict()
 
@@ -83,6 +85,10 @@ class DataBase:
         for world_system in self._model.world_systems:
             self._world_systems.setdefault(world_system.name, world_system)
 
+        self._spawners.clear()
+        for spawner in self._model.spawners:
+            self._spawners.setdefault(spawner.name, spawner)
+
     ###############################################################################################################################################
     def get_actor(self, actor_name: str) -> Optional[ActorModel]:
         instance_name = ActorInstanceName(actor_name)
@@ -99,6 +105,10 @@ class DataBase:
     ###############################################################################################################################################
     def get_world_system(self, world_system_name: str) -> Optional[WorldSystemModel]:
         return self._world_systems.get(world_system_name, None)
+
+    ###############################################################################################################################################
+    def get_spawner(self, spawner_name: str) -> Optional[SpawnerModel]:
+        return self._spawners.get(spawner_name, None)
 
 
 ###############################################################################################################################################

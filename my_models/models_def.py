@@ -12,6 +12,8 @@ class EditorEntityType(StrEnum):
     STAGE = "Stage"
     ABOUT_GAME = "AboutGame"
     ACTOR_GROUP = "ActorGroup"
+    ACTOR_SPAWN = "ActorSpawn"
+    SPAWNER = "Spawner"
 
 
 @unique
@@ -27,6 +29,8 @@ class EditorProperty(StrEnum):
     ACTORS_IN_STAGE = "actors_in_stage"
     GROUPS_IN_STAGE = "groups_in_stage"
     DESCRIPTION = "description"
+    SPAWN = "spawn"
+    SPAWNERS_IN_STAGE = "spawners_in_stage"
 
 
 class OneGameConfigModel(BaseModel):
@@ -51,6 +55,33 @@ class APIRoutesConfigModel(BaseModel):
     FETCH_MESSAGES: str = ""
     GET_ACTOR_ARCHIVES: str = ""
     GET_STAGE_ARCHIVES: str = ""
+
+
+class PropInstanceModel(BaseModel):
+    name: str
+    guid: int
+    count: int
+
+
+class ActorInstanceModel(BaseModel):
+    name: str
+    guid: int
+    props: List[PropInstanceModel]
+    actor_current_using_prop: List[str]
+    suffix: str = ""
+
+
+class StageInstanceModel(BaseModel):
+    name: str
+    guid: int
+    props: List[PropInstanceModel]
+    actors: List[Dict[str, Any]]
+    spawners: List[str]
+
+
+class WorldSystemInstanceModel(BaseModel):
+    name: str
+    guid: int
 
 
 class ActorModel(BaseModel):
@@ -89,36 +120,18 @@ class WorldSystemModel(BaseModel):
     url: str
 
 
+class SpawnerModel(BaseModel):
+    name: str
+    spawn: List[str]
+    actor_prototype: List[ActorInstanceModel]
+
+
 class DataBaseModel(BaseModel):
     actors: List[ActorModel]
     stages: List[StageModel]
     props: List[PropModel]
     world_systems: List[WorldSystemModel]
-
-
-class PropInstanceModel(BaseModel):
-    name: str
-    guid: int
-    count: int
-
-
-class ActorInstanceModel(BaseModel):
-    name: str
-    guid: int
-    props: List[PropInstanceModel]
-    actor_current_using_prop: List[str]
-
-
-class StageInstanceModel(BaseModel):
-    name: str
-    guid: int
-    props: List[PropInstanceModel]
-    actors: List[Dict[str, Any]]
-
-
-class WorldSystemInstanceModel(BaseModel):
-    name: str
-    guid: int
+    spawners: List[SpawnerModel]
 
 
 class GameModel(BaseModel):

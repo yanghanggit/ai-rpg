@@ -39,7 +39,7 @@ class ExcelEditorGroup:
 
         assert "#" in self.original_name, f"Invalid actor names: {self.original_name}"
         assert ":" in self.original_name, f"Invalid actor names: {self.original_name}"
-        logger.debug(f"Group: {self.original_name}")
+        logger.debug(f"ExcelEditorGroup: {self.original_name}")
         logger.debug(f"actor_name: {self.actor_name}")
         logger.debug(f"group_name: {self.group_name}")
         logger.debug(f"group_count: {self.group_count}")
@@ -76,11 +76,16 @@ class ExcelEditorGroup:
         assert "#" in self.original_name, f"Invalid actor names: {self.original_name}"
         group_name_and_count = self.original_name.split("#")[1]
         count = group_name_and_count.split(":")[1]
-        return int(count)
+        assert count.isnumeric(), f"Invalid actor names: {self.original_name}"
+        ret = int(count)
+        if ret < 0:
+            logger.error(f"Invalid group count: {self.original_name}")
+            ret = 0
+        return ret
 
     #################################################################################################################################
     @property
-    def spawn_actors(self) -> List[ExcelEditorActor]:
+    def generate_excel_actors(self) -> List[ExcelEditorActor]:
         if not configuration.EN_ACTOR_GROUP_FEATURE:
             return []
 
@@ -90,11 +95,13 @@ class ExcelEditorGroup:
             for i in range(self.group_count):
                 self._cache_spawn_actors.append(
                     ExcelEditorActor(
-                        self._data,
-                        self._actor_data_base,
-                        self._prop_data_base,
-                        self,
-                        editor_guid_generator.gen_actor_guid(self.actor_name),
+                        data=self._data,
+                        actor_data_base=self._actor_data_base,
+                        prop_data_base=self._prop_data_base,
+                        editor_group=self,
+                        group_gen_guid=editor_guid_generator.gen_actor_guid(
+                            self.actor_name
+                        ),
                     )
                 )
 

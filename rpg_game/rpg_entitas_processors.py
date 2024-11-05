@@ -96,6 +96,7 @@ class RPGEntitasProcessors(Processors):
         from gameplay_systems.save_entity_system import SaveEntitySystem
         from gameplay_systems.save_player_system import SavePlayerSystem
         from gameplay_systems.web_player_tips_system import WebPlayerTipsSystem
+        from gameplay_systems.spawner_system import SpawnerSystem
 
         ##
         rpg_game = cast(RPGGame, game)
@@ -106,6 +107,7 @@ class RPGEntitasProcessors(Processors):
         processors.add(BeginSystem(context, rpg_game))
 
         # 初始化系统########################
+        processors.add(SpawnerSystem(context, rpg_game))
         processors.add(AgentConnectSystem(context, rpg_game))
         processors.add(AgentKickOffSystem(context, rpg_game))
         #########################################

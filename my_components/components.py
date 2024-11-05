@@ -46,6 +46,13 @@ class StageGraphComponent(NamedTuple):
     stage_graph: List[str]
 
 
+# 场景可以去往的地方
+@final
+class StageSpawnerComponent(NamedTuple):
+    name: str
+    spawners: List[str]
+
+
 # 角色标记
 @final
 class ActorComponent(NamedTuple):

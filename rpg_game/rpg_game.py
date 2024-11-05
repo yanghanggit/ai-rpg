@@ -17,6 +17,7 @@ from my_components.components import (
     KickOffContentComponent,
     RoundEventsComponent,
     KickOffFlagComponent,
+    StageSpawnerComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from rpg_game.rpg_game_resource import RPGGameResource
@@ -412,6 +413,7 @@ class RPGGame(BaseGame):
         stage_entity.add(GUIDComponent, stage_model.name, stage_instance.guid)
         stage_entity.add(StageComponent, stage_model.name)
 
+        # 记录属性
         stage_entity.add(
             RPGAttributesComponent,
             stage_model.name,
@@ -421,16 +423,26 @@ class RPGGame(BaseGame):
             stage_model.attributes[AttributesIndex.DEFENSE.value],
         )
 
+        # 记录用
         stage_entity.add(
             KickOffContentComponent, stage_model.name, stage_model.kick_off_message
         )
 
+        # 记录用
         stage_entity.add(RoundEventsComponent, stage_model.name, [])
 
-        ## 重新设置Actor和stage的关系
-        for actor_proxy in stage_instance.actors:
+        # 添加场景可以连接的场景
+        stage_entity.add(StageGraphComponent, stage_model.name, stage_model.stage_graph)
 
-            actor_name = actor_proxy["name"]
+        # 添加spawners
+        stage_entity.add(
+            StageSpawnerComponent, stage_model.name, stage_instance.spawners
+        )
+
+        ## 重新设置Actor和stage的关系
+        for actor_instance in stage_instance.actors:
+
+            actor_name = actor_instance["name"]
             actor_entity: Optional[Entity] = context.get_actor_entity(actor_name)
             assert actor_entity is not None
 
@@ -455,14 +467,12 @@ class RPGGame(BaseGame):
             context._file_system.add_file(prop_file)
             context._file_system.write_file(prop_file)
 
-        # 添加场景可以连接的场景
-        stage_entity.add(StageGraphComponent, stage_model.name, stage_model.stage_graph)
-
-        # 添加子系统！
+        # 添加子系统：Agent
         context._langserve_agent_system.register_agent(
             stage_model.name, stage_model.url
         )
 
+        # 添加子系统：CodeName
         context._codename_component_system.register_code_name_component_class(
             stage_model.name, stage_model.codename
         )

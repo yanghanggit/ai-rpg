@@ -19,6 +19,7 @@ from my_models.models_def import (
     StageInstanceModel,
 )
 from game_sample.group_editor import ExcelEditorGroup
+import game_sample.configuration as configuration
 
 
 class ExcelEditorStage:
@@ -186,7 +187,7 @@ class ExcelEditorStage:
             ret.append({EditorProperty.NAME: actor.name})
 
         for group in groups:
-            for spawn_actor in group.spawn_actors:
+            for spawn_actor in group.generate_excel_actors:
                 ret.append({EditorProperty.NAME: spawn_actor.name})
 
         return ret
@@ -215,6 +216,7 @@ class ExcelEditorStage:
             actors=self.gen_actors_instances_in_stage(
                 self.parse_actors_in_stage(), self._editor_groups
             ),
+            spawners=self.spawners_in_stage,
         )
 
         return ret
@@ -223,6 +225,19 @@ class ExcelEditorStage:
     @property
     def groups_in_stage(self) -> List[str]:
         org_data: Optional[str] = self._data[EditorProperty.GROUPS_IN_STAGE]
+        if org_data is None:
+            return []
+        ret = org_data.split(";")
+        return ret
+
+    ################################################################################################################################
+    @property
+    def spawners_in_stage(self) -> List[str]:
+
+        if not configuration.EN_SPAWNER_FEATURE:
+            return []
+
+        org_data: Optional[str] = self._data[EditorProperty.SPAWNERS_IN_STAGE]
         if org_data is None:
             return []
         ret = org_data.split(";")

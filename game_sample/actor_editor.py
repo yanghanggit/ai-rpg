@@ -26,7 +26,8 @@ class ExcelEditorActor:
         actor_data_base: Dict[str, ExcelDataActor],
         prop_data_base: Dict[str, ExcelDataProp],
         editor_group: Any = None,
-        spawn_guid: int = 0,
+        group_gen_guid: int = 0,
+        editor_spawn: Any = None,
     ) -> None:
         assert data is not None
         assert actor_data_base is not None
@@ -37,12 +38,14 @@ class ExcelEditorActor:
         self._actor_data_base: Dict[str, ExcelDataActor] = actor_data_base
         self._prop_data_base: Dict[str, ExcelDataProp] = prop_data_base
         self._editor_group = editor_group
-        self._spawn_guid = spawn_guid
+        self._group_gen_guid = group_gen_guid
+        self._editor_spawn = editor_spawn
 
         if self.type not in [
             EditorEntityType.PLAYER,
             EditorEntityType.ACTOR,
             EditorEntityType.ACTOR_GROUP,
+            EditorEntityType.ACTOR_SPAWN,
         ]:
             assert False, f"Invalid actor type: {self.type}"
 
@@ -52,9 +55,18 @@ class ExcelEditorActor:
     def name(self) -> str:
 
         if self._editor_group is not None:
-            assert self._spawn_guid > 0
-            return f"""{self._editor_group.actor_name}#{self._spawn_guid}"""
+            from game_sample.group_editor import ExcelEditorGroup
 
+            assert self._group_gen_guid > 0
+            return f"""{cast(ExcelEditorGroup, self._editor_group).actor_name}#{self._group_gen_guid}"""
+
+        if self._editor_spawn is not None:
+            from game_sample.actor_spawn_editor import ExcelEditorActorSpawn
+
+            return cast(ExcelEditorActorSpawn, self._editor_spawn).actor_name
+
+        assert "#" not in self._data[EditorProperty.NAME]
+        assert ":" not in self._data[EditorProperty.NAME]
         return str(self._data[EditorProperty.NAME])
 
     #################################################################################################################################
@@ -171,8 +183,8 @@ class ExcelEditorActor:
         )
 
         if self._editor_group is not None:
-            assert self._spawn_guid > 0
-            ret.guid = self._spawn_guid
+            assert self._group_gen_guid > 0
+            ret.guid = self._group_gen_guid
         else:
             ret.guid = editor_guid_generator.gen_actor_guid(self.name)
 

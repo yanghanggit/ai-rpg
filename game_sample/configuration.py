@@ -91,3 +91,4 @@ assert (
 
 
 EN_ACTOR_GROUP_FEATURE: bool = False
+EN_SPAWNER_FEATURE: bool = True

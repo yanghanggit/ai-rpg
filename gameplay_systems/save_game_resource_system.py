@@ -58,7 +58,7 @@ class SaveGameResourceSystem(ExecuteProcessor):
         ).entities
         for player_entity in player_entities:
             actor_proxy_model = self._create_actor_proxy_model(player_entity)
-            prop_proxy_models = self._create_prop_proxy_model(player_entity)
+            prop_proxy_models = self._create_prop_instance_model(player_entity)
             actor_proxy_model.props = prop_proxy_models
 
             game_model.players.append(actor_proxy_model)
@@ -73,7 +73,7 @@ class SaveGameResourceSystem(ExecuteProcessor):
         ).entities
         for actor_entity in actor_entities:
             actor_proxy_model = self._create_actor_proxy_model(actor_entity)
-            actor_proxy_model.props = self._create_prop_proxy_model(actor_entity)
+            actor_proxy_model.props = self._create_prop_instance_model(actor_entity)
 
             game_model.actors.append(actor_proxy_model)
 
@@ -101,7 +101,7 @@ class SaveGameResourceSystem(ExecuteProcessor):
         return ret
 
     ############################################################################################################
-    def _create_prop_proxy_model(self, entity: Entity) -> List[PropInstanceModel]:
+    def _create_prop_instance_model(self, entity: Entity) -> List[PropInstanceModel]:
 
         ret: List[PropInstanceModel] = []
         safe_name = self._context.safe_get_entity_name(entity)
@@ -123,16 +123,16 @@ class SaveGameResourceSystem(ExecuteProcessor):
         stage_entities = self._context.get_group(Matcher(StageComponent)).entities
         for stage_entity in stage_entities:
 
-            stage_proxy_model = self._create_stage_proxy_model(stage_entity)
-            stage_proxy_model.props = self._create_prop_proxy_model(stage_entity)
+            stage_proxy_model = self._create_stage_instance_model(stage_entity)
+            stage_proxy_model.props = self._create_prop_instance_model(stage_entity)
 
             game_model.stages.append(stage_proxy_model)
 
     ############################################################################################################
-    def _create_stage_proxy_model(self, stage_entity: Entity) -> StageInstanceModel:
+    def _create_stage_instance_model(self, stage_entity: Entity) -> StageInstanceModel:
 
         ret: StageInstanceModel = StageInstanceModel(
-            name="", guid=0, props=[], actors=[]
+            name="", guid=0, props=[], actors=[], spawners=[]
         )
 
         stage_comp = stage_entity.get(StageComponent)

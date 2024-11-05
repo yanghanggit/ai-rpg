@@ -83,7 +83,6 @@ class PlanningAllowedComponent(NamedTuple):
 class AppearanceComponent(NamedTuple):
     name: str
     appearance: str
-    # hash_code: str
 
 
 # 身体信息，用于和衣服组成完整的外观信息。如果是动物等，就是动物的外观信息

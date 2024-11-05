@@ -39,4 +39,4 @@ class ActorArchiveFileModel(BaseModel):
 class PropFileModel(BaseModel):
     owner: str
     prop_model: PropModel
-    prop_proxy_model: PropInstanceModel
+    prop_instance_model: PropInstanceModel

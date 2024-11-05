@@ -166,15 +166,15 @@ class RPGGame(BaseGame):
 
         ret: List[Entity] = []
 
-        for world_system_proxy in game_resource.world_systems_proxy:
+        for world_system_instance in game_resource.world_system_instances:
 
             world_system_model = game_resource.data_base.get_world_system(
-                world_system_proxy.name
+                world_system_instance.name
             )
             assert world_system_model is not None
 
             world_system_entity = self._create_world_system_entity(
-                world_system_proxy, world_system_model, self._entitas_context
+                world_system_instance, world_system_model, self._entitas_context
             )
             assert world_system_entity is not None
 
@@ -221,13 +221,13 @@ class RPGGame(BaseGame):
 
     ###############################################################################################################################################
     def _create_player_entities(
-        self, game_resource: RPGGameResource, actors_proxy: List[ActorInstanceModel]
+        self, game_resource: RPGGameResource, actors_instances: List[ActorInstanceModel]
     ) -> List[Entity]:
 
         assert game_resource is not None
 
         # 创建player 本质就是创建Actor
-        actor_entities = self._create_actor_entities(game_resource, actors_proxy)
+        actor_entities = self._create_actor_entities(game_resource, actors_instances)
 
         # 为Actor添加PlayerComponent
         for actor_entity in actor_entities:
@@ -297,7 +297,6 @@ class RPGGame(BaseGame):
             AppearanceComponent,
             actor_instance.name,
             actor_model.body,
-            # hash(actor_model.body),
         )
         actor_entity.add(BodyComponent, actor_instance.name, actor_model.body)
 
@@ -334,7 +333,7 @@ class RPGGame(BaseGame):
                 PropFileModel(
                     owner=actor_instance.name,
                     prop_model=prop_model,
-                    prop_proxy_model=prop_instance,
+                    prop_instance_model=prop_instance,
                 )
             )
             context._file_system.add_file(new_prop_file)
@@ -392,13 +391,13 @@ class RPGGame(BaseGame):
 
         ret: List[Entity] = []
 
-        for stage_proxy in game_resource.stages_instances:
+        for stage_instance in game_resource.stages_instances:
 
-            stage_model = game_resource.data_base.get_stage(stage_proxy.name)
+            stage_model = game_resource.data_base.get_stage(stage_instance.name)
             assert stage_model is not None
 
             stage_entity = self._create_stage_entity(
-                stage_proxy, stage_model, self._entitas_context
+                stage_instance, stage_model, self._entitas_context
             )
             assert stage_entity is not None
 
@@ -462,19 +461,19 @@ class RPGGame(BaseGame):
             actor_entity.replace(ActorComponent, actor_name, stage_model.name)
 
         # 场景内添加道具
-        for prop_proxy in stage_instance.props:
+        for prop_instance in stage_instance.props:
             # 直接使用文件系统
             assert self._game_resource is not None
-            prop_model = self._game_resource.data_base.get_prop(prop_proxy.name)
+            prop_model = self._game_resource.data_base.get_prop(prop_instance.name)
             if prop_model is None:
-                logger.error(f"没有从数据库找到道具：{prop_proxy.name}")
+                logger.error(f"没有从数据库找到道具：{prop_instance.name}")
                 continue
 
             prop_file = PropFile(
                 PropFileModel(
                     owner=stage_model.name,
                     prop_model=prop_model,
-                    prop_proxy_model=prop_proxy,
+                    prop_instance_model=prop_instance,
                 )
             )
             context._file_system.add_file(prop_file)
@@ -585,7 +584,6 @@ class RPGGame(BaseGame):
                             AppearanceComponent,
                             appearance_comp.name,
                             appearance_comp.appearance,
-                            # appearance_comp.hash_code,
                         )
 
                     case PlayerComponent.__name__:

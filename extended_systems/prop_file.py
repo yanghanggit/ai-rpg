@@ -21,7 +21,9 @@ class PropFile(BaseFile):
         prop_file_model: PropFileModel,
     ) -> None:
 
-        super().__init__(prop_file_model.prop_proxy_model.name, prop_file_model.owner)
+        super().__init__(
+            prop_file_model.prop_instance_model.name, prop_file_model.owner
+        )
         self._model: PropFileModel = prop_file_model
 
     ############################################################################################################
@@ -33,13 +35,13 @@ class PropFile(BaseFile):
     @override
     def deserialization(self, content: str) -> None:
         self._model = PropFileModel.model_validate_json(content)
-        self._name = self._model.prop_proxy_model.name
+        self._name = self._model.prop_instance_model.name
         self._owner_name = self._model.owner
 
     ############################################################################################################
     @property
     def guid(self) -> int:
-        return self.prop_proxy_model.guid
+        return self.prop_instance_model.guid
 
     ############################################################################################################
     @property
@@ -48,8 +50,8 @@ class PropFile(BaseFile):
 
     ############################################################################################################
     @property
-    def prop_proxy_model(self) -> PropInstanceModel:
-        return self._model.prop_proxy_model
+    def prop_instance_model(self) -> PropInstanceModel:
+        return self._model.prop_instance_model
 
     ############################################################################################################
     @property
@@ -125,17 +127,17 @@ class PropFile(BaseFile):
     ############################################################################################################
     @property
     def count(self) -> int:
-        return self.prop_proxy_model.count
+        return self.prop_instance_model.count
 
     ############################################################################################################
     def increase_count(self, amount: int) -> None:
-        self.prop_proxy_model.count += amount
+        self.prop_instance_model.count += amount
 
     ############################################################################################################
     def decrease_count(self, amount: int) -> None:
-        self.prop_proxy_model.count -= amount
-        if self.prop_proxy_model.count < 0:
-            self.prop_proxy_model.count = 0
+        self.prop_instance_model.count -= amount
+        if self.prop_instance_model.count < 0:
+            self.prop_instance_model.count = 0
 
     ############################################################################################################
 

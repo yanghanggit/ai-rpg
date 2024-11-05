@@ -97,7 +97,7 @@ def exchange_prop_file(
             PropFileModel(
                 owner=right_owner_name,
                 prop_model=left_prop_file.prop_model,
-                prop_proxy_model=left_prop_file.prop_proxy_model,
+                prop_instance_model=left_prop_file.prop_instance_model,
             ),
         )
 
@@ -114,7 +114,7 @@ def exchange_prop_file(
             PropFileModel(
                 owner=left_owner_name,
                 prop_model=right_prop_file.prop_model,
-                prop_proxy_model=right_prop_file.prop_proxy_model,
+                prop_instance_model=right_prop_file.prop_instance_model,
             ),
         )
 

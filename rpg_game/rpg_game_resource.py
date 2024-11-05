@@ -176,7 +176,7 @@ class RPGGameResource:
 
     ###############################################################################################################################################
     @property
-    def world_systems_proxy(self) -> List[WorldSystemInstanceModel]:
+    def world_system_instances(self) -> List[WorldSystemInstanceModel]:
         return self._model.world_systems
 
     ###############################################################################################################################################
@@ -244,14 +244,14 @@ class RPGGameResource:
 
         assert self._load_dir is not None and self._load_dir.exists()
 
-        for world_system in self.world_systems_proxy:
+        for world_system_instance in self.world_system_instances:
 
             # 载入聊天记录
             chat_history_dump_model = self._load_chat_history(
-                world_system.name, self._load_dir
+                world_system_instance.name, self._load_dir
             )
             if chat_history_dump_model is not None:
-                self._load_chat_history_dict[world_system.name] = (
+                self._load_chat_history_dict[world_system_instance.name] = (
                     chat_history_dump_model
                 )
 
@@ -327,28 +327,32 @@ class RPGGameResource:
 
         assert self._load_dir is not None and self._load_dir.exists()
 
-        for stage_proxy in self.stages_instances:
+        for stage_instance in self.stages_instances:
 
             # 载入聊天记录
             chat_history_dump_model = self._load_chat_history(
-                stage_proxy.name, self._load_dir
+                stage_instance.name, self._load_dir
             )
             if chat_history_dump_model is not None:
-                self._load_chat_history_dict[stage_proxy.name] = chat_history_dump_model
+                self._load_chat_history_dict[stage_instance.name] = (
+                    chat_history_dump_model
+                )
 
             # 载入实体的profile
-            entity_profile = self._load_entity_profile(stage_proxy.name, self._load_dir)
+            entity_profile = self._load_entity_profile(
+                stage_instance.name, self._load_dir
+            )
             if entity_profile is not None:
-                self._load_entity_profile_dict[stage_proxy.name] = entity_profile
+                self._load_entity_profile_dict[stage_instance.name] = entity_profile
 
             # 载入actor的存档
-            self._load_actor_archive_dict[stage_proxy.name] = (
-                self._load_actor_archive_file(stage_proxy.name, self._load_dir)
+            self._load_actor_archive_dict[stage_instance.name] = (
+                self._load_actor_archive_file(stage_instance.name, self._load_dir)
             )
 
             # 载入stage的存档
-            self._load_stage_archive_dict[stage_proxy.name] = (
-                self._load_stage_archive_file(stage_proxy.name, self._load_dir)
+            self._load_stage_archive_dict[stage_instance.name] = (
+                self._load_stage_archive_file(stage_instance.name, self._load_dir)
             )
 
     ###############################################################################################################################################

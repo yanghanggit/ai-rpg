@@ -185,7 +185,6 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
             entity = context.get_actor_entity(name)
             if entity is None:
                 continue
-            # hash_code = hash(appearance)
             entity.replace(AppearanceComponent, name, appearance)
 
     ###############################################################################################################################################

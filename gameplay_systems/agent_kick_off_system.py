@@ -8,6 +8,7 @@ from my_components.components import (
     BodyComponent,
     KickOffContentComponent,
     KickOffFlagComponent,
+    AgentConnectionFlagComponent,
 )
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt
 from rpg_game.rpg_entitas_context import RPGEntitasContext
@@ -155,7 +156,11 @@ class AgentKickOffSystem(ExecuteProcessor):
 
         world_entities: Set[Entity] = self._context.get_group(
             Matcher(
-                all_of=[WorldComponent, KickOffContentComponent],
+                all_of=[
+                    WorldComponent,
+                    KickOffContentComponent,
+                    AgentConnectionFlagComponent,
+                ],
                 none_of=[KickOffFlagComponent],
             )
         ).entities
@@ -186,7 +191,11 @@ class AgentKickOffSystem(ExecuteProcessor):
 
         stage_entities: Set[Entity] = self._context.get_group(
             Matcher(
-                all_of=[StageComponent, KickOffContentComponent],
+                all_of=[
+                    StageComponent,
+                    KickOffContentComponent,
+                    AgentConnectionFlagComponent,
+                ],
                 none_of=[KickOffFlagComponent],
             )
         ).entities
@@ -223,7 +232,11 @@ class AgentKickOffSystem(ExecuteProcessor):
 
         actor_entities: Set[Entity] = self._context.get_group(
             Matcher(
-                all_of=[ActorComponent, KickOffContentComponent],
+                all_of=[
+                    ActorComponent,
+                    KickOffContentComponent,
+                    AgentConnectionFlagComponent,
+                ],
                 none_of=[KickOffFlagComponent],
             )
         ).entities

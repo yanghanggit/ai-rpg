@@ -5,6 +5,8 @@ from my_components.components import (
     PlanningAllowedComponent,
     StageGraphComponent,
     PlayerComponent,
+    AgentConnectionFlagComponent,
+    KickOffFlagComponent,
 )
 from my_components.action_components import (
     StageNarrateAction,
@@ -209,7 +211,12 @@ class ActorPlanningExecutionSystem(ExecuteProcessor):
 
         actor_entities = self._context.get_group(
             Matcher(
-                all_of=[ActorComponent, PlanningAllowedComponent],
+                all_of=[
+                    ActorComponent,
+                    PlanningAllowedComponent,
+                    AgentConnectionFlagComponent,
+                    KickOffFlagComponent,
+                ],
                 none_of=[PlayerComponent],
             )
         ).entities

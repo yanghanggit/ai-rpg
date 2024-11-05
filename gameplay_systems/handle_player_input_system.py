@@ -28,7 +28,7 @@ class HandlePlayerInputSystem(ExecuteProcessor):
                 continue
 
             if not player_entity.has(PlanningAllowedComponent):
-                logger.info(
+                logger.error(
                     f"player_entity has no PlanningAllowedComponent, player_proxy.name={player_proxy.name}"
                 )
                 continue

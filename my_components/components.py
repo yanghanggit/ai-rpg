@@ -8,13 +8,13 @@ class GUIDComponent(NamedTuple):
     GUID: int
 
 
-# 记录kick off信息
+# 标记agent连接完成
 @final
-class AgentConnectionFlag(NamedTuple):
+class AgentConnectionFlagComponent(NamedTuple):
     name: str
 
 
-# 记录kick off信息
+# 记录kick off原始信息
 @final
 class KickOffContentComponent(NamedTuple):
     name: str
@@ -46,7 +46,7 @@ class StageGraphComponent(NamedTuple):
     stage_graph: List[str]
 
 
-# 场景可以去往的地方
+# 场景可以产生actor的孵化器
 @final
 class StageSpawnerComponent(NamedTuple):
     name: str

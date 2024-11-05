@@ -1,6 +1,11 @@
 from entitas import Matcher, ExecuteProcessor  # type: ignore
 from overrides import override
-from my_components.components import StageComponent, PlanningAllowedComponent
+from my_components.components import (
+    StageComponent,
+    PlanningAllowedComponent,
+    AgentConnectionFlagComponent,
+    KickOffFlagComponent,
+)
 from my_components.action_components import (
     STAGE_AVAILABLE_ACTIONS_REGISTER,
     RemovePropAction,
@@ -148,7 +153,14 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
         out_put_request_tasks.clear()
 
         stage_entities = self._context.get_group(
-            Matcher(all_of=[StageComponent, PlanningAllowedComponent])
+            Matcher(
+                all_of=[
+                    StageComponent,
+                    PlanningAllowedComponent,
+                    AgentConnectionFlagComponent,
+                    KickOffFlagComponent,
+                ]
+            )
         ).entities
         for stage_entity in stage_entities:
 

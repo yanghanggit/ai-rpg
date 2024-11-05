@@ -9,7 +9,7 @@ from my_components.action_components import (
 from typing import final, override
 from loguru import logger
 from rpg_game.rpg_game import RPGGame
-from my_models.models_def import AgentEvent
+from my_models.event_models import AgentEvent
 
 
 @final

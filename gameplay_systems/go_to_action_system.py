@@ -12,7 +12,7 @@ from rpg_game.rpg_game import RPGGame
 from extended_systems.files_def import StageArchiveFile
 
 # from loguru import logger
-from my_models.models_def import AgentEvent
+from my_models.event_models import AgentEvent
 
 
 ################################################################################################################################################

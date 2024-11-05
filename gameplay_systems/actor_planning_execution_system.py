@@ -27,7 +27,7 @@ from my_agent.agent_task import (
 from rpg_game.rpg_game import RPGGame
 from gameplay_systems.actor_checker import ActorChecker
 from extended_systems.files_def import PropFile
-from my_models.models_def import PropType
+from my_models.file_models import PropType
 
 
 ###############################################################################################################################################

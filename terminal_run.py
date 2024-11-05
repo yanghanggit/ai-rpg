@@ -8,7 +8,7 @@ from dataclasses import dataclass
 import rpg_game.rpg_game_config as rpg_game_config
 import shutil
 from rpg_game.rpg_game_resource import RPGGameResource
-from my_models.models_def import PlayerProxyModel
+from my_models.player_models import PlayerProxyModel
 
 
 @dataclass

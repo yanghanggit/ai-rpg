@@ -35,11 +35,11 @@ from rpg_game.web_game import WebGame
 from player.player_proxy import PlayerProxy
 import rpg_game.rpg_game_config as rpg_game_config
 import shutil
-from my_models.models_def import PlayerProxyModel
-from my_models.models_def import (
+from my_models.player_models import PlayerProxyModel
+from my_models.config_models import (
+    APIRoutesConfigModel,
     GenGamesConfigModel,
     OneGameConfigModel,
-    APIRoutesConfigModel,
 )
 from fastapi.middleware.cors import CORSMiddleware
 

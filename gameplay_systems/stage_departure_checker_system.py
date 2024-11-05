@@ -18,8 +18,8 @@ from my_agent.agent_task import AgentTask
 from my_agent.agent_plan import AgentPlanResponse
 from extended_systems.files_def import PropFile
 from rpg_game.rpg_game import RPGGame
-from my_models.models_def import PropType
-from my_models.models_def import AgentEvent
+from my_models.file_models import PropType
+from my_models.event_models import AgentEvent
 
 
 def _generate_exit_conditions_prompt(

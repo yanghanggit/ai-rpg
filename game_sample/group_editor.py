@@ -7,10 +7,7 @@ from typing import List, Dict, Any, cast, Optional
 from game_sample.excel_data_prop import ExcelDataProp
 from game_sample.excel_data_actor import ExcelDataActor
 from game_sample.editor_guid_generator import editor_guid_generator
-from my_models.models_def import (
-    EditorEntityType,
-    EditorProperty,
-)
+from my_models.editor_models import EditorEntityType, EditorProperty
 from game_sample.actor_editor import ExcelEditorActor
 from loguru import logger
 import game_sample.configuration as configuration

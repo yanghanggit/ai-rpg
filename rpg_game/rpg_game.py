@@ -25,18 +25,17 @@ from extended_systems.files_def import PropFile
 from rpg_game.base_game import BaseGame
 import extended_systems.file_system_helper
 from rpg_game.rpg_entitas_processors import RPGEntitasProcessors
-from my_models.models_def import (
+from my_models.entity_models import (
     ActorInstanceModel,
     StageInstanceModel,
     ActorModel,
     StageModel,
     WorldSystemModel,
     WorldSystemInstanceModel,
-    PropFileModel,
-    AgentEvent,
-    UpdateAppearanceEvent,
 )
-from my_models.models_def import AttributesIndex
+from my_models.event_models import AgentEvent, UpdateAppearanceEvent
+from my_models.file_models import PropFileModel
+from my_models.entity_models import AttributesIndex
 from player.player_proxy import PlayerProxy
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt
 

@@ -30,8 +30,8 @@ from ws_config import (
 )
 from loguru import logger
 from typing import List
-from my_models.models_def import APIRoutesConfigModel
 import datetime
+from my_models.config_models import APIRoutesConfigModel
 
 
 class GameClientContext:

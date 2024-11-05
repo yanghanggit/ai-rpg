@@ -3,9 +3,10 @@ import datetime
 import os
 from typing import Set, List
 import json
-from my_models.models_def import GameAgentsConfigModel, GenGamesConfigModel
+from my_models.config_models import GameAgentsConfigModel
 import rpg_game.rpg_game_config as rpg_game_config
 from pathlib import Path
+from my_models.config_models import GenGamesConfigModel
 
 
 ####################################################################################################################################

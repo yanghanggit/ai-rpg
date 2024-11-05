@@ -1,16 +1,23 @@
 from overrides import override
 import json
 from abc import ABC, abstractmethod
-from my_models.models_def import (
+from my_models.entity_models import (
     PropModel,
-    EntityProfileModel,
-    StageArchiveFileModel,
-    ActorArchiveFileModel,
+    # EntityProfileModel,
+    # StageArchiveFileModel,
+    # ActorArchiveFileModel,
     PropInstanceModel,
 )
 from pathlib import Path
 from loguru import logger
-from my_models.models_def import AttributesIndex, PropType, PropFileModel
+from my_models.entity_models import AttributesIndex
+from my_models.file_models import (
+    PropType,
+    PropFileModel,
+    EntityProfileModel,
+    StageArchiveFileModel,
+    ActorArchiveFileModel,
+)
 
 
 ############################################################################################################

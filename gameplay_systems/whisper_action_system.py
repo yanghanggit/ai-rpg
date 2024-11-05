@@ -6,7 +6,7 @@ import gameplay_systems.conversation_helper
 import my_format_string.target_and_message_format_string
 from rpg_game.rpg_game import RPGGame
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt
-from my_models.models_def import AgentEvent
+from my_models.event_models import AgentEvent
 
 
 ################################################################################################################################################

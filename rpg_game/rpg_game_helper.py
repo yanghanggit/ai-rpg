@@ -45,8 +45,8 @@ from player.player_command import (
 import datetime
 import shutil
 import zipfile
-from my_models.models_def import AgentEvent
-from my_models.models_def import (
+from my_models.event_models import AgentEvent
+from my_models.player_models import (
     WatchActionModel,
     CheckActionModel,
     GetActorArchivesActionModel,

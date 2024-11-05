@@ -1,14 +1,9 @@
 from typing import Any, List, Optional, Dict
-from my_models.models_def import (
+from my_models.entity_models import (
     ActorInstanceModel,
     StageInstanceModel,
     WorldSystemInstanceModel,
     GameModel,
-    EntityProfileModel,
-    StageArchiveFileModel,
-    ActorArchiveFileModel,
-    AgentChatHistoryDumpModel,
-    PlayerProxyModel,
     DataBaseModel,
     ActorModel,
     PropModel,
@@ -19,6 +14,13 @@ from my_models.models_def import (
 from pathlib import Path
 import json
 from loguru import logger
+from my_models.file_models import (
+    EntityProfileModel,
+    ActorArchiveFileModel,
+    StageArchiveFileModel,
+)
+from my_models.player_models import PlayerProxyModel
+from my_models.agent_models import AgentChatHistoryDumpModel
 
 
 class ActorInstanceName:

@@ -8,7 +8,7 @@ from my_components.components import (
 from typing import final, override, Any, FrozenSet
 import extended_systems.file_system_helper
 from rpg_game.rpg_game import RPGGame
-from my_models.models_def import ComponentDumpModel, EntityProfileModel
+from my_models.file_models import ComponentDumpModel, EntityProfileModel
 from collections import OrderedDict
 
 

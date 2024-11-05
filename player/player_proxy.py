@@ -1,9 +1,11 @@
 from typing import List, Any
 from loguru import logger
-from my_models.models_def import (
+from my_models.event_models import (
+    BaseAgentEvent,
+)
+from my_models.player_models import (
     PlayerClientMessage,
     PlayerClientMessageTag,
-    BaseAgentEvent,
     PlayerProxyModel,
 )
 

@@ -10,9 +10,9 @@ from game_sample.excel_data_actor import ExcelDataActor
 from game_sample.excel_data_stage import ExcelDataStage
 import game_sample.utils
 from game_sample.editor_guid_generator import editor_guid_generator
-from my_models.models_def import (
-    EditorEntityType,
-    EditorProperty,
+from my_models.entity_models import (
+    # EditorEntityType,
+    # EditorProperty,
     AttributesIndex,
     PropInstanceModel,
     StageModel,
@@ -20,6 +20,7 @@ from my_models.models_def import (
 )
 from game_sample.group_editor import ExcelEditorGroup
 import game_sample.configuration as configuration
+from my_models.editor_models import EditorEntityType, EditorProperty
 
 
 class ExcelEditorStage:

@@ -12,10 +12,10 @@ from extended_systems.files_def import PropFile
 import my_format_string.target_and_message_format_string
 import my_format_string.attrs_format_string
 from rpg_game.rpg_game import RPGGame
-from my_models.models_def import AttributesIndex
+from my_models.entity_models import AttributesIndex
 import extended_systems.file_system_helper
-from my_models.models_def import PropType
-from my_models.models_def import AgentEvent
+from my_models.file_models import PropType
+from my_models.event_models import AgentEvent
 
 
 ################################################################################################################################################

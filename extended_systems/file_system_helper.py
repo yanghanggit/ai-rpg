@@ -7,7 +7,7 @@ from extended_systems.files_def import (
 )
 from extended_systems.file_system import FileSystem
 from loguru import logger
-from my_models.models_def import (
+from my_models.file_models import (
     EntityProfileModel,
     PropFileModel,
     ActorArchiveFileModel,

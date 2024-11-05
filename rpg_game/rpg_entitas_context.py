@@ -15,7 +15,7 @@ from my_agent.lang_serve_agent_system import LangServeAgentSystem
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from typing import Optional, Dict, Set, cast, Any
 import gameplay_systems.public_builtin_prompt as public_builtin_prompt
-from my_models.models_def import AgentEvent
+from my_models.event_models import AgentEvent
 
 
 class RPGEntitasContext(Context):

@@ -13,7 +13,7 @@ from my_components.components import (
 )
 from typing import Dict, final, override, List
 from rpg_game.rpg_game import RPGGame
-from my_models.models_def import (
+from my_models.entity_models import (
     GameModel,
     ActorInstanceModel,
     PropInstanceModel,

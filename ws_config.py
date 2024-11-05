@@ -2,17 +2,26 @@ from dataclasses import dataclass
 from enum import Enum
 from pydantic import BaseModel
 from typing import Dict, Set, List, Optional, Final, final
-from my_models.models_def import (
+from my_models.entity_models import (
     GameModel,
+    # WatchActionModel,
+    # CheckActionModel,
+    # GetActorArchivesActionModel,
+    # GetStageArchivesActionModel,
+    # GenGamesConfigModel,
+    # APIRoutesConfigModel,
+)
+
+# from my_models.models_def import PlayerClientMessage
+from loguru import logger
+from my_models.config_models import APIRoutesConfigModel, GenGamesConfigModel
+from my_models.player_models import (
     WatchActionModel,
     CheckActionModel,
     GetActorArchivesActionModel,
     GetStageArchivesActionModel,
-    GenGamesConfigModel,
-    APIRoutesConfigModel,
+    PlayerClientMessage,
 )
-from my_models.models_def import PlayerClientMessage
-from loguru import logger
 
 
 @dataclass

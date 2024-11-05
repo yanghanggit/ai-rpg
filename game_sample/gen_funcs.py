@@ -15,7 +15,7 @@ import game_sample.utils
 from game_sample.excel_data_actor import ExcelDataActor
 from game_sample.game_editor import ExcelEditorGame
 import game_sample.configuration as configuration
-from my_models.models_def import GenGamesConfigModel, OneGameConfigModel
+from my_models.config_models import GenGamesConfigModel, OneGameConfigModel
 
 
 ############################################################################################################

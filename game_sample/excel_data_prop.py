@@ -4,7 +4,8 @@ from pathlib import Path
 root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 from typing import Any, List, cast
-from my_models.models_def import PropModel, PropType, AttributesIndex
+from my_models.entity_models import PropModel, AttributesIndex
+from my_models.file_models import PropType
 from enum import StrEnum, unique
 
 

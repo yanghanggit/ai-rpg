@@ -6,10 +6,11 @@ sys.path.append(str(root_dir))
 from typing import List, Dict, Any, cast
 from game_sample.excel_data_prop import ExcelDataProp
 from game_sample.excel_data_actor import ExcelDataActor
-from my_models.models_def import (
-    EditorProperty,
+from my_models.entity_models import (
+    # EditorProperty,
     SpawnerModel,
 )
+from my_models.editor_models import EditorProperty
 from loguru import logger
 from game_sample.actor_spawn_editor import ExcelEditorActorSpawn
 

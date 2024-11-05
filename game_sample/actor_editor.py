@@ -8,14 +8,15 @@ from game_sample.excel_data_prop import ExcelDataProp
 import game_sample.utils
 from game_sample.excel_data_actor import ExcelDataActor
 from game_sample.editor_guid_generator import editor_guid_generator
-from my_models.models_def import (
-    EditorEntityType,
-    EditorProperty,
+from my_models.entity_models import (
+    # EditorEntityType,
+    # EditorProperty,
     ActorModel,
     AttributesIndex,
     ActorInstanceModel,
     PropInstanceModel,
 )
+from my_models.editor_models import EditorEntityType, EditorProperty
 
 
 class ExcelEditorActor:

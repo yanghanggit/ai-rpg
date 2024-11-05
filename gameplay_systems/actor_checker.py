@@ -9,7 +9,7 @@ from my_components.components import (
 from typing import List, Dict, Optional
 from extended_systems.files_def import PropFile
 import extended_systems.file_system_helper
-from my_models.models_def import PropType
+from my_models.file_models import PropType
 
 
 # 简单方便的一次性获取需要的信息。这个类是一个工具类。

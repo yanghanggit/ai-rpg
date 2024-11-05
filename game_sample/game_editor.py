@@ -14,18 +14,19 @@ from game_sample.stage_editor import ExcelEditorStage
 from game_sample.world_system_editor import ExcelEditorWorldSystem
 import pandas as pd
 import game_sample.utils
-from my_models.models_def import (
-    EditorEntityType,
-    EditorProperty,
+from my_models.entity_models import (
+    # EditorEntityType,
+    # EditorProperty,
     GameModel,
     DataBaseModel,
-    GameAgentsConfigModel,
+    # GameAgentsConfigModel,
 )
 from game_sample.actor_spawn_editor import ExcelEditorActorSpawn
 from game_sample.spawner_editor import ExcelEditorSpawner
 import game_sample.configuration as configuration
-
+from my_models.editor_models import EditorEntityType, EditorProperty
 from loguru import logger
+from my_models.config_models import GameAgentsConfigModel
 
 
 ################################################################################################################

@@ -14,9 +14,7 @@ from extended_systems.files_def import PropFile
 from my_agent.agent_task import AgentTask
 from my_components.action_components import UpdateAppearanceAction
 from rpg_game.rpg_game import RPGGame
-from my_models.models_def import UpdateAppearanceEvent
-
-# import gameplay_systems.public_builtin_prompt as public_builtin_prompt
+from my_models.event_models import UpdateAppearanceEvent
 
 
 ################################################################################################################################################

@@ -7,7 +7,7 @@ from typing import final, override
 from extended_systems.files_def import PropFile
 import extended_systems.file_system_helper
 from rpg_game.rpg_game import RPGGame
-from my_models.models_def import AgentEvent
+from my_models.event_models import AgentEvent
 
 
 ###############################################################################################################################################

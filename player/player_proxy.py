@@ -1,7 +1,7 @@
 from typing import List, Any
 from loguru import logger
 from my_models.event_models import (
-    BaseAgentEvent,
+    BaseEvent,
 )
 from my_models.player_models import (
     PlayerClientMessage,
@@ -63,7 +63,7 @@ class PlayerProxy:
         self._model.client_messages.append(new_message)
 
     ##########################################################################################################################################################
-    def add_system_message(self, agent_event: BaseAgentEvent) -> None:
+    def add_system_message(self, agent_event: BaseEvent) -> None:
         self._add_client_message(
             PlayerClientMessage(
                 tag=PlayerClientMessageTag.SYSTEM,
@@ -73,7 +73,7 @@ class PlayerProxy:
         )
 
     ##########################################################################################################################################################
-    def add_actor_message(self, actor_name: str, agent_event: BaseAgentEvent) -> None:
+    def add_actor_message(self, actor_name: str, agent_event: BaseEvent) -> None:
         self._add_client_message(
             PlayerClientMessage(
                 tag=PlayerClientMessageTag.ACTOR,
@@ -83,7 +83,7 @@ class PlayerProxy:
         )
 
     ##########################################################################################################################################################
-    def add_stage_message(self, stage_name: str, agent_event: BaseAgentEvent) -> None:
+    def add_stage_message(self, stage_name: str, agent_event: BaseEvent) -> None:
         self._add_client_message(
             PlayerClientMessage(
                 tag=PlayerClientMessageTag.STAGE,
@@ -93,7 +93,7 @@ class PlayerProxy:
         )
 
     ##########################################################################################################################################################
-    def add_tip_message(self, sender_name: str, agent_event: BaseAgentEvent) -> None:
+    def add_tip_message(self, sender_name: str, agent_event: BaseEvent) -> None:
         self._add_client_message(
             PlayerClientMessage(
                 tag=PlayerClientMessageTag.TIP,
@@ -134,9 +134,7 @@ class PlayerProxy:
         self._model.cache_kickoff_messages.clear()
 
     ##########################################################################################################################################################
-    def cache_kickoff_message(
-        self, actor_name: str, agent_event: BaseAgentEvent
-    ) -> None:
+    def cache_kickoff_message(self, actor_name: str, agent_event: BaseEvent) -> None:
 
         self._model.cache_kickoff_messages.append(
             PlayerClientMessage(

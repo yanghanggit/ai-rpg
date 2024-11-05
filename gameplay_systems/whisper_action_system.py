@@ -5,13 +5,13 @@ from typing import final, override
 import gameplay_systems.conversation_helper
 import my_format_string.target_and_message_format_string
 from rpg_game.rpg_game import RPGGame
-import gameplay_systems.public_builtin_prompt as public_builtin_prompt
+import gameplay_systems.builtin_prompt_util as builtin_prompt_util
 from my_models.event_models import AgentEvent
 
 
 ################################################################################################################################################
 def _generate_whisper_prompt(src_name: str, dest_name: str, content: str) -> str:
-    return f"# {public_builtin_prompt.ConstantPrompt.WHISPER_ACTION_TAG} {src_name}对{dest_name}私语道:{content}"
+    return f"# {builtin_prompt_util.ConstantPromptTag.WHISPER_ACTION_TAG} {src_name}对{dest_name}私语道:{content}"
 
 
 ####################################################################################################################################

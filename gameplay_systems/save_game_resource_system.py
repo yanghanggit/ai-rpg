@@ -20,7 +20,7 @@ from my_models.entity_models import (
     StageInstanceModel,
     WorldSystemInstanceModel,
 )
-from extended_systems.files_def import PropFile
+from extended_systems.prop_file import PropFile
 from pathlib import Path
 from rpg_game.rpg_game_resource import RPGGameResource
 

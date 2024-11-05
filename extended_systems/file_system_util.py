@@ -1,10 +1,6 @@
 from typing import Set, Optional, List, Dict
-from extended_systems.files_def import (
-    PropFile,
-    ActorArchiveFile,
-    StageArchiveFile,
-    EntityProfileFile,
-)
+from extended_systems.archive_file import ActorArchiveFile, StageArchiveFile
+from extended_systems.prop_file import PropFile
 from extended_systems.file_system import FileSystem
 from loguru import logger
 from my_models.file_models import (
@@ -13,6 +9,7 @@ from my_models.file_models import (
     ActorArchiveFileModel,
     StageArchiveFileModel,
 )
+from extended_systems.dump_file import EntityProfileFile
 
 
 ##################################################################################################################################

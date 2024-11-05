@@ -9,7 +9,7 @@ from my_components.action_components import (
 from my_components.components import StageComponent, RPGCurrentWeaponComponent
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import final, override, Set, Optional, Any
-from extended_systems.files_def import PropFile
+from extended_systems.prop_file import PropFile
 from rpg_game.rpg_game import RPGGame
 from my_models.event_models import AgentEvent
 

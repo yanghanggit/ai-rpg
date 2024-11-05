@@ -1,8 +1,9 @@
 from typing import List, List
 from pydantic import BaseModel
-from enum import StrEnum
+from enum import StrEnum, unique
 
 
+@unique
 class AgentMessageType(StrEnum):
     STSTEM = "SystemMessage"
     HUMAN = "HumanMessage"

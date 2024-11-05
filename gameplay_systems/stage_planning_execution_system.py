@@ -17,8 +17,8 @@ from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from typing import Dict, List, final
 import gameplay_systems.action_helper
-from extended_systems.files_def import PropFile
-import gameplay_systems.public_builtin_prompt as public_builtin_prompt
+from extended_systems.prop_file import PropFile, generate_prop_prompt
+import gameplay_systems.builtin_prompt_util as builtin_prompt_util
 from my_agent.agent_task import (
     AgentTask,
 )
@@ -36,7 +36,7 @@ def _generate_stage_plan_prompt(
     if len(props_in_stage) > 0:
         props_in_stage_prompt = ""
         for prop in props_in_stage:
-            props_in_stage_prompt += public_builtin_prompt.generate_prop_prompt(
+            props_in_stage_prompt += generate_prop_prompt(
                 prop, description_prompt=False, appearance_prompt=True
             )
 
@@ -49,7 +49,7 @@ def _generate_stage_plan_prompt(
                 f"### {actor_name}\n- 角色外观:{actor_appearance}\n"
             )
 
-    ret_prompt = f"""# {public_builtin_prompt.ConstantPrompt.STAGE_PLAN_PROMPT_TAG} 请做出你的计划，决定你将要做什么与更新你的场景描述
+    ret_prompt = f"""# {builtin_prompt_util.ConstantPromptTag.STAGE_PLAN_PROMPT_TAG} 请做出你的计划，决定你将要做什么与更新你的场景描述
 
 ## 场景内的道具
 {props_in_stage_prompt}
@@ -134,7 +134,7 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
                 stage_planning, STAGE_AVAILABLE_ACTIONS_REGISTER
             ):
                 logger.warning(
-                    f"StagePlanningSystem: check_plan failed, {stage_planning}"
+                    f"StagePlanningSystem: check_plan failed, {stage_planning.original_response_content}"
                 )
                 ## 需要失忆!
                 self._context._langserve_agent_system.remove_last_human_ai_conversation(

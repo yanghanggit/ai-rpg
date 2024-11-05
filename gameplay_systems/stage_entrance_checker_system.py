@@ -12,12 +12,12 @@ from my_components.components import (
     KickOffContentComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-import gameplay_systems.public_builtin_prompt as public_builtin_prompt
+import gameplay_systems.builtin_prompt_util as builtin_prompt_util
 from typing import final, override, List, Set, Any, Dict, Optional
 from gameplay_systems.actor_checker import ActorChecker
 from my_agent.agent_task import AgentTask
 from my_agent.agent_plan import AgentPlanResponse
-from extended_systems.files_def import PropFile
+from extended_systems.prop_file import PropFile, generate_prop_prompt
 from rpg_game.rpg_game import RPGGame
 from my_models.file_models import PropType
 from my_models.event_models import AgentEvent
@@ -35,7 +35,7 @@ def _generate_stage_entry_conditions_prompt(
     if len(prop_files) > 0:
         prop_prompt_list = "\n".join(
             [
-                public_builtin_prompt.generate_prop_prompt(
+                generate_prop_prompt(
                     prop, description_prompt=True, appearance_prompt=True
                 )
                 for prop in prop_files
@@ -43,7 +43,7 @@ def _generate_stage_entry_conditions_prompt(
         )
 
     ret_prompt = f"""# {actor_name} 想要进入场景: {current_stage_name}。
-## 第1步: 请回顾你的 {public_builtin_prompt.ConstantPrompt.STAGE_EXIT_TAG}
+## 第1步: 请回顾你的 {builtin_prompt_util.ConstantPromptTag.STAGE_EXIT_TAG}
 
 ## 第2步: 根据当前‘你的状态’判断是否满足允许{actor_name}进入
 当前状态可能由于事件而变化，请仔细考虑。
@@ -212,8 +212,10 @@ class StageEntranceCheckerSystem(ReactiveProcessor):
         if len(go_to_action.values) == 0:
             return ""
 
-        if public_builtin_prompt.is_stage_name_unknown(go_to_action.values[0]):
-            guid = public_builtin_prompt.extract_stage_guid(go_to_action.values[0])
+        if builtin_prompt_util.is_unknown_stage_name(go_to_action.values[0]):
+            guid = builtin_prompt_util.extract_guid_from_unknown_stage_name(
+                go_to_action.values[0]
+            )
             stage_entity = self._context.get_entity_by_guid(guid)
             if stage_entity is not None and stage_entity.has(StageComponent):
                 return self._context.safe_get_entity_name(stage_entity)
@@ -278,7 +280,7 @@ class StageEntranceCheckerSystem(ReactiveProcessor):
 
         kick_off_comp = stage_entity.get(KickOffContentComponent)
         return (
-            public_builtin_prompt.ConstantPrompt.STAGE_ENTRY_TAG
+            builtin_prompt_util.ConstantPromptTag.STAGE_ENTRY_TAG
             in kick_off_comp.content
         )
 

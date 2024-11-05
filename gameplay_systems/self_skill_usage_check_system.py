@@ -15,8 +15,8 @@ from my_components.components import (
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import final, override, List, Set, Dict, Any
 from loguru import logger
-from extended_systems.files_def import PropFile
-import gameplay_systems.public_builtin_prompt as public_builtin_prompt
+from extended_systems.prop_file import PropFile, generate_prop_prompt
+import gameplay_systems.builtin_prompt_util as builtin_prompt_util
 from my_agent.agent_task import AgentTask
 from my_agent.agent_plan import AgentPlanResponse
 from rpg_game.rpg_game import RPGGame
@@ -36,7 +36,7 @@ def _generate_skill_usage_reasoning_prompt(
     if len(skill_files) > 0:
         for skill_file in skill_files:
             skills_prompt.append(
-                public_builtin_prompt.generate_prop_prompt(
+                generate_prop_prompt(
                     skill_file, description_prompt=True, appearance_prompt=False
                 )
             )
@@ -49,7 +49,7 @@ def _generate_skill_usage_reasoning_prompt(
     if len(prop_files) > 0:
         for prop_file in prop_files:
             props_prompt.append(
-                public_builtin_prompt.generate_prop_prompt(
+                generate_prop_prompt(
                     prop_file, description_prompt=True, appearance_prompt=False
                 )
             )
@@ -270,7 +270,7 @@ class SelfSkillUsageCheckSystem(ReactiveProcessor):
             # 会添加上下文的！！！！
             ret[agent._name] = AgentTask.create(
                 agent,
-                public_builtin_prompt.replace_you(prompt, agent_name),
+                builtin_prompt_util.replace_you(prompt, agent_name),
             )
 
         return ret

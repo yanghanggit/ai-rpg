@@ -1,9 +1,19 @@
+from enum import unique, StrEnum
 from entitas import ExecuteProcessor, Matcher, Entity  # type: ignore
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from my_components.components import ActorComponent, StageComponent
 from typing import Set, final, override, Dict
 from rpg_game.rpg_game import RPGGame
-import gameplay_systems.public_builtin_prompt as public_builtin_prompt
+import gameplay_systems.builtin_prompt_util as builtin_prompt_util
+
+
+@unique
+class CompressChatHistoryConstantPrompt(StrEnum):
+    COMPRESS_ACTOR_PLAN_PROMPT = "请做出你的计划，决定你将要做什么"
+    COMPRESS_STAGE_PLAN_PROMPT = "请输出 你的当前描述 和 你的计划"
+
+
+############################################################################################################
 
 
 @final
@@ -17,14 +27,14 @@ class CompressChatHistorySystem(ExecuteProcessor):
     def execute(self) -> None:
         # 这个很有危险
         # self.handle_exclude_chat_history()
-        self.handle_compress_chat_history()
+        self._handle_compress_chat_history()
 
     ############################################################################################################
-    def handle_exclude_chat_history(self) -> None:
+    def _handle_exclude_chat_history(self) -> None:
 
         tags: Set[str] = {
-            public_builtin_prompt.ConstantPrompt.ACTOR_PLAN_PROMPT_TAG,
-            public_builtin_prompt.ConstantPrompt.STAGE_PLAN_PROMPT_TAG,
+            builtin_prompt_util.ConstantPromptTag.ACTOR_PLAN_PROMPT_TAG,
+            builtin_prompt_util.ConstantPromptTag.STAGE_PLAN_PROMPT_TAG,
         }
 
         entities: Set[Entity] = self._context.get_group(
@@ -42,11 +52,11 @@ class CompressChatHistorySystem(ExecuteProcessor):
             )
 
     ############################################################################################################
-    def handle_compress_chat_history(self) -> None:
+    def _handle_compress_chat_history(self) -> None:
         context = self._context
         replace_data: Dict[str, str] = {
-            public_builtin_prompt.ConstantPrompt.ACTOR_PLAN_PROMPT_TAG: public_builtin_prompt.ConstantPrompt.COMPRESS_ACTOR_PLAN_PROMPT,
-            public_builtin_prompt.ConstantPrompt.STAGE_PLAN_PROMPT_TAG: public_builtin_prompt.ConstantPrompt.COMPRESS_STAGE_PLAN_PROMPT,
+            builtin_prompt_util.ConstantPromptTag.ACTOR_PLAN_PROMPT_TAG: CompressChatHistoryConstantPrompt.COMPRESS_ACTOR_PLAN_PROMPT,
+            builtin_prompt_util.ConstantPromptTag.STAGE_PLAN_PROMPT_TAG: CompressChatHistoryConstantPrompt.COMPRESS_STAGE_PLAN_PROMPT,
         }
 
         entities = context.get_group(

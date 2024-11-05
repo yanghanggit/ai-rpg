@@ -15,12 +15,12 @@ from my_components.components import (
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import final, override, List, Set, Dict, Any
 from loguru import logger
-from extended_systems.files_def import PropFile
-import gameplay_systems.public_builtin_prompt as public_builtin_prompt
+from extended_systems.prop_file import PropFile, generate_prop_prompt
+import gameplay_systems.builtin_prompt_util as builtin_prompt_util
 from my_agent.agent_task import AgentTask
 from my_agent.agent_plan import AgentPlanResponse
 from rpg_game.rpg_game import RPGGame
-import extended_systems.file_system_helper
+import extended_systems.file_system_util
 from my_models.event_models import AgentEvent
 
 
@@ -105,7 +105,7 @@ def _generate_rule_prompt(
     if len(skill_files) > 0:
         for skill_file in skill_files:
             skills_prompt.append(
-                public_builtin_prompt.generate_prop_prompt(
+                generate_prop_prompt(
                     skill_file, description_prompt=True, appearance_prompt=False
                 )
             )
@@ -117,7 +117,7 @@ def _generate_rule_prompt(
     if len(prop_files) > 0:
         for prop_file in prop_files:
             props_prompt.append(
-                public_builtin_prompt.generate_prop_prompt(
+                generate_prop_prompt(
                     prop_file, description_prompt=True, appearance_prompt=False
                 )
             )
@@ -140,27 +140,27 @@ def _generate_rule_prompt(
 
 ## 判断的逻辑步骤
 1. 如果 配置的道具 存在。则需要将道具与技能的信息联合起来推理。
-    - 推理结果 违反了游戏规则或世界观设计。则技能释放失败。即{public_builtin_prompt.ConstantPrompt.FAILURE}。
-    - 推理结果合理的。则技能释放成功。即{public_builtin_prompt.ConstantPrompt.SUCCESS}。如果道具对技能有增益效果，则标记为{public_builtin_prompt.ConstantPrompt.CRITICAL_SUCCESS}。
+    - 推理结果 违反了游戏规则或世界观设计。则技能释放失败。即{builtin_prompt_util.ConstantSkillPrompt.FAILURE}。
+    - 推理结果合理的。则技能释放成功。即{builtin_prompt_util.ConstantSkillPrompt.SUCCESS}。如果道具对技能有增益效果，则标记为{builtin_prompt_util.ConstantSkillPrompt.CRITICAL_SUCCESS}。
 2. 如果 配置的道具 不存在。则继续下面的步骤。
 3. 结合 {actor_name} 的自身信息。判断是否符合技能释放的条件。
-    - 如果不符合。则技能释放失败。即{public_builtin_prompt.ConstantPrompt.FAILURE}。
-    - 如果符合。则技能释放成功。即{public_builtin_prompt.ConstantPrompt.SUCCESS}。如果 {actor_name} 的自身信息，对技能有增益效果，则标记为{public_builtin_prompt.ConstantPrompt.CRITICAL_SUCCESS}。
+    - 如果不符合。则技能释放失败。即{builtin_prompt_util.ConstantSkillPrompt.FAILURE}。
+    - 如果符合。则技能释放成功。即{builtin_prompt_util.ConstantSkillPrompt.SUCCESS}。如果 {actor_name} 的自身信息，对技能有增益效果，则标记为{builtin_prompt_util.ConstantSkillPrompt.CRITICAL_SUCCESS}。
 
 ## 输出格式指南
 
 ### 请根据下面的示例, 确保你的输出严格遵守相应的结构。
 {{
   "{BroadcastAction.__name__}":["输出结果"],
-  "{TagAction.__name__}":["{public_builtin_prompt.ConstantPrompt.CRITICAL_SUCCESS}或{public_builtin_prompt.ConstantPrompt.SUCCESS}或{public_builtin_prompt.ConstantPrompt.FAILURE}"]
+  "{TagAction.__name__}":["{builtin_prompt_util.ConstantSkillPrompt.CRITICAL_SUCCESS}或{builtin_prompt_util.ConstantSkillPrompt.SUCCESS}或{builtin_prompt_util.ConstantSkillPrompt.FAILURE}"]
 }}
 
 ### 关于 {BroadcastAction.__name__} 的输出结果的规则如下
-- 如果你的判断是 {public_builtin_prompt.ConstantPrompt.SUCCESS} 或 {public_builtin_prompt.ConstantPrompt.CRITICAL_SUCCESS}。
+- 如果你的判断是 {builtin_prompt_util.ConstantSkillPrompt.SUCCESS} 或 {builtin_prompt_util.ConstantSkillPrompt.CRITICAL_SUCCESS}。
     - 必须包含如下信息：{actor_name}的名字（技能使用者），释放的技能的描述，技能释放的目标的名字，配置的道具的信息。
     - 做出逻辑合理的句子描述（可以适当润色），来表达 {actor_name} 使用技能的使用过程。但不要判断技能命中目标之后，目标的可能反应。
     - 请注意，用第三人称的描述。  
-- 如果你的判断是 {public_builtin_prompt.ConstantPrompt.FAILURE}。
+- 如果你的判断是 {builtin_prompt_util.ConstantSkillPrompt.FAILURE}。
     - 则输出结果需要描述为：技能释放失败的原因。
     
 ### 注意事项
@@ -185,7 +185,7 @@ class WorldSkillRuleResponse(AgentPlanResponse):
     def result(self) -> str:
         action = self.get_action(TagAction.__name__)
         if action is None or len(action.values) == 0:
-            return public_builtin_prompt.ConstantPrompt.FAILURE
+            return builtin_prompt_util.ConstantSkillPrompt.FAILURE
         return action.values[0]
 
     @property
@@ -278,19 +278,19 @@ class WorldSkillRuleSystem(ReactiveProcessor):
                 continue
 
             match (response_plan.result):
-                case public_builtin_prompt.ConstantPrompt.FAILURE:
+                case builtin_prompt_util.ConstantSkillPrompt.FAILURE:
                     self.on_world_skill_system_rule_fail_event(
                         actor_entity, response_plan
                     )
                     self.on_remove_action(actor_entity)
-                case public_builtin_prompt.ConstantPrompt.SUCCESS:
+                case builtin_prompt_util.ConstantSkillPrompt.SUCCESS:
                     self.on_world_skill_system_rule_success_event(
                         actor_entity, response_plan
                     )
                     self.add_world_skill_system_rule_action(actor_entity, response_plan)
                     self.consume_consumable_props(actor_entity)
 
-                case public_builtin_prompt.ConstantPrompt.CRITICAL_SUCCESS:
+                case builtin_prompt_util.ConstantSkillPrompt.CRITICAL_SUCCESS:
                     self.on_world_skill_system_rule_success_event(
                         actor_entity, response_plan
                     )
@@ -305,7 +305,7 @@ class WorldSkillRuleSystem(ReactiveProcessor):
         prop_files = self.extract_prop_files(entity)
         for prop_file in prop_files:
             if prop_file.is_consumable_item:
-                extended_systems.file_system_helper.consume_consumable(
+                extended_systems.file_system_util.consume_consumable(
                     self._context._file_system, prop_file
                 )
 

@@ -10,13 +10,13 @@ from my_components.components import (
     KickOffFlagComponent,
     AgentConnectionFlagComponent,
 )
-import gameplay_systems.public_builtin_prompt as public_builtin_prompt
+import gameplay_systems.builtin_prompt_util as builtin_prompt_util
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from typing import Dict, Set, FrozenSet, Any, List, final
 from my_agent.agent_task import AgentTask
 from rpg_game.rpg_game import RPGGame
-from extended_systems.files_def import PropFile
+from extended_systems.prop_file import PropFile, generate_prop_prompt
 from my_components.action_components import (
     STAGE_AVAILABLE_ACTIONS_REGISTER,
     ACTOR_AVAILABLE_ACTIONS_REGISTER,
@@ -34,7 +34,7 @@ def _generate_actor_kick_off_prompt(
     kick_off_message: str, about_game: str, game_round: int
 ) -> str:
 
-    ret_prompt = f"""# {public_builtin_prompt.ConstantPrompt.ACTOR_KICK_OFF_MESSAGE_PROMPT_TAG} 游戏世界即将开始运行。这是你的初始设定，你将以此为起点进行游戏并更新你的状态
+    ret_prompt = f"""# {builtin_prompt_util.ConstantPromptTag.ACTOR_KICK_OFF_MESSAGE_PROMPT_TAG} 游戏世界即将开始运行。这是你的初始设定，你将以此为起点进行游戏并更新你的状态
 
 ## 游戏背景与风格设定
 {about_game}
@@ -62,7 +62,7 @@ def _generate_stage_kick_off_prompt(
     if len(props_in_stage) > 0:
         props_prompt = ""
         for prop_file in props_in_stage:
-            props_prompt += public_builtin_prompt.generate_prop_prompt(
+            props_prompt += generate_prop_prompt(
                 prop_file, description_prompt=False, appearance_prompt=True
             )
 
@@ -72,7 +72,7 @@ def _generate_stage_kick_off_prompt(
         for actor_name in actors_in_stage:
             actors_prompt += f"- {actor_name}\n"
 
-    ret_prompt = f"""# {public_builtin_prompt.ConstantPrompt.STAGE_KICK_OFF_MESSAGE_PROMPT_TAG} 游戏世界即将开始运行。这是你的初始设定，你将以此为起点进行游戏，并更新你的场景描述
+    ret_prompt = f"""# {builtin_prompt_util.ConstantPromptTag.STAGE_KICK_OFF_MESSAGE_PROMPT_TAG} 游戏世界即将开始运行。这是你的初始设定，你将以此为起点进行游戏，并更新你的场景描述
 
 ## 游戏背景与风格设定
 {about_game}
@@ -98,7 +98,7 @@ def _generate_stage_kick_off_prompt(
 
 ###############################################################################################################################################
 def _generate_world_system_kick_off_prompt(about_game: str, game_round: int) -> str:
-    return f"""# {public_builtin_prompt.ConstantPrompt.WORLD_SYSTEM_KICK_OFF_MESSAGE_PROMPT_TAG} 游戏世界即将开始运行。这是你的初始设定，请简要回答你的职能与描述
+    return f"""# {builtin_prompt_util.ConstantPromptTag.WORLD_SYSTEM_KICK_OFF_MESSAGE_PROMPT_TAG} 游戏世界即将开始运行。这是你的初始设定，请简要回答你的职能与描述
 ## 游戏背景与风格设定
 {about_game}"""
 
@@ -138,7 +138,7 @@ class AgentKickOffSystem(ExecuteProcessor):
         if len(tasks) == 0:
             return
 
-        logger.debug(f"AgentKickOffSystem tasks: {tasks}")
+        # logger.debug(f"AgentKickOffSystem tasks: {tasks}")
 
         # 执行全部的任务
         await AgentTask.gather([task for task in tasks.values()])
@@ -292,7 +292,7 @@ class AgentKickOffSystem(ExecuteProcessor):
                 agent_planning, actions_register
             ):
                 logger.warning(
-                    f"ActorPlanningSystem: check_plan failed, {agent_planning}"
+                    f"ActorPlanningSystem: check_plan failed, {agent_planning.original_response_content}"
                 )
 
                 self._context._langserve_agent_system.remove_last_human_ai_conversation(

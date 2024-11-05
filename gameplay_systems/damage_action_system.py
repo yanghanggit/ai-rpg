@@ -8,12 +8,12 @@ from my_components.components import (
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import final, override
-from extended_systems.files_def import PropFile
+from extended_systems.prop_file import PropFile
 import my_format_string.target_and_message_format_string
 import my_format_string.attrs_format_string
 from rpg_game.rpg_game import RPGGame
 from my_models.entity_models import AttributesIndex
-import extended_systems.file_system_helper
+import extended_systems.file_system_util
 from my_models.file_models import PropType
 from my_models.event_models import AgentEvent
 
@@ -190,14 +190,14 @@ class DamageActionSystem(ReactiveProcessor):
     def loot_on_death(self, from_name: str, target_entity: Entity) -> None:
         target_name = self._context.safe_get_entity_name(target_entity)
         categorized_prop_files = (
-            extended_systems.file_system_helper.get_categorized_files(
+            extended_systems.file_system_util.get_categorized_files(
                 self._context._file_system, target_name
             )
         )
 
         non_consumable_items = categorized_prop_files[PropType.TYPE_NON_CONSUMABLE_ITEM]
         for prop_file in non_consumable_items:
-            extended_systems.file_system_helper.give_prop_file(
+            extended_systems.file_system_util.give_prop_file(
                 self._context._file_system, target_name, from_name, prop_file.name
             )
 

@@ -7,8 +7,8 @@ from my_components.components import (
     AppearanceComponent,
 )
 from typing import List, Dict, Optional
-from extended_systems.files_def import PropFile
-import extended_systems.file_system_helper
+from extended_systems.prop_file import PropFile
+import extended_systems.file_system_util
 from my_models.file_models import PropType
 
 
@@ -79,7 +79,7 @@ class ActorChecker:
     def _check_props(self, context: RPGEntitasContext, entity: Entity) -> None:
         safe_name = context.safe_get_entity_name(entity)
         self._category_prop_files = (
-            extended_systems.file_system_helper.get_categorized_files(
+            extended_systems.file_system_util.get_categorized_files(
                 context._file_system, safe_name
             )
         )

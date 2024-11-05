@@ -12,7 +12,7 @@ from my_components.components import (
 )
 from loguru import logger
 from typing import final, override
-from extended_systems.files_def import PropFile
+from extended_systems.prop_file import PropFile
 from rpg_game.rpg_game import RPGGame
 from my_models.event_models import AgentEvent
 

@@ -32,10 +32,10 @@ class AgentConnectSystem(ExecuteProcessor):
             )
         ).entities.copy()
 
-        if len(unconnected_entities) > 0:
-            logger.debug(
-                f"AgentConnectSystem unconnected_entities: {unconnected_entities}"
-            )
+        # if len(unconnected_entities) > 0:
+        #     logger.debug(
+        #         f"AgentConnectSystem unconnected_entities: {unconnected_entities}"
+        #     )
 
         for entity in unconnected_entities:
 

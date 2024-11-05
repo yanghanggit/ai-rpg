@@ -23,7 +23,7 @@ def validate_actions(
 ) -> bool:
     if len(plan_response._actions) == 0:
         # 走到这里
-        logger.warning(f"走到这里就是request过了，但是格式在load json的时候出了问题")
+        # logger.warning(f"走到这里就是request过了，但是格式在load json的时候出了问题")
         return False
 
     for action in plan_response._actions:

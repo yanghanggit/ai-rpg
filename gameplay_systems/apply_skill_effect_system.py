@@ -16,8 +16,8 @@ from my_components.components import (
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import final, override, List, Optional, Set
-from extended_systems.files_def import PropFile
-import gameplay_systems.public_builtin_prompt as public_builtin_prompt
+from extended_systems.prop_file import PropFile
+import gameplay_systems.builtin_prompt_util as builtin_prompt_util
 from my_agent.agent_task import AgentTask
 from my_agent.agent_plan import AgentPlanResponse
 import my_format_string.target_and_message_format_string
@@ -376,7 +376,7 @@ class ApplySkillEffectSystem(ReactiveProcessor):
 
         return AgentTask.create(
             target_agent,
-            public_builtin_prompt.replace_you(prompt, target_agent_name),
+            builtin_prompt_util.replace_you(prompt, target_agent_name),
         )
 
     ######################################################################################################################################################
@@ -402,7 +402,7 @@ class ApplySkillEffectSystem(ReactiveProcessor):
 
         if (
             world_skill_system_rule_tag
-            == public_builtin_prompt.ConstantPrompt.CRITICAL_SUCCESS
+            == builtin_prompt_util.ConstantSkillPrompt.CRITICAL_SUCCESS
         ):
             return 1.5  # 先写死，测试的时候再改。todo
 

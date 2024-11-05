@@ -10,7 +10,7 @@ from my_components.components import (
     ActorComponent,
     RPGCurrentClothesComponent,
 )
-from extended_systems.files_def import PropFile
+from extended_systems.prop_file import PropFile
 from my_agent.agent_task import AgentTask
 from my_components.action_components import UpdateAppearanceAction
 from rpg_game.rpg_game import RPGGame

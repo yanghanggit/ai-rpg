@@ -1,7 +1,8 @@
-from typing import Dict, Optional, Any
+from typing import Dict, Optional, Any, final
 from collections import namedtuple
 
 
+@final
 class CodeNameComponentSystem:
 
     def __init__(self, name: str) -> None:

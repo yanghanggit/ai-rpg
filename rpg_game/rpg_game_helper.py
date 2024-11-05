@@ -17,10 +17,11 @@ from pathlib import Path
 import json
 from rpg_game.terminal_game import TerminalGame
 from rpg_game.web_game import WebGame
-import gameplay_systems.public_builtin_prompt as public_builtin_prompt
+import gameplay_systems.builtin_prompt_util as builtin_prompt_util
 
 from player.player_proxy import PlayerProxy
-from extended_systems.files_def import ActorArchiveFile, StageArchiveFile, PropFile
+from extended_systems.archive_file import ActorArchiveFile, StageArchiveFile
+from extended_systems.prop_file import PropFile, generate_prop_prompt
 from my_components.components import (
     ActorComponent,
     AppearanceComponent,
@@ -254,7 +255,7 @@ def gen_player_watch_action_model(
     # 场景内的道具信息获取
     props_in_stage = get_props_in_stage(game_name, player_entity)
     props_in_stage_prompts = [
-        public_builtin_prompt.generate_prop_prompt(
+        generate_prop_prompt(
             prop, description_prompt=False, appearance_prompt=True, attr_prompt=False
         )
         for prop in props_in_stage

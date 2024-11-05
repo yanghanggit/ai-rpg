@@ -21,6 +21,7 @@ class AgentPlanResponse:
 
         self._name: str = name
         self._actions: List[AgentAction] = []
+        self._original_response_content: str = str(response_content)
 
         # 处理特殊的情况, 例如出现了markdown json block与重复json的情况
         # GPT4 也有可能输出markdown json block。以防万一，我们检查一下。
@@ -35,6 +36,11 @@ class AgentPlanResponse:
         # 核心执行
         json_data = self._load_json(fmt_string)
         self._build(json_data)
+
+    ############################################################################################################
+    @property
+    def original_response_content(self) -> str:
+        return self._original_response_content
 
     ############################################################################################################
     def _load_json(self, input_str: str) -> Dict[str, List[str]]:

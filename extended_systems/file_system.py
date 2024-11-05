@@ -1,18 +1,17 @@
 from loguru import logger
-from typing import Dict, List, Optional, TypeVar, Type, cast
-from extended_systems.files_def import (
+from typing import Dict, List, Optional, TypeVar, Type, cast, final
+from extended_systems.base_file import (
     BaseFile,
-    PropFile,
-    ActorArchiveFile,
-    StageArchiveFile,
-    EntityProfileFile,
 )
 from pathlib import Path
-
+from extended_systems.prop_file import PropFile
+from extended_systems.archive_file import ActorArchiveFile, StageArchiveFile
+from extended_systems.dump_file import EntityProfileFile
 
 FileType = TypeVar("FileType")
 
 
+@final
 class FileSystem:
 
     def __init__(self, name: str) -> None:

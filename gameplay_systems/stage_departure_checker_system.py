@@ -11,12 +11,12 @@ from my_components.components import (
     KickOffContentComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-import gameplay_systems.public_builtin_prompt as public_builtin_prompt
+import gameplay_systems.builtin_prompt_util as builtin_prompt_util
 from typing import final, override, List, Set, Any, Dict, Optional
 from gameplay_systems.actor_checker import ActorChecker
 from my_agent.agent_task import AgentTask
 from my_agent.agent_plan import AgentPlanResponse
-from extended_systems.files_def import PropFile
+from extended_systems.prop_file import PropFile, generate_prop_prompt
 from rpg_game.rpg_game import RPGGame
 from my_models.file_models import PropType
 from my_models.event_models import AgentEvent
@@ -33,7 +33,7 @@ def _generate_exit_conditions_prompt(
     if len(prop_files) > 0:
         prop_prompt_list = "\n".join(
             [
-                public_builtin_prompt.generate_prop_prompt(
+                generate_prop_prompt(
                     prop, description_prompt=True, appearance_prompt=True
                 )
                 for prop in prop_files
@@ -41,7 +41,7 @@ def _generate_exit_conditions_prompt(
         )
 
     ret_prompt = f"""# {actor_name} 想要离开场景: {current_stage_name}。
-## 第1步: 请回顾你的 {public_builtin_prompt.ConstantPrompt.STAGE_EXIT_TAG}
+## 第1步: 请回顾你的 {builtin_prompt_util.ConstantPromptTag.STAGE_EXIT_TAG}
 
 ## 第2步: 根据当前‘你的状态’判断是否满足允许{actor_name}离开
 当前状态可能由于事件而变化，请仔细考虑。
@@ -253,7 +253,8 @@ class StageDepartureCheckerSystem(ReactiveProcessor):
 
         kick_off_comp = stage_entity.get(KickOffContentComponent)
         return (
-            public_builtin_prompt.ConstantPrompt.STAGE_EXIT_TAG in kick_off_comp.content
+            builtin_prompt_util.ConstantPromptTag.STAGE_EXIT_TAG
+            in kick_off_comp.content
         )
 
     ###############################################################################################################################################

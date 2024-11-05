@@ -20,13 +20,13 @@ from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from typing import Dict, Set, List, Optional, final
 import gameplay_systems.action_helper
-import gameplay_systems.public_builtin_prompt as public_builtin_prompt
+import gameplay_systems.builtin_prompt_util as builtin_prompt_util
 from my_agent.agent_task import (
     AgentTask,
 )
 from rpg_game.rpg_game import RPGGame
 from gameplay_systems.actor_checker import ActorChecker
-from extended_systems.files_def import PropFile
+from extended_systems.prop_file import PropFile, generate_prop_prompt
 from my_models.file_models import PropType
 
 
@@ -50,7 +50,7 @@ def _generate_actor_props_prompts(
 
         for prop_file in props_dict[key]:
             ret.append(
-                public_builtin_prompt.generate_prop_prompt(
+                generate_prop_prompt(
                     prop_file,
                     description_prompt=True,
                     appearance_prompt=True,
@@ -80,9 +80,7 @@ def _generate_actor_plan_prompt(
     actor_props_prompt = _generate_actor_props_prompts(actor_props)
 
     props_in_stage_prompt = [
-        public_builtin_prompt.generate_prop_prompt(
-            prop, description_prompt=False, appearance_prompt=True
-        )
+        generate_prop_prompt(prop, description_prompt=False, appearance_prompt=True)
         for prop in props_in_stage
     ]
 
@@ -94,7 +92,7 @@ def _generate_actor_plan_prompt(
                 f"### {actor_name}\n- 角色外观:{actor_appearance}\n"
             )
 
-    ret_prompt = f"""# {public_builtin_prompt.ConstantPrompt.ACTOR_PLAN_PROMPT_TAG} 请做出你的计划，决定你将要做什么
+    ret_prompt = f"""# {builtin_prompt_util.ConstantPromptTag.ACTOR_PLAN_PROMPT_TAG} 请做出你的计划，决定你将要做什么
 
 ## 你当前所在的场景
 {current_stage != "" and current_stage or "未知"}
@@ -190,7 +188,7 @@ class ActorPlanningExecutionSystem(ExecuteProcessor):
                 actor_planning, ACTOR_AVAILABLE_ACTIONS_REGISTER
             ):
                 logger.warning(
-                    f"ActorPlanningSystem: check_plan failed, {actor_planning}"
+                    f"ActorPlanningSystem: check_plan failed, {actor_planning.original_response_content}"
                 )
                 ## 需要失忆!
                 self._context._langserve_agent_system.remove_last_human_ai_conversation(

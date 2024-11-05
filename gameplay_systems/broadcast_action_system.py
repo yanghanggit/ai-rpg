@@ -4,12 +4,12 @@ from my_components.components import StageComponent
 from my_components.action_components import BroadcastAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from rpg_game.rpg_game import RPGGame
-import gameplay_systems.public_builtin_prompt as public_builtin_prompt
+import gameplay_systems.builtin_prompt_util as builtin_prompt_util
 from my_models.event_models import AgentEvent
 
 
 def _generate_broadcast_prompt(src_name: str, dest_name: str, content: str) -> str:
-    return f"# {public_builtin_prompt.ConstantPrompt.BROADCASE_ACTION_TAG} {src_name}对{dest_name}里的所有人说:{content}"
+    return f"# {builtin_prompt_util.ConstantPromptTag.BROADCASE_ACTION_TAG} {src_name}对{dest_name}里的所有人说:{content}"
 
 
 @final

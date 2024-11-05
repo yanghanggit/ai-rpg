@@ -10,8 +10,8 @@ from player.player_proxy import PlayerProxy
 from my_models.event_models import AgentEvent
 from rpg_game.web_game import WebGame
 from loguru import logger
-from extended_systems.files_def import StageArchiveFile
-import gameplay_systems.public_builtin_prompt as public_builtin_prompt
+from extended_systems.archive_file import StageArchiveFile
+import gameplay_systems.builtin_prompt_util as builtin_prompt_util
 from my_components.components import (
     PlayerComponent,
     ActorComponent,
@@ -31,7 +31,7 @@ class WebPlayerTipsSystem(ExecuteProcessor):
     @override
     def execute(self) -> None:
         if not isinstance(self._game, WebGame):
-            logger.warning("不是终端游戏，无法使用这个系统")
+            logger.debug("不是终端游戏，无法使用这个系统")
             return
 
         self._add_tips()
@@ -111,8 +111,6 @@ class WebPlayerTipsSystem(ExecuteProcessor):
 
         assert stage_entity.has(GUIDComponent)
         guid_comp = stage_entity.get(GUIDComponent)
-        return public_builtin_prompt.generate_unknown_guid_stage_name_prompt(
-            guid_comp.GUID
-        )
+        return builtin_prompt_util.generate_unknown_stage_name(guid_comp.GUID)
 
     ############################################################################################################

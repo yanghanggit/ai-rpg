@@ -3,7 +3,7 @@ from typing import final, override
 from my_components.action_components import RemovePropAction, StageNarrateAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from rpg_game.rpg_game import RPGGame
-from extended_systems.files_def import PropFile
+from extended_systems.prop_file import PropFile
 from my_components.components import StageComponent
 from my_models.event_models import AgentEvent
 

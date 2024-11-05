@@ -6,7 +6,7 @@ from my_components.components import (
     ActorComponent,
 )
 from typing import final, override, Any, FrozenSet
-import extended_systems.file_system_helper
+import extended_systems.file_system_util
 from rpg_game.rpg_game import RPGGame
 from my_models.file_models import ComponentDumpModel, EntityProfileModel
 from collections import OrderedDict
@@ -32,7 +32,7 @@ class SaveEntitySystem(ExecuteProcessor):
             frozenset({StageComponent, ActorComponent})
         )
         for key, value in entity_dumps.items():
-            extended_systems.file_system_helper.update_entity_profile_file(
+            extended_systems.file_system_util.update_entity_profile_file(
                 self._context._file_system, value
             )
 

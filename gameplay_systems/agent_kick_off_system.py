@@ -166,6 +166,10 @@ class AgentKickOffSystem(ExecuteProcessor):
             if agent is None:
                 continue
 
+            assert (
+                len(agent._chat_history) == 0
+            ), f"chat_history is not empty, {agent._chat_history}"
+
             ret[world_comp.name] = AgentTask.create(
                 agent,
                 _generate_world_system_kick_off_prompt(
@@ -193,9 +197,9 @@ class AgentKickOffSystem(ExecuteProcessor):
             if agent is None:
                 continue
 
-            # assert (
-            #     len(agent._chat_history) == 0
-            # ), f"chat_history is not empty, {agent._chat_history}"
+            assert (
+                len(agent._chat_history) == 0
+            ), f"chat_history is not empty, {agent._chat_history}"
 
             kick_off_comp = stage_entity.get(KickOffContentComponent)
             kick_off_prompt = _generate_stage_kick_off_prompt(

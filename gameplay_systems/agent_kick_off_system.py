@@ -193,9 +193,9 @@ class AgentKickOffSystem(ExecuteProcessor):
             if agent is None:
                 continue
 
-            assert (
-                len(agent._chat_history) == 0
-            ), f"chat_history is not empty, {agent._chat_history}"
+            # assert (
+            #     len(agent._chat_history) == 0
+            # ), f"chat_history is not empty, {agent._chat_history}"
 
             kick_off_comp = stage_entity.get(KickOffContentComponent)
             kick_off_prompt = _generate_stage_kick_off_prompt(
@@ -315,7 +315,14 @@ class AgentKickOffSystem(ExecuteProcessor):
     def _initialize_appearance_update_action(self, tasks: Dict[str, AgentTask]) -> None:
 
         actor_entities = self._context.get_group(
-            Matcher(all_of=[ActorComponent, AppearanceComponent, BodyComponent])
+            Matcher(
+                all_of=[
+                    ActorComponent,
+                    AppearanceComponent,
+                    BodyComponent,
+                    KickOffFlagComponent,
+                ]
+            )
         ).entities
 
         for actor_entity in actor_entities:

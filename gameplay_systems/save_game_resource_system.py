@@ -9,8 +9,9 @@ from my_components.components import (
     RPGCurrentWeaponComponent,
     RPGCurrentClothesComponent,
     WorldComponent,
+    StageSpawnerComponent,
 )
-from typing import Dict, final, override, List, Any
+from typing import Dict, final, override, List
 from rpg_game.rpg_game import RPGGame
 from my_models.models_def import (
     GameModel,
@@ -40,7 +41,7 @@ class SaveGameResourceSystem(ExecuteProcessor):
         assert self._game._game_resource is not None
         runtime_model = self._game._game_resource._runtime_model
 
-        # 把save_model改掉，然后重新写入
+        # 把runtime_model改掉，然后重新写入
         runtime_model.save_round = self._game._runtime_game_round
         self._save_players(runtime_model)
         self._save_actors(runtime_model)
@@ -49,46 +50,74 @@ class SaveGameResourceSystem(ExecuteProcessor):
         self._write_model(runtime_model, self._parse_write_path())
 
     ############################################################################################################
-    def _save_players(self, game_model: GameModel) -> None:
+    def _save_players(self, runtime_game_model: GameModel) -> None:
 
-        game_model.players.clear()
+        runtime_game_model.players.clear()
 
         player_entities = self._context.get_group(
-            Matcher(all_of=[ActorComponent, PlayerComponent])
+            Matcher(all_of=[ActorComponent, PlayerComponent, GUIDComponent])
         ).entities
         for player_entity in player_entities:
-            actor_proxy_model = self._create_actor_proxy_model(player_entity)
-            prop_proxy_models = self._create_prop_instance_model(player_entity)
-            actor_proxy_model.props = prop_proxy_models
-
-            game_model.players.append(actor_proxy_model)
+            runtime_game_model.players.append(
+                self._generate_actor_instance_model(player_entity)
+            )
 
     ############################################################################################################
-    def _save_actors(self, game_model: GameModel) -> None:
+    def _save_actors(self, runtime_game_model: GameModel) -> None:
 
-        game_model.actors.clear()
+        runtime_game_model.actors.clear()
 
         actor_entities = self._context.get_group(
-            Matcher(all_of=[ActorComponent], none_of=[PlayerComponent])
+            Matcher(all_of=[ActorComponent, GUIDComponent], none_of=[PlayerComponent])
         ).entities
         for actor_entity in actor_entities:
-            actor_proxy_model = self._create_actor_proxy_model(actor_entity)
-            actor_proxy_model.props = self._create_prop_instance_model(actor_entity)
-
-            game_model.actors.append(actor_proxy_model)
+            runtime_game_model.actors.append(
+                self._generate_actor_instance_model(actor_entity)
+            )
 
     ############################################################################################################
-    def _create_actor_proxy_model(self, actor_entity: Entity) -> ActorInstanceModel:
+    def _save_world_systems(self, runtime_game_model: GameModel) -> None:
 
-        ret = ActorInstanceModel(name="", guid=0, props=[], actor_current_using_prop=[])
+        runtime_game_model.world_systems.clear()
+
+        world_system_entities = self._context.get_group(
+            Matcher(all_of=[WorldComponent, GUIDComponent])
+        ).entities
+        for world_system_entity in world_system_entities:
+
+            world_comp = world_system_entity.get(WorldComponent)
+            guid_comp = world_system_entity.get(GUIDComponent)
+            runtime_game_model.world_systems.append(
+                WorldSystemInstanceModel(name=world_comp.name, guid=guid_comp.GUID)
+            )
+
+    ############################################################################################################
+    def _save_stages(self, runtime_game_model: GameModel) -> None:
+
+        runtime_game_model.stages.clear()
+
+        stage_entities = self._context.get_group(
+            Matcher(all_of=[StageComponent, GUIDComponent, StageSpawnerComponent])
+        ).entities
+        for stage_entity in stage_entities:
+            runtime_game_model.stages.append(
+                self._generate_stage_instance_model(stage_entity)
+            )
+
+    ############################################################################################################
+    def _generate_actor_instance_model(
+        self, actor_entity: Entity
+    ) -> ActorInstanceModel:
 
         actor_comp = actor_entity.get(ActorComponent)
-        ret.name = actor_comp.name
-
         guid_comp = actor_entity.get(GUIDComponent)
-        ret.guid = guid_comp.GUID
 
-        ret.actor_current_using_prop = []
+        ret = ActorInstanceModel(
+            name=actor_comp.name,
+            guid=guid_comp.GUID,
+            props=self._generate_prop_instance_models(actor_entity),
+            actor_current_using_prop=[],
+        )
 
         if actor_entity.has(RPGCurrentWeaponComponent):
             current_weapon_comp = actor_entity.get(RPGCurrentWeaponComponent)
@@ -101,7 +130,7 @@ class SaveGameResourceSystem(ExecuteProcessor):
         return ret
 
     ############################################################################################################
-    def _create_prop_instance_model(self, entity: Entity) -> List[PropInstanceModel]:
+    def _generate_prop_instance_models(self, entity: Entity) -> List[PropInstanceModel]:
 
         ret: List[PropInstanceModel] = []
         safe_name = self._context.safe_get_entity_name(entity)
@@ -116,70 +145,37 @@ class SaveGameResourceSystem(ExecuteProcessor):
         return ret
 
     ############################################################################################################
-    def _save_stages(self, game_model: GameModel) -> None:
-
-        game_model.stages.clear()
-
-        stage_entities = self._context.get_group(Matcher(StageComponent)).entities
-        for stage_entity in stage_entities:
-
-            stage_proxy_model = self._create_stage_instance_model(stage_entity)
-            stage_proxy_model.props = self._create_prop_instance_model(stage_entity)
-
-            game_model.stages.append(stage_proxy_model)
-
-    ############################################################################################################
-    def _create_stage_instance_model(self, stage_entity: Entity) -> StageInstanceModel:
-
-        ret: StageInstanceModel = StageInstanceModel(
-            name="", guid=0, props=[], actors=[], spawners=[]
-        )
+    def _generate_stage_instance_model(
+        self, stage_entity: Entity
+    ) -> StageInstanceModel:
 
         stage_comp = stage_entity.get(StageComponent)
-        ret.name = stage_comp.name
-
         guid_comp = stage_entity.get(GUIDComponent)
-        ret.guid = guid_comp.GUID
+        stage_spawner_comp = stage_entity.get(StageSpawnerComponent)
+
+        ret: StageInstanceModel = StageInstanceModel(
+            name=stage_comp.name,
+            guid=guid_comp.GUID,
+            props=self._generate_prop_instance_models(stage_entity),
+            actors=[],
+            spawners=stage_spawner_comp.spawners,
+        )
 
         actor_entities = self._context.get_actors_in_stage(stage_entity)
         for actor_entity in actor_entities:
-            data: Dict[str, Any] = {}
+            data: Dict[str, str] = {}
             data["name"] = self._context.safe_get_entity_name(actor_entity)
             ret.actors.append(data)
 
         return ret
 
     ############################################################################################################
-    def _save_world_systems(self, game_model: GameModel) -> None:
-
-        game_model.world_systems.clear()
-
-        world_system_entities = self._context.get_group(
-            Matcher(WorldComponent)
-        ).entities
-        for world_system_entity in world_system_entities:
-
-            new_model = WorldSystemInstanceModel(name="", guid=0)
-
-            world_comp = world_system_entity.get(WorldComponent)
-            new_model.name = world_comp.name
-
-            guid_comp = world_system_entity.get(GUIDComponent)
-            new_model.guid = guid_comp.GUID
-
-            game_model.world_systems.append(new_model)
-
-    ############################################################################################################
-    def _write_model(self, game_model: GameModel, write_path: Path) -> int:
-
+    def _write_model(self, runtime_game_model: GameModel, write_path: Path) -> int:
         try:
-
-            dump_json = game_model.model_dump_json()
+            dump_json = runtime_game_model.model_dump_json()
             return write_path.write_text(dump_json, encoding="utf-8")
-
         except Exception as e:
             logger.error(f"写文件失败: {write_path}, e = {e}")
-
         return -1
 
     ############################################################################################################

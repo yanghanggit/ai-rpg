@@ -15,6 +15,7 @@ class CodeNameComponentSystem:
     def register_code_name_component_class(
         self, name: str, code_name: str
     ) -> type[Any]:
+        assert name not in self._name2codename, f"{name} already registered"
         self._name2codename[name] = code_name
         self._codename2component[code_name] = namedtuple(code_name, "name")
         return self._codename2component[code_name]

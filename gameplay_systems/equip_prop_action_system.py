@@ -133,11 +133,16 @@ class EquipPropActionSystem(ReactiveProcessor):
 
     ####################################################################################################################################
     def on_add_update_apperance_action(self, entity: Entity) -> None:
-        if not entity.has(UpdateAppearanceAction):
-            entity.add(
-                UpdateAppearanceAction,
-                self._context.safe_get_entity_name(entity),
-                [],
-            )
+        # if not entity.has(UpdateAppearanceAction):
+        #     entity.add(
+        #         UpdateAppearanceAction,
+        #         self._context.safe_get_entity_name(entity),
+        #         [],
+        #     )
+        entity.replace(
+            UpdateAppearanceAction,
+            self._context.safe_get_entity_name(entity),
+            [],
+        )
 
     ####################################################################################################################################

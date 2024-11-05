@@ -298,7 +298,7 @@ class RPGGame(BaseGame):
             AppearanceComponent,
             actor_instance.name,
             actor_model.body,
-            hash(actor_model.body),
+            # hash(actor_model.body),
         )
         actor_entity.add(BodyComponent, actor_instance.name, actor_model.body)
 
@@ -586,7 +586,7 @@ class RPGGame(BaseGame):
                             AppearanceComponent,
                             appearance_comp.name,
                             appearance_comp.appearance,
-                            appearance_comp.hash_code,
+                            # appearance_comp.hash_code,
                         )
 
                     case PlayerComponent.__name__:

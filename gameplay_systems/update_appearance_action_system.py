@@ -150,9 +150,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
             entity = context.get_actor_entity(name)
             assert entity is not None, f"entity is None, name: {name}"
 
-            entity.replace(
-                AppearanceComponent, name, default_appearance, hash(default_appearance)
-            )
+            entity.replace(AppearanceComponent, name, default_appearance)
 
     ###############################################################################################################################################
     def request(self, input_data: Dict[str, tuple[str, str]], agent_name: str) -> bool:
@@ -189,8 +187,8 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
             entity = context.get_actor_entity(name)
             if entity is None:
                 continue
-            hash_code = hash(appearance)
-            entity.replace(AppearanceComponent, name, appearance, hash_code)
+            # hash_code = hash(appearance)
+            entity.replace(AppearanceComponent, name, appearance)
 
     ###############################################################################################################################################
     def make_data(self, actor_entities: Set[Entity]) -> Dict[str, tuple[str, str]]:

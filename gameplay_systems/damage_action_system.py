@@ -129,13 +129,18 @@ class DamageActionSystem(ReactiveProcessor):
         if is_dead:
 
             # 添加动作
-            if not target_entity.has(DeadAction):
-                # 复制一个，不用以前的，怕GC不掉
-                target_entity.add(
-                    DeadAction,
-                    self._context.safe_get_entity_name(target_entity),
-                    [],
-                )
+            # if not target_entity.has(DeadAction):
+            #     # 复制一个，不用以前的，怕GC不掉
+            #     target_entity.add(
+            #         DeadAction,
+            #         self._context.safe_get_entity_name(target_entity),
+            #         [],
+            #     )
+            target_entity.replace(
+                DeadAction,
+                self._context.safe_get_entity_name(target_entity),
+                [],
+            )
 
             # 死亡夺取
             self.loot_on_death(from_name, target_entity)

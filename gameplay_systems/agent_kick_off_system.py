@@ -309,8 +309,9 @@ class AgentKickOffSystem(ExecuteProcessor):
 
     ######################################################################################################################################################
     def _add_kick_off_flag(self, entity: Entity, agent_name: str) -> None:
-        if not entity.has(KickOffFlagComponent):
-            entity.add(KickOffFlagComponent, agent_name)
+        # if not entity.has(KickOffFlagComponent):
+        #     entity.add(KickOffFlagComponent, agent_name)
+        entity.replace(KickOffFlagComponent, agent_name)
 
     ######################################################################################################################################################
     def _resolve_actions_register(self, name: str) -> FrozenSet[type[Any]]:
@@ -348,11 +349,16 @@ class AgentKickOffSystem(ExecuteProcessor):
             if safe_name not in tasks:
                 continue
 
-            if not actor_entity.has(UpdateAppearanceAction):
-                actor_entity.add(
-                    UpdateAppearanceAction,
-                    self._context.safe_get_entity_name(actor_entity),
-                    [],
-                )
+            # if not actor_entity.has(UpdateAppearanceAction):
+            #     actor_entity.add(
+            #         UpdateAppearanceAction,
+            #         self._context.safe_get_entity_name(actor_entity),
+            #         [],
+            #     )
+            actor_entity.replace(
+                UpdateAppearanceAction,
+                self._context.safe_get_entity_name(actor_entity),
+                [],
+            )
 
     ######################################################################################################################################################

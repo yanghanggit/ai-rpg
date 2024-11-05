@@ -27,7 +27,8 @@ class StagePlanningStrategySystem(ExecuteProcessor):
             actors_in_stage = self._context._get_actors_in_stage(stage_comp.name)
             if len(actors_in_stage) == 0:
                 continue
-            if not stage_entity.has(PlanningAllowedComponent):
-                stage_entity.add(PlanningAllowedComponent, stage_comp.name)
+            # if not stage_entity.has(PlanningAllowedComponent):
+            #     stage_entity.add(PlanningAllowedComponent, stage_comp.name)
+            stage_entity.replace(PlanningAllowedComponent, stage_comp.name)
 
     ############################################################################################################

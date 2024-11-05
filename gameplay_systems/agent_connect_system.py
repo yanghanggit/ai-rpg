@@ -51,8 +51,9 @@ class AgentConnectSystem(ExecuteProcessor):
                 continue
 
             if self._context._langserve_agent_system.connect_agent(safe_name):
-                if not entity.has(AgentConnectionFlagComponent):
-                    entity.add(AgentConnectionFlagComponent, safe_name)
+                # if not entity.has(AgentConnectionFlagComponent):
+                #     entity.add(AgentConnectionFlagComponent, safe_name)
+                entity.replace(AgentConnectionFlagComponent, safe_name)
 
 
 ###############################################################################################################################################

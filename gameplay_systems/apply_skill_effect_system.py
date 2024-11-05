@@ -279,12 +279,17 @@ class ApplySkillEffectSystem(ReactiveProcessor):
         if skill_attrs[AttributesIndex.DAMAGE.value] == 0:
             return
 
-        if not target.has(DamageAction):
-            target.add(
-                DamageAction,
-                self._context.safe_get_entity_name(target),
-                [],
-            )
+        # if not target.has(DamageAction):
+        #     target.add(
+        #         DamageAction,
+        #         self._context.safe_get_entity_name(target),
+        #         [],
+        #     )
+        target.replace(
+            DamageAction,
+            self._context.safe_get_entity_name(target),
+            [],
+        )
 
         target.get(DamageAction).values.append(
             my_format_string.target_and_message_format_string.make_target_and_message(

@@ -43,8 +43,9 @@ def add_action(
     comp_class = retrieve_registered_component(action.action_name, registered_actions)
     if comp_class is None:
         return
-    if not entity.has(comp_class):
-        entity.add(comp_class, action.name, action.values)
+    # if not entity.has(comp_class):
+    #     entity.add(comp_class, action.name, action.values)
+    entity.replace(comp_class, action.name, action.values)
 
 
 ######################################################################################################################################

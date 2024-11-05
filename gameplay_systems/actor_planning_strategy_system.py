@@ -80,9 +80,11 @@ class ActorPlanningStrategySystem(InitializeProcessor, ExecuteProcessor):
                 continue
 
             assert pop_actor_entity.has(ActorComponent)
-            if not pop_actor_entity.has(PlanningAllowedComponent):
-                actor_comp = pop_actor_entity.get(ActorComponent)
-                pop_actor_entity.add(PlanningAllowedComponent, actor_comp.name)
+            # if not pop_actor_entity.has(PlanningAllowedComponent):
+            #     actor_comp = pop_actor_entity.get(ActorComponent)
+            #     pop_actor_entity.add(PlanningAllowedComponent, actor_comp.name)
+            actor_comp = pop_actor_entity.get(ActorComponent)
+            pop_actor_entity.replace(PlanningAllowedComponent, actor_comp.name)
 
     ############################################################################################################
     def _extend_order_queue(

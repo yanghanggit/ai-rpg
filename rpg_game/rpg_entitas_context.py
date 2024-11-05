@@ -82,6 +82,7 @@ class RPGEntitasContext(Context):
             return None
         find_entities = self.get_group(Matcher(comp_class)).entities
         if len(find_entities) > 0:
+            assert len(find_entities) == 1
             return next(iter(find_entities))
         return None
 
@@ -190,8 +191,8 @@ class RPGEntitasContext(Context):
 
     #############################################################################################################################
     # 更改场景的标记组件
-    def change_stage_tag_component(
-        self, entity: Entity, from_stage_name: str, to_stage_name: str
+    def update_stage_tag_component(
+        self, entity: Entity, previous_stage_name: str, target_stage_name: str
     ) -> None:
 
         if not entity.has(ActorComponent):
@@ -199,28 +200,30 @@ class RPGEntitasContext(Context):
             return
 
         # 查看一下，如果一样基本就是错误
-        if from_stage_name == to_stage_name:
-            logger.error(f"stagename相同，无需修改: {from_stage_name}")
+        if previous_stage_name == target_stage_name:
+            logger.error(f"stagename相同，无需修改: {previous_stage_name}")
 
         # 删除旧的
-        from_stagetag_comp_class = (
+        previous_stage_tag_component_class = (
             self._codename_component_system.get_stage_tag_component_class(
-                from_stage_name
+                previous_stage_name
             )
         )
-        if from_stagetag_comp_class is not None and entity.has(
-            from_stagetag_comp_class
+        if previous_stage_tag_component_class is not None and entity.has(
+            previous_stage_tag_component_class
         ):
-            entity.remove(from_stagetag_comp_class)
+            entity.remove(previous_stage_tag_component_class)
 
         # 添加新的
-        to_stagetag_comp_class = (
-            self._codename_component_system.get_stage_tag_component_class(to_stage_name)
+        target_stage_tag_component_class = (
+            self._codename_component_system.get_stage_tag_component_class(
+                target_stage_name
+            )
         )
-        if to_stagetag_comp_class is not None and not entity.has(
-            to_stagetag_comp_class
+        if target_stage_tag_component_class is not None and not entity.has(
+            target_stage_tag_component_class
         ):
-            entity.add(to_stagetag_comp_class, to_stage_name)
+            entity.add(target_stage_tag_component_class, target_stage_name)
 
     #############################################################################################################################
     # 获取场景内所有的角色的外观信息

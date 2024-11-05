@@ -156,7 +156,7 @@ class GoToActionSystem(ReactiveProcessor):
         )
 
         # 更新场景标记
-        self._context.change_stage_tag_component(
+        self._context.update_stage_tag_component(
             helper._entity, helper._current_stage_name, helper.target_stage_name
         )
 
@@ -229,7 +229,7 @@ class GoToActionSystem(ReactiveProcessor):
         helper._entity.replace(ActorComponent, actor_comp.name, "")
 
         # 更新场景标记
-        self._context.change_stage_tag_component(
+        self._context.update_stage_tag_component(
             helper._entity, helper._current_stage_name, ""
         )
 

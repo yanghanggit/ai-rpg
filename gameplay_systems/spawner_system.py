@@ -5,10 +5,8 @@ from my_components.components import (
     StageSpawnerComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from loguru import logger
-from typing import final, Final, Optional
+from typing import final, Final, List
 from rpg_game.rpg_game import RPGGame
-from my_models.models_def import ActorInstanceModel, ActorModel
 import copy
 
 
@@ -33,19 +31,20 @@ class SpawnerSystem(ExecuteProcessor):
         ).entities
 
         for stage_entity in stage_entities:
-
             stage_spawner_component = stage_entity.get(StageSpawnerComponent)
             for spawner_name in stage_spawner_component.spawners:
-                self._spawn(spawner_name)
+                self._execute_spawn(spawner_name, stage_entity)
 
     ######################################################################################################################################################
-    def _spawn(self, spawner_name: str) -> None:
+    def _execute_spawn(self, spawner_name: str, stage_entity: Entity) -> List[Entity]:
         assert self._game._game_resource is not None
         assert self._game._game_resource.data_base is not None
 
         spawner_data = self._game._game_resource.data_base.get_spawner(spawner_name)
         if spawner_data is None:
-            return
+            return []
+
+        ret: List[Entity] = []
 
         for actor_prototype in spawner_data.actor_prototype:
             actor_model = self._game._game_resource.data_base.get_actor(
@@ -55,21 +54,21 @@ class SpawnerSystem(ExecuteProcessor):
                 assert False, f"actor_prototype.name: {actor_prototype.name} not found"
                 continue
 
-            actor_prototype_copy = copy.deepcopy(actor_prototype)
+            # 必须深拷贝，否则会出问题
+            actor_prototype_deep_copy = copy.deepcopy(actor_prototype)
+            # 生成一个guid
             gen_guid = self._gen_actor_guid()
-            hack_name = f"""{actor_prototype.name}#{gen_guid}"""
-            actor_prototype_copy.name = hack_name
-            actor_prototype_copy.guid = gen_guid
-            self._spawn_actor_entity(actor_prototype_copy, actor_model)
+            # 生成一个新的名字 + 修改名字和guid
+            actor_prototype_deep_copy.name = f"""{actor_prototype.name}#{gen_guid}"""
+            actor_prototype_deep_copy.guid = gen_guid
+            # 生成一个新的entity
+            spawned_actor_entity = self._game.runtime_create_actor_entity(
+                actor_prototype_deep_copy, actor_model, stage_entity
+            )
+            if spawned_actor_entity is not None:
+                ret.append(spawned_actor_entity)
 
-    ######################################################################################################################################################
-    def _spawn_actor_entity(
-        self, actor_instance: ActorInstanceModel, actor_model: ActorModel
-    ) -> Optional[Entity]:
-
-        logger.debug(f"actor_instance: {actor_instance}")
-        logger.debug(f"actor_model: {actor_model}")
-        return None
+        return ret
 
     ######################################################################################################################################################
     def _gen_actor_guid(

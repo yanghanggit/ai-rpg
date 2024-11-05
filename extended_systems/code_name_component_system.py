@@ -12,9 +12,12 @@ class CodeNameComponentSystem:
         self._stagetag2component: Dict[str, type[Any]] = {}
 
     ########################################################################################################################
-    def register_code_name_component_class(self, name: str, code_name: str) -> None:
+    def register_code_name_component_class(
+        self, name: str, code_name: str
+    ) -> type[Any]:
         self._name2codename[name] = code_name
         self._codename2component[code_name] = namedtuple(code_name, "name")
+        return self._codename2component[code_name]
 
     ########################################################################################################################
     def get_code_name_component_class(self, name: str) -> Optional[type[Any]]:

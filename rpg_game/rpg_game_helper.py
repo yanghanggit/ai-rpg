@@ -49,8 +49,8 @@ from my_models.event_models import AgentEvent
 from my_models.player_models import (
     WatchActionModel,
     CheckActionModel,
-    GetActorArchivesActionModel,
-    GetStageArchivesActionModel,
+    RetrieveActorArchivesModel,
+    RetrieveStageArchivesActionModel,
 )
 
 
@@ -320,9 +320,9 @@ def gen_player_check_action_model(
 
 
 #######################################################################################################################################
-def gen_player_get_actor_archives_action_model(
+def gen_player_retrieve_actor_archives_action_model(
     game_name: RPGGame, player_proxy: PlayerProxy
-) -> Optional[GetActorArchivesActionModel]:
+) -> Optional[RetrieveActorArchivesModel]:
 
     player_entity = game_name.context.get_player_entity(player_proxy.name)
     if player_entity is None:
@@ -333,7 +333,7 @@ def gen_player_get_actor_archives_action_model(
         ActorArchiveFile, file_owner_name
     )
 
-    ret: GetActorArchivesActionModel = GetActorArchivesActionModel(
+    ret: RetrieveActorArchivesModel = RetrieveActorArchivesModel(
         message="这是角色档案！！！！", archives=[]
     )
 
@@ -344,9 +344,9 @@ def gen_player_get_actor_archives_action_model(
 
 
 #######################################################################################################################################
-def gen_player_get_stage_archives_action_model(
+def gen_player_retrieve_stage_archives_action_model(
     game_name: RPGGame, player_proxy: PlayerProxy
-) -> Optional[GetStageArchivesActionModel]:
+) -> Optional[RetrieveStageArchivesActionModel]:
 
     player_entity = game_name.context.get_player_entity(player_proxy.name)
     if player_entity is None:
@@ -357,7 +357,7 @@ def gen_player_get_stage_archives_action_model(
         StageArchiveFile, file_owner_name
     )
 
-    ret: GetStageArchivesActionModel = GetStageArchivesActionModel(
+    ret: RetrieveStageArchivesActionModel = RetrieveStageArchivesActionModel(
         message="这是场景档案！！！！", archives=[]
     )
 

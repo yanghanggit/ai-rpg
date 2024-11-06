@@ -37,11 +37,11 @@ class CheckActionModel(BaseModel):
     content: str = ""
 
 
-class GetActorArchivesActionModel(BaseModel):
+class RetrieveActorArchivesModel(BaseModel):
     message: str = ""
     archives: List[ActorArchiveFileModel] = []
 
 
-class GetStageArchivesActionModel(BaseModel):
+class RetrieveStageArchivesActionModel(BaseModel):
     message: str = ""
     archives: List[StageArchiveFileModel] = []

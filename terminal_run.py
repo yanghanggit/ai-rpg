@@ -228,7 +228,7 @@ def terminal_player_input_get_actor_archives(
     game_name: RPGGame, player_proxy: PlayerProxy
 ) -> None:
     get_actor_archives_model = (
-        rpg_game.rpg_game_helper.gen_player_get_actor_archives_action_model(
+        rpg_game.rpg_game_helper.gen_player_retrieve_actor_archives_action_model(
             game_name, player_proxy
         )
     )
@@ -247,7 +247,7 @@ def terminal_player_input_get_stage_archives(
     game_name: RPGGame, player_proxy: PlayerProxy
 ) -> None:
     get_stage_archives_model = (
-        rpg_game.rpg_game_helper.gen_player_get_stage_archives_action_model(
+        rpg_game.rpg_game_helper.gen_player_retrieve_stage_archives_action_model(
             game_name, player_proxy
         )
     )

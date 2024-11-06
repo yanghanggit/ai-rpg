@@ -1,27 +1,18 @@
 from dataclasses import dataclass
 from enum import Enum
 from pydantic import BaseModel
-from typing import Dict, Set, List, Optional, Final, final
-from my_models.entity_models import (
-    GameModel,
-    # WatchActionModel,
-    # CheckActionModel,
-    # GetActorArchivesActionModel,
-    # GetStageArchivesActionModel,
-    # GenGamesConfigModel,
-    # APIRoutesConfigModel,
-)
-
-# from my_models.models_def import PlayerClientMessage
-from loguru import logger
+from typing import Dict, Set, List, Optional, Final
+from my_models.entity_models import GameModel
 from my_models.config_models import APIRoutesConfigModel, GenGamesConfigModel
 from my_models.player_models import (
     WatchActionModel,
     CheckActionModel,
-    GetActorArchivesActionModel,
-    GetStageArchivesActionModel,
+    RetrieveActorArchivesModel,
+    RetrieveStageArchivesActionModel,
     PlayerClientMessage,
 )
+
+# from loguru import logger
 
 
 @dataclass
@@ -269,17 +260,17 @@ class FetchMessagesResponse(BaseModel):
 ###############################################################################################################################################
 
 
-class GetActorArchivesRequest(BaseModel):
+class RetrieveActorArchivesRequest(BaseModel):
     user_name: str = ""
     game_name: str = ""
     actor_name: str = ""
 
 
-class GetActorArchivesResponse(BaseModel):
+class RetrieveActorArchivesResponse(BaseModel):
     user_name: str = ""
     game_name: str = ""
     actor_name: str = ""
-    action_model: GetActorArchivesActionModel = GetActorArchivesActionModel()
+    action_model: RetrieveActorArchivesModel = RetrieveActorArchivesModel()
     error: int = 0
     message: str = ""
 
@@ -289,17 +280,17 @@ class GetActorArchivesResponse(BaseModel):
 ###############################################################################################################################################
 
 
-class GetStageArchivesRequest(BaseModel):
+class RetrieveStageArchivesRequest(BaseModel):
     user_name: str = ""
     game_name: str = ""
     actor_name: str = ""
 
 
-class GetStageArchivesResponse(BaseModel):
+class RetrieveStageArchivesResponse(BaseModel):
     user_name: str = ""
     game_name: str = ""
     actor_name: str = ""
-    action_model: GetStageArchivesActionModel = GetStageArchivesActionModel()
+    action_model: RetrieveStageArchivesActionModel = RetrieveStageArchivesActionModel()
     error: int = 0
     message: str = ""
 

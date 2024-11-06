@@ -21,10 +21,10 @@ from ws_config import (
     CheckResponse,
     FetchMessagesRequest,
     FetchMessagesResponse,
-    GetActorArchivesRequest,
-    GetActorArchivesResponse,
-    GetStageArchivesRequest,
-    GetStageArchivesResponse,
+    RetrieveActorArchivesRequest,
+    RetrieveActorArchivesResponse,
+    RetrieveStageArchivesRequest,
+    RetrieveStageArchivesResponse,
     APIRoutesConfigRequest,
     APIRoutesConfigResponse,
 )
@@ -422,14 +422,16 @@ def _requesting_get_actor_archives(
 
     response = requests.get(
         client_context.api_routes.GET_ACTOR_ARCHIVES,
-        json=GetActorArchivesRequest(
+        json=RetrieveActorArchivesRequest(
             user_name=client_context._user_name,
             game_name=client_context._game_name,
             actor_name=client_context._actor_name,
         ).model_dump(),
     )
 
-    actor_archives_response = GetActorArchivesResponse.model_validate(response.json())
+    actor_archives_response = RetrieveActorArchivesResponse.model_validate(
+        response.json()
+    )
     if actor_archives_response.error > 0:
         logger.warning(
             f"获取角色档案失败: {actor_archives_response.user_name}, {actor_archives_response.game_name}, {actor_archives_response.actor_name}"
@@ -446,14 +448,16 @@ def _requesting_get_stage_archives(
 
     response = requests.get(
         client_context.api_routes.GET_STAGE_ARCHIVES,
-        json=GetStageArchivesRequest(
+        json=RetrieveStageArchivesRequest(
             user_name=client_context._user_name,
             game_name=client_context._game_name,
             actor_name=client_context._actor_name,
         ).model_dump(),
     )
 
-    stage_archives_response = GetStageArchivesResponse.model_validate(response.json())
+    stage_archives_response = RetrieveStageArchivesResponse.model_validate(
+        response.json()
+    )
     if stage_archives_response.error > 0:
         logger.warning(
             f"获取舞台档案失败: {stage_archives_response.user_name}, {stage_archives_response.game_name}, {stage_archives_response.actor_name}"

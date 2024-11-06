@@ -22,10 +22,10 @@ from ws_config import (
     CheckResponse,
     FetchMessagesRequest,
     FetchMessagesResponse,
-    GetActorArchivesRequest,
-    GetActorArchivesResponse,
-    GetStageArchivesRequest,
-    GetStageArchivesResponse,
+    RetrieveActorArchivesRequest,
+    RetrieveActorArchivesResponse,
+    RetrieveStageArchivesRequest,
+    RetrieveStageArchivesResponse,
     APIRoutesConfigRequest,
     APIRoutesConfigResponse,
 )
@@ -582,11 +582,13 @@ async def fetch_messages(request_data: FetchMessagesRequest) -> Dict[str, Any]:
 
 ###############################################################################################################################################
 @fastapi_app.post("/get_actor_archives/")
-async def get_actor_archives(request_data: GetActorArchivesRequest) -> Dict[str, Any]:
+async def get_actor_archives(
+    request_data: RetrieveActorArchivesRequest,
+) -> Dict[str, Any]:
 
     global global_game_room
     if global_game_room is None or global_game_room._game is None:
-        return GetActorArchivesResponse(
+        return RetrieveActorArchivesResponse(
             user_name=request_data.user_name,
             game_name=request_data.game_name,
             actor_name=request_data.actor_name,
@@ -597,7 +599,7 @@ async def get_actor_archives(request_data: GetActorArchivesRequest) -> Dict[str,
     # 没有客户端就不能看
     player_proxy = global_game_room.get_player()
     if player_proxy is None:
-        return GetActorArchivesResponse(
+        return RetrieveActorArchivesResponse(
             user_name=request_data.user_name,
             game_name=request_data.game_name,
             actor_name=request_data.actor_name,
@@ -607,13 +609,13 @@ async def get_actor_archives(request_data: GetActorArchivesRequest) -> Dict[str,
 
     # 获得消息
     get_actor_archives_action_model = (
-        rpg_game.rpg_game_helper.gen_player_get_actor_archives_action_model(
+        rpg_game.rpg_game_helper.gen_player_retrieve_actor_archives_action_model(
             global_game_room._game, player_proxy
         )
     )
 
     if get_actor_archives_action_model is None:
-        return GetActorArchivesResponse(
+        return RetrieveActorArchivesResponse(
             user_name=request_data.user_name,
             game_name=request_data.game_name,
             actor_name=request_data.actor_name,
@@ -621,7 +623,7 @@ async def get_actor_archives(request_data: GetActorArchivesRequest) -> Dict[str,
             message="get_actor_archives_model is None",
         ).model_dump()
 
-    return GetActorArchivesResponse(
+    return RetrieveActorArchivesResponse(
         user_name=request_data.user_name,
         game_name=request_data.game_name,
         actor_name=request_data.actor_name,
@@ -631,11 +633,13 @@ async def get_actor_archives(request_data: GetActorArchivesRequest) -> Dict[str,
 
 ###############################################################################################################################################
 @fastapi_app.post("/get_stage_archives/")
-async def get_stage_archives(request_data: GetStageArchivesRequest) -> Dict[str, Any]:
+async def get_stage_archives(
+    request_data: RetrieveStageArchivesRequest,
+) -> Dict[str, Any]:
 
     global global_game_room
     if global_game_room is None or global_game_room._game is None:
-        return GetStageArchivesResponse(
+        return RetrieveStageArchivesResponse(
             user_name=request_data.user_name,
             game_name=request_data.game_name,
             actor_name=request_data.actor_name,
@@ -645,7 +649,7 @@ async def get_stage_archives(request_data: GetStageArchivesRequest) -> Dict[str,
 
     player_proxy = global_game_room.get_player()
     if player_proxy is None:
-        return GetStageArchivesResponse(
+        return RetrieveStageArchivesResponse(
             user_name=request_data.user_name,
             game_name=request_data.game_name,
             actor_name=request_data.actor_name,
@@ -654,13 +658,13 @@ async def get_stage_archives(request_data: GetStageArchivesRequest) -> Dict[str,
         ).model_dump()
 
     get_stage_archives_action_model = (
-        rpg_game.rpg_game_helper.gen_player_get_stage_archives_action_model(
+        rpg_game.rpg_game_helper.gen_player_retrieve_stage_archives_action_model(
             global_game_room._game, player_proxy
         )
     )
 
     if get_stage_archives_action_model is None:
-        return GetStageArchivesResponse(
+        return RetrieveStageArchivesResponse(
             user_name=request_data.user_name,
             game_name=request_data.game_name,
             actor_name=request_data.actor_name,
@@ -668,7 +672,7 @@ async def get_stage_archives(request_data: GetStageArchivesRequest) -> Dict[str,
             message="get_stage_archives_model is None",
         ).model_dump()
 
-    return GetStageArchivesResponse(
+    return RetrieveStageArchivesResponse(
         user_name=request_data.user_name,
         game_name=request_data.game_name,
         actor_name=request_data.actor_name,

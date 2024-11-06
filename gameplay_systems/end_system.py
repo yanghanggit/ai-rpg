@@ -20,17 +20,17 @@ class EndSystem(ExecuteProcessor):
     ############################################################################################################
     @override
     def execute(self) -> None:
-        self._show_map_info()
+        self._log_map_information()
 
     ############################################################################################################
-    def _show_map_info(self) -> None:
+    def _log_map_information(self) -> None:
 
-        map_dumps = self._get_map_info()
+        map_dumps = self._fetch_stage_actor_mapping()
         if len(map_dumps.keys()) > 0:
             logger.info(f"/show map info: \n{map_dumps}")
 
     ############################################################################################################
-    def _get_map_info(self) -> OrderedDict[str, List[str]]:
+    def _fetch_stage_actor_mapping(self) -> OrderedDict[str, List[str]]:
 
         stage_entities = self._context.get_group(Matcher(StageComponent)).entities
         actor_entities = self._context.get_group(Matcher(ActorComponent)).entities

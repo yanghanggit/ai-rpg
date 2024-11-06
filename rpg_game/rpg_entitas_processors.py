@@ -97,6 +97,7 @@ class RPGEntitasProcessors(Processors):
         from gameplay_systems.save_player_system import SavePlayerSystem
         from gameplay_systems.web_player_tips_system import WebPlayerTipsSystem
         from gameplay_systems.spawner_system import SpawnerSystem
+        from gameplay_systems.game_round_system import GameRoundSystem
 
         ##
         rpg_game = cast(RPGGame, game)
@@ -105,6 +106,9 @@ class RPGEntitasProcessors(Processors):
 
         ##调试用的系统。监视进入运行之前的状态
         processors.add(BeginSystem(context, rpg_game))
+
+        # 游戏回合系统，就是计算游戏的时间这个开始问题
+        processors.add(GameRoundSystem(context, rpg_game))
 
         # 初始化系统########################
         processors.add(SpawnerSystem(context, rpg_game))

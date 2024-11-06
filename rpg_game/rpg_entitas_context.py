@@ -16,6 +16,7 @@ from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from typing import Optional, Dict, Set, cast, Any
 import gameplay_systems.builtin_prompt_util as builtin_prompt_util
 from my_models.event_models import AgentEvent
+from rpg_game.base_game import BaseGame
 
 
 class RPGEntitasContext(Context):
@@ -47,7 +48,7 @@ class RPGEntitasContext(Context):
         self._chaos_engineering_system: IChaosEngineering = chaos_engineering_system
 
         #
-        self._game: Any = None
+        self._game: Optional[BaseGame] = None
 
     #############################################################################################################################
 
@@ -307,13 +308,16 @@ class RPGEntitasContext(Context):
         if len(entities) == 0:
             return
 
-        player_entities: Set[Entity] = set()
+        player_proxy_names: Set[str] = set()
         for entity in entities:
             if entity.has(PlayerComponent):
-                player_entities.add(entity)
+                player_comp = entity.get(PlayerComponent)
+                player_proxy_names.add(player_comp.name)
 
-        from rpg_game.rpg_game import RPGGame
+        if len(player_proxy_names) == 0:
+            return
 
-        cast(RPGGame, self._game).add_message_to_players(player_entities, agent_event)
+        assert self._game is not None
+        self._game.send_event(player_proxy_names, agent_event)
 
     #############################################################################################################################

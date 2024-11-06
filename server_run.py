@@ -427,7 +427,7 @@ async def execute(request_data: ExecuteRequest) -> Dict[str, Any]:
             global_game_room._game, player_proxy
         ),
         total=len(player_proxy.model.client_messages),
-        game_round=global_game_room._game._runtime_game_round,
+        game_round=global_game_room._game.current_round,
     ).model_dump()
 
 
@@ -576,7 +576,7 @@ async def fetch_messages(request_data: FetchMessagesRequest) -> Dict[str, Any]:
         actor_name=request_data.actor_name,
         messages=fetch_messages,
         total=len(player_proxy.model.client_messages),
-        game_round=global_game_room._game._runtime_game_round,
+        game_round=global_game_room._game.current_round,
     ).model_dump()
 
 

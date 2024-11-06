@@ -33,7 +33,7 @@ from my_models.entity_models import (
     WorldSystemModel,
     WorldSystemInstanceModel,
 )
-from my_models.event_models import AgentEvent, UpdateAppearanceEvent
+from my_models.event_models import UpdateAppearanceEvent, BaseEvent
 from my_models.file_models import PropFileModel
 from my_models.entity_models import AttributesIndex
 from player.player_proxy import PlayerProxy
@@ -58,12 +58,17 @@ class RPGGame(BaseGame):
             self, context
         )
         self._players: List[PlayerProxy] = []
-        self._runtime_game_round: int = 0
+        self._runtime_round: int = 0
 
     ###############################################################################################################################################
     @property
-    def runtime_game_round(self) -> int:
-        return self._runtime_game_round
+    def context(self) -> RPGEntitasContext:
+        return self._entitas_context
+
+    ###############################################################################################################################################
+    @property
+    def current_round(self) -> int:
+        return self._runtime_round
 
     ###############################################################################################################################################
     @property
@@ -80,16 +85,16 @@ class RPGGame(BaseGame):
     ###############################################################################################################################################
     def build(self, game_resource: RPGGameResource) -> "RPGGame":
 
-        context = self._entitas_context
-
         # 混沌系统，准备测试
-        context._chaos_engineering_system.on_pre_create_game(context, game_resource)
+        self.context._chaos_engineering_system.on_pre_create_game(
+            self.context, game_resource
+        )
 
         ## 第1步，设置根路径
         self._game_resource = game_resource
         ##
-        context._langserve_agent_system.set_runtime_dir(game_resource._runtime_dir)
-        context._file_system.set_runtime_dir(game_resource._runtime_dir)
+        self.context._langserve_agent_system.set_runtime_dir(game_resource._runtime_dir)
+        self.context._file_system.set_runtime_dir(game_resource._runtime_dir)
 
         ## 第2步 创建管理员类型的角色，全局的AI
         self._create_world_system_entities(game_resource)
@@ -110,10 +115,12 @@ class RPGGame(BaseGame):
 
         ## 第6步，如果是载入的文件，就需要直接修改一些值
         if game_resource.is_load:
-            self._load_game(context, game_resource)
+            self._load_game(self.context, game_resource)
 
         ## 最后！混沌系统，准备测试
-        context._chaos_engineering_system.on_post_create_game(context, game_resource)
+        self.context._chaos_engineering_system.on_post_create_game(
+            self.context, game_resource
+        )
 
         return self
 
@@ -174,7 +181,7 @@ class RPGGame(BaseGame):
             assert world_system_model is not None
 
             world_system_entity = self._create_world_system_entity(
-                world_system_instance, world_system_model, self._entitas_context
+                world_system_instance, world_system_model, self.context
             )
             assert world_system_entity is not None
 
@@ -255,7 +262,7 @@ class RPGGame(BaseGame):
             assert actor_model is not None
 
             entity = self._create_actor_entity(
-                actor_instance, actor_model, self._entitas_context
+                actor_instance, actor_model, self.context
             )
             assert entity is not None
 
@@ -397,7 +404,7 @@ class RPGGame(BaseGame):
             assert stage_model is not None
 
             stage_entity = self._create_stage_entity(
-                stage_instance, stage_model, self._entitas_context
+                stage_instance, stage_model, self.context
             )
             assert stage_entity is not None
 
@@ -506,7 +513,7 @@ class RPGGame(BaseGame):
         for actor_entity in actor_entities:
             actor_comp = actor_entity.get(ActorComponent)
             assert actor_comp.current_stage != ""
-            self._entitas_context.update_stage_tag_component(
+            self.context.update_stage_tag_component(
                 actor_entity, "", actor_comp.current_stage
             )
 
@@ -529,7 +536,7 @@ class RPGGame(BaseGame):
     ) -> None:
 
         # 存储的局数拿回来
-        self._runtime_game_round = game_resource.save_round
+        self._runtime_round = game_resource.save_round
 
         # 重新加载相关的对像
         self._load_entities(context, game_resource)
@@ -667,36 +674,32 @@ class RPGGame(BaseGame):
             player_proxy.on_load()
 
     ###############################################################################################################################################
-    def add_message_to_players(
-        self, player_entities: Set[Entity], agent_event: AgentEvent
-    ) -> None:
-
-        if self._ignore_agent_event(agent_event):
-            logger.debug(f"忽略的消息：{agent_event}")
+    @override
+    def send_event(self, player_proxy_names: Set[str], send_event: BaseEvent) -> None:
+        if self._ignore_event(send_event):
+            logger.debug(f"忽略的消息：{send_event}")
             return
 
-        for player_entity in player_entities:
-            assert player_entity.has(PlayerComponent)
-            player_comp = player_entity.get(PlayerComponent)
-            player_proxy = self.get_player(player_comp.name)
+        for player_proxy_name in player_proxy_names:
+            player_proxy = self.get_player(player_proxy_name)
             if player_proxy is None:
-                assert False, f"没有找到玩家：{player_comp.name}"
+                assert False, f"没有找到玩家：{player_proxy_name}"
                 continue
 
             assert player_proxy.actor_name != ""
-            agent_event.message_content = builtin_prompt_util.replace_you(
-                agent_event.message_content,
+            send_event.message_content = builtin_prompt_util.replace_you(
+                send_event.message_content,
                 player_proxy.actor_name,
             )
 
-            player_proxy.add_actor_message(player_proxy.actor_name, agent_event)
+            player_proxy.add_actor_message(player_proxy.actor_name, send_event)
 
     ###############################################################################################################################################
-    def _ignore_agent_event(self, agent_event: AgentEvent) -> bool:
-        return isinstance(agent_event, UpdateAppearanceEvent)
+    def _ignore_event(self, send_event: BaseEvent) -> bool:
+        return isinstance(send_event, UpdateAppearanceEvent)
 
     ###############################################################################################################################################
-    def runtime_create_actor_entity(
+    def create_actor_entity_at_runtime(
         self,
         actor_instance: ActorInstanceModel,
         actor_model: ActorModel,
@@ -709,7 +712,7 @@ class RPGGame(BaseGame):
 
         assert stage_entity.has(StageComponent)
         actor_entity = self._create_actor_entity(
-            actor_instance, actor_model, self._entitas_context
+            actor_instance, actor_model, self.context
         )
         if actor_entity is None:
             return None

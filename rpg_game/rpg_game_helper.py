@@ -26,6 +26,7 @@ from my_components.components import (
     PlayerComponent,
     PlanningAllowedComponent,
     KickOffContentComponent,
+    KickOffFlagComponent,
 )
 from gameplay_systems.actor_checker import ActorChecker
 import gameplay_systems.actor_planning_execution_system
@@ -174,11 +175,11 @@ def create_web_rpg_game(game_resource: RPGGameResource) -> Optional[WebGame]:
 
 #######################################################################################################################################
 def get_props_in_stage(game_name: RPGGame, player_entity: Entity) -> List[PropFile]:
-    stage_entity = game_name._entitas_context.safe_get_stage_entity(player_entity)
+    stage_entity = game_name.context.safe_get_stage_entity(player_entity)
     if stage_entity is None:
         return []
-    stage_name = game_name._entitas_context.safe_get_entity_name(stage_entity)
-    return game_name._entitas_context._file_system.get_files(PropFile, stage_name)
+    stage_name = game_name.context.safe_get_entity_name(stage_entity)
+    return game_name.context._file_system.get_files(PropFile, stage_name)
 
 
 #######################################################################################################################################
@@ -186,18 +187,18 @@ def get_stage_narrate_content_from_stage_archive_file(
     game_name: RPGGame, player_entity: Entity
 ) -> str:
 
-    stage_entity = game_name._entitas_context.safe_get_stage_entity(player_entity)
+    stage_entity = game_name.context.safe_get_stage_entity(player_entity)
     if stage_entity is None:
         return ""
 
-    actor_name = game_name._entitas_context.safe_get_entity_name(player_entity)
-    stage_name = game_name._entitas_context.safe_get_entity_name(stage_entity)
+    actor_name = game_name.context.safe_get_entity_name(player_entity)
+    stage_name = game_name.context.safe_get_entity_name(stage_entity)
 
-    if game_name._entitas_context._file_system.has_file(
+    if game_name.context._file_system.has_file(
         StageArchiveFile, actor_name, stage_name
     ):
 
-        stage_archive = game_name._entitas_context._file_system.get_file(
+        stage_archive = game_name.context._file_system.get_file(
             StageArchiveFile, actor_name, stage_name
         )
 
@@ -211,11 +212,11 @@ def get_stage_narrate_content_from_stage_archive_file(
 def get_info_of_actors_in_stage(
     game_name: RPGGame, player_entity: Entity
 ) -> Dict[str, str]:
-    stage_entity = game_name._entitas_context.safe_get_stage_entity(player_entity)
+    stage_entity = game_name.context.safe_get_stage_entity(player_entity)
     if stage_entity is None:
         return {}
 
-    actor_entities = game_name._entitas_context.get_actors_in_stage(stage_entity)
+    actor_entities = game_name.context.get_actors_in_stage(stage_entity)
     ret: Dict[str, str] = {}
     for actor_entity in actor_entities:
         actor_comp = actor_entity.get(ActorComponent)
@@ -229,7 +230,7 @@ def get_info_of_actors_in_stage(
 def gen_player_watch_action_model(
     game_name: RPGGame, player_proxy: PlayerProxy
 ) -> Optional[WatchActionModel]:
-    player_entity = game_name._entitas_context.get_player_entity(player_proxy.name)
+    player_entity = game_name.context.get_player_entity(player_proxy.name)
     if player_entity is None:
         return None
 
@@ -240,7 +241,7 @@ def gen_player_watch_action_model(
 
     ## 场景内的角色信息获取
     actors_info: Dict[str, str] = get_info_of_actors_in_stage(game_name, player_entity)
-    actors_info.pop(game_name._entitas_context.safe_get_entity_name(player_entity))
+    actors_info.pop(game_name.context.safe_get_entity_name(player_entity))
 
     actors_info_prompts = [
         f"""{actor_name}: {appearance}"""
@@ -260,9 +261,9 @@ def gen_player_watch_action_model(
     ]
 
     # 场景名称
-    stage_entity = game_name._entitas_context.safe_get_stage_entity(player_entity)
+    stage_entity = game_name.context.safe_get_stage_entity(player_entity)
     assert stage_entity is not None
-    stage_name = game_name._entitas_context.safe_get_entity_name(stage_entity)
+    stage_name = game_name.context.safe_get_entity_name(stage_entity)
 
     # 最终返回
     message = f"""# {player_proxy.name} | {player_proxy.actor_name} 获取场景信息
@@ -283,12 +284,12 @@ def gen_player_watch_action_model(
 def gen_player_check_action_model(
     game_name: RPGGame, player_proxy: PlayerProxy
 ) -> Optional[CheckActionModel]:
-    player_entity = game_name._entitas_context.get_player_entity(player_proxy.name)
+    player_entity = game_name.context.get_player_entity(player_proxy.name)
     if player_entity is None:
         return None
 
     #
-    check_self = ActorChecker(game_name._entitas_context, player_entity)
+    check_self = ActorChecker(game_name.context, player_entity)
     health = check_self.health * 100
 
     # 道具信息
@@ -323,12 +324,12 @@ def gen_player_get_actor_archives_action_model(
     game_name: RPGGame, player_proxy: PlayerProxy
 ) -> Optional[GetActorArchivesActionModel]:
 
-    player_entity = game_name._entitas_context.get_player_entity(player_proxy.name)
+    player_entity = game_name.context.get_player_entity(player_proxy.name)
     if player_entity is None:
         return None
 
-    file_owner_name = game_name._entitas_context.safe_get_entity_name(player_entity)
-    archive_files = game_name._entitas_context._file_system.get_files(
+    file_owner_name = game_name.context.safe_get_entity_name(player_entity)
+    archive_files = game_name.context._file_system.get_files(
         ActorArchiveFile, file_owner_name
     )
 
@@ -347,12 +348,12 @@ def gen_player_get_stage_archives_action_model(
     game_name: RPGGame, player_proxy: PlayerProxy
 ) -> Optional[GetStageArchivesActionModel]:
 
-    player_entity = game_name._entitas_context.get_player_entity(player_proxy.name)
+    player_entity = game_name.context.get_player_entity(player_proxy.name)
     if player_entity is None:
         return None
 
-    file_owner_name = game_name._entitas_context.safe_get_entity_name(player_entity)
-    archive_files = game_name._entitas_context._file_system.get_files(
+    file_owner_name = game_name.context.safe_get_entity_name(player_entity)
+    archive_files = game_name.context._file_system.get_files(
         StageArchiveFile, file_owner_name
     )
 
@@ -431,39 +432,37 @@ def add_player_command(
 
 #######################################################################################################################################
 def player_play_new_game(
-    rpg_game: RPGGame, player_proxy: PlayerProxy, player_controlled_actor_name: str
+    rpg_game: RPGGame, player_proxy: PlayerProxy, player_actor_name: str
 ) -> None:
 
-    actor_entity = rpg_game._entitas_context.get_actor_entity(
-        player_controlled_actor_name
-    )
-    if actor_entity is None or not actor_entity.has(PlayerComponent):
-        logger.error(f"没有找到角色 = {player_controlled_actor_name}")
+    player_entity = rpg_game.context.get_actor_entity(player_actor_name)
+    if player_entity is None or not player_entity.has(PlayerComponent):
+        logger.error(f"没有找到角色 = {player_actor_name}")
         return
 
     # 更改算作登陆成功
-    actor_entity.replace(PlayerComponent, player_proxy.name)
-    player_proxy.set_actor(player_controlled_actor_name)
+    player_entity.replace(PlayerComponent, player_proxy.name)
+    player_proxy.set_actor(player_actor_name)
 
+    # 添加游戏介绍
     player_proxy.add_system_message(AgentEvent(message_content=rpg_game.about_game))
 
-    # todo 添加登陆新的信息到客户端消息中
+    # log 信息
     time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    # player_proxy.add_system_message(
-    #     AgentEvent(
-    #         message_content=f"login: {player_proxy.name}, time = {time}, 控制角色 = {player_controlled_actor_name}"
-    #     )
-    # )
-
     logger.info(
-        f"time = {time}, 玩家登陆游戏 = {player_proxy.name}, 控制角色 = {player_controlled_actor_name}"
+        f"time = {time}, 玩家登陆游戏 = {player_proxy.name}, 控制角色 = {player_actor_name}"
     )
 
-    kick_off_comp = actor_entity.get(KickOffContentComponent)
+    # 配置的启动故事，因为player的kickoff只能在这里
+    kick_off_comp = player_entity.get(KickOffContentComponent)
     player_proxy.cache_kickoff_message(
-        player_controlled_actor_name,
+        player_actor_name,
         AgentEvent(message_content=kick_off_comp.content),
     )
+
+    # 做kickoff标记 完成
+    assert not player_entity.has(KickOffFlagComponent)
+    player_entity.replace(KickOffFlagComponent, player_proxy.actor_name)
 
 
 #######################################################################################################################################
@@ -471,19 +470,23 @@ def player_play_again(rpg_game: RPGGame, player_name: str) -> Optional[PlayerPro
 
     player_proxy = rpg_game.get_player(player_name)
     if player_proxy is None:
+        assert False, f"没有找到玩家 = {player_name}"
         return None
 
     time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    player_proxy.add_system_message(
-        AgentEvent(
-            message_content=f"load & login: {player_proxy.name}, time = {time}, 控制角色 = {player_proxy.actor_name}"
-        )
+    logger.info(
+        f"time = {time}, 玩家登陆游戏 = {player_proxy.name}, 控制角色 = {player_proxy.actor_name}"
     )
 
     player_proxy.cache_kickoff_message(
         player_proxy.actor_name,
-        AgentEvent(message_content=f"你回忆起了你的经历: {rpg_game._name}。"),
+        AgentEvent(message_content=f"再次游戏: {rpg_game._name}。"),
     )
+
+    # 因为是load的，到了这里肯定有！！！
+    player_entity = rpg_game.context.get_actor_entity(player_proxy.actor_name)
+    assert player_entity is not None
+    assert player_entity.has(KickOffFlagComponent)
 
     return player_proxy
 
@@ -491,7 +494,7 @@ def player_play_again(rpg_game: RPGGame, player_name: str) -> Optional[PlayerPro
 #######################################################################################################################################
 def get_player_actor_names(rpg_game: RPGGame) -> List[str]:
 
-    actor_entities = rpg_game._entitas_context.get_player_entities()
+    actor_entities = rpg_game.context.get_player_entities()
     ret: List[str] = []
     for actor_entity in actor_entities:
         actor_comp = actor_entity.get(ActorComponent)
@@ -502,7 +505,7 @@ def get_player_actor_names(rpg_game: RPGGame) -> List[str]:
 
 #######################################################################################################################################
 def is_player_turn(rpg_game: RPGGame, player_proxy: PlayerProxy) -> bool:
-    player_entity = rpg_game._entitas_context.get_player_entity(player_proxy.name)
+    player_entity = rpg_game.context.get_player_entity(player_proxy.name)
     if player_entity is None:
         return False
 

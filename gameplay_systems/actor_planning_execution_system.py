@@ -232,7 +232,7 @@ class ActorPlanningExecutionSystem(ExecuteProcessor):
             out_put_request_tasks[actor_comp.name] = AgentTask.create(
                 agent,
                 _generate_actor_plan_prompt(
-                    game_round=self._game._runtime_game_round,
+                    game_round=self._game.current_round,
                     current_stage=self._get_stage_name(actor_entity),
                     stage_enviro_narrate=self._get_stage_narrate(actor_entity),
                     stage_graph=set(self._get_stage_graph(actor_entity)),

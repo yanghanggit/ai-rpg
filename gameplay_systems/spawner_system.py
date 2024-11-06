@@ -62,7 +62,7 @@ class SpawnerSystem(ExecuteProcessor):
             actor_prototype_deep_copy.name = f"""{actor_prototype.name}#{gen_guid}"""
             actor_prototype_deep_copy.guid = gen_guid
             # 生成一个新的entity
-            spawned_actor_entity = self._game.runtime_create_actor_entity(
+            spawned_actor_entity = self._game.create_actor_entity_at_runtime(
                 actor_prototype_deep_copy, actor_model, stage_entity
             )
             if spawned_actor_entity is not None:

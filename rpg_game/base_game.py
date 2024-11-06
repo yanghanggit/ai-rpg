@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
+from typing import Set
+from my_models.event_models import BaseEvent
 
 
-# 基础类
+# 基础类，定义基本行为，其实是为了桥一下并做隔离
 class BaseGame(ABC):
 
     def __init__(self, name: str) -> None:
@@ -18,4 +20,8 @@ class BaseGame(ABC):
 
     @abstractmethod
     def exit(self) -> None:
+        pass
+
+    @abstractmethod
+    def send_event(self, player_proxy_names: Set[str], send_event: BaseEvent) -> None:
         pass

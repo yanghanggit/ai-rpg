@@ -34,7 +34,7 @@ class PlayerGoTo(PlayerCommand):
         from rpg_game.rpg_game import RPGGame
 
         rpg_game = cast(RPGGame, game)
-        player_entity = rpg_game._entitas_context.get_player_entity(player_proxy.name)
+        player_entity = rpg_game.context.get_player_entity(player_proxy.name)
         if player_entity is None:
             return
 
@@ -62,7 +62,7 @@ class PlayerBroadcast(PlayerCommand):
         from rpg_game.rpg_game import RPGGame
 
         rpg_game = cast(RPGGame, game)
-        player_entity = rpg_game._entitas_context.get_player_entity(player_proxy.name)
+        player_entity = rpg_game.context.get_player_entity(player_proxy.name)
         if player_entity is None:
             return
 
@@ -96,7 +96,7 @@ class PlayerSpeak(PlayerCommand):
         from rpg_game.rpg_game import RPGGame
 
         rpg_game = cast(RPGGame, game)
-        player_entity = rpg_game._entitas_context.get_player_entity(player_proxy.name)
+        player_entity = rpg_game.context.get_player_entity(player_proxy.name)
         if player_entity is None:
             return
 
@@ -124,7 +124,7 @@ class PlayerWhisper(PlayerCommand):
         from rpg_game.rpg_game import RPGGame
 
         rpg_game = cast(RPGGame, game)
-        player_entity = rpg_game._entitas_context.get_player_entity(player_proxy.name)
+        player_entity = rpg_game.context.get_player_entity(player_proxy.name)
         if player_entity is None:
             return
 
@@ -156,7 +156,7 @@ class PlayerPickUpProp(PlayerCommand):
         from rpg_game.rpg_game import RPGGame
 
         rpg_game = cast(RPGGame, game)
-        player_entity = rpg_game._entitas_context.get_player_entity(player_proxy.name)
+        player_entity = rpg_game.context.get_player_entity(player_proxy.name)
         if player_entity is None:
             return
 
@@ -189,7 +189,7 @@ class PlayerSteal(PlayerCommand):
         from rpg_game.rpg_game import RPGGame
 
         rpg_game = cast(RPGGame, game)
-        player_entity = rpg_game._entitas_context.get_player_entity(player_proxy.name)
+        player_entity = rpg_game.context.get_player_entity(player_proxy.name)
         if player_entity is None:
             return
 
@@ -221,7 +221,7 @@ class PlayerGiveProp(PlayerCommand):
         from rpg_game.rpg_game import RPGGame
 
         rpg_game = cast(RPGGame, game)
-        player_entity = rpg_game._entitas_context.get_player_entity(player_proxy.name)
+        player_entity = rpg_game.context.get_player_entity(player_proxy.name)
         if player_entity is None:
             return
 
@@ -255,7 +255,7 @@ class PlayerBehavior(PlayerCommand):
         from rpg_game.rpg_game import RPGGame
 
         rpg_game = cast(RPGGame, game)
-        player_entity = rpg_game._entitas_context.get_player_entity(player_proxy.name)
+        player_entity = rpg_game.context.get_player_entity(player_proxy.name)
         if player_entity is None:
             return
 
@@ -289,7 +289,7 @@ class PlayerEquip(PlayerCommand):
         from rpg_game.rpg_game import RPGGame
 
         rpg_game = cast(RPGGame, game)
-        player_entity = rpg_game._entitas_context.get_player_entity(player_proxy.name)
+        player_entity = rpg_game.context.get_player_entity(player_proxy.name)
         if player_entity is None:
             return
 
@@ -321,11 +321,11 @@ class PlayerKill(PlayerCommand):
         from rpg_game.rpg_game import RPGGame
 
         rpg_game = cast(RPGGame, game)
-        player_entity = rpg_game._entitas_context.get_player_entity(player_proxy.name)
+        player_entity = rpg_game.context.get_player_entity(player_proxy.name)
         if player_entity is None:
             return
 
-        target_entity = rpg_game._entitas_context.get_entity_by_name(self.target_name)
+        target_entity = rpg_game.context.get_entity_by_name(self.target_name)
         if target_entity is None:
             logger.error(f"没有找到目标:{self.target_name}")
             return

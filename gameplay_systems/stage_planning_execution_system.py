@@ -176,7 +176,7 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
                         PropFile,
                         self._context.safe_get_entity_name(stage_entity),
                     ),
-                    self._game._runtime_game_round,
+                    self._game.current_round,
                     self._context.get_appearance_in_stage(stage_entity),
                 ),
             )

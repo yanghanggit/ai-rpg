@@ -4,10 +4,10 @@ from pathlib import Path
 root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 from typing import List, Dict, Any, Optional, Set
-from game_sample.excel_data_prop import ExcelDataProp
-from game_sample.excel_data_world_system import ExcelDataWorldSystem
-from game_sample.excel_data_stage import ExcelDataStage
-from game_sample.excel_data_actor import ExcelDataActor
+from game_sample.prop_data import ExcelDataProp
+from game_sample.world_system_data import ExcelDataWorldSystem
+from game_sample.stage_data import ExcelDataStage
+from game_sample.actor_data import ExcelDataActor
 from game_sample.actor_editor import ExcelEditorActor
 from game_sample.stage_editor import ExcelEditorStage
 from game_sample.world_system_editor import ExcelEditorWorldSystem
@@ -18,12 +18,11 @@ from my_models.entity_models import (
     DataBaseModel,
 )
 from game_sample.spawner_editor import ExcelEditorSpawner
-import game_sample.configuration as configuration
 from my_models.editor_models import EditorEntityType, EditorProperty
 from loguru import logger
 from my_models.config_models import GameAgentsConfigModel
 from my_format_string.complex_name import ComplexName
-from game_sample.editor_guid_generator import editor_guid_generator
+from game_sample.guid_generator import editor_guid_generator
 import game_sample.configuration
 
 
@@ -455,7 +454,7 @@ class ExcelEditorGame:
         model = GameAgentsConfigModel(actors=[], stages=[], world_systems=[])
 
         for actor in self.editor_players + self.editor_actors:
-            model.actors.append({actor.name: f"{actor.codename}_agent.py"})
+            model.actors.append({actor.agent_name: f"{actor.codename}_agent.py"})
 
         for stage in self.editor_stages:
             model.stages.append({stage.name: f"{stage.codename}_agent.py"})

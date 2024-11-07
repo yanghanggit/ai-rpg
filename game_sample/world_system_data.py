@@ -7,7 +7,8 @@ import game_sample.configuration as configuration
 import game_sample.utils
 from typing import Any
 from enum import StrEnum, unique
-from loguru import logger
+
+# from loguru import logger
 
 
 @unique

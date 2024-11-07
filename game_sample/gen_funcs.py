@@ -7,12 +7,12 @@ import pandas as pd
 from loguru import logger
 from pandas.core.frame import DataFrame
 from typing import Dict, List
-from game_sample.excel_data_prop import ExcelDataProp
-from game_sample.excel_data_world_system import ExcelDataWorldSystem
-from game_sample.excel_data_stage import ExcelDataStage
+from game_sample.prop_data import ExcelDataProp
+from game_sample.world_system_data import ExcelDataWorldSystem
+from game_sample.stage_data import ExcelDataStage
 from pathlib import Path
 import game_sample.utils
-from game_sample.excel_data_actor import ExcelDataActor
+from game_sample.actor_data import ExcelDataActor
 from game_sample.game_editor import ExcelEditorGame
 import game_sample.configuration as configuration
 from my_models.config_models import GenGamesConfigModel, OneGameConfigModel

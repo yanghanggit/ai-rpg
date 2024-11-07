@@ -21,10 +21,10 @@ from my_components.action_components import (
 )
 
 from loguru import logger
-from game_sample.romance_of_the_three_kingdoms_builtin_prompt import (
+from game_sample.builtin_prompt import (
     GAME_BACKGROUND_AND_STYLE_SETTING as game_background_and_style_setting,
 )
-from game_sample.romance_of_the_three_kingdoms_builtin_prompt import (
+from game_sample.builtin_prompt import (
     GAME_RULES_SETTING as game_rules_setting,
 )
 

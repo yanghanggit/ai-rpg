@@ -5,11 +5,11 @@ root_dir = Path(__file__).resolve().parent.parent  # 将项目根目录添加到
 sys.path.append(str(root_dir))
 from loguru import logger
 from typing import List, Dict, Any, Optional, cast, Set
-from game_sample.excel_data_prop import ExcelDataProp
-from game_sample.excel_data_actor import ExcelDataActor
-from game_sample.excel_data_stage import ExcelDataStage
+from game_sample.prop_data import ExcelDataProp
+from game_sample.actor_data import ExcelDataActor
+from game_sample.stage_data import ExcelDataStage
 import game_sample.utils
-from game_sample.editor_guid_generator import editor_guid_generator
+from game_sample.guid_generator import editor_guid_generator
 from my_models.entity_models import (
     AttributesIndex,
     PropInstanceModel,

@@ -4,8 +4,8 @@ from pathlib import Path
 root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 from typing import Dict, Any, cast
-from game_sample.excel_data_world_system import ExcelDataWorldSystem
-from game_sample.editor_guid_generator import editor_guid_generator
+from game_sample.world_system_data import ExcelDataWorldSystem
+from game_sample.guid_generator import editor_guid_generator
 from my_models.entity_models import (
     WorldSystemModel,
     WorldSystemInstanceModel,

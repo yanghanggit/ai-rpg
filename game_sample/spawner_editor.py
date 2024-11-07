@@ -4,8 +4,8 @@ from pathlib import Path
 root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 from typing import List, Dict, Any, cast, Set
-from game_sample.excel_data_prop import ExcelDataProp
-from game_sample.excel_data_actor import ExcelDataActor
+from game_sample.prop_data import ExcelDataProp
+from game_sample.actor_data import ExcelDataActor
 from my_models.entity_models import (
     SpawnerModel,
 )

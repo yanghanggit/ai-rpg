@@ -8,7 +8,7 @@ class GUIDType(IntEnum):
     WORLD_SYSTEM_TYPE = 4 * 1000 * 1000
 
 
-class EditorGUIDGenerator:
+class GUIDGenerator:
 
     def __init__(self) -> None:
         self._actor_index: int = 0
@@ -43,4 +43,4 @@ class EditorGUIDGenerator:
 
 
 ###
-editor_guid_generator = EditorGUIDGenerator()
+editor_guid_generator = GUIDGenerator()

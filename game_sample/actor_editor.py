@@ -4,10 +4,10 @@ from pathlib import Path
 root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 from typing import List, Dict, Any, Optional, cast
-from game_sample.excel_data_prop import ExcelDataProp
+from game_sample.prop_data import ExcelDataProp
 import game_sample.utils
-from game_sample.excel_data_actor import ExcelDataActor
-from game_sample.editor_guid_generator import editor_guid_generator
+from game_sample.actor_data import ExcelDataActor
+from game_sample.guid_generator import editor_guid_generator
 from my_models.entity_models import (
     ActorModel,
     AttributesIndex,
@@ -27,9 +27,7 @@ class ExcelEditorActor:
         data: Any,
         actor_data_base: Dict[str, ExcelDataActor],
         prop_data_base: Dict[str, ExcelDataProp],
-        # editor_group: Any = None,
         group_generation_id: int = 0,
-        editor_spawn: Any = None,
     ) -> None:
         assert data is not None
         assert actor_data_base is not None
@@ -41,7 +39,6 @@ class ExcelEditorActor:
         self._actor_data_base: Dict[str, ExcelDataActor] = actor_data_base
         self._prop_data_base: Dict[str, ExcelDataProp] = prop_data_base
         self._guid = group_generation_id
-        self._editor_spawn = editor_spawn
 
         if self.type not in [
             EditorEntityType.PLAYER,
@@ -65,6 +62,15 @@ class ExcelEditorActor:
     @property
     def actor_with_guid(self) -> str:
         return f"""{self.data_base_name}#{self._resolve_guid()}"""
+
+    #################################################################################################################################
+    @property
+    def agent_name(self) -> str:
+        if self._complex_name.is_complex_name:
+            return self.actor_with_guid
+
+        assert self.name == self.data_base_name
+        return self.name
 
     #################################################################################################################################
     @property

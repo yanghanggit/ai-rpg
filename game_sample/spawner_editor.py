@@ -57,7 +57,8 @@ class ExcelEditorSpawner:
         return SpawnerModel(
             name=self.name,
             actor_prototypes=[
-                actor.actor_with_guid for actor in self._editor_actor_prototypes
+                actor.format_actor_name_with_guid
+                for actor in self._editor_actor_prototypes
             ],
         )
 

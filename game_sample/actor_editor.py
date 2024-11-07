@@ -23,23 +23,25 @@ class ExcelEditorActor:
 
     def __init__(
         self,
-        complex_name: ComplexName,
         data: Any,
         actor_data_base: Dict[str, ExcelDataActor],
         prop_data_base: Dict[str, ExcelDataProp],
         group_generation_id: int = 0,
     ) -> None:
+
+        #
         assert data is not None
         assert actor_data_base is not None
         assert prop_data_base is not None
 
         #
-        self._complex_name: ComplexName = complex_name
         self._data: Any = data
         self._actor_data_base: Dict[str, ExcelDataActor] = actor_data_base
         self._prop_data_base: Dict[str, ExcelDataProp] = prop_data_base
         self._guid = group_generation_id
+        self._complex_name: ComplexName = ComplexName(str(data[EditorProperty.NAME]))
 
+        # 检查actor类型是否合法
         if self.type not in [
             EditorEntityType.PLAYER,
             EditorEntityType.ACTOR,
@@ -60,14 +62,14 @@ class ExcelEditorActor:
 
     #################################################################################################################################
     @property
-    def actor_with_guid(self) -> str:
+    def format_actor_name_with_guid(self) -> str:
         return f"""{self.data_base_name}#{self._resolve_guid()}"""
 
     #################################################################################################################################
     @property
     def agent_name(self) -> str:
         if self._complex_name.is_complex_name:
-            return self.actor_with_guid
+            return self.format_actor_name_with_guid
 
         assert self.name == self.data_base_name
         return self.name
@@ -175,7 +177,7 @@ class ExcelEditorActor:
         )
 
         if self._complex_name.is_complex_name:
-            ret.name = self.actor_with_guid
+            ret.name = self.format_actor_name_with_guid
         else:
             ret.name = self.name
 
@@ -190,7 +192,9 @@ class ExcelEditorActor:
 
         # test
         if "#" in ret.name:
-            assert ret.name == self.actor_with_guid, f"Invalid actor name: {ret.name}"
+            assert (
+                ret.name == self.format_actor_name_with_guid
+            ), f"Invalid actor name: {ret.name}"
         else:
             assert ret.name in self._actor_data_base, f"Invalid actor name: {ret.name}"
 

@@ -189,7 +189,7 @@ class ExcelEditorStage:
             ret.append({"name": actor.name})
 
         for actor_group_instance in actors_in_groups:
-            ret.append({"name": actor_group_instance.actor_with_guid})
+            ret.append({"name": actor_group_instance.format_actor_name_with_guid})
 
         return ret
 

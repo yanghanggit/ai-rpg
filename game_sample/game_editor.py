@@ -122,7 +122,6 @@ class ExcelEditorGame:
                 assert str(item[EditorProperty.NAME]) in self._actor_data_base
                 self._cache_players.append(
                     ExcelEditorActor(
-                        ComplexName(str(item[EditorProperty.NAME])),
                         data=item,
                         actor_data_base=self._actor_data_base,
                         prop_data_base=self._prop_data_base,
@@ -161,24 +160,23 @@ class ExcelEditorGame:
                     continue
 
                 # 复杂的对象用于分析到底是什么
-                complex_name = ComplexName(str(item[EditorProperty.NAME]))
-                if complex_name.is_complex_name:
+                actor_complex_identifier = ComplexName(str(item[EditorProperty.NAME]))
+                if actor_complex_identifier.is_complex_name:
 
                     if not game_sample.configuration.EN_GROUP_FEATURE:
                         continue  # 不支持组功能
 
-                    assert complex_name.actor_name in self._actor_data_base
+                    assert actor_complex_identifier.actor_name in self._actor_data_base
 
                     group_actors: List[ExcelEditorActor] = []
 
-                    for i in range(complex_name.group_count):
+                    for i in range(actor_complex_identifier.group_count):
                         group_editor_actor = ExcelEditorActor(
-                            complex_name=complex_name,
                             data=item,
                             actor_data_base=self._actor_data_base,
                             prop_data_base=self._prop_data_base,
                             group_generation_id=editor_guid_generator.gen_actor_guid(
-                                complex_name.actor_name
+                                actor_complex_identifier.actor_name
                             ),
                         )
 
@@ -186,16 +184,15 @@ class ExcelEditorGame:
 
                     self._cache_actors.extend(group_actors)
                     self._cache_actor_group.setdefault(
-                        complex_name.group_name, []
+                        actor_complex_identifier.group_name, []
                     ).extend(group_actors)
 
                 else:
 
                     assert item[EditorProperty.NAME] in self._actor_data_base
-                    assert complex_name.actor_name in self._actor_data_base
+                    assert actor_complex_identifier.actor_name in self._actor_data_base
                     self._cache_actors.append(
                         ExcelEditorActor(
-                            complex_name=complex_name,
                             data=item,
                             actor_data_base=self._actor_data_base,
                             prop_data_base=self._prop_data_base,

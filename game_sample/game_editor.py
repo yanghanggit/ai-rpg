@@ -3,7 +3,7 @@ from pathlib import Path
 
 root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Set
 from game_sample.excel_data_prop import ExcelDataProp
 from game_sample.excel_data_world_system import ExcelDataWorldSystem
 from game_sample.excel_data_stage import ExcelDataStage
@@ -15,11 +15,8 @@ from game_sample.world_system_editor import ExcelEditorWorldSystem
 import pandas as pd
 import game_sample.utils
 from my_models.entity_models import (
-    # EditorEntityType,
-    # EditorProperty,
     GameModel,
     DataBaseModel,
-    # GameAgentsConfigModel,
 )
 from game_sample.actor_spawn_editor import ExcelEditorActorSpawn
 from game_sample.spawner_editor import ExcelEditorSpawner
@@ -370,7 +367,26 @@ class ExcelEditorGame:
         for editor_stage in self.editor_stages:
             ret.stages.append(editor_stage.gen_instance())
 
+        # 验证模型
+        self._validate_model(ret)
         return ret
+
+    ############################################################################################################################
+    def _validate_model(self, model: GameModel) -> None:
+
+        # 验证角色，如果场景里不出现就不算
+        validated_player_names: Set[str] = set()
+
+        for player in model.players:
+            for stage in model.stages:
+                for actor in stage.actors:
+                    if actor["name"] == player.name:
+                        validated_player_names.add(player.name)
+
+        if len(validated_player_names) != len(model.players):
+            assert False, f"Invalid players: {model.players}, {validated_player_names}"
+
+        # 验证其他的。，。
 
     ############################################################################################################################
     def _data_base(self) -> DataBaseModel:

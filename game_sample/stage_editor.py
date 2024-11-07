@@ -185,11 +185,11 @@ class ExcelEditorStage:
         ret: List[Dict[str, str]] = []
 
         for actor in actors:
-            ret.append({EditorProperty.NAME: actor.name})
+            ret.append({"name": actor.name})
 
         for group in groups:
             for spawn_actor in group.generate_excel_actors:
-                ret.append({EditorProperty.NAME: spawn_actor.name})
+                ret.append({"name": spawn_actor.name})
 
         return ret
 

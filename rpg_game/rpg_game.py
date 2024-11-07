@@ -247,6 +247,28 @@ class RPGGame(BaseGame):
         return actor_entities
 
     ###############################################################################################################################################
+    def _retrieve_actors_with_stage_presence(
+        self, game_resource: RPGGameResource, actors_instances: List[ActorInstanceModel]
+    ) -> List[ActorInstanceModel]:
+
+        unique_actor_names = set()
+
+        stages_instances = game_resource.stages_instances
+        for stage_instance in stages_instances:
+            for actor_instance1 in stage_instance.actors:
+                unique_actor_names.add(actor_instance1["name"])
+
+        logger.debug(f"collect_unique_actor_names: {unique_actor_names}")
+
+        ret: List[ActorInstanceModel] = []
+        for actor_instance2 in actors_instances:
+            if actor_instance2.name in unique_actor_names:
+                ret.append(actor_instance2)
+
+        assert len(actors_instances) <= len(unique_actor_names)
+        return ret
+
+    ###############################################################################################################################################
     def _create_actor_entities(
         self, game_resource: RPGGameResource, actor_instances: List[ActorInstanceModel]
     ) -> List[Entity]:
@@ -254,9 +276,13 @@ class RPGGame(BaseGame):
         assert game_resource is not None
         assert game_resource.data_base is not None
 
+        actors_with_stage_presence = self._retrieve_actors_with_stage_presence(
+            game_resource, actor_instances
+        )
+
         ret: List[Entity] = []
 
-        for actor_instance in actor_instances:
+        for actor_instance in actors_with_stage_presence:
 
             actor_model = game_resource.data_base.get_actor(actor_instance.name)
             assert actor_model is not None

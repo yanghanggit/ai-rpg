@@ -16,7 +16,7 @@ class SpawnerSystem(ExecuteProcessor):
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         self._context: RPGEntitasContext = context
         self._game: RPGGame = rpg_game
-        self._base_index: Final[int] = 5 * 100 * 100
+        self._base_index: Final[int] = 9 * 1000 * 1000
         self._gen_index: int = 0
 
     ######################################################################################################################################################

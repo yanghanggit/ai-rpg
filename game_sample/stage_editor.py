@@ -4,23 +4,23 @@ from pathlib import Path
 root_dir = Path(__file__).resolve().parent.parent  # 将项目根目录添加到sys.path
 sys.path.append(str(root_dir))
 from loguru import logger
-from typing import List, Dict, Any, Optional, cast
+from typing import List, Dict, Any, Optional, cast, Set
 from game_sample.excel_data_prop import ExcelDataProp
 from game_sample.excel_data_actor import ExcelDataActor
 from game_sample.excel_data_stage import ExcelDataStage
 import game_sample.utils
 from game_sample.editor_guid_generator import editor_guid_generator
 from my_models.entity_models import (
-    # EditorEntityType,
-    # EditorProperty,
     AttributesIndex,
     PropInstanceModel,
     StageModel,
     StageInstanceModel,
 )
-from game_sample.group_editor import ExcelEditorGroup
 import game_sample.configuration as configuration
 from my_models.editor_models import EditorEntityType, EditorProperty
+import my_format_string.attrs_format_string
+from game_sample.actor_editor import ExcelEditorActor
+from my_format_string.complex_name import ComplexName
 
 
 class ExcelEditorStage:
@@ -43,7 +43,8 @@ class ExcelEditorStage:
         self._actor_data_base: Dict[str, ExcelDataActor] = actor_data_base
         self._prop_data_base: Dict[str, ExcelDataProp] = prop_data_base
         self._stage_data_base: Dict[str, ExcelDataStage] = stage_data_base
-        self._editor_groups: List[ExcelEditorGroup] = []
+
+        self._actor_group: List[ExcelEditorActor] = []
 
         if self.type not in [EditorEntityType.STAGE]:
             assert False, f"Invalid Stage type: {self.type}"
@@ -79,7 +80,7 @@ class ExcelEditorStage:
         assert self._data is not None
         data = cast(str, self._data[EditorProperty.ATTRIBUTES])
         assert "," in data, f"raw_string_val: {data} is not valid."
-        values = [int(attr) for attr in data.split(",")]
+        values = my_format_string.attrs_format_string.from_string_to_int_attrs(data)
         if len(values) < AttributesIndex.MAX.value:
             values.extend([0] * (AttributesIndex.MAX.value - len(values)))
         return values
@@ -180,16 +181,15 @@ class ExcelEditorStage:
 
     ################################################################################################################################
     def gen_actors_instances_in_stage(
-        self, actors: List[ExcelDataActor], groups: List[ExcelEditorGroup]
+        self, actors: List[ExcelDataActor], actors_in_groups: List[ExcelEditorActor]
     ) -> List[Dict[str, str]]:
         ret: List[Dict[str, str]] = []
 
         for actor in actors:
             ret.append({"name": actor.name})
 
-        for group in groups:
-            for spawn_actor in group.generate_excel_actors:
-                ret.append({"name": spawn_actor.name})
+        for actor_group_instance in actors_in_groups:
+            ret.append({"name": actor_group_instance.actor_with_guid})
 
         return ret
 
@@ -210,26 +210,24 @@ class ExcelEditorStage:
     def gen_instance(self) -> StageInstanceModel:
         assert self.excel_data is not None
         #
-        ret: StageInstanceModel = StageInstanceModel(
+        return StageInstanceModel(
             name=self.excel_data.name,
             guid=editor_guid_generator.gen_stage_guid(self.excel_data.name),
             props=self.gen_prop_instances_in_stage(self.parse_props_in_stage()),
             actors=self.gen_actors_instances_in_stage(
-                self.parse_actors_in_stage(), self._editor_groups
+                self.parse_actors_in_stage(), self._actor_group
             ),
             spawners=self.spawners_in_stage,
         )
 
-        return ret
-
     ################################################################################################################################
     @property
-    def groups_in_stage(self) -> List[str]:
+    def groups_in_stage(self) -> List[ComplexName]:
         org_data: Optional[str] = self._data[EditorProperty.GROUPS_IN_STAGE]
         if org_data is None:
             return []
         ret = org_data.split(";")
-        return ret
+        return [ComplexName(name) for name in ret]
 
     ################################################################################################################################
     @property
@@ -245,10 +243,21 @@ class ExcelEditorStage:
         return ret
 
     ################################################################################################################################
-    def match_group(self, editor_group: ExcelEditorGroup) -> None:
-        for group in self.groups_in_stage:
-            if editor_group.equal(group):
-                self._editor_groups.append(editor_group)
-                break
+    def validate_group_matches(
+        self, global_group: Dict[str, List[ExcelEditorActor]]
+    ) -> Set[str]:
+
+        ret: Set[str] = set()
+
+        for complex_group_name in self.groups_in_stage:
+
+            if complex_group_name.group_name not in global_group:
+                assert False, f"Invalid group: {complex_group_name.group_name}"
+                continue
+
+            self._actor_group.extend(global_group[complex_group_name.group_name])
+            ret.add(complex_group_name.group_name)
+
+        return ret
 
     ################################################################################################################################

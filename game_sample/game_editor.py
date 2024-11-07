@@ -9,7 +9,6 @@ from game_sample.excel_data_world_system import ExcelDataWorldSystem
 from game_sample.excel_data_stage import ExcelDataStage
 from game_sample.excel_data_actor import ExcelDataActor
 from game_sample.actor_editor import ExcelEditorActor
-from game_sample.group_editor import ExcelEditorGroup
 from game_sample.stage_editor import ExcelEditorStage
 from game_sample.world_system_editor import ExcelEditorWorldSystem
 import pandas as pd
@@ -24,6 +23,9 @@ import game_sample.configuration as configuration
 from my_models.editor_models import EditorEntityType, EditorProperty
 from loguru import logger
 from my_models.config_models import GameAgentsConfigModel
+from my_format_string.complex_name import ComplexName
+from game_sample.editor_guid_generator import editor_guid_generator
+import game_sample.configuration
 
 
 ################################################################################################################
@@ -61,10 +63,10 @@ class ExcelEditorGame:
         self._cache_world_systems: Optional[List[ExcelEditorWorldSystem]] = None
         self._cache_players: Optional[List[ExcelEditorActor]] = None
         self._cache_actors: Optional[List[ExcelEditorActor]] = None
+        self._cache_actor_group: Optional[Dict[str, List[ExcelEditorActor]]] = None
         self._cache_stages: Optional[List[ExcelEditorStage]] = None
         self._cache_props: Optional[List[ExcelDataProp]] = None
         self._cache_configs: Optional[List[Any]] = None
-        self._cache_groups: Optional[List[ExcelEditorGroup]] = None
         self._cache_actor_spawns: Optional[List[ExcelEditorActorSpawn]] = None
         self._cache_spawners: Optional[List[ExcelEditorSpawner]] = None
 
@@ -123,12 +125,10 @@ class ExcelEditorGame:
                 if item[EditorProperty.TYPE] != EditorEntityType.PLAYER:
                     continue
 
-                if item[EditorProperty.NAME] not in self._actor_data_base:
-                    assert False, f"Invalid Player name: {item[EditorProperty.NAME]}"
-                    continue
-
+                assert str(item[EditorProperty.NAME]) in self._actor_data_base
                 self._cache_players.append(
                     ExcelEditorActor(
+                        ComplexName(str(item[EditorProperty.NAME])),
                         data=item,
                         actor_data_base=self._actor_data_base,
                         prop_data_base=self._prop_data_base,
@@ -139,53 +139,76 @@ class ExcelEditorGame:
 
     ############################################################################################################################
     @property
-    def editor_actors(self) -> List[ExcelEditorActor]:
-        if self._cache_actors is None:
-            self._cache_actors = []
-
-            for item in self._data:
-                if item[EditorProperty.TYPE] != EditorEntityType.ACTOR:
-                    continue
-
-                if item[EditorProperty.NAME] not in self._actor_data_base:
-                    assert False, f"Invalid Actor name: {item[EditorProperty.NAME]}"
-                    continue
-
-                self._cache_actors.append(
-                    ExcelEditorActor(
-                        data=item,
-                        actor_data_base=self._actor_data_base,
-                        prop_data_base=self._prop_data_base,
-                    )
-                )
-
-            # 扩展生成！
-            self._cache_actors.extend(self._extend_group())
-
-        return self._cache_actors
-
-    ############################################################################################################################
-    def _extend_group(self) -> List[ExcelEditorActor]:
-        ret: List[ExcelEditorActor] = []
-        for group in self.editor_groups:
-            ret.extend(group.generate_excel_actors)
-        return ret
+    def global_editor_group(self) -> Dict[str, List[ExcelEditorActor]]:
+        # 惰性初始化一次！
+        self.editor_actors
+        assert self._cache_actor_group is not None
+        return self._cache_actor_group
 
     ############################################################################################################################
     @property
-    def editor_groups(self) -> List[ExcelEditorGroup]:
+    def editor_actors(self) -> List[ExcelEditorActor]:
 
-        if self._cache_groups is None:
-            self._cache_groups = []
+        if self._cache_actors is None:
+
+            # 肯定是一起的。
+            assert self._cache_actor_group is None
+
+            # 第一次初始化
+            self._cache_actors = []
+            self._cache_actor_group = {}
+
             for item in self._data:
-                if item[EditorProperty.TYPE] != EditorEntityType.ACTOR_GROUP:
+                if (
+                    item[EditorProperty.TYPE] != EditorEntityType.ACTOR
+                    and item[EditorProperty.TYPE] != EditorEntityType.GROUP
+                ):
+                    # 只关注角色与组
                     continue
 
-                self._cache_groups.append(
-                    ExcelEditorGroup(item, self._actor_data_base, self._prop_data_base)
-                )
+                # 复杂的对象用于分析到底是什么
+                complex_name = ComplexName(str(item[EditorProperty.NAME]))
+                if complex_name.is_complex_name:
 
-        return self._cache_groups
+                    if not game_sample.configuration.EN_GROUP_FEATURE:
+                        continue  # 不支持组功能
+
+                    assert complex_name.actor_name in self._actor_data_base
+
+                    group_actors: List[ExcelEditorActor] = []
+
+                    for i in range(complex_name.group_count):
+                        group_editor_actor = ExcelEditorActor(
+                            complex_name=complex_name,
+                            data=item,
+                            actor_data_base=self._actor_data_base,
+                            prop_data_base=self._prop_data_base,
+                            group_generation_id=editor_guid_generator.gen_actor_guid(
+                                complex_name.actor_name
+                            ),
+                        )
+
+                        group_actors.append(group_editor_actor)
+
+                    self._cache_actors.extend(group_actors)
+                    self._cache_actor_group.setdefault(
+                        complex_name.group_name, []
+                    ).extend(group_actors)
+
+                else:
+
+                    assert item[EditorProperty.NAME] in self._actor_data_base
+                    assert complex_name.actor_name in self._actor_data_base
+                    self._cache_actors.append(
+                        ExcelEditorActor(
+                            complex_name=complex_name,
+                            data=item,
+                            actor_data_base=self._actor_data_base,
+                            prop_data_base=self._prop_data_base,
+                        )
+                    )
+
+        return self._cache_actors
 
     ############################################################################################################################
     @property
@@ -332,10 +355,26 @@ class ExcelEditorGame:
     ############################################################################################################################
     def gen_model(self) -> GameModel:
 
-        # 匹配组
-        for group in self.editor_groups:
+        # step1: 匹配角色与组 ----------------------------------------------
+
+        if game_sample.configuration.EN_GROUP_FEATURE:
+
+            duplicate_group_tracker: Dict[str, int] = {}
+
             for stage in self.editor_stages:
-                stage.match_group(group)
+                matched_group_names = stage.validate_group_matches(
+                    self.global_editor_group
+                )
+                for group_name in matched_group_names:
+                    duplicate_group_tracker[group_name] = (
+                        duplicate_group_tracker.get(group_name, 0) + 1
+                    )
+
+            for k, v in duplicate_group_tracker.items():
+                if v > 1:
+                    assert False, f"Invalid group name: {k}, {v}"
+
+        # ----------------------------------------------------------------
 
         # 匹配角色生成器与生成器
         self._match_actor_spawns_and_spawners(
@@ -348,8 +387,8 @@ class ExcelEditorGame:
             players=[
                 editor_actor.gen_instance() for editor_actor in self.editor_players
             ],
-            actors=[],
-            stages=[],
+            actors=[editor_actor.gen_instance() for editor_actor in self.editor_actors],
+            stages=[editor_stage.gen_instance() for editor_stage in self.editor_stages],
             world_systems=[
                 editor_world_system.gen_instance()
                 for editor_world_system in self.editor_world_systems
@@ -358,14 +397,6 @@ class ExcelEditorGame:
             about_game=self.about_game,
             version=self._version,
         )
-
-        # 添加角色的数据
-        for editor_actor in self.editor_actors:
-            ret.actors.append(editor_actor.gen_instance())
-
-        # 添加场景的数据
-        for editor_stage in self.editor_stages:
-            ret.stages.append(editor_stage.gen_instance())
 
         # 验证模型
         self._validate_model(ret)

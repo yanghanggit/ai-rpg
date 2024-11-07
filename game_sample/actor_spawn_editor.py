@@ -9,6 +9,7 @@ from game_sample.excel_data_actor import ExcelDataActor
 from my_models.editor_models import EditorEntityType, EditorProperty
 from game_sample.actor_editor import ExcelEditorActor
 from loguru import logger
+from my_format_string.complex_name import ComplexName
 
 
 class ExcelEditorActorSpawn:
@@ -30,6 +31,7 @@ class ExcelEditorActorSpawn:
 
         # 包一个这个类
         self._prototype_editor_actor: ExcelEditorActor = ExcelEditorActor(
+            ComplexName(self.original_name),
             data=data,
             actor_data_base=actor_data_base,
             prop_data_base=prop_data_base,

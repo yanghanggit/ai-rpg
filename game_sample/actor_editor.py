@@ -9,25 +9,26 @@ import game_sample.utils
 from game_sample.excel_data_actor import ExcelDataActor
 from game_sample.editor_guid_generator import editor_guid_generator
 from my_models.entity_models import (
-    # EditorEntityType,
-    # EditorProperty,
     ActorModel,
     AttributesIndex,
     ActorInstanceModel,
     PropInstanceModel,
 )
 from my_models.editor_models import EditorEntityType, EditorProperty
+import my_format_string.attrs_format_string
+from my_format_string.complex_name import ComplexName
 
 
 class ExcelEditorActor:
 
     def __init__(
         self,
+        complex_name: ComplexName,
         data: Any,
         actor_data_base: Dict[str, ExcelDataActor],
         prop_data_base: Dict[str, ExcelDataProp],
-        editor_group: Any = None,
-        group_gen_guid: int = 0,
+        # editor_group: Any = None,
+        group_generation_id: int = 0,
         editor_spawn: Any = None,
     ) -> None:
         assert data is not None
@@ -35,18 +36,18 @@ class ExcelEditorActor:
         assert prop_data_base is not None
 
         #
+        self._complex_name: ComplexName = complex_name
         self._data: Any = data
         self._actor_data_base: Dict[str, ExcelDataActor] = actor_data_base
         self._prop_data_base: Dict[str, ExcelDataProp] = prop_data_base
-        self._editor_group = editor_group
-        self._group_gen_guid = group_gen_guid
+        self._guid = group_generation_id
         self._editor_spawn = editor_spawn
 
         if self.type not in [
             EditorEntityType.PLAYER,
             EditorEntityType.ACTOR,
-            EditorEntityType.ACTOR_GROUP,
             EditorEntityType.ACTOR_SPAWN,
+            EditorEntityType.GROUP,
         ]:
             assert False, f"Invalid actor type: {self.type}"
 
@@ -54,31 +55,17 @@ class ExcelEditorActor:
 
     @property
     def name(self) -> str:
-
-        if self._editor_group is not None:
-            from game_sample.group_editor import ExcelEditorGroup
-
-            assert self._group_gen_guid > 0
-            return f"""{cast(ExcelEditorGroup, self._editor_group).actor_name}#{self._group_gen_guid}"""
-
-        if self._editor_spawn is not None:
-            from game_sample.actor_spawn_editor import ExcelEditorActorSpawn
-
-            return cast(ExcelEditorActorSpawn, self._editor_spawn).actor_name
-
-        assert "#" not in self._data[EditorProperty.NAME]
-        assert ":" not in self._data[EditorProperty.NAME]
-        return str(self._data[EditorProperty.NAME])
+        return self._complex_name.source_name
 
     #################################################################################################################################
     @property
     def data_base_name(self) -> str:
-        if self._editor_group is not None:
-            from game_sample.group_editor import ExcelEditorGroup
+        return self._complex_name.actor_name
 
-            return cast(ExcelEditorGroup, self._editor_group).actor_name
-
-        return self.name
+    #################################################################################################################################
+    @property
+    def actor_with_guid(self) -> str:
+        return f"""{self.data_base_name}#{self._resolve_guid()}"""
 
     #################################################################################################################################
     @property
@@ -89,7 +76,6 @@ class ExcelEditorActor:
     #################################################################################################################################
     @property
     def type(self) -> str:
-        assert self._data is not None
         return cast(str, self._data[EditorProperty.TYPE])
 
     #################################################################################################################################
@@ -98,7 +84,7 @@ class ExcelEditorActor:
         assert self._data is not None
         data = cast(str, self._data[EditorProperty.ATTRIBUTES])
         assert "," in data, f"raw_string_val: {data} is not valid."
-        values = [int(attr) for attr in data.split(",")]
+        values = my_format_string.attrs_format_string.from_string_to_int_attrs(data)
         if len(values) < AttributesIndex.MAX.value:
             values.extend([0] * (AttributesIndex.MAX.value - len(values)))
         return values
@@ -157,7 +143,7 @@ class ExcelEditorActor:
         return ret
 
     #################################################################################################################################
-    # 核心函数！！！
+
     def gen_model(self) -> ActorModel:
 
         assert self.excel_data is not None
@@ -177,17 +163,16 @@ class ExcelEditorActor:
     def gen_instance(self) -> ActorInstanceModel:
         assert self.excel_data is not None
         ret: ActorInstanceModel = ActorInstanceModel(
-            name=self.name,
-            guid=0,
+            name="",
+            guid=self._resolve_guid(),
             props=[],
             actor_current_using_prop=self.actor_current_using_prop,
         )
 
-        if self._editor_group is not None:
-            assert self._group_gen_guid > 0
-            ret.guid = self._group_gen_guid
+        if self._complex_name.is_complex_name:
+            ret.name = self.actor_with_guid
         else:
-            ret.guid = editor_guid_generator.gen_actor_guid(self.name)
+            ret.name = self.name
 
         for tp in self.parse_actor_prop():
             ret.props.append(
@@ -198,6 +183,20 @@ class ExcelEditorActor:
                 )
             )
 
+        # test
+        if "#" in ret.name:
+            assert ret.name == self.actor_with_guid, f"Invalid actor name: {ret.name}"
+        else:
+            assert ret.name in self._actor_data_base, f"Invalid actor name: {ret.name}"
+
         return ret
+
+    #################################################################################################################################
+    def _resolve_guid(self) -> int:
+        if self._guid > 0:
+            return self._guid
+
+        self._guid = editor_guid_generator.gen_actor_guid(self.data_base_name)
+        return self._guid
 
     #################################################################################################################################

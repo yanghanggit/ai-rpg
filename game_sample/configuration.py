@@ -90,5 +90,5 @@ assert (
 ), f"找不到目录: {GAME_SAMPLE_OUT_PUT_GAME_DIR}"
 
 
-EN_ACTOR_GROUP_FEATURE: bool = False
+EN_GROUP_FEATURE: bool = True
 EN_SPAWNER_FEATURE: bool = False

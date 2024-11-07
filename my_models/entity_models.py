@@ -1,4 +1,4 @@
-from typing import List, Dict, List, Any
+from typing import List, TypedDict
 from pydantic import BaseModel
 from enum import IntEnum
 
@@ -25,11 +25,15 @@ class ActorInstanceModel(BaseModel):
     suffix: str = ""
 
 
+class StageActorInstanceProxy(TypedDict, total=True):
+    name: str
+
+
 class StageInstanceModel(BaseModel):
     name: str
     guid: int
     props: List[PropInstanceModel]
-    actors: List[Dict[str, Any]]
+    actors: List[StageActorInstanceProxy]
     spawners: List[str]
 
 

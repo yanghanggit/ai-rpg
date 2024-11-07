@@ -11,7 +11,7 @@ from my_components.components import (
     WorldComponent,
     StageSpawnerComponent,
 )
-from typing import Dict, final, override, List
+from typing import final, override, List
 from rpg_game.rpg_game import RPGGame
 from my_models.entity_models import (
     GameModel,
@@ -163,9 +163,9 @@ class SaveGameResourceSystem(ExecuteProcessor):
 
         actor_entities = self._context.get_actors_in_stage(stage_entity)
         for actor_entity in actor_entities:
-            data: Dict[str, str] = {}
-            data["name"] = self._context.safe_get_entity_name(actor_entity)
-            ret.actors.append(data)
+            ret.actors.append(
+                {"name": self._context.safe_get_entity_name(actor_entity)}
+            )
 
         return ret
 

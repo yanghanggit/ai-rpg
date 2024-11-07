@@ -15,6 +15,7 @@ from my_models.entity_models import (
     PropInstanceModel,
     StageModel,
     StageInstanceModel,
+    StageActorInstanceProxy,
 )
 import game_sample.configuration as configuration
 from my_models.editor_models import EditorEntityType, EditorProperty
@@ -182,8 +183,8 @@ class ExcelEditorStage:
     ################################################################################################################################
     def gen_actors_instances_in_stage(
         self, actors: List[ExcelDataActor], actors_in_groups: List[ExcelEditorActor]
-    ) -> List[Dict[str, str]]:
-        ret: List[Dict[str, str]] = []
+    ) -> List[StageActorInstanceProxy]:
+        ret: List[StageActorInstanceProxy] = []
 
         for actor in actors:
             ret.append({"name": actor.name})

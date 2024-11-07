@@ -338,7 +338,7 @@ class ExcelEditorGame:
             if v > 1:
                 assert False, f"Invalid group name: {k}, {v}"
 
-        # 准备返回数据，但是 actors 与 stages 需要后续加工
+        # step3: 准备返回数据，但是 actors 与 stages 需要后续加工
         ret: GameModel = GameModel(
             save_round=0,
             players=[
@@ -355,26 +355,67 @@ class ExcelEditorGame:
             version=self._version,
         )
 
-        # 验证模型
+        # step4: 验证模型
         self._validate_model(ret)
         return ret
 
     ############################################################################################################################
     def _validate_model(self, model: GameModel) -> None:
 
-        # 验证角色，如果场景里不出现就不算
-        validated_player_names: Set[str] = set()
-
+        # 验证角色，如果场景里不出现就是错误
+        confirmed_player_names: Set[str] = set()
         for player in model.players:
             for stage in model.stages:
                 for actor in stage.actors:
                     if actor["name"] == player.name:
-                        validated_player_names.add(player.name)
+                        confirmed_player_names.add(player.name)
 
-        if len(validated_player_names) != len(model.players):
-            assert False, f"Invalid players: {model.players}, {validated_player_names}"
+        if len(confirmed_player_names) != len(model.players):
+            assert False, f"Invalid players: {model.players}, {confirmed_player_names}"
 
-        # 验证其他的。，。
+        # 验证孵化器，同时出现在2个场景里就是不对的
+        validated_spawner_tracker: Dict[str, int] = {}
+        for unqiue_data_base_spawn in model.database.spawners:
+            for stage in model.stages:
+                for spawner_in_stage in stage.spawners:
+                    if unqiue_data_base_spawn.name == spawner_in_stage:
+                        validated_spawner_tracker[unqiue_data_base_spawn.name] = (
+                            validated_spawner_tracker.get(
+                                unqiue_data_base_spawn.name, 0
+                            )
+                            + 1
+                        )
+        for k, v in validated_spawner_tracker.items():
+            if v > 1:
+                assert False, f"Invalid spawner name: {k}, {v}"
+
+        # 一个角色在不同的场景出现就是错误的
+        actor_frequency_count: Dict[str, int] = {}
+        for stage in model.stages:
+            for actor in stage.actors:
+                actor_frequency_count[actor["name"]] = (
+                    actor_frequency_count.get(actor["name"], 0) + 1
+                )
+
+        for k, v in actor_frequency_count.items():
+            if v > 1:
+                assert False, f"Invalid actor name: {k}, {v}"
+
+        # actor instance 如果不在场景里出现，就必须在database的spawner里出现
+        for actor2 in model.players + model.actors:
+            if actor2.name in actor_frequency_count:
+                continue
+
+            actor_found_in_spawner = False
+            for data_base_spawner in model.database.spawners:
+                if actor2.name in data_base_spawner.actor_prototypes:
+                    actor_found_in_spawner = True
+                    logger.debug(
+                        f"actor_found_in_spawner: {actor2.name}, {data_base_spawner.name}"
+                    )
+                    break
+
+            assert actor_found_in_spawner, f"Invalid actor name: {actor2.name}"
 
     ############################################################################################################################
     def _data_base(self) -> DataBaseModel:

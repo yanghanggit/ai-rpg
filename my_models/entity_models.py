@@ -76,8 +76,7 @@ class WorldSystemModel(BaseModel):
 
 class SpawnerModel(BaseModel):
     name: str
-    spawn: List[str]
-    actor_prototype: List[ActorInstanceModel]
+    actor_prototypes: List[str]
 
 
 class DataBaseModel(BaseModel):

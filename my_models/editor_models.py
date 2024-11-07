@@ -8,8 +8,6 @@ class EditorEntityType(StrEnum):
     ACTOR = "Actor"
     STAGE = "Stage"
     ABOUT_GAME = "AboutGame"
-    # ACTOR_GROUP = "ActorGroup"
-    ACTOR_SPAWN = "ActorSpawn"
     SPAWNER = "Spawner"
     GROUP = "Group"
 

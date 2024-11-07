@@ -46,29 +46,46 @@ class SpawnerSystem(ExecuteProcessor):
 
         ret: List[Entity] = []
 
-        for actor_prototype in spawner_data.actor_prototype:
+        for actor_instance_as_prototype_name in spawner_data.actor_prototypes:
+
+            actor_intance_as_prototype = self._game._game_resource.get_actor_instance(
+                actor_instance_as_prototype_name
+            )
+            if actor_intance_as_prototype is None:
+                assert (
+                    False
+                ), f"actor_prototype.name: {actor_instance_as_prototype_name} not found"
+                continue
+
             actor_model = self._game._game_resource.data_base.get_actor(
-                actor_prototype.name
+                self._extract_base_actor_name(actor_instance_as_prototype_name)
             )
             if actor_model is None:
-                assert False, f"actor_prototype.name: {actor_prototype.name} not found"
+                assert (
+                    False
+                ), f"actor_prototype.name: {actor_instance_as_prototype_name} not found"
                 continue
 
             # 必须深拷贝，否则会出问题
-            actor_prototype_deep_copy = copy.deepcopy(actor_prototype)
+            actor_intance_deep_copy = copy.deepcopy(actor_intance_as_prototype)
             # 生成一个guid
             gen_guid = self._gen_actor_guid()
             # 生成一个新的名字 + 修改名字和guid
-            actor_prototype_deep_copy.name = f"""{actor_prototype.name}#{gen_guid}"""
-            actor_prototype_deep_copy.guid = gen_guid
+            actor_intance_deep_copy.name = f"""{self._extract_base_actor_name(actor_instance_as_prototype_name)}#{gen_guid}"""
+            actor_intance_deep_copy.guid = gen_guid
             # 生成一个新的entity
             spawned_actor_entity = self._game.create_actor_entity_at_runtime(
-                actor_prototype_deep_copy, actor_model, stage_entity
+                actor_intance_deep_copy, actor_model, stage_entity
             )
             if spawned_actor_entity is not None:
                 ret.append(spawned_actor_entity)
 
         return ret
+
+    ######################################################################################################################################################
+    def _extract_base_actor_name(self, actor_instance_name: str) -> str:
+        assert "#" in actor_instance_name
+        return actor_instance_name.split("#")[0]
 
     ######################################################################################################################################################
     def _gen_actor_guid(

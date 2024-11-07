@@ -143,7 +143,7 @@ class RPGGameResource:
         self._data_base = DataBase(self._model.database)
 
         # 运行时模型，用于后续的存储时候用。
-        self._runtime_model = self._model.model_copy()
+        self._runtime_model = self._model.model_copy(deep=True)
 
         # load 相关的数据结构
         self._load_dir: Optional[Path] = None
@@ -188,6 +188,13 @@ class RPGGameResource:
     @property
     def actor_instances(self) -> List[ActorInstanceModel]:
         return self._model.actors
+
+    ###############################################################################################################################################
+    def get_actor_instance(self, name: str) -> Optional[ActorInstanceModel]:
+        for actor in self.actor_instances:
+            if actor.name == name:
+                return actor
+        return None
 
     ###############################################################################################################################################
     @property

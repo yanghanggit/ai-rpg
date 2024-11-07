@@ -17,7 +17,6 @@ from my_models.entity_models import (
     GameModel,
     DataBaseModel,
 )
-from game_sample.actor_spawn_editor import ExcelEditorActorSpawn
 from game_sample.spawner_editor import ExcelEditorSpawner
 import game_sample.configuration as configuration
 from my_models.editor_models import EditorEntityType, EditorProperty
@@ -67,7 +66,6 @@ class ExcelEditorGame:
         self._cache_stages: Optional[List[ExcelEditorStage]] = None
         self._cache_props: Optional[List[ExcelDataProp]] = None
         self._cache_configs: Optional[List[Any]] = None
-        self._cache_actor_spawns: Optional[List[ExcelEditorActorSpawn]] = None
         self._cache_spawners: Optional[List[ExcelEditorSpawner]] = None
 
         # 构建场景的图关系。
@@ -85,9 +83,6 @@ class ExcelEditorGame:
             self._parse_props_from_actors(self.editor_players)
             + self._parse_props_from_actors(self.editor_actors)
             + self._parse_props_from_stages(self.editor_stages)
-            + self._parse_props_from_actors(
-                self._gather_editor_actors_from_spawns(self.editor_actor_spawns)
-            )
         )
 
         self._cache_props = list(set(all_props))
@@ -211,34 +206,11 @@ class ExcelEditorGame:
         return self._cache_actors
 
     ############################################################################################################################
-    @property
-    def editor_actor_spawns(self) -> List[ExcelEditorActorSpawn]:
-
-        if not configuration.EN_SPAWNER_FEATURE:
-            return []
-
-        if self._cache_actor_spawns is None:
-            self._cache_actor_spawns = []
-            for item in self._data:
-                if item[EditorProperty.TYPE] != EditorEntityType.ACTOR_SPAWN:
-                    continue
-
-                self._cache_actor_spawns.append(
-                    ExcelEditorActorSpawn(
-                        item,
-                        self._actor_data_base,
-                        self._prop_data_base,
-                    )
-                )
-
-        return self._cache_actor_spawns
-
-    ############################################################################################################################
 
     @property
     def editor_spawners(self) -> List[ExcelEditorSpawner]:
 
-        if not configuration.EN_SPAWNER_FEATURE:
+        if not game_sample.configuration.EN_SPAWNER_FEATURE:
             return []
 
         if self._cache_spawners is None:
@@ -256,15 +228,6 @@ class ExcelEditorGame:
                 )
 
         return self._cache_spawners
-
-    ############################################################################################################################
-    def _gather_editor_actors_from_spawns(
-        self, editor_actor_spawns: List[ExcelEditorActorSpawn]
-    ) -> List[ExcelEditorActor]:
-        ret: List[ExcelEditorActor] = []
-        for editor_actor_spawn in editor_actor_spawns:
-            ret.append(editor_actor_spawn.prototype_editor_actor)
-        return ret
 
     ############################################################################################################################
     @property
@@ -342,24 +305,12 @@ class ExcelEditorGame:
         return ret
 
     ############################################################################################################################
-    def _match_actor_spawns_and_spawners(
-        self,
-        editor_actor_spawns: List[ExcelEditorActorSpawn],
-        editor_spawners: List[ExcelEditorSpawner],
-    ) -> None:
-
-        for spawner in editor_spawners:
-            for actor_spawn in editor_actor_spawns:
-                spawner.match_actor_spawner(actor_spawn)
-
-    ############################################################################################################################
     def gen_model(self) -> GameModel:
 
+        duplicate_group_tracker: Dict[str, int] = {}
+
         # step1: 匹配角色与组 ----------------------------------------------
-
         if game_sample.configuration.EN_GROUP_FEATURE:
-
-            duplicate_group_tracker: Dict[str, int] = {}
 
             for stage in self.editor_stages:
                 matched_group_names = stage.validate_group_matches(
@@ -370,16 +321,22 @@ class ExcelEditorGame:
                         duplicate_group_tracker.get(group_name, 0) + 1
                     )
 
-            for k, v in duplicate_group_tracker.items():
-                if v > 1:
-                    assert False, f"Invalid group name: {k}, {v}"
+        # step2: 匹配角色生成器与生成器 ----------------------------------------------
+        if game_sample.configuration.EN_SPAWNER_FEATURE:
 
-        # ----------------------------------------------------------------
+            for spawner in self.editor_spawners:
+                gather_valid_spawner_groups = spawner.gather_valid_spawner_groups(
+                    self.global_editor_group
+                )
+                for group_name in gather_valid_spawner_groups:
+                    duplicate_group_tracker[group_name] = (
+                        duplicate_group_tracker.get(group_name, 0) + 1
+                    )
 
-        # 匹配角色生成器与生成器
-        self._match_actor_spawns_and_spawners(
-            self.editor_actor_spawns, self.editor_spawners
-        )
+        # 出问题就报警
+        for k, v in duplicate_group_tracker.items():
+            if v > 1:
+                assert False, f"Invalid group name: {k}, {v}"
 
         # 准备返回数据，但是 actors 与 stages 需要后续加工
         ret: GameModel = GameModel(
@@ -433,11 +390,7 @@ class ExcelEditorGame:
 
         # 生成唯一的actor模型, 用于生成数据库
         unique_actor_model: Dict[str, ExcelEditorActor] = {}
-        for data in (
-            self.editor_players
-            + self.editor_actors
-            + self._gather_editor_actors_from_spawns(self.editor_actor_spawns)
-        ):
+        for data in self.editor_players + self.editor_actors:
             if data.data_base_name in unique_actor_model:
                 continue
             unique_actor_model[data.data_base_name] = data
@@ -460,11 +413,7 @@ class ExcelEditorGame:
 
         model = GameAgentsConfigModel(actors=[], stages=[], world_systems=[])
 
-        for actor in (
-            self.editor_players
-            + self.editor_actors
-            + self._gather_editor_actors_from_spawns(self.editor_actor_spawns)
-        ):
+        for actor in self.editor_players + self.editor_actors:
             model.actors.append({actor.name: f"{actor.codename}_agent.py"})
 
         for stage in self.editor_stages:

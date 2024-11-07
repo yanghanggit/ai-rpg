@@ -46,7 +46,6 @@ class ExcelEditorActor:
         if self.type not in [
             EditorEntityType.PLAYER,
             EditorEntityType.ACTOR,
-            EditorEntityType.ACTOR_SPAWN,
             EditorEntityType.GROUP,
         ]:
             assert False, f"Invalid actor type: {self.type}"

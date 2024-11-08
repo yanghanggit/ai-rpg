@@ -10,7 +10,7 @@ from my_components.components import (
     RoundEventsComponent,
 )
 from extended_systems.file_system import FileSystem
-from extended_systems.code_name_component_system import CodeNameComponentSystem
+from extended_systems.query_component_system import QueryComponentSystem
 from my_agent.lang_serve_agent_system import LangServeAgentSystem
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from typing import Optional, Dict, Set
@@ -26,7 +26,7 @@ class RPGEntitasContext(Context):
         self,
         file_system: FileSystem,
         langserve_agent_system: LangServeAgentSystem,
-        codename_component_system: CodeNameComponentSystem,
+        codename_component_system: QueryComponentSystem,
         chaos_engineering_system: IChaosEngineering,
     ) -> None:
 
@@ -40,7 +40,7 @@ class RPGEntitasContext(Context):
         self._langserve_agent_system: LangServeAgentSystem = langserve_agent_system
 
         # 代码名字组件系统（方便快速查找用）
-        self._codename_component_system: CodeNameComponentSystem = (
+        self._codename_component_system: QueryComponentSystem = (
             codename_component_system
         )
 
@@ -78,7 +78,7 @@ class RPGEntitasContext(Context):
 
     #############################################################################################################################
     def get_entity_by_name(self, name: str) -> Optional[Entity]:
-        comp_class = self._codename_component_system.get_code_name_component_class(name)
+        comp_class = self._codename_component_system.get_query_component_class(name)
         if comp_class is None:
             return None
         find_entities = self.get_group(Matcher(comp_class)).entities

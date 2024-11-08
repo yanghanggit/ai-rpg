@@ -216,7 +216,7 @@ class RPGGame(BaseGame):
 
         # 添加扩展子系统的功能: CodeName
         code_name_component_class = (
-            context._codename_component_system.register_code_name_component_class(
+            context._codename_component_system.register_query_component_class(
                 world_system_model.name,
                 f"""{world_system_model.codename}{world_system_instance.guid}""",
             )
@@ -346,7 +346,7 @@ class RPGGame(BaseGame):
 
         # 添加扩展子系统: CodeName
         code_name_component_class = (
-            context._codename_component_system.register_code_name_component_class(
+            context._codename_component_system.register_query_component_class(
                 actor_instance.name, f"""{actor_model.codename}{actor_instance.guid}"""
             )
         )
@@ -519,7 +519,7 @@ class RPGGame(BaseGame):
 
         # 添加子系统：CodeName
         code_name_component_class = (
-            context._codename_component_system.register_code_name_component_class(
+            context._codename_component_system.register_query_component_class(
                 stage_model.name, stage_model.codename
             )
         )

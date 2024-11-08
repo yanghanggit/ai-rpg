@@ -7,7 +7,7 @@ from rpg_game.rpg_entitas_context import RPGEntitasContext
 from extended_systems.file_system import FileSystem
 from typing import Optional
 from my_agent.lang_serve_agent_system import LangServeAgentSystem
-from extended_systems.code_name_component_system import CodeNameComponentSystem
+from extended_systems.query_component_system import QueryComponentSystem
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from chaos_engineering.empty_engineering_system import EmptyChaosEngineeringSystem
 from game_sample.game_sample_chaos_engineering_system import (
@@ -140,8 +140,8 @@ def _create_entitas_context(
         LangServeAgentSystem(
             "LangServeAgentSystem Because it involves net operations, an independent system is more convenient."
         ),
-        CodeNameComponentSystem(
-            "CodeNameComponentSystem, Build components by codename for special purposes"
+        QueryComponentSystem(
+            "QueryComponentSystem Because it involves query operations, an independent system is more convenient."
         ),
         chaos_engineering_system,
     )

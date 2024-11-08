@@ -3,7 +3,7 @@ from typing import Dict, List, Optional, Set, cast, final
 from langchain_core.messages import HumanMessage, AIMessage
 from pathlib import Path
 from my_agent.lang_serve_agent import LangServeAgent
-from my_agent.remote_runnable_wrapper import RemoteRunnableWrapper
+from my_agent.remote_runnable_connector import RemoteRunnableConnector
 from my_models.agent_models import (
     AgentMessageType,
     AgentMessageModel,
@@ -18,7 +18,7 @@ class LangServeAgentSystem:
         self._name: str = name
         self._agents: Dict[str, LangServeAgent] = {}
         self._runtime_dir: Optional[Path] = None
-        self._remote_runnable_wrappers: Dict[str, RemoteRunnableWrapper] = {}
+        self._remote_executable_connectors: Dict[str, RemoteRunnableConnector] = {}
 
     ################################################################################################################################################################################
     ### 必须设置根部的执行路行
@@ -39,21 +39,14 @@ class LangServeAgentSystem:
             logger.error(f"register_agent: {agent_name} has been registered.")
             return self._agents[agent_name]
 
-        remote_runnable = self._remote_runnable_wrappers.get(url, None)
+        remote_runnable = self._remote_executable_connectors.get(url, None)
         if remote_runnable is None:
-            remote_runnable = RemoteRunnableWrapper(url)
-            self._remote_runnable_wrappers[url] = remote_runnable
+            remote_runnable = RemoteRunnableConnector(url)
+            self._remote_executable_connectors[url] = remote_runnable
 
         new_agent = LangServeAgent(agent_name, remote_runnable)
         self._agents[agent_name] = new_agent
         return new_agent
-
-    ################################################################################################################################################################################
-    def connect_agent(self, agent_name: str) -> bool:
-        agent = self.get_agent(agent_name)
-        if agent is not None:
-            return agent._remote_runnable_wrapper.initialize_connection()
-        return False
 
     ################################################################################################################################################################################
     def get_agent(self, agent_name: str) -> Optional[LangServeAgent]:
@@ -149,7 +142,7 @@ class LangServeAgentSystem:
             return None
 
         ret: AgentChatHistoryDumpModel = AgentChatHistoryDumpModel(
-            name=agent_name, url=agent._remote_runnable_wrapper._url, chat_history=[]
+            name=agent_name, url=agent.remote_connector.url, chat_history=[]
         )
 
         for chat in agent._chat_history:

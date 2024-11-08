@@ -1,5 +1,7 @@
-from entitas import Matcher, ExecuteProcessor  # type: ignore
-from typing import final, override
+import asyncio
+import time
+from entitas import Matcher, Entity, ExecuteProcessor  # type: ignore
+from typing import Any, Coroutine, Set, final, override, List
 from my_components.components import (
     WorldComponent,
     StageComponent,
@@ -20,17 +22,36 @@ class AgentConnectSystem(ExecuteProcessor):
     ###############################################################################################################################################
     @override
     def execute(self) -> None:
-        self._connect_all_agents()
+        pass
 
     ###############################################################################################################################################
-    def _connect_all_agents(self) -> None:
+    @override
+    async def a_execute1(self) -> None:
 
+        # 准备所有未连接的实体
         unconnected_entities = self._context.get_group(
             Matcher(
                 any_of=[WorldComponent, StageComponent, ActorComponent],
                 none_of=[AgentConnectionFlagComponent],
             )
         ).entities.copy()
+
+        # 创建任务来并发连接所有未连接的实体
+        connect_task = self._initialize_agent_connections(unconnected_entities)
+        start_time = time.time()
+        await asyncio.gather(*connect_task)
+        end_time = time.time()
+        logger.debug(f"AgentConnectSystem.gather:{end_time - start_time:.2f} seconds")
+
+        # 连接完成后，更新所有已连接的实体
+        self._process_agent_connections(unconnected_entities)
+
+    ###############################################################################################################################################
+    def _initialize_agent_connections(
+        self, unconnected_entities: Set[Entity]
+    ) -> List[Coroutine[Any, Any, Any]]:
+
+        ret: List[Coroutine[Any, Any, Any]] = []
 
         for entity in unconnected_entities:
 
@@ -45,8 +66,23 @@ class AgentConnectSystem(ExecuteProcessor):
             if agent.remote_runnable is not None:
                 continue
 
-            if self._context._langserve_agent_system.connect_agent(safe_name):
+            ret.append(agent.remote_connector.initialize_connection())
+
+        return ret
+
+    ###############################################################################################################################################
+    def _process_agent_connections(self, unconnected_entities: Set[Entity]) -> None:
+        for entity in unconnected_entities:
+            safe_name = self._context.safe_get_entity_name(entity)
+            if safe_name == "":
+                continue
+            agent = self._context._langserve_agent_system.get_agent(safe_name)
+            if agent is None:
+                continue
+            if agent.remote_runnable is not None:
                 entity.replace(AgentConnectionFlagComponent, safe_name)
+                logger.debug(
+                    f"AgentConnectSystem._process_agent_connections:{safe_name} connected"
+                )
 
-
-###############################################################################################################################################
+    ###############################################################################################################################################

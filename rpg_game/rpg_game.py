@@ -670,12 +670,12 @@ class RPGGame(BaseGame):
             if safe_name == "":
                 continue
 
-            actor_archives = game_resource.get_actor_archives(safe_name)
+            actor_archives = game_resource.retrieve_actor_archives(safe_name)
             extended_systems.file_system_util.load_actor_archive_files(
                 context._file_system, safe_name, actor_archives
             )
 
-            stage_archives = game_resource.get_stage_archives(safe_name)
+            stage_archives = game_resource.retrieve_stage_archives(safe_name)
             extended_systems.file_system_util.load_stage_archive_files(
                 context._file_system, safe_name, stage_archives
             )

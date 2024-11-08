@@ -32,11 +32,6 @@ class AgentConnectSystem(ExecuteProcessor):
             )
         ).entities.copy()
 
-        # if len(unconnected_entities) > 0:
-        #     logger.debug(
-        #         f"AgentConnectSystem unconnected_entities: {unconnected_entities}"
-        #     )
-
         for entity in unconnected_entities:
 
             safe_name = self._context.safe_get_entity_name(entity)
@@ -51,8 +46,6 @@ class AgentConnectSystem(ExecuteProcessor):
                 continue
 
             if self._context._langserve_agent_system.connect_agent(safe_name):
-                # if not entity.has(AgentConnectionFlagComponent):
-                #     entity.add(AgentConnectionFlagComponent, safe_name)
                 entity.replace(AgentConnectionFlagComponent, safe_name)
 
 

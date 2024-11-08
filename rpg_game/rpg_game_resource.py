@@ -215,11 +215,11 @@ class RPGGameResource:
         return self._load_chat_history_dict.get(name, None)
 
     ###############################################################################################################################################
-    def get_actor_archives(self, name: str) -> List[ActorArchiveFileModel]:
+    def retrieve_actor_archives(self, name: str) -> List[ActorArchiveFileModel]:
         return self._load_actor_archive_dict.get(name, [])
 
     ###############################################################################################################################################
-    def get_stage_archives(self, name: str) -> List[StageArchiveFileModel]:
+    def retrieve_stage_archives(self, name: str) -> List[StageArchiveFileModel]:
         return self._load_stage_archive_dict.get(name, [])
 
     ###############################################################################################################################################

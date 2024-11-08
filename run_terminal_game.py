@@ -12,7 +12,7 @@ from my_models.player_models import PlayerProxyModel
 
 
 @dataclass
-class TerminalRunOption:
+class TerminalGameOption:
     login_player_name: str
     default_game_name: str
     check_game_resource_version: str
@@ -20,7 +20,7 @@ class TerminalRunOption:
     new_game: bool = True
 
 
-async def terminal_run(option: TerminalRunOption) -> None:
+async def run_terminal_game(option: TerminalGameOption) -> None:
 
     # 输入要进入的世界名称
     game_name = input(
@@ -197,11 +197,11 @@ async def terminal_player_input(game: RPGGame, player_proxy: PlayerProxy) -> Non
         elif usr_input == "/check" or usr_input == "/c":
             terminal_player_input_check(game, player_proxy)
 
-        elif usr_input == "/get_actor_archives" or usr_input == "/gaa":
-            terminal_player_input_get_actor_archives(game, player_proxy)
+        elif usr_input == "/retrieve_actor_archives" or usr_input == "/raa":
+            terminal_player_input_retrieve_actor_archives(game, player_proxy)
 
-        elif usr_input == "/get_stage_archives" or usr_input == "/gsa":
-            terminal_player_input_get_stage_archives(game, player_proxy)
+        elif usr_input == "/retrieve_stage_archives" or usr_input == "/rsa":
+            terminal_player_input_retrieve_stage_archives(game, player_proxy)
 
         else:
             rpg_game.rpg_game_helper.add_player_command(game, player_proxy, usr_input)
@@ -224,7 +224,7 @@ def terminal_player_input_check(game_name: RPGGame, player_proxy: PlayerProxy) -
 
 
 #######################################################################################################################################
-def terminal_player_input_get_actor_archives(
+def terminal_player_input_retrieve_actor_archives(
     game_name: RPGGame, player_proxy: PlayerProxy
 ) -> None:
     get_actor_archives_model = (
@@ -243,7 +243,7 @@ def terminal_player_input_get_actor_archives(
 
 
 #######################################################################################################################################
-def terminal_player_input_get_stage_archives(
+def terminal_player_input_retrieve_stage_archives(
     game_name: RPGGame, player_proxy: PlayerProxy
 ) -> None:
     get_stage_archives_model = (
@@ -286,10 +286,10 @@ if __name__ == "__main__":
     log_start_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     logger.add(f"logs/{log_start_time}.log", level="DEBUG")
 
-    option = TerminalRunOption(
+    option = TerminalGameOption(
         login_player_name="北京柏林互动科技有限公司",
         default_game_name="World1",
         check_game_resource_version=rpg_game_config.CHECK_GAME_RESOURCE_VERSION,
         show_client_message_count=20,
     )
-    asyncio.run(terminal_run(option))  # todo
+    asyncio.run(run_terminal_game(option))  # todo

@@ -5,7 +5,11 @@ from my_components.action_components import (
     BroadcastAction,
     WhisperAction,
 )
-from my_components.components import PlayerComponent, ActorComponent
+from my_components.components import (
+    PlayerComponent,
+    ActorComponent,
+    AgentConnectionFlagComponent,
+)
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from my_agent.agent_task import AgentTask
 from typing import Dict, List, final
@@ -69,7 +73,11 @@ class PreConversationActionSystem(ReactiveProcessor):
     #################################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(PlayerComponent) and entity.has(ActorComponent)
+        return (
+            entity.has(PlayerComponent)
+            and entity.has(ActorComponent)
+            and entity.has(AgentConnectionFlagComponent)
+        )
 
     #################################################################################################################################################
     @override

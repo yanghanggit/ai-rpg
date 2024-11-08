@@ -22,8 +22,8 @@ class APIRoutesConfigModel(BaseModel):
     WATCH: str = ""
     CHECK: str = ""
     FETCH_MESSAGES: str = ""
-    GET_ACTOR_ARCHIVES: str = ""
-    GET_STAGE_ARCHIVES: str = ""
+    RETRIEVE_ACTOR_ARCHIVES: str = ""
+    RETRIEVE_STAGE_ARCHIVES: str = ""
 
 
 class GameAgentsConfigModel(BaseModel):

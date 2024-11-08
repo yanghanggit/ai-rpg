@@ -11,8 +11,6 @@ from ws_config import (
     StartResponse,
     ExitRequest,
     ExitResponse,
-    GameStateManager,
-    GameState,
     ExecuteRequest,
     ExecuteResponse,
     WatchRequest,
@@ -29,12 +27,16 @@ from ws_config import (
     APIRoutesConfigResponse,
 )
 from loguru import logger
-from typing import List
+from typing import Final, List
 import datetime
 from my_models.config_models import APIRoutesConfigModel
+from my_services.game_state_manager import GameStateManager, GameState
 
 
-class GameClientContext:
+FETCH_MESSAGES_COUNT: Final[int] = 9999  # 多要一点得了。
+
+
+class SimuWebAPP:
 
     def __init__(self) -> None:
         self._user_name: str = ""
@@ -53,14 +55,17 @@ class GameClientContext:
     def api_routes(self) -> APIRoutesConfigModel:
         return self._api_routes
 
+    @api_routes.setter
+    def api_routes(self, value: APIRoutesConfigModel) -> None:
+        self._api_routes = value
+        logger.info(f"获取API路由成功: {self._api_routes.model_dump_json()}")
+
 
 ###############################################################################################################################################
-def _api_routes(
-    client_context: GameClientContext, state_manager: GameStateManager
-) -> None:
+def _api_routes(client_context: SimuWebAPP, state_manager: GameStateManager) -> None:
 
     time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    response = requests.get(
+    response = requests.post(
         f"""http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/api_routes/""",
         json=APIRoutesConfigRequest(content=f"time = {time}").model_dump(),
     )
@@ -70,15 +75,12 @@ def _api_routes(
         assert False, f"获取API路由失败: {api_routes_config_response.message}"
         return
 
-    client_context._api_routes = api_routes_config_response.api_routes
-    logger.info(
-        f"获取API路由成功: {api_routes_config_response.api_routes.model_dump_json()}"
-    )
+    client_context.api_routes = api_routes_config_response.api_routes
 
 
 ###############################################################################################################################################
 def _login(
-    client_context: GameClientContext,
+    client_context: SimuWebAPP,
     state_manager: GameStateManager,
     default_user_name: str,
 ) -> None:
@@ -118,9 +120,7 @@ def _login(
 
 
 ###############################################################################################################################################
-def _create_game(
-    client_context: GameClientContext, state_manager: GameStateManager
-) -> None:
+def _create_game(client_context: SimuWebAPP, state_manager: GameStateManager) -> None:
 
     assert client_context._user_name != ""
 
@@ -161,9 +161,7 @@ def _create_game(
 
 
 ###############################################################################################################################################
-def _join_game(
-    client_context: GameClientContext, state_manager: GameStateManager
-) -> None:
+def _join_game(client_context: SimuWebAPP, state_manager: GameStateManager) -> None:
 
     if not state_manager.can_transition(GameState.GAME_JOINED):
         return
@@ -216,7 +214,7 @@ def _join_game(
 
 
 ###############################################################################################################################################
-def _play(client_context: GameClientContext, state_manager: GameStateManager) -> None:
+def _play(client_context: SimuWebAPP, state_manager: GameStateManager) -> None:
 
     if not state_manager.can_transition(GameState.PLAYING):
         return
@@ -249,7 +247,7 @@ def _play(client_context: GameClientContext, state_manager: GameStateManager) ->
 
 ###############################################################################################################################################
 def _request_game_execute(
-    client_context: GameClientContext,
+    client_context: SimuWebAPP,
     state_manager: GameStateManager,
     usr_input: List[str],
 ) -> None:
@@ -277,13 +275,13 @@ def _request_game_execute(
 
 ###############################################################################################################################################
 def _request_fetch_messages(
-    client_context: GameClientContext,
+    client_context: SimuWebAPP,
     state_manager: GameStateManager,
     fetch_begin_index: int,
     fetch_count: int,
 ) -> None:
 
-    response = requests.get(
+    response = requests.post(
         client_context.api_routes.FETCH_MESSAGES,
         json=FetchMessagesRequest(
             user_name=client_context._user_name,
@@ -303,12 +301,12 @@ def _request_fetch_messages(
 
     for show_message in fetch_messages_response.messages:
         json_str = show_message.model_dump_json()
-        logger.warning(json_str)
+        logger.debug(json_str)
 
 
 ###############################################################################################################################################
 def _web_player_input(
-    client_context: GameClientContext, state_manager: GameStateManager
+    client_context: SimuWebAPP, state_manager: GameStateManager
 ) -> None:
 
     assert client_context._user_name != ""
@@ -323,7 +321,7 @@ def _web_player_input(
             )
             _request_game_execute(client_context, state_manager, [])
             _request_fetch_messages(
-                client_context, state_manager, 0, WS_CONFIG.FETCH_MESSAGES_COUNT
+                client_context, state_manager, 0, FETCH_MESSAGES_COUNT
             )
             break
 
@@ -335,9 +333,9 @@ def _web_player_input(
         usr_input = input(
             f"[{client_context._user_name}|{client_context._actor_name}]:"
         )
-        if usr_input == "":
-            logger.warning("输入不能为空")
-            continue
+        # if usr_input == "":
+        #     logger.warning("输入不能为空")
+        #     continue
 
         if usr_input == "/quit":
             _requesting_exit(client_context, state_manager)
@@ -351,28 +349,28 @@ def _web_player_input(
             _requesting_check(client_context, state_manager)
             break
 
-        elif usr_input == "/get_actor_archives" or usr_input == "/gaa":
-            _requesting_get_actor_archives(client_context, state_manager)
+        elif usr_input == "/retrieve_actor_archives" or usr_input == "/raa":
+            _requesting_retrieve_actor_archives(client_context, state_manager)
             break
 
-        elif usr_input == "/get_stage_archives" or usr_input == "/gsa":
-            _requesting_get_stage_archives(client_context, state_manager)
+        elif usr_input == "/retrieve_stage_archives" or usr_input == "/rsa":
+            _requesting_retrieve_stage_archives(client_context, state_manager)
             break
 
         else:
             _request_game_execute(client_context, state_manager, [usr_input])
             _request_fetch_messages(
-                client_context, state_manager, 0, WS_CONFIG.FETCH_MESSAGES_COUNT
+                client_context, state_manager, 0, FETCH_MESSAGES_COUNT
             )
             break
 
 
 ###############################################################################################################################################
 def _requesting_watch(
-    client_context: GameClientContext, state_manager: GameStateManager
+    client_context: SimuWebAPP, state_manager: GameStateManager
 ) -> None:
 
-    response = requests.get(
+    response = requests.post(
         client_context.api_routes.WATCH,
         json=WatchRequest(
             user_name=client_context._user_name,
@@ -393,10 +391,10 @@ def _requesting_watch(
 
 ###############################################################################################################################################
 def _requesting_check(
-    client_context: GameClientContext, state_manager: GameStateManager
+    client_context: SimuWebAPP, state_manager: GameStateManager
 ) -> None:
 
-    response = requests.get(
+    response = requests.post(
         client_context.api_routes.CHECK,
         json=CheckRequest(
             user_name=client_context._user_name,
@@ -416,12 +414,12 @@ def _requesting_check(
 
 
 ###############################################################################################################################################
-def _requesting_get_actor_archives(
-    client_context: GameClientContext, state_manager: GameStateManager
+def _requesting_retrieve_actor_archives(
+    client_context: SimuWebAPP, state_manager: GameStateManager
 ) -> None:
 
-    response = requests.get(
-        client_context.api_routes.GET_ACTOR_ARCHIVES,
+    response = requests.post(
+        client_context.api_routes.RETRIEVE_ACTOR_ARCHIVES,
         json=RetrieveActorArchivesRequest(
             user_name=client_context._user_name,
             game_name=client_context._game_name,
@@ -442,12 +440,12 @@ def _requesting_get_actor_archives(
 
 
 ###############################################################################################################################################
-def _requesting_get_stage_archives(
-    client_context: GameClientContext, state_manager: GameStateManager
+def _requesting_retrieve_stage_archives(
+    client_context: SimuWebAPP, state_manager: GameStateManager
 ) -> None:
 
-    response = requests.get(
-        client_context.api_routes.GET_STAGE_ARCHIVES,
+    response = requests.post(
+        client_context.api_routes.RETRIEVE_STAGE_ARCHIVES,
         json=RetrieveStageArchivesRequest(
             user_name=client_context._user_name,
             game_name=client_context._game_name,
@@ -469,7 +467,7 @@ def _requesting_get_stage_archives(
 
 ###############################################################################################################################################
 def _requesting_exit(
-    client_context: GameClientContext, state_manager: GameStateManager
+    client_context: SimuWebAPP, state_manager: GameStateManager
 ) -> None:
 
     if not state_manager.can_transition(GameState.REQUESTING_EXIT):
@@ -504,7 +502,7 @@ def _requesting_exit(
 def web_run() -> None:
 
     client_state = GameStateManager(GameState.UNLOGGED)
-    client_context = GameClientContext()
+    client_context = SimuWebAPP()
     default_user_name = "北京柏林互动科技有限公司"
 
     while True:

@@ -167,7 +167,7 @@ class AgentKickOffSystem(ExecuteProcessor):
         for world_entity in world_entities:
 
             world_comp = world_entity.get(WorldComponent)
-            agent = self._context._langserve_agent_system.get_agent(world_comp.name)
+            agent = self._context.agent_system.get_agent(world_comp.name)
             if agent is None:
                 continue
 
@@ -202,7 +202,7 @@ class AgentKickOffSystem(ExecuteProcessor):
         for stage_entity in stage_entities:
 
             stage_comp = stage_entity.get(StageComponent)
-            agent = self._context._langserve_agent_system.get_agent(stage_comp.name)
+            agent = self._context.agent_system.get_agent(stage_comp.name)
             if agent is None:
                 continue
 
@@ -243,7 +243,7 @@ class AgentKickOffSystem(ExecuteProcessor):
         for actor_entity in actor_entities:
 
             actor_comp = actor_entity.get(ActorComponent)
-            agent = self._context._langserve_agent_system.get_agent(actor_comp.name)
+            agent = self._context.agent_system.get_agent(actor_comp.name)
             if agent is None:
                 continue
 
@@ -295,9 +295,7 @@ class AgentKickOffSystem(ExecuteProcessor):
                     f"ActorPlanningSystem: check_plan failed, {agent_planning.original_response_content}"
                 )
 
-                self._context._langserve_agent_system.remove_last_human_ai_conversation(
-                    agent_name
-                )
+                self._context.agent_system.remove_last_human_ai_conversation(agent_name)
                 continue
 
             for action in agent_planning._actions:

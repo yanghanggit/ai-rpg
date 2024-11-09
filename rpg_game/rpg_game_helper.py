@@ -134,15 +134,9 @@ def _create_entitas_context(
 
     # 创建上下文
     context = RPGEntitasContext(
-        FileSystem(
-            "FileSystem Because it involves IO operations, an independent system is more convenient."
-        ),
-        LangServeAgentSystem(
-            "LangServeAgentSystem Because it involves net operations, an independent system is more convenient."
-        ),
-        QueryComponentSystem(
-            "QueryComponentSystem Because it involves query operations, an independent system is more convenient."
-        ),
+        FileSystem(),
+        LangServeAgentSystem(),
+        QueryComponentSystem(),
         chaos_engineering_system,
     )
 

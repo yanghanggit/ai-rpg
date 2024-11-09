@@ -12,6 +12,16 @@ class AgentEvent(BaseEvent):
     pass
 
 
+# 以下是一些具体的事件
+
+
+# 这个事件是用来更新外观的
 @final
 class UpdateAppearanceEvent(AgentEvent):
+    pass
+
+
+# 这个事件是用来通知进入场景的
+@final
+class PreStageExitEvent(AgentEvent):
     pass

@@ -10,9 +10,7 @@ from typing import final, override, Optional
 import gameplay_systems.builtin_prompt_util as builtin_prompt_util
 from rpg_game.rpg_game import RPGGame
 from extended_systems.archive_file import StageArchiveFile
-
-# from loguru import logger
-from my_models.event_models import AgentEvent
+from my_models.event_models import AgentEvent, PreStageExitEvent
 
 
 ################################################################################################################################################
@@ -40,8 +38,8 @@ def _generate_stage_entry_prompt2(
 def _generate_last_impression_of_stage_prompt(
     actor_name: str, stage_name: str, stage_narrate: str
 ) -> str:
-    return f"""# {actor_name} 将要离开 {stage_name} 场景。
-## 对于 {stage_name} 最后的印象如下:
+    return f"""# 提示: {actor_name} 将要离开 {stage_name} 场景。
+## {actor_name} 对于 {stage_name} 最后的印象(场景描述):
 {stage_narrate}"""
 
 
@@ -196,17 +194,13 @@ class GoToActionSystem(ReactiveProcessor):
         if stage_archive is None or stage_archive.stage_narrate == "":
             return
 
-        message_content = builtin_prompt_util.replace_you(
-            _generate_last_impression_of_stage_prompt(
-                my_name, helper._current_stage_name, stage_archive.stage_narrate
+        self._context.notify_event(
+            set({helper._entity}),
+            PreStageExitEvent(
+                message_content=_generate_last_impression_of_stage_prompt(
+                    my_name, helper._current_stage_name, stage_archive.stage_narrate
+                )
             ),
-            my_name,
-        )
-
-        # 慎用！！！！
-        self._context.safe_add_human_message_to_entity(
-            helper._entity,
-            message_content,
         )
 
     ###############################################################################################################################################

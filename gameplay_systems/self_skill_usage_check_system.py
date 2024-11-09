@@ -256,7 +256,7 @@ class SelfSkillUsageCheckSystem(ReactiveProcessor):
 
             agent_name = self._context.safe_get_entity_name(entity)
 
-            agent = self._context._langserve_agent_system.get_agent(agent_name)
+            agent = self._context.agent_system.get_agent(agent_name)
             if agent is None:
                 continue
 

@@ -358,9 +358,7 @@ class ApplySkillEffectSystem(ReactiveProcessor):
     def create_task(self, entity: Entity, target: Entity) -> Optional[AgentTask]:
 
         target_agent_name = self._context.safe_get_entity_name(target)
-        target_agent = self._context._langserve_agent_system.get_agent(
-            target_agent_name
-        )
+        target_agent = self._context.agent_system.get_agent(target_agent_name)
         if target_agent is None:
             return None
 

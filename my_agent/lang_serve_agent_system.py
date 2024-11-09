@@ -13,9 +13,9 @@ from my_models.agent_models import (
 
 @final
 class LangServeAgentSystem:
+    """LangServeAgentSystem Because it involves net operations, an independent system is more convenient."""
 
-    def __init__(self, name: str) -> None:
-        self._name: str = name
+    def __init__(self) -> None:
         self._agents: Dict[str, LangServeAgent] = {}
         self._runtime_dir: Optional[Path] = None
         self._remote_executable_connectors: Dict[str, RemoteRunnableConnector] = {}

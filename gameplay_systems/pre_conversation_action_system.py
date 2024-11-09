@@ -89,7 +89,7 @@ class PreConversationActionSystem(ReactiveProcessor):
     #################################################################################################################################################
     def fill_task(self, player_entity: Entity, tasks: Dict[str, AgentTask]) -> None:
         safe_name = self._context.safe_get_entity_name(player_entity)
-        agent = self._context._langserve_agent_system.get_agent(safe_name)
+        agent = self._context.agent_system.get_agent(safe_name)
         if agent is None:
             return
 

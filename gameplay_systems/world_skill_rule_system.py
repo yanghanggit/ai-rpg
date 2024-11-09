@@ -481,7 +481,7 @@ class WorldSkillRuleSystem(ReactiveProcessor):
 
         ret: List[AgentTask] = []
 
-        world_system_agent = self._context._langserve_agent_system.get_agent(
+        world_system_agent = self._context.agent_system.get_agent(
             world_skill_system_name
         )
         if world_system_agent is None:

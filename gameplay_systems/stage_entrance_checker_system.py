@@ -190,7 +190,7 @@ class StageEntranceCheckerSystem(ReactiveProcessor):
             return None
 
         target_stage_name = self._context.safe_get_entity_name(target_stage_entity)
-        agent = self._context._langserve_agent_system.get_agent(target_stage_name)
+        agent = self._context.agent_system.get_agent(target_stage_name)
         if agent is None:
             return None
 
@@ -251,7 +251,7 @@ class StageEntranceCheckerSystem(ReactiveProcessor):
 
             else:
 
-                self._context._langserve_agent_system.remove_last_human_ai_conversation(
+                self._context.agent_system.remove_last_human_ai_conversation(
                     stage_agent_task.agent_name
                 )
 

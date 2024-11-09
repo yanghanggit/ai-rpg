@@ -36,7 +36,7 @@ class SaveGameResourceSystem(ExecuteProcessor):
     @override
     def execute(self) -> None:
 
-        self._context._langserve_agent_system.dump_chat_histories()
+        self._context.agent_system.dump_chat_histories()
 
         assert self._game._game_resource is not None
         runtime_model = self._game._game_resource._runtime_model

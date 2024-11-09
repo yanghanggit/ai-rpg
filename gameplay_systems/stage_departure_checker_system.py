@@ -180,9 +180,7 @@ class StageDepartureCheckerSystem(ReactiveProcessor):
         assert current_stage_entity is not None
 
         current_stage_name = self._context.safe_get_entity_name(current_stage_entity)
-        stage_agent = self._context._langserve_agent_system.get_agent(
-            current_stage_name
-        )
+        stage_agent = self._context.agent_system.get_agent(current_stage_name)
         if stage_agent is None:
             return None
 
@@ -225,7 +223,7 @@ class StageDepartureCheckerSystem(ReactiveProcessor):
 
             else:
 
-                self._context._langserve_agent_system.remove_last_human_ai_conversation(
+                self._context.agent_system.remove_last_human_ai_conversation(
                     stage_agent_task.agent_name
                 )
 

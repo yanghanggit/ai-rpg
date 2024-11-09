@@ -33,7 +33,11 @@ from my_models.entity_models import (
     WorldSystemModel,
     WorldSystemInstanceModel,
 )
-from my_models.event_models import UpdateAppearanceEvent, BaseEvent
+from my_models.event_models import (
+    BaseEvent,
+    UpdateAppearanceEvent,
+    PreStageExitEvent,
+)
 from my_models.file_models import PropFileModel
 from my_models.entity_models import AttributesIndex
 from player.player_proxy import PlayerProxy
@@ -93,7 +97,7 @@ class RPGGame(BaseGame):
         ## 第1步，设置根路径
         self._game_resource = game_resource
         ##
-        self.context._langserve_agent_system.set_runtime_dir(game_resource._runtime_dir)
+        self.context.agent_system.set_runtime_dir(game_resource._runtime_dir)
         self.context._file_system.set_runtime_dir(game_resource._runtime_dir)
 
         ## 第2步 创建管理员类型的角色，全局的AI
@@ -210,7 +214,7 @@ class RPGGame(BaseGame):
         world_system_entity.add(RoundEventsComponent, world_system_model.name, [])
 
         # 添加扩展子系统的功能: Agent
-        context._langserve_agent_system.register_agent(
+        context.agent_system.register_agent(
             world_system_model.name, world_system_model.url
         )
 
@@ -340,9 +344,7 @@ class RPGGame(BaseGame):
         actor_entity.add(RoundEventsComponent, actor_instance.name, [])
 
         # 添加扩展子系统: Agent
-        context._langserve_agent_system.register_agent(
-            actor_instance.name, actor_model.url
-        )
+        context.agent_system.register_agent(actor_instance.name, actor_model.url)
 
         # 添加扩展子系统: CodeName
         code_name_component_class = (
@@ -513,9 +515,7 @@ class RPGGame(BaseGame):
             context._file_system.write_file(prop_file)
 
         # 添加子系统：Agent
-        context._langserve_agent_system.register_agent(
-            stage_model.name, stage_model.url
-        )
+        context.agent_system.register_agent(stage_model.name, stage_model.url)
 
         # 添加子系统：CodeName
         code_name_component_class = (
@@ -652,7 +652,7 @@ class RPGGame(BaseGame):
             if chat_history is None:
                 continue
 
-            context._langserve_agent_system.fill_chat_history(safe_name, chat_history)
+            context.agent_system.fill_chat_history(safe_name, chat_history)
 
     ###############################################################################################################################################
     def _load_archives(
@@ -722,7 +722,9 @@ class RPGGame(BaseGame):
 
     ###############################################################################################################################################
     def _ignore_event(self, send_event: BaseEvent) -> bool:
-        return isinstance(send_event, UpdateAppearanceEvent)
+        return isinstance(send_event, UpdateAppearanceEvent) or isinstance(
+            send_event, PreStageExitEvent
+        )
 
     ###############################################################################################################################################
     def create_actor_entity_at_runtime(

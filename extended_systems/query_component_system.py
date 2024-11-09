@@ -4,9 +4,9 @@ from collections import namedtuple
 
 @final
 class QueryComponentSystem:
+    """QueryComponentSystem Because it involves query operations, an independent system is more convenient."""
 
-    def __init__(self, name: str) -> None:
-        self._name: str = name
+    def __init__(self) -> None:
         self._name_2_query_code_name: Dict[str, str] = {}
         self._query_code_name_2_component: Dict[str, type[Any]] = {}
         self._name_2_stage_tag: Dict[str, str] = {}

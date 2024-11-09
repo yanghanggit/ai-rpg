@@ -156,7 +156,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
         if len(input_data) == 0:
             return False
 
-        agent = self._context._langserve_agent_system.get_agent(agent_name)
+        agent = self._context.agent_system.get_agent(agent_name)
         if agent is None:
             return False
 

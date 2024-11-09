@@ -137,9 +137,7 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
                     f"StagePlanningSystem: check_plan failed, {stage_planning.original_response_content}"
                 )
                 ## 需要失忆!
-                self._context._langserve_agent_system.remove_last_human_ai_conversation(
-                    name
-                )
+                self._context.agent_system.remove_last_human_ai_conversation(name)
                 continue
 
             ## 不能停了，只能一直继续
@@ -165,7 +163,7 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
         for stage_entity in stage_entities:
 
             stage_comp = stage_entity.get(StageComponent)
-            agent = self._context._langserve_agent_system.get_agent(stage_comp.name)
+            agent = self._context.agent_system.get_agent(stage_comp.name)
             if agent is None:
                 continue
 

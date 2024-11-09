@@ -191,7 +191,7 @@ class ActorPlanningExecutionSystem(ExecuteProcessor):
                     f"ActorPlanningSystem: check_plan failed, {actor_planning.original_response_content}"
                 )
                 ## 需要失忆!
-                self._context._langserve_agent_system.remove_last_human_ai_conversation(
+                self._context.agent_system.remove_last_human_ai_conversation(
                     actor_comp.name
                 )
                 continue
@@ -221,7 +221,7 @@ class ActorPlanningExecutionSystem(ExecuteProcessor):
         for actor_entity in actor_entities:
 
             actor_comp = actor_entity.get(ActorComponent)
-            agent = self._context._langserve_agent_system.get_agent(actor_comp.name)
+            agent = self._context.agent_system.get_agent(actor_comp.name)
             if agent is None:
                 continue
 

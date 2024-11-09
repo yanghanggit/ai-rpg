@@ -51,6 +51,11 @@ class RPGEntitasContext(Context):
         self._game: Optional[BaseGame] = None
 
     #############################################################################################################################
+    @property
+    def agent_system(self) -> LangServeAgentSystem:
+        return self._langserve_agent_system
+
+    #############################################################################################################################
 
     def get_world_entity(self, world_name: str) -> Optional[Entity]:
         entity: Optional[Entity] = self.get_entity_by_name(world_name)
@@ -152,43 +157,26 @@ class RPGEntitasContext(Context):
         return ""
 
     #############################################################################################################################
-    ##给一个实体添加记忆，尽量统一走这个方法, add_human_message_to_entity
     def safe_add_human_message_to_entity(
         self, entity: Entity, message_content: str
-    ) -> bool:
-
-        if message_content == "":
-            logger.error("消息内容为空，无法添加记忆")
-            return False
-
-        name = self.safe_get_entity_name(entity)
-        if name == "":
-            logger.error("实体没有名字，无法添加记忆")
-            return False
-
-        self._langserve_agent_system.append_human_message_to_chat_history(
-            name, message_content
+    ) -> None:
+        logger.warning(
+            f"请检查调用这个函数的调用点，确定合理，safe_add_human_message_to_entity: {message_content}"
         )
-        return True
+        self.agent_system.append_human_message_to_chat_history(
+            self.safe_get_entity_name(entity), message_content
+        )
 
     #############################################################################################################################
     def safe_add_ai_message_to_entity(
         self, entity: Entity, message_content: str
-    ) -> bool:
-
-        if message_content == "":
-            logger.error("消息内容为空，无法添加记忆")
-            return False
-
-        name = self.safe_get_entity_name(entity)
-        if name == "":
-            logger.error("实体没有名字，无法添加记忆")
-            return False
-
-        self._langserve_agent_system.append_ai_message_to_chat_history(
-            name, message_content
+    ) -> None:
+        logger.warning(
+            f"请检查调用这个函数的调用点，确定合理，safe_add_ai_message_to_entity: {message_content}"
         )
-        return True
+        self.agent_system.append_ai_message_to_chat_history(
+            self.safe_get_entity_name(entity), message_content
+        )
 
     #############################################################################################################################
     # 更改场景的标记组件
@@ -290,12 +278,10 @@ class RPGEntitasContext(Context):
                 agent_event.message_content, safe_name
             )
 
-            #
-            self._langserve_agent_system.append_human_message_to_chat_history(
+            self.agent_system.append_human_message_to_chat_history(
                 safe_name, replace_message
             )
 
-            # 记录历史
             if entity.has(RoundEventsComponent):
                 round_events_comp = entity.get(RoundEventsComponent)
                 round_events_comp.events.append(replace_message)

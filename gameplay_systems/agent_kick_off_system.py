@@ -5,7 +5,6 @@ from my_components.components import (
     StageComponent,
     ActorComponent,
     AppearanceComponent,
-    BodyComponent,
     KickOffContentComponent,
     KickOffFlagComponent,
     AgentConnectionFlagComponent,
@@ -311,9 +310,7 @@ class AgentKickOffSystem(ExecuteProcessor):
         actor_entities = self._context.get_group(
             Matcher(
                 all_of=[
-                    ActorComponent,
                     AppearanceComponent,
-                    BodyComponent,
                     KickOffFlagComponent,
                 ]
             )

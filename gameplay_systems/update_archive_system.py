@@ -49,7 +49,9 @@ class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
             actor_entities = self._context.get_actors_in_stage(stage_entity)
             if len(actor_entities) == 0:
                 continue
-            appearance_info = self._context.get_appearance_in_stage(stage_entity)
+            appearance_info = self._context.gather_actor_appearance_in_stage(
+                stage_entity
+            )
             for actor_entity in actor_entities:
                 self._update_actor_appearance_of_archive(actor_entity, appearance_info)
 

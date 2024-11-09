@@ -63,7 +63,6 @@ def _generate_actor_props_prompts(
 
 ###############################################################################################################################################
 def _generate_actor_plan_prompt(
-    game_round: int,
     current_stage: str,
     stage_enviro_narrate: str,
     stage_graph: Set[str],
@@ -136,7 +135,6 @@ class ActorPlanningExecutionSystem(ExecuteProcessor):
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         self._context: RPGEntitasContext = context
         self._game: RPGGame = rpg_game
-        self._tasks: Dict[str, AgentTask] = {}
 
     #######################################################################################################################################
     @override
@@ -147,43 +145,35 @@ class ActorPlanningExecutionSystem(ExecuteProcessor):
     @override
     async def a_execute1(self) -> None:
         # step1: 添加任务
-        self._tasks.clear()
-        self._fill_tasks(self._tasks)
+        tasks: Dict[str, AgentTask] = {}
+        self._populate_agent_tasks(tasks)
         # step可选：混沌工程做测试
         self._context._chaos_engineering_system.on_actor_planning_system_execute(
             self._context
         )
         # step2: 并行执行requests
-        if len(self._tasks) == 0:
+        if len(tasks) == 0:
             return
 
-        responses = await AgentTask.gather([task for task in self._tasks.values()])
+        responses = await AgentTask.gather([task for task in tasks.values()])
         if len(responses) == 0:
             logger.warning(f"ActorPlanningSystem: request_result is empty.")
             return
 
-        self._handle_tasks(self._tasks)
-        self._tasks.clear()
+        self._process_agent_tasks(tasks)
+        tasks.clear()
 
     #######################################################################################################################################
-    def _handle_tasks(self, request_tasks: Dict[str, AgentTask]) -> None:
+    def _process_agent_tasks(self, request_tasks: Dict[str, AgentTask]) -> None:
 
-        for name, task in request_tasks.items():
+        for actor_name, agent_task in request_tasks.items():
 
-            if task is None:
-                logger.warning(
-                    f"ActorPlanningSystem: response is None or empty, so we can't get the planning."
-                )
-                continue
+            entity = self._context.get_actor_entity(actor_name)
+            assert (
+                entity is not None
+            ), f"ActorPlanningSystem: entity is None, {actor_name}"
 
-            entity = self._context.get_actor_entity(name)
-            assert entity is not None, f"ActorPlanningSystem: entity is None, {name}"
-            if entity is None:
-                logger.warning(f"ActorPlanningSystem: entity is None, {name}")
-                continue
-
-            actor_comp = entity.get(ActorComponent)
-            actor_planning = AgentPlanResponse(actor_comp.name, task.response_content)
+            actor_planning = AgentPlanResponse(actor_name, agent_task.response_content)
             if not gameplay_systems.action_helper.validate_actions(
                 actor_planning, ACTOR_AVAILABLE_ACTIONS_REGISTER
             ):
@@ -191,9 +181,7 @@ class ActorPlanningExecutionSystem(ExecuteProcessor):
                     f"ActorPlanningSystem: check_plan failed, {actor_planning.original_response_content}"
                 )
                 ## 需要失忆!
-                self._context.agent_system.remove_last_human_ai_conversation(
-                    actor_comp.name
-                )
+                self._context.agent_system.remove_last_human_ai_conversation(actor_name)
                 continue
 
             ## 不能停了，只能一直继续
@@ -203,9 +191,9 @@ class ActorPlanningExecutionSystem(ExecuteProcessor):
                 )
 
     #######################################################################################################################################
-    def _fill_tasks(self, out_put_request_tasks: Dict[str, AgentTask]) -> None:
+    def _populate_agent_tasks(self, planned_agent_tasks: Dict[str, AgentTask]) -> None:
 
-        out_put_request_tasks.clear()
+        planned_agent_tasks.clear()
 
         actor_entities = self._context.get_group(
             Matcher(
@@ -226,17 +214,18 @@ class ActorPlanningExecutionSystem(ExecuteProcessor):
                 continue
 
             check_self = ActorChecker(self._context, actor_entity)
-            actors_appearance = self._context.get_appearance_in_stage(actor_entity)
+            actors_appearance = self._context.gather_actor_appearance_in_stage(
+                actor_entity
+            )
             actors_appearance.pop(actor_comp.name, None)  # 自己不要
 
-            out_put_request_tasks[actor_comp.name] = AgentTask.create(
+            planned_agent_tasks[actor_comp.name] = AgentTask.create(
                 agent,
                 _generate_actor_plan_prompt(
-                    game_round=self._game.current_round,
-                    current_stage=self._get_stage_name(actor_entity),
-                    stage_enviro_narrate=self._get_stage_narrate(actor_entity),
-                    stage_graph=set(self._get_stage_graph(actor_entity)),
-                    props_in_stage=self._get_stage_props(actor_entity),
+                    current_stage=self._retrieve_stage_name(actor_entity),
+                    stage_enviro_narrate=self._retrieve_stage_narrative(actor_entity),
+                    stage_graph=set(self._retrieve_stage_graph(actor_entity)),
+                    props_in_stage=self._retrieve_props_in_stage(actor_entity),
                     info_of_actors_in_stage=actors_appearance,
                     health=check_self.health,
                     actor_props=check_self._category_prop_files,
@@ -246,47 +235,35 @@ class ActorPlanningExecutionSystem(ExecuteProcessor):
             )
 
     #######################################################################################################################################
-    def _get_stage_name(self, actor_entity: Entity) -> str:
+    def _retrieve_stage_name(self, actor_entity: Entity) -> str:
         stage_entity = self._context.safe_get_stage_entity(actor_entity)
-        if stage_entity is None:
-            logger.error("stage is None, actor无所在场景是有问题的")
-            return ""
-
+        assert stage_entity is not None, "stage is None, actor无所在场景是有问题的"
         return self._context.safe_get_entity_name(stage_entity)
 
     #######################################################################################################################################
-    def _get_stage_narrate(self, actor_entity: Entity) -> str:
+    def _retrieve_stage_narrative(self, actor_entity: Entity) -> str:
         stage_entity = self._context.safe_get_stage_entity(actor_entity)
-        if stage_entity is None:
-            logger.error("stage is None, actor无所在场景是有问题的")
-            return ""
+        assert stage_entity is not None, "stage is None, actor无所在场景是有问题的"
 
         if not stage_entity.has(StageNarrateAction):
+            logger.warning("stage has no StageNarrateAction")
             return ""
 
         stage_narrate_action = stage_entity.get(StageNarrateAction)
         return " ".join(stage_narrate_action.values)
 
     #######################################################################################################################################
-    def _get_stage_props(self, actor_entity: Entity) -> List[PropFile]:
+    def _retrieve_props_in_stage(self, actor_entity: Entity) -> List[PropFile]:
         stage_entity = self._context.safe_get_stage_entity(actor_entity)
-        if stage_entity is None:
-            logger.error("stage is None, actor无所在场景是有问题的")
-            return []
+        assert stage_entity is not None, "stage is None, actor无所在场景是有问题的"
         return self._context._file_system.get_files(
             PropFile, self._context.safe_get_entity_name(stage_entity)
         )
 
     #######################################################################################################################################
-    def _get_stage_graph(self, actor_entity: Entity) -> List[str]:
+    def _retrieve_stage_graph(self, actor_entity: Entity) -> List[str]:
         stage_entity = self._context.safe_get_stage_entity(actor_entity)
-        if stage_entity is None:
-            logger.error("stage is None, actor无所在场景是有问题的")
-            return []
-
-        if not stage_entity.has(StageGraphComponent):
-            return []
-
+        assert stage_entity is not None, "stage is None, actor无所在场景是有问题的"
         return stage_entity.get(StageGraphComponent).stage_graph
 
     #######################################################################################################################################

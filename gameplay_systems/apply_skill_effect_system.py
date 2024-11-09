@@ -10,7 +10,6 @@ from my_components.action_components import (
     TagAction,
 )
 from my_components.components import (
-    BodyComponent,
     AttributesComponent,
     ActorComponent,
 )
@@ -204,10 +203,10 @@ class ApplySkillEffectSystem(ReactiveProcessor):
         return ret
 
     ######################################################################################################################################################
-    def extract_body_info(self, entity: Entity) -> str:
-        if not entity.has(BodyComponent):
-            return ""
-        return str(entity.get(BodyComponent).body)
+    # def extract_body_info(self, entity: Entity) -> str:
+    #     if not entity.has(BodyComponent):
+    #         return ""
+    #     return str(entity.get(BodyComponent).body)
 
     ######################################################################################################################################################
     def extract_prop_files(self, entity: Entity) -> List[PropFile]:

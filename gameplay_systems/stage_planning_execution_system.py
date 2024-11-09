@@ -28,7 +28,6 @@ from rpg_game.rpg_game import RPGGame
 ###############################################################################################################################################
 def _generate_stage_plan_prompt(
     props_in_stage: List[PropFile],
-    game_round: int,
     info_of_actors_in_stage: Dict[str, str],
 ) -> str:
 
@@ -80,7 +79,6 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         self._context: RPGEntitasContext = context
         self._game: RPGGame = rpg_game
-        self._tasks: Dict[str, AgentTask] = {}
 
     #######################################################################################################################################
     @override
@@ -91,45 +89,37 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
     @override
     async def a_execute1(self) -> None:
         # step1: 添加任务
-        self._tasks.clear()
-        self._fill_tasks(self._tasks)
+        tasks: Dict[str, AgentTask] = {}
+
+        self._populate_agent_tasks(tasks)
         # step可选：混沌工程做测试
         self._context._chaos_engineering_system.on_stage_planning_system_excute(
             self._context
         )
         # step2: 并行执行requests
-        if len(self._tasks) == 0:
+        if len(tasks) == 0:
             return
 
-        responses = await AgentTask.gather([task for task in self._tasks.values()])
+        responses = await AgentTask.gather([task for task in tasks.values()])
         if len(responses) == 0:
             logger.warning(f"StagePlanningSystem: request_result is empty.")
             return
 
         # step3: 处理结果
-        self._handle_tasks(self._tasks)
-        self._tasks.clear()
+        self._process_agent_tasks(tasks)
+        tasks.clear()
 
     #######################################################################################################################################
-    def _handle_tasks(self, request_tasks: Dict[str, AgentTask]) -> None:
+    def _process_agent_tasks(self, agent_task_requests: Dict[str, AgentTask]) -> None:
 
-        for name, task in request_tasks.items():
+        for stage_name, agent_task in agent_task_requests.items():
 
-            if task is None:
-                logger.warning(
-                    f"StagePlanningSystem: response is None or empty, so we can't get the planning."
-                )
-                continue
-
-            stage_entity = self._context.get_stage_entity(name)
+            stage_entity = self._context.get_stage_entity(stage_name)
             assert (
                 stage_entity is not None
-            ), f"StagePlanningSystem: stage_entity is None, {name}"
-            if stage_entity is None:
-                logger.warning(f"StagePlanningSystem: stage_entity is None, {name}")
-                continue
+            ), f"StagePlanningSystem: stage_entity is None, {stage_name}"
 
-            stage_planning = AgentPlanResponse(name, task.response_content)
+            stage_planning = AgentPlanResponse(stage_name, agent_task.response_content)
             if not gameplay_systems.action_helper.validate_actions(
                 stage_planning, STAGE_AVAILABLE_ACTIONS_REGISTER
             ):
@@ -137,7 +127,7 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
                     f"StagePlanningSystem: check_plan failed, {stage_planning.original_response_content}"
                 )
                 ## 需要失忆!
-                self._context.agent_system.remove_last_human_ai_conversation(name)
+                self._context.agent_system.remove_last_human_ai_conversation(stage_name)
                 continue
 
             ## 不能停了，只能一直继续
@@ -147,8 +137,10 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
                 )
 
     #######################################################################################################################################
-    def _fill_tasks(self, out_put_request_tasks: Dict[str, AgentTask]) -> None:
-        out_put_request_tasks.clear()
+    def _populate_agent_tasks(
+        self, requested_agent_tasks: Dict[str, AgentTask]
+    ) -> None:
+        requested_agent_tasks.clear()
 
         stage_entities = self._context.get_group(
             Matcher(
@@ -165,17 +157,17 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
             stage_comp = stage_entity.get(StageComponent)
             agent = self._context.agent_system.get_agent(stage_comp.name)
             if agent is None:
+                assert False, f"StagePlanningSystem: agent is None, {stage_comp.name}"
                 continue
 
-            out_put_request_tasks[stage_comp.name] = AgentTask.create(
+            requested_agent_tasks[stage_comp.name] = AgentTask.create(
                 agent,
                 _generate_stage_plan_prompt(
                     self._context._file_system.get_files(
                         PropFile,
                         self._context.safe_get_entity_name(stage_entity),
                     ),
-                    self._game.current_round,
-                    self._context.get_appearance_in_stage(stage_entity),
+                    self._context.gather_actor_appearance_in_stage(stage_entity),
                 ),
             )
 

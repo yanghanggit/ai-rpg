@@ -22,7 +22,6 @@ from extended_systems.archive_file import ActorArchiveFile, StageArchiveFile
 from extended_systems.prop_file import PropFile, generate_prop_prompt
 from my_components.components import (
     ActorComponent,
-    AppearanceComponent,
     PlayerComponent,
     PlanningAllowedComponent,
     KickOffContentComponent,
@@ -203,21 +202,21 @@ def get_stage_narrate_content_from_stage_archive_file(
 
 
 #######################################################################################################################################
-def get_info_of_actors_in_stage(
-    game_name: RPGGame, player_entity: Entity
-) -> Dict[str, str]:
-    stage_entity = game_name.context.safe_get_stage_entity(player_entity)
-    if stage_entity is None:
-        return {}
+# def get_info_of_actors_in_stage(
+#     game_name: RPGGame, player_entity: Entity
+# ) -> Dict[str, str]:
+#     stage_entity = game_name.context.safe_get_stage_entity(player_entity)
+#     if stage_entity is None:
+#         return {}
 
-    actor_entities = game_name.context.get_actors_in_stage(stage_entity)
-    ret: Dict[str, str] = {}
-    for actor_entity in actor_entities:
-        actor_comp = actor_entity.get(ActorComponent)
-        appearance_comp = actor_entity.get(AppearanceComponent)
-        ret.setdefault(actor_comp.name, appearance_comp.appearance)
+#     actor_entities = game_name.context.get_actors_in_stage(stage_entity)
+#     ret: Dict[str, str] = {}
+#     for actor_entity in actor_entities:
+#         actor_comp = actor_entity.get(ActorComponent)
+#         appearance_comp = actor_entity.get(AppearanceComponent)
+#         ret.setdefault(actor_comp.name, appearance_comp.appearance)
 
-    return ret
+#     return ret
 
 
 #######################################################################################################################################
@@ -234,7 +233,9 @@ def gen_player_watch_action_model(
     )
 
     ## 场景内的角色信息获取
-    actors_info: Dict[str, str] = get_info_of_actors_in_stage(game_name, player_entity)
+    actors_info: Dict[str, str] = game_name.context.gather_actor_appearance_in_stage(
+        player_entity
+    )  # get_info_of_actors_in_stage(game_name, player_entity)
     actors_info.pop(game_name.context.safe_get_entity_name(player_entity))
 
     actors_info_prompts = [

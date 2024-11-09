@@ -5,6 +5,7 @@ from my_components.components import (
     ClothesComponent,
     WeaponComponent,
     AppearanceComponent,
+    ActorComponent,
 )
 from typing import List, Dict, Optional
 from extended_systems.prop_file import PropFile
@@ -16,6 +17,8 @@ from my_models.file_models import PropType
 class ActorChecker:
 
     def __init__(self, context: RPGEntitasContext, entity: Entity) -> None:
+
+        assert entity.has(ActorComponent)
 
         self._maxhp: int = 0
         self._hp: int = 0
@@ -54,15 +57,8 @@ class ActorChecker:
         # 检查装备信息
         self._check_equipments(context, entity)
         # 检查外观信息
-        self._check_appearance(context, entity)
-
-    ######################################################################################################################################
-    def _check_appearance(self, context: RPGEntitasContext, entity: Entity) -> None:
-        if not entity.has(AppearanceComponent):
-            return None
-        appearance_comp = entity.get(AppearanceComponent)
-        # 害怕，就拷贝了。
-        self._appearance = str(appearance_comp.appearance)
+        assert entity.has(AppearanceComponent)
+        self._appearance = str(entity.get(AppearanceComponent).appearance)
 
     ######################################################################################################################################
     def _check_stage(self, context: RPGEntitasContext, entity: Entity) -> None:

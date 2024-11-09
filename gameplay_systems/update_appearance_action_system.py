@@ -2,7 +2,7 @@ from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: igno
 from overrides import override
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
-from typing import Dict, Set, List, final
+from typing import Dict, Set, List, final, Optional
 import json
 from my_components.components import (
     AppearanceComponent,
@@ -19,18 +19,21 @@ from my_models.event_models import UpdateAppearanceEvent
 
 ################################################################################################################################################
 def _generate_appearance_update_prompt(actor_name: str, appearance: str) -> str:
-    return f"""# {actor_name} 的外观信息已更新
-## 角色外观信息
+    return f"""# 发生事件: {actor_name} 的外观信息更新
 {appearance}"""
 
 
 ################################################################################################################################################
 def _generate_default_appearance_prompt(body: str, clothe: str) -> str:
-    return body + f"""\n衣着:{clothe}""" if clothe != "" else " "
+    assert body != "", "body is empty."
+    if clothe == "":
+        return body
+
+    return body + f"""\n衣着:{clothe}"""
 
 
 ################################################################################################################################################
-def _generate_reasoning_appearance_prompt(
+def _generate_appearance_reasoning_prompt(
     actors_body_and_clothe: Dict[str, tuple[str, str]]
 ) -> str:
     appearance_info_list: List[str] = []
@@ -83,12 +86,12 @@ def _generate_reasoning_appearance_prompt(
 class UpdateAppearanceActionSystem(ReactiveProcessor):
 
     def __init__(
-        self, context: RPGEntitasContext, rpg_game: RPGGame, system_name: str
+        self, context: RPGEntitasContext, rpg_game: RPGGame, world_system_name: str
     ) -> None:
         super().__init__(context)
         self._context: RPGEntitasContext = context
         self._game: RPGGame = rpg_game
-        self._system_name: str = str(system_name)
+        self._world_system_name: str = str(world_system_name)
 
     ####################################################################################################
     @override
@@ -107,39 +110,41 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
     ####################################################################################################
     @override
     def react(self, entities: list[Entity]) -> None:
-        world_entity = self._context.get_world_entity(self._system_name)
-        assert world_entity is not None
-        self.handle_all(world_entity, set(entities))
-        self.remove_all(entities)
+        self._update_entity_appearance(
+            self._context.get_world_entity(self._world_system_name), set(entities)
+        )
+        self._clear_appearance_actions(entities)
 
     ###############################################################################################################################################
-    def handle_all(self, world_entity: Entity, actor_entities: Set[Entity]) -> None:
+    def _update_entity_appearance(
+        self, world_system_entity: Optional[Entity], actor_entities: Set[Entity]
+    ) -> None:
 
-        if len(actor_entities) == 0 or world_entity is None:
+        if len(actor_entities) == 0:
             return
 
-        input_data = self.make_data(actor_entities)
-        if len(input_data) == 0:
+        actor_appearance_data = self._generate_actor_appearance_data(actor_entities)
+        if len(actor_appearance_data) == 0:
             return
 
         # 没有衣服的，直接更新外观
-        self.default_update(input_data)
+        self._apply_default_appearance(actor_appearance_data)
 
         # 有衣服的，请求更新，通过LLM来推理外观
-        world_system_agent_name = self._context.safe_get_entity_name(world_entity)
-        self.request(input_data, world_system_agent_name)
+        self._process_appearance_update_request(
+            actor_appearance_data, world_system_entity
+        )
 
-        #
-        self.add_update_appearance_human_message(actor_entities)
+        # 广播更新外观事件
+        self._broadcast_appearance_update_event(actor_entities)
 
     ###############################################################################################################################################
-    def default_update(self, input_data: Dict[str, tuple[str, str]]) -> None:
+    def _apply_default_appearance(self, input_data: Dict[str, tuple[str, str]]) -> None:
 
         context = self._context
         for name, (body, clothe) in input_data.items():
 
             if body == "":
-                # assert False, f"body is empty, name: {name}"
                 logger.error(f"body is empty, name: {name}")
                 continue
 
@@ -151,26 +156,33 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
             entity.replace(AppearanceComponent, name, default_appearance)
 
     ###############################################################################################################################################
-    def request(self, input_data: Dict[str, tuple[str, str]], agent_name: str) -> bool:
+    def _process_appearance_update_request(
+        self,
+        actor_appearance_data: Dict[str, tuple[str, str]],
+        world_system_entity: Optional[Entity],
+    ) -> bool:
 
-        if len(input_data) == 0:
+        if len(actor_appearance_data) == 0 or world_system_entity is None:
             return False
 
-        agent = self._context.agent_system.get_agent(agent_name)
+        safe_name = self._context.safe_get_entity_name(world_system_entity)
+        agent = self._context.agent_system.get_agent(safe_name)
         if agent is None:
             return False
 
-        prompt = _generate_reasoning_appearance_prompt(input_data)
+        prompt = _generate_appearance_reasoning_prompt(actor_appearance_data)
 
-        task = AgentTask.create_standalone(agent, prompt)
-        if task.request() is None:
-            logger.error(f"{agent_name} request response is None.")
+        appearance_update_task = AgentTask.create_standalone(agent, prompt)
+        if appearance_update_task.request() is None:
+            logger.error(f"{safe_name} request response is None.")
             return False
 
         try:
 
-            json_obj: Dict[str, str] = json.loads(task.response_content)
-            self.on_success(json_obj)
+            appearance_json_response: Dict[str, str] = json.loads(
+                appearance_update_task.response_content
+            )
+            self._update_appearance_entities(appearance_json_response)
 
         except Exception as e:
             logger.error(f"json.loads error: {e}")
@@ -179,7 +191,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
         return True
 
     ###############################################################################################################################################
-    def on_success(self, _json_: Dict[str, str]) -> None:
+    def _update_appearance_entities(self, _json_: Dict[str, str]) -> None:
         context = self._context
         for name, appearance in _json_.items():
             entity = context.get_actor_entity(name)
@@ -188,20 +200,21 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
             entity.replace(AppearanceComponent, name, appearance)
 
     ###############################################################################################################################################
-    def make_data(self, actor_entities: Set[Entity]) -> Dict[str, tuple[str, str]]:
+    def _generate_actor_appearance_data(
+        self, actor_entities: Set[Entity]
+    ) -> Dict[str, tuple[str, str]]:
 
         ret: Dict[str, tuple[str, str]] = {}
-
         for actor_entity in actor_entities:
-            name = actor_entity.get(ActorComponent).name
-            body = self.get_body(actor_entity)
-            clothe = self.get_current_clothe(actor_entity)
-            ret[name] = (body, clothe)
+            ret[actor_entity.get(ActorComponent).name] = (
+                actor_entity.get(BodyComponent).body,
+                self._retrieve_current_clothing(actor_entity),
+            )
 
         return ret
 
     ###############################################################################################################################################
-    def get_current_clothe(self, entity: Entity) -> str:
+    def _retrieve_current_clothing(self, entity: Entity) -> str:
         if not entity.has(ClothesComponent):
             return ""
 
@@ -215,22 +228,13 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
         return current_clothe_prop_file.appearance
 
     ###############################################################################################################################################
-    def get_body(self, entity: Entity) -> str:
-        if not entity.has(BodyComponent):
-            return ""
-        body_comp = entity.get(BodyComponent)
-        return body_comp.body
-
-    ###############################################################################################################################################
-    def add_update_appearance_human_message(self, actor_entities: Set[Entity]) -> None:
+    def _broadcast_appearance_update_event(self, actor_entities: Set[Entity]) -> None:
         for actor_entity in actor_entities:
             current_stage_entity = self._context.safe_get_stage_entity(actor_entity)
             if current_stage_entity is None:
                 continue
 
             appearance_comp = actor_entity.get(AppearanceComponent)
-
-            # 广播给场景内的所有人，包括自己。
             self._context.broadcast_event_in_stage(
                 current_stage_entity,
                 UpdateAppearanceEvent(
@@ -241,7 +245,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
             )
 
     ###############################################################################################################################################
-    def remove_all(self, entities: List[Entity]) -> None:
+    def _clear_appearance_actions(self, entities: List[Entity]) -> None:
         for entity in entities:
             if entity.has(UpdateAppearanceAction):
                 entity.remove(UpdateAppearanceAction)

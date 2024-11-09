@@ -224,10 +224,10 @@ class SelfSkillUsageCheckSystem(ReactiveProcessor):
         return ret
 
     ######################################################################################################################################################
-    def extract_body_info(self, entity: Entity) -> str:
-        if not entity.has(BodyComponent):
-            return ""
-        return str(entity.get(BodyComponent).body)
+    # def extract_body_info(self, entity: Entity) -> str:
+    #     if not entity.has(BodyComponent):
+    #         return ""
+    #     return str(entity.get(BodyComponent).body)
 
     ######################################################################################################################################################
     def extract_prop_files(self, entity: Entity) -> List[PropFile]:
@@ -262,7 +262,7 @@ class SelfSkillUsageCheckSystem(ReactiveProcessor):
 
             prompt = _generate_skill_usage_reasoning_prompt(
                 agent_name,
-                self.extract_body_info(entity),
+                entity.get(BodyComponent).body,
                 self.extract_skill_files(entity),
                 self.extract_prop_files(entity),
             )

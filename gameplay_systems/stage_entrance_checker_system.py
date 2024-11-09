@@ -197,7 +197,7 @@ class StageEntranceCheckerSystem(ReactiveProcessor):
         prompt = _generate_stage_entry_conditions_prompt(
             self._context.safe_get_entity_name(actor_entity),
             target_stage_name,
-            self.get_actor_appearance_prompt(actor_entity),
+            actor_entity.get(AppearanceComponent).appearance,
             self.get_actor_props(actor_entity),
         )
 
@@ -285,12 +285,12 @@ class StageEntranceCheckerSystem(ReactiveProcessor):
         )
 
     ###############################################################################################################################################
-    def get_actor_appearance_prompt(self, actor_entity: Entity) -> str:
-        assert actor_entity.has(ActorComponent)
-        if not actor_entity.has(AppearanceComponent):
-            return ""
-        appearance_comp = actor_entity.get(AppearanceComponent)
-        return appearance_comp.appearance
+    # def get_actor_appearance_prompt(self, actor_entity: Entity) -> str:
+    #     assert actor_entity.has(ActorComponent)
+    #     if not actor_entity.has(AppearanceComponent):
+    #         return ""
+    #     appearance_comp = actor_entity.get(AppearanceComponent)
+    #     return appearance_comp.appearance
 
     ###############################################################################################################################################
     def get_actor_props(self, actor_entity: Entity) -> List[PropFile]:

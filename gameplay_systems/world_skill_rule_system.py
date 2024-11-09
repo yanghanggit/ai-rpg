@@ -397,12 +397,6 @@ class WorldSkillRuleSystem(ReactiveProcessor):
         return ret
 
     ######################################################################################################################################################
-    def extract_body_info(self, entity: Entity) -> str:
-        if not entity.has(BodyComponent):
-            return ""
-        return str(entity.get(BodyComponent).body)
-
-    ######################################################################################################################################################
     def extract_prop_files(self, entity: Entity) -> List[PropFile]:
         if not entity.has(SkillUsePropAction):
             return []
@@ -491,7 +485,7 @@ class WorldSkillRuleSystem(ReactiveProcessor):
 
             prompt = _generate_rule_prompt(
                 self._context.safe_get_entity_name(actor_entity),
-                self.extract_body_info(actor_entity),
+                actor_entity.get(BodyComponent).body,
                 self.extract_skill_files(actor_entity),
                 self.extract_prop_files(actor_entity),
                 self.extract_behavior_sentence(actor_entity),

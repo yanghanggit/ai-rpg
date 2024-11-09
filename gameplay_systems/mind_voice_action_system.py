@@ -26,11 +26,6 @@ class MindVoiceActionSystem(ReactiveProcessor):
     ####################################################################################################
     @override
     def react(self, entities: list[Entity]) -> None:
-        for entity in entities:
-            self.handle(entity)
-
-    ####################################################################################################
-    def handle(self, entity: Entity) -> None:
         pass
 
 

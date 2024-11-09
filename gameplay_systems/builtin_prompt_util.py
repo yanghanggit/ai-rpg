@@ -8,21 +8,9 @@ class ConstantPromptTag(StrEnum):
 
     STAGE_PLAN_PROMPT_TAG = "<%这是场景计划>"
 
-    # BROADCASE_ACTION_TAG = "<%这是广播行动结果>"
-
-    SPEAK_ACTION_TAG = "<%这是说话行动结果>"
-
-    WHISPER_ACTION_TAG = "<%这是私语行动结果>"
-
     STAGE_ENTRY_TAG = "场景进入限制"
 
     STAGE_EXIT_TAG = "场景离开限制"
-
-    ACTOR_KICK_OFF_MESSAGE_PROMPT_TAG = "<%这是角色初始化>"
-
-    STAGE_KICK_OFF_MESSAGE_PROMPT_TAG = "<%这是场景初始化>"
-
-    WORLD_SYSTEM_KICK_OFF_MESSAGE_PROMPT_TAG = "<%这是世界系统初始化>"
 
     UNKNOWN_STAGE_NAME_TAG = "未知场景:"
 

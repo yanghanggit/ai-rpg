@@ -30,6 +30,22 @@ class PreStageExitEvent(AgentEvent):
 # 广播内容事件
 @final
 class BroadcastEvent(AgentEvent):
-    actor_name: str
+    announcer_name: str
     stage_name: str
+    content: str
+
+
+# 说话事件
+@final
+class SpeakEvent(AgentEvent):
+    speaker_name: str
+    target_name: str
+    content: str
+
+
+# 私语事件
+@final
+class WhisperEvent(AgentEvent):
+    whisperer_name: str
+    target_name: str
     content: str

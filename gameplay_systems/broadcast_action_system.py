@@ -6,8 +6,8 @@ from rpg_game.rpg_game import RPGGame
 from my_models.event_models import BroadcastEvent
 
 
-def _generate_broadcast_prompt(actor_name: str, stage_name: str, content: str) -> str:
-    return f"# 发生事件: {actor_name} 对 {stage_name} 里的所有人说: {content}"
+def _generate_broadcast_prompt(speaker_name: str, stage_name: str, content: str) -> str:
+    return f"# 发生事件: {speaker_name} 对 {stage_name} 里的所有角色说: {content}"
 
 
 ####################################################################################################
@@ -56,7 +56,7 @@ class BroadcastActionSystem(ReactiveProcessor):
                     stage_name,
                     content,
                 ),
-                actor_name=broadcast_action.name,
+                announcer_name=broadcast_action.name,
                 stage_name=stage_name,
                 content=content,
             ),

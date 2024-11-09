@@ -10,7 +10,6 @@ from my_components.components import (
     KickOffFlagComponent,
     AgentConnectionFlagComponent,
 )
-import gameplay_systems.builtin_prompt_util as builtin_prompt_util
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from typing import Dict, Set, FrozenSet, Any, List, final
@@ -23,6 +22,7 @@ from my_components.action_components import (
     MindVoiceAction,
     TagAction,
     StageNarrateAction,
+    UpdateAppearanceAction,
 )
 import gameplay_systems.action_helper
 from my_agent.agent_plan import AgentPlanResponse
@@ -30,14 +30,9 @@ from my_components.action_components import UpdateAppearanceAction
 
 
 ###############################################################################################################################################
-def _generate_actor_kick_off_prompt(
-    kick_off_message: str, about_game: str, game_round: int
-) -> str:
+def _generate_actor_kick_off_prompt(kick_off_message: str) -> str:
 
-    ret_prompt = f"""# {builtin_prompt_util.ConstantPromptTag.ACTOR_KICK_OFF_MESSAGE_PROMPT_TAG} 游戏世界即将开始运行。这是你的初始设定，你将以此为起点进行游戏并更新你的状态
-
-## 游戏背景与风格设定
-{about_game}
+    ret_prompt = f"""# 游戏世界即将开始运行。这是你的初始设定，你将以此为起点进行游戏并更新你的状态
 
 ## 你的初始设定
 {kick_off_message}
@@ -52,10 +47,8 @@ def _generate_actor_kick_off_prompt(
 ###############################################################################################################################################
 def _generate_stage_kick_off_prompt(
     kick_off_message: str,
-    about_game: str,
     props_in_stage: List[PropFile],
     actors_in_stage: Set[str],
-    game_round: int,
 ) -> str:
 
     props_prompt = "- 无任何道具。"
@@ -72,10 +65,7 @@ def _generate_stage_kick_off_prompt(
         for actor_name in actors_in_stage:
             actors_prompt += f"- {actor_name}\n"
 
-    ret_prompt = f"""# {builtin_prompt_util.ConstantPromptTag.STAGE_KICK_OFF_MESSAGE_PROMPT_TAG} 游戏世界即将开始运行。这是你的初始设定，你将以此为起点进行游戏，并更新你的场景描述
-
-## 游戏背景与风格设定
-{about_game}
+    ret_prompt = f"""# 游戏世界即将开始运行。这是你的初始设定，你将以此为起点进行游戏，并更新你的场景描述
 
 ## 场景内的道具
 {props_prompt}
@@ -97,10 +87,8 @@ def _generate_stage_kick_off_prompt(
 
 
 ###############################################################################################################################################
-def _generate_world_system_kick_off_prompt(about_game: str, game_round: int) -> str:
-    return f"""# {builtin_prompt_util.ConstantPromptTag.WORLD_SYSTEM_KICK_OFF_MESSAGE_PROMPT_TAG} 游戏世界即将开始运行。这是你的初始设定，请简要回答你的职能与描述
-## 游戏背景与风格设定
-{about_game}"""
+def _generate_world_system_kick_off_prompt() -> str:
+    return f"""# 游戏世界即将开始运行。请回答你的职能与描述"""
 
 
 ######################################################################################################################################################
@@ -137,8 +125,6 @@ class AgentKickOffSystem(ExecuteProcessor):
         tasks: Dict[str, AgentTask] = self._create_tasks()
         if len(tasks) == 0:
             return
-
-        # logger.debug(f"AgentKickOffSystem tasks: {tasks}")
 
         # 执行全部的任务
         await AgentTask.gather([task for task in tasks.values()])
@@ -177,9 +163,7 @@ class AgentKickOffSystem(ExecuteProcessor):
 
             ret[world_comp.name] = AgentTask.create(
                 agent,
-                _generate_world_system_kick_off_prompt(
-                    self._game.about_game, self._game.current_round
-                ),
+                _generate_world_system_kick_off_prompt(),
             )
 
         return ret
@@ -213,12 +197,10 @@ class AgentKickOffSystem(ExecuteProcessor):
             kick_off_comp = stage_entity.get(KickOffContentComponent)
             kick_off_prompt = _generate_stage_kick_off_prompt(
                 kick_off_comp.content,
-                self._game.about_game,
                 self._context._file_system.get_files(
                     PropFile, self._context.safe_get_entity_name(stage_entity)
                 ),
                 self._context.get_actor_names_in_stage(stage_entity),
-                self._game.current_round,
             )
 
             ret[stage_comp.name] = AgentTask.create(agent, kick_off_prompt)
@@ -256,8 +238,6 @@ class AgentKickOffSystem(ExecuteProcessor):
                 agent,
                 _generate_actor_kick_off_prompt(
                     kick_off_comp.content,
-                    self._game.about_game,
-                    self._game.current_round,
                 ),
             )
 
@@ -307,8 +287,6 @@ class AgentKickOffSystem(ExecuteProcessor):
 
     ######################################################################################################################################################
     def _add_kick_off_flag(self, entity: Entity, agent_name: str) -> None:
-        # if not entity.has(KickOffFlagComponent):
-        #     entity.add(KickOffFlagComponent, agent_name)
         entity.replace(KickOffFlagComponent, agent_name)
 
     ######################################################################################################################################################
@@ -347,12 +325,6 @@ class AgentKickOffSystem(ExecuteProcessor):
             if safe_name not in tasks:
                 continue
 
-            # if not actor_entity.has(UpdateAppearanceAction):
-            #     actor_entity.add(
-            #         UpdateAppearanceAction,
-            #         self._context.safe_get_entity_name(actor_entity),
-            #         [],
-            #     )
             actor_entity.replace(
                 UpdateAppearanceAction,
                 self._context.safe_get_entity_name(actor_entity),

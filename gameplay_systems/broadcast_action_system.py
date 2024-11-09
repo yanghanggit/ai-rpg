@@ -1,15 +1,18 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: ignore
 from typing import final, override
-from my_components.components import StageComponent
 from my_components.action_components import BroadcastAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from rpg_game.rpg_game import RPGGame
-import gameplay_systems.builtin_prompt_util as builtin_prompt_util
-from my_models.event_models import AgentEvent
+from my_models.event_models import BroadcastEvent
 
 
-def _generate_broadcast_prompt(src_name: str, dest_name: str, content: str) -> str:
-    return f"# {builtin_prompt_util.ConstantPromptTag.BROADCASE_ACTION_TAG} {src_name}对{dest_name}里的所有人说:{content}"
+def _generate_broadcast_prompt(actor_name: str, stage_name: str, content: str) -> str:
+    return f"# 发生事件: {actor_name} 对 {stage_name} 里的所有人说: {content}"
+
+
+####################################################################################################
+####################################################################################################
+####################################################################################################
 
 
 @final
@@ -34,24 +37,28 @@ class BroadcastActionSystem(ReactiveProcessor):
     @override
     def react(self, entities: list[Entity]) -> None:
         for entity in entities:
-            self.handle(entity)
+            self._process_broadcast_action(entity)
 
     ####################################################################################################
-    ## 目前的设定是场景与Actor都能广播，后续会调整与修改。
-    def handle(self, entity: Entity) -> None:
-        current_stage_entity = self._context.safe_get_stage_entity(entity)
-        if current_stage_entity is None:
+    def _process_broadcast_action(self, entity: Entity) -> None:
+        stage_entity = self._context.safe_get_stage_entity(entity)
+        if stage_entity is None:
             return
 
         broadcast_action = entity.get(BroadcastAction)
+        stage_name = self._context.safe_get_entity_name(stage_entity)
+        content = " ".join(broadcast_action.values)
         self._context.broadcast_event_in_stage(
-            current_stage_entity,
-            AgentEvent(
-                message_content=_generate_broadcast_prompt(
+            stage_entity,
+            BroadcastEvent(
+                message=_generate_broadcast_prompt(
                     broadcast_action.name,
-                    current_stage_entity.get(StageComponent).name,
-                    " ".join(broadcast_action.values),
-                )
+                    stage_name,
+                    content,
+                ),
+                actor_name=broadcast_action.name,
+                stage_name=stage_name,
+                content=content,
             ),
         )
 

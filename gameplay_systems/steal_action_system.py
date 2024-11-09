@@ -92,7 +92,7 @@ class StealActionSystem(ReactiveProcessor):
             self._context.notify_event(
                 set({entity, target_entity}),
                 AgentEvent(
-                    message_content=_generate_steal_prompt(
+                    message=_generate_steal_prompt(
                         self._context.safe_get_entity_name(entity),
                         tp[0],
                         tp[1],

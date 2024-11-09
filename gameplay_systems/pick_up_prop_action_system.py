@@ -85,9 +85,7 @@ class PickUpPropActionSystem(ReactiveProcessor):
                 self._context.notify_event(
                     set({entity}),
                     AgentEvent(
-                        message_content=_generate_failed_pickup_prompt(
-                            actor_name, prop_name
-                        )
+                        message=_generate_failed_pickup_prompt(actor_name, prop_name)
                     ),
                 )
                 continue
@@ -102,7 +100,7 @@ class PickUpPropActionSystem(ReactiveProcessor):
             self._context.broadcast_event_in_stage(
                 current_stage_entity,
                 AgentEvent(
-                    message_content=_generate_success_pickup_prompt(
+                    message=_generate_success_pickup_prompt(
                         actor_name, prop_name, stage_comp.name
                     )
                 ),

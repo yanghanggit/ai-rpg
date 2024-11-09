@@ -245,7 +245,7 @@ class ApplySkillEffectSystem(ReactiveProcessor):
         self._context.broadcast_event_in_stage(
             current_stage_entity,
             AgentEvent(
-                message_content=_generate_skill_event_notification_prompt(
+                message=_generate_skill_event_notification_prompt(
                     self._context.safe_get_entity_name(from_entity),
                     self._context.safe_get_entity_name(target_entity),
                     world_skill_system_rule_out_come,
@@ -346,7 +346,7 @@ class ApplySkillEffectSystem(ReactiveProcessor):
         self._context.notify_event(
             set({entity}),
             AgentEvent(
-                message_content=_generate_offline_prompt(
+                message=_generate_offline_prompt(
                     self._context.safe_get_entity_name(entity),
                     self._context.safe_get_entity_name(target),
                     world_skill_system_rule_out_come,

@@ -65,7 +65,7 @@ class WebPlayerTipsSystem(ExecuteProcessor):
         actor_name = self._context.safe_get_entity_name(player_entity)
         player_proxy.add_tip_message(
             actor_name,
-            AgentEvent(message_content=f"这是一个测试的消息{self._test_index}"),
+            AgentEvent(message=f"这是一个测试的消息{self._test_index}"),
         )
 
     ############################################################################################################
@@ -82,7 +82,7 @@ class WebPlayerTipsSystem(ExecuteProcessor):
         if not stage_entity.has(StageGraphComponent):
             player_proxy.add_tip_message(
                 self._context.safe_get_entity_name(stage_entity),
-                AgentEvent(message_content="当前场景没有相连接的场景，无法离开"),
+                AgentEvent(message="当前场景没有相连接的场景，无法离开"),
             )
             return
 
@@ -95,7 +95,7 @@ class WebPlayerTipsSystem(ExecuteProcessor):
         ]
         player_proxy.add_tip_message(
             self._context.safe_get_entity_name(stage_entity),
-            AgentEvent(message_content=f"可去往场景:\n{'\n'.join(stage_names)}"),
+            AgentEvent(message=f"可去往场景:\n{'\n'.join(stage_names)}"),
         )
 
     ############################################################################################################

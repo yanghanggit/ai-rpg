@@ -82,7 +82,7 @@ class StageValidatorSystem(ReactiveProcessor):
             self._context.notify_event(
                 set({entity}),
                 AgentEvent(
-                    message_content=_generate_stage_validation_error_prompt(
+                    message=_generate_stage_validation_error_prompt(
                         safe_actor_name, target_stage_name
                     )
                 ),
@@ -95,7 +95,7 @@ class StageValidatorSystem(ReactiveProcessor):
             self._context.notify_event(
                 set({entity}),
                 AgentEvent(
-                    message_content=_generate_stage_already_in_prompt(
+                    message=_generate_stage_already_in_prompt(
                         safe_actor_name, target_stage_name
                     )
                 ),
@@ -111,7 +111,7 @@ class StageValidatorSystem(ReactiveProcessor):
                 self._context.notify_event(
                     set({entity}),
                     AgentEvent(
-                        message_content=_generate_stage_validation_error_prompt(
+                        message=_generate_stage_validation_error_prompt(
                             safe_actor_name, target_stage_name
                         )
                     ),

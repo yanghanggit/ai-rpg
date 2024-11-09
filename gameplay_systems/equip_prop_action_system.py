@@ -91,7 +91,7 @@ class EquipPropActionSystem(ReactiveProcessor):
                 self._context.notify_event(
                     set({entity}),
                     AgentEvent(
-                        message_content=_generate_equipment_not_found_prompt(
+                        message=_generate_equipment_not_found_prompt(
                             actor_name, prop_name
                         )
                     ),
@@ -106,9 +106,7 @@ class EquipPropActionSystem(ReactiveProcessor):
                 self._context.notify_event(
                     set({entity}),
                     AgentEvent(
-                        message_content=_generate_equipment_weapon_prompt(
-                            actor_name, prop_file
-                        )
+                        message=_generate_equipment_weapon_prompt(actor_name, prop_file)
                     ),
                 )
 
@@ -119,7 +117,7 @@ class EquipPropActionSystem(ReactiveProcessor):
                 self._context.notify_event(
                     set({entity}),
                     AgentEvent(
-                        message_content=_generate_equipment_clothing_prompt(
+                        message=_generate_equipment_clothing_prompt(
                             actor_name, prop_file
                         )
                     ),

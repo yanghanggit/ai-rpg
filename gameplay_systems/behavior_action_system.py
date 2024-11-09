@@ -217,7 +217,7 @@ class BehaviorActionSystem(ReactiveProcessor):
         self._context.notify_event(
             set({entity}),
             AgentEvent(
-                message_content=_generate_behavior_result_prompt(
+                message=_generate_behavior_result_prompt(
                     self._context.safe_get_entity_name(entity),
                     behavior_sentence,
                     processed_result,

@@ -439,7 +439,7 @@ def player_play_new_game(
     player_proxy.set_actor(player_actor_name)
 
     # 添加游戏介绍
-    player_proxy.add_system_message(AgentEvent(message_content=rpg_game.about_game))
+    player_proxy.add_system_message(AgentEvent(message=rpg_game.about_game))
 
     # log 信息
     time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -451,7 +451,7 @@ def player_play_new_game(
     kick_off_comp = player_entity.get(KickOffContentComponent)
     player_proxy.cache_kickoff_message(
         player_actor_name,
-        AgentEvent(message_content=kick_off_comp.content),
+        AgentEvent(message=kick_off_comp.content),
     )
 
     # 做kickoff标记 完成
@@ -474,7 +474,7 @@ def player_play_again(rpg_game: RPGGame, player_name: str) -> Optional[PlayerPro
 
     player_proxy.cache_kickoff_message(
         player_proxy.actor_name,
-        AgentEvent(message_content=f"再次游戏: {rpg_game._name}。"),
+        AgentEvent(message=f"再次游戏: {rpg_game._name}。"),
     )
 
     # 因为是load的，到了这里肯定有！！！

@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 # 根类 连接 player 与 entity的 2个大部分。
 class BaseEvent(BaseModel):
-    message_content: str
+    message: str
 
 
 # 广播用的实现，这里只是一个例子，实际上可能会有很多不同的实现
@@ -12,7 +12,7 @@ class AgentEvent(BaseEvent):
     pass
 
 
-# 以下是一些具体的事件
+# 以下是一些具体的事件-------------------------------------------------------------
 
 
 # 这个事件是用来更新外观的
@@ -25,3 +25,11 @@ class UpdateAppearanceEvent(AgentEvent):
 @final
 class PreStageExitEvent(AgentEvent):
     pass
+
+
+# 广播内容事件
+@final
+class BroadcastEvent(AgentEvent):
+    actor_name: str
+    stage_name: str
+    content: str

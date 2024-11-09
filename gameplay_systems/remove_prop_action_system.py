@@ -74,9 +74,7 @@ class RemovePropActionSystem(ReactiveProcessor):
         safe_name = self._context.safe_get_entity_name(entity)
         self._context.notify_event(
             set({entity}),
-            AgentEvent(
-                message_content=_generate_prop_lost_prompt(safe_name, prop_name)
-            ),
+            AgentEvent(message=_generate_prop_lost_prompt(safe_name, prop_name)),
         )
 
     ############################################################################################################
@@ -85,9 +83,7 @@ class RemovePropActionSystem(ReactiveProcessor):
         self._context.notify_event(
             set({entity}),
             AgentEvent(
-                message_content=_generate_successful_prop_removal_prompt(
-                    safe_name, prop_name
-                )
+                message=_generate_successful_prop_removal_prompt(safe_name, prop_name)
             ),
         )
 

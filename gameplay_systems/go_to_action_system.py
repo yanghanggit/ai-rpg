@@ -177,7 +177,7 @@ class GoToActionSystem(ReactiveProcessor):
         self._context.broadcast_event_in_stage(
             helper.target_stage_entity,
             AgentEvent(
-                message_content=_generate_stage_entry_prompt(
+                message=_generate_stage_entry_prompt(
                     actor_comp.name, helper.target_stage_name
                 )
             ),
@@ -188,7 +188,7 @@ class GoToActionSystem(ReactiveProcessor):
         self._context.notify_event(
             set({helper._entity}),
             AgentEvent(
-                message_content=_generate_stage_change_prompt(
+                message=_generate_stage_change_prompt(
                     actor_comp.name,
                     helper.target_stage_name,
                     helper._current_stage_name,
@@ -211,7 +211,7 @@ class GoToActionSystem(ReactiveProcessor):
         self._context.notify_event(
             set({helper._entity}),
             PreStageExitEvent(
-                message_content=_generate_last_impression_of_stage_prompt(
+                message=_generate_last_impression_of_stage_prompt(
                     my_name, helper._current_stage_name, stage_archive.stage_narrate
                 )
             ),
@@ -225,7 +225,7 @@ class GoToActionSystem(ReactiveProcessor):
         self._context.broadcast_event_in_stage(
             helper.current_stage_entity,
             AgentEvent(
-                message_content=_generate_exit_stage_prompt(
+                message=_generate_exit_stage_prompt(
                     actor_comp.name, helper._current_stage_name
                 )
             ),

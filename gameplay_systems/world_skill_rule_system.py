@@ -427,7 +427,7 @@ class WorldSkillRuleSystem(ReactiveProcessor):
         self._context.notify_event(
             set({entity}),
             AgentEvent(
-                message_content=_generate_offline_prompt(
+                message=_generate_offline_prompt(
                     self._context.safe_get_entity_name(entity),
                     self.extract_behavior_sentence(entity),
                 )
@@ -447,7 +447,7 @@ class WorldSkillRuleSystem(ReactiveProcessor):
         self._context.notify_event(
             set({entity}),
             AgentEvent(
-                message_content=_generate_rule_success_prompt(
+                message=_generate_rule_success_prompt(
                     self._context.safe_get_entity_name(entity),
                     target_names,
                     world_response_plan.result,
@@ -465,7 +465,7 @@ class WorldSkillRuleSystem(ReactiveProcessor):
         self._context.notify_event(
             set({entity}),
             AgentEvent(
-                message_content=_generate_rule_failure_prompt(
+                message=_generate_rule_failure_prompt(
                     self._context.safe_get_entity_name(entity),
                     world_response_plan.result,
                     self.extract_behavior_sentence(entity),

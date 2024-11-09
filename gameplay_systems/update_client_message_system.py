@@ -59,7 +59,7 @@ class UpdateClientMessageSystem(ExecuteProcessor):
 
         message = " ".join(stage_narrate_action.values)
         player_proxy.add_stage_message(
-            stage_narrate_action.name, AgentEvent(message_content=message)
+            stage_narrate_action.name, AgentEvent(message=message)
         )
 
     ############################################################################################################
@@ -85,7 +85,7 @@ class UpdateClientMessageSystem(ExecuteProcessor):
             stage_name = go_to_action.values[0]
             player_proxy.add_actor_message(
                 go_to_action.name,
-                AgentEvent(message_content=f"""准备去往{stage_name}"""),
+                AgentEvent(message=f"""准备去往{stage_name}"""),
             )
 
 

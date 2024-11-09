@@ -241,7 +241,7 @@ class StageEntranceCheckerSystem(ReactiveProcessor):
                 self._context.notify_event(
                     set({actor_entity}),
                     AgentEvent(
-                        message_content=_generate_stage_entry_failure_prompt(
+                        message=_generate_stage_entry_failure_prompt(
                             actor_name, stage_agent_task.agent_name, response_plan.tips
                         )
                     ),

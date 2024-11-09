@@ -234,7 +234,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
             self._context.broadcast_event_in_stage(
                 current_stage_entity,
                 UpdateAppearanceEvent(
-                    message_content=_generate_appearance_update_prompt(
+                    message=_generate_appearance_update_prompt(
                         appearance_comp.name, appearance_comp.appearance
                     )
                 ),

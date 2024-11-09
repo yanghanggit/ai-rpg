@@ -8,7 +8,7 @@ class ConstantPromptTag(StrEnum):
 
     STAGE_PLAN_PROMPT_TAG = "<%这是场景计划>"
 
-    BROADCASE_ACTION_TAG = "<%这是广播行动结果>"
+    # BROADCASE_ACTION_TAG = "<%这是广播行动结果>"
 
     SPEAK_ACTION_TAG = "<%这是说话行动结果>"
 

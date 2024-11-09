@@ -275,7 +275,7 @@ class RPGEntitasContext(Context):
 
             safe_name = self.safe_get_entity_name(entity)
             replace_message = builtin_prompt_util.replace_you(
-                agent_event.message_content, safe_name
+                agent_event.message, safe_name
             )
 
             self.agent_system.append_human_message_to_chat_history(

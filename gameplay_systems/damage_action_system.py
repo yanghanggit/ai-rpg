@@ -164,9 +164,7 @@ class DamageActionSystem(ReactiveProcessor):
             # 直接打死。
             self._context.broadcast_event_in_stage(
                 current_stage_entity,
-                AgentEvent(
-                    message_content=_generate_kill_event_prompt(from_name, target_name)
-                ),
+                AgentEvent(message=_generate_kill_event_prompt(from_name, target_name)),
             )
 
         else:
@@ -176,7 +174,7 @@ class DamageActionSystem(ReactiveProcessor):
                 self._context.broadcast_event_in_stage(
                     current_stage_entity,
                     AgentEvent(
-                        message_content=_generate_damage_event_prompt(
+                        message=_generate_damage_event_prompt(
                             from_name,
                             target_name,
                             damage,

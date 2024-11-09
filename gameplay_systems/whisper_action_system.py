@@ -63,9 +63,7 @@ class WhisperActionSystem(ReactiveProcessor):
 
             self._context.notify_event(
                 set({entity, target_entity}),
-                AgentEvent(
-                    message_content=_generate_whisper_prompt(safe_name, tp[0], tp[1])
-                ),
+                AgentEvent(message=_generate_whisper_prompt(safe_name, tp[0], tp[1])),
             )
 
 

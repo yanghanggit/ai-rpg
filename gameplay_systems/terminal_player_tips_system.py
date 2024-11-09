@@ -66,7 +66,7 @@ class TerminalPlayerTipsSystem(ExecuteProcessor):
         if not stage_entity.has(StageGraphComponent):
             player_proxy.add_tip_message(
                 self._context.safe_get_entity_name(stage_entity),
-                AgentEvent(message_content="当前场景没有相连接的场景，无法离开"),
+                AgentEvent(message="当前场景没有相连接的场景，无法离开"),
             )
             return
 
@@ -79,7 +79,7 @@ class TerminalPlayerTipsSystem(ExecuteProcessor):
         ]
         player_proxy.add_tip_message(
             self._context.safe_get_entity_name(stage_entity),
-            AgentEvent(message_content=f"可去往场景:\n{'\n'.join(stage_names)}"),
+            AgentEvent(message=f"可去往场景:\n{'\n'.join(stage_names)}"),
         )
 
     ############################################################################################################
@@ -117,12 +117,10 @@ class TerminalPlayerTipsSystem(ExecuteProcessor):
 
             player_proxy.add_tip_message(
                 actor_name,
-                AgentEvent(message_content=f"已知场景:\n{'\n'.join(stage_names)}"),
+                AgentEvent(message=f"已知场景:\n{'\n'.join(stage_names)}"),
             )
         else:
-            player_proxy.add_tip_message(
-                actor_name, AgentEvent(message_content="没有已知场景")
-            )
+            player_proxy.add_tip_message(actor_name, AgentEvent(message="没有已知场景"))
 
 
 ############################################################################################################

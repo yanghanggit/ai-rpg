@@ -60,9 +60,7 @@ class SpeakActionSystem(ReactiveProcessor):
             assert target_entity is not None
             self._context.broadcast_event_in_stage(
                 entity,
-                AgentEvent(
-                    message_content=_generate_speak_prompt(safe_name, tp[0], tp[1])
-                ),
+                AgentEvent(message=_generate_speak_prompt(safe_name, tp[0], tp[1])),
             )
 
 

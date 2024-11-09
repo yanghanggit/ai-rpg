@@ -4,7 +4,7 @@ from my_components.components import (
     PlayerComponent,
     DestroyComponent,
     ActorComponent,
-    RPGAttributesComponent,
+    AttributesComponent,
     ActorComponent,
 )
 from my_components.action_components import (
@@ -38,10 +38,10 @@ class DeadActionSystem(ExecuteProcessor):
     ########################################################################################################################################################################
     def handle_zero_hp_attributes(self) -> None:
         entities = self._context.get_group(
-            Matcher(all_of=[RPGAttributesComponent], none_of=[DeadAction])
+            Matcher(all_of=[AttributesComponent], none_of=[DeadAction])
         ).entities
         for entity in entities:
-            rpg_attributes = entity.get(RPGAttributesComponent)
+            rpg_attributes = entity.get(AttributesComponent)
             if rpg_attributes.hp <= 0:
                 entity.add(DeadAction, rpg_attributes.name, [])
 

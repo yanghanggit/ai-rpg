@@ -11,7 +11,7 @@ from my_components.action_components import (
 )
 from my_components.components import (
     BodyComponent,
-    RPGAttributesComponent,
+    AttributesComponent,
     ActorComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
@@ -306,10 +306,10 @@ class ApplySkillEffectSystem(ReactiveProcessor):
         self, entity: Entity, target: Entity, out_put_skill_attrs: List[int]
     ) -> None:
 
-        if not entity.has(RPGAttributesComponent):
+        if not entity.has(AttributesComponent):
             return
 
-        rpg_attr_comp = entity.get(RPGAttributesComponent)
+        rpg_attr_comp = entity.get(AttributesComponent)
         out_put_skill_attrs[AttributesIndex.DAMAGE.value] += rpg_attr_comp.attack
 
     ######################################################################################################################################################

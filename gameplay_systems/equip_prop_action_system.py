@@ -7,8 +7,8 @@ from my_components.action_components import (
 )
 from my_components.components import (
     ActorComponent,
-    RPGCurrentWeaponComponent,
-    RPGCurrentClothesComponent,
+    WeaponComponent,
+    ClothesComponent,
 )
 from loguru import logger
 from typing import final, override
@@ -101,9 +101,7 @@ class EquipPropActionSystem(ReactiveProcessor):
 
             if prop_file.is_weapon:
 
-                entity.replace(
-                    RPGCurrentWeaponComponent, equip_prop_action.name, prop_name
-                )
+                entity.replace(WeaponComponent, equip_prop_action.name, prop_name)
 
                 self._context.notify_event(
                     set({entity}),
@@ -116,9 +114,7 @@ class EquipPropActionSystem(ReactiveProcessor):
 
             elif prop_file.is_clothes:
 
-                entity.replace(
-                    RPGCurrentClothesComponent, equip_prop_action.name, prop_name
-                )
+                entity.replace(ClothesComponent, equip_prop_action.name, prop_name)
 
                 self._context.notify_event(
                     set({entity}),

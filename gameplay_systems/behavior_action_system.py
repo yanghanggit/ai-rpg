@@ -6,7 +6,7 @@ from my_components.action_components import (
     SkillUsePropAction,
     WorldSkillSystemRuleAction,
 )
-from my_components.components import StageComponent, RPGCurrentWeaponComponent
+from my_components.components import StageComponent, WeaponComponent
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import final, override, Set, Optional, Any
 from extended_systems.prop_file import PropFile
@@ -104,9 +104,9 @@ class BehaviorActionSystem(ReactiveProcessor):
 
     ######################################################################################################################################################
     def get_current_weapon(self, entity: Entity) -> Optional[PropFile]:
-        if not entity.has(RPGCurrentWeaponComponent):
+        if not entity.has(WeaponComponent):
             return None
-        current_weapon_comp = entity.get(RPGCurrentWeaponComponent)
+        current_weapon_comp = entity.get(WeaponComponent)
         return self._context._file_system.get_file(
             PropFile, current_weapon_comp.name, current_weapon_comp.propname
         )

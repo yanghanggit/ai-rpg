@@ -1,8 +1,8 @@
 from entitas import Matcher, ReactiveProcessor, GroupEvent, Entity  # type: ignore
 from my_components.action_components import DamageAction, DeadAction
 from my_components.components import (
-    RPGAttributesComponent,
-    RPGCurrentClothesComponent,
+    AttributesComponent,
+    ClothesComponent,
     ActorComponent,
     StageComponent,
 )
@@ -53,7 +53,7 @@ class DamageActionSystem(ReactiveProcessor):
     def filter(self, entity: Entity) -> bool:
         return (
             entity.has(DamageAction)
-            and entity.has(RPGAttributesComponent)
+            and entity.has(AttributesComponent)
             and (entity.has(StageComponent) or entity.has(ActorComponent))
         )
 
@@ -99,7 +99,7 @@ class DamageActionSystem(ReactiveProcessor):
         self, from_name: str, target_entity: Entity, input_damage: int
     ) -> None:
         # 目标拿出来
-        target_rpg_comp = target_entity.get(RPGAttributesComponent)
+        target_rpg_comp = target_entity.get(AttributesComponent)
 
         # 简单的战斗计算，简单的血减掉伤害
         hp = target_rpg_comp.hp
@@ -114,7 +114,7 @@ class DamageActionSystem(ReactiveProcessor):
 
         # 结果修改
         target_entity.replace(
-            RPGAttributesComponent,
+            AttributesComponent,
             target_rpg_comp.name,
             target_rpg_comp.maxhp,
             left_hp,
@@ -172,7 +172,7 @@ class DamageActionSystem(ReactiveProcessor):
         else:
             # 没有打死。对于场景的伤害不要通知了，场景设定目前是打不死的。而且怕影响对话上下文。
             if not target_entity.has(StageComponent):
-                rpg_attr_comp = target_entity.get(RPGAttributesComponent)
+                rpg_attr_comp = target_entity.get(AttributesComponent)
                 self._context.broadcast_event_in_stage(
                     current_stage_entity,
                     AgentEvent(
@@ -207,13 +207,13 @@ class DamageActionSystem(ReactiveProcessor):
         final: int = 0
 
         # 基础防御力
-        rpg_attr_comp = entity.get(RPGAttributesComponent)
+        rpg_attr_comp = entity.get(AttributesComponent)
         final += rpg_attr_comp.defense
 
         # 计算衣服带来的防御力
-        if entity.has(RPGCurrentClothesComponent):
+        if entity.has(ClothesComponent):
 
-            clothes_comp = entity.get(RPGCurrentClothesComponent)
+            clothes_comp = entity.get(ClothesComponent)
 
             current_clothe_prop_file = self._context._file_system.get_file(
                 PropFile, clothes_comp.name, clothes_comp.propname

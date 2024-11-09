@@ -5,7 +5,7 @@ from my_components.components import (
     PlanningAllowedComponent,
     StageComponent,
     ActorComponent,
-    EnterStageComponent,
+    EnterStageFlagComponent,
 )
 from rpg_game.rpg_game import RPGGame
 from typing import List, Dict, Optional, final
@@ -114,10 +114,12 @@ class ActorPlanningStrategySystem(InitializeProcessor, ExecuteProcessor):
     def _analyze_recent_stage_transition_actors(self) -> Dict[str, List[str]]:
         ret: Dict[str, List[str]] = {}
 
-        actor_entities = self._context.get_group(Matcher(EnterStageComponent)).entities
+        actor_entities = self._context.get_group(
+            Matcher(EnterStageFlagComponent)
+        ).entities
 
         for actor_entity in actor_entities:
-            enter_stage_comp = actor_entity.get(EnterStageComponent)
+            enter_stage_comp = actor_entity.get(EnterStageFlagComponent)
             ret.setdefault(enter_stage_comp.enter_stage, []).append(
                 enter_stage_comp.name
             )
@@ -127,10 +129,10 @@ class ActorPlanningStrategySystem(InitializeProcessor, ExecuteProcessor):
     ############################################################################################################
     def _handle_remove_enter_stage_component(self) -> None:
         actor_entities = self._context.get_group(
-            Matcher(EnterStageComponent)
+            Matcher(EnterStageFlagComponent)
         ).entities.copy()
         for actor_entity in actor_entities:
-            actor_entity.remove(EnterStageComponent)
+            actor_entity.remove(EnterStageFlagComponent)
 
     ############################################################################################################
     def _pop_first_executable_actor_from_order_queue(

@@ -94,14 +94,14 @@ class BodyComponent(NamedTuple):
 
 # 标记进入新的舞台
 @final
-class EnterStageComponent(NamedTuple):
+class EnterStageFlagComponent(NamedTuple):
     name: str
     enter_stage: str
 
 
 # RPG游戏的属性组件
 @final
-class RPGAttributesComponent(NamedTuple):
+class AttributesComponent(NamedTuple):
     name: str
     maxhp: int
     hp: int
@@ -111,14 +111,14 @@ class RPGAttributesComponent(NamedTuple):
 
 # RPG游戏的当前武器组件
 @final
-class RPGCurrentWeaponComponent(NamedTuple):
+class WeaponComponent(NamedTuple):
     name: str
     propname: str
 
 
 # RPG游戏的当前衣服组件
 @final
-class RPGCurrentClothesComponent(NamedTuple):
+class ClothesComponent(NamedTuple):
     name: str
     propname: str
 

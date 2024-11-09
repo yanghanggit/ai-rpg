@@ -7,12 +7,12 @@ from my_components.components import (
     StageComponent,
     ActorComponent,
     PlayerComponent,
-    RPGAttributesComponent,
+    AttributesComponent,
     AppearanceComponent,
     BodyComponent,
     GUIDComponent,
-    RPGCurrentWeaponComponent,
-    RPGCurrentClothesComponent,
+    WeaponComponent,
+    ClothesComponent,
     StageGraphComponent,
     KickOffContentComponent,
     RoundEventsComponent,
@@ -322,7 +322,7 @@ class RPGGame(BaseGame):
         actor_entity.add(ActorComponent, actor_instance.name, "")
 
         actor_entity.add(
-            RPGAttributesComponent,
+            AttributesComponent,
             actor_instance.name,
             actor_model.attributes[AttributesIndex.MAX_HP.value],
             actor_model.attributes[AttributesIndex.CUR_HP.value],
@@ -403,18 +403,14 @@ class RPGGame(BaseGame):
             ):
                 clothes_prop_file = find_prop_file_weapon_or_clothes
 
-        if weapon_prop_file is not None and not actor_entity.has(
-            RPGCurrentWeaponComponent
-        ):
+        if weapon_prop_file is not None and not actor_entity.has(WeaponComponent):
             actor_entity.add(
-                RPGCurrentWeaponComponent, actor_instance.name, weapon_prop_file.name
+                WeaponComponent, actor_instance.name, weapon_prop_file.name
             )
 
-        if clothes_prop_file is not None and not actor_entity.has(
-            RPGCurrentClothesComponent
-        ):
+        if clothes_prop_file is not None and not actor_entity.has(ClothesComponent):
             actor_entity.add(
-                RPGCurrentClothesComponent, actor_instance.name, clothes_prop_file.name
+                ClothesComponent, actor_instance.name, clothes_prop_file.name
             )
 
         return actor_entity
@@ -462,7 +458,7 @@ class RPGGame(BaseGame):
 
         # 记录属性
         stage_entity.add(
-            RPGAttributesComponent,
+            AttributesComponent,
             stage_model.name,
             stage_model.attributes[AttributesIndex.MAX_HP.value],
             stage_model.attributes[AttributesIndex.CUR_HP.value],
@@ -578,9 +574,7 @@ class RPGGame(BaseGame):
         assert game_resource.is_load
 
         load_entities = context.get_group(
-            Matcher(
-                any_of=[RPGAttributesComponent, AppearanceComponent, PlayerComponent]
-            )
+            Matcher(any_of=[AttributesComponent, AppearanceComponent, PlayerComponent])
         ).entities
 
         for load_entity in load_entities:
@@ -600,10 +594,10 @@ class RPGGame(BaseGame):
                 # 只有这些组件需要处理
                 match (comp.name):
 
-                    case RPGAttributesComponent.__name__:
-                        rpg_attr_comp = RPGAttributesComponent(**comp.data)
+                    case AttributesComponent.__name__:
+                        rpg_attr_comp = AttributesComponent(**comp.data)
                         load_entity.replace(
-                            RPGAttributesComponent,
+                            AttributesComponent,
                             rpg_attr_comp.name,
                             rpg_attr_comp.maxhp,
                             rpg_attr_comp.hp,

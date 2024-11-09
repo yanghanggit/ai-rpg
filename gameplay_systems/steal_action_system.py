@@ -6,8 +6,8 @@ from my_components.action_components import (
 )
 from my_components.components import (
     ActorComponent,
-    RPGCurrentWeaponComponent,
-    RPGCurrentClothesComponent,
+    WeaponComponent,
+    ClothesComponent,
 )
 import gameplay_systems.conversation_helper
 from typing import final, override
@@ -135,13 +135,13 @@ class StealActionSystem(ReactiveProcessor):
         if not prop_file.can_exchange:
             return False
 
-        if target_entity.has(RPGCurrentWeaponComponent):
-            current_weapon_comp = target_entity.get(RPGCurrentWeaponComponent)
+        if target_entity.has(WeaponComponent):
+            current_weapon_comp = target_entity.get(WeaponComponent)
             if current_weapon_comp.propname == prop_file.name:
                 return False
 
-        if target_entity.has(RPGCurrentClothesComponent):
-            current_armor_comp = target_entity.get(RPGCurrentClothesComponent)
+        if target_entity.has(ClothesComponent):
+            current_armor_comp = target_entity.get(ClothesComponent)
             if current_armor_comp.propname == prop_file.name:
                 return False
 

@@ -2,7 +2,7 @@ from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: igno
 from my_components.action_components import GoToAction, DeadAction
 from my_components.components import (
     ActorComponent,
-    EnterStageComponent,
+    EnterStageFlagComponent,
     StageComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
@@ -11,25 +11,24 @@ import gameplay_systems.builtin_prompt_util as builtin_prompt_util
 from rpg_game.rpg_game import RPGGame
 from extended_systems.archive_file import StageArchiveFile
 from my_models.event_models import AgentEvent, PreStageExitEvent
+from loguru import logger
 
 
 ################################################################################################################################################
-def _generate_leave_stage_prompt(
-    actor_name: str, current_stage_name: str, go_to_stage_name: str
+def _generate_exit_stage_prompt(actor_name: str, current_stage_name: str) -> str:
+    return f"# 发生事件: {actor_name} 离开了 {current_stage_name} 场景。"
+
+
+################################################################################################################################################
+def _generate_stage_entry_prompt(actor_name: str, target_stage_name: str) -> str:
+    return f"# 发生事件: {actor_name} 进入了场景 {target_stage_name}。"
+
+
+################################################################################################################################################
+def _generate_stage_change_prompt(
+    actor_name: str, target_stage_name: str, previous_stage_name: str
 ) -> str:
-    return f"# {actor_name}离开了{current_stage_name} 场景。"
-
-
-################################################################################################################################################
-def _generate_stage_entry_prompt1(actor_name: str, target_stage_name: str) -> str:
-    return f"# {actor_name}进入了场景 {target_stage_name}。"
-
-
-################################################################################################################################################
-def _generate_stage_entry_prompt2(
-    actor_name: str, target_stage_name: str, last_stage_name: str
-) -> str:
-    return f"# {actor_name} 离开了 {last_stage_name}, 进入了{target_stage_name}。"
+    return f"# 发生事件: {actor_name} 离开了 {previous_stage_name} 场景, 然后进入了 {target_stage_name} 场景。"
 
 
 ################################################################################################################################################
@@ -44,7 +43,7 @@ def _generate_last_impression_of_stage_prompt(
 
 
 ###############################################################################################################################################
-class GoToHelper:
+class StageTransitionHandler:
 
     def __init__(
         self, context: RPGEntitasContext, entity: Entity, target_stage_name: str
@@ -52,23 +51,32 @@ class GoToHelper:
 
         self._context: RPGEntitasContext = context
         self._entity: Entity = entity
+        self._target_stage_name: str = target_stage_name
+
         self._current_stage_name: str = entity.get(ActorComponent).current_stage
         self._current_stage_entity: Optional[Entity] = self._context.get_stage_entity(
             self._current_stage_name
         )
-        assert self._current_stage_entity is not None
-        self._target_stage_name: str = target_stage_name
 
+    ###############################################################################################################################################
+    @property
+    def current_stage_entity(self) -> Entity:
+        assert self._current_stage_entity is not None
+        return self._current_stage_entity
+
+    ###############################################################################################################################################
     @property
     def target_stage_entity(self) -> Optional[Entity]:
-        stage_name = self._get_target_stage_name(self._entity)
+        stage_name = self._resolve_target_stage_name(self._entity)
         return self._context.get_stage_entity(stage_name)
 
+    ###############################################################################################################################################
     @property
     def target_stage_name(self) -> str:
-        return self._get_target_stage_name(self._entity)
+        return self._resolve_target_stage_name(self._entity)
 
-    def _get_target_stage_name(self, actor_entity: Entity) -> str:
+    ###############################################################################################################################################
+    def _resolve_target_stage_name(self, actor_entity: Entity) -> str:
         assert actor_entity.has(ActorComponent)
         assert actor_entity.has(GoToAction)
 
@@ -85,6 +93,11 @@ class GoToHelper:
                 return self._context.safe_get_entity_name(stage_entity)
 
         return str(go_to_action.values[0])
+
+
+###############################################################################################################################################
+###############################################################################################################################################
+###############################################################################################################################################
 
 
 @final
@@ -113,35 +126,34 @@ class GoToActionSystem(ReactiveProcessor):
     @override
     def react(self, entities: list[Entity]) -> None:
         for entity in entities:
-            self.handle(entity)
+            self._process_go_to_action(entity)
 
     ###############################################################################################################################################
-    def handle(self, entity: Entity) -> None:
+    def _process_go_to_action(self, entity: Entity) -> None:
 
-        assert entity.has(GoToAction)
         go_to_action = entity.get(GoToAction)
         if len(go_to_action.values) == 0:
+            logger.error(f"GoToActionSystem: {entity} has no target stage")
             return
 
-        helper = GoToHelper(self._context, entity, go_to_action.values[0])
+        helper = StageTransitionHandler(self._context, entity, go_to_action.values[0])
         if (
             helper.target_stage_entity is None
-            or helper._current_stage_entity is None
-            or helper.target_stage_entity == helper._current_stage_entity
+            or helper.current_stage_entity is None
+            or helper.target_stage_entity == helper.current_stage_entity
         ):
+            logger.error(f"GoToActionSystem: {entity} invalid helper")
             return
 
-        if helper._current_stage_entity is not None:
-            # 离开前的处理
-            self.before_leave_current_stage(helper)
-            # 离开
-            self.leave_current_stage(helper)
-
+        # 离开前的处理
+        self._prepare_for_exit_stage(helper)
+        # 离开
+        self._exit_current_stage(helper)
         # 进入新的场景
-        self.enter_target_stage(helper)
+        self._enter_target_stage(helper)
 
     ###############################################################################################################################################
-    def enter_target_stage(self, helper: GoToHelper) -> None:
+    def _enter_target_stage(self, helper: StageTransitionHandler) -> None:
 
         actor_comp = helper._entity.get(ActorComponent)
 
@@ -152,7 +164,7 @@ class GoToActionSystem(ReactiveProcessor):
 
         # 标记一下
         helper._entity.replace(
-            EnterStageComponent, actor_comp.name, helper.target_stage_name
+            EnterStageFlagComponent, actor_comp.name, helper.target_stage_name
         )
 
         # 更新场景标记
@@ -160,21 +172,23 @@ class GoToActionSystem(ReactiveProcessor):
             helper._entity, helper._current_stage_name, helper.target_stage_name
         )
 
+        # 通知新场景的人，我进入了场景，#自己不用通知，下面会单独通知。
         assert helper.target_stage_entity is not None
         self._context.broadcast_event_in_stage(
             helper.target_stage_entity,
             AgentEvent(
-                message_content=_generate_stage_entry_prompt1(
+                message_content=_generate_stage_entry_prompt(
                     actor_comp.name, helper.target_stage_name
                 )
             ),
             set({helper._entity}),
         )
 
+        # 通知自己，我切换了场景
         self._context.notify_event(
             set({helper._entity}),
             AgentEvent(
-                message_content=_generate_stage_entry_prompt2(
+                message_content=_generate_stage_change_prompt(
                     actor_comp.name,
                     helper.target_stage_name,
                     helper._current_stage_name,
@@ -183,7 +197,7 @@ class GoToActionSystem(ReactiveProcessor):
         )
 
     ###############################################################################################################################################
-    def before_leave_current_stage(self, helper: GoToHelper) -> None:
+    def _prepare_for_exit_stage(self, helper: StageTransitionHandler) -> None:
 
         my_name = self._context.safe_get_entity_name(helper._entity)
 
@@ -204,18 +218,15 @@ class GoToActionSystem(ReactiveProcessor):
         )
 
     ###############################################################################################################################################
-    def leave_current_stage(self, helper: GoToHelper) -> None:
+    def _exit_current_stage(self, helper: StageTransitionHandler) -> None:
 
         # 离开场景的事件需要通知相关的人
-        assert helper._current_stage_entity is not None
         actor_comp = helper._entity.get(ActorComponent)
         self._context.broadcast_event_in_stage(
-            helper._current_stage_entity,
+            helper.current_stage_entity,
             AgentEvent(
-                message_content=_generate_leave_stage_prompt(
-                    actor_comp.name,
-                    helper._current_stage_name,
-                    helper.target_stage_name,
+                message_content=_generate_exit_stage_prompt(
+                    actor_comp.name, helper._current_stage_name
                 )
             ),
             set({helper._entity}),

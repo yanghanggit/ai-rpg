@@ -6,8 +6,8 @@ from my_components.components import (
     ActorComponent,
     PlayerComponent,
     GUIDComponent,
-    RPGCurrentWeaponComponent,
-    RPGCurrentClothesComponent,
+    WeaponComponent,
+    ClothesComponent,
     WorldComponent,
     StageSpawnerComponent,
 )
@@ -119,12 +119,12 @@ class SaveGameResourceSystem(ExecuteProcessor):
             actor_current_using_prop=[],
         )
 
-        if actor_entity.has(RPGCurrentWeaponComponent):
-            current_weapon_comp = actor_entity.get(RPGCurrentWeaponComponent)
+        if actor_entity.has(WeaponComponent):
+            current_weapon_comp = actor_entity.get(WeaponComponent)
             ret.actor_current_using_prop.append(current_weapon_comp.propname)
 
-        if actor_entity.has(RPGCurrentClothesComponent):
-            current_clothes_comp = actor_entity.get(RPGCurrentClothesComponent)
+        if actor_entity.has(ClothesComponent):
+            current_clothes_comp = actor_entity.get(ClothesComponent)
             ret.actor_current_using_prop.append(current_clothes_comp.propname)
 
         return ret

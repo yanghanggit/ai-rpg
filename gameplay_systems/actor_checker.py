@@ -1,9 +1,9 @@
 from entitas import Entity  # type: ignore
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from my_components.components import (
-    RPGAttributesComponent,
-    RPGCurrentClothesComponent,
-    RPGCurrentWeaponComponent,
+    AttributesComponent,
+    ClothesComponent,
+    WeaponComponent,
     AppearanceComponent,
 )
 from typing import List, Dict, Optional
@@ -84,9 +84,9 @@ class ActorChecker:
 
     ######################################################################################################################################
     def _check_health(self, entity: Entity) -> None:
-        if not entity.has(RPGAttributesComponent):
+        if not entity.has(AttributesComponent):
             return
-        rpg_attr_comp = entity.get(RPGAttributesComponent)
+        rpg_attr_comp = entity.get(AttributesComponent)
         self._maxhp = rpg_attr_comp.maxhp
         self._hp = rpg_attr_comp.hp
 
@@ -94,14 +94,14 @@ class ActorChecker:
     def _check_equipments(self, context: RPGEntitasContext, entity: Entity) -> None:
         safe_name = context.safe_get_entity_name(entity)
 
-        if entity.has(RPGCurrentWeaponComponent):
+        if entity.has(WeaponComponent):
             self._current_weapon = context._file_system.get_file(
-                PropFile, safe_name, entity.get(RPGCurrentWeaponComponent).propname
+                PropFile, safe_name, entity.get(WeaponComponent).propname
             )
 
-        if entity.has(RPGCurrentClothesComponent):
+        if entity.has(ClothesComponent):
             self._current_clothes = context._file_system.get_file(
-                PropFile, safe_name, entity.get(RPGCurrentClothesComponent).propname
+                PropFile, safe_name, entity.get(ClothesComponent).propname
             )
 
     ######################################################################################################################################

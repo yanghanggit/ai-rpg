@@ -8,7 +8,7 @@ from my_components.components import (
     AppearanceComponent,
     BodyComponent,
     ActorComponent,
-    RPGCurrentClothesComponent,
+    ClothesComponent,
 )
 from extended_systems.prop_file import PropFile
 from my_agent.agent_task import AgentTask
@@ -202,10 +202,10 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
 
     ###############################################################################################################################################
     def get_current_clothe(self, entity: Entity) -> str:
-        if not entity.has(RPGCurrentClothesComponent):
+        if not entity.has(ClothesComponent):
             return ""
 
-        current_clothes_comp = entity.get(RPGCurrentClothesComponent)
+        current_clothes_comp = entity.get(ClothesComponent)
         current_clothe_prop_file = self._context._file_system.get_file(
             PropFile, current_clothes_comp.name, current_clothes_comp.propname
         )

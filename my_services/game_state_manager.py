@@ -11,7 +11,7 @@ class GameState(Enum):
     REQUESTING_EXIT = 6
 
 
-class GameStateManager:
+class GameStateController:
 
     def __init__(self, game_stage: GameState) -> None:
 

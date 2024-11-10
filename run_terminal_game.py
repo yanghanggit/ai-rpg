@@ -13,8 +13,8 @@ from my_models.player_models import PlayerProxyModel
 
 @dataclass
 class TerminalGameOption:
-    login_player_name: str
-    default_game_name: str
+    user_name: str
+    default_game: str
     check_game_resource_version: str
     show_client_message_count: int = 20
     new_game: bool = True
@@ -24,17 +24,16 @@ async def run_terminal_game(option: TerminalGameOption) -> None:
 
     # 输入要进入的世界名称
     game_name = input(
-        f"请输入要进入的世界名称(必须与自动化创建的名字一致), 默认为 {option.default_game_name}:"
+        f"请输入要进入的世界名称(必须与自动化创建的名字一致), 默认为 {option.default_game}:"
     )
 
     # 如果没有输入就用默认的
     if game_name == "":
-        game_name = option.default_game_name
+        game_name = option.default_game
 
     # 创建游戏运行时目录，每一次运行都会删除
-    game_runtime_dir = rpg_game_config.GAMES_RUNTIME_DIR / game_name
+    game_runtime_dir = rpg_game_config.GAMES_RUNTIME_DIR / option.user_name / game_name
     if game_runtime_dir.exists():
-        # logger.warning(f"删除文件夹：{game_runtime_dir}, 这是为了测试，后续得改！！！")
         shutil.rmtree(game_runtime_dir)
 
     game_runtime_dir.mkdir(parents=True, exist_ok=True)
@@ -66,7 +65,9 @@ async def run_terminal_game(option: TerminalGameOption) -> None:
 
     else:
         # 测试用的load!!!!!!!!!!!!!!!!
-        load_archive_zip_path = rpg_game_config.GAMES_ARCHIVE_DIR / f"{game_name}.zip"
+        load_archive_zip_path = (
+            rpg_game_config.GAMES_ARCHIVE_DIR / option.user_name / f"{game_name}.zip"
+        )
         if load_archive_zip_path.exists():
             game_resource = rpg_game.rpg_game_helper.load_game_resource(
                 load_archive_zip_path,
@@ -91,8 +92,8 @@ async def run_terminal_game(option: TerminalGameOption) -> None:
         # 是否是控制actor游戏
         player_actor_name = terminal_player_input_select_actor(new_game)
         if player_actor_name != "":
-            logger.info(f"{option.login_player_name}:{game_name}:{player_actor_name}")
-            player_proxy = PlayerProxy(PlayerProxyModel(name=option.login_player_name))
+            logger.info(f"{option.user_name}:{game_name}:{player_actor_name}")
+            player_proxy = PlayerProxy(PlayerProxyModel(name=option.user_name))
             new_game.add_player(player_proxy)
 
             rpg_game.rpg_game_helper.player_play_new_game(
@@ -105,7 +106,7 @@ async def run_terminal_game(option: TerminalGameOption) -> None:
     else:
 
         player_proxy = rpg_game.rpg_game_helper.player_play_again(
-            new_game, option.login_player_name
+            new_game, option.user_name
         )
 
     # 核心循环
@@ -137,14 +138,17 @@ async def run_terminal_game(option: TerminalGameOption) -> None:
             # 不是你的输入回合
             await terminal_player_wait(new_game, player_proxy)
 
-    rpg_game.rpg_game_helper.save_game(new_game, rpg_game_config.GAMES_ARCHIVE_DIR)
+    rpg_game.rpg_game_helper.save_game(
+        rpg_game=new_game,
+        archive_dir=rpg_game_config.GAMES_ARCHIVE_DIR / option.user_name,
+    )
     new_game.exit()
     new_game = None  # 其实是废话，习惯性写着吧
 
 
 ###############################################################################################################################################
 def terminal_player_input_select_actor(game: RPGGame) -> str:
-    all_names = rpg_game.rpg_game_helper.get_player_actor_names(game)
+    all_names = rpg_game.rpg_game_helper.get_player_actor(game)
     if len(all_names) == 0:
         return ""
 
@@ -287,8 +291,8 @@ if __name__ == "__main__":
     logger.add(f"logs/{log_start_time}.log", level="DEBUG")
 
     option = TerminalGameOption(
-        login_player_name="北京柏林互动科技有限公司",
-        default_game_name="World1",
+        user_name="北京柏林互动科技有限公司",
+        default_game="World1",
         check_game_resource_version=rpg_game_config.CHECK_GAME_RESOURCE_VERSION,
         show_client_message_count=20,
     )

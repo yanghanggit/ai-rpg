@@ -202,24 +202,6 @@ def get_stage_narrate_content_from_stage_archive_file(
 
 
 #######################################################################################################################################
-# def get_info_of_actors_in_stage(
-#     game_name: RPGGame, player_entity: Entity
-# ) -> Dict[str, str]:
-#     stage_entity = game_name.context.safe_get_stage_entity(player_entity)
-#     if stage_entity is None:
-#         return {}
-
-#     actor_entities = game_name.context.get_actors_in_stage(stage_entity)
-#     ret: Dict[str, str] = {}
-#     for actor_entity in actor_entities:
-#         actor_comp = actor_entity.get(ActorComponent)
-#         appearance_comp = actor_entity.get(AppearanceComponent)
-#         ret.setdefault(actor_comp.name, appearance_comp.appearance)
-
-#     return ret
-
-
-#######################################################################################################################################
 def gen_player_watch_action_model(
     game_name: RPGGame, player_proxy: PlayerProxy
 ) -> Optional[WatchActionModel]:
@@ -487,7 +469,7 @@ def player_play_again(rpg_game: RPGGame, player_name: str) -> Optional[PlayerPro
 
 
 #######################################################################################################################################
-def get_player_actor_names(rpg_game: RPGGame) -> List[str]:
+def get_player_actor(rpg_game: RPGGame) -> List[str]:
 
     actor_entities = rpg_game.context.get_player_entities()
     ret: List[str] = []

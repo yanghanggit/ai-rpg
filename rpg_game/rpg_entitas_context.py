@@ -7,7 +7,7 @@ from my_components.components import (
     PlayerComponent,
     AppearanceComponent,
     GUIDComponent,
-    RoundEventsComponent,
+    RoundEventsRecordComponent,
 )
 from extended_systems.file_system import FileSystem
 from extended_systems.query_component_system import QueryComponentSystem
@@ -282,8 +282,8 @@ class RPGEntitasContext(Context):
                 safe_name, replace_message
             )
 
-            if entity.has(RoundEventsComponent):
-                round_events_comp = entity.get(RoundEventsComponent)
+            if entity.has(RoundEventsRecordComponent):
+                round_events_comp = entity.get(RoundEventsRecordComponent)
                 round_events_comp.events.append(replace_message)
 
     #############################################################################################################################

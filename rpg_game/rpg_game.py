@@ -15,7 +15,7 @@ from my_components.components import (
     ClothesComponent,
     StageGraphComponent,
     KickOffContentComponent,
-    RoundEventsComponent,
+    RoundEventsRecordComponent,
     KickOffFlagComponent,
     StageSpawnerComponent,
 )
@@ -37,6 +37,7 @@ from my_models.event_models import (
     BaseEvent,
     UpdateAppearanceEvent,
     PreStageExitEvent,
+    GameRoundEvent,
 )
 from my_models.file_models import PropFileModel
 from my_models.entity_models import AttributesIndex
@@ -211,7 +212,7 @@ class RPGGame(BaseGame):
         )
         world_system_entity.add(WorldComponent, world_system_model.name)
         world_system_entity.add(KickOffContentComponent, world_system_model.name, "")
-        world_system_entity.add(RoundEventsComponent, world_system_model.name, [])
+        world_system_entity.add(RoundEventsRecordComponent, world_system_model.name, [])
 
         # 添加扩展子系统的功能: Agent
         context.agent_system.register_agent(
@@ -341,7 +342,7 @@ class RPGGame(BaseGame):
             KickOffContentComponent, actor_instance.name, actor_model.kick_off_message
         )
 
-        actor_entity.add(RoundEventsComponent, actor_instance.name, [])
+        actor_entity.add(RoundEventsRecordComponent, actor_instance.name, [])
 
         # 添加扩展子系统: Agent
         context.agent_system.register_agent(actor_instance.name, actor_model.url)
@@ -472,7 +473,7 @@ class RPGGame(BaseGame):
         )
 
         # 记录用
-        stage_entity.add(RoundEventsComponent, stage_model.name, [])
+        stage_entity.add(RoundEventsRecordComponent, stage_model.name, [])
 
         # 添加场景可以连接的场景
         stage_entity.add(StageGraphComponent, stage_model.name, stage_model.stage_graph)
@@ -696,7 +697,7 @@ class RPGGame(BaseGame):
     ###############################################################################################################################################
     @override
     def send_event(self, player_proxy_names: Set[str], send_event: BaseEvent) -> None:
-        if self._ignore_event(send_event):
+        if self._should_ignore_event(send_event):
             logger.debug(f"忽略的消息：{send_event}")
             return
 
@@ -715,9 +716,11 @@ class RPGGame(BaseGame):
             player_proxy.add_actor_message(player_proxy.actor_name, send_event)
 
     ###############################################################################################################################################
-    def _ignore_event(self, send_event: BaseEvent) -> bool:
-        return isinstance(send_event, UpdateAppearanceEvent) or isinstance(
-            send_event, PreStageExitEvent
+    def _should_ignore_event(self, send_event: BaseEvent) -> bool:
+        return (
+            isinstance(send_event, UpdateAppearanceEvent)
+            or isinstance(send_event, PreStageExitEvent)
+            or isinstance(send_event, GameRoundEvent)
         )
 
     ###############################################################################################################################################

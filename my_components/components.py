@@ -125,6 +125,6 @@ class ClothesComponent(NamedTuple):
 
 # 每一局的消息记录下来，为了处理archives的问题
 @final
-class RoundEventsComponent(NamedTuple):
+class RoundEventsRecordComponent(NamedTuple):
     name: str
     events: List[str]

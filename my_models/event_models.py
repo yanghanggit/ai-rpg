@@ -54,3 +54,8 @@ class WhisperEvent(AgentEvent):
     whisperer_name: str
     target_name: str
     content: str
+
+# 每一个游戏回合通知到
+@final
+class GameRoundEvent(AgentEvent):
+    pass

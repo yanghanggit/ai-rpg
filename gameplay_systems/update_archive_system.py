@@ -4,7 +4,7 @@ from my_components.components import (
     ActorComponent,
     StageComponent,
     KickOffContentComponent,
-    RoundEventsComponent,
+    RoundEventsRecordComponent,
 )
 from typing import Set, final, override, Dict, List
 import extended_systems.file_system_util
@@ -87,12 +87,12 @@ class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
         all_stage_names = self._get_all_stage_names()
 
         actor_entities: Set[Entity] = self._context.get_group(
-            Matcher(all_of=[ActorComponent, RoundEventsComponent])
+            Matcher(all_of=[ActorComponent, RoundEventsRecordComponent])
         ).entities
 
         for actor_entity in actor_entities:
 
-            round_events_comp = actor_entity.get(RoundEventsComponent)
+            round_events_comp = actor_entity.get(RoundEventsRecordComponent)
             messages = round_events_comp.events
             if len(messages) == 0:
                 continue

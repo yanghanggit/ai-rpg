@@ -17,7 +17,7 @@ from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from typing import Dict, List, final
 import gameplay_systems.action_helper
-from extended_systems.prop_file import PropFile, generate_prop_prompt
+from extended_systems.prop_file import PropFile, generate_prop_file_appearance_prompt
 import gameplay_systems.builtin_prompt_util as builtin_prompt_util
 from my_agent.agent_task import (
     AgentTask,
@@ -35,9 +35,7 @@ def _generate_stage_plan_prompt(
     if len(props_in_stage) > 0:
         props_in_stage_prompt = ""
         for prop in props_in_stage:
-            props_in_stage_prompt += generate_prop_prompt(
-                prop, description_prompt=False, appearance_prompt=True
-            )
+            props_in_stage_prompt += generate_prop_file_appearance_prompt(prop)
 
     ## 场景角色
     actors_in_stage_prompt = "- 无任何角色。"

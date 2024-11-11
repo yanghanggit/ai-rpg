@@ -17,7 +17,10 @@ from typing import final, override, List, Set, Any, Dict, Optional
 from gameplay_systems.actor_checker import ActorChecker
 from my_agent.agent_task import AgentTask
 from my_agent.agent_plan import AgentPlanResponse
-from extended_systems.prop_file import PropFile, generate_prop_prompt
+from extended_systems.prop_file import (
+    PropFile,
+    generate_prop_file_for_stage_condition_prompt,
+)
 from rpg_game.rpg_game import RPGGame
 from my_models.file_models import PropType
 from my_models.event_models import AgentEvent
@@ -34,12 +37,7 @@ def _generate_stage_entry_conditions_prompt(
     prop_prompt_list = "无"
     if len(prop_files) > 0:
         prop_prompt_list = "\n".join(
-            [
-                generate_prop_prompt(
-                    prop, description_prompt=True, appearance_prompt=True
-                )
-                for prop in prop_files
-            ]
+            [generate_prop_file_for_stage_condition_prompt(prop) for prop in prop_files]
         )
 
     ret_prompt = f"""# {actor_name} 想要进入场景: {current_stage_name}。

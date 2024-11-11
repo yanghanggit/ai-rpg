@@ -19,7 +19,7 @@ from rpg_game.terminal_game import TerminalGame
 from rpg_game.web_game import WebGame
 from player.player_proxy import PlayerProxy
 from extended_systems.archive_file import ActorArchiveFile, StageArchiveFile
-from extended_systems.prop_file import PropFile, generate_prop_prompt
+from extended_systems.prop_file import PropFile, generate_prop_file_appearance_prompt
 from my_components.components import (
     ActorComponent,
     PlayerComponent,
@@ -231,10 +231,7 @@ def gen_player_watch_action_model(
     # 场景内的道具信息获取
     props_in_stage = get_props_in_stage(game_name, player_entity)
     props_in_stage_prompts = [
-        generate_prop_prompt(
-            prop, description_prompt=False, appearance_prompt=True, attr_prompt=False
-        )
-        for prop in props_in_stage
+        generate_prop_file_appearance_prompt(prop) for prop in props_in_stage
     ]
 
     # 场景名称

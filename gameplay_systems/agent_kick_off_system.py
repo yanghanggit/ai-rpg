@@ -14,7 +14,7 @@ from loguru import logger
 from typing import Dict, Set, FrozenSet, Any, List, final
 from my_agent.agent_task import AgentTask
 from rpg_game.rpg_game import RPGGame
-from extended_systems.prop_file import PropFile, generate_prop_prompt
+from extended_systems.prop_file import PropFile, generate_prop_file_appearance_prompt
 from my_components.action_components import (
     STAGE_AVAILABLE_ACTIONS_REGISTER,
     ACTOR_AVAILABLE_ACTIONS_REGISTER,
@@ -54,9 +54,7 @@ def _generate_stage_kick_off_prompt(
     if len(props_in_stage) > 0:
         props_prompt = ""
         for prop_file in props_in_stage:
-            props_prompt += generate_prop_prompt(
-                prop_file, description_prompt=False, appearance_prompt=True
-            )
+            props_prompt += generate_prop_file_appearance_prompt(prop_file)
 
     actors_prompt = "- 无任何角色。"
     if len(actors_in_stage) > 0:

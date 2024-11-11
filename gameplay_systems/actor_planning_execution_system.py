@@ -26,7 +26,11 @@ from my_agent.agent_task import (
 )
 from rpg_game.rpg_game import RPGGame
 from gameplay_systems.actor_checker import ActorChecker
-from extended_systems.prop_file import PropFile, generate_prop_prompt
+from extended_systems.prop_file import (
+    PropFile,
+    generate_prop_file_total_prompt,
+    generate_prop_file_appearance_prompt,
+)
 from my_models.file_models import PropType
 
 
@@ -49,14 +53,7 @@ def _generate_actor_props_prompts(
             continue
 
         for prop_file in props_dict[key]:
-            ret.append(
-                generate_prop_prompt(
-                    prop_file,
-                    description_prompt=True,
-                    appearance_prompt=True,
-                    attr_prompt=True,
-                )
-            )
+            ret.append(generate_prop_file_total_prompt(prop_file))
 
     return ret
 
@@ -79,8 +76,7 @@ def _generate_actor_plan_prompt(
     actor_props_prompt = _generate_actor_props_prompts(actor_props)
 
     props_in_stage_prompt = [
-        generate_prop_prompt(prop, description_prompt=False, appearance_prompt=True)
-        for prop in props_in_stage
+        generate_prop_file_appearance_prompt(prop) for prop in props_in_stage
     ]
 
     actors_in_stage_prompt = "- 无任何角色。"

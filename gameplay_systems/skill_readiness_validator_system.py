@@ -11,7 +11,11 @@ from my_components.components import (
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import final, override, List, Dict
 from loguru import logger
-from extended_systems.prop_file import PropFile, generate_prop_prompt
+from extended_systems.prop_file import (
+    PropFile,
+    generate_skill_prop_file_prompt,
+    generate_skill_accessory_prop_file_prompt,
+)
 import gameplay_systems.builtin_prompt_util as builtin_prompt_util
 from my_agent.agent_task import AgentTask
 from my_agent.agent_plan import AgentPlanResponse
@@ -23,44 +27,43 @@ import gameplay_systems.skill_system_utils
 def _generate_skill_readiness_validator_prompt(
     actor_name: str,
     actor_body_info: str,
-    skill_files: List[PropFile],
-    prop_files: List[PropFile],
+    skill_prop_files: List[PropFile],
+    skill_accessory_prop_files: List[PropFile],
 ) -> str:
 
-    skills_prompt: List[str] = []
-    if len(skill_files) > 0:
-        for skill_file in skill_files:
-            skills_prompt.append(
-                generate_prop_prompt(
-                    skill_file, description_prompt=True, appearance_prompt=False
-                )
-            )
-    else:
+    # 组织技能的提示词
+    skill_prop_prompt: List[str] = []
+    if len(skill_prop_files) > 0:
+        for skill_prop_file in skill_prop_files:
+            assert skill_prop_file.is_skill, "不是技能文件"
+            skill_prop_prompt.append(generate_skill_prop_file_prompt(skill_prop_file))
 
-        skills_prompt.append("- 无任何技能。")
+    if len(skill_prop_prompt) == 0:
+        skill_prop_prompt.append("### 无任何技能")
         assert False, "技能不能为空"
 
-    props_prompt: List[str] = []
-    if len(prop_files) > 0:
-        for prop_file in prop_files:
-            props_prompt.append(
-                generate_prop_prompt(
-                    prop_file, description_prompt=True, appearance_prompt=False
-                )
+    # 组织道具的提示词
+    skill_accessory_prop_prompt: List[str] = []
+    if len(skill_accessory_prop_files) > 0:
+        for skill_accessory_prop_file in skill_accessory_prop_files:
+            skill_accessory_prop_prompt.append(
+                generate_skill_accessory_prop_file_prompt(skill_accessory_prop_file)
             )
-    else:
-        props_prompt.append("- 无任何道具。")
 
+    if len(skill_accessory_prop_prompt) == 0:
+        skill_accessory_prop_prompt.append("### 未使用道具")
+
+    # 组织最终的提示词
     ret_prompt = f"""# {actor_name} 计划使用技能，请做出判断是否允许使用。
 
 ## {actor_name} 自身信息
 {actor_body_info}
         
 ## 要使用的技能
-{"\n".join(skills_prompt)}
+{"\n".join(skill_prop_prompt)}
 
 ## 使用技能时配置的道具
-{"\n".join(props_prompt)}
+{"\n".join(skill_accessory_prop_prompt)}
 
 ## 判断的逻辑步骤
 1. 检查 要使用的技能 的信息。结合 {actor_name} 自身信息 判断 {actor_name} 是否满足技能释放的条件。如果不能则技能释放失败。不用继续判断。

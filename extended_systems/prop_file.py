@@ -143,43 +143,84 @@ class PropFile(BaseFile):
 
 
 ###############################################################################################################################################
-def generate_prop_type_prompt(prop_file: PropFile) -> str:
-
-    ret = "未知"
+def _generate_prop_type_prompt(prop_file: PropFile) -> str:
 
     if prop_file.is_weapon:
-        ret = "武器"
+        return "武器"
     elif prop_file.is_clothes:
-        ret = "衣服"
+        return "衣服"
     elif prop_file.is_non_consumable_item:
-        ret = "非消耗品"
+        return "非消耗品"
     elif prop_file.is_special:
-        ret = "特殊能力"
+        return "特殊能力"
     elif prop_file.is_skill:
-        ret = "技能"
+        return "技能"
 
-    return ret
+    assert False, f"未知的道具类型:{prop_file.prop_model.type}"
+    return "未知"
 
 
 ###############################################################################################################################################
-def generate_prop_prompt(
-    prop_file: PropFile,
-    description_prompt: bool,
-    appearance_prompt: bool,
-    attr_prompt: bool = False,
-) -> str:
+# 所有信息全要, 一般是用于做核心决策的时候
+def generate_prop_file_total_prompt(prop_file: PropFile) -> str:
 
     prompt = f"""### {prop_file.name}
-- 类型:{generate_prop_type_prompt(prop_file)}"""
+- 类型:{_generate_prop_type_prompt(prop_file)}
+- 道具描述:{prop_file.description}
+- 道具外观:{prop_file.appearance}
+- 道具数量:{prop_file.count}
+- 攻击力:{prop_file.attack}
+- 防御力:{prop_file.defense}"""
 
-    if description_prompt:
-        prompt += f"\n- 道具描述:{prop_file.description}"
+    return prompt
 
-    if appearance_prompt:
-        prompt += f"\n- 道具外观:{prop_file.appearance}"
 
-    if attr_prompt:
-        prompt += f"\n- 攻击力:{prop_file.attack}\n- 防御力:{prop_file.defense}"
+###############################################################################################################################################
+# 只要技能相关的信息，技能系统过程中需要
+def generate_skill_prop_file_prompt(prop_file: PropFile) -> str:
+    assert prop_file.is_skill, "不是技能文件"
+
+    prompt = f"""### {prop_file.name}
+- 类型: {_generate_prop_type_prompt(prop_file)}
+- 技能描述: {prop_file.description}
+- 攻击力: {prop_file.attack}
+- 防御力: {prop_file.defense}"""
+
+    return prompt
+
+
+###############################################################################################################################################
+# 只要技能配件相关的信息， 技能系统过程中需要
+def generate_skill_accessory_prop_file_prompt(prop_file: PropFile) -> str:
+    assert not prop_file.is_skill, "不是技能文件"
+
+    prompt = f"""### {prop_file.name}
+- 类型: {_generate_prop_type_prompt(prop_file)}
+- 道具描述: {prop_file.description}
+- 道具数量: {prop_file.count}"""
+
+    return prompt
+
+
+###############################################################################################################################################
+# 只要外形相关的信息，观察场景时需要，还有输出场景描述时需要
+def generate_prop_file_appearance_prompt(prop_file: PropFile) -> str:
+
+    prompt = f"""### {prop_file.name}
+- 类型: {_generate_prop_type_prompt(prop_file)}
+- 道具外观: {prop_file.appearance}"""
+
+    return prompt
+
+
+###############################################################################################################################################
+# 只要场景条件检查所需要的信息。
+def generate_prop_file_for_stage_condition_prompt(prop_file: PropFile) -> str:
+
+    prompt = f"""### {prop_file.name}
+- 类型: {_generate_prop_type_prompt(prop_file)}
+- 道具描述: {prop_file.description}
+- 道具外观: {prop_file.appearance}"""
 
     return prompt
 

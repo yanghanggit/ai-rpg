@@ -22,6 +22,7 @@ from my_models.editor_models import EditorEntityType, EditorProperty
 import my_format_string.attrs_format_string
 from game_sample.actor_editor import ExcelEditorActor
 from my_format_string.complex_name import ComplexName
+import my_format_string.editor_prop_info_string
 
 
 class ExcelEditorStage:
@@ -130,7 +131,9 @@ class ExcelEditorStage:
             if prop_str == "":
                 continue
 
-            tp = game_sample.utils.parse_prop_info(prop_str)
+            tp = my_format_string.editor_prop_info_string.parse_prop_name_and_count(
+                prop_str
+            )
             if tp[0] not in self._prop_data_base:
                 assert False, f"Invalid prop: {tp[0]}"
                 continue

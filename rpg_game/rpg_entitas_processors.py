@@ -67,8 +67,12 @@ class RPGEntitasProcessors(Processors):
         from gameplay_systems.stage_narrate_action_system import (
             StageNarrateActionSystem,
         )
-        from gameplay_systems.behavior_action_system import BehaviorActionSystem
-        from gameplay_systems.apply_skill_effect_system import ApplySkillEffectSystem
+        from gameplay_systems.skill_invocation_action_system import (
+            SkillInvocationActionSystem,
+        )
+        from gameplay_systems.skill_impact_response_evaluator_system import (
+            SkillImpactResponseEvaluatorSystem,
+        )
         from gameplay_systems.damage_action_system import DamageActionSystem
         from gameplay_systems.handle_player_input_system import HandlePlayerInputSystem
         from gameplay_systems.update_client_message_system import (
@@ -88,10 +92,12 @@ class RPGEntitasProcessors(Processors):
         from gameplay_systems.remove_prop_action_system import (
             RemovePropActionSystem,
         )
-        from gameplay_systems.self_skill_usage_check_system import (
-            SelfSkillUsageCheckSystem,
+        from gameplay_systems.skill_readiness_validator_system import (
+            SkillReadinessValidatorSystem,
         )
-        from gameplay_systems.world_skill_rule_system import WorldSkillRuleSystem
+        from gameplay_systems.skill_world_harmony_inspector_system import (
+            SkillWorldHarmonyInspectorSystem,
+        )
         from gameplay_systems.save_game_resource_system import SaveGameResourceSystem
         from gameplay_systems.save_entity_system import SaveEntitySystem
         from gameplay_systems.save_player_system import SavePlayerSystem
@@ -147,15 +153,15 @@ class RPGEntitasProcessors(Processors):
         processors.add(PostConversationActionSystem(context, rpg_game))
 
         # 战斗类的行为!
-        processors.add(BehaviorActionSystem(context, rpg_game))
-        processors.add(SelfSkillUsageCheckSystem(context, rpg_game))
+        processors.add(SkillInvocationActionSystem(context, rpg_game))
+        processors.add(SkillReadinessValidatorSystem(context, rpg_game))
         processors.add(
-            WorldSkillRuleSystem(
+            SkillWorldHarmonyInspectorSystem(
                 context, rpg_game, WorldSystemNames.WORLD_SKILL_SYSTEM_NAME
             )
         )
 
-        processors.add(ApplySkillEffectSystem(context, rpg_game))
+        processors.add(SkillImpactResponseEvaluatorSystem(context, rpg_game))
         processors.add(DamageActionSystem(context, rpg_game))
         processors.add(
             DeadActionSystem(context, rpg_game)

@@ -74,13 +74,7 @@ class GivePropAction(ActionComponent):
 
 # 行为动作与技能动作
 @final
-class BehaviorAction(ActionComponent):
-    pass
-
-
-# 技能目标动作
-@final
-class SkillTargetAction(ActionComponent):
+class SkillInvocationAction(ActionComponent):
     pass
 
 
@@ -90,15 +84,21 @@ class SkillAction(ActionComponent):
     pass
 
 
+# 技能目标动作
+@final
+class SkillTargetAction(ActionComponent):
+    pass
+
+
 # 使用技能道具动作
 @final
-class SkillUsePropAction(ActionComponent):
+class SkillAccessoryAction(ActionComponent):
     pass
 
 
 # 世界技能系统规则动作
 @final
-class WorldSkillSystemRuleAction(ActionComponent):
+class SkillWorldHarmonyInspectorAction(ActionComponent):
     pass
 
 
@@ -150,11 +150,11 @@ ACTOR_INTERACTIVE_ACTIONS_REGISTER: FrozenSet[type[Any]] = frozenset(
         GoToAction,
         StealPropAction,
         GivePropAction,
-        BehaviorAction,
+        SkillInvocationAction,
         SkillTargetAction,
         SkillAction,
-        SkillUsePropAction,
-        WorldSkillSystemRuleAction,
+        SkillAccessoryAction,
+        SkillWorldHarmonyInspectorAction,
         UpdateAppearanceAction,
         DamageAction,
         EquipPropAction,

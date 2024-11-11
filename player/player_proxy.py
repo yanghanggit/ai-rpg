@@ -2,6 +2,9 @@ from typing import List, Any
 from loguru import logger
 from my_models.event_models import (
     BaseEvent,
+    UpdateAppearanceEvent,
+    PreStageExitEvent,
+    GameRoundEvent,
 )
 from my_models.player_models import (
     PlayerClientMessage,
@@ -74,12 +77,23 @@ class PlayerProxy:
 
     ##########################################################################################################################################################
     def add_actor_message(self, actor_name: str, agent_event: BaseEvent) -> None:
+        if self._should_ignore_event(agent_event):
+            return
+
         self._add_client_message(
             PlayerClientMessage(
                 tag=PlayerClientMessageTag.ACTOR,
                 sender=actor_name,
                 agent_event=agent_event,
             )
+        )
+
+    ##########################################################################################################################################################
+    def _should_ignore_event(self, send_event: BaseEvent) -> bool:
+        return (
+            isinstance(send_event, UpdateAppearanceEvent)
+            or isinstance(send_event, PreStageExitEvent)
+            or isinstance(send_event, GameRoundEvent)
         )
 
     ##########################################################################################################################################################

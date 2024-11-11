@@ -7,7 +7,7 @@ from my_agent.lang_serve_agent import LangServeAgent
 from enum import Flag, auto
 
 
-class OptionsForContextOperation(Flag):
+class ContextOperationOptions(Flag):
     NONE = auto()
     INPUT_CHAT_HISTORY = auto()
     APPEND_PROMPT_TO_CHAT_HISTORY = auto()
@@ -36,29 +36,29 @@ class AgentTask:
         return AgentTask(
             agent,
             prompt,
-            OptionsForContextOperation.INPUT_CHAT_HISTORY
-            | OptionsForContextOperation.APPEND_PROMPT_TO_CHAT_HISTORY
-            | OptionsForContextOperation.APPEND_RESPONSE_TO_CHAT_HISTORY,
+            ContextOperationOptions.INPUT_CHAT_HISTORY
+            | ContextOperationOptions.APPEND_PROMPT_TO_CHAT_HISTORY
+            | ContextOperationOptions.APPEND_RESPONSE_TO_CHAT_HISTORY,
         )
 
     ################################################################################################################################################################################
     @staticmethod
     def create_standalone(agent: LangServeAgent, prompt: str) -> "AgentTask":
-        return AgentTask(agent, prompt, OptionsForContextOperation.NONE)
+        return AgentTask(agent, prompt, ContextOperationOptions.NONE)
 
     ################################################################################################################################################################################
     @staticmethod
     def create_process_context_without_saving(
         agent: LangServeAgent, prompt: str
     ) -> "AgentTask":
-        return AgentTask(agent, prompt, OptionsForContextOperation.INPUT_CHAT_HISTORY)
+        return AgentTask(agent, prompt, ContextOperationOptions.INPUT_CHAT_HISTORY)
 
     ################################################################################################################################################################################
     def __init__(
         self,
         agent: LangServeAgent,
         prompt: str,
-        options_for_context_opt: OptionsForContextOperation,
+        context_operation_options: ContextOperationOptions,
     ) -> None:
 
         assert prompt != ""
@@ -66,9 +66,9 @@ class AgentTask:
         self._agent: LangServeAgent = agent
         self._prompt: str = prompt
         self._response: Any = None
-        self._extend_params: Dict[str, str] = {}
-        self._options_for_context_opt: OptionsForContextOperation = (
-            options_for_context_opt
+        self._additional_params: Dict[str, str] = {}
+        self._context_operation_options: ContextOperationOptions = (
+            context_operation_options
         )
 
     ################################################################################################################################################################################
@@ -93,8 +93,8 @@ class AgentTask:
     def chat_history_as_context(self) -> List[Union[HumanMessage, AIMessage]]:
 
         if (
-            OptionsForContextOperation.INPUT_CHAT_HISTORY
-            in self._options_for_context_opt
+            ContextOperationOptions.INPUT_CHAT_HISTORY
+            in self._context_operation_options
         ):
             return self._agent._chat_history
         return []
@@ -163,14 +163,14 @@ class AgentTask:
     def _finalize_task(self) -> None:
 
         if (
-            OptionsForContextOperation.APPEND_PROMPT_TO_CHAT_HISTORY
-            in self._options_for_context_opt
+            ContextOperationOptions.APPEND_PROMPT_TO_CHAT_HISTORY
+            in self._context_operation_options
         ):
             self._agent._chat_history.extend([HumanMessage(content=self._prompt)])
 
         if (
-            OptionsForContextOperation.APPEND_RESPONSE_TO_CHAT_HISTORY
-            in self._options_for_context_opt
+            ContextOperationOptions.APPEND_RESPONSE_TO_CHAT_HISTORY
+            in self._context_operation_options
         ):
             self._agent._chat_history.extend([AIMessage(content=self.response_content)])
 

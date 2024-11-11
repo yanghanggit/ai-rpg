@@ -33,12 +33,7 @@ from my_models.entity_models import (
     WorldSystemModel,
     WorldSystemInstanceModel,
 )
-from my_models.event_models import (
-    BaseEvent,
-    UpdateAppearanceEvent,
-    PreStageExitEvent,
-    GameRoundEvent,
-)
+from my_models.event_models import BaseEvent
 from my_models.file_models import PropFileModel
 from my_models.entity_models import AttributesIndex
 from player.player_proxy import PlayerProxy
@@ -697,9 +692,6 @@ class RPGGame(BaseGame):
     ###############################################################################################################################################
     @override
     def send_event(self, player_proxy_names: Set[str], send_event: BaseEvent) -> None:
-        if self._should_ignore_event(send_event):
-            logger.debug(f"忽略的消息：{send_event}")
-            return
 
         for player_proxy_name in player_proxy_names:
             player_proxy = self.get_player(player_proxy_name)
@@ -714,14 +706,6 @@ class RPGGame(BaseGame):
             )
 
             player_proxy.add_actor_message(player_proxy.actor_name, send_event)
-
-    ###############################################################################################################################################
-    def _should_ignore_event(self, send_event: BaseEvent) -> bool:
-        return (
-            isinstance(send_event, UpdateAppearanceEvent)
-            or isinstance(send_event, PreStageExitEvent)
-            or isinstance(send_event, GameRoundEvent)
-        )
 
     ###############################################################################################################################################
     def create_actor_entity_at_runtime(

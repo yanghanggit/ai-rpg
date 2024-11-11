@@ -1,11 +1,11 @@
 from entitas import Matcher, ReactiveProcessor, GroupEvent, Entity  # type: ignore
 from my_components.action_components import (
-    BehaviorAction,
+    SkillInvocationAction,
     SkillTargetAction,
     SkillAction,
-    SkillUsePropAction,
+    SkillAccessoryAction,
     DamageAction,
-    WorldSkillSystemRuleAction,
+    SkillWorldHarmonyInspectorAction,
     BroadcastAction,
     TagAction,
 )
@@ -29,7 +29,7 @@ from loguru import logger
 ################################################################################################################################################
 
 
-def _generate_skill_hit_feedback_prompt(
+def _generate_skill_impact_response_prompt(
     actor_name: str,
     target_name: str,
     reasoning_sentence: str,
@@ -74,7 +74,7 @@ def _generate_offline_prompt(
 ################################################################################################################################################
 
 
-def _generate_skill_event_notification_prompt(
+def _generate_broadcast_skill_impact_response_prompt(
     actor_name: str, target_name: str, reasoning_sentence: str, feedback_sentence: str
 ) -> str:
 
@@ -91,10 +91,10 @@ def _generate_skill_event_notification_prompt(
 
 ################################################################################################################################################
 @final
-class SkillFeedbackResponse(AgentPlanResponse):
+class SkillImpactResponse(AgentPlanResponse):
 
     @property
-    def feedback(self) -> str:
+    def impact_result(self) -> str:
         return self._concatenate_values(BroadcastAction.__name__)
 
 
@@ -102,7 +102,7 @@ class SkillFeedbackResponse(AgentPlanResponse):
 
 
 @final
-class ApplySkillEffectSystem(ReactiveProcessor):
+class SkillImpactResponseEvaluatorSystem(ReactiveProcessor):
 
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         super().__init__(context)
@@ -122,10 +122,10 @@ class ApplySkillEffectSystem(ReactiveProcessor):
         return (
             entity.has(SkillAction)
             and entity.has(SkillTargetAction)
-            and entity.has(BehaviorAction)
-            and entity.has(WorldSkillSystemRuleAction)
+            and entity.has(SkillInvocationAction)
+            and entity.has(SkillWorldHarmonyInspectorAction)
             and entity.has(ActorComponent)
-        ) or entity.has(SkillUsePropAction)
+        ) or entity.has(SkillAccessoryAction)
 
     ######################################################################################################################################################
     @override
@@ -137,43 +137,35 @@ class ApplySkillEffectSystem(ReactiveProcessor):
     async def a_execute2(self) -> None:
 
         for entity in self._react_entities_copy:
-            await self.handle(entity)
+            await self._process_skill_impact(entity)
 
         self._react_entities_copy.clear()
 
     ######################################################################################################################################################
-    async def handle(self, entity: Entity) -> None:
+    async def _process_skill_impact(self, entity: Entity) -> None:
         # 释放技能
-        for target in self.extract_targets(entity):
+        for target in self._get_skill_targets(entity):
 
-            task = self.create_task(entity, target)
+            task = self._generate_skill_impact_response_task(entity, target)
             if task is None:
-                self.on_skill_target_agent_off_line_event(entity, target)
+                self._on_skill_target_agent_off_line_event(entity, target)
                 continue
 
             if task.request() is None:
-                self.on_skill_target_agent_off_line_event(entity, target)
+                self._on_skill_target_agent_off_line_event(entity, target)
                 continue
 
             # 加入伤害计算的逻辑
-            self.calculate_and_add_action(entity, target)
+            self._evaluate_and_apply_action(entity, target)
 
             # 场景事件
-            response_plan = SkillFeedbackResponse(
-                task.agent_name, task.response_content
+            response_plan = SkillImpactResponse(task.agent_name, task.response_content)
+            self._on_broadcast_skill_impact_response_event(
+                entity, target, response_plan.impact_result
             )
-            self.on_broadcast_skill_event(entity, target, response_plan.feedback)
 
     ######################################################################################################################################################
-
-    def extract_behavior_sentence(self, entity: Entity) -> str:
-        behavior_action = entity.get(BehaviorAction)
-        if behavior_action is None or len(behavior_action.values) == 0:
-            return ""
-        return behavior_action.values[0]
-
-    ######################################################################################################################################################
-    def extract_targets(self, entity: Entity) -> Set[Entity]:
+    def _get_skill_targets(self, entity: Entity) -> Set[Entity]:
         assert entity.has(SkillTargetAction)
         targets = set()
         for target_name in entity.get(SkillTargetAction).values:
@@ -183,7 +175,7 @@ class ApplySkillEffectSystem(ReactiveProcessor):
         return targets
 
     ######################################################################################################################################################
-    def extract_skill_files(self, entity: Entity) -> List[PropFile]:
+    def _get_skill_prop_files(self, entity: Entity) -> List[PropFile]:
         assert entity.has(SkillAction) and entity.has(SkillTargetAction)
 
         ret: List[PropFile] = []
@@ -203,18 +195,12 @@ class ApplySkillEffectSystem(ReactiveProcessor):
         return ret
 
     ######################################################################################################################################################
-    # def extract_body_info(self, entity: Entity) -> str:
-    #     if not entity.has(BodyComponent):
-    #         return ""
-    #     return str(entity.get(BodyComponent).body)
-
-    ######################################################################################################################################################
-    def extract_prop_files(self, entity: Entity) -> List[PropFile]:
-        if not entity.has(SkillUsePropAction):
+    def _get_skill_accessory_prop_files(self, entity: Entity) -> List[PropFile]:
+        if not entity.has(SkillAccessoryAction):
             return []
 
         safe_name = self._context.safe_get_entity_name(entity)
-        skill_use_prop_action = entity.get(SkillUsePropAction)
+        skill_use_prop_action = entity.get(SkillAccessoryAction)
         ret: List[PropFile] = []
         for prop_name in skill_use_prop_action.values:
             prop_file = self._context._file_system.get_file(
@@ -227,8 +213,7 @@ class ApplySkillEffectSystem(ReactiveProcessor):
         return ret
 
     ######################################################################################################################################################
-
-    def on_broadcast_skill_event(
+    def _on_broadcast_skill_impact_response_event(
         self, from_entity: Entity, target_entity: Entity, target_feedback: str
     ) -> None:
 
@@ -236,18 +221,18 @@ class ApplySkillEffectSystem(ReactiveProcessor):
         if current_stage_entity is None:
             return
 
-        world_skill_system_rule_tag, world_skill_system_rule_out_come = (
-            self.extract_world_skill_system_rule(from_entity)
+        inspector_tag, inspector_content = (
+            self._parse_skill_world_harmony_inspector_action(from_entity)
         )
-        logger.debug(f"world_skill_system_rule_tag: {world_skill_system_rule_tag}")
+        logger.debug(f"world_skill_system_rule_tag: {inspector_tag}")
 
         self._context.broadcast_event_in_stage(
             current_stage_entity,
             AgentEvent(
-                message=_generate_skill_event_notification_prompt(
+                message=_generate_broadcast_skill_impact_response_prompt(
                     self._context.safe_get_entity_name(from_entity),
                     self._context.safe_get_entity_name(target_entity),
-                    world_skill_system_rule_out_come,
+                    inspector_content,
                     target_feedback,
                 )
             ),
@@ -255,19 +240,21 @@ class ApplySkillEffectSystem(ReactiveProcessor):
         )
 
     ######################################################################################################################################################
-    def calculate_and_add_action(self, entity: Entity, target: Entity) -> None:
+    def _evaluate_and_apply_action(self, entity: Entity, target: Entity) -> None:
 
         # 拿到原始的
-        calculate_attrs: List[int] = self.gen_skill_attrs(entity)
+        calculate_attrs: List[int] = self._calculate_skill_attributes(entity)
         # 补充上发起者的攻击值
-        self.calculate_attr_comp(entity, target, calculate_attrs)
+        self._calculate_attr_component(entity, target, calculate_attrs)
         # 补充上所有参与的道具的属性
-        self.calculate_props(entity, target, calculate_attrs)
+        self._calculate_skill_accessory_props(entity, target, calculate_attrs)
         # 最终添加到目标的伤害
-        self.add_damage(entity, target, calculate_attrs, self.get_damage_buff(entity))
+        self._apply_damage(
+            entity, target, calculate_attrs, self._determine_damage_bonus(entity)
+        )
 
     ######################################################################################################################################################
-    def add_damage(
+    def _apply_damage(
         self, entity: Entity, target: Entity, skill_attrs: List[int], buff: float = 1.0
     ) -> None:
 
@@ -278,12 +265,6 @@ class ApplySkillEffectSystem(ReactiveProcessor):
         if skill_attrs[AttributesIndex.DAMAGE.value] == 0:
             return
 
-        # if not target.has(DamageAction):
-        #     target.add(
-        #         DamageAction,
-        #         self._context.safe_get_entity_name(target),
-        #         [],
-        #     )
         target.replace(
             DamageAction,
             self._context.safe_get_entity_name(target),
@@ -300,8 +281,7 @@ class ApplySkillEffectSystem(ReactiveProcessor):
         )
 
     ######################################################################################################################################################
-
-    def calculate_attr_comp(
+    def _calculate_attr_component(
         self, entity: Entity, target: Entity, out_put_skill_attrs: List[int]
     ) -> None:
 
@@ -312,18 +292,18 @@ class ApplySkillEffectSystem(ReactiveProcessor):
         out_put_skill_attrs[AttributesIndex.DAMAGE.value] += rpg_attr_comp.attack
 
     ######################################################################################################################################################
-    def calculate_props(
+    def _calculate_skill_accessory_props(
         self, entity: Entity, target: Entity, out_put_skill_attrs: List[int]
     ) -> None:
-        prop_files = self.extract_prop_files(entity)
+        prop_files = self._get_skill_accessory_prop_files(entity)
         for prop_file in prop_files:
             for i in range(len(out_put_skill_attrs)):
                 out_put_skill_attrs[i] += prop_file.prop_model.attributes[i]
 
     ######################################################################################################################################################
-    def gen_skill_attrs(self, entity: Entity) -> List[int]:
+    def _calculate_skill_attributes(self, entity: Entity) -> List[int]:
         final_attr: List[int] = []
-        for skill_file in self.extract_skill_files(entity):
+        for skill_file in self._get_skill_prop_files(entity):
             if len(final_attr) == 0:
                 final_attr = skill_file.prop_model.attributes
             else:
@@ -332,12 +312,12 @@ class ApplySkillEffectSystem(ReactiveProcessor):
         return final_attr
 
     ######################################################################################################################################################
-    def on_skill_target_agent_off_line_event(
+    def _on_skill_target_agent_off_line_event(
         self, entity: Entity, target: Entity
     ) -> None:
 
         world_skill_system_rule_tag, world_skill_system_rule_out_come = (
-            self.extract_world_skill_system_rule(entity)
+            self._parse_skill_world_harmony_inspector_action(entity)
         )
 
         logger.debug(f"world_skill_system_rule_tag: {world_skill_system_rule_tag}")
@@ -354,21 +334,23 @@ class ApplySkillEffectSystem(ReactiveProcessor):
         )
 
     ######################################################################################################################################################
-    def create_task(self, entity: Entity, target: Entity) -> Optional[AgentTask]:
+    def _generate_skill_impact_response_task(
+        self, entity: Entity, target: Entity
+    ) -> Optional[AgentTask]:
 
         target_agent_name = self._context.safe_get_entity_name(target)
         target_agent = self._context.agent_system.get_agent(target_agent_name)
         if target_agent is None:
             return None
 
-        world_skill_system_rule_tag, world_skill_system_rule_out_come = (
-            self.extract_world_skill_system_rule(entity)
+        inspector_tag, inspector_content = (
+            self._parse_skill_world_harmony_inspector_action(entity)
         )
-        prompt = _generate_skill_hit_feedback_prompt(
+        prompt = _generate_skill_impact_response_prompt(
             self._context.safe_get_entity_name(entity),
             target_agent_name,
-            world_skill_system_rule_out_come,
-            world_skill_system_rule_tag,
+            inspector_content,
+            inspector_tag,
         )
 
         return AgentTask.create(
@@ -377,30 +359,30 @@ class ApplySkillEffectSystem(ReactiveProcessor):
         )
 
     ######################################################################################################################################################
-    def extract_world_skill_system_rule(self, entity: Entity) -> tuple[str, str]:
-        if not entity.has(WorldSkillSystemRuleAction):
+    def _parse_skill_world_harmony_inspector_action(
+        self, entity: Entity
+    ) -> tuple[str, str]:
+        if not entity.has(SkillWorldHarmonyInspectorAction):
             return "", ""
 
-        world_skill_system_rule_action = entity.get(WorldSkillSystemRuleAction)
-        if len(world_skill_system_rule_action.values) < 2:
+        skill_world_harmony_inspector_action = entity.get(
+            SkillWorldHarmonyInspectorAction
+        )
+        if len(skill_world_harmony_inspector_action.values) < 2:
             return "", ""
-        # [response_plan.result_tag, response_plan.out_come]
         return (
-            world_skill_system_rule_action.values[0],
-            world_skill_system_rule_action.values[1],
+            skill_world_harmony_inspector_action.values[0],
+            skill_world_harmony_inspector_action.values[1],
         )
 
     ######################################################################################################################################################
-    def get_damage_buff(self, entity: Entity) -> float:
+    def _determine_damage_bonus(self, entity: Entity) -> float:
 
-        world_skill_system_rule_tag, world_skill_system_rule_out_come = (
-            self.extract_world_skill_system_rule(entity)
+        inspector_tag, inspector_content = (
+            self._parse_skill_world_harmony_inspector_action(entity)
         )
 
-        if (
-            world_skill_system_rule_tag
-            == builtin_prompt_util.ConstantSkillPrompt.CRITICAL_SUCCESS
-        ):
+        if inspector_tag == builtin_prompt_util.ConstantSkillPrompt.CRITICAL_SUCCESS:
             return 1.5  # 先写死，测试的时候再改。todo
 
         return 1.0  # 默认的。

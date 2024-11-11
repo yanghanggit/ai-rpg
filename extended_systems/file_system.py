@@ -82,7 +82,6 @@ class FileSystem:
                 exist_file = self.get_file(PropFile, file._owner_name, file._name)
                 if exist_file is not None:
                     assert exist_file.is_consumable_item
-                    # exist_file._count += file._count
                     exist_file.increase_count(file.count)
                     return True
 

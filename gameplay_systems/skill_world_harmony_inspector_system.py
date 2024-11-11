@@ -1,16 +1,17 @@
 from entitas import Matcher, ReactiveProcessor, GroupEvent, Entity  # type: ignore
 from my_components.action_components import (
-    BehaviorAction,
+    SkillInvocationAction,
     SkillTargetAction,
     SkillAction,
-    SkillUsePropAction,
+    SkillAccessoryAction,
     TagAction,
     BroadcastAction,
-    WorldSkillSystemRuleAction,
+    SkillWorldHarmonyInspectorAction,
 )
 from my_components.components import (
     BodyComponent,
     ActorComponent,
+    AgentConnectionFlagComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import final, override, List, Set, Dict, Any
@@ -25,21 +26,21 @@ from my_models.event_models import AgentEvent
 
 
 ################################################################################################################################################
-def _generate_offline_prompt(actor_name: str, behavior_sentence: str) -> str:
+def _generate_offline_prompt(actor_name: str, sentence: str) -> str:
 
     prompt = f"""# 注意! 全局技能系统 处于离线状态或者出错，无法使用技能，请一会再试。
 ## 行动内容语句({actor_name} 发起)
-{behavior_sentence}
+{sentence}
 ## 以上的行动将无法执行（被系统强制取消），因为技能系统处于离线状态或者出错。
 """
     return prompt
 
 
 ################################################################################################################################################
-def _generate_rule_failure_prompt(
+def _generate_failure_prompt(
     actor_name: str,
     failure_result: str,
-    input_behavior_sentence: str,
+    input_sentence: str,
     reasoning_sentence: str,
 ) -> str:
 
@@ -50,7 +51,7 @@ def _generate_rule_failure_prompt(
 ## 失败类型: {failure_result}
 
 ## 原始的行动内容语句
-{input_behavior_sentence}
+{input_sentence}
 
 ## 系统推理后的结果
 {reasoning_sentence}
@@ -65,13 +66,11 @@ def _generate_rule_failure_prompt(
 
 
 ################################################################################################################################################
-
-
-def _generate_rule_success_prompt(
+def _generate_success_prompt(
     actor_name: str,
     target_names: Set[str],
     success_result: str,
-    input_behavior_sentence: str,
+    input_sentence: str,
     reasoning_sentence: str,
 ) -> str:
 
@@ -82,7 +81,7 @@ def _generate_rule_success_prompt(
 ## 成功类型: {success_result}
 
 ## 原始行动语句(在其中可以分析出技能的目标)
-{input_behavior_sentence}
+{input_sentence}
 
 ## 系统推理并润色后的结果
 {reasoning_sentence}"""
@@ -91,14 +90,12 @@ def _generate_rule_success_prompt(
 
 
 ################################################################################################################################################
-
-
-def _generate_rule_prompt(
+def _generate_world_harmony_inspector_prompt(
     actor_name: str,
     actor_body_info: str,
     skill_files: List[PropFile],
     prop_files: List[PropFile],
-    behavior_sentence: str,
+    sentence: str,
 ) -> str:
 
     skills_prompt: List[str] = []
@@ -136,7 +133,7 @@ def _generate_rule_prompt(
 {"\n".join(props_prompt)}
 
 ## 行动内容语句(请在这段信息内提取 技能释放的目标 的信息，注意请完整引用)
-{behavior_sentence}
+{sentence}
 
 ## 判断的逻辑步骤
 1. 如果 配置的道具 存在。则需要将道具与技能的信息联合起来推理。
@@ -173,7 +170,7 @@ def _generate_rule_prompt(
 
 ######################################################################################################################################################
 @final
-class WorldSkillRuleResponse(AgentPlanResponse):
+class SkillWorldHarmonyInspectorResponse(AgentPlanResponse):
 
     OPTION_PARAM_NAME: str = "actor_name"
 
@@ -182,22 +179,24 @@ class WorldSkillRuleResponse(AgentPlanResponse):
         self._task: AgentTask = task
 
     @property
-    def result(self) -> str:
+    def inspector_tag(self) -> str:
         action = self.get_action(TagAction.__name__)
         if action is None or len(action.values) == 0:
             return builtin_prompt_util.ConstantSkillPrompt.FAILURE
         return action.values[0]
 
     @property
-    def out_come(self) -> str:
+    def inspector_content(self) -> str:
         return self._concatenate_values(BroadcastAction.__name__)
 
 
 ######################################################################################################################################################
+######################################################################################################################################################
+######################################################################################################################################################
 
 
 @final
-class WorldSkillRuleSystem(ReactiveProcessor):
+class SkillWorldHarmonyInspectorSystem(ReactiveProcessor):
 
     def __init__(
         self, context: RPGEntitasContext, rpg_game: RPGGame, system_name: str
@@ -220,7 +219,7 @@ class WorldSkillRuleSystem(ReactiveProcessor):
         return (
             entity.has(SkillAction)
             and entity.has(SkillTargetAction)
-            and entity.has(BehaviorAction)
+            and entity.has(SkillInvocationAction)
             and entity.has(ActorComponent)
         )
 
@@ -233,39 +232,47 @@ class WorldSkillRuleSystem(ReactiveProcessor):
     @override
     async def a_execute2(self) -> None:
 
-        if (
-            self._context.get_world_entity(self._system_name) is not None
-            and len(self._react_entities_copy) > 0
-        ):
-            await self._execute(self._react_entities_copy, self._system_name)
+        if len(self._react_entities_copy) == 0:
+            return
 
+        world_skill_system = self._context.get_world_entity(self._system_name)
+        if world_skill_system is None:
+            self._clear_action_components(self._react_entities_copy)
+            self._react_entities_copy.clear()
+            assert False, "全局技能系统不存在"
+            return
+
+        await self._process_world_harmony_inspector(
+            self._react_entities_copy, world_skill_system
+        )
+
+        # 必须清空
         self._react_entities_copy.clear()
 
     ######################################################################################################################################################
-    async def _execute(
-        self, entities: List[Entity], world_skill_system_name: str
+    async def _process_world_harmony_inspector(
+        self, entities: List[Entity], world_system_entity: Entity
     ) -> None:
 
         if len(entities) == 0:
             return
 
         # 第二个大阶段，全局技能系统检查技能组合是否合法
-        tasks = self.create_tasks(entities, world_skill_system_name)
+        tasks = self._generate_agent_tasks(entities, world_system_entity)
         if len(tasks) == 0:
-            self.on_remove_all(entities)
+            self._clear_action_components(entities)
             return
 
         responses = await AgentTask.gather(tasks)
         if len(responses) == 0:
-            self.on_remove_all(entities)
+            self._clear_action_components(entities)
             return
 
-        response_plans = self.create_responses(tasks)
-        self.handle_responses(response_plans)
+        self._process_response_plans(self._generate_actor_responses(tasks))
 
     ######################################################################################################################################################
-    def handle_responses(
-        self, response_plans: Dict[str, WorldSkillRuleResponse]
+    def _process_response_plans(
+        self, response_plans: Dict[str, SkillWorldHarmonyInspectorResponse]
     ) -> None:
 
         for actor_name, response_plan in response_plans.items():
@@ -274,35 +281,39 @@ class WorldSkillRuleSystem(ReactiveProcessor):
                 continue
 
             if response_plan._task.response_content == "":
-                self.on_world_skill_system_off_line_event(actor_entity)
+                self._on_agent_offline_notification_event(actor_entity)
                 continue
 
-            match (response_plan.result):
+            match (response_plan.inspector_tag):
                 case builtin_prompt_util.ConstantSkillPrompt.FAILURE:
-                    self.on_world_skill_system_rule_fail_event(
+                    self._on_world_harmony_inspector_fail_event(
                         actor_entity, response_plan
                     )
-                    self.on_remove_action(actor_entity)
+                    self._remove_action_components(actor_entity)
                 case builtin_prompt_util.ConstantSkillPrompt.SUCCESS:
-                    self.on_world_skill_system_rule_success_event(
+                    self._on_world_harmony_inspector_success_event(
                         actor_entity, response_plan
                     )
-                    self.add_world_skill_system_rule_action(actor_entity, response_plan)
-                    self.consume_consumable_props(actor_entity)
+                    self._add_world_harmony_inspector_action(
+                        actor_entity, response_plan
+                    )
+                    self._process_consumable_items(actor_entity)
 
                 case builtin_prompt_util.ConstantSkillPrompt.CRITICAL_SUCCESS:
-                    self.on_world_skill_system_rule_success_event(
+                    self._on_world_harmony_inspector_success_event(
                         actor_entity, response_plan
                     )
-                    self.add_world_skill_system_rule_action(actor_entity, response_plan)
-                    self.consume_consumable_props(actor_entity)
+                    self._add_world_harmony_inspector_action(
+                        actor_entity, response_plan
+                    )
+                    self._process_consumable_items(actor_entity)
 
                 case _:
-                    logger.error(f"Unknown tag: {response_plan.result}")
+                    logger.error(f"Unknown tag: {response_plan.inspector_tag}")
 
     ######################################################################################################################################################
-    def consume_consumable_props(self, entity: Entity) -> None:
-        prop_files = self.extract_prop_files(entity)
+    def _process_consumable_items(self, entity: Entity) -> None:
+        prop_files = self._get_skill_accessory_prop_files(entity)
         for prop_file in prop_files:
             if prop_file.is_consumable_item:
                 extended_systems.file_system_util.consume_consumable(
@@ -310,35 +321,35 @@ class WorldSkillRuleSystem(ReactiveProcessor):
                 )
 
     ######################################################################################################################################################
-    def add_world_skill_system_rule_action(
-        self, entity: Entity, response_plan: WorldSkillRuleResponse
+    def _add_world_harmony_inspector_action(
+        self, entity: Entity, response_plan: SkillWorldHarmonyInspectorResponse
     ) -> None:
 
         actor_name = self._context.safe_get_entity_name(entity)
         entity.replace(
-            WorldSkillSystemRuleAction,
+            SkillWorldHarmonyInspectorAction,
             actor_name,
-            [response_plan.result, response_plan.out_come],
+            [response_plan.inspector_tag, response_plan.inspector_content],
         )
 
     ######################################################################################################################################################
-    def create_responses(
+    def _generate_actor_responses(
         self, world_system_agent_tasks: List[AgentTask]
-    ) -> Dict[str, WorldSkillRuleResponse]:
+    ) -> Dict[str, SkillWorldHarmonyInspectorResponse]:
 
-        ret: Dict[str, WorldSkillRuleResponse] = {}
+        ret: Dict[str, SkillWorldHarmonyInspectorResponse] = {}
 
         for world_system_agent_task in world_system_agent_tasks:
 
-            actor_name = world_system_agent_task._extend_params.get(
-                WorldSkillRuleResponse.OPTION_PARAM_NAME, ""
+            actor_name = world_system_agent_task._additional_params.get(
+                SkillWorldHarmonyInspectorResponse.OPTION_PARAM_NAME, ""
             )
 
             entity = self._context.get_actor_entity(actor_name)
             if entity is None:
                 continue
 
-            ret[actor_name] = WorldSkillRuleResponse(
+            ret[actor_name] = SkillWorldHarmonyInspectorResponse(
                 world_system_agent_task.agent_name,
                 world_system_agent_task.response_content,
                 world_system_agent_task,
@@ -347,15 +358,15 @@ class WorldSkillRuleSystem(ReactiveProcessor):
         return ret
 
     ######################################################################################################################################################
-    def on_remove_action(
+    def _remove_action_components(
         self,
         entity: Entity,
         action_comps: Set[type[Any]] = {
-            BehaviorAction,
+            SkillInvocationAction,
             SkillAction,
             SkillTargetAction,
-            SkillUsePropAction,
-            WorldSkillSystemRuleAction,
+            SkillAccessoryAction,
+            SkillWorldHarmonyInspectorAction,
         },
     ) -> None:
 
@@ -364,20 +375,19 @@ class WorldSkillRuleSystem(ReactiveProcessor):
                 entity.remove(action_comp)
 
     ######################################################################################################################################################
-    def on_remove_all(self, entities: List[Entity]) -> None:
+    def _clear_action_components(self, entities: List[Entity]) -> None:
         for entity in entities:
-            self.on_remove_action(entity)
+            self._remove_action_components(entity)
 
     ######################################################################################################################################################
-
-    def extract_behavior_sentence(self, entity: Entity) -> str:
-        behavior_action = entity.get(BehaviorAction)
+    def _get_behavior(self, entity: Entity) -> str:
+        behavior_action = entity.get(SkillInvocationAction)
         if behavior_action is None or len(behavior_action.values) == 0:
             return ""
         return behavior_action.values[0]
 
     ######################################################################################################################################################
-    def extract_skill_files(self, entity: Entity) -> List[PropFile]:
+    def _get_skill_prop_files(self, entity: Entity) -> List[PropFile]:
         assert entity.has(SkillAction) and entity.has(SkillTargetAction)
 
         ret: List[PropFile] = []
@@ -397,12 +407,12 @@ class WorldSkillRuleSystem(ReactiveProcessor):
         return ret
 
     ######################################################################################################################################################
-    def extract_prop_files(self, entity: Entity) -> List[PropFile]:
-        if not entity.has(SkillUsePropAction):
+    def _get_skill_accessory_prop_files(self, entity: Entity) -> List[PropFile]:
+        if not entity.has(SkillAccessoryAction):
             return []
 
         safe_name = self._context.safe_get_entity_name(entity)
-        skill_use_prop_action = entity.get(SkillUsePropAction)
+        skill_use_prop_action = entity.get(SkillAccessoryAction)
 
         ret: List[PropFile] = []
         for prop_name in skill_use_prop_action.values:
@@ -416,24 +426,24 @@ class WorldSkillRuleSystem(ReactiveProcessor):
         return ret
 
     ######################################################################################################################################################
-    def on_world_skill_system_off_line_event(self, entity: Entity) -> None:
+    def _on_agent_offline_notification_event(self, entity: Entity) -> None:
 
         self._context.notify_event(
             set({entity}),
             AgentEvent(
                 message=_generate_offline_prompt(
                     self._context.safe_get_entity_name(entity),
-                    self.extract_behavior_sentence(entity),
+                    self._get_behavior(entity),
                 )
             ),
         )
 
     ######################################################################################################################################################
-    def on_world_skill_system_rule_success_event(
-        self, entity: Entity, world_response_plan: WorldSkillRuleResponse
+    def _on_world_harmony_inspector_success_event(
+        self, entity: Entity, world_response_plan: SkillWorldHarmonyInspectorResponse
     ) -> None:
 
-        target_entities = self.extract_targets(entity)
+        target_entities = self._get_skill_target_entities(entity)
         target_names: Set[str] = set()
         for target_entity in target_entities:
             target_names.add(self._context.safe_get_entity_name(target_entity))
@@ -441,62 +451,69 @@ class WorldSkillRuleSystem(ReactiveProcessor):
         self._context.notify_event(
             set({entity}),
             AgentEvent(
-                message=_generate_rule_success_prompt(
+                message=_generate_success_prompt(
                     self._context.safe_get_entity_name(entity),
                     target_names,
-                    world_response_plan.result,
-                    self.extract_behavior_sentence(entity),
-                    world_response_plan.out_come,
+                    world_response_plan.inspector_tag,
+                    self._get_behavior(entity),
+                    world_response_plan.inspector_content,
                 )
             ),
         )
 
     ######################################################################################################################################################
-    def on_world_skill_system_rule_fail_event(
-        self, entity: Entity, world_response_plan: WorldSkillRuleResponse
+    def _on_world_harmony_inspector_fail_event(
+        self, entity: Entity, world_response_plan: SkillWorldHarmonyInspectorResponse
     ) -> None:
 
         self._context.notify_event(
             set({entity}),
             AgentEvent(
-                message=_generate_rule_failure_prompt(
+                message=_generate_failure_prompt(
                     self._context.safe_get_entity_name(entity),
-                    world_response_plan.result,
-                    self.extract_behavior_sentence(entity),
-                    world_response_plan.out_come,
+                    world_response_plan.inspector_tag,
+                    self._get_behavior(entity),
+                    world_response_plan.inspector_content,
                 )
             ),
         )
 
     ######################################################################################################################################################
-    def create_tasks(
-        self, actor_entities: List[Entity], world_skill_system_name: str
+    def _generate_agent_tasks(
+        self, actor_entities: List[Entity], world_system_entity: Entity
     ) -> List[AgentTask]:
 
         ret: List[AgentTask] = []
 
+        if not world_system_entity.has(AgentConnectionFlagComponent):
+            return ret
+
+        world_system_agent_name = self._context.safe_get_entity_name(
+            world_system_entity
+        )
         world_system_agent = self._context.agent_system.get_agent(
-            world_skill_system_name
+            world_system_agent_name
         )
         if world_system_agent is None:
+            assert False, "全局技能系统的Agent不存在"
             return ret
 
         for actor_entity in actor_entities:
 
-            prompt = _generate_rule_prompt(
+            prompt = _generate_world_harmony_inspector_prompt(
                 self._context.safe_get_entity_name(actor_entity),
                 actor_entity.get(BodyComponent).body,
-                self.extract_skill_files(actor_entity),
-                self.extract_prop_files(actor_entity),
-                self.extract_behavior_sentence(actor_entity),
+                self._get_skill_prop_files(actor_entity),
+                self._get_skill_accessory_prop_files(actor_entity),
+                self._get_behavior(actor_entity),
             )
 
             world_system_agent_task = AgentTask.create_process_context_without_saving(
                 world_system_agent, prompt
             )
 
-            world_system_agent_task._extend_params.setdefault(
-                WorldSkillRuleResponse.OPTION_PARAM_NAME,
+            world_system_agent_task._additional_params.setdefault(
+                SkillWorldHarmonyInspectorResponse.OPTION_PARAM_NAME,
                 self._context.safe_get_entity_name(actor_entity),
             )
             ret.append(world_system_agent_task)
@@ -504,7 +521,7 @@ class WorldSkillRuleSystem(ReactiveProcessor):
         return ret
 
     ######################################################################################################################################################
-    def extract_targets(self, entity: Entity) -> Set[Entity]:
+    def _get_skill_target_entities(self, entity: Entity) -> Set[Entity]:
         assert entity.has(SkillTargetAction)
 
         targets = set()

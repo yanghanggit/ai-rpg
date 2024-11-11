@@ -1,12 +1,12 @@
 from entitas import Matcher, ReactiveProcessor, GroupEvent, Entity  # type: ignore
 from my_components.action_components import (
-    BehaviorAction,
+    SkillInvocationAction,
     SkillTargetAction,
     SkillAction,
-    SkillUsePropAction,
+    SkillAccessoryAction,
     TagAction,
     MindVoiceAction,
-    WorldSkillSystemRuleAction,
+    SkillWorldHarmonyInspectorAction,
 )
 from my_components.components import (
     BodyComponent,
@@ -23,9 +23,7 @@ from rpg_game.rpg_game import RPGGame
 
 
 ################################################################################################################################################
-
-
-def _generate_skill_usage_reasoning_prompt(
+def _generate_skill_readiness_validator_prompt(
     actor_name: str,
     actor_body_info: str,
     skill_files: List[PropFile],
@@ -91,8 +89,13 @@ def _generate_skill_usage_reasoning_prompt(
     return ret_prompt
 
 
+######################################################################################################################################################
+######################################################################################################################################################
+######################################################################################################################################################
+
+
 @final
-class SelfUsageCheckResponse(AgentPlanResponse):
+class SkillReadinessValidatorResponse(AgentPlanResponse):
 
     def __init__(self, name: str, input_str: str) -> None:
         super().__init__(name, input_str)
@@ -106,8 +109,13 @@ class SelfUsageCheckResponse(AgentPlanResponse):
         return self._concatenate_values(MindVoiceAction.__name__)
 
 
+######################################################################################################################################################
+######################################################################################################################################################
+######################################################################################################################################################
+
+
 @final
-class SelfSkillUsageCheckSystem(ReactiveProcessor):
+class SkillReadinessValidatorSystem(ReactiveProcessor):
 
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         super().__init__(context)
@@ -127,7 +135,7 @@ class SelfSkillUsageCheckSystem(ReactiveProcessor):
         return (
             entity.has(SkillAction)
             and entity.has(SkillTargetAction)
-            and entity.has(BehaviorAction)
+            and entity.has(SkillInvocationAction)
             and entity.has(ActorComponent)
         )
 
@@ -139,58 +147,61 @@ class SelfSkillUsageCheckSystem(ReactiveProcessor):
     ######################################################################################################################################################
     @override
     async def a_execute2(self) -> None:
-        await self._execute(self._react_entities_copy)
+        await self._validate_skill_readiness(self._react_entities_copy)
         self._react_entities_copy.clear()
 
     ######################################################################################################################################################
-    async def _execute(self, entities: List[Entity]) -> None:
+    async def _validate_skill_readiness(self, entities: List[Entity]) -> None:
 
         if len(entities) == 0:
             return
 
-        tasks = self.create_tasks(entities)
+        tasks = self._generate_agent_tasks(entities)
         if len(tasks) == 0:
-            self.on_remove_all(entities)
+            self._clear_action_components(entities)
             return
 
         responses = await AgentTask.gather([task for task in tasks.values()])
         if len(responses) == 0:
             logger.debug(f"phase1_response is None.")
-            self.on_remove_all(entities)
+            self._clear_action_components(entities)
             return
 
-        self.handle_tasks(tasks)
+        self._process_agent_tasks(tasks)
 
     ######################################################################################################################################################
-    def handle_tasks(self, tasks: Dict[str, AgentTask]) -> None:
+    def _process_agent_tasks(self, agent_task_dict: Dict[str, AgentTask]) -> None:
 
-        for agent_name, task in tasks.items():
+        for agent_name, agent_task in agent_task_dict.items():
 
             actor_entity = self._context.get_actor_entity(agent_name)
+            assert actor_entity is not None, f"actor_entity {agent_name} not found."
             if actor_entity is None:
                 continue
 
-            if task.response_content == "":
+            if agent_task.response_content == "":
                 # 没有回答，直接清除所有的action
-                self.on_remove_action(actor_entity)
+                self._remove_action_components(actor_entity)
                 continue
 
-            response_plan = SelfUsageCheckResponse(agent_name, task.response_content)
+            skill_readiness_response = SkillReadinessValidatorResponse(
+                agent_name, agent_task.response_content
+            )
 
-            if not response_plan.boolean_value:
+            if not skill_readiness_response.boolean_value:
                 # 失败就不用继续了，直接清除所有的action
-                self.on_remove_action(actor_entity)
+                self._remove_action_components(actor_entity)
 
     ######################################################################################################################################################
-    def on_remove_action(
+    def _remove_action_components(
         self,
         entity: Entity,
         action_comps: Set[type[Any]] = {
-            BehaviorAction,
+            SkillInvocationAction,
             SkillAction,
             SkillTargetAction,
-            SkillUsePropAction,
-            WorldSkillSystemRuleAction,
+            SkillAccessoryAction,
+            SkillWorldHarmonyInspectorAction,
         },
     ) -> None:
 
@@ -199,12 +210,12 @@ class SelfSkillUsageCheckSystem(ReactiveProcessor):
                 entity.remove(action_comp)
 
     ######################################################################################################################################################
-    def on_remove_all(self, entities: List[Entity]) -> None:
+    def _clear_action_components(self, entities: List[Entity]) -> None:
         for entity in entities:
-            self.on_remove_action(entity)
+            self._remove_action_components(entity)
 
     ######################################################################################################################################################
-    def extract_skill_files(self, entity: Entity) -> List[PropFile]:
+    def _get_skill_prop_files(self, entity: Entity) -> List[PropFile]:
         assert entity.has(SkillAction) and entity.has(SkillTargetAction)
 
         ret: List[PropFile] = []
@@ -224,18 +235,12 @@ class SelfSkillUsageCheckSystem(ReactiveProcessor):
         return ret
 
     ######################################################################################################################################################
-    # def extract_body_info(self, entity: Entity) -> str:
-    #     if not entity.has(BodyComponent):
-    #         return ""
-    #     return str(entity.get(BodyComponent).body)
-
-    ######################################################################################################################################################
-    def extract_prop_files(self, entity: Entity) -> List[PropFile]:
-        if not entity.has(SkillUsePropAction):
+    def _get_skill_accessory_prop_files(self, entity: Entity) -> List[PropFile]:
+        if not entity.has(SkillAccessoryAction):
             return []
 
         safe_name = self._context.safe_get_entity_name(entity)
-        prop_action = entity.get(SkillUsePropAction)
+        prop_action = entity.get(SkillAccessoryAction)
         ret: List[PropFile] = []
         for prop_name in prop_action.values:
             prop_file = self._context._file_system.get_file(
@@ -248,26 +253,25 @@ class SelfSkillUsageCheckSystem(ReactiveProcessor):
         return ret
 
     ######################################################################################################################################################
-    def create_tasks(self, entities: List[Entity]) -> Dict[str, AgentTask]:
+    def _generate_agent_tasks(self, entities: List[Entity]) -> Dict[str, AgentTask]:
 
         ret: Dict[str, AgentTask] = {}
 
         for entity in entities:
 
             agent_name = self._context.safe_get_entity_name(entity)
-
             agent = self._context.agent_system.get_agent(agent_name)
             if agent is None:
+                assert False, f"agent {agent_name} not found."
                 continue
 
-            prompt = _generate_skill_usage_reasoning_prompt(
+            prompt = _generate_skill_readiness_validator_prompt(
                 agent_name,
                 entity.get(BodyComponent).body,
-                self.extract_skill_files(entity),
-                self.extract_prop_files(entity),
+                self._get_skill_prop_files(entity),
+                self._get_skill_accessory_prop_files(entity),
             )
 
-            # 会添加上下文的！！！！
             ret[agent._name] = AgentTask.create(
                 agent,
                 builtin_prompt_util.replace_you(prompt, agent_name),

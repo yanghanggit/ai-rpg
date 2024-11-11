@@ -1,10 +1,10 @@
 from entitas import Matcher, ReactiveProcessor, GroupEvent, Entity  # type: ignore
 from my_components.action_components import (
-    BehaviorAction,
+    SkillInvocationAction,
     SkillTargetAction,
     SkillAction,
-    SkillUsePropAction,
-    WorldSkillSystemRuleAction,
+    SkillAccessoryAction,
+    SkillWorldHarmonyInspectorAction,
 )
 from my_components.components import StageComponent, WeaponComponent
 from rpg_game.rpg_entitas_context import RPGEntitasContext
@@ -17,13 +17,13 @@ from my_models.event_models import AgentEvent
 ################################################################################################################################################
 
 
-def _generate_behavior_result_prompt(
-    actor_name: str, behavior_sentence: str, result: bool
+def _generate_skill_invocation_result_prompt(
+    actor_name: str, command: str, result: bool
 ) -> str:
     if result:
         prompt1 = f"""# {actor_name} 准备发起一次使用技能的行动。
 ## 输入语句
-{behavior_sentence}
+{command}
 ## 分析过程
 输入语句中应至少包含一个技能与一个目标。可以选择性的包含道具。
 ## 结果
@@ -32,7 +32,7 @@ def _generate_behavior_result_prompt(
 
     prompt2 = f""" #{actor_name} 准备发起一次使用技能的行动。
 ## 输入语句
-{behavior_sentence}
+{command}
 ## 分析过程
 输入语句中应至少包含一个技能与一个目标。可以选择性的包含道具。
 ## 结果
@@ -42,8 +42,13 @@ def _generate_behavior_result_prompt(
     return prompt2
 
 
+######################################################################################################################################################
+######################################################################################################################################################
+######################################################################################################################################################
+
+
 @final
-class BehaviorActionSystem(ReactiveProcessor):
+class SkillInvocationActionSystem(ReactiveProcessor):
 
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         super().__init__(context)
@@ -53,57 +58,63 @@ class BehaviorActionSystem(ReactiveProcessor):
     ######################################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(BehaviorAction): GroupEvent.ADDED}
+        return {Matcher(SkillInvocationAction): GroupEvent.ADDED}
 
     ######################################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(BehaviorAction)
+        return entity.has(SkillInvocationAction)
 
     ######################################################################################################################################################
     @override
     def react(self, entities: list[Entity]) -> None:
         for entity in entities:
-            self.handle(entity)
+            self._process_skill_invocation(entity)
 
     ######################################################################################################################################################
-    def handle(self, entity: Entity) -> None:
+    def _process_skill_invocation(self, entity: Entity) -> None:
 
-        behavior_action = entity.get(BehaviorAction)
-        if len(behavior_action.values) == 0:
+        skill_invocation_action = entity.get(SkillInvocationAction)
+        if len(skill_invocation_action.values) == 0:
             return
 
-        behavior_sentence = behavior_action.values[0]
-        if behavior_sentence == "":
+        skill_invocation_command = skill_invocation_action.values[0]
+        if skill_invocation_command == "":
             return
 
         # 基础数据
-        targets = self.extract_targets_info(entity, behavior_sentence)
-        skills = self.extract_skills_info(entity, behavior_sentence)
+        targets = self._parse_targets_from_command(entity, skill_invocation_command)
+        skills = self._parse_skill_prop_files_from_command(
+            entity, skill_invocation_command
+        )
         # 不用继续了
         if len(targets) == 0 or len(skills) == 0:
-            self.on_behavior_action_result_event(entity, behavior_sentence, False)
+            self._on_skill_invocation_result_event(
+                entity, skill_invocation_command, False
+            )
             return
 
-        props = self.extract_props_info(entity, behavior_sentence)
+        props = self._parse_skill_accessory_prop_files_from_command(
+            entity, skill_invocation_command
+        )
 
         # 默认会添加当前武器? 先不用。
-        weapon_prop = self.get_current_weapon(entity)
+        weapon_prop = self._get_weapon_prop_file(entity)
         if weapon_prop is not None:
             pass
             # props.add(weapon_prop)
 
         # 添加动作
-        self.clear_action(entity)
-        self.add_skill_target_action(entity, targets)
-        self.add_skill_action(entity, skills)
-        self.add_skill_use_prop_action(entity, props)
+        self._remove_action_components(entity)
+        self._add_skill_target_action(entity, targets)
+        self._add_skill_action(entity, skills)
+        self._add_skill_accessory_prop_action(entity, props)
 
         # 事件通知
-        self.on_behavior_action_result_event(entity, behavior_sentence, True)
+        self._on_skill_invocation_result_event(entity, skill_invocation_command, True)
 
     ######################################################################################################################################################
-    def get_current_weapon(self, entity: Entity) -> Optional[PropFile]:
+    def _get_weapon_prop_file(self, entity: Entity) -> Optional[PropFile]:
         if not entity.has(WeaponComponent):
             return None
         current_weapon_comp = entity.get(WeaponComponent)
@@ -112,15 +123,15 @@ class BehaviorActionSystem(ReactiveProcessor):
         )
 
     ######################################################################################################################################################
-    def clear_action(
+    def _remove_action_components(
         self,
         entity: Entity,
         actions_comp: Set[type[Any]] = set(
             {
                 SkillTargetAction,
                 SkillAction,
-                SkillUsePropAction,
-                WorldSkillSystemRuleAction,
+                SkillAccessoryAction,
+                SkillWorldHarmonyInspectorAction,
             }
         ),
     ) -> None:
@@ -130,8 +141,7 @@ class BehaviorActionSystem(ReactiveProcessor):
                 entity.remove(action_comp)
 
     ######################################################################################################################################################
-
-    def extract_targets_info(self, entity: Entity, sentence: str) -> Set[str]:
+    def _parse_targets_from_command(self, entity: Entity, command: str) -> Set[str]:
 
         current_stage_entity = self._context.safe_get_stage_entity(entity)
         assert current_stage_entity is not None
@@ -139,19 +149,19 @@ class BehaviorActionSystem(ReactiveProcessor):
             return set()
 
         current_stage_name = current_stage_entity.get(StageComponent).name
-        if current_stage_name in sentence:
+        if current_stage_name in command:
             # 有场景就是直接是场景的。放弃下面的处理！
             return set({current_stage_name})
 
         ret: Set[str] = set()
         actor_names = self._context.get_actor_names_in_stage(current_stage_entity)
         for actor_name in actor_names:
-            if actor_name in sentence:
+            if actor_name in command:
                 ret.add(actor_name)
         return ret
 
     ######################################################################################################################################################
-    def add_skill_target_action(self, entity: Entity, target_names: Set[str]) -> None:
+    def _add_skill_target_action(self, entity: Entity, target_names: Set[str]) -> None:
         if len(target_names) == 0:
             return
         entity.add(
@@ -161,7 +171,9 @@ class BehaviorActionSystem(ReactiveProcessor):
         )
 
     ######################################################################################################################################################
-    def extract_skills_info(self, entity: Entity, sentence: str) -> Set[PropFile]:
+    def _parse_skill_prop_files_from_command(
+        self, entity: Entity, command: str
+    ) -> Set[PropFile]:
 
         safe_name = self._context.safe_get_entity_name(entity)
         skill_files = self._context._file_system.get_files(PropFile, safe_name)
@@ -171,13 +183,13 @@ class BehaviorActionSystem(ReactiveProcessor):
             if not skill_file.is_skill:
                 continue
 
-            if skill_file.name in sentence:
+            if skill_file.name in command:
                 ret.add(skill_file)
 
         return ret
 
     ######################################################################################################################################################
-    def add_skill_action(
+    def _add_skill_action(
         self, entity: Entity, prop_name_as_skill_name: Set[PropFile]
     ) -> None:
         if len(prop_name_as_skill_name) == 0:
@@ -186,7 +198,9 @@ class BehaviorActionSystem(ReactiveProcessor):
         entity.add(SkillAction, self._context.safe_get_entity_name(entity), skill_names)
 
     ######################################################################################################################################################
-    def extract_props_info(self, entity: Entity, sentence: str) -> Set[PropFile]:
+    def _parse_skill_accessory_prop_files_from_command(
+        self, entity: Entity, command: str
+    ) -> Set[PropFile]:
 
         safe_name = self._context.safe_get_entity_name(entity)
         prop_files = self._context._file_system.get_files(PropFile, safe_name)
@@ -194,32 +208,34 @@ class BehaviorActionSystem(ReactiveProcessor):
         for prop_file in prop_files:
             if prop_file.is_skill:
                 continue
-            if prop_file.name in sentence:
+            if prop_file.name in command:
                 ret.add(prop_file)
 
         return ret
 
     ######################################################################################################################################################
-    def add_skill_use_prop_action(self, entity: Entity, props: Set[PropFile]) -> None:
+    def _add_skill_accessory_prop_action(
+        self, entity: Entity, props: Set[PropFile]
+    ) -> None:
         if len(props) == 0:
             return
         prop_names = [prop.name for prop in props]
         entity.add(
-            SkillUsePropAction, self._context.safe_get_entity_name(entity), prop_names
+            SkillAccessoryAction, self._context.safe_get_entity_name(entity), prop_names
         )
 
     ######################################################################################################################################################
-    def on_behavior_action_result_event(
-        self, entity: Entity, behavior_sentence: str, processed_result: bool
+    def _on_skill_invocation_result_event(
+        self, entity: Entity, command: str, processed_result: bool
     ) -> None:
 
         # 需要给到agent
         self._context.notify_event(
             set({entity}),
             AgentEvent(
-                message=_generate_behavior_result_prompt(
+                message=_generate_skill_invocation_result_prompt(
                     self._context.safe_get_entity_name(entity),
-                    behavior_sentence,
+                    command,
                     processed_result,
                 )
             ),

@@ -88,14 +88,17 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
     #######################################################################################################################################
     @override
     async def a_execute1(self) -> None:
+
         # step1: 添加任务
         tasks: Dict[str, AgentTask] = {}
 
         self._populate_agent_tasks(tasks)
+
         # step可选：混沌工程做测试
         self._context._chaos_engineering_system.on_stage_planning_system_excute(
             self._context
         )
+
         # step2: 并行执行requests
         if len(tasks) == 0:
             return
@@ -107,7 +110,29 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
 
         # step3: 处理结果
         self._process_agent_tasks(tasks)
+
+        # step4: 保底加一个行为？
+        self._ensure_stage_narration_action(tasks)
+
+        # step？: 清理，习惯性动作
         tasks.clear()
+
+    #######################################################################################################################################
+    def _ensure_stage_narration_action(
+        self, agent_task_requests: Dict[str, AgentTask]
+    ) -> None:
+        for stage_name, agent_task in agent_task_requests.items():
+
+            stage_entity = self._context.get_stage_entity(stage_name)
+            assert (
+                stage_entity is not None
+            ), f"StagePlanningSystem: stage_entity is None, {stage_name}"
+
+            if not stage_entity.has(StageNarrateAction):
+                logger.warning(
+                    f"StagePlanningSystem: add StageNarrateAction = {stage_name}"
+                )
+                stage_entity.add(StageNarrateAction, ["无任何描述。"])
 
     #######################################################################################################################################
     def _process_agent_tasks(self, agent_task_requests: Dict[str, AgentTask]) -> None:

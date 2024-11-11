@@ -8,7 +8,7 @@ from my_components.action_components import (
     PickUpPropAction,
     StealPropAction,
     GivePropAction,
-    BehaviorAction,
+    SkillInvocationAction,
     EquipPropAction,
     DeadAction,
 )
@@ -244,10 +244,10 @@ class PlayerGiveProp(PlayerCommand):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class PlayerBehavior(PlayerCommand):
+class PlayerSkillInvocation(PlayerCommand):
 
     @property
-    def behavior_sentence(self) -> str:
+    def command(self) -> str:
         return self.split_command(self._input_val, self._name)
 
     @override
@@ -259,18 +259,18 @@ class PlayerBehavior(PlayerCommand):
         if player_entity is None:
             return
 
-        logger.debug(f"PlayerBehavior, {player_proxy.name}: {self.behavior_sentence}")
+        logger.debug(f"PlayerSkillInvocation, {player_proxy.name}: {self.command}")
         actor_comp = player_entity.get(ActorComponent)
 
         player_entity.add(
-            BehaviorAction,
+            SkillInvocationAction,
             actor_comp.name,
-            [self.behavior_sentence],
+            [self.command],
         )
 
         self.add_player_planning_message(
             player_entity,
-            self.make_simple_message(BehaviorAction.__name__, [self.behavior_sentence]),
+            self.make_simple_message(SkillInvocationAction.__name__, [self.command]),
             rpg_game,
         )
 

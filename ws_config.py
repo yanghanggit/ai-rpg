@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from pydantic import BaseModel
 from typing import List, Optional, Final
 from my_models.entity_models import GameModel
-from my_models.config_models import APIRoutesConfigModel, GenGamesConfigModel
+from my_models.config_models import APIEndpointsConfigModel, AllGamesConfigModel
 from my_models.player_models import (
     WatchActionModel,
     CheckActionModel,
@@ -21,13 +21,13 @@ class WS_CONFIG:
 ###############################################################################################################################################
 ###############################################################################################################################################
 ###############################################################################################################################################
-class APIRoutesConfigRequest(BaseModel):
+class APIEndpointsConfigRequest(BaseModel):
     content: str = ""
 
 
-class APIRoutesConfigResponse(BaseModel):
+class APIEndpointsConfigResponse(BaseModel):
     content: str = ""
-    api_routes: APIRoutesConfigModel = APIRoutesConfigModel()
+    api_endpoints: APIEndpointsConfigModel = APIEndpointsConfigModel()
     error: int = 0
     message: str = ""
 
@@ -41,7 +41,7 @@ class LoginRequest(BaseModel):
 
 class LoginResponse(BaseModel):
     user_name: str = ""
-    game_config: GenGamesConfigModel = GenGamesConfigModel()
+    game_config: AllGamesConfigModel = AllGamesConfigModel()
     error: int = 0
     message: str = ""
 

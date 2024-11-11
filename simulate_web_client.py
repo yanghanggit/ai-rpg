@@ -23,13 +23,13 @@ from ws_config import (
     RetrieveActorArchivesResponse,
     RetrieveStageArchivesRequest,
     RetrieveStageArchivesResponse,
-    APIRoutesConfigRequest,
-    APIRoutesConfigResponse,
+    APIEndpointsConfigRequest,
+    APIEndpointsConfigResponse,
 )
 from loguru import logger
 from typing import Final, List
 import datetime
-from my_models.config_models import APIRoutesConfigModel
+from my_models.config_models import APIEndpointsConfigModel
 from my_services.game_state_manager import GameStateController, GameState
 
 
@@ -44,7 +44,7 @@ class SimuWebAPP:
         self._selectable_actors: List[str] = []
         self._actor_name: str = ""
         self._input_enable = False
-        self._api_routes = APIRoutesConfigModel()
+        self._api_endpoints = APIEndpointsConfigModel()
 
     def on_exit_game(self) -> None:
         self._game_name = ""
@@ -52,30 +52,34 @@ class SimuWebAPP:
         self._actor_name = ""
 
     @property
-    def api_routes(self) -> APIRoutesConfigModel:
-        return self._api_routes
+    def api_endpoints(self) -> APIEndpointsConfigModel:
+        return self._api_endpoints
 
-    @api_routes.setter
-    def api_routes(self, value: APIRoutesConfigModel) -> None:
-        self._api_routes = value
-        logger.info(f"获取API路由成功: {self._api_routes.model_dump_json()}")
+    @api_endpoints.setter
+    def api_endpoints(self, value: APIEndpointsConfigModel) -> None:
+        self._api_endpoints = value
+        logger.info(f"获取API路由成功: {self._api_endpoints.model_dump_json()}")
 
 
 ###############################################################################################################################################
-def _api_routes(client_context: SimuWebAPP, state_manager: GameStateController) -> None:
+def _api_endpoints(
+    client_context: SimuWebAPP, state_manager: GameStateController
+) -> None:
 
     time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     response = requests.post(
-        f"""http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/api_routes/""",
-        json=APIRoutesConfigRequest(content=f"time = {time}").model_dump(),
+        f"""http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/api_endpoints/""",
+        json=APIEndpointsConfigRequest(content=f"time = {time}").model_dump(),
     )
 
-    api_routes_config_response = APIRoutesConfigResponse.model_validate(response.json())
+    api_routes_config_response = APIEndpointsConfigResponse.model_validate(
+        response.json()
+    )
     if api_routes_config_response.error > 0:
         assert False, f"获取API路由失败: {api_routes_config_response.message}"
         return
 
-    client_context.api_routes = api_routes_config_response.api_routes
+    client_context.api_endpoints = api_routes_config_response.api_endpoints
 
 
 ###############################################################################################################################################
@@ -101,7 +105,7 @@ def _login(
         return
 
     response = requests.post(
-        client_context.api_routes.LOGIN,
+        client_context.api_endpoints.LOGIN,
         json=LoginRequest(user_name=input_username).model_dump(),
     )
 
@@ -134,7 +138,7 @@ def _create_game(
     )
 
     response = requests.post(
-        client_context.api_routes.CREATE,
+        client_context.api_endpoints.CREATE,
         json=CreateRequest(
             user_name=client_context._user_name, game_name=input_game_name
         ).model_dump(),
@@ -190,7 +194,7 @@ def _join_game(client_context: SimuWebAPP, state_manager: GameStateController) -
             logger.debug("输入错误，请重新输入。")
 
     response = requests.post(
-        client_context.api_routes.JOIN,
+        client_context.api_endpoints.JOIN,
         json=JoinRequest(
             user_name=client_context._user_name,
             game_name=client_context._game_name,
@@ -222,7 +226,7 @@ def _play(client_context: SimuWebAPP, state_manager: GameStateController) -> Non
         return
 
     response = requests.post(
-        client_context.api_routes.START,
+        client_context.api_endpoints.START,
         json=StartRequest(
             user_name=client_context._user_name,
             game_name=client_context._game_name,
@@ -258,7 +262,7 @@ def _request_game_execute(
 
     # 推动游戏执行一次
     response = requests.post(
-        client_context.api_routes.EXECUTE,
+        client_context.api_endpoints.EXECUTE,
         json=ExecuteRequest(
             user_name=client_context._user_name,
             game_name=client_context._game_name,
@@ -284,7 +288,7 @@ def _request_fetch_messages(
 ) -> None:
 
     response = requests.post(
-        client_context.api_routes.FETCH_MESSAGES,
+        client_context.api_endpoints.FETCH_MESSAGES,
         json=FetchMessagesRequest(
             user_name=client_context._user_name,
             game_name=client_context._game_name,
@@ -373,7 +377,7 @@ def _requesting_watch(
 ) -> None:
 
     response = requests.post(
-        client_context.api_routes.WATCH,
+        client_context.api_endpoints.WATCH,
         json=WatchRequest(
             user_name=client_context._user_name,
             game_name=client_context._game_name,
@@ -397,7 +401,7 @@ def _requesting_check(
 ) -> None:
 
     response = requests.post(
-        client_context.api_routes.CHECK,
+        client_context.api_endpoints.CHECK,
         json=CheckRequest(
             user_name=client_context._user_name,
             game_name=client_context._game_name,
@@ -421,7 +425,7 @@ def _requesting_retrieve_actor_archives(
 ) -> None:
 
     response = requests.post(
-        client_context.api_routes.RETRIEVE_ACTOR_ARCHIVES,
+        client_context.api_endpoints.RETRIEVE_ACTOR_ARCHIVES,
         json=RetrieveActorArchivesRequest(
             user_name=client_context._user_name,
             game_name=client_context._game_name,
@@ -447,7 +451,7 @@ def _requesting_retrieve_stage_archives(
 ) -> None:
 
     response = requests.post(
-        client_context.api_routes.RETRIEVE_STAGE_ARCHIVES,
+        client_context.api_endpoints.RETRIEVE_STAGE_ARCHIVES,
         json=RetrieveStageArchivesRequest(
             user_name=client_context._user_name,
             game_name=client_context._game_name,
@@ -476,7 +480,7 @@ def _requesting_exit(
         return
 
     response = requests.post(
-        client_context.api_routes.EXECUTE,
+        client_context.api_endpoints.EXECUTE,
         json=ExitRequest(
             user_name=client_context._user_name, game_name=client_context._game_name
         ).model_dump(),
@@ -511,7 +515,7 @@ def web_run() -> None:
 
         match client_state.state:
             case GameState.UNLOGGED:
-                _api_routes(client_context, client_state)
+                _api_endpoints(client_context, client_state)
                 _login(client_context, client_state, default_user_name)
 
             case GameState.LOGGED_IN:

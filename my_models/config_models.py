@@ -2,17 +2,17 @@ from typing import List, Dict, List
 from pydantic import BaseModel
 
 
-class OneGameConfigModel(BaseModel):
+class GameConfigModel(BaseModel):
     game_name: str = ""
     about_game: str = ""
     players: Dict[str, str] = {}
 
 
-class GenGamesConfigModel(BaseModel):
-    game_configs: List[OneGameConfigModel] = []
+class AllGamesConfigModel(BaseModel):
+    game_configs: List[GameConfigModel] = []
 
 
-class APIRoutesConfigModel(BaseModel):
+class APIEndpointsConfigModel(BaseModel):
     LOGIN: str = ""
     CREATE: str = ""
     JOIN: str = ""

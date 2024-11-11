@@ -15,7 +15,7 @@ import game_sample.utils
 from game_sample.actor_data import ExcelDataActor
 from game_sample.game_editor import ExcelEditorGame
 import game_sample.configuration as configuration
-from my_models.config_models import GenGamesConfigModel, OneGameConfigModel
+from my_models.config_models import AllGamesConfigModel, GameConfigModel
 
 
 ############################################################################################################
@@ -165,13 +165,13 @@ def build_relationship_between_actors_and_props(
 
 
 ################################################################################################################
-def gen_games_config(gen_games: List[ExcelEditorGame]) -> GenGamesConfigModel:
+def gen_games_config(gen_games: List[ExcelEditorGame]) -> AllGamesConfigModel:
 
-    ret: GenGamesConfigModel = GenGamesConfigModel()
+    ret: AllGamesConfigModel = AllGamesConfigModel()
 
     for game_editor in gen_games:
 
-        one_game_config = OneGameConfigModel()
+        one_game_config = GameConfigModel()
         one_game_config.game_name = game_editor._name
         one_game_config.about_game = game_editor.about_game
 

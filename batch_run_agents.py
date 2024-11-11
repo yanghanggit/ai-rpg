@@ -6,7 +6,7 @@ import json
 from my_models.config_models import GameAgentsConfigModel
 import rpg_game.rpg_game_config as rpg_game_config
 from pathlib import Path
-from my_models.config_models import GenGamesConfigModel
+from my_models.config_models import AllGamesConfigModel
 
 
 ####################################################################################################################################
@@ -125,13 +125,13 @@ def main() -> None:
     config_file_config = rpg_game_config.ROOT_GEN_GAMES_DIR / f"config.json"
     assert config_file_config.exists()
     read_config_content = config_file_config.read_text(encoding="utf-8")
-    gen_games_config_model = GenGamesConfigModel.model_validate_json(
+    all_games_config_model = AllGamesConfigModel.model_validate_json(
         read_config_content
     )
 
     #
     available_games: List[str] = []
-    for game_config in gen_games_config_model.game_configs:
+    for game_config in all_games_config_model.game_configs:
         available_games.append(game_config.game_name)
 
     #

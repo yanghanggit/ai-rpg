@@ -137,12 +137,12 @@ def main(game_names: List[str]) -> None:
                 logger.warning(f"game_editor.write_agents: {input_target_game_name}")
 
     # 生成games_config
-    gen_games_config_model = gen_funcs.gen_games_config(ret_gen_games)
-    if gen_games_config_model is not None:
+    all_games_config_model = gen_funcs.gen_games_config(ret_gen_games)
+    if all_games_config_model is not None:
         utils.write_text_file(
             configuration.GAME_SAMPLE_OUT_PUT_GAME_DIR,
             f"config.json",
-            gen_games_config_model.model_dump_json(),
+            all_games_config_model.model_dump_json(),
         )
 
     # game最后拷贝到项目根部

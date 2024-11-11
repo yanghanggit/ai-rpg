@@ -2,24 +2,24 @@ from fastapi import APIRouter
 from loguru import logger
 from ws_config import (
     WS_CONFIG,
-    APIRoutesConfigRequest,
-    APIRoutesConfigResponse,
+    APIEndpointsConfigRequest,
+    APIEndpointsConfigResponse,
 )
 from typing import Dict, Any
 from my_models.config_models import (
-    APIRoutesConfigModel,
+    APIEndpointsConfigModel,
 )
 
 
-api_routes_router = APIRouter()
+api_endpoints_router = APIRouter()
 
 
 ###############################################################################################################################################
-@api_routes_router.post("/api_routes/")
-async def api_routes(request_data: APIRoutesConfigRequest) -> Dict[str, Any]:
-    logger.info(f"api_routes: {request_data.content}")
+@api_endpoints_router.post("/api_endpoints/")
+async def api_endpoints(request_data: APIEndpointsConfigRequest) -> Dict[str, Any]:
+    logger.info(f"api_endpoints: {request_data.content}")
 
-    gen_api_routes_config: APIRoutesConfigModel = APIRoutesConfigModel(
+    gen_api_endpoints_config: APIEndpointsConfigModel = APIEndpointsConfigModel(
         LOGIN=f"http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/login/",
         CREATE=f"http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/create/",
         JOIN=f"http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/join/",
@@ -33,7 +33,7 @@ async def api_routes(request_data: APIRoutesConfigRequest) -> Dict[str, Any]:
         RETRIEVE_STAGE_ARCHIVES=f"http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/retrieve_stage_archives/",
     )
 
-    return APIRoutesConfigResponse(
+    return APIEndpointsConfigResponse(
         message=request_data.content,
-        api_routes=gen_api_routes_config,
+        api_endpoints=gen_api_endpoints_config,
     ).model_dump()

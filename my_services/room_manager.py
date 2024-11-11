@@ -1,7 +1,7 @@
 from typing import Optional, Dict
 from rpg_game.web_game import WebGame
 from player.player_proxy import PlayerProxy
-from my_models.config_models import GenGamesConfigModel
+from my_models.config_models import AllGamesConfigModel
 from my_services.game_state_manager import GameStateController, GameState
 from pathlib import Path
 from loguru import logger
@@ -52,11 +52,11 @@ class RoomManager:
     def __init__(self) -> None:
 
         self._rooms: Dict[str, Room] = {}
-        self._game_config: GenGamesConfigModel = GenGamesConfigModel()
+        self._game_config: AllGamesConfigModel = AllGamesConfigModel()
 
     ###############################################################################################################################################
     @property
-    def game_config(self) -> GenGamesConfigModel:
+    def game_config(self) -> AllGamesConfigModel:
         return self._game_config
 
     ###############################################################################################################################################
@@ -85,7 +85,7 @@ class RoomManager:
     def read_game_config(self, game_config_file_path: Path) -> None:
         assert game_config_file_path.exists()
         try:
-            self._game_config = GenGamesConfigModel.model_validate_json(
+            self._game_config = AllGamesConfigModel.model_validate_json(
                 game_config_file_path.read_text(encoding="utf-8")
             )
 

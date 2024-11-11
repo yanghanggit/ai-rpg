@@ -23,8 +23,8 @@ import rpg_game.rpg_game_config as rpg_game_config
 import shutil
 from my_models.player_models import PlayerProxyModel
 from my_models.config_models import (
-    GenGamesConfigModel,
-    OneGameConfigModel,
+    AllGamesConfigModel,
+    GameConfigModel,
 )
 from my_services.game_state_manager import GameState
 from my_services.room_manager import (
@@ -36,8 +36,8 @@ game_process_api_router = APIRouter()
 
 ###############################################################################################################################################
 def _match_create_enabled_config(
-    game_name: str, game_config: GenGamesConfigModel
-) -> Optional[OneGameConfigModel]:
+    game_name: str, game_config: AllGamesConfigModel
+) -> Optional[GameConfigModel]:
 
     for one_game_config in game_config.game_configs:
         if one_game_config.game_name != game_name:

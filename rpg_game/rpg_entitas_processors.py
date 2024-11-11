@@ -104,17 +104,19 @@ class RPGEntitasProcessors(Processors):
 
         processors = RPGEntitasProcessors()
 
-        ##调试用的系统。监视进入运行之前的状态
-        processors.add(BeginSystem(context, rpg_game))
+        # 初始化系统########################
+        processors.add(
+            SpawnerSystem(context, rpg_game)
+        )  # 因为需要connect 与 kick off，所以需要放在2者之前
+        processors.add(AgentConnectSystem(context, rpg_game))
+        processors.add(AgentKickOffSystem(context, rpg_game))
+        #########################################
 
         # 游戏回合系统，就是计算游戏的时间这个开始问题
         processors.add(GameRoundSystem(context, rpg_game))
 
-        # 初始化系统########################
-        processors.add(SpawnerSystem(context, rpg_game))
-        processors.add(AgentConnectSystem(context, rpg_game))
-        processors.add(AgentKickOffSystem(context, rpg_game))
-        #########################################
+        ##调试用的系统。监视进入运行之前的状态
+        processors.add(BeginSystem(context, rpg_game))
 
         ### 处理玩家输入!
         processors.add(HandlePlayerInputSystem(context, rpg_game))

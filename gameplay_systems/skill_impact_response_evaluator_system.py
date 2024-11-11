@@ -1,11 +1,7 @@
 from entitas import Matcher, ReactiveProcessor, GroupEvent, Entity  # type: ignore
 from my_components.action_components import (
-    SkillInvocationAction,
-    SkillTargetAction,
     SkillAction,
-    SkillAccessoryAction,
     DamageAction,
-    SkillWorldHarmonyInspectorAction,
     BroadcastAction,
     TagAction,
 )
@@ -14,8 +10,7 @@ from my_components.components import (
     ActorComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from typing import final, override, List, Optional, Set
-from extended_systems.prop_file import PropFile
+from typing import final, override, List, Optional
 import gameplay_systems.builtin_prompt_util as builtin_prompt_util
 from my_agent.agent_task import AgentTask
 from my_agent.agent_plan import AgentPlanResponse
@@ -25,6 +20,7 @@ from rpg_game.rpg_game import RPGGame
 from my_models.entity_models import AttributesIndex
 from my_models.event_models import AgentEvent
 from loguru import logger
+import gameplay_systems.skill_system_utils
 
 ################################################################################################################################################
 
@@ -119,13 +115,9 @@ class SkillImpactResponseEvaluatorSystem(ReactiveProcessor):
     ######################################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return (
-            entity.has(SkillAction)
-            and entity.has(SkillTargetAction)
-            and entity.has(SkillInvocationAction)
-            and entity.has(SkillWorldHarmonyInspectorAction)
-            and entity.has(ActorComponent)
-        ) or entity.has(SkillAccessoryAction)
+        return entity.has(
+            ActorComponent
+        ) and gameplay_systems.skill_system_utils.has_skill_system_action(entity)
 
     ######################################################################################################################################################
     @override
@@ -144,7 +136,11 @@ class SkillImpactResponseEvaluatorSystem(ReactiveProcessor):
     ######################################################################################################################################################
     async def _process_skill_impact(self, entity: Entity) -> None:
         # 释放技能
-        for target in self._get_skill_targets(entity):
+        for (
+            target
+        ) in gameplay_systems.skill_system_utils.parse_skill_target_from_action(
+            self._context, entity
+        ):
 
             task = self._generate_skill_impact_response_task(entity, target)
             if task is None:
@@ -165,54 +161,6 @@ class SkillImpactResponseEvaluatorSystem(ReactiveProcessor):
             )
 
     ######################################################################################################################################################
-    def _get_skill_targets(self, entity: Entity) -> Set[Entity]:
-        assert entity.has(SkillTargetAction)
-        targets = set()
-        for target_name in entity.get(SkillTargetAction).values:
-            target = self._context.get_entity_by_name(target_name)
-            if target is not None:
-                targets.add(target)
-        return targets
-
-    ######################################################################################################################################################
-    def _get_skill_prop_files(self, entity: Entity) -> List[PropFile]:
-        assert entity.has(SkillAction) and entity.has(SkillTargetAction)
-
-        ret: List[PropFile] = []
-
-        safe_name = self._context.safe_get_entity_name(entity)
-        skill_action = entity.get(SkillAction)
-        for skill_name in skill_action.values:
-
-            skill_file = self._context._file_system.get_file(
-                PropFile, safe_name, skill_name
-            )
-            if skill_file is None or not skill_file.is_skill:
-                continue
-
-            ret.append(skill_file)
-
-        return ret
-
-    ######################################################################################################################################################
-    def _get_skill_accessory_prop_files(self, entity: Entity) -> List[PropFile]:
-        if not entity.has(SkillAccessoryAction):
-            return []
-
-        safe_name = self._context.safe_get_entity_name(entity)
-        skill_use_prop_action = entity.get(SkillAccessoryAction)
-        ret: List[PropFile] = []
-        for prop_name in skill_use_prop_action.values:
-            prop_file = self._context._file_system.get_file(
-                PropFile, safe_name, prop_name
-            )
-            if prop_file is None:
-                continue
-            ret.append(prop_file)
-
-        return ret
-
-    ######################################################################################################################################################
     def _on_broadcast_skill_impact_response_event(
         self, from_entity: Entity, target_entity: Entity, target_feedback: str
     ) -> None:
@@ -222,7 +170,9 @@ class SkillImpactResponseEvaluatorSystem(ReactiveProcessor):
             return
 
         inspector_tag, inspector_content = (
-            self._parse_skill_world_harmony_inspector_action(from_entity)
+            gameplay_systems.skill_system_utils.parse_skill_world_harmony_inspector_action(
+                from_entity
+            )
         )
         logger.debug(f"world_skill_system_rule_tag: {inspector_tag}")
 
@@ -295,20 +245,29 @@ class SkillImpactResponseEvaluatorSystem(ReactiveProcessor):
     def _calculate_skill_accessory_props(
         self, entity: Entity, target: Entity, out_put_skill_attrs: List[int]
     ) -> None:
-        prop_files = self._get_skill_accessory_prop_files(entity)
-        for prop_file in prop_files:
+
+        data = gameplay_systems.skill_system_utils.parse_skill_accessory_prop_info_from_action(
+            self._context, entity
+        )
+        for prop_file_and_count_data in data:
             for i in range(len(out_put_skill_attrs)):
-                out_put_skill_attrs[i] += prop_file.prop_model.attributes[i]
+                prop_file = prop_file_and_count_data[0]
+                count = prop_file_and_count_data[1]
+                out_put_skill_attrs[i] += prop_file.prop_model.attributes[i] * count
 
     ######################################################################################################################################################
     def _calculate_skill_attributes(self, entity: Entity) -> List[int]:
         final_attr: List[int] = []
-        for skill_file in self._get_skill_prop_files(entity):
+        for (
+            skill_prop_file
+        ) in gameplay_systems.skill_system_utils.parse_skill_prop_files_from_action(
+            self._context, entity
+        ):
             if len(final_attr) == 0:
-                final_attr = skill_file.prop_model.attributes
+                final_attr = skill_prop_file.prop_model.attributes
             else:
                 for i in range(len(final_attr)):
-                    final_attr[i] += skill_file.prop_model.attributes[i]
+                    final_attr[i] += skill_prop_file.prop_model.attributes[i]
         return final_attr
 
     ######################################################################################################################################################
@@ -317,7 +276,9 @@ class SkillImpactResponseEvaluatorSystem(ReactiveProcessor):
     ) -> None:
 
         world_skill_system_rule_tag, world_skill_system_rule_out_come = (
-            self._parse_skill_world_harmony_inspector_action(entity)
+            gameplay_systems.skill_system_utils.parse_skill_world_harmony_inspector_action(
+                entity
+            )
         )
 
         logger.debug(f"world_skill_system_rule_tag: {world_skill_system_rule_tag}")
@@ -344,7 +305,9 @@ class SkillImpactResponseEvaluatorSystem(ReactiveProcessor):
             return None
 
         inspector_tag, inspector_content = (
-            self._parse_skill_world_harmony_inspector_action(entity)
+            gameplay_systems.skill_system_utils.parse_skill_world_harmony_inspector_action(
+                entity
+            )
         )
         prompt = _generate_skill_impact_response_prompt(
             self._context.safe_get_entity_name(entity),
@@ -359,27 +322,12 @@ class SkillImpactResponseEvaluatorSystem(ReactiveProcessor):
         )
 
     ######################################################################################################################################################
-    def _parse_skill_world_harmony_inspector_action(
-        self, entity: Entity
-    ) -> tuple[str, str]:
-        if not entity.has(SkillWorldHarmonyInspectorAction):
-            return "", ""
-
-        skill_world_harmony_inspector_action = entity.get(
-            SkillWorldHarmonyInspectorAction
-        )
-        if len(skill_world_harmony_inspector_action.values) < 2:
-            return "", ""
-        return (
-            skill_world_harmony_inspector_action.values[0],
-            skill_world_harmony_inspector_action.values[1],
-        )
-
-    ######################################################################################################################################################
     def _determine_damage_bonus(self, entity: Entity) -> float:
 
         inspector_tag, inspector_content = (
-            self._parse_skill_world_harmony_inspector_action(entity)
+            gameplay_systems.skill_system_utils.parse_skill_world_harmony_inspector_action(
+                entity
+            )
         )
 
         if inspector_tag == builtin_prompt_util.ConstantSkillPrompt.CRITICAL_SUCCESS:

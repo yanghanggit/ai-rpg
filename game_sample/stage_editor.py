@@ -8,7 +8,6 @@ from typing import List, Dict, Any, Optional, cast, Set
 from game_sample.prop_data import ExcelDataProp
 from game_sample.actor_data import ExcelDataActor
 from game_sample.stage_data import ExcelDataStage
-import game_sample.utils
 from game_sample.guid_generator import editor_guid_generator
 from my_models.entity_models import (
     AttributesIndex,
@@ -131,7 +130,7 @@ class ExcelEditorStage:
             if prop_str == "":
                 continue
 
-            tp = my_format_string.editor_prop_info_string.parse_prop_name_and_count(
+            tp = my_format_string.editor_prop_info_string.extract_prop_name_and_count(
                 prop_str
             )
             if tp[0] not in self._prop_data_base:

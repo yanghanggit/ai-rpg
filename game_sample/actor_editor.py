@@ -5,7 +5,6 @@ root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 from typing import List, Dict, Any, Optional, cast
 from game_sample.prop_data import ExcelDataProp
-import game_sample.utils
 from game_sample.actor_data import ExcelDataActor
 from game_sample.guid_generator import editor_guid_generator
 from my_models.entity_models import (
@@ -138,8 +137,10 @@ class ExcelEditorActor:
             if prop_info == "":
                 continue
 
-            parse = my_format_string.editor_prop_info_string.parse_prop_name_and_count(
-                prop_info
+            parse = (
+                my_format_string.editor_prop_info_string.extract_prop_name_and_count(
+                    prop_info
+                )
             )
             prop_name = parse[0]
             prop_count = parse[1]

@@ -1,25 +1,22 @@
 from entitas import Matcher, ReactiveProcessor, GroupEvent, Entity  # type: ignore
 from my_components.action_components import (
-    SkillInvocationAction,
-    SkillTargetAction,
     SkillAction,
-    SkillAccessoryAction,
     TagAction,
     MindVoiceAction,
-    SkillWorldHarmonyInspectorAction,
 )
 from my_components.components import (
     BodyComponent,
     ActorComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from typing import final, override, List, Set, Dict, Any
+from typing import final, override, List, Dict
 from loguru import logger
 from extended_systems.prop_file import PropFile, generate_prop_prompt
 import gameplay_systems.builtin_prompt_util as builtin_prompt_util
 from my_agent.agent_task import AgentTask
 from my_agent.agent_plan import AgentPlanResponse
 from rpg_game.rpg_game import RPGGame
+import gameplay_systems.skill_system_utils
 
 
 ################################################################################################################################################
@@ -132,12 +129,9 @@ class SkillReadinessValidatorSystem(ReactiveProcessor):
     ######################################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return (
-            entity.has(SkillAction)
-            and entity.has(SkillTargetAction)
-            and entity.has(SkillInvocationAction)
-            and entity.has(ActorComponent)
-        )
+        return entity.has(
+            ActorComponent
+        ) and gameplay_systems.skill_system_utils.has_skill_system_action(entity)
 
     ######################################################################################################################################################
     @override
@@ -181,7 +175,9 @@ class SkillReadinessValidatorSystem(ReactiveProcessor):
 
             if agent_task.response_content == "":
                 # 没有回答，直接清除所有的action
-                self._remove_action_components(actor_entity)
+                gameplay_systems.skill_system_utils.clear_skill_system_actions(
+                    actor_entity
+                )
                 continue
 
             skill_readiness_response = SkillReadinessValidatorResponse(
@@ -190,67 +186,14 @@ class SkillReadinessValidatorSystem(ReactiveProcessor):
 
             if not skill_readiness_response.boolean_value:
                 # 失败就不用继续了，直接清除所有的action
-                self._remove_action_components(actor_entity)
-
-    ######################################################################################################################################################
-    def _remove_action_components(
-        self,
-        entity: Entity,
-        action_comps: Set[type[Any]] = {
-            SkillInvocationAction,
-            SkillAction,
-            SkillTargetAction,
-            SkillAccessoryAction,
-            SkillWorldHarmonyInspectorAction,
-        },
-    ) -> None:
-
-        for action_comp in action_comps:
-            if entity.has(action_comp):
-                entity.remove(action_comp)
+                gameplay_systems.skill_system_utils.clear_skill_system_actions(
+                    actor_entity
+                )
 
     ######################################################################################################################################################
     def _clear_action_components(self, entities: List[Entity]) -> None:
         for entity in entities:
-            self._remove_action_components(entity)
-
-    ######################################################################################################################################################
-    def _get_skill_prop_files(self, entity: Entity) -> List[PropFile]:
-        assert entity.has(SkillAction) and entity.has(SkillTargetAction)
-
-        ret: List[PropFile] = []
-
-        safe_name = self._context.safe_get_entity_name(entity)
-        skill_action = entity.get(SkillAction)
-        for skill_name in skill_action.values:
-
-            skill_file = self._context._file_system.get_file(
-                PropFile, safe_name, skill_name
-            )
-            if skill_file is None or not skill_file.is_skill:
-                continue
-
-            ret.append(skill_file)
-
-        return ret
-
-    ######################################################################################################################################################
-    def _get_skill_accessory_prop_files(self, entity: Entity) -> List[PropFile]:
-        if not entity.has(SkillAccessoryAction):
-            return []
-
-        safe_name = self._context.safe_get_entity_name(entity)
-        prop_action = entity.get(SkillAccessoryAction)
-        ret: List[PropFile] = []
-        for prop_name in prop_action.values:
-            prop_file = self._context._file_system.get_file(
-                PropFile, safe_name, prop_name
-            )
-            if prop_file is None:
-                continue
-            ret.append(prop_file)
-
-        return ret
+            gameplay_systems.skill_system_utils.clear_skill_system_actions(entity)
 
     ######################################################################################################################################################
     def _generate_agent_tasks(self, entities: List[Entity]) -> Dict[str, AgentTask]:
@@ -268,8 +211,12 @@ class SkillReadinessValidatorSystem(ReactiveProcessor):
             prompt = _generate_skill_readiness_validator_prompt(
                 agent_name,
                 entity.get(BodyComponent).body,
-                self._get_skill_prop_files(entity),
-                self._get_skill_accessory_prop_files(entity),
+                gameplay_systems.skill_system_utils.parse_skill_prop_files_from_action(
+                    self._context, entity
+                ),
+                gameplay_systems.skill_system_utils.list_skill_accessory_prop_files_from_action(
+                    self._context, entity
+                ),
             )
 
             ret[agent._name] = AgentTask.create(

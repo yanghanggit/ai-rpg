@@ -128,3 +128,16 @@ class ClothesComponent(NamedTuple):
 class RoundEventsRecordComponent(NamedTuple):
     name: str
     events: List[str]
+
+
+# 技能
+@final
+class SkillComponent(NamedTuple):
+    name: str
+    command: str
+    skill_name: str
+    stage: str
+    targets: List[str]
+    skill_accessory_props: List[str]
+    world_harmony_inspector_tag: str
+    world_harmony_inspector_content: str

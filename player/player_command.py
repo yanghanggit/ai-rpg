@@ -8,7 +8,7 @@ from my_components.action_components import (
     PickUpPropAction,
     StealPropAction,
     GivePropAction,
-    SkillInvocationAction,
+    SkillAction,
     EquipPropAction,
     DeadAction,
 )
@@ -244,7 +244,7 @@ class PlayerGiveProp(PlayerCommand):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class PlayerSkillInvocation(PlayerCommand):
+class PlayerSkill(PlayerCommand):
 
     @property
     def command(self) -> str:
@@ -263,14 +263,14 @@ class PlayerSkillInvocation(PlayerCommand):
         actor_comp = player_entity.get(ActorComponent)
 
         player_entity.add(
-            SkillInvocationAction,
+            SkillAction,
             actor_comp.name,
             [self.command],
         )
 
         self.add_player_planning_message(
             player_entity,
-            self.make_simple_message(SkillInvocationAction.__name__, [self.command]),
+            self.make_simple_message(SkillAction.__name__, [self.command]),
             rpg_game,
         )
 

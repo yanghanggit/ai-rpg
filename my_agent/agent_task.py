@@ -66,7 +66,7 @@ class AgentTask:
         self._agent: LangServeAgent = agent
         self._prompt: str = prompt
         self._response: Any = None
-        self._additional_params: Dict[str, str] = {}
+        # self._additional_params: Dict[str, str] = {}
         self._context_operation_options: ContextOperationOptions = (
             context_operation_options
         )

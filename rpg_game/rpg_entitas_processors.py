@@ -67,8 +67,8 @@ class RPGEntitasProcessors(Processors):
         from gameplay_systems.stage_narrate_action_system import (
             StageNarrateActionSystem,
         )
-        from gameplay_systems.skill_invocation_action_system import (
-            SkillInvocationActionSystem,
+        from gameplay_systems.skill_invocation_system import (
+            SkillInvocationSystem,
         )
         from gameplay_systems.skill_impact_response_evaluator_system import (
             SkillImpactResponseEvaluatorSystem,
@@ -153,7 +153,7 @@ class RPGEntitasProcessors(Processors):
         processors.add(PostConversationActionSystem(context, rpg_game))
 
         # 战斗类的行为!
-        processors.add(SkillInvocationActionSystem(context, rpg_game))
+        processors.add(SkillInvocationSystem(context, rpg_game))
         processors.add(SkillReadinessValidatorSystem(context, rpg_game))
         processors.add(
             SkillWorldHarmonyInspectorSystem(

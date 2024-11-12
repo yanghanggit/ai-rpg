@@ -77,8 +77,6 @@ class DeadActionSystem(ExecuteProcessor):
         entities = self._context.get_group(Matcher(DeadAction)).entities
         for entity in entities:
             dead_caction = entity.get(DeadAction)
-            # if not entity.has(DestroyComponent):
-            #     entity.add(DestroyComponent, dead_caction.name)
             entity.replace(DestroyComponent, dead_caction.name)
 
 

@@ -7,6 +7,9 @@ from my_components.action_components import (
 )
 import gameplay_systems.action_helper
 from rpg_game.rpg_game import RPGGame
+from my_components.components import SkillComponent
+import gameplay_systems.skill_system_utils
+from loguru import logger
 
 
 @final
@@ -19,18 +22,29 @@ class PostActionSystem(ExecuteProcessor):
     ############################################################################################################
     @override
     def execute(self) -> None:
-
-        all_actions_register = (
-            ACTOR_AVAILABLE_ACTIONS_REGISTER | STAGE_AVAILABLE_ACTIONS_REGISTER
-        )
-
-        gameplay_systems.action_helper.remove_actions(
-            self._context, all_actions_register
-        )
-        self.test()
+        self._remove_all_actions()
+        self._remove_all_skills()
 
     ############################################################################################################
-    def test(self) -> None:
+    def _remove_all_actions(self) -> None:
+        gameplay_systems.action_helper.remove_actions(
+            self._context,
+            (ACTOR_AVAILABLE_ACTIONS_REGISTER | STAGE_AVAILABLE_ACTIONS_REGISTER),
+        )
+        self._test()
+
+    ############################################################################################################
+    # todo
+    def _remove_all_skills(self) -> None:
+        skill_entities = self._context.get_group(
+            Matcher(all_of=[SkillComponent])
+        ).entities.copy()
+        logger.debug(f"Remove all skills = {len(skill_entities)}")
+        for skill_entity in skill_entities:
+            gameplay_systems.skill_system_utils.destroy_skill_entity(skill_entity)
+
+    ############################################################################################################
+    def _test(self) -> None:
         stage_entities = self._context.get_group(
             Matcher(any_of=STAGE_AVAILABLE_ACTIONS_REGISTER)
         ).entities

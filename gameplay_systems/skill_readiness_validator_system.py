@@ -1,15 +1,16 @@
-from entitas import Matcher, ReactiveProcessor, GroupEvent, Entity  # type: ignore
+from dataclasses import dataclass
+from entitas import Matcher, ExecuteProcessor, Entity  # type: ignore
 from my_components.action_components import (
-    SkillAction,
     TagAction,
     MindVoiceAction,
 )
 from my_components.components import (
     BodyComponent,
-    ActorComponent,
+    SkillComponent,
+    DestroyComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from typing import final, override, List, Dict
+from typing import final, override, List, Dict, Set, Optional
 from loguru import logger
 from extended_systems.prop_file import (
     PropFile,
@@ -95,7 +96,7 @@ def _generate_skill_readiness_validator_prompt(
 
 
 @final
-class SkillReadinessValidatorResponse(AgentPlanResponse):
+class InternalPlanResponse(AgentPlanResponse):
 
     def __init__(self, name: str, input_str: str) -> None:
         super().__init__(name, input_str)
@@ -112,100 +113,134 @@ class SkillReadinessValidatorResponse(AgentPlanResponse):
 ######################################################################################################################################################
 ######################################################################################################################################################
 ######################################################################################################################################################
+@dataclass
+class InternalProcessor:
+    actor_entity: Entity
+    skill_entity: Entity
+    agent_task: Optional[AgentTask]
+
+
+######################################################################################################################################################
+######################################################################################################################################################
+######################################################################################################################################################
 
 
 @final
-class SkillReadinessValidatorSystem(ReactiveProcessor):
+class SkillReadinessValidatorSystem(ExecuteProcessor):
 
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
-        super().__init__(context)
-
         self._context: RPGEntitasContext = context
         self._game: RPGGame = rpg_game
-        self._react_entities_copy: List[Entity] = []
 
     ######################################################################################################################################################
     @override
-    def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(SkillAction): GroupEvent.ADDED}
+    def execute(self) -> None:
+        pass
 
     ######################################################################################################################################################
     @override
-    def filter(self, entity: Entity) -> bool:
-        return entity.has(
-            ActorComponent
-        ) and gameplay_systems.skill_system_utils.has_skill_system_action(entity)
+    async def a_execute1(self) -> None:
+
+        # 只关注技能
+        skill_entities = self._context.get_group(
+            Matcher(all_of=[SkillComponent], none_of=[DestroyComponent])
+        ).entities.copy()
+
+        # 组成成方便的数据结构
+        skill_processors = self._initialize_processors(skill_entities)
+
+        # 核心执行
+        await self._validate_skill_readiness(skill_processors)
 
     ######################################################################################################################################################
-    @override
-    def react(self, entities: list[Entity]) -> None:
-        self._react_entities_copy = entities.copy()
+    def _initialize_processors(
+        self, skill_entities: Set[Entity]
+    ) -> List[InternalProcessor]:
+        ret: List[InternalProcessor] = []
+        for skill_entity in skill_entities:
+            skill_comp = skill_entity.get(SkillComponent)
+            actor_entity = self._context.get_actor_entity(skill_comp.name)
+            assert (
+                actor_entity is not None
+            ), f"actor_entity {skill_comp.name} not found."
+            ret.append(InternalProcessor(actor_entity, skill_entity, None))
+        return ret
 
     ######################################################################################################################################################
-    @override
-    async def a_execute2(self) -> None:
-        await self._validate_skill_readiness(self._react_entities_copy)
-        self._react_entities_copy.clear()
+    async def _validate_skill_readiness(
+        self, skill_processors: List[InternalProcessor]
+    ) -> None:
 
-    ######################################################################################################################################################
-    async def _validate_skill_readiness(self, entities: List[Entity]) -> None:
-
-        if len(entities) == 0:
+        if len(skill_processors) == 0:
             return
 
-        tasks = self._generate_agent_tasks(entities)
+        tasks = self._generate_agent_tasks(skill_processors)
         if len(tasks) == 0:
-            self._clear_action_components(entities)
+            self._clear(skill_processors)
             return
 
         responses = await AgentTask.gather([task for task in tasks.values()])
         if len(responses) == 0:
             logger.debug(f"phase1_response is None.")
-            self._clear_action_components(entities)
+            self._clear(skill_processors)
             return
 
-        self._process_agent_tasks(tasks)
+        self._process_agent_tasks(skill_processors)
 
     ######################################################################################################################################################
-    def _process_agent_tasks(self, agent_task_dict: Dict[str, AgentTask]) -> None:
+    def _process_agent_tasks(self, skill_processors: List[InternalProcessor]) -> None:
 
-        for agent_name, agent_task in agent_task_dict.items():
+        for skill_processor in skill_processors:
 
-            actor_entity = self._context.get_actor_entity(agent_name)
-            assert actor_entity is not None, f"actor_entity {agent_name} not found."
-            if actor_entity is None:
-                continue
-
-            if agent_task.response_content == "":
-                # 没有回答，直接清除所有的action
-                gameplay_systems.skill_system_utils.clear_skill_system_actions(
-                    actor_entity
+            agent_task = skill_processor.agent_task
+            if agent_task is None:
+                gameplay_systems.skill_system_utils.destroy_skill_entity(
+                    skill_processor.skill_entity
                 )
                 continue
 
-            skill_readiness_response = SkillReadinessValidatorResponse(
-                agent_name, agent_task.response_content
+            assert skill_processor.skill_entity is not None, "skill_entity is None."
+            if agent_task.response_content == "":
+                gameplay_systems.skill_system_utils.destroy_skill_entity(
+                    skill_processor.skill_entity
+                )
+                continue
+
+            skill_readiness_response = InternalPlanResponse(
+                agent_task.agent_name, agent_task.response_content
             )
 
             if not skill_readiness_response.boolean_value:
-                # 失败就不用继续了，直接清除所有的action
-                gameplay_systems.skill_system_utils.clear_skill_system_actions(
-                    actor_entity
+                # 删除
+                gameplay_systems.skill_system_utils.destroy_skill_entity(
+                    skill_processor.skill_entity
                 )
 
     ######################################################################################################################################################
-    def _clear_action_components(self, entities: List[Entity]) -> None:
-        for entity in entities:
-            gameplay_systems.skill_system_utils.clear_skill_system_actions(entity)
+    def _clear(self, skill_processors: List[InternalProcessor]) -> None:
+        for skill_processor in skill_processors:
+            assert skill_processor.skill_entity is not None, "skill_entity is None."
+            gameplay_systems.skill_system_utils.destroy_skill_entity(
+                skill_processor.skill_entity
+            )
 
     ######################################################################################################################################################
-    def _generate_agent_tasks(self, entities: List[Entity]) -> Dict[str, AgentTask]:
+    def _generate_agent_tasks(
+        self, skill_processors: List[InternalProcessor]
+    ) -> Dict[str, AgentTask]:
 
         ret: Dict[str, AgentTask] = {}
 
-        for entity in entities:
+        for skill_processor in skill_processors:
 
-            agent_name = self._context.safe_get_entity_name(entity)
+            if skill_processor.actor_entity is None:
+                assert False, "actor_entity is None."
+                continue
+
+            agent_name = self._context.safe_get_entity_name(
+                skill_processor.actor_entity
+            )
+
             agent = self._context.agent_system.get_agent(agent_name)
             if agent is None:
                 assert False, f"agent {agent_name} not found."
@@ -213,19 +248,26 @@ class SkillReadinessValidatorSystem(ReactiveProcessor):
 
             prompt = _generate_skill_readiness_validator_prompt(
                 agent_name,
-                entity.get(BodyComponent).body,
-                gameplay_systems.skill_system_utils.parse_skill_prop_files_from_action(
-                    self._context, entity
+                skill_processor.actor_entity.get(BodyComponent).body,
+                gameplay_systems.skill_system_utils.parse_skill_prop_files(
+                    context=self._context,
+                    skill_entity=skill_processor.skill_entity,
+                    actor_entity=skill_processor.actor_entity,
                 ),
-                gameplay_systems.skill_system_utils.list_skill_accessory_prop_files_from_action(
-                    self._context, entity
+                gameplay_systems.skill_system_utils.retrieve_skill_accessory_files(
+                    context=self._context,
+                    skill_entity=skill_processor.skill_entity,
+                    actor_entity=skill_processor.actor_entity,
                 ),
             )
 
-            ret[agent._name] = AgentTask.create(
+            ret[agent_name] = AgentTask.create(
                 agent,
                 builtin_prompt_util.replace_you(prompt, agent_name),
             )
+
+            assert skill_processor.agent_task is None, "agent_task is not None."
+            skill_processor.agent_task = ret[agent_name]
 
         return ret
 

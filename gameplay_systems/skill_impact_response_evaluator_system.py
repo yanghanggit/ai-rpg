@@ -1,16 +1,17 @@
-from entitas import Matcher, ReactiveProcessor, GroupEvent, Entity  # type: ignore
+from dataclasses import dataclass
+from entitas import Matcher, ExecuteProcessor, Entity  # type: ignore
 from my_components.action_components import (
-    SkillAction,
     DamageAction,
     BroadcastAction,
     TagAction,
 )
 from my_components.components import (
     AttributesComponent,
-    ActorComponent,
+    DestroyComponent,
+    SkillComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from typing import final, override, List, Optional
+from typing import final, override, List, Optional, Dict, Set
 import gameplay_systems.builtin_prompt_util as builtin_prompt_util
 from my_agent.agent_task import AgentTask
 from my_agent.agent_plan import AgentPlanResponse
@@ -19,7 +20,6 @@ import my_format_string.attrs_format_string
 from rpg_game.rpg_game import RPGGame
 from my_models.entity_models import AttributesIndex
 from my_models.event_models import AgentEvent
-from loguru import logger
 import gameplay_systems.skill_system_utils
 
 ################################################################################################################################################
@@ -87,7 +87,7 @@ def _generate_broadcast_skill_impact_response_prompt(
 
 ################################################################################################################################################
 @final
-class SkillImpactResponse(AgentPlanResponse):
+class InternalPlanResponse(AgentPlanResponse):
 
     @property
     def impact_result(self) -> str:
@@ -95,117 +95,168 @@ class SkillImpactResponse(AgentPlanResponse):
 
 
 ################################################################################################################################################
+@dataclass
+class InternalProcessor:
+    actor_entity: Entity
+    skill_entity: Entity
+    agent_task: Optional[AgentTask]
+    task_response: Dict[str, InternalPlanResponse] = {}
+
+
+################################################################################################################################################
 
 
 @final
-class SkillImpactResponseEvaluatorSystem(ReactiveProcessor):
+class SkillImpactResponseEvaluatorSystem(ExecuteProcessor):
 
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
-        super().__init__(context)
-
         self._context: RPGEntitasContext = context
         self._game: RPGGame = rpg_game
-        self._react_entities_copy: List[Entity] = []
 
     ######################################################################################################################################################
     @override
-    def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(SkillAction): GroupEvent.ADDED}
+    def execute(self) -> None:
+        pass
 
     ######################################################################################################################################################
     @override
-    def filter(self, entity: Entity) -> bool:
-        return entity.has(
-            ActorComponent
-        ) and gameplay_systems.skill_system_utils.has_skill_system_action(entity)
+    async def a_execute1(self) -> None:
+
+        # 只关注技能
+        skill_entities = self._context.get_group(
+            Matcher(all_of=[SkillComponent], none_of=[DestroyComponent])
+        ).entities.copy()
+
+        # 组成成方便的数据结构
+        skill_processors = self._initialize_processors(skill_entities)
+        for processor in skill_processors:
+            await self._process_skill_impact(processor)
 
     ######################################################################################################################################################
-    @override
-    def react(self, entities: list[Entity]) -> None:
-        self._react_entities_copy = entities.copy()
+    def _initialize_processors(
+        self, skill_entities: Set[Entity]
+    ) -> List[InternalProcessor]:
+        ret: List[InternalProcessor] = []
+        for skill_entity in skill_entities:
+            skill_comp = skill_entity.get(SkillComponent)
+            actor_entity = self._context.get_actor_entity(skill_comp.name)
+            assert (
+                actor_entity is not None
+            ), f"actor_entity {skill_comp.name} not found."
+            ret.append(InternalProcessor(actor_entity, skill_entity, None))
+        return ret
 
     ######################################################################################################################################################
-    @override
-    async def a_execute2(self) -> None:
+    async def _process_skill_impact(self, skill_processor: InternalProcessor) -> None:
 
-        for entity in self._react_entities_copy:
-            await self._process_skill_impact(entity)
+        skill_comp = skill_processor.skill_entity.get(SkillComponent)
+        for target_name in skill_comp.targets:
 
-        self._react_entities_copy.clear()
-
-    ######################################################################################################################################################
-    async def _process_skill_impact(self, entity: Entity) -> None:
-        # 释放技能
-        for (
-            target
-        ) in gameplay_systems.skill_system_utils.parse_skill_target_from_action(
-            self._context, entity
-        ):
-
-            task = self._generate_skill_impact_response_task(entity, target)
-            if task is None:
-                self._on_skill_target_agent_off_line_event(entity, target)
+            target_entity = self._context.get_entity_by_name(target_name)
+            if target_entity is None:
                 continue
 
-            if task.request() is None:
-                self._on_skill_target_agent_off_line_event(entity, target)
+            skill_impact_response_task = self._generate_skill_impact_response_task(
+                skill_entity=skill_processor.skill_entity,
+                source_entity=skill_processor.actor_entity,
+                target_entity=target_entity,
+            )
+            if skill_impact_response_task is None:
+                self._on_skill_target_agent_off_line_event(
+                    skill_entity=skill_processor.skill_entity,
+                    source_entity=skill_processor.actor_entity,
+                    target_entity=target_entity,
+                )
+                continue
+
+            if skill_impact_response_task.request() is None:
+                self._on_skill_target_agent_off_line_event(
+                    skill_entity=skill_processor.skill_entity,
+                    source_entity=skill_processor.actor_entity,
+                    target_entity=target_entity,
+                )
                 continue
 
             # 加入伤害计算的逻辑
-            self._evaluate_and_apply_action(entity, target)
+            self._evaluate_and_apply_action(
+                skill_entity=skill_processor.skill_entity,
+                source_entity=skill_processor.actor_entity,
+                target_entity=target_entity,
+            )
 
             # 场景事件
-            response_plan = SkillImpactResponse(task.agent_name, task.response_content)
+            response_plan = InternalPlanResponse(
+                skill_impact_response_task.agent_name,
+                skill_impact_response_task.response_content,
+            )
             self._on_broadcast_skill_impact_response_event(
-                entity, target, response_plan.impact_result
+                skill_entity=skill_processor.skill_entity,
+                source_entity=skill_processor.actor_entity,
+                target_entity=target_entity,
+                impact_result=response_plan.impact_result,
             )
 
     ######################################################################################################################################################
     def _on_broadcast_skill_impact_response_event(
-        self, from_entity: Entity, target_entity: Entity, target_feedback: str
+        self,
+        skill_entity: Entity,
+        source_entity: Entity,
+        target_entity: Entity,
+        impact_result: str,
     ) -> None:
 
-        current_stage_entity = self._context.safe_get_stage_entity(from_entity)
+        current_stage_entity = self._context.safe_get_stage_entity(source_entity)
         if current_stage_entity is None:
             return
-
-        inspector_tag, inspector_content = (
-            gameplay_systems.skill_system_utils.parse_skill_world_harmony_inspector_action(
-                from_entity
-            )
-        )
-        logger.debug(f"world_skill_system_rule_tag: {inspector_tag}")
 
         self._context.broadcast_event_in_stage(
             current_stage_entity,
             AgentEvent(
                 message=_generate_broadcast_skill_impact_response_prompt(
-                    self._context.safe_get_entity_name(from_entity),
+                    self._context.safe_get_entity_name(source_entity),
                     self._context.safe_get_entity_name(target_entity),
-                    inspector_content,
-                    target_feedback,
+                    skill_entity.get(SkillComponent).world_harmony_inspector_content,
+                    impact_result,
                 )
             ),
             set({target_entity}),  # 已经参与的双方不需要再被通知了。
         )
 
     ######################################################################################################################################################
-    def _evaluate_and_apply_action(self, entity: Entity, target: Entity) -> None:
+    def _evaluate_and_apply_action(
+        self, skill_entity: Entity, source_entity: Entity, target_entity: Entity
+    ) -> None:
 
         # 拿到原始的
-        calculate_attrs: List[int] = self._calculate_skill_attributes(entity)
+        calculate_attrs: List[int] = self._calculate_skill_attributes(
+            skill_entity=skill_entity, source_entity=source_entity
+        )
         # 补充上发起者的攻击值
-        self._calculate_attr_component(entity, target, calculate_attrs)
+        self._calculate_attr_component(source_entity, target_entity, calculate_attrs)
         # 补充上所有参与的道具的属性
-        self._calculate_skill_accessory_props(entity, target, calculate_attrs)
+        self._calculate_skill_accessory_props(
+            skill_entity=skill_entity,
+            source_entity=source_entity,
+            target_entity=target_entity,
+            out_put_skill_attrs=calculate_attrs,
+        )
         # 最终添加到目标的伤害
         self._apply_damage(
-            entity, target, calculate_attrs, self._determine_damage_bonus(entity)
+            source_entity,
+            target_entity,
+            calculate_attrs,
+            self._determine_damage_bonus(
+                skill_entity=skill_entity, source_entity=source_entity
+            ),
         )
 
     ######################################################################################################################################################
     def _apply_damage(
-        self, entity: Entity, target: Entity, skill_attrs: List[int], buff: float = 1.0
+        self,
+        source_entity: Entity,
+        target_entity: Entity,
+        skill_attrs: List[int],
+        buff: float = 1.0,
     ) -> None:
 
         skill_attrs[AttributesIndex.DAMAGE.value] = int(
@@ -215,15 +266,15 @@ class SkillImpactResponseEvaluatorSystem(ReactiveProcessor):
         if skill_attrs[AttributesIndex.DAMAGE.value] == 0:
             return
 
-        target.replace(
+        target_entity.replace(
             DamageAction,
-            self._context.safe_get_entity_name(target),
+            self._context.safe_get_entity_name(target_entity),
             [],
         )
 
-        target.get(DamageAction).values.append(
+        target_entity.get(DamageAction).values.append(
             my_format_string.target_and_message_format_string.make_target_and_message(
-                self._context.safe_get_entity_name(entity),
+                self._context.safe_get_entity_name(source_entity),
                 my_format_string.attrs_format_string.from_int_attrs_to_string(
                     skill_attrs
                 ),
@@ -232,36 +283,47 @@ class SkillImpactResponseEvaluatorSystem(ReactiveProcessor):
 
     ######################################################################################################################################################
     def _calculate_attr_component(
-        self, entity: Entity, target: Entity, out_put_skill_attrs: List[int]
+        self,
+        source_entity: Entity,
+        target_entity: Entity,
+        out_put_skill_attrs: List[int],
     ) -> None:
 
-        if not entity.has(AttributesComponent):
+        if not source_entity.has(AttributesComponent):
             return
 
-        rpg_attr_comp = entity.get(AttributesComponent)
+        rpg_attr_comp = source_entity.get(AttributesComponent)
         out_put_skill_attrs[AttributesIndex.DAMAGE.value] += rpg_attr_comp.attack
 
     ######################################################################################################################################################
     def _calculate_skill_accessory_props(
-        self, entity: Entity, target: Entity, out_put_skill_attrs: List[int]
+        self,
+        skill_entity: Entity,
+        source_entity: Entity,
+        target_entity: Entity,
+        out_put_skill_attrs: List[int],
     ) -> None:
 
-        data = gameplay_systems.skill_system_utils.parse_skill_accessory_prop_info_from_action(
-            self._context, entity
+        data = gameplay_systems.skill_system_utils.parse_skill_accessory_prop_files(
+            context=self._context, skill_entity=skill_entity, actor_entity=source_entity
         )
         for prop_file_and_count_data in data:
             for i in range(len(out_put_skill_attrs)):
                 prop_file = prop_file_and_count_data[0]
-                count = prop_file_and_count_data[1]
-                out_put_skill_attrs[i] += prop_file.prop_model.attributes[i] * count
+                cunsume_count = prop_file_and_count_data[1]
+                out_put_skill_attrs[i] += (
+                    prop_file.prop_model.attributes[i] * cunsume_count
+                )
 
     ######################################################################################################################################################
-    def _calculate_skill_attributes(self, entity: Entity) -> List[int]:
+    def _calculate_skill_attributes(
+        self, skill_entity: Entity, source_entity: Entity
+    ) -> List[int]:
         final_attr: List[int] = []
         for (
             skill_prop_file
-        ) in gameplay_systems.skill_system_utils.parse_skill_prop_files_from_action(
-            self._context, entity
+        ) in gameplay_systems.skill_system_utils.parse_skill_prop_files(
+            context=self._context, skill_entity=skill_entity, actor_entity=source_entity
         ):
             if len(final_attr) == 0:
                 final_attr = skill_prop_file.prop_model.attributes
@@ -272,48 +334,35 @@ class SkillImpactResponseEvaluatorSystem(ReactiveProcessor):
 
     ######################################################################################################################################################
     def _on_skill_target_agent_off_line_event(
-        self, entity: Entity, target: Entity
+        self, skill_entity: Entity, source_entity: Entity, target_entity: Entity
     ) -> None:
 
-        world_skill_system_rule_tag, world_skill_system_rule_out_come = (
-            gameplay_systems.skill_system_utils.parse_skill_world_harmony_inspector_action(
-                entity
-            )
-        )
-
-        logger.debug(f"world_skill_system_rule_tag: {world_skill_system_rule_tag}")
-
         self._context.notify_event(
-            set({entity}),
+            set({source_entity}),
             AgentEvent(
                 message=_generate_offline_prompt(
-                    self._context.safe_get_entity_name(entity),
-                    self._context.safe_get_entity_name(target),
-                    world_skill_system_rule_out_come,
+                    self._context.safe_get_entity_name(source_entity),
+                    self._context.safe_get_entity_name(target_entity),
+                    skill_entity.get(SkillComponent).world_harmony_inspector_content,
                 )
             ),
         )
 
     ######################################################################################################################################################
     def _generate_skill_impact_response_task(
-        self, entity: Entity, target: Entity
+        self, skill_entity: Entity, source_entity: Entity, target_entity: Entity
     ) -> Optional[AgentTask]:
 
-        target_agent_name = self._context.safe_get_entity_name(target)
+        target_agent_name = self._context.safe_get_entity_name(target_entity)
         target_agent = self._context.agent_system.get_agent(target_agent_name)
         if target_agent is None:
             return None
 
-        inspector_tag, inspector_content = (
-            gameplay_systems.skill_system_utils.parse_skill_world_harmony_inspector_action(
-                entity
-            )
-        )
         prompt = _generate_skill_impact_response_prompt(
-            self._context.safe_get_entity_name(entity),
+            self._context.safe_get_entity_name(source_entity),
             target_agent_name,
-            inspector_content,
-            inspector_tag,
+            skill_entity.get(SkillComponent).world_harmony_inspector_content,
+            skill_entity.get(SkillComponent).world_harmony_inspector_tag,
         )
 
         return AgentTask.create(
@@ -322,15 +371,14 @@ class SkillImpactResponseEvaluatorSystem(ReactiveProcessor):
         )
 
     ######################################################################################################################################################
-    def _determine_damage_bonus(self, entity: Entity) -> float:
+    def _determine_damage_bonus(
+        self, skill_entity: Entity, source_entity: Entity
+    ) -> float:
 
-        inspector_tag, inspector_content = (
-            gameplay_systems.skill_system_utils.parse_skill_world_harmony_inspector_action(
-                entity
-            )
-        )
-
-        if inspector_tag == builtin_prompt_util.ConstantSkillPrompt.CRITICAL_SUCCESS:
+        if (
+            skill_entity.get(SkillComponent).world_harmony_inspector_tag
+            == builtin_prompt_util.ConstantSkillPrompt.CRITICAL_SUCCESS
+        ):
             return 1.5  # 先写死，测试的时候再改。todo
 
         return 1.0  # 默认的。

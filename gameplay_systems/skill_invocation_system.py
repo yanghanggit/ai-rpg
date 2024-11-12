@@ -1,17 +1,18 @@
 from entitas import Matcher, ReactiveProcessor, GroupEvent, Entity  # type: ignore
 from my_components.action_components import (
-    SkillInvocationAction,
-    SkillTargetAction,
     SkillAction,
-    SkillAccessoryAction,
 )
-from my_components.components import StageComponent, WeaponComponent
+from my_components.components import (
+    StageComponent,
+    WeaponComponent,
+    SkillComponent,
+    ActorComponent,
+)
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import final, override, Set, Optional, List
 from extended_systems.prop_file import PropFile
 from rpg_game.rpg_game import RPGGame
 from my_models.event_models import AgentEvent
-import gameplay_systems.skill_system_utils
 import my_format_string.editor_prop_info_string
 from loguru import logger
 
@@ -49,18 +50,29 @@ def _generate_skill_invocation_result_prompt(
 
 
 # todo
-class SkillInvocationHelper:
+class InternalParser:
     def __init__(self, command: str) -> None:
         self._origin_command = str(command)
         self._target: Set[str] = set()
         self._skill_prop_files: List[PropFile] = []
         self._skill_accessory_prop_files: List[tuple[PropFile, int]] = []
 
-    # /skillinvocation 对@冀州.中山.卢奴.秘密监狱.火字十一号牢房的铁栏门上面的/腐化的木牌 使用技能/妖法.飞炎咒 消耗/A#1 消耗/B 消耗/C#2
+    ######################################################################################################################################################
+    @property
+    def origin_command(self) -> str:
+        return self._origin_command
+
     ######################################################################################################################################################
     @property
     def commands(self) -> List[str]:
         return self._origin_command.split(" ")
+
+    ######################################################################################################################################################
+    @property
+    def first_skill_name(self) -> str:
+        if len(self._skill_prop_files) == 0:
+            return ""
+        return self._skill_prop_files[0].name
 
     ######################################################################################################################################################
     def parse(
@@ -72,36 +84,64 @@ class SkillInvocationHelper:
     ) -> None:
 
         # 添加目标
-        commands = self.commands
+        for split_command in self.commands:
+            self._process_command(
+                split_command=split_command,
+                stage_name=stage_name,
+                actors_in_stage=actors_in_stage,
+                skill_prop_files=skill_prop_files,
+                accessory_prop_files=accessory_prop_files,
+            )
+
+        # 有场景就保留场景
+        if stage_name in self._target:
+            # 有场景就保留场景
+            self._target.clear()
+            self._target.add(stage_name)
+
+        if len(self._skill_prop_files) > 1:
+            # 只要一个技能
+            self._skill_prop_files = self._skill_prop_files[:1]
+
+    ######################################################################################################################################################
+    def _process_command(
+        self,
+        split_command: str,
+        stage_name: str,
+        actors_in_stage: Set[str],
+        skill_prop_files: Set[PropFile],
+        accessory_prop_files: Set[PropFile],
+    ) -> None:
 
         # 分析目标
-        if stage_name in commands:
+        if stage_name in split_command:
             self._target.add(stage_name)
         else:
             for actor_name in actors_in_stage:
-                if actor_name in commands:
+                if actor_name in split_command:
                     self._target.add(actor_name)
 
         # 分析使用的技能
         for skill_prop in skill_prop_files:
-            if skill_prop.name in commands and skill_prop.is_skill:
+            if skill_prop.name in split_command and skill_prop.is_skill:
                 self._skill_prop_files.append(skill_prop)
-                break  # 只要一个!
 
-        # 分析使用的道具
-        for cmd in commands:
-            for accessory_prop_file in accessory_prop_files:
-                if accessory_prop_file.name not in cmd:
-                    continue
+        # 分析技能配件
+        for accessory_prop_file in accessory_prop_files:
+            if accessory_prop_file.name not in split_command:
+                continue
 
-                prop_name, count = (
-                    my_format_string.editor_prop_info_string.extract_prop_name_and_count(
-                        cmd
-                    )
+            if accessory_prop_file.is_skill:
+                continue
+
+            prop_name, count = (
+                my_format_string.editor_prop_info_string.extract_prop_name_and_count(
+                    split_command
                 )
-                assert prop_name == accessory_prop_file.name
-                logger.debug(f"{cmd}, prop_name: {prop_name}, count: {count}")
-                self._skill_accessory_prop_files.append((accessory_prop_file, count))
+            )
+            assert prop_name == accessory_prop_file.name
+            logger.debug(f"{split_command}, prop_name: {prop_name}, count: {count}")
+            self._skill_accessory_prop_files.append((accessory_prop_file, count))
 
     ######################################################################################################################################################
 
@@ -110,7 +150,7 @@ class SkillInvocationHelper:
 ######################################################################################################################################################
 ######################################################################################################################################################
 @final
-class SkillInvocationActionSystem(ReactiveProcessor):
+class SkillInvocationSystem(ReactiveProcessor):
 
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         super().__init__(context)
@@ -120,12 +160,12 @@ class SkillInvocationActionSystem(ReactiveProcessor):
     ######################################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(SkillInvocationAction): GroupEvent.ADDED}
+        return {Matcher(SkillAction): GroupEvent.ADDED}
 
     ######################################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(SkillInvocationAction)
+        return entity.has(SkillAction) and entity.has(ActorComponent)
 
     ######################################################################################################################################################
     @override
@@ -134,66 +174,59 @@ class SkillInvocationActionSystem(ReactiveProcessor):
             self._process_skill_invocation(entity)
 
     ######################################################################################################################################################
-    def _process_skill_invocation(self, entity: Entity) -> None:
+    def _process_skill_invocation(self, actor_entity: Entity) -> None:
 
-        # /skillinvocation 对@冀州.中山.卢奴.秘密监狱.火字十一号牢房的铁栏门上面的/腐化的木牌 使用技能/妖法.飞炎咒 消耗/A#1 消耗/B 消耗/C#2
-
-        skill_invocation_command = (
-            gameplay_systems.skill_system_utils.parse_skill_invocation_action_command(
-                entity
-            )
-        )
-        if skill_invocation_command == "":
+        # /skill 对@冀州.中山.卢奴.秘密监狱.火字十一号牢房的铁栏门上面的/腐化的木牌 使用技能/妖法.飞炎咒 消耗/A=1 消耗/B 消耗/C=2
+        skill_invocation_action = actor_entity.get(SkillAction)
+        if skill_invocation_action is None or len(skill_invocation_action.values) == 0:
             return
+
+        skill_invocation_command = skill_invocation_action.values[0]
 
         # 帮助类
-        helper = SkillInvocationHelper(skill_invocation_command)
-
-        # 获得数据
-        current_stage_name = self._get_current_stage_name(entity)
-        actors_in_stage = self._context.get_actor_names_in_stage(entity)
-        skill_prop_files = self._get_skill_prop_files(entity)
-        skill_accessory_prop_files = self._get_skill_accessory_prop_files(entity)
-
-        #
-        helper.parse(
-            current_stage_name,
-            actors_in_stage,
-            skill_prop_files,
-            skill_accessory_prop_files,
+        skill_invocation_parser = InternalParser(skill_invocation_command)
+        skill_invocation_parser.parse(
+            self._get_current_stage_name(actor_entity),
+            self._context.get_actor_names_in_stage(actor_entity),
+            self._get_skill_prop_files(actor_entity),
+            self._get_skill_accessory_prop_files(actor_entity),
         )
 
-        # 不用继续了
-        if len(helper._target) == 0 or len(helper._skill_prop_files) == 0:
+        # 判断合理性
+        if (
+            len(skill_invocation_parser._target) == 0
+            or len(skill_invocation_parser._skill_prop_files) == 0
+        ):
             self._on_skill_invocation_result_event(
-                entity, skill_invocation_command, False
+                actor_entity, skill_invocation_command, False
             )
+            # 不用继续了，没有技能或者没有目标
             return
 
-        weapon_prop = self._get_weapon_prop_file(entity)
+        weapon_prop = self._get_weapon_prop_file(actor_entity)
         if weapon_prop is not None:
             # 默认会添加当前武器
-            helper._skill_accessory_prop_files.append((weapon_prop, 1))
+            skill_invocation_parser._skill_accessory_prop_files.append((weapon_prop, 1))
 
         # 检查道具的消耗数量，是否满足
-        for skill_accessory_prop_file_info in helper._skill_accessory_prop_files:
-            prop_file, count = skill_accessory_prop_file_info
-            if prop_file.count < count:
+        for (
+            skill_accessory_prop_file_info
+        ) in skill_invocation_parser._skill_accessory_prop_files:
+            prop_file, consume_count = skill_accessory_prop_file_info
+            if prop_file.count < consume_count:
                 self._on_skill_invocation_result_event(
-                    entity, skill_invocation_command, False
+                    actor_entity, skill_invocation_command, False
                 )
+                # 消耗的道具不够，不能执行。
                 return
 
-        # 以上全过了，就开始 添加动作
-        gameplay_systems.skill_system_utils.clear_skill_system_actions(entity)
-        self._add_skill_target_action(entity, helper._target)
-        self._add_skill_action(entity, set(helper._skill_prop_files))
-        self._add_skill_accessory_prop_action(
-            entity, helper._skill_accessory_prop_files
-        )
+        # 创建技能实体
+        self._create_skill_entity(actor_entity, skill_invocation_parser)
 
         # 事件通知
-        self._on_skill_invocation_result_event(entity, skill_invocation_command, True)
+        self._on_skill_invocation_result_event(
+            actor_entity, skill_invocation_parser.origin_command, True
+        )
 
     ######################################################################################################################################################
     def _get_weapon_prop_file(self, entity: Entity) -> Optional[PropFile]:
@@ -239,46 +272,6 @@ class SkillInvocationActionSystem(ReactiveProcessor):
         return ret
 
     ######################################################################################################################################################
-    def _add_skill_target_action(self, entity: Entity, target_names: Set[str]) -> None:
-        if len(target_names) == 0:
-            return
-        entity.add(
-            SkillTargetAction,
-            self._context.safe_get_entity_name(entity),
-            list(target_names),
-        )
-
-    ######################################################################################################################################################
-    def _add_skill_action(
-        self, entity: Entity, skill_prop_files: Set[PropFile]
-    ) -> None:
-        if len(skill_prop_files) == 0:
-            return
-        skill_names = [skill.name for skill in skill_prop_files]
-        entity.add(SkillAction, self._context.safe_get_entity_name(entity), skill_names)
-
-    ######################################################################################################################################################
-    def _add_skill_accessory_prop_action(
-        self, entity: Entity, skill_accessory_prop_files: List[tuple[PropFile, int]]
-    ) -> None:
-        if len(skill_accessory_prop_files) == 0:
-            return
-
-        action_params: List[str] = []
-        for prop_file, count in skill_accessory_prop_files:
-            action_params.append(
-                my_format_string.editor_prop_info_string.generate_prop_name_and_count_format_string(
-                    prop_file.name, count
-                )
-            )
-
-        entity.add(
-            SkillAccessoryAction,
-            self._context.safe_get_entity_name(entity),
-            action_params,
-        )
-
-    ######################################################################################################################################################
     def _on_skill_invocation_result_event(
         self, entity: Entity, command: str, processed_result: bool
     ) -> None:
@@ -294,5 +287,50 @@ class SkillInvocationActionSystem(ReactiveProcessor):
                 )
             ),
         )
+
+    ######################################################################################################################################################
+    def _create_skill_entity(
+        self,
+        entity: Entity,
+        skill_invocation_parser: InternalParser,
+    ) -> Entity:
+
+        # 角色名字
+        actor_name = self._context.safe_get_entity_name(entity)
+
+        # 场景名字
+        stage_entity = self._context.safe_get_stage_entity(entity)
+        assert stage_entity is not None
+        stage_name = self._context.safe_get_entity_name(stage_entity)
+
+        # 组织技能配件的道具
+        skill_accessory_props: List[str] = []
+        for (
+            skill_accessory_prop_file_info
+        ) in skill_invocation_parser._skill_accessory_prop_files:
+            skill_accessory_prop_file, consume_count = skill_accessory_prop_file_info
+            skill_accessory_props.append(
+                my_format_string.editor_prop_info_string.generate_prop_name_and_count_format_string(
+                    skill_accessory_prop_file.name, consume_count
+                )
+            )
+
+        # # 创建实体
+        skill_entity = self._context.create_entity()
+
+        # 添加组件
+        skill_entity.add(
+            SkillComponent,
+            actor_name,
+            skill_invocation_parser.origin_command,
+            skill_invocation_parser.first_skill_name,
+            stage_name,
+            list(skill_invocation_parser._target),
+            skill_accessory_props,
+            "",
+            "",
+        )
+
+        return skill_entity
 
     ######################################################################################################################################################

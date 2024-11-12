@@ -37,7 +37,7 @@ from player.player_command import (
     PlayerPickUpProp,
     PlayerSteal,
     PlayerGiveProp,
-    PlayerSkillInvocation,
+    PlayerSkill,
     PlayerEquip,
     PlayerKill,
 )
@@ -388,8 +388,8 @@ def add_player_command(
     elif "/give" in usr_input:
         player_proxy.add_command(PlayerGiveProp("/give", usr_input))
 
-    elif "/skillinvocation" in usr_input:
-        player_proxy.add_command(PlayerSkillInvocation("/skillinvocation", usr_input))
+    elif "/skill" in usr_input:
+        player_proxy.add_command(PlayerSkill("/skill", usr_input))
 
     elif "/equip" in usr_input:
         player_proxy.add_command(PlayerEquip("/equip", usr_input))

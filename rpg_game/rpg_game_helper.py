@@ -478,6 +478,19 @@ def get_player_actor(rpg_game: RPGGame) -> List[str]:
 
 
 #######################################################################################################################################
+def get_turn_player_actors(rpg_game: RPGGame) -> List[str]:
+
+    ret: List[str] = []
+
+    players = rpg_game.context.get_player_entities()
+    for player in players:
+        if player.has(PlanningAllowedComponent):
+            ret.append(player.get(PlanningAllowedComponent).name)
+
+    return ret
+
+
+#######################################################################################################################################
 def is_player_turn(rpg_game: RPGGame, player_proxy: PlayerProxy) -> bool:
     player_entity = rpg_game.context.get_player_entity(player_proxy.name)
     if player_entity is None:

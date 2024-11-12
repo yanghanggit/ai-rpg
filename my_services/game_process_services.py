@@ -375,14 +375,14 @@ async def execute(request_data: ExecuteRequest) -> Dict[str, Any]:
     if player_proxy.over:
         user_room.game._will_exit = True
 
+    turn_player_actors = rpg_game.rpg_game_helper.get_turn_player_actors(user_room.game)
+
     # 返回执行游戏的信息
     return ExecuteResponse(
         user_name=request_data.user_name,
         game_name=request_data.game_name,
         actor_name=user_room.get_player_actor_name(),
-        player_input_enable=rpg_game.rpg_game_helper.is_player_turn(
-            user_room.game, player_proxy
-        ),
+        turn_player_actor=turn_player_actors[0] if len(turn_player_actors) > 0 else "",
         total=len(player_proxy.model.client_messages),
         game_round=user_room.game.current_round,
     ).model_dump()

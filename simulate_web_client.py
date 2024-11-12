@@ -43,13 +43,17 @@ class SimuWebAPP:
         self._game_name: str = ""
         self._selectable_actors: List[str] = []
         self._actor_name: str = ""
-        self._input_enable = False
+        self._turn_player_actor = ""
         self._api_endpoints = APIEndpointsConfigModel()
 
     def on_exit_game(self) -> None:
         self._game_name = ""
         self._selectable_actors = []
         self._actor_name = ""
+
+    @property
+    def player_input_enable(self) -> bool:
+        return self._actor_name != "" and self._actor_name == self._turn_player_actor
 
     @property
     def api_endpoints(self) -> APIEndpointsConfigModel:
@@ -276,7 +280,8 @@ def _request_game_execute(
         logger.warning(f"执行游戏失败: {execute_response.message}")
         return
 
-    client_context._input_enable = execute_response.player_input_enable
+    # client_context._input_enable = execute_response.turn_player == client_context._actor_name
+    client_context._turn_player_actor = execute_response.turn_player_actor
 
 
 ###############################################################################################################################################
@@ -320,7 +325,7 @@ def _web_player_input(
     assert client_context._actor_name != ""
 
     # 如果没有输入权限，就等待，推动游戏执行一次
-    if not client_context._input_enable:
+    if not client_context.player_input_enable:
         while True:
             input(
                 f"[{client_context._user_name}|{client_context._actor_name}]! 按任意键推动游戏执行一次:"

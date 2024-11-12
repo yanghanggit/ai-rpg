@@ -137,7 +137,7 @@ class ExecuteResponse(BaseModel):
     user_name: str = ""
     game_name: str = ""
     actor_name: str = ""
-    player_input_enable: bool = False
+    turn_player_actor: str = ""
     total: int = 0
     game_round: int = 0
     error: int = 0

@@ -13,7 +13,7 @@ import my_format_string.target_and_message_format_string
 import my_format_string.attrs_format_string
 from rpg_game.rpg_game import RPGGame
 from my_models.entity_models import AttributesIndex
-import extended_systems.file_system_util
+import gameplay_systems.file_system_utils
 from my_models.file_models import PropType
 from my_models.event_models import AgentEvent
 from loguru import logger
@@ -195,17 +195,22 @@ class DamageActionSystem(ReactiveProcessor):
         )
 
     ######################################################################################################################################################
+    # todo
     def _reward_on_death(self, source_entity_name: str, target_entity: Entity) -> None:
+
+        logger.warning(
+            f"_reward_on_death {source_entity_name}击败了{self._context.safe_get_entity_name(target_entity)}"
+        )
 
         target_name = self._context.safe_get_entity_name(target_entity)
         categorized_prop_files = (
-            extended_systems.file_system_util.get_categorized_files(
+            gameplay_systems.file_system_utils.categorize_files_by_type(
                 self._context._file_system, target_name
             )
         )
 
         for prop_file in categorized_prop_files[PropType.TYPE_NON_CONSUMABLE_ITEM]:
-            extended_systems.file_system_util.give_prop_file(
+            gameplay_systems.file_system_utils.transfer_file(
                 self._context._file_system,
                 target_name,
                 source_entity_name,

@@ -7,14 +7,13 @@ from my_components.action_components import (
 )
 from my_components.components import (
     ActorComponent,
-    AppearanceComponent,
     StageComponent,
     KickOffContentComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-import gameplay_systems.builtin_prompt_util as builtin_prompt_util
-from typing import final, override, List, Set, Any, Dict, Optional
-from gameplay_systems.actor_checker import ActorChecker
+import gameplay_systems.builtin_prompt_utils as builtin_prompt_utils
+from typing import final, override, List, Set, Any, Dict
+from gameplay_systems.actor_entity_utils import ActorStatusEvaluator
 from my_agent.agent_task import AgentTask
 from my_agent.agent_plan import AgentPlanResponse
 from extended_systems.prop_file import (
@@ -22,8 +21,9 @@ from extended_systems.prop_file import (
     generate_prop_file_for_stage_condition_prompt,
 )
 from rpg_game.rpg_game import RPGGame
-from my_models.file_models import PropType
 from my_models.event_models import AgentEvent
+from loguru import logger
+from my_agent.lang_serve_agent import LangServeAgent
 
 
 ################################################################################################################################################
@@ -41,7 +41,7 @@ def _generate_stage_entry_conditions_prompt(
         )
 
     ret_prompt = f"""# {actor_name} 想要进入场景: {current_stage_name}。
-## 第1步: 请回顾你的 {builtin_prompt_util.ConstantPromptTag.STAGE_EXIT_TAG}
+## 第1步: 请回顾你的 {builtin_prompt_utils.ConstantPromptTag.STAGE_EXIT_TAG}
 
 ## 第2步: 根据当前‘你的状态’判断是否满足允许{actor_name}进入
 当前状态可能由于事件而变化，请仔细考虑。
@@ -81,17 +81,17 @@ def _generate_stage_entry_failure_prompt(
 
 ################################################################################################################################################
 @final
-class StageEntranceResponse(AgentPlanResponse):
+class InternalPlanResponse(AgentPlanResponse):
 
-    def __init__(self, name: str, input_str: str) -> None:
-        super().__init__(name, input_str)
+    def __init__(self, name: str, response_content: str) -> None:
+        super().__init__(name, response_content)
 
     @property
-    def allow(self) -> bool:
+    def is_allowed(self) -> bool:
         return self._parse_boolean(TagAction.__name__)
 
     @property
-    def tips(self) -> str:
+    def hint(self) -> str:
         return self._concatenate_values(WhisperAction.__name__)
 
 
@@ -138,100 +138,109 @@ class StageEntranceCheckerSystem(ReactiveProcessor):
     ###############################################################################################################################################
     async def _execute2(self, entities: List[Entity]) -> None:
 
-        tasks = self.create_tasks(entities)
-        if len(tasks) == 0:
+        agent_tasks = self._initialize_agent_tasks(entities)
+        if len(agent_tasks) == 0:
             return
 
-        responses = await AgentTask.gather(
-            [task for task in tasks.values()],
+        agent_responses = await AgentTask.gather(
+            [task for task in agent_tasks.values()],
         )
 
-        if len(responses) == 0:
-            self.on_remove_all(entities)
+        if len(agent_responses) == 0:
+            self._remove_all_entities_actions(entities)
             return
 
-        self.handle_tasks(tasks)
+        self._handle_agent_responses(agent_tasks)
 
     ######################################################################################################################################################
-    def create_tasks(self, actor_entities: List[Entity]) -> Dict[str, AgentTask]:
+    def _initialize_agent_tasks(
+        self, actor_entities: List[Entity]
+    ) -> Dict[str, AgentTask]:
 
         ret: Dict[str, AgentTask] = {}
 
         for actor_entity in actor_entities:
 
             target_stage_entity = self._context.get_stage_entity(
-                self.get_target_stage_name(actor_entity)
+                self._resolve_actor_target_stage(actor_entity)
             )
 
             if target_stage_entity is None:
+                logger.error(
+                    f"target_stage_entity is None!!!!!!!!"
+                )  # todo 这里应该通知下，这不是一个合理的场景
+                self._remove_action_components(actor_entity)
                 continue
 
-            if not self.has_conditions(target_stage_entity):
+            if not self._has_conditions(target_stage_entity):
                 continue
 
-            task = self.create_task(actor_entity)
-            if task is not None:
-                ret[self._context.safe_get_entity_name(actor_entity)] = task
-            else:
-                self.on_remove_action(actor_entity)
+            # 必须是能推理的场景
+            target_stage_agent = self._context.agent_system.get_agent(
+                self._context.safe_get_entity_name(target_stage_entity)
+            )
+            assert target_stage_agent is not None, "Stage agent is None"
+            if target_stage_agent is None:
+                continue
+
+            # 加入返回值
+            ret[self._context.safe_get_entity_name(actor_entity)] = (
+                self._generate_agent_task(
+                    actor_entity, target_stage_entity, target_stage_agent
+                )
+            )
 
         return ret
 
     ######################################################################################################################################################
-    def create_task(self, actor_entity: Entity) -> Optional[AgentTask]:
-
-        target_stage_entity = self._context.get_stage_entity(
-            self.get_target_stage_name(actor_entity)
-        )
-
-        if target_stage_entity is None:
-            return None
+    def _generate_agent_task(
+        self,
+        actor_entity: Entity,
+        target_stage_entity: Entity,
+        stage_agent: LangServeAgent,
+    ) -> AgentTask:
 
         target_stage_name = self._context.safe_get_entity_name(target_stage_entity)
-        agent = self._context.agent_system.get_agent(target_stage_name)
-        if agent is None:
-            return None
-
+        actor_status_evaluator = ActorStatusEvaluator(self._context, actor_entity)
         prompt = _generate_stage_entry_conditions_prompt(
-            self._context.safe_get_entity_name(actor_entity),
+            actor_status_evaluator.actor_name,
             target_stage_name,
-            actor_entity.get(AppearanceComponent).appearance,
-            self.get_actor_props(actor_entity),
+            actor_status_evaluator.appearance,
+            actor_status_evaluator.available_stage_condition_prop_files,
         )
 
-        return AgentTask.create(agent, prompt)
+        return AgentTask.create_process_context_without_saving(stage_agent, prompt)
 
     ###############################################################################################################################################
-    def get_target_stage_name(self, actor_entity: Entity) -> str:
+    def _resolve_actor_target_stage(self, actor_entity: Entity) -> str:
         assert actor_entity.has(ActorComponent)
         assert actor_entity.has(GoToAction)
-
-        go_to_action = actor_entity.get(GoToAction)
-        if len(go_to_action.values) == 0:
+        goto_action = actor_entity.get(GoToAction)
+        if len(goto_action.values) == 0:
             return ""
 
-        if builtin_prompt_util.is_unknown_stage_name(go_to_action.values[0]):
-            guid = builtin_prompt_util.extract_guid_from_unknown_stage_name(
-                go_to_action.values[0]
+        if builtin_prompt_utils.is_unknown_stage_name(goto_action.values[0]):
+            guid = builtin_prompt_utils.extract_guid_from_unknown_stage_name(
+                goto_action.values[0]
             )
             stage_entity = self._context.get_entity_by_guid(guid)
             if stage_entity is not None and stage_entity.has(StageComponent):
                 return self._context.safe_get_entity_name(stage_entity)
 
-        return str(go_to_action.values[0])
+        return str(goto_action.values[0])
 
     ######################################################################################################################################################
-    def handle_tasks(self, stage_agent_tasks: Dict[str, AgentTask]) -> None:
+    def _handle_agent_responses(self, tasks: Dict[str, AgentTask]) -> None:
 
-        for actor_name, stage_agent_task in stage_agent_tasks.items():
+        for actor_name, stage_agent_task in tasks.items():
 
             if stage_agent_task.response_content == "":
                 continue
 
-            response_plan = StageEntranceResponse(
+            agent_response_plan = InternalPlanResponse(
                 stage_agent_task.agent_name, stage_agent_task.response_content
             )
-            if not response_plan.allow:
+            if not agent_response_plan.is_allowed:
 
                 actor_entity = self._context.get_actor_entity(actor_name)
                 assert actor_entity is not None
@@ -240,57 +249,42 @@ class StageEntranceCheckerSystem(ReactiveProcessor):
                     set({actor_entity}),
                     AgentEvent(
                         message=_generate_stage_entry_failure_prompt(
-                            actor_name, stage_agent_task.agent_name, response_plan.tips
+                            actor_name,
+                            stage_agent_task.agent_name,
+                            agent_response_plan.hint,
                         )
                     ),
                 )
 
-                self.on_remove_action(actor_entity)
-
-            else:
-
-                self._context.agent_system.remove_last_human_ai_conversation(
-                    stage_agent_task.agent_name
-                )
+                self._remove_action_components(actor_entity)
 
     ###############################################################################################################################################
-    def on_remove_all(
-        self, entities: List[Entity], action_comps: Set[type[Any]] = {GoToAction}
+    def _remove_all_entities_actions(
+        self,
+        actor_entities: List[Entity],
+        action_components: Set[type[Any]] = {GoToAction},
     ) -> None:
 
-        for entity in entities:
-            self.on_remove_action(entity, action_comps)
+        for actor_entity in actor_entities:
+            self._remove_action_components(actor_entity, action_components)
 
     ###############################################################################################################################################
-    def on_remove_action(
-        self, entity: Entity, action_comps: Set[type[Any]] = {GoToAction}
+    def _remove_action_components(
+        self, actor_entity: Entity, action_components: Set[type[Any]] = {GoToAction}
     ) -> None:
 
-        for action_comp in action_comps:
-            if entity.has(action_comp):
-                entity.remove(action_comp)
+        for action_component in action_components:
+            if actor_entity.has(action_component):
+                actor_entity.remove(action_component)
 
     ###############################################################################################################################################
-    def has_conditions(self, stage_entity: Entity) -> bool:
+    def _has_conditions(self, stage_entity: Entity) -> bool:
 
-        if not stage_entity.has(KickOffContentComponent):
-            return False
-
-        kick_off_comp = stage_entity.get(KickOffContentComponent)
+        assert stage_entity.has(StageComponent)
+        assert stage_entity.has(KickOffContentComponent)
         return (
-            builtin_prompt_util.ConstantPromptTag.STAGE_ENTRY_TAG
-            in kick_off_comp.content
-        )
-
-    ###############################################################################################################################################
-    def get_actor_props(self, actor_entity: Entity) -> List[PropFile]:
-
-        check_self = ActorChecker(self._context, actor_entity)
-        return (
-            check_self.get_prop_files(PropType.TYPE_SPECIAL)
-            + check_self.get_prop_files(PropType.TYPE_WEAPON)
-            + check_self.get_prop_files(PropType.TYPE_CLOTHES)
-            + check_self.get_prop_files(PropType.TYPE_NON_CONSUMABLE_ITEM)
+            builtin_prompt_utils.ConstantPromptTag.STAGE_ENTRY_TAG
+            in stage_entity.get(KickOffContentComponent).content
         )
 
     ###############################################################################################################################################

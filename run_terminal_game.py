@@ -1,7 +1,7 @@
 from loguru import logger
 import datetime
 from player.player_proxy import PlayerProxy
-import rpg_game.rpg_game_helper
+import rpg_game.rpg_game_utils
 from rpg_game.rpg_game import RPGGame
 from typing import Optional
 from dataclasses import dataclass
@@ -52,7 +52,7 @@ async def run_terminal_game(option: TerminalGameOption) -> None:
             return
 
         # 创建游戏资源
-        game_resource = rpg_game.rpg_game_helper.create_game_resource(
+        game_resource = rpg_game.rpg_game_utils.create_game_resource(
             game_resource_file_path,
             game_runtime_dir,
             option.check_game_resource_version,
@@ -69,7 +69,7 @@ async def run_terminal_game(option: TerminalGameOption) -> None:
             rpg_game_config.GAMES_ARCHIVE_DIR / option.user_name / f"{game_name}.zip"
         )
         if load_archive_zip_path.exists():
-            game_resource = rpg_game.rpg_game_helper.load_game_resource(
+            game_resource = rpg_game.rpg_game_utils.load_game_resource(
                 load_archive_zip_path,
                 game_runtime_dir,
                 option.check_game_resource_version,
@@ -81,7 +81,7 @@ async def run_terminal_game(option: TerminalGameOption) -> None:
         return
 
     # 创建游戏
-    new_game = rpg_game.rpg_game_helper.create_terminal_rpg_game(game_resource)
+    new_game = rpg_game.rpg_game_utils.create_terminal_rpg_game(game_resource)
     if new_game is None:
         logger.error(f"create_rpg_game 失败 = {game_name}")
         return
@@ -96,7 +96,7 @@ async def run_terminal_game(option: TerminalGameOption) -> None:
             player_proxy = PlayerProxy(PlayerProxyModel(name=option.user_name))
             new_game.add_player(player_proxy)
 
-            rpg_game.rpg_game_helper.player_play_new_game(
+            rpg_game.rpg_game_utils.player_play_new_game(
                 new_game, player_proxy, player_actor_name
             )
         else:
@@ -105,7 +105,7 @@ async def run_terminal_game(option: TerminalGameOption) -> None:
             )
     else:
 
-        player_proxy = rpg_game.rpg_game_helper.player_play_again(
+        player_proxy = rpg_game.rpg_game_utils.player_play_again(
             new_game, option.user_name
         )
 
@@ -131,14 +131,14 @@ async def run_terminal_game(option: TerminalGameOption) -> None:
         #     new_game._will_exit = True
         #     continue
 
-        if rpg_game.rpg_game_helper.is_player_turn(new_game, player_proxy):
+        if rpg_game.rpg_game_utils.is_player_turn(new_game, player_proxy):
             # 是你的输入回合
             await terminal_player_input(new_game, player_proxy)
         else:
             # 不是你的输入回合
             await terminal_player_wait(new_game, player_proxy)
 
-    rpg_game.rpg_game_helper.save_game(
+    rpg_game.rpg_game_utils.save_game(
         rpg_game=new_game,
         archive_dir=rpg_game_config.GAMES_ARCHIVE_DIR / option.user_name,
     )
@@ -148,7 +148,7 @@ async def run_terminal_game(option: TerminalGameOption) -> None:
 
 ###############################################################################################################################################
 def terminal_player_input_select_actor(game: RPGGame) -> str:
-    all_names = rpg_game.rpg_game_helper.get_player_actor(game)
+    all_names = rpg_game.rpg_game_utils.get_player_actor(game)
     if len(all_names) == 0:
         return ""
 
@@ -169,7 +169,7 @@ def terminal_player_input_select_actor(game: RPGGame) -> str:
 
 #######################################################################################################################################
 def terminal_player_input_watch(game_name: RPGGame, player_proxy: PlayerProxy) -> None:
-    watch_action_model = rpg_game.rpg_game_helper.gen_player_watch_action_model(
+    watch_action_model = rpg_game.rpg_game_utils.gen_player_watch_action_model(
         game_name, player_proxy
     )
     if watch_action_model is None:
@@ -208,13 +208,13 @@ async def terminal_player_input(game: RPGGame, player_proxy: PlayerProxy) -> Non
             terminal_player_input_retrieve_stage_archives(game, player_proxy)
 
         else:
-            rpg_game.rpg_game_helper.add_player_command(game, player_proxy, usr_input)
+            rpg_game.rpg_game_utils.add_player_command(game, player_proxy, usr_input)
             break
 
 
 #######################################################################################################################################
 def terminal_player_input_check(game_name: RPGGame, player_proxy: PlayerProxy) -> None:
-    check_action_model = rpg_game.rpg_game_helper.gen_player_check_action_model(
+    check_action_model = rpg_game.rpg_game_utils.gen_player_check_action_model(
         game_name, player_proxy
     )
 
@@ -232,7 +232,7 @@ def terminal_player_input_retrieve_actor_archives(
     game_name: RPGGame, player_proxy: PlayerProxy
 ) -> None:
     get_actor_archives_model = (
-        rpg_game.rpg_game_helper.gen_player_retrieve_actor_archives_action_model(
+        rpg_game.rpg_game_utils.gen_player_retrieve_actor_archives_action_model(
             game_name, player_proxy
         )
     )
@@ -251,7 +251,7 @@ def terminal_player_input_retrieve_stage_archives(
     game_name: RPGGame, player_proxy: PlayerProxy
 ) -> None:
     get_stage_archives_model = (
-        rpg_game.rpg_game_helper.gen_player_retrieve_stage_archives_action_model(
+        rpg_game.rpg_game_utils.gen_player_retrieve_stage_archives_action_model(
             game_name, player_proxy
         )
     )

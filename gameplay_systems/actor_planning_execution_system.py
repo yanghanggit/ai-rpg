@@ -19,13 +19,13 @@ from my_agent.agent_plan import AgentPlanResponse
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from typing import Dict, Set, List, Optional, final
-import gameplay_systems.action_helper
-import gameplay_systems.builtin_prompt_util as builtin_prompt_util
+import gameplay_systems.action_utils
+import gameplay_systems.builtin_prompt_utils as builtin_prompt_utils
 from my_agent.agent_task import (
     AgentTask,
 )
 from rpg_game.rpg_game import RPGGame
-from gameplay_systems.actor_checker import ActorChecker
+from gameplay_systems.actor_entity_utils import ActorStatusEvaluator
 from extended_systems.prop_file import (
     PropFile,
     generate_prop_file_total_prompt,
@@ -87,7 +87,7 @@ def _generate_actor_plan_prompt(
                 f"### {actor_name}\n- 角色外观:{actor_appearance}\n"
             )
 
-    ret_prompt = f"""# {builtin_prompt_util.ConstantPromptTag.ACTOR_PLAN_PROMPT_TAG} 请做出你的计划，决定你将要做什么
+    ret_prompt = f"""# {builtin_prompt_utils.ConstantPromptTag.ACTOR_PLAN_PROMPT_TAG} 请做出你的计划，决定你将要做什么
 
 ## 你当前所在的场景
 {current_stage != "" and current_stage or "未知"}
@@ -170,7 +170,7 @@ class ActorPlanningExecutionSystem(ExecuteProcessor):
             ), f"ActorPlanningSystem: entity is None, {actor_name}"
 
             actor_planning = AgentPlanResponse(actor_name, agent_task.response_content)
-            if not gameplay_systems.action_helper.validate_actions(
+            if not gameplay_systems.action_utils.validate_actions(
                 actor_planning, ACTOR_AVAILABLE_ACTIONS_REGISTER
             ):
                 logger.warning(
@@ -182,7 +182,7 @@ class ActorPlanningExecutionSystem(ExecuteProcessor):
 
             ## 不能停了，只能一直继续
             for action in actor_planning._actions:
-                gameplay_systems.action_helper.add_action(
+                gameplay_systems.action_utils.add_action(
                     entity, action, ACTOR_AVAILABLE_ACTIONS_REGISTER
                 )
 
@@ -209,7 +209,7 @@ class ActorPlanningExecutionSystem(ExecuteProcessor):
             if agent is None:
                 continue
 
-            check_self = ActorChecker(self._context, actor_entity)
+            check_self = ActorStatusEvaluator(self._context, actor_entity)
             actors_appearance = self._context.gather_actor_appearance_in_stage(
                 actor_entity
             )

@@ -23,7 +23,7 @@ from my_components.action_components import (
     StageNarrateAction,
     UpdateAppearanceAction,
 )
-import gameplay_systems.action_helper
+import gameplay_systems.action_utils
 from my_agent.agent_plan import AgentPlanResponse
 from my_components.action_components import UpdateAppearanceAction
 
@@ -265,7 +265,7 @@ class AgentKickOffSystem(ExecuteProcessor):
             ), f"entity has no stage or actor component, {agent_name}"
 
             agent_planning = AgentPlanResponse(agent_name, agent_task.response_content)
-            if not gameplay_systems.action_helper.validate_actions(
+            if not gameplay_systems.action_utils.validate_actions(
                 agent_planning, actions_register
             ):
                 logger.warning(
@@ -276,7 +276,7 @@ class AgentKickOffSystem(ExecuteProcessor):
                 continue
 
             for action in agent_planning._actions:
-                gameplay_systems.action_helper.add_action(
+                gameplay_systems.action_utils.add_action(
                     entity, action, actions_register
                 )
 

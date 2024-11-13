@@ -19,7 +19,8 @@ class ActorArchiveFile(BaseFile):
 
     @override
     def serialization(self) -> str:
-        return json.dumps(self._model.model_dump(), ensure_ascii=False)
+        return self._model.model_dump_json()
+        # return json.dumps(self._model.model_dump(), ensure_ascii=False)
 
     @override
     def deserialization(self, content: str) -> None:
@@ -53,7 +54,8 @@ class StageArchiveFile(BaseFile):
 
     @override
     def serialization(self) -> str:
-        return json.dumps(self._model.model_dump(), ensure_ascii=False)
+        return self._model.model_dump_json()
+        # return json.dumps(self._model.model_dump(), ensure_ascii=False)
 
     @override
     def deserialization(self, content: str) -> None:

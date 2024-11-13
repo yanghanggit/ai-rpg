@@ -5,7 +5,7 @@ from my_components.components import ActorComponent, StageComponent
 from loguru import logger
 from typing import final, override
 from extended_systems.prop_file import PropFile
-import extended_systems.file_system_util
+import gameplay_systems.file_system_utils
 from rpg_game.rpg_game import RPGGame
 from my_models.event_models import AgentEvent
 
@@ -90,7 +90,7 @@ class PickUpPropActionSystem(ReactiveProcessor):
                 )
                 continue
 
-            extended_systems.file_system_util.give_prop_file(
+            gameplay_systems.file_system_utils.transfer_file(
                 self._context._file_system,
                 stage_comp.name,
                 pick_up_prop_action.name,

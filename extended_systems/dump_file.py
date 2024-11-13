@@ -19,8 +19,7 @@ class EntityProfileFile(BaseFile):
         if self._model is None:
             return ""
         try:
-            model_dump = self._model.model_dump()
-            return json.dumps(model_dump, ensure_ascii=False)
+            return self._model.model_dump_json()
         except Exception as e:
             logger.error(f"{e}")
         return ""

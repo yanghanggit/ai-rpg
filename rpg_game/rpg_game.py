@@ -23,7 +23,7 @@ from rpg_game.rpg_entitas_context import RPGEntitasContext
 from rpg_game.rpg_game_resource import RPGGameResource
 from extended_systems.prop_file import PropFile
 from rpg_game.base_game import BaseGame
-import extended_systems.file_system_util
+import gameplay_systems.file_system_utils
 from rpg_game.rpg_entitas_processors import RPGEntitasProcessors
 from my_models.entity_models import (
     ActorInstanceModel,
@@ -37,7 +37,7 @@ from my_models.event_models import BaseEvent
 from my_models.file_models import PropFileModel
 from my_models.entity_models import AttributesIndex
 from player.player_proxy import PlayerProxy
-import gameplay_systems.builtin_prompt_util as builtin_prompt_util
+import gameplay_systems.builtin_prompt_utils as builtin_prompt_utils
 
 
 class RPGGame(BaseGame):
@@ -371,11 +371,11 @@ class RPGGame(BaseGame):
             context._file_system.write_file(new_prop_file)
 
         # 文件系统：添加档案
-        extended_systems.file_system_util.add_actor_archive_files(
+        gameplay_systems.file_system_utils.register_actor_archives(
             context._file_system, actor_instance.name, set(actor_model.actor_archives)
         )
 
-        extended_systems.file_system_util.add_stage_archive_files(
+        gameplay_systems.file_system_utils.register_stage_archives(
             context._file_system, actor_instance.name, set(actor_model.stage_archives)
         )
 
@@ -667,12 +667,12 @@ class RPGGame(BaseGame):
                 continue
 
             actor_archives = game_resource.retrieve_actor_archives(safe_name)
-            extended_systems.file_system_util.load_actor_archive_files(
+            gameplay_systems.file_system_utils.load_actor_archives(
                 context._file_system, safe_name, actor_archives
             )
 
             stage_archives = game_resource.retrieve_stage_archives(safe_name)
-            extended_systems.file_system_util.load_stage_archive_files(
+            gameplay_systems.file_system_utils.load_stage_archives(
                 context._file_system, safe_name, stage_archives
             )
 
@@ -706,7 +706,7 @@ class RPGGame(BaseGame):
                 continue
 
             assert player_proxy.actor_name != ""
-            send_event.message = builtin_prompt_util.replace_you(
+            send_event.message = builtin_prompt_utils.replace_you(
                 send_event.message,
                 player_proxy.actor_name,
             )

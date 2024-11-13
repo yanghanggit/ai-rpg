@@ -13,7 +13,7 @@ from rpg_game.rpg_game import RPGGame
 from my_models.event_models import AgentEvent
 import my_format_string.editor_prop_info_string
 from loguru import logger
-from gameplay_systems.actor_checker import ActorChecker
+from gameplay_systems.actor_entity_utils import ActorStatusEvaluator
 from my_models.file_models import PropType
 
 ################################################################################################################################################
@@ -208,17 +208,13 @@ class SkillInvocationSystem(ReactiveProcessor):
             return
 
         # 帮助类分析整个字符串
-        check_self = ActorChecker(self._context, actor_entity)
+        actor_status_evaluator = ActorStatusEvaluator(self._context, actor_entity)
         skill_command_parser = SkillCommandParser(origin_command_from_skill_action)
         skill_command_parser.parse(
             actor_entity.get(ActorComponent).current_stage,
             self._context.get_actor_names_in_stage(actor_entity),
-            set(check_self.get_prop_files(PropType.TYPE_SKILL)),
-            set(
-                check_self.get_prop_files(PropType.TYPE_SPECIAL)
-                + check_self.get_prop_files(PropType.TYPE_NON_CONSUMABLE_ITEM)
-                + check_self.get_prop_files(PropType.TYPE_CONSUMABLE_ITEM)
-            ),
+            set(actor_status_evaluator.skill_prop_files),
+            set(actor_status_evaluator.available_skill_accessory_prop_files),
         )
 
         # 判断合理性
@@ -233,7 +229,7 @@ class SkillInvocationSystem(ReactiveProcessor):
             return
 
         # 默认会添加当前武器到技能消耗配件中
-        current_weapon = check_self._current_weapon
+        current_weapon = actor_status_evaluator._current_weapon
         if current_weapon is not None:
 
             if current_weapon not in [

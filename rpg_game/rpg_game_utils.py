@@ -27,7 +27,7 @@ from my_components.components import (
     KickOffContentComponent,
     KickOffFlagComponent,
 )
-from gameplay_systems.actor_checker import ActorChecker
+from gameplay_systems.actor_entity_utils import ActorStatusEvaluator
 import gameplay_systems.actor_planning_execution_system
 from player.player_command import (
     PlayerGoTo,
@@ -263,7 +263,7 @@ def gen_player_check_action_model(
         return None
 
     #
-    check_self = ActorChecker(game_name.context, player_entity)
+    check_self = ActorStatusEvaluator(game_name.context, player_entity)
     health = check_self.health * 100
 
     # 道具信息

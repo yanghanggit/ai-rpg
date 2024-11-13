@@ -17,7 +17,7 @@ from ws_config import (
     FetchMessagesResponse,
 )
 from typing import Dict, Any, Optional
-import rpg_game.rpg_game_helper
+import rpg_game.rpg_game_utils
 from player.player_proxy import PlayerProxy
 import rpg_game.rpg_game_config as rpg_game_config
 import shutil
@@ -152,7 +152,7 @@ async def create(request_data: CreateRequest) -> Dict[str, Any]:
         ).model_dump()
 
     # 创建游戏资源
-    game_resource = rpg_game.rpg_game_helper.create_game_resource(
+    game_resource = rpg_game.rpg_game_utils.create_game_resource(
         game_resource_file_path,
         game_runtime_dir,
         rpg_game_config.CHECK_GAME_RESOURCE_VERSION,
@@ -171,7 +171,7 @@ async def create(request_data: CreateRequest) -> Dict[str, Any]:
     )
 
     # 创建游戏
-    new_game = rpg_game.rpg_game_helper.create_web_rpg_game(game_resource)
+    new_game = rpg_game.rpg_game_utils.create_web_rpg_game(game_resource)
     if new_game is None or new_game._game_resource is None:
         logger.error(f"create_rpg_game 失败 = {request_data.game_name}")
         return CreateResponse(
@@ -182,7 +182,7 @@ async def create(request_data: CreateRequest) -> Dict[str, Any]:
         ).model_dump()
 
     # 检查是否有可以控制的角色, 没有就不让玩, 因为是客户端进来的。没有可以控制的觉得暂时就不允许玩。
-    player_actors = rpg_game.rpg_game_helper.get_player_actor(new_game)
+    player_actors = rpg_game.rpg_game_utils.get_player_actor(new_game)
     if len(player_actors) == 0:
         logger.warning(f"create_rpg_game 没有可以控制的角色 = {request_data.game_name}")
         return CreateResponse(
@@ -247,7 +247,7 @@ async def join(request_data: JoinRequest) -> Dict[str, Any]:
     user_room.game.add_player(player_proxy)
 
     # 加入游戏
-    rpg_game.rpg_game_helper.player_play_new_game(
+    rpg_game.rpg_game_utils.player_play_new_game(
         user_room.game, player_proxy, request_data.actor_name
     )
 
@@ -365,7 +365,7 @@ async def execute(request_data: ExecuteRequest) -> Dict[str, Any]:
             usr_input != "/retrieve_stage_archives" and usr_input != "/rsa"
         ), "不应该有这个命令"
 
-        rpg_game.rpg_game_helper.add_player_command(
+        rpg_game.rpg_game_utils.add_player_command(
             user_room.game, player_proxy, usr_input
         )
 
@@ -375,7 +375,7 @@ async def execute(request_data: ExecuteRequest) -> Dict[str, Any]:
     # if player_proxy.is_over:
     #     user_room.game._will_exit = True
 
-    turn_player_actors = rpg_game.rpg_game_helper.get_turn_player_actors(user_room.game)
+    turn_player_actors = rpg_game.rpg_game_utils.get_turn_player_actors(user_room.game)
 
     # 返回执行游戏的信息
     return ExecuteResponse(
@@ -486,7 +486,7 @@ async def exit(request_data: ExitRequest) -> Dict[str, Any]:
 
     # 当前的游戏杀掉
     user_room.game._will_exit = True
-    rpg_game.rpg_game_helper.save_game(
+    rpg_game.rpg_game_utils.save_game(
         rpg_game=user_room.game,
         archive_dir=rpg_game_config.GAMES_ARCHIVE_DIR / request_data.user_name,
     )

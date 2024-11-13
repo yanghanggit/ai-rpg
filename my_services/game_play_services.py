@@ -12,7 +12,7 @@ from ws_config import (
 )
 from typing import Dict, Any
 from my_services.room_manager import RoomManagerInstance
-import rpg_game.rpg_game_helper
+import rpg_game.rpg_game_utils
 
 
 game_play_api_router = APIRouter()
@@ -45,7 +45,7 @@ async def watch(request_data: WatchRequest) -> Dict[str, Any]:
         ).model_dump()
 
     # 获得消息
-    watch_action_model = rpg_game.rpg_game_helper.gen_player_watch_action_model(
+    watch_action_model = rpg_game.rpg_game_utils.gen_player_watch_action_model(
         room.game, player_proxy
     )
 
@@ -93,7 +93,7 @@ async def check(request_data: CheckRequest) -> Dict[str, Any]:
         ).model_dump()
 
     # 获得消息
-    check_action_model = rpg_game.rpg_game_helper.gen_player_check_action_model(
+    check_action_model = rpg_game.rpg_game_utils.gen_player_check_action_model(
         room.game, player_proxy
     )
 
@@ -144,7 +144,7 @@ async def retrieve_actor_archives(
 
     # 获得消息
     retrieve_actor_archives_action_model = (
-        rpg_game.rpg_game_helper.gen_player_retrieve_actor_archives_action_model(
+        rpg_game.rpg_game_utils.gen_player_retrieve_actor_archives_action_model(
             room.game, player_proxy
         )
     )
@@ -193,7 +193,7 @@ async def retrieve_stage_archives(
         ).model_dump()
 
     retrieve_stage_archives_action_model = (
-        rpg_game.rpg_game_helper.gen_player_retrieve_stage_archives_action_model(
+        rpg_game.rpg_game_utils.gen_player_retrieve_stage_archives_action_model(
             room.game, player_proxy
         )
     )

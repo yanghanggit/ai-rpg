@@ -2,7 +2,7 @@ from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: igno
 from my_components.action_components import WhisperAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import final, override
-import gameplay_systems.conversation_helper
+import gameplay_systems.action_utils
 import my_format_string.target_and_message_format_string
 from rpg_game.rpg_game import RPGGame
 from my_models.event_models import WhisperEvent
@@ -51,10 +51,10 @@ class WhisperActionSystem(ReactiveProcessor):
 
         for tp in target_and_message:
             if (
-                gameplay_systems.conversation_helper.validate_conversation(
+                gameplay_systems.action_utils.validate_conversation(
                     self._context, entity, tp[0]
                 )
-                != gameplay_systems.conversation_helper.ConversationError.VALID
+                != gameplay_systems.action_utils.ConversationError.VALID
             ):
                 continue
 

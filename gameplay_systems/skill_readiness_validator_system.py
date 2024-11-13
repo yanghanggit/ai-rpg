@@ -17,7 +17,7 @@ from extended_systems.prop_file import (
     generate_skill_prop_file_prompt,
     generate_skill_accessory_prop_file_prompt,
 )
-import gameplay_systems.builtin_prompt_util as builtin_prompt_util
+import gameplay_systems.builtin_prompt_utils as builtin_prompt_utils
 from my_agent.agent_task import AgentTask
 from my_agent.agent_plan import AgentPlanResponse
 from rpg_game.rpg_game import RPGGame
@@ -269,7 +269,7 @@ class SkillReadinessValidatorSystem(ExecuteProcessor):
 
             process_data.agent_task = ret[process_data.agent._name] = AgentTask.create(
                 process_data.agent,
-                builtin_prompt_util.replace_you(
+                builtin_prompt_utils.replace_you(
                     skill_readiness_prompt, process_data.agent._name
                 ),
             )

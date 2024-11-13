@@ -12,7 +12,7 @@ from my_components.components import (
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import final, override, List, Optional, Set
-import gameplay_systems.builtin_prompt_util as builtin_prompt_util
+import gameplay_systems.builtin_prompt_utils as builtin_prompt_utils
 from my_agent.agent_task import AgentTask
 from my_agent.agent_plan import AgentPlanResponse
 import my_format_string.target_and_message_format_string
@@ -198,7 +198,7 @@ class SkillImpactResponseEvaluatorSystem(ExecuteProcessor):
             ret.agent_tasks.append(
                 AgentTask.create(
                     agent,
-                    builtin_prompt_util.replace_you(skill_comp.command, agent._name),
+                    builtin_prompt_utils.replace_you(skill_comp.command, agent._name),
                 )
             )
 
@@ -490,7 +490,7 @@ class SkillImpactResponseEvaluatorSystem(ExecuteProcessor):
 
         return AgentTask.create(
             target_agent,
-            builtin_prompt_util.replace_you(prompt, target_agent_name),
+            builtin_prompt_utils.replace_you(prompt, target_agent_name),
         )
 
     ######################################################################################################################################################

@@ -10,7 +10,7 @@ from my_components.components import (
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
-import gameplay_systems.builtin_prompt_util as builtin_prompt_util
+import gameplay_systems.builtin_prompt_utils as builtin_prompt_utils
 from typing import final, override, Set, Any
 from rpg_game.rpg_game import RPGGame
 from my_models.event_models import AgentEvent
@@ -129,8 +129,8 @@ class StageValidatorSystem(ReactiveProcessor):
         if len(go_to_action.values) == 0:
             return ""
 
-        if builtin_prompt_util.is_unknown_stage_name(go_to_action.values[0]):
-            guid = builtin_prompt_util.extract_guid_from_unknown_stage_name(
+        if builtin_prompt_utils.is_unknown_stage_name(go_to_action.values[0]):
+            guid = builtin_prompt_utils.extract_guid_from_unknown_stage_name(
                 go_to_action.values[0]
             )
             stage_entity = self._context.get_entity_by_guid(guid)

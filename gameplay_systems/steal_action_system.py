@@ -9,9 +9,9 @@ from my_components.components import (
     WeaponComponent,
     ClothesComponent,
 )
-import gameplay_systems.conversation_helper
+import gameplay_systems.action_utils
 from typing import final, override
-import extended_systems.file_system_util
+import gameplay_systems.file_system_utils
 from extended_systems.prop_file import PropFile
 import my_format_string.target_and_message_format_string
 from rpg_game.rpg_game import RPGGame
@@ -76,10 +76,10 @@ class StealActionSystem(ReactiveProcessor):
         for tp in target_and_message:
 
             if (
-                gameplay_systems.conversation_helper.validate_conversation(
+                gameplay_systems.action_utils.validate_conversation(
                     self._context, entity, tp[0]
                 )
-                != gameplay_systems.conversation_helper.ConversationError.VALID
+                != gameplay_systems.action_utils.ConversationError.VALID
             ):
                 # 不能交谈就是不能偷
                 continue
@@ -120,7 +120,7 @@ class StealActionSystem(ReactiveProcessor):
         if not self.can_be_stolen(target_entity, prop_file):
             return False
 
-        extended_systems.file_system_util.give_prop_file(
+        gameplay_systems.file_system_utils.transfer_file(
             self._context._file_system,
             target_actor_name,
             self._context.safe_get_entity_name(entity),

@@ -7,10 +7,10 @@ from my_components.components import (
     RoundEventsRecordComponent,
 )
 from typing import Set, final, override, Dict, List
-import extended_systems.file_system_util
+import gameplay_systems.file_system_utils
 from rpg_game.rpg_game import RPGGame
 from extended_systems.archive_file import ActorArchiveFile, StageArchiveFile
-import extended_systems.file_system_util
+import gameplay_systems.file_system_utils
 
 
 @final
@@ -68,7 +68,7 @@ class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
             if not self._context._file_system.has_file(
                 ActorArchiveFile, my_name, actor_name
             ):
-                extended_systems.file_system_util.add_actor_archive_files(
+                gameplay_systems.file_system_utils.register_actor_archives(
                     self._context._file_system, my_name, set({actor_name})
                 )
 
@@ -123,7 +123,7 @@ class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
             if exist_file is not None:
                 continue
 
-            new_archive = extended_systems.file_system_util.add_stage_archive_files(
+            new_archive = gameplay_systems.file_system_utils.register_stage_archives(
                 self._context._file_system, actor_name, {stage_name}
             )
 
@@ -149,7 +149,7 @@ class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
             if archive_actor_name not in messages:
                 continue
 
-            add_archives = extended_systems.file_system_util.add_actor_archive_files(
+            add_archives = gameplay_systems.file_system_utils.register_actor_archives(
                 self._context._file_system, safe_name, {archive_actor_name}
             )
 
@@ -176,7 +176,7 @@ class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
             if archive_stage_name not in messages:
                 continue
 
-            add_archives = extended_systems.file_system_util.add_stage_archive_files(
+            add_archives = gameplay_systems.file_system_utils.register_stage_archives(
                 self._context._file_system, safe_name, {archive_stage_name}
             )
 
@@ -227,7 +227,7 @@ class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
                     continue
 
                 add_archives = (
-                    extended_systems.file_system_util.add_actor_archive_files(
+                    gameplay_systems.file_system_utils.register_actor_archives(
                         self._context._file_system,
                         actor_comp.name,
                         {archive_actor_name},
@@ -263,7 +263,7 @@ class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
                     continue
 
                 add_archives = (
-                    extended_systems.file_system_util.add_stage_archive_files(
+                    gameplay_systems.file_system_utils.register_stage_archives(
                         self._context._file_system,
                         actor_comp.name,
                         {archive_stage_name},

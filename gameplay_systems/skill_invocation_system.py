@@ -322,7 +322,7 @@ class SkillInvocationSystem(ReactiveProcessor):
             "",
             "",
         )
-        
+
         skill_comp = skill_entity.get(SkillComponent)
         logger.debug(f"_create_skill_entity skill_comp: {skill_comp._asdict()}")
 

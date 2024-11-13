@@ -22,6 +22,7 @@ from my_agent.agent_task import AgentTask
 from my_agent.agent_plan import AgentPlanResponse
 from rpg_game.rpg_game import RPGGame
 import gameplay_systems.skill_system_utils
+from my_agent.lang_serve_agent import LangServeAgent
 
 
 ################################################################################################################################################
@@ -102,21 +103,18 @@ class InternalPlanResponse(AgentPlanResponse):
         super().__init__(name, input_str)
 
     @property
-    def boolean_value(self) -> bool:
+    def is_skill_ready(self) -> bool:
         return self._parse_boolean(TagAction.__name__)
-
-    @property
-    def out_come(self) -> str:
-        return self._concatenate_values(MindVoiceAction.__name__)
 
 
 ######################################################################################################################################################
 ######################################################################################################################################################
 ######################################################################################################################################################
 @dataclass
-class InternalProcessor:
+class InternalProcessData:
     actor_entity: Entity
     skill_entity: Entity
+    agent: Optional[LangServeAgent]
     agent_task: Optional[AgentTask]
 
 
@@ -147,127 +145,133 @@ class SkillReadinessValidatorSystem(ExecuteProcessor):
         ).entities.copy()
 
         # 组成成方便的数据结构
-        skill_processors = self._initialize_processors(skill_entities)
+        internal_process_data = self._initialize_internal_process_data(skill_entities)
 
         # 核心执行
-        await self._validate_skill_readiness(skill_processors)
+        await self._validate_skill_readiness(internal_process_data)
 
     ######################################################################################################################################################
-    def _initialize_processors(
+    def _initialize_internal_process_data(
         self, skill_entities: Set[Entity]
-    ) -> List[InternalProcessor]:
-        ret: List[InternalProcessor] = []
+    ) -> List[InternalProcessData]:
+        ret: List[InternalProcessData] = []
         for skill_entity in skill_entities:
             skill_comp = skill_entity.get(SkillComponent)
+
             actor_entity = self._context.get_actor_entity(skill_comp.name)
             assert (
                 actor_entity is not None
             ), f"actor_entity {skill_comp.name} not found."
-            ret.append(InternalProcessor(actor_entity, skill_entity, None))
+            if actor_entity is None:
+                logger.debug(f"actor_entity {skill_comp.name} not found.")
+                continue
+
+            actor_name = self._context.safe_get_entity_name(actor_entity)
+            agent = self._context.agent_system.get_agent(actor_name)
+            assert agent is not None, f"agent {actor_name} not found."
+            if agent is None:
+                continue
+
+            ret.append(
+                InternalProcessData(
+                    actor_entity=actor_entity,
+                    skill_entity=skill_entity,
+                    agent=agent,
+                    agent_task=None,
+                )
+            )
         return ret
 
     ######################################################################################################################################################
     async def _validate_skill_readiness(
-        self, skill_processors: List[InternalProcessor]
+        self, internal_process_data: List[InternalProcessData]
     ) -> None:
 
-        if len(skill_processors) == 0:
+        if len(internal_process_data) == 0:
             return
 
-        tasks = self._generate_agent_tasks(skill_processors)
-        if len(tasks) == 0:
-            self._clear(skill_processors)
+        agent_tasks = self._generate_agent_tasks(internal_process_data)
+        assert len(agent_tasks) > 0, "agent_tasks is empty."
+        if len(agent_tasks) == 0:
+            self._clear(internal_process_data)
             return
 
-        responses = await AgentTask.gather([task for task in tasks.values()])
+        responses = await AgentTask.gather([task for task in agent_tasks.values()])
         if len(responses) == 0:
             logger.debug(f"phase1_response is None.")
-            self._clear(skill_processors)
+            self._clear(internal_process_data)
             return
 
-        self._process_agent_tasks(skill_processors)
+        self._process_agent_tasks(internal_process_data)
 
     ######################################################################################################################################################
-    def _process_agent_tasks(self, skill_processors: List[InternalProcessor]) -> None:
+    def _process_agent_tasks(
+        self, internal_process_data: List[InternalProcessData]
+    ) -> None:
 
-        for skill_processor in skill_processors:
+        for process_data in internal_process_data:
 
-            agent_task = skill_processor.agent_task
-            if agent_task is None:
+            agent_task = process_data.agent_task
+            assert agent_task is not None, "agent_task is None."
+
+            if not self._is_skill_ready(agent_task):
                 gameplay_systems.skill_system_utils.destroy_skill_entity(
-                    skill_processor.skill_entity
+                    process_data.skill_entity
                 )
                 continue
 
-            assert skill_processor.skill_entity is not None, "skill_entity is None."
-            if agent_task.response_content == "":
-                gameplay_systems.skill_system_utils.destroy_skill_entity(
-                    skill_processor.skill_entity
-                )
-                continue
+    ######################################################################################################################################################
+    def _is_skill_ready(self, agent_task: AgentTask) -> bool:
+        if agent_task.response_content == "":
+            return False
 
-            skill_readiness_response = InternalPlanResponse(
-                agent_task.agent_name, agent_task.response_content
-            )
-
-            if not skill_readiness_response.boolean_value:
-                # 删除
-                gameplay_systems.skill_system_utils.destroy_skill_entity(
-                    skill_processor.skill_entity
-                )
+        return InternalPlanResponse(
+            agent_task.agent_name, agent_task.response_content
+        ).is_skill_ready
 
     ######################################################################################################################################################
-    def _clear(self, skill_processors: List[InternalProcessor]) -> None:
-        for skill_processor in skill_processors:
-            assert skill_processor.skill_entity is not None, "skill_entity is None."
+    def _clear(self, internal_process_data: List[InternalProcessData]) -> None:
+        for process_data in internal_process_data:
+            assert process_data.skill_entity is not None, "skill_entity is None."
             gameplay_systems.skill_system_utils.destroy_skill_entity(
-                skill_processor.skill_entity
+                process_data.skill_entity
             )
 
     ######################################################################################################################################################
     def _generate_agent_tasks(
-        self, skill_processors: List[InternalProcessor]
+        self, internal_process_data: List[InternalProcessData]
     ) -> Dict[str, AgentTask]:
 
         ret: Dict[str, AgentTask] = {}
 
-        for skill_processor in skill_processors:
+        for process_data in internal_process_data:
 
-            if skill_processor.actor_entity is None:
-                assert False, "actor_entity is None."
-                continue
+            assert process_data.actor_entity is not None, "actor_entity is None."
+            assert process_data.skill_entity is not None, "skill_entity is None."
+            assert process_data.agent is not None, "agent is None."
 
-            agent_name = self._context.safe_get_entity_name(
-                skill_processor.actor_entity
-            )
-
-            agent = self._context.agent_system.get_agent(agent_name)
-            if agent is None:
-                assert False, f"agent {agent_name} not found."
-                continue
-
-            prompt = _generate_skill_readiness_validator_prompt(
-                agent_name,
-                skill_processor.actor_entity.get(BodyComponent).body,
+            skill_readiness_prompt = _generate_skill_readiness_validator_prompt(
+                process_data.agent._name,
+                process_data.actor_entity.get(BodyComponent).body,
                 gameplay_systems.skill_system_utils.parse_skill_prop_files(
                     context=self._context,
-                    skill_entity=skill_processor.skill_entity,
-                    actor_entity=skill_processor.actor_entity,
+                    skill_entity=process_data.skill_entity,
+                    actor_entity=process_data.actor_entity,
                 ),
                 gameplay_systems.skill_system_utils.retrieve_skill_accessory_files(
                     context=self._context,
-                    skill_entity=skill_processor.skill_entity,
-                    actor_entity=skill_processor.actor_entity,
+                    skill_entity=process_data.skill_entity,
+                    actor_entity=process_data.actor_entity,
                 ),
             )
 
-            ret[agent_name] = AgentTask.create(
-                agent,
-                builtin_prompt_util.replace_you(prompt, agent_name),
+            assert process_data.agent_task is None, "agent_task is not None."
+            process_data.agent_task = ret[process_data.agent._name] = AgentTask.create(
+                process_data.agent,
+                builtin_prompt_util.replace_you(
+                    skill_readiness_prompt, process_data.agent._name
+                ),
             )
-
-            assert skill_processor.agent_task is None, "agent_task is not None."
-            skill_processor.agent_task = ret[agent_name]
 
         return ret
 

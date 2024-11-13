@@ -141,3 +141,4 @@ class SkillComponent(NamedTuple):
     skill_accessory_props: List[str]
     world_harmony_inspector_tag: str
     world_harmony_inspector_content: str
+    world_harmony_inspector_value: int = 100

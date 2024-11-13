@@ -619,6 +619,12 @@ class RPGGame(BaseGame):
                             KickOffFlagComponent, kick_off_flag_comp.name
                         )
 
+                    case BodyComponent.__name__:
+                        body_comp = BodyComponent(**comp.data)
+                        load_entity.replace(
+                            BodyComponent, body_comp.name, body_comp.body
+                        )
+
                     case _:
                         pass
 

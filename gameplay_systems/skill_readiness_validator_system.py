@@ -114,8 +114,8 @@ class InternalPlanResponse(AgentPlanResponse):
 class InternalProcessData:
     actor_entity: Entity
     skill_entity: Entity
-    agent: Optional[LangServeAgent]
-    agent_task: Optional[AgentTask]
+    agent: LangServeAgent
+    agent_task: AgentTask
 
 
 ######################################################################################################################################################
@@ -154,6 +154,7 @@ class SkillReadinessValidatorSystem(ExecuteProcessor):
     def _initialize_internal_process_data(
         self, skill_entities: Set[Entity]
     ) -> List[InternalProcessData]:
+
         ret: List[InternalProcessData] = []
         for skill_entity in skill_entities:
             skill_comp = skill_entity.get(SkillComponent)
@@ -177,9 +178,10 @@ class SkillReadinessValidatorSystem(ExecuteProcessor):
                     actor_entity=actor_entity,
                     skill_entity=skill_entity,
                     agent=agent,
-                    agent_task=None,
+                    agent_task=AgentTask.create_standalone(agent=agent, prompt=""),
                 )
             )
+
         return ret
 
     ######################################################################################################################################################
@@ -265,7 +267,6 @@ class SkillReadinessValidatorSystem(ExecuteProcessor):
                 ),
             )
 
-            assert process_data.agent_task is None, "agent_task is not None."
             process_data.agent_task = ret[process_data.agent._name] = AgentTask.create(
                 process_data.agent,
                 builtin_prompt_util.replace_you(

@@ -8,10 +8,9 @@ from my_components.components import (
     BodyComponent,
     SkillComponent,
     DestroyComponent,
-    AgentConnectionFlagComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from typing import final, override, List, Set, Dict, Optional
+from typing import final, override, List, Set, Optional
 from loguru import logger
 from extended_systems.prop_file import (
     PropFile,
@@ -25,6 +24,7 @@ from rpg_game.rpg_game import RPGGame
 import extended_systems.file_system_util
 from my_models.event_models import AgentEvent
 import gameplay_systems.skill_system_utils
+from my_agent.lang_serve_agent import LangServeAgent
 
 
 ################################################################################################################################################
@@ -171,11 +171,8 @@ def _generate_world_harmony_inspector_prompt(
 @final
 class InternalPlanResponse(AgentPlanResponse):
 
-    OPTION_PARAM_NAME: str = "actor_name"
-
-    def __init__(self, name: str, input_str: str, task: AgentTask) -> None:
-        super().__init__(name, input_str)
-        self._task: AgentTask = task
+    def __init__(self, name: str, response_content: str) -> None:
+        super().__init__(name, response_content)
 
     @property
     def inspector_tag(self) -> str:
@@ -188,6 +185,12 @@ class InternalPlanResponse(AgentPlanResponse):
     def inspector_content(self) -> str:
         return self._concatenate_values(BroadcastAction.__name__)
 
+    @property
+    def inspector_value(self) -> int:
+        ret = 100
+        ret = max(0, min(200, ret))
+        return ret  # todo
+
 
 ######################################################################################################################################################
 ######################################################################################################################################################
@@ -195,11 +198,12 @@ class InternalPlanResponse(AgentPlanResponse):
 
 
 @dataclass
-class InternalProcessor:
+class InternalProcessData:
     actor_entity: Entity
     skill_entity: Entity
-    agent_task: Optional[AgentTask]
-    task_response: Dict[str, InternalPlanResponse] = {}
+    agent: LangServeAgent
+    agent_task: AgentTask
+    plan_response: InternalPlanResponse
 
 
 ######################################################################################################################################################
@@ -211,11 +215,11 @@ class InternalProcessor:
 class SkillWorldHarmonyInspectorSystem(ExecuteProcessor):
 
     def __init__(
-        self, context: RPGEntitasContext, rpg_game: RPGGame, system_name: str
+        self, context: RPGEntitasContext, rpg_game: RPGGame, world_system_name: str
     ) -> None:
         self._context: RPGEntitasContext = context
         self._game: RPGGame = rpg_game
-        self._system_name: str = system_name
+        self._world_system_name: str = world_system_name
 
     ######################################################################################################################################################
     @override
@@ -226,137 +230,121 @@ class SkillWorldHarmonyInspectorSystem(ExecuteProcessor):
     @override
     async def a_execute1(self) -> None:
 
+        if self.world_system_entity is None or self.world_system_agent is None:
+            logger.error("world_system_entity or world_system_agent is None")
+            return
+
         # 只关注技能
         skill_entities = self._context.get_group(
             Matcher(all_of=[SkillComponent], none_of=[DestroyComponent])
         ).entities.copy()
 
         # 组成成方便的数据结构
-        skill_processors = self._initialize_processors(skill_entities)
-        if len(skill_processors) == 0:
+        internal_process_data = self._initialize_internal_process_data(
+            skill_entities, self.world_system_agent
+        )
+        if len(internal_process_data) == 0:
             return
 
-        world_skill_system = self._context.get_world_entity(self._system_name)
-        if world_skill_system is None:
-            self._clear(skill_processors)
-            assert False, "全局技能系统不存在"
-            return
+        await self._process_world_harmony_inspector(internal_process_data)
 
-        await self._process_world_harmony_inspector(
-            skill_processors, world_skill_system
+    ######################################################################################################################################################
+    @property
+    def world_system_entity(self) -> Optional[Entity]:
+        return self._context.get_world_entity(self._world_system_name)
+
+    ######################################################################################################################################################
+    @property
+    def world_system_agent(self) -> Optional[LangServeAgent]:
+        if self.world_system_entity is None:
+            return None
+
+        return self._context.agent_system.get_agent(
+            self._context.safe_get_entity_name(self.world_system_entity)
         )
 
     ######################################################################################################################################################
-    def _initialize_processors(
-        self, skill_entities: Set[Entity]
-    ) -> List[InternalProcessor]:
-        ret: List[InternalProcessor] = []
-        for skill_entity in skill_entities:
+    def _initialize_internal_process_data(
+        self, internal_process_data: Set[Entity], world_system_agent: LangServeAgent
+    ) -> List[InternalProcessData]:
+
+        ret: List[InternalProcessData] = []
+        for skill_entity in internal_process_data:
             skill_comp = skill_entity.get(SkillComponent)
+
             actor_entity = self._context.get_actor_entity(skill_comp.name)
             assert (
                 actor_entity is not None
             ), f"actor_entity {skill_comp.name} not found."
-            ret.append(InternalProcessor(actor_entity, skill_entity, None))
+            if actor_entity is None:
+                continue
+
+            ret.append(
+                InternalProcessData(
+                    actor_entity=actor_entity,
+                    skill_entity=skill_entity,
+                    agent=world_system_agent,
+                    agent_task=AgentTask.create_standalone(world_system_agent, ""),
+                    plan_response=InternalPlanResponse(skill_comp.name, ""),
+                )
+            )
+
         return ret
 
     ######################################################################################################################################################
     async def _process_world_harmony_inspector(
-        self,
-        skill_processors: List[InternalProcessor],
-        world_system_entity: Entity,
+        self, internal_process_data: List[InternalProcessData]
     ) -> None:
 
-        tasks = self._generate_agent_tasks(skill_processors, world_system_entity)
-        if len(tasks) == 0:
-            self._clear(skill_processors)
+        agent_tasks = self._generate_agent_tasks(internal_process_data)
+        assert len(agent_tasks) > 0
+        if len(agent_tasks) == 0:
+            self._clear(internal_process_data)
             return
 
-        responses = await AgentTask.gather(tasks)
+        responses = await AgentTask.gather(agent_tasks)
         if len(responses) == 0:
-            self._clear(skill_processors)
+            logger.error("responses is empty")
+            self._clear(internal_process_data)
             return
 
-        self._generate_actor_responses(skill_processors)
-        self._process_response_plans(skill_processors)
+        self._assemble_process_responses(internal_process_data)
+        self._handle_response_plans(internal_process_data)
 
     ######################################################################################################################################################
-    def _process_response_plans(
-        self, skill_processors: List[InternalProcessor]
+    def _handle_response_plans(
+        self, internal_process_data: List[InternalProcessData]
     ) -> None:
 
-        for skill_processor in skill_processors:
-            actor_entity = skill_processor.actor_entity
-            assert actor_entity is not None
-            if actor_entity is None:
-                continue
+        for process_data in internal_process_data:
 
-            response_plan = skill_processor.task_response.get(
-                self._context.safe_get_entity_name(actor_entity)
-            )
-            if response_plan is None:
-                assert False, "response_plan is None"
-                continue
-
-            if response_plan._task.response_content == "":
-                self._on_agent_offline_notification_event(
-                    skill_entity=skill_processor.skill_entity, actor_entity=actor_entity
+            if (
+                process_data.plan_response.inspector_tag
+                == builtin_prompt_util.ConstantSkillPrompt.FAILURE
+            ):
+                self._notify_inspector_failure_event(process_data)
+                gameplay_systems.skill_system_utils.destroy_skill_entity(
+                    process_data.skill_entity
                 )
                 continue
 
-            match (response_plan.inspector_tag):
-                case builtin_prompt_util.ConstantSkillPrompt.FAILURE:
-                    self._on_world_harmony_inspector_fail_event(
-                        skill_entity=skill_processor.skill_entity,
-                        actor_entity=actor_entity,
-                        world_response_plan=response_plan,
-                    )
-                    gameplay_systems.skill_system_utils.destroy_skill_entity(
-                        skill_processor.skill_entity
-                    )
-
-                case builtin_prompt_util.ConstantSkillPrompt.SUCCESS:
-                    self._on_world_harmony_inspector_success_event(
-                        skill_entity=skill_processor.skill_entity,
-                        actor_entity=actor_entity,
-                        world_response_plan=response_plan,
-                    )
-                    self._add_world_harmony_inspector_data(
-                        skill_entity=skill_processor.skill_entity,
-                        actor_entity=actor_entity,
-                        response_plan=response_plan,
-                    )
-                    self._process_consumable_items(
-                        skill_entity=skill_processor.skill_entity,
-                        actor_entity=actor_entity,
-                    )
-
-                case builtin_prompt_util.ConstantSkillPrompt.CRITICAL_SUCCESS:
-                    self._on_world_harmony_inspector_success_event(
-                        skill_entity=skill_processor.skill_entity,
-                        actor_entity=actor_entity,
-                        world_response_plan=response_plan,
-                    )
-                    self._add_world_harmony_inspector_data(
-                        skill_entity=skill_processor.skill_entity,
-                        actor_entity=actor_entity,
-                        response_plan=response_plan,
-                    )
-                    self._process_consumable_items(
-                        skill_entity=skill_processor.skill_entity,
-                        actor_entity=actor_entity,
-                    )
-
-                case _:
-                    logger.error(f"Unknown tag: {response_plan.inspector_tag}")
+            assert (
+                process_data.plan_response.inspector_tag
+                == builtin_prompt_util.ConstantSkillPrompt.SUCCESS
+                or process_data.plan_response.inspector_tag
+                == builtin_prompt_util.ConstantSkillPrompt.CRITICAL_SUCCESS
+            )
+            self._notify_inspector_success_event(process_data)
+            self._add_world_harmony_inspector_data(process_data)
+            self._process_consumable_items(process_data)
 
     ######################################################################################################################################################
-    def _process_consumable_items(
-        self, skill_entity: Entity, actor_entity: Entity
-    ) -> None:
+    def _process_consumable_items(self, process_data: InternalProcessData) -> None:
 
         data = gameplay_systems.skill_system_utils.parse_skill_accessory_prop_files(
-            context=self._context, skill_entity=skill_entity, actor_entity=actor_entity
+            context=self._context,
+            skill_entity=process_data.skill_entity,
+            actor_entity=process_data.actor_entity,
         )
         for prop_file_and_count in data:
             prop_file = prop_file_and_count[0]
@@ -368,14 +356,12 @@ class SkillWorldHarmonyInspectorSystem(ExecuteProcessor):
     ######################################################################################################################################################
     def _add_world_harmony_inspector_data(
         self,
-        skill_entity: Entity,
-        actor_entity: Entity,
-        response_plan: InternalPlanResponse,
+        process_data: InternalProcessData,
     ) -> None:
 
-        assert skill_entity.has(SkillComponent)
-        skill_comp = skill_entity.get(SkillComponent)
-        skill_entity.replace(
+        assert process_data.plan_response is not None
+        skill_comp = process_data.skill_entity.get(SkillComponent)
+        process_data.skill_entity.replace(
             SkillComponent,
             skill_comp.name,
             skill_comp.command,
@@ -383,100 +369,73 @@ class SkillWorldHarmonyInspectorSystem(ExecuteProcessor):
             skill_comp.stage,
             skill_comp.targets,
             skill_comp.skill_accessory_props,
-            response_plan.inspector_tag,
-            response_plan.inspector_content,
+            process_data.plan_response.inspector_tag,
+            process_data.plan_response.inspector_content,
+            process_data.plan_response.inspector_value,
         )
 
     ######################################################################################################################################################
-    def _generate_actor_responses(
-        self, skill_processors: List[InternalProcessor]
-    ) -> Dict[str, InternalPlanResponse]:
-
-        ret: Dict[str, InternalPlanResponse] = {}
-
-        for skill_processor in skill_processors:
-
-            if skill_processor.agent_task is None:
-                continue
-
-            actor_name = self._context.safe_get_entity_name(
-                skill_processor.actor_entity
-            )
-
-            ret[actor_name] = InternalPlanResponse(
-                skill_processor.agent_task.agent_name,
-                skill_processor.agent_task.response_content,
-                skill_processor.agent_task,
-            )
-            skill_processor.task_response[actor_name] = ret[actor_name]
-
-        return ret
-
-    ######################################################################################################################################################
-    def _clear(self, skill_processors: List[InternalProcessor]) -> None:
-        for skill_processor in skill_processors:
-            gameplay_systems.skill_system_utils.destroy_skill_entity(
-                skill_processor.skill_entity
-            )
-
-    ######################################################################################################################################################
-    def _on_agent_offline_notification_event(
-        self, skill_entity: Entity, actor_entity: Entity
+    def _assemble_process_responses(
+        self, internal_process_data: List[InternalProcessData]
     ) -> None:
 
-        assert skill_entity.has(SkillComponent)
+        for process_data in internal_process_data:
+            process_data.plan_response = InternalPlanResponse(
+                process_data.agent_task.agent_name,
+                process_data.agent_task.response_content,
+            )
+
+    ######################################################################################################################################################
+    def _clear(self, internal_process_data: List[InternalProcessData]) -> None:
+        for process_data in internal_process_data:
+            gameplay_systems.skill_system_utils.destroy_skill_entity(
+                process_data.skill_entity
+            )
+
+    ######################################################################################################################################################
+    def _notify_agent_offline_event(self, process_data: InternalProcessData) -> None:
 
         self._context.notify_event(
-            set({actor_entity}),
+            set({process_data.actor_entity}),
             AgentEvent(
                 message=_generate_offline_prompt(
-                    self._context.safe_get_entity_name(actor_entity),
-                    skill_entity.get(SkillComponent).command,
+                    self._context.safe_get_entity_name(process_data.actor_entity),
+                    process_data.skill_entity.get(SkillComponent).command,
                 )
             ),
         )
 
     ######################################################################################################################################################
-    def _on_world_harmony_inspector_success_event(
-        self,
-        skill_entity: Entity,
-        actor_entity: Entity,
-        world_response_plan: InternalPlanResponse,
+    def _notify_inspector_success_event(
+        self, process_data: InternalProcessData
     ) -> None:
 
-        assert skill_entity.has(SkillComponent)
-
         self._context.notify_event(
-            set({actor_entity}),
+            set({process_data.actor_entity}),
             AgentEvent(
                 message=_generate_success_prompt(
-                    self._context.safe_get_entity_name(actor_entity),
-                    set(skill_entity.get(SkillComponent).targets),
-                    world_response_plan.inspector_tag,
-                    skill_entity.get(SkillComponent).command,
-                    world_response_plan.inspector_content,
+                    self._context.safe_get_entity_name(process_data.actor_entity),
+                    set(process_data.skill_entity.get(SkillComponent).targets),
+                    process_data.plan_response.inspector_tag,
+                    process_data.skill_entity.get(SkillComponent).command,
+                    process_data.plan_response.inspector_content,
                 )
             ),
         )
 
     ######################################################################################################################################################
-    def _on_world_harmony_inspector_fail_event(
-        self,
-        skill_entity: Entity,
-        actor_entity: Entity,
-        world_response_plan: InternalPlanResponse,
+    def _notify_inspector_failure_event(
+        self, process_data: InternalProcessData
     ) -> None:
 
-        assert skill_entity.has(SkillComponent)
-
         self._context.notify_event(
-            set({actor_entity}),
+            set({process_data.actor_entity}),
             AgentEvent(
                 message=_generate_failure_prompt(
-                    self._context.safe_get_entity_name(actor_entity),
-                    world_response_plan.inspector_tag,
-                    skill_entity.get(SkillComponent).command,
-                    world_response_plan.inspector_content,
+                    self._context.safe_get_entity_name(process_data.actor_entity),
+                    process_data.plan_response.inspector_tag,
+                    process_data.skill_entity.get(SkillComponent).command,
+                    process_data.plan_response.inspector_content,
                 )
             ),
         )
@@ -484,46 +443,37 @@ class SkillWorldHarmonyInspectorSystem(ExecuteProcessor):
     ######################################################################################################################################################
     def _generate_agent_tasks(
         self,
-        skill_processors: List[InternalProcessor],
-        world_system_entity: Entity,
+        internal_process_data: List[InternalProcessData],
     ) -> List[AgentTask]:
 
-        if not world_system_entity.has(AgentConnectionFlagComponent):
-            return []
-
-        world_system_agent = self._context.agent_system.get_agent(
-            self._context.safe_get_entity_name(world_system_entity)
-        )
-        if world_system_agent is None:
-            assert False, "全局技能系统的Agent不存在"
-            return []
-
         ret: List[AgentTask] = []
-        for skill_processor in skill_processors:
+        for process_data in internal_process_data:
 
             prompt = _generate_world_harmony_inspector_prompt(
-                self._context.safe_get_entity_name(skill_processor.actor_entity),
-                skill_processor.actor_entity.get(BodyComponent).body,
+                self._context.safe_get_entity_name(process_data.actor_entity),
+                process_data.actor_entity.get(BodyComponent).body,
                 gameplay_systems.skill_system_utils.parse_skill_prop_files(
                     context=self._context,
-                    skill_entity=skill_processor.skill_entity,
-                    actor_entity=skill_processor.actor_entity,
+                    skill_entity=process_data.skill_entity,
+                    actor_entity=process_data.actor_entity,
                 ),
                 gameplay_systems.skill_system_utils.retrieve_skill_accessory_files(
                     context=self._context,
-                    skill_entity=skill_processor.skill_entity,
-                    actor_entity=skill_processor.actor_entity,
+                    skill_entity=process_data.skill_entity,
+                    actor_entity=process_data.actor_entity,
                 ),
-                skill_processor.skill_entity.get(SkillComponent).command,
+                process_data.skill_entity.get(SkillComponent).command,
             )
 
-            world_system_agent_task = AgentTask.create_process_context_without_saving(
-                world_system_agent, prompt
+            create_task = AgentTask.create_process_context_without_saving(
+                process_data.agent, prompt
             )
 
-            ret.append(world_system_agent_task)
-            assert skill_processor.agent_task is None
-            skill_processor.agent_task = world_system_agent_task
+            # 返回结果
+            ret.append(create_task)
+
+            ##记录下
+            process_data.agent_task = create_task
 
         return ret
 

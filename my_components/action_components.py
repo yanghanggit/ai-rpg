@@ -122,6 +122,7 @@ STAGE_AVAILABLE_ACTIONS_REGISTER: FrozenSet[type[Any]] = (
 # 角色交互类动作
 ACTOR_INTERACTIVE_ACTIONS_REGISTER: FrozenSet[type[Any]] = frozenset(
     {
+        DeadAction,
         PickUpPropAction,
         GoToAction,
         StealPropAction,

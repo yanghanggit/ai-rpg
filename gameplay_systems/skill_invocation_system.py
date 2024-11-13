@@ -321,6 +321,7 @@ class SkillInvocationSystem(ReactiveProcessor):
             skill_accessory_props,
             "",
             "",
+            100,
         )
 
         skill_comp = skill_entity.get(SkillComponent)

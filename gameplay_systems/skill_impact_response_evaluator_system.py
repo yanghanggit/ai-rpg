@@ -352,10 +352,10 @@ class SkillImpactResponseEvaluatorSystem(ExecuteProcessor):
         calculate_bonus: float,
     ) -> None:
 
-        total_skill_attributes[AttributesIndex.DAMAGE.value] = int(
-            total_skill_attributes[AttributesIndex.DAMAGE.value] * calculate_bonus
+        total_skill_attributes[AttributesIndex.DAMAGE] = int(
+            total_skill_attributes[AttributesIndex.DAMAGE] * calculate_bonus
         )
-        if total_skill_attributes[AttributesIndex.DAMAGE.value] == 0:
+        if total_skill_attributes[AttributesIndex.DAMAGE] == 0:
             return
 
         #
@@ -393,7 +393,7 @@ class SkillImpactResponseEvaluatorSystem(ExecuteProcessor):
         if not source_entity.has(AttributesComponent):
             return
         attr_comp = source_entity.get(AttributesComponent)
-        skill_attribute_output[AttributesIndex.DAMAGE.value] += attr_comp.attack
+        skill_attribute_output[AttributesIndex.DAMAGE] += attr_comp.attack
 
     ######################################################################################################################################################
     def _compute_skill_accessory_attributes(

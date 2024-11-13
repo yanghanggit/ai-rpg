@@ -1,6 +1,5 @@
 from typing import final
 from overrides import override
-import json
 from my_models.entity_models import (
     PropModel,
     PropInstanceModel,
@@ -31,7 +30,6 @@ class PropFile(BaseFile):
     @override
     def serialization(self) -> str:
         return self._model.model_dump_json()
-        # return json.dumps(self._model.model_dump(), ensure_ascii=False)
 
     ############################################################################################################
     @override
@@ -96,35 +94,24 @@ class PropFile(BaseFile):
         return self.prop_model.type == PropType.TYPE_SKILL
 
     ############################################################################################################
-
-    @property
-    def can_exchange(self) -> bool:
-        return (
-            self.is_weapon
-            or self.is_clothes
-            or self.is_non_consumable_item
-            or self.is_consumable_item
-        )
-
-    ############################################################################################################
     @property
     def max_hp(self) -> int:
-        return self.prop_model.attributes[AttributesIndex.MAX_HP.value]
+        return self.prop_model.attributes[AttributesIndex.MAX_HP]
 
     ############################################################################################################
     @property
     def hp(self) -> int:
-        return self.prop_model.attributes[AttributesIndex.CUR_HP.value]
+        return self.prop_model.attributes[AttributesIndex.CUR_HP]
 
     ############################################################################################################
     @property
     def attack(self) -> int:
-        return self.prop_model.attributes[AttributesIndex.DAMAGE.value]
+        return self.prop_model.attributes[AttributesIndex.DAMAGE]
 
     ############################################################################################################
     @property
     def defense(self) -> int:
-        return self.prop_model.attributes[AttributesIndex.DEFENSE.value]
+        return self.prop_model.attributes[AttributesIndex.DEFENSE]
 
     ############################################################################################################
     @property

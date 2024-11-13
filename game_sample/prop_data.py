@@ -70,8 +70,8 @@ class ExcelDataProp:
         data = cast(str, self._data[DataPropProperty.ATTRIBUTES])
         assert "," in data, f"raw_string_val: {data} is not valid."
         values = [int(attr) for attr in data.split(",")]
-        if len(values) < AttributesIndex.MAX.value:
-            values.extend([0] * (AttributesIndex.MAX.value - len(values)))
+        if len(values) < AttributesIndex.MAX:
+            values.extend([0] * (AttributesIndex.MAX - len(values)))
         return values
 
     ############################################################################################################

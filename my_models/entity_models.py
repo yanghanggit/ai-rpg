@@ -8,7 +8,7 @@ class AttributesIndex(IntEnum):
     CUR_HP = 1
     DAMAGE = 2
     DEFENSE = 3
-    MAX = 10
+    MAX = 20
 
 
 class PropInstanceModel(BaseModel):

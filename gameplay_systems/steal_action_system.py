@@ -6,8 +6,6 @@ from my_components.action_components import (
 )
 from my_components.components import (
     ActorComponent,
-    WeaponComponent,
-    ClothesComponent,
 )
 import gameplay_systems.action_utils
 from typing import final, override
@@ -22,14 +20,15 @@ from my_models.event_models import AgentEvent
 
 
 def _generate_steal_prompt(
-    from_name: str, target_name: str, prop_name: str, action_result: bool
+    source_name: str, target_name: str, prop_name: str, action_result: bool
 ) -> str:
     if not action_result:
-        return f"# {from_name} 试图从 {target_name} 盗取 {prop_name}, 但是失败了。"
-    return f"""# {from_name} 从 {target_name} 成功盗取了 {prop_name}。
+        return f"# 发生事件: {source_name} 试图从 {target_name} 盗取 {prop_name}, 但是失败了。"
+
+    return f"""# 发生事件: {source_name} 从 {target_name} 成功盗取了 {prop_name}。
 # 导致结果
 - {target_name} 现在不再拥有 {prop_name}。
-- {from_name} 现在拥有了 {prop_name}。"""
+- {source_name} 现在拥有了 {prop_name}。"""
 
 
 ####################################################################################################################################
@@ -61,91 +60,95 @@ class StealActionSystem(ReactiveProcessor):
     @override
     def react(self, entities: list[Entity]) -> None:
         for entity in entities:
-            self.handle(entity)
+            self._process_steal_action(entity)
 
     ####################################################################################################################################
-    def handle(self, entity: Entity) -> None:
+    def _process_steal_action(self, source_entity: Entity) -> None:
 
-        steal_action: StealPropAction = entity.get(StealPropAction)
+        steal_action: StealPropAction = source_entity.get(StealPropAction)
         target_and_message = (
             my_format_string.target_and_message_format_string.target_and_message_values(
                 steal_action.values
             )
         )
 
-        for tp in target_and_message:
+        for target_entity_name, prop_file_name in target_and_message:
 
             if (
                 gameplay_systems.action_utils.validate_conversation(
-                    self._context, entity, tp[0]
+                    self._context, source_entity, target_entity_name
                 )
                 != gameplay_systems.action_utils.ConversationError.VALID
             ):
                 # 不能交谈就是不能偷
                 continue
 
-            target_entity = self._context.get_entity_by_name(tp[0])
+            target_entity = self._context.get_entity_by_name(target_entity_name)
             if target_entity is None:
+                # 不存在的目标
                 continue
 
-            action_result = self.do_steal(entity, target_entity, tp[1])
-            self._context.notify_event(
-                set({entity, target_entity}),
-                AgentEvent(
-                    message=_generate_steal_prompt(
-                        self._context.safe_get_entity_name(entity),
-                        tp[0],
-                        tp[1],
-                        action_result,
-                    )
-                ),
+            # 判断文件的合理性
+            target_prop_file = self._context._file_system.get_file(
+                PropFile, target_entity_name, prop_file_name
+            )
+
+            if target_prop_file is None or not target_prop_file.is_non_consumable_item:
+                self._notify_steal_event(
+                    source_entity=source_entity,
+                    target_entity=target_entity,
+                    prop_file_name=prop_file_name,
+                    steal_action_result=False,
+                )
+                continue
+
+            ## 执行偷窃
+            self._execute_steal_action(source_entity, target_entity, target_prop_file)
+
+            ## 通知事件
+            self._notify_steal_event(
+                source_entity=target_entity,
+                target_entity=target_entity,
+                prop_file_name=prop_file_name,
+                steal_action_result=True,
             )
 
     ####################################################################################################################################
-    def do_steal(
-        self, entity: Entity, target_entity: Entity, target_prop_name: str
-    ) -> bool:
+    def _notify_steal_event(
+        self,
+        source_entity: Entity,
+        target_entity: Entity,
+        prop_file_name: str,
+        steal_action_result: bool,
+    ) -> None:
 
-        target_actor_name = self._context.safe_get_entity_name(target_entity)
-        prop_file = self._context._file_system.get_file(
-            PropFile, target_actor_name, target_prop_name
+        target_entity_name = self._context.safe_get_entity_name(target_entity)
+        self._context.notify_event(
+            set({source_entity, target_entity}),
+            AgentEvent(
+                message=_generate_steal_prompt(
+                    self._context.safe_get_entity_name(source_entity),
+                    target_entity_name,
+                    prop_file_name,
+                    steal_action_result,
+                )
+            ),
         )
 
-        if prop_file is None:
-            logger.info(
-                f"steal prop {target_prop_name} from {target_actor_name} failed"
-            )
-            return False
+    ####################################################################################################################################
+    def _execute_steal_action(
+        self, source_entity: Entity, target_entity: Entity, target_prop_file: PropFile
+    ) -> None:
 
-        if not self.can_be_stolen(target_entity, prop_file):
-            return False
-
+        target_actor_name = self._context.safe_get_entity_name(target_entity)
         gameplay_systems.file_system_utils.transfer_file(
             self._context._file_system,
             target_actor_name,
-            self._context.safe_get_entity_name(entity),
-            target_prop_name,
+            self._context.safe_get_entity_name(source_entity),
+            target_prop_file.name,
         )
 
-        return True
-
     ####################################################################################################################################
-    def can_be_stolen(self, target_entity: Entity, prop_file: PropFile) -> bool:
-
-        if not prop_file.can_exchange:
-            return False
-
-        if target_entity.has(WeaponComponent):
-            current_weapon_comp = target_entity.get(WeaponComponent)
-            if current_weapon_comp.propname == prop_file.name:
-                return False
-
-        if target_entity.has(ClothesComponent):
-            current_armor_comp = target_entity.get(ClothesComponent)
-            if current_armor_comp.propname == prop_file.name:
-                return False
-
-        return True
 
 
 ####################################################################################################################################

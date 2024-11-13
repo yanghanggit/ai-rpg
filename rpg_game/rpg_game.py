@@ -320,10 +320,10 @@ class RPGGame(BaseGame):
         actor_entity.add(
             AttributesComponent,
             actor_instance.name,
-            actor_model.attributes[AttributesIndex.MAX_HP.value],
-            actor_model.attributes[AttributesIndex.CUR_HP.value],
-            actor_model.attributes[AttributesIndex.DAMAGE.value],
-            actor_model.attributes[AttributesIndex.DEFENSE.value],
+            actor_model.attributes[AttributesIndex.MAX_HP],
+            actor_model.attributes[AttributesIndex.CUR_HP],
+            actor_model.attributes[AttributesIndex.DAMAGE],
+            actor_model.attributes[AttributesIndex.DEFENSE],
         )
 
         actor_entity.add(
@@ -456,10 +456,10 @@ class RPGGame(BaseGame):
         stage_entity.add(
             AttributesComponent,
             stage_model.name,
-            stage_model.attributes[AttributesIndex.MAX_HP.value],
-            stage_model.attributes[AttributesIndex.CUR_HP.value],
-            stage_model.attributes[AttributesIndex.DAMAGE.value],
-            stage_model.attributes[AttributesIndex.DEFENSE.value],
+            stage_model.attributes[AttributesIndex.MAX_HP],
+            stage_model.attributes[AttributesIndex.CUR_HP],
+            stage_model.attributes[AttributesIndex.DAMAGE],
+            stage_model.attributes[AttributesIndex.DEFENSE],
         )
 
         # 记录用

@@ -86,11 +86,13 @@ class PlanResponseFormatJSON:
         self._input: str = str(input_str)
         self._output: str = str(input_str)
 
+    ############################################################################################################
     def extract_json_block(self) -> "PlanResponseFormatJSON":
         if _has_json_block(self._output):
             self._output = _extract_json_block(self._output)
         return self
 
+    ############################################################################################################
     def merge_repeat(self) -> "PlanResponseFormatJSON":
         if _is_repeat(self._output):
             merge_res = _merge(self._output)
@@ -98,6 +100,9 @@ class PlanResponseFormatJSON:
                 self._output = json.dumps(merge_res, ensure_ascii=False)
         return self
 
+    ############################################################################################################
     @property
     def output(self) -> str:
         return self._output
+
+    ############################################################################################################

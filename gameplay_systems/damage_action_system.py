@@ -202,17 +202,17 @@ class DamageActionSystem(ReactiveProcessor):
             f"_reward_on_death {source_entity_name}击败了{self._context.safe_get_entity_name(target_entity)}"
         )
 
-        target_name = self._context.safe_get_entity_name(target_entity)
+        target_entity_name = self._context.safe_get_entity_name(target_entity)
         categorized_prop_files = (
             gameplay_systems.file_system_utils.categorize_files_by_type(
-                self._context._file_system, target_name
+                self._context._file_system, target_entity_name
             )
         )
 
         for prop_file in categorized_prop_files[PropType.TYPE_NON_CONSUMABLE_ITEM]:
             gameplay_systems.file_system_utils.transfer_file(
                 self._context._file_system,
-                target_name,
+                target_entity_name,
                 source_entity_name,
                 prop_file.name,
             )

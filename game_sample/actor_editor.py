@@ -92,8 +92,8 @@ class ExcelEditorActor:
         data = cast(str, self._data[EditorProperty.ATTRIBUTES])
         assert "," in data, f"raw_string_val: {data} is not valid."
         values = my_format_string.attrs_format_string.from_string_to_int_attrs(data)
-        if len(values) < AttributesIndex.MAX.value:
-            values.extend([0] * (AttributesIndex.MAX.value - len(values)))
+        if len(values) < AttributesIndex.MAX:
+            values.extend([0] * (AttributesIndex.MAX - len(values)))
         return values
 
     #################################################################################################################################

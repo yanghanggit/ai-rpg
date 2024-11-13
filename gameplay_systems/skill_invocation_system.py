@@ -3,18 +3,18 @@ from my_components.action_components import (
     SkillAction,
 )
 from my_components.components import (
-    StageComponent,
-    WeaponComponent,
     SkillComponent,
     ActorComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from typing import final, override, Set, Optional, List
+from typing import final, override, Set, List
 from extended_systems.prop_file import PropFile
 from rpg_game.rpg_game import RPGGame
 from my_models.event_models import AgentEvent
 import my_format_string.editor_prop_info_string
 from loguru import logger
+from gameplay_systems.actor_checker import ActorChecker
+from my_models.file_models import PropType
 
 ################################################################################################################################################
 
@@ -49,10 +49,10 @@ def _generate_skill_invocation_result_prompt(
 ######################################################################################################################################################
 
 
-# todo
-class InternalParser:
-    def __init__(self, command: str) -> None:
-        self._origin_command = str(command)
+@final
+class SkillCommandParser:
+    def __init__(self, origin_command: str) -> None:
+        self._origin_command = str(origin_command)
         self._target: Set[str] = set()
         self._skill_prop_files: List[PropFile] = []
         self._skill_accessory_prop_files: List[tuple[PropFile, int]] = []
@@ -64,12 +64,12 @@ class InternalParser:
 
     ######################################################################################################################################################
     @property
-    def commands(self) -> List[str]:
+    def command_queue(self) -> List[str]:
         return self._origin_command.split(" ")
 
     ######################################################################################################################################################
     @property
-    def first_skill_name(self) -> str:
+    def skill_name(self) -> str:
         if len(self._skill_prop_files) == 0:
             return ""
         return self._skill_prop_files[0].name
@@ -84,9 +84,9 @@ class InternalParser:
     ) -> None:
 
         # 添加目标
-        for split_command in self.commands:
-            self._process_command(
-                split_command=split_command,
+        for parsed_command in self.command_queue:
+            self._parse_command(
+                parsed_command=parsed_command,
                 stage_name=stage_name,
                 actors_in_stage=actors_in_stage,
                 skill_prop_files=skill_prop_files,
@@ -104,9 +104,9 @@ class InternalParser:
             self._skill_prop_files = self._skill_prop_files[:1]
 
     ######################################################################################################################################################
-    def _process_command(
+    def _parse_command(
         self,
-        split_command: str,
+        parsed_command: str,
         stage_name: str,
         actors_in_stage: Set[str],
         skill_prop_files: Set[PropFile],
@@ -114,34 +114,45 @@ class InternalParser:
     ) -> None:
 
         # 分析目标
-        if stage_name in split_command:
+        if stage_name in parsed_command:
             self._target.add(stage_name)
         else:
             for actor_name in actors_in_stage:
-                if actor_name in split_command:
+                if actor_name in parsed_command:
                     self._target.add(actor_name)
 
         # 分析使用的技能
         for skill_prop in skill_prop_files:
-            if skill_prop.name in split_command and skill_prop.is_skill:
+            assert skill_prop.is_skill
+            if skill_prop.name in parsed_command and skill_prop.is_skill:
                 self._skill_prop_files.append(skill_prop)
 
         # 分析技能配件
         for accessory_prop_file in accessory_prop_files:
-            if accessory_prop_file.name not in split_command:
+            if accessory_prop_file.name not in parsed_command:
                 continue
 
-            if accessory_prop_file.is_skill:
+            is_accessory_valid = (
+                accessory_prop_file.is_special
+                or accessory_prop_file.is_non_consumable_item
+                or accessory_prop_file.is_consumable_item
+            )
+            assert is_accessory_valid
+            if not is_accessory_valid:
                 continue
 
-            prop_name, count = (
+            prop_name, consume_count = (
                 my_format_string.editor_prop_info_string.extract_prop_name_and_count(
-                    split_command
+                    parsed_command
                 )
             )
             assert prop_name == accessory_prop_file.name
-            logger.debug(f"{split_command}, prop_name: {prop_name}, count: {count}")
-            self._skill_accessory_prop_files.append((accessory_prop_file, count))
+            logger.debug(
+                f"{parsed_command}, prop_name: {prop_name}, count: {consume_count}"
+            )
+            self._skill_accessory_prop_files.append(
+                (accessory_prop_file, consume_count)
+            )
 
     ######################################################################################################################################################
 
@@ -174,105 +185,86 @@ class SkillInvocationSystem(ReactiveProcessor):
             self._process_skill_invocation(entity)
 
     ######################################################################################################################################################
+    def _extract_origin_command_from_skill_action(self, actor_entity: Entity) -> str:
+        skill_invocation_action = actor_entity.get(SkillAction)
+        if skill_invocation_action is None or len(skill_invocation_action.values) == 0:
+            return ""
+
+        return skill_invocation_action.values[0]
+
+    ######################################################################################################################################################
     def _process_skill_invocation(self, actor_entity: Entity) -> None:
 
         # /skill 对@冀州.中山.卢奴.秘密监狱.火字十一号牢房的铁栏门上面的/腐化的木牌 使用技能/妖法.飞炎咒 消耗/A=1 消耗/B 消耗/C=2
-        skill_invocation_action = actor_entity.get(SkillAction)
-        if skill_invocation_action is None or len(skill_invocation_action.values) == 0:
-            return
-
-        skill_invocation_command = skill_invocation_action.values[0]
-
-        # 帮助类
-        skill_invocation_parser = InternalParser(skill_invocation_command)
-        skill_invocation_parser.parse(
-            self._get_current_stage_name(actor_entity),
-            self._context.get_actor_names_in_stage(actor_entity),
-            self._get_skill_prop_files(actor_entity),
-            self._get_skill_accessory_prop_files(actor_entity),
+        origin_command_from_skill_action = (
+            self._extract_origin_command_from_skill_action(actor_entity)
         )
-
-        # 判断合理性
-        if (
-            len(skill_invocation_parser._target) == 0
-            or len(skill_invocation_parser._skill_prop_files) == 0
-        ):
-            self._on_skill_invocation_result_event(
-                actor_entity, skill_invocation_command, False
+        if origin_command_from_skill_action == "":
+            logger.error("origin_command_from_skill_action is empty")
+            self._notify_skill_invocation_result(
+                actor_entity, origin_command_from_skill_action, False
             )
             # 不用继续了，没有技能或者没有目标
             return
 
-        weapon_prop = self._get_weapon_prop_file(actor_entity)
-        if weapon_prop is not None:
-            # 默认会添加当前武器
-            skill_invocation_parser._skill_accessory_prop_files.append((weapon_prop, 1))
+        # 帮助类分析整个字符串
+        check_self = ActorChecker(self._context, actor_entity)
+        skill_command_parser = SkillCommandParser(origin_command_from_skill_action)
+        skill_command_parser.parse(
+            actor_entity.get(ActorComponent).current_stage,
+            self._context.get_actor_names_in_stage(actor_entity),
+            set(check_self.get_prop_files(PropType.TYPE_SKILL)),
+            set(
+                check_self.get_prop_files(PropType.TYPE_SPECIAL)
+                + check_self.get_prop_files(PropType.TYPE_NON_CONSUMABLE_ITEM)
+                + check_self.get_prop_files(PropType.TYPE_CONSUMABLE_ITEM)
+            ),
+        )
 
-        # 检查道具的消耗数量，是否满足
+        # 判断合理性
+        if (
+            len(skill_command_parser._target) == 0
+            or len(skill_command_parser._skill_prop_files) == 0
+        ):
+            # 不用继续了，没有技能或者没有目标
+            self._notify_skill_invocation_result(
+                actor_entity, origin_command_from_skill_action, False
+            )
+            return
+
+        # 默认会添加当前武器到技能消耗配件中
+        current_weapon = check_self._current_weapon
+        if current_weapon is not None:
+
+            if current_weapon not in [
+                item[0] for item in skill_command_parser._skill_accessory_prop_files
+            ]:
+                skill_command_parser._skill_accessory_prop_files.append(
+                    (current_weapon, 1)
+                )
+
+        # 检查技能消耗的配件, 是否满足数量
         for (
             skill_accessory_prop_file_info
-        ) in skill_invocation_parser._skill_accessory_prop_files:
+        ) in skill_command_parser._skill_accessory_prop_files:
             prop_file, consume_count = skill_accessory_prop_file_info
             if prop_file.count < consume_count:
-                self._on_skill_invocation_result_event(
-                    actor_entity, skill_invocation_command, False
+                self._notify_skill_invocation_result(
+                    actor_entity, origin_command_from_skill_action, False
                 )
                 # 消耗的道具不够，不能执行。
                 return
 
         # 创建技能实体
-        self._create_skill_entity(actor_entity, skill_invocation_parser)
+        self._create_skill_entity(actor_entity, skill_command_parser)
 
         # 事件通知
-        self._on_skill_invocation_result_event(
-            actor_entity, skill_invocation_parser.origin_command, True
+        self._notify_skill_invocation_result(
+            actor_entity, skill_command_parser.origin_command, True
         )
 
     ######################################################################################################################################################
-    def _get_weapon_prop_file(self, entity: Entity) -> Optional[PropFile]:
-        if not entity.has(WeaponComponent):
-            return None
-        current_weapon_comp = entity.get(WeaponComponent)
-        return self._context._file_system.get_file(
-            PropFile, current_weapon_comp.name, current_weapon_comp.propname
-        )
-
-    ######################################################################################################################################################
-    def _get_current_stage_name(self, entity: Entity) -> str:
-        current_stage_entity = self._context.safe_get_stage_entity(entity)
-        assert current_stage_entity is not None
-        return current_stage_entity.get(StageComponent).name
-
-    ######################################################################################################################################################
-    def _get_skill_prop_files(self, entity: Entity) -> Set[PropFile]:
-
-        safe_name = self._context.safe_get_entity_name(entity)
-        skill_files = self._context._file_system.get_files(PropFile, safe_name)
-
-        ret: Set[PropFile] = set()
-        for skill_file in skill_files:
-            if not skill_file.is_skill:
-                continue
-            ret.add(skill_file)
-
-        return ret
-
-    ######################################################################################################################################################
-    def _get_skill_accessory_prop_files(self, entity: Entity) -> Set[PropFile]:
-
-        safe_name = self._context.safe_get_entity_name(entity)
-        prop_files = self._context._file_system.get_files(PropFile, safe_name)
-
-        ret: Set[PropFile] = set()
-        for prop_file in prop_files:
-            if prop_file.is_skill:
-                continue
-            ret.add(prop_file)
-
-        return ret
-
-    ######################################################################################################################################################
-    def _on_skill_invocation_result_event(
+    def _notify_skill_invocation_result(
         self, entity: Entity, command: str, processed_result: bool
     ) -> None:
 
@@ -292,7 +284,7 @@ class SkillInvocationSystem(ReactiveProcessor):
     def _create_skill_entity(
         self,
         entity: Entity,
-        skill_invocation_parser: InternalParser,
+        skill_invocation_parser: SkillCommandParser,
     ) -> Entity:
 
         # 角色名字
@@ -323,13 +315,16 @@ class SkillInvocationSystem(ReactiveProcessor):
             SkillComponent,
             actor_name,
             skill_invocation_parser.origin_command,
-            skill_invocation_parser.first_skill_name,
+            skill_invocation_parser.skill_name,
             stage_name,
             list(skill_invocation_parser._target),
             skill_accessory_props,
             "",
             "",
         )
+        
+        skill_comp = skill_entity.get(SkillComponent)
+        logger.debug(f"_create_skill_entity skill_comp: {skill_comp._asdict()}")
 
         return skill_entity
 

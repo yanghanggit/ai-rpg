@@ -361,10 +361,9 @@ class SkillWorldHarmonyInspectorSystem(ExecuteProcessor):
         for prop_file_and_count in data:
             prop_file = prop_file_and_count[0]
             consume_count = prop_file_and_count[1]
-            if prop_file.is_consumable_item:
-                extended_systems.file_system_util.consume_consumable(
-                    self._context._file_system, prop_file, consume_count
-                )
+            extended_systems.file_system_util.consume_prop(
+                self._context._file_system, prop_file, consume_count
+            )
 
     ######################################################################################################################################################
     def _add_world_harmony_inspector_data(

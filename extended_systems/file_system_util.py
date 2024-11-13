@@ -137,23 +137,16 @@ def get_categorized_files(
 
 
 ##################################################################################################################################
-def consume_consumable(
+def consume_prop(
     file_system: FileSystem, prop_file: PropFile, consume_count: int = 1
-) -> bool:
-    if not prop_file.is_consumable_item:
-        return False
+) -> None:
 
-    if prop_file.count < consume_count:
-        logger.error(f"consume_consumable: {prop_file.name} count is not enough.")
-        return False
-
-    prop_file.decrease_count(consume_count)
+    prop_file.consume(consume_count)
     if prop_file.count == 0:
         file_system.remove_file(prop_file)
-        return True
+        return
 
     file_system.write_file(prop_file)
-    return True
 
 
 ##################################################################################################################################

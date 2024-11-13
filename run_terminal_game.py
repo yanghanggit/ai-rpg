@@ -126,10 +126,10 @@ async def run_terminal_game(option: TerminalGameOption) -> None:
 
         # 有客户端才进行控制。
         player_proxy.log_recent_client_messages(option.show_client_message_count)
-        if player_proxy.over:
-            # 如果死了就退出。
-            new_game._will_exit = True
-            continue
+        # if player_proxy.is_over:
+        #     # 如果死了就退出。
+        #     new_game._will_exit = True
+        #     continue
 
         if rpg_game.rpg_game_helper.is_player_turn(new_game, player_proxy):
             # 是你的输入回合

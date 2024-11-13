@@ -11,6 +11,7 @@ from my_models.file_models import (
     PropFileModel,
 )
 from extended_systems.base_file import BaseFile
+from loguru import logger
 
 
 @final
@@ -130,11 +131,10 @@ class PropFile(BaseFile):
         return self.prop_instance_model.count
 
     ############################################################################################################
-    def increase_count(self, amount: int) -> None:
-        self.prop_instance_model.count += amount
-
-    ############################################################################################################
-    def decrease_count(self, amount: int) -> None:
+    def consume(self, amount: int) -> None:
+        if not self.is_consumable_item:
+            logger.debug(f"道具:{self.name}不是消耗品, 减少数量就略过")
+            return
         self.prop_instance_model.count -= amount
         if self.prop_instance_model.count < 0:
             self.prop_instance_model.count = 0

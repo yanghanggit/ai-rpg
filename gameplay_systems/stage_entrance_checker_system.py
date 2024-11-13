@@ -283,14 +283,6 @@ class StageEntranceCheckerSystem(ReactiveProcessor):
         )
 
     ###############################################################################################################################################
-    # def get_actor_appearance_prompt(self, actor_entity: Entity) -> str:
-    #     assert actor_entity.has(ActorComponent)
-    #     if not actor_entity.has(AppearanceComponent):
-    #         return ""
-    #     appearance_comp = actor_entity.get(AppearanceComponent)
-    #     return appearance_comp.appearance
-
-    ###############################################################################################################################################
     def get_actor_props(self, actor_entity: Entity) -> List[PropFile]:
 
         check_self = ActorChecker(self._context, actor_entity)

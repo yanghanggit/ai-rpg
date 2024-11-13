@@ -14,6 +14,7 @@ from my_components.action_components import (
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from rpg_game.rpg_game import RPGGame
 from typing import FrozenSet, Any
+from loguru import logger
 
 
 @final
@@ -27,16 +28,16 @@ class DeadActionSystem(ExecuteProcessor):
     @override
     def execute(self) -> None:
         # 处理血量为0的情况
-        self.handle_zero_hp_attributes()
+        self._update_entities_to_dead_state()
         # 移除后续动作
-        self.remove_actions(ACTOR_INTERACTIVE_ACTIONS_REGISTER)
+        self._clear_actions(ACTOR_INTERACTIVE_ACTIONS_REGISTER)
         # 玩家死亡就游戏结束
-        self.handle_player_dead()
+        self._process_player_death()
         # 添加销毁
-        self.add_destory()
+        self._add_destory()
 
     ########################################################################################################################################################################
-    def handle_zero_hp_attributes(self) -> None:
+    def _update_entities_to_dead_state(self) -> None:
         entities = self._context.get_group(
             Matcher(all_of=[AttributesComponent], none_of=[DeadAction])
         ).entities
@@ -46,7 +47,7 @@ class DeadActionSystem(ExecuteProcessor):
                 entity.add(DeadAction, rpg_attributes.name, [])
 
     ########################################################################################################################################################################
-    def remove_actions(self, action_comps: FrozenSet[type[Any]]) -> None:
+    def _clear_actions(self, action_comps: FrozenSet[type[Any]]) -> None:
         actor_entities = self._context.get_group(
             Matcher(
                 all_of=[ActorComponent, DeadAction],
@@ -60,7 +61,7 @@ class DeadActionSystem(ExecuteProcessor):
                     entity.remove(action_class)
 
     ########################################################################################################################################################################
-    def handle_player_dead(self) -> None:
+    def _process_player_death(self) -> None:
         player_entities = self._context.get_group(
             Matcher(DeadAction, PlayerComponent)
         ).entities
@@ -68,12 +69,12 @@ class DeadActionSystem(ExecuteProcessor):
             player_comp = player_entity.get(PlayerComponent)
             player_proxy = self._game.get_player(player_comp.name)
             if player_proxy is None:
-                assert False, f"没有找到玩家 = {player_comp.name}!!!!!!"
+                logger.error(f"player {player_comp.name} not found")
                 continue
             player_proxy.on_dead()
 
     ########################################################################################################################################################################
-    def add_destory(self) -> None:
+    def _add_destory(self) -> None:
         entities = self._context.get_group(Matcher(DeadAction)).entities
         for entity in entities:
             dead_caction = entity.get(DeadAction)

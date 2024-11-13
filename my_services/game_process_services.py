@@ -349,7 +349,7 @@ async def execute(request_data: ExecuteRequest) -> Dict[str, Any]:
         ).model_dump()
 
     # 人物死亡了，不能推动游戏
-    if player_proxy.over:
+    if player_proxy.is_over:
         return ExecuteResponse(
             user_name=request_data.user_name, error=105, message="player_proxy.over"
         ).model_dump()
@@ -372,8 +372,8 @@ async def execute(request_data: ExecuteRequest) -> Dict[str, Any]:
     if not user_room.game._will_exit:
         await user_room.game.a_execute()
 
-    if player_proxy.over:
-        user_room.game._will_exit = True
+    # if player_proxy.is_over:
+    #     user_room.game._will_exit = True
 
     turn_player_actors = rpg_game.rpg_game_helper.get_turn_player_actors(user_room.game)
 

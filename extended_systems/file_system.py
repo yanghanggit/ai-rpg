@@ -77,13 +77,11 @@ class FileSystem:
     def add_file(self, file: BaseFile) -> bool:
 
         if isinstance(file, PropFile):
-
-            if file.is_consumable_item:
-                exist_file = self.get_file(PropFile, file._owner_name, file._name)
-                if exist_file is not None:
-                    assert exist_file.is_consumable_item
-                    exist_file.increase_count(file.count)
-                    return True
+            # 如果已经存在，就合并数量。
+            exist_file = self.get_file(PropFile, file._owner_name, file._name)
+            if exist_file is not None:
+                exist_file.prop_instance_model.count += file.count
+                return True
 
             return self._add_file_2_base_file_dict(
                 cast(Dict[str, List[BaseFile]], self._prop_files), file

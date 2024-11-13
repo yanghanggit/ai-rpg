@@ -22,9 +22,9 @@ class HandlePlayerInputSystem(ExecuteProcessor):
 
             player_entity = self._context.get_player_entity(player_proxy.name)
             if player_entity is None:
-                assert (
-                    False
-                ), f"player_entity is None, player_proxy.name={player_proxy.name}"
+                logger.warning(
+                    f"player_entity is None, player_proxy.name={player_proxy.name}"
+                )
                 continue
 
             if not player_entity.has(PlanningAllowedComponent):

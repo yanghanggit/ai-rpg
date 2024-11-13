@@ -7,6 +7,7 @@ from enum import StrEnum, unique
 class GenSystemPromptSymbol(StrEnum):
     NAME = "<%name>"
     SYSTEM_PROMPT = "<%sys_prompt>"
+    BODY = "<%body>"
     CONVERSATION_EXAMPLE = "<%conversation_example>"
 
 

@@ -104,6 +104,9 @@ class ExcelDataActor:
             configuration.GenSystemPromptSymbol.SYSTEM_PROMPT, self.system_prompt
         )
         gen_prompt = gen_prompt.replace(
+            configuration.GenSystemPromptSymbol.BODY, self.body
+        )
+        gen_prompt = gen_prompt.replace(
             configuration.GenSystemPromptSymbol.CONVERSATION_EXAMPLE,
             self.conversation_example,
         )

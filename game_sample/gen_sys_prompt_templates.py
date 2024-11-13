@@ -55,8 +55,11 @@ ACTOR_SYS_PROMPT_TEMPLATE = f"""# {configuration.GenSystemPromptSymbol.NAME}
 ## 游戏规则设定
 {game_rules_setting}
 
-## 角色设定
+## 你的角色设定
 {configuration.GenSystemPromptSymbol.SYSTEM_PROMPT}
+
+## 你的初始外观描述
+{configuration.GenSystemPromptSymbol.BODY}
 
 ## 你的说话风格与语气
 {configuration.GenSystemPromptSymbol.CONVERSATION_EXAMPLE}

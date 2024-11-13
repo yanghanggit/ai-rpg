@@ -10,7 +10,7 @@ from my_components.components import (
     DestroyComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from typing import final, override, List, Dict, Set, Optional
+from typing import final, override, List, Dict, Set
 from loguru import logger
 from extended_systems.prop_file import (
     PropFile,

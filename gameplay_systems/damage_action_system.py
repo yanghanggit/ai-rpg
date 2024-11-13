@@ -16,6 +16,7 @@ from my_models.entity_models import AttributesIndex
 import extended_systems.file_system_util
 from my_models.file_models import PropType
 from my_models.event_models import AgentEvent
+from loguru import logger
 
 
 ################################################################################################################################################
@@ -33,6 +34,11 @@ def _generate_damage_event_prompt(
 ) -> str:
     health_percent = max(0, (target_current_hp - damage) / target_max_hp * 100)
     return f"# {actor_name} 对 {target_name} 的行动造成了{damage}点伤害, 当前 {target_name} 的生命值剩余 {health_percent}%。"
+
+
+################################################################################################################################################
+################################################################################################################################################
+################################################################################################################################################
 
 
 @final
@@ -61,81 +67,75 @@ class DamageActionSystem(ReactiveProcessor):
     @override
     def react(self, entities: list[Entity]) -> None:
         for entity in entities:
-            self.handle(entity)
+            self._process_damage_action(entity)
 
     ######################################################################################################################################################
-    def handle(self, target_entity: Entity) -> None:
+    def _process_damage_action(self, target_entity: Entity) -> None:
 
         damage_action = target_entity.get(DamageAction)
         if len(damage_action.values) == 0:
             return
 
         for val in damage_action.values:
-            target_and_message = my_format_string.target_and_message_format_string.parse_target_and_message(
-                val
+            source_entity_name, attribute_values_string = (
+                my_format_string.target_and_message_format_string.parse_target_and_message(
+                    val
+                )
             )
-            if target_and_message[0] is None or target_and_message[1] is None:
+            if source_entity_name is None or attribute_values_string is None:
                 continue
 
-            from_name = target_and_message[0]
-            find_entity = self._context.get_entity_by_name(from_name)
-            if find_entity is None:
-                assert find_entity is not None, f"找不到实体:{from_name}"
-                continue
-
-            attrs_array = my_format_string.attrs_format_string.from_string_to_int_attrs(
-                target_and_message[1]
+            attribute_values = (
+                my_format_string.attrs_format_string.from_string_to_int_attrs(
+                    attribute_values_string
+                )
             )
+
             assert (
-                len(attrs_array) > AttributesIndex.DAMAGE.value
-            ), f"属性数组长度不够:{attrs_array}"
-            if len(attrs_array) > AttributesIndex.DAMAGE.value:
-                self.handle_target_damage(
-                    from_name, target_entity, attrs_array[AttributesIndex.DAMAGE.value]
+                len(attribute_values) > AttributesIndex.DAMAGE
+            ), f"属性数组长度不够:{attribute_values}"
+
+            if len(attribute_values) > AttributesIndex.DAMAGE:
+
+                self._apply_damage_to_target(
+                    source_entity_name,
+                    target_entity,
+                    attribute_values[AttributesIndex.DAMAGE],
                 )
 
     ######################################################################################################################################################
-    def handle_target_damage(
-        self, from_name: str, target_entity: Entity, input_damage: int
+    def _apply_damage_to_target(
+        self, source_entity_name: str, target_entity: Entity, applied_damage: int
     ) -> None:
         # 目标拿出来
-        target_rpg_comp = target_entity.get(AttributesComponent)
+        target_attr_comp = target_entity.get(AttributesComponent)
 
         # 简单的战斗计算，简单的血减掉伤害
-        hp = target_rpg_comp.hp
+        current_health = target_attr_comp.hp
 
         # 必须控制在0和最大值之间
-        final_damage = input_damage - self.calculate_defense(target_entity)
-        if final_damage < 0:
-            final_damage = 0
+        effective_damage = applied_damage - self._compute_entity_defense(target_entity)
+        if effective_damage < 0:
+            effective_damage = 0
 
-        left_hp = hp - final_damage
-        left_hp = max(0, min(left_hp, target_rpg_comp.maxhp))
+        remaining_health = current_health - effective_damage
+        remaining_health = max(0, min(remaining_health, target_attr_comp.maxhp))
 
         # 结果修改
         target_entity.replace(
             AttributesComponent,
-            target_rpg_comp.name,
-            target_rpg_comp.maxhp,
-            left_hp,
-            target_rpg_comp.attack,
-            target_rpg_comp.defense,
+            target_attr_comp.name,
+            target_attr_comp.maxhp,
+            remaining_health,
+            target_attr_comp.attack,
+            target_attr_comp.defense,
         )
 
         ##死亡是关键
-        is_dead = left_hp <= 0
+        is_dead = remaining_health <= 0
 
         ## 死后处理大流程，step最后——死亡组件系统必须要添加
         if is_dead:
-
-            # 添加动作
-            # if not target_entity.has(DeadAction):
-            #     # 复制一个，不用以前的，怕GC不掉
-            #     target_entity.add(
-            #         DeadAction,
-            #         self._context.safe_get_entity_name(target_entity),
-            #         [],
-            #     )
             target_entity.replace(
                 DeadAction,
                 self._context.safe_get_entity_name(target_entity),
@@ -143,14 +143,20 @@ class DamageActionSystem(ReactiveProcessor):
             )
 
             # 死亡夺取
-            self.loot_on_death(from_name, target_entity)
+            self._reward_on_death(source_entity_name, target_entity)
 
         ## 导演系统，单独处理，有旧的代码
-        self.on_damage_result_event(from_name, target_entity, final_damage, is_dead)
+        self._notify_damage_outcome(
+            source_entity_name, target_entity, effective_damage, is_dead
+        )
 
     ######################################################################################################################################################
-    def on_damage_result_event(
-        self, from_name: str, target_entity: Entity, damage: int, is_dead: bool
+    def _notify_damage_outcome(
+        self,
+        source_entity_name: str,
+        target_entity: Entity,
+        effective_damage: int,
+        is_dead: bool,
     ) -> None:
         pass
 
@@ -164,28 +170,33 @@ class DamageActionSystem(ReactiveProcessor):
             # 直接打死。
             self._context.broadcast_event_in_stage(
                 current_stage_entity,
-                AgentEvent(message=_generate_kill_event_prompt(from_name, target_name)),
+                AgentEvent(
+                    message=_generate_kill_event_prompt(source_entity_name, target_name)
+                ),
             )
+            return
 
-        else:
-            # 没有打死。对于场景的伤害不要通知了，场景设定目前是打不死的。而且怕影响对话上下文。
-            if not target_entity.has(StageComponent):
-                rpg_attr_comp = target_entity.get(AttributesComponent)
-                self._context.broadcast_event_in_stage(
-                    current_stage_entity,
-                    AgentEvent(
-                        message=_generate_damage_event_prompt(
-                            from_name,
-                            target_name,
-                            damage,
-                            rpg_attr_comp.hp,
-                            rpg_attr_comp.maxhp,
-                        )
-                    ),
+        if target_entity.has(StageComponent):
+            logger.warning(f"场景{target_name}受到了伤害，但是不会死亡。不需要通知了")
+            return
+
+        rpg_attr_comp = target_entity.get(AttributesComponent)
+        self._context.broadcast_event_in_stage(
+            current_stage_entity,
+            AgentEvent(
+                message=_generate_damage_event_prompt(
+                    source_entity_name,
+                    target_name,
+                    effective_damage,
+                    rpg_attr_comp.hp,
+                    rpg_attr_comp.maxhp,
                 )
+            ),
+        )
 
     ######################################################################################################################################################
-    def loot_on_death(self, from_name: str, target_entity: Entity) -> None:
+    def _reward_on_death(self, source_entity_name: str, target_entity: Entity) -> None:
+
         target_name = self._context.safe_get_entity_name(target_entity)
         categorized_prop_files = (
             extended_systems.file_system_util.get_categorized_files(
@@ -193,34 +204,34 @@ class DamageActionSystem(ReactiveProcessor):
             )
         )
 
-        non_consumable_items = categorized_prop_files[PropType.TYPE_NON_CONSUMABLE_ITEM]
-        for prop_file in non_consumable_items:
+        for prop_file in categorized_prop_files[PropType.TYPE_NON_CONSUMABLE_ITEM]:
             extended_systems.file_system_util.give_prop_file(
-                self._context._file_system, target_name, from_name, prop_file.name
+                self._context._file_system,
+                target_name,
+                source_entity_name,
+                prop_file.name,
             )
 
     ######################################################################################################################################################
-    def calculate_defense(self, entity: Entity) -> int:
+    def _compute_entity_defense(self, entity: Entity) -> int:
         # 输出的防御力
-        final: int = 0
+        total_defense: int = 0
 
         # 基础防御力
-        rpg_attr_comp = entity.get(AttributesComponent)
-        final += rpg_attr_comp.defense
+        attr_comp = entity.get(AttributesComponent)
+        total_defense += attr_comp.defense
 
         # 计算衣服带来的防御力
         if entity.has(ClothesComponent):
-
             clothes_comp = entity.get(ClothesComponent)
-
             current_clothe_prop_file = self._context._file_system.get_file(
                 PropFile, clothes_comp.name, clothes_comp.propname
             )
             assert current_clothe_prop_file is not None
             if current_clothe_prop_file is not None:
-                final += current_clothe_prop_file.defense
+                total_defense += current_clothe_prop_file.defense
 
-        return final
+        return total_defense
 
 
 ######################################################################################################################################################

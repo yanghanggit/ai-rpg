@@ -11,7 +11,7 @@ from my_components.components import (
     SkillComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from typing import final, override, List, Optional, Dict, Set
+from typing import final, override, List, Optional, Set
 import gameplay_systems.builtin_prompt_util as builtin_prompt_util
 from my_agent.agent_task import AgentTask
 from my_agent.agent_plan import AgentPlanResponse
@@ -21,6 +21,8 @@ from rpg_game.rpg_game import RPGGame
 from my_models.entity_models import AttributesIndex
 from my_models.event_models import AgentEvent
 import gameplay_systems.skill_system_utils
+from my_agent.lang_serve_agent import LangServeAgent
+from loguru import logger
 
 ################################################################################################################################################
 
@@ -96,11 +98,13 @@ class InternalPlanResponse(AgentPlanResponse):
 
 ################################################################################################################################################
 @dataclass
-class InternalProcessor:
-    actor_entity: Entity
+class InternalProcessData:
+    source_entity: Entity
     skill_entity: Entity
-    agent_task: Optional[AgentTask]
-    task_response: Dict[str, InternalPlanResponse] = {}
+    target_entities: List[Entity]
+    agents: List[LangServeAgent]
+    agent_tasks: List[AgentTask]
+    task_responses: List[InternalPlanResponse]
 
 
 ################################################################################################################################################
@@ -128,84 +132,140 @@ class SkillImpactResponseEvaluatorSystem(ExecuteProcessor):
         ).entities.copy()
 
         # 组成成方便的数据结构
-        skill_processors = self._initialize_processors(skill_entities)
-        for processor in skill_processors:
-            await self._process_skill_impact(processor)
+        internal_process_data = self._initialize_internal_process_data(skill_entities)
+        for process_data in internal_process_data:
+            await self._process_skill_impact(process_data)
 
     ######################################################################################################################################################
-    def _initialize_processors(
+    def _initialize_internal_process_data(
         self, skill_entities: Set[Entity]
-    ) -> List[InternalProcessor]:
-        ret: List[InternalProcessor] = []
+    ) -> List[InternalProcessData]:
+
+        ret: List[InternalProcessData] = []
+
         for skill_entity in skill_entities:
-            skill_comp = skill_entity.get(SkillComponent)
-            actor_entity = self._context.get_actor_entity(skill_comp.name)
-            assert (
-                actor_entity is not None
-            ), f"actor_entity {skill_comp.name} not found."
-            ret.append(InternalProcessor(actor_entity, skill_entity, None))
+            create_internal_process_data = self._create_interal_process_data(
+                skill_entity
+            )
+            if create_internal_process_data is None:
+                continue
+            ret.append(create_internal_process_data)
+
         return ret
 
     ######################################################################################################################################################
-    async def _process_skill_impact(self, skill_processor: InternalProcessor) -> None:
+    def _create_interal_process_data(
+        self, skill_entity: Entity
+    ) -> Optional[InternalProcessData]:
+        skill_comp = skill_entity.get(SkillComponent)
+        if len(skill_comp.targets) < 1:
+            return None
 
-        skill_comp = skill_processor.skill_entity.get(SkillComponent)
+        source_entity = self._context.get_actor_entity(skill_comp.name)
+        assert source_entity is not None, f"actor_entity {skill_comp.name} not found."
+
+        if source_entity is None:
+            return None
+
+        ret = InternalProcessData(
+            source_entity=source_entity,
+            skill_entity=skill_entity,
+            target_entities=[],
+            agents=[],
+            agent_tasks=[],
+            task_responses=[],
+        )
+
         for target_name in skill_comp.targets:
 
             target_entity = self._context.get_entity_by_name(target_name)
+            assert target_entity is not None, f"target_entity {target_name} not found."
             if target_entity is None:
                 continue
 
-            skill_impact_response_task = self._generate_skill_impact_response_task(
-                skill_entity=skill_processor.skill_entity,
-                source_entity=skill_processor.actor_entity,
-                target_entity=target_entity,
-            )
-            if skill_impact_response_task is None:
-                self._on_skill_target_agent_off_line_event(
-                    skill_entity=skill_processor.skill_entity,
-                    source_entity=skill_processor.actor_entity,
-                    target_entity=target_entity,
-                )
+            agent = self._context.agent_system.get_agent(target_name)
+            assert agent is not None, f"agent {target_name} not found."
+            if agent is None:
                 continue
 
-            if skill_impact_response_task.request() is None:
-                self._on_skill_target_agent_off_line_event(
-                    skill_entity=skill_processor.skill_entity,
-                    source_entity=skill_processor.actor_entity,
+            # 目标
+            ret.target_entities.append(target_entity)
+
+            # 目标的agent
+            ret.agents.append(agent)
+
+            # 空的任务
+            ret.agent_tasks.append(
+                AgentTask.create(
+                    agent,
+                    builtin_prompt_util.replace_you(skill_comp.command, agent._name),
+                )
+            )
+
+            # 空的回复
+            ret.task_responses.append(InternalPlanResponse(agent._name, ""))
+
+        # 最后的检查，出问题了就返回None
+        if len(ret.target_entities) == 0:
+            return None
+
+        return ret
+
+    ######################################################################################################################################################
+    async def _process_skill_impact(
+        self, internal_process_data: InternalProcessData
+    ) -> None:
+
+        for data_index in range(len(internal_process_data.target_entities)):
+
+            target_entity = internal_process_data.target_entities[data_index]
+            target_agent = internal_process_data.agents[data_index]
+            agent_task = internal_process_data.agent_tasks[data_index] = (
+                self._generate_skill_impact_response_task(
+                    internal_process_data,
+                    target_entity=target_entity,
+                    target_agent=target_agent,
+                )
+            )
+
+            # 这里单步上行
+            if agent_task.request() is None:
+                self._notify_skill_target_agent_offline(
+                    internal_process_data,
                     target_entity=target_entity,
                 )
                 continue
 
             # 加入伤害计算的逻辑
             self._evaluate_and_apply_action(
-                skill_entity=skill_processor.skill_entity,
-                source_entity=skill_processor.actor_entity,
+                internal_process_data,
                 target_entity=target_entity,
             )
 
             # 场景事件
-            response_plan = InternalPlanResponse(
-                skill_impact_response_task.agent_name,
-                skill_impact_response_task.response_content,
+            task_response = internal_process_data.task_responses[data_index] = (
+                InternalPlanResponse(
+                    agent_task.agent_name,
+                    agent_task.response_content,
+                )
             )
-            self._on_broadcast_skill_impact_response_event(
-                skill_entity=skill_processor.skill_entity,
-                source_entity=skill_processor.actor_entity,
+            self._notify_skill_impact_outcome(
+                internal_process_data,
                 target_entity=target_entity,
-                impact_result=response_plan.impact_result,
+                impact_result=task_response.impact_result,
             )
 
     ######################################################################################################################################################
-    def _on_broadcast_skill_impact_response_event(
+    def _notify_skill_impact_outcome(
         self,
-        skill_entity: Entity,
-        source_entity: Entity,
+        internal_process_data: InternalProcessData,
         target_entity: Entity,
         impact_result: str,
     ) -> None:
 
-        current_stage_entity = self._context.safe_get_stage_entity(source_entity)
+        current_stage_entity = self._context.safe_get_stage_entity(
+            internal_process_data.source_entity
+        )
         if current_stage_entity is None:
             return
 
@@ -213,9 +273,13 @@ class SkillImpactResponseEvaluatorSystem(ExecuteProcessor):
             current_stage_entity,
             AgentEvent(
                 message=_generate_broadcast_skill_impact_response_prompt(
-                    self._context.safe_get_entity_name(source_entity),
+                    self._context.safe_get_entity_name(
+                        internal_process_data.source_entity
+                    ),
                     self._context.safe_get_entity_name(target_entity),
-                    skill_entity.get(SkillComponent).world_harmony_inspector_content,
+                    internal_process_data.skill_entity.get(
+                        SkillComponent
+                    ).world_harmony_inspector_content,
                     impact_result,
                 )
             ),
@@ -224,145 +288,204 @@ class SkillImpactResponseEvaluatorSystem(ExecuteProcessor):
 
     ######################################################################################################################################################
     def _evaluate_and_apply_action(
-        self, skill_entity: Entity, source_entity: Entity, target_entity: Entity
+        self, internal_process_data: InternalProcessData, target_entity: Entity
     ) -> None:
 
         # 拿到原始的
-        calculate_attrs: List[int] = self._calculate_skill_attributes(
-            skill_entity=skill_entity, source_entity=source_entity
+        total_skill_attributes: List[int] = self._summarize_skill_attributes(
+            internal_process_data,
         )
+
+        if len(total_skill_attributes) == 0:
+            assert False, f"total_skill_attributes {total_skill_attributes} not found."
+            return
+
         # 补充上发起者的攻击值
-        self._calculate_attr_component(source_entity, target_entity, calculate_attrs)
-        # 补充上所有参与的道具的属性
-        self._calculate_skill_accessory_props(
-            skill_entity=skill_entity,
-            source_entity=source_entity,
-            target_entity=target_entity,
-            out_put_skill_attrs=calculate_attrs,
+        self._compute_entity_attributes(
+            internal_process_data.source_entity, target_entity, total_skill_attributes
         )
+
+        # 补充上所有参与的道具的属性
+        self._compute_skill_accessory_attributes(
+            internal_process_data,
+            target_entity=target_entity,
+            skill_attribute_outputs=total_skill_attributes,
+        )
+
         # 最终添加到目标的伤害
-        self._apply_damage(
-            source_entity,
+        self._calculate_and_apply_damage(
+            internal_process_data.source_entity,
             target_entity,
-            calculate_attrs,
-            self._determine_damage_bonus(
-                skill_entity=skill_entity, source_entity=source_entity
+            total_skill_attributes,
+            self._calculate_bonus(
+                internal_process_data,
+            ),
+        )
+
+        # 添加到最终的治疗
+        self._calculate_and_apply_heal(
+            internal_process_data.source_entity,
+            target_entity,
+            total_skill_attributes,
+            self._calculate_bonus(
+                internal_process_data,
             ),
         )
 
     ######################################################################################################################################################
-    def _apply_damage(
+    def _calculate_and_apply_heal(
         self,
         source_entity: Entity,
         target_entity: Entity,
-        skill_attrs: List[int],
-        buff: float = 1.0,
+        total_skill_attributes: List[int],
+        calculate_bonus: float,
+    ) -> None:
+        assert False, "heal not implemented"
+        logger("heal not implemented")
+
+    ######################################################################################################################################################
+    def _calculate_and_apply_damage(
+        self,
+        source_entity: Entity,
+        target_entity: Entity,
+        total_skill_attributes: List[int],
+        calculate_bonus: float,
     ) -> None:
 
-        skill_attrs[AttributesIndex.DAMAGE.value] = int(
-            skill_attrs[AttributesIndex.DAMAGE.value] * buff
+        total_skill_attributes[AttributesIndex.DAMAGE.value] = int(
+            total_skill_attributes[AttributesIndex.DAMAGE.value] * calculate_bonus
         )
-
-        if skill_attrs[AttributesIndex.DAMAGE.value] == 0:
+        if total_skill_attributes[AttributesIndex.DAMAGE.value] == 0:
             return
 
-        target_entity.replace(
-            DamageAction,
-            self._context.safe_get_entity_name(target_entity),
-            [],
-        )
-
-        target_entity.get(DamageAction).values.append(
+        #
+        formatted_damage_message = (
             my_format_string.target_and_message_format_string.make_target_and_message(
                 self._context.safe_get_entity_name(source_entity),
                 my_format_string.attrs_format_string.from_int_attrs_to_string(
-                    skill_attrs
+                    total_skill_attributes
                 ),
             )
         )
 
+        if not target_entity.has(DamageAction):
+            target_entity.replace(
+                DamageAction,
+                self._context.safe_get_entity_name(target_entity),
+                [formatted_damage_message],
+            )
+        else:
+
+            damage_action = target_entity.get(DamageAction)
+            damage_action.values.append(formatted_damage_message)
+            target_entity.replace(
+                DamageAction, damage_action.name, damage_action.values
+            )
+
     ######################################################################################################################################################
-    def _calculate_attr_component(
+    def _compute_entity_attributes(
         self,
         source_entity: Entity,
         target_entity: Entity,
-        out_put_skill_attrs: List[int],
+        skill_attribute_output: List[int],
     ) -> None:
 
         if not source_entity.has(AttributesComponent):
             return
-
-        rpg_attr_comp = source_entity.get(AttributesComponent)
-        out_put_skill_attrs[AttributesIndex.DAMAGE.value] += rpg_attr_comp.attack
+        attr_comp = source_entity.get(AttributesComponent)
+        skill_attribute_output[AttributesIndex.DAMAGE.value] += attr_comp.attack
 
     ######################################################################################################################################################
-    def _calculate_skill_accessory_props(
+    def _compute_skill_accessory_attributes(
         self,
-        skill_entity: Entity,
-        source_entity: Entity,
+        internal_process_data: InternalProcessData,
         target_entity: Entity,
-        out_put_skill_attrs: List[int],
+        skill_attribute_outputs: List[int],
     ) -> None:
 
+        if len(skill_attribute_outputs) == 0:
+            return
+
         data = gameplay_systems.skill_system_utils.parse_skill_accessory_prop_files(
-            context=self._context, skill_entity=skill_entity, actor_entity=source_entity
+            context=self._context,
+            skill_entity=internal_process_data.skill_entity,
+            actor_entity=internal_process_data.source_entity,
         )
-        for prop_file_and_count_data in data:
-            for i in range(len(out_put_skill_attrs)):
-                prop_file = prop_file_and_count_data[0]
-                cunsume_count = prop_file_and_count_data[1]
-                out_put_skill_attrs[i] += (
-                    prop_file.prop_model.attributes[i] * cunsume_count
-                )
+
+        for prop_file_with_count in data:
+            for attr_index in range(len(skill_attribute_outputs)):
+                prop_file = prop_file_with_count[0]
+                cunsume_count = prop_file_with_count[1]
+                skill_attribute_outputs[attr_index] += prop_file.prop_model.attributes[
+                    attr_index
+                ]
 
     ######################################################################################################################################################
-    def _calculate_skill_attributes(
-        self, skill_entity: Entity, source_entity: Entity
+    def _summarize_skill_attributes(
+        self, internal_process_data: InternalProcessData
     ) -> List[int]:
-        final_attr: List[int] = []
-        for (
-            skill_prop_file
-        ) in gameplay_systems.skill_system_utils.parse_skill_prop_files(
-            context=self._context, skill_entity=skill_entity, actor_entity=source_entity
-        ):
-            if len(final_attr) == 0:
-                final_attr = skill_prop_file.prop_model.attributes
+
+        skill_prop_files = gameplay_systems.skill_system_utils.parse_skill_prop_files(
+            context=self._context,
+            skill_entity=internal_process_data.skill_entity,
+            actor_entity=internal_process_data.source_entity,
+        )
+        assert (
+            len(skill_prop_files) > 0
+        ), f"skill_prop_files {skill_prop_files} not found."
+        if len(skill_prop_files) == 0:
+            return []
+
+        accumulated_attributes: List[int] = []
+        for skill_prop_file in skill_prop_files:
+            if len(accumulated_attributes) == 0:
+                accumulated_attributes = skill_prop_file.prop_model.attributes.copy()
             else:
-                for i in range(len(final_attr)):
-                    final_attr[i] += skill_prop_file.prop_model.attributes[i]
-        return final_attr
+                for i in range(len(accumulated_attributes)):
+                    accumulated_attributes[i] += skill_prop_file.prop_model.attributes[
+                        i
+                    ]
+        return accumulated_attributes
 
     ######################################################################################################################################################
-    def _on_skill_target_agent_off_line_event(
-        self, skill_entity: Entity, source_entity: Entity, target_entity: Entity
+    def _notify_skill_target_agent_offline(
+        self, internal_process_data: InternalProcessData, target_entity: Entity
     ) -> None:
 
         self._context.notify_event(
-            set({source_entity}),
+            set({internal_process_data.source_entity}),
             AgentEvent(
                 message=_generate_offline_prompt(
-                    self._context.safe_get_entity_name(source_entity),
+                    self._context.safe_get_entity_name(
+                        internal_process_data.source_entity
+                    ),
                     self._context.safe_get_entity_name(target_entity),
-                    skill_entity.get(SkillComponent).world_harmony_inspector_content,
+                    internal_process_data.skill_entity.get(
+                        SkillComponent
+                    ).world_harmony_inspector_content,
                 )
             ),
         )
 
     ######################################################################################################################################################
     def _generate_skill_impact_response_task(
-        self, skill_entity: Entity, source_entity: Entity, target_entity: Entity
-    ) -> Optional[AgentTask]:
+        self,
+        internal_process_data: InternalProcessData,
+        target_entity: Entity,
+        target_agent: LangServeAgent,
+    ) -> AgentTask:
 
         target_agent_name = self._context.safe_get_entity_name(target_entity)
-        target_agent = self._context.agent_system.get_agent(target_agent_name)
-        if target_agent is None:
-            return None
 
         prompt = _generate_skill_impact_response_prompt(
-            self._context.safe_get_entity_name(source_entity),
+            self._context.safe_get_entity_name(internal_process_data.source_entity),
             target_agent_name,
-            skill_entity.get(SkillComponent).world_harmony_inspector_content,
-            skill_entity.get(SkillComponent).world_harmony_inspector_tag,
+            internal_process_data.skill_entity.get(
+                SkillComponent
+            ).world_harmony_inspector_content,
+            internal_process_data.skill_entity.get(
+                SkillComponent
+            ).world_harmony_inspector_tag,
         )
 
         return AgentTask.create(
@@ -371,16 +494,12 @@ class SkillImpactResponseEvaluatorSystem(ExecuteProcessor):
         )
 
     ######################################################################################################################################################
-    def _determine_damage_bonus(
-        self, skill_entity: Entity, source_entity: Entity
-    ) -> float:
+    def _calculate_bonus(self, internal_process_data: InternalProcessData) -> float:
+        skill_comp = internal_process_data.skill_entity.get(SkillComponent)
+        value = skill_comp.world_harmony_inspector_value / 100
+        if value < 0:
+            value = 0
 
-        if (
-            skill_entity.get(SkillComponent).world_harmony_inspector_tag
-            == builtin_prompt_util.ConstantSkillPrompt.CRITICAL_SUCCESS
-        ):
-            return 1.5  # 先写死，测试的时候再改。todo
-
-        return 1.0  # 默认的。
+        return value
 
     ######################################################################################################################################################

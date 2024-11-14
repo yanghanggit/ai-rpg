@@ -7,7 +7,7 @@ from my_components.components import (
     ActorComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from typing import final, override, Set, List
+from typing import final, override, Set, List, Dict
 from extended_systems.prop_file import PropFile
 from rpg_game.rpg_game import RPGGame
 from my_models.event_models import AgentEvent
@@ -16,9 +16,8 @@ from loguru import logger
 from gameplay_systems.actor_entity_utils import ActorStatusEvaluator
 from my_models.file_models import PropType
 
+
 ################################################################################################################################################
-
-
 def _generate_skill_invocation_result_prompt(
     actor_name: str, command: str, result: bool
 ) -> str:
@@ -44,6 +43,20 @@ def _generate_skill_invocation_result_prompt(
     return prompt2
 
 
+################################################################################################################################################
+def _generate_format_command_prompt(
+    actor_name: str, skill_name: str, targets: List[str], accessory_props: List[str]
+) -> str:
+    return f"""# 发生事件: {actor_name} 使用技能 {skill_name}
+## 目标: 
+{"\n".join(targets)}
+## 配置道具:
+{"\n".join(accessory_props)}"""
+
+
+################################################################################################################################################
+
+
 ######################################################################################################################################################
 ######################################################################################################################################################
 ######################################################################################################################################################
@@ -51,16 +64,12 @@ def _generate_skill_invocation_result_prompt(
 
 @final
 class SkillCommandParser:
-    def __init__(self, origin_command: str) -> None:
+    def __init__(self, actor_name: str, origin_command: str) -> None:
+        self._actor_name = actor_name
         self._origin_command = str(origin_command)
-        self._target: Set[str] = set()
+        self._targets: Dict[str, str] = {}
         self._skill_prop_files: List[PropFile] = []
         self._skill_accessory_prop_files: List[tuple[PropFile, int]] = []
-
-    ######################################################################################################################################################
-    @property
-    def origin_command(self) -> str:
-        return self._origin_command
 
     ######################################################################################################################################################
     @property
@@ -94,10 +103,8 @@ class SkillCommandParser:
             )
 
         # 有场景就保留场景
-        if stage_name in self._target:
-            # 有场景就保留场景
-            self._target.clear()
-            self._target.add(stage_name)
+        if stage_name in self._targets:
+            self._targets = {stage_name: self._targets[stage_name]}
 
         if len(self._skill_prop_files) > 1:
             # 只要一个技能
@@ -115,11 +122,11 @@ class SkillCommandParser:
 
         # 分析目标
         if stage_name in parsed_command:
-            self._target.add(stage_name)
+            self._targets.setdefault(stage_name, parsed_command)
         else:
             for actor_name in actors_in_stage:
                 if actor_name in parsed_command:
-                    self._target.add(actor_name)
+                    self._targets.setdefault(actor_name, parsed_command)
 
         # 分析使用的技能
         for skill_prop in skill_prop_files:
@@ -155,6 +162,32 @@ class SkillCommandParser:
             )
 
     ######################################################################################################################################################
+    @property
+    def format_command(self) -> str:
+        if len(self._targets) == 0 or len(self._skill_prop_files) == 0:
+            return ""
+
+        formatted_skill_name: str = f"""/{self._skill_prop_files[0].name}"""
+        formatted_target_names: List[str] = [
+            f"@{target}" for target in self._targets.keys()
+        ]
+
+        skill_accessories_list: List[str] = []
+        for skill_accessory_prop_file_info in self._skill_accessory_prop_files:
+            skill_accessory_prop_file, consume_count = skill_accessory_prop_file_info
+            skill_accessories_list.append(
+                my_format_string.editor_prop_info_string.generate_prop_name_and_count_format_string(
+                    skill_accessory_prop_file.name, consume_count
+                )
+            )
+
+        # 对@冀州.中山.卢奴.秘密监狱.火字十一号牢房的铁栏门上面的/腐化的木牌 使用技能/妖法.飞炎咒 消耗/A=1 消耗/B 消耗/C=2
+        return _generate_format_command_prompt(
+            actor_name=self._actor_name,
+            skill_name=formatted_skill_name,
+            targets=formatted_target_names,
+            accessory_props=skill_accessories_list,
+        )
 
 
 ######################################################################################################################################################
@@ -209,7 +242,10 @@ class SkillInvocationSystem(ReactiveProcessor):
 
         # 帮助类分析整个字符串
         actor_status_evaluator = ActorStatusEvaluator(self._context, actor_entity)
-        skill_command_parser = SkillCommandParser(origin_command_from_skill_action)
+        skill_command_parser = SkillCommandParser(
+            actor_name=actor_status_evaluator.actor_name,
+            origin_command=origin_command_from_skill_action,
+        )
         skill_command_parser.parse(
             actor_entity.get(ActorComponent).current_stage,
             self._context.get_actor_names_in_stage(actor_entity),
@@ -219,7 +255,7 @@ class SkillInvocationSystem(ReactiveProcessor):
 
         # 判断合理性
         if (
-            len(skill_command_parser._target) == 0
+            len(skill_command_parser._targets) == 0
             or len(skill_command_parser._skill_prop_files) == 0
         ):
             # 不用继续了，没有技能或者没有目标
@@ -256,7 +292,7 @@ class SkillInvocationSystem(ReactiveProcessor):
 
         # 事件通知
         self._notify_skill_invocation_result(
-            actor_entity, skill_command_parser.origin_command, True
+            actor_entity, origin_command_from_skill_action, True
         )
 
     ######################################################################################################################################################
@@ -310,10 +346,10 @@ class SkillInvocationSystem(ReactiveProcessor):
         skill_entity.add(
             SkillComponent,
             actor_name,
-            skill_invocation_parser.origin_command,
+            skill_invocation_parser.format_command,
             skill_invocation_parser.skill_name,
             stage_name,
-            list(skill_invocation_parser._target),
+            list(skill_invocation_parser._targets),
             skill_accessory_props,
             "",
             "",

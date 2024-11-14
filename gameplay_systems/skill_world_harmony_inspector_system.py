@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from entitas import Matcher, ExecuteProcessor, Entity  # type: ignore
 from my_components.action_components import (
     TagAction,
-    BroadcastAction,
+    AnnounceAction,
 )
 from my_components.components import (
     BodyComponent,
@@ -147,11 +147,11 @@ def _generate_world_harmony_inspector_prompt(
 
 ### 请根据下面的示例, 确保你的输出严格遵守相应的结构。
 {{
-  "{BroadcastAction.__name__}":["输出结果"],
+  "{AnnounceAction.__name__}":["输出结果"],
   "{TagAction.__name__}":["{builtin_prompt_utils.ConstantSkillPrompt.CRITICAL_SUCCESS}或{builtin_prompt_utils.ConstantSkillPrompt.SUCCESS}或{builtin_prompt_utils.ConstantSkillPrompt.FAILURE}"]
 }}
 
-### 关于 {BroadcastAction.__name__} 的输出结果的规则如下
+### 关于 {AnnounceAction.__name__} 的输出结果的规则如下
 - 如果你的判断是 {builtin_prompt_utils.ConstantSkillPrompt.SUCCESS} 或 {builtin_prompt_utils.ConstantSkillPrompt.CRITICAL_SUCCESS}。
     - 必须包含如下信息：{actor_name}的名字（技能使用者），释放的技能的描述，技能释放的目标的名字，配置的道具的信息。
     - 做出逻辑合理的句子描述（可以适当润色），来表达 {actor_name} 使用技能的使用过程。但不要判断技能命中目标之后，目标的可能反应。
@@ -183,7 +183,7 @@ class InternalPlanResponse(AgentPlanResponse):
 
     @property
     def inspector_content(self) -> str:
-        return self._concatenate_values(BroadcastAction.__name__)
+        return self._concatenate_values(AnnounceAction.__name__)
 
     @property
     def inspector_value(self) -> int:

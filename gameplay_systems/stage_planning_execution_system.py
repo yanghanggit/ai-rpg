@@ -8,7 +8,7 @@ from my_components.components import (
 )
 from my_components.action_components import (
     STAGE_AVAILABLE_ACTIONS_REGISTER,
-    # RemovePropAction,
+    # StagePropDestructionAction,
     StageNarrateAction,
     TagAction,
 )

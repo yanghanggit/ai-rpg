@@ -2,7 +2,7 @@ from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: igno
 from overrides import override
 from my_components.action_components import (
     SpeakAction,
-    BroadcastAction,
+    AnnounceAction,
     WhisperAction,
 )
 from my_components.components import (
@@ -19,12 +19,12 @@ from rpg_game.rpg_game import RPGGame
 
 ################################################################################################################################################
 def _generate_conversation_check_prompt(
-    input_broadcast_content: str,
+    input_announce_content: str,
     input_speak_content_list: List[str],
     input_whisper_content_list: List[str],
 ) -> str:
 
-    broadcast_prompt = input_broadcast_content != "" and input_broadcast_content or "无"
+    announce_prompt = input_announce_content != "" and input_announce_content or "无"
     speak_content_prompt = (
         len(input_speak_content_list) > 0
         and "\n".join(input_speak_content_list)
@@ -38,8 +38,8 @@ def _generate_conversation_check_prompt(
 
     prompt = f"""# 玩家输入了如下对话类型事件，请你检查
 
-## {BroadcastAction.__name__}
-{broadcast_prompt}
+## {AnnounceAction.__name__}
+{announce_prompt}
 ## {SpeakAction.__name__}
 {speak_content_prompt}
 ## {WhisperAction.__name__}
@@ -66,7 +66,7 @@ class PreConversationActionSystem(ReactiveProcessor):
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
         return {
             Matcher(
-                any_of=[SpeakAction, BroadcastAction, WhisperAction]
+                any_of=[SpeakAction, AnnounceAction, WhisperAction]
             ): GroupEvent.ADDED
         }
 
@@ -93,22 +93,22 @@ class PreConversationActionSystem(ReactiveProcessor):
         if agent is None:
             return
 
-        broadcast_content = self.get_broadcast_content(player_entity)
+        announce_content = self.get_announce_content(player_entity)
         speak_content_list = self.get_speak_content(player_entity)
         whisper_content_list = self.get_whisper_content(player_entity)
 
         prompt = _generate_conversation_check_prompt(
-            broadcast_content, speak_content_list, whisper_content_list
+            announce_content, speak_content_list, whisper_content_list
         )
 
         tasks[safe_name] = AgentTask.create_standalone(agent, prompt)
 
     #################################################################################################################################################
-    def get_broadcast_content(self, player_entity: Entity) -> str:
-        if not player_entity.has(BroadcastAction):
+    def get_announce_content(self, player_entity: Entity) -> str:
+        if not player_entity.has(AnnounceAction):
             return ""
-        broadcast_action = player_entity.get(BroadcastAction)
-        return " ".join(broadcast_action.values)
+        announce_action = player_entity.get(AnnounceAction)
+        return " ".join(announce_action.values)
 
     #################################################################################################################################################
     def get_speak_content(self, player_entity: Entity) -> List[str]:
@@ -143,7 +143,7 @@ class PreConversationActionSystem(ReactiveProcessor):
         actor_entities = self._context.get_group(
             Matcher(
                 all_of=[ActorComponent, PlayerComponent],
-                any_of=[SpeakAction, BroadcastAction, WhisperAction],
+                any_of=[SpeakAction, AnnounceAction, WhisperAction],
             )
         ).entities.copy()
 
@@ -155,8 +155,8 @@ class PreConversationActionSystem(ReactiveProcessor):
         if player_entity.has(SpeakAction):
             player_entity.remove(SpeakAction)
 
-        if player_entity.has(BroadcastAction):
-            player_entity.remove(BroadcastAction)
+        if player_entity.has(AnnounceAction):
+            player_entity.remove(AnnounceAction)
 
         if player_entity.has(WhisperAction):
             player_entity.remove(WhisperAction)

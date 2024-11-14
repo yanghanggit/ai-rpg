@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from entitas import Matcher, ExecuteProcessor, Entity  # type: ignore
 from my_components.action_components import (
     DamageAction,
-    BroadcastAction,
+    AnnounceAction,
     TagAction,
 )
 from my_components.components import (
@@ -48,8 +48,8 @@ def _generate_skill_impact_response_prompt(
 
 ## 输出要求
 - 请遵循 输出格式指南。
-- 返回结果只带如下的键: {BroadcastAction.__name__} 和 {TagAction.__name__}。
-- {BroadcastAction.__name__} 的内容格式要求为: "{target_name}对技能的反馈与更新后的状态描述"。
+- 返回结果只带如下的键: {AnnounceAction.__name__} 和 {TagAction.__name__}。
+- {AnnounceAction.__name__} 的内容格式要求为: "{target_name}对技能的反馈与更新后的状态描述"。
 """
 
     return prompt
@@ -93,7 +93,7 @@ class InternalPlanResponse(AgentPlanResponse):
 
     @property
     def impact_result(self) -> str:
-        return self._concatenate_values(BroadcastAction.__name__)
+        return self._concatenate_values(AnnounceAction.__name__)
 
 
 ################################################################################################################################################

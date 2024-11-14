@@ -1,7 +1,7 @@
 from rpg_game.base_game import BaseGame
 from loguru import logger
 from my_components.action_components import (
-    BroadcastAction,
+    AnnounceAction,
     SpeakAction,
     GoToAction,
     WhisperAction,
@@ -51,10 +51,10 @@ class PlayerGoTo(PlayerCommand):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class PlayerBroadcast(PlayerCommand):
+class PlayerAnnounce(PlayerCommand):
 
     @property
-    def broadcast_content(self) -> str:
+    def announce_content(self) -> str:
         return self.split_command(self._input_val, self._name)
 
     @override
@@ -68,16 +68,14 @@ class PlayerBroadcast(PlayerCommand):
 
         actor_comp = player_entity.get(ActorComponent)
         player_entity.add(
-            BroadcastAction,
+            AnnounceAction,
             actor_comp.name,
-            [self.broadcast_content],
+            [self.announce_content],
         )
 
         self.add_player_planning_message(
             player_entity,
-            self.make_simple_message(
-                BroadcastAction.__name__, [self.broadcast_content]
-            ),
+            self.make_simple_message(AnnounceAction.__name__, [self.announce_content]),
             rpg_game,
         )
 

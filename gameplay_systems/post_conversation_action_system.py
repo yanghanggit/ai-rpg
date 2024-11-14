@@ -3,7 +3,7 @@ from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: igno
 from overrides import override
 from my_components.action_components import (
     SpeakAction,
-    BroadcastAction,
+    AnnounceAction,
     WhisperAction,
 )
 from my_components.components import PlayerComponent, ActorComponent
@@ -24,7 +24,7 @@ class PostConversationActionSystem(ReactiveProcessor):
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
         return {
             Matcher(
-                any_of=[SpeakAction, BroadcastAction, WhisperAction]
+                any_of=[SpeakAction, AnnounceAction, WhisperAction]
             ): GroupEvent.ADDED
         }
 

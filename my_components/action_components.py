@@ -18,9 +18,9 @@ class MindVoiceAction(ActionComponent):
     pass
 
 
-# 场景内广播
+# 场景内广播 AnnounceAction
 @final
-class BroadcastAction(ActionComponent):
+class AnnounceAction(ActionComponent):
     pass
 
 
@@ -98,12 +98,12 @@ class EquipPropAction(ActionComponent):
 
 # 场景内销毁道具
 @final
-class RemovePropAction(ActionComponent):
+class StagePropDestructionAction(ActionComponent):
     pass
 
 
 CONVERSATION_ACTIONS_REGISTER: FrozenSet[type[Any]] = frozenset(
-    {TagAction, MindVoiceAction, SpeakAction, BroadcastAction, WhisperAction}
+    {TagAction, MindVoiceAction, SpeakAction, AnnounceAction, WhisperAction}
 )
 
 # 场景可以用的所有动作
@@ -111,7 +111,7 @@ STAGE_AVAILABLE_ACTIONS_REGISTER: FrozenSet[type[Any]] = (
     frozenset(
         {
             StageNarrateAction,
-            RemovePropAction,
+            StagePropDestructionAction,
             DamageAction,
         }
     )

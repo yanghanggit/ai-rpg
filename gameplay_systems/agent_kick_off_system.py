@@ -92,13 +92,13 @@ class AgentKickOffSystem(ExecuteProcessor):
         self._game: RPGGame = rpg_game
 
     ######################################################################################################################################################
-    def _create_tasks(self) -> Dict[str, AgentTask]:
+    def _initialize_tasks(self) -> Dict[str, AgentTask]:
 
         ret: Dict[str, AgentTask] = {}
 
-        world_tasks = self._create_world_system_tasks()
-        stage_tasks = self._create_stage_tasks()
-        actor_tasks = self._create_actor_tasks()
+        world_tasks = self._initialize_world_system_tasks()
+        stage_tasks = self._initialize_stage_tasks()
+        actor_tasks = self._initialize_actor_tasks()
 
         ret.update(world_tasks)
         ret.update(stage_tasks)
@@ -115,7 +115,7 @@ class AgentKickOffSystem(ExecuteProcessor):
     @override
     async def a_execute1(self) -> None:
 
-        tasks: Dict[str, AgentTask] = self._create_tasks()
+        tasks: Dict[str, AgentTask] = self._initialize_tasks()
         if len(tasks) == 0:
             return
 
@@ -123,13 +123,13 @@ class AgentKickOffSystem(ExecuteProcessor):
         await AgentTask.gather([task for task in tasks.values()])
 
         # 处理结果
-        self._handle_responses(tasks)
+        self._process_agent_tasks(tasks)
 
         # 初始化更新外观的action
-        self._initialize_appearance_update_action(tasks)
+        self._initialize_appearance_update_action()
 
     ######################################################################################################################################################
-    def _create_world_system_tasks(self) -> Dict[str, AgentTask]:
+    def _initialize_world_system_tasks(self) -> Dict[str, AgentTask]:
 
         ret: Dict[str, AgentTask] = {}
 
@@ -162,7 +162,7 @@ class AgentKickOffSystem(ExecuteProcessor):
         return ret
 
     ######################################################################################################################################################
-    def _create_stage_tasks(self) -> Dict[str, AgentTask]:
+    def _initialize_stage_tasks(self) -> Dict[str, AgentTask]:
 
         ret: Dict[str, AgentTask] = {}
 
@@ -201,7 +201,7 @@ class AgentKickOffSystem(ExecuteProcessor):
         return ret
 
     ######################################################################################################################################################
-    def _create_actor_tasks(self) -> Dict[str, AgentTask]:
+    def _initialize_actor_tasks(self) -> Dict[str, AgentTask]:
 
         ret: Dict[str, AgentTask] = {}
 
@@ -237,7 +237,7 @@ class AgentKickOffSystem(ExecuteProcessor):
         return ret
 
     ######################################################################################################################################################
-    def _handle_responses(self, tasks: Dict[str, AgentTask]) -> None:
+    def _process_agent_tasks(self, tasks: Dict[str, AgentTask]) -> None:
 
         for agent_name, agent_task in tasks.items():
 
@@ -299,7 +299,7 @@ class AgentKickOffSystem(ExecuteProcessor):
         return frozenset()
 
     ######################################################################################################################################################
-    def _initialize_appearance_update_action(self, tasks: Dict[str, AgentTask]) -> None:
+    def _initialize_appearance_update_action(self) -> None:
 
         actor_entities = self._context.get_group(
             Matcher(
@@ -311,11 +311,6 @@ class AgentKickOffSystem(ExecuteProcessor):
         ).entities
 
         for actor_entity in actor_entities:
-
-            safe_name = self._context.safe_get_entity_name(actor_entity)
-            if safe_name not in tasks:
-                continue
-
             actor_entity.replace(
                 UpdateAppearanceAction,
                 self._context.safe_get_entity_name(actor_entity),

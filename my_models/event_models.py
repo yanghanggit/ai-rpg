@@ -34,7 +34,7 @@ class PreStageExitEvent(AgentEvent):
 
 # 广播内容事件
 @final
-class BroadcastEvent(AgentEvent):
+class AnnounceEvent(AgentEvent):
     announcer_name: str
     stage_name: str
     content: str

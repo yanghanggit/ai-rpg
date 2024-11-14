@@ -1,12 +1,13 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: ignore
 from typing import final, override
-from my_components.action_components import BroadcastAction
+from my_components.action_components import AnnounceAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from rpg_game.rpg_game import RPGGame
-from my_models.event_models import BroadcastEvent
+from my_models.event_models import AnnounceEvent
 
 
-def _generate_broadcast_prompt(speaker_name: str, stage_name: str, content: str) -> str:
+####################################################################################################
+def _generate_announce_prompt(speaker_name: str, stage_name: str, content: str) -> str:
     return f"# 发生事件: {speaker_name} 对 {stage_name} 里的所有角色说: {content}"
 
 
@@ -16,7 +17,7 @@ def _generate_broadcast_prompt(speaker_name: str, stage_name: str, content: str)
 
 
 @final
-class BroadcastActionSystem(ReactiveProcessor):
+class AnnounceActionSystem(ReactiveProcessor):
 
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         super().__init__(context)
@@ -26,37 +27,37 @@ class BroadcastActionSystem(ReactiveProcessor):
     ####################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(BroadcastAction): GroupEvent.ADDED}
+        return {Matcher(AnnounceAction): GroupEvent.ADDED}
 
     ####################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(BroadcastAction)
+        return entity.has(AnnounceAction)
 
     ####################################################################################################
     @override
     def react(self, entities: list[Entity]) -> None:
         for entity in entities:
-            self._process_broadcast_action(entity)
+            self._process_announce_action(entity)
 
     ####################################################################################################
-    def _process_broadcast_action(self, entity: Entity) -> None:
+    def _process_announce_action(self, entity: Entity) -> None:
         stage_entity = self._context.safe_get_stage_entity(entity)
         if stage_entity is None:
             return
 
-        broadcast_action = entity.get(BroadcastAction)
+        announce_action = entity.get(AnnounceAction)
         stage_name = self._context.safe_get_entity_name(stage_entity)
-        content = " ".join(broadcast_action.values)
+        content = " ".join(announce_action.values)
         self._context.broadcast_event_in_stage(
             stage_entity,
-            BroadcastEvent(
-                message=_generate_broadcast_prompt(
-                    broadcast_action.name,
+            AnnounceEvent(
+                message=_generate_announce_prompt(
+                    announce_action.name,
                     stage_name,
                     content,
                 ),
-                announcer_name=broadcast_action.name,
+                announcer_name=announce_action.name,
                 stage_name=stage_name,
                 content=content,
             ),

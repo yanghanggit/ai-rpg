@@ -32,7 +32,7 @@ class RPGEntitasProcessors(Processors):
 
         from gameplay_systems.destroy_entity_system import DestroyEntitySystem
         from gameplay_systems.tag_action_system import TagActionSystem
-        from gameplay_systems.broadcast_action_system import BroadcastActionSystem
+        from gameplay_systems.announce_action_system import AnnounceActionSystem
         from gameplay_systems.whisper_action_system import WhisperActionSystem
         from gameplay_systems.pick_up_prop_action_system import PickUpPropActionSystem
         from gameplay_systems.mind_voice_action_system import MindVoiceActionSystem
@@ -89,8 +89,8 @@ class RPGEntitasProcessors(Processors):
             TerminalPlayerTipsSystem,
         )
         from gameplay_systems.equip_prop_action_system import EquipPropActionSystem
-        from gameplay_systems.remove_prop_action_system import (
-            RemovePropActionSystem,
+        from gameplay_systems.stage_prop_destruction_action_system import (
+            StagePropDestructionActionSystem,
         )
         from gameplay_systems.skill_readiness_validator_system import (
             SkillReadinessValidatorSystem,
@@ -148,7 +148,7 @@ class RPGEntitasProcessors(Processors):
         processors.add(TagActionSystem(context, rpg_game))
         processors.add(MindVoiceActionSystem(context, rpg_game))
         processors.add(WhisperActionSystem(context, rpg_game))
-        processors.add(BroadcastActionSystem(context, rpg_game))
+        processors.add(AnnounceActionSystem(context, rpg_game))
         processors.add(SpeakActionSystem(context, rpg_game))
         processors.add(PostConversationActionSystem(context, rpg_game))
 
@@ -168,7 +168,7 @@ class RPGEntitasProcessors(Processors):
         )  ## 战斗类行为产生结果可能有死亡，死亡之后，后面的行为都不可以做。
 
         # 交互类的行为（交换数据），在死亡之后，因为死了就不能执行
-        processors.add(RemovePropActionSystem(context, rpg_game))
+        processors.add(StagePropDestructionActionSystem(context, rpg_game))
         processors.add(PickUpPropActionSystem(context, rpg_game))
         processors.add(StealActionSystem(context, rpg_game))
         processors.add(GivePropActionSystem(context, rpg_game))

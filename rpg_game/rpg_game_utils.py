@@ -31,7 +31,7 @@ from gameplay_systems.actor_entity_utils import ActorStatusEvaluator
 import gameplay_systems.actor_planning_execution_system
 from player.player_command import (
     PlayerGoTo,
-    PlayerBroadcast,
+    PlayerAnnounce,
     PlayerSpeak,
     PlayerWhisper,
     PlayerPickUpProp,
@@ -370,8 +370,8 @@ def add_player_command(
     if "/goto" in usr_input:
         player_proxy.add_command(PlayerGoTo("/goto", usr_input))
 
-    elif "/broadcast" in usr_input:
-        player_proxy.add_command(PlayerBroadcast("/broadcast", usr_input))
+    elif "/announce" in usr_input:
+        player_proxy.add_command(PlayerAnnounce("/announce", usr_input))
 
     elif "/speak" in usr_input:
         player_proxy.add_command(PlayerSpeak("/speak", usr_input))

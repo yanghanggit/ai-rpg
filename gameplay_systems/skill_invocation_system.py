@@ -47,10 +47,10 @@ def _generate_skill_invocation_result_prompt(
 def _generate_format_command_prompt(
     actor_name: str, skill_name: str, targets: List[str], accessory_props: List[str]
 ) -> str:
-    return f"""# 发生事件: {actor_name} 使用技能 {skill_name}
-## 目标: 
+    return f"""{actor_name} 使用技能 {skill_name}
+目标: 
 {"\n".join(targets)}
-## 配置道具:
+配置道具:
 {"\n".join(accessory_props)}"""
 
 

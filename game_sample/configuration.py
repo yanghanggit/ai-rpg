@@ -4,7 +4,7 @@ from enum import StrEnum, unique
 
 # 文件内容替换的标记
 @unique
-class GenSystemPromptSymbol(StrEnum):
+class SystemPromptReplaceSymbol(StrEnum):
     NAME = "<%name>"
     SYSTEM_PROMPT = "<%sys_prompt>"
     BODY = "<%body>"
@@ -13,7 +13,7 @@ class GenSystemPromptSymbol(StrEnum):
 
 # 文件内容替换的标记
 @unique
-class GenAgentAppContentSymbol(StrEnum):
+class AgentAppReplaceSymbol(StrEnum):
     SYSTEM_PROMPT_CONTENT = "<%SYSTEM_PROMPT_CONTENT>"
     RAG_CONTENT = "<%RAG_CONTENT>"
     PORT = "<%PORT>"

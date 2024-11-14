@@ -98,16 +98,16 @@ class ExcelDataActor:
     def gen_sys_prompt(self, sys_prompt_template: str) -> str:
         gen_prompt = str(sys_prompt_template)
         gen_prompt = gen_prompt.replace(
-            configuration.GenSystemPromptSymbol.NAME, self.name
+            configuration.SystemPromptReplaceSymbol.NAME, self.name
         )
         gen_prompt = gen_prompt.replace(
-            configuration.GenSystemPromptSymbol.SYSTEM_PROMPT, self.system_prompt
+            configuration.SystemPromptReplaceSymbol.SYSTEM_PROMPT, self.system_prompt
         )
         gen_prompt = gen_prompt.replace(
-            configuration.GenSystemPromptSymbol.BODY, self.body
+            configuration.SystemPromptReplaceSymbol.BODY, self.body
         )
         gen_prompt = gen_prompt.replace(
-            configuration.GenSystemPromptSymbol.CONVERSATION_EXAMPLE,
+            configuration.SystemPromptReplaceSymbol.CONVERSATION_EXAMPLE,
             self.conversation_example,
         )
         self._gen_system_prompt = gen_prompt
@@ -117,18 +117,18 @@ class ExcelDataActor:
     def gen_agentpy(self, agent_py_template: str) -> str:
         gen_py = str(agent_py_template)
         gen_py = gen_py.replace(
-            configuration.GenAgentAppContentSymbol.SYSTEM_PROMPT_CONTENT,
+            configuration.AgentAppReplaceSymbol.SYSTEM_PROMPT_CONTENT,
             self._gen_system_prompt,
         )
 
         gen_py = gen_py.replace(
-            configuration.GenAgentAppContentSymbol.RAG_CONTENT,
+            configuration.AgentAppReplaceSymbol.RAG_CONTENT,
             game_sample.utils.read_text_file(configuration.GAME_SAMPLE_DIR / self.rag),
         )
         gen_py = gen_py.replace(
-            configuration.GenAgentAppContentSymbol.PORT, str(self.port)
+            configuration.AgentAppReplaceSymbol.PORT, str(self.port)
         )
-        gen_py = gen_py.replace(configuration.GenAgentAppContentSymbol.API, self.api)
+        gen_py = gen_py.replace(configuration.AgentAppReplaceSymbol.API, self.api)
         self._gen_agentpy = gen_py
         return self._gen_agentpy
 

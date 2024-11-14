@@ -73,10 +73,6 @@ def _generate_stage_kick_off_prompt(
 ## 你的初始设定
 {kick_off_message}
 
-## {StageNarrateAction.__name__} 场景描述生成规则
-- 不要对场景内角色未发生的对话，行为或心理活动进行任何猜测与推理。
-- 注意！在输出内容中，移除所有与 场景内的角色 相关的描述。
-
 ## 输出要求
 - 请遵循 输出格式指南。
 - 返回结果只包含:{StageNarrateAction.__name__} 和 {TagAction.__name__}。"""

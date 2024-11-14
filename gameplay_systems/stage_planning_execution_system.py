@@ -8,7 +8,7 @@ from my_components.components import (
 )
 from my_components.action_components import (
     STAGE_AVAILABLE_ACTIONS_REGISTER,
-    RemovePropAction,
+    # RemovePropAction,
     StageNarrateAction,
     TagAction,
 )
@@ -53,14 +53,6 @@ def _generate_stage_plan_prompt(
 
 ## 场景内的角色
 {actors_in_stage_prompt}
-
-## 你的计划生成规则
-- 结合以上信息，决定你的下一步行动。
-- 如果 场景内的道具 产生损毁与破坏等事件 (请回顾你的历史消息)，则使用 {RemovePropAction.__name__} 将其移除，以此来保证你的逻辑的连贯与合理性。
-
-## {StageNarrateAction.__name__} 场景描述生成规则
-- 不要对场景内角色未发生的对话，行为或心理活动进行任何猜测与推理。
-- 注意！在输出内容中，移除所有与 场景内的角色 相关的描述。
 
 ## 输出要求
 - 请遵循 输出格式指南。

@@ -284,7 +284,7 @@ class SkillWorldHarmonyInspectorSystem(ExecuteProcessor):
                     actor_entity=actor_entity,
                     skill_entity=skill_entity,
                     agent=world_system_agent,
-                    agent_task=AgentTask.create_standalone(world_system_agent, ""),
+                    agent_task=AgentTask.create_without_context(world_system_agent, ""),
                     plan_response=InternalPlanResponse(skill_comp.name, ""),
                 )
             )
@@ -465,7 +465,7 @@ class SkillWorldHarmonyInspectorSystem(ExecuteProcessor):
                 process_data.skill_entity.get(SkillComponent).command,
             )
 
-            create_task = AgentTask.create_process_context_without_saving(
+            create_task = AgentTask.create_with_input_only_context(
                 process_data.agent, prompt
             )
 

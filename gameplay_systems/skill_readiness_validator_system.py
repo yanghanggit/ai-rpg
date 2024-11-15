@@ -178,7 +178,7 @@ class SkillReadinessValidatorSystem(ExecuteProcessor):
                     actor_entity=actor_entity,
                     skill_entity=skill_entity,
                     agent=agent,
-                    agent_task=AgentTask.create_standalone(agent=agent, prompt=""),
+                    agent_task=AgentTask.create_without_context(agent=agent, prompt=""),
                 )
             )
 
@@ -267,11 +267,13 @@ class SkillReadinessValidatorSystem(ExecuteProcessor):
                 ),
             )
 
-            process_data.agent_task = ret[process_data.agent._name] = AgentTask.create(
-                process_data.agent,
-                builtin_prompt_utils.replace_you(
-                    skill_readiness_prompt, process_data.agent._name
-                ),
+            process_data.agent_task = ret[process_data.agent._name] = (
+                AgentTask.create_with_full_context(
+                    process_data.agent,
+                    builtin_prompt_utils.replace_you(
+                        skill_readiness_prompt, process_data.agent._name
+                    ),
+                )
             )
 
         return ret

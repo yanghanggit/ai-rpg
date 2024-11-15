@@ -175,7 +175,7 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
                 assert False, f"StagePlanningSystem: agent is None, {stage_comp.name}"
                 continue
 
-            requested_agent_tasks[stage_comp.name] = AgentTask.create(
+            requested_agent_tasks[stage_comp.name] = AgentTask.create_with_full_context(
                 agent,
                 _generate_stage_plan_prompt(
                     self._context._file_system.get_files(

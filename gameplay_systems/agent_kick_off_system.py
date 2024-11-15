@@ -154,7 +154,7 @@ class AgentKickOffSystem(ExecuteProcessor):
                 len(agent._chat_history) == 0
             ), f"chat_history is not empty, {agent._chat_history}"
 
-            ret[world_comp.name] = AgentTask.create(
+            ret[world_comp.name] = AgentTask.create_with_full_context(
                 agent,
                 _generate_world_system_kick_off_prompt(),
             )
@@ -196,7 +196,9 @@ class AgentKickOffSystem(ExecuteProcessor):
                 self._context.get_actor_names_in_stage(stage_entity),
             )
 
-            ret[stage_comp.name] = AgentTask.create(agent, kick_off_prompt)
+            ret[stage_comp.name] = AgentTask.create_with_full_context(
+                agent, kick_off_prompt
+            )
 
         return ret
 
@@ -227,7 +229,7 @@ class AgentKickOffSystem(ExecuteProcessor):
             ), f"chat_history is not empty, {agent._chat_history}"
 
             kick_off_comp = actor_entity.get(KickOffContentComponent)
-            ret[actor_comp.name] = AgentTask.create(
+            ret[actor_comp.name] = AgentTask.create_with_full_context(
                 agent,
                 _generate_actor_kick_off_prompt(
                     kick_off_comp.content,

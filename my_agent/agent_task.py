@@ -29,7 +29,7 @@ class AgentTask:
 
     ################################################################################################################################################################################
     @staticmethod
-    def create(
+    def create_with_full_context(
         agent: LangServeAgent,
         prompt: str,
     ) -> "AgentTask":
@@ -43,12 +43,12 @@ class AgentTask:
 
     ################################################################################################################################################################################
     @staticmethod
-    def create_standalone(agent: LangServeAgent, prompt: str) -> "AgentTask":
+    def create_without_context(agent: LangServeAgent, prompt: str) -> "AgentTask":
         return AgentTask(agent, prompt, ChatHistoryOperationOptions.NONE)
 
     ################################################################################################################################################################################
     @staticmethod
-    def create_process_context_without_saving(
+    def create_with_input_only_context(
         agent: LangServeAgent, prompt: str
     ) -> "AgentTask":
         return AgentTask(agent, prompt, ChatHistoryOperationOptions.INPUT_CHAT_HISTORY)

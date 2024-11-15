@@ -196,7 +196,7 @@ class SkillImpactResponseEvaluatorSystem(ExecuteProcessor):
 
             # 空的任务
             ret.agent_tasks.append(
-                AgentTask.create(
+                AgentTask.create_with_full_context(
                     agent,
                     builtin_prompt_utils.replace_you(skill_comp.command, agent._name),
                 )
@@ -488,7 +488,7 @@ class SkillImpactResponseEvaluatorSystem(ExecuteProcessor):
             ).world_harmony_inspector_tag,
         )
 
-        return AgentTask.create(
+        return AgentTask.create_with_full_context(
             target_agent,
             builtin_prompt_utils.replace_you(prompt, target_agent_name),
         )

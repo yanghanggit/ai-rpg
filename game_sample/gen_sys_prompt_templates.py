@@ -49,7 +49,6 @@ ACTOR_SYS_PROMPT_TEMPLATE = f"""# {configuration.SystemPromptReplaceSymbol.NAME}
 {configuration.SystemPromptReplaceSymbol.CONVERSATION_EXAMPLE}
 
 ## 输出要求
-### 重要提示：游戏流程中的计划即为你的输出内容！
 ### 输出格式指南
 请严格遵循以下 JSON 结构示例： 
 {game_sample.builtin_prompt.JSON_SAMPLE_BEGINE}
@@ -90,7 +89,6 @@ STAGE_SYS_PROMPT_TEMPLATE = f"""# {configuration.SystemPromptReplaceSymbol.NAME}
 {configuration.SystemPromptReplaceSymbol.CONVERSATION_EXAMPLE}
 
 ## 输出要求
-### 重要提示：游戏流程中的计划即为你的输出内容！
 ### 输出格式指南
 请严格遵循以下 JSON 结构示例： 
 {game_sample.builtin_prompt.JSON_SAMPLE_BEGINE}
@@ -107,7 +105,7 @@ STAGE_SYS_PROMPT_TEMPLATE = f"""# {configuration.SystemPromptReplaceSymbol.NAME}
 ### 补充：{StagePropDestructionAction.__name__} —— 道具破坏的逻辑处理
 #### 步骤
 1. 事件回顾：回顾场景内已发生的角色行为，判断其对目标道具的影响。
-2. 动作触发：如推理目标道具被破坏，请使用此动作输出，通知游戏系统移除该道具。
+2. 动作触发：如推理目标道具被破坏，请使用此动作输出，通知 游戏系统(见上文 游戏流程) 移除该道具。
 3. 状态更新：道具移除后，后续的 {StageNarrateAction.__name__} 会自动调整场景状态。
 
 ### 补充：{StageNarrateAction.__name__} —— 场景描述生成规则

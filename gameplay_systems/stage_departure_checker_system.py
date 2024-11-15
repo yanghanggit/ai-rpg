@@ -196,7 +196,7 @@ class StageDepartureCheckerSystem(ReactiveProcessor):
             actor_status_evaluator.available_stage_condition_prop_files,
         )
 
-        return AgentTask.create_process_context_without_saving(stage_agent, prompt)
+        return AgentTask.create_with_input_only_context(stage_agent, prompt)
 
     ######################################################################################################################################################
     def _handle_agent_responses(self, tasks: Dict[str, AgentTask]) -> None:

@@ -4,11 +4,12 @@ from rpg_game.rpg_entitas_context import RPGEntitasContext
 from rpg_game.rpg_game import RPGGame
 from my_components.components import PlanningAllowedComponent
 from loguru import logger
+from rpg_game.terminal_game import TerminalGame
 
 
 ############################################################################################################
 @final
-class HandlePlayerInputSystem(ExecuteProcessor):
+class HandleWebPlayerInputSystem(ExecuteProcessor):
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         self._context: RPGEntitasContext = context
         self._game: RPGGame = rpg_game
@@ -16,6 +17,9 @@ class HandlePlayerInputSystem(ExecuteProcessor):
     ############################################################################################################
     @override
     def execute(self) -> None:
+
+        if not isinstance(self._game, TerminalGame):
+            return
 
         # 1. 遍历所有的玩家,
         for player_proxy in self._game.players:
@@ -36,8 +40,6 @@ class HandlePlayerInputSystem(ExecuteProcessor):
             for command in player_proxy._commands:
                 command.execute(self._game, player_proxy)
 
-        # 2. 清空所有玩家的命令
-        for player_proxy in self._game.players:
             player_proxy._commands.clear()
 
 

@@ -101,7 +101,7 @@ class PreConversationActionSystem(ReactiveProcessor):
             announce_content, speak_content_list, whisper_content_list
         )
 
-        tasks[safe_name] = AgentTask.create_standalone(agent, prompt)
+        tasks[safe_name] = AgentTask.create_without_context(agent, prompt)
 
     #################################################################################################################################################
     def get_announce_content(self, player_entity: Entity) -> str:

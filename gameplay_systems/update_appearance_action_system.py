@@ -172,7 +172,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
 
         prompt = _generate_appearance_reasoning_prompt(actor_appearance_data)
 
-        appearance_update_task = AgentTask.create_standalone(agent, prompt)
+        appearance_update_task = AgentTask.create_without_context(agent, prompt)
         if appearance_update_task.request() is None:
             logger.error(f"{safe_name} request response is None.")
             return False

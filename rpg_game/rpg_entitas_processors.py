@@ -74,7 +74,9 @@ class RPGEntitasProcessors(Processors):
             SkillImpactResponseEvaluatorSystem,
         )
         from gameplay_systems.damage_action_system import DamageActionSystem
-        from gameplay_systems.handle_player_input_system import HandlePlayerInputSystem
+        from gameplay_systems.handle_terminal_player_input_system import (
+            HandleTerminalPlayerInputSystem,
+        )
         from gameplay_systems.update_client_message_system import (
             UpdateClientMessageSystem,
         )
@@ -104,6 +106,9 @@ class RPGEntitasProcessors(Processors):
         from gameplay_systems.web_player_tips_system import WebPlayerTipsSystem
         from gameplay_systems.spawner_system import SpawnerSystem
         from gameplay_systems.game_round_system import GameRoundSystem
+        from gameplay_systems.handle_web_player_input_system import (
+            HandleWebPlayerInputSystem,
+        )
 
         ##
         rpg_game = cast(RPGGame, game)
@@ -125,7 +130,8 @@ class RPGEntitasProcessors(Processors):
         processors.add(BeginSystem(context, rpg_game))
 
         ### 处理玩家输入!
-        processors.add(HandlePlayerInputSystem(context, rpg_game))
+        processors.add(HandleTerminalPlayerInputSystem(context, rpg_game))
+        processors.add(HandleWebPlayerInputSystem(context, rpg_game))
 
         # 行动逻辑!
         processors.add(

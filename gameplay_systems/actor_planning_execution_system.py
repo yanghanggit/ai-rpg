@@ -215,7 +215,7 @@ class ActorPlanningExecutionSystem(ExecuteProcessor):
             )
             actors_appearance.pop(actor_comp.name, None)  # 自己不要
 
-            planned_agent_tasks[actor_comp.name] = AgentTask.create(
+            planned_agent_tasks[actor_comp.name] = AgentTask.create_with_full_context(
                 agent,
                 _generate_actor_plan_prompt(
                     current_stage=self._retrieve_stage_name(actor_entity),

@@ -12,6 +12,7 @@ from rpg_game.rpg_game import RPGGame
 from extended_systems.archive_file import StageArchiveFile
 from my_models.event_models import AgentEvent, PreStageExitEvent
 from loguru import logger
+import my_format_string.unknown_stage_name
 
 
 ################################################################################################################################################
@@ -93,8 +94,10 @@ class StageTransitionHandler:
         if len(go_to_action.values) == 0:
             return ""
 
-        if prompt_utils.is_unknown_stage_name(go_to_action.values[0]):
-            guid = prompt_utils.extract_guid_from_unknown_stage_name(
+        if my_format_string.unknown_stage_name.is_unknown_stage_name(
+            go_to_action.values[0]
+        ):
+            guid = my_format_string.unknown_stage_name.extract_guid_from_unknown_stage_name(
                 go_to_action.values[0]
             )
             stage_entity = self._context.get_entity_by_guid(guid)

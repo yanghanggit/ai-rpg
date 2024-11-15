@@ -11,7 +11,6 @@ from my_components.components import (
 from my_components.action_components import (
     StageNarrateAction,
     ACTOR_AVAILABLE_ACTIONS_REGISTER,
-    # PickUpPropAction,
     GoToAction,
     TagAction,
 )
@@ -29,14 +28,13 @@ from gameplay_systems.actor_entity_utils import ActorStatusEvaluator
 from extended_systems.prop_file import (
     PropFile,
     generate_prop_file_total_prompt,
-    generate_prop_file_appearance_prompt,
 )
 from my_models.file_models import PropType
 
 
 ###############################################################################################################################################
-def _generate_actor_props_prompts(
-    props_dict: Dict[str, List[PropFile]],
+def _generate_props_prompt(
+    prop_info: Dict[str, List[PropFile]],
     order_keys: List[str] = [
         PropType.TYPE_SPECIAL,
         PropType.TYPE_WEAPON,
@@ -49,10 +47,10 @@ def _generate_actor_props_prompts(
     ret: List[str] = []
 
     for key in order_keys:
-        if key not in props_dict:
+        if key not in prop_info:
             continue
 
-        for prop_file in props_dict[key]:
+        for prop_file in prop_info[key]:
             ret.append(generate_prop_file_total_prompt(prop_file))
 
     return ret
@@ -63,69 +61,69 @@ def _generate_actor_plan_prompt(
     current_stage: str,
     stage_enviro_narrate: str,
     stage_graph: Set[str],
-    props_in_stage: List[PropFile],
-    info_of_actors_in_stage: Dict[str, str],
+    actor_appearance_mapping: Dict[str, str],
     health: float,
     actor_props: Dict[str, List[PropFile]],
     current_weapon: Optional[PropFile],
     current_clothes: Optional[PropFile],
 ) -> str:
 
+    assert current_stage != "", "current_stage is empty"
+
+    # 组织生成角色道具描述
     health *= 100
 
-    actor_props_prompt = _generate_actor_props_prompts(actor_props)
+    # 组织生成角色道具描述
+    props_prompt = _generate_props_prompt(actor_props)
+    if len(props_prompt) == 0:
+        props_prompt.append("无任何道具。")
 
-    props_in_stage_prompt = [
-        generate_prop_file_appearance_prompt(prop) for prop in props_in_stage
-    ]
+    # 组织生成角色外观描述
+    actor_appearance_mapping_prompt: List[str] = []
+    for actor_name, actor_appearance in actor_appearance_mapping.items():
+        actor_appearance_mapping_prompt += f"""### {actor_name}
+角色外观:{actor_appearance}"""
 
-    actors_in_stage_prompt = "- 无任何角色。"
-    if len(info_of_actors_in_stage) > 0:
-        actors_in_stage_prompt = ""
-        for actor_name, actor_appearance in info_of_actors_in_stage.items():
-            actors_in_stage_prompt += (
-                f"### {actor_name}\n- 角色外观:{actor_appearance}\n"
-            )
+    if len(actor_appearance_mapping_prompt) == 0:
+        actor_appearance_mapping_prompt.append("无任何角色。")
 
-    ret_prompt = f"""# {prompt_utils.ConstantPromptTag.ACTOR_PLAN_PROMPT_TAG} 请做出你的计划，决定你将要做什么
+    #
+    if len(stage_graph) == 0:
+        stage_graph.add(f"无可去往场景(你不可以执行{GoToAction.__name__})")
+
+    return f"""# 请制定你的计划
+- 标记 {prompt_utils.PromptTag.ACTOR_PLAN_PROMPT_TAG} 
+- 规则见‘游戏流程’-制定计划
 
 ## 你当前所在的场景
-{current_stage != "" and current_stage or "未知"}
+{current_stage}
 ### 场景描述
-{stage_enviro_narrate != "" and stage_enviro_narrate or "无"}
+{stage_enviro_narrate}
 ### 从本场景可以去往的场景
-{len(stage_graph) > 0 and "\n".join([f"- {stage}" for stage in stage_graph]) or "无可去往场景"}   
+{"\n".join(stage_graph)}   
 
 ## 场景内的角色
-{actors_in_stage_prompt}
+{"\n".join(actor_appearance_mapping_prompt)}
 
 ## 你的健康状态
 {f"生命值: {health:.2f}%"}
 
-## 你当前持有的道具
-{len(actor_props_prompt) > 0 and "\n".join(actor_props_prompt) or "- 无任何道具。"}
+## 你当前所有的道具
+{"\n".join(props_prompt)}
 
 ## 你当前装备的道具
-- 武器: {current_weapon is not None and current_weapon.name or "无"}
-- 衣服: {current_clothes is not None and current_clothes.name or "无"}
+- {current_weapon is not None and current_weapon.name or "无"}
+- {current_clothes is not None and current_clothes.name or "无"}
 
-## 建议与注意事项
-- 结合以上信息，决定你的下一步行动。
-- 随时保持装备武器与衣服的状态(前提是你有对应的道具）。
-- 注意！如果 从本场景可以去往的场景 为 无可去往场景，你就不可以执行{GoToAction.__name__}，因为系统的设计规则如此。
+## 小建议
+- 随时保持装备武器与衣服的状态(前提是你拥有）。
 
 ## 输出要求
 - 请遵循 输出格式指南。
-- 结果中要附带 {TagAction.__name__}。"""
-
-    return ret_prompt
+- 返回结果 至少 包含 {TagAction.__name__}。"""
 
 
 #######################################################################################################################################
-
-
-# ## 场景内的道具(可以进行交互，如: {PickUpPropAction.__name__})
-# {len(props_in_stage_prompt) > 0 and "\n".join(props_in_stage_prompt) or "- 无任何道具。"}
 
 
 @final
@@ -225,8 +223,7 @@ class ActorPlanningExecutionSystem(ExecuteProcessor):
                     current_stage=self._retrieve_stage_name(actor_entity),
                     stage_enviro_narrate=self._retrieve_stage_narrative(actor_entity),
                     stage_graph=set(self._retrieve_stage_graph(actor_entity)),
-                    props_in_stage=self._retrieve_props_in_stage(actor_entity),
-                    info_of_actors_in_stage=actors_appearance,
+                    actor_appearance_mapping=actors_appearance,
                     health=check_self.health,
                     actor_props=check_self._category_prop_files,
                     current_weapon=check_self._current_weapon,
@@ -253,17 +250,17 @@ class ActorPlanningExecutionSystem(ExecuteProcessor):
         return " ".join(stage_narrate_action.values)
 
     #######################################################################################################################################
-    def _retrieve_props_in_stage(self, actor_entity: Entity) -> List[PropFile]:
-        stage_entity = self._context.safe_get_stage_entity(actor_entity)
-        assert stage_entity is not None, "stage is None, actor无所在场景是有问题的"
-        return self._context._file_system.get_files(
-            PropFile, self._context.safe_get_entity_name(stage_entity)
-        )
+    # def _retrieve_props_in_stage(self, actor_entity: Entity) -> List[PropFile]:
+    #     stage_entity = self._context.safe_get_stage_entity(actor_entity)
+    #     assert stage_entity is not None, "stage is None, actor无所在场景是有问题的"
+    #     return self._context._file_system.get_files(
+    #         PropFile, self._context.safe_get_entity_name(stage_entity)
+    #     )
 
     #######################################################################################################################################
     def _retrieve_stage_graph(self, actor_entity: Entity) -> List[str]:
         stage_entity = self._context.safe_get_stage_entity(actor_entity)
         assert stage_entity is not None, "stage is None, actor无所在场景是有问题的"
-        return stage_entity.get(StageGraphComponent).stage_graph
+        return stage_entity.get(StageGraphComponent).stage_graph.copy()
 
     #######################################################################################################################################

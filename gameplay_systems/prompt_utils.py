@@ -2,49 +2,30 @@ from enum import StrEnum, unique
 
 
 @unique
-class ConstantPromptTag(StrEnum):
+class PromptTag(StrEnum):
 
-    ACTOR_PLAN_PROMPT_TAG = "<%这是角色计划>"
+    ACTOR_PLAN_PROMPT_TAG = "<%角色计划>"
 
-    STAGE_PLAN_PROMPT_TAG = "<%这是场景计划>"
+    STAGE_PLAN_PROMPT_TAG = "<%场景计划>"
 
     STAGE_ENTRY_TAG = "场景进入限制"
 
     STAGE_EXIT_TAG = "场景离开限制"
 
-    UNKNOWN_STAGE_NAME_TAG = "未知场景:"
-
 
 ################################################################################################################################################
 @unique
-class ConstantSkillPrompt(StrEnum):
+class SkillResultPromptTag(StrEnum):
     SUCCESS = "</成功>"
     CRITICAL_SUCCESS = "</大成功>"
     FAILURE = "</失败>"
 
 
 ################################################################################################################################################
-def replace_you(content: str, your_name: str) -> str:
-    if len(content) == 0 or your_name not in content:
-        return content
-    return content.replace(your_name, "你")
-
-
-################################################################################################################################################
-def generate_unknown_stage_name(guid: int) -> str:
-    return f"{ConstantPromptTag.UNKNOWN_STAGE_NAME_TAG}{guid}"
-
-
-################################################################################################################################################
-def is_unknown_stage_name(stage_name: str) -> bool:
-    return ConstantPromptTag.UNKNOWN_STAGE_NAME_TAG in stage_name
-
-
-################################################################################################################################################
-def extract_guid_from_unknown_stage_name(stage_name: str) -> int:
-    if not is_unknown_stage_name(stage_name):
-        return -1
-    return int(stage_name.split(":")[1])
+def replace_you(input_text: str, your_name: str) -> str:
+    if len(input_text) == 0 or your_name not in input_text:
+        return input_text
+    return input_text.replace(your_name, "你")
 
 
 ################################################################################################################################################

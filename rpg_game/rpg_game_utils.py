@@ -19,7 +19,7 @@ from rpg_game.terminal_game import TerminalGame
 from rpg_game.web_game import WebGame
 from player.player_proxy import PlayerProxy
 from extended_systems.archive_file import ActorArchiveFile, StageArchiveFile
-from extended_systems.prop_file import PropFile, generate_prop_file_appearance_prompt
+from extended_systems.prop_file import PropFile
 from my_components.components import (
     ActorComponent,
     PlayerComponent,
@@ -34,7 +34,6 @@ from player.player_command import (
     PlayerAnnounce,
     PlayerSpeak,
     PlayerWhisper,
-    # PlayerPickUpProp,
     PlayerSteal,
     PlayerGiveProp,
     PlayerSkill,
@@ -259,32 +258,34 @@ def gen_player_check_action_model(
         return None
 
     #
-    check_self = ActorStatusEvaluator(game_name.context, player_entity)
-    health = check_self.health * 100
+    actor_status_evaluator = ActorStatusEvaluator(game_name.context, player_entity)
+
+    # 生命值
+    health = actor_status_evaluator.health * 100
 
     # 道具信息
     actor_props_prompt = (
-        gameplay_systems.actor_planning_execution_system._generate_actor_props_prompts(
-            check_self._category_prop_files
+        gameplay_systems.actor_planning_execution_system._generate_props_prompt(
+            actor_status_evaluator._category_prop_files
         )
     )
 
     if len(actor_props_prompt) == 0:
-        actor_props_prompt.append("- 无任何道具。")
+        actor_props_prompt.append("无任何道具。")
 
     # 最终返回
     message = f"""# {player_proxy.name} | {player_proxy.actor_name}
 
-## 你当前所在的场景：{check_self.stage_name}
+## 所在的场景：{actor_status_evaluator.stage_name}
 
-## 你的健康状态
+## 健康状态
 {f"生命值: {health:.2f}%"}
 
-## 你当前持有的道具
+## 持有的道具
 {"\n".join(actor_props_prompt)}
 
 ## 你的外貌
-{check_self._appearance}"""
+{actor_status_evaluator.appearance}"""
 
     return CheckActionModel(content=message)
 

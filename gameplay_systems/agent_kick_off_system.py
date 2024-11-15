@@ -11,10 +11,9 @@ from my_components.components import (
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
-from typing import Dict, Set, FrozenSet, Any, List, final
+from typing import Dict, Set, FrozenSet, Any, final
 from my_agent.agent_task import AgentTask
 from rpg_game.rpg_game import RPGGame
-from extended_systems.prop_file import PropFile, generate_prop_file_appearance_prompt
 from my_components.action_components import (
     STAGE_AVAILABLE_ACTIONS_REGISTER,
     ACTOR_AVAILABLE_ACTIONS_REGISTER,
@@ -45,19 +44,9 @@ def _generate_actor_kick_off_prompt(kick_off_message: str) -> str:
 ###############################################################################################################################################
 def _generate_stage_kick_off_prompt(
     kick_off_message: str,
-    input_props_in_stage: List[PropFile],
     input_actors_in_stage: Set[str],
 ) -> str:
 
-    # # 组织一下场景中的道具信息，只要外观。
-    # props_in_stage_prompt = [
-    #     generate_prop_file_appearance_prompt(prop_file)
-    #     for prop_file in input_props_in_stage
-    # ]
-    # if len(props_in_stage_prompt) == 0:
-    #     props_in_stage_prompt.append("无")
-
-    # 组织一下场景中的角色信息, 名字即可，因为后面会有推理的plan
     actors_in_stage_prompt = list(input_actors_in_stage)
     if len(actors_in_stage_prompt) == 0:
         actors_in_stage_prompt.append("无")
@@ -193,9 +182,6 @@ class AgentKickOffSystem(ExecuteProcessor):
             kick_off_comp = stage_entity.get(KickOffContentComponent)
             kick_off_prompt = _generate_stage_kick_off_prompt(
                 kick_off_comp.content,
-                self._context._file_system.get_files(
-                    PropFile, self._context.safe_get_entity_name(stage_entity)
-                ),
                 self._context.get_actor_names_in_stage(stage_entity),
             )
 

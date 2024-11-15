@@ -24,6 +24,7 @@ from rpg_game.rpg_game import RPGGame
 from my_models.event_models import AgentEvent
 from loguru import logger
 from my_agent.lang_serve_agent import LangServeAgent
+import my_format_string.unknown_stage_name
 
 
 ################################################################################################################################################
@@ -41,7 +42,7 @@ def _generate_stage_entry_conditions_prompt(
         )
 
     ret_prompt = f"""# {actor_name} 想要进入场景: {current_stage_name}。
-## 第1步: 请回顾你的 {prompt_utils.ConstantPromptTag.STAGE_EXIT_TAG}
+## 第1步: 请回顾你的 {prompt_utils.PromptTag.STAGE_EXIT_TAG}
 
 ## 第2步: 根据当前‘你的状态’判断是否满足允许{actor_name}进入
 当前状态可能由于事件而变化，请仔细考虑。
@@ -219,8 +220,10 @@ class StageEntranceCheckerSystem(ReactiveProcessor):
         if len(goto_action.values) == 0:
             return ""
 
-        if prompt_utils.is_unknown_stage_name(goto_action.values[0]):
-            guid = prompt_utils.extract_guid_from_unknown_stage_name(
+        if my_format_string.unknown_stage_name.is_unknown_stage_name(
+            goto_action.values[0]
+        ):
+            guid = my_format_string.unknown_stage_name.extract_guid_from_unknown_stage_name(
                 goto_action.values[0]
             )
             stage_entity = self._context.get_entity_by_guid(guid)
@@ -283,7 +286,7 @@ class StageEntranceCheckerSystem(ReactiveProcessor):
         assert stage_entity.has(StageComponent)
         assert stage_entity.has(KickOffContentComponent)
         return (
-            prompt_utils.ConstantPromptTag.STAGE_ENTRY_TAG
+            prompt_utils.PromptTag.STAGE_ENTRY_TAG
             in stage_entity.get(KickOffContentComponent).content
         )
 

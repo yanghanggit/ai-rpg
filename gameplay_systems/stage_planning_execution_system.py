@@ -8,7 +8,6 @@ from my_components.components import (
 )
 from my_components.action_components import (
     STAGE_AVAILABLE_ACTIONS_REGISTER,
-    # StagePropDestructionAction,
     StageNarrateAction,
     TagAction,
 )
@@ -17,7 +16,6 @@ from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from typing import Dict, List, final
 import gameplay_systems.action_utils
-from extended_systems.prop_file import PropFile, generate_prop_file_appearance_prompt
 import gameplay_systems.prompt_utils as prompt_utils
 from my_agent.agent_task import (
     AgentTask,
@@ -27,35 +25,29 @@ from rpg_game.rpg_game import RPGGame
 
 ###############################################################################################################################################
 def _generate_stage_plan_prompt(
-    props_in_stage: List[PropFile],
-    info_of_actors_in_stage: Dict[str, str],
+    actor_appearance_mapping: Dict[str, str],
 ) -> str:
 
-    # props_in_stage_prompt = "- 无任何道具。"
-    # if len(props_in_stage) > 0:
-    #     props_in_stage_prompt = ""
-    #     for prop in props_in_stage:
-    #         props_in_stage_prompt += generate_prop_file_appearance_prompt(prop)
+    # 组织生成角色外观描述
+    actor_appearance_mapping_prompt: List[str] = []
+    for actor_name, actor_appearance in actor_appearance_mapping.items():
+        actor_appearance_mapping_prompt += f"""### {actor_name}
+角色外观:{actor_appearance}"""
 
-    ## 场景角色
-    actors_in_stage_prompt = "- 无任何角色。"
-    if len(info_of_actors_in_stage) > 0:
-        actors_in_stage_prompt = ""
-        for actor_name, actor_appearance in info_of_actors_in_stage.items():
-            actors_in_stage_prompt += (
-                f"### {actor_name}\n- 角色外观:{actor_appearance}\n"
-            )
+    if len(actor_appearance_mapping_prompt) == 0:
+        actor_appearance_mapping_prompt.append("无任何角色。")
 
-    ret_prompt = f"""# {prompt_utils.ConstantPromptTag.STAGE_PLAN_PROMPT_TAG} 请做出你的计划，决定你将要做什么与更新你的场景描述
+    # 最终生成
+    return f"""# 请制定你的计划
+- 标记 {prompt_utils.PromptTag.STAGE_PLAN_PROMPT_TAG}
+- 规则见‘游戏流程’-制定计划
 
 ## 场景内的角色
-{actors_in_stage_prompt}
+{"\n".join(actor_appearance_mapping_prompt)}
 
 ## 输出要求
 - 请遵循 输出格式指南。
-- 返回结果至少包含 {StageNarrateAction.__name__} 和 {TagAction.__name__}。"""
-
-    return ret_prompt
+- 返回结果 至少 包含 {StageNarrateAction.__name__} 和 {TagAction.__name__}。"""
 
 
 #######################################################################################################################################
@@ -175,10 +167,6 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
             requested_agent_tasks[stage_comp.name] = AgentTask.create_with_full_context(
                 agent,
                 _generate_stage_plan_prompt(
-                    self._context._file_system.get_files(
-                        PropFile,
-                        self._context.safe_get_entity_name(stage_entity),
-                    ),
                     self._context.gather_actor_appearance_in_stage(stage_entity),
                 ),
             )

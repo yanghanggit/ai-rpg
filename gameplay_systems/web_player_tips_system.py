@@ -18,6 +18,7 @@ from my_components.components import (
     StageGraphComponent,
     GUIDComponent,
 )
+import my_format_string.unknown_stage_name
 
 
 @final
@@ -111,6 +112,8 @@ class WebPlayerTipsSystem(ExecuteProcessor):
 
         assert stage_entity.has(GUIDComponent)
         guid_comp = stage_entity.get(GUIDComponent)
-        return prompt_utils.generate_unknown_stage_name(guid_comp.GUID)
+        return my_format_string.unknown_stage_name.generate_unknown_stage_name(
+            guid_comp.GUID
+        )
 
     ############################################################################################################

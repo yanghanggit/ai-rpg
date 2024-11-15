@@ -39,7 +39,7 @@ def _generate_exit_conditions_prompt(
         )
 
     ret_prompt = f"""# {actor_name} 想要离开场景: {current_stage_name}。
-## 第1步: 请回顾你的 {prompt_utils.ConstantPromptTag.STAGE_EXIT_TAG}
+## 第1步: 请回顾你的 {prompt_utils.PromptTag.STAGE_EXIT_TAG}
 
 ## 第2步: 根据当前‘你的状态’判断是否满足允许{actor_name}离开
 当前状态可能由于事件而变化，请仔细考虑。
@@ -256,7 +256,7 @@ class StageDepartureCheckerSystem(ReactiveProcessor):
         assert stage_entity.has(StageComponent)
         assert stage_entity.has(KickOffContentComponent)
         return (
-            prompt_utils.ConstantPromptTag.STAGE_EXIT_TAG
+            prompt_utils.PromptTag.STAGE_EXIT_TAG
             in stage_entity.get(KickOffContentComponent).content
         )
 

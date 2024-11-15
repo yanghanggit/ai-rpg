@@ -90,6 +90,7 @@ class ExcelDataActor:
     @property
     def base_form(self) -> str:
         assert str(self._data[DataActorProperty.BASE_FORM]) != ""
+        assert "#" not in str(self._data[DataActorProperty.BASE_FORM])
         return str(self._data[DataActorProperty.BASE_FORM])
 
     ############################################################################################################

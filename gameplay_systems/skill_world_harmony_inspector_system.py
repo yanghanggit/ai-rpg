@@ -17,7 +17,7 @@ from extended_systems.prop_file import (
     generate_skill_prop_file_prompt,
     generate_skill_accessory_prop_file_prompt,
 )
-import gameplay_systems.builtin_prompt_utils as builtin_prompt_utils
+import gameplay_systems.prompt_utils as prompt_utils
 from my_agent.agent_task import AgentTask
 from my_agent.agent_plan import AgentPlanResponse
 from rpg_game.rpg_game import RPGGame
@@ -136,27 +136,27 @@ def _generate_world_harmony_inspector_prompt(
 
 ## 判断的逻辑步骤
 1. 如果 配置的道具 存在。则需要将道具与技能的信息联合起来推理。
-    - 推理结果 违反了游戏规则或世界观设计。则技能释放失败。即{builtin_prompt_utils.ConstantSkillPrompt.FAILURE}。
-    - 推理结果合理的。则技能释放成功。即{builtin_prompt_utils.ConstantSkillPrompt.SUCCESS}。如果道具对技能有增益效果，则标记为{builtin_prompt_utils.ConstantSkillPrompt.CRITICAL_SUCCESS}。
+    - 推理结果 违反了游戏规则或世界观设计。则技能释放失败。即{prompt_utils.ConstantSkillPrompt.FAILURE}。
+    - 推理结果合理的。则技能释放成功。即{prompt_utils.ConstantSkillPrompt.SUCCESS}。如果道具对技能有增益效果，则标记为{prompt_utils.ConstantSkillPrompt.CRITICAL_SUCCESS}。
 2. 如果 配置的道具 不存在。则继续下面的步骤。
 3. 结合 {actor_name} 的自身信息。判断是否符合技能释放的条件。
-    - 如果不符合。则技能释放失败。即{builtin_prompt_utils.ConstantSkillPrompt.FAILURE}。
-    - 如果符合。则技能释放成功。即{builtin_prompt_utils.ConstantSkillPrompt.SUCCESS}。如果 {actor_name} 的自身信息，对技能有增益效果，则标记为{builtin_prompt_utils.ConstantSkillPrompt.CRITICAL_SUCCESS}。
+    - 如果不符合。则技能释放失败。即{prompt_utils.ConstantSkillPrompt.FAILURE}。
+    - 如果符合。则技能释放成功。即{prompt_utils.ConstantSkillPrompt.SUCCESS}。如果 {actor_name} 的自身信息，对技能有增益效果，则标记为{prompt_utils.ConstantSkillPrompt.CRITICAL_SUCCESS}。
 
 ## 输出格式指南
 
 ### 请根据下面的示例, 确保你的输出严格遵守相应的结构。
 {{
   "{AnnounceAction.__name__}":["输出结果"],
-  "{TagAction.__name__}":["{builtin_prompt_utils.ConstantSkillPrompt.CRITICAL_SUCCESS}或{builtin_prompt_utils.ConstantSkillPrompt.SUCCESS}或{builtin_prompt_utils.ConstantSkillPrompt.FAILURE}"]
+  "{TagAction.__name__}":["{prompt_utils.ConstantSkillPrompt.CRITICAL_SUCCESS}或{prompt_utils.ConstantSkillPrompt.SUCCESS}或{prompt_utils.ConstantSkillPrompt.FAILURE}"]
 }}
 
 ### 关于 {AnnounceAction.__name__} 的输出结果的规则如下
-- 如果你的判断是 {builtin_prompt_utils.ConstantSkillPrompt.SUCCESS} 或 {builtin_prompt_utils.ConstantSkillPrompt.CRITICAL_SUCCESS}。
+- 如果你的判断是 {prompt_utils.ConstantSkillPrompt.SUCCESS} 或 {prompt_utils.ConstantSkillPrompt.CRITICAL_SUCCESS}。
     - 必须包含如下信息：{actor_name}的名字（技能使用者），释放的技能的描述，技能释放的目标的名字，配置的道具的信息。
     - 做出逻辑合理的句子描述（可以适当润色），来表达 {actor_name} 使用技能的使用过程。但不要判断技能命中目标之后，目标的可能反应。
     - 请注意，用第三人称的描述。  
-- 如果你的判断是 {builtin_prompt_utils.ConstantSkillPrompt.FAILURE}。
+- 如果你的判断是 {prompt_utils.ConstantSkillPrompt.FAILURE}。
     - 则输出结果需要描述为：技能释放失败的原因。
     
 ### 注意事项
@@ -178,7 +178,7 @@ class InternalPlanResponse(AgentPlanResponse):
     def inspector_tag(self) -> str:
         action = self.get_action(TagAction.__name__)
         if action is None or len(action.values) == 0:
-            return builtin_prompt_utils.ConstantSkillPrompt.FAILURE
+            return prompt_utils.ConstantSkillPrompt.FAILURE
         return action.values[0]
 
     @property
@@ -320,7 +320,7 @@ class SkillWorldHarmonyInspectorSystem(ExecuteProcessor):
 
             if (
                 process_data.plan_response.inspector_tag
-                == builtin_prompt_utils.ConstantSkillPrompt.FAILURE
+                == prompt_utils.ConstantSkillPrompt.FAILURE
             ):
                 self._notify_inspector_failure_event(process_data)
                 gameplay_systems.skill_system_utils.destroy_skill_entity(
@@ -330,9 +330,9 @@ class SkillWorldHarmonyInspectorSystem(ExecuteProcessor):
 
             assert (
                 process_data.plan_response.inspector_tag
-                == builtin_prompt_utils.ConstantSkillPrompt.SUCCESS
+                == prompt_utils.ConstantSkillPrompt.SUCCESS
                 or process_data.plan_response.inspector_tag
-                == builtin_prompt_utils.ConstantSkillPrompt.CRITICAL_SUCCESS
+                == prompt_utils.ConstantSkillPrompt.CRITICAL_SUCCESS
             )
             self._notify_inspector_success_event(process_data)
             self._add_world_harmony_inspector_data(process_data)

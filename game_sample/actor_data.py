@@ -22,8 +22,6 @@ class DataActorProperty(StrEnum):
     AGENTPY_TEMPLATE = "agentpy_template"
     BASE_FORM = "base_form"
 
-    # base_form
-
 
 ############################################################################################################
 

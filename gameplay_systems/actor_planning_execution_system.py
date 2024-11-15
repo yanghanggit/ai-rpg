@@ -20,7 +20,7 @@ from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from typing import Dict, Set, List, Optional, final
 import gameplay_systems.action_utils
-import gameplay_systems.builtin_prompt_utils as builtin_prompt_utils
+import gameplay_systems.prompt_utils as prompt_utils
 from my_agent.agent_task import (
     AgentTask,
 )
@@ -87,7 +87,7 @@ def _generate_actor_plan_prompt(
                 f"### {actor_name}\n- 角色外观:{actor_appearance}\n"
             )
 
-    ret_prompt = f"""# {builtin_prompt_utils.ConstantPromptTag.ACTOR_PLAN_PROMPT_TAG} 请做出你的计划，决定你将要做什么
+    ret_prompt = f"""# {prompt_utils.ConstantPromptTag.ACTOR_PLAN_PROMPT_TAG} 请做出你的计划，决定你将要做什么
 
 ## 你当前所在的场景
 {current_stage != "" and current_stage or "未知"}

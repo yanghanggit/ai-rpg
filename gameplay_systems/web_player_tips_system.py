@@ -11,7 +11,7 @@ from my_models.event_models import AgentEvent
 from rpg_game.web_game import WebGame
 from loguru import logger
 from extended_systems.archive_file import StageArchiveFile
-import gameplay_systems.builtin_prompt_utils as builtin_prompt_utils
+import gameplay_systems.prompt_utils as prompt_utils
 from my_components.components import (
     PlayerComponent,
     ActorComponent,
@@ -111,6 +111,6 @@ class WebPlayerTipsSystem(ExecuteProcessor):
 
         assert stage_entity.has(GUIDComponent)
         guid_comp = stage_entity.get(GUIDComponent)
-        return builtin_prompt_utils.generate_unknown_stage_name(guid_comp.GUID)
+        return prompt_utils.generate_unknown_stage_name(guid_comp.GUID)
 
     ############################################################################################################

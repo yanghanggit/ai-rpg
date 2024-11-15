@@ -63,7 +63,9 @@ class ExcelEditorActor:
     #################################################################################################################################
     @property
     def format_actor_name_with_guid(self) -> str:
-        return f"""{self.data_base_name}#{self._resolve_guid()}"""
+        return ComplexName.format_name_with_guid(
+            self.data_base_name, self._resolve_guid()
+        )
 
     #################################################################################################################################
     @property
@@ -195,7 +197,7 @@ class ExcelEditorActor:
             )
 
         # test
-        if "#" in ret.name:
+        if ComplexName.contains_guid(ret.name):
             assert (
                 ret.name == self.format_actor_name_with_guid
             ), f"Invalid actor name: {ret.name}"

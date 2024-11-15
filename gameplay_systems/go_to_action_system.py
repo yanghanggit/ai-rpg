@@ -7,7 +7,7 @@ from my_components.components import (
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import final, override, Optional
-import gameplay_systems.builtin_prompt_utils as builtin_prompt_utils
+import gameplay_systems.prompt_utils as prompt_utils
 from rpg_game.rpg_game import RPGGame
 from extended_systems.archive_file import StageArchiveFile
 from my_models.event_models import AgentEvent, PreStageExitEvent
@@ -93,8 +93,8 @@ class StageTransitionHandler:
         if len(go_to_action.values) == 0:
             return ""
 
-        if builtin_prompt_utils.is_unknown_stage_name(go_to_action.values[0]):
-            guid = builtin_prompt_utils.extract_guid_from_unknown_stage_name(
+        if prompt_utils.is_unknown_stage_name(go_to_action.values[0]):
+            guid = prompt_utils.extract_guid_from_unknown_stage_name(
                 go_to_action.values[0]
             )
             stage_entity = self._context.get_entity_by_guid(guid)

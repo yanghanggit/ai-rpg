@@ -37,7 +37,8 @@ from my_models.event_models import BaseEvent
 from my_models.file_models import PropFileModel
 from my_models.entity_models import AttributesIndex
 from player.player_proxy import PlayerProxy
-import gameplay_systems.builtin_prompt_utils as builtin_prompt_utils
+import gameplay_systems.prompt_utils as prompt_utils
+from my_format_string.complex_name import ComplexName
 
 
 class RPGGame(BaseGame):
@@ -306,7 +307,11 @@ class RPGGame(BaseGame):
 
         if actor_instance.name != actor_model.name:
             assert (
-                actor_instance.name == f"""{actor_model.name}#{actor_instance.guid}"""
+                actor_instance.name
+                == ComplexName.format_name_with_guid(
+                    actor_model.name, actor_instance.guid
+                )
+                # f"""{actor_model.name}{ComplexNameSymbol.GUID_FLAG}{actor_instance.guid}"""
             ), """注意！你做了批量生成的actor但是生成出现了错误！"""
 
         # 创建实体
@@ -717,7 +722,7 @@ class RPGGame(BaseGame):
                 continue
 
             assert player_proxy.actor_name != ""
-            send_event.message = builtin_prompt_utils.replace_you(
+            send_event.message = prompt_utils.replace_you(
                 send_event.message,
                 player_proxy.actor_name,
             )

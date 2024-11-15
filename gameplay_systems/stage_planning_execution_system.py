@@ -18,7 +18,7 @@ from loguru import logger
 from typing import Dict, List, final
 import gameplay_systems.action_utils
 from extended_systems.prop_file import PropFile, generate_prop_file_appearance_prompt
-import gameplay_systems.builtin_prompt_utils as builtin_prompt_utils
+import gameplay_systems.prompt_utils as prompt_utils
 from my_agent.agent_task import (
     AgentTask,
 )
@@ -46,7 +46,7 @@ def _generate_stage_plan_prompt(
                 f"### {actor_name}\n- 角色外观:{actor_appearance}\n"
             )
 
-    ret_prompt = f"""# {builtin_prompt_utils.ConstantPromptTag.STAGE_PLAN_PROMPT_TAG} 请做出你的计划，决定你将要做什么与更新你的场景描述
+    ret_prompt = f"""# {prompt_utils.ConstantPromptTag.STAGE_PLAN_PROMPT_TAG} 请做出你的计划，决定你将要做什么与更新你的场景描述
 
 ## 场景内的道具
 {props_in_stage_prompt}

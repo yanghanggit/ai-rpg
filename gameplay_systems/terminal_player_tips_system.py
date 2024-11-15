@@ -10,7 +10,7 @@ from my_components.components import (
 )
 from extended_systems.archive_file import StageArchiveFile
 from player.player_proxy import PlayerProxy
-import gameplay_systems.builtin_prompt_utils as builtin_prompt_utils
+import gameplay_systems.prompt_utils as prompt_utils
 from my_models.event_models import AgentEvent
 from rpg_game.terminal_game import TerminalGame
 from loguru import logger
@@ -95,7 +95,7 @@ class TerminalPlayerTipsSystem(ExecuteProcessor):
 
         assert stage_entity.has(GUIDComponent)
         guid_comp = stage_entity.get(GUIDComponent)
-        return builtin_prompt_utils.generate_unknown_stage_name(guid_comp.GUID)
+        return prompt_utils.generate_unknown_stage_name(guid_comp.GUID)
 
     ############################################################################################################
     def tip_stage_archives(

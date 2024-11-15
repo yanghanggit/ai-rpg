@@ -21,6 +21,7 @@ from my_models.file_models import (
 )
 from my_models.player_models import PlayerProxyModel
 from my_models.agent_models import AgentChatHistoryDumpModel
+from my_format_string.complex_name import ComplexName
 
 
 class ActorInstanceName:
@@ -33,12 +34,12 @@ class ActorInstanceName:
         return self._original_name
 
     @property
-    def real_name(self) -> str:
-        return self._original_name.split("#")[0]
+    def base_name(self) -> str:
+        return ComplexName.extract_name(self._original_name)
 
     @property
     def guid(self) -> int:
-        return int(self._original_name.split("#")[1])
+        return ComplexName.extract_guid(self._original_name)
 
 
 ###############################################################################################################################################
@@ -94,7 +95,7 @@ class DataBase:
     ###############################################################################################################################################
     def get_actor(self, actor_name: str) -> Optional[ActorModel]:
         instance_name = ActorInstanceName(actor_name)
-        return self._actors.get(instance_name.real_name, None)
+        return self._actors.get(instance_name.base_name, None)
 
     ###############################################################################################################################################
     def get_stage(self, stage_name: str) -> Optional[StageModel]:

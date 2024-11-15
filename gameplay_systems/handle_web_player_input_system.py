@@ -4,7 +4,7 @@ from rpg_game.rpg_entitas_context import RPGEntitasContext
 from rpg_game.rpg_game import RPGGame
 from my_components.components import PlanningAllowedComponent
 from loguru import logger
-from rpg_game.terminal_game import TerminalGame
+from rpg_game.web_game import WebGame
 
 
 ############################################################################################################
@@ -18,7 +18,7 @@ class HandleWebPlayerInputSystem(ExecuteProcessor):
     @override
     def execute(self) -> None:
 
-        if not isinstance(self._game, TerminalGame):
+        if not isinstance(self._game, WebGame):
             return
 
         # 1. 遍历所有的玩家,

@@ -8,6 +8,7 @@ from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import final, Final, List
 from rpg_game.rpg_game import RPGGame
 import copy
+from my_format_string.complex_name import ComplexName
 
 
 ######################################################################################################################################################
@@ -58,7 +59,7 @@ class SpawnerSystem(ExecuteProcessor):
                 continue
 
             actor_model = self._game._game_resource.data_base.get_actor(
-                self._extract_base_actor_name(actor_instance_as_prototype_name)
+                ComplexName.extract_name(actor_instance_as_prototype_name)
             )
             if actor_model is None:
                 assert (
@@ -69,10 +70,12 @@ class SpawnerSystem(ExecuteProcessor):
             # 必须深拷贝，否则会出问题
             actor_intance_deep_copy = copy.deepcopy(actor_intance_as_prototype)
             # 生成一个guid
-            gen_guid = self._gen_actor_guid()
+            gen_new_guid = self._gen_actor_guid()
             # 生成一个新的名字 + 修改名字和guid
-            actor_intance_deep_copy.name = f"""{self._extract_base_actor_name(actor_instance_as_prototype_name)}#{gen_guid}"""
-            actor_intance_deep_copy.guid = gen_guid
+            actor_intance_deep_copy.name = ComplexName.format_name_with_guid(
+                ComplexName.extract_name(actor_instance_as_prototype_name), gen_new_guid
+            )
+            actor_intance_deep_copy.guid = gen_new_guid
             # 生成一个新的entity
             spawned_actor_entity = self._game.create_actor_entity_at_runtime(
                 actor_intance_deep_copy, actor_model, stage_entity
@@ -81,11 +84,6 @@ class SpawnerSystem(ExecuteProcessor):
                 ret.append(spawned_actor_entity)
 
         return ret
-
-    ######################################################################################################################################################
-    def _extract_base_actor_name(self, actor_instance_name: str) -> str:
-        assert "#" in actor_instance_name
-        return actor_instance_name.split("#")[0]
 
     ######################################################################################################################################################
     def _gen_actor_guid(

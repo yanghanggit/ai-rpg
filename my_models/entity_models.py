@@ -49,7 +49,7 @@ class ActorModel(BaseModel):
     actor_archives: List[str]
     stage_archives: List[str]
     attributes: List[int]
-    body: str
+    base_form: str
 
 
 class StageModel(BaseModel):

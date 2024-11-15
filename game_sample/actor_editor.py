@@ -167,7 +167,7 @@ class ExcelEditorActor:
             actor_archives=self.excel_data._actor_archives,
             stage_archives=self.excel_data._stage_archives,
             attributes=self.attributes,
-            body=self.excel_data.body,
+            base_form=self.excel_data.base_form,
         )
 
     #################################################################################################################################

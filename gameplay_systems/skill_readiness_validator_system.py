@@ -28,7 +28,7 @@ from my_agent.lang_serve_agent import LangServeAgent
 ################################################################################################################################################
 def _generate_skill_readiness_validator_prompt(
     actor_name: str,
-    actor_body_info: str,
+    actor_base_form_info: str,
     skill_prop_files: List[PropFile],
     skill_accessory_prop_files: List[PropFile],
 ) -> str:
@@ -59,7 +59,7 @@ def _generate_skill_readiness_validator_prompt(
     ret_prompt = f"""# {actor_name} 计划使用技能，请做出判断是否允许使用。
 
 ## {actor_name} 自身信息
-{actor_body_info}
+{actor_base_form_info}
         
 ## 要使用的技能
 {"\n".join(skill_prop_prompt)}

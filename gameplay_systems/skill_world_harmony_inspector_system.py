@@ -94,7 +94,7 @@ def _generate_success_prompt(
 ################################################################################################################################################
 def _generate_world_harmony_inspector_prompt(
     actor_name: str,
-    actor_body_info: str,
+    actor_base_form_info: str,
     skill_prop_files: List[PropFile],
     skill_accessory_prop_files: List[PropFile],
     sentence: str,
@@ -123,7 +123,7 @@ def _generate_world_harmony_inspector_prompt(
     ret_prompt = f"""# {actor_name} 准备使用技能，请你判断技能使用的合理性(是否符合游戏规则和世界观设计)。在尽量能保证游戏乐趣的情况下，来润色技能的描述。
 
 ## {actor_name} 自身信息
-{actor_body_info}
+{actor_base_form_info}
         
 ## 要使用的技能
 {"\n".join(skill_prop_prompts)}

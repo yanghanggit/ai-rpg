@@ -40,8 +40,8 @@ ACTOR_SYS_PROMPT_TEMPLATE = f"""# {configuration.SystemPromptReplaceSymbol.NAME}
 ## 你的角色设定
 {configuration.SystemPromptReplaceSymbol.SYSTEM_PROMPT}
 
-## 你的初始外观描述
-{configuration.SystemPromptReplaceSymbol.BODY}
+## 你的初始的基础形态（未穿戴衣物时的基础形态）
+{configuration.SystemPromptReplaceSymbol.BASE_FORM}
 
 ## 你的说话风格与语气
 {configuration.SystemPromptReplaceSymbol.CONVERSATION_EXAMPLE}

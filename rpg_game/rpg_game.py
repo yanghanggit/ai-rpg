@@ -326,7 +326,8 @@ class RPGGame(BaseGame):
             actor_model.attributes[AttributesIndex.DEFENSE],
         )
 
-        actor_entity.add(BaseFormComponent, actor_instance.name, actor_model.body)
+        assert actor_model.base_form != ""
+        actor_entity.add(BaseFormComponent, actor_instance.name, actor_model.base_form)
         actor_entity.add(
             FinalAppearanceComponent,
             actor_instance.name,
@@ -628,9 +629,11 @@ class RPGGame(BaseGame):
                         )
 
                     case BaseFormComponent.__name__:
-                        body_comp = BaseFormComponent(**comp.data)
+                        base_form_comp = BaseFormComponent(**comp.data)
                         load_entity.replace(
-                            BaseFormComponent, body_comp.name, body_comp.base_form
+                            BaseFormComponent,
+                            base_form_comp.name,
+                            base_form_comp.base_form,
                         )
 
                     case _:

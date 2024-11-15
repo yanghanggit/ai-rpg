@@ -20,7 +20,9 @@ class DataActorProperty(StrEnum):
     RAG = "RAG"
     SYS_PROMPT_TEMPLATE = "sys_prompt_template"
     AGENTPY_TEMPLATE = "agentpy_template"
-    BODY = "body"
+    BASE_FORM = "base_form"
+
+    # base_form
 
 
 ############################################################################################################
@@ -86,8 +88,9 @@ class ExcelDataActor:
 
     ############################################################################################################
     @property
-    def body(self) -> str:
-        return str(self._data[DataActorProperty.BODY])
+    def base_form(self) -> str:
+        assert str(self._data[DataActorProperty.BASE_FORM]) != ""
+        return str(self._data[DataActorProperty.BASE_FORM])
 
     ############################################################################################################
     @property
@@ -104,7 +107,7 @@ class ExcelDataActor:
             configuration.SystemPromptReplaceSymbol.SYSTEM_PROMPT, self.system_prompt
         )
         gen_prompt = gen_prompt.replace(
-            configuration.SystemPromptReplaceSymbol.BODY, self.body
+            configuration.SystemPromptReplaceSymbol.BASE_FORM, self.base_form
         )
         gen_prompt = gen_prompt.replace(
             configuration.SystemPromptReplaceSymbol.CONVERSATION_EXAMPLE,

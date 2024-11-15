@@ -30,7 +30,7 @@ def _generate_appearance_update_prompt(actor_name: str, appearance: str) -> str:
 def _generate_default_appearance_prompt(
     actor_name: str, base_form: str, clothe: str
 ) -> str:
-    assert base_form != "", "body is empty."
+    assert base_form != "", "base_form is empty."
     if clothe == "":
         return base_form
 
@@ -45,9 +45,9 @@ def _generate_appearance_reasoning_prompt(
 ) -> str:
 
     reference_info: List[str] = []
-    for name, (body, clothe) in base_form_and_clothe_info.items():
+    for name, (base_form, clothe) in base_form_and_clothe_info.items():
         reference_info.append(
-            f"""### {_generate_default_appearance_prompt(name, body, clothe)}"""
+            f"""### {_generate_default_appearance_prompt(name, base_form, clothe)}"""
         )
 
     appearance_json_structure = json.dumps(
@@ -63,7 +63,7 @@ def _generate_appearance_reasoning_prompt(
 1. 角色穿衣：如角色有衣服，结合基础形态和衣服信息生成外观描述。注意：
     - 部分身体部位（基础形态）会因穿着衣服被遮蔽，应忽略被遮蔽的部位。
     - 衣服的样式和细节（如袖子、裤子、面具、帽子）会影响外观。
-    - 避免描述被遮蔽的部位，例如“胸前的黑色印记被衣服遮盖住”。
+    - 避免描述被遮蔽的部位，例如“胸前的印记被衣服遮盖住”。
 2. 角色无衣：如角色无衣服，人形角色为穿内衣状态，非人角色直接描述基础形态外观。
 3. 润色：对最终结果进行适度润色，使描述生动。
 
@@ -78,6 +78,11 @@ def _generate_appearance_reasoning_prompt(
 - 每个 JSON 对象只应包含上述键中的一个或多个，不得重复或使用未定义的键。
 - 输出中不应包含多余文本或解释。
 - 不要使用```json```来封装内容。"""
+
+
+####################################################################################################
+####################################################################################################
+####################################################################################################
 
 
 ####################################################################################################
@@ -151,9 +156,9 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
     ###############################################################################################################################################
     def _apply_default(self, appearance_info: Dict[str, tuple[str, str]]) -> None:
 
-        for name, (body, clothe) in appearance_info.items():
-            if body == "":
-                logger.error(f"body is empty, name: {name}")
+        for name, (base_form, clothe) in appearance_info.items():
+            if base_form == "":
+                logger.error(f"base_form is empty, name: {name}")
                 continue
 
             actor_entity = self._context.get_actor_entity(name)
@@ -161,7 +166,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
             actor_entity.replace(
                 FinalAppearanceComponent,
                 name,
-                _generate_default_appearance_prompt(name, body, clothe),
+                _generate_default_appearance_prompt(name, base_form, clothe),
             )
 
     ###############################################################################################################################################

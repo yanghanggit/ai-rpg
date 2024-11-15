@@ -19,8 +19,6 @@ from my_components.action_components import (
     StageNarrateAction,
     StagePropDestructionAction,
 )
-
-from loguru import logger
 import game_sample.builtin_prompt
 
 
@@ -65,11 +63,9 @@ ACTOR_SYS_PROMPT_TEMPLATE = f"""# {configuration.SystemPromptReplaceSymbol.NAME}
 
 ### 注意事项
 {game_sample.builtin_prompt.ADDITIONAL_JSON_OUTPUT_FORMAT_REQUIREMENTS_FOR_ACTOR}"""
-
 ############################################################################################################
 ############################################################################################################
 ############################################################################################################
-
 STAGE_SYS_PROMPT_TEMPLATE = f"""# {configuration.SystemPromptReplaceSymbol.NAME}
 你扮演这个游戏世界中的一个场景: {configuration.SystemPromptReplaceSymbol.NAME}。
 
@@ -118,11 +114,9 @@ STAGE_SYS_PROMPT_TEMPLATE = f"""# {configuration.SystemPromptReplaceSymbol.NAME}
 #### 注意！
 - 输出应清晰反映场景的最新状态和变化，不应包含角色的活动或心理。
 - 确保描述有层次感，充分展示场景的状态更新。"""
-
 ############################################################################################################
 ############################################################################################################
 ############################################################################################################
-
 WORLD_SYSTEM_SYS_PROMPT_TEMPLATE = f"""# {configuration.SystemPromptReplaceSymbol.NAME}
 你扮演这个游戏世界中一个‘世界系统’: {configuration.SystemPromptReplaceSymbol.NAME}。
 
@@ -134,34 +128,6 @@ WORLD_SYSTEM_SYS_PROMPT_TEMPLATE = f"""# {configuration.SystemPromptReplaceSymbo
 
 ## 你的设定
 {configuration.SystemPromptReplaceSymbol.SYSTEM_PROMPT}"""
-
-
-############################################################################################################
-############################################################################################################
-############################################################################################################
-
-
-def gen_sys_prompt_templates() -> None:
-
-    game_sample.utils.write_text_file(
-        configuration.GAME_SAMPLE_OUT_PUT_SYS_PROMPT_TEMPLATES_DIR,
-        "actor_sys_prompt_template.md",
-        ACTOR_SYS_PROMPT_TEMPLATE,
-    )
-    game_sample.utils.write_text_file(
-        configuration.GAME_SAMPLE_OUT_PUT_SYS_PROMPT_TEMPLATES_DIR,
-        "stage_sys_prompt_template.md",
-        STAGE_SYS_PROMPT_TEMPLATE,
-    )
-    game_sample.utils.write_text_file(
-        configuration.GAME_SAMPLE_OUT_PUT_SYS_PROMPT_TEMPLATES_DIR,
-        "world_system_sys_prompt_template.md",
-        WORLD_SYSTEM_SYS_PROMPT_TEMPLATE,
-    )
-
-    logger.debug("Generated system prompt templates.")
-
-
 ############################################################################################################
 ############################################################################################################
 ############################################################################################################

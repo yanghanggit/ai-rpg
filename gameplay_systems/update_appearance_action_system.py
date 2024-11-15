@@ -5,8 +5,8 @@ from loguru import logger
 from typing import Dict, List, final, Optional
 import json
 from my_components.components import (
-    AppearanceComponent,
-    BodyComponent,
+    FinalAppearanceComponent,
+    BaseFormComponent,
     ActorComponent,
     ClothesComponent,
     AgentConnectionFlagComponent,
@@ -27,61 +27,57 @@ def _generate_appearance_update_prompt(actor_name: str, appearance: str) -> str:
 
 
 ################################################################################################################################################
-def _generate_default_appearance_prompt(body: str, clothe: str) -> str:
-    assert body != "", "body is empty."
+def _generate_default_appearance_prompt(
+    actor_name: str, base_form: str, clothe: str
+) -> str:
+    assert base_form != "", "body is empty."
     if clothe == "":
-        return body
+        return base_form
 
-    return body + f"""\n衣着:{clothe}"""
+    return f"""{actor_name}
+- 基础形态: {base_form}
+- 衣着: {clothe}"""
 
 
 ################################################################################################################################################
 def _generate_appearance_reasoning_prompt(
-    actors_body_and_clothe: Dict[str, tuple[str, str]]
+    base_form_and_clothe_info: Dict[str, tuple[str, str]]
 ) -> str:
-    appearance_info_list: List[str] = []
-    actor_name_list: List[str] = []
-    for name, (body, clothe) in actors_body_and_clothe.items():
-        appearance_info_list.append(
-            f"""### {name}
-- 裸身:{body}
-- 衣服:{clothe}
-"""
+
+    reference_info: List[str] = []
+    for name, (body, clothe) in base_form_and_clothe_info.items():
+        reference_info.append(
+            f"""### {_generate_default_appearance_prompt(name, body, clothe)}"""
         )
-        actor_name_list.append(name)
 
-    dumps = json.dumps({name: "?" for name in actor_name_list}, ensure_ascii=False)
+    appearance_json_structure = json.dumps(
+        {name: "?" for name in base_form_and_clothe_info.keys()}, ensure_ascii=False
+    )
 
-    # 最后的合并
-    ret_prompt = f"""# 请根据 裸身 与 衣服，生成当前的角色外观的描述。
-## 提供给你的信息
-{"\n".join(appearance_info_list)}
+    return f"""# 请根据基础形态和衣着的信息生成角色的外观描述。
+
+## 提供信息
+{"\n".join(reference_info)}
 
 ## 推理逻辑
-- 第1步:如角色有衣服。则代表“角色穿着衣服”。最终推理结果为:裸身的信息结合衣服信息。并且是以第三者视角能看到的样子去描述。
-    - 注意！部分身体部位会因穿着衣服被遮蔽。请根据衣服的信息进行推理。
-    - 衣服的样式，袖子与裤子等信息都会影响最终外观。
-    - 面具（遮住脸），帽子（遮住头部，或部分遮住脸）等头部装饰物也会影响最终外观。
-    - 被遮住的部位（因为站在第三者视角就无法看见），不需要再次提及，不要出现在推理结果中，如果有，需要删除。
-    - 注意！错误的句子：胸前的黑色印记被衣服遮盖住，无法看见。
-- 第2步:如角色无衣服，推理结果为角色当前为裸身。
-    - 注意！如果是人形角色，裸身意味着穿着内衣!
-    - 如果是动物，怪物等非人角色，就是最终外观信息。
-- 第3步:将推理结果进行适度润色。
+1. 角色穿衣：如角色有衣服，结合基础形态和衣服信息生成外观描述。注意：
+    - 部分身体部位（基础形态）会因穿着衣服被遮蔽，应忽略被遮蔽的部位。
+    - 衣服的样式和细节（如袖子、裤子、面具、帽子）会影响外观。
+    - 避免描述被遮蔽的部位，例如“胸前的黑色印记被衣服遮盖住”。
+2. 角色无衣：如角色无衣服，人形角色为穿内衣状态，非人角色直接描述基础形态外观。
+3. 润色：对最终结果进行适度润色，使描述生动。
 
-## 输出格式指南
+## 输出要求 
 
-### 输出格式（请根据下面的示意, 确保你的输出严格遵守相应的结构)
-{dumps}
+### 输出格式指南
+请严格遵循以下JSON结构示例: {appearance_json_structure}
 
 ### 注意事项
-- '?'就是你推理出来的结果(结果中可以不用再提及角色名字)，你需要将其替换为你的推理结果。
-- 所有文本输出必须为第3人称。
-- 每个 JSON 对象必须包含上述键中的一个或多个，不得重复同一个键，也不得使用不在上述中的键。
-- 输出不应包含任何超出所需 JSON 格式的额外文本、解释或总结。
-- 不要使用```json```来封装内容。
-"""
-    return ret_prompt
+- 将“?”替换为推理结果，无需重复角色名字。
+- 输出必须为第3人称。
+- 每个 JSON 对象只应包含上述键中的一个或多个，不得重复或使用未定义的键。
+- 输出中不应包含多余文本或解释。
+- 不要使用```json```来封装内容。"""
 
 
 ####################################################################################################
@@ -107,7 +103,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
         return (
             entity.has(UpdateAppearanceAction)
             and entity.has(ActorComponent)
-            and entity.has(BodyComponent)
+            and entity.has(BaseFormComponent)
         )
 
     ####################################################################################################
@@ -163,9 +159,9 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
             actor_entity = self._context.get_actor_entity(name)
             assert actor_entity is not None, f"entity is None, name: {name}"
             actor_entity.replace(
-                AppearanceComponent,
+                FinalAppearanceComponent,
                 name,
-                _generate_default_appearance_prompt(body, clothe),
+                _generate_default_appearance_prompt(name, body, clothe),
             )
 
     ###############################################################################################################################################
@@ -203,7 +199,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
             assert entity is not None, f"entity is None, name: {name}"
             if entity is None:
                 continue
-            entity.replace(AppearanceComponent, name, appearance)
+            entity.replace(FinalAppearanceComponent, name, appearance)
 
     ###############################################################################################################################################
     def _generate_actor_appearance_info(
@@ -213,7 +209,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
         ret: Dict[str, tuple[str, str]] = {}
         for actor_entity in actor_entities:
             ret[actor_entity.get(ActorComponent).name] = (
-                actor_entity.get(BodyComponent).body,
+                actor_entity.get(BaseFormComponent).base_form,
                 self._extract_clothing_appearance(actor_entity),
             )
 
@@ -241,12 +237,12 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
             if current_stage_entity is None:
                 continue
 
-            appearance_comp = actor_entity.get(AppearanceComponent)
+            appearance_comp = actor_entity.get(FinalAppearanceComponent)
             self._context.broadcast_event_in_stage(
                 current_stage_entity,
                 UpdateAppearanceEvent(
                     message=_generate_appearance_update_prompt(
-                        appearance_comp.name, appearance_comp.appearance
+                        appearance_comp.name, appearance_comp.final_appearance
                     )
                 ),
             )

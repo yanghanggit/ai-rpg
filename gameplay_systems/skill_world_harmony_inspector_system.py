@@ -5,7 +5,7 @@ from my_components.action_components import (
     AnnounceAction,
 )
 from my_components.components import (
-    BodyComponent,
+    BaseFormComponent,
     SkillComponent,
     DestroyComponent,
 )
@@ -451,7 +451,7 @@ class SkillWorldHarmonyInspectorSystem(ExecuteProcessor):
 
             prompt = _generate_world_harmony_inspector_prompt(
                 self._context.safe_get_entity_name(process_data.actor_entity),
-                process_data.actor_entity.get(BodyComponent).body,
+                process_data.actor_entity.get(BaseFormComponent).base_form,
                 gameplay_systems.skill_system_utils.parse_skill_prop_files(
                     context=self._context,
                     skill_entity=process_data.skill_entity,

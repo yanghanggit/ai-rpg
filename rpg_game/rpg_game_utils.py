@@ -209,7 +209,6 @@ def gen_player_watch_action_model(
     if player_entity is None:
         return None
 
-    # 场景本身的描述
     stage_narrate_content = get_stage_narrate_content_from_stage_archive_file(
         game_name, player_entity
     )
@@ -277,7 +276,7 @@ def gen_player_check_action_model(
         actor_props_prompt.append("- 无任何道具。")
 
     # 最终返回
-    message = f"""# {player_proxy.name} | {player_proxy.actor_name} 自身检查
+    message = f"""# {player_proxy.name} | {player_proxy.actor_name}
 
 ## 你当前所在的场景：{check_self.stage_name}
 

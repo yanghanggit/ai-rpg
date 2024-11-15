@@ -32,9 +32,6 @@ class HandleTerminalPlayerInputSystem(ExecuteProcessor):
                 continue
 
             if not player_entity.has(PlanningAllowedComponent):
-                logger.info(
-                    f"player_entity has no PlanningAllowedComponent, player_proxy.name={player_proxy.name}"
-                )
                 continue
 
             for command in player_proxy._commands:

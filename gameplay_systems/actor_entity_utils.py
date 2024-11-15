@@ -4,7 +4,7 @@ from my_components.components import (
     AttributesComponent,
     ClothesComponent,
     WeaponComponent,
-    AppearanceComponent,
+    FinalAppearanceComponent,
     ActorComponent,
 )
 from typing import List, Dict, Optional
@@ -62,8 +62,10 @@ class ActorStatusEvaluator:
         # 检查装备信息
         self._validate_equipment(context, actor_entity)
         # 检查外观信息
-        assert actor_entity.has(AppearanceComponent)
-        self._appearance = str(actor_entity.get(AppearanceComponent).appearance)
+        assert actor_entity.has(FinalAppearanceComponent)
+        self._appearance = str(
+            actor_entity.get(FinalAppearanceComponent).final_appearance
+        )
 
     ######################################################################################################################################
     def _retrieve_stage_name(

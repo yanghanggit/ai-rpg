@@ -8,8 +8,8 @@ from my_components.components import (
     ActorComponent,
     PlayerComponent,
     AttributesComponent,
-    AppearanceComponent,
-    BodyComponent,
+    FinalAppearanceComponent,
+    BaseFormComponent,
     GUIDComponent,
     WeaponComponent,
     ClothesComponent,
@@ -326,9 +326,9 @@ class RPGGame(BaseGame):
             actor_model.attributes[AttributesIndex.DEFENSE],
         )
 
-        actor_entity.add(BodyComponent, actor_instance.name, actor_model.body)
+        actor_entity.add(BaseFormComponent, actor_instance.name, actor_model.body)
         actor_entity.add(
-            AppearanceComponent,
+            FinalAppearanceComponent,
             actor_instance.name,
             "",
         )
@@ -573,10 +573,10 @@ class RPGGame(BaseGame):
             Matcher(
                 any_of=[
                     AttributesComponent,
-                    AppearanceComponent,
+                    FinalAppearanceComponent,
                     PlayerComponent,
                     KickOffFlagComponent,
-                    BodyComponent,
+                    BaseFormComponent,
                 ]
             )
         ).entities
@@ -609,12 +609,12 @@ class RPGGame(BaseGame):
                             rpg_attr_comp.defense,
                         )
 
-                    case AppearanceComponent.__name__:
-                        appearance_comp = AppearanceComponent(**comp.data)
+                    case FinalAppearanceComponent.__name__:
+                        appearance_comp = FinalAppearanceComponent(**comp.data)
                         load_entity.replace(
-                            AppearanceComponent,
+                            FinalAppearanceComponent,
                             appearance_comp.name,
-                            appearance_comp.appearance,
+                            appearance_comp.final_appearance,
                         )
 
                     case PlayerComponent.__name__:
@@ -627,10 +627,10 @@ class RPGGame(BaseGame):
                             KickOffFlagComponent, kick_off_flag_comp.name
                         )
 
-                    case BodyComponent.__name__:
-                        body_comp = BodyComponent(**comp.data)
+                    case BaseFormComponent.__name__:
+                        body_comp = BaseFormComponent(**comp.data)
                         load_entity.replace(
-                            BodyComponent, body_comp.name, body_comp.body
+                            BaseFormComponent, body_comp.name, body_comp.base_form
                         )
 
                     case _:

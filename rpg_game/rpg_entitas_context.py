@@ -5,7 +5,7 @@ from my_components.components import (
     StageComponent,
     ActorComponent,
     PlayerComponent,
-    AppearanceComponent,
+    FinalAppearanceComponent,
     GUIDComponent,
     RoundEventsRecordComponent,
 )
@@ -220,11 +220,11 @@ class RPGEntitasContext(Context):
 
         ret: Dict[str, str] = {}
         for actor in self.get_actors_in_stage(actor_entity):
-            if not actor.has(AppearanceComponent):
+            if not actor.has(FinalAppearanceComponent):
                 continue
 
-            appearance_comp = actor.get(AppearanceComponent)
-            ret[appearance_comp.name] = str(appearance_comp.appearance)
+            appearance_comp = actor.get(FinalAppearanceComponent)
+            ret[appearance_comp.name] = str(appearance_comp.final_appearance)
 
         return ret
 

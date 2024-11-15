@@ -78,18 +78,18 @@ class PlanningAllowedComponent(NamedTuple):
     name: str
 
 
+# 基础形态。，用于和衣服组成完整的外观信息。如果是动物等，就是动物的外观信息
+@final
+class BaseFormComponent(NamedTuple):
+    name: str
+    base_form: str
+
+
 # 角色外观信息
 @final
-class AppearanceComponent(NamedTuple):
+class FinalAppearanceComponent(NamedTuple):
     name: str
-    appearance: str
-
-
-# 身体信息，用于和衣服组成完整的外观信息。如果是动物等，就是动物的外观信息
-@final
-class BodyComponent(NamedTuple):
-    name: str
-    body: str
+    final_appearance: str
 
 
 # 标记进入新的舞台

@@ -4,7 +4,7 @@ from my_components.components import (
     WorldComponent,
     StageComponent,
     ActorComponent,
-    AppearanceComponent,
+    FinalAppearanceComponent,
     KickOffContentComponent,
     KickOffFlagComponent,
     AgentConnectionFlagComponent,
@@ -30,58 +30,59 @@ from my_components.action_components import UpdateAppearanceAction
 
 ###############################################################################################################################################
 def _generate_actor_kick_off_prompt(kick_off_message: str) -> str:
-
-    ret_prompt = f"""# 游戏世界即将开始运行。这是你的初始设定，你将以此为起点进行游戏并更新你的状态
+    return f"""# 游戏启动!
+见‘游戏流程’-‘游戏启动’，游戏系统将提供初始设定，包括角色、场景、道具信息，以及剧情开端。
+你将以此为起点进行游戏
 
 ## 你的初始设定
 {kick_off_message}
 
 ## 输出要求
 - 请遵循 输出格式指南。
-- 返回结果只带如下的键:{MindVoiceAction.__name__}与{TagAction.__name__}。"""
-
-    return ret_prompt
+- 返回结果 只 包含:{MindVoiceAction.__name__}与{TagAction.__name__}。"""
 
 
 ###############################################################################################################################################
 def _generate_stage_kick_off_prompt(
     kick_off_message: str,
-    props_in_stage: List[PropFile],
-    actors_in_stage: Set[str],
+    input_props_in_stage: List[PropFile],
+    input_actors_in_stage: Set[str],
 ) -> str:
 
-    props_prompt = "- 无任何道具。"
-    if len(props_in_stage) > 0:
-        props_prompt = ""
-        for prop_file in props_in_stage:
-            props_prompt += generate_prop_file_appearance_prompt(prop_file)
+    # 组织一下场景中的道具信息，只要外观。
+    props_in_stage_prompt = [
+        generate_prop_file_appearance_prompt(prop_file)
+        for prop_file in input_props_in_stage
+    ]
+    if len(props_in_stage_prompt) == 0:
+        props_in_stage_prompt.append("无")
 
-    actors_prompt = "- 无任何角色。"
-    if len(actors_in_stage) > 0:
-        actors_prompt = ""
-        for actor_name in actors_in_stage:
-            actors_prompt += f"- {actor_name}\n"
+    # 组织一下场景中的角色信息, 名字即可，因为后面会有推理的plan
+    actors_in_stage_prompt = list(input_actors_in_stage)
+    if len(actors_in_stage_prompt) == 0:
+        actors_in_stage_prompt.append("无")
 
-    ret_prompt = f"""# 游戏世界即将开始运行。这是你的初始设定，你将以此为起点进行游戏，并更新你的场景描述
+    return f"""# 游戏启动!
+见‘游戏流程’-‘游戏启动’，游戏系统将提供初始设定，包括角色、场景、道具信息，以及剧情开端。
+你将以此为起点进行游戏
 
 ## 场景内的道具
-{props_prompt}
+{"\n".join(props_in_stage_prompt)}
 
 ## 场景内的角色
-{actors_prompt}
+{"\n".join(actors_in_stage_prompt)}
 
 ## 你的初始设定
 {kick_off_message}
 
 ## 输出要求
 - 请遵循 输出格式指南。
-- 返回结果只包含:{StageNarrateAction.__name__} 和 {TagAction.__name__}。"""
-    return ret_prompt
+- 返回结果 只 包含:{StageNarrateAction.__name__} 和 {TagAction.__name__}。"""
 
 
 ###############################################################################################################################################
 def _generate_world_system_kick_off_prompt() -> str:
-    return f"""# 游戏世界即将开始运行。请回答你的职能与描述"""
+    return f"""# 游戏启动! 请回答你的职能与描述"""
 
 
 ######################################################################################################################################################
@@ -308,12 +309,14 @@ class AgentKickOffSystem(ExecuteProcessor):
     ######################################################################################################################################################
     def _initialize_appearance_update_action(self) -> None:
 
-        actor_entities = self._context.get_group(Matcher(AppearanceComponent)).entities
+        actor_entities = self._context.get_group(
+            Matcher(FinalAppearanceComponent)
+        ).entities
         for actor_entity in actor_entities:
 
-            appearance_comp = actor_entity.get(AppearanceComponent)
-            if appearance_comp.appearance == "":
-                logger.warning(
+            appearance_comp = actor_entity.get(FinalAppearanceComponent)
+            if appearance_comp.final_appearance == "":
+                logger.info(
                     f"AgentKickOffSystem: appearance is empty, {appearance_comp.name}, so need to update appearance"
                 )
                 actor_entity.replace(

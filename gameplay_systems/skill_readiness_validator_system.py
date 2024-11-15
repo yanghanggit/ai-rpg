@@ -5,7 +5,7 @@ from my_components.action_components import (
     MindVoiceAction,
 )
 from my_components.components import (
-    BodyComponent,
+    BaseFormComponent,
     SkillComponent,
     DestroyComponent,
 )
@@ -254,7 +254,7 @@ class SkillReadinessValidatorSystem(ExecuteProcessor):
 
             skill_readiness_prompt = _generate_skill_readiness_validator_prompt(
                 process_data.agent._name,
-                process_data.actor_entity.get(BodyComponent).body,
+                process_data.actor_entity.get(BaseFormComponent).base_form,
                 gameplay_systems.skill_system_utils.parse_skill_prop_files(
                     context=self._context,
                     skill_entity=process_data.skill_entity,

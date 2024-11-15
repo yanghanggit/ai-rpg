@@ -39,7 +39,7 @@ class RemoteRunnableConnector:
             remote_runnable = RemoteRunnable(url)
             response = await remote_runnable.ainvoke(
                 {
-                    "input": "请告诉我你的名字",
+                    "input": "你是谁?",
                     "chat_history": [],
                 }
             )

@@ -33,9 +33,7 @@ assert GAME_SAMPLE_DIR.exists(), f"找不到目录: {GAME_SAMPLE_DIR}"
 # Excel文件路径
 excel_path = Path(f"game_sample/excel/")
 excel_path.mkdir(parents=True, exist_ok=True)
-GAME_SAMPLE_EXCEL_FILE_PATH: Path = (
-    excel_path / "game_sample.xlsx"
-)  # Path(f"game_sample/excel/game_sample.xlsx")
+GAME_SAMPLE_EXCEL_FILE_PATH: Path = excel_path / "game_sample.xlsx"
 assert (
     GAME_SAMPLE_EXCEL_FILE_PATH.exists()
 ), f"找不到Excel文件: {GAME_SAMPLE_EXCEL_FILE_PATH}"

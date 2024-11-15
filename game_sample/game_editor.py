@@ -78,11 +78,9 @@ class ExcelEditorGame:
             assert isinstance(self._cache_props, list)
             return self._cache_props
 
-        all_props = (
-            self._parse_props_from_actors(self.editor_players)
-            + self._parse_props_from_actors(self.editor_actors)
-            # + self._parse_props_from_stages(self.editor_stages)
-        )
+        all_props = self._parse_props_from_actors(
+            self.editor_players
+        ) + self._parse_props_from_actors(self.editor_actors)
 
         self._cache_props = list(set(all_props))
 
@@ -284,21 +282,6 @@ class ExcelEditorGame:
                 if prop not in ret:
                     ret.append(prop)
         return ret
-
-    ############################################################################################################################
-    # def _parse_props_from_stages(
-    #     self, stages: List[ExcelEditorStage]
-    # ) -> List[ExcelDataProp]:
-
-    #     ret = []
-    #     for stage in stages:
-    #         for tp in stage.parse_props_in_stage():
-    #             prop = tp[0]
-    #             assert prop not in ret
-    #             if prop not in ret:
-    #                 ret.append(prop)
-
-    #     return ret
 
     ############################################################################################################################
     def gen_model(self) -> GameModel:

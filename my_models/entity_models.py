@@ -31,7 +31,6 @@ class StageActorInstanceProxy(TypedDict, total=True):
 class StageInstanceModel(BaseModel):
     name: str
     guid: int
-    # props: List[PropInstanceModel]
     actors: List[StageActorInstanceProxy]
     spawners: List[str]
 

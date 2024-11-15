@@ -11,7 +11,6 @@ from game_sample.stage_data import ExcelDataStage
 from game_sample.guid_generator import editor_guid_generator
 from my_models.entity_models import (
     AttributesIndex,
-    PropInstanceModel,
     StageModel,
     StageInstanceModel,
     StageActorInstanceProxy,
@@ -106,45 +105,12 @@ class ExcelEditorStage:
         return ret
 
     ################################################################################################################################
-    # @property
-    # def stage_prop(self) -> List[str]:
-    #     data: Optional[str] = self._data[EditorProperty.STAGE_PROP]
-    #     if data is None:
-    #         return []
-    #     return data.split(";")
-
-    ################################################################################################################################
     @property
     def actors_in_stage(self) -> List[str]:
         data: Optional[str] = self._data[EditorProperty.ACTORS_IN_STAGE]
         if data is None:
             return []
         return data.split(";")
-
-    ################################################################################################################################
-    # def parse_props_in_stage(self) -> List[tuple[ExcelDataProp, int]]:
-
-    #     ret: List[tuple[ExcelDataProp, int]] = []
-
-    #     for prop_str in self.stage_prop:
-    #         if prop_str == "":
-    #             continue
-
-    #         tp = my_format_string.editor_prop_info_string.extract_prop_name_and_count(
-    #             prop_str
-    #         )
-    #         if tp[0] not in self._prop_data_base:
-    #             assert False, f"Invalid prop: {tp[0]}"
-    #             continue
-
-    #         prop_data = self._prop_data_base[tp[0]]
-    #         if not prop_data.can_placed:
-    #             assert False, f"Invalid prop: {prop_data.name}"
-    #             continue
-
-    #         ret.append((prop_data, tp[1]))
-
-    #     return ret
 
     ################################################################################################################################
     def add_stage_graph(self, stage_name: str) -> None:
@@ -165,22 +131,6 @@ class ExcelEditorStage:
                 logger.error(f"Invalid actor: {actor_name}")
 
         return ret
-
-    ################################################################################################################################
-    # def gen_prop_instances_in_stage(
-    #     self, props: List[tuple[ExcelDataProp, int]]
-    # ) -> List[PropInstanceModel]:
-
-    #     ret: List[PropInstanceModel] = []
-    #     for tp in props:
-    #         new_model = PropInstanceModel(
-    #             name=tp[0].name,
-    #             guid=editor_guid_generator.gen_prop_guid(tp[0].name),
-    #             count=tp[1],
-    #         )
-    #         ret.append(new_model)
-
-    #     return ret
 
     ################################################################################################################################
     def gen_actors_instances_in_stage(
@@ -216,7 +166,6 @@ class ExcelEditorStage:
         return StageInstanceModel(
             name=self.excel_data.name,
             guid=editor_guid_generator.gen_stage_guid(self.excel_data.name),
-            # props=self.gen_prop_instances_in_stage(self.parse_props_in_stage()),
             actors=self.gen_actors_instances_in_stage(
                 self.parse_actors_in_stage(), self._actor_group
             ),

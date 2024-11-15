@@ -215,7 +215,7 @@ def gen_player_watch_action_model(
     ## 场景内的角色信息获取
     actors_info: Dict[str, str] = game_name.context.gather_actor_appearance_in_stage(
         player_entity
-    )  # get_info_of_actors_in_stage(game_name, player_entity)
+    )
     actors_info.pop(game_name.context.safe_get_entity_name(player_entity))
 
     actors_info_prompts = [
@@ -225,12 +225,6 @@ def gen_player_watch_action_model(
 
     if len(actors_info_prompts) == 0:
         actors_info_prompts.append("- 场景内无其他角色。")
-
-    # 场景内的道具信息获取
-    # props_in_stage = get_props_in_stage(game_name, player_entity)
-    # props_in_stage_prompts = [
-    #     generate_prop_file_appearance_prompt(prop) for prop in props_in_stage
-    # ]
 
     # 场景名称
     stage_entity = game_name.context.safe_get_stage_entity(player_entity)

@@ -108,7 +108,7 @@ def _generate_actor_plan_prompt(
 ## 你的健康状态
 {f"生命值: {health:.2f}%"}
 
-## 你当前所有的道具
+## 你的道具
 {"\n".join(props_prompt)}
 
 ## 你当前装备的道具
@@ -116,7 +116,7 @@ def _generate_actor_plan_prompt(
 - {current_clothes is not None and current_clothes.name or "无"}
 
 ## 小建议
-- 随时保持装备武器与衣服的状态(前提是你拥有）。
+- 请随时保持装备武器与衣服的状态(前提是你拥有）。
 
 ## 输出要求
 - 请遵循 输出格式指南。

@@ -13,11 +13,9 @@ from my_components.action_components import (
     MindVoiceAction,
     AnnounceAction,
     WhisperAction,
-    # PickUpPropAction,
     GivePropAction,
     EquipPropAction,
     StageNarrateAction,
-    # StagePropDestructionAction,
 )
 import game_sample.builtin_prompt
 
@@ -62,9 +60,6 @@ ACTOR_SYS_PROMPT_TEMPLATE = f"""# {configuration.SystemPromptReplaceSymbol.NAME}
 
 ### 注意事项
 {game_sample.builtin_prompt.ADDITIONAL_JSON_OUTPUT_FORMAT_REQUIREMENTS_FOR_ACTOR}"""
-
-
-##"{PickUpPropAction.__name__}":["在本场景内的道具的全名（表示你要拾取它）"],
 ############################################################################################################
 ############################################################################################################
 ############################################################################################################
@@ -107,9 +102,6 @@ STAGE_SYS_PROMPT_TEMPLATE = f"""# {configuration.SystemPromptReplaceSymbol.NAME}
 #### 注意！
 - 输出应清晰反映场景的最新状态和变化，不应包含角色的活动或心理。
 - 确保描述有层次感，充分展示场景的状态更新。"""
-
-
-##"{StagePropDestructionAction.__name__}":["场景内被破坏的道具全名（触发规则见下文'道具破坏的逻辑处理'）"],
 ############################################################################################################
 ############################################################################################################
 ############################################################################################################

@@ -306,12 +306,8 @@ class RPGGame(BaseGame):
     ) -> Entity:
 
         if actor_instance.name != actor_model.name:
-            assert (
-                actor_instance.name
-                == ComplexName.format_name_with_guid(
-                    actor_model.name, actor_instance.guid
-                )
-                # f"""{actor_model.name}{ComplexNameSymbol.GUID_FLAG}{actor_instance.guid}"""
+            assert actor_instance.name == ComplexName.format_name_with_guid(
+                actor_model.name, actor_instance.guid
             ), """注意！你做了批量生成的actor但是生成出现了错误！"""
 
         # 创建实体
@@ -492,25 +488,6 @@ class RPGGame(BaseGame):
             assert actor_entity is not None
 
             actor_entity.replace(ActorComponent, actor_name, stage_model.name)
-
-        # 场景内添加道具
-        # for prop_instance in stage_instance.props:
-        #     # 直接使用文件系统
-        #     assert self._game_resource is not None
-        #     prop_model = self._game_resource.data_base.get_prop(prop_instance.name)
-        #     if prop_model is None:
-        #         logger.error(f"没有从数据库找到道具：{prop_instance.name}")
-        #         continue
-
-        #     prop_file = PropFile(
-        #         PropFileModel(
-        #             owner=stage_model.name,
-        #             prop_model=prop_model,
-        #             prop_instance_model=prop_instance,
-        #         )
-        #     )
-        #     context._file_system.add_file(prop_file)
-        #     context._file_system.write_file(prop_file)
 
         # 添加子系统：Agent
         context.agent_system.register_agent(stage_model.name, stage_model.url)

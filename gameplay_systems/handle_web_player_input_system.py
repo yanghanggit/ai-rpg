@@ -21,7 +21,6 @@ class HandleWebPlayerInputSystem(ExecuteProcessor):
         if not isinstance(self._game, WebGame):
             return
 
-        # 1. 遍历所有的玩家,
         for player_proxy in self._game.players:
 
             player_entity = self._context.get_player_entity(player_proxy.name)

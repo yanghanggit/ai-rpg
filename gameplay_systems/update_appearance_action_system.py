@@ -2,19 +2,22 @@ from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: igno
 from overrides import override
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
-from typing import Dict, Set, List, final, Optional
+from typing import Dict, List, final, Optional
 import json
 from my_components.components import (
     AppearanceComponent,
     BodyComponent,
     ActorComponent,
     ClothesComponent,
+    AgentConnectionFlagComponent,
+    KickOffContentComponent,
 )
 from extended_systems.prop_file import PropFile
 from my_agent.agent_task import AgentTask
 from my_components.action_components import UpdateAppearanceAction
 from rpg_game.rpg_game import RPGGame
 from my_models.event_models import UpdateAppearanceEvent
+from my_agent.lang_serve_agent import LangServeAgent
 
 
 ################################################################################################################################################
@@ -110,79 +113,80 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
     ####################################################################################################
     @override
     def react(self, entities: list[Entity]) -> None:
-        self._update_entity_appearance(
-            self._context.get_world_entity(self._world_system_name), set(entities)
-        )
+
+        actor_appearance_info = self._generate_actor_appearance_info((entities))
+        if len(actor_appearance_info) == 0:
+            assert False, "actor_appearance_info is empty."
+            return
+
+        # 没有衣服的，直接更新外观，也是默认设置，防止世界系统无法推理
+        self._apply_default(actor_appearance_info)
+
+        # 如果有世界系统，且有AgentConnectionFlagComponent，请求更新外观
+        if (
+            self.world_system_entity is not None
+            and self.world_system_entity.has(AgentConnectionFlagComponent)
+            and self.world_system_entity.has(KickOffContentComponent)
+        ):
+            # 准备推理
+            world_system_agent = self._context.agent_system.get_agent(
+                self._context.safe_get_entity_name(self.world_system_entity)
+            )
+            assert (
+                world_system_agent is not None
+            ), f"world_system_agent is None, name: {self._context.safe_get_entity_name(self.world_system_entity)}"
+
+            # 有衣服的，请求更新，通过LLM来推理外观
+            self._execute_appearance_update_task(
+                actor_appearance_info, world_system_agent
+            )
+
+        # 广播更新外观事件
+        self._notify_appearance_change_event((entities))
+
+        # 最后必须清除UpdateAppearanceAction
         self._clear_appearance_actions(entities)
 
     ###############################################################################################################################################
-    def _update_entity_appearance(
-        self, world_system_entity: Optional[Entity], actor_entities: Set[Entity]
-    ) -> None:
-
-        if len(actor_entities) == 0:
-            return
-
-        actor_appearance_data = self._generate_actor_appearance_data(actor_entities)
-        if len(actor_appearance_data) == 0:
-            return
-
-        # 没有衣服的，直接更新外观
-        self._apply_default_appearance(actor_appearance_data)
-
-        # 有衣服的，请求更新，通过LLM来推理外观
-        self._process_appearance_update_request(
-            actor_appearance_data, world_system_entity
-        )
-
-        # 广播更新外观事件
-        self._broadcast_appearance_update_event(actor_entities)
+    @property
+    def world_system_entity(self) -> Optional[Entity]:
+        return self._context.get_world_entity(self._world_system_name)
 
     ###############################################################################################################################################
-    def _apply_default_appearance(self, input_data: Dict[str, tuple[str, str]]) -> None:
+    def _apply_default(self, appearance_info: Dict[str, tuple[str, str]]) -> None:
 
-        context = self._context
-        for name, (body, clothe) in input_data.items():
-
+        for name, (body, clothe) in appearance_info.items():
             if body == "":
                 logger.error(f"body is empty, name: {name}")
                 continue
 
-            default_appearance = _generate_default_appearance_prompt(body, clothe)
-
-            entity = context.get_actor_entity(name)
-            assert entity is not None, f"entity is None, name: {name}"
-
-            entity.replace(AppearanceComponent, name, default_appearance)
+            actor_entity = self._context.get_actor_entity(name)
+            assert actor_entity is not None, f"entity is None, name: {name}"
+            actor_entity.replace(
+                AppearanceComponent,
+                name,
+                _generate_default_appearance_prompt(body, clothe),
+            )
 
     ###############################################################################################################################################
-    def _process_appearance_update_request(
+    def _execute_appearance_update_task(
         self,
-        actor_appearance_data: Dict[str, tuple[str, str]],
-        world_system_entity: Optional[Entity],
+        appearance_info: Dict[str, tuple[str, str]],
+        world_system_agent: LangServeAgent,
     ) -> bool:
 
-        if len(actor_appearance_data) == 0 or world_system_entity is None:
-            return False
-
-        safe_name = self._context.safe_get_entity_name(world_system_entity)
-        agent = self._context.agent_system.get_agent(safe_name)
-        if agent is None:
-            return False
-
-        prompt = _generate_appearance_reasoning_prompt(actor_appearance_data)
-
-        appearance_update_task = AgentTask.create_without_context(agent, prompt)
-        if appearance_update_task.request() is None:
-            logger.error(f"{safe_name} request response is None.")
+        agent_task = AgentTask.create_without_context(
+            world_system_agent,
+            _generate_appearance_reasoning_prompt(appearance_info),
+        )
+        if agent_task.request() is None:
+            logger.error(f"{world_system_agent._name} request response is None.")
             return False
 
         try:
 
-            appearance_json_response: Dict[str, str] = json.loads(
-                appearance_update_task.response_content
-            )
-            self._update_appearance_entities(appearance_json_response)
+            json_reponse: Dict[str, str] = json.loads(agent_task.response_content)
+            self._update_appearance_components(json_reponse)
 
         except Exception as e:
             logger.error(f"json.loads error: {e}")
@@ -191,44 +195,47 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
         return True
 
     ###############################################################################################################################################
-    def _update_appearance_entities(self, _json_: Dict[str, str]) -> None:
-        context = self._context
-        for name, appearance in _json_.items():
-            entity = context.get_actor_entity(name)
+    def _update_appearance_components(
+        self, appearance_change_map: Dict[str, str]
+    ) -> None:
+        for name, appearance in appearance_change_map.items():
+            entity = self._context.get_actor_entity(name)
+            assert entity is not None, f"entity is None, name: {name}"
             if entity is None:
                 continue
             entity.replace(AppearanceComponent, name, appearance)
 
     ###############################################################################################################################################
-    def _generate_actor_appearance_data(
-        self, actor_entities: Set[Entity]
+    def _generate_actor_appearance_info(
+        self, actor_entities: List[Entity]
     ) -> Dict[str, tuple[str, str]]:
 
         ret: Dict[str, tuple[str, str]] = {}
         for actor_entity in actor_entities:
             ret[actor_entity.get(ActorComponent).name] = (
                 actor_entity.get(BodyComponent).body,
-                self._retrieve_current_clothing(actor_entity),
+                self._extract_clothing_appearance(actor_entity),
             )
 
         return ret
 
     ###############################################################################################################################################
-    def _retrieve_current_clothing(self, entity: Entity) -> str:
-        if not entity.has(ClothesComponent):
+    def _extract_clothing_appearance(self, actor_entity: Entity) -> str:
+        if not actor_entity.has(ClothesComponent):
             return ""
 
-        current_clothes_comp = entity.get(ClothesComponent)
-        current_clothe_prop_file = self._context._file_system.get_file(
-            PropFile, current_clothes_comp.name, current_clothes_comp.propname
+        clothes_comp = actor_entity.get(ClothesComponent)
+        clothe_prop_file = self._context._file_system.get_file(
+            PropFile, clothes_comp.name, clothes_comp.propname
         )
-        if current_clothe_prop_file is None:
+        if clothe_prop_file is None:
+            assert False, f"clothe_prop_file is None, name: {clothes_comp.name}"
             return ""
 
-        return current_clothe_prop_file.appearance
+        return clothe_prop_file.appearance
 
     ###############################################################################################################################################
-    def _broadcast_appearance_update_event(self, actor_entities: Set[Entity]) -> None:
+    def _notify_appearance_change_event(self, actor_entities: List[Entity]) -> None:
         for actor_entity in actor_entities:
             current_stage_entity = self._context.safe_get_stage_entity(actor_entity)
             if current_stage_entity is None:

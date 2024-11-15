@@ -216,10 +216,10 @@ class RPGEntitasContext(Context):
 
     #############################################################################################################################
     # 获取场景内所有的角色的外观信息
-    def gather_actor_appearance_in_stage(self, entity: Entity) -> Dict[str, str]:
+    def gather_actor_appearance_in_stage(self, actor_entity: Entity) -> Dict[str, str]:
 
         ret: Dict[str, str] = {}
-        for actor in self.get_actors_in_stage(entity):
+        for actor in self.get_actors_in_stage(actor_entity):
             if not actor.has(AppearanceComponent):
                 continue
 

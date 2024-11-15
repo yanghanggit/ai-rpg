@@ -326,12 +326,12 @@ class RPGGame(BaseGame):
             actor_model.attributes[AttributesIndex.DEFENSE],
         )
 
+        actor_entity.add(BodyComponent, actor_instance.name, actor_model.body)
         actor_entity.add(
             AppearanceComponent,
             actor_instance.name,
-            actor_model.body,
+            "",
         )
-        actor_entity.add(BodyComponent, actor_instance.name, actor_model.body)
 
         actor_entity.add(
             KickOffContentComponent, actor_instance.name, actor_model.kick_off_message
@@ -570,7 +570,15 @@ class RPGGame(BaseGame):
         assert game_resource.is_load
 
         load_entities = context.get_group(
-            Matcher(any_of=[AttributesComponent, AppearanceComponent, PlayerComponent])
+            Matcher(
+                any_of=[
+                    AttributesComponent,
+                    AppearanceComponent,
+                    PlayerComponent,
+                    KickOffFlagComponent,
+                    BodyComponent,
+                ]
+            )
         ).entities
 
         for load_entity in load_entities:

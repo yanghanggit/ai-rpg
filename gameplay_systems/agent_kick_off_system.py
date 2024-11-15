@@ -115,18 +115,23 @@ class AgentKickOffSystem(ExecuteProcessor):
     @override
     async def a_execute1(self) -> None:
 
-        tasks: Dict[str, AgentTask] = self._initialize_tasks()
-        if len(tasks) == 0:
-            return
-
-        # 执行全部的任务
-        await AgentTask.gather([task for task in tasks.values()])
-
-        # 处理结果
-        self._process_agent_tasks(tasks)
+        # 处理kick off任务
+        await self._process_kick_off_tasks()
 
         # 初始化更新外观的action
         self._initialize_appearance_update_action()
+
+    ######################################################################################################################################################
+    async def _process_kick_off_tasks(self) -> None:
+        agent_tasks: Dict[str, AgentTask] = self._initialize_tasks()
+        if len(agent_tasks) == 0:
+            return
+
+        # 执行全部的任务
+        await AgentTask.gather([task for task in agent_tasks.values()])
+
+        # 处理结果
+        self._process_agent_tasks(agent_tasks)
 
     ######################################################################################################################################################
     def _initialize_world_system_tasks(self) -> Dict[str, AgentTask]:
@@ -303,20 +308,18 @@ class AgentKickOffSystem(ExecuteProcessor):
     ######################################################################################################################################################
     def _initialize_appearance_update_action(self) -> None:
 
-        actor_entities = self._context.get_group(
-            Matcher(
-                all_of=[
-                    AppearanceComponent,
-                    KickOffFlagComponent,
-                ]
-            )
-        ).entities
-
+        actor_entities = self._context.get_group(Matcher(AppearanceComponent)).entities
         for actor_entity in actor_entities:
-            actor_entity.replace(
-                UpdateAppearanceAction,
-                self._context.safe_get_entity_name(actor_entity),
-                [],
-            )
+
+            appearance_comp = actor_entity.get(AppearanceComponent)
+            if appearance_comp.appearance == "":
+                logger.warning(
+                    f"AgentKickOffSystem: appearance is empty, {appearance_comp.name}, so need to update appearance"
+                )
+                actor_entity.replace(
+                    UpdateAppearanceAction,
+                    appearance_comp.name,
+                    [],
+                )
 
     ######################################################################################################################################################

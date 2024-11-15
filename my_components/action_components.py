@@ -55,9 +55,9 @@ class GoToAction(ActionComponent):
 
 
 # 从场景内可以拾取道具
-@final
-class PickUpPropAction(ActionComponent):
-    pass
+# @final
+# class PickUpPropAction(ActionComponent):
+#     pass
 
 
 # 从目标角色处偷取
@@ -97,9 +97,9 @@ class EquipPropAction(ActionComponent):
 
 
 # 场景内销毁道具
-@final
-class StagePropDestructionAction(ActionComponent):
-    pass
+# @final
+# class StagePropDestructionAction(ActionComponent):
+#     pass
 
 
 CONVERSATION_ACTIONS_REGISTER: FrozenSet[type[Any]] = frozenset(
@@ -111,7 +111,7 @@ STAGE_AVAILABLE_ACTIONS_REGISTER: FrozenSet[type[Any]] = (
     frozenset(
         {
             StageNarrateAction,
-            StagePropDestructionAction,
+            # StagePropDestructionAction,
             DamageAction,
         }
     )
@@ -123,7 +123,7 @@ STAGE_AVAILABLE_ACTIONS_REGISTER: FrozenSet[type[Any]] = (
 ACTOR_INTERACTIVE_ACTIONS_REGISTER: FrozenSet[type[Any]] = frozenset(
     {
         DeadAction,
-        PickUpPropAction,
+        # PickUpPropAction,
         GoToAction,
         StealPropAction,
         GivePropAction,

@@ -49,13 +49,13 @@ def _generate_stage_kick_off_prompt(
     input_actors_in_stage: Set[str],
 ) -> str:
 
-    # 组织一下场景中的道具信息，只要外观。
-    props_in_stage_prompt = [
-        generate_prop_file_appearance_prompt(prop_file)
-        for prop_file in input_props_in_stage
-    ]
-    if len(props_in_stage_prompt) == 0:
-        props_in_stage_prompt.append("无")
+    # # 组织一下场景中的道具信息，只要外观。
+    # props_in_stage_prompt = [
+    #     generate_prop_file_appearance_prompt(prop_file)
+    #     for prop_file in input_props_in_stage
+    # ]
+    # if len(props_in_stage_prompt) == 0:
+    #     props_in_stage_prompt.append("无")
 
     # 组织一下场景中的角色信息, 名字即可，因为后面会有推理的plan
     actors_in_stage_prompt = list(input_actors_in_stage)
@@ -65,9 +65,6 @@ def _generate_stage_kick_off_prompt(
     return f"""# 游戏启动!
 见‘游戏流程’-‘游戏启动’，游戏系统将提供初始设定，包括角色、场景、道具信息，以及剧情开端。
 你将以此为起点进行游戏
-
-## 场景内的道具
-{"\n".join(props_in_stage_prompt)}
 
 ## 场景内的角色
 {"\n".join(actors_in_stage_prompt)}

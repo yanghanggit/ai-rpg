@@ -494,23 +494,23 @@ class RPGGame(BaseGame):
             actor_entity.replace(ActorComponent, actor_name, stage_model.name)
 
         # 场景内添加道具
-        for prop_instance in stage_instance.props:
-            # 直接使用文件系统
-            assert self._game_resource is not None
-            prop_model = self._game_resource.data_base.get_prop(prop_instance.name)
-            if prop_model is None:
-                logger.error(f"没有从数据库找到道具：{prop_instance.name}")
-                continue
+        # for prop_instance in stage_instance.props:
+        #     # 直接使用文件系统
+        #     assert self._game_resource is not None
+        #     prop_model = self._game_resource.data_base.get_prop(prop_instance.name)
+        #     if prop_model is None:
+        #         logger.error(f"没有从数据库找到道具：{prop_instance.name}")
+        #         continue
 
-            prop_file = PropFile(
-                PropFileModel(
-                    owner=stage_model.name,
-                    prop_model=prop_model,
-                    prop_instance_model=prop_instance,
-                )
-            )
-            context._file_system.add_file(prop_file)
-            context._file_system.write_file(prop_file)
+        #     prop_file = PropFile(
+        #         PropFileModel(
+        #             owner=stage_model.name,
+        #             prop_model=prop_model,
+        #             prop_instance_model=prop_instance,
+        #         )
+        #     )
+        #     context._file_system.add_file(prop_file)
+        #     context._file_system.write_file(prop_file)
 
         # 添加子系统：Agent
         context.agent_system.register_agent(stage_model.name, stage_model.url)

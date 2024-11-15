@@ -31,11 +31,11 @@ def _generate_stage_plan_prompt(
     info_of_actors_in_stage: Dict[str, str],
 ) -> str:
 
-    props_in_stage_prompt = "- 无任何道具。"
-    if len(props_in_stage) > 0:
-        props_in_stage_prompt = ""
-        for prop in props_in_stage:
-            props_in_stage_prompt += generate_prop_file_appearance_prompt(prop)
+    # props_in_stage_prompt = "- 无任何道具。"
+    # if len(props_in_stage) > 0:
+    #     props_in_stage_prompt = ""
+    #     for prop in props_in_stage:
+    #         props_in_stage_prompt += generate_prop_file_appearance_prompt(prop)
 
     ## 场景角色
     actors_in_stage_prompt = "- 无任何角色。"
@@ -47,9 +47,6 @@ def _generate_stage_plan_prompt(
             )
 
     ret_prompt = f"""# {prompt_utils.ConstantPromptTag.STAGE_PLAN_PROMPT_TAG} 请做出你的计划，决定你将要做什么与更新你的场景描述
-
-## 场景内的道具
-{props_in_stage_prompt}
 
 ## 场景内的角色
 {actors_in_stage_prompt}

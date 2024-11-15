@@ -11,7 +11,7 @@ from my_components.components import (
 from my_components.action_components import (
     StageNarrateAction,
     ACTOR_AVAILABLE_ACTIONS_REGISTER,
-    PickUpPropAction,
+    # PickUpPropAction,
     GoToAction,
     TagAction,
 )
@@ -96,9 +96,6 @@ def _generate_actor_plan_prompt(
 ### 从本场景可以去往的场景
 {len(stage_graph) > 0 and "\n".join([f"- {stage}" for stage in stage_graph]) or "无可去往场景"}   
 
-## 场景内的道具(可以进行交互，如: {PickUpPropAction.__name__})
-{len(props_in_stage_prompt) > 0 and "\n".join(props_in_stage_prompt) or "- 无任何道具。"}
-
 ## 场景内的角色
 {actors_in_stage_prompt}
 
@@ -122,6 +119,13 @@ def _generate_actor_plan_prompt(
 - 结果中要附带 {TagAction.__name__}。"""
 
     return ret_prompt
+
+
+#######################################################################################################################################
+
+
+# ## 场景内的道具(可以进行交互，如: {PickUpPropAction.__name__})
+# {len(props_in_stage_prompt) > 0 and "\n".join(props_in_stage_prompt) or "- 无任何道具。"}
 
 
 @final

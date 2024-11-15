@@ -156,7 +156,7 @@ class SaveGameResourceSystem(ExecuteProcessor):
         ret: StageInstanceModel = StageInstanceModel(
             name=stage_comp.name,
             guid=guid_comp.GUID,
-            props=self._generate_prop_instance_models(stage_entity),
+            # props=self._generate_prop_instance_models(stage_entity),
             actors=[],
             spawners=stage_spawner_comp.spawners,
         )

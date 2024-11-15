@@ -34,7 +34,7 @@ from player.player_command import (
     PlayerAnnounce,
     PlayerSpeak,
     PlayerWhisper,
-    PlayerPickUpProp,
+    # PlayerPickUpProp,
     PlayerSteal,
     PlayerGiveProp,
     PlayerSkill,
@@ -228,10 +228,10 @@ def gen_player_watch_action_model(
         actors_info_prompts.append("- 场景内无其他角色。")
 
     # 场景内的道具信息获取
-    props_in_stage = get_props_in_stage(game_name, player_entity)
-    props_in_stage_prompts = [
-        generate_prop_file_appearance_prompt(prop) for prop in props_in_stage
-    ]
+    # props_in_stage = get_props_in_stage(game_name, player_entity)
+    # props_in_stage_prompts = [
+    #     generate_prop_file_appearance_prompt(prop) for prop in props_in_stage
+    # ]
 
     # 场景名称
     stage_entity = game_name.context.safe_get_stage_entity(player_entity)
@@ -245,10 +245,7 @@ def gen_player_watch_action_model(
 {stage_narrate_content}
 
 ## 场景内角色
-{"\n".join(actors_info_prompts)}
-
-## 场景内道具
-{"\n".join(props_in_stage_prompts)}"""
+{"\n".join(actors_info_prompts)}"""
 
     return WatchActionModel(content=message)
 
@@ -378,8 +375,8 @@ def add_player_command(
     elif "/whisper" in usr_input:
         player_proxy.add_command(PlayerWhisper("/whisper", usr_input))
 
-    elif "/pickup" in usr_input:
-        player_proxy.add_command(PlayerPickUpProp("/pickup", usr_input))
+    # elif "/pickup" in usr_input:
+    #     player_proxy.add_command(PlayerPickUpProp("/pickup", usr_input))
 
     elif "/steal" in usr_input:
         player_proxy.add_command(PlayerSteal("/steal", usr_input))

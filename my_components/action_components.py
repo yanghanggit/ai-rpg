@@ -12,6 +12,12 @@ class StageNarrateAction(ActionComponent):
     pass
 
 
+# 输出场景中所有显著的道具和物件的标记，以便进一步处理或引用。这样，每次场景更新时，系统不仅生成详细的场景描述，还会同步输出这些场景内的道具和物件标记，使得场景内容的处理更加完善和细致。
+@final
+class StageTagAction(ActionComponent):
+    pass
+
+
 # 内心独白
 @final
 class MindVoiceAction(ActionComponent):
@@ -54,12 +60,6 @@ class GoToAction(ActionComponent):
     pass
 
 
-# 从场景内可以拾取道具
-# @final
-# class PickUpPropAction(ActionComponent):
-#     pass
-
-
 # 从目标角色处偷取
 @final
 class StealPropAction(ActionComponent):
@@ -96,12 +96,6 @@ class EquipPropAction(ActionComponent):
     pass
 
 
-# 场景内销毁道具
-# @final
-# class StagePropDestructionAction(ActionComponent):
-#     pass
-
-
 CONVERSATION_ACTIONS_REGISTER: FrozenSet[type[Any]] = frozenset(
     {TagAction, MindVoiceAction, SpeakAction, AnnounceAction, WhisperAction}
 )
@@ -111,7 +105,7 @@ STAGE_AVAILABLE_ACTIONS_REGISTER: FrozenSet[type[Any]] = (
     frozenset(
         {
             StageNarrateAction,
-            # StagePropDestructionAction,
+            StageTagAction,
             DamageAction,
         }
     )
@@ -123,7 +117,6 @@ STAGE_AVAILABLE_ACTIONS_REGISTER: FrozenSet[type[Any]] = (
 ACTOR_INTERACTIVE_ACTIONS_REGISTER: FrozenSet[type[Any]] = frozenset(
     {
         DeadAction,
-        # PickUpPropAction,
         GoToAction,
         StealPropAction,
         GivePropAction,

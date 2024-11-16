@@ -248,14 +248,6 @@ class ActorPlanningExecutionSystem(ExecuteProcessor):
         return " ".join(stage_narrate_action.values)
 
     #######################################################################################################################################
-    # def _retrieve_props_in_stage(self, actor_entity: Entity) -> List[PropFile]:
-    #     stage_entity = self._context.safe_get_stage_entity(actor_entity)
-    #     assert stage_entity is not None, "stage is None, actor无所在场景是有问题的"
-    #     return self._context._file_system.get_files(
-    #         PropFile, self._context.safe_get_entity_name(stage_entity)
-    #     )
-
-    #######################################################################################################################################
     def _retrieve_stage_graph(self, actor_entity: Entity) -> List[str]:
         stage_entity = self._context.safe_get_stage_entity(actor_entity)
         assert stage_entity is not None, "stage is None, actor无所在场景是有问题的"

@@ -60,21 +60,21 @@ class StageValidatorSystem(ReactiveProcessor):
     def react(self, entities: list[Entity]) -> None:
 
         for entity in entities:
-            if not self.handle(entity):
-                self.on_remove_action(entity)
+            if not self._validate_stage_transition(entity):
+                self._remove_action_component(entity)
 
     ###############################################################################################################################################
-    def handle(self, entity: Entity) -> bool:
+    def _validate_stage_transition(self, entity: Entity) -> bool:
         safe_actor_name = self._context.safe_get_entity_name(entity)
         current_stage_entity = self._context.safe_get_stage_entity(entity)
+        assert current_stage_entity is not None
         if current_stage_entity is None:
-            # assert False, f"{safe_actor_name}没有当前场景，这是个错误"
             logger.error(f"{safe_actor_name}没有当前场景，这是个错误")
             return False
 
-        target_stage_name = self.get_target_stage_name(entity)
+        target_stage_name = self._get_target_stage_name(entity)
         target_stage_entity = self._context.get_stage_entity(
-            self.get_target_stage_name(entity)
+            self._get_target_stage_name(entity)
         )
         if target_stage_entity is None:
 
@@ -102,7 +102,6 @@ class StageValidatorSystem(ReactiveProcessor):
 
             return False
 
-        assert current_stage_entity.has(StageGraphComponent)
         stage_graph_comp = current_stage_entity.get(StageGraphComponent)
         if len(stage_graph_comp.stage_graph) > 0:
             if target_stage_name not in stage_graph_comp.stage_graph:
@@ -120,7 +119,7 @@ class StageValidatorSystem(ReactiveProcessor):
         return True
 
     ###############################################################################################################################################
-    def get_target_stage_name(self, actor_entity: Entity) -> str:
+    def _get_target_stage_name(self, actor_entity: Entity) -> str:
         assert actor_entity.has(ActorComponent)
         assert actor_entity.has(GoToAction)
         go_to_action = actor_entity.get(GoToAction)
@@ -131,7 +130,7 @@ class StageValidatorSystem(ReactiveProcessor):
         )
 
     ###############################################################################################################################################
-    def on_remove_action(
+    def _remove_action_component(
         self, actor_entity: Entity, action_comps: Set[type[Any]] = {GoToAction}
     ) -> None:
 

@@ -15,7 +15,7 @@ from my_models.entity_models import (
 )
 from my_models.editor_models import EditorEntityType, EditorProperty
 import my_format_string.attrs_format_string
-import my_format_string.editor_prop_info_string
+import my_format_string.complex_prop_name
 from my_format_string.complex_actor_name import ComplexActorName
 
 
@@ -141,10 +141,8 @@ class ExcelEditorActor:
             if prop_info == "":
                 continue
 
-            parse = (
-                my_format_string.editor_prop_info_string.extract_prop_name_and_count(
-                    prop_info
-                )
+            parse = my_format_string.complex_prop_name.parse_complex_prop_info_string(
+                prop_info
             )
             prop_name = parse[0]
             prop_count = parse[1]

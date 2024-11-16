@@ -23,10 +23,10 @@ class StageSpawnerSystem(ExecuteProcessor):
     ######################################################################################################################################################
     @override
     def execute(self) -> None:
-        self.test_execute()
+        self._test()
 
     ######################################################################################################################################################
-    def test_execute(self) -> None:
+    def _test(self) -> None:
         stage_entities = self._context.get_group(
             Matcher(all_of=[StageComponent, StageSpawnerComponent])
         ).entities

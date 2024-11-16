@@ -11,7 +11,7 @@ from typing import final, override, Set, List, Dict
 from extended_systems.prop_file import PropFile
 from rpg_game.rpg_game import RPGGame
 from my_models.event_models import AgentEvent
-import my_format_string.editor_prop_info_string
+import my_format_string.complex_prop_name
 from loguru import logger
 from gameplay_systems.actor_entity_utils import ActorStatusEvaluator
 from my_models.file_models import PropType
@@ -149,7 +149,7 @@ class SkillCommandParser:
                 continue
 
             prop_name, consume_count = (
-                my_format_string.editor_prop_info_string.extract_prop_name_and_count(
+                my_format_string.complex_prop_name.parse_complex_prop_info_string(
                     parsed_command
                 )
             )
@@ -176,7 +176,7 @@ class SkillCommandParser:
         for skill_accessory_prop_file_info in self._skill_accessory_prop_files:
             skill_accessory_prop_file, consume_count = skill_accessory_prop_file_info
             skill_accessories_list.append(
-                my_format_string.editor_prop_info_string.generate_prop_name_and_count_format_string(
+                my_format_string.complex_prop_name.format_prop_name_with_count(
                     skill_accessory_prop_file.name, consume_count
                 )
             )
@@ -334,7 +334,7 @@ class SkillInvocationSystem(ReactiveProcessor):
         ) in skill_invocation_parser._skill_accessory_prop_files:
             skill_accessory_prop_file, consume_count = skill_accessory_prop_file_info
             skill_accessory_props.append(
-                my_format_string.editor_prop_info_string.generate_prop_name_and_count_format_string(
+                my_format_string.complex_prop_name.format_prop_name_with_count(
                     skill_accessory_prop_file.name, consume_count
                 )
             )

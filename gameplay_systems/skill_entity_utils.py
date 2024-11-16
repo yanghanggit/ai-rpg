@@ -3,7 +3,7 @@ from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import List
 from loguru import logger
 from extended_systems.prop_file import PropFile
-import my_format_string.editor_prop_info_string
+import my_format_string.complex_prop_name
 from my_components.components import ActorComponent, SkillComponent, DestroyComponent
 
 
@@ -27,16 +27,14 @@ def parse_skill_accessory_prop_files(
     ret: List[tuple[PropFile, int]] = []
     for format_string in skill_comp.skill_accessory_props:
 
-        if not my_format_string.editor_prop_info_string.check_prop_name_and_count_format(
+        if not my_format_string.complex_prop_name.check_complex_prop_info_format(
             format_string
         ):
             logger.error(f"Invalid prop name and count format: {format_string}")
             continue
 
         prop_name, consume_count = (
-            my_format_string.editor_prop_info_string._extract_prop_name_and_count(
-                format_string
-            )
+            my_format_string.complex_prop_name._parse_prop_name_and_count(format_string)
         )
 
         prop_file = context.file_system.get_file(PropFile, actor_comp.name, prop_name)

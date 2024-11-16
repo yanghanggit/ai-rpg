@@ -20,7 +20,7 @@ from my_models.editor_models import EditorEntityType, EditorProperty
 import my_format_string.attrs_format_string
 from game_sample.actor_editor import ExcelEditorActor
 from my_format_string.complex_actor_name import ComplexActorName
-import my_format_string.editor_prop_info_string
+import my_format_string.complex_prop_name
 
 
 class ExcelEditorStage:

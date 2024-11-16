@@ -152,7 +152,7 @@ def _generate_prop_type_prompt(prop_file: PropFile) -> str:
 # 所有信息全要, 一般是用于做核心决策的时候
 def generate_prop_file_total_prompt(prop_file: PropFile) -> str:
 
-    prompt = f"""### {prop_file.name}
+    return f"""### {prop_file.name}
 - 类型:{_generate_prop_type_prompt(prop_file)}
 - 道具描述:{prop_file.description}
 - 道具外观:{prop_file.appearance}
@@ -160,21 +160,17 @@ def generate_prop_file_total_prompt(prop_file: PropFile) -> str:
 - 攻击力:{prop_file.attack}
 - 防御力:{prop_file.defense}"""
 
-    return prompt
-
 
 ###############################################################################################################################################
 # 只要技能相关的信息，技能系统过程中需要
 def generate_skill_prop_file_prompt(prop_file: PropFile) -> str:
     assert prop_file.is_skill, "不是技能文件"
 
-    prompt = f"""### {prop_file.name}
+    return f"""### {prop_file.name}
 - 类型: {_generate_prop_type_prompt(prop_file)}
 - 技能描述: {prop_file.description}
 - 攻击力: {prop_file.attack}
 - 防御力: {prop_file.defense}"""
-
-    return prompt
 
 
 ###############################################################################################################################################
@@ -182,35 +178,29 @@ def generate_skill_prop_file_prompt(prop_file: PropFile) -> str:
 def generate_skill_accessory_prop_file_prompt(prop_file: PropFile) -> str:
     assert not prop_file.is_skill, "不是技能文件"
 
-    prompt = f"""### {prop_file.name}
+    return f"""### {prop_file.name}
 - 类型: {_generate_prop_type_prompt(prop_file)}
 - 道具描述: {prop_file.description}
 - 道具数量: {prop_file.count}"""
-
-    return prompt
 
 
 ###############################################################################################################################################
 # 只要外形相关的信息，观察场景时需要，还有输出场景描述时需要
 def generate_prop_file_appearance_prompt(prop_file: PropFile) -> str:
 
-    prompt = f"""### {prop_file.name}
+    return f"""### {prop_file.name}
 - 类型: {_generate_prop_type_prompt(prop_file)}
 - 道具外观: {prop_file.appearance}"""
-
-    return prompt
 
 
 ###############################################################################################################################################
 # 只要场景条件检查所需要的信息。
 def generate_prop_file_for_stage_condition_prompt(prop_file: PropFile) -> str:
 
-    prompt = f"""### {prop_file.name}
+    return f"""### {prop_file.name}
 - 类型: {_generate_prop_type_prompt(prop_file)}
 - 道具描述: {prop_file.description}
 - 道具外观: {prop_file.appearance}"""
-
-    return prompt
 
 
 ###############################################################################################################################################

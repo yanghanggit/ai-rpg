@@ -1,6 +1,5 @@
-from typing import final
+from typing import final, List
 from overrides import override
-import json
 from my_models.file_models import (
     StageArchiveFileModel,
     ActorArchiveFileModel,
@@ -20,7 +19,6 @@ class ActorArchiveFile(BaseFile):
     @override
     def serialization(self) -> str:
         return self._model.model_dump_json()
-        # return json.dumps(self._model.model_dump(), ensure_ascii=False)
 
     @override
     def deserialization(self, content: str) -> None:
@@ -44,9 +42,6 @@ class ActorArchiveFile(BaseFile):
 ############################################################################################################
 ############################################################################################################
 ############################################################################################################
-
-
-## 表达一个Stage的档案，有这个档案说明你知道这个Stage
 class StageArchiveFile(BaseFile):
     def __init__(self, model: StageArchiveFileModel) -> None:
         super().__init__(model.name, model.owner)
@@ -55,7 +50,6 @@ class StageArchiveFile(BaseFile):
     @override
     def serialization(self) -> str:
         return self._model.model_dump_json()
-        # return json.dumps(self._model.model_dump(), ensure_ascii=False)
 
     @override
     def deserialization(self, content: str) -> None:
@@ -70,7 +64,15 @@ class StageArchiveFile(BaseFile):
     def set_stage_narrate(self, narrate: str) -> None:
         self._model.stage_narrate = narrate
 
+    def set_stage_tags(self, tags: List[str]) -> None:
+        self._model.stage_tags = tags
+
     def update(self, model: StageArchiveFileModel) -> None:
         self._model = model
         self._name = model.name
         self._owner_name = model.owner
+
+
+############################################################################################################
+############################################################################################################
+############################################################################################################

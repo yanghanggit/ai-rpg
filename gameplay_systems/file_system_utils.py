@@ -52,7 +52,7 @@ def register_stage_archives(
 
         archive_file = StageArchiveFile(
             StageArchiveFileModel(
-                name=stage_name, owner=archive_owner, stage_narrate=""
+                name=stage_name, owner=archive_owner, stage_narrate="", stage_tags=[]
             )
         )
         file_system.add_file(archive_file)

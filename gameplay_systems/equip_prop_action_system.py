@@ -67,10 +67,10 @@ class EquipPropActionSystem(ReactiveProcessor):
     @override
     def react(self, entities: list[Entity]) -> None:
         for entity in entities:
-            self.handle(entity)
+            self._process_equipment_action(entity)
 
     ####################################################################################################################################
-    def handle(self, entity: Entity) -> None:
+    def _process_equipment_action(self, entity: Entity) -> None:
 
         equip_prop_action = entity.get(EquipPropAction)
         if len(equip_prop_action.values) == 0:
@@ -123,16 +123,10 @@ class EquipPropActionSystem(ReactiveProcessor):
                     ),
                 )
 
-                self.on_add_update_apperance_action(entity)
+                self._add_update_appearance_action(entity)
 
     ####################################################################################################################################
-    def on_add_update_apperance_action(self, entity: Entity) -> None:
-        # if not entity.has(UpdateAppearanceAction):
-        #     entity.add(
-        #         UpdateAppearanceAction,
-        #         self._context.safe_get_entity_name(entity),
-        #         [],
-        #     )
+    def _add_update_appearance_action(self, entity: Entity) -> None:
         entity.replace(
             UpdateAppearanceAction,
             self._context.safe_get_entity_name(entity),

@@ -105,6 +105,11 @@ class RPGEntitasProcessors(Processors):
         from gameplay_systems.handle_web_player_input_system import (
             HandleWebPlayerInputSystem,
         )
+        from gameplay_systems.stage_tag_action_system import StageTagActionSystem
+        from gameplay_systems.inspect_action_system import InspectActionSystem
+        from gameplay_systems.stage_transfer_action_system import (
+            StageTransferActionSystem,
+        )
 
         ##
         rpg_game = cast(RPGGame, game)
@@ -146,6 +151,7 @@ class RPGEntitasProcessors(Processors):
         processors.add(
             PreConversationActionSystem(context, rpg_game)
         )  # 所有对话之前目前是防止用户用对话行为说出不符合政策的话
+        processors.add(StageTagActionSystem(context, rpg_game))
         processors.add(StageNarrateActionSystem(context, rpg_game))
         processors.add(TagActionSystem(context, rpg_game))
         processors.add(MindVoiceActionSystem(context, rpg_game))
@@ -170,6 +176,7 @@ class RPGEntitasProcessors(Processors):
         )  ## 战斗类行为产生结果可能有死亡，死亡之后，后面的行为都不可以做。
 
         # 交互类的行为（交换数据），在死亡之后，因为死了就不能执行
+        processors.add(StageTransferActionSystem(context, rpg_game))
         processors.add(StealActionSystem(context, rpg_game))
         processors.add(GivePropActionSystem(context, rpg_game))
         processors.add(EquipPropActionSystem(context, rpg_game))
@@ -180,6 +187,7 @@ class RPGEntitasProcessors(Processors):
                 WorldSystemNames.WORLD_APPEARANCE_SYSTEM_NAME,
             )
         )  ### 更新外观
+        processors.add(InspectActionSystem(context, rpg_game))
 
         # 场景切换类行为，非常重要而且必须在最后，在正式执行之前有3个系统负责检查与提示。
         processors.add(StageValidatorSystem(context, rpg_game))

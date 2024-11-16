@@ -28,6 +28,7 @@ class StageArchiveFileModel(BaseModel):
     name: str
     owner: str
     stage_narrate: str
+    stage_tags: List[str]
 
 
 class ActorArchiveFileModel(BaseModel):

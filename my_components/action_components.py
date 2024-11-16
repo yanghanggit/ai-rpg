@@ -18,6 +18,12 @@ class StageTagAction(ActionComponent):
     pass
 
 
+# 场景将道具标记转移给目标角色
+@final
+class StageTransferAction(ActionComponent):
+    pass
+
+
 # 内心独白
 @final
 class MindVoiceAction(ActionComponent):
@@ -96,6 +102,12 @@ class EquipPropAction(ActionComponent):
     pass
 
 
+# 角色A对角色B进行检查，获取有关B的信息，例如携带的道具、健康状态等。
+@final
+class InspectAction(ActionComponent):
+    pass
+
+
 CONVERSATION_ACTIONS_REGISTER: FrozenSet[type[Any]] = frozenset(
     {TagAction, MindVoiceAction, SpeakAction, AnnounceAction, WhisperAction}
 )
@@ -106,6 +118,7 @@ STAGE_AVAILABLE_ACTIONS_REGISTER: FrozenSet[type[Any]] = (
         {
             StageNarrateAction,
             StageTagAction,
+            StageTransferAction,
             DamageAction,
         }
     )
@@ -124,6 +137,7 @@ ACTOR_INTERACTIVE_ACTIONS_REGISTER: FrozenSet[type[Any]] = frozenset(
         SkillAction,
         DamageAction,
         EquipPropAction,
+        InspectAction,
     }
 )
 

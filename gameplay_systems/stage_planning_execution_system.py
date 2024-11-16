@@ -9,6 +9,7 @@ from my_components.components import (
 from my_components.action_components import (
     STAGE_AVAILABLE_ACTIONS_REGISTER,
     StageNarrateAction,
+    StageTagAction,
     TagAction,
 )
 from my_agent.agent_plan import AgentPlanResponse
@@ -91,15 +92,13 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
         self._process_agent_tasks(tasks)
 
         # step4: 保底加一个行为？
-        self._ensure_stage_narration_action(tasks)
+        self._ensure_stage_actions(tasks)
 
         # step？: 清理，习惯性动作
         tasks.clear()
 
     #######################################################################################################################################
-    def _ensure_stage_narration_action(
-        self, agent_task_requests: Dict[str, AgentTask]
-    ) -> None:
+    def _ensure_stage_actions(self, agent_task_requests: Dict[str, AgentTask]) -> None:
         for stage_name, agent_task in agent_task_requests.items():
 
             stage_entity = self._context.get_stage_entity(stage_name)
@@ -112,6 +111,12 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
                     f"StagePlanningSystem: add StageNarrateAction = {stage_name}"
                 )
                 stage_entity.add(StageNarrateAction, ["无任何描述。"])
+
+            if not stage_entity.has(StageTagAction):
+                logger.warning(
+                    f"StagePlanningSystem: add StageTagAction = {stage_name}"
+                )
+                stage_entity.add(StageTagAction, [])
 
     #######################################################################################################################################
     def _process_agent_tasks(self, agent_task_requests: Dict[str, AgentTask]) -> None:

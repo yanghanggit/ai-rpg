@@ -24,11 +24,9 @@ class StagePlanningStrategySystem(ExecuteProcessor):
         stage_entities = self._context.get_group(Matcher(StageComponent)).entities
         for stage_entity in stage_entities:
             stage_comp = stage_entity.get(StageComponent)
-            actors_in_stage = self._context._get_actors_in_stage(stage_comp.name)
+            actors_in_stage = self._context._retrieve_actors_in_stage(stage_comp.name)
             if len(actors_in_stage) == 0:
                 continue
-            # if not stage_entity.has(PlanningAllowedComponent):
-            #     stage_entity.add(PlanningAllowedComponent, stage_comp.name)
             stage_entity.replace(PlanningAllowedComponent, stage_comp.name)
 
     ############################################################################################################

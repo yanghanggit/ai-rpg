@@ -40,7 +40,7 @@ class CompressChatHistorySystem(ExecuteProcessor):
         ).entities
 
         for entity in entities:
-            self._context.agent_system.modify_chat_history(
+            self._context.agent_system.replace_messages(
                 self._context.safe_get_entity_name(entity), chat_history_replacement_map
             )
 

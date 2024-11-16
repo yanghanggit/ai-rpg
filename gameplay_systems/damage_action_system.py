@@ -168,7 +168,7 @@ class DamageActionSystem(ReactiveProcessor):
         target_name = self._context.safe_get_entity_name(target_entity)
         if is_dead:
             # 直接打死。
-            self._context.broadcast_event_in_stage(
+            self._context.broadcast_event(
                 current_stage_entity,
                 AgentEvent(
                     message=_generate_kill_event_prompt(source_entity_name, target_name)
@@ -181,7 +181,7 @@ class DamageActionSystem(ReactiveProcessor):
             return
 
         rpg_attr_comp = target_entity.get(AttributesComponent)
-        self._context.broadcast_event_in_stage(
+        self._context.broadcast_event(
             current_stage_entity,
             AgentEvent(
                 message=_generate_damage_event_prompt(
@@ -205,13 +205,13 @@ class DamageActionSystem(ReactiveProcessor):
         target_entity_name = self._context.safe_get_entity_name(target_entity)
         categorized_prop_files = (
             gameplay_systems.file_system_utils.categorize_files_by_type(
-                self._context._file_system, target_entity_name
+                self._context.file_system, target_entity_name
             )
         )
 
         for prop_file in categorized_prop_files[PropType.TYPE_NON_CONSUMABLE_ITEM]:
             gameplay_systems.file_system_utils.transfer_file(
-                self._context._file_system,
+                self._context.file_system,
                 target_entity_name,
                 source_entity_name,
                 prop_file.name,
@@ -229,7 +229,7 @@ class DamageActionSystem(ReactiveProcessor):
         # 计算衣服带来的防御力
         if entity.has(ClothesComponent):
             clothes_comp = entity.get(ClothesComponent)
-            current_clothe_prop_file = self._context._file_system.get_file(
+            current_clothe_prop_file = self._context.file_system.get_file(
                 PropFile, clothes_comp.name, clothes_comp.propname
             )
             assert current_clothe_prop_file is not None

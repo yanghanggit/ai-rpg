@@ -130,13 +130,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
             and self.world_system_entity.has(KickOffContentComponent)
         ):
             # 准备推理
-            world_system_agent = self._context.agent_system.get_agent(
-                self._context.safe_get_entity_name(self.world_system_entity)
-            )
-            assert (
-                world_system_agent is not None
-            ), f"world_system_agent is None, name: {self._context.safe_get_entity_name(self.world_system_entity)}"
-
+            world_system_agent = self._context.safe_get_agent(self.world_system_entity)
             # 有衣服的，请求更新，通过LLM来推理外观
             self._execute_appearance_update_task(
                 actor_appearance_info, world_system_agent
@@ -181,7 +175,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
             _generate_appearance_reasoning_prompt(appearance_info),
         )
         if agent_task.request() is None:
-            logger.error(f"{world_system_agent._name} request response is None.")
+            logger.error(f"{world_system_agent.name} request response is None.")
             return False
 
         try:
@@ -226,7 +220,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
             return ""
 
         clothes_comp = actor_entity.get(ClothesComponent)
-        clothe_prop_file = self._context._file_system.get_file(
+        clothe_prop_file = self._context.file_system.get_file(
             PropFile, clothes_comp.name, clothes_comp.propname
         )
         if clothe_prop_file is None:
@@ -243,7 +237,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
                 continue
 
             appearance_comp = actor_entity.get(FinalAppearanceComponent)
-            self._context.broadcast_event_in_stage(
+            self._context.broadcast_event(
                 current_stage_entity,
                 UpdateAppearanceEvent(
                     message=_generate_appearance_update_prompt(

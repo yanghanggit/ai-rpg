@@ -33,7 +33,7 @@ class SaveEntitySystem(ExecuteProcessor):
         )
         for key, value in entity_dumps.items():
             gameplay_systems.file_system_utils.persist_entity_profile(
-                self._context._file_system, value
+                self._context.file_system, value
             )
 
     ############################################################################################################

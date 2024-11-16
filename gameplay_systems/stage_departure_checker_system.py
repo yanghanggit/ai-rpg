@@ -169,12 +169,7 @@ class StageDepartureCheckerSystem(ReactiveProcessor):
                 continue
 
             # 必须是能推理的场景
-            stage_agent = self._context.agent_system.get_agent(
-                self._context.safe_get_entity_name(current_stage_entity)
-            )
-            assert stage_agent is not None, "Stage agent is None"
-            if stage_agent is None:
-                continue
+            stage_agent = self._context.safe_get_agent(current_stage_entity)
 
             # 加入返回值
             ret[self._context.safe_get_entity_name(actor_entity)] = (

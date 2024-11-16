@@ -74,7 +74,7 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
         self._populate_agent_tasks(tasks)
 
         # step可选：混沌工程做测试
-        self._context._chaos_engineering_system.on_stage_planning_system_excute(
+        self._context.chaos_engineering_system.on_stage_planning_system_excute(
             self._context
         )
 
@@ -131,7 +131,9 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
                     f"StagePlanningSystem: check_plan failed, {stage_planning.original_response_content}"
                 )
                 ## 需要失忆!
-                self._context.agent_system.remove_last_human_ai_conversation(stage_name)
+                self._context.agent_system.discard_last_human_ai_conversation(
+                    stage_name
+                )
                 continue
 
             ## 不能停了，只能一直继续
@@ -157,17 +159,11 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
             )
         ).entities
         for stage_entity in stage_entities:
-
-            stage_comp = stage_entity.get(StageComponent)
-            agent = self._context.agent_system.get_agent(stage_comp.name)
-            if agent is None:
-                assert False, f"StagePlanningSystem: agent is None, {stage_comp.name}"
-                continue
-
-            requested_agent_tasks[stage_comp.name] = AgentTask.create_with_full_context(
+            agent = self._context.safe_get_agent(stage_entity)
+            requested_agent_tasks[agent.name] = AgentTask.create_with_full_context(
                 agent,
                 _generate_stage_plan_prompt(
-                    self._context.gather_actor_appearance_in_stage(stage_entity),
+                    self._context.retrieve_stage_actor_appearance(stage_entity),
                 ),
             )
 

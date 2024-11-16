@@ -85,9 +85,7 @@ class TerminalPlayerTipsSystem(ExecuteProcessor):
     ############################################################################################################
     def parse_stage_name(self, stage_name: str, actor_name: str) -> str:
 
-        if self._context._file_system.has_file(
-            StageArchiveFile, actor_name, stage_name
-        ):
+        if self._context.file_system.has_file(StageArchiveFile, actor_name, stage_name):
             return stage_name
 
         stage_entity = self._context.get_stage_entity(stage_name)
@@ -108,7 +106,7 @@ class TerminalPlayerTipsSystem(ExecuteProcessor):
         assert player_proxy is not None
 
         actor_name = self._context.safe_get_entity_name(player_entity)
-        stage_archives = self._context._file_system.get_files(
+        stage_archives = self._context.file_system.get_files(
             StageArchiveFile, actor_name
         )
         stage_names: List[str] = [

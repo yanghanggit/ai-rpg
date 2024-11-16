@@ -97,12 +97,12 @@ class GivePropActionSystem(ReactiveProcessor):
     def give_prop(self, entity: Entity, target_actor_name: str, prop_name: str) -> bool:
         safe_name = self._context.safe_get_entity_name(entity)
 
-        prop_file = self._context._file_system.get_file(PropFile, safe_name, prop_name)
+        prop_file = self._context.file_system.get_file(PropFile, safe_name, prop_name)
         if prop_file is None:
             return False
 
         gameplay_systems.file_system_utils.transfer_file(
-            self._context._file_system, safe_name, target_actor_name, prop_name
+            self._context.file_system, safe_name, target_actor_name, prop_name
         )
         return True
 

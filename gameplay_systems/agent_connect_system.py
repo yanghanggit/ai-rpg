@@ -54,35 +54,20 @@ class AgentConnectSystem(ExecuteProcessor):
         ret: List[Coroutine[Any, Any, Any]] = []
 
         for entity in unconnected_entities:
-
-            safe_name = self._context.safe_get_entity_name(entity)
-            if safe_name == "":
-                continue
-
-            agent = self._context.agent_system.get_agent(safe_name)
-            if agent is None:
-                continue
-
-            if agent.remote_runnable is not None:
-                continue
-
-            ret.append(agent.remote_connector.initialize_connection())
+            agent = self._context.safe_get_agent(entity)
+            if agent.remote_runnable is None:
+                ret.append(agent.remote_connector.initialize_connection("你是谁?"))
 
         return ret
 
     ###############################################################################################################################################
     def _process_agent_connections(self, unconnected_entities: Set[Entity]) -> None:
         for entity in unconnected_entities:
-            safe_name = self._context.safe_get_entity_name(entity)
-            if safe_name == "":
-                continue
-            agent = self._context.agent_system.get_agent(safe_name)
-            if agent is None:
-                continue
+            agent = self._context.safe_get_agent(entity)
             if agent.remote_runnable is not None:
-                entity.replace(AgentConnectionFlagComponent, safe_name)
+                entity.replace(AgentConnectionFlagComponent, agent.name)
                 logger.debug(
-                    f"AgentConnectSystem._process_agent_connections:{safe_name} connected"
+                    f"AgentConnectSystem._process_agent_connections:{agent.name} connected"
                 )
 
     ###############################################################################################################################################

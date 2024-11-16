@@ -186,7 +186,7 @@ class GoToActionSystem(ReactiveProcessor):
 
         # 通知新场景的人，我进入了场景，#自己不用通知，下面会单独通知。
         assert helper.target_stage_entity is not None
-        self._context.broadcast_event_in_stage(
+        self._context.broadcast_event(
             helper.target_stage_entity,
             AgentEvent(
                 message=_generate_stage_entry_prompt(
@@ -213,7 +213,7 @@ class GoToActionSystem(ReactiveProcessor):
 
         my_name = self._context.safe_get_entity_name(helper._entity)
 
-        stage_archive = self._context._file_system.get_file(
+        stage_archive = self._context.file_system.get_file(
             StageArchiveFile, my_name, helper._current_stage_name
         )
 
@@ -227,7 +227,7 @@ class GoToActionSystem(ReactiveProcessor):
                 ),
             )
 
-        actor_appearance_in_stage = self._context.gather_actor_appearance_in_stage(
+        actor_appearance_in_stage = self._context.retrieve_stage_actor_appearance(
             helper.current_stage_entity
         )
         actor_appearance_in_stage.pop(my_name)
@@ -246,7 +246,7 @@ class GoToActionSystem(ReactiveProcessor):
 
         # 离开场景的事件需要通知相关的人
         actor_comp = helper._entity.get(ActorComponent)
-        self._context.broadcast_event_in_stage(
+        self._context.broadcast_event(
             helper.current_stage_entity,
             AgentEvent(
                 message=_generate_exit_stage_prompt(

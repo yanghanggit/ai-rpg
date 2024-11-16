@@ -88,11 +88,7 @@ class PreConversationActionSystem(ReactiveProcessor):
 
     #################################################################################################################################################
     def fill_task(self, player_entity: Entity, tasks: Dict[str, AgentTask]) -> None:
-        safe_name = self._context.safe_get_entity_name(player_entity)
-        agent = self._context.agent_system.get_agent(safe_name)
-        if agent is None:
-            return
-
+        agent = self._context.safe_get_agent(player_entity)
         announce_content = self.get_announce_content(player_entity)
         speak_content_list = self.get_speak_content(player_entity)
         whisper_content_list = self.get_whisper_content(player_entity)
@@ -101,7 +97,7 @@ class PreConversationActionSystem(ReactiveProcessor):
             announce_content, speak_content_list, whisper_content_list
         )
 
-        tasks[safe_name] = AgentTask.create_without_context(agent, prompt)
+        tasks[agent.name] = AgentTask.create_without_context(agent, prompt)
 
     #################################################################################################################################################
     def get_announce_content(self, player_entity: Entity) -> str:

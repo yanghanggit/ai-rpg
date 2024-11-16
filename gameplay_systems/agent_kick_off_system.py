@@ -136,17 +136,12 @@ class AgentKickOffSystem(ExecuteProcessor):
             )
         ).entities
         for world_entity in world_entities:
-
-            world_comp = world_entity.get(WorldComponent)
-            agent = self._context.agent_system.get_agent(world_comp.name)
-            if agent is None:
-                continue
-
+            agent = self._context.safe_get_agent(world_entity)
             assert (
                 len(agent._chat_history) == 0
             ), f"chat_history is not empty, {agent._chat_history}"
 
-            ret[world_comp.name] = AgentTask.create_with_full_context(
+            ret[agent.name] = AgentTask.create_with_full_context(
                 agent,
                 _generate_world_system_kick_off_prompt(),
             )
@@ -169,12 +164,7 @@ class AgentKickOffSystem(ExecuteProcessor):
             )
         ).entities
         for stage_entity in stage_entities:
-
-            stage_comp = stage_entity.get(StageComponent)
-            agent = self._context.agent_system.get_agent(stage_comp.name)
-            if agent is None:
-                continue
-
+            agent = self._context.safe_get_agent(stage_entity)
             assert (
                 len(agent._chat_history) == 0
             ), f"chat_history is not empty, {agent._chat_history}"
@@ -182,12 +172,9 @@ class AgentKickOffSystem(ExecuteProcessor):
             kick_off_comp = stage_entity.get(KickOffContentComponent)
             kick_off_prompt = _generate_stage_kick_off_prompt(
                 kick_off_comp.content,
-                self._context.get_actor_names_in_stage(stage_entity),
+                self._context.retrieve_actor_names_in_stage(stage_entity),
             )
-
-            ret[stage_comp.name] = AgentTask.create_with_full_context(
-                agent, kick_off_prompt
-            )
+            ret[agent.name] = AgentTask.create_with_full_context(agent, kick_off_prompt)
 
         return ret
 
@@ -207,18 +194,13 @@ class AgentKickOffSystem(ExecuteProcessor):
             )
         ).entities
         for actor_entity in actor_entities:
-
-            actor_comp = actor_entity.get(ActorComponent)
-            agent = self._context.agent_system.get_agent(actor_comp.name)
-            if agent is None:
-                continue
-
+            agent = self._context.safe_get_agent(actor_entity)
             assert (
                 len(agent._chat_history) == 0
             ), f"chat_history is not empty, {agent._chat_history}"
 
             kick_off_comp = actor_entity.get(KickOffContentComponent)
-            ret[actor_comp.name] = AgentTask.create_with_full_context(
+            ret[agent.name] = AgentTask.create_with_full_context(
                 agent,
                 _generate_actor_kick_off_prompt(
                     kick_off_comp.content,
@@ -259,7 +241,9 @@ class AgentKickOffSystem(ExecuteProcessor):
                     f"ActorPlanningSystem: check_plan failed, {agent_planning.original_response_content}"
                 )
 
-                self._context.agent_system.remove_last_human_ai_conversation(agent_name)
+                self._context.agent_system.discard_last_human_ai_conversation(
+                    agent_name
+                )
                 continue
 
             for action in agent_planning._actions:

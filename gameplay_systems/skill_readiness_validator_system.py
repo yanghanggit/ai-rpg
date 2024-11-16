@@ -167,12 +167,7 @@ class SkillReadinessValidatorSystem(ExecuteProcessor):
                 logger.debug(f"actor_entity {skill_comp.name} not found.")
                 continue
 
-            actor_name = self._context.safe_get_entity_name(actor_entity)
-            agent = self._context.agent_system.get_agent(actor_name)
-            assert agent is not None, f"agent {actor_name} not found."
-            if agent is None:
-                continue
-
+            agent = self._context.safe_get_agent(actor_entity)
             ret.append(
                 InternalProcessData(
                     actor_entity=actor_entity,
@@ -253,7 +248,7 @@ class SkillReadinessValidatorSystem(ExecuteProcessor):
             assert process_data.agent is not None, "agent is None."
 
             skill_readiness_prompt = _generate_skill_readiness_validator_prompt(
-                process_data.agent._name,
+                process_data.agent.name,
                 process_data.actor_entity.get(BaseFormComponent).base_form,
                 gameplay_systems.skill_system_utils.parse_skill_prop_files(
                     context=self._context,
@@ -267,11 +262,11 @@ class SkillReadinessValidatorSystem(ExecuteProcessor):
                 ),
             )
 
-            process_data.agent_task = ret[process_data.agent._name] = (
+            process_data.agent_task = ret[process_data.agent.name] = (
                 AgentTask.create_with_full_context(
                     process_data.agent,
                     prompt_utils.replace_you(
-                        skill_readiness_prompt, process_data.agent._name
+                        skill_readiness_prompt, process_data.agent.name
                     ),
                 )
             )

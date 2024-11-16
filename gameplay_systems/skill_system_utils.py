@@ -39,7 +39,7 @@ def parse_skill_accessory_prop_files(
             )
         )
 
-        prop_file = context._file_system.get_file(PropFile, actor_comp.name, prop_name)
+        prop_file = context.file_system.get_file(PropFile, actor_comp.name, prop_name)
         if prop_file is None:
             continue
 
@@ -74,7 +74,7 @@ def parse_skill_prop_files(
     if skill_comp.name != actor_comp.name:
         return []
 
-    skill_file = context._file_system.get_file(
+    skill_file = context.file_system.get_file(
         PropFile, skill_comp.name, skill_comp.skill_name
     )
     if skill_file is None or not skill_file.is_skill:

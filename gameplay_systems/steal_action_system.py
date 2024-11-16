@@ -89,7 +89,7 @@ class StealActionSystem(ReactiveProcessor):
                 continue
 
             # 判断文件的合理性
-            target_prop_file = self._context._file_system.get_file(
+            target_prop_file = self._context.file_system.get_file(
                 PropFile, target_entity_name, prop_file_name
             )
 
@@ -142,7 +142,7 @@ class StealActionSystem(ReactiveProcessor):
 
         target_actor_name = self._context.safe_get_entity_name(target_entity)
         gameplay_systems.file_system_utils.transfer_file(
-            self._context._file_system,
+            self._context.file_system,
             target_actor_name,
             self._context.safe_get_entity_name(source_entity),
             target_prop_file.name,

@@ -87,7 +87,7 @@ class RPGGame(BaseGame):
     def build(self, game_resource: RPGGameResource) -> "RPGGame":
 
         # 混沌系统，准备测试
-        self.context._chaos_engineering_system.on_pre_create_game(
+        self.context.chaos_engineering_system.on_pre_create_game(
             self.context, game_resource
         )
 
@@ -95,7 +95,7 @@ class RPGGame(BaseGame):
         self._game_resource = game_resource
         ##
         self.context.agent_system.set_runtime_dir(game_resource._runtime_dir)
-        self.context._file_system.set_runtime_dir(game_resource._runtime_dir)
+        self.context.file_system.set_runtime_dir(game_resource._runtime_dir)
 
         ## 第2步 创建管理员类型的角色，全局的AI
         self._create_world_system_entities(game_resource)
@@ -119,7 +119,7 @@ class RPGGame(BaseGame):
             self._load_game(self.context, game_resource)
 
         ## 最后！混沌系统，准备测试
-        self.context._chaos_engineering_system.on_post_create_game(
+        self.context.chaos_engineering_system.on_post_create_game(
             self.context, game_resource
         )
 
@@ -217,7 +217,7 @@ class RPGGame(BaseGame):
 
         # 添加扩展子系统的功能: CodeName
         code_name_component_class = (
-            context._codename_component_system.register_query_component_class(
+            context.query_component_system.register_query_component_class(
                 world_system_model.name,
                 f"""{world_system_model.codename}{world_system_instance.guid}""",
             )
@@ -346,7 +346,7 @@ class RPGGame(BaseGame):
 
         # 添加扩展子系统: CodeName
         code_name_component_class = (
-            context._codename_component_system.register_query_component_class(
+            context.query_component_system.register_query_component_class(
                 actor_instance.name, f"""{actor_model.codename}{actor_instance.guid}"""
             )
         )
@@ -369,16 +369,16 @@ class RPGGame(BaseGame):
                     prop_instance_model=prop_instance,
                 )
             )
-            context._file_system.add_file(new_prop_file)
-            context._file_system.write_file(new_prop_file)
+            context.file_system.add_file(new_prop_file)
+            context.file_system.write_file(new_prop_file)
 
         # 文件系统：添加档案
         gameplay_systems.file_system_utils.register_actor_archives(
-            context._file_system, actor_instance.name, set(actor_model.actor_archives)
+            context.file_system, actor_instance.name, set(actor_model.actor_archives)
         )
 
         gameplay_systems.file_system_utils.register_stage_archives(
-            context._file_system, actor_instance.name, set(actor_model.stage_archives)
+            context.file_system, actor_instance.name, set(actor_model.stage_archives)
         )
 
         # 文件系统准备好之后，设置当前使用的道具
@@ -386,7 +386,7 @@ class RPGGame(BaseGame):
         clothes_prop_file: Optional[PropFile] = None
         for prop_name in actor_instance.actor_current_using_prop:
 
-            find_prop_file_weapon_or_clothes = context._file_system.get_file(
+            find_prop_file_weapon_or_clothes = context.file_system.get_file(
                 PropFile, actor_instance.name, prop_name
             )
             if find_prop_file_weapon_or_clothes is None:
@@ -494,7 +494,7 @@ class RPGGame(BaseGame):
 
         # 添加子系统：CodeName
         code_name_component_class = (
-            context._codename_component_system.register_query_component_class(
+            context.query_component_system.register_query_component_class(
                 stage_model.name, stage_model.codename
             )
         )
@@ -502,7 +502,7 @@ class RPGGame(BaseGame):
         stage_entity.add(code_name_component_class, stage_instance.name)
 
         # 添加子系统：StageTag
-        context._codename_component_system.register_stage_tag_component_class(
+        context.query_component_system.register_stage_tag_component_class(
             stage_model.name, f"""{stage_model.codename}{stage_instance.guid}"""
         )
 
@@ -641,7 +641,7 @@ class RPGGame(BaseGame):
             if chat_history is None:
                 continue
 
-            context.agent_system.fill_chat_history(safe_name, chat_history)
+            context.agent_system.initialize_chat_history(safe_name, chat_history)
 
     ###############################################################################################################################################
     def _load_archives(
@@ -661,12 +661,12 @@ class RPGGame(BaseGame):
 
             actor_archives = game_resource.retrieve_actor_archives(safe_name)
             gameplay_systems.file_system_utils.load_actor_archives(
-                context._file_system, safe_name, actor_archives
+                context.file_system, safe_name, actor_archives
             )
 
             stage_archives = game_resource.retrieve_stage_archives(safe_name)
             gameplay_systems.file_system_utils.load_stage_archives(
-                context._file_system, safe_name, stage_archives
+                context.file_system, safe_name, stage_archives
             )
 
     ###############################################################################################################################################

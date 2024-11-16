@@ -49,7 +49,7 @@ class AnnounceActionSystem(ReactiveProcessor):
         announce_action = entity.get(AnnounceAction)
         stage_name = self._context.safe_get_entity_name(stage_entity)
         content = " ".join(announce_action.values)
-        self._context.broadcast_event_in_stage(
+        self._context.broadcast_event(
             stage_entity,
             AnnounceEvent(
                 message=_generate_announce_prompt(

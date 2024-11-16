@@ -46,10 +46,10 @@ class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
         ).entities
 
         for stage_entity in stage_entities:
-            actor_entities = self._context.get_actors_in_stage(stage_entity)
+            actor_entities = self._context.retrieve_actors_in_stage(stage_entity)
             if len(actor_entities) == 0:
                 continue
-            appearance_info = self._context.gather_actor_appearance_in_stage(
+            appearance_info = self._context.retrieve_stage_actor_appearance(
                 stage_entity
             )
             for actor_entity in actor_entities:
@@ -65,20 +65,20 @@ class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
             if actor_name == my_name:
                 continue
 
-            if not self._context._file_system.has_file(
+            if not self._context.file_system.has_file(
                 ActorArchiveFile, my_name, actor_name
             ):
                 gameplay_systems.file_system_utils.register_actor_archives(
-                    self._context._file_system, my_name, set({actor_name})
+                    self._context.file_system, my_name, set({actor_name})
                 )
 
-            actor_archive = self._context._file_system.get_file(
+            actor_archive = self._context.file_system.get_file(
                 ActorArchiveFile, my_name, actor_name
             )
             assert actor_archive is not None
             if actor_archive.appearance != actor_appearance:
                 actor_archive.set_appearance(actor_appearance)
-                self._context._file_system.write_file(actor_archive)
+                self._context.file_system.write_file(actor_archive)
 
     ###############################################################################################################################################
     def _extract_and_add_archives_from_rounds(self) -> None:
@@ -117,14 +117,14 @@ class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
 
             stage_name = self._context.safe_get_entity_name(stage_entity)
             actor_name = self._context.safe_get_entity_name(actor_entity)
-            exist_file = self._context._file_system.get_file(
+            exist_file = self._context.file_system.get_file(
                 StageArchiveFile, actor_name, stage_name
             )
             if exist_file is not None:
                 continue
 
             new_archive = gameplay_systems.file_system_utils.register_stage_archives(
-                self._context._file_system, actor_name, {stage_name}
+                self._context.file_system, actor_name, {stage_name}
             )
 
             ret[actor_name] = new_archive[0]
@@ -150,7 +150,7 @@ class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
                 continue
 
             add_archives = gameplay_systems.file_system_utils.register_actor_archives(
-                self._context._file_system, safe_name, {archive_actor_name}
+                self._context.file_system, safe_name, {archive_actor_name}
             )
 
             if len(add_archives) > 0:
@@ -177,7 +177,7 @@ class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
                 continue
 
             add_archives = gameplay_systems.file_system_utils.register_stage_archives(
-                self._context._file_system, safe_name, {archive_stage_name}
+                self._context.file_system, safe_name, {archive_stage_name}
             )
 
             if len(add_archives) > 0:
@@ -228,7 +228,7 @@ class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
 
                 add_archives = (
                     gameplay_systems.file_system_utils.register_actor_archives(
-                        self._context._file_system,
+                        self._context.file_system,
                         actor_comp.name,
                         {archive_actor_name},
                     )
@@ -264,7 +264,7 @@ class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
 
                 add_archives = (
                     gameplay_systems.file_system_utils.register_stage_archives(
-                        self._context._file_system,
+                        self._context.file_system,
                         actor_comp.name,
                         {archive_stage_name},
                     )

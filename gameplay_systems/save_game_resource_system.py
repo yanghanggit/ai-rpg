@@ -134,7 +134,7 @@ class SaveGameResourceSystem(ExecuteProcessor):
 
         ret: List[PropInstanceModel] = []
         safe_name = self._context.safe_get_entity_name(entity)
-        prop_files = self._context._file_system.get_files(PropFile, safe_name)
+        prop_files = self._context.file_system.get_files(PropFile, safe_name)
 
         for prop_file in prop_files:
             new_model = PropInstanceModel(
@@ -161,7 +161,7 @@ class SaveGameResourceSystem(ExecuteProcessor):
             spawners=stage_spawner_comp.spawners,
         )
 
-        actor_entities = self._context.get_actors_in_stage(stage_entity)
+        actor_entities = self._context.retrieve_actors_in_stage(stage_entity)
         for actor_entity in actor_entities:
             ret.actors.append(
                 {"name": self._context.safe_get_entity_name(actor_entity)}

@@ -39,28 +39,28 @@ class StageNarrateActionSystem(ReactiveProcessor):
             return
 
         stage_narrate_content = " ".join(stage_narrate_action.values)
-        actor_entities = self._context.get_actors_in_stage(stage_entity)
+        actor_entities = self._context.retrieve_actors_in_stage(stage_entity)
         for actor_entity in actor_entities:
 
             actor_name = self._context.safe_get_entity_name(actor_entity)
 
-            if not self._context._file_system.has_file(
+            if not self._context.file_system.has_file(
                 StageArchiveFile, actor_name, stage_narrate_action.name
             ):
                 # 保证必须有
                 gameplay_systems.file_system_utils.register_stage_archives(
-                    self._context._file_system,
+                    self._context.file_system,
                     actor_name,
                     set({stage_narrate_action.name}),
                 )
 
-            stage_archive = self._context._file_system.get_file(
+            stage_archive = self._context.file_system.get_file(
                 StageArchiveFile, actor_name, stage_narrate_action.name
             )
 
             assert stage_archive is not None
             if stage_archive.stage_narrate != stage_narrate_content:
                 stage_archive.set_stage_narrate(stage_narrate_content)
-                self._context._file_system.write_file(stage_archive)
+                self._context.file_system.write_file(stage_archive)
 
     ############################################################################################################

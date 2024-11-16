@@ -81,7 +81,7 @@ class ActorStatusEvaluator:
         safe_name = context.safe_get_entity_name(actor_entity)
         self._category_prop_files = (
             gameplay_systems.file_system_utils.categorize_files_by_type(
-                context._file_system, safe_name
+                context.file_system, safe_name
             )
         )
 
@@ -100,12 +100,12 @@ class ActorStatusEvaluator:
         safe_name = context.safe_get_entity_name(actor_entity)
 
         if actor_entity.has(WeaponComponent):
-            self._current_weapon = context._file_system.get_file(
+            self._current_weapon = context.file_system.get_file(
                 PropFile, safe_name, actor_entity.get(WeaponComponent).propname
             )
 
         if actor_entity.has(ClothesComponent):
-            self._current_clothes = context._file_system.get_file(
+            self._current_clothes = context.file_system.get_file(
                 PropFile, safe_name, actor_entity.get(ClothesComponent).propname
             )
 

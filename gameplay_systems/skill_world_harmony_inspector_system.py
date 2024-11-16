@@ -259,9 +259,7 @@ class SkillWorldHarmonyInspectorSystem(ExecuteProcessor):
         if self.world_system_entity is None:
             return None
 
-        return self._context.agent_system.get_agent(
-            self._context.safe_get_entity_name(self.world_system_entity)
-        )
+        return self._context.safe_get_agent(self.world_system_entity)
 
     ######################################################################################################################################################
     def _initialize_internal_process_data(
@@ -350,7 +348,7 @@ class SkillWorldHarmonyInspectorSystem(ExecuteProcessor):
             prop_file = prop_file_and_count[0]
             consume_count = prop_file_and_count[1]
             gameplay_systems.file_system_utils.consume_file(
-                self._context._file_system, prop_file, consume_count
+                self._context.file_system, prop_file, consume_count
             )
 
     ######################################################################################################################################################

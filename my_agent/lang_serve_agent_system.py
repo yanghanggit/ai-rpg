@@ -53,25 +53,21 @@ class LangServeAgentSystem:
         return self._agents.get(agent_name, None)
 
     ################################################################################################################################################################################
-    def append_human_message_to_chat_history(self, agent_name: str, chat: str) -> None:
-
+    def append_human_message(self, agent_name: str, chat: str) -> None:
         agent = self.get_agent(agent_name)
+        assert agent is not None, f"add_chat_history: {agent_name} is not registered."
         if agent is not None:
             agent._chat_history.extend([HumanMessage(content=chat)])
-        else:
-            logger.error(f"add_chat_history: {agent_name} is not registered.")
 
     ################################################################################################################################################################################
-    def append_ai_message_to_chat_history(self, agent_name: str, chat: str) -> None:
-
+    def append_ai_message(self, agent_name: str, chat: str) -> None:
         agent = self.get_agent(agent_name)
+        assert agent is not None, f"add_chat_history: {agent_name} is not registered."
         if agent is not None:
             agent._chat_history.extend([AIMessage(content=chat)])
-        else:
-            logger.error(f"add_chat_history: {agent_name} is not registered.")
 
     ################################################################################################################################################################################
-    def remove_last_human_ai_conversation(
+    def discard_last_human_ai_conversation(
         self, agent_name: str
     ) -> List[HumanMessage | AIMessage]:
 
@@ -104,7 +100,7 @@ class LangServeAgentSystem:
         return ret
 
     ################################################################################################################################################################################
-    def _get_chat_history_dump_path(self, name: str) -> Path:
+    def _resolve_chat_history_dump_file_path(self, name: str) -> Path:
         assert self._runtime_dir is not None
         dir = self._runtime_dir / f"{name}"
         dir.mkdir(parents=True, exist_ok=True)
@@ -117,15 +113,16 @@ class LangServeAgentSystem:
 
         for agent_name in self._agents.keys():
 
-            chat_history_model = self._dump_chat_history(agent_name)
-            if chat_history_model is None:
-                continue
-
             try:
-                json_string = chat_history_model.model_dump_json()
-                path = self._get_chat_history_dump_path(agent_name)
-                write_res = path.write_text(json_string, encoding="utf-8")
-                ret.setdefault(agent_name, write_res)
+
+                agent_chat_history_json = self._retrieve_chat_history(
+                    agent_name
+                ).model_dump_json()
+
+                path = self._resolve_chat_history_dump_file_path(agent_name)
+                ret[agent_name] = path.write_text(
+                    agent_chat_history_json, encoding="utf-8"
+                )
 
             except Exception as e:
                 logger.error(f"[{agent_name}]写入chat history dump失败。{e}")
@@ -133,50 +130,47 @@ class LangServeAgentSystem:
         return ret
 
     ################################################################################################################################################################################
-    def _dump_chat_history(
-        self, agent_name: str
-    ) -> Optional[AgentChatHistoryDumpModel]:
-
+    def _retrieve_chat_history(self, agent_name: str) -> AgentChatHistoryDumpModel:
         agent = self.get_agent(agent_name)
         if agent is None:
-            return None
+            return AgentChatHistoryDumpModel(name="", url="", chat_history=[])
 
         ret: AgentChatHistoryDumpModel = AgentChatHistoryDumpModel(
             name=agent_name, url=agent.remote_connector.url, chat_history=[]
         )
 
-        for chat in agent._chat_history:
-            if isinstance(chat, HumanMessage):
+        for message in agent._chat_history:
+            if isinstance(message, HumanMessage):
                 ret.chat_history.append(
                     AgentMessageModel(
                         message_type=AgentMessageType.HUMAN,
-                        content=cast(str, chat.content),
+                        content=cast(str, message.content),
                     )
                 )
-            elif isinstance(chat, AIMessage):
+            elif isinstance(message, AIMessage):
                 ret.chat_history.append(
                     AgentMessageModel(
                         message_type=AgentMessageType.AI,
-                        content=cast(str, chat.content),
+                        content=cast(str, message.content),
                     )
                 )
 
         return ret
 
     ################################################################################################################################################################################
-    def modify_chat_history(self, name: str, modify_data: Dict[str, str]) -> None:
+    def replace_messages(self, name: str, message_replacements: Dict[str, str]) -> None:
 
         agent = self.get_agent(name)
         if agent is None:
             return
 
         for message in agent._chat_history:
-            for key, value in modify_data.items():
+            for key, value in message_replacements.items():
                 if key in cast(str, message.content):
                     message.content = value
 
     ################################################################################################################################################################################
-    def filter_messages_by_keywords(
+    def extract_messages_by_keywords(
         self, name: str, filtered_words: Set[str]
     ) -> List[HumanMessage | AIMessage]:
 
@@ -192,7 +186,7 @@ class LangServeAgentSystem:
         return ret
 
     ################################################################################################################################################################################
-    def filter_chat_history(
+    def remove_excluded_messages(
         self, name: str, excluded_messages: List[HumanMessage | AIMessage]
     ) -> None:
 
@@ -206,7 +200,7 @@ class LangServeAgentSystem:
                 shallow_copy.remove(message)
 
     ################################################################################################################################################################################
-    def fill_chat_history(
+    def initialize_chat_history(
         self, name: str, chat_history_dump_model: AgentChatHistoryDumpModel
     ) -> None:
         agent = self.get_agent(name)

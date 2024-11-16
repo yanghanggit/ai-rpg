@@ -79,7 +79,7 @@ class EquipPropActionSystem(ReactiveProcessor):
         actor_name = self._context.safe_get_entity_name(entity)
         for prop_name in equip_prop_action.values:
 
-            prop_file = self._context._file_system.get_file(
+            prop_file = self._context.file_system.get_file(
                 PropFile, actor_name, prop_name
             )
 

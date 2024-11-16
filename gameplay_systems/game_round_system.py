@@ -50,13 +50,6 @@ class GameRoundSystem(ExecuteProcessor):
             Matcher(any_of=[WorldComponent, StageComponent, ActorComponent])
         ).entities
 
-        for entity in entities:
-            safe_name = self._context.safe_get_entity_name(entity)
-            assert safe_name != "", "Entity name is empty"
-            assert (
-                self._context.agent_system.get_agent(safe_name) is not None
-            ), f"Agent not found = {safe_name}"
-
         self._context.notify_event(
             entities,
             GameRoundEvent(

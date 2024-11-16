@@ -146,7 +146,7 @@ class ActorPlanningExecutionSystem(ExecuteProcessor):
         tasks: Dict[str, AgentTask] = {}
         self._populate_agent_tasks(tasks)
         # step可选：混沌工程做测试
-        self._context._chaos_engineering_system.on_actor_planning_system_execute(
+        self._context.chaos_engineering_system.on_actor_planning_system_execute(
             self._context
         )
         # step2: 并行执行requests
@@ -179,7 +179,9 @@ class ActorPlanningExecutionSystem(ExecuteProcessor):
                     f"ActorPlanningSystem: check_plan failed, {actor_planning.original_response_content}"
                 )
                 ## 需要失忆!
-                self._context.agent_system.remove_last_human_ai_conversation(actor_name)
+                self._context.agent_system.discard_last_human_ai_conversation(
+                    actor_name
+                )
                 continue
 
             ## 不能停了，只能一直继续
@@ -207,23 +209,19 @@ class ActorPlanningExecutionSystem(ExecuteProcessor):
         for actor_entity in actor_entities:
 
             actor_comp = actor_entity.get(ActorComponent)
-            agent = self._context.agent_system.get_agent(actor_comp.name)
-            if agent is None:
-                continue
-
             check_self = ActorStatusEvaluator(self._context, actor_entity)
-            actors_appearance = self._context.gather_actor_appearance_in_stage(
+            actor_appearance_mapping = self._context.retrieve_stage_actor_appearance(
                 actor_entity
             )
-            actors_appearance.pop(actor_comp.name, None)  # 自己不要
+            actor_appearance_mapping.pop(actor_comp.name, None)  # 自己不要
 
             planned_agent_tasks[actor_comp.name] = AgentTask.create_with_full_context(
-                agent,
+                self._context.safe_get_agent(actor_entity),
                 _generate_actor_plan_prompt(
                     current_stage=self._retrieve_stage_name(actor_entity),
                     stage_enviro_narrate=self._retrieve_stage_narrative(actor_entity),
                     stage_graph=set(self._retrieve_stage_graph(actor_entity)),
-                    actor_appearance_mapping=actors_appearance,
+                    actor_appearance_mapping=actor_appearance_mapping,
                     health=check_self.health,
                     actor_props=check_self._category_prop_files,
                     current_weapon=check_self._current_weapon,

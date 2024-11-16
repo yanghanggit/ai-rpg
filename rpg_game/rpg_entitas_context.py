@@ -17,6 +17,7 @@ from typing import Optional, Dict, Set
 import gameplay_systems.prompt_utils as prompt_utils
 from my_models.event_models import AgentEvent
 from rpg_game.base_game import BaseGame
+from my_agent.lang_serve_agent import LangServeAgent
 
 
 class RPGEntitasContext(Context):
@@ -26,7 +27,7 @@ class RPGEntitasContext(Context):
         self,
         file_system: FileSystem,
         langserve_agent_system: LangServeAgentSystem,
-        codename_component_system: QueryComponentSystem,
+        query_component_system: QueryComponentSystem,
         chaos_engineering_system: IChaosEngineering,
     ) -> None:
 
@@ -37,26 +38,38 @@ class RPGEntitasContext(Context):
         self._file_system: FileSystem = file_system
 
         # agent 系统
-        self._langserve_agent_system: LangServeAgentSystem = langserve_agent_system
+        self._agent_system: LangServeAgentSystem = langserve_agent_system
 
         # 代码名字组件系统（方便快速查找用）
-        self._codename_component_system: QueryComponentSystem = (
-            codename_component_system
-        )
+        self._query_component_system: QueryComponentSystem = query_component_system
 
         # 混沌工程系统
         self._chaos_engineering_system: IChaosEngineering = chaos_engineering_system
 
-        #
+        # 游戏对象记录下
         self._game: Optional[BaseGame] = None
 
     #############################################################################################################################
     @property
-    def agent_system(self) -> LangServeAgentSystem:
-        return self._langserve_agent_system
+    def file_system(self) -> FileSystem:
+        return self._file_system
 
     #############################################################################################################################
+    @property
+    def agent_system(self) -> LangServeAgentSystem:
+        return self._agent_system
 
+    #############################################################################################################################
+    @property
+    def query_component_system(self) -> QueryComponentSystem:
+        return self._query_component_system
+
+    #############################################################################################################################
+    @property
+    def chaos_engineering_system(self) -> IChaosEngineering:
+        return self._chaos_engineering_system
+
+    #############################################################################################################################
     def get_world_entity(self, world_name: str) -> Optional[Entity]:
         entity: Optional[Entity] = self.get_entity_by_name(world_name)
         if entity is not None and entity.has(WorldComponent):
@@ -83,7 +96,7 @@ class RPGEntitasContext(Context):
 
     #############################################################################################################################
     def get_entity_by_name(self, name: str) -> Optional[Entity]:
-        comp_class = self._codename_component_system.get_query_component_class(name)
+        comp_class = self._query_component_system.get_query_component_class(name)
         if comp_class is None:
             return None
         find_entities = self.get_group(Matcher(comp_class)).entities
@@ -107,11 +120,10 @@ class RPGEntitasContext(Context):
         return None
 
     #############################################################################################################################
-
-    def _get_actors_in_stage(self, stage_name: str) -> Set[Entity]:
+    def _retrieve_actors_in_stage(self, stage_name: str) -> Set[Entity]:
         # 测试！！！
         stage_tag_component = (
-            self._codename_component_system.get_stage_tag_component_class(stage_name)
+            self._query_component_system.get_stage_tag_component_class(stage_name)
         )
         entities = self.get_group(
             Matcher(all_of=[ActorComponent, stage_tag_component])
@@ -119,18 +131,16 @@ class RPGEntitasContext(Context):
         return set(entities)
 
     #############################################################################################################################
-
-    def get_actors_in_stage(self, entity: Entity) -> Set[Entity]:
+    def retrieve_actors_in_stage(self, entity: Entity) -> Set[Entity]:
         stage_entity = self.safe_get_stage_entity(entity)
         if stage_entity is None:
             return set()
         stage_comp = stage_entity.get(StageComponent)
-        return self._get_actors_in_stage(stage_comp.name)
+        return self._retrieve_actors_in_stage(stage_comp.name)
 
     #############################################################################################################################
-
-    def get_actor_names_in_stage(self, entity: Entity) -> Set[str]:
-        actors = self.get_actors_in_stage(entity)
+    def retrieve_actor_names_in_stage(self, entity: Entity) -> Set[str]:
+        actors = self.retrieve_actors_in_stage(entity)
         ret: Set[str] = set()
         for actor in actors:
             actor_comp = actor.get(ActorComponent)
@@ -157,25 +167,23 @@ class RPGEntitasContext(Context):
         return ""
 
     #############################################################################################################################
-    def safe_add_human_message_to_entity(
-        self, entity: Entity, message_content: str
+    def safe_add_human_message(
+        self, target_entity: Entity, message_content: str
     ) -> None:
         logger.warning(
             f"请检查调用这个函数的调用点，确定合理，safe_add_human_message_to_entity: {message_content}"
         )
-        self.agent_system.append_human_message_to_chat_history(
-            self.safe_get_entity_name(entity), message_content
+        self.agent_system.append_human_message(
+            self.safe_get_entity_name(target_entity), message_content
         )
 
     #############################################################################################################################
-    def safe_add_ai_message_to_entity(
-        self, entity: Entity, message_content: str
-    ) -> None:
+    def safe_add_ai_message(self, target_entity: Entity, message_content: str) -> None:
         logger.warning(
             f"请检查调用这个函数的调用点，确定合理，safe_add_ai_message_to_entity: {message_content}"
         )
-        self.agent_system.append_ai_message_to_chat_history(
-            self.safe_get_entity_name(entity), message_content
+        self.agent_system.append_ai_message(
+            self.safe_get_entity_name(target_entity), message_content
         )
 
     #############################################################################################################################
@@ -194,7 +202,7 @@ class RPGEntitasContext(Context):
 
         # 删除旧的
         previous_stage_tag_component_class = (
-            self._codename_component_system.get_stage_tag_component_class(
+            self._query_component_system.get_stage_tag_component_class(
                 previous_stage_name
             )
         )
@@ -205,7 +213,7 @@ class RPGEntitasContext(Context):
 
         # 添加新的
         target_stage_tag_component_class = (
-            self._codename_component_system.get_stage_tag_component_class(
+            self._query_component_system.get_stage_tag_component_class(
                 target_stage_name
             )
         )
@@ -215,11 +223,10 @@ class RPGEntitasContext(Context):
             entity.add(target_stage_tag_component_class, target_stage_name)
 
     #############################################################################################################################
-    # 获取场景内所有的角色的外观信息
-    def gather_actor_appearance_in_stage(self, actor_entity: Entity) -> Dict[str, str]:
+    def retrieve_stage_actor_appearance(self, actor_entity: Entity) -> Dict[str, str]:
 
         ret: Dict[str, str] = {}
-        for actor in self.get_actors_in_stage(actor_entity):
+        for actor in self.retrieve_actors_in_stage(actor_entity):
             if not actor.has(FinalAppearanceComponent):
                 continue
 
@@ -239,7 +246,7 @@ class RPGEntitasContext(Context):
         return None
 
     #############################################################################################################################
-    def broadcast_event_in_stage(
+    def broadcast_event(
         self,
         entity: Entity,
         agent_event: AgentEvent,
@@ -247,10 +254,11 @@ class RPGEntitasContext(Context):
     ) -> None:
 
         stage_entity = self.safe_get_stage_entity(entity)
+        assert stage_entity is not None, "stage is None, actor无所在场景是有问题的"
         if stage_entity is None:
             return
 
-        need_broadcast_entities = self.get_actors_in_stage(stage_entity)
+        need_broadcast_entities = self.retrieve_actors_in_stage(stage_entity)
         need_broadcast_entities.add(stage_entity)
 
         if len(exclude_entities) > 0:
@@ -266,7 +274,7 @@ class RPGEntitasContext(Context):
     ) -> None:
 
         self._notify_event(entities, agent_event)
-        self._notify_event_players(entities, agent_event)
+        self._notify_event_to_players(entities, agent_event)
 
     #############################################################################################################################
     def _notify_event(self, entities: Set[Entity], agent_event: AgentEvent) -> None:
@@ -276,16 +284,14 @@ class RPGEntitasContext(Context):
             safe_name = self.safe_get_entity_name(entity)
             replace_message = prompt_utils.replace_you(agent_event.message, safe_name)
 
-            self.agent_system.append_human_message_to_chat_history(
-                safe_name, replace_message
-            )
+            self.agent_system.append_human_message(safe_name, replace_message)
 
             if entity.has(RoundEventsRecordComponent):
                 round_events_comp = entity.get(RoundEventsRecordComponent)
                 round_events_comp.events.append(replace_message)
 
     #############################################################################################################################
-    def _notify_event_players(
+    def _notify_event_to_players(
         self, entities: Set[Entity], agent_event: AgentEvent
     ) -> None:
 
@@ -303,5 +309,14 @@ class RPGEntitasContext(Context):
 
         assert self._game is not None
         self._game.send_event(player_proxy_names, agent_event)
+
+    #############################################################################################################################
+    def safe_get_agent(self, entity: Entity) -> LangServeAgent:
+        safe_name = self.safe_get_entity_name(entity)
+        agent = self.agent_system.get_agent(safe_name)
+        assert agent is not None, f"无法找到agent: {safe_name}"
+        if agent is None:
+            return LangServeAgent.create_empty()
+        return agent
 
     #############################################################################################################################

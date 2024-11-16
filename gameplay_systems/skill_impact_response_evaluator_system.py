@@ -183,11 +183,7 @@ class SkillImpactResponseEvaluatorSystem(ExecuteProcessor):
             if target_entity is None:
                 continue
 
-            agent = self._context.agent_system.get_agent(target_name)
-            assert agent is not None, f"agent {target_name} not found."
-            if agent is None:
-                continue
-
+            agent = self._context.safe_get_agent(target_entity)
             # 目标
             ret.target_entities.append(target_entity)
 
@@ -198,12 +194,12 @@ class SkillImpactResponseEvaluatorSystem(ExecuteProcessor):
             ret.agent_tasks.append(
                 AgentTask.create_with_full_context(
                     agent,
-                    prompt_utils.replace_you(skill_comp.command, agent._name),
+                    prompt_utils.replace_you(skill_comp.command, agent.name),
                 )
             )
 
             # 空的回复
-            ret.task_responses.append(InternalPlanResponse(agent._name, ""))
+            ret.task_responses.append(InternalPlanResponse(agent.name, ""))
 
         # 最后的检查，出问题了就返回None
         if len(ret.target_entities) == 0:
@@ -269,7 +265,7 @@ class SkillImpactResponseEvaluatorSystem(ExecuteProcessor):
         if current_stage_entity is None:
             return
 
-        self._context.broadcast_event_in_stage(
+        self._context.broadcast_event(
             current_stage_entity,
             AgentEvent(
                 message=_generate_broadcast_skill_impact_response_prompt(

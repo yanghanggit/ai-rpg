@@ -102,9 +102,7 @@ class WebPlayerTipsSystem(ExecuteProcessor):
     ############################################################################################################
     def parse_stage_name(self, stage_name: str, actor_name: str) -> str:
 
-        if self._context._file_system.has_file(
-            StageArchiveFile, actor_name, stage_name
-        ):
+        if self._context.file_system.has_file(StageArchiveFile, actor_name, stage_name):
             return stage_name
 
         stage_entity = self._context.get_stage_entity(stage_name)

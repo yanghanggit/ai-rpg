@@ -248,7 +248,7 @@ class SkillInvocationSystem(ReactiveProcessor):
         )
         skill_command_parser.parse(
             actor_entity.get(ActorComponent).current_stage,
-            self._context.get_actor_names_in_stage(actor_entity),
+            self._context.retrieve_actor_names_in_stage(actor_entity),
             set(actor_status_evaluator.skill_prop_files),
             set(actor_status_evaluator.available_skill_accessory_prop_files),
         )

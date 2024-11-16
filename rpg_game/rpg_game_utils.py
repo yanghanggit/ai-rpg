@@ -171,7 +171,7 @@ def get_props_in_stage(game_name: RPGGame, player_entity: Entity) -> List[PropFi
     if stage_entity is None:
         return []
     stage_name = game_name.context.safe_get_entity_name(stage_entity)
-    return game_name.context._file_system.get_files(PropFile, stage_name)
+    return game_name.context.file_system.get_files(PropFile, stage_name)
 
 
 #######################################################################################################################################
@@ -186,11 +186,9 @@ def get_stage_narrate_content_from_stage_archive_file(
     actor_name = game_name.context.safe_get_entity_name(player_entity)
     stage_name = game_name.context.safe_get_entity_name(stage_entity)
 
-    if game_name.context._file_system.has_file(
-        StageArchiveFile, actor_name, stage_name
-    ):
+    if game_name.context.file_system.has_file(StageArchiveFile, actor_name, stage_name):
 
-        stage_archive = game_name.context._file_system.get_file(
+        stage_archive = game_name.context.file_system.get_file(
             StageArchiveFile, actor_name, stage_name
         )
 
@@ -213,7 +211,7 @@ def gen_player_watch_action_model(
     )
 
     ## 场景内的角色信息获取
-    actors_info: Dict[str, str] = game_name.context.gather_actor_appearance_in_stage(
+    actors_info: Dict[str, str] = game_name.context.retrieve_stage_actor_appearance(
         player_entity
     )
     actors_info.pop(game_name.context.safe_get_entity_name(player_entity))
@@ -294,7 +292,7 @@ def gen_player_retrieve_actor_archives_action_model(
         return None
 
     file_owner_name = game_name.context.safe_get_entity_name(player_entity)
-    archive_files = game_name.context._file_system.get_files(
+    archive_files = game_name.context.file_system.get_files(
         ActorArchiveFile, file_owner_name
     )
 
@@ -318,7 +316,7 @@ def gen_player_retrieve_stage_archives_action_model(
         return None
 
     file_owner_name = game_name.context.safe_get_entity_name(player_entity)
-    archive_files = game_name.context._file_system.get_files(
+    archive_files = game_name.context.file_system.get_files(
         StageArchiveFile, file_owner_name
     )
 

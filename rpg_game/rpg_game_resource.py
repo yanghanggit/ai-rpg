@@ -21,7 +21,7 @@ from my_models.file_models import (
 )
 from my_models.player_models import PlayerProxyModel
 from my_models.agent_models import AgentChatHistoryDumpModel
-from my_format_string.complex_name import ComplexName
+from my_format_string.complex_actor_name import ComplexActorName
 
 
 class ActorInstanceName:
@@ -35,11 +35,11 @@ class ActorInstanceName:
 
     @property
     def base_name(self) -> str:
-        return ComplexName.extract_name(self._original_name)
+        return ComplexActorName.extract_name(self._original_name)
 
     @property
     def guid(self) -> int:
-        return ComplexName.extract_guid(self._original_name)
+        return ComplexActorName.extract_guid(self._original_name)
 
 
 ###############################################################################################################################################

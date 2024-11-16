@@ -19,7 +19,7 @@ import game_sample.configuration as configuration
 from my_models.editor_models import EditorEntityType, EditorProperty
 import my_format_string.attrs_format_string
 from game_sample.actor_editor import ExcelEditorActor
-from my_format_string.complex_name import ComplexName
+from my_format_string.complex_actor_name import ComplexActorName
 import my_format_string.editor_prop_info_string
 
 
@@ -174,12 +174,12 @@ class ExcelEditorStage:
 
     ################################################################################################################################
     @property
-    def groups_in_stage(self) -> List[ComplexName]:
+    def groups_in_stage(self) -> List[ComplexActorName]:
         org_data: Optional[str] = self._data[EditorProperty.GROUPS_IN_STAGE]
         if org_data is None:
             return []
         ret = org_data.split(";")
-        return [ComplexName(name) for name in ret]
+        return [ComplexActorName(name) for name in ret]
 
     ################################################################################################################################
     @property

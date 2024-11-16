@@ -15,7 +15,7 @@ from my_agent.agent_plan import AgentPlanResponse
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from typing import Dict, List, final
-import gameplay_systems.action_utils
+import gameplay_systems.action_component_utils
 import gameplay_systems.prompt_utils as prompt_utils
 from my_agent.agent_task import (
     AgentTask,
@@ -124,7 +124,7 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
             ), f"StagePlanningSystem: stage_entity is None, {stage_name}"
 
             stage_planning = AgentPlanResponse(stage_name, agent_task.response_content)
-            if not gameplay_systems.action_utils.validate_actions(
+            if not gameplay_systems.action_component_utils.validate_actions(
                 stage_planning, STAGE_AVAILABLE_ACTIONS_REGISTER
             ):
                 logger.warning(
@@ -138,7 +138,7 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
 
             ## 不能停了，只能一直继续
             for action in stage_planning._actions:
-                gameplay_systems.action_utils.add_action(
+                gameplay_systems.action_component_utils.add_action(
                     stage_entity, action, STAGE_AVAILABLE_ACTIONS_REGISTER
                 )
 

@@ -24,7 +24,7 @@ from rpg_game.rpg_game import RPGGame
 from my_models.event_models import AgentEvent
 from loguru import logger
 from my_agent.lang_serve_agent import LangServeAgent
-import my_format_string.unknown_stage_name
+import gameplay_systems.stage_entity_utils
 
 
 ################################################################################################################################################
@@ -214,18 +214,9 @@ class StageEntranceCheckerSystem(ReactiveProcessor):
         goto_action = actor_entity.get(GoToAction)
         if len(goto_action.values) == 0:
             return ""
-
-        if my_format_string.unknown_stage_name.is_unknown_stage_name(
-            goto_action.values[0]
-        ):
-            guid = my_format_string.unknown_stage_name.extract_guid_from_unknown_stage_name(
-                goto_action.values[0]
-            )
-            stage_entity = self._context.get_entity_by_guid(guid)
-            if stage_entity is not None and stage_entity.has(StageComponent):
-                return self._context.safe_get_entity_name(stage_entity)
-
-        return str(goto_action.values[0])
+        return gameplay_systems.stage_entity_utils.resolve_stage_name(
+            self._context, goto_action.values[0]
+        )
 
     ######################################################################################################################################################
     def _handle_agent_responses(self, tasks: Dict[str, AgentTask]) -> None:

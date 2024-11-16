@@ -8,12 +8,12 @@ from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import final, Final, List
 from rpg_game.rpg_game import RPGGame
 import copy
-from my_format_string.complex_name import ComplexName
+from my_format_string.complex_actor_name import ComplexActorName
 
 
 ######################################################################################################################################################
 @final
-class SpawnerSystem(ExecuteProcessor):
+class StageSpawnerSystem(ExecuteProcessor):
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         self._context: RPGEntitasContext = context
         self._game: RPGGame = rpg_game
@@ -59,7 +59,7 @@ class SpawnerSystem(ExecuteProcessor):
                 continue
 
             actor_model = self._game._game_resource.data_base.get_actor(
-                ComplexName.extract_name(actor_instance_as_prototype_name)
+                ComplexActorName.extract_name(actor_instance_as_prototype_name)
             )
             if actor_model is None:
                 assert (
@@ -72,8 +72,9 @@ class SpawnerSystem(ExecuteProcessor):
             # 生成一个guid
             gen_new_guid = self._gen_actor_guid()
             # 生成一个新的名字 + 修改名字和guid
-            actor_intance_deep_copy.name = ComplexName.format_name_with_guid(
-                ComplexName.extract_name(actor_instance_as_prototype_name), gen_new_guid
+            actor_intance_deep_copy.name = ComplexActorName.format_name_with_guid(
+                ComplexActorName.extract_name(actor_instance_as_prototype_name),
+                gen_new_guid,
             )
             actor_intance_deep_copy.guid = gen_new_guid
             # 生成一个新的entity
@@ -86,10 +87,7 @@ class SpawnerSystem(ExecuteProcessor):
         return ret
 
     ######################################################################################################################################################
-    def _gen_actor_guid(
-        self,
-    ) -> int:
-
+    def _gen_actor_guid(self) -> int:
         self._gen_index += 1
         return self._base_index + self._gen_index
 

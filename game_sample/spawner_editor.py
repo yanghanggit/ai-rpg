@@ -11,7 +11,7 @@ from my_models.entity_models import (
 )
 from my_models.editor_models import EditorProperty
 from loguru import logger
-from my_format_string.complex_name import ComplexName
+from my_format_string.complex_actor_name import ComplexActorName
 from game_sample.actor_editor import ExcelEditorActor
 
 
@@ -43,13 +43,13 @@ class ExcelEditorSpawner:
 
     #################################################################################################################################
     @property
-    def spawn(self) -> List[ComplexName]:
+    def spawn(self) -> List[ComplexActorName]:
         assert self._data is not None
         raw_string = cast(str, self._data[EditorProperty.SPAWN])
         if raw_string is None:
             return []
         tmp = [str(attr) for attr in raw_string.split(";")]
-        return [ComplexName(attr) for attr in tmp]
+        return [ComplexActorName(attr) for attr in tmp]
 
     #################################################################################################################################
 

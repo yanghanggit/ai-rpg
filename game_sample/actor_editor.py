@@ -16,7 +16,7 @@ from my_models.entity_models import (
 from my_models.editor_models import EditorEntityType, EditorProperty
 import my_format_string.attrs_format_string
 import my_format_string.editor_prop_info_string
-from my_format_string.complex_name import ComplexName
+from my_format_string.complex_actor_name import ComplexActorName
 
 
 class ExcelEditorActor:
@@ -39,7 +39,9 @@ class ExcelEditorActor:
         self._actor_data_base: Dict[str, ExcelDataActor] = actor_data_base
         self._prop_data_base: Dict[str, ExcelDataProp] = prop_data_base
         self._guid = group_generation_id
-        self._complex_name: ComplexName = ComplexName(str(data[EditorProperty.NAME]))
+        self._complex_name: ComplexActorName = ComplexActorName(
+            str(data[EditorProperty.NAME])
+        )
 
         # 检查actor类型是否合法
         if self.type not in [
@@ -63,7 +65,7 @@ class ExcelEditorActor:
     #################################################################################################################################
     @property
     def format_actor_name_with_guid(self) -> str:
-        return ComplexName.format_name_with_guid(
+        return ComplexActorName.format_name_with_guid(
             self.data_base_name, self._resolve_guid()
         )
 
@@ -197,7 +199,7 @@ class ExcelEditorActor:
             )
 
         # test
-        if ComplexName.contains_guid(ret.name):
+        if ComplexActorName.contains_guid(ret.name):
             assert (
                 ret.name == self.format_actor_name_with_guid
             ), f"Invalid actor name: {ret.name}"

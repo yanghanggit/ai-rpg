@@ -100,7 +100,7 @@ class RPGEntitasProcessors(Processors):
         from gameplay_systems.save_entity_system import SaveEntitySystem
         from gameplay_systems.save_player_system import SavePlayerSystem
         from gameplay_systems.web_player_tips_system import WebPlayerTipsSystem
-        from gameplay_systems.spawner_system import SpawnerSystem
+        from gameplay_systems.stage_spawner_system import StageSpawnerSystem
         from gameplay_systems.game_round_system import GameRoundSystem
         from gameplay_systems.handle_web_player_input_system import (
             HandleWebPlayerInputSystem,
@@ -113,7 +113,7 @@ class RPGEntitasProcessors(Processors):
 
         # 初始化系统########################
         processors.add(
-            SpawnerSystem(context, rpg_game)
+            StageSpawnerSystem(context, rpg_game)
         )  # 因为需要connect 与 kick off，所以需要放在2者之前
         processors.add(AgentConnectSystem(context, rpg_game))
         processors.add(AgentKickOffSystem(context, rpg_game))

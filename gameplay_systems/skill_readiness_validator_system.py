@@ -21,7 +21,7 @@ import gameplay_systems.prompt_utils as prompt_utils
 from my_agent.agent_task import AgentTask
 from my_agent.agent_plan import AgentPlanResponse
 from rpg_game.rpg_game import RPGGame
-import gameplay_systems.skill_system_utils
+import gameplay_systems.skill_entity_utils
 from my_agent.lang_serve_agent import LangServeAgent
 
 
@@ -212,7 +212,7 @@ class SkillReadinessValidatorSystem(ExecuteProcessor):
             assert agent_task is not None, "agent_task is None."
 
             if not self._is_skill_ready(agent_task):
-                gameplay_systems.skill_system_utils.destroy_skill_entity(
+                gameplay_systems.skill_entity_utils.destroy_skill_entity(
                     process_data.skill_entity
                 )
                 continue
@@ -230,7 +230,7 @@ class SkillReadinessValidatorSystem(ExecuteProcessor):
     def _clear(self, internal_process_data: List[InternalProcessData]) -> None:
         for process_data in internal_process_data:
             assert process_data.skill_entity is not None, "skill_entity is None."
-            gameplay_systems.skill_system_utils.destroy_skill_entity(
+            gameplay_systems.skill_entity_utils.destroy_skill_entity(
                 process_data.skill_entity
             )
 
@@ -250,12 +250,12 @@ class SkillReadinessValidatorSystem(ExecuteProcessor):
             skill_readiness_prompt = _generate_skill_readiness_validator_prompt(
                 process_data.agent.name,
                 process_data.actor_entity.get(BaseFormComponent).base_form,
-                gameplay_systems.skill_system_utils.parse_skill_prop_files(
+                gameplay_systems.skill_entity_utils.parse_skill_prop_files(
                     context=self._context,
                     skill_entity=process_data.skill_entity,
                     actor_entity=process_data.actor_entity,
                 ),
-                gameplay_systems.skill_system_utils.retrieve_skill_accessory_files(
+                gameplay_systems.skill_entity_utils.retrieve_skill_accessory_files(
                     context=self._context,
                     skill_entity=process_data.skill_entity,
                     actor_entity=process_data.actor_entity,

@@ -20,7 +20,7 @@ import my_format_string.attrs_format_string
 from rpg_game.rpg_game import RPGGame
 from my_models.entity_models import AttributesIndex
 from my_models.event_models import AgentEvent
-import gameplay_systems.skill_system_utils
+import gameplay_systems.skill_entity_utils
 from my_agent.lang_serve_agent import LangServeAgent
 from loguru import logger
 
@@ -402,7 +402,7 @@ class SkillImpactResponseEvaluatorSystem(ExecuteProcessor):
         if len(skill_attribute_outputs) == 0:
             return
 
-        data = gameplay_systems.skill_system_utils.parse_skill_accessory_prop_files(
+        data = gameplay_systems.skill_entity_utils.parse_skill_accessory_prop_files(
             context=self._context,
             skill_entity=internal_process_data.skill_entity,
             actor_entity=internal_process_data.source_entity,
@@ -421,7 +421,7 @@ class SkillImpactResponseEvaluatorSystem(ExecuteProcessor):
         self, internal_process_data: InternalProcessData
     ) -> List[int]:
 
-        skill_prop_files = gameplay_systems.skill_system_utils.parse_skill_prop_files(
+        skill_prop_files = gameplay_systems.skill_entity_utils.parse_skill_prop_files(
             context=self._context,
             skill_entity=internal_process_data.skill_entity,
             actor_entity=internal_process_data.source_entity,

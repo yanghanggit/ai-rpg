@@ -4,17 +4,15 @@ from my_components.action_components import (
     DeadAction,
 )
 from my_components.components import (
-    StageComponent,
     ActorComponent,
     StageGraphComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
-import gameplay_systems.prompt_utils as prompt_utils
 from typing import final, override, Set, Any
 from rpg_game.rpg_game import RPGGame
 from my_models.event_models import AgentEvent
-import my_format_string.unknown_stage_name
+import gameplay_systems.stage_entity_utils
 
 
 ################################################################################################################################################
@@ -125,22 +123,12 @@ class StageValidatorSystem(ReactiveProcessor):
     def get_target_stage_name(self, actor_entity: Entity) -> str:
         assert actor_entity.has(ActorComponent)
         assert actor_entity.has(GoToAction)
-
         go_to_action = actor_entity.get(GoToAction)
         if len(go_to_action.values) == 0:
             return ""
-
-        if my_format_string.unknown_stage_name.is_unknown_stage_name(
-            go_to_action.values[0]
-        ):
-            guid = my_format_string.unknown_stage_name.extract_guid_from_unknown_stage_name(
-                go_to_action.values[0]
-            )
-            stage_entity = self._context.get_entity_by_guid(guid)
-            if stage_entity is not None and stage_entity.has(StageComponent):
-                return self._context.safe_get_entity_name(stage_entity)
-
-        return str(go_to_action.values[0])
+        return gameplay_systems.stage_entity_utils.resolve_stage_name(
+            self._context, str(go_to_action.values[0])
+        )
 
     ###############################################################################################################################################
     def on_remove_action(

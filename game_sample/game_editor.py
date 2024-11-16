@@ -21,7 +21,7 @@ from game_sample.spawner_editor import ExcelEditorSpawner
 from my_models.editor_models import EditorEntityType, EditorProperty
 from loguru import logger
 from my_models.config_models import GameAgentsConfigModel
-from my_format_string.complex_name import ComplexName
+from my_format_string.complex_actor_name import ComplexActorName
 from game_sample.guid_generator import editor_guid_generator
 import game_sample.configuration
 
@@ -158,7 +158,9 @@ class ExcelEditorGame:
                     continue
 
                 # 复杂的对象用于分析到底是什么
-                actor_complex_identifier = ComplexName(str(item[EditorProperty.NAME]))
+                actor_complex_identifier = ComplexActorName(
+                    str(item[EditorProperty.NAME])
+                )
                 if actor_complex_identifier.is_complex_name:
 
                     if not game_sample.configuration.EN_GROUP_FEATURE:

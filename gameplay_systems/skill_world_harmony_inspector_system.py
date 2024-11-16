@@ -23,7 +23,7 @@ from my_agent.agent_plan import AgentPlanResponse
 from rpg_game.rpg_game import RPGGame
 import gameplay_systems.file_system_utils
 from my_models.event_models import AgentEvent
-import gameplay_systems.skill_system_utils
+import gameplay_systems.skill_entity_utils
 from my_agent.lang_serve_agent import LangServeAgent
 
 
@@ -321,7 +321,7 @@ class SkillWorldHarmonyInspectorSystem(ExecuteProcessor):
                 == prompt_utils.SkillResultPromptTag.FAILURE
             ):
                 self._notify_inspector_failure_event(process_data)
-                gameplay_systems.skill_system_utils.destroy_skill_entity(
+                gameplay_systems.skill_entity_utils.destroy_skill_entity(
                     process_data.skill_entity
                 )
                 continue
@@ -339,7 +339,7 @@ class SkillWorldHarmonyInspectorSystem(ExecuteProcessor):
     ######################################################################################################################################################
     def _process_consumable_items(self, process_data: InternalProcessData) -> None:
 
-        data = gameplay_systems.skill_system_utils.parse_skill_accessory_prop_files(
+        data = gameplay_systems.skill_entity_utils.parse_skill_accessory_prop_files(
             context=self._context,
             skill_entity=process_data.skill_entity,
             actor_entity=process_data.actor_entity,
@@ -386,7 +386,7 @@ class SkillWorldHarmonyInspectorSystem(ExecuteProcessor):
     ######################################################################################################################################################
     def _clear(self, internal_process_data: List[InternalProcessData]) -> None:
         for process_data in internal_process_data:
-            gameplay_systems.skill_system_utils.destroy_skill_entity(
+            gameplay_systems.skill_entity_utils.destroy_skill_entity(
                 process_data.skill_entity
             )
 
@@ -450,12 +450,12 @@ class SkillWorldHarmonyInspectorSystem(ExecuteProcessor):
             prompt = _generate_world_harmony_inspector_prompt(
                 self._context.safe_get_entity_name(process_data.actor_entity),
                 process_data.actor_entity.get(BaseFormComponent).base_form,
-                gameplay_systems.skill_system_utils.parse_skill_prop_files(
+                gameplay_systems.skill_entity_utils.parse_skill_prop_files(
                     context=self._context,
                     skill_entity=process_data.skill_entity,
                     actor_entity=process_data.actor_entity,
                 ),
-                gameplay_systems.skill_system_utils.retrieve_skill_accessory_files(
+                gameplay_systems.skill_entity_utils.retrieve_skill_accessory_files(
                     context=self._context,
                     skill_entity=process_data.skill_entity,
                     actor_entity=process_data.actor_entity,

@@ -11,14 +11,13 @@ from my_models.event_models import AgentEvent
 from rpg_game.web_game import WebGame
 from loguru import logger
 from extended_systems.archive_file import StageArchiveFile
-import gameplay_systems.prompt_utils as prompt_utils
 from my_components.components import (
     PlayerComponent,
     ActorComponent,
     StageGraphComponent,
     GUIDComponent,
 )
-import my_format_string.unknown_stage_name
+from my_format_string.complex_stage_name import ComplexStageName
 
 
 @final
@@ -110,8 +109,6 @@ class WebPlayerTipsSystem(ExecuteProcessor):
 
         assert stage_entity.has(GUIDComponent)
         guid_comp = stage_entity.get(GUIDComponent)
-        return my_format_string.unknown_stage_name.generate_unknown_stage_name(
-            guid_comp.GUID
-        )
+        return ComplexStageName.generate_unknown_stage_name(guid_comp.GUID)
 
     ############################################################################################################

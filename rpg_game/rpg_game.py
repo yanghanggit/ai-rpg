@@ -38,7 +38,7 @@ from my_models.file_models import PropFileModel
 from my_models.entity_models import AttributesIndex
 from player.player_proxy import PlayerProxy
 import gameplay_systems.prompt_utils as prompt_utils
-from my_format_string.complex_name import ComplexName
+from my_format_string.complex_actor_name import ComplexActorName
 
 
 class RPGGame(BaseGame):
@@ -306,7 +306,7 @@ class RPGGame(BaseGame):
     ) -> Entity:
 
         if actor_instance.name != actor_model.name:
-            assert actor_instance.name == ComplexName.format_name_with_guid(
+            assert actor_instance.name == ComplexActorName.format_name_with_guid(
                 actor_model.name, actor_instance.guid
             ), """注意！你做了批量生成的actor但是生成出现了错误！"""
 

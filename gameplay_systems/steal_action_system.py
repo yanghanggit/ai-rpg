@@ -7,7 +7,7 @@ from my_components.action_components import (
 from my_components.components import (
     ActorComponent,
 )
-import gameplay_systems.action_utils
+import gameplay_systems.action_component_utils
 from typing import final, override
 import gameplay_systems.file_system_utils
 from extended_systems.prop_file import PropFile
@@ -75,10 +75,10 @@ class StealActionSystem(ReactiveProcessor):
         for target_entity_name, prop_file_name in target_and_message:
 
             if (
-                gameplay_systems.action_utils.validate_conversation(
+                gameplay_systems.action_component_utils.validate_conversation(
                     self._context, source_entity, target_entity_name
                 )
-                != gameplay_systems.action_utils.ConversationError.VALID
+                != gameplay_systems.action_component_utils.ConversationError.VALID
             ):
                 # 不能交谈就是不能偷
                 continue

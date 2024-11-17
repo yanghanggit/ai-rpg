@@ -4,7 +4,6 @@ from my_components.action_components import (
     DamageAction,
     AnnounceAction,
     TagAction,
-    StageTransferAction,
 )
 from my_components.components import (
     AttributesComponent,
@@ -355,30 +354,26 @@ class SkillImpactResponseEvaluatorSystem(ExecuteProcessor):
             ),
         )
 
-        # 处理场景转移
-        self._process_stage_transfer(
+        # 处理场景是否要添加动作。
+        self._evaluate_stage_actions(
             internal_process_data, target_entity, target_plan_response
         )
 
     ######################################################################################################################################################
-    def _process_stage_transfer(
+    def _evaluate_stage_actions(
         self,
         internal_process_data: InternalProcessData,
-        target_entity: Entity,
-        inter_plan_response: InternalPlanResponse,
+        target_stage_entity: Entity,
+        internal_plan_response: InternalPlanResponse,
     ) -> None:
 
-        if not target_entity.has(StageComponent):
-            return
-
-        if inter_plan_response.get_action(StageTransferAction.__name__) is None:
+        if not target_stage_entity.has(StageComponent):
             return
 
         gameplay_systems.action_component_utils.add_stage_actions(
-            self._context, target_entity, inter_plan_response
+            self._context, target_stage_entity, internal_plan_response
         )
-
-        assert False, "stage transfer not implemented"
+        assert False, "add_stage_actions not implemented"
 
     ######################################################################################################################################################
     def _calculate_and_apply_heal(

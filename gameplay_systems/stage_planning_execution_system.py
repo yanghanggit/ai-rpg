@@ -7,7 +7,6 @@ from my_components.components import (
     KickOffFlagComponent,
 )
 from my_components.action_components import (
-    STAGE_AVAILABLE_ACTIONS_REGISTER,
     StageNarrateAction,
     StageTagAction,
     TagAction,
@@ -98,29 +97,6 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
         tasks.clear()
 
     #######################################################################################################################################
-    def _ensure_stage_actions(self, agent_task_requests: Dict[str, AgentTask]) -> None:
-        for stage_name, agent_task in agent_task_requests.items():
-
-            stage_entity = self._context.get_stage_entity(stage_name)
-            assert (
-                stage_entity is not None
-            ), f"StagePlanningSystem: stage_entity is None, {stage_name}"
-            if stage_entity is None:
-                continue
-
-            if not stage_entity.has(StageNarrateAction):
-                logger.warning(
-                    f"StagePlanningSystem: add StageNarrateAction = {stage_name}"
-                )
-                stage_entity.add(StageNarrateAction, ["无任何描述。"])
-
-            if not stage_entity.has(StageTagAction):
-                logger.warning(
-                    f"StagePlanningSystem: add StageTagAction = {stage_name}"
-                )
-                stage_entity.add(StageTagAction, [])
-
-    #######################################################################################################################################
     def _process_agent_tasks(self, agent_task_requests: Dict[str, AgentTask]) -> None:
 
         for stage_name, agent_task in agent_task_requests.items():
@@ -169,6 +145,29 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
                     self._context.retrieve_stage_actor_appearance(stage_entity),
                 ),
             )
+
+    #######################################################################################################################################
+    def _ensure_stage_actions(self, agent_task_requests: Dict[str, AgentTask]) -> None:
+        for stage_name, agent_task in agent_task_requests.items():
+
+            stage_entity = self._context.get_stage_entity(stage_name)
+            assert (
+                stage_entity is not None
+            ), f"StagePlanningSystem: stage_entity is None, {stage_name}"
+            if stage_entity is None:
+                continue
+
+            if not stage_entity.has(StageNarrateAction):
+                logger.warning(
+                    f"StagePlanningSystem: add StageNarrateAction = {stage_name}"
+                )
+                stage_entity.add(StageNarrateAction, ["无任何描述。"])
+
+            if not stage_entity.has(StageTagAction):
+                logger.warning(
+                    f"StagePlanningSystem: add StageTagAction = {stage_name}"
+                )
+                stage_entity.add(StageTagAction, [])
 
 
 #######################################################################################################################################

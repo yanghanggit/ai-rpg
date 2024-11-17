@@ -219,7 +219,7 @@ class ActorPlanningExecutionSystem(ExecuteProcessor):
                     stage_enviro_narrate=self._retrieve_stage_narrative(actor_entity),
                     stage_graph=set(self._retrieve_stage_graph(actor_entity)),
                     actor_appearance_mapping=actor_appearance_mapping,
-                    health=check_self.health,
+                    health=check_self.health_ratio,
                     actor_props=check_self._category_prop_files,
                     current_weapon=check_self._current_weapon,
                     current_clothes=check_self._current_clothes,

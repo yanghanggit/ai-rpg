@@ -1,6 +1,6 @@
 from overrides import final
 from pydantic import BaseModel
-from typing import Any
+from typing import Any, List
 
 
 # 根类 连接 player 与 entity的 2个大部分。
@@ -60,3 +60,9 @@ class WhisperEvent(AgentEvent):
 @final
 class GameRoundEvent(AgentEvent):
     pass
+
+
+#
+@final
+class StageTagEvent(AgentEvent):
+    stage_tags: List[str]

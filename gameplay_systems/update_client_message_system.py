@@ -10,7 +10,7 @@ from my_components.action_components import (
 from typing import final, override
 from loguru import logger
 from rpg_game.rpg_game import RPGGame
-from my_models.event_models import AgentEvent
+from my_models.event_models import AgentEvent, StageTagEvent
 
 
 @final
@@ -82,7 +82,8 @@ class UpdateClientMessageSystem(ExecuteProcessor):
 
         message = ",".join(stage_tag_action.values)
         player_proxy.add_stage_message(
-            stage_tag_action.name, AgentEvent(message=message)
+            stage_tag_action.name,
+            StageTagEvent(message=message, stage_tags=stage_tag_action.values),
         )
 
     ############################################################################################################

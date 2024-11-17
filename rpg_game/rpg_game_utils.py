@@ -253,7 +253,7 @@ def gen_player_check_action_model(
     actor_status_evaluator = ActorStatusEvaluator(game_name.context, player_entity)
 
     # 生命值
-    health = actor_status_evaluator.health * 100
+    health = actor_status_evaluator.health_ratio * 100
 
     # 道具信息
     actor_props_prompt = (

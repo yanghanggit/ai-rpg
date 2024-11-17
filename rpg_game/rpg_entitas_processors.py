@@ -171,12 +171,13 @@ class RPGEntitasProcessors(Processors):
 
         processors.add(SkillImpactResponseEvaluatorSystem(context, rpg_game))
         processors.add(DamageActionSystem(context, rpg_game))
+        processors.add(StageTransferActionSystem(context, rpg_game))
         processors.add(
             DeadActionSystem(context, rpg_game)
         )  ## 战斗类行为产生结果可能有死亡，死亡之后，后面的行为都不可以做。
 
         # 交互类的行为（交换数据），在死亡之后，因为死了就不能执行
-        processors.add(StageTransferActionSystem(context, rpg_game))
+
         processors.add(StealActionSystem(context, rpg_game))
         processors.add(GivePropActionSystem(context, rpg_game))
         processors.add(EquipPropActionSystem(context, rpg_game))

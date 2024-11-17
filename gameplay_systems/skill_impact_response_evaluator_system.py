@@ -4,15 +4,17 @@ from my_components.action_components import (
     DamageAction,
     AnnounceAction,
     TagAction,
+    StageTransferAction,
 )
 from my_components.components import (
     AttributesComponent,
     DestroyComponent,
     SkillComponent,
+    StageComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import final, override, List, Optional, Set
-import gameplay_systems.prompt_utils as prompt_utils
+import gameplay_systems.prompt_utils
 from my_agent.agent_task import AgentTask
 from my_agent.agent_plan import AgentPlanResponse
 import my_format_string.target_and_message_format_string
@@ -23,23 +25,24 @@ from my_models.event_models import AgentEvent
 import gameplay_systems.skill_entity_utils
 from my_agent.lang_serve_agent import LangServeAgent
 from loguru import logger
+import gameplay_systems.action_component_utils
+
 
 ################################################################################################################################################
-
-
 def _generate_skill_impact_response_prompt(
     actor_name: str,
     target_name: str,
-    reasoning_sentence: str,
-    result_desc: str,
+    world_harmony_inspector_content: str,
+    world_harmony_inspector_tag: str,
+    is_stage: bool,
 ) -> str:
 
     prompt = f"""# {actor_name} 向 {target_name} 发动技能。
 ## 事件描述
- {reasoning_sentence}
+ {world_harmony_inspector_content}
 
 ## 系统判断结果
-{result_desc}
+{world_harmony_inspector_tag}
 
 ## 判断步骤
 第1步:回顾 {target_name} 的当前状态。
@@ -56,8 +59,6 @@ def _generate_skill_impact_response_prompt(
 
 
 ################################################################################################################################################
-
-
 def _generate_offline_prompt(
     actor_name: str, target_name: str, reasoning_sentence: str
 ) -> str:
@@ -70,8 +71,6 @@ def _generate_offline_prompt(
 
 
 ################################################################################################################################################
-
-
 def _generate_broadcast_skill_impact_response_prompt(
     actor_name: str, target_name: str, reasoning_sentence: str, feedback_sentence: str
 ) -> str:
@@ -92,7 +91,7 @@ def _generate_broadcast_skill_impact_response_prompt(
 class InternalPlanResponse(AgentPlanResponse):
 
     @property
-    def impact_result(self) -> str:
+    def impact(self) -> str:
         return self._concatenate_values(AnnounceAction.__name__)
 
 
@@ -102,9 +101,9 @@ class InternalProcessData:
     source_entity: Entity
     skill_entity: Entity
     target_entities: List[Entity]
-    agents: List[LangServeAgent]
-    agent_tasks: List[AgentTask]
-    task_responses: List[InternalPlanResponse]
+    target_agents: List[LangServeAgent]
+    target_tasks: List[AgentTask]
+    target_responses: List[InternalPlanResponse]
 
 
 ################################################################################################################################################
@@ -133,8 +132,37 @@ class SkillImpactResponseEvaluatorSystem(ExecuteProcessor):
 
         # 组成成方便的数据结构
         internal_process_data = self._initialize_internal_process_data(skill_entities)
+
+        # 全部收集起来，然后批量执行
+        populate_target_tasks: List[AgentTask] = []
         for process_data in internal_process_data:
-            await self._process_skill_impact(process_data)
+            populate_target_tasks.extend(self._populate_target_tasks(process_data))
+
+        # 批量执行
+        await AgentTask.gather(populate_target_tasks)
+
+        for process_data in internal_process_data:
+            self._process_skill_impact(process_data)
+
+    ######################################################################################################################################################
+    def _populate_target_tasks(
+        self, internal_process_data: InternalProcessData
+    ) -> List[AgentTask]:
+
+        ret: List[AgentTask] = []
+
+        for data_index in range(len(internal_process_data.target_entities)):
+            internal_process_data.target_tasks[data_index] = (
+                self._generate_skill_impact_response_task(
+                    internal_process_data,
+                    target_entity=internal_process_data.target_entities[data_index],
+                    target_agent=internal_process_data.target_agents[data_index],
+                )
+            )
+
+            ret.append(internal_process_data.target_tasks[data_index])
+
+        return ret
 
     ######################################################################################################################################################
     def _initialize_internal_process_data(
@@ -157,13 +185,13 @@ class SkillImpactResponseEvaluatorSystem(ExecuteProcessor):
     def _create_interal_process_data(
         self, skill_entity: Entity
     ) -> Optional[InternalProcessData]:
+
         skill_comp = skill_entity.get(SkillComponent)
         if len(skill_comp.targets) < 1:
             return None
 
         source_entity = self._context.get_actor_entity(skill_comp.name)
         assert source_entity is not None, f"actor_entity {skill_comp.name} not found."
-
         if source_entity is None:
             return None
 
@@ -171,9 +199,9 @@ class SkillImpactResponseEvaluatorSystem(ExecuteProcessor):
             source_entity=source_entity,
             skill_entity=skill_entity,
             target_entities=[],
-            agents=[],
-            agent_tasks=[],
-            task_responses=[],
+            target_agents=[],
+            target_tasks=[],
+            target_responses=[],
         )
 
         for target_name in skill_comp.targets:
@@ -188,18 +216,20 @@ class SkillImpactResponseEvaluatorSystem(ExecuteProcessor):
             ret.target_entities.append(target_entity)
 
             # 目标的agent
-            ret.agents.append(agent)
+            ret.target_agents.append(agent)
 
             # 空的任务
-            ret.agent_tasks.append(
+            ret.target_tasks.append(
                 AgentTask.create_with_full_context(
                     agent,
-                    prompt_utils.replace_you(skill_comp.command, agent.name),
+                    gameplay_systems.prompt_utils.replace_you(
+                        skill_comp.command, agent.name
+                    ),
                 )
             )
 
             # 空的回复
-            ret.task_responses.append(InternalPlanResponse(agent.name, ""))
+            ret.target_responses.append(InternalPlanResponse(agent.name, ""))
 
         # 最后的检查，出问题了就返回None
         if len(ret.target_entities) == 0:
@@ -208,47 +238,39 @@ class SkillImpactResponseEvaluatorSystem(ExecuteProcessor):
         return ret
 
     ######################################################################################################################################################
-    async def _process_skill_impact(
-        self, internal_process_data: InternalProcessData
-    ) -> None:
+    def _process_skill_impact(self, internal_process_data: InternalProcessData) -> None:
 
-        for data_index in range(len(internal_process_data.target_entities)):
+        # 然后处理返回结果
+        for data_index in range(len(internal_process_data.target_tasks)):
 
-            target_entity = internal_process_data.target_entities[data_index]
-            target_agent = internal_process_data.agents[data_index]
-            agent_task = internal_process_data.agent_tasks[data_index] = (
-                self._generate_skill_impact_response_task(
-                    internal_process_data,
-                    target_entity=target_entity,
-                    target_agent=target_agent,
-                )
-            )
-
-            # 这里单步上行
-            if agent_task.request() is None:
+            # 拿任务，看看有没有返回内容
+            agent_task = internal_process_data.target_tasks[data_index]
+            if agent_task.response_content == "":
                 self._notify_skill_target_agent_offline(
                     internal_process_data,
-                    target_entity=target_entity,
+                    target_entity=internal_process_data.target_entities[data_index],
                 )
+                # 没有返回内容，通知掉线后直接跳过
                 continue
 
-            # 加入伤害计算的逻辑
-            self._evaluate_and_apply_action(
-                internal_process_data,
-                target_entity=target_entity,
+            # 计算处理完毕，开始处理数据，第一步先存储下来。
+            internal_process_data.target_responses[data_index] = InternalPlanResponse(
+                agent_task.agent_name,
+                agent_task.response_content,
             )
 
-            # 场景事件
-            task_response = internal_process_data.task_responses[data_index] = (
-                InternalPlanResponse(
-                    agent_task.agent_name,
-                    agent_task.response_content,
-                )
+            # 开始处理计算！！！！！！！！！！！！！！！！！！
+            self._evaluate_and_apply_action(
+                internal_process_data,
+                target_entity=internal_process_data.target_entities[data_index],
+                target_plan_response=internal_process_data.target_responses[data_index],
             )
+
+            # 通知技能的影响结果
             self._notify_skill_impact_outcome(
                 internal_process_data,
-                target_entity=target_entity,
-                impact_result=task_response.impact_result,
+                target_entity=internal_process_data.target_entities[data_index],
+                impact_result=internal_process_data.target_responses[data_index].impact,
             )
 
     ######################################################################################################################################################
@@ -284,7 +306,10 @@ class SkillImpactResponseEvaluatorSystem(ExecuteProcessor):
 
     ######################################################################################################################################################
     def _evaluate_and_apply_action(
-        self, internal_process_data: InternalProcessData, target_entity: Entity
+        self,
+        internal_process_data: InternalProcessData,
+        target_entity: Entity,
+        target_plan_response: InternalPlanResponse,
     ) -> None:
 
         # 拿到原始的
@@ -292,8 +317,10 @@ class SkillImpactResponseEvaluatorSystem(ExecuteProcessor):
             internal_process_data,
         )
 
+        assert (
+            len(total_skill_attributes) > 0
+        ), f"total_skill_attributes {total_skill_attributes} not found."
         if len(total_skill_attributes) == 0:
-            assert False, f"total_skill_attributes {total_skill_attributes} not found."
             return
 
         # 补充上发起者的攻击值
@@ -327,6 +354,31 @@ class SkillImpactResponseEvaluatorSystem(ExecuteProcessor):
                 internal_process_data,
             ),
         )
+
+        # 处理场景转移
+        self._process_stage_transfer(
+            internal_process_data, target_entity, target_plan_response
+        )
+
+    ######################################################################################################################################################
+    def _process_stage_transfer(
+        self,
+        internal_process_data: InternalProcessData,
+        target_entity: Entity,
+        inter_plan_response: InternalPlanResponse,
+    ) -> None:
+
+        if not target_entity.has(StageComponent):
+            return
+
+        if inter_plan_response.get_action(StageTransferAction.__name__) is None:
+            return
+
+        gameplay_systems.action_component_utils.add_stage_actions(
+            self._context, target_entity, inter_plan_response
+        )
+
+        assert False, "stage transfer not implemented"
 
     ######################################################################################################################################################
     def _calculate_and_apply_heal(
@@ -471,28 +523,30 @@ class SkillImpactResponseEvaluatorSystem(ExecuteProcessor):
         target_agent: LangServeAgent,
     ) -> AgentTask:
 
-        target_agent_name = self._context.safe_get_entity_name(target_entity)
+        target_name = self._context.safe_get_entity_name(target_entity)
+        skill_comp = internal_process_data.skill_entity.get(SkillComponent)
 
         prompt = _generate_skill_impact_response_prompt(
-            self._context.safe_get_entity_name(internal_process_data.source_entity),
-            target_agent_name,
-            internal_process_data.skill_entity.get(
-                SkillComponent
-            ).world_harmony_inspector_content,
-            internal_process_data.skill_entity.get(
-                SkillComponent
-            ).world_harmony_inspector_tag,
+            actor_name=self._context.safe_get_entity_name(
+                internal_process_data.source_entity
+            ),
+            target_name=target_name,
+            world_harmony_inspector_content=skill_comp.world_harmony_inspector_content,
+            world_harmony_inspector_tag=skill_comp.world_harmony_inspector_tag,
+            is_stage=target_entity.has(StageComponent),
         )
 
         return AgentTask.create_with_full_context(
             target_agent,
-            prompt_utils.replace_you(prompt, target_agent_name),
+            gameplay_systems.prompt_utils.replace_you(prompt, target_name),
         )
 
     ######################################################################################################################################################
-    def _calculate_bonus(self, internal_process_data: InternalProcessData) -> float:
+    def _calculate_bonus(
+        self, internal_process_data: InternalProcessData, reference_value: int = 100
+    ) -> float:
         skill_comp = internal_process_data.skill_entity.get(SkillComponent)
-        value = skill_comp.world_harmony_inspector_value / 100
+        value = skill_comp.world_harmony_inspector_value / reference_value
         if value < 0:
             value = 0
 

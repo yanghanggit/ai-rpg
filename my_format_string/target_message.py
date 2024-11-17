@@ -3,7 +3,7 @@ from typing import Optional, List
 
 #################################################################################################################################
 # 我方定义的规则字符串
-def parse_target_and_message(
+def _extract_target_message(
     content: str, symbol1: str = "@", symbol2: str = ">"
 ) -> tuple[Optional[str], Optional[str]]:
     # 检查是否包含'@'和'>'符号
@@ -27,41 +27,41 @@ def parse_target_and_message(
 
         return target, message
     except Exception as e:
-        # 如果有任何异常，返回原始内容和异常提示
-        return None, content
+        pass  # 如果有任何异常，返回原始内容和异常提示
+
+    return None, content
 
 
 #################################################################################################################################
 # 是否是有效的目标和消息格式
-def is_target_and_message(content: str, symbol1: str = "@", symbol2: str = ">") -> bool:
+def _has_target_message_format(
+    content: str, symbol1: str = "@", symbol2: str = ">"
+) -> bool:
     if symbol1 not in content or symbol2 not in content:
         return False
     return True
 
 
 #################################################################################################################################
-def make_target_and_message(
+def generate_target_message_pair(
     target: str, message: str, symbol1: str = "@", symbol2: str = ">"
 ) -> str:
     return f"{symbol1}{target}{symbol2}{message}"
 
 
 #################################################################################################################################
-def target_and_message_values(
+def extract_target_message_pairs(
     values: List[str], symbol1: str = "@", symbol2: str = ">"
 ) -> List[tuple[str, str]]:
 
     result: List[tuple[str, str]] = []
 
     for value in values:
-        if not is_target_and_message(value, symbol1, symbol2):
+        if not _has_target_message_format(value, symbol1, symbol2):
             continue
 
-        tp = parse_target_and_message(value, symbol1, symbol2)
-        target: Optional[str] = tp[0]
-        message: Optional[str] = tp[1]
+        target, message = _extract_target_message(value, symbol1, symbol2)
         if target is None or message is None:
-            # logger.error(f"target is None: {value}")
             continue
 
         result.append((target, message))

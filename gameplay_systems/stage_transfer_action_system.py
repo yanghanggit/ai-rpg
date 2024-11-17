@@ -8,7 +8,7 @@ from my_components.components import (
 )
 from typing import Final, final, override
 from rpg_game.rpg_game import RPGGame
-import my_format_string.target_and_message_format_string
+import my_format_string.target_message
 import gameplay_systems.file_system_utils
 import gameplay_systems.action_component_utils
 from loguru import logger
@@ -73,7 +73,7 @@ class StageTransferActionSystem(ReactiveProcessor):
 
         stage_transfer_action = stage_entity.get(StageTransferAction)
         target_and_message = (
-            my_format_string.target_and_message_format_string.target_and_message_values(
+            my_format_string.target_message.extract_target_message_pairs(
                 stage_transfer_action.values, "@", "/"
             )
         )

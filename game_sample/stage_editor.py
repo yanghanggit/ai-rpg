@@ -17,7 +17,7 @@ from my_models.entity_models import (
 )
 import game_sample.configuration as configuration
 from my_models.editor_models import EditorEntityType, EditorProperty
-import my_format_string.attrs_format_string
+import my_format_string.ints_string
 from game_sample.actor_editor import ExcelEditorActor
 from my_format_string.complex_actor_name import ComplexActorName
 import my_format_string.complex_prop_name
@@ -80,7 +80,7 @@ class ExcelEditorStage:
         assert self._data is not None
         data = cast(str, self._data[EditorProperty.ATTRIBUTES])
         assert "," in data, f"raw_string_val: {data} is not valid."
-        values = my_format_string.attrs_format_string.from_string_to_int_attrs(data)
+        values = my_format_string.ints_string.convert_string_to_ints(data)
         if len(values) < AttributesIndex.MAX:
             values.extend([0] * (AttributesIndex.MAX - len(values)))
         return values

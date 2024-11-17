@@ -2,8 +2,8 @@ from dataclasses import dataclass
 from typing import List, Dict, Any, Optional, cast
 import json
 from loguru import logger
-from my_format_string.plan_response_format_json import (
-    PlanResponseFormatJSON,
+from my_format_string.json_plan_response_handler import (
+    JsonPlanResponseHandler,
 )
 
 
@@ -27,9 +27,9 @@ class AgentPlanResponse:
         # GPT4 也有可能输出markdown json block。以防万一，我们检查一下。
         # GPT4 也有可能输出重复的json。我们合并一下。有可能上面的json block的错误也犯了，所以放到第二个步骤来做
         fmt_string = (
-            PlanResponseFormatJSON(response_content)
-            .extract_json_block()
-            .merge_repeat()
+            JsonPlanResponseHandler(response_content)
+            .strip_json_code()
+            .combine_duplicate_fragments()
             .output
         )
 

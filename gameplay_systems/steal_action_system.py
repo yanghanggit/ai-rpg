@@ -11,7 +11,7 @@ import gameplay_systems.action_component_utils
 from typing import final, override
 import gameplay_systems.file_system_utils
 from extended_systems.prop_file import PropFile
-import my_format_string.target_and_message_format_string
+import my_format_string.target_message
 from rpg_game.rpg_game import RPGGame
 from loguru import logger
 from my_models.event_models import AgentEvent
@@ -67,7 +67,7 @@ class StealActionSystem(ReactiveProcessor):
 
         steal_action: StealPropAction = source_entity.get(StealPropAction)
         target_and_message = (
-            my_format_string.target_and_message_format_string.target_and_message_values(
+            my_format_string.target_message.extract_target_message_pairs(
                 steal_action.values
             )
         )

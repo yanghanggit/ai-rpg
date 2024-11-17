@@ -16,8 +16,8 @@ from typing import final, override, List, Optional, Set
 import gameplay_systems.prompt_utils
 from my_agent.agent_task import AgentTask
 from my_agent.agent_plan import AgentPlanResponse
-import my_format_string.target_and_message_format_string
-import my_format_string.attrs_format_string
+import my_format_string.target_message
+import my_format_string.ints_string
 from rpg_game.rpg_game import RPGGame
 from my_models.entity_models import AttributesIndex
 from my_models.event_models import AgentEvent
@@ -403,9 +403,9 @@ class SkillImpactResponseEvaluatorSystem(ExecuteProcessor):
 
         #
         formatted_damage_message = (
-            my_format_string.target_and_message_format_string.make_target_and_message(
+            my_format_string.target_message.generate_target_message_pair(
                 self._context.safe_get_entity_name(source_entity),
-                my_format_string.attrs_format_string.from_int_attrs_to_string(
+                my_format_string.ints_string.convert_ints_to_string(
                     total_skill_attributes
                 ),
             )
@@ -479,15 +479,12 @@ class SkillImpactResponseEvaluatorSystem(ExecuteProcessor):
         if len(skill_prop_files) == 0:
             return []
 
-        accumulated_attributes: List[int] = []
-        for skill_prop_file in skill_prop_files:
-            if len(accumulated_attributes) == 0:
-                accumulated_attributes = skill_prop_file.prop_model.attributes.copy()
-            else:
-                for i in range(len(accumulated_attributes)):
-                    accumulated_attributes[i] += skill_prop_file.prop_model.attributes[
-                        i
-                    ]
+        accumulated_attributes: List[int] = skill_prop_files[
+            0
+        ].prop_model.attributes.copy()
+        for skill_prop_file in skill_prop_files[1:]:
+            for j in range(len(accumulated_attributes)):
+                accumulated_attributes[j] += skill_prop_file.prop_model.attributes[j]
         return accumulated_attributes
 
     ######################################################################################################################################################

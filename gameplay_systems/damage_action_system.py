@@ -9,8 +9,8 @@ from my_components.components import (
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import final, override
 from extended_systems.prop_file import PropFile
-import my_format_string.target_and_message_format_string
-import my_format_string.attrs_format_string
+import my_format_string.target_message
+import my_format_string.ints_string
 from rpg_game.rpg_game import RPGGame
 from my_models.entity_models import AttributesIndex
 import gameplay_systems.file_system_utils
@@ -76,19 +76,14 @@ class DamageActionSystem(ReactiveProcessor):
         if len(damage_action.values) == 0:
             return
 
-        for val in damage_action.values:
-            source_entity_name, attribute_values_string = (
-                my_format_string.target_and_message_format_string.parse_target_and_message(
-                    val
-                )
-            )
-            if source_entity_name is None or attribute_values_string is None:
-                continue
-
-            attribute_values = (
-                my_format_string.attrs_format_string.from_string_to_int_attrs(
-                    attribute_values_string
-                )
+        for (
+            source_entity_name,
+            attribute_values_string,
+        ) in my_format_string.target_message.extract_target_message_pairs(
+            damage_action.values
+        ):
+            attribute_values = my_format_string.ints_string.convert_string_to_ints(
+                attribute_values_string
             )
 
             assert (

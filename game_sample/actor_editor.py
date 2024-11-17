@@ -14,7 +14,7 @@ from my_models.entity_models import (
     PropInstanceModel,
 )
 from my_models.editor_models import EditorEntityType, EditorProperty
-import my_format_string.attrs_format_string
+import my_format_string.ints_string
 import my_format_string.complex_prop_name
 from my_format_string.complex_actor_name import ComplexActorName
 
@@ -95,7 +95,7 @@ class ExcelEditorActor:
         assert self._data is not None
         data = cast(str, self._data[EditorProperty.ATTRIBUTES])
         assert "," in data, f"raw_string_val: {data} is not valid."
-        values = my_format_string.attrs_format_string.from_string_to_int_attrs(data)
+        values = my_format_string.ints_string.convert_string_to_ints(data)
         if len(values) < AttributesIndex.MAX:
             values.extend([0] * (AttributesIndex.MAX - len(values)))
         return values

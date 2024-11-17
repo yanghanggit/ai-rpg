@@ -3,7 +3,7 @@ from my_components.action_components import WhisperAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import final, override
 import gameplay_systems.action_component_utils
-import my_format_string.target_and_message_format_string
+import my_format_string.target_message
 from rpg_game.rpg_game import RPGGame
 from my_models.event_models import WhisperEvent
 
@@ -44,7 +44,7 @@ class WhisperActionSystem(ReactiveProcessor):
     def _process_whisper_action(self, entity: Entity) -> None:
         whisper_action = entity.get(WhisperAction)
         target_and_message = (
-            my_format_string.target_and_message_format_string.target_and_message_values(
+            my_format_string.target_message.extract_target_message_pairs(
                 whisper_action.values
             )
         )

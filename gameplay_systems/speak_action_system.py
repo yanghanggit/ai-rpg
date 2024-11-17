@@ -3,7 +3,7 @@ from my_components.action_components import SpeakAction
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 import gameplay_systems.action_component_utils
 from typing import final, override
-import my_format_string.target_and_message_format_string
+import my_format_string.target_message
 from rpg_game.rpg_game import RPGGame
 from my_models.event_models import SpeakEvent
 
@@ -41,7 +41,7 @@ class SpeakActionSystem(ReactiveProcessor):
 
         speak_action = entity.get(SpeakAction)
         target_and_message = (
-            my_format_string.target_and_message_format_string.target_and_message_values(
+            my_format_string.target_message.extract_target_message_pairs(
                 speak_action.values
             )
         )

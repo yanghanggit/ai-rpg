@@ -19,7 +19,7 @@ from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from typing import Dict, Set, List, Optional, final
 import gameplay_systems.action_component_utils
-import gameplay_systems.prompt_utils as prompt_utils
+import gameplay_systems.prompt_utils
 from my_agent.agent_task import (
     AgentTask,
 )
@@ -92,7 +92,7 @@ def _generate_actor_plan_prompt(
         stage_graph.add(f"无可去往场景(你不可以执行{GoToAction.__name__})")
 
     return f"""# 请制定你的计划
-- 标记 {prompt_utils.PromptTag.ACTOR_PLAN_PROMPT_TAG} 
+- 标记 {gameplay_systems.prompt_utils.PromptTag.ACTOR_PLAN_PROMPT_TAG} 
 - 规则见‘游戏流程’-制定计划
 
 ## 你当前所在的场景
@@ -166,29 +166,26 @@ class ActorPlanningExecutionSystem(ExecuteProcessor):
 
         for actor_name, agent_task in request_tasks.items():
 
-            entity = self._context.get_actor_entity(actor_name)
+            actor_entity = self._context.get_actor_entity(actor_name)
             assert (
-                entity is not None
+                actor_entity is not None
             ), f"ActorPlanningSystem: entity is None, {actor_name}"
 
-            actor_planning = AgentPlanResponse(actor_name, agent_task.response_content)
-            if not gameplay_systems.action_component_utils.validate_actions(
-                actor_planning, ACTOR_AVAILABLE_ACTIONS_REGISTER
-            ):
-                logger.warning(
-                    f"ActorPlanningSystem: check_plan failed, {actor_planning.original_response_content}"
-                )
-                ## 需要失忆!
-                self._context.agent_system.discard_last_human_ai_conversation(
-                    actor_name
-                )
+            if actor_entity is None:
                 continue
 
-            ## 不能停了，只能一直继续
-            for action in actor_planning._actions:
-                gameplay_systems.action_component_utils.add_action(
-                    entity, action, ACTOR_AVAILABLE_ACTIONS_REGISTER
+            action_add_result = (
+                gameplay_systems.action_component_utils.add_actor_actions(
+                    self._context,
+                    actor_entity,
+                    AgentPlanResponse(actor_name, agent_task.response_content),
                 )
+            )
+
+            if not action_add_result:
+                logger.warning("ActorPlanningSystem: action_add_result is False.")
+                self._context.discard_last_human_ai_conversation(actor_entity)
+                continue
 
     #######################################################################################################################################
     def _populate_agent_tasks(self, planned_agent_tasks: Dict[str, AgentTask]) -> None:

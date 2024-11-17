@@ -26,7 +26,7 @@ class PostActionSystem(ExecuteProcessor):
 
     ############################################################################################################
     def _remove_all_actions(self) -> None:
-        gameplay_systems.action_component_utils.remove_actions(
+        gameplay_systems.action_component_utils.clear_registered_actions(
             self._context,
             (ACTOR_AVAILABLE_ACTIONS_REGISTER | STAGE_AVAILABLE_ACTIONS_REGISTER),
         )

@@ -11,19 +11,15 @@ from my_components.components import (
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
-from typing import Dict, Set, FrozenSet, Any, final
+from typing import Dict, Set, final
 from my_agent.agent_task import AgentTask
 from rpg_game.rpg_game import RPGGame
 from my_components.action_components import (
-    STAGE_AVAILABLE_ACTIONS_REGISTER,
-    ACTOR_AVAILABLE_ACTIONS_REGISTER,
     MindVoiceAction,
     TagAction,
     StageNarrateAction,
     UpdateAppearanceAction,
 )
-import gameplay_systems.action_component_utils
-from my_agent.agent_plan import AgentPlanResponse
 from my_components.action_components import UpdateAppearanceAction
 
 
@@ -211,67 +207,12 @@ class AgentKickOffSystem(ExecuteProcessor):
 
     ######################################################################################################################################################
     def _process_agent_tasks(self, tasks: Dict[str, AgentTask]) -> None:
-
-        for agent_name, agent_task in tasks.items():
-
+        for agent_name, _ in tasks.items():
             entity = self._context.get_entity_by_name(agent_name)
+            assert entity is not None, f"entity is None, {agent_name}"
             if entity is None:
-                assert False, f"entity is None, {agent_name}"
                 continue
-
-            actions_register = self._resolve_actions_register(agent_name)
-            if len(actions_register) == 0:
-
-                assert entity.has(
-                    WorldComponent
-                ), f"entity has no world component, {agent_name}"
-
-                self._add_kick_off_flag(entity, agent_name)
-                continue
-
-            assert entity.has(StageComponent) or entity.has(
-                ActorComponent
-            ), f"entity has no stage or actor component, {agent_name}"
-
-            agent_planning = AgentPlanResponse(agent_name, agent_task.response_content)
-            if not gameplay_systems.action_component_utils.validate_actions(
-                agent_planning, actions_register
-            ):
-                logger.warning(
-                    f"ActorPlanningSystem: check_plan failed, {agent_planning.original_response_content}"
-                )
-
-                self._context.agent_system.discard_last_human_ai_conversation(
-                    agent_name
-                )
-                continue
-
-            for action in agent_planning._actions:
-                gameplay_systems.action_component_utils.add_action(
-                    entity, action, actions_register
-                )
-
-            self._add_kick_off_flag(entity, agent_name)
-
-    ######################################################################################################################################################
-    def _add_kick_off_flag(self, entity: Entity, agent_name: str) -> None:
-        entity.replace(KickOffFlagComponent, agent_name)
-
-    ######################################################################################################################################################
-    def _resolve_actions_register(self, name: str) -> FrozenSet[type[Any]]:
-
-        entity = self._context.get_entity_by_name(name)
-        if entity is None:
-            return frozenset()
-
-        if entity.has(ActorComponent):
-            return ACTOR_AVAILABLE_ACTIONS_REGISTER
-        elif entity.has(StageComponent):
-            return STAGE_AVAILABLE_ACTIONS_REGISTER
-        else:
-            assert entity.has(WorldComponent), f"entity has no world component, {name}"
-
-        return frozenset()
+            entity.replace(KickOffFlagComponent, agent_name)
 
     ######################################################################################################################################################
     def _initialize_appearance_update_action(self) -> None:

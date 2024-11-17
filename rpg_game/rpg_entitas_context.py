@@ -187,6 +187,11 @@ class RPGEntitasContext(Context):
         )
 
     #############################################################################################################################
+    def discard_last_human_ai_conversation(self, entity: Entity) -> None:
+        agent = self.safe_get_agent(entity)
+        self.agent_system._discard_last_human_ai_conversation(agent.name)
+
+    #############################################################################################################################
     # 更改场景的标记组件
     def update_stage_tag_component(
         self, entity: Entity, previous_stage_name: str, target_stage_name: str

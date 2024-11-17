@@ -17,7 +17,7 @@ from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from typing import Dict, List, final
 import gameplay_systems.action_component_utils
-import gameplay_systems.prompt_utils as prompt_utils
+import gameplay_systems.prompt_utils
 from my_agent.agent_task import (
     AgentTask,
 )
@@ -40,7 +40,7 @@ def _generate_stage_plan_prompt(
 
     # 最终生成
     return f"""# 请制定你的计划
-- 标记 {prompt_utils.PromptTag.STAGE_PLAN_PROMPT_TAG}
+- 标记 {gameplay_systems.prompt_utils.PromptTag.STAGE_PLAN_PROMPT_TAG}
 - 规则见‘游戏流程’-制定计划
 
 ## 场景内的角色
@@ -105,6 +105,8 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
             assert (
                 stage_entity is not None
             ), f"StagePlanningSystem: stage_entity is None, {stage_name}"
+            if stage_entity is None:
+                continue
 
             if not stage_entity.has(StageNarrateAction):
                 logger.warning(
@@ -127,25 +129,21 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
             assert (
                 stage_entity is not None
             ), f"StagePlanningSystem: stage_entity is None, {stage_name}"
-
-            stage_planning = AgentPlanResponse(stage_name, agent_task.response_content)
-            if not gameplay_systems.action_component_utils.validate_actions(
-                stage_planning, STAGE_AVAILABLE_ACTIONS_REGISTER
-            ):
-                logger.warning(
-                    f"StagePlanningSystem: check_plan failed, {stage_planning.original_response_content}"
-                )
-                ## 需要失忆!
-                self._context.agent_system.discard_last_human_ai_conversation(
-                    stage_name
-                )
+            if stage_entity is None:
                 continue
 
-            ## 不能停了，只能一直继续
-            for action in stage_planning._actions:
-                gameplay_systems.action_component_utils.add_action(
-                    stage_entity, action, STAGE_AVAILABLE_ACTIONS_REGISTER
+            action_add_result = (
+                gameplay_systems.action_component_utils.add_stage_actions(
+                    self._context,
+                    stage_entity,
+                    AgentPlanResponse(stage_name, agent_task.response_content),
                 )
+            )
+
+            if not action_add_result:
+                logger.warning("StagePlanningSystem: action_add_result is False.")
+                self._context.discard_last_human_ai_conversation(stage_entity)
+                continue
 
     #######################################################################################################################################
     def _populate_agent_tasks(

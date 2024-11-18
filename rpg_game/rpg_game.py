@@ -78,10 +78,10 @@ class RPGGame(BaseGame):
 
     ###############################################################################################################################################
     @property
-    def about_game(self) -> str:
+    def epoch_script(self) -> str:
         if self._game_resource is None:
             return ""
-        return self._game_resource.about_game
+        return self._game_resource.epoch_script
 
     ###############################################################################################################################################
     def build(self, game_resource: RPGGameResource) -> "RPGGame":
@@ -259,7 +259,7 @@ class RPGGame(BaseGame):
             for actor_instance1 in stage_instance.actors:
                 unique_actor_names.add(actor_instance1["name"])
 
-        logger.debug(f"collect_unique_actor_names: {unique_actor_names}")
+        # logger.debug(f"collect_unique_actor_names: {unique_actor_names}")
 
         ret: List[ActorInstanceModel] = []
         for actor_instance2 in actors_instances:

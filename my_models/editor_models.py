@@ -7,7 +7,7 @@ class EditorEntityType(StrEnum):
     PLAYER = "Player"
     ACTOR = "Actor"
     STAGE = "Stage"
-    ABOUT_GAME = "AboutGame"
+    EPOCH_SCRIPT = "EpochScript"
     SPAWNER = "Spawner"
     GROUP = "Group"
 

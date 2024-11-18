@@ -138,7 +138,7 @@ def _create_game(
         return
 
     input_game_name = input(
-        f"{client_context._user_name} 准备创建一个游戏,请输入游戏的名字(建议是 World1/World2/World3 之一):"
+        f"{client_context._user_name} 准备创建一个游戏,请输入游戏的名字(建议是 World1/World2/World3/World4 之一):"
     )
 
     response = requests.post(

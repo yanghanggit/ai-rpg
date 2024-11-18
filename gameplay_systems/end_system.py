@@ -27,7 +27,7 @@ class EndSystem(ExecuteProcessor):
 
         map_dumps = self._fetch_stage_actor_mapping()
         if len(map_dumps.keys()) > 0:
-            logger.info(f"/show map info: \n{map_dumps}")
+            logger.warning(f"/show map info: \n{map_dumps}")
 
     ############################################################################################################
     def _fetch_stage_actor_mapping(self) -> OrderedDict[str, List[str]]:

@@ -67,6 +67,9 @@ class ExcelDataActor:
     ############################################################################################################
     @property
     def api(self) -> str:
+        assert self.codename in str(
+            self._data[DataActorProperty.API]
+        ), f"{self.codename} not in {self._data[DataActorProperty.API]}"
         return str(self._data[DataActorProperty.API])
 
     ############################################################################################################

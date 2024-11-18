@@ -31,19 +31,22 @@ def _generate_stage_plan_prompt(
     # 组织生成角色外观描述
     actor_appearance_mapping_prompt: List[str] = []
     for actor_name, actor_appearance in actor_appearance_mapping.items():
-        actor_appearance_mapping_prompt += f"""### {actor_name}
+        actor_appearance_mapping_prompt.append(
+            f"""### {actor_name}
 角色外观:{actor_appearance}"""
+        )
 
     if len(actor_appearance_mapping_prompt) == 0:
         actor_appearance_mapping_prompt.append("无任何角色。")
 
     # 最终生成
-    return f"""# 请制定你的计划
-- 标记 {gameplay_systems.prompt_utils.PromptTag.STAGE_PLAN_PROMPT_TAG}
-- 规则见‘游戏流程’-制定计划
+    return f"""# 请制定你的计划({gameplay_systems.prompt_utils.PromptTag.STAGE_PLAN_PROMPT_TAG})
+规则见 游戏流程 - 制定计划
 
 ## 场景内的角色
 {"\n".join(actor_appearance_mapping_prompt)}
+
+{gameplay_systems.prompt_utils.generate_stage_narrate_action_prompt()}
 
 ## 输出要求
 - 请遵循 输出格式指南。
@@ -161,13 +164,15 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
                 logger.warning(
                     f"StagePlanningSystem: add StageNarrateAction = {stage_name}"
                 )
-                stage_entity.add(StageNarrateAction, ["无任何描述。"])
+                stage_entity.add(
+                    StageNarrateAction, StageNarrateAction.__name__, ["无任何描述。"]
+                )
 
             if not stage_entity.has(StageTagAction):
-                logger.warning(
-                    f"StagePlanningSystem: add StageTagAction = {stage_name}"
-                )
-                stage_entity.add(StageTagAction, [])
+                # logger.warning(
+                #     f"StagePlanningSystem: add StageTagAction = {stage_name}"
+                # )
+                stage_entity.add(StageTagAction, StageTagAction.__name__, [])
 
 
 #######################################################################################################################################

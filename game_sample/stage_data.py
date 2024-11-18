@@ -54,6 +54,9 @@ class ExcelDataStage:
     ############################################################################################################
     @property
     def api(self) -> str:
+        assert self.codename in str(
+            self._data[DataStageProperty.API]
+        ), "API must contain codename."
         return str(self._data[DataStageProperty.API])
 
     ############################################################################################################

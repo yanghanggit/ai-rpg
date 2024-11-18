@@ -89,6 +89,8 @@ class ExcelEditorStage:
     @property
     def kick_off_message(self) -> str:
         assert self._data is not None
+        if self._data[EditorProperty.KICK_OFF_MESSAGE] is None:
+            return "无"
         return cast(str, self._data[EditorProperty.KICK_OFF_MESSAGE])
 
     ################################################################################################################################

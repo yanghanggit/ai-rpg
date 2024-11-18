@@ -408,7 +408,7 @@ def player_play_new_game(
     player_proxy.set_actor(player_actor_name)
 
     # 添加游戏介绍
-    player_proxy.add_system_message(AgentEvent(message=rpg_game.about_game))
+    player_proxy.add_system_message(AgentEvent(message=rpg_game.epoch_script))
 
     # log 信息
     time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")

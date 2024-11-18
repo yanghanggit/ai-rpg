@@ -21,18 +21,23 @@ from my_components.action_components import (
     UpdateAppearanceAction,
 )
 from my_components.action_components import UpdateAppearanceAction
+import gameplay_systems.prompt_utils
 
 
 ###############################################################################################################################################
-def _generate_actor_kick_off_prompt(kick_off_message: str) -> str:
+def _generate_actor_kick_off_prompt(kick_off_message: str, epoch_script: str) -> str:
     return f"""# 游戏启动!
 见‘游戏流程’-‘游戏启动’，游戏系统将提供初始设定，包括角色、场景、道具信息，以及剧情开端。
-你将以此为起点进行游戏
+你将开始你的扮演，此时的世界背景如下，请仔细阅读并牢记，以确保你的行为和言语符合游戏设定，不会偏离时代背景。
+
+## 当前世界背景
+{epoch_script}
 
 ## 你的初始设定
 {kick_off_message}
 
 ## 输出要求
+- 生成的内容应符合当前世界背景。
 - 请遵循 输出格式指南。
 - 返回结果 只 包含:{MindVoiceAction.__name__}与{TagAction.__name__}。"""
 
@@ -41,6 +46,7 @@ def _generate_actor_kick_off_prompt(kick_off_message: str) -> str:
 def _generate_stage_kick_off_prompt(
     kick_off_message: str,
     input_actors_in_stage: Set[str],
+    epoch_script: str,
 ) -> str:
 
     actors_in_stage_prompt = list(input_actors_in_stage)
@@ -49,7 +55,10 @@ def _generate_stage_kick_off_prompt(
 
     return f"""# 游戏启动!
 见‘游戏流程’-‘游戏启动’，游戏系统将提供初始设定，包括角色、场景、道具信息，以及剧情开端。
-你将以此为起点进行游戏
+你将开始你的扮演，此时的世界背景如下，请仔细阅读并牢记，以确保你的行为和言语符合游戏设定，不会偏离时代背景。
+
+## 当前世界背景
+{epoch_script}
 
 ## 场景内的角色
 {"\n".join(actors_in_stage_prompt)}
@@ -57,13 +66,16 @@ def _generate_stage_kick_off_prompt(
 ## 你的初始设定
 {kick_off_message}
 
+{gameplay_systems.prompt_utils.generate_stage_narrate_action_prompt()}
+
 ## 输出要求
+- 生成的内容应符合当前世界背景。
 - 请遵循 输出格式指南。
 - 返回结果 只 包含:{StageNarrateAction.__name__} 和 {TagAction.__name__}。"""
 
 
 ###############################################################################################################################################
-def _generate_world_system_kick_off_prompt() -> str:
+def _generate_world_system_kick_off_prompt(epoch_script: str) -> str:
     return f"""# 游戏启动! 请回答你的职能与描述"""
 
 
@@ -139,7 +151,7 @@ class AgentKickOffSystem(ExecuteProcessor):
 
             ret[agent.name] = AgentTask.create_with_full_context(
                 agent,
-                _generate_world_system_kick_off_prompt(),
+                _generate_world_system_kick_off_prompt(epoch_script=""),
             )
 
         return ret
@@ -167,8 +179,11 @@ class AgentKickOffSystem(ExecuteProcessor):
 
             kick_off_comp = stage_entity.get(KickOffContentComponent)
             kick_off_prompt = _generate_stage_kick_off_prompt(
-                kick_off_comp.content,
-                self._context.retrieve_actor_names_in_stage(stage_entity),
+                kick_off_message=kick_off_comp.content,
+                input_actors_in_stage=self._context.retrieve_actor_names_in_stage(
+                    stage_entity
+                ),
+                epoch_script=self._game.epoch_script,
             )
             ret[agent.name] = AgentTask.create_with_full_context(agent, kick_off_prompt)
 
@@ -199,7 +214,8 @@ class AgentKickOffSystem(ExecuteProcessor):
             ret[agent.name] = AgentTask.create_with_full_context(
                 agent,
                 _generate_actor_kick_off_prompt(
-                    kick_off_comp.content,
+                    kick_off_message=kick_off_comp.content,
+                    epoch_script=self._game.epoch_script,
                 ),
             )
 
@@ -224,9 +240,6 @@ class AgentKickOffSystem(ExecuteProcessor):
 
             appearance_comp = actor_entity.get(FinalAppearanceComponent)
             if appearance_comp.final_appearance == "":
-                logger.info(
-                    f"AgentKickOffSystem: appearance is empty, {appearance_comp.name}, so need to update appearance"
-                )
                 actor_entity.replace(
                     UpdateAppearanceAction,
                     appearance_comp.name,

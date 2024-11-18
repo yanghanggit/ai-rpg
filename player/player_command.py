@@ -5,7 +5,6 @@ from my_components.action_components import (
     SpeakAction,
     GoToAction,
     WhisperAction,
-    # PickUpPropAction,
     StealPropAction,
     GivePropAction,
     SkillAction,
@@ -138,39 +137,6 @@ class PlayerWhisper(PlayerCommand):
             self.make_simple_message(WhisperAction.__name__, [self.whisper_content]),
             rpg_game,
         )
-
-
-####################################################################################################################################
-####################################################################################################################################
-####################################################################################################################################
-# class PlayerPickUpProp(PlayerCommand):
-
-#     @property
-#     def prop_name(self) -> str:
-#         return self.split_command(self._input_val, self._name)
-
-#     @override
-#     def execute(self, game: BaseGame, player_proxy: PlayerProxy) -> None:
-#         from rpg_game.rpg_game import RPGGame
-
-#         rpg_game = cast(RPGGame, game)
-#         player_entity = rpg_game.context.get_player_entity(player_proxy.name)
-#         if player_entity is None:
-#             return
-
-#         actor_comp = player_entity.get(ActorComponent)
-#         player_entity.add(
-#             PickUpPropAction,
-#             actor_comp.name,
-#             [self.prop_name],
-#         )
-
-#         # 模拟添加一个plan的发起。
-#         self.add_player_planning_message(
-#             player_entity,
-#             self.make_simple_message(PickUpPropAction.__name__, [self.prop_name]),
-#             rpg_game,
-#         )
 
 
 ####################################################################################################################################

@@ -84,7 +84,8 @@ class ExcelDataWorldSystem:
             configuration.SystemPromptReplaceSymbol.NAME, self.name
         )
         gen_prompt = gen_prompt.replace(
-            configuration.SystemPromptReplaceSymbol.SYSTEM_PROMPT, self.world_system_profile
+            configuration.SystemPromptReplaceSymbol.SYSTEM_PROMPT,
+            self.world_system_profile,
         )
         self._gen_system_prompt = gen_prompt
         return self._gen_system_prompt

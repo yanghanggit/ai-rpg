@@ -173,7 +173,7 @@ def gen_games_config(gen_games: List[ExcelEditorGame]) -> AllGamesConfigModel:
 
         one_game_config = GameConfigModel()
         one_game_config.game_name = game_editor._name
-        one_game_config.about_game = game_editor.about_game
+        one_game_config.about_game = game_editor.epoch_script
 
         for player in game_editor.editor_players:
             one_game_config.players.setdefault(player.name, "")

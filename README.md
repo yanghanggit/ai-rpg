@@ -16,7 +16,7 @@ pip install langchain langchain_core langserve fastapi langchain_openai sse_star
 ```
 
 ## 严格模式检查
-- mypy --strict game_sample/gen_game.py batch_run_agents.py run_terminal_game.py run_game_server.py simulate_web_client.py
+- mypy --strict game_sample/gen_game.py batch_run_agents.py run_terminal_game.py run_game_server.py simulate_web_client.py game_sample/base_form_prompt_editor.py game_sample/actor_profile_prompt_editor.py game_sample/actor_conversational_style_prompt_editor.py
 
 
 ## 说明

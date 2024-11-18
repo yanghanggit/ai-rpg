@@ -10,7 +10,6 @@ from my_components.components import (
 )
 from my_components.action_components import (
     StageNarrateAction,
-    ACTOR_AVAILABLE_ACTIONS_REGISTER,
     GoToAction,
     TagAction,
 )
@@ -81,8 +80,10 @@ def _generate_actor_plan_prompt(
     # 组织生成角色外观描述
     actor_appearance_mapping_prompt: List[str] = []
     for actor_name, actor_appearance in actor_appearance_mapping.items():
-        actor_appearance_mapping_prompt += f"""### {actor_name}
+        actor_appearance_mapping_prompt.append(
+            f"""### {actor_name}
 角色外观:{actor_appearance}"""
+        )
 
     if len(actor_appearance_mapping_prompt) == 0:
         actor_appearance_mapping_prompt.append("无任何角色。")
@@ -91,15 +92,16 @@ def _generate_actor_plan_prompt(
     if len(stage_graph) == 0:
         stage_graph.add(f"无可去往场景(你不可以执行{GoToAction.__name__})")
 
-    return f"""# 请制定你的计划
-- 标记 {gameplay_systems.prompt_utils.PromptTag.ACTOR_PLAN_PROMPT_TAG} 
-- 规则见‘游戏流程’-制定计划
+    return f"""# 请制定你的计划({gameplay_systems.prompt_utils.PromptTag.ACTOR_PLAN_PROMPT_TAG})
+规则见 游戏流程 - 制定计划
 
 ## 你当前所在的场景
 {current_stage}
+
 ### 场景描述
 {stage_enviro_narrate}
-### 从本场景可以去往的场景
+
+### (如从本场景离开)你可以去往的场景
 {"\n".join(stage_graph)}   
 
 ## 场景内的角色

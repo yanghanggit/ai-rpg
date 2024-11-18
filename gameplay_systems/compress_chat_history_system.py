@@ -7,7 +7,6 @@ from rpg_game.rpg_game import RPGGame
 import gameplay_systems.prompt_utils as prompt_utils
 
 
-@unique
 class CompressChatHistoryConstantPrompt(StrEnum):
     COMPRESS_ACTOR_PLAN_PROMPT = "请做出你的计划，决定你将要做什么"
     COMPRESS_STAGE_PLAN_PROMPT = "请做出你的计划，决定你将要做什么"

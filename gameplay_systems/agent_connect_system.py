@@ -1,5 +1,6 @@
 import asyncio
-import time
+
+# import time
 from entitas import Matcher, Entity, ExecuteProcessor  # type: ignore
 from typing import Any, Coroutine, Set, final, override, List
 from my_components.components import (
@@ -38,10 +39,10 @@ class AgentConnectSystem(ExecuteProcessor):
 
         # 创建任务来并发连接所有未连接的实体
         connect_task = self._initialize_agent_connections(unconnected_entities)
-        start_time = time.time()
+        # start_time = time.time()
         await asyncio.gather(*connect_task)
-        end_time = time.time()
-        logger.debug(f"AgentConnectSystem.gather:{end_time - start_time:.2f} seconds")
+        # end_time = time.time()
+        # logger.debug(f"AgentConnectSystem.gather:{end_time - start_time:.2f} seconds")
 
         # 连接完成后，更新所有已连接的实体
         self._process_agent_connections(unconnected_entities)
@@ -66,8 +67,8 @@ class AgentConnectSystem(ExecuteProcessor):
             agent = self._context.safe_get_agent(entity)
             if agent.remote_runnable is not None:
                 entity.replace(AgentConnectionFlagComponent, agent.name)
-                logger.debug(
-                    f"AgentConnectSystem._process_agent_connections:{agent.name} connected"
-                )
+                # logger.debug(
+                #     f"AgentConnectSystem._process_agent_connections:{agent.name} connected"
+                # )
 
     ###############################################################################################################################################

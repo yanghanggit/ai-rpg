@@ -16,36 +16,36 @@ import gameplay_systems.stage_entity_utils
 
 ################################################################################################################################################
 def _generate_exit_stage_prompt(actor_name: str, current_stage_name: str) -> str:
-    return f"# 发生事件: {actor_name} 离开了 {current_stage_name} 场景。"
+    return f"# 发生事件: {actor_name} 离开了场景:{current_stage_name}。"
 
 
 ################################################################################################################################################
 def _generate_stage_entry_prompt(actor_name: str, target_stage_name: str) -> str:
-    return f"# 发生事件: {actor_name} 进入了场景 {target_stage_name}。"
+    return f"# 发生事件: {actor_name} 进入了场景:{target_stage_name}。"
 
 
 ################################################################################################################################################
 def _generate_stage_change_prompt(
     actor_name: str, target_stage_name: str, previous_stage_name: str
 ) -> str:
-    return f"# 发生事件: {actor_name} 离开了 {previous_stage_name} 场景, 然后进入了 {target_stage_name} 场景。"
+    return f"# 发生事件: {actor_name} 离开了场景:{previous_stage_name}, 然后进入了场景:{target_stage_name}。"
 
 
 ################################################################################################################################################
 def _generate_last_impression_of_stage_prompt(
     actor_name: str, stage_name: str, stage_narrate: str
 ) -> str:
-    return f"""# 提示: {actor_name} 将要离开 {stage_name} 场景。
-## {actor_name} 对于 {stage_name} 最后的印象(场景描述):
+    return f"""# 提示: {actor_name} 将要离开场景:{stage_name}。
+## {actor_name} 对于场景——{stage_name}，最后的印象(场景描述)如下:
 {stage_narrate}"""
 
 
 ################################################################################################################################################
 def _generate_last_impression_of_actor_prompt(
-    actor_name: str, target_name: str, appearance: str
+    actor_name: str, current_stage: str, target_name: str, appearance: str
 ) -> str:
-    return f"""# 提示: {actor_name} 将要离开 {target_name}。
-## {actor_name} 对于 {target_name} 最后的印象(外观描述):
+    return f"""# 提示: {actor_name} 将要离开场景:{current_stage}。
+## {actor_name} 对于 {target_name} 最后的印象(外观描述)如下:
 {appearance}"""
 
 
@@ -211,7 +211,9 @@ class GoToActionSystem(ReactiveProcessor):
                 set({helper._entity}),
                 PreStageExitEvent(
                     message=_generate_last_impression_of_stage_prompt(
-                        my_name, helper._current_stage_name, stage_archive.stage_narrate
+                        actor_name=my_name,
+                        stage_name=helper._current_stage_name,
+                        stage_narrate=stage_archive.stage_narrate,
                     )
                 ),
             )
@@ -225,7 +227,10 @@ class GoToActionSystem(ReactiveProcessor):
                 set({helper._entity}),
                 PreStageExitEvent(
                     message=_generate_last_impression_of_actor_prompt(
-                        my_name, actor_name, appearance
+                        actor_name=my_name,
+                        current_stage=helper._current_stage_name,
+                        target_name=actor_name,
+                        appearance=appearance,
                     )
                 ),
             )

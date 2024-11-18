@@ -2,7 +2,8 @@ from loguru import logger
 from typing import List, Union, cast, Any
 from langchain_core.messages import HumanMessage, AIMessage
 import asyncio
-import time
+
+# import time
 from my_agent.lang_serve_agent import LangServeAgent
 from enum import Flag, auto
 
@@ -20,11 +21,10 @@ class AgentTask:
     @staticmethod
     async def gather(tasks: List["AgentTask"]) -> List[Any]:
         coros = [task.a_request() for task in tasks]
-        start_time = time.time()
+        # start_time = time.time()
         future = await asyncio.gather(*coros)
-        end_time = time.time()
-
-        logger.debug(f"AgentTask.gather:{end_time - start_time:.2f} seconds")
+        # end_time = time.time()
+        # logger.debug(f"AgentTask.gather:{end_time - start_time:.2f} seconds")
         return future
 
     ################################################################################################################################################################################
@@ -103,7 +103,7 @@ class AgentTask:
 
         try:
 
-            logger.info(f"{self.agent_name} request prompt:\n{self._prompt}")
+            logger.debug(f"{self.agent_name} request prompt:\n{self._prompt}")
 
             self._response = self._agent.remote_runnable.invoke(
                 {
@@ -115,7 +115,7 @@ class AgentTask:
             if self.response is not None:
                 self._finalize_task()
                 logger.info(
-                    f"{self.agent_name} request success:\n{self.response_content}"
+                    f"{self.agent_name} request response:\n{self.response_content}"
                 )
 
         except Exception as e:
@@ -131,7 +131,7 @@ class AgentTask:
 
         try:
 
-            logger.info(f"{self.agent_name} a_request prompt:\n{self._prompt}")
+            logger.debug(f"{self.agent_name} a_request prompt:\n{self._prompt}")
 
             self._response = await self._agent.remote_runnable.ainvoke(
                 {
@@ -143,7 +143,7 @@ class AgentTask:
             if self.response is not None:
                 self._finalize_task()
                 logger.info(
-                    f"{self.agent_name} a_request success:\n{self.response_content}"
+                    f"{self.agent_name} a_request response:\n{self.response_content}"
                 )
 
         except Exception as e:

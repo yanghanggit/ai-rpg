@@ -100,7 +100,7 @@ async def run_terminal_game(option: TerminalGameOption) -> None:
                 new_game, player_proxy, player_actor_name
             )
         else:
-            logger.info(
+            logger.warning(
                 "没有找到可以控制的角色，可能是game resource里没设置Player，此时就是观看。"
             )
     else:
@@ -269,7 +269,7 @@ def terminal_player_input_retrieve_stage_archives(
 async def terminal_player_wait(game: RPGGame, player_proxy: PlayerProxy) -> None:
     while True:
         input(
-            f"不是你{player_proxy.name},{player_proxy.actor_name}的回合，按任意键继续游戏:{game._name}"
+            f"<<<<<<<<<<<<<<<<<<<<<<< 不是你{player_proxy.name},{player_proxy.actor_name}的回合，按任意键继续游戏:{game._name} >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
         )
         break
 
@@ -277,7 +277,9 @@ async def terminal_player_wait(game: RPGGame, player_proxy: PlayerProxy) -> None
 ###############################################################################################################################################
 async def terminal_continue(game: RPGGame) -> None:
     while True:
-        input(f"{game._name} 游戏继续，没有玩家")
+        input(
+            f"<<<<<<<<<<<<<<<<<<<<<<< {game._name} 游戏继续，没有玩家 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+        )
         break
 
 
@@ -292,7 +294,7 @@ if __name__ == "__main__":
 
     option = TerminalGameOption(
         user_name="北京柏林互动科技有限公司",
-        default_game="World1",
+        default_game="World4",
         check_game_resource_version=rpg_game_config.CHECK_GAME_RESOURCE_VERSION,
         show_client_message_count=20,
     )

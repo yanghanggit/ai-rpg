@@ -198,4 +198,4 @@ def main(game_names: List[str]) -> None:
 
 ############################################################################################################
 if __name__ == "__main__":
-    main(["World1", "World2", "World3"])
+    main(["World1", "World2", "World3", "World4"])

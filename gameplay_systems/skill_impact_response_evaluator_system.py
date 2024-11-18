@@ -51,8 +51,7 @@ def _generate_skill_impact_response_prompt(
 ## 输出要求
 - 请遵循 输出格式指南。
 - 返回结果只带如下的键: {AnnounceAction.__name__} 和 {TagAction.__name__}。
-- {AnnounceAction.__name__} 的内容格式要求为: "{target_name}对技能的反馈与更新后的状态描述"。
-"""
+- {AnnounceAction.__name__} 的内容格式要求为: "{target_name}对技能的反馈与更新后的状态描述"。"""
 
     return prompt
 

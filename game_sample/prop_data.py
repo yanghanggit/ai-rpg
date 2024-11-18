@@ -13,7 +13,7 @@ from enum import StrEnum, unique
 class DataPropProperty(StrEnum):
     NAME = "name"
     CODE_NAME = "codename"
-    DESCRIPTION = "description"
+    DETAILS = "details"
     RAG = "RAG"
     TYPE = "type"
     ATTRIBUTES = "attributes"
@@ -50,8 +50,8 @@ class ExcelDataProp:
 
     ############################################################################################################
     @property
-    def description(self) -> str:
-        return str(self._data[DataPropProperty.DESCRIPTION])
+    def details(self) -> str:
+        return str(self._data[DataPropProperty.DETAILS])
 
     ############################################################################################################
     @property
@@ -95,7 +95,7 @@ class ExcelDataProp:
         return PropModel(
             name=self.name,
             codename=self.codename,
-            description=self.description,
+            details=self.details,
             type=self.type,
             attributes=self.attributes,
             appearance=self.appearance,

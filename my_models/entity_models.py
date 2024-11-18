@@ -66,7 +66,7 @@ class StageModel(BaseModel):
 class PropModel(BaseModel):
     name: str
     codename: str
-    description: str
+    details: str
     type: str
     attributes: List[int]
     appearance: str
@@ -98,5 +98,5 @@ class GameModel(BaseModel):
     stages: List[StageInstanceModel]
     world_systems: List[WorldSystemInstanceModel]
     database: DataBaseModel
-    about_game: str
+    epoch_script: str
     version: str

@@ -56,7 +56,7 @@ class PropFile(BaseFile):
     ############################################################################################################
     @property
     def description(self) -> str:
-        return self.prop_model.description
+        return self.prop_model.details
 
     ############################################################################################################
     @property

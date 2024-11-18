@@ -256,14 +256,14 @@ class ExcelEditorGame:
         if self._cache_configs is None:
             self._cache_configs = []
             for item in self._data:
-                if item[EditorProperty.TYPE] != EditorEntityType.ABOUT_GAME:
+                if item[EditorProperty.TYPE] != EditorEntityType.EPOCH_SCRIPT:
                     continue
                 self._cache_configs.append(item)
         return self._cache_configs
 
     ############################################################################################################################
     @property
-    def about_game(self) -> str:
+    def epoch_script(self) -> str:
         if len(self.editor_configs) == 0:
             return ""
         data = self.editor_configs[0]
@@ -332,7 +332,7 @@ class ExcelEditorGame:
                 for editor_world_system in self.editor_world_systems
             ],
             database=self._data_base(),
-            about_game=self.about_game,
+            epoch_script=self.epoch_script,
             version=self._version,
         )
 

@@ -42,7 +42,7 @@ ACTOR_SYS_PROMPT_TEMPLATE = f"""# {configuration.SystemPromptReplaceSymbol.NAME}
 {configuration.SystemPromptReplaceSymbol.BASE_FORM}
 
 ## 你的说话风格与语气
-{configuration.SystemPromptReplaceSymbol.CONVERSATION_EXAMPLE}
+{configuration.SystemPromptReplaceSymbol.CONVERSATIONAL_STYLE}
 
 ## 输出要求
 ### 输出格式指南
@@ -79,7 +79,7 @@ STAGE_SYS_PROMPT_TEMPLATE = f"""# {configuration.SystemPromptReplaceSymbol.NAME}
 {configuration.SystemPromptReplaceSymbol.SYSTEM_PROMPT}
 
 ## 你的说话风格与语气
-{configuration.SystemPromptReplaceSymbol.CONVERSATION_EXAMPLE}
+{configuration.SystemPromptReplaceSymbol.CONVERSATIONAL_STYLE}
 
 ## 输出要求
 ### 输出格式指南

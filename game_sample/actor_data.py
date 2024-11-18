@@ -13,8 +13,8 @@ import game_sample.configuration as configuration
 class DataActorProperty(StrEnum):
     NAME = "name"
     CODENAME = "codename"
-    SYSTEM_PROMPT = "system_prompt"
-    CONVERSATION_EXAMPLE = "conversation_example"
+    ACTOR_PROFILE = "actor_profile"
+    CONVERSATIONAL_STYLE = "conversational_style"
     PORT = "PORT"
     API = "API"
     RAG = "RAG"
@@ -51,13 +51,13 @@ class ExcelDataActor:
 
     ############################################################################################################
     @property
-    def system_prompt(self) -> str:
-        return str(self._data[DataActorProperty.SYSTEM_PROMPT])
+    def actor_profile(self) -> str:
+        return str(self._data[DataActorProperty.ACTOR_PROFILE])
 
     ############################################################################################################
     @property
-    def conversation_example(self) -> str:
-        return str(self._data[DataActorProperty.CONVERSATION_EXAMPLE])
+    def conversational_style(self) -> str:
+        return str(self._data[DataActorProperty.CONVERSATIONAL_STYLE])
 
     ############################################################################################################
     @property
@@ -103,14 +103,14 @@ class ExcelDataActor:
             configuration.SystemPromptReplaceSymbol.NAME, self.name
         )
         gen_prompt = gen_prompt.replace(
-            configuration.SystemPromptReplaceSymbol.SYSTEM_PROMPT, self.system_prompt
+            configuration.SystemPromptReplaceSymbol.SYSTEM_PROMPT, self.actor_profile
         )
         gen_prompt = gen_prompt.replace(
             configuration.SystemPromptReplaceSymbol.BASE_FORM, self.base_form
         )
         gen_prompt = gen_prompt.replace(
-            configuration.SystemPromptReplaceSymbol.CONVERSATION_EXAMPLE,
-            self.conversation_example,
+            configuration.SystemPromptReplaceSymbol.CONVERSATIONAL_STYLE,
+            self.conversational_style,
         )
         self._gen_system_prompt = gen_prompt
         return self._gen_system_prompt
@@ -159,7 +159,7 @@ class ExcelDataActor:
         if actor_name in self._actor_archives:
             return True
 
-        if actor_name in self.system_prompt:
+        if actor_name in self.actor_profile:
             self._actor_archives.append(actor_name)
             return True
 
@@ -171,7 +171,7 @@ class ExcelDataActor:
         if stage_name in self._stage_archives:
             return True
 
-        if stage_name in self.system_prompt:
+        if stage_name in self.actor_profile:
             self._stage_archives.append(stage_name)
             return True
 
@@ -187,7 +187,7 @@ class ExcelDataActor:
         if prop_name in self._prop_archives:
             return True
 
-        if prop_name in self.system_prompt:
+        if prop_name in self.actor_profile:
             self._prop_archives.append(prop_name)
             return True
 

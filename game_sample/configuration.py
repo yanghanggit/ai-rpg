@@ -8,7 +8,7 @@ class SystemPromptReplaceSymbol(StrEnum):
     NAME = "<%name>"
     SYSTEM_PROMPT = "<%sys_prompt>"
     BASE_FORM = "<%base_form>"
-    CONVERSATION_EXAMPLE = "<%conversation_example>"
+    CONVERSATIONAL_STYLE = "<%conversational_style>"
 
 
 # 文件内容替换的标记

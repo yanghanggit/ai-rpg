@@ -56,7 +56,7 @@ class ActorModel(BaseModel):
 class StageModel(BaseModel):
     name: str
     codename: str
-    system_prompt: str
+    stage_profile: str
     url: str
     kick_off_message: str
     stage_graph: List[str]

@@ -13,13 +13,13 @@ from enum import StrEnum, unique
 class DataStageProperty(StrEnum):
     NAME = "name"
     CODENAME = "codename"
-    SYSTEM_PROMPT = "system_prompt"
+    STAGE_PROFILE = "stage_profile"
     PORT = "PORT"
     API = "API"
     RAG = "RAG"
     SYS_PROMPT_TEMPLATE = "sys_prompt_template"
     AGENTPY_TEMPLATE = "agentpy_template"
-    CONVERSATION_EXAMPLE = "conversation_example"
+    CONVERSATIONAL_STYLE = "conversational_style"
 
 
 ############################################################################################################
@@ -43,8 +43,8 @@ class ExcelDataStage:
 
     ############################################################################################################
     @property
-    def system_prompt(self) -> str:
-        return str(self._data[DataStageProperty.SYSTEM_PROMPT])
+    def stage_profile(self) -> str:
+        return str(self._data[DataStageProperty.STAGE_PROFILE])
 
     ############################################################################################################
     @property
@@ -73,8 +73,8 @@ class ExcelDataStage:
 
     ############################################################################################################
     @property
-    def conversation_example(self) -> str:
-        return str(self._data[DataStageProperty.CONVERSATION_EXAMPLE])
+    def conversational_style(self) -> str:
+        return str(self._data[DataStageProperty.CONVERSATIONAL_STYLE])
 
     ############################################################################################################
     @property
@@ -88,11 +88,11 @@ class ExcelDataStage:
             configuration.SystemPromptReplaceSymbol.NAME, self.name
         )
         gen_prompt = gen_prompt.replace(
-            configuration.SystemPromptReplaceSymbol.SYSTEM_PROMPT, self.system_prompt
+            configuration.SystemPromptReplaceSymbol.SYSTEM_PROMPT, self.stage_profile
         )
         gen_prompt = gen_prompt.replace(
-            configuration.SystemPromptReplaceSymbol.CONVERSATION_EXAMPLE,
-            self.conversation_example,
+            configuration.SystemPromptReplaceSymbol.CONVERSATIONAL_STYLE,
+            self.conversational_style,
         )
         self._gen_system_prompt = gen_prompt
         return self._gen_system_prompt

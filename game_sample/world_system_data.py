@@ -13,7 +13,7 @@ from enum import StrEnum, unique
 class DataWorldSystemProperty(StrEnum):
     NAME = "name"
     CODENAME = "codename"
-    SYSTEM_PROMPT = "system_prompt"
+    WORLD_SYSTEM_PROFILE = "world_system_profile"
     PORT = "PORT"
     API = "API"
     RAG = "RAG"
@@ -44,8 +44,8 @@ class ExcelDataWorldSystem:
 
     ############################################################################################################
     @property
-    def system_prompt(self) -> str:
-        return str(self._data[DataWorldSystemProperty.SYSTEM_PROMPT])
+    def world_system_profile(self) -> str:
+        return str(self._data[DataWorldSystemProperty.WORLD_SYSTEM_PROFILE])
 
     ############################################################################################################
     @property
@@ -84,7 +84,7 @@ class ExcelDataWorldSystem:
             configuration.SystemPromptReplaceSymbol.NAME, self.name
         )
         gen_prompt = gen_prompt.replace(
-            configuration.SystemPromptReplaceSymbol.SYSTEM_PROMPT, self.system_prompt
+            configuration.SystemPromptReplaceSymbol.SYSTEM_PROMPT, self.world_system_profile
         )
         self._gen_system_prompt = gen_prompt
         return self._gen_system_prompt

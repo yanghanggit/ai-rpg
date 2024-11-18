@@ -4,7 +4,7 @@ from pathlib import Path
 root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 from typing import Any, List, cast
-from my_models.entity_models import PropModel, AttributesIndex
+from my_models.entity_models import PropModel, Attributes
 from my_models.file_models import PropType
 from enum import StrEnum, unique
 
@@ -70,8 +70,8 @@ class ExcelDataProp:
         data = cast(str, self._data[DataPropProperty.ATTRIBUTES])
         assert "," in data, f"raw_string_val: {data} is not valid."
         values = [int(attr) for attr in data.split(",")]
-        if len(values) < AttributesIndex.MAX:
-            values.extend([0] * (AttributesIndex.MAX - len(values)))
+        if len(values) < Attributes.MAX:
+            values.extend([0] * (Attributes.MAX - len(values)))
         return values
 
     ############################################################################################################

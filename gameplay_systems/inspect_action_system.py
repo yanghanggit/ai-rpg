@@ -32,11 +32,11 @@ def _generate_invalid_target_prompt(source_name: str, target_name: str) -> str:
 
 #######################################################################################################################################
 def _generate_inspect_prompt(
-    source_name: str, target_name: str, health: float, prop_files: List[PropFile]
+    source_name: str, target_name: str, health_ratio: float, prop_files: List[PropFile]
 ) -> str:
 
     # 生命值
-    health = health * 100
+    health_ratio = health_ratio * 100
 
     # 道具信息
     props_prompt = [generate_prop_file_appearance_prompt(prop) for prop in prop_files]
@@ -47,7 +47,7 @@ def _generate_inspect_prompt(
     return f"""# 发生事件: {source_name} 对 {target_name} 进行了检查。获得了如下信息。
 
 ## {target_name} 健康状态
-{f"生命值: {health:.2f}%"}
+{f"生命值: {health_ratio:.2f}%"}
 
 ## {target_name} 持有的道具
 {"\n".join(props_prompt)}"""

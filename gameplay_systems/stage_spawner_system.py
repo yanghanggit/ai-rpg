@@ -5,10 +5,11 @@ from my_components.components import (
     StageSpawnerComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from typing import final, Final, List
+from typing import final, List
 from rpg_game.rpg_game import RPGGame
 import copy
 from my_format_string.complex_actor_name import ComplexActorName
+from my_models.editor_models import GUIDType
 
 
 ######################################################################################################################################################
@@ -17,7 +18,6 @@ class StageSpawnerSystem(ExecuteProcessor):
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
         self._context: RPGEntitasContext = context
         self._game: RPGGame = rpg_game
-        self._base_index: Final[int] = 9 * 1000 * 1000
         self._gen_index: int = 0
 
     ######################################################################################################################################################
@@ -89,6 +89,6 @@ class StageSpawnerSystem(ExecuteProcessor):
     ######################################################################################################################################################
     def _gen_actor_guid(self) -> int:
         self._gen_index += 1
-        return self._base_index + self._gen_index
+        return GUIDType.RUNTIME_ACTOR_TYPE + self._gen_index
 
     ######################################################################################################################################################

@@ -12,7 +12,7 @@ from extended_systems.prop_file import PropFile
 import my_format_string.target_message
 import my_format_string.ints_string
 from rpg_game.rpg_game import RPGGame
-from my_models.entity_models import AttributesIndex
+from my_models.entity_models import Attributes
 import gameplay_systems.file_system_utils
 from my_models.file_models import PropType
 from my_models.event_models import AgentEvent
@@ -87,15 +87,15 @@ class DamageActionSystem(ReactiveProcessor):
             )
 
             assert (
-                len(attribute_values) > AttributesIndex.DAMAGE
+                len(attribute_values) > Attributes.DAMAGE
             ), f"属性数组长度不够:{attribute_values}"
 
-            if len(attribute_values) > AttributesIndex.DAMAGE:
+            if len(attribute_values) > Attributes.DAMAGE:
 
                 self._apply_damage_to_target(
                     source_entity_name,
                     target_entity,
-                    attribute_values[AttributesIndex.DAMAGE],
+                    attribute_values[Attributes.DAMAGE],
                 )
 
     ######################################################################################################################################################

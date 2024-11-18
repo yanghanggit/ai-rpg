@@ -25,6 +25,7 @@ import gameplay_systems.file_system_utils
 from my_models.event_models import AgentEvent
 import gameplay_systems.skill_entity_utils
 from my_agent.lang_serve_agent import LangServeAgent
+from my_models.entity_models import Attributes
 
 
 ################################################################################################################################################
@@ -187,7 +188,7 @@ class InternalPlanResponse(AgentPlanResponse):
 
     @property
     def inspector_value(self) -> int:
-        ret = 100
+        ret = int(Attributes.BASE_VALUE_SCALE)
         ret = max(0, min(200, ret))
         return ret  # todo
 

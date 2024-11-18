@@ -19,7 +19,7 @@ from my_agent.agent_plan import AgentPlanResponse
 import my_format_string.target_message
 import my_format_string.ints_string
 from rpg_game.rpg_game import RPGGame
-from my_models.entity_models import AttributesIndex
+from my_models.entity_models import Attributes
 from my_models.event_models import AgentEvent
 import gameplay_systems.skill_entity_utils
 from my_agent.lang_serve_agent import LangServeAgent
@@ -395,10 +395,10 @@ class SkillImpactResponseEvaluatorSystem(ExecuteProcessor):
         calculate_bonus: float,
     ) -> None:
 
-        total_skill_attributes[AttributesIndex.DAMAGE] = int(
-            total_skill_attributes[AttributesIndex.DAMAGE] * calculate_bonus
+        total_skill_attributes[Attributes.DAMAGE] = int(
+            total_skill_attributes[Attributes.DAMAGE] * calculate_bonus
         )
-        if total_skill_attributes[AttributesIndex.DAMAGE] == 0:
+        if total_skill_attributes[Attributes.DAMAGE] == 0:
             return
 
         #
@@ -436,7 +436,7 @@ class SkillImpactResponseEvaluatorSystem(ExecuteProcessor):
         if not source_entity.has(AttributesComponent):
             return
         attr_comp = source_entity.get(AttributesComponent)
-        skill_attribute_output[AttributesIndex.DAMAGE] += attr_comp.attack
+        skill_attribute_output[Attributes.DAMAGE] += attr_comp.attack
 
     ######################################################################################################################################################
     def _compute_skill_accessory_attributes(
@@ -535,7 +535,9 @@ class SkillImpactResponseEvaluatorSystem(ExecuteProcessor):
 
     ######################################################################################################################################################
     def _calculate_bonus(
-        self, internal_process_data: InternalProcessData, reference_value: int = 100
+        self,
+        internal_process_data: InternalProcessData,
+        reference_value: int = Attributes.BASE_VALUE_SCALE,
     ) -> float:
         skill_comp = internal_process_data.skill_entity.get(SkillComponent)
         value = skill_comp.world_harmony_inspector_value / reference_value

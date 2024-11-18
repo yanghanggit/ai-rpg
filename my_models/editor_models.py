@@ -1,4 +1,4 @@
-from enum import StrEnum, unique
+from enum import IntEnum, StrEnum, unique
 
 
 @unique
@@ -26,3 +26,13 @@ class EditorProperty(StrEnum):
     DESCRIPTION = "description"
     SPAWN = "spawn"
     SPAWNERS_IN_STAGE = "spawners_in_stage"
+
+
+@unique
+class GUIDType(IntEnum):
+    ACTOR_TYPE = 1 * 1000 * 1000
+    STAGE_TYPE = 2 * 1000 * 1000
+    PROP_TYPE = 3 * 1000 * 1000
+    WORLD_SYSTEM_TYPE = 4 * 1000 * 1000
+    RUNTIME_ACTOR_TYPE = 5 * 1000 * 1000
+    RUNTIME_PROP_TYPE = 6 * 1000 * 1000

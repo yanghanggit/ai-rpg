@@ -4,7 +4,7 @@ from my_models.entity_models import (
     PropModel,
     PropInstanceModel,
 )
-from my_models.entity_models import AttributesIndex
+from my_models.entity_models import Attributes
 from my_models.file_models import (
     PropType,
     PropFileModel,
@@ -96,22 +96,22 @@ class PropFile(BaseFile):
     ############################################################################################################
     @property
     def max_hp(self) -> int:
-        return self.prop_model.attributes[AttributesIndex.MAX_HP]
+        return self.prop_model.attributes[Attributes.MAX_HP]
 
     ############################################################################################################
     @property
     def hp(self) -> int:
-        return self.prop_model.attributes[AttributesIndex.CUR_HP]
+        return self.prop_model.attributes[Attributes.CUR_HP]
 
     ############################################################################################################
     @property
     def attack(self) -> int:
-        return self.prop_model.attributes[AttributesIndex.DAMAGE]
+        return self.prop_model.attributes[Attributes.DAMAGE]
 
     ############################################################################################################
     @property
     def defense(self) -> int:
-        return self.prop_model.attributes[AttributesIndex.DEFENSE]
+        return self.prop_model.attributes[Attributes.DEFENSE]
 
     ############################################################################################################
     @property

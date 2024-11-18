@@ -10,7 +10,7 @@ from game_sample.actor_data import ExcelDataActor
 from game_sample.stage_data import ExcelDataStage
 from game_sample.guid_generator import editor_guid_generator
 from my_models.entity_models import (
-    AttributesIndex,
+    Attributes,
     StageModel,
     StageInstanceModel,
     StageActorInstanceProxy,
@@ -81,8 +81,8 @@ class ExcelEditorStage:
         data = cast(str, self._data[EditorProperty.ATTRIBUTES])
         assert "," in data, f"raw_string_val: {data} is not valid."
         values = my_format_string.ints_string.convert_string_to_ints(data)
-        if len(values) < AttributesIndex.MAX:
-            values.extend([0] * (AttributesIndex.MAX - len(values)))
+        if len(values) < Attributes.MAX:
+            values.extend([0] * (Attributes.MAX - len(values)))
         return values
 
     ################################################################################################################################

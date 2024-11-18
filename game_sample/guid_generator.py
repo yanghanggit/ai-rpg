@@ -1,11 +1,4 @@
-from enum import IntEnum
-
-
-class GUIDType(IntEnum):
-    ACTOR_TYPE = 1 * 1000 * 1000
-    STAGE_TYPE = 2 * 1000 * 1000
-    PROP_TYPE = 3 * 1000 * 1000
-    WORLD_SYSTEM_TYPE = 4 * 1000 * 1000
+from my_models.editor_models import GUIDType
 
 
 class GUIDGenerator:

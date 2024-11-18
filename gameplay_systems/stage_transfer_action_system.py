@@ -6,7 +6,7 @@ from my_components.action_components import (
 from my_components.components import (
     StageComponent,
 )
-from typing import Final, final, override
+from typing import final, override
 from rpg_game.rpg_game import RPGGame
 import my_format_string.target_message
 import gameplay_systems.file_system_utils
@@ -17,6 +17,7 @@ from extended_systems.prop_file import PropFile
 from my_models.file_models import PropFileModel
 from my_models.entity_models import PropInstanceModel
 from my_models.event_models import AgentEvent
+from my_models.editor_models import GUIDType
 
 
 ####################################################################################################################################
@@ -48,7 +49,6 @@ class StageTransferActionSystem(ReactiveProcessor):
         super().__init__(context)
         self._context: RPGEntitasContext = context
         self._game: RPGGame = rpg_game
-        self._base_index: Final[int] = 8 * 1000 * 1000
         self._gen_index: int = 0
 
     ####################################################################################################################################
@@ -151,6 +151,6 @@ class StageTransferActionSystem(ReactiveProcessor):
     ######################################################################################################################################################
     def _gen_prop_guid(self) -> int:
         self._gen_index += 1
-        return self._base_index + self._gen_index
+        return GUIDType.RUNTIME_PROP_TYPE + self._gen_index
 
     ######################################################################################################################################################

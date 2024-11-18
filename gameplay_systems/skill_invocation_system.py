@@ -14,7 +14,7 @@ from my_models.event_models import AgentEvent
 import my_format_string.complex_prop_name
 from loguru import logger
 from gameplay_systems.actor_entity_utils import ActorStatusEvaluator
-from my_models.file_models import PropType
+from my_models.entity_models import Attributes
 
 
 ################################################################################################################################################
@@ -228,7 +228,7 @@ class SkillInvocationSystem(ReactiveProcessor):
     ######################################################################################################################################################
     def _process_skill_invocation(self, actor_entity: Entity) -> None:
 
-        # /skill 对@冀州.中山.卢奴.秘密监狱.火字十一号牢房的铁栏门上面的/腐化的木牌 使用技能/妖法.飞炎咒 消耗/A=1 消耗/B 消耗/C=2
+        # /skill 对@冀州.中山.卢奴.秘密监狱.火字十一号牢房 &铁栏门上面的/腐化的木牌 使用技能/妖法.飞炎咒 消耗/A=1 消耗/B 消耗/C=2
         origin_command_from_skill_action = (
             self._extract_origin_command_from_skill_action(actor_entity)
         )
@@ -353,7 +353,7 @@ class SkillInvocationSystem(ReactiveProcessor):
             skill_accessory_props,
             "",
             "",
-            100,
+            Attributes.BASE_VALUE_SCALE,
         )
 
         skill_comp = skill_entity.get(SkillComponent)

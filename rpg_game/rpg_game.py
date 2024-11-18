@@ -35,7 +35,7 @@ from my_models.entity_models import (
 )
 from my_models.event_models import BaseEvent
 from my_models.file_models import PropFileModel
-from my_models.entity_models import AttributesIndex
+from my_models.entity_models import Attributes
 from player.player_proxy import PlayerProxy
 import gameplay_systems.prompt_utils as prompt_utils
 from my_format_string.complex_actor_name import ComplexActorName
@@ -321,10 +321,10 @@ class RPGGame(BaseGame):
         actor_entity.add(
             AttributesComponent,
             actor_instance.name,
-            actor_model.attributes[AttributesIndex.MAX_HP],
-            actor_model.attributes[AttributesIndex.CUR_HP],
-            actor_model.attributes[AttributesIndex.DAMAGE],
-            actor_model.attributes[AttributesIndex.DEFENSE],
+            actor_model.attributes[Attributes.MAX_HP],
+            actor_model.attributes[Attributes.CUR_HP],
+            actor_model.attributes[Attributes.DAMAGE],
+            actor_model.attributes[Attributes.DEFENSE],
         )
 
         assert actor_model.base_form != ""
@@ -458,10 +458,10 @@ class RPGGame(BaseGame):
         stage_entity.add(
             AttributesComponent,
             stage_model.name,
-            stage_model.attributes[AttributesIndex.MAX_HP],
-            stage_model.attributes[AttributesIndex.CUR_HP],
-            stage_model.attributes[AttributesIndex.DAMAGE],
-            stage_model.attributes[AttributesIndex.DEFENSE],
+            stage_model.attributes[Attributes.MAX_HP],
+            stage_model.attributes[Attributes.CUR_HP],
+            stage_model.attributes[Attributes.DAMAGE],
+            stage_model.attributes[Attributes.DEFENSE],
         )
 
         # 记录用

@@ -1,14 +1,16 @@
 from typing import List, TypedDict
 from pydantic import BaseModel
-from enum import IntEnum
+from enum import IntEnum, unique
 
 
-class AttributesIndex(IntEnum):
+@unique
+class Attributes(IntEnum):
     MAX_HP = 0
     CUR_HP = 1
     DAMAGE = 2
     DEFENSE = 3
     MAX = 20
+    BASE_VALUE_SCALE = 100
 
 
 class PropInstanceModel(BaseModel):

@@ -166,12 +166,12 @@ def create_web_rpg_game(game_resource: RPGGameResource) -> Optional[WebGame]:
 
 
 #######################################################################################################################################
-def get_props_in_stage(game_name: RPGGame, player_entity: Entity) -> List[PropFile]:
-    stage_entity = game_name.context.safe_get_stage_entity(player_entity)
-    if stage_entity is None:
-        return []
-    stage_name = game_name.context.safe_get_entity_name(stage_entity)
-    return game_name.context.file_system.get_files(PropFile, stage_name)
+# def get_props_in_stage(game_name: RPGGame, player_entity: Entity) -> List[PropFile]:
+#     stage_entity = game_name.context.safe_get_stage_entity(player_entity)
+#     if stage_entity is None:
+#         return []
+#     stage_name = game_name.context.safe_get_entity_name(stage_entity)
+#     return game_name.context.file_system.get_files(PropFile, stage_name)
 
 
 #######################################################################################################################################

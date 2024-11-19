@@ -251,3 +251,60 @@
 ############################################################################################################
 ############################################################################################################
 ############################################################################################################
+
+
+"""
+actor_prop = actor_props
+actor_current_using_prop = actor_equipped_props
+actors_in_stage= actors_on_stage
+groups_in_stage = groups_on_stage
+spawn = spawn_config
+spawners_in_stage = spawners_on_stage
+
+
+
+
+我的游戏中有如下3个核心概念：
+1. Actor。演员。
+2. Stage。舞台。
+3, Prop。道具。
+
+有2个Actor的系统：
+1. Group。组。用于表达一组Actor的集合。
+2. Spawn。生成。用于表达Actor的生成。
+
+我现在的需求是根据以上我的设定，起一些变量的名字。用于我的代码。
+1. Actor身上的Prop。
+2. Actor当前装备的Prop。
+3. 在Stage中的Actors。
+4. 在Stage中的Groups。
+5. Spawn的设置信息（就是驱动其如何生成Actors的数据）
+6. 在Stage中的Spawners。
+
+请仔细思考，给我这些变量的名字。
+
+
+
+根据你的设定和需求，这里是为这些变量推荐的名称：
+
+Actor身上的Prop：
+
+actorProps 或 carriedProps：清晰表达Actor携带的道具。
+Actor当前装备的Prop：
+
+equippedProps 或 actorEquippedProps：突出Actor当前已装备的道具。
+在Stage中的Actors：
+
+stageActors 或 actorsOnStage：表明Stage中的所有Actor。
+在Stage中的Groups：
+
+stageGroups 或 groupsOnStage：表达Stage中存在的Actor组。
+Spawn的设置信息：
+
+spawnConfig 或 spawnSettings：表示用于生成Actor的配置数据。
+在Stage中的Spawners：
+
+stageSpawners 或 spawnersOnStage：指出在Stage中用于生成Actor的生成器。
+这些名称尽量简洁明了，便于理解并符合你的游戏设定。希望这些建议对你有帮助！
+
+"""

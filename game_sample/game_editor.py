@@ -358,8 +358,8 @@ class ExcelEditorGame:
         validated_spawner_tracker: Dict[str, int] = {}
         for unqiue_data_base_spawn in model.database.spawners:
             for stage in model.stages:
-                for spawner_in_stage in stage.spawners:
-                    if unqiue_data_base_spawn.name == spawner_in_stage:
+                for spawner_on_stage in stage.spawners:
+                    if unqiue_data_base_spawn.name == spawner_on_stage:
                         validated_spawner_tracker[unqiue_data_base_spawn.name] = (
                             validated_spawner_tracker.get(
                                 unqiue_data_base_spawn.name, 0

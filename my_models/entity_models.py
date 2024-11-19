@@ -23,7 +23,7 @@ class ActorInstanceModel(BaseModel):
     name: str
     guid: int
     props: List[PropInstanceModel]
-    actor_current_using_prop: List[str]
+    actor_equipped_props: List[str]
 
 
 class StageActorInstanceProxy(TypedDict, total=True):

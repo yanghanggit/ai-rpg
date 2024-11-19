@@ -108,8 +108,8 @@ class ExcelEditorStage:
 
     ################################################################################################################################
     @property
-    def actors_in_stage(self) -> List[str]:
-        data: Optional[str] = self._data[EditorProperty.ACTORS_IN_STAGE]
+    def actors_on_stage(self) -> List[str]:
+        data: Optional[str] = self._data[EditorProperty.ACTORS_ON_STAGE]
         if data is None:
             return []
         return data.split(";")
@@ -122,11 +122,11 @@ class ExcelEditorStage:
             self._data[EditorProperty.STAGE_GRAPH] = ";".join(stage_graph)
 
     ################################################################################################################################
-    def parse_actors_in_stage(self) -> List[ExcelDataActor]:
+    def parse_actors_on_stage(self) -> List[ExcelDataActor]:
 
         ret: List[ExcelDataActor] = []
 
-        for actor_name in self.actors_in_stage:
+        for actor_name in self.actors_on_stage:
             if actor_name in self._actor_data_base:
                 ret.append(self._actor_data_base[actor_name])
             else:
@@ -135,7 +135,7 @@ class ExcelEditorStage:
         return ret
 
     ################################################################################################################################
-    def gen_actors_instances_in_stage(
+    def gen_actors_instances_on_stage(
         self, actors: List[ExcelDataActor], actors_in_groups: List[ExcelEditorActor]
     ) -> List[StageActorInstanceProxy]:
         ret: List[StageActorInstanceProxy] = []
@@ -168,16 +168,16 @@ class ExcelEditorStage:
         return StageInstanceModel(
             name=self.excel_data.name,
             guid=editor_guid_generator.gen_stage_guid(self.excel_data.name),
-            actors=self.gen_actors_instances_in_stage(
-                self.parse_actors_in_stage(), self._actor_group
+            actors=self.gen_actors_instances_on_stage(
+                self.parse_actors_on_stage(), self._actor_group
             ),
-            spawners=self.spawners_in_stage,
+            spawners=self.spawners_on_stage,
         )
 
     ################################################################################################################################
     @property
-    def groups_in_stage(self) -> List[ComplexActorName]:
-        org_data: Optional[str] = self._data[EditorProperty.GROUPS_IN_STAGE]
+    def groups_on_stage(self) -> List[ComplexActorName]:
+        org_data: Optional[str] = self._data[EditorProperty.GROUPS_ON_STAGE]
         if org_data is None:
             return []
         ret = org_data.split(";")
@@ -185,12 +185,12 @@ class ExcelEditorStage:
 
     ################################################################################################################################
     @property
-    def spawners_in_stage(self) -> List[str]:
+    def spawners_on_stage(self) -> List[str]:
 
         if not configuration.EN_SPAWNER_FEATURE:
             return []
 
-        org_data: Optional[str] = self._data[EditorProperty.SPAWNERS_IN_STAGE]
+        org_data: Optional[str] = self._data[EditorProperty.SPAWNERS_ON_STAGE]
         if org_data is None:
             return []
         ret = org_data.split(";")
@@ -203,7 +203,7 @@ class ExcelEditorStage:
 
         ret: Set[str] = set()
 
-        for complex_group_name in self.groups_in_stage:
+        for complex_group_name in self.groups_on_stage:
 
             if complex_group_name.group_name not in global_group:
                 assert False, f"Invalid group: {complex_group_name.group_name}"

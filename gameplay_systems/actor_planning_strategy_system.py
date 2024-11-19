@@ -95,7 +95,7 @@ class ActorPlanningStrategySystem(InitializeProcessor, ExecuteProcessor):
     ) -> None:
 
         stage_name = stage_entity.get(StageComponent).name
-        actor_names = self._context.retrieve_actor_names_in_stage(stage_entity)
+        actor_names = self._context.retrieve_actor_names_on_stage(stage_entity)
 
         # step1: 移除新进入场景的
         if len(append_recent_stage_transition_actors) > 0:

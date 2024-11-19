@@ -18,14 +18,14 @@ class EditorProperty(StrEnum):
     NAME = "name"
     ATTRIBUTES = "attributes"
     KICK_OFF_MESSAGE = "kick_off_message"
-    ACTOR_CURRENT_USING_PROP = "actor_current_using_prop"
-    ACTOR_PROP = "actor_prop"
+    ACTOR_EQUIPPED_PROPS = "actor_equipped_props"
+    ACTOR_PROPS = "actor_props"
     STAGE_GRAPH = "stage_graph"
-    ACTORS_IN_STAGE = "actors_in_stage"
-    GROUPS_IN_STAGE = "groups_in_stage"
+    ACTORS_ON_STAGE = "actors_on_stage"
+    GROUPS_ON_STAGE = "groups_on_stage"
     DESCRIPTION = "description"
-    SPAWN = "spawn"
-    SPAWNERS_IN_STAGE = "spawners_in_stage"
+    SPAWN_CONFIG = "spawn_config"
+    SPAWNERS_ON_STAGE = "spawners_on_stage"
 
 
 @unique

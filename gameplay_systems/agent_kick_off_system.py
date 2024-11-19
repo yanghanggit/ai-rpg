@@ -45,13 +45,13 @@ def _generate_actor_kick_off_prompt(kick_off_message: str, epoch_script: str) ->
 ###############################################################################################################################################
 def _generate_stage_kick_off_prompt(
     kick_off_message: str,
-    input_actors_in_stage: Set[str],
+    input_actors_on_stage: Set[str],
     epoch_script: str,
 ) -> str:
 
-    actors_in_stage_prompt = list(input_actors_in_stage)
-    if len(actors_in_stage_prompt) == 0:
-        actors_in_stage_prompt.append("无")
+    actors_on_stage_prompt = list(input_actors_on_stage)
+    if len(actors_on_stage_prompt) == 0:
+        actors_on_stage_prompt.append("无")
 
     return f"""# 游戏启动!
 见‘游戏流程’-‘游戏启动’，游戏系统将提供初始设定，包括角色、场景、道具信息，以及剧情开端。
@@ -61,7 +61,7 @@ def _generate_stage_kick_off_prompt(
 {epoch_script}
 
 ## 场景内的角色
-{"\n".join(actors_in_stage_prompt)}
+{"\n".join(actors_on_stage_prompt)}
 
 ## 你的初始设定
 {kick_off_message}
@@ -180,7 +180,7 @@ class AgentKickOffSystem(ExecuteProcessor):
             kick_off_comp = stage_entity.get(KickOffContentComponent)
             kick_off_prompt = _generate_stage_kick_off_prompt(
                 kick_off_message=kick_off_comp.content,
-                input_actors_in_stage=self._context.retrieve_actor_names_in_stage(
+                input_actors_on_stage=self._context.retrieve_actor_names_on_stage(
                     stage_entity
                 ),
                 epoch_script=self._game.epoch_script,

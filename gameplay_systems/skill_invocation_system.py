@@ -87,7 +87,7 @@ class SkillCommandParser:
     def parse(
         self,
         stage_name: str,
-        actors_in_stage: Set[str],
+        actors_on_stage: Set[str],
         skill_prop_files: Set[PropFile],
         accessory_prop_files: Set[PropFile],
     ) -> None:
@@ -97,7 +97,7 @@ class SkillCommandParser:
             self._parse_command(
                 parsed_command=parsed_command,
                 stage_name=stage_name,
-                actors_in_stage=actors_in_stage,
+                actors_on_stage=actors_on_stage,
                 skill_prop_files=skill_prop_files,
                 accessory_prop_files=accessory_prop_files,
             )
@@ -115,7 +115,7 @@ class SkillCommandParser:
         self,
         parsed_command: str,
         stage_name: str,
-        actors_in_stage: Set[str],
+        actors_on_stage: Set[str],
         skill_prop_files: Set[PropFile],
         accessory_prop_files: Set[PropFile],
     ) -> None:
@@ -124,7 +124,7 @@ class SkillCommandParser:
         if stage_name in parsed_command:
             self._targets.setdefault(stage_name, parsed_command)
         else:
-            for actor_name in actors_in_stage:
+            for actor_name in actors_on_stage:
                 if actor_name in parsed_command:
                     self._targets.setdefault(actor_name, parsed_command)
 
@@ -248,7 +248,7 @@ class SkillInvocationSystem(ReactiveProcessor):
         )
         skill_command_parser.parse(
             actor_entity.get(ActorComponent).current_stage,
-            self._context.retrieve_actor_names_in_stage(actor_entity),
+            self._context.retrieve_actor_names_on_stage(actor_entity),
             set(actor_status_evaluator.skill_prop_files),
             set(actor_status_evaluator.available_skill_accessory_prop_files),
         )

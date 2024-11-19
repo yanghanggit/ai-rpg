@@ -39,7 +39,7 @@ class StageNarrateActionSystem(ReactiveProcessor):
             return
 
         stage_narrate_content = " ".join(stage_narrate_action.values)
-        actor_entities = self._context.retrieve_actors_in_stage(stage_entity)
+        actor_entities = self._context.retrieve_actors_on_stage(stage_entity)
         for actor_entity in actor_entities:
 
             actor_name = self._context.safe_get_entity_name(actor_entity)

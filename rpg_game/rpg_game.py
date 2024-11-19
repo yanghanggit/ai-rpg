@@ -384,7 +384,7 @@ class RPGGame(BaseGame):
         # 文件系统准备好之后，设置当前使用的道具
         weapon_prop_file: Optional[PropFile] = None
         clothes_prop_file: Optional[PropFile] = None
-        for prop_name in actor_instance.actor_current_using_prop:
+        for prop_name in actor_instance.actor_equipped_props:
 
             find_prop_file_weapon_or_clothes = context.file_system.get_file(
                 PropFile, actor_instance.name, prop_name

@@ -116,16 +116,16 @@ class SaveGameResourceSystem(ExecuteProcessor):
             name=actor_comp.name,
             guid=guid_comp.GUID,
             props=self._generate_prop_instance_models(actor_entity),
-            actor_current_using_prop=[],
+            actor_equipped_props=[],
         )
 
         if actor_entity.has(WeaponComponent):
             current_weapon_comp = actor_entity.get(WeaponComponent)
-            ret.actor_current_using_prop.append(current_weapon_comp.propname)
+            ret.actor_equipped_props.append(current_weapon_comp.propname)
 
         if actor_entity.has(ClothesComponent):
             current_clothes_comp = actor_entity.get(ClothesComponent)
-            ret.actor_current_using_prop.append(current_clothes_comp.propname)
+            ret.actor_equipped_props.append(current_clothes_comp.propname)
 
         return ret
 
@@ -161,7 +161,7 @@ class SaveGameResourceSystem(ExecuteProcessor):
             spawners=stage_spawner_comp.spawners,
         )
 
-        actor_entities = self._context.retrieve_actors_in_stage(stage_entity)
+        actor_entities = self._context.retrieve_actors_on_stage(stage_entity)
         for actor_entity in actor_entities:
             ret.actors.append(
                 {"name": self._context.safe_get_entity_name(actor_entity)}

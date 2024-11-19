@@ -226,10 +226,10 @@ class GoToActionSystem(ReactiveProcessor):
             return
 
         # 外观拿出来。
-        actor_appearance_in_stage = self._context.retrieve_stage_actor_appearance(
+        actor_appearance_on_stage = self._context.retrieve_stage_actor_appearance(
             helper.current_stage_entity
         )
-        actor_appearance_in_stage.pop(my_name)
+        actor_appearance_on_stage.pop(my_name)
 
         # 最后通知
         self._context.notify_event(
@@ -239,7 +239,7 @@ class GoToActionSystem(ReactiveProcessor):
                     actor_name=my_name,
                     current_stage=helper._current_stage_name,
                     stage_narrate=stage_archive.stage_narrate,
-                    actor_appearance_mapping=actor_appearance_in_stage,
+                    actor_appearance_mapping=actor_appearance_on_stage,
                 )
             ),
         )

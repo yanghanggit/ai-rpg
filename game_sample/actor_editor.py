@@ -108,17 +108,17 @@ class ExcelEditorActor:
 
     #################################################################################################################################
     @property
-    def actor_current_using_prop(self) -> List[str]:
+    def actor_equipped_props(self) -> List[str]:
         assert self._data is not None
-        raw_string = cast(str, self._data[EditorProperty.ACTOR_CURRENT_USING_PROP])
+        raw_string = cast(str, self._data[EditorProperty.ACTOR_EQUIPPED_PROPS])
         if raw_string is None:
             return []
         return [str(attr) for attr in raw_string.split(";")]
 
     #################################################################################################################################
     @property
-    def actor_prop(self) -> List[str]:
-        data: Optional[str] = self._data[EditorProperty.ACTOR_PROP]
+    def actor_props(self) -> List[str]:
+        data: Optional[str] = self._data[EditorProperty.ACTOR_PROPS]
         if data is None:
             return []
 
@@ -136,8 +136,7 @@ class ExcelEditorActor:
 
         ret: List[tuple[ExcelDataProp, int]] = []
 
-        actor_prop = self.actor_prop
-        for prop_info in actor_prop:
+        for prop_info in self.actor_props:
             if prop_info == "":
                 continue
 
@@ -179,7 +178,7 @@ class ExcelEditorActor:
             name="",
             guid=self._resolve_guid(),
             props=[],
-            actor_current_using_prop=self.actor_current_using_prop,
+            actor_equipped_props=self.actor_equipped_props,
         )
 
         if self._complex_name.is_complex_name:

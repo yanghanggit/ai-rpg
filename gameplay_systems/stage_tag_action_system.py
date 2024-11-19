@@ -38,7 +38,7 @@ class StageTagActionSystem(ReactiveProcessor):
         if len(stage_tag_action.values) == 0:
             return
 
-        actor_entities = self._context.retrieve_actors_in_stage(stage_entity)
+        actor_entities = self._context.retrieve_actors_on_stage(stage_entity)
         for actor_entity in actor_entities:
 
             actor_name = self._context.safe_get_entity_name(actor_entity)

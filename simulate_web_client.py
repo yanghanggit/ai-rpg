@@ -96,9 +96,7 @@ def _login(
     if not state_manager.can_transition(GameState.LOGGED_IN):
         return
 
-    input_username = input(
-        f"客户端启动，需要输入用户(默认为 [{default_user_name}] ):"
-    )
+    input_username = input(f"客户端启动，需要输入用户(默认为 [{default_user_name}] ):")
 
     assert default_user_name != ""
     if input_username == "" and default_user_name != "":

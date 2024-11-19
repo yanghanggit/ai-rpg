@@ -120,7 +120,7 @@ class RPGEntitasContext(Context):
         return None
 
     #############################################################################################################################
-    def _retrieve_actors_in_stage(self, stage_name: str) -> Set[Entity]:
+    def _retrieve_actors_on_stage(self, stage_name: str) -> Set[Entity]:
         # 测试！！！
         stage_tag_component = (
             self._query_component_system.get_stage_tag_component_class(stage_name)
@@ -131,16 +131,16 @@ class RPGEntitasContext(Context):
         return set(entities)
 
     #############################################################################################################################
-    def retrieve_actors_in_stage(self, entity: Entity) -> Set[Entity]:
+    def retrieve_actors_on_stage(self, entity: Entity) -> Set[Entity]:
         stage_entity = self.safe_get_stage_entity(entity)
         if stage_entity is None:
             return set()
         stage_comp = stage_entity.get(StageComponent)
-        return self._retrieve_actors_in_stage(stage_comp.name)
+        return self._retrieve_actors_on_stage(stage_comp.name)
 
     #############################################################################################################################
-    def retrieve_actor_names_in_stage(self, entity: Entity) -> Set[str]:
-        actors = self.retrieve_actors_in_stage(entity)
+    def retrieve_actor_names_on_stage(self, entity: Entity) -> Set[str]:
+        actors = self.retrieve_actors_on_stage(entity)
         ret: Set[str] = set()
         for actor in actors:
             actor_comp = actor.get(ActorComponent)
@@ -231,7 +231,7 @@ class RPGEntitasContext(Context):
     def retrieve_stage_actor_appearance(self, actor_entity: Entity) -> Dict[str, str]:
 
         ret: Dict[str, str] = {}
-        for actor in self.retrieve_actors_in_stage(actor_entity):
+        for actor in self.retrieve_actors_on_stage(actor_entity):
             if not actor.has(FinalAppearanceComponent):
                 continue
 
@@ -263,7 +263,7 @@ class RPGEntitasContext(Context):
         if stage_entity is None:
             return
 
-        need_broadcast_entities = self.retrieve_actors_in_stage(stage_entity)
+        need_broadcast_entities = self.retrieve_actors_on_stage(stage_entity)
         need_broadcast_entities.add(stage_entity)
 
         if len(exclude_entities) > 0:

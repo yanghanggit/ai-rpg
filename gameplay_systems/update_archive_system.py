@@ -46,7 +46,7 @@ class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
         ).entities
 
         for stage_entity in stage_entities:
-            actor_entities = self._context.retrieve_actors_in_stage(stage_entity)
+            actor_entities = self._context.retrieve_actors_on_stage(stage_entity)
             if len(actor_entities) == 0:
                 continue
             appearance_info = self._context.retrieve_stage_actor_appearance(

@@ -45,7 +45,7 @@ class ExcelEditorSpawner:
     @property
     def spawn(self) -> List[ComplexActorName]:
         assert self._data is not None
-        raw_string = cast(str, self._data[EditorProperty.SPAWN])
+        raw_string = cast(str, self._data[EditorProperty.SPAWN_CONFIG])
         if raw_string is None:
             return []
         tmp = [str(attr) for attr in raw_string.split(";")]

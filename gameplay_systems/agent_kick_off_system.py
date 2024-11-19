@@ -66,7 +66,7 @@ def _generate_stage_kick_off_prompt(
 ## 你的初始设定
 {kick_off_message}
 
-{gameplay_systems.prompt_utils.generate_stage_narrate_action_prompt()}
+{gameplay_systems.prompt_utils.insert_stage_narrate_action_prompt()}
 
 ## 输出要求
 - 生成的内容应符合当前世界背景。

@@ -97,7 +97,7 @@ def _login(
         return
 
     input_username = input(
-        f"客户端启动，需要输入用户名字(默认为 [{default_user_name}] ):"
+        f"客户端启动，需要输入用户(默认为 [{default_user_name}] ):"
     )
 
     assert default_user_name != ""
@@ -105,7 +105,7 @@ def _login(
         input_username = default_user_name
 
     if input_username == "":
-        logger.error("用户名不能为空!")
+        logger.error("不能为空!")
         return
 
     response = requests.post(
@@ -138,7 +138,7 @@ def _create_game(
         return
 
     input_game_name = input(
-        f"{client_context._user_name} 准备创建一个游戏,请输入游戏的名字(建议是 World1/World2/World3/World4 之一):"
+        f"{client_context._user_name} 准备创建一个游戏,请输入游戏的(建议是 World1/World2/World3/World4/World5 之一):"
     )
 
     response = requests.post(

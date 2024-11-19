@@ -55,7 +55,7 @@ ACTOR_SYS_PROMPT_TEMPLATE = f"""# {configuration.SystemPromptReplaceSymbol.NAME}
     "{MindVoiceAction.__name__}":["你的内心独白",...], 
     "{GoToAction.__name__}":["前往的场景全名"], 
     "{GivePropAction.__name__}":["@道具接收角色全名/交付的道具全名"], 
-    "{EquipPropAction.__name__}":["你拥有的(武器)道具全名", "你拥有的(衣服)道具全名"], 
+    "{EquipPropAction.__name__}":["你想要装备的武器的道具全名", "你想要装备的衣服的道具全名"], 
 {game_sample.builtin_prompt.JSON_SAMPLE_END}
 
 ### 注意事项

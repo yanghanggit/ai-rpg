@@ -20,7 +20,7 @@ class AgentAppReplaceSymbol(StrEnum):
     API = "<%API>"
 
 
-# Excel文件中的Sheet名称
+# Excel文件中的Sheet
 ACTOR_SHEET_NAME = "Actor"
 STAGE_SHEET_NAME = "Stage"
 PROP_SHEET_NAME = "Prop"

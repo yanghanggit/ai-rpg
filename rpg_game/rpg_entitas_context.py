@@ -40,7 +40,7 @@ class RPGEntitasContext(Context):
         # agent 系统
         self._agent_system: LangServeAgentSystem = langserve_agent_system
 
-        # 代码名字组件系统（方便快速查找用）
+        # （方便快速查找用）
         self._query_component_system: QueryComponentSystem = query_component_system
 
         # 混沌工程系统

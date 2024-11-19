@@ -128,7 +128,7 @@ class RPGGameResource:
 
     def __init__(self, name: str, data: Any, game_runtime_dir: Path) -> None:
 
-        # 资源的名字也是游戏的名字
+        # 
         self._game_name: str = name
 
         # 运行时路径保存

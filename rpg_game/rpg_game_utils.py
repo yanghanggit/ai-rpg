@@ -224,7 +224,6 @@ def gen_player_watch_action_model(
     if len(actors_info_prompts) == 0:
         actors_info_prompts.append("- 场景内无其他角色。")
 
-    # 场景名称
     stage_entity = game_name.context.safe_get_stage_entity(player_entity)
     assert stage_entity is not None
     stage_name = game_name.context.safe_get_entity_name(stage_entity)

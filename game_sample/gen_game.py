@@ -128,7 +128,7 @@ def main(game_names: List[str]) -> None:
     # 测试这个世界编辑
     if len(game_names) == 0:
         input_target_game_name = input(
-            "输入要创建的World的名字(必须对应excel中的sheet名):"
+            "输入要创建的World的(必须对应excel中的sheet):"
         )
         if input_target_game_name != "":
             gen_games.append(input_target_game_name)
@@ -198,4 +198,4 @@ def main(game_names: List[str]) -> None:
 
 ############################################################################################################
 if __name__ == "__main__":
-    main(["World1", "World2", "World3", "World4"])
+    main(["World1", "World2", "World3", "World4", "World5"])

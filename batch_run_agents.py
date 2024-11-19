@@ -79,7 +79,6 @@ def _get_unique_agentpy_file_paths(unique_agentpy_names: Set[str]) -> List[Path]
 ####################################################################################################################################
 def _run_agents(game_names: List[str]) -> None:
 
-    # 抽取所有的agentpy文件的名字
     unique_agentpy_names: Set[str] = _get_unique_agentpy_names(game_names)
     if len(unique_agentpy_names) == 0:
         assert False, "unique_agentpy_names == 0"
@@ -138,7 +137,7 @@ def main() -> None:
     while True:
 
         usr_input = input(
-            f"请输入要进入的游戏名称(必须与自动化创建的名字一致), 可以是{available_games}之一，空输入为全部生成:"
+            f"请输入要进入的游戏(必须与自动化创建一致), 可以是{available_games}之一，空输入为全部生成:"
         )
         if usr_input == "":
             final_game_names = available_games.copy()
@@ -150,7 +149,7 @@ def main() -> None:
             continue
 
     if len(final_game_names) == 0:
-        logger.error("没有找到游戏名称")
+        logger.error("没有找到游戏")
         return None
 
     _run_agents(final_game_names)

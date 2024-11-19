@@ -5,11 +5,11 @@ from my_components.action_components import StageNarrateAction
 @unique
 class PromptTag(StrEnum):
 
-    CURRENT_ROUND_TAG = "<%当前回合数>"
+    CURRENT_ROUND_TAG = "<当前回合数>"
 
-    ACTOR_PLAN_PROMPT_TAG = "<%角色计划>"
+    ACTOR_PLAN_PROMPT_TAG = "<角色计划>"
 
-    STAGE_PLAN_PROMPT_TAG = "<%场景计划>"
+    STAGE_PLAN_PROMPT_TAG = "<场景计划>"
 
     STAGE_ENTRY_TAG = "场景进入限制"
 
@@ -19,9 +19,9 @@ class PromptTag(StrEnum):
 ################################################################################################################################################
 @unique
 class SkillResultPromptTag(StrEnum):
-    SUCCESS = "</成功>"
-    CRITICAL_SUCCESS = "</大成功>"
-    FAILURE = "</失败>"
+    SUCCESS = "<成功>"
+    CRITICAL_SUCCESS = "<大成功>"
+    FAILURE = "<失败>"
 
 
 ################################################################################################################################################
@@ -32,7 +32,7 @@ def replace_you(input_text: str, your_name: str) -> str:
 
 
 ################################################################################################################################################
-def generate_stage_narrate_action_prompt() -> str:
+def insert_stage_narrate_action_prompt() -> str:
     return f"""## 注意！{StageNarrateAction.__name__} —— 场景描述 生成规则
 ### 步骤
 1. 事件回顾：回顾场景内已发生的角色行为、对话及道具使用，判断这些事件对场景状态的具体影响。场景会根据自身设定进行逻辑性变化，例如自然发展的状态变化（如火焰蔓延）。切勿推测未发生的活动。

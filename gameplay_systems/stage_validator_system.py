@@ -20,8 +20,8 @@ def _generate_stage_validation_error_prompt(actor_name: str, stage_name: str) ->
     return f"""# 提示：{actor_name} 无法前往场景：{stage_name}
 ## 原因分析
 1. 场景: {stage_name}，目前不可访问，可能未开放或已关闭。
-2. 场景名称格式错误，例如使用“xxx的深处/北部/边缘/附近/其他区域”，会导致识别失败。
-3. 请确保使用的 场景名称（见‘全名机制’）严格匹配！
+2. 场景全名格式错误，例如使用“xxx的深处/北部/边缘/附近/其他区域”，会导致识别失败。
+3. 请确保使用的 场景全名（见‘全名机制’）严格匹配！
 4. {actor_name} 当前所在的场景与目标场景:{stage_name} 之间没有路径连接。
 
 ## 建议

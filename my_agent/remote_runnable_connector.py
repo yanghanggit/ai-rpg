@@ -19,13 +19,13 @@ class RemoteRunnableConnector:
     async def establish_connection(self, message: str) -> bool:
 
         if self._remote_runnable is not None:
-            logger.error(f"initialize_connection: already initialized = {self._url}")
+            logger.error(f"pin establish_connection: already initialized = {self._url}")
             return False
 
         remote_runnable = await self._establish_remote_runnable(self._url, message)
         if remote_runnable is None:
             logger.error(
-                f"initialize_connection: remote_runnable is None = {self._url}"
+                f"pin establish_connection: remote_runnable is None = {self._url}"
             )
             return False
 
@@ -47,14 +47,14 @@ class RemoteRunnableConnector:
             )
 
             if response is None:
-                logger.error(f"initialize_connection: response is None")
+                logger.error(f"_establish_remote_runnable: response is None")
                 return None
 
-            logger.info(f"initialize_connection: {response["output"]}")
+            logger.info(f"_establish_remote_runnable: {response["output"]}")
             return remote_runnable
 
         except Exception as e:
-            logger.error(f"initialize_connection error: {e}")
+            logger.error(f"_establish_remote_runnable error: {e}")
 
         return None
 

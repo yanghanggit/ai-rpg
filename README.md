@@ -11,7 +11,7 @@ conda activate Name
 
 pip install langchain langchain_core langserve fastapi langchain_openai sse_starlette faiss-cpu loguru mypy pandas openpyxl overrides Jinja2 jsonschema black
 
-# Name 是环境的名字，任取。
+# Name 是环境的名，任取。
 # 如果用vscode 进行代码调试，需要用 >Python Interpreter. 将python环境指向这个Name代表的环境
 ```
 

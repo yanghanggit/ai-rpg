@@ -57,7 +57,7 @@ def _generate_exit_conditions_prompt(
 
 # 本次输出结果格式要求。需遵循 输出格式指南:
 {{
-    {WhisperAction.__name__}: ["@角色名字(你要对谁说,只能是场景内的角色)>你想私下说的内容，即描述允许离开或不允许的原因，使{actor_name}明白"],
+    {WhisperAction.__name__}: ["@角色全名(你要对谁说,只能是场景内的角色)>你想私下说的内容，即描述允许离开或不允许的原因，使{actor_name}明白"],
     {TagAction.__name__}: ["Yes/No"]
 }}
 ## 附注

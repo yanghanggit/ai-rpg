@@ -5,11 +5,25 @@ import gameplay_systems.action_component_utils
 from typing import final, override
 import my_format_string.target_message
 from rpg_game.rpg_game import RPGGame
-from my_models.event_models import SpeakEvent
+from my_models.event_models import SpeakEvent, AgentEvent
 
 
+####################################################################################################################################
 def _generate_speak_prompt(speaker_name: str, target_name: str, content: str) -> str:
     return f"# 发生事件: {speaker_name} 对 {target_name} 说: {content}"
+
+
+####################################################################################################################################
+def _generate_invalid_speak_target_prompt(speaker_name: str, target_name: str) -> str:
+    return f"""# 提示: {speaker_name} 试图和一个不存在的目标 {target_name} 进行对话。
+## 原因分析与建议
+- 请检查目标的全名: {target_name}，确保是完整匹配:游戏规则-全名机制
+- 请检查目标是否存在于当前场景中。"""
+
+
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
 
 
 ####################################################################################################################################
@@ -46,23 +60,41 @@ class SpeakActionSystem(ReactiveProcessor):
             )
         )
 
-        for tp in target_and_message:
-            if (
-                gameplay_systems.action_component_utils.validate_conversation(
-                    self._context, entity, tp[0]
-                )
-                != gameplay_systems.action_component_utils.ConversationError.VALID
-            ):
+        for target_name, message in target_and_message:
+
+            # 关键的检查
+            error = gameplay_systems.action_component_utils.validate_conversation(
+                self._context, entity, target_name
+            )
+            if error != gameplay_systems.action_component_utils.ConversationError.VALID:
+
+                if (
+                    error
+                    == gameplay_systems.action_component_utils.ConversationError.INVALID_TARGET
+                ):
+                    self._context.notify_event(
+                        set({entity}),
+                        AgentEvent(
+                            message=_generate_invalid_speak_target_prompt(
+                                speak_action.name, target_name
+                            ),
+                        ),
+                    )
+
+                # 总之就是不对，不会继续执行。
                 continue
 
-            assert self._context.get_entity_by_name(tp[0]) is not None
+            # 正式的对话
+            assert self._context.get_entity_by_name(target_name) is not None
             self._context.broadcast_event(
                 entity,
                 SpeakEvent(
-                    message=_generate_speak_prompt(speak_action.name, tp[0], tp[1]),
+                    message=_generate_speak_prompt(
+                        speak_action.name, target_name, message
+                    ),
                     speaker_name=speak_action.name,
-                    target_name=tp[0],
-                    content=tp[1],
+                    target_name=target_name,
+                    content=message,
                 ),
             )
 

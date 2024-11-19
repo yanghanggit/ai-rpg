@@ -46,7 +46,7 @@ def _generate_stage_plan_prompt(
 ## 场景内的角色
 {"\n".join(actor_appearance_mapping_prompt)}
 
-{gameplay_systems.prompt_utils.generate_stage_narrate_action_prompt()}
+{gameplay_systems.prompt_utils.insert_stage_narrate_action_prompt()}
 
 ## 输出要求
 - 请遵循 输出格式指南。

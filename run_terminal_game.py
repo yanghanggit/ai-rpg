@@ -22,9 +22,8 @@ class TerminalGameOption:
 
 async def run_terminal_game(option: TerminalGameOption) -> None:
 
-    # 输入要进入的世界名称
     game_name = input(
-        f"请输入要进入的世界名称(必须与自动化创建的名字一致), 默认为 {option.default_game}:"
+        f"请输入要进入的世界(必须与自动化创建的一致), 默认为 {option.default_game}:"
     )
 
     # 如果没有输入就用默认的
@@ -294,7 +293,7 @@ if __name__ == "__main__":
 
     option = TerminalGameOption(
         user_name="北京柏林互动科技有限公司",
-        default_game="World4",
+        default_game="World5",
         check_game_resource_version=rpg_game_config.CHECK_GAME_RESOURCE_VERSION,
         show_client_message_count=20,
     )

@@ -154,7 +154,7 @@ def _generate_world_harmony_inspector_prompt(
 
 ### 关于 {AnnounceAction.__name__} 的输出结果的规则如下
 - 如果你的判断是 {prompt_utils.SkillResultPromptTag.SUCCESS} 或 {prompt_utils.SkillResultPromptTag.CRITICAL_SUCCESS}。
-    - 必须包含如下信息：{actor_name}的名字（技能使用者），释放的技能的描述，技能释放的目标的名字，配置的道具的信息。
+    - 必须包含如下信息：{actor_name}的全名（技能使用者），释放的技能的描述，技能释放的目标的全名，配置的道具的信息。
     - 做出逻辑合理的句子描述（可以适当润色），来表达 {actor_name} 使用技能的使用过程。但不要判断技能命中目标之后，目标的可能反应。
     - 请注意，用第三人称的描述。  
 - 如果你的判断是 {prompt_utils.SkillResultPromptTag.FAILURE}。

@@ -12,6 +12,7 @@ from my_components.action_components import (
     StageNarrateAction,
     GoToAction,
     TagAction,
+    EquipPropAction,
 )
 from my_agent.agent_plan import AgentPlanResponse
 from rpg_game.rpg_entitas_context import RPGEntitasContext
@@ -101,7 +102,7 @@ def _generate_actor_plan_prompt(
 ### 场景描述
 {stage_enviro_narrate}
 
-### (如从本场景离开)你可以去往的场景
+### (如从本场景离开)你可以去往的场景，即动作 {GoToAction.__name__} 可以执行的目标场景
 {"\n".join(stage_graph)}   
 
 ## 场景内的角色
@@ -110,15 +111,18 @@ def _generate_actor_plan_prompt(
 ## 你的健康状态
 {f"生命值: {health_ratio:.2f}%"}
 
-## 你的道具
+## 你的全部道具
 {"\n".join(props_prompt)}
 
-## 你当前装备的道具
-- {current_weapon is not None and current_weapon.name or "无"}
-- {current_clothes is not None and current_clothes.name or "无"}
+## 你已经装备的道具
+- 武器: {current_weapon is not None and current_weapon.name or "无"}
+- 衣服: {current_clothes is not None and current_clothes.name or "无"}
 
-## 小建议
-- 请随时保持装备武器与衣服的状态(前提是你拥有）。
+## 小贴士
+### 关于动作: {EquipPropAction.__name__}。
+- 若你未装备任何武器或衣服，可从“你的全部道具”中选择武器或衣服进行装备。
+- 若你已装备武器或衣服，可根据需要和计划进行更换。
+- 请避免重复装备相同的道具，以免无效操作。
 
 ## 输出要求
 - 请遵循 输出格式指南。

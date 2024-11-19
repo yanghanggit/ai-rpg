@@ -71,7 +71,7 @@ class StageSpawnerSystem(ExecuteProcessor):
             actor_intance_deep_copy = copy.deepcopy(actor_intance_as_prototype)
             # 生成一个guid
             gen_new_guid = self._gen_actor_guid()
-            # 生成一个新的名字 + 修改名字和guid
+            # 生成一个新的 + guid
             actor_intance_deep_copy.name = ComplexActorName.format_name_with_guid(
                 ComplexActorName.extract_name(actor_instance_as_prototype_name),
                 gen_new_guid,

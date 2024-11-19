@@ -5,7 +5,7 @@ from typing import final, override
 import gameplay_systems.action_component_utils
 import my_format_string.target_message
 from rpg_game.rpg_game import RPGGame
-from my_models.event_models import WhisperEvent
+from my_models.event_models import WhisperEvent, AgentEvent
 
 
 ################################################################################################################################################
@@ -13,6 +13,19 @@ def _generate_whisper_prompt(
     whisperer_name: str, target_name: str, content: str
 ) -> str:
     return f"# 发生事件: {whisperer_name} 对 {target_name} 私语: {content}"
+
+
+####################################################################################################################################
+def _generate_invalid_whisper_target_prompt(speaker_name: str, target_name: str) -> str:
+    return f"""# 提示: {speaker_name} 试图和一个不存在的目标 {target_name} 进行私语。
+## 原因分析与建议
+- 请检查目标的全名: {target_name}，确保目标全名是完整匹配:游戏规则-全名机制
+- 请检查目标是否存在于当前场景中。"""
+
+
+####################################################################################################################################
+####################################################################################################################################
+####################################################################################################################################
 
 
 ####################################################################################################################################
@@ -49,26 +62,43 @@ class WhisperActionSystem(ReactiveProcessor):
             )
         )
 
-        for tp in target_and_message:
-            if (
-                gameplay_systems.action_component_utils.validate_conversation(
-                    self._context, entity, tp[0]
-                )
-                != gameplay_systems.action_component_utils.ConversationError.VALID
-            ):
+        for target_name, message in target_and_message:
+
+            # 关键的检查
+            error = gameplay_systems.action_component_utils.validate_conversation(
+                self._context, entity, target_name
+            )
+            if error != gameplay_systems.action_component_utils.ConversationError.VALID:
+
+                if (
+                    error
+                    == gameplay_systems.action_component_utils.ConversationError.INVALID_TARGET
+                ):
+                    self._context.notify_event(
+                        set({entity}),
+                        AgentEvent(
+                            message=_generate_invalid_whisper_target_prompt(
+                                whisper_action.name, target_name
+                            )
+                        ),
+                    )
+
+                # 总之就是不对，不会继续执行。
                 continue
 
-            target_entity = self._context.get_entity_by_name(tp[0])
+            # 正式的执行。
+            target_entity = self._context.get_entity_by_name(target_name)
             assert target_entity is not None
-
             # 注意，只有说话者和目标之间的私语才会被广播
             self._context.notify_event(
                 set({entity, target_entity}),
                 WhisperEvent(
-                    message=_generate_whisper_prompt(whisper_action.name, tp[0], tp[1]),
+                    message=_generate_whisper_prompt(
+                        whisper_action.name, target_name, message
+                    ),
                     whisperer_name=whisper_action.name,
-                    target_name=tp[0],
-                    content=tp[1],
+                    target_name=target_name,
+                    content=message,
                 ),
             )
 

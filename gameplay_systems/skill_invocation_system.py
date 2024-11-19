@@ -319,10 +319,10 @@ class SkillInvocationSystem(ReactiveProcessor):
         skill_invocation_parser: SkillCommandParser,
     ) -> Entity:
 
-        # 角色名字
+        # 角色
         actor_name = self._context.safe_get_entity_name(entity)
 
-        # 场景名字
+        # 场景
         stage_entity = self._context.safe_get_stage_entity(entity)
         assert stage_entity is not None
         stage_name = self._context.safe_get_entity_name(stage_entity)

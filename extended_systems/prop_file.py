@@ -8,6 +8,7 @@ from my_models.entity_models import Attributes
 from my_models.file_models import (
     PropType,
     PropFileModel,
+    PropTypeName,
 )
 from extended_systems.base_file import BaseFile
 from loguru import logger
@@ -134,18 +135,18 @@ class PropFile(BaseFile):
 def _generate_prop_type_prompt(prop_file: PropFile) -> str:
 
     if prop_file.is_weapon:
-        return "武器"
+        return PropTypeName.WEAPON
     elif prop_file.is_clothes:
-        return "衣服"
+        return PropTypeName.CLOTHES
     elif prop_file.is_non_consumable_item:
-        return "非消耗品"
+        return PropTypeName.NON_CONSUMABLE_ITEM
     elif prop_file.is_special:
-        return "特殊能力"
+        return PropTypeName.SPECIAL
     elif prop_file.is_skill:
-        return "技能"
+        return PropTypeName.SKILL
 
     assert False, f"未知的道具类型:{prop_file.prop_model.type}"
-    return "未知"
+    return PropTypeName.UNKNOWN
 
 
 ###############################################################################################################################################
@@ -153,12 +154,12 @@ def _generate_prop_type_prompt(prop_file: PropFile) -> str:
 def generate_prop_file_total_prompt(prop_file: PropFile) -> str:
 
     return f"""### {prop_file.name}
-- 类型:{_generate_prop_type_prompt(prop_file)}
-- 道具描述:{prop_file.description}
-- 道具外观:{prop_file.appearance}
-- 道具数量:{prop_file.count}
-- 攻击力:{prop_file.attack}
-- 防御力:{prop_file.defense}"""
+类型: {_generate_prop_type_prompt(prop_file)}
+道具数量: {prop_file.count}
+攻击力: {prop_file.attack}
+防御力: {prop_file.defense}
+道具描述: {prop_file.description}
+道具外观: {prop_file.appearance}"""
 
 
 ###############################################################################################################################################
@@ -167,10 +168,10 @@ def generate_skill_prop_file_prompt(prop_file: PropFile) -> str:
     assert prop_file.is_skill, "不是技能文件"
 
     return f"""### {prop_file.name}
-- 类型: {_generate_prop_type_prompt(prop_file)}
-- 技能描述: {prop_file.description}
-- 攻击力: {prop_file.attack}
-- 防御力: {prop_file.defense}"""
+类型: {_generate_prop_type_prompt(prop_file)}
+攻击力: {prop_file.attack}
+防御力: {prop_file.defense}
+道具描述（技能描述）: {prop_file.description}"""
 
 
 ###############################################################################################################################################
@@ -179,9 +180,9 @@ def generate_skill_accessory_prop_file_prompt(prop_file: PropFile) -> str:
     assert not prop_file.is_skill, "不是技能文件"
 
     return f"""### {prop_file.name}
-- 类型: {_generate_prop_type_prompt(prop_file)}
-- 道具描述: {prop_file.description}
-- 道具数量: {prop_file.count}"""
+类型: {_generate_prop_type_prompt(prop_file)}
+道具数量: {prop_file.count}
+道具描述: {prop_file.description}"""
 
 
 ###############################################################################################################################################
@@ -189,8 +190,8 @@ def generate_skill_accessory_prop_file_prompt(prop_file: PropFile) -> str:
 def generate_prop_file_appearance_prompt(prop_file: PropFile) -> str:
 
     return f"""### {prop_file.name}
-- 类型: {_generate_prop_type_prompt(prop_file)}
-- 道具外观: {prop_file.appearance}"""
+类型: {_generate_prop_type_prompt(prop_file)}
+道具外观: {prop_file.appearance}"""
 
 
 ###############################################################################################################################################
@@ -198,9 +199,9 @@ def generate_prop_file_appearance_prompt(prop_file: PropFile) -> str:
 def generate_prop_file_for_stage_condition_prompt(prop_file: PropFile) -> str:
 
     return f"""### {prop_file.name}
-- 类型: {_generate_prop_type_prompt(prop_file)}
-- 道具描述: {prop_file.description}
-- 道具外观: {prop_file.appearance}"""
+类型: {_generate_prop_type_prompt(prop_file)}
+道具描述: {prop_file.description}
+道具外观: {prop_file.appearance}"""
 
 
 ###############################################################################################################################################

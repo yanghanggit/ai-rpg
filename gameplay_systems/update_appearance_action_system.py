@@ -73,7 +73,7 @@ def _generate_appearance_reasoning_prompt(
 请严格遵循以下JSON结构示例: {appearance_json_structure}
 
 ### 注意事项
-- 将“?”替换为推理结果，无需重复角色名字。
+- 将“?”替换为推理结果，无需重复角色全名。
 - 输出必须为第3人称。
 - 每个 JSON 对象只应包含上述键中的一个或多个，不得重复或使用未定义的键。
 - 输出中不应包含多余文本或解释。

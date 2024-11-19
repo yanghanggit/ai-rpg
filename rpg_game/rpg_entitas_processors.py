@@ -1,10 +1,12 @@
 from entitas import Processors  # type: ignore
-from loguru import logger
 from overrides import override
-import time
+
+# import time
 from typing import Any, cast
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from rpg_game.rpg_game_config import WorldSystemNames
+
+# from loguru import logger
 
 
 class RPGEntitasProcessors(Processors):
@@ -141,6 +143,7 @@ class RPGEntitasProcessors(Processors):
             PreActionSystem(context, rpg_game)
         )  ######## <在所有行动之前> ##############################################################
 
+        # 第一次更新外观！基本就是kickoff 用
         processors.add(
             UpdateAppearanceActionSystem(
                 context,
@@ -162,6 +165,16 @@ class RPGEntitasProcessors(Processors):
         processors.add(SpeakActionSystem(context, rpg_game))
         processors.add(PostConversationActionSystem(context, rpg_game))
 
+        ### 正式的更新外观
+        processors.add(EquipPropActionSystem(context, rpg_game))
+        processors.add(
+            UpdateAppearanceActionSystem(
+                context,
+                rpg_game,
+                WorldSystemNames.WORLD_APPEARANCE_SYSTEM_NAME,
+            )
+        )
+
         # 战斗类的行为!
         processors.add(SkillInvocationSystem(context, rpg_game))
         processors.add(SkillReadinessValidatorSystem(context, rpg_game))
@@ -179,17 +192,9 @@ class RPGEntitasProcessors(Processors):
         )  ## 战斗类行为产生结果可能有死亡，死亡之后，后面的行为都不可以做。
 
         # 交互类的行为（交换数据），在死亡之后，因为死了就不能执行
-
         processors.add(StealActionSystem(context, rpg_game))
         processors.add(GivePropActionSystem(context, rpg_game))
-        processors.add(EquipPropActionSystem(context, rpg_game))
-        processors.add(
-            UpdateAppearanceActionSystem(
-                context,
-                rpg_game,
-                WorldSystemNames.WORLD_APPEARANCE_SYSTEM_NAME,
-            )
-        )  ### 更新外观
+        # 检查与提示类行为，临时放在这个位置。
         processors.add(InspectActionSystem(context, rpg_game))
 
         # 场景切换类行为，非常重要而且必须在最后，在正式执行之前有3个系统负责检查与提示。
@@ -235,7 +240,6 @@ class RPGEntitasProcessors(Processors):
         processors.add(UpdateClientMessageSystem(context, rpg_game))
         processors.add(TerminalPlayerTipsSystem(context, rpg_game))
         processors.add(WebPlayerTipsSystem(context, rpg_game))
-
         # 在这里记录，不然少message
         processors.add(SavePlayerSystem(context, rpg_game))
 

@@ -55,6 +55,7 @@ def _generate_skill_impact_response_prompt(
 
     return prompt
 
+
 ################################################################################################################################################
 def _generate_broadcast_skill_impact_response_prompt(
     actor_name: str, target_name: str, reasoning_sentence: str, feedback_sentence: str

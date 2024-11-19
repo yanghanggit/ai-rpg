@@ -23,9 +23,6 @@ class AgentPlanResponse:
         self._actions: List[AgentAction] = []
         self._raw_response_content: str = str(response_content)
 
-
-
-
         # 准备开始处理了
         if response_content != "":
             # 处理特殊的情况, 例如出现了markdown json block与重复json的情况

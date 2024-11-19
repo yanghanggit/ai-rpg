@@ -3,6 +3,7 @@ from entitas import Matcher, ExecuteProcessor, Entity  # type: ignore
 from my_components.action_components import (
     TagAction,
     MindVoiceAction,
+    SkillAction,
 )
 from my_components.components import (
     BaseFormComponent,
@@ -77,69 +78,53 @@ from my_agent.lang_serve_agent import LangServeAgent
 ################################################################################################################################################
 def _generate_skill_readiness_validator_prompt(
     actor_name: str,
-    actor_base_form_info: str,
+    base_form: str,
     skill_prop_files: List[PropFile],
     skill_accessory_prop_files: List[PropFile],
 ) -> str:
 
-    # 组织技能的提示词
-    skill_prop_prompt: List[str] = []
-    if len(skill_prop_files) > 0:
-        for skill_prop_file in skill_prop_files:
-            assert skill_prop_file.is_skill, "不是技能文件"
-            skill_prop_prompt.append(generate_skill_prop_file_prompt(skill_prop_file))
+    assert len(skill_prop_files) == 1, "技能文件数量不为1"
 
-    if len(skill_prop_prompt) == 0:
-        skill_prop_prompt.append("### 无任何技能")
+    # 使用的技能！！！
+    skill_prop_files_prompt: List[str] = []
+    for skill_prop_file in skill_prop_files:
+        assert skill_prop_file.is_skill, "不是技能文件"
+        skill_prop_files_prompt.append(generate_skill_prop_file_prompt(skill_prop_file))
+    if len(skill_prop_files_prompt) == 0:
+        skill_prop_files_prompt.append("无任何技能")
         assert False, "技能不能为空"
 
-    # 组织道具的提示词
-    skill_accessory_prop_prompt: List[str] = []
-    if len(skill_accessory_prop_files) > 0:
-        for skill_accessory_prop_file in skill_accessory_prop_files:
-            skill_accessory_prop_prompt.append(
-                generate_skill_accessory_prop_file_prompt(skill_accessory_prop_file)
-            )
+    # 配置的道具！！
+    skill_accessory_prop_files_prompt: List[str] = []
+    for skill_accessory_prop_file in skill_accessory_prop_files:
+        skill_accessory_prop_files_prompt.append(
+            generate_skill_accessory_prop_file_prompt(skill_accessory_prop_file)
+        )
+    if len(skill_accessory_prop_files_prompt) == 0:
+        skill_accessory_prop_files_prompt.append("未配置任何道具")
 
-    if len(skill_accessory_prop_prompt) == 0:
-        skill_accessory_prop_prompt.append("### 未使用道具")
+    return f"""# {actor_name} 计划使用技能（动作：{SkillAction.__name__}）——判断是否允许使用
 
-    # 组织最终的提示词
-    ret_prompt = f"""# {actor_name} 计划使用技能，请做出判断是否允许使用。
-
-## {actor_name} 自身信息
-{actor_base_form_info}
-        
-## 要使用的技能
-{"\n".join(skill_prop_prompt)}
-
-## 使用技能时配置的道具
-{"\n".join(skill_accessory_prop_prompt)}
-
-## 判断的逻辑步骤
-1. 检查 要使用的技能 的信息。结合 {actor_name} 自身信息 判断 {actor_name} 是否满足技能释放的条件。如果不能则技能释放失败。不用继续判断。
-2. 检查 使用技能时配置的道具 的信息。结合 {actor_name} 自身信息 判断 {actor_name} 是否满足使用这些道具的条件。如果不能则技能释放失败。不用继续判断。
-3. 分支判断 是否存在 使用技能时配置的道具。
-    - 如存在。则结合 要使用的技能 与 使用技能时配置的道具 的信息进行综合半段。如果 技能对 配置的道具有明确的需求，且道具不满足，则技能释放失败。不用继续判断。
-    - 如不存在。则继续下面的步骤。
-4. 如果以上步骤都通过，则技能释放成功。
-
-## 输出格式指南
-
-### 请根据下面的示例, 确保你的输出严格遵守相应的结构。
-{{
-  "{MindVoiceAction.__name__}":["输入你的最终判断结果，技能是否可以使用成功或失败，并附带原因"],
-  "{TagAction.__name__}":["Yes/No"(即技能是否可以使用成功或失败)"]
-}}
-
+## {actor_name} 的基础形态
+{base_form}
+## 技能信息
+{"\n".join(skill_prop_files_prompt)}
+## 配置的道具信息
+{"\n".join(skill_accessory_prop_files_prompt)}
+## 判断逻辑步骤
+1. 技能条件检查：结合 {actor_name} 的基础形态和历史背景，检查技能信息是否符合释放条件。如不满足，技能释放失败，停止判断。
+2. 配置道具条件检查：结合 {actor_name} 的基础形态和历史背景，验证配置道具是否符合使用条件。如不满足，技能释放失败，停止判断。
+3. 配置道具分支判断：
+    - 若有配置道具，综合技能与道具信息进行验证。如技能对配置道具有特定要求且道具不满足，技能释放失败，停止判断。
+    - 若无配置道具，继续下一步。
+4. 最终判断：如以上条件均满足，技能释放成功。
 ### 注意事项
-- 每个 JSON 对象必须包含上述键中的一个或多个，不得重复同一个键，也不得使用不在上述中的键。
-- 输出不应包含任何超出所需 JSON 格式的额外文本、解释或总结。
-- 不要使用```json```来封装内容。"""
-
-    return ret_prompt
-
-
+上述的‘历史背景’为角色的历史经历（事件与对话等）、性格特点、外貌特征等信息，用于判断技能释放条件。
+## 输出要求
+- 请遵循输出格式指南。
+- 返回结果仅包含：{MindVoiceAction.__name__} 和 {TagAction.__name__}。
+## 格式示例：
+{{ "{MindVoiceAction.__name__}":["输入你的最终判断结果，说明技能是否成功或失败，并附上原因"], "{TagAction.__name__}":["Yes/No"（技能是否成功）] }}"""
 ######################################################################################################################################################
 ######################################################################################################################################################
 ######################################################################################################################################################

@@ -24,7 +24,8 @@ from rpg_game.rpg_game import RPGGame
 from my_models.event_models import AgentEvent
 from loguru import logger
 from my_agent.lang_serve_agent import LangServeAgent
-#import gameplay_systems.stage_entity_utils
+
+# import gameplay_systems.stage_entity_utils
 
 
 ################################################################################################################################################
@@ -220,7 +221,7 @@ class StageEntranceCheckerSystem(ReactiveProcessor):
     def _handle_agent_responses(self, tasks: Dict[str, AgentTask]) -> None:
 
         for actor_name, stage_agent_task in tasks.items():
-            
+
             agent_response_plan = InternalPlanResponse(
                 stage_agent_task.agent_name, stage_agent_task.response_content
             )

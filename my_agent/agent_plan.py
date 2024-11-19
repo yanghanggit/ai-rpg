@@ -21,26 +21,31 @@ class AgentPlanResponse:
 
         self._name: str = name
         self._actions: List[AgentAction] = []
-        self._original_response_content: str = str(response_content)
+        self._raw_response_content: str = str(response_content)
 
-        # 处理特殊的情况, 例如出现了markdown json block与重复json的情况
-        # GPT4 也有可能输出markdown json block。以防万一，我们检查一下。
-        # GPT4 也有可能输出重复的json。我们合并一下。有可能上面的json block的错误也犯了，所以放到第二个步骤来做
-        fmt_string = (
-            JsonPlanResponseHandler(response_content)
-            .strip_json_code()
-            .combine_duplicate_fragments()
-            .output
-        )
 
-        # 核心执行
-        json_data = self._load_json(fmt_string)
-        self._build(json_data)
+
+
+        # 准备开始处理了
+        if response_content != "":
+            # 处理特殊的情况, 例如出现了markdown json block与重复json的情况
+            # GPT4 也有可能输出markdown json block。以防万一，我们检查一下。
+            # GPT4 也有可能输出重复的json。我们合并一下。有可能上面的json block的错误也犯了，所以放到第二个步骤来做
+            fmt_string = (
+                JsonPlanResponseHandler(response_content)
+                .strip_json_code()
+                .combine_duplicate_fragments()
+                .output
+            )
+
+            # 核心执行
+            json_data = self._load_json(fmt_string)
+            self._build(json_data)
 
     ############################################################################################################
     @property
     def original_response_content(self) -> str:
-        return self._original_response_content
+        return self._raw_response_content
 
     ############################################################################################################
     def _load_json(self, input_str: str) -> Dict[str, List[str]]:

@@ -55,19 +55,6 @@ def _generate_skill_impact_response_prompt(
 
     return prompt
 
-
-################################################################################################################################################
-def _generate_offline_prompt(
-    actor_name: str, target_name: str, reasoning_sentence: str
-) -> str:
-
-    prompt = f"""# 注意! {actor_name} 无法对 {target_name} 使用技能，本次技能释放被系统取消。
-## 行动内容语句({actor_name} 发起)
-{reasoning_sentence}
-"""
-    return prompt
-
-
 ################################################################################################################################################
 def _generate_broadcast_skill_impact_response_prompt(
     actor_name: str, target_name: str, reasoning_sentence: str, feedback_sentence: str
@@ -243,14 +230,6 @@ class SkillImpactResponseEvaluatorSystem(ExecuteProcessor):
 
             # 拿任务，看看有没有返回内容
             agent_task = internal_process_data.target_tasks[data_index]
-            if agent_task.response_content == "":
-                self._notify_skill_target_agent_offline(
-                    internal_process_data,
-                    target_entity=internal_process_data.target_entities[data_index],
-                )
-                # 没有返回内容，通知掉线后直接跳过
-                continue
-
             # 计算处理完毕，开始处理数据，第一步先存储下来。
             internal_process_data.target_responses[data_index] = InternalPlanResponse(
                 agent_task.agent_name,
@@ -485,26 +464,6 @@ class SkillImpactResponseEvaluatorSystem(ExecuteProcessor):
             for j in range(len(accumulated_attributes)):
                 accumulated_attributes[j] += skill_prop_file.prop_model.attributes[j]
         return accumulated_attributes
-
-    ######################################################################################################################################################
-    def _notify_skill_target_agent_offline(
-        self, internal_process_data: InternalProcessData, target_entity: Entity
-    ) -> None:
-
-        self._context.notify_event(
-            set({internal_process_data.source_entity}),
-            AgentEvent(
-                message=_generate_offline_prompt(
-                    self._context.safe_get_entity_name(
-                        internal_process_data.source_entity
-                    ),
-                    self._context.safe_get_entity_name(target_entity),
-                    internal_process_data.skill_entity.get(
-                        SkillComponent
-                    ).world_harmony_inspector_content,
-                )
-            ),
-        )
 
     ######################################################################################################################################################
     def _generate_skill_impact_response_task(

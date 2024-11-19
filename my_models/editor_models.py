@@ -14,16 +14,16 @@ class EditorEntityType(StrEnum):
 
 @unique
 class EditorProperty(StrEnum):
-    TYPE = "type"
     NAME = "name"
-    ATTRIBUTES = "attributes"
-    KICK_OFF_MESSAGE = "kick_off_message"
-    ACTOR_EQUIPPED_PROPS = "actor_equipped_props"
+    TYPE = "type"
+    DESCRIPTION = "description"
     ACTOR_PROPS = "actor_props"
-    STAGE_GRAPH = "stage_graph"
+    ACTOR_EQUIPPED_PROPS = "actor_equipped_props"
     ACTORS_ON_STAGE = "actors_on_stage"
     GROUPS_ON_STAGE = "groups_on_stage"
-    DESCRIPTION = "description"
+    KICK_OFF_MESSAGE = "kick_off_message"
+    STAGE_GRAPH = "stage_graph"
+    ATTRIBUTES = "attributes"
     SPAWN_CONFIG = "spawn_config"
     SPAWNERS_ON_STAGE = "spawners_on_stage"
 

@@ -495,7 +495,7 @@ class RPGGame(BaseGame):
         # 添加子系统：CodeName
         code_name_component_class = (
             context.query_component_system.register_query_component_class(
-                stage_model.name, stage_model.codename
+                stage_model.name, f"""{stage_model.codename}{stage_instance.guid}"""
             )
         )
         assert code_name_component_class is not None

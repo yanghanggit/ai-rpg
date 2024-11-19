@@ -61,8 +61,6 @@ class AgentTask:
         context_operation_options: ChatHistoryOperationOptions,
     ) -> None:
 
-        assert prompt != ""
-
         self._agent: LangServeAgent = agent
         self._prompt: str = prompt
         self._response: Any = None
@@ -101,6 +99,10 @@ class AgentTask:
         if self._agent.remote_runnable is None:
             return None
 
+        if self._prompt == "":
+            logger.error(f"{self.agent_name}: request error: prompt is empty")
+            return None
+
         try:
 
             logger.debug(f"{self.agent_name} request prompt:\n{self._prompt}")
@@ -127,6 +129,10 @@ class AgentTask:
     async def a_request(self) -> Any:
         assert self.response is None
         if self._agent.remote_runnable is None:
+            return None
+
+        if self._prompt == "":
+            logger.error(f"{self.agent_name}: a_request error: prompt is empty")
             return None
 
         try:

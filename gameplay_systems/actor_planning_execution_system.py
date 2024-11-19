@@ -59,7 +59,7 @@ def _generate_props_prompt(
 ###############################################################################################################################################
 def _generate_actor_plan_prompt(
     current_stage: str,
-    stage_enviro_narrate: str,
+    stage_narrate: str,
     stage_graph: Set[str],
     actor_appearance_mapping: Dict[str, str],
     health_ratio: float,
@@ -100,7 +100,7 @@ def _generate_actor_plan_prompt(
 {current_stage}
 
 ### 场景描述
-{stage_enviro_narrate}
+{stage_narrate}
 
 ### (如从本场景离开)你可以去往的场景，即动作 {GoToAction.__name__} 可以执行的目标场景
 {"\n".join(stage_graph)}   
@@ -118,11 +118,12 @@ def _generate_actor_plan_prompt(
 - 武器: {current_weapon is not None and current_weapon.name or "无"}
 - 衣服: {current_clothes is not None and current_clothes.name or "无"}
 
-## 小贴士
-### 关于动作: {EquipPropAction.__name__}。
+## 关于动作: {EquipPropAction.__name__}。
 - 若你未装备任何武器或衣服，可从“你的全部道具”中选择武器或衣服进行装备。
 - 若你已装备武器或衣服，可根据需要和计划进行更换。
 - 请避免重复装备相同的道具，以免无效操作。
+
+{gameplay_systems.prompt_utils.insert_skill_action_prompt(actor_props.get(PropType.TYPE_SKILL, []))}
 
 ## 输出要求
 - 请遵循 输出格式指南。
@@ -222,7 +223,7 @@ class ActorPlanningExecutionSystem(ExecuteProcessor):
                 self._context.safe_get_agent(actor_entity),
                 _generate_actor_plan_prompt(
                     current_stage=self._retrieve_stage_name(actor_entity),
-                    stage_enviro_narrate=self._retrieve_stage_narrative(actor_entity),
+                    stage_narrate=self._retrieve_stage_narrative(actor_entity),
                     stage_graph=set(self._retrieve_stage_graph(actor_entity)),
                     actor_appearance_mapping=actor_appearance_mapping,
                     health_ratio=check_self.health_ratio,

@@ -27,18 +27,6 @@ import gameplay_systems.skill_entity_utils
 from my_agent.lang_serve_agent import LangServeAgent
 from my_models.entity_models import Attributes
 
-
-################################################################################################################################################
-def _generate_offline_prompt(actor_name: str, sentence: str) -> str:
-
-    prompt = f"""# 注意! 全局技能系统 处于离线状态或者出错，无法使用技能，请一会再试。
-## 行动内容语句({actor_name} 发起)
-{sentence}
-## 以上的行动将无法执行（被系统强制取消），因为技能系统处于离线状态或者出错。
-"""
-    return prompt
-
-
 ################################################################################################################################################
 def _generate_failure_prompt(
     actor_name: str,
@@ -390,19 +378,6 @@ class SkillWorldHarmonyInspectorSystem(ExecuteProcessor):
             gameplay_systems.skill_entity_utils.destroy_skill_entity(
                 process_data.skill_entity
             )
-
-    ######################################################################################################################################################
-    def _notify_agent_offline_event(self, process_data: InternalProcessData) -> None:
-
-        self._context.notify_event(
-            set({process_data.actor_entity}),
-            AgentEvent(
-                message=_generate_offline_prompt(
-                    self._context.safe_get_entity_name(process_data.actor_entity),
-                    process_data.skill_entity.get(SkillComponent).command,
-                )
-            ),
-        )
 
     ######################################################################################################################################################
     def _notify_inspector_success_event(

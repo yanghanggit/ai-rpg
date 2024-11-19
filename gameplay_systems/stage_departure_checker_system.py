@@ -201,11 +201,6 @@ class StageDepartureCheckerSystem(ReactiveProcessor):
             actor_entity = self._context.get_actor_entity(actor_name)
             assert actor_entity is not None
 
-            if stage_agent_task.response_content == "":
-                # 无回应，直接删除
-                self._remove_action_components(actor_entity)
-                continue
-
             agent_response_plan = InternalPlanResponse(
                 stage_agent_task.agent_name, stage_agent_task.response_content
             )

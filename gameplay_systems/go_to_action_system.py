@@ -3,10 +3,10 @@ from my_components.action_components import GoToAction, DeadAction
 from my_components.components import (
     ActorComponent,
     EnterStageFlagComponent,
-    StageComponent,
+    # StageComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from typing import final, override, Optional
+from typing import final, override, Optional, Dict, List
 from rpg_game.rpg_game import RPGGame
 from extended_systems.archive_file import StageArchiveFile
 from my_models.event_models import AgentEvent, PreStageExitEvent
@@ -32,21 +32,33 @@ def _generate_stage_change_prompt(
 
 
 ################################################################################################################################################
-def _generate_last_impression_of_stage_prompt(
-    actor_name: str, stage_name: str, stage_narrate: str
+def _generate_last_impression_prompt(
+    actor_name: str,
+    current_stage: str,
+    stage_narrate: str,
+    actor_appearance_mapping: Dict[str, str],
 ) -> str:
-    return f"""# 提示: {actor_name} 将要离开场景:{stage_name}。
-## {actor_name} 对于场景——{stage_name}，最后的印象(场景描述)如下:
-{stage_narrate}"""
 
+    if actor_name in actor_appearance_mapping:
+        actor_appearance_mapping.pop(actor_name, None)
 
-################################################################################################################################################
-def _generate_last_impression_of_actor_prompt(
-    actor_name: str, current_stage: str, target_name: str, appearance: str
-) -> str:
+    actor_appearance_mapping_prompt: List[str] = []
+    for target_name, appearance in actor_appearance_mapping.items():
+        actor_appearance_mapping_prompt.append(
+            f"""### {target_name}
+角色外观:{appearance}
+"""
+        )
+
+    if len(actor_appearance_mapping_prompt) == 0:
+        actor_appearance_mapping_prompt.append("无任何角色。")
+
     return f"""# 提示: {actor_name} 将要离开场景:{current_stage}。
-## {actor_name} 对于 {target_name} 最后的印象(外观描述)如下:
-{appearance}"""
+## {actor_name} 对于场景——{current_stage}，最后的印象(场景描述):
+{stage_narrate}
+
+## {actor_name} 对于其他角色最后的印象:
+{"\n".join(actor_appearance_mapping_prompt)}"""
 
 
 ###############################################################################################################################################
@@ -91,9 +103,10 @@ class StageTransitionHandler:
         go_to_action = actor_entity.get(GoToAction)
         if len(go_to_action.values) == 0:
             return ""
-        return gameplay_systems.stage_entity_utils.resolve_stage_name(
-            self._context, go_to_action.values[0]
-        )
+        return str(go_to_action.values[0])
+        # return gameplay_systems.stage_entity_utils.resolve_stage_name(
+        #     self._context, go_to_action.values[0]
+        # )
 
 
 ###############################################################################################################################################
@@ -206,34 +219,30 @@ class GoToActionSystem(ReactiveProcessor):
             StageArchiveFile, my_name, helper._current_stage_name
         )
 
-        if stage_archive is not None and stage_archive.stage_narrate != "":
-            self._context.notify_event(
-                set({helper._entity}),
-                PreStageExitEvent(
-                    message=_generate_last_impression_of_stage_prompt(
-                        actor_name=my_name,
-                        stage_name=helper._current_stage_name,
-                        stage_narrate=stage_archive.stage_narrate,
-                    )
-                ),
-            )
+        assert (
+            stage_archive is not None
+        ), f"stage_archive is None, {my_name}, {helper._current_stage_name}"
+        if stage_archive is None:
+            return
 
+        # 外观拿出来。
         actor_appearance_in_stage = self._context.retrieve_stage_actor_appearance(
             helper.current_stage_entity
         )
         actor_appearance_in_stage.pop(my_name)
-        for actor_name, appearance in actor_appearance_in_stage.items():
-            self._context.notify_event(
-                set({helper._entity}),
-                PreStageExitEvent(
-                    message=_generate_last_impression_of_actor_prompt(
-                        actor_name=my_name,
-                        current_stage=helper._current_stage_name,
-                        target_name=actor_name,
-                        appearance=appearance,
-                    )
-                ),
-            )
+
+        # 最后通知
+        self._context.notify_event(
+            set({helper._entity}),
+            PreStageExitEvent(
+                message=_generate_last_impression_prompt(
+                    actor_name=my_name,
+                    current_stage=helper._current_stage_name,
+                    stage_narrate=stage_archive.stage_narrate,
+                    actor_appearance_mapping=actor_appearance_in_stage,
+                )
+            ),
+        )
 
     ###############################################################################################################################################
     def _exit_current_stage(self, helper: StageTransitionHandler) -> None:

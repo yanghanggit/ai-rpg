@@ -5,6 +5,8 @@ from my_components.action_components import StageNarrateAction
 @unique
 class PromptTag(StrEnum):
 
+    CURRENT_ROUND_TAG = "<%当前回合数>"
+
     ACTOR_PLAN_PROMPT_TAG = "<%角色计划>"
 
     STAGE_PLAN_PROMPT_TAG = "<%场景计划>"

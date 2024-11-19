@@ -5,7 +5,7 @@ from my_components.components import (
     PlanningAllowedComponent,
     StageGraphComponent,
     PlayerComponent,
-    AgentConnectionFlagComponent,
+    AgentPingFlagComponent,
     KickOffFlagComponent,
 )
 from my_components.action_components import (
@@ -199,7 +199,7 @@ class ActorPlanningExecutionSystem(ExecuteProcessor):
                 all_of=[
                     ActorComponent,
                     PlanningAllowedComponent,
-                    AgentConnectionFlagComponent,
+                    AgentPingFlagComponent,
                     KickOffFlagComponent,
                 ],
                 none_of=[PlayerComponent],

@@ -10,11 +10,12 @@ from my_components.components import (
     RoundEventsRecordComponent,
 )
 from my_models.event_models import GameRoundEvent
+import gameplay_systems.prompt_utils
 
 
 ################################################################################################################################################
 def _generate_game_round_prompt(game_round: int) -> str:
-    return f"""# 提示: 当前回合数: {game_round}"""
+    return f"""# 提示: {gameplay_systems.prompt_utils.PromptTag.CURRENT_ROUND_TAG}:{game_round}"""
 
 
 ################################################################################################################################################
@@ -50,12 +51,28 @@ class GameRoundSystem(ExecuteProcessor):
             Matcher(any_of=[WorldComponent, StageComponent, ActorComponent])
         ).entities
 
+        # 移除上一回合的信息？
+        # self.clear_previous_game_round_events(entities)
+
         self._context.notify_event(
             entities,
             GameRoundEvent(
                 message=_generate_game_round_prompt(self._game.current_round)
             ),
         )
+
+    ############################################################################################################
+    # def clear_previous_game_round_events(self, entities: Set[Entity]) -> None:
+    #     for entity in entities:
+    #         safe_name = self._context.safe_get_entity_name(entity)
+    #         retrieve_relevant_messages = self._context.agent_system.extract_messages_by_keywords(
+    #             safe_name,
+    #             set({gameplay_systems.prompt_utils.PromptTag.CURRENT_ROUND_TAG}),
+    #         )
+    #         self._context.agent_system.remove_excluded_messages(
+    #             safe_name,
+    #             retrieve_relevant_messages,
+    #         )
 
     ############################################################################################################
     def _reset_round_event_records(self) -> None:

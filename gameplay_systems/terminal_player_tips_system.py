@@ -13,7 +13,8 @@ from player.player_proxy import PlayerProxy
 from my_models.event_models import AgentEvent
 from rpg_game.terminal_game import TerminalGame
 from loguru import logger
-from my_format_string.complex_stage_name import ComplexStageName
+
+# from my_format_string.complex_stage_name import ComplexStageName
 
 
 @final
@@ -91,9 +92,10 @@ class TerminalPlayerTipsSystem(ExecuteProcessor):
         stage_entity = self._context.get_stage_entity(stage_name)
         assert stage_entity is not None
 
-        assert stage_entity.has(GUIDComponent)
-        guid_comp = stage_entity.get(GUIDComponent)
-        return ComplexStageName.generate_unknown_stage_name(guid_comp.GUID)
+        # assert stage_entity.has(GUIDComponent)
+        # guid_comp = stage_entity.get(GUIDComponent)
+        # return ComplexStageName.generate_unknown_stage_name(guid_comp.GUID)
+        return stage_name
 
     ############################################################################################################
     def tip_stage_archives(

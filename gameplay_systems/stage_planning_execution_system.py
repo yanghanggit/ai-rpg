@@ -3,7 +3,7 @@ from overrides import override
 from my_components.components import (
     StageComponent,
     PlanningAllowedComponent,
-    AgentConnectionFlagComponent,
+    AgentPingFlagComponent,
     KickOffFlagComponent,
 )
 from my_components.action_components import (
@@ -135,7 +135,7 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
                 all_of=[
                     StageComponent,
                     PlanningAllowedComponent,
-                    AgentConnectionFlagComponent,
+                    AgentPingFlagComponent,
                     KickOffFlagComponent,
                 ]
             )
@@ -164,15 +164,13 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
                 logger.warning(
                     f"StagePlanningSystem: add StageNarrateAction = {stage_name}"
                 )
-                stage_entity.add(
-                    StageNarrateAction, StageNarrateAction.__name__, ["无任何描述。"]
-                )
+                stage_entity.add(StageNarrateAction, stage_name, ["无任何描述。"])
 
             if not stage_entity.has(StageTagAction):
                 # logger.warning(
                 #     f"StagePlanningSystem: add StageTagAction = {stage_name}"
                 # )
-                stage_entity.add(StageTagAction, StageTagAction.__name__, [])
+                stage_entity.add(StageTagAction, stage_name, [])
 
 
 #######################################################################################################################################

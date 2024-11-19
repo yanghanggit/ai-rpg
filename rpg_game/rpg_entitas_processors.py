@@ -50,7 +50,9 @@ class RPGEntitasProcessors(Processors):
         from gameplay_systems.post_action_system import PostActionSystem
         from gameplay_systems.steal_action_system import StealActionSystem
         from gameplay_systems.give_prop_action_system import GivePropActionSystem
-        from gameplay_systems.agent_connect_system import AgentConnectSystem
+        from gameplay_systems.agent_ping_validator_system import (
+            AgentPingValidatorSystem,
+        )
         from gameplay_systems.compress_chat_history_system import (
             CompressChatHistorySystem,
         )
@@ -120,7 +122,7 @@ class RPGEntitasProcessors(Processors):
         processors.add(
             StageSpawnerSystem(context, rpg_game)
         )  # 因为需要connect 与 kick off，所以需要放在2者之前
-        processors.add(AgentConnectSystem(context, rpg_game))
+        processors.add(AgentPingValidatorSystem(context, rpg_game))
         processors.add(AgentKickOffSystem(context, rpg_game))
         #########################################
 

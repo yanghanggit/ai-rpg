@@ -129,9 +129,10 @@ class StageValidatorSystem(ReactiveProcessor):
         go_to_action = actor_entity.get(GoToAction)
         if len(go_to_action.values) == 0:
             return ""
-        return gameplay_systems.stage_entity_utils.resolve_stage_name(
-            self._context, str(go_to_action.values[0])
-        )
+        return str(go_to_action.values[0])
+        # return gameplay_systems.stage_entity_utils.resolve_stage_name(
+        #     self._context, str(go_to_action.values[0])
+        # )
 
     ###############################################################################################################################################
     def _remove_action_component(

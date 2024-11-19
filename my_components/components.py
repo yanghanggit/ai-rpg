@@ -10,7 +10,7 @@ class GUIDComponent(NamedTuple):
 
 # 标记agent连接完成
 @final
-class AgentConnectionFlagComponent(NamedTuple):
+class AgentPingFlagComponent(NamedTuple):
     name: str
 
 

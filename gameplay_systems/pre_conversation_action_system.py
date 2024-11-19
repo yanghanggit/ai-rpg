@@ -8,7 +8,7 @@ from my_components.action_components import (
 from my_components.components import (
     PlayerComponent,
     ActorComponent,
-    AgentConnectionFlagComponent,
+    AgentPingFlagComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from my_agent.agent_task import AgentTask
@@ -76,7 +76,7 @@ class PreConversationActionSystem(ReactiveProcessor):
         return (
             entity.has(PlayerComponent)
             and entity.has(ActorComponent)
-            and entity.has(AgentConnectionFlagComponent)
+            and entity.has(AgentPingFlagComponent)
         )
 
     #################################################################################################################################################

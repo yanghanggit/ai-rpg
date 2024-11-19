@@ -16,13 +16,13 @@ class RemoteRunnableConnector:
         return self._url
 
     #################################################################################################################################################
-    async def initialize_connection(self, message: str) -> bool:
+    async def establish_connection(self, message: str) -> bool:
 
         if self._remote_runnable is not None:
             logger.error(f"initialize_connection: already initialized = {self._url}")
             return False
 
-        remote_runnable = await self._establish_remote_connection(self._url, message)
+        remote_runnable = await self._establish_remote_runnable(self._url, message)
         if remote_runnable is None:
             logger.error(
                 f"initialize_connection: remote_runnable is None = {self._url}"
@@ -33,15 +33,15 @@ class RemoteRunnableConnector:
         return True
 
     #################################################################################################################################################
-    async def _establish_remote_connection(
-        self, url: str, message: str
+    async def _establish_remote_runnable(
+        self, url: str, ping_message: str
     ) -> Optional[RemoteRunnable]:
 
         try:
             remote_runnable = RemoteRunnable(url)
             response = await remote_runnable.ainvoke(
                 {
-                    "input": message,
+                    "input": ping_message,
                     "chat_history": [],
                 }
             )

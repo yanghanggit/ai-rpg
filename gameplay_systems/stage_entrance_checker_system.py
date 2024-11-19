@@ -214,9 +214,10 @@ class StageEntranceCheckerSystem(ReactiveProcessor):
         goto_action = actor_entity.get(GoToAction)
         if len(goto_action.values) == 0:
             return ""
-        return gameplay_systems.stage_entity_utils.resolve_stage_name(
-            self._context, goto_action.values[0]
-        )
+        return str(goto_action.values[0])
+        # return gameplay_systems.stage_entity_utils.resolve_stage_name(
+        #     self._context, goto_action.values[0]
+        # )
 
     ######################################################################################################################################################
     def _handle_agent_responses(self, tasks: Dict[str, AgentTask]) -> None:

@@ -7,7 +7,7 @@ from my_components.components import (
     FinalAppearanceComponent,
     KickOffContentComponent,
     KickOffFlagComponent,
-    AgentConnectionFlagComponent,
+    AgentPingFlagComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
@@ -138,7 +138,7 @@ class AgentKickOffSystem(ExecuteProcessor):
                 all_of=[
                     WorldComponent,
                     KickOffContentComponent,
-                    AgentConnectionFlagComponent,
+                    AgentPingFlagComponent,
                 ],
                 none_of=[KickOffFlagComponent],
             )
@@ -166,7 +166,7 @@ class AgentKickOffSystem(ExecuteProcessor):
                 all_of=[
                     StageComponent,
                     KickOffContentComponent,
-                    AgentConnectionFlagComponent,
+                    AgentPingFlagComponent,
                 ],
                 none_of=[KickOffFlagComponent],
             )
@@ -199,7 +199,7 @@ class AgentKickOffSystem(ExecuteProcessor):
                 all_of=[
                     ActorComponent,
                     KickOffContentComponent,
-                    AgentConnectionFlagComponent,
+                    AgentPingFlagComponent,
                 ],
                 none_of=[KickOffFlagComponent],
             )

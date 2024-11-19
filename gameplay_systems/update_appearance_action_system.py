@@ -9,7 +9,7 @@ from my_components.components import (
     BaseFormComponent,
     ActorComponent,
     ClothesComponent,
-    AgentConnectionFlagComponent,
+    AgentPingFlagComponent,
     KickOffContentComponent,
 )
 from extended_systems.prop_file import PropFile
@@ -126,7 +126,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
         # 如果有世界系统，且有AgentConnectionFlagComponent，请求更新外观
         if (
             self.world_system_entity is not None
-            and self.world_system_entity.has(AgentConnectionFlagComponent)
+            and self.world_system_entity.has(AgentPingFlagComponent)
             and self.world_system_entity.has(KickOffContentComponent)
         ):
             # 准备推理

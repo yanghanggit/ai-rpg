@@ -13,11 +13,23 @@ class QueryComponentSystem:
         self._stage_tag_2_component: Dict[str, type[Any]] = {}
 
     ########################################################################################################################
-    def register_query_component_class(self, name: str, code_name: str) -> type[Any]:
-        assert name not in self._name_2_query_code_name, f"{name} already registered"
-        self._name_2_query_code_name[name] = code_name
-        self._query_code_name_2_component[code_name] = namedtuple(code_name, "name")
-        return self._query_code_name_2_component[code_name]
+    def register_query_component_class(
+        self, instance_name: str, data_base_code_name: str, guid: int
+    ) -> type[Any]:
+
+        assert (
+            instance_name not in self._name_2_query_code_name
+        ), f"{instance_name} already registered"
+        assert (
+            "%" not in data_base_code_name
+        ), f"{data_base_code_name} is not a valid code name"
+
+        dynamic_query_name = f"{data_base_code_name}{guid}"
+        self._name_2_query_code_name[instance_name] = dynamic_query_name
+        self._query_code_name_2_component[dynamic_query_name] = namedtuple(
+            dynamic_query_name, "name"
+        )
+        return self._query_code_name_2_component[dynamic_query_name]
 
     ########################################################################################################################
     def get_query_component_class(self, name: str) -> Optional[type[Any]]:

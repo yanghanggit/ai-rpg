@@ -20,6 +20,8 @@ class AgentTask:
     ################################################################################################################################################################################
     @staticmethod
     async def gather(tasks: List["AgentTask"]) -> List[Any]:
+        if len(tasks) == 0:
+            return []
         coros = [task.a_request() for task in tasks]
         # start_time = time.time()
         future = await asyncio.gather(*coros)

@@ -58,7 +58,7 @@ class ExcelEditorWorldSystem:
         return WorldSystemModel(
             name=self.excel_data.name,
             codename=self.excel_data.codename,
-            url=self.excel_data.localhost,
+            url=self.excel_data.localhost_api_url,
         )
 
     ######################################################################################################################

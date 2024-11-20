@@ -1,5 +1,5 @@
 from pathlib import Path
-from enum import StrEnum, unique
+from enum import StrEnum, unique, IntEnum
 
 
 # 文件内容替换的标记
@@ -18,6 +18,7 @@ class AgentAppReplaceSymbol(StrEnum):
     RAG_CONTENT = "<%RAG_CONTENT>"
     PORT = "<%PORT>"
     API = "<%API>"
+    TEMPERATURE = "<%TEMPERATURE>"
 
 
 # Excel文件中的Sheet
@@ -94,3 +95,44 @@ EN_SPAWNER_FEATURE: bool = True
 
 # SPAWNER本质是依赖于GROUP的特性
 EN_SPAWNER_FEATURE = EN_GROUP_FEATURE and EN_SPAWNER_FEATURE
+
+
+@unique
+class PortBaseIndex(IntEnum):
+    STAGE_BEGIN = 8100
+    STAGE_END = 8399
+    ACTOR_BEGIN = 8400
+    ACTOR_END = 8699
+    WORLD_SYSTEM_BEGIN = 8700
+    WORLD_SYSTEM_END = 8799
+
+
+class PortGenerator:
+    def __init__(self) -> None:
+        self._stage_port_index = 0
+        self._actor_port_index = 0
+        self._world_system_port_index = 0
+
+    def gen_stage_port(self) -> int:
+        self._stage_port_index += 1
+        assert self._stage_port_index <= (
+            PortBaseIndex.STAGE_END - PortBaseIndex.STAGE_BEGIN
+        ), f"stage port超出范围: {self._stage_port_index}"
+        return PortBaseIndex.STAGE_BEGIN + self._stage_port_index
+
+    def gen_actor_port(self) -> int:
+        self._actor_port_index += 1
+        assert self._actor_port_index <= (
+            PortBaseIndex.ACTOR_END - PortBaseIndex.ACTOR_BEGIN
+        ), f"actor port超出范围: {self._actor_port_index}"
+        return PortBaseIndex.ACTOR_BEGIN + self._actor_port_index
+
+    def gen_world_system_port(self) -> int:
+        self._world_system_port_index += 1
+        assert self._world_system_port_index <= (
+            PortBaseIndex.WORLD_SYSTEM_END - PortBaseIndex.WORLD_SYSTEM_BEGIN
+        ), f"world system port超出范围: {self._world_system_port_index}"
+        return PortBaseIndex.WORLD_SYSTEM_BEGIN + self._world_system_port_index
+
+
+port_generator = PortGenerator()

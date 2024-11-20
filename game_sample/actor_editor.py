@@ -163,7 +163,7 @@ class ExcelEditorActor:
         return ActorModel(
             name=self.data_base_name,
             codename=self.codename,
-            url=self.excel_data.localhost,
+            url=self.excel_data.localhost_api_url,
             kick_off_message=self.kick_off_message,
             actor_archives=self.excel_data._actor_archives,
             stage_archives=self.excel_data._stage_archives,

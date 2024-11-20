@@ -164,10 +164,10 @@ class LangServeAgentSystem:
         if agent is None:
             return
 
-        for message in agent._chat_history:
-            for key, value in message_replacements.items():
-                if key in cast(str, message.content):
-                    message.content = value
+        for key_word, replace_content in message_replacements.items():
+            extracted_messages = self.extract_messages_by_keywords(name, {key_word})
+            for message in extracted_messages:
+                message.content = replace_content
 
     ################################################################################################################################################################################
     def extract_messages_by_keywords(

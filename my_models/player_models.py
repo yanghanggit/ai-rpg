@@ -14,6 +14,7 @@ class PlayerClientMessageTag(StrEnum):
     TIP = "TIP"
 
 
+# 玩家客户端消息
 class PlayerClientMessage(BaseModel):
     tag: str
     sender: str
@@ -21,6 +22,7 @@ class PlayerClientMessage(BaseModel):
     agent_event: BaseEvent  # 要根部的类，其实只需要它的序列化能力，其余的不要，所以不要出现具体类型的调用！
 
 
+# 玩家代理模型
 class PlayerProxyModel(BaseModel):
     name: str = ""
     client_messages: List[PlayerClientMessage] = []
@@ -29,19 +31,23 @@ class PlayerProxyModel(BaseModel):
     actor_name: str = ""
 
 
-class WatchActionModel(BaseModel):
+# 看看场景内的信息
+class SurveyStageModel(BaseModel):
     content: str = ""
 
 
-class CheckActionModel(BaseModel):
+# 看看背包的信息
+class StatusInventoryCheckModel(BaseModel):
     content: str = ""
 
 
+# 检索角色档案
 class RetrieveActorArchivesModel(BaseModel):
     message: str = ""
     archives: List[ActorArchiveFileModel] = []
 
 
+# 检索场景档案
 class RetrieveStageArchivesActionModel(BaseModel):
     message: str = ""
     archives: List[StageArchiveFileModel] = []

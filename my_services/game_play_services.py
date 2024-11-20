@@ -1,10 +1,10 @@
 from fastapi import APIRouter
 from loguru import logger
 from ws_config import (
-    WatchRequest,
-    WatchResponse,
-    CheckRequest,
-    CheckResponse,
+    SurveyStageRequest,
+    SurveyStageResponse,
+    StatusInventoryCheckRequest,
+    StatusInventoryCheckResponse,
     RetrieveActorArchivesRequest,
     RetrieveActorArchivesResponse,
     RetrieveStageArchivesRequest,
@@ -19,12 +19,12 @@ game_play_api_router = APIRouter()
 
 
 ###############################################################################################################################################
-@game_play_api_router.post("/watch/")
-async def watch(request_data: WatchRequest) -> Dict[str, Any]:
+@game_play_api_router.post("/survey_stage_action/")
+async def survey_stage_action(request_data: SurveyStageRequest) -> Dict[str, Any]:
 
     room = RoomManagerInstance.get_room(request_data.user_name)
     if room is None or room.game is None:
-        return WatchResponse(
+        return SurveyStageResponse(
             user_name=request_data.user_name,
             game_name=request_data.game_name,
             actor_name=request_data.actor_name,
@@ -36,7 +36,7 @@ async def watch(request_data: WatchRequest) -> Dict[str, Any]:
     player_proxy = room.get_player()
     assert player_proxy is not None
     if player_proxy is None:
-        return WatchResponse(
+        return SurveyStageResponse(
             user_name=request_data.user_name,
             game_name=request_data.game_name,
             actor_name=request_data.actor_name,
@@ -45,12 +45,12 @@ async def watch(request_data: WatchRequest) -> Dict[str, Any]:
         ).model_dump()
 
     # 获得消息
-    watch_action_model = rpg_game.rpg_game_utils.gen_player_watch_action_model(
+    watch_action_model = rpg_game.rpg_game_utils.gen_player_survey_stage_model(
         room.game, player_proxy
     )
 
     if watch_action_model is None:
-        return WatchResponse(
+        return SurveyStageResponse(
             user_name=request_data.user_name,
             game_name=request_data.game_name,
             actor_name=request_data.actor_name,
@@ -59,7 +59,7 @@ async def watch(request_data: WatchRequest) -> Dict[str, Any]:
         ).model_dump()
 
     # 返回观察游戏的信息
-    return WatchResponse(
+    return SurveyStageResponse(
         user_name=request_data.user_name,
         game_name=request_data.game_name,
         actor_name=request_data.actor_name,
@@ -68,12 +68,14 @@ async def watch(request_data: WatchRequest) -> Dict[str, Any]:
 
 
 ###############################################################################################################################################
-@game_play_api_router.post("/check/")
-async def check(request_data: CheckRequest) -> Dict[str, Any]:
+@game_play_api_router.post("/status_inventory_check_action/")
+async def status_inventory_check_action(
+    request_data: StatusInventoryCheckRequest,
+) -> Dict[str, Any]:
 
     room = RoomManagerInstance.get_room(request_data.user_name)
     if room is None or room.game is None:
-        return CheckResponse(
+        return StatusInventoryCheckResponse(
             user_name=request_data.user_name,
             game_name=request_data.game_name,
             actor_name=request_data.actor_name,
@@ -84,7 +86,7 @@ async def check(request_data: CheckRequest) -> Dict[str, Any]:
     # 没有客户端就不能看
     player_proxy = room.get_player()
     if player_proxy is None:
-        return CheckResponse(
+        return StatusInventoryCheckResponse(
             user_name=request_data.user_name,
             game_name=request_data.game_name,
             actor_name=request_data.actor_name,
@@ -93,12 +95,14 @@ async def check(request_data: CheckRequest) -> Dict[str, Any]:
         ).model_dump()
 
     # 获得消息
-    check_action_model = rpg_game.rpg_game_utils.gen_player_check_action_model(
-        room.game, player_proxy
+    check_action_model = (
+        rpg_game.rpg_game_utils.gen_player_status_inventory_check_model(
+            room.game, player_proxy
+        )
     )
 
     if check_action_model is None:
-        return CheckResponse(
+        return StatusInventoryCheckResponse(
             user_name=request_data.user_name,
             game_name=request_data.game_name,
             actor_name=request_data.actor_name,
@@ -107,7 +111,7 @@ async def check(request_data: CheckRequest) -> Dict[str, Any]:
         ).model_dump()
 
     # 返回检查游戏的信息
-    return CheckResponse(
+    return StatusInventoryCheckResponse(
         user_name=request_data.user_name,
         game_name=request_data.game_name,
         actor_name=request_data.actor_name,

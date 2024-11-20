@@ -13,10 +13,10 @@ from ws_config import (
     ExitResponse,
     ExecuteRequest,
     ExecuteResponse,
-    WatchRequest,
-    WatchResponse,
-    CheckRequest,
-    CheckResponse,
+    SurveyStageRequest,
+    SurveyStageResponse,
+    StatusInventoryCheckRequest,
+    StatusInventoryCheckResponse,
     FetchMessagesRequest,
     FetchMessagesResponse,
     RetrieveActorArchivesRequest,
@@ -350,11 +350,11 @@ def _web_player_input(
             _requesting_exit(client_context, state_manager)
             break
 
-        elif usr_input == "/watch" or usr_input == "/w":
+        elif usr_input == "/survey_stage_action" or usr_input == "/ssa":
             _requesting_watch(client_context, state_manager)
             break
 
-        elif usr_input == "/check" or usr_input == "/c":
+        elif usr_input == "/status_inventory_check_action" or usr_input == "/sica":
             _requesting_check(client_context, state_manager)
             break
 
@@ -381,14 +381,14 @@ def _requesting_watch(
 
     response = requests.post(
         client_context.api_endpoints.WATCH,
-        json=WatchRequest(
+        json=SurveyStageRequest(
             user_name=client_context._user_name,
             game_name=client_context._game_name,
             actor_name=client_context._actor_name,
         ).model_dump(),
     )
 
-    watch_response = WatchResponse.model_validate(response.json())
+    watch_response = SurveyStageResponse.model_validate(response.json())
     if watch_response.error > 0:
         logger.warning(
             f"观察游戏失败: {watch_response.user_name}, {watch_response.game_name}, {watch_response.actor_name}"
@@ -405,14 +405,14 @@ def _requesting_check(
 
     response = requests.post(
         client_context.api_endpoints.CHECK,
-        json=CheckRequest(
+        json=StatusInventoryCheckRequest(
             user_name=client_context._user_name,
             game_name=client_context._game_name,
             actor_name=client_context._actor_name,
         ).model_dump(),
     )
 
-    check_response = CheckResponse.model_validate(response.json())
+    check_response = StatusInventoryCheckResponse.model_validate(response.json())
     if check_response.error > 0:
         logger.warning(
             f"检查游戏失败: {check_response.user_name}, {check_response.game_name}, {check_response.actor_name}"

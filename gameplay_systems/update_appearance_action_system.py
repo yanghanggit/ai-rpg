@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: ignore
 from overrides import override
 from rpg_game.rpg_entitas_context import RPGEntitasContext
@@ -11,6 +12,7 @@ from my_components.components import (
     ClothesComponent,
     AgentPingFlagComponent,
     KickOffContentComponent,
+    WeaponComponent,
 )
 from extended_systems.prop_file import PropFile
 from my_agent.agent_task import AgentTask
@@ -28,26 +30,27 @@ def _generate_appearance_update_prompt(actor_name: str, appearance: str) -> str:
 
 ################################################################################################################################################
 def _generate_default_appearance_prompt(
-    actor_name: str, base_form: str, clothe: str
+    actor_name: str, base_form: str, clothe: str, weapon: str
 ) -> str:
     assert base_form != "", "base_form is empty."
     if clothe == "":
         return base_form
 
     return f"""{actor_name}
-- 基础形态: {base_form}
-- 衣着: {clothe}"""
+基础形态: {base_form}
+持有武器: {weapon if weapon != "" else "无"}
+穿着衣服: {clothe if clothe != "" else "无"}"""
 
 
 ################################################################################################################################################
 def _generate_appearance_reasoning_prompt(
-    base_form_and_clothe_info: Dict[str, tuple[str, str]]
+    base_form_and_clothe_info: Dict[str, tuple[str, str, str]]
 ) -> str:
 
     reference_info: List[str] = []
-    for name, (base_form, clothe) in base_form_and_clothe_info.items():
+    for name, (base_form, clothe, weapon) in base_form_and_clothe_info.items():
         reference_info.append(
-            f"""### {_generate_default_appearance_prompt(name, base_form, clothe)}"""
+            f"""### {_generate_default_appearance_prompt(name, base_form, clothe, weapon)}"""
         )
 
     appearance_json_structure = json.dumps(
@@ -65,13 +68,12 @@ def _generate_appearance_reasoning_prompt(
     - 衣服的样式和细节（如袖子、裤子、面具、帽子）会影响外观。
     - 避免描述被遮蔽的部位，例如“胸前的印记被衣服遮盖住”。
 2. 角色无衣：如角色无衣服，人形角色为穿内衣状态，非人角色直接描述基础形态外观。
-3. 润色：对最终结果进行适度润色，使描述生动。
+3. 角色持有武器：如角色有武器，则最终结果应融入武器的外观描述。没有则不需要描述。
+4. 润色：对最终结果进行适度润色，使描述生动。
 
 ## 输出要求 
-
 ### 输出格式指南
 请严格遵循以下JSON结构示例: {appearance_json_structure}
-
 ### 注意事项
 - 将“?”替换为推理结果，无需重复角色全名。
 - 输出必须为第3人称。
@@ -83,6 +85,15 @@ def _generate_appearance_reasoning_prompt(
 ####################################################################################################
 ####################################################################################################
 ####################################################################################################
+
+
+@dataclass
+class InternalProcessData:
+    actor_name: str
+    actor_entity: Entity
+    base_form: str
+    weapon: str
+    clothe: str
 
 
 ####################################################################################################
@@ -117,7 +128,6 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
 
         actor_appearance_info = self._generate_actor_appearance_info((entities))
         if len(actor_appearance_info) == 0:
-            assert False, "actor_appearance_info is empty."
             return
 
         # 没有衣服的，直接更新外观，也是默认设置，防止世界系统无法推理
@@ -148,31 +158,43 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
         return self._context.get_world_entity(self._world_system_name)
 
     ###############################################################################################################################################
-    def _apply_default(self, appearance_info: Dict[str, tuple[str, str]]) -> None:
+    def _apply_default(self, appearance_info: List[InternalProcessData]) -> None:
 
-        for name, (base_form, clothe) in appearance_info.items():
-            if base_form == "":
-                logger.error(f"base_form is empty, name: {name}")
+        for data in appearance_info:
+            assert data.base_form != "", "base_form is empty."
+            if data.base_form == "":
                 continue
 
-            actor_entity = self._context.get_actor_entity(name)
-            assert actor_entity is not None, f"entity is None, name: {name}"
-            actor_entity.replace(
+            data.actor_entity.replace(
                 FinalAppearanceComponent,
-                name,
-                _generate_default_appearance_prompt(name, base_form, clothe),
+                data.actor_name,
+                _generate_default_appearance_prompt(
+                    data.actor_name,
+                    data.base_form,
+                    data.clothe,
+                    data.weapon,
+                ),
             )
 
     ###############################################################################################################################################
     def _execute_appearance_update_task(
         self,
-        appearance_info: Dict[str, tuple[str, str]],
+        appearance_info: List[InternalProcessData],
         world_system_agent: LangServeAgent,
     ) -> bool:
 
+        appearance_info_mapping = {
+            data.actor_name: (
+                data.base_form,
+                data.clothe,
+                data.weapon,
+            )
+            for data in appearance_info
+        }
+
         agent_task = AgentTask.create_without_context(
             world_system_agent,
-            _generate_appearance_reasoning_prompt(appearance_info),
+            _generate_appearance_reasoning_prompt(appearance_info_mapping),
         )
         if agent_task.request() is None:
             logger.error(f"{world_system_agent.name} request response is None.")
@@ -203,13 +225,18 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
     ###############################################################################################################################################
     def _generate_actor_appearance_info(
         self, actor_entities: List[Entity]
-    ) -> Dict[str, tuple[str, str]]:
+    ) -> List[InternalProcessData]:
 
-        ret: Dict[str, tuple[str, str]] = {}
+        ret: List[InternalProcessData] = []
         for actor_entity in actor_entities:
-            ret[actor_entity.get(ActorComponent).name] = (
-                actor_entity.get(BaseFormComponent).base_form,
-                self._extract_clothing_appearance(actor_entity),
+            ret.append(
+                InternalProcessData(
+                    actor_name=actor_entity.get(ActorComponent).name,
+                    actor_entity=actor_entity,
+                    base_form=actor_entity.get(BaseFormComponent).base_form,
+                    weapon=self._extract_weapon_appearance(actor_entity),
+                    clothe=self._extract_clothing_appearance(actor_entity),
+                )
             )
 
         return ret
@@ -223,11 +250,30 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
         clothe_prop_file = self._context.file_system.get_file(
             PropFile, clothes_comp.name, clothes_comp.propname
         )
+        assert (
+            clothe_prop_file is not None
+        ), f"clothe_prop_file is None, name: {clothes_comp.name}"
         if clothe_prop_file is None:
-            assert False, f"clothe_prop_file is None, name: {clothes_comp.name}"
             return ""
 
-        return clothe_prop_file.appearance
+        return f"""{clothe_prop_file.name}。 {clothe_prop_file.appearance}"""
+
+    ###############################################################################################################################################
+    def _extract_weapon_appearance(self, actor_entity: Entity) -> str:
+        if not actor_entity.has(WeaponComponent):
+            return ""
+
+        weapon_comp = actor_entity.get(WeaponComponent)
+        weapon_prop_file = self._context.file_system.get_file(
+            PropFile, weapon_comp.name, weapon_comp.propname
+        )
+        assert (
+            weapon_prop_file is not None
+        ), f"weapon_prop_file is None, name: {weapon_comp.name}"
+        if weapon_prop_file is None:
+            return ""
+
+        return f"""{weapon_prop_file.name}。 {weapon_prop_file.appearance}"""
 
     ###############################################################################################################################################
     def _notify_appearance_change_event(self, actor_entities: List[Entity]) -> None:

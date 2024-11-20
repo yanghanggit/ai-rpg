@@ -7,7 +7,7 @@ from my_components.components import (
     ActorComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from typing import final, override, Set, List, Dict
+from typing import Final, final, override, Set, List, Dict
 from extended_systems.prop_file import PropFile
 from rpg_game.rpg_game import RPGGame
 from my_models.event_models import AgentEvent
@@ -43,14 +43,15 @@ def _generate_skill_invocation_result_prompt(
 @final
 class SkillCommandParser:
     def __init__(
-        self, context: RPGEntitasContext, actor_name: str, origin_command: str
+        self, context: RPGEntitasContext, actor_name: str, skill_command: str
     ) -> None:
-        self._context: RPGEntitasContext = context
-        self._actor_name = actor_name
-        self._origin_command = str(origin_command)
+        self._context: Final[RPGEntitasContext] = context
+        self._actor_name: Final[str] = actor_name
+        self._skill_command: Final[str] = str(skill_command)
         self._parsed_command_mapping: Dict[str, str] = {}
         self._skill_prop_files: List[PropFile] = []
         self._skill_accessory_prop_files: List[tuple[PropFile, int]] = []
+        # self._auto_equipped_weapon: Optional[PropFile] = None
 
     ######################################################################################################################################################
     @property
@@ -72,13 +73,13 @@ class SkillCommandParser:
 
     ######################################################################################################################################################
     @property
-    def origin_command(self) -> str:
-        return self._origin_command
+    def skill_command(self) -> str:
+        return self._skill_command
 
     ######################################################################################################################################################
     @property
     def command_queue(self) -> List[str]:
-        return self._origin_command.split(" ")
+        return self._skill_command.split(" ")
 
     ######################################################################################################################################################
     @property
@@ -221,7 +222,7 @@ class SkillInvocationSystem(ReactiveProcessor):
         skill_command_parser = SkillCommandParser(
             context=self._context,
             actor_name=actor_status_evaluator.actor_name,
-            origin_command=origin_command_from_skill_action,
+            skill_command=origin_command_from_skill_action,
         )
         skill_command_parser.parse(
             actor_entity.get(ActorComponent).current_stage,
@@ -240,17 +241,6 @@ class SkillInvocationSystem(ReactiveProcessor):
                 actor_entity, origin_command_from_skill_action, False
             )
             return
-
-        # 默认会添加当前武器到技能消耗配件中
-        current_weapon = actor_status_evaluator._current_weapon
-        if current_weapon is not None:
-
-            if current_weapon not in [
-                item[0] for item in skill_command_parser._skill_accessory_prop_files
-            ]:
-                skill_command_parser._skill_accessory_prop_files.append(
-                    (current_weapon, 1)
-                )
 
         # 检查技能消耗的配件, 是否满足数量
         for (
@@ -320,7 +310,7 @@ class SkillInvocationSystem(ReactiveProcessor):
         skill_entity.add(
             SkillComponent,
             actor_name,
-            skill_command_parser.origin_command,
+            skill_command_parser.skill_command,
             skill_command_parser.skill_name,
             stage_name,
             skill_command_parser.target_entity_names,

@@ -119,9 +119,9 @@ def _generate_actor_plan_prompt(
 - 衣服: {current_clothes is not None and current_clothes.name or "无"}
 
 ## 关于动作: {EquipPropAction.__name__}。
-- 若你未装备任何武器或衣服，可从“你的全部道具”中选择武器或衣服进行装备。
-- 若你已装备武器或衣服，可根据需要和计划进行更换。
-- 请避免重复装备相同的道具，以免无效操作。
+- 未装备武器或衣服时，可从“你的全部道具”中选择装备。
+- 已装备时，可根据需要更换。
+- 避免重复装备相同道具，以免无效操作。
 
 {gameplay_systems.prompt_utils.insert_skill_action_prompt(actor_props.get(PropType.TYPE_SKILL, []))}
 

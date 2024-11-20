@@ -155,7 +155,7 @@ class ExcelEditorStage:
             name=self.excel_data.name,
             codename=self.excel_data.codename,
             stage_profile=self.excel_data.stage_profile,
-            url=self.excel_data.localhost,
+            url=self.excel_data.localhost_api_url,
             kick_off_message=self.kick_off_message,
             stage_graph=self.stage_graph,
             attributes=self.attributes,

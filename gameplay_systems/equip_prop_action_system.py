@@ -106,16 +106,28 @@ class EquipPropActionSystem(ReactiveProcessor):
                 )
                 continue
 
+            need_add_update_appearance = False
+
             if prop_file.is_weapon:
-                self._apply_weapon_equipment(entity, prop_file)
+                need_add_update_appearance = (
+                    need_add_update_appearance
+                    or self._apply_weapon_equipment(entity, prop_file)
+                )
 
             elif prop_file.is_clothes:
-                if self._apply_clothing_equipment(entity, prop_file):
-                    self._add_update_appearance_action(entity)
+                need_add_update_appearance = (
+                    need_add_update_appearance
+                    or self._apply_clothing_equipment(entity, prop_file)
+                )
+
             else:
                 logger.error(
                     f"EquipPropActionSystem: {actor_name} can't equip prop {equip_prop_file_name}"
                 )
+
+            # 添加更新外观的action
+            if need_add_update_appearance:
+                self._add_update_appearance_action(entity)
 
     ####################################################################################################################################
     def _apply_weapon_equipment(self, entity: Entity, prop_file: PropFile) -> bool:

@@ -4,8 +4,8 @@ from typing import List, Optional, Final
 from my_models.entity_models import GameModel
 from my_models.config_models import APIEndpointsConfigModel, AllGamesConfigModel
 from my_models.player_models import (
-    WatchActionModel,
-    CheckActionModel,
+    SurveyStageModel,
+    StatusInventoryCheckModel,
     RetrieveActorArchivesModel,
     RetrieveStageArchivesActionModel,
     PlayerClientMessage,
@@ -149,17 +149,17 @@ class ExecuteResponse(BaseModel):
 ###############################################################################################################################################
 
 
-class WatchRequest(BaseModel):
+class SurveyStageRequest(BaseModel):
     user_name: str = ""
     game_name: str = ""
     actor_name: str = ""
 
 
-class WatchResponse(BaseModel):
+class SurveyStageResponse(BaseModel):
     user_name: str = ""
     game_name: str = ""
     actor_name: str = ""
-    action_model: WatchActionModel = WatchActionModel()
+    action_model: SurveyStageModel = SurveyStageModel()
     error: int = 0
     message: str = ""
 
@@ -169,17 +169,17 @@ class WatchResponse(BaseModel):
 ###############################################################################################################################################
 
 
-class CheckRequest(BaseModel):
+class StatusInventoryCheckRequest(BaseModel):
     user_name: str = ""
     game_name: str = ""
     actor_name: str = ""
 
 
-class CheckResponse(BaseModel):
+class StatusInventoryCheckResponse(BaseModel):
     user_name: str = ""
     game_name: str = ""
     actor_name: str = ""
-    action_model: CheckActionModel = CheckActionModel()
+    action_model: StatusInventoryCheckModel = StatusInventoryCheckModel()
     error: int = 0
     message: str = ""
 

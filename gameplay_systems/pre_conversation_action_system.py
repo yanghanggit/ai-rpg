@@ -4,6 +4,8 @@ from my_components.action_components import (
     SpeakAction,
     AnnounceAction,
     WhisperAction,
+    MindVoiceAction,
+    TagAction,
 )
 from my_components.components import (
     PlayerComponent,
@@ -12,44 +14,69 @@ from my_components.components import (
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from my_agent.agent_task import AgentTask
-from typing import Dict, List, final
+from typing import List, final
 import copy
 from rpg_game.rpg_game import RPGGame
+from my_agent.agent_plan import AgentPlanResponse
 
 
 ################################################################################################################################################
 def _generate_conversation_check_prompt(
-    input_announce_content: str,
-    input_speak_content_list: List[str],
-    input_whisper_content_list: List[str],
+    announce_content: str,
+    speak_content_list: List[str],
+    whisper_content_list: List[str],
 ) -> str:
 
-    announce_prompt = input_announce_content != "" and input_announce_content or "无"
-    speak_content_prompt = (
-        len(input_speak_content_list) > 0
-        and "\n".join(input_speak_content_list)
-        or "无"
+    # 生成对话检查的提示
+    announce_prompt = announce_content != "" and announce_content or "无"
+    speak_content_list_prompt = (
+        len(speak_content_list) > 0 and "\n".join(speak_content_list) or "无"
     )
-    whisper_content_prompt = (
-        len(input_whisper_content_list) > 0
-        and "\n".join(input_whisper_content_list)
-        or "无"
+    whisper_content_list_prompt = (
+        len(whisper_content_list) > 0 and "\n".join(whisper_content_list) or "无"
     )
 
-    prompt = f"""# 玩家输入了如下对话类型事件，请你检查
-
+    return f"""# 提示: 玩家输入了如下对话类型事件，请你检查是否符合游戏规则。
+    
 ## {AnnounceAction.__name__}
 {announce_prompt}
+
 ## {SpeakAction.__name__}
-{speak_content_prompt}
+{speak_content_list_prompt}
+
 ## {WhisperAction.__name__}
-{whisper_content_prompt}
-## 检查规则
+{whisper_content_list_prompt}
+
+## 检查要求与原则
 - 对话内容是否违反政策。
 - 对话内容是否有不当的内容。
 - 对话对容是否有超出游戏范围的内容。例如，玩家说了一些关于游戏外的事情，或者说出不符合游戏世界观与历史背景的事件。
-"""
-    return prompt
+
+## 输出要求
+- 请遵循输出格式指南。
+- 返回结果仅包含：{MindVoiceAction.__name__} 和 {TagAction.__name__}。
+
+## 格式示例：
+{{ "{MindVoiceAction.__name__}":["输出你的最终判断结果，说明是否符合，并附上原因"], "{TagAction.__name__}":["Yes/No"（符合/不符合）] }}"""
+
+
+################################################################################################################################################
+################################################################################################################################################
+################################################################################################################################################
+@final
+class InternalPlanResponse(AgentPlanResponse):
+
+    def __init__(self, name: str, input_str: str) -> None:
+        super().__init__(name, input_str)
+
+    @property
+    def is_allowed(self) -> bool:
+        return self._parse_boolean(TagAction.__name__)
+
+
+################################################################################################################################################
+################################################################################################################################################
+################################################################################################################################################
 
 
 @final
@@ -59,7 +86,7 @@ class PreConversationActionSystem(ReactiveProcessor):
         super().__init__(context)
         self._context: RPGEntitasContext = context
         self._game: RPGGame = rpg_game
-        self._tasks: Dict[str, AgentTask] = {}
+        self._entities_copy: List[Entity] = []
 
     #################################################################################################################################################
     @override
@@ -82,72 +109,68 @@ class PreConversationActionSystem(ReactiveProcessor):
     #################################################################################################################################################
     @override
     def react(self, entities: list[Entity]) -> None:
-        self._tasks.clear()
-        for player_entity in entities:
-            self.fill_task(player_entity, self._tasks)
+        self._entities_copy = entities.copy()
 
     #################################################################################################################################################
-    def fill_task(self, player_entity: Entity, tasks: Dict[str, AgentTask]) -> None:
-        agent = self._context.safe_get_agent(player_entity)
-        announce_content = self.get_announce_content(player_entity)
-        speak_content_list = self.get_speak_content(player_entity)
-        whisper_content_list = self.get_whisper_content(player_entity)
+    async def a_execute2(self) -> None:
+        await self._execute_agent_tasks(self._entities_copy)
+        self._entities_copy.clear()
 
-        prompt = _generate_conversation_check_prompt(
-            announce_content, speak_content_list, whisper_content_list
+    #################################################################################################################################################
+    async def _execute_agent_tasks(self, entities: List[Entity]) -> None:
+
+        if len(entities) == 0:
+            return
+
+        # 生成agent任务
+        agent_tasks: List[AgentTask] = []
+        for player_entity in entities:
+            agent_tasks.append(self._populate_agent_task(player_entity))
+
+        # 执行agent任务
+        await AgentTask.gather(agent_tasks)
+
+        # 处理agent任务的返回值
+        self._process_response_tasks(agent_tasks)
+
+    #################################################################################################################################################
+    def _populate_agent_task(
+        self,
+        player_entity: Entity,
+    ) -> AgentTask:
+        return AgentTask.create_without_context(
+            self._context.safe_get_agent(player_entity),
+            _generate_conversation_check_prompt(
+                self._get_announce_content(player_entity),
+                self._get_speak_content(player_entity),
+                self._get_whisper_content(player_entity),
+            ),
         )
 
-        tasks[agent.name] = AgentTask.create_without_context(agent, prompt)
-
     #################################################################################################################################################
-    def get_announce_content(self, player_entity: Entity) -> str:
+    def _get_announce_content(self, player_entity: Entity) -> str:
         if not player_entity.has(AnnounceAction):
             return ""
         announce_action = player_entity.get(AnnounceAction)
         return " ".join(announce_action.values)
 
     #################################################################################################################################################
-    def get_speak_content(self, player_entity: Entity) -> List[str]:
+    def _get_speak_content(self, player_entity: Entity) -> List[str]:
         if not player_entity.has(SpeakAction):
             return []
         speak_action = player_entity.get(SpeakAction)
         return copy.copy(speak_action.values)
 
     #################################################################################################################################################
-    def get_whisper_content(self, player_entity: Entity) -> List[str]:
+    def _get_whisper_content(self, player_entity: Entity) -> List[str]:
         if not player_entity.has(WhisperAction):
             return []
         whisper_action = player_entity.get(WhisperAction)
         return copy.copy(whisper_action.values)
 
     #################################################################################################################################################
-    async def a_execute2(self) -> None:
-        if len(self._tasks) == 0:
-            return
+    def _clear_player_communication_actions(self, player_entity: Entity) -> None:
 
-        responses = await AgentTask.gather([task for task in self._tasks.values()])
-        if len(responses) == 0:
-            self.remove_all()
-            return
-
-        self.on_response(self._tasks)
-        self._tasks.clear()
-
-    #################################################################################################################################################
-    def remove_all(self) -> None:
-
-        actor_entities = self._context.get_group(
-            Matcher(
-                all_of=[ActorComponent, PlayerComponent],
-                any_of=[SpeakAction, AnnounceAction, WhisperAction],
-            )
-        ).entities.copy()
-
-        for actor_entity in actor_entities:
-            self.remove_action(actor_entity)
-
-    #################################################################################################################################################
-    def remove_action(self, player_entity: Entity) -> None:
         if player_entity.has(SpeakAction):
             player_entity.remove(SpeakAction)
 
@@ -158,15 +181,16 @@ class PreConversationActionSystem(ReactiveProcessor):
             player_entity.remove(WhisperAction)
 
     #################################################################################################################################################
-    def on_response(self, tasks: Dict[str, AgentTask]) -> None:
-        for name, task in tasks.items():
-
-            player_entity = self._context.get_actor_entity(name)
+    def _process_response_tasks(self, tasks: List[AgentTask]) -> None:
+        for task in tasks:
+            player_entity = self._context.get_actor_entity(task.agent_name)
+            assert player_entity is not None
             if player_entity is None:
                 continue
 
-            if task.response is None:
-                # 说明可能在langserve中出现了问题，就是没有任何返回值。
-                self.remove_action(player_entity)
+            # 处理agent任务的返回值
+            plan_response = InternalPlanResponse(task.agent_name, task.response_content)
+            if not plan_response.is_allowed:
+                self._clear_player_communication_actions(player_entity)
 
     #################################################################################################################################################

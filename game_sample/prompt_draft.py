@@ -251,60 +251,29 @@
 ############################################################################################################
 ############################################################################################################
 ############################################################################################################
-
-
 """
-actor_prop = actor_props
-actor_current_using_prop = actor_equipped_props
-actors_in_stage= actors_on_stage
-groups_in_stage = groups_on_stage
-spawn = spawn_config
-spawners_in_stage = spawners_on_stage
+# 我想设计2个动作系统，请给我起名字的建议
+
+## 动作系统1:
+这个动作表达：角色查看场景中的信息，例如：有哪些角色。此时场景的描述和场景的关键信息(显著的道具和物件的标记)。
+
+## 动作系统2:
+这个动作表达：角色对自身的状态进行检查，例如：角色的生命值（健康状态），自身的外貌，自身拥有的所有道具等。
+
+## 请为我这2个动作系统，分别起2个程序用的class类名。要求用xxxAction的形式。
 
 
 
+以下是这两个动作系统的class名称建议：
 
-我的游戏中有如下3个核心概念：
-1. Actor。演员。
-2. Stage。舞台。
-3, Prop。道具。
+动作系统1
+Class 名称：SurveySceneAction
 
-有2个Actor的系统：
-1. Group。组。用于表达一组Actor的集合。
-2. Spawn。生成。用于表达Actor的生成。
+解释：强调角色对场景信息进行全面查看和调查。
+动作系统2
+Class 名称：StatusInventoryCheckAction
 
-我现在的需求是根据以上我的设定，起一些变量的名字。用于我的代码。
-1. Actor身上的Prop。
-2. Actor当前装备的Prop。
-3. 在Stage中的Actors。
-4. 在Stage中的Groups。
-5. Spawn的设置信息（就是驱动其如何生成Actors的数据）
-6. 在Stage中的Spawners。
-
-请仔细思考，给我这些变量的名字。
-
-
-
-根据你的设定和需求，这里是为这些变量推荐的名称：
-
-Actor身上的Prop：
-
-actorProps 或 carriedProps：清晰表达Actor携带的道具。
-Actor当前装备的Prop：
-
-equippedProps 或 actorEquippedProps：突出Actor当前已装备的道具。
-在Stage中的Actors：
-
-stageActors 或 actorsOnStage：表明Stage中的所有Actor。
-在Stage中的Groups：
-
-stageGroups 或 groupsOnStage：表达Stage中存在的Actor组。
-Spawn的设置信息：
-
-spawnConfig 或 spawnSettings：表示用于生成Actor的配置数据。
-在Stage中的Spawners：
-
-stageSpawners 或 spawnersOnStage：指出在Stage中用于生成Actor的生成器。
-这些名称尽量简洁明了，便于理解并符合你的游戏设定。希望这些建议对你有帮助！
+解释：突出角色检查自身状态和道具的行为。
+这两个名称表达清晰且符合命名规范，便于理解和在代码中使用。如果你有其他需求或想法，请告诉我！
 
 """

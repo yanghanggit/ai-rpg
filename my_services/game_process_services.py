@@ -356,8 +356,12 @@ async def execute(request_data: ExecuteRequest) -> Dict[str, Any]:
 
     # 如果有输入命令，就要加
     for usr_input in request_data.user_input:
-        assert usr_input != "/watch" and usr_input != "/w", "不应该有这个命令"
-        assert usr_input != "/check" and usr_input != "/c", "不应该有这个命令"
+        assert (
+            usr_input != "/survey_stage_action" and usr_input != "/ssa"
+        ), "不应该有这个命令"
+        assert (
+            usr_input != "/status_inventory_check_action" and usr_input != "/sica"
+        ), "不应该有这个命令"
         assert (
             usr_input != "/retrieve_actor_archives" and usr_input != "/raa"
         ), "不应该有这个命令"

@@ -216,11 +216,11 @@ class RPGGame(BaseGame):
         )
 
         # 添加扩展子系统的功能: CodeName
-        code_name_component_class = (
-            context.query_component_system.register_query_component_class(
-                world_system_model.name,
-                f"""{world_system_model.codename}{world_system_instance.guid}""",
-            )
+        code_name_component_class = context.query_component_system.register_query_component_class(
+            instance_name=world_system_model.name,
+            data_base_code_name=world_system_model.codename,
+            guid=world_system_instance.guid,
+            # f"""{world_system_model.codename}{world_system_instance.guid}""",
         )
         assert code_name_component_class is not None
         world_system_entity.add(code_name_component_class, world_system_instance.name)
@@ -345,10 +345,11 @@ class RPGGame(BaseGame):
         context.agent_system.register_agent(actor_instance.name, actor_model.url)
 
         # 添加扩展子系统: CodeName
-        code_name_component_class = (
-            context.query_component_system.register_query_component_class(
-                actor_instance.name, f"""{actor_model.codename}{actor_instance.guid}"""
-            )
+        code_name_component_class = context.query_component_system.register_query_component_class(
+            instance_name=actor_instance.name,
+            data_base_code_name=actor_model.codename,
+            guid=actor_instance.guid,
+            # f"""{actor_model.codename}{actor_instance.guid}"""
         )
         assert code_name_component_class is not None
         actor_entity.add(code_name_component_class, actor_instance.name)
@@ -493,10 +494,11 @@ class RPGGame(BaseGame):
         context.agent_system.register_agent(stage_model.name, stage_model.url)
 
         # 添加子系统：CodeName
-        code_name_component_class = (
-            context.query_component_system.register_query_component_class(
-                stage_model.name, f"""{stage_model.codename}{stage_instance.guid}"""
-            )
+        code_name_component_class = context.query_component_system.register_query_component_class(
+            instance_name=stage_instance.name,
+            data_base_code_name=stage_model.codename,
+            guid=stage_instance.guid,
+            # f"""{stage_model.codename}{stage_instance.guid}"""
         )
         assert code_name_component_class is not None
         stage_entity.add(code_name_component_class, stage_instance.name)

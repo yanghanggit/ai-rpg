@@ -168,7 +168,7 @@ def terminal_player_input_select_actor(game: RPGGame) -> str:
 
 #######################################################################################################################################
 def terminal_player_input_watch(game_name: RPGGame, player_proxy: PlayerProxy) -> None:
-    watch_action_model = rpg_game.rpg_game_utils.gen_player_watch_action_model(
+    watch_action_model = rpg_game.rpg_game_utils.gen_player_survey_stage_model(
         game_name, player_proxy
     )
     if watch_action_model is None:
@@ -194,10 +194,10 @@ async def terminal_player_input(game: RPGGame, player_proxy: PlayerProxy) -> Non
             game._will_exit = True
             break
 
-        elif usr_input == "/watch" or usr_input == "/w":
+        elif usr_input == "/survey_stage_action" or usr_input == "/ssa":
             terminal_player_input_watch(game, player_proxy)
 
-        elif usr_input == "/check" or usr_input == "/c":
+        elif usr_input == "/status_inventory_check_action" or usr_input == "/sica":
             terminal_player_input_check(game, player_proxy)
 
         elif usr_input == "/retrieve_actor_archives" or usr_input == "/raa":
@@ -213,8 +213,10 @@ async def terminal_player_input(game: RPGGame, player_proxy: PlayerProxy) -> Non
 
 #######################################################################################################################################
 def terminal_player_input_check(game_name: RPGGame, player_proxy: PlayerProxy) -> None:
-    check_action_model = rpg_game.rpg_game_utils.gen_player_check_action_model(
-        game_name, player_proxy
+    check_action_model = (
+        rpg_game.rpg_game_utils.gen_player_status_inventory_check_model(
+            game_name, player_proxy
+        )
     )
 
     if check_action_model is None:

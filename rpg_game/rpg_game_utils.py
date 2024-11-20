@@ -19,7 +19,8 @@ from rpg_game.terminal_game import TerminalGame
 from rpg_game.web_game import WebGame
 from player.player_proxy import PlayerProxy
 from extended_systems.archive_file import ActorArchiveFile, StageArchiveFile
-from extended_systems.prop_file import PropFile
+
+# from extended_systems.prop_file import PropFile
 from my_components.components import (
     ActorComponent,
     PlayerComponent,
@@ -45,8 +46,8 @@ import shutil
 import zipfile
 from my_models.event_models import AgentEvent
 from my_models.player_models import (
-    WatchActionModel,
-    CheckActionModel,
+    SurveyStageModel,
+    StatusInventoryCheckModel,
     RetrieveActorArchivesModel,
     RetrieveStageArchivesActionModel,
 )
@@ -199,9 +200,9 @@ def get_stage_narrate_content_from_stage_archive_file(
 
 
 #######################################################################################################################################
-def gen_player_watch_action_model(
+def gen_player_survey_stage_model(
     game_name: RPGGame, player_proxy: PlayerProxy
-) -> Optional[WatchActionModel]:
+) -> Optional[SurveyStageModel]:
     player_entity = game_name.context.get_player_entity(player_proxy.name)
     if player_entity is None:
         return None
@@ -237,13 +238,13 @@ def gen_player_watch_action_model(
 ## 场景内角色
 {"\n".join(actors_info_prompts)}"""
 
-    return WatchActionModel(content=message)
+    return SurveyStageModel(content=message)
 
 
 #######################################################################################################################################
-def gen_player_check_action_model(
+def gen_player_status_inventory_check_model(
     game_name: RPGGame, player_proxy: PlayerProxy
-) -> Optional[CheckActionModel]:
+) -> Optional[StatusInventoryCheckModel]:
     player_entity = game_name.context.get_player_entity(player_proxy.name)
     if player_entity is None:
         return None
@@ -278,7 +279,7 @@ def gen_player_check_action_model(
 ## 你的外貌
 {actor_status_evaluator.appearance}"""
 
-    return CheckActionModel(content=message)
+    return StatusInventoryCheckModel(content=message)
 
 
 #######################################################################################################################################

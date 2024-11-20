@@ -380,7 +380,7 @@ def _requesting_watch(
 ) -> None:
 
     response = requests.post(
-        client_context.api_endpoints.WATCH,
+        client_context.api_endpoints.SURVEY_STAGE_ACTION,
         json=SurveyStageRequest(
             user_name=client_context._user_name,
             game_name=client_context._game_name,
@@ -404,7 +404,7 @@ def _requesting_check(
 ) -> None:
 
     response = requests.post(
-        client_context.api_endpoints.CHECK,
+        client_context.api_endpoints.STATUS_INVENTORY_CHECK_ACTION,
         json=StatusInventoryCheckRequest(
             user_name=client_context._user_name,
             game_name=client_context._game_name,

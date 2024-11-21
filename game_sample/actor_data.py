@@ -15,8 +15,6 @@ class DataActorProperty(StrEnum):
     CODENAME = "codename"
     ACTOR_PROFILE = "actor_profile"
     CONVERSATIONAL_STYLE = "conversational_style"
-    # PORT = "PORT"
-    # API = "API"
     RAG = "RAG"
     SYS_PROMPT_TEMPLATE = "sys_prompt_template"
     AGENTPY_TEMPLATE = "agentpy_template"
@@ -67,18 +65,13 @@ class ExcelDataActor:
     @property
     def port(self) -> int:
         return self._port
-        # return int(self._data[DataActorProperty.PORT])
 
     ############################################################################################################
     @property
     def api_path(self) -> str:
         assert self.codename != ""
+        assert "/" not in self.codename
         return f"/actor/{self.codename}"
-
-        # assert self.codename in str(
-        #     self._data[DataActorProperty.API]
-        # ), f"{self.codename} not in {self._data[DataActorProperty.API]}"
-        # return str(self._data[DataActorProperty.API])
 
     ############################################################################################################
     @property

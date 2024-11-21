@@ -14,8 +14,6 @@ class DataWorldSystemProperty(StrEnum):
     NAME = "name"
     CODENAME = "codename"
     WORLD_SYSTEM_PROFILE = "world_system_profile"
-    # PORT = "PORT"
-    # API = "API"
     RAG = "RAG"
     SYS_PROMPT_TEMPLATE = "sys_prompt_template"
     AGENTPY_TEMPLATE = "agentpy_template"
@@ -55,15 +53,13 @@ class ExcelDataWorldSystem:
     @property
     def port(self) -> int:
         return self._port
-        # return int(self._data[DataWorldSystemProperty.PORT])
 
     ############################################################################################################
     @property
     def api_path(self) -> str:
         assert self.codename != "", "codename must not be empty."
+        assert "/" not in self.codename
         return f"/world_system/{self.codename}"
-
-    # return str(self._data[DataWorldSystemProperty.API])
 
     ############################################################################################################
     @property

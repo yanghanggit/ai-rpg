@@ -3,7 +3,7 @@ from entitas import Matcher, ExecuteProcessor, Entity  # type: ignore
 from my_components.action_components import (
     DamageAction,
     AnnounceAction,
-    TagAction,
+    SkillAction,
 )
 from my_components.components import (
     AttributesComponent,
@@ -36,40 +36,37 @@ def _generate_skill_impact_response_prompt(
     is_stage: bool,
 ) -> str:
 
-    prompt = f"""# {actor_name} 向 {target_name} 发动技能。
+    return f"""# 发生事件: {actor_name} 向 {target_name} 使用动作：{SkillAction.__name__}。
 ## 事件描述
- {world_harmony_inspector_content}
-
+{world_harmony_inspector_content}
+ 
 ## 系统判断结果
 {world_harmony_inspector_tag}
 
 ## 判断步骤
-第1步:回顾 {target_name} 的当前状态。
-第2步:结合 事件描述 与 系统判断结果，推理技能对 {target_name} 的影响。例如改变你的状态，或者对你造成伤害等。
-第3步:更新 {target_name} 的状态，作为最终输出。
+第1步: 回顾 {target_name} 的当前状态。
+第2步: 结合 事件描述 与 系统判断结果，推理技能对 {target_name} 的影响。例如改变你的状态，或者对你造成伤害等。
+第3步: 更新 {target_name} 的状态，作为最终输出。
 
 ## 输出要求
-- 请遵循 输出格式指南。
-- 返回结果只带如下的键: {AnnounceAction.__name__} 和 {TagAction.__name__}。
-- {AnnounceAction.__name__} 的内容格式要求为: "{target_name}对技能的反馈与更新后的状态描述"。"""
-
-    return prompt
+请遵循 输出格式指南。
+返回结果只带如下的键: {AnnounceAction.__name__}，规则如下:
+{{"{AnnounceAction.__name__}": ["{target_name}对技能的反馈与更新后的状态描述"]}}"""
 
 
 ################################################################################################################################################
-def _generate_broadcast_skill_impact_response_prompt(
-    actor_name: str, target_name: str, reasoning_sentence: str, feedback_sentence: str
+def _generate_skill_impact_notification_prompt(
+    source_name: str,
+    target_name: str,
+    world_harmony_inspector_content: str,
+    impact: str,
 ) -> str:
 
-    ret_prompt = f"""# 注意场景内发生了如下事件: {actor_name} 向 {target_name} 发动了技能。
-
-## 技能发动的过程描述
-{reasoning_sentence}
-
-## {target_name} 受到技能后的反馈
-{feedback_sentence}"""
-
-    return ret_prompt
+    return f"""# 发生事件: {source_name} 向 {target_name} 使用动作：{SkillAction.__name__}。
+## 事件描述
+{world_harmony_inspector_content}
+## 系统判断 {target_name} 受到技能后的反馈
+{impact}"""
 
 
 ################################################################################################################################################
@@ -245,18 +242,18 @@ class SkillImpactResponseEvaluatorSystem(ExecuteProcessor):
             )
 
             # 通知技能的影响结果
-            self._notify_skill_impact_outcome(
+            self._notify_skill_impact(
                 internal_process_data,
                 target_entity=internal_process_data.target_entities[data_index],
-                impact_result=internal_process_data.target_responses[data_index].impact,
+                impact=internal_process_data.target_responses[data_index].impact,
             )
 
     ######################################################################################################################################################
-    def _notify_skill_impact_outcome(
+    def _notify_skill_impact(
         self,
         internal_process_data: InternalProcessData,
         target_entity: Entity,
-        impact_result: str,
+        impact: str,
     ) -> None:
 
         current_stage_entity = self._context.safe_get_stage_entity(
@@ -268,15 +265,15 @@ class SkillImpactResponseEvaluatorSystem(ExecuteProcessor):
         self._context.broadcast_event(
             current_stage_entity,
             AgentEvent(
-                message=_generate_broadcast_skill_impact_response_prompt(
-                    self._context.safe_get_entity_name(
+                message=_generate_skill_impact_notification_prompt(
+                    source_name=self._context.safe_get_entity_name(
                         internal_process_data.source_entity
                     ),
-                    self._context.safe_get_entity_name(target_entity),
-                    internal_process_data.skill_entity.get(
+                    target_name=self._context.safe_get_entity_name(target_entity),
+                    world_harmony_inspector_content=internal_process_data.skill_entity.get(
                         SkillComponent
                     ).world_harmony_inspector_content,
-                    impact_result,
+                    impact=impact,
                 )
             ),
             set({target_entity}),  # 已经参与的双方不需要再被通知了。

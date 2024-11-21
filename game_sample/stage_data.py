@@ -14,8 +14,6 @@ class DataStageProperty(StrEnum):
     NAME = "name"
     CODENAME = "codename"
     STAGE_PROFILE = "stage_profile"
-    # PORT = "PORT"
-    # API = "API"
     RAG = "RAG"
     SYS_PROMPT_TEMPLATE = "sys_prompt_template"
     AGENTPY_TEMPLATE = "agentpy_template"
@@ -54,18 +52,13 @@ class ExcelDataStage:
     @property
     def port(self) -> int:
         return self._port
-        # return int(self._data[DataStageProperty.PORT])
 
     ############################################################################################################
     @property
     def api_path(self) -> str:
         assert self.codename != "", "codename must not be empty."
+        assert "/" not in self.codename
         return f"/stage/{self.codename}"
-
-        # assert self.codename in str(
-        #     self._data[DataStageProperty.API]
-        # ), "API must contain codename."
-        # return str(self._data[DataStageProperty.API])
 
     ############################################################################################################
     @property

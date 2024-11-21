@@ -32,12 +32,11 @@ def _generate_invalid_target_prompt(source_name: str, target_name: str) -> str:
 
 #######################################################################################################################################
 def _generate_inspect_prompt(
-    source_name: str, target_name: str, health_ratio: float, prop_files: List[PropFile]
+    source_name: str,
+    target_name: str,
+    health_description: str,
+    prop_files: List[PropFile],
 ) -> str:
-
-    # 生命值
-    health_ratio = health_ratio * 100
-
     # 道具信息
     props_prompt = [generate_prop_file_appearance_prompt(prop) for prop in prop_files]
     if len(props_prompt) == 0:
@@ -45,10 +44,8 @@ def _generate_inspect_prompt(
 
     # 最终返回
     return f"""# 发生事件: {source_name} 对 {target_name} 进行了检查。获得了如下信息。
-
 ## {target_name} 健康状态
-{f"生命值: {health_ratio:.2f}%"}
-
+生命值: {health_description}
 ## {target_name} 持有的道具
 {"\n".join(props_prompt)}"""
 
@@ -104,6 +101,7 @@ class InspectActionSystem(ReactiveProcessor):
                 continue
 
             target_entity = self._context.get_entity_by_name(target_name)
+            assert target_entity is not None, f"未找到名为 {target_name} 的实体。"
             if target_entity is None or not target_entity.has(ActorComponent):
                 # 不存在的目标
                 self._notify_invalid_target_event(source_entity, target_name)
@@ -124,7 +122,7 @@ class InspectActionSystem(ReactiveProcessor):
                 message=_generate_inspect_prompt(
                     self._context.safe_get_entity_name(source_entity),
                     actor_status_evaluator.actor_name,
-                    actor_status_evaluator.health_ratio,
+                    actor_status_evaluator.format_health_info,
                     actor_status_evaluator.inspectable_prop_files,
                 )
             ),

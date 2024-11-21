@@ -17,6 +17,8 @@ from my_components.action_components import (
     EquipPropAction,
     StageNarrateAction,
     SkillAction,
+    InspectAction,
+    StealPropAction,
 )
 import game_sample.builtin_prompt
 
@@ -57,7 +59,9 @@ ACTOR_SYS_PROMPT_TEMPLATE = f"""# {configuration.SystemPromptReplaceSymbol.NAME}
     "{GoToAction.__name__}":["前往的场景全名"], 
     "{GivePropAction.__name__}":["@道具接收角色全名/交付的道具全名"], 
     "{EquipPropAction.__name__}":["你想要装备的武器的道具全名", "你想要装备的衣服的道具全名"], 
-    "{SkillAction.__name__}":["技能使用指令"], 
+    "{SkillAction.__name__}":["技能使用指令"],
+    "{StealPropAction.__name__}":["@道具拥有者的角色全名(只能是场景内的角色)/目标道具的全名"], 
+    "{InspectAction.__name__}":[角色全名(只能是场景内的角色，你计划查看其拥有的道具与健康状态)",...],
 {game_sample.builtin_prompt.JSON_SAMPLE_END}
 
 ### 注意事项

@@ -253,7 +253,7 @@ def gen_player_status_inventory_check_model(
     actor_status_evaluator = ActorStatusEvaluator(game_name.context, player_entity)
 
     # 生命值
-    health = actor_status_evaluator.health_ratio * 100
+    # health = actor_status_evaluator.health_ratio * 100
 
     # 道具信息
     actor_props_prompt = (
@@ -271,7 +271,7 @@ def gen_player_status_inventory_check_model(
 ## 所在的场景：{actor_status_evaluator.stage_name}
 
 ## 健康状态
-{f"生命值: {health:.2f}%"}
+生命值: {actor_status_evaluator.format_health_info}
 
 ## 持有的道具
 {"\n".join(actor_props_prompt)}

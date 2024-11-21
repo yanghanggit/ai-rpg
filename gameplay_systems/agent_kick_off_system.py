@@ -10,7 +10,6 @@ from my_components.components import (
     AgentPingFlagComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from loguru import logger
 from typing import Dict, Set, final
 from my_agent.agent_task import AgentTask
 from rpg_game.rpg_game import RPGGame
@@ -22,6 +21,7 @@ from my_components.action_components import (
 )
 from my_components.action_components import UpdateAppearanceAction
 import gameplay_systems.prompt_utils
+from loguru import logger
 
 
 ###############################################################################################################################################

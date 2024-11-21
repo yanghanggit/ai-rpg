@@ -3,6 +3,7 @@ from rpg_game.rpg_entitas_context import RPGEntitasContext
 from my_components.action_components import (
     StealPropAction,
     DeadAction,
+    InspectAction,
 )
 from my_components.components import (
     ActorComponent,
@@ -13,22 +14,33 @@ import gameplay_systems.file_system_utils
 from extended_systems.prop_file import PropFile
 import my_format_string.target_message
 from rpg_game.rpg_game import RPGGame
-from loguru import logger
 from my_models.event_models import AgentEvent
+from loguru import logger
+
 
 ####################################################################################################################################
-
-
-def _generate_steal_prompt(
+def _generate_steal_notification_prompt(
     source_name: str, target_name: str, prop_name: str, action_result: bool
 ) -> str:
     if not action_result:
-        return f"# 发生事件: {source_name} 试图从 {target_name} 盗取 {prop_name}, 但是失败了。"
+        return f"""# 发生事件: {source_name} 试图从 {target_name} 盗取 {prop_name}, 但是失败了。
+## 建议
+可以尝试使用 {InspectAction.__name__} 动作来查看目标的道具。"""
 
     return f"""# 发生事件: {source_name} 从 {target_name} 成功盗取了 {prop_name}。
-# 导致结果
+## 导致结果
 - {target_name} 现在不再拥有 {prop_name}。
 - {source_name} 现在拥有了 {prop_name}。"""
+
+
+####################################################################################################################################
+def _generate_steal_target_error_message_prompt(
+    source_name: str, target_name: str
+) -> str:
+    return f"""# 提示: {source_name} 试图对一个不存在的目标 {target_name} 进行盗取。
+## 原因分析与建议
+- 请检查目标的全名: {target_name}，确保是完整匹配:游戏规则-全名机制
+- 请检查目标是否存在于当前场景中。"""
 
 
 ####################################################################################################################################
@@ -68,22 +80,35 @@ class StealActionSystem(ReactiveProcessor):
         steal_action: StealPropAction = source_entity.get(StealPropAction)
         target_and_message = (
             my_format_string.target_message.extract_target_message_pairs(
-                steal_action.values
+                values=steal_action.values, symbol1="@", symbol2="/"
             )
         )
 
         for target_entity_name, prop_file_name in target_and_message:
 
-            if (
-                gameplay_systems.action_component_utils.validate_conversation(
-                    self._context, source_entity, target_entity_name
-                )
-                != gameplay_systems.action_component_utils.ConversationError.VALID
-            ):
-                # 不能交谈就是不能偷
+            error = gameplay_systems.action_component_utils.validate_conversation(
+                self._context, source_entity, target_entity_name
+            )
+            if error != gameplay_systems.action_component_utils.ConversationError.VALID:
+
+                if (
+                    error
+                    == gameplay_systems.action_component_utils.ConversationError.INVALID_TARGET
+                ):
+                    self._context.notify_event(
+                        set({source_entity}),
+                        AgentEvent(
+                            message=_generate_steal_target_error_message_prompt(
+                                steal_action.name, target_entity_name
+                            ),
+                        ),
+                    )
+
+                # 总之就是不对，不会继续执行。
                 continue
 
             target_entity = self._context.get_entity_by_name(target_entity_name)
+            assert target_entity is not None
             if target_entity is None:
                 # 不存在的目标
                 continue
@@ -126,7 +151,7 @@ class StealActionSystem(ReactiveProcessor):
         self._context.notify_event(
             set({source_entity, target_entity}),
             AgentEvent(
-                message=_generate_steal_prompt(
+                message=_generate_steal_notification_prompt(
                     self._context.safe_get_entity_name(source_entity),
                     target_entity_name,
                     prop_file_name,
@@ -149,6 +174,3 @@ class StealActionSystem(ReactiveProcessor):
         )
 
     ####################################################################################################################################
-
-
-####################################################################################################################################

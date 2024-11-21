@@ -290,7 +290,7 @@ class RPGEntitasContext(Context):
             replace_message = prompt_utils.replace_you(agent_event.message, safe_name)
 
             self.agent_system.append_human_message(safe_name, replace_message)
-            logger.info(f"{safe_name} ==> {replace_message}")
+            logger.warning(f"{safe_name} ==> {replace_message}")
 
             if entity.has(RoundEventsRecordComponent):
                 round_events_comp = entity.get(RoundEventsRecordComponent)

@@ -37,6 +37,7 @@ def _generate_skill_impact_response_prompt(
 ) -> str:
 
     return f"""# 发生事件: {actor_name} 向 {target_name} 使用动作：{SkillAction.__name__}。
+
 ## 事件描述
 {world_harmony_inspector_content}
  
@@ -45,8 +46,8 @@ def _generate_skill_impact_response_prompt(
 
 ## 判断步骤
 第1步: 回顾 {target_name} 的当前状态。
-第2步: 结合 事件描述 与 系统判断结果，推理技能对 {target_name} 的影响。例如改变你的状态，或者对你造成伤害等。
-第3步: 更新 {target_name} 的状态，作为最终输出。
+第2步: 结合 事件描述 与 系统判断结果，推理技能对 {target_name} 的影响。例如改变状态，或者造成伤害等。
+第3步: 更新 {target_name} 的状态。
 
 ## 输出要求
 请遵循 输出格式指南。
@@ -359,8 +360,8 @@ class SkillImpactResponseEvaluatorSystem(ExecuteProcessor):
         total_skill_attributes: List[int],
         calculate_bonus: float,
     ) -> None:
-        assert False, "heal not implemented"
-        logger("heal not implemented")
+        pass
+        # logger.error("heal not implemented")
 
     ######################################################################################################################################################
     def _calculate_and_apply_damage(
@@ -495,6 +496,7 @@ class SkillImpactResponseEvaluatorSystem(ExecuteProcessor):
         internal_process_data: InternalProcessData,
         reference_value: int = Attributes.BASE_VALUE_SCALE,
     ) -> float:
+        assert reference_value > 0, f"reference_value {reference_value} not found."
         skill_comp = internal_process_data.skill_entity.get(SkillComponent)
         value = skill_comp.world_harmony_inspector_value / reference_value
         if value < 0:

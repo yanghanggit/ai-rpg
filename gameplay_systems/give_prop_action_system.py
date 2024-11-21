@@ -74,7 +74,7 @@ class GivePropActionSystem(ReactiveProcessor):
         give_prop_action = entity.get(GivePropAction)
         target_and_message = (
             my_format_string.target_message.extract_target_message_pairs(
-                give_prop_action.values, "@", "/"
+                values=give_prop_action.values, symbol1="@", symbol2="/"
             )
         )
 

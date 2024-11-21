@@ -62,7 +62,7 @@ def _generate_actor_plan_prompt(
     stage_narrate: str,
     stage_graph: Set[str],
     actor_appearance_mapping: Dict[str, str],
-    health_ratio: float,
+    health_description: str,
     actor_props: Dict[str, List[PropFile]],
     current_weapon: Optional[PropFile],
     current_clothes: Optional[PropFile],
@@ -71,7 +71,7 @@ def _generate_actor_plan_prompt(
     assert current_stage != "", "current_stage is empty"
 
     # 组织生成角色道具描述
-    health_ratio *= 100
+    # health_description *= 100
 
     # 组织生成角色道具描述
     props_prompt = _generate_props_prompt(actor_props)
@@ -109,7 +109,7 @@ def _generate_actor_plan_prompt(
 {"\n".join(actor_appearance_mapping_prompt)}
 
 ## 你的健康状态
-{f"生命值: {health_ratio:.2f}%"}
+生命值: {health_description}
 
 ## 你的全部道具
 {"\n".join(props_prompt)}
@@ -226,7 +226,7 @@ class ActorPlanningExecutionSystem(ExecuteProcessor):
                     stage_narrate=self._retrieve_stage_narrative(actor_entity),
                     stage_graph=set(self._retrieve_stage_graph(actor_entity)),
                     actor_appearance_mapping=actor_appearance_mapping,
-                    health_ratio=check_self.health_ratio,
+                    health_description=check_self.format_health_info,
                     actor_props=check_self._category_prop_files,
                     current_weapon=check_self._current_weapon,
                     current_clothes=check_self._current_clothes,

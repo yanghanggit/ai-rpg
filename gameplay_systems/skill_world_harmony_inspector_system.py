@@ -56,7 +56,7 @@ def _generate_success_response_prompt(
     inspector_content: str,
 ) -> str:
 
-    return f"""# 提示: 系统推理与判断之后，判断结果为 {inspector_tag}
+    return f"""# 提示: 系统推理与判断之后，判断结果为 {inspector_tag}。即系统经过判断后允许继续
 ## 行动(技能)发起者
 {actor_name}
 ## 技能指令内容
@@ -121,24 +121,8 @@ def _generate_world_harmony_inspector_prompt(
 
 3. **正常释放**：
    - 如果技能无道具需求，且角色无特殊增益，技能按正常释放计算。
-
-## 输出要求
-### JSON 格式指南
-请严格按照以下结构生成结果： 
-{{
-  "{AnnounceAction.__name__}": ["输出技能使用过程的描述"],
-  "{TagAction.__name__}": ["{prompt_utils.SkillResultPromptTag.CRITICAL_SUCCESS} 或 {prompt_utils.SkillResultPromptTag.SUCCESS} 或 {prompt_utils.SkillResultPromptTag.FAILURE}"],
-  "{InspectAction.__name__}": ["一个0~200的数字，代表你对结果的评估值"]
-}}
-
-### 输出示例
-{
-  "AnnounceAction": ["某某角色施展了炫丽的火球术，目标锁定在前方的敌人，并使用了珍贵的魔法水晶作为催化剂。"],
-  "TagAction": ["<大成功>"],
-  "InspectAction": ["180"]
-}
-
-### 关于 {AnnounceAction.__name__} 的输出规则
+   
+## 关于 {AnnounceAction.__name__} 的输出规则
 1. 成功或大成功时：
    - 必须描述：技能使用者的全名，释放的技能名称和描述，技能目标的全名，配置的道具信息。
    - 描述需用逻辑合理且生动的句子，润色后以第三人称呈现。
@@ -146,103 +130,35 @@ def _generate_world_harmony_inspector_prompt(
 2. 失败时：
    - 必须描述：技能释放失败的原因。
 
-### 关于 {InspectAction.__name__} 的输出规则
-- 成功/大成功/失败对应的评分范围：
-  - <失败>: 0~100。
-  - <成功>: 100~200。
-  - 默认分值：100 为 <成功> 的基础值。
+## 关于 {InspectAction.__name__} 的输出规则
+- 对结果的评估值规则：
+  - {prompt_utils.SkillResultPromptTag.FAILURE}: 0。
+  - {prompt_utils.SkillResultPromptTag.SUCCESS}: 100。
+  - {prompt_utils.SkillResultPromptTag.CRITICAL_SUCCESS}: 100~200。
 
+## 输出要求
+### 输出格式指南
+请严格遵循以下 JSON 结构示例: 
+{{
+  "{AnnounceAction.__name__}": ["输出技能使用过程的描述（见上文）"],
+  "{TagAction.__name__}": ["{prompt_utils.SkillResultPromptTag.CRITICAL_SUCCESS} 或 {prompt_utils.SkillResultPromptTag.SUCCESS} 或 {prompt_utils.SkillResultPromptTag.FAILURE}"],
+  "{InspectAction.__name__}": ["一个0~200的数字，代表你对结果的评估值（见上文）"]
+}}
+### 例句
+{{
+  "AnnounceAction": ["某某角色施展了炫丽的火球术，目标锁定在前方的敌人，并使用了珍贵的魔法水晶作为催化剂。"],
+  "TagAction": ["<大成功>"],
+  "InspectAction": ["180"]
+}}
 ### 注意事项
-- 不要使用 `json` 块封装内容。
-- 输出需严格遵循结构和范围要求，不得增加多余字段。
-- 在描述中加入适当润色，但保证关键信息完整。"""
+- 注意！不允许重复使用上述的键！ 
+- 注意！不允许使用不在上述列表中的键！（即未定义的键位），注意看‘输出要求’
+- 输出不得包含超出所需 JSON 格式的其他文本、解释或附加信息。
+- 不要使用```json```来封装内容。"""
 
 
 ######################################################################################################################################################
 ######################################################################################################################################################
-######################################################################################################################################################
-#     # 组织最终的提示词
-#     return f"""# {actor_name} 准备使用技能动作: {SkillAction.__name__}，请你作为系统来，判断其技能使用的合理性(是否符合游戏规则和世界观设计)。在尽量能保证游戏乐趣的情况下，来润色技能的描述。
-
-# {gameplay_systems.prompt_utils.skill_action_rule_prompt()}
-
-# ## {actor_name} 基础形态
-# {actor_base_form}
-
-# ## 使用的技能
-# {"\n".join(skill_prop_files_prompt)}
-
-# ## 配置的道具
-# {"\n".join(skill_accessory_prop_files_prompt)}
-
-# ## 技能使用指令内容
-# {skill_command}
-
-# ## 判断的逻辑步骤
-# 1. 如果 配置的道具 存在。则需要将道具与技能的信息联合起来推理。
-#     - 推理结果 违反了游戏规则或世界观设计。则技能释放失败。即{prompt_utils.SkillResultPromptTag.FAILURE}。
-#     - 推理结果合理的。则技能释放成功。即{prompt_utils.SkillResultPromptTag.SUCCESS}。如果道具对技能有增益效果，则标记为{prompt_utils.SkillResultPromptTag.CRITICAL_SUCCESS}。
-# 2. 如果 配置的道具 不存在。则继续下面的步骤。
-# 3. 结合 {actor_name} 的自身信息。判断是否符合技能释放的条件。
-#     - 如果不符合。则技能释放失败。即{prompt_utils.SkillResultPromptTag.FAILURE}。
-#     - 如果符合。则技能释放成功。即{prompt_utils.SkillResultPromptTag.SUCCESS}。如果 {actor_name} 的自身信息，对技能有增益效果，则标记为{prompt_utils.SkillResultPromptTag.CRITICAL_SUCCESS}。
-
-# ## 输出要求
-# ### 输出格式指南
-# 请严格遵循以下 JSON 结构示例：
-# {{
-#   "{AnnounceAction.__name__}":["输出结果"],
-#   "{TagAction.__name__}":["{prompt_utils.SkillResultPromptTag.CRITICAL_SUCCESS}或{prompt_utils.SkillResultPromptTag.SUCCESS}或{prompt_utils.SkillResultPromptTag.FAILURE}"]
-#   "{InspectAction.__name__}":["一个0~200的数字，代表你对结果的评估值"]
-# }}
-
-# ### 关于 {AnnounceAction.__name__} 的输出结果的规则如下
-# - 如果你的判断是 {prompt_utils.SkillResultPromptTag.SUCCESS} 或 {prompt_utils.SkillResultPromptTag.CRITICAL_SUCCESS}。
-#     - 必须包含如下信息：{actor_name}的全名（技能使用者），释放的技能的描述，技能释放的目标的全名，配置的道具的信息。
-#     - 做出逻辑合理的句子描述（可以适当润色），来表达 {actor_name} 使用技能的使用过程。但不要判断技能命中目标之后，目标的可能反应。
-#     - 用第三人称的描述。
-# - 如果你的判断是 {prompt_utils.SkillResultPromptTag.FAILURE}。
-#     - 则输出结果需要描述为：技能释放失败的原因。
-
-# ### 关于 {InspectAction.__name__} 的输出结果的规则如下
-# - 你需要考虑 {prompt_utils.SkillResultPromptTag.CRITICAL_SUCCESS}或{prompt_utils.SkillResultPromptTag.SUCCESS}或{prompt_utils.SkillResultPromptTag.FAILURE} 的输出情况。
-# - 只能输出0～200之间的数字。100为默认。为{prompt_utils.SkillResultPromptTag.SUCCESS}。
-# - 100～200之间为{prompt_utils.SkillResultPromptTag.CRITICAL_SUCCESS}。
-# - 0～100之间为{prompt_utils.SkillResultPromptTag.FAILURE}。
-
-# ### 注意事项
-# - 不要使用```json```来封装内容。"""
-######################################################################################################################################################
-######################################################################################################################################################
-# """
-# # 好的，我来解答一下，以便你更好的理解这段代码。
-
-# ## 关于 代码引用的逻辑或功能：
-
-# ### 问题：{gameplay_systems.prompt_utils.skill_action_rule_prompt()}：这个函数生成的具体内容是什么？是全局游戏规则的摘要，还是动态生成的规则集？
-# 这个是我的 全局游戏规则——技能部分的摘要，我已经调整完毕，放在这里是为了让系统再次确认并理解这个规则。
-
-# ### 问题：{prompt_utils.SkillResultPromptTag.*}：这些标签的具体值或者枚举结构是预定义的吗？
-# 答：是预定义
-# 源代码如下，很简单
-# class SkillResultPromptTag(StrEnum):
-#     SUCCESS = "<成功>"
-#     CRITICAL_SUCCESS = "<大成功>"
-#     FAILURE = "<失败>"
-
-# ## 关于 输入的技能描述信息：
-# 这一段你可以忽略，我已经调整好了。
-
-# ## 关于 判断逻辑的边界条件：
-# 你的问题：如果技能与角色的基础信息和配置道具均无明显匹配条件（如技能没有道具需求，但角色也没有任何增益条件），此时如何处理？直接判定失败，还是依然允许正常释放？
-# 我的回答：按着正常释放计算。
-
-# ## 关于 润色的自由度：
-# 我的需求是，至少要将技能的使用过程描述清楚，即严谨的部分，谁发起，目标是谁，使用了什么道具，这些都要有。
-# 艺术的部分，在此之上，你可以适当的润色，让描述更加生动。即艺术化的部分。
-# """
-
-
 ######################################################################################################################################################
 @final
 class InternalPlanResponse(AgentPlanResponse):
@@ -288,8 +204,6 @@ class InternalPlanResponse(AgentPlanResponse):
 ######################################################################################################################################################
 ######################################################################################################################################################
 ######################################################################################################################################################
-
-
 @dataclass
 class InternalProcessData:
     actor_entity: Entity
@@ -302,8 +216,6 @@ class InternalProcessData:
 ######################################################################################################################################################
 ######################################################################################################################################################
 ######################################################################################################################################################
-
-
 @final
 class SkillWorldHarmonyInspectorSystem(ExecuteProcessor):
 

@@ -16,6 +16,7 @@ from loguru import logger
 from gameplay_systems.actor_entity_utils import ActorStatusEvaluator
 from my_models.entity_models import Attributes
 import gameplay_systems.prompt_utils
+from my_format_string.complex_actor_name import ComplexActorNameSymbol
 
 
 ################################################################################################################################################
@@ -38,8 +39,6 @@ def _generate_skill_invocation_result_prompt(
 ######################################################################################################################################################
 ######################################################################################################################################################
 ######################################################################################################################################################
-
-
 @final
 class SkillCommandParser:
     def __init__(
@@ -131,6 +130,12 @@ class SkillCommandParser:
             self._parsed_command_mapping.setdefault(stage_name, parsed_command)
         else:
             for actor_name in actors_on_stage:
+                if (
+                    ComplexActorNameSymbol.GROUP_FLAG in parsed_command
+                    and not ComplexActorNameSymbol.GROUP_FLAG in actor_name
+                ):
+                    continue
+
                 if actor_name in parsed_command:
                     self._parsed_command_mapping.setdefault(actor_name, parsed_command)
 

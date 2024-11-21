@@ -17,23 +17,23 @@ import gameplay_systems.file_system_utils
 from my_models.file_models import PropType
 from my_models.event_models import AgentEvent
 from loguru import logger
+from gameplay_systems.actor_entity_utils import ActorStatusEvaluator
 
 
 ################################################################################################################################################
-def _generate_kill_event_prompt(actor_name: str, target_name: str) -> str:
-    return f"# {actor_name} 对 {target_name} 的行动造成了{target_name}死亡。"
+def _generate_kill_notification_prompt(source_name: str, target_name: str) -> str:
+    return (
+        f"# 发生事件: {source_name} 对 {target_name} 的行动造成了 {target_name} 死亡。"
+    )
 
 
 ################################################################################################################################################
-def _generate_damage_event_prompt(
-    actor_name: str,
+def _generate_damage_event_description_prompt(
+    source_name: str,
     target_name: str,
-    damage: int,
-    target_current_hp: int,
-    target_max_hp: int,
+    effective_damage: int,
 ) -> str:
-    health_percent = max(0, (target_current_hp - damage) / target_max_hp * 100)
-    return f"# {actor_name} 对 {target_name} 的行动造成了{damage}点伤害, 当前 {target_name} 的生命值剩余 {health_percent}%。"
+    return f"# 发生事件: {source_name} 对 {target_name} 的行动造成了 {effective_damage} 伤害。"
 
 
 ################################################################################################################################################
@@ -166,7 +166,9 @@ class DamageActionSystem(ReactiveProcessor):
             self._context.broadcast_event(
                 current_stage_entity,
                 AgentEvent(
-                    message=_generate_kill_event_prompt(source_entity_name, target_name)
+                    message=_generate_kill_notification_prompt(
+                        source_entity_name, target_name
+                    )
                 ),
             )
             return
@@ -175,16 +177,13 @@ class DamageActionSystem(ReactiveProcessor):
             logger.warning(f"场景{target_name}受到了伤害，但是不会死亡。不需要通知了")
             return
 
-        rpg_attr_comp = target_entity.get(AttributesComponent)
         self._context.broadcast_event(
             current_stage_entity,
             AgentEvent(
-                message=_generate_damage_event_prompt(
+                message=_generate_damage_event_description_prompt(
                     source_entity_name,
                     target_name,
                     effective_damage,
-                    rpg_attr_comp.hp,
-                    rpg_attr_comp.maxhp,
                 )
             ),
         )

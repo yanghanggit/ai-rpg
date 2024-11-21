@@ -24,14 +24,14 @@ def _generate_skill_invocation_result_prompt(
 ) -> str:
 
     if not result:
-        return f"""# 提示: {actor_name} 执行了动作: {SkillAction.__name__} 失败。
-## 输入的错误的技能使用指令如下:
+        return f"""# 提示: {actor_name} 计划执行动作: {SkillAction.__name__}，结果为：系统经过判断后，否决。
+## 输入的错误的 技能使用指令 如下:
 {skill_command}    
-## 请你分析问题，并再次理解规则:
+## 请分析问题，并再次理解规则:
 {gameplay_systems.prompt_utils.skill_action_rule_prompt()}"""
 
-    return f"""# 提示: {actor_name} 执行了动作: {SkillAction.__name__} 成功。
-## 输入的起效的技能使用指令如下:
+    return f"""# 提示: {actor_name} 计划执行动作: {SkillAction.__name__} ，结果为：系统经过判断后，允许继续，并执行下一步判断。
+## 输入的起效的 技能使用指令 如下:
 {skill_command}"""
 
 
@@ -51,7 +51,6 @@ class SkillCommandParser:
         self._parsed_command_mapping: Dict[str, str] = {}
         self._skill_prop_files: List[PropFile] = []
         self._skill_accessory_prop_files: List[tuple[PropFile, int]] = []
-        # self._auto_equipped_weapon: Optional[PropFile] = None
 
     ######################################################################################################################################################
     @property

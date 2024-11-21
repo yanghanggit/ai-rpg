@@ -25,60 +25,55 @@ from my_models.event_models import AgentEvent
 from loguru import logger
 from my_agent.lang_serve_agent import LangServeAgent
 
-# import gameplay_systems.stage_entity_utils
-
 
 ################################################################################################################################################
 def _generate_stage_entry_conditions_prompt(
     actor_name: str,
-    current_stage_name: str,
-    actor_status_prompt: str,
+    target_stage_name: str,
+    actor_appearance: str,
     prop_files: List[PropFile],
 ) -> str:
 
-    prop_prompt_list = "无"
-    if len(prop_files) > 0:
-        prop_prompt_list = "\n".join(
-            [generate_prop_file_for_stage_condition_prompt(prop) for prop in prop_files]
+    assert actor_appearance != ""
+
+    prop_files_prompt: List[str] = []
+    for prop_file in prop_files:
+        prop_files_prompt.append(
+            generate_prop_file_for_stage_condition_prompt(prop_file)
         )
+    if len(prop_files_prompt) == 0:
+        prop_files_prompt.append("无")
 
-    ret_prompt = f"""# {actor_name} 想要进入场景: {current_stage_name}。
-## 第1步: 请回顾你的 {prompt_utils.PromptTag.STAGE_EXIT_TAG}
+    return f"""# 提示: {actor_name} 试图进入场景：{target_stage_name}
 
-## 第2步: 根据当前‘你的状态’判断是否满足允许{actor_name}进入
-当前状态可能由于事件而变化，请仔细考虑。
+## 判断步骤
+1. 回顾状态：参考 {prompt_utils.PromptTag.STAGE_ENTRY_TAG} 确定场景当前状态。
+2. 状态验证：结合事件回顾和场景设定，更新场景状态：
+    - 事件回顾：分析角色行为、对话及道具使用的影响，以及场景的逻辑性变化。切勿推测未发生的活动。
+    - 状态更新：推理并更新场景的最新状态。
+3. 外观检查：确认 {actor_name} 的外观是否符合进入要求:
+{actor_appearance}
+4. 道具检查：确认 {actor_name} 的道具是否符合进入要求:
+{"\n".join(prop_files_prompt)}
 
-## 第3步: 检查{actor_name}的状态是否符合进入的需求:
-### 当前角色状态: 
-{actor_status_prompt if actor_status_prompt != "" else "无"}
+## 最终判断
+完成以上步骤后，决定是否允许 {actor_name} 进入 {target_stage_name}。
 
-## 第4步: 检查{actor_name}的道具(与拥有的特殊能力)是否符合以下要求:
-### 当前角色道具与特殊能力信息: 
-{prop_prompt_list}
+## 输出要求
+请遵循 输出格式指南。
+{{ {WhisperAction.__name__}: ["@角色全名(对目标角色私下说明允许进入或不允许的原因，简单明确)"], {TagAction.__name__}: ["Yes/No" (是否允许进入)] }}
 
-# 判断结果
-- 完成以上步骤后，决定是否允许 {actor_name} 进入 {current_stage_name}。
-
-# 本次输出结果格式要求。需遵循 输出格式指南:
-{{
-    {WhisperAction.__name__}: ["@角色全名(你要对谁说,只能是场景内的角色)>你想私下说的内容，即描述允许进入或不允许的原因，使{actor_name}明白"],
-    {TagAction.__name__}: ["Yes/No"]
-}}
-## 附注
-- {WhisperAction.__name__} 中描述的判断理由。如果不允许进入，就只说哪一条不符合要求，不要都说出来，否则会让{actor_name}迷惑，和造成不必要的提示，影响玩家解谜的乐趣。
-- Yes: 允许进入
-- No: 不允许进入
-"""
-    return ret_prompt
+## 注意事项
+在 {WhisperAction.__name__} 中仅说明不符合要求的单一原因，避免透露过多信息以免引起混乱或误导。"""
 
 
 ################################################################################################################################################
-def _generate_stage_entry_failure_prompt(
-    actor_name: str, stage_name: str, show_tips: str
+def _generate_entry_denial_prompt(
+    actor_name: str, target_stage_name: str, denial_message: str
 ) -> str:
-    return f"""# {actor_name} 想要进入场景: {stage_name}，但是失败了。
-## 说明:
-{show_tips}"""
+    return f"""# 提示: {actor_name} 试图进入场景：{target_stage_name}，但被拒绝。
+## {target_stage_name} 给出的拒绝原因
+{denial_message}"""
 
 
 ################################################################################################################################################
@@ -94,7 +89,10 @@ class InternalPlanResponse(AgentPlanResponse):
 
     @property
     def hint(self) -> str:
-        return self._concatenate_values(WhisperAction.__name__)
+        ret = self._concatenate_values(WhisperAction.__name__)
+        if ret == "":
+            return "无"
+        return ret
 
 
 ###############################################################################################################################################
@@ -194,19 +192,19 @@ class StageEntranceCheckerSystem(ReactiveProcessor):
         self,
         actor_entity: Entity,
         target_stage_entity: Entity,
-        stage_agent: LangServeAgent,
+        target_stage_agent: LangServeAgent,
     ) -> AgentTask:
 
-        target_stage_name = self._context.safe_get_entity_name(target_stage_entity)
+        # target_stage_name = self._context.safe_get_entity_name(target_stage_entity)
         actor_status_evaluator = ActorStatusEvaluator(self._context, actor_entity)
         prompt = _generate_stage_entry_conditions_prompt(
-            actor_status_evaluator.actor_name,
-            target_stage_name,
-            actor_status_evaluator.appearance,
-            actor_status_evaluator.available_stage_condition_prop_files,
+            actor_name=actor_status_evaluator.actor_name,
+            target_stage_name=target_stage_agent.name,
+            actor_appearance=actor_status_evaluator.appearance,
+            prop_files=actor_status_evaluator.available_stage_condition_prop_files,
         )
 
-        return AgentTask.create_with_input_only_context(stage_agent, prompt)
+        return AgentTask.create_with_input_only_context(target_stage_agent, prompt)
 
     ###############################################################################################################################################
     def _resolve_actor_target_stage(self, actor_entity: Entity) -> str:
@@ -233,7 +231,7 @@ class StageEntranceCheckerSystem(ReactiveProcessor):
                 self._context.notify_event(
                     set({actor_entity}),
                     AgentEvent(
-                        message=_generate_stage_entry_failure_prompt(
+                        message=_generate_entry_denial_prompt(
                             actor_name,
                             stage_agent_task.agent_name,
                             agent_response_plan.hint,

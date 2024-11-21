@@ -12,7 +12,6 @@ from loguru import logger
 from typing import final, override, Set, Any
 from rpg_game.rpg_game import RPGGame
 from my_models.event_models import AgentEvent
-import gameplay_systems.stage_entity_utils
 
 
 ################################################################################################################################################
@@ -20,20 +19,18 @@ def _generate_stage_validation_error_prompt(actor_name: str, stage_name: str) ->
     return f"""# 提示：{actor_name} 无法前往场景：{stage_name}
 ## 原因分析
 1. 场景: {stage_name}，目前不可访问，可能未开放或已关闭。
-2. 场景全名格式错误，例如使用“xxx的深处/北部/边缘/附近/其他区域”，会导致识别失败。
-3. 请确保使用的 场景全名（见‘全名机制’）严格匹配！
-4. {actor_name} 当前所在的场景与目标场景:{stage_name} 之间没有路径连接。
-
+2. 场景全名格式错误，会导致系统识别失败。请确保使用的 场景全名（见‘全名机制’）严格匹配！
+3. {actor_name} 当前所在的场景与目标场景:{stage_name} 之间没有路径连接。
 ## 建议
-- 请{actor_name} 重新考虑目的地。"""
+请{actor_name} 重新考虑目的地。"""
 
 
 ################################################################################################################################################
 def _generate_stage_conflict_prompt(actor_name: str, stage_name: str) -> str:
     return f"""# 提示：注意！{actor_name} 已经在 {stage_name} 场景中。
 ## 原因分析与建议
-- 去往 {stage_name} 场景是重复且无意义的。
-- 请重新考虑去往的目的地"""
+去往 {stage_name} 场景是重复且无意义的。
+请重新考虑去往的目的地"""
 
 
 ###############################################################################################################################################
@@ -130,9 +127,6 @@ class StageValidatorSystem(ReactiveProcessor):
         if len(go_to_action.values) == 0:
             return ""
         return str(go_to_action.values[0])
-        # return gameplay_systems.stage_entity_utils.resolve_stage_name(
-        #     self._context, str(go_to_action.values[0])
-        # )
 
     ###############################################################################################################################################
     def _remove_action_component(

@@ -276,4 +276,16 @@ Class 名称：StatusInventoryCheckAction
 解释：突出角色检查自身状态和道具的行为。
 这两个名称表达清晰且符合命名规范，便于理解和在代码中使用。如果你有其他需求或想法，请告诉我！
 
+
+我已经写了一些python的文件. 这些*.py。其内容都是启动一个agent。不同的文件启动不同的agent
+类比：每一个.python就是一个app。
+
+我的需求：
+我想再写一个python文件，比如叫A，这个A的目的是：同时并批量 + 自动化的启动上述的所有的*.py文件（app）。
+请问我现在的这个文件A，应该叫什么名字比较好，能精确反映我的意图？
+
+
+BatchAppLauncher
+
+batch_agent_app_launcher
 """

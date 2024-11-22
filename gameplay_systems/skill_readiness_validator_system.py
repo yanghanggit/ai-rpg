@@ -3,7 +3,7 @@ from entitas import Matcher, ExecuteProcessor, Entity  # type: ignore
 from my_components.action_components import (
     TagAction,
     MindVoiceAction,
-    SkillAction,
+    AnnounceAction,
 )
 from my_components.components import (
     BaseFormComponent,
@@ -18,12 +18,13 @@ from extended_systems.prop_file import (
     generate_skill_prop_file_prompt,
     generate_skill_accessory_prop_file_prompt,
 )
-import gameplay_systems.prompt_utils as prompt_utils
+import gameplay_systems.prompt_utils
 from my_agent.agent_task import AgentTask
 from my_agent.agent_plan import AgentPlanResponse
 from rpg_game.rpg_game import RPGGame
 import gameplay_systems.skill_entity_utils
 from my_agent.lang_serve_agent import LangServeAgent
+from my_models.entity_models import Attributes
 
 
 ################################################################################################################################################
@@ -54,7 +55,7 @@ def _generate_skill_readiness_validator_prompt(
     if len(skill_accessory_prop_files_prompt) == 0:
         skill_accessory_prop_files_prompt.append("未配置任何道具")
 
-    return f"""# 提示: {actor_name} 计划使用技能（动作：{SkillAction.__name__}）——判断是否允许使用
+    return f"""# 提示: {actor_name} 计划使用技能，需判断是否允许使用
 
 ## {actor_name} 的基础形态
 {base_form}
@@ -71,11 +72,20 @@ def _generate_skill_readiness_validator_prompt(
 4. 最终判断：如以上条件均满足，技能释放成功。
 ### 注意事项
 上述的‘历史背景’为角色的历史经历（事件与对话等）、性格特点、外貌特征等信息，用于判断技能释放条件。
+
+## 成功技能事件描述
+1. 如果成功，请注意 上述 技能信息 中的 技能表现的描述。其中技能释放者即为 {actor_name}。
+2. 将描述做为例句，组织然后润色并输出 {actor_name} 使用技能时的事件描述。
+
 ## 输出要求
 - 请遵循输出格式指南。
 - 返回结果仅包含：{MindVoiceAction.__name__} 和 {TagAction.__name__}。
 ## 格式示例：
-{{ "{MindVoiceAction.__name__}":["输入你的最终判断结果，说明技能是否成功或失败，并附上原因"], "{TagAction.__name__}":["Yes/No"（技能是否成功）] }}"""
+{{ 
+    "{MindVoiceAction.__name__}":["输入你的最终判断结果，说明技能是否成功或失败。如果是失败就说明失败的原因。"], 
+    "{AnnounceAction.__name__}": ["如成功，输出‘成功技能事件描述’（见上文），如失败，输出‘失败’"],
+    "{TagAction.__name__}":["Yes/No"（技能是否成功）] 
+}}"""
 
 
 ######################################################################################################################################################
@@ -90,6 +100,12 @@ class InternalPlanResponse(AgentPlanResponse):
     @property
     def is_skill_ready(self) -> bool:
         return self._parse_boolean(TagAction.__name__)
+
+    @property
+    def inspector_content(self) -> str:
+        if not self.is_skill_ready:
+            return ""
+        return self._concatenate_values(AnnounceAction.__name__)
 
 
 ######################################################################################################################################################
@@ -194,11 +210,29 @@ class SkillReadinessValidatorSystem(ExecuteProcessor):
             agent_task = process_data.agent_task
             assert agent_task is not None, "agent_task is None."
 
-            if not self._is_skill_ready(agent_task):
+            plan_response = InternalPlanResponse(
+                agent_task.agent_name, agent_task.response_content
+            )
+
+            if not plan_response.is_skill_ready:
                 gameplay_systems.skill_entity_utils.destroy_skill_entity(
                     process_data.skill_entity
                 )
                 continue
+
+            skill_comp = process_data.skill_entity.get(SkillComponent)
+            process_data.skill_entity.replace(
+                SkillComponent,
+                skill_comp.name,
+                skill_comp.command,
+                skill_comp.skill_name,
+                skill_comp.stage,
+                skill_comp.targets,
+                skill_comp.skill_accessory_props,
+                gameplay_systems.prompt_utils.SkillResultPromptTag.SUCCESS,
+                plan_response.inspector_content,
+                Attributes.BASE_VALUE_SCALE,
+            )
 
     ######################################################################################################################################################
     def _is_skill_ready(self, agent_task: AgentTask) -> bool:
@@ -245,7 +279,7 @@ class SkillReadinessValidatorSystem(ExecuteProcessor):
             process_data.agent_task = ret[process_data.agent.name] = (
                 AgentTask.create_with_full_context(
                     process_data.agent,
-                    prompt_utils.replace_you(
+                    gameplay_systems.prompt_utils.replace_you(
                         skill_readiness_prompt, process_data.agent.name
                     ),
                 )

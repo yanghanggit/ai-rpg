@@ -3,13 +3,13 @@ from entitas import Matcher, ExecuteProcessor, Entity  # type: ignore
 from my_components.action_components import (
     TagAction,
     AnnounceAction,
-    SkillAction,
     InspectAction,
 )
 from my_components.components import (
     BaseFormComponent,
     SkillComponent,
     DestroyComponent,
+    DirectSkillComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import final, override, List, Set, Optional
@@ -93,7 +93,7 @@ def _generate_world_harmony_inspector_prompt(
     if len(skill_accessory_prop_files_prompt) == 0:
         skill_accessory_prop_files_prompt.append("未配置道具")
 
-    return f"""# 提示: {actor_name} 准备使用技能动作: {SkillAction.__name__}。请你作为系统，判断其技能使用的合理性（是否符合游戏规则和世界观设计）。在尽量保证游戏乐趣的前提下，润色技能使用过程的描述。
+    return f"""# 提示: {actor_name} 准备使用技能。请你作为系统，判断其技能使用的合理性（是否符合游戏规则和世界观设计）。在尽量保证游戏乐趣的前提下，润色技能使用过程的描述。
 
 ## 技能规则摘要
 {gameplay_systems.prompt_utils.skill_action_rule_prompt()}
@@ -241,7 +241,10 @@ class SkillWorldHarmonyInspectorSystem(ExecuteProcessor):
 
         # 只关注技能
         skill_entities = self._context.get_group(
-            Matcher(all_of=[SkillComponent], none_of=[DestroyComponent])
+            Matcher(
+                all_of=[SkillComponent],
+                none_of=[DestroyComponent, DirectSkillComponent],
+            )
         ).entities.copy()
 
         # 组成成方便的数据结构

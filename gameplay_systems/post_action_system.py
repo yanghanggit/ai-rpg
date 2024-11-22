@@ -38,7 +38,6 @@ class PostActionSystem(ExecuteProcessor):
         skill_entities = self._context.get_group(
             Matcher(all_of=[SkillComponent], none_of=[DestroyComponent])
         ).entities.copy()
-        # logger.debug(f"Remove all skills = {len(skill_entities)}")
         for skill_entity in skill_entities:
             skill_entity.replace(DestroyComponent, "")
 

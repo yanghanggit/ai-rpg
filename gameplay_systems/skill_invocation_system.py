@@ -1,13 +1,15 @@
 from entitas import Matcher, ReactiveProcessor, GroupEvent, Entity  # type: ignore
 from my_components.action_components import (
     SkillAction,
+    EquipPropAction,
 )
 from my_components.components import (
     SkillComponent,
     ActorComponent,
+    DirectSkillComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from typing import Final, final, override, Set, List, Dict
+from typing import Final, final, override, Set, List, Dict, Optional
 from extended_systems.prop_file import PropFile
 from rpg_game.rpg_game import RPGGame
 from my_models.event_models import AgentEvent
@@ -16,7 +18,7 @@ from loguru import logger
 from gameplay_systems.actor_entity_utils import ActorStatusEvaluator
 from my_models.entity_models import Attributes
 import gameplay_systems.prompt_utils
-from my_format_string.complex_actor_name import ComplexActorNameSymbol
+import my_format_string.complex_prop_name
 
 
 ################################################################################################################################################
@@ -37,12 +39,39 @@ def _generate_skill_invocation_result_prompt(
 
 
 ######################################################################################################################################################
+def _generate_invalid_accessory_weapon_prompt(
+    actor_name: str,
+    skill_command: str,
+    accessory_weapon_prop_file_name: str,
+    current_weapon_name: str,
+) -> str:
+
+    assert accessory_weapon_prop_file_name != current_weapon_name
+    assert current_weapon_name not in skill_command
+
+    return f"""# 提示: {actor_name} 计划执行动作: {SkillAction.__name__}，结果为：系统经过判断后，否决。
+## 输入的错误的 技能使用指令 如下:
+{skill_command}
+## 请分析问题，并再次理解规则:
+{gameplay_systems.prompt_utils.skill_action_rule_prompt()}
+## 配置的武器: {accessory_weapon_prop_file_name} 不是当前装备的武器: {current_weapon_name}
+可以考虑使用 {EquipPropAction.__name__} 来装备正确的武器。"""
+
+
+######################################################################################################################################################
+
+
+######################################################################################################################################################
 ######################################################################################################################################################
 ######################################################################################################################################################
 @final
 class SkillCommandParser:
     def __init__(
-        self, context: RPGEntitasContext, actor_name: str, skill_command: str
+        self,
+        context: RPGEntitasContext,
+        actor_name: str,
+        skill_command: str,
+        weapon_prop_file: Optional[PropFile],
     ) -> None:
         self._context: Final[RPGEntitasContext] = context
         self._actor_name: Final[str] = actor_name
@@ -50,10 +79,13 @@ class SkillCommandParser:
         self._parsed_command_mapping: Dict[str, str] = {}
         self._skill_prop_files: List[PropFile] = []
         self._skill_accessory_prop_files: List[tuple[PropFile, int]] = []
+        self._weapon_prop_file: Optional[PropFile] = weapon_prop_file
+        self._parsed: bool = False
 
     ######################################################################################################################################################
     @property
     def target_entities(self) -> Set[Entity]:
+        assert self._parsed, "not parsed"
         ret: Set[Entity] = set()
         for target_name in self._parsed_command_mapping.keys():
             target_entity = self._context.get_entity_by_name(target_name)
@@ -64,6 +96,7 @@ class SkillCommandParser:
     ######################################################################################################################################################
     @property
     def target_entity_names(self) -> List[str]:
+        assert self._parsed, "not parsed"
         ret: List[str] = []
         for entity in self.target_entities:
             ret.append(self._context.safe_get_entity_name(entity))
@@ -77,11 +110,16 @@ class SkillCommandParser:
     ######################################################################################################################################################
     @property
     def command_queue(self) -> List[str]:
-        return self._skill_command.split(" ")
+        symbol = ";"
+        if not symbol in self._skill_command:
+            return []
+
+        return self._skill_command.split(symbol)
 
     ######################################################################################################################################################
     @property
     def skill_name(self) -> str:
+        assert self._parsed, "not parsed"
         if len(self._skill_prop_files) == 0:
             return ""
         return self._skill_prop_files[0].name
@@ -115,6 +153,21 @@ class SkillCommandParser:
             # 只要一个技能
             self._skill_prop_files = self._skill_prop_files[:1]
 
+        self._parsed = True
+
+    ######################################################################################################################################################
+    def _match_target_entity_name(self, check_name: str, target_name: str) -> bool:
+        return f"""@{check_name}""" == target_name
+
+    ######################################################################################################################################################
+    def _match_prop_name(self, check_name: str, complex_prop_name: str) -> bool:
+        prop_name, consume_count = (
+            my_format_string.complex_prop_name.parse_complex_prop_info_string(
+                complex_prop_name
+            )
+        )
+        return check_name == prop_name
+
     ######################################################################################################################################################
     def _parse_command(
         self,
@@ -126,37 +179,22 @@ class SkillCommandParser:
     ) -> None:
 
         # 分析目标
-        if stage_name in parsed_command:
+        if self._match_target_entity_name(self._actor_name, parsed_command):
             self._parsed_command_mapping.setdefault(stage_name, parsed_command)
         else:
             for actor_name in actors_on_stage:
-                if (
-                    ComplexActorNameSymbol.GROUP_FLAG in parsed_command
-                    and not ComplexActorNameSymbol.GROUP_FLAG in actor_name
-                ):
-                    continue
-
-                if actor_name in parsed_command:
+                if self._match_target_entity_name(actor_name, parsed_command):
                     self._parsed_command_mapping.setdefault(actor_name, parsed_command)
 
         # 分析使用的技能
         for skill_prop in skill_prop_files:
             assert skill_prop.is_skill
-            if skill_prop.name in parsed_command and skill_prop.is_skill:
+            if self._match_prop_name(skill_prop.name, parsed_command):
                 self._skill_prop_files.append(skill_prop)
 
         # 分析技能配件
         for accessory_prop_file in accessory_prop_files:
-            if accessory_prop_file.name not in parsed_command:
-                continue
-
-            is_accessory_valid = (
-                accessory_prop_file.is_special
-                or accessory_prop_file.is_non_consumable_item
-                or accessory_prop_file.is_consumable_item
-            )
-            assert is_accessory_valid
-            if not is_accessory_valid:
+            if not self._match_prop_name(accessory_prop_file.name, parsed_command):
                 continue
 
             prop_name, consume_count = (
@@ -171,6 +209,30 @@ class SkillCommandParser:
             self._skill_accessory_prop_files.append(
                 (accessory_prop_file, consume_count)
             )
+
+    ######################################################################################################################################################
+    @property
+    def accessory_weapon_prop_files(self) -> List[PropFile]:
+        assert self._parsed, "not parsed"
+
+        ret: List[PropFile] = []
+        for skill_accessory_prop_file_info in self._skill_accessory_prop_files:
+            skill_accessory_prop_file, consume_count = skill_accessory_prop_file_info
+            if skill_accessory_prop_file.is_weapon:
+                ret.append(skill_accessory_prop_file)
+        return ret
+
+    ######################################################################################################################################################
+    @property
+    def is_direct_skill(self) -> bool:
+        assert self._parsed, "not parsed"
+        return (
+            len(self.accessory_weapon_prop_files) == 1
+            and self._weapon_prop_file is not None
+            and self._weapon_prop_file == self.accessory_weapon_prop_files[0]
+        )
+
+    ######################################################################################################################################################
 
 
 ######################################################################################################################################################
@@ -227,6 +289,7 @@ class SkillInvocationSystem(ReactiveProcessor):
             context=self._context,
             actor_name=actor_status_evaluator.actor_name,
             skill_command=origin_command_from_skill_action,
+            weapon_prop_file=actor_status_evaluator._current_weapon,
         )
         skill_command_parser.parse(
             actor_entity.get(ActorComponent).current_stage,
@@ -246,11 +309,30 @@ class SkillInvocationSystem(ReactiveProcessor):
             )
             return
 
+        # 配置的武器却不是当前武器
+        if actor_status_evaluator._current_weapon is not None:
+            for (
+                prop_file,
+                consume_count,
+            ) in skill_command_parser._skill_accessory_prop_files:
+                if (
+                    prop_file.is_weapon
+                    and prop_file != actor_status_evaluator._current_weapon
+                ):
+
+                    self._notify_invalid_accessory_weapon_equipped(
+                        actor_entity,
+                        origin_command_from_skill_action,
+                        prop_file,
+                        actor_status_evaluator._current_weapon,
+                    )
+                    return
+
         # 检查技能消耗的配件, 是否满足数量
         for (
-            skill_accessory_prop_file_info
+            prop_file,
+            consume_count,
         ) in skill_command_parser._skill_accessory_prop_files:
-            prop_file, consume_count = skill_accessory_prop_file_info
             if prop_file.count < consume_count:
                 self._notify_skill_invocation_result(
                     actor_entity, origin_command_from_skill_action, False
@@ -264,6 +346,26 @@ class SkillInvocationSystem(ReactiveProcessor):
         # 事件通知
         self._notify_skill_invocation_result(
             actor_entity, origin_command_from_skill_action, True
+        )
+
+    ######################################################################################################################################################
+    def _notify_invalid_accessory_weapon_equipped(
+        self,
+        entity: Entity,
+        command: str,
+        accessory_weapon_prop_file: PropFile,
+        current_weapon: PropFile,
+    ) -> None:
+        self._context.notify_event(
+            set({entity}),
+            AgentEvent(
+                message=_generate_invalid_accessory_weapon_prompt(
+                    self._context.safe_get_entity_name(entity),
+                    command,
+                    accessory_weapon_prop_file.name,
+                    current_weapon.name,
+                )
+            ),
         )
 
     ######################################################################################################################################################
@@ -323,6 +425,12 @@ class SkillInvocationSystem(ReactiveProcessor):
             "",
             Attributes.BASE_VALUE_SCALE,
         )
+
+        if skill_command_parser.is_direct_skill:
+            # 直接技能。
+            skill_entity.add(
+                DirectSkillComponent, actor_name, skill_command_parser.skill_name
+            )
 
         logger.debug(
             f"_create_skill_entity skill_comp: {skill_entity.get(SkillComponent)._asdict()}"

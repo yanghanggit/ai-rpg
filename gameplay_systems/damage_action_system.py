@@ -17,23 +17,39 @@ import gameplay_systems.file_system_utils
 from my_models.file_models import PropType
 from my_models.event_models import AgentEvent
 from loguru import logger
-from gameplay_systems.actor_entity_utils import ActorStatusEvaluator
 
 
 ################################################################################################################################################
-def _generate_kill_notification_prompt(source_name: str, target_name: str) -> str:
-    return (
-        f"# 发生事件: {source_name} 对 {target_name} 的行动造成了 {target_name} 死亡。"
-    )
+def _generate_kill_notification_prompt(
+    source_name: str, target_name: str, effective_damage: int
+) -> str:
+    return f"""# 发生事件: {source_name} 对 {target_name} 的行动造成了 {target_name} 死亡。
+{target_name} 受到了 {effective_damage} 伤害。"""
 
 
 ################################################################################################################################################
-def _generate_damage_event_description_prompt(
+def _generate_damage_event_description_prompt1(
     source_name: str,
     target_name: str,
     effective_damage: int,
 ) -> str:
     return f"# 发生事件: {source_name} 对 {target_name} 的行动造成了 {effective_damage} 伤害。"
+
+
+################################################################################################################################################
+def _generate_damage_event_description_prompt2(
+    source_name: str,
+    target_name: str,
+    effective_damage: int,
+    applied_damage: int,
+    remaining_hp: int,
+    max_hp: int,
+) -> str:
+    defense = applied_damage - effective_damage
+    defense = max(0, defense)
+    return f"""# 发生事件: {source_name} 对 {target_name} 的行动，最终造成了 {effective_damage} 伤害。
+防御抵消(自身防御力和衣服提供的防御力) {defense} 伤害.
+剩余生命值 {remaining_hp}/{max_hp}。"""
 
 
 ################################################################################################################################################
@@ -142,7 +158,11 @@ class DamageActionSystem(ReactiveProcessor):
 
         ## 导演系统，单独处理，有旧的代码
         self._notify_damage_outcome(
-            source_entity_name, target_entity, effective_damage, is_dead
+            source_entity_name=source_entity_name,
+            target_entity=target_entity,
+            applied_damage=applied_damage,
+            effective_damage=effective_damage,
+            is_dead=is_dead,
         )
 
     ######################################################################################################################################################
@@ -151,6 +171,7 @@ class DamageActionSystem(ReactiveProcessor):
         source_entity_name: str,
         target_entity: Entity,
         effective_damage: int,
+        applied_damage: int,
         is_dead: bool,
     ) -> None:
         pass
@@ -167,7 +188,9 @@ class DamageActionSystem(ReactiveProcessor):
                 current_stage_entity,
                 AgentEvent(
                     message=_generate_kill_notification_prompt(
-                        source_entity_name, target_name
+                        source_name=source_entity_name,
+                        target_name=target_name,
+                        effective_damage=effective_damage,
                     )
                 ),
             )
@@ -177,13 +200,31 @@ class DamageActionSystem(ReactiveProcessor):
             logger.warning(f"场景{target_name}受到了伤害，但是不会死亡。不需要通知了")
             return
 
+        # 通知其他人，数据相对简单
         self._context.broadcast_event(
             current_stage_entity,
             AgentEvent(
-                message=_generate_damage_event_description_prompt(
+                message=_generate_damage_event_description_prompt1(
                     source_entity_name,
                     target_name,
                     effective_damage,
+                )
+            ),
+            set([target_entity]),
+        )
+
+        # 通知自己，数据相对全面
+        attr_comp = target_entity.get(AttributesComponent)
+        self._context.notify_event(
+            set([target_entity]),
+            AgentEvent(
+                message=_generate_damage_event_description_prompt2(
+                    source_name=source_entity_name,
+                    target_name=target_name,
+                    effective_damage=effective_damage,
+                    applied_damage=applied_damage,
+                    remaining_hp=attr_comp.hp,
+                    max_hp=attr_comp.maxhp,
                 )
             ),
         )

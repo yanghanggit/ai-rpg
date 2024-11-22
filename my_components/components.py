@@ -139,6 +139,14 @@ class SkillComponent(NamedTuple):
     stage: str
     targets: List[str]
     skill_accessory_props: List[str]
-    world_harmony_inspector_tag: str
-    world_harmony_inspector_content: str
-    world_harmony_inspector_value: int
+    inspector_tag: str
+    inspector_content: str
+    inspector_value: int
+
+
+# 这种技能就是，直接使用装备的武器，并不配置任何强化或者增幅的道具。直接对目标进行攻击。
+# 这种技能的优点是：简单，直接，不需要额外的配置。消耗算力小。
+@final
+class DirectSkillComponent(NamedTuple):
+    name: str
+    skill_name: str

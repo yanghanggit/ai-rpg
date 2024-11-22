@@ -130,6 +130,8 @@ class ActorStatusEvaluator:
             self._get_category_prop_files(PropType.TYPE_SPECIAL)
             + self._get_category_prop_files(PropType.TYPE_NON_CONSUMABLE_ITEM)
             + self._get_category_prop_files(PropType.TYPE_CONSUMABLE_ITEM)
+            + self._get_category_prop_files(PropType.TYPE_WEAPON)
+            + self._get_category_prop_files(PropType.TYPE_CLOTHES)
         )
 
     ######################################################################################################################################

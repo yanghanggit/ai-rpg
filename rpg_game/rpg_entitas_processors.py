@@ -1,11 +1,10 @@
 from entitas import Processors  # type: ignore
 from overrides import override
-
-# import time
 from typing import Any, cast
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from rpg_game.rpg_game_config import WorldSystemNames
 
+# import time
 # from loguru import logger
 
 
@@ -73,8 +72,8 @@ class RPGEntitasProcessors(Processors):
         from gameplay_systems.skill_invocation_system import (
             SkillInvocationSystem,
         )
-        from gameplay_systems.skill_impact_response_evaluator_system import (
-            SkillImpactResponseEvaluatorSystem,
+        from gameplay_systems.skill_hit_impact__system import (
+            SkillHitImpactSystem,
         )
         from gameplay_systems.damage_action_system import DamageActionSystem
         from gameplay_systems.handle_terminal_player_input_system import (
@@ -114,6 +113,7 @@ class RPGEntitasProcessors(Processors):
         from gameplay_systems.stage_transfer_action_system import (
             StageTransferActionSystem,
         )
+        from gameplay_systems.skill_feedback_system import SkillFeedbackSystem
 
         ##
         rpg_game = cast(RPGGame, game)
@@ -184,8 +184,9 @@ class RPGEntitasProcessors(Processors):
             )
         )
 
-        processors.add(SkillImpactResponseEvaluatorSystem(context, rpg_game))
+        processors.add(SkillHitImpactSystem(context, rpg_game))
         processors.add(DamageActionSystem(context, rpg_game))
+        processors.add(SkillFeedbackSystem(context, rpg_game))
         processors.add(StageTransferActionSystem(context, rpg_game))
         processors.add(
             DeadActionSystem(context, rpg_game)

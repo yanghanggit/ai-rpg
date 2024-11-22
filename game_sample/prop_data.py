@@ -5,7 +5,7 @@ root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 from typing import Any, List, cast
 from my_models.entity_models import PropModel, Attributes
-from my_models.file_models import PropType
+from my_models.file_models import PropType, SkillUsageType
 from enum import StrEnum, unique
 
 
@@ -51,7 +51,13 @@ class ExcelDataProp:
     ############################################################################################################
     @property
     def details(self) -> str:
-        return str(self._data[DataPropProperty.DETAILS])
+        ret = str(self._data[DataPropProperty.DETAILS])
+        if self.type == PropType.TYPE_SKILL:
+            assert (
+                SkillUsageType.SINGLE_TARGET_SKILL_TAG in ret
+                or SkillUsageType.MULTI_TARGET_SKILL_TAG in ret
+            ), f"Invalid Skill Target Type: {ret}"
+        return ret
 
     ############################################################################################################
     @property
@@ -78,16 +84,6 @@ class ExcelDataProp:
     @property
     def appearance(self) -> str:
         return str(self._data[DataPropProperty.APPEARANCE])
-
-    ############################################################################################################
-    @property
-    def can_placed(self) -> bool:
-        return self.type in [
-            PropType.TYPE_WEAPON,
-            PropType.TYPE_CLOTHES,
-            PropType.TYPE_NON_CONSUMABLE_ITEM,
-            PropType.TYPE_CONSUMABLE_ITEM,
-        ]
 
     ############################################################################################################
     def gen_model(self) -> PropModel:

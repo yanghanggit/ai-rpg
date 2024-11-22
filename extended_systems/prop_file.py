@@ -56,7 +56,7 @@ class PropFile(BaseFile):
 
     ############################################################################################################
     @property
-    def description(self) -> str:
+    def details(self) -> str:
         return self.prop_model.details
 
     ############################################################################################################
@@ -96,17 +96,7 @@ class PropFile(BaseFile):
 
     ############################################################################################################
     @property
-    def max_hp(self) -> int:
-        return self.prop_model.attributes[Attributes.MAX_HP]
-
-    ############################################################################################################
-    @property
-    def hp(self) -> int:
-        return self.prop_model.attributes[Attributes.CUR_HP]
-
-    ############################################################################################################
-    @property
-    def attack(self) -> int:
+    def damage(self) -> int:
         return self.prop_model.attributes[Attributes.DAMAGE]
 
     ############################################################################################################
@@ -162,9 +152,9 @@ def generate_prop_file_total_prompt(prop_file: PropFile) -> str:
     return f"""### {prop_file.name}
 - 类型: {_generate_prop_type_prompt(prop_file)}
 - 道具数量: {prop_file.count}
-- 攻击力: {prop_file.attack}
+- 攻击力: {prop_file.damage}
 - 防御力: {prop_file.defense}
-- 道具描述: {prop_file.description}
+- 道具描述: {prop_file.details}
 - {_determine_prop_appearance_tag(prop_file)}: {prop_file.appearance}"""
 
 
@@ -174,9 +164,9 @@ def generate_skill_prop_file_prompt(prop_file: PropFile) -> str:
     assert prop_file.is_skill, "不是技能文件"
     return f"""### {prop_file.name}
 - 类型: {_generate_prop_type_prompt(prop_file)}
-- 攻击力: {prop_file.attack}
+- 攻击力: {prop_file.damage}
 - 防御力: {prop_file.defense}
-- 道具描述: {prop_file.description}
+- 道具描述: {prop_file.details}
 - {_determine_prop_appearance_tag(prop_file)}: {prop_file.appearance}"""
 
 
@@ -187,7 +177,7 @@ def generate_skill_accessory_prop_file_prompt(prop_file: PropFile) -> str:
     return f"""### {prop_file.name}
 - 类型: {_generate_prop_type_prompt(prop_file)}
 - 道具数量: {prop_file.count}
-- 道具描述: {prop_file.description}"""
+- 道具描述: {prop_file.details}"""
 
 
 ###############################################################################################################################################
@@ -205,7 +195,7 @@ def generate_prop_file_for_stage_condition_prompt(prop_file: PropFile) -> str:
     assert not prop_file.is_skill, "不是技能文件"
     return f"""### {prop_file.name}
 - 类型: {_generate_prop_type_prompt(prop_file)}
-- 道具描述: {prop_file.description}
+- 道具描述: {prop_file.details}
 - {_determine_prop_appearance_tag(prop_file)}: {prop_file.appearance}"""
 
 

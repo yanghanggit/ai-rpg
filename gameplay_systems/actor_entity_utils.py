@@ -21,8 +21,8 @@ class ActorStatusEvaluator:
         assert actor_entity.has(ActorComponent)
 
         self._name = actor_entity.get(ActorComponent).name
-        self._maxhp: int = 0
-        self._hp: int = 0
+        self._max_hp: int = 0
+        self._cur_hp: int = 0
         self._category_prop_files: Dict[str, List[PropFile]] = {}
         self._current_weapon: Optional[PropFile] = None
         self._current_clothes: Optional[PropFile] = None
@@ -39,12 +39,12 @@ class ActorStatusEvaluator:
     ######################################################################################################################################
     @property
     def health_ratio(self) -> float:
-        return self._hp / self._maxhp
+        return self._cur_hp / self._max_hp
 
     ######################################################################################################################################
     @property
     def format_health_info(self) -> str:
-        return f"{self._hp}/{self._maxhp}"
+        return f"{self._cur_hp}/{self._max_hp}"
 
     ######################################################################################################################################
     @property
@@ -95,8 +95,8 @@ class ActorStatusEvaluator:
         if not actor_entity.has(AttributesComponent):
             return
         rpg_attr_comp = actor_entity.get(AttributesComponent)
-        self._maxhp = rpg_attr_comp.maxhp
-        self._hp = rpg_attr_comp.hp
+        self._max_hp = rpg_attr_comp.max_hp
+        self._cur_hp = rpg_attr_comp.cur_hp
 
     ######################################################################################################################################
     def _validate_equipment(

@@ -72,7 +72,7 @@ class RPGEntitasProcessors(Processors):
         from gameplay_systems.skill_invocation_system import (
             SkillInvocationSystem,
         )
-        from gameplay_systems.skill_hit_impact__system import (
+        from gameplay_systems.skill_hit_impact_system import (
             SkillHitImpactSystem,
         )
         from gameplay_systems.damage_action_system import DamageActionSystem

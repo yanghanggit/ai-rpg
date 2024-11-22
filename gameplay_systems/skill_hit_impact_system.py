@@ -225,9 +225,7 @@ class SkillHitImpactSystem(ExecuteProcessor):
             return
 
         # 补充上发起者的攻击值
-        self._compute_entity_attributes(
-            internal_process_data.source_entity, target_entity, total_skill_attributes
-        )
+        self._compute_entity_attributes(internal_process_data, total_skill_attributes)
 
         # 补充上所有参与的道具的属性
         self._compute_skill_accessory_attributes(
@@ -308,15 +306,19 @@ class SkillHitImpactSystem(ExecuteProcessor):
     ######################################################################################################################################################
     def _compute_entity_attributes(
         self,
-        source_entity: Entity,
-        target_entity: Entity,
+        internal_process_data: InternalProcessData,
         skill_attribute_output: List[int],
     ) -> None:
 
-        if not source_entity.has(AttributesComponent):
+        if not internal_process_data.source_entity.has(AttributesComponent):
             return
-        attr_comp = source_entity.get(AttributesComponent)
-        skill_attribute_output[Attributes.DAMAGE] += attr_comp.attack
+        attr_comp = internal_process_data.source_entity.get(AttributesComponent)
+        assert (
+            len(internal_process_data.target_entities) > 0
+        ), f"target_entities {internal_process_data.target_entities} not found."
+        skill_attribute_output[Attributes.DAMAGE] += int(
+            attr_comp.damage / len(internal_process_data.target_entities)
+        )
 
     ######################################################################################################################################################
     def _compute_skill_accessory_attributes(

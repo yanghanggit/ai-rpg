@@ -43,7 +43,7 @@ class DeadActionSystem(ExecuteProcessor):
         ).entities
         for entity in entities:
             rpg_attributes = entity.get(AttributesComponent)
-            if rpg_attributes.hp <= 0:
+            if rpg_attributes.cur_hp <= 0:
                 entity.add(DeadAction, rpg_attributes.name, [])
 
     ########################################################################################################################################################################

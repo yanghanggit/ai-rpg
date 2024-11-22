@@ -106,13 +106,13 @@ class DamageActionSystem(ReactiveProcessor):
                 len(attribute_values) > Attributes.DAMAGE
             ), f"属性数组长度不够:{attribute_values}"
 
-            if len(attribute_values) > Attributes.DAMAGE:
+            # if len(attribute_values) > Attributes.DAMAGE:
 
-                self._apply_damage_to_target(
-                    source_entity_name,
-                    target_entity,
-                    attribute_values[Attributes.DAMAGE],
-                )
+            self._apply_damage_to_target(
+                source_entity_name,
+                target_entity,
+                attribute_values[Attributes.DAMAGE],
+            )
 
     ######################################################################################################################################################
     def _apply_damage_to_target(
@@ -122,7 +122,7 @@ class DamageActionSystem(ReactiveProcessor):
         target_attr_comp = target_entity.get(AttributesComponent)
 
         # 简单的战斗计算，简单的血减掉伤害
-        current_health = target_attr_comp.hp
+        current_health = target_attr_comp.cur_hp
 
         # 必须控制在0和最大值之间
         effective_damage = applied_damage - self._compute_entity_defense(target_entity)
@@ -130,15 +130,15 @@ class DamageActionSystem(ReactiveProcessor):
             effective_damage = 0
 
         remaining_health = current_health - effective_damage
-        remaining_health = max(0, min(remaining_health, target_attr_comp.maxhp))
+        remaining_health = max(0, min(remaining_health, target_attr_comp.max_hp))
 
         # 结果修改
         target_entity.replace(
             AttributesComponent,
             target_attr_comp.name,
-            target_attr_comp.maxhp,
+            target_attr_comp.max_hp,
             remaining_health,
-            target_attr_comp.attack,
+            target_attr_comp.damage,
             target_attr_comp.defense,
         )
 
@@ -223,8 +223,8 @@ class DamageActionSystem(ReactiveProcessor):
                     target_name=target_name,
                     effective_damage=effective_damage,
                     applied_damage=applied_damage,
-                    remaining_hp=attr_comp.hp,
-                    max_hp=attr_comp.maxhp,
+                    remaining_hp=attr_comp.cur_hp,
+                    max_hp=attr_comp.max_hp,
                 )
             ),
         )

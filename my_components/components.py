@@ -103,9 +103,9 @@ class EnterStageFlagComponent(NamedTuple):
 @final
 class AttributesComponent(NamedTuple):
     name: str
-    maxhp: int
-    hp: int
-    attack: int
+    max_hp: int
+    cur_hp: int
+    damage: int
     defense: int
 
 

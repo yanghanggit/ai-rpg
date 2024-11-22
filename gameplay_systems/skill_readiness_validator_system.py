@@ -6,7 +6,7 @@ from my_components.action_components import (
     AnnounceAction,
 )
 from my_components.components import (
-    BaseFormComponent,
+    # BaseFormComponent,
     SkillComponent,
     DestroyComponent,
 )
@@ -30,7 +30,7 @@ from my_models.entity_models import Attributes
 ################################################################################################################################################
 def _generate_skill_readiness_validator_prompt(
     actor_name: str,
-    base_form: str,
+    # base_form: str,
     skill_prop_files: List[PropFile],
     skill_accessory_prop_files: List[PropFile],
 ) -> str:
@@ -56,22 +56,19 @@ def _generate_skill_readiness_validator_prompt(
         skill_accessory_prop_files_prompt.append("未配置任何道具")
 
     return f"""# 提示: {actor_name} 计划使用技能，需判断是否允许使用
-
-## {actor_name} 的基础形态
-{base_form}
 ## 技能信息
 {"\n".join(skill_prop_files_prompt)}
 ## 配置的道具信息
 {"\n".join(skill_accessory_prop_files_prompt)}
 ## 判断逻辑步骤
-1. 技能条件检查：结合 {actor_name} 的基础形态和历史背景，检查技能信息是否符合释放条件。如不满足，技能释放失败，停止判断。
-2. 配置道具条件检查：结合 {actor_name} 的基础形态和历史背景，验证配置道具是否符合使用条件。如不满足，技能释放失败，停止判断。
+1. 技能条件检查：结合 {actor_name} 的状态和历史，检查技能信息是否符合释放条件。如不满足，技能释放失败，停止判断。
+2. 配置道具条件检查：结合 {actor_name} 的状态和历史，验证配置道具是否符合使用条件。如不满足，技能释放失败，停止判断。
 3. 配置道具分支判断：
     - 若有配置道具，综合技能与道具信息进行验证。如技能对配置道具有特定要求且道具不满足，技能释放失败，停止判断。
     - 若无配置道具，继续下一步。
 4. 最终判断：如以上条件均满足，技能释放成功。
 ### 注意事项
-上述的‘历史背景’为角色的历史经历（事件与对话等）、性格特点、外貌特征等信息，用于判断技能释放条件。
+上述的‘状态和历史’为角色的历史经历（事件与对话等）、性格特点、外貌特征(基础形态)等信息，用于判断技能释放条件。
 
 ## 成功技能事件描述
 1. 如果成功，请注意 上述 技能信息 中的 技能表现的描述。其中技能释放者即为 {actor_name}。
@@ -263,7 +260,7 @@ class SkillReadinessValidatorSystem(ExecuteProcessor):
 
             skill_readiness_prompt = _generate_skill_readiness_validator_prompt(
                 process_data.agent.name,
-                process_data.actor_entity.get(BaseFormComponent).base_form,
+                # process_data.actor_entity.get(BaseFormComponent).base_form,
                 gameplay_systems.skill_entity_utils.parse_skill_prop_files(
                     context=self._context,
                     skill_entity=process_data.skill_entity,

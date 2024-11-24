@@ -16,7 +16,7 @@ class PlayerCommand(ABC):
     def execute(self, game: BaseGame, player_proxy: PlayerProxy) -> None:
         pass
 
-    def add_player_planning_message(
+    def add_ai_message_as_planning(
         self, entity: Entity, human_message_content: str, game: BaseGame
     ) -> None:
         from rpg_game.rpg_game import RPGGame
@@ -29,7 +29,7 @@ class PlayerCommand(ABC):
             return input_val.split(split_str)[1].strip()
         return input_val
 
-    def make_simple_message(self, action_name: str, values: List[str]) -> str:
+    def generate_action_message(self, action_name: str, values: List[str]) -> str:
         ret: Dict[str, List[str]] = {}
         ret[action_name] = values
         json_str = json.dumps(ret, ensure_ascii=False)

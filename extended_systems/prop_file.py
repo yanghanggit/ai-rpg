@@ -66,6 +66,11 @@ class PropFile(BaseFile):
 
     ############################################################################################################
     @property
+    def insight(self) -> str:
+        return self.prop_model.insight
+
+    ############################################################################################################
+    @property
     def is_special(self) -> bool:
         return self.prop_model.type == PropType.TYPE_SPECIAL
 
@@ -160,13 +165,15 @@ def generate_prop_file_total_prompt(prop_file: PropFile) -> str:
 
 ###############################################################################################################################################
 # 只要技能相关的信息，技能系统过程中需要
-def generate_skill_prop_file_prompt(prop_file: PropFile) -> str:
+def generate_skill_prop_file_prompt(
+    prop_file: PropFile, enable_insight_detail: bool
+) -> str:
     assert prop_file.is_skill, "不是技能文件"
     return f"""### {prop_file.name}
 - 类型: {_generate_prop_type_prompt(prop_file)}
 - 攻击力: {prop_file.damage}
 - 防御力: {prop_file.defense}
-- 道具描述: {prop_file.details}
+- 道具描述: {prop_file.details} {prop_file.insight if enable_insight_detail else ""}
 - {_determine_prop_appearance_tag(prop_file)}: {prop_file.appearance}"""
 
 

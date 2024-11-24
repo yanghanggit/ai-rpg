@@ -177,6 +177,17 @@ class RPGEntitasProcessors(Processors):
 
         # 战斗类的行为!
         processors.add(SkillInvocationSystem(context, rpg_game))
+
+        ### SkillInvocationSystem里，可能会切换武器
+        processors.add(EquipPropActionSystem(context, rpg_game))
+        processors.add(
+            UpdateAppearanceActionSystem(
+                context,
+                rpg_game,
+                WorldSystemNames.WORLD_APPEARANCE_SYSTEM_NAME,
+            )
+        )
+
         processors.add(SkillReadinessValidatorSystem(context, rpg_game))
         processors.add(
             SkillWorldHarmonyInspectorSystem(

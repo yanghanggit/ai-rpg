@@ -571,6 +571,7 @@ class RPGGame(BaseGame):
                     PlayerComponent,
                     KickOffFlagComponent,
                     BaseFormComponent,
+                    StageEnvironmentComponent,
                 ]
             )
         ).entities
@@ -627,6 +628,14 @@ class RPGGame(BaseGame):
                             BaseFormComponent,
                             base_form_comp.name,
                             base_form_comp.base_form,
+                        )
+
+                    case StageEnvironmentComponent.__name__:
+                        stage_env_comp = StageEnvironmentComponent(**comp.data)
+                        load_entity.replace(
+                            StageEnvironmentComponent,
+                            stage_env_comp.name,
+                            stage_env_comp.narrate,
                         )
 
                     case _:

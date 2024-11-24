@@ -70,6 +70,7 @@ class PropModel(BaseModel):
     type: str
     attributes: List[int]
     appearance: str
+    insight: str
 
 
 class WorldSystemModel(BaseModel):

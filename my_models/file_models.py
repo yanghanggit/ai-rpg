@@ -55,6 +55,7 @@ class PropTypeName(StrEnum):
 
 
 @unique
-class SkillUsageType(StrEnum):
-    SINGLE_TARGET_SKILL_TAG = "<单体技能>"
-    MULTI_TARGET_SKILL_TAG = "<群体技能>"
+class PropSkillUsageMode(StrEnum):
+    CASTER_TAG = "<技能施放者>"
+    SINGLE_TARGET_TAG = "<单个目标>"
+    MULTI_TARGETS_TAG = "<多个目标>"

@@ -19,7 +19,7 @@ from gameplay_systems.actor_entity_utils import ActorStatusEvaluator
 from my_models.entity_models import Attributes
 import gameplay_systems.prompt_utils
 import my_format_string.complex_prop_name
-from my_models.file_models import SkillUsageType
+from my_models.file_models import PropSkillUsageMode
 
 
 ################################################################################################################################################
@@ -47,26 +47,6 @@ def _generate_skill_invocation_result_prompt(
 {initial_skill_command}
 ## 系统调整后的技能使用指令 如下:
 {adjusted_skill_command}"""
-
-
-######################################################################################################################################################
-def _generate_invalid_accessory_weapon_prompt(
-    actor_name: str,
-    skill_command: str,
-    accessory_weapon_prop_file_name: str,
-    current_weapon_name: str,
-) -> str:
-
-    assert accessory_weapon_prop_file_name != current_weapon_name
-    assert current_weapon_name not in skill_command
-
-    return f"""# 提示: {actor_name} 计划执行动作: {SkillAction.__name__}，结果为：系统经过判断后，否决。
-## 输入的错误的 技能使用指令 如下:
-{skill_command}
-## 请分析问题，并再次理解规则:
-{gameplay_systems.prompt_utils.skill_action_rule_prompt()}
-## 配置的武器: {accessory_weapon_prop_file_name} 不是当前装备的武器: {current_weapon_name}
-可以考虑使用 {EquipPropAction.__name__} 来装备正确的武器。"""
 
 
 ######################################################################################################################################################
@@ -185,8 +165,8 @@ class SkillCommandParser:
 
         # 是单体技能，只能有一个目标，就保留一个目标
         if (
-            SkillUsageType.SINGLE_TARGET_SKILL_TAG
-            in self._parsed_skill_prop_files[0].details
+            PropSkillUsageMode.SINGLE_TARGET_TAG
+            in self._parsed_skill_prop_files[0].appearance
         ):
             if len(self._parsed_mapping) > 1:
                 fisrt_key = ""
@@ -265,13 +245,20 @@ class SkillCommandParser:
 
     ######################################################################################################################################################
     @property
-    def is_direct_skill(self) -> bool:
+    def is_using_single_weapon(self) -> bool:
         current_weapon = self._actor_status_evaluator._current_weapon
         return (
             len(self.accessory_weapon_prop_files) == 1
             and current_weapon is not None
             and current_weapon == self.accessory_weapon_prop_files[0]
         )
+
+    ######################################################################################################################################################
+    @property
+    def has_insight_info(self) -> bool:
+        if len(self._parsed_skill_prop_files) == 0:
+            return False
+        return self._parsed_skill_prop_files[0].insight != ""
 
     ######################################################################################################################################################
 
@@ -341,25 +328,6 @@ class SkillInvocationSystem(ReactiveProcessor):
             )
             return
 
-        # 配置的武器却不是当前武器
-        if actor_status_evaluator._current_weapon is not None:
-            for (
-                prop_file,
-                consume_count,
-            ) in skill_command_parser._parsed_skill_accessory_prop_files:
-                if (
-                    prop_file.is_weapon
-                    and prop_file != actor_status_evaluator._current_weapon
-                ):
-
-                    self._notify_invalid_accessory_weapon_equipped(
-                        actor_entity,
-                        input_skill_command,
-                        prop_file,
-                        actor_status_evaluator._current_weapon,
-                    )
-                    return
-
         # 检查技能消耗的配件, 是否满足数量
         for (
             prop_file,
@@ -371,6 +339,19 @@ class SkillInvocationSystem(ReactiveProcessor):
                 )
                 # 消耗的道具不够，不能执行。
                 return
+
+        # 自动切换武器
+        if actor_status_evaluator._current_weapon is not None:
+            for (
+                prop_file,
+                consume_count,
+            ) in skill_command_parser._parsed_skill_accessory_prop_files:
+                if (
+                    prop_file.is_weapon
+                    and prop_file != actor_status_evaluator._current_weapon
+                ):
+                    self._switch_weapon(actor_entity, prop_file)
+                    break
 
         # 创建技能实体
         self._create_skill_entity(actor_entity, skill_command_parser)
@@ -384,23 +365,11 @@ class SkillInvocationSystem(ReactiveProcessor):
         )
 
     ######################################################################################################################################################
-    def _notify_invalid_accessory_weapon_equipped(
-        self,
-        entity: Entity,
-        command: str,
-        accessory_weapon_prop_file: PropFile,
-        current_weapon: PropFile,
-    ) -> None:
-        self._context.notify_event(
-            set({entity}),
-            AgentEvent(
-                message=_generate_invalid_accessory_weapon_prompt(
-                    self._context.safe_get_entity_name(entity),
-                    command,
-                    accessory_weapon_prop_file.name,
-                    current_weapon.name,
-                )
-            ),
+    def _switch_weapon(self, actor_entity: Entity, weapon_prop_file: PropFile) -> None:
+        actor_entity.replace(
+            EquipPropAction,
+            weapon_prop_file.owner_name,
+            [weapon_prop_file.name],
         )
 
     ######################################################################################################################################################
@@ -466,7 +435,10 @@ class SkillInvocationSystem(ReactiveProcessor):
             Attributes.BASE_VALUE_SCALE,
         )
 
-        if skill_command_parser.is_direct_skill:
+        if (
+            skill_command_parser.is_using_single_weapon
+            and not skill_command_parser.has_insight_info
+        ):
             # 直接技能。
             skill_entity.add(
                 DirectSkillComponent, actor_name, skill_command_parser.skill_name

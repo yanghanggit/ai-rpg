@@ -40,9 +40,9 @@ class PlayerGoTo(PlayerCommand):
         actor_comp = player_entity.get(ActorComponent)
         player_entity.add(GoToAction, actor_comp.name, [self.stage_name])
 
-        self.add_player_planning_message(
+        self.add_ai_message_as_planning(
             player_entity,
-            self.make_simple_message(GoToAction.__name__, [self.stage_name]),
+            self.generate_action_message(GoToAction.__name__, [self.stage_name]),
             rpg_game,
         )
 
@@ -72,9 +72,11 @@ class PlayerAnnounce(PlayerCommand):
             [self.announce_content],
         )
 
-        self.add_player_planning_message(
+        self.add_ai_message_as_planning(
             player_entity,
-            self.make_simple_message(AnnounceAction.__name__, [self.announce_content]),
+            self.generate_action_message(
+                AnnounceAction.__name__, [self.announce_content]
+            ),
             rpg_game,
         )
 
@@ -100,9 +102,9 @@ class PlayerSpeak(PlayerCommand):
         actor_comp = player_entity.get(ActorComponent)
         player_entity.add(SpeakAction, actor_comp.name, [self.speak_content])
 
-        self.add_player_planning_message(
+        self.add_ai_message_as_planning(
             player_entity,
-            self.make_simple_message(SpeakAction.__name__, [self.speak_content]),
+            self.generate_action_message(SpeakAction.__name__, [self.speak_content]),
             rpg_game,
         )
 
@@ -132,9 +134,11 @@ class PlayerWhisper(PlayerCommand):
             [self.whisper_content],
         )
 
-        self.add_player_planning_message(
+        self.add_ai_message_as_planning(
             player_entity,
-            self.make_simple_message(WhisperAction.__name__, [self.whisper_content]),
+            self.generate_action_message(
+                WhisperAction.__name__, [self.whisper_content]
+            ),
             rpg_game,
         )
 
@@ -164,9 +168,11 @@ class PlayerSteal(PlayerCommand):
             [self.format_string],
         )
 
-        self.add_player_planning_message(
+        self.add_ai_message_as_planning(
             player_entity,
-            self.make_simple_message(StealPropAction.__name__, [self.format_string]),
+            self.generate_action_message(
+                StealPropAction.__name__, [self.format_string]
+            ),
             rpg_game,
         )
 
@@ -198,9 +204,9 @@ class PlayerGiveProp(PlayerCommand):
 
         assert "@" in self.format_string
         assert "/" in self.format_string
-        self.add_player_planning_message(
+        self.add_ai_message_as_planning(
             player_entity,
-            self.make_simple_message(GivePropAction.__name__, [self.format_string]),
+            self.generate_action_message(GivePropAction.__name__, [self.format_string]),
             rpg_game,
         )
 
@@ -232,9 +238,9 @@ class PlayerSkill(PlayerCommand):
             [self.command],
         )
 
-        self.add_player_planning_message(
+        self.add_ai_message_as_planning(
             player_entity,
-            self.make_simple_message(SkillAction.__name__, [self.command]),
+            self.generate_action_message(SkillAction.__name__, [self.command]),
             rpg_game,
         )
 
@@ -264,9 +270,9 @@ class PlayerEquip(PlayerCommand):
             [self.equip_name],
         )
 
-        self.add_player_planning_message(
+        self.add_ai_message_as_planning(
             player_entity,
-            self.make_simple_message(EquipPropAction.__name__, [self.equip_name]),
+            self.generate_action_message(EquipPropAction.__name__, [self.equip_name]),
             rpg_game,
         )
 

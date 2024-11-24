@@ -6,7 +6,7 @@ from my_components.action_components import (
     AnnounceAction,
 )
 from my_components.components import (
-    # BaseFormComponent,
+    DirectSkillComponent,
     SkillComponent,
     DestroyComponent,
 )
@@ -25,12 +25,12 @@ from rpg_game.rpg_game import RPGGame
 import gameplay_systems.skill_entity_utils
 from my_agent.lang_serve_agent import LangServeAgent
 from my_models.entity_models import Attributes
+from my_models.file_models import PropSkillUsageMode
 
 
 ################################################################################################################################################
 def _generate_skill_readiness_validator_prompt(
     actor_name: str,
-    # base_form: str,
     skill_prop_files: List[PropFile],
     skill_accessory_prop_files: List[PropFile],
 ) -> str:
@@ -41,7 +41,9 @@ def _generate_skill_readiness_validator_prompt(
     skill_prop_files_prompt: List[str] = []
     for skill_prop_file in skill_prop_files:
         assert skill_prop_file.is_skill, "不是技能文件"
-        skill_prop_files_prompt.append(generate_skill_prop_file_prompt(skill_prop_file))
+        skill_prop_files_prompt.append(
+            generate_skill_prop_file_prompt(skill_prop_file, False)
+        )
     if len(skill_prop_files_prompt) == 0:
         skill_prop_files_prompt.append("无任何技能")
         assert False, "技能不能为空"
@@ -71,8 +73,9 @@ def _generate_skill_readiness_validator_prompt(
 上述的‘状态和历史’为角色的历史经历（事件与对话等）、性格特点、外貌特征(基础形态)等信息，用于判断技能释放条件。
 
 ## 成功技能事件描述
-1. 如果成功，请注意 上述 技能信息 中的 技能表现的描述。其中技能释放者即为 {actor_name}。
-2. 将描述做为例句，组织然后润色并输出 {actor_name} 使用技能时的事件描述。
+1. 如果成功，请注意 上述 技能信息 中的 技能表现的描述。其中 {PropSkillUsageMode.CASTER_TAG} 即为 {actor_name}。
+2. {PropSkillUsageMode.SINGLE_TARGET_TAG} 或 {PropSkillUsageMode.MULTI_TARGETS_TAG} 为技能的目标。
+3. 将描述做为例句模版，组织然后润色并输出 {actor_name} 使用技能时的事件描述。
 
 ## 输出要求
 - 请遵循输出格式指南。
@@ -114,6 +117,7 @@ class InternalProcessData:
     skill_entity: Entity
     agent: LangServeAgent
     agent_task: AgentTask
+    is_direct_skill: bool
 
 
 ######################################################################################################################################################
@@ -143,8 +147,11 @@ class SkillReadinessValidatorSystem(ExecuteProcessor):
         # 组成成方便的数据结构
         internal_process_data = self._initialize_internal_process_data(skill_entities)
 
-        # 核心执行
+        # 推理技能, 可能有一部分不需要处理
         await self._validate_skill_readiness(internal_process_data)
+
+        # 后续处理
+        self._process_agent_tasks(internal_process_data)
 
     ######################################################################################################################################################
     def _initialize_internal_process_data(
@@ -170,6 +177,7 @@ class SkillReadinessValidatorSystem(ExecuteProcessor):
                     skill_entity=skill_entity,
                     agent=agent,
                     agent_task=AgentTask.create_without_context(agent=agent, prompt=""),
+                    is_direct_skill=skill_entity.has(DirectSkillComponent),
                 )
             )
 
@@ -179,23 +187,10 @@ class SkillReadinessValidatorSystem(ExecuteProcessor):
     async def _validate_skill_readiness(
         self, internal_process_data: List[InternalProcessData]
     ) -> None:
-
-        if len(internal_process_data) == 0:
-            return
-
         agent_tasks = self._generate_agent_tasks(internal_process_data)
-        assert len(agent_tasks) > 0, "agent_tasks is empty."
         if len(agent_tasks) == 0:
-            self._clear(internal_process_data)
             return
-
-        responses = await AgentTask.gather([task for task in agent_tasks.values()])
-        if len(responses) == 0:
-            logger.debug(f"phase1_response is None.")
-            self._clear(internal_process_data)
-            return
-
-        self._process_agent_tasks(internal_process_data)
+        await AgentTask.gather([task for task in agent_tasks.values()])
 
     ######################################################################################################################################################
     def _process_agent_tasks(
@@ -204,18 +199,14 @@ class SkillReadinessValidatorSystem(ExecuteProcessor):
 
         for process_data in internal_process_data:
 
-            agent_task = process_data.agent_task
-            assert agent_task is not None, "agent_task is None."
-
-            plan_response = InternalPlanResponse(
-                agent_task.agent_name, agent_task.response_content
-            )
-
-            if not plan_response.is_skill_ready:
+            if not self._is_skill_ready(process_data):
                 gameplay_systems.skill_entity_utils.destroy_skill_entity(
                     process_data.skill_entity
                 )
                 continue
+
+            inspector_content = self._extract_inspector_content(process_data)
+            assert inspector_content != "", "inspector_content is empty."
 
             skill_comp = process_data.skill_entity.get(SkillComponent)
             process_data.skill_entity.replace(
@@ -227,23 +218,72 @@ class SkillReadinessValidatorSystem(ExecuteProcessor):
                 skill_comp.targets,
                 skill_comp.skill_accessory_props,
                 gameplay_systems.prompt_utils.SkillResultPromptTag.SUCCESS,
-                plan_response.inspector_content,
+                inspector_content,
                 Attributes.BASE_VALUE_SCALE,
             )
 
     ######################################################################################################################################################
-    def _is_skill_ready(self, agent_task: AgentTask) -> bool:
-        return InternalPlanResponse(
+    def _is_skill_ready(self, process_data: InternalProcessData) -> bool:
+        if process_data.is_direct_skill:
+            return True
+        agent_task = process_data.agent_task
+        assert agent_task is not None, "agent_task is None."
+        plan_response = InternalPlanResponse(
             agent_task.agent_name, agent_task.response_content
-        ).is_skill_ready
+        )
+        return plan_response.is_skill_ready
 
     ######################################################################################################################################################
-    def _clear(self, internal_process_data: List[InternalProcessData]) -> None:
-        for process_data in internal_process_data:
-            assert process_data.skill_entity is not None, "skill_entity is None."
-            gameplay_systems.skill_entity_utils.destroy_skill_entity(
-                process_data.skill_entity
+    def _extract_inspector_content(self, process_data: InternalProcessData) -> str:
+
+        if process_data.is_direct_skill:
+            return self._format_direct_skill_inspector_content(process_data)
+
+        agent_task = process_data.agent_task
+        assert agent_task is not None, "agent_task is None."
+        plan_response = InternalPlanResponse(
+            agent_task.agent_name, agent_task.response_content
+        )
+        return plan_response.inspector_content
+
+    ######################################################################################################################################################
+    def _format_direct_skill_inspector_content(
+        self, process_data: InternalProcessData
+    ) -> str:
+
+        skill_comp = process_data.skill_entity.get(SkillComponent)
+        skill_prop_file = self._context.file_system.get_file(
+            PropFile, skill_comp.name, skill_comp.skill_name
+        )
+        assert skill_prop_file is not None, "skill_prop_file is None."
+        if skill_prop_file is None:
+            logger.error(f"skill_prop_file {skill_comp.skill_name} not found.")
+            return ""
+
+        skill_appearance = str(skill_prop_file.appearance)
+
+        assert (
+            PropSkillUsageMode.CASTER_TAG in skill_appearance
+        ), "技能表现中没有技能施放者标签"
+        if PropSkillUsageMode.CASTER_TAG in skill_appearance:
+            skill_appearance = skill_appearance.replace(
+                PropSkillUsageMode.CASTER_TAG, skill_comp.name
             )
+
+        assert (
+            PropSkillUsageMode.SINGLE_TARGET_TAG in skill_appearance
+            or PropSkillUsageMode.MULTI_TARGETS_TAG in skill_appearance
+        ), "技能表现中没有目标标签"
+        if PropSkillUsageMode.SINGLE_TARGET_TAG in skill_appearance:
+            skill_appearance = skill_appearance.replace(
+                PropSkillUsageMode.SINGLE_TARGET_TAG, ",".join(skill_comp.targets)
+            )
+        if PropSkillUsageMode.MULTI_TARGETS_TAG in skill_appearance:
+            skill_appearance = skill_appearance.replace(
+                PropSkillUsageMode.MULTI_TARGETS_TAG, ",".join(skill_comp.targets)
+            )
+
+        return skill_appearance
 
     ######################################################################################################################################################
     def _generate_agent_tasks(
@@ -253,6 +293,8 @@ class SkillReadinessValidatorSystem(ExecuteProcessor):
         ret: Dict[str, AgentTask] = {}
 
         for process_data in internal_process_data:
+            if process_data.is_direct_skill:
+                continue
 
             assert process_data.actor_entity is not None, "actor_entity is None."
             assert process_data.skill_entity is not None, "skill_entity is None."
@@ -260,7 +302,6 @@ class SkillReadinessValidatorSystem(ExecuteProcessor):
 
             skill_readiness_prompt = _generate_skill_readiness_validator_prompt(
                 process_data.agent.name,
-                # process_data.actor_entity.get(BaseFormComponent).base_form,
                 gameplay_systems.skill_entity_utils.parse_skill_prop_files(
                     context=self._context,
                     skill_entity=process_data.skill_entity,

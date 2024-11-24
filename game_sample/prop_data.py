@@ -5,8 +5,9 @@ root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 from typing import Any, List, cast
 from my_models.entity_models import PropModel, Attributes
-from my_models.file_models import PropType, SkillUsageType
+from my_models.file_models import PropType, PropSkillUsageMode
 from enum import StrEnum, unique
+import pandas
 
 
 @unique
@@ -14,10 +15,10 @@ class DataPropProperty(StrEnum):
     NAME = "name"
     CODE_NAME = "codename"
     DETAILS = "details"
-    RAG = "RAG"
     TYPE = "type"
     ATTRIBUTES = "attributes"
     APPEARANCE = "appearance"
+    INSIGHT = "insight"
 
 
 ############################################################################################################
@@ -51,18 +52,7 @@ class ExcelDataProp:
     ############################################################################################################
     @property
     def details(self) -> str:
-        ret = str(self._data[DataPropProperty.DETAILS])
-        if self.type == PropType.TYPE_SKILL:
-            assert (
-                SkillUsageType.SINGLE_TARGET_SKILL_TAG in ret
-                or SkillUsageType.MULTI_TARGET_SKILL_TAG in ret
-            ), f"Invalid Skill Target Type: {ret}"
-        return ret
-
-    ############################################################################################################
-    @property
-    def rag(self) -> str:
-        return str(self._data[DataPropProperty.RAG])
+        return str(self._data[DataPropProperty.DETAILS])
 
     ############################################################################################################
     @property
@@ -83,7 +73,24 @@ class ExcelDataProp:
     ############################################################################################################
     @property
     def appearance(self) -> str:
-        return str(self._data[DataPropProperty.APPEARANCE])
+        ret = str(self._data[DataPropProperty.APPEARANCE])
+        if self.type == PropType.TYPE_SKILL:
+            assert (
+                PropSkillUsageMode.CASTER_TAG in ret
+            ), f"Invalid Skill Target Type: {ret}"
+            assert (
+                PropSkillUsageMode.SINGLE_TARGET_TAG in ret
+                or PropSkillUsageMode.MULTI_TARGETS_TAG in ret
+            ), f"Invalid Skill Target Type: {ret}"
+
+        return ret
+
+    ############################################################################################################
+    @property
+    def insight(self) -> str:
+        if pandas.isna(self._data[DataPropProperty.INSIGHT]):
+            return ""
+        return str(self._data[DataPropProperty.INSIGHT])
 
     ############################################################################################################
     def gen_model(self) -> PropModel:
@@ -95,6 +102,7 @@ class ExcelDataProp:
             type=self.type,
             attributes=self.attributes,
             appearance=self.appearance,
+            insight=self.insight,
         )
 
 

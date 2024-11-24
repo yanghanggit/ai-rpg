@@ -78,7 +78,10 @@ def _generate_world_harmony_inspector_prompt(
     skill_prop_files_prompt: List[str] = []
     if len(skill_prop_files) > 0:
         for skill_file in skill_prop_files:
-            skill_prop_files_prompt.append(generate_skill_prop_file_prompt(skill_file))
+            assert skill_file.insight != "", "技能的洞察力不能为空"
+            skill_prop_files_prompt.append(
+                generate_skill_prop_file_prompt(skill_file, True)
+            )
     if len(skill_prop_files_prompt) == 0:
         skill_prop_files_prompt.append("无任何技能")
         assert False, "技能不能为空"

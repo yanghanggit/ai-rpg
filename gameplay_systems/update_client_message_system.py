@@ -3,7 +3,7 @@ from rpg_game.rpg_entitas_context import RPGEntitasContext
 from player.player_proxy import PlayerProxy
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from my_components.action_components import (
-    StageNarrateAction,
+    # StageNarrateAction,
     StageTagAction,
     GoToAction,
 )
@@ -11,6 +11,8 @@ from typing import final, override
 from loguru import logger
 from rpg_game.rpg_game import RPGGame
 from my_models.event_models import AgentEvent, StageTagEvent
+from my_components.components import StageComponent
+import gameplay_systems.stage_entity_utils
 
 
 @final
@@ -51,19 +53,17 @@ class UpdateClientMessageSystem(ExecuteProcessor):
     def _add_stage_narrate_action_message(
         self, player_proxy: PlayerProxy, player_entity: Entity
     ) -> None:
-        stage = self._context.safe_get_stage_entity(player_entity)
-        if stage is None:
-            return
-        if not stage.has(StageNarrateAction):
+        stage_entity = self._context.safe_get_stage_entity(player_entity)
+        if stage_entity is None:
             return
 
-        stage_narrate_action = stage.get(StageNarrateAction)
-        if len(stage_narrate_action.values) == 0:
-            return
-
-        message = " ".join(stage_narrate_action.values)
         player_proxy.add_stage_message(
-            stage_narrate_action.name, AgentEvent(message=message)
+            stage_entity.get(StageComponent).name,
+            AgentEvent(
+                message=gameplay_systems.stage_entity_utils.extract_current_stage_narrative(
+                    self._context, stage_entity
+                )
+            ),
         )
 
     ############################################################################################################

@@ -2,7 +2,7 @@ from entitas import ExecuteProcessor  # type: ignore
 from typing import final, override
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from rpg_game.rpg_game import RPGGame
-from my_components.components import PlanningAllowedComponent
+from my_components.components import PlanningFlagComponent
 from loguru import logger
 from rpg_game.terminal_game import TerminalGame
 
@@ -30,7 +30,7 @@ class HandleTerminalPlayerInputSystem(ExecuteProcessor):
                 )
                 continue
 
-            if not player_entity.has(PlanningAllowedComponent):
+            if not player_entity.has(PlanningFlagComponent):
                 continue
 
             for command in player_proxy._commands:

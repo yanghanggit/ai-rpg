@@ -2,7 +2,7 @@ from entitas import InitializeProcessor, ExecuteProcessor, Matcher, Entity  # ty
 from overrides import override
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from my_components.components import (
-    PlanningAllowedComponent,
+    PlanningFlagComponent,
     StageComponent,
     ActorComponent,
     EnterStageFlagComponent,
@@ -61,7 +61,7 @@ class ActorPlanningStrategySystem(InitializeProcessor, ExecuteProcessor):
     ############################################################################################################
     def _handle_add_planning_component(self) -> None:
         stage_entities = self._context.get_group(
-            Matcher(StageComponent, PlanningAllowedComponent)
+            Matcher(StageComponent, PlanningFlagComponent)
         ).entities
 
         for stage_entity in stage_entities:
@@ -80,11 +80,9 @@ class ActorPlanningStrategySystem(InitializeProcessor, ExecuteProcessor):
                 continue
 
             assert pop_actor_entity.has(ActorComponent)
-            # if not pop_actor_entity.has(PlanningAllowedComponent):
-            #     actor_comp = pop_actor_entity.get(ActorComponent)
-            #     pop_actor_entity.add(PlanningAllowedComponent, actor_comp.name)
+
             actor_comp = pop_actor_entity.get(ActorComponent)
-            pop_actor_entity.replace(PlanningAllowedComponent, actor_comp.name)
+            pop_actor_entity.replace(PlanningFlagComponent, actor_comp.name)
 
     ############################################################################################################
     def _extend_order_queue(

@@ -2,14 +2,13 @@ from entitas import Entity, Matcher, ExecuteProcessor  # type: ignore
 from overrides import override
 from my_components.components import (
     ActorComponent,
-    PlanningAllowedComponent,
+    PlanningFlagComponent,
     StageGraphComponent,
     PlayerComponent,
     AgentPingFlagComponent,
     KickOffFlagComponent,
 )
 from my_components.action_components import (
-    StageNarrateAction,
     GoToAction,
     TagAction,
     EquipPropAction,
@@ -30,6 +29,7 @@ from extended_systems.prop_file import (
     generate_prop_file_total_prompt,
 )
 from my_models.file_models import PropType
+import gameplay_systems.stage_entity_utils
 
 
 ###############################################################################################################################################
@@ -203,7 +203,7 @@ class ActorPlanningExecutionSystem(ExecuteProcessor):
             Matcher(
                 all_of=[
                     ActorComponent,
-                    PlanningAllowedComponent,
+                    PlanningFlagComponent,
                     AgentPingFlagComponent,
                     KickOffFlagComponent,
                 ],
@@ -223,7 +223,9 @@ class ActorPlanningExecutionSystem(ExecuteProcessor):
                 self._context.safe_get_agent(actor_entity),
                 _generate_actor_plan_prompt(
                     current_stage=self._retrieve_stage_name(actor_entity),
-                    stage_narrate=self._retrieve_stage_narrative(actor_entity),
+                    stage_narrate=gameplay_systems.stage_entity_utils.extract_current_stage_narrative(
+                        self._context, actor_entity
+                    ),
                     stage_graph=set(self._retrieve_stage_graph(actor_entity)),
                     actor_appearance_mapping=actor_appearance_mapping,
                     health_description=check_self.format_health_info,
@@ -238,18 +240,6 @@ class ActorPlanningExecutionSystem(ExecuteProcessor):
         stage_entity = self._context.safe_get_stage_entity(actor_entity)
         assert stage_entity is not None, "stage is None, actor无所在场景是有问题的"
         return self._context.safe_get_entity_name(stage_entity)
-
-    #######################################################################################################################################
-    def _retrieve_stage_narrative(self, actor_entity: Entity) -> str:
-        stage_entity = self._context.safe_get_stage_entity(actor_entity)
-        assert stage_entity is not None, "stage is None, actor无所在场景是有问题的"
-
-        if not stage_entity.has(StageNarrateAction):
-            logger.warning("stage has no StageNarrateAction")
-            return ""
-
-        stage_narrate_action = stage_entity.get(StageNarrateAction)
-        return " ".join(stage_narrate_action.values)
 
     #######################################################################################################################################
     def _retrieve_stage_graph(self, actor_entity: Entity) -> List[str]:

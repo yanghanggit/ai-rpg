@@ -2,9 +2,10 @@ from entitas import Matcher, ExecuteProcessor  # type: ignore
 from overrides import override
 from my_components.components import (
     StageComponent,
-    PlanningAllowedComponent,
+    PlanningFlagComponent,
     AgentPingFlagComponent,
     KickOffFlagComponent,
+    StageStaticFlagComponent,
 )
 from my_components.action_components import (
     StageNarrateAction,
@@ -21,6 +22,7 @@ from my_agent.agent_task import (
     AgentTask,
 )
 from rpg_game.rpg_game import RPGGame
+import gameplay_systems.stage_entity_utils
 
 
 ###############################################################################################################################################
@@ -71,9 +73,15 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
     @override
     async def a_execute1(self) -> None:
 
+        await self._execute_stage_tasks()
+        # 保底加一个行为？
+        self._ensure_stage_actions()
+
+    #######################################################################################################################################
+    async def _execute_stage_tasks(self) -> None:
+
         # step1: 添加任务
         tasks: Dict[str, AgentTask] = {}
-
         self._populate_agent_tasks(tasks)
 
         # step可选：混沌工程做测试
@@ -85,18 +93,12 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
         if len(tasks) == 0:
             return
 
-        responses = await AgentTask.gather([task for task in tasks.values()])
-        if len(responses) == 0:
-            logger.warning(f"StagePlanningSystem: request_result is empty.")
-            return
+        await AgentTask.gather([task for task in tasks.values()])
 
         # step3: 处理结果
         self._process_agent_tasks(tasks)
 
-        # step4: 保底加一个行为？
-        self._ensure_stage_actions(tasks)
-
-        # step？: 清理，习惯性动作
+        # step: 清理，习惯性动作
         tasks.clear()
 
     #######################################################################################################################################
@@ -111,11 +113,12 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
             if stage_entity is None:
                 continue
 
+            plan_response = AgentPlanResponse(stage_name, agent_task.response_content)
             action_add_result = (
                 gameplay_systems.action_component_utils.add_stage_actions(
                     self._context,
                     stage_entity,
-                    AgentPlanResponse(stage_name, agent_task.response_content),
+                    plan_response,
                 )
             )
 
@@ -124,20 +127,24 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
                 self._context.discard_last_human_ai_conversation(stage_entity)
                 continue
 
+            gameplay_systems.stage_entity_utils.apply_stage_narration(
+                self._context, plan_response
+            )
+
     #######################################################################################################################################
     def _populate_agent_tasks(
         self, requested_agent_tasks: Dict[str, AgentTask]
     ) -> None:
         requested_agent_tasks.clear()
-
         stage_entities = self._context.get_group(
             Matcher(
                 all_of=[
                     StageComponent,
-                    PlanningAllowedComponent,
+                    PlanningFlagComponent,
                     AgentPingFlagComponent,
                     KickOffFlagComponent,
-                ]
+                ],
+                none_of=[StageStaticFlagComponent],
             )
         ).entities
         for stage_entity in stage_entities:
@@ -150,27 +157,41 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
             )
 
     #######################################################################################################################################
-    def _ensure_stage_actions(self, agent_task_requests: Dict[str, AgentTask]) -> None:
-        for stage_name, agent_task in agent_task_requests.items():
+    def _ensure_stage_actions(self) -> None:
 
-            stage_entity = self._context.get_stage_entity(stage_name)
-            assert (
-                stage_entity is not None
-            ), f"StagePlanningSystem: stage_entity is None, {stage_name}"
-            if stage_entity is None:
-                continue
+        stage_entities = self._context.get_group(
+            Matcher(
+                all_of=[
+                    StageComponent,
+                    PlanningFlagComponent,
+                    AgentPingFlagComponent,
+                    KickOffFlagComponent,
+                ]
+            )
+        ).entities
 
+        for stage_entity in stage_entities:
+
+            stage_name = stage_entity.get(StageComponent).name
             if not stage_entity.has(StageNarrateAction):
                 logger.warning(
                     f"StagePlanningSystem: add StageNarrateAction = {stage_name}"
                 )
-                stage_entity.add(StageNarrateAction, stage_name, ["无任何描述。"])
+
+                narrate = (
+                    gameplay_systems.stage_entity_utils.extract_current_stage_narrative(
+                        self._context, stage_entity
+                    )
+                )
+
+                stage_entity.replace(
+                    StageNarrateAction,
+                    stage_name,
+                    [narrate],
+                )
 
             if not stage_entity.has(StageTagAction):
-                # logger.warning(
-                #     f"StagePlanningSystem: add StageTagAction = {stage_name}"
-                # )
-                stage_entity.add(StageTagAction, stage_name, [])
+                stage_entity.replace(StageTagAction, stage_name, [])
 
 
 #######################################################################################################################################

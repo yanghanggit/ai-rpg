@@ -3,7 +3,7 @@ from entitas import ExecuteProcessor, Matcher  # type: ignore
 from overrides import override
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from my_components.components import (
-    PlanningAllowedComponent,
+    PlanningFlagComponent,
 )
 from rpg_game.rpg_game import RPGGame
 
@@ -19,9 +19,9 @@ class PrePlanningSystem(ExecuteProcessor):
     @override
     def execute(self) -> None:
         entities = self._context.get_group(
-            Matcher(PlanningAllowedComponent)
+            Matcher(PlanningFlagComponent)
         ).entities.copy()
         for entity in entities:
-            entity.remove(PlanningAllowedComponent)
+            entity.remove(PlanningFlagComponent)
 
     ############################################################################################################

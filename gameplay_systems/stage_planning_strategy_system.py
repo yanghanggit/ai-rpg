@@ -2,7 +2,7 @@ from entitas import ExecuteProcessor, Matcher  # type: ignore
 from overrides import override
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from my_components.components import (
-    PlanningAllowedComponent,
+    PlanningFlagComponent,
     StageComponent,
 )
 from rpg_game.rpg_game import RPGGame
@@ -27,6 +27,6 @@ class StagePlanningStrategySystem(ExecuteProcessor):
             actors_on_stage = self._context._retrieve_actors_on_stage(stage_comp.name)
             if len(actors_on_stage) == 0:
                 continue
-            stage_entity.replace(PlanningAllowedComponent, stage_comp.name)
+            stage_entity.replace(PlanningFlagComponent, stage_comp.name)
 
     ############################################################################################################

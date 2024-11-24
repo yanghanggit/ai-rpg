@@ -1,21 +1,42 @@
-# from rpg_game.rpg_entitas_context import RPGEntitasContext
-# from my_components.components import (
-#     StageComponent,
-# )
-# from my_format_string.complex_stage_name import ComplexStageName
+from entitas import Entity  # type: ignore
+from my_components.components import (
+    StageComponent,
+    StageEnvironmentComponent,
+)
+from my_components.action_components import (
+    StageNarrateAction,
+)
+from my_agent.agent_plan import AgentPlanResponse
+from rpg_game.rpg_entitas_context import RPGEntitasContext
 
 
-# ################################################################################################################################################
-# # def resolve_stage_name(context: RPGEntitasContext, source_name: str) -> str:
+######################################################################################################################################################
+def apply_stage_narration(
+    context: RPGEntitasContext, plan_response: AgentPlanResponse
+) -> None:
 
-# #     complex_stage_name = ComplexStageName(source_name)
-# #     if complex_stage_name.is_unknown_stage_name:
-# #         guid = complex_stage_name.extract_guid
-# #         stage_entity = context.get_entity_by_guid(guid)
-# #         if stage_entity is not None and stage_entity.has(StageComponent):
-# #             return context.safe_get_entity_name(stage_entity)
+    stage_narrate_action = plan_response.get_action(StageNarrateAction.__name__)
+    if stage_narrate_action is None or len(stage_narrate_action.values) == 0:
+        return
 
-# #     return source_name
+    stage_entity = context.get_entity_by_name(plan_response.agent_name)
+    if stage_entity is None or not stage_entity.has(StageEnvironmentComponent):
+        return
+
+    extract_content = " ".join(stage_narrate_action.values)
+    stage_entity.replace(
+        StageEnvironmentComponent, plan_response.agent_name, extract_content
+    )
 
 
-# ################################################################################################################################################
+######################################################################################################################################################
+def extract_current_stage_narrative(context: RPGEntitasContext, entity: Entity) -> str:
+    stage_entity = context.safe_get_stage_entity(entity)
+    if stage_entity is None:
+        return ""
+    assert stage_entity.has(StageComponent), "stage_entity error"
+    assert stage_entity.has(StageEnvironmentComponent), "stage_entity error"
+    return stage_entity.get(StageEnvironmentComponent).narrate
+
+
+#############################################################################################################################

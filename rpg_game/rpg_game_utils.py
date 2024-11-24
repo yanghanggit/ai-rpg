@@ -19,12 +19,10 @@ from rpg_game.terminal_game import TerminalGame
 from rpg_game.web_game import WebGame
 from player.player_proxy import PlayerProxy
 from extended_systems.archive_file import ActorArchiveFile, StageArchiveFile
-
-# from extended_systems.prop_file import PropFile
 from my_components.components import (
     ActorComponent,
     PlayerComponent,
-    PlanningAllowedComponent,
+    PlanningFlagComponent,
     KickOffContentComponent,
     KickOffFlagComponent,
 )
@@ -473,8 +471,8 @@ def get_turn_player_actors(rpg_game: RPGGame) -> List[str]:
 
     players = rpg_game.context.get_player_entities()
     for player in players:
-        if player.has(PlanningAllowedComponent):
-            ret.append(player.get(PlanningAllowedComponent).name)
+        if player.has(PlanningFlagComponent):
+            ret.append(player.get(PlanningFlagComponent).name)
 
     return ret
 
@@ -485,7 +483,7 @@ def is_player_turn(rpg_game: RPGGame, player_proxy: PlayerProxy) -> bool:
     if player_entity is None:
         return False
 
-    return player_entity.has(PlanningAllowedComponent)
+    return player_entity.has(PlanningFlagComponent)
 
 
 #######################################################################################################################################

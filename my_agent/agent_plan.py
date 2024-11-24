@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Dict, Any, Optional, cast
+from typing import Final, List, Dict, Any, Optional, cast
 import json
 from loguru import logger
 from my_format_string.json_plan_response_handler import (
@@ -14,14 +14,13 @@ class AgentAction:
     values: List[str]
 
 
-#
 class AgentPlanResponse:
 
-    def __init__(self, name: str, response_content: str) -> None:
+    def __init__(self, agent_name: str, response_content: str) -> None:
 
-        self._name: str = name
+        self._agent_name: Final[str] = agent_name
         self._actions: List[AgentAction] = []
-        self._raw_response_content: str = str(response_content)
+        self._raw_response_content: Final[str] = str(response_content)
 
         # 准备开始处理了
         if response_content != "":
@@ -41,7 +40,12 @@ class AgentPlanResponse:
 
     ############################################################################################################
     @property
-    def original_response_content(self) -> str:
+    def agent_name(self) -> str:
+        return self._agent_name
+
+    ############################################################################################################
+    @property
+    def raw_response_content(self) -> str:
         return self._raw_response_content
 
     ############################################################################################################
@@ -61,7 +65,7 @@ class AgentPlanResponse:
             return cast(Dict[str, List[str]], load_ret)
 
         except Exception as e:
-            logger.error(f"[{self._name}] = json.loads error. \n{e}")
+            logger.error(f"[{self._agent_name}] = json.loads error. \n{e}")
 
         return {}
 
@@ -69,7 +73,7 @@ class AgentPlanResponse:
     def _build(self, json: Dict[str, List[str]]) -> None:
         self._actions.clear()
         for key, value in json.items():
-            self._actions.append(AgentAction(self._name, key, value))
+            self._actions.append(AgentAction(self._agent_name, key, value))
 
     ############################################################################################################
     def _check_fmt(self, json_data: Any) -> bool:

@@ -107,7 +107,7 @@ def add_actor_actions(
 
     if not _validate_actions(actor_planning_response, registered_actions):
         logger.warning(
-            f"add_actor_actions, {actor_planning_response.original_response_content}"
+            f"add_actor_actions, {actor_planning_response.raw_response_content}"
         )
         return False
 
@@ -132,7 +132,7 @@ def add_stage_actions(
 
     if not _validate_actions(stage_planning_response, registered_actions):
         logger.warning(
-            f"add_stage_actions failed, {stage_planning_response.original_response_content}"
+            f"add_stage_actions failed, {stage_planning_response.raw_response_content}"
         )
         return False
 

@@ -21,6 +21,8 @@ from my_components.action_components import (
 )
 from my_components.action_components import UpdateAppearanceAction
 import gameplay_systems.prompt_utils
+from my_agent.agent_plan import AgentPlanResponse
+import gameplay_systems.stage_entity_utils
 from loguru import logger
 
 
@@ -128,6 +130,9 @@ class AgentKickOffSystem(ExecuteProcessor):
         # 处理结果
         self._process_agent_tasks(agent_tasks)
 
+        # 记录场景叙述
+        self._process_stage_narrate_action(agent_tasks)
+
     ######################################################################################################################################################
     def _initialize_world_system_tasks(self) -> Dict[str, AgentTask]:
 
@@ -229,6 +234,19 @@ class AgentKickOffSystem(ExecuteProcessor):
             if entity is None:
                 continue
             entity.replace(KickOffFlagComponent, agent_name)
+
+    ######################################################################################################################################################
+    def _process_stage_narrate_action(self, tasks: Dict[str, AgentTask]) -> None:
+        for agent_name, agent_task in tasks.items():
+            entity = self._context.get_entity_by_name(agent_name)
+            assert entity is not None, f"entity is None, {agent_name}"
+            if entity is None or not entity.has(StageComponent):
+                continue
+
+            gameplay_systems.stage_entity_utils.apply_stage_narration(
+                self._context,
+                AgentPlanResponse(agent_name, agent_task.response_content),
+            )
 
     ######################################################################################################################################################
     def _initialize_appearance_update_action(self) -> None:

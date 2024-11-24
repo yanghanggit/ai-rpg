@@ -53,6 +53,19 @@ class StageSpawnerComponent(NamedTuple):
     spawners: List[str]
 
 
+# 记录场景的描述 #Environment
+@final
+class StageEnvironmentComponent(NamedTuple):
+    name: str
+    narrate: str
+
+
+# 一旦标记这个，就说明这个场景是静态的，不会发生变化，就是不会参与planning的执行中去。
+@final
+class StageStaticFlagComponent(NamedTuple):
+    name: str
+
+
 # 角色标记
 @final
 class ActorComponent(NamedTuple):
@@ -72,9 +85,9 @@ class DestroyComponent(NamedTuple):
     name: str
 
 
-# 自动规划的标记
+# 自动规划的标记 planning
 @final
-class PlanningAllowedComponent(NamedTuple):
+class PlanningFlagComponent(NamedTuple):
     name: str
 
 

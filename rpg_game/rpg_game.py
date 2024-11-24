@@ -18,6 +18,8 @@ from my_components.components import (
     RoundEventsRecordComponent,
     KickOffFlagComponent,
     StageSpawnerComponent,
+    StageEnvironmentComponent,
+    StageStaticFlagComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from rpg_game.rpg_game_resource import RPGGameResource
@@ -480,6 +482,12 @@ class RPGGame(BaseGame):
         stage_entity.add(
             StageSpawnerComponent, stage_model.name, stage_instance.spawners
         )
+
+        ## 添加场景环境信息。
+        stage_entity.add(StageEnvironmentComponent, stage_model.name, "")
+
+        ## todo 全部静态场景，除了第一次kick off，后续全部不做环境变化
+        stage_entity.add(StageStaticFlagComponent, stage_model.name)
 
         ## 重新设置Actor和stage的关系
         for actor_instance in stage_instance.actors:

@@ -161,6 +161,6 @@ class SkillComponent(NamedTuple):
 # 这种技能就是，直接使用装备的武器，并不配置任何强化或者增幅的道具。直接对目标进行攻击。
 # 这种技能的优点是：简单，直接，不需要额外的配置。消耗算力小。
 @final
-class DirectSkillComponent(NamedTuple):
+class WeaponDirectAttackSkill(NamedTuple):
     name: str
     skill_name: str

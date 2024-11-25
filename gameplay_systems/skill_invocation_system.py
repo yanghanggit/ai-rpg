@@ -6,7 +6,7 @@ from my_components.action_components import (
 from my_components.components import (
     SkillComponent,
     ActorComponent,
-    DirectSkillComponent,
+    WeaponDirectAttackSkill,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import Final, final, override, Set, List, Dict, Optional
@@ -180,7 +180,8 @@ class SkillCommandParser:
 
         # 是单体技能，只能有一个目标，就保留一个目标
         if (
-            PropSkillUsageMode.SINGLE_TARGET_TAG
+            len(self._parsed_skill_prop_files) > 0
+            and PropSkillUsageMode.SINGLE_TARGET_TAG
             in self._parsed_skill_prop_files[0].appearance
         ):
             if len(self._parsed_mapping) > 1:
@@ -507,7 +508,7 @@ class SkillInvocationSystem(ReactiveProcessor):
         ):
             # 直接技能。
             skill_entity.add(
-                DirectSkillComponent, actor_name, skill_command_parser.skill_name
+                WeaponDirectAttackSkill, actor_name, skill_command_parser.skill_name
             )
 
         logger.debug(

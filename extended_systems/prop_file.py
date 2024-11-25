@@ -140,6 +140,8 @@ def _generate_prop_type_prompt(prop_file: PropFile) -> str:
         return PropTypeName.CLOTHES
     elif prop_file.is_non_consumable_item:
         return PropTypeName.NON_CONSUMABLE_ITEM
+    elif prop_file.is_consumable_item:
+        return PropTypeName.CONSUMABLE_ITEM
     elif prop_file.is_special:
         return PropTypeName.SPECIAL
     elif prop_file.is_skill:
@@ -164,6 +166,7 @@ def generate_prop_file_total_prompt(prop_file: PropFile) -> str:
 - 道具数量: {prop_file.count}
 - 攻击力: {prop_file.damage}
 - 防御力: {prop_file.defense}
+- 治疗量: {prop_file.heal}
 - 道具描述: {prop_file.details}
 - {_determine_prop_appearance_tag(prop_file)}: {prop_file.appearance}"""
 
@@ -178,6 +181,7 @@ def generate_skill_prop_file_prompt(
 - 类型: {_generate_prop_type_prompt(prop_file)}
 - 攻击力: {prop_file.damage}
 - 防御力: {prop_file.defense}
+- 治疗量: {prop_file.heal}
 - 道具描述: {prop_file.details} {prop_file.insight if enable_insight_detail else ""}
 - {_determine_prop_appearance_tag(prop_file)}: {prop_file.appearance}"""
 

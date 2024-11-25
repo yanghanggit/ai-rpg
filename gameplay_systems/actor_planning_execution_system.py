@@ -39,6 +39,7 @@ def _generate_props_prompt(
         PropType.TYPE_WEAPON,
         PropType.TYPE_CLOTHES,
         PropType.TYPE_NON_CONSUMABLE_ITEM,
+        PropType.TYPE_CONSUMABLE_ITEM,
         PropType.TYPE_SKILL,
     ],
 ) -> List[str]:

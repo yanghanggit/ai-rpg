@@ -199,7 +199,9 @@ class RPGEntitasProcessors(Processors):
         processors.add(SkillHitImpactSystem(context, rpg_game))
         processors.add(HealActionSystem(context, rpg_game))  # 先治疗后伤害。
         processors.add(DamageActionSystem(context, rpg_game))
-        processors.add(SkillFeedbackSystem(context, rpg_game))
+        processors.add(
+            SkillFeedbackSystem(context, rpg_game)
+        )  # 一些特殊事件的反馈。可能触发 StageTransfer
         processors.add(StageTransferActionSystem(context, rpg_game))
         processors.add(
             DeadActionSystem(context, rpg_game)

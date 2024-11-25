@@ -8,7 +8,6 @@ from my_components.components import (
     FinalAppearanceComponent,
     GUIDComponent,
     RoundEventsRecordComponent,
-    StageEnvironmentComponent,
 )
 from extended_systems.file_system import FileSystem
 from extended_systems.query_component_system import QueryComponentSystem

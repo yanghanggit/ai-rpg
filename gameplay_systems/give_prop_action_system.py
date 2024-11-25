@@ -25,9 +25,12 @@ def _generate_give_prop_prompt(
     source_name: str, target_name: str, prop_name: str, action_result: bool
 ) -> str:
     if not action_result:
-        return (
-            f"# 提示: {source_name} 试图将 {prop_name} 给予 {target_name}, 但是失败了。"
-        )
+        return f"""# 提示: {source_name} 试图将 {prop_name} 给予 {target_name}, 但是失败了。
+## 原因分析
+- {source_name} 没有 {prop_name}。
+- {prop_name} 并不是合理的道具的全名，请注意 {GivePropAction.__name__} 的使用格式。
+    - "{GivePropAction.__name__}":["@道具接收角色全名/交付的道具全名"]  
+"""
 
     return f"""# 发生事件: {source_name} 将 {prop_name} 成功给予了 {target_name}。
 ## 导致结果

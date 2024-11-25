@@ -345,14 +345,23 @@ class SkillHitImpactSystem(ExecuteProcessor):
             len(internal_process_data.target_entities) > 0
         ), f"target_entities {internal_process_data.target_entities} not found."
 
-        # 均摊到每个属性上 todo
-        skill_attribute_output[Attributes.DAMAGE] += int(
-            attr_comp.damage / len(internal_process_data.target_entities)
+        # 不能同时存在。
+        assert (
+            skill_attribute_output[Attributes.DAMAGE]
+            * skill_attribute_output[Attributes.HEAL]
+            == 0
         )
 
-        skill_attribute_output[Attributes.HEAL] += int(
-            attr_comp.heal / len(internal_process_data.target_entities)
-        )
+        # 均摊到每个属性上 todo
+        if skill_attribute_output[Attributes.DAMAGE] != 0:
+            skill_attribute_output[Attributes.DAMAGE] += int(
+                attr_comp.damage / len(internal_process_data.target_entities)
+            )
+
+        if skill_attribute_output[Attributes.HEAL] != 0:
+            skill_attribute_output[Attributes.HEAL] += int(
+                attr_comp.heal / len(internal_process_data.target_entities)
+            )
 
     ######################################################################################################################################################
     def _compute_skill_accessory_attributes(

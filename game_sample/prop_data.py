@@ -62,12 +62,21 @@ class ExcelDataProp:
     ############################################################################################################
     @property
     def attributes(self) -> List[int]:
+
+        if pandas.isna(self._data[DataPropProperty.ATTRIBUTES]):
+            assert False, f"attributes is None: {self.name}"
+            return [0] * Attributes.MAX
+
         assert self._data is not None
         data = cast(str, self._data[DataPropProperty.ATTRIBUTES])
         assert "," in data, f"raw_string_val: {data} is not valid."
         values = [int(attr) for attr in data.split(",")]
         if len(values) < Attributes.MAX:
             values.extend([0] * (Attributes.MAX - len(values)))
+
+        assert (
+            values[Attributes.DAMAGE] * values[Attributes.HEAL] == 0
+        ), f"Invalid Attributes: {values}"
         return values
 
     ############################################################################################################

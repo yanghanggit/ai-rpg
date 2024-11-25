@@ -6,7 +6,7 @@ from my_components.action_components import (
     AnnounceAction,
 )
 from my_components.components import (
-    DirectSkillComponent,
+    WeaponDirectAttackSkill,
     SkillComponent,
     DestroyComponent,
 )
@@ -117,7 +117,7 @@ class InternalProcessData:
     skill_entity: Entity
     agent: LangServeAgent
     agent_task: AgentTask
-    is_direct_skill: bool
+    is_weapon_direct_attack_skill: bool
 
 
 ######################################################################################################################################################
@@ -177,7 +177,9 @@ class SkillReadinessValidatorSystem(ExecuteProcessor):
                     skill_entity=skill_entity,
                     agent=agent,
                     agent_task=AgentTask.create_without_context(agent=agent, prompt=""),
-                    is_direct_skill=skill_entity.has(DirectSkillComponent),
+                    is_weapon_direct_attack_skill=skill_entity.has(
+                        WeaponDirectAttackSkill
+                    ),
                 )
             )
 
@@ -224,7 +226,7 @@ class SkillReadinessValidatorSystem(ExecuteProcessor):
 
     ######################################################################################################################################################
     def _is_skill_ready(self, process_data: InternalProcessData) -> bool:
-        if process_data.is_direct_skill:
+        if process_data.is_weapon_direct_attack_skill:
             return True
         agent_task = process_data.agent_task
         assert agent_task is not None, "agent_task is None."
@@ -236,7 +238,7 @@ class SkillReadinessValidatorSystem(ExecuteProcessor):
     ######################################################################################################################################################
     def _extract_inspector_content(self, process_data: InternalProcessData) -> str:
 
-        if process_data.is_direct_skill:
+        if process_data.is_weapon_direct_attack_skill:
             return self._format_direct_skill_inspector_content(process_data)
 
         agent_task = process_data.agent_task
@@ -293,7 +295,7 @@ class SkillReadinessValidatorSystem(ExecuteProcessor):
         ret: Dict[str, AgentTask] = {}
 
         for process_data in internal_process_data:
-            if process_data.is_direct_skill:
+            if process_data.is_weapon_direct_attack_skill:
                 continue
 
             assert process_data.actor_entity is not None, "actor_entity is None."

@@ -3,7 +3,7 @@ from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: igno
 from overrides import override
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
-from typing import Dict, List, final, Optional
+from typing import Dict, Final, List, final, Optional
 import json
 from my_components.components import (
     FinalAppearanceComponent,
@@ -69,7 +69,7 @@ def _generate_appearance_reasoning_prompt(
     - 避免描述被遮蔽的部位，例如“胸前的印记被衣服遮盖住”。
 2. 角色无衣：如角色无衣服，人形角色为穿内衣状态，非人角色直接描述基础形态外观。
 3. 角色持有武器：如角色有武器，则最终结果应融入武器的外观描述。没有则不需要描述。
-4. 润色：对最终结果进行适度润色，使描述生动。
+4. 输出内容要求简短。
 
 ## 输出要求 
 ### 输出格式指南
@@ -107,6 +107,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
         self._context: RPGEntitasContext = context
         self._game: RPGGame = rpg_game
         self._world_system_name: str = str(world_system_name)
+        self._batch_size: Final[int] = 5
 
     ####################################################################################################
     @override
@@ -139,12 +140,15 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
             and self.world_system_entity.has(AgentPingFlagComponent)
             and self.world_system_entity.has(KickOffContentComponent)
         ):
-            # 准备推理
-            world_system_agent = self._context.safe_get_agent(self.world_system_entity)
+
             # 有衣服的，请求更新，通过LLM来推理外观
-            self._execute_appearance_update_task(
-                actor_appearance_info, world_system_agent
-            )
+            # 如果 actor_appearance_info过长，需要分批推理，每次推理最多5个
+            assert self._batch_size > 0, "batch_size must be greater than 0."
+            for i in range(0, len(actor_appearance_info), self._batch_size):
+                batch = actor_appearance_info[i : i + self._batch_size]
+                self._process_appearance_update_task(
+                    batch, self._context.safe_get_agent(self.world_system_entity)
+                )
 
         # 广播更新外观事件
         self._notify_appearance_change_event((entities))
@@ -177,39 +181,35 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
             )
 
     ###############################################################################################################################################
-    def _execute_appearance_update_task(
+    def _process_appearance_update_task(
         self,
-        appearance_info: List[InternalProcessData],
+        batch_appearance_info: List[InternalProcessData],
         world_system_agent: LangServeAgent,
-    ) -> bool:
+    ) -> None:
 
-        appearance_info_mapping = {
+        gen_mapping = {
             data.actor_name: (
                 data.base_form,
                 data.clothe,
                 data.weapon,
             )
-            for data in appearance_info
+            for data in batch_appearance_info
         }
 
         agent_task = AgentTask.create_without_context(
             world_system_agent,
-            _generate_appearance_reasoning_prompt(appearance_info_mapping),
+            _generate_appearance_reasoning_prompt(gen_mapping),
         )
         if agent_task.request() is None:
             logger.error(f"{world_system_agent.name} request response is None.")
-            return False
+            return
 
         try:
-
             json_reponse: Dict[str, str] = json.loads(agent_task.response_content)
             self._update_appearance_components(json_reponse)
 
         except Exception as e:
             logger.error(f"json.loads error: {e}")
-            return False
-
-        return True
 
     ###############################################################################################################################################
     def _update_appearance_components(

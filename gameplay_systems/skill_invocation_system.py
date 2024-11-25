@@ -9,7 +9,7 @@ from my_components.components import (
     DirectSkillComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
-from typing import Final, final, override, Set, List, Dict
+from typing import Final, final, override, Set, List, Dict, Optional
 from extended_systems.prop_file import PropFile
 from rpg_game.rpg_game import RPGGame
 from my_models.event_models import AgentEvent
@@ -47,6 +47,21 @@ def _generate_skill_invocation_result_prompt(
 {initial_skill_command}
 ## 系统调整后的技能使用指令 如下:
 {adjusted_skill_command}"""
+
+
+######################################################################################################################################################
+def _generate_weapon_count_exceed_prompt(
+    actor_name: str,
+    initial_skill_command: str,
+    weapon_prop_file_names: List[str],
+) -> str:
+    return f"""# 提示: {actor_name} 计划执行动作: {SkillAction.__name__}，结果为：系统经过判断后，否决。
+## 输入的错误的 技能使用指令 如下:
+{initial_skill_command}  
+## 请分析问题，并再次理解规则:
+{gameplay_systems.prompt_utils.skill_action_rule_prompt()}
+## 配置的武器数量过多，只能配置一个武器，但是配置了多个武器如下:
+{";".join(weapon_prop_file_names)}"""
 
 
 ######################################################################################################################################################
@@ -300,6 +315,8 @@ class SkillInvocationSystem(ReactiveProcessor):
 
     ######################################################################################################################################################
     def _process_skill_invocation(self, actor_entity: Entity) -> None:
+        
+        # 提取内容
         input_skill_command = self._extract_command_from_skill_action(actor_entity)
         if input_skill_command == "":
             logger.error("origin_command_from_skill_action is empty")
@@ -309,6 +326,7 @@ class SkillInvocationSystem(ReactiveProcessor):
             # 不用继续了，没有技能或者没有目标
             return
 
+
         # 帮助类分析整个字符串
         actor_status_evaluator = ActorStatusEvaluator(self._context, actor_entity)
         skill_command_parser = SkillCommandParser(
@@ -317,14 +335,25 @@ class SkillInvocationSystem(ReactiveProcessor):
             actor_status_evaluator=actor_status_evaluator,
         )
 
+
         # 判断合理性
         if (
             len(skill_command_parser.target_entities) == 0
             or len(skill_command_parser._parsed_skill_prop_files) == 0
         ):
-            # 不用继续了，没有技能或者没有目标
+            # 不用继续了，没有技能或者没有目标，是不合理的。
             self._notify_skill_invocation_result(
                 actor_entity, input_skill_command, "", False
+            )
+            return
+
+        # 配置的武器多余一个。
+        if len(skill_command_parser.accessory_weapon_prop_files) > 1:
+            # 目前的规则配置武器太多不可以。就一次只能一个，如果不是当前装备的，就在后面做自动切换
+            self._notify_weapon_count_exceed(
+                actor_entity=actor_entity,
+                initial_skill_command=input_skill_command,
+                accessory_weapon_prop_files=skill_command_parser.accessory_weapon_prop_files,
             )
             return
 
@@ -335,23 +364,22 @@ class SkillInvocationSystem(ReactiveProcessor):
         ) in skill_command_parser._parsed_skill_accessory_prop_files:
             if prop_file.count < consume_count:
                 self._notify_skill_invocation_result(
-                    actor_entity, input_skill_command, "", False
+                    entity=actor_entity,
+                    initial_skill_command=input_skill_command,
+                    adjusted_skill_command="",
+                    processed_result=False,
                 )
                 # 消耗的道具不够，不能执行。
                 return
 
+        # 下面就不能停止了------------------------------------------------
+
         # 自动切换武器
-        if actor_status_evaluator._current_weapon is not None:
-            for (
-                prop_file,
-                consume_count,
-            ) in skill_command_parser._parsed_skill_accessory_prop_files:
-                if (
-                    prop_file.is_weapon
-                    and prop_file != actor_status_evaluator._current_weapon
-                ):
-                    self._switch_weapon(actor_entity, prop_file)
-                    break
+        self._auto_switch_weapon(
+            actor_entity,
+            skill_command_parser.accessory_weapon_prop_files,
+            actor_status_evaluator._current_weapon,
+        )
 
         # 创建技能实体
         self._create_skill_entity(actor_entity, skill_command_parser)
@@ -365,11 +393,51 @@ class SkillInvocationSystem(ReactiveProcessor):
         )
 
     ######################################################################################################################################################
-    def _switch_weapon(self, actor_entity: Entity, weapon_prop_file: PropFile) -> None:
+    def _auto_switch_weapon(
+        self,
+        actor_entity: Entity,
+        accessory_weapon_prop_files: List[PropFile],
+        current_weapon: Optional[PropFile],
+    ) -> bool:
+        if len(accessory_weapon_prop_files) == 0:
+            return False
+
+        selected_accessory_weapon = accessory_weapon_prop_files[0]
+        assert selected_accessory_weapon.is_weapon
+        if selected_accessory_weapon == current_weapon:
+            return False
+
         actor_entity.replace(
             EquipPropAction,
-            weapon_prop_file.owner_name,
-            [weapon_prop_file.name],
+            selected_accessory_weapon.owner_name,
+            [selected_accessory_weapon.name],
+        )
+        
+        return True
+
+    ######################################################################################################################################################
+    def _notify_weapon_count_exceed(
+        self,
+        actor_entity: Entity,
+        initial_skill_command: str,
+        accessory_weapon_prop_files: List[PropFile],
+    ) -> None:
+
+        assert len(accessory_weapon_prop_files) > 1
+
+        # 需要给到agent
+        self._context.notify_event(
+            set({actor_entity}),
+            AgentEvent(
+                message=_generate_weapon_count_exceed_prompt(
+                    actor_name=self._context.safe_get_entity_name(actor_entity),
+                    initial_skill_command=initial_skill_command,
+                    weapon_prop_file_names=[
+                        weapon_prop_file.name
+                        for weapon_prop_file in accessory_weapon_prop_files
+                    ],
+                )
+            ),
         )
 
     ######################################################################################################################################################

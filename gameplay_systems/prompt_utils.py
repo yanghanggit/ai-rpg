@@ -1,5 +1,9 @@
 from enum import StrEnum, unique
-from my_components.action_components import StageNarrateAction, SkillAction
+from my_components.action_components import (
+    StageNarrateAction,
+    SkillAction,
+    EquipPropAction,
+)
 from typing import List
 from extended_systems.prop_file import PropFile
 
@@ -57,6 +61,7 @@ def skill_action_rule_prompt() -> str:
     - 技能道具与配置道具：都必须是角色拥有的道具。
 - 技能道具：只能选择一个。
 - 配置道具：可以选择多个。
+    - 如果配置了武器，只能配置一个武器。
 - 消耗数量：如使用配置道具，消耗数量必须至少为1(即填写 /配置道具(全名)=1)
 - 目标选择：必须根据技能描述选择至少一个目标角色。
 - 配置道具选择：可以根据技能描述选择配置道具，也可以不选择。"""
@@ -68,6 +73,14 @@ def insert_skill_action_prompt(props: List[PropFile]) -> str:
         return ""
     assert all([prop.is_skill for prop in props]), "不是技能文件"
     return skill_action_rule_prompt()
+
+
+################################################################################################################################################
+def insert_equip_prop_action_prompt() -> str:
+    return f"""## 关于动作: {EquipPropAction.__name__}。
+- 未装备武器或衣服时，可从“你的全部道具”中选择装备。
+- 已装备时，可根据需要更换。
+- 避免重复装备相同道具，以免无效操作。"""
 
 
 ################################################################################################################################################

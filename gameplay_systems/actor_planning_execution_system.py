@@ -11,7 +11,6 @@ from my_components.components import (
 from my_components.action_components import (
     GoToAction,
     TagAction,
-    EquipPropAction,
 )
 from my_agent.agent_plan import AgentPlanResponse
 from rpg_game.rpg_entitas_context import RPGEntitasContext
@@ -118,10 +117,7 @@ def _generate_actor_plan_prompt(
 - 武器: {current_weapon is not None and current_weapon.name or "无"}
 - 衣服: {current_clothes is not None and current_clothes.name or "无"}
 
-## 关于动作: {EquipPropAction.__name__}。
-- 未装备武器或衣服时，可从“你的全部道具”中选择装备。
-- 已装备时，可根据需要更换。
-- 避免重复装备相同道具，以免无效操作。
+{gameplay_systems.prompt_utils.insert_equip_prop_action_prompt()}
 
 {gameplay_systems.prompt_utils.insert_skill_action_prompt(actor_props.get(PropType.TYPE_SKILL, []))}
 

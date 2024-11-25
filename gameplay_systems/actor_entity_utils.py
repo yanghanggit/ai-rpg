@@ -147,12 +147,12 @@ class ActorStatusEvaluator:
     ######################################################################################################################################
     @property
     def inspectable_prop_files(self) -> List[PropFile]:
-
+        # 只能发现 不可消耗道具。
         return (
-            self._get_category_prop_files(PropType.TYPE_WEAPON)
-            + self._get_category_prop_files(PropType.TYPE_CLOTHES)
-            + self._get_category_prop_files(PropType.TYPE_NON_CONSUMABLE_ITEM)
-            + self._get_category_prop_files(PropType.TYPE_CONSUMABLE_ITEM)
+            # self._get_category_prop_files(PropType.TYPE_WEAPON)
+            # + self._get_category_prop_files(PropType.TYPE_CLOTHES)
+            self._get_category_prop_files(PropType.TYPE_NON_CONSUMABLE_ITEM)
+            # + self._get_category_prop_files(PropType.TYPE_CONSUMABLE_ITEM)
         )
 
     ######################################################################################################################################

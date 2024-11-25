@@ -106,8 +106,6 @@ class DamageActionSystem(ReactiveProcessor):
                 len(attribute_values) > Attributes.DAMAGE
             ), f"属性数组长度不够:{attribute_values}"
 
-            # if len(attribute_values) > Attributes.DAMAGE:
-
             self._apply_damage_to_target(
                 source_entity_name,
                 target_entity,
@@ -140,6 +138,7 @@ class DamageActionSystem(ReactiveProcessor):
             remaining_health,
             target_attr_comp.damage,
             target_attr_comp.defense,
+            target_attr_comp.heal,
         )
 
         ##死亡是关键

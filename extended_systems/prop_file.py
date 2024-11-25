@@ -106,6 +106,11 @@ class PropFile(BaseFile):
 
     ############################################################################################################
     @property
+    def heal(self) -> int:
+        return self.prop_model.attributes[Attributes.HEAL]
+
+    ############################################################################################################
+    @property
     def defense(self) -> int:
         return self.prop_model.attributes[Attributes.DEFENSE]
 

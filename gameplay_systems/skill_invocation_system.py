@@ -315,7 +315,7 @@ class SkillInvocationSystem(ReactiveProcessor):
 
     ######################################################################################################################################################
     def _process_skill_invocation(self, actor_entity: Entity) -> None:
-        
+
         # 提取内容
         input_skill_command = self._extract_command_from_skill_action(actor_entity)
         if input_skill_command == "":
@@ -326,7 +326,6 @@ class SkillInvocationSystem(ReactiveProcessor):
             # 不用继续了，没有技能或者没有目标
             return
 
-
         # 帮助类分析整个字符串
         actor_status_evaluator = ActorStatusEvaluator(self._context, actor_entity)
         skill_command_parser = SkillCommandParser(
@@ -334,7 +333,6 @@ class SkillInvocationSystem(ReactiveProcessor):
             input_skill_command=input_skill_command,
             actor_status_evaluator=actor_status_evaluator,
         )
-
 
         # 判断合理性
         if (
@@ -412,7 +410,7 @@ class SkillInvocationSystem(ReactiveProcessor):
             selected_accessory_weapon.owner_name,
             [selected_accessory_weapon.name],
         )
-        
+
         return True
 
     ######################################################################################################################################################

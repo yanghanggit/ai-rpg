@@ -114,6 +114,7 @@ class RPGEntitasProcessors(Processors):
             StageTransferActionSystem,
         )
         from gameplay_systems.skill_feedback_system import SkillFeedbackSystem
+        from gameplay_systems.heal_action_system import HealActionSystem
 
         ##
         rpg_game = cast(RPGGame, game)
@@ -196,6 +197,7 @@ class RPGEntitasProcessors(Processors):
         )
 
         processors.add(SkillHitImpactSystem(context, rpg_game))
+        processors.add(HealActionSystem(context, rpg_game))  # 先治疗后伤害。
         processors.add(DamageActionSystem(context, rpg_game))
         processors.add(SkillFeedbackSystem(context, rpg_game))
         processors.add(StageTransferActionSystem(context, rpg_game))

@@ -326,6 +326,7 @@ class RPGGame(BaseGame):
             actor_model.attributes[Attributes.CUR_HP],
             actor_model.attributes[Attributes.DAMAGE],
             actor_model.attributes[Attributes.DEFENSE],
+            actor_model.attributes[Attributes.HEAL],
         )
 
         assert actor_model.base_form != ""
@@ -465,6 +466,7 @@ class RPGGame(BaseGame):
             stage_model.attributes[Attributes.CUR_HP],
             stage_model.attributes[Attributes.DAMAGE],
             stage_model.attributes[Attributes.DEFENSE],
+            stage_model.attributes[Attributes.HEAL],
         )
 
         # 记录用
@@ -602,6 +604,7 @@ class RPGGame(BaseGame):
                             rpg_attr_comp.cur_hp,
                             rpg_attr_comp.damage,
                             rpg_attr_comp.defense,
+                            rpg_attr_comp.heal,
                         )
 
                     case FinalAppearanceComponent.__name__:

@@ -96,6 +96,12 @@ class DamageAction(ActionComponent):
     pass
 
 
+# 处理治疗逻辑
+@final
+class HealAction(ActionComponent):
+    pass
+
+
 # 装备道具
 @final
 class EquipPropAction(ActionComponent):
@@ -120,6 +126,7 @@ STAGE_AVAILABLE_ACTIONS_REGISTER: FrozenSet[type[Any]] = (
             StageTagAction,
             StageTransferAction,
             DamageAction,
+            HealAction,
         }
     )
     | CONVERSATION_ACTIONS_REGISTER
@@ -136,6 +143,7 @@ ACTOR_INTERACTIVE_ACTIONS_REGISTER: FrozenSet[type[Any]] = frozenset(
         UpdateAppearanceAction,
         SkillAction,
         DamageAction,
+        HealAction,
         EquipPropAction,
         InspectAction,
     }

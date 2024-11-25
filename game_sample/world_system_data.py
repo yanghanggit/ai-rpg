@@ -7,6 +7,7 @@ import game_sample.configuration
 import game_sample.utils
 from typing import Any, Final
 from enum import StrEnum, unique
+import pandas
 
 
 @unique
@@ -84,7 +85,7 @@ class ExcelDataWorldSystem:
     ############################################################################################################
     @property
     def temperature(self) -> float:
-        if self._data[DataWorldSystemProperty.TEMPERATURE] is None:
+        if pandas.isna(self._data[DataWorldSystemProperty.TEMPERATURE]):
             return 0.7
         return float(self._data[DataWorldSystemProperty.TEMPERATURE])
 

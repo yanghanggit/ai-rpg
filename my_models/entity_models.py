@@ -9,6 +9,7 @@ class Attributes(IntEnum):
     CUR_HP = 1
     DAMAGE = 2
     DEFENSE = 3
+    HEAL = 4
     MAX = 20
     BASE_VALUE_SCALE = 100
 

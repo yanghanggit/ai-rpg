@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from entitas import Matcher, ExecuteProcessor, Entity  # type: ignore
 from my_components.action_components import (
     DamageAction,
+    HealAction,
 )
 from my_components.components import (
     AttributesComponent,
@@ -262,7 +263,34 @@ class SkillHitImpactSystem(ExecuteProcessor):
         total_skill_attributes: List[int],
         calculate_bonus: float,
     ) -> None:
-        pass
+
+        total_skill_attributes[Attributes.HEAL] = int(
+            total_skill_attributes[Attributes.HEAL] * calculate_bonus
+        )
+        if total_skill_attributes[Attributes.HEAL] == 0:
+            return
+
+        #
+        formatted_heal_message = (
+            my_format_string.target_message.generate_target_message_pair(
+                self._context.safe_get_entity_name(source_entity),
+                my_format_string.ints_string.convert_ints_to_string(
+                    total_skill_attributes
+                ),
+            )
+        )
+
+        if not target_entity.has(HealAction):
+            target_entity.replace(
+                HealAction,
+                self._context.safe_get_entity_name(target_entity),
+                [formatted_heal_message],
+            )
+        else:
+
+            heal_action = target_entity.get(HealAction)
+            heal_action.values.append(formatted_heal_message)
+            target_entity.replace(HealAction, heal_action.name, heal_action.values)
 
     ######################################################################################################################################################
     def _calculate_and_apply_damage(
@@ -316,8 +344,14 @@ class SkillHitImpactSystem(ExecuteProcessor):
         assert (
             len(internal_process_data.target_entities) > 0
         ), f"target_entities {internal_process_data.target_entities} not found."
+
+        # 均摊到每个属性上 todo
         skill_attribute_output[Attributes.DAMAGE] += int(
             attr_comp.damage / len(internal_process_data.target_entities)
+        )
+
+        skill_attribute_output[Attributes.HEAL] += int(
+            attr_comp.heal / len(internal_process_data.target_entities)
         )
 
     ######################################################################################################################################################

@@ -120,6 +120,7 @@ class AttributesComponent(NamedTuple):
     cur_hp: int
     damage: int
     defense: int
+    heal: int
 
 
 # RPG游戏的当前武器组件

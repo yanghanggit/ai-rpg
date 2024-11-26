@@ -59,7 +59,7 @@ def _generate_success_response_prompt(
     return f"""# 提示: 系统推理与判断之后，判断结果为 {inspector_tag}。即系统经过判断后允许继续
 ## 行动(技能)发起者
 {actor_name}
-## 技能指令内容
+## 技能指令 内容
 {skill_command}
 ## 系统推理并润色后的结果
 {inspector_content}"""
@@ -108,7 +108,7 @@ def _generate_world_harmony_inspector_prompt(
 {"\n".join(skill_prop_files_prompt)}
 ### 配置道具信息
 {"\n".join(skill_accessory_prop_files_prompt)}
-### 技能指令内容
+### 技能指令 内容
 {skill_command}
 
 
@@ -130,6 +130,8 @@ def _generate_world_harmony_inspector_prompt(
    - 必须描述：技能使用者的全名，释放的技能名称和描述，技能目标的全名，配置的道具信息。
    - 描述需用逻辑合理且生动的句子，润色后以第三人称呈现。
    - 不需涉及目标被命中后的反应，仅限于技能释放的过程。
+   - 可以参考 上述 技能信息 中的 技能表现的描述。
+   - 注意结合配置道具信息的内容
 2. 失败时：
    - 必须描述：技能释放失败的原因。
 
@@ -147,17 +149,39 @@ def _generate_world_harmony_inspector_prompt(
   "{TagAction.__name__}": ["{prompt_utils.SkillResultPromptTag.CRITICAL_SUCCESS} 或 {prompt_utils.SkillResultPromptTag.SUCCESS} 或 {prompt_utils.SkillResultPromptTag.FAILURE}"],
   "{InspectAction.__name__}": ["一个0~200的数字，代表你对结果的评估值（见上文）"]
 }}
-### 例句
-{{
-  "AnnounceAction": ["某某角色施展了炫丽的火球术，目标锁定在前方的敌人，并使用了珍贵的魔法水晶作为催化剂。"],
-  "TagAction": ["<大成功>"],
-  "InspectAction": ["180"]
-}}
 ### 注意事项
 - 注意！不允许重复使用上述的键！ 
 - 注意！不允许使用不在上述列表中的键！（即未定义的键位），注意看‘输出要求’
 - 输出不得包含超出所需 JSON 格式的其他文本、解释或附加信息。
 - 不要使用```json```来封装内容。"""
+
+
+######################################################################################################################################################
+### 例句
+# {{
+#   "AnnounceAction": ["某某角色施展了炫丽的火球术，目标锁定在前方的敌人，并使用了珍贵的魔法水晶作为催化剂。"],
+#   "TagAction": ["<大成功>"],
+#   "InspectAction": ["180"]
+# }}
+
+
+######################################################################################################################################################
+def _generate_item_consumption_message_prompt(
+    actor_name: str,
+    prop_file: PropFile,
+) -> str:
+
+    return f"""# 发生事件: {actor_name} 的道具 {prop_file.name} 已被消耗尽, 并移除。"""
+
+
+######################################################################################################################################################
+def _generate_item_consumption_report_prompt(
+    actor_name: str, prop_file: PropFile, actual_consumed_amount: int
+) -> str:
+
+    assert prop_file.count > 0, "prop_file.count must be greater than or equal to 0"
+    assert actual_consumed_amount > 0, "actual_consumed_amount must be greater than 0"
+    return f"""# 发生事件: {actor_name} 的道具 {prop_file.name} 数量变为为{prop_file.count}。已被消耗{actual_consumed_amount}"""
 
 
 ######################################################################################################################################################
@@ -350,17 +374,59 @@ class SkillWorldHarmonyInspectorSystem(ExecuteProcessor):
     ######################################################################################################################################################
     def _process_consumable_items(self, process_data: InternalProcessData) -> None:
 
-        data = gameplay_systems.skill_entity_utils.parse_skill_accessory_prop_files(
+        for (
+            prop_file,
+            consume_count,
+        ) in gameplay_systems.skill_entity_utils.parse_skill_accessory_prop_files(
             context=self._context,
             skill_entity=process_data.skill_entity,
             actor_entity=process_data.actor_entity,
-        )
-        for prop_file_and_count in data:
-            prop_file = prop_file_and_count[0]
-            consume_count = prop_file_and_count[1]
+        ):
+            previous_count = prop_file.count
             gameplay_systems.file_system_utils.consume_file(
                 self._context.file_system, prop_file, consume_count
             )
+            self._notify_item_consumption_event(process_data, prop_file, previous_count)
+
+    ######################################################################################################################################################
+    def _notify_item_consumption_event(
+        self,
+        process_data: InternalProcessData,
+        prop_file: PropFile,
+        previous_count: int,
+    ) -> None:
+
+        if prop_file.count == 0:
+            self._context.notify_event(
+                set({process_data.actor_entity}),
+                AgentEvent(
+                    message=_generate_item_consumption_message_prompt(
+                        actor_name=self._context.safe_get_entity_name(
+                            process_data.actor_entity
+                        ),
+                        prop_file=prop_file,
+                    )
+                ),
+            )
+            return
+
+        if prop_file.count == previous_count:
+            logger.error("prop_file.count == previous_count")
+            return
+
+        assert prop_file.count < previous_count
+        self._context.notify_event(
+            set({process_data.actor_entity}),
+            AgentEvent(
+                message=_generate_item_consumption_report_prompt(
+                    actor_name=self._context.safe_get_entity_name(
+                        process_data.actor_entity
+                    ),
+                    prop_file=prop_file,
+                    actual_consumed_amount=prop_file.count - previous_count,
+                )
+            ),
+        )
 
     ######################################################################################################################################################
     def _add_world_harmony_inspector_data(

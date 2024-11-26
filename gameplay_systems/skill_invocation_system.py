@@ -32,20 +32,20 @@ def _generate_skill_invocation_result_prompt(
 
     if not processed_result:
         return f"""# 提示: {actor_name} 计划执行动作: {SkillAction.__name__}，结果为：系统经过判断后，否决。
-## 输入的错误的 技能使用指令 如下:
+## 输入的错误的 技能指令 如下:
 {initial_skill_command}    
 ## 请分析问题，并再次理解规则:
 {gameplay_systems.prompt_utils.skill_action_rule_prompt()}"""
 
     if initial_skill_command == adjusted_skill_command:
         return f"""# 提示: {actor_name} 计划执行动作: {SkillAction.__name__}，结果为：系统经过判断后，允许继续，并执行下一步判断。
-    ## 输入的起效的 技能使用指令 如下:
+    ## 输入的起效的 技能指令 如下:
     {initial_skill_command}"""
 
     return f"""# 提示: {actor_name} 计划执行动作: {SkillAction.__name__}，结果为：系统经过判断，并做了调整之后，允许继续，并执行下一步判断。
-## 输入的技能使用指令 如下:
+## 输入的 技能指令 如下:
 {initial_skill_command}
-## 系统调整后的技能使用指令 如下:
+## 系统调整后的 技能指令 如下:
 {adjusted_skill_command}"""
 
 
@@ -56,7 +56,7 @@ def _generate_weapon_count_exceed_prompt(
     weapon_prop_file_names: List[str],
 ) -> str:
     return f"""# 提示: {actor_name} 计划执行动作: {SkillAction.__name__}，结果为：系统经过判断后，否决。
-## 输入的错误的 技能使用指令 如下:
+## 输入的错误的 技能指令 如下:
 {initial_skill_command}  
 ## 请分析问题，并再次理解规则:
 {gameplay_systems.prompt_utils.skill_action_rule_prompt()}
@@ -426,8 +426,8 @@ class SkillInvocationSystem(ReactiveProcessor):
 
         # 需要给到agent
         self._context.notify_event(
-            set({actor_entity}),
-            AgentEvent(
+            entities=set({actor_entity}),
+            agent_event=AgentEvent(
                 message=_generate_weapon_count_exceed_prompt(
                     actor_name=self._context.safe_get_entity_name(actor_entity),
                     initial_skill_command=initial_skill_command,
@@ -437,6 +437,7 @@ class SkillInvocationSystem(ReactiveProcessor):
                     ],
                 )
             ),
+            keep_original_message_content=True,
         )
 
     ######################################################################################################################################################
@@ -450,8 +451,8 @@ class SkillInvocationSystem(ReactiveProcessor):
 
         # 需要给到agent
         self._context.notify_event(
-            set({entity}),
-            AgentEvent(
+            entities=set({entity}),
+            agent_event=AgentEvent(
                 message=_generate_skill_invocation_result_prompt(
                     actor_name=self._context.safe_get_entity_name(entity),
                     initial_skill_command=initial_skill_command,
@@ -459,6 +460,7 @@ class SkillInvocationSystem(ReactiveProcessor):
                     processed_result=processed_result,
                 )
             ),
+            keep_original_message_content=True,
         )
 
     ######################################################################################################################################################

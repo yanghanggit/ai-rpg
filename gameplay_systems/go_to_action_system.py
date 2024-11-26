@@ -3,6 +3,7 @@ from my_components.action_components import GoToAction, DeadAction
 from my_components.components import (
     ActorComponent,
     EnterStageFlagComponent,
+    StageGraphComponent,
     # StageComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
@@ -11,7 +12,9 @@ from rpg_game.rpg_game import RPGGame
 from extended_systems.archive_file import StageArchiveFile
 from my_models.event_models import AgentEvent, PreStageExitEvent
 from loguru import logger
-import gameplay_systems.stage_entity_utils
+
+# import gameplay_systems.stage_entity_utils
+import copy
 
 
 ################################################################################################################################################
@@ -37,8 +40,14 @@ def _generate_last_impression_prompt(
     current_stage: str,
     stage_narrate: str,
     actor_appearance_mapping: Dict[str, str],
+    stage_graph: List[str],
 ) -> str:
 
+    # 连接的场景
+    if len(stage_graph) == 0:
+        stage_graph.append(f"无")
+
+    # 场景内角色的外观组织信息
     if actor_name in actor_appearance_mapping:
         actor_appearance_mapping.pop(actor_name, None)
 
@@ -56,6 +65,8 @@ def _generate_last_impression_prompt(
     return f"""# 提示: {actor_name} 将要离开场景:{current_stage}。
 ## {actor_name} 对于场景——{current_stage}，最后的印象(场景描述):
 {stage_narrate}
+### (如从本场景离开)可以去往的场景
+{"\n".join(stage_graph)}   
 
 ## {actor_name} 对于其他角色最后的印象:
 {"\n".join(actor_appearance_mapping_prompt)}"""
@@ -104,9 +115,6 @@ class StageTransitionHandler:
         if len(go_to_action.values) == 0:
             return ""
         return str(go_to_action.values[0])
-        # return gameplay_systems.stage_entity_utils.resolve_stage_name(
-        #     self._context, go_to_action.values[0]
-        # )
 
 
 ###############################################################################################################################################
@@ -232,6 +240,7 @@ class GoToActionSystem(ReactiveProcessor):
         actor_appearance_on_stage.pop(my_name)
 
         # 最后通知
+        assert helper.current_stage_entity.has(StageGraphComponent)
         self._context.notify_event(
             set({helper._entity}),
             PreStageExitEvent(
@@ -240,6 +249,9 @@ class GoToActionSystem(ReactiveProcessor):
                     current_stage=helper._current_stage_name,
                     stage_narrate=stage_archive.stage_narrate,
                     actor_appearance_mapping=actor_appearance_on_stage,
+                    stage_graph=copy.deepcopy(
+                        helper.current_stage_entity.get(StageGraphComponent).stage_graph
+                    ),
                 )
             ),
         )

@@ -96,7 +96,7 @@ class InternalProcessData:
     clothe: str
 
 
-####################################################################################################
+###############################################################################################################################################
 @final
 class UpdateAppearanceActionSystem(ReactiveProcessor):
 
@@ -108,13 +108,14 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
         self._game: RPGGame = rpg_game
         self._world_system_name: str = str(world_system_name)
         self._batch_size: Final[int] = 5
+        self._react_entities_copy: List[Entity] = []
 
-    ####################################################################################################
+    ###############################################################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
         return {Matcher(UpdateAppearanceAction): GroupEvent.ADDED}
 
-    ####################################################################################################
+    ###############################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
         return (
@@ -123,9 +124,21 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
             and entity.has(BaseFormComponent)
         )
 
-    ####################################################################################################
+    ###############################################################################################################################################
     @override
     def react(self, entities: list[Entity]) -> None:
+        self._react_entities_copy = entities.copy()
+
+    ###############################################################################################################################################
+    @override
+    async def a_execute2(self) -> None:
+        if len(self._react_entities_copy) == 0:
+            return
+        await self._process_appearance_update(self._react_entities_copy)
+        self._react_entities_copy.clear()
+
+    ###############################################################################################################################################
+    async def _process_appearance_update(self, entities: List[Entity]) -> None:
 
         actor_appearance_info = self._generate_actor_appearance_info((entities))
         if len(actor_appearance_info) == 0:
@@ -134,27 +147,48 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
         # 没有衣服的，直接更新外观，也是默认设置，防止世界系统无法推理
         self._apply_default(actor_appearance_info)
 
-        # 如果有世界系统，且有AgentConnectionFlagComponent，请求更新外观
-        if (
-            self.world_system_entity is not None
-            and self.world_system_entity.has(AgentPingFlagComponent)
-            and self.world_system_entity.has(KickOffContentComponent)
-        ):
-
-            # 有衣服的，请求更新，通过LLM来推理外观
-            # 如果 actor_appearance_info过长，需要分批推理，每次推理最多5个
-            assert self._batch_size > 0, "batch_size must be greater than 0."
-            for i in range(0, len(actor_appearance_info), self._batch_size):
-                batch = actor_appearance_info[i : i + self._batch_size]
-                self._process_appearance_update_task(
-                    batch, self._context.safe_get_agent(self.world_system_entity)
-                )
+        # 有衣服的，请求更新，通过LLM来推理外观
+        await self._process_world_system_update_appearance(
+            actor_appearance_info, self._batch_size
+        )
 
         # 广播更新外观事件
         self._notify_appearance_change_event((entities))
 
         # 最后必须清除UpdateAppearanceAction
         self._clear_appearance_actions(entities)
+
+    ###############################################################################################################################################
+    async def _process_world_system_update_appearance(
+        self, actor_appearance_info: List[InternalProcessData], batch_size: int
+    ) -> None:
+
+        assert batch_size > 0, "batch_size must be greater than 0."
+        if (
+            len(actor_appearance_info) == 0
+            or self.world_system_entity is None
+            or not self.world_system_entity.has(AgentPingFlagComponent)
+            or not self.world_system_entity.has(KickOffContentComponent)
+            or batch_size <= 0
+        ):
+            return
+
+        # 如果 actor_appearance_info过长，需要分批推理，每次推理最多5个
+        batch_processing_tasks: List[AgentTask] = []
+        for i in range(0, len(actor_appearance_info), batch_size):
+            batch = actor_appearance_info[i : i + batch_size]
+            batch_processing_tasks.append(
+                self._generate_agent_appearance_task(
+                    batch, self._context.safe_get_agent(self.world_system_entity)
+                )
+            )
+
+        # 并发
+        await AgentTask.gather(batch_processing_tasks)
+
+        # 处理
+        for process_task in batch_processing_tasks:
+            self._process_agent_appearance_task(process_task)
 
     ###############################################################################################################################################
     @property
@@ -181,11 +215,11 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
             )
 
     ###############################################################################################################################################
-    def _process_appearance_update_task(
+    def _generate_agent_appearance_task(
         self,
         batch_appearance_info: List[InternalProcessData],
         world_system_agent: LangServeAgent,
-    ) -> None:
+    ) -> AgentTask:
 
         gen_mapping = {
             data.actor_name: (
@@ -196,15 +230,19 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
             for data in batch_appearance_info
         }
 
-        agent_task = AgentTask.create_without_context(
+        return AgentTask.create_without_context(
             world_system_agent,
             _generate_appearance_reasoning_prompt(gen_mapping),
         )
-        if agent_task.request() is None:
-            logger.error(f"{world_system_agent.name} request response is None.")
-            return
+
+    ###############################################################################################################################################
+    def _process_agent_appearance_task(
+        self,
+        agent_task: AgentTask,
+    ) -> None:
 
         try:
+
             json_reponse: Dict[str, str] = json.loads(agent_task.response_content)
             self._update_appearance_components(json_reponse)
 

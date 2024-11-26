@@ -18,7 +18,7 @@ from my_models.event_models import AgentEvent
 
 
 @final
-class StealActionSystem(ReactiveProcessor):
+class StealPropActionSystem(ReactiveProcessor):
 
     def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame):
         super().__init__(context)
@@ -126,7 +126,7 @@ class StealActionSystem(ReactiveProcessor):
     def _notify_target_inaccessible_event(
         self, source_entity: Entity, target_name: str
     ) -> None:
-        
+
         source_name = self._context.safe_get_entity_name(source_entity)
 
         prompt = f"""# 提示: {source_name} 试图对一个不存在的目标 {target_name} 进行盗取{StealPropAction.__name__}。
@@ -146,10 +146,10 @@ class StealActionSystem(ReactiveProcessor):
         target_entity: Entity,
         target_prop_file: PropFile,
     ) -> None:
-        
+
         source_name = self._context.safe_get_entity_name(source_entity)
         target_name = self._context.safe_get_entity_name(target_entity)
-        
+
         prompt = f"""# 发生事件: {source_name} 从 {target_name} 成功盗取了 {target_prop_file.name}。
 ## 导致结果
 - {target_name} 现在不再拥有 {target_prop_file.name}。

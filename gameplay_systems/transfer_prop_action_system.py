@@ -15,6 +15,7 @@ from my_models.event_models import AgentEvent
 import my_format_string.complex_prop_name
 from extended_systems.prop_file import generate_prop_type_prompt
 
+
 @final
 class TransferPropActionSystem(ReactiveProcessor):
 
@@ -84,11 +85,11 @@ class TransferPropActionSystem(ReactiveProcessor):
                 self._notify_invalid_prop_usage_event(entity, complex_prop_name)
                 continue
 
-            if (
-                not transferable_prop_file.is_consumable_item
-                or not transferable_prop_file.is_consumable_item
+            if not (
+                transferable_prop_file.is_consumable_item
+                or transferable_prop_file.is_non_consumable_item
             ):
-                # 提示 类型不对
+                # 提示 类型不对, 只能2种类型。
                 self._notify_invalid_prop_type_event(entity, transferable_prop_file)
                 continue
 

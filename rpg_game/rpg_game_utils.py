@@ -33,7 +33,7 @@ from player.player_command import (
     PlayerAnnounce,
     PlayerSpeak,
     PlayerWhisper,
-    PlayerSteal,
+    PlayerStealProp,
     PlayerTransferProp,
     PlayerSkill,
     PlayerEquip,
@@ -366,11 +366,8 @@ def add_player_command(
     elif "/whisper" in usr_input:
         player_proxy.add_command(PlayerWhisper("/whisper", usr_input))
 
-    # elif "/pickup" in usr_input:
-    #     player_proxy.add_command(PlayerPickUpProp("/pickup", usr_input))
-
     elif "/steal" in usr_input:
-        player_proxy.add_command(PlayerSteal("/steal", usr_input))
+        player_proxy.add_command(PlayerStealProp("/steal", usr_input))
 
     elif "/transfer" in usr_input:
         player_proxy.add_command(PlayerTransferProp("/transfer", usr_input))

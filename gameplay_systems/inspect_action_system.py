@@ -18,6 +18,7 @@ from extended_systems.prop_file import (
     generate_prop_file_appearance_prompt,
 )
 
+
 @final
 class InspectActionSystem(ReactiveProcessor):
 

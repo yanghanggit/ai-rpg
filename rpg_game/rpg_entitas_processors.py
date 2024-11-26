@@ -49,7 +49,7 @@ class RPGEntitasProcessors(Processors):
         from gameplay_systems.post_planning_system import PostPlanningSystem
         from gameplay_systems.pre_action_system import PreActionSystem
         from gameplay_systems.post_action_system import PostActionSystem
-        from gameplay_systems.steal_action_system import StealActionSystem
+        from gameplay_systems.steal_prop_action_system import StealPropActionSystem
         from gameplay_systems.transfer_prop_action_system import (
             TransferPropActionSystem,
         )
@@ -210,7 +210,7 @@ class RPGEntitasProcessors(Processors):
         )  ## 战斗类行为产生结果可能有死亡，死亡之后，后面的行为都不可以做。
 
         # 交互类的行为（交换数据），在死亡之后，因为死了就不能执行
-        processors.add(StealActionSystem(context, rpg_game))
+        processors.add(StealPropActionSystem(context, rpg_game))
         processors.add(TransferPropActionSystem(context, rpg_game))
         # 检查与提示类行为，临时放在这个位置。
         processors.add(InspectActionSystem(context, rpg_game))

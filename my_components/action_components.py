@@ -72,9 +72,9 @@ class StealPropAction(ActionComponent):
     pass
 
 
-# 将道具交给目标角色
+# 将道具转移至目标角色
 @final
-class GivePropAction(ActionComponent):
+class TransferPropAction(ActionComponent):
     pass
 
 
@@ -139,7 +139,7 @@ ACTOR_INTERACTIVE_ACTIONS_REGISTER: FrozenSet[type[Any]] = frozenset(
         DeadAction,
         GoToAction,
         StealPropAction,
-        GivePropAction,
+        TransferPropAction,
         UpdateAppearanceAction,
         SkillAction,
         DamageAction,

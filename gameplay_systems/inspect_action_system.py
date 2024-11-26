@@ -7,52 +7,17 @@ from my_components.action_components import (
 from my_components.components import (
     ActorComponent,
 )
-from typing import final, override, List
+from typing import final, override
 from rpg_game.rpg_game import RPGGame
 import gameplay_systems.file_system_utils
-from extended_systems.prop_file import PropFile
 from rpg_game.rpg_game import RPGGame
-from loguru import logger
 from my_models.event_models import AgentEvent
 import gameplay_systems.action_component_utils
 from gameplay_systems.actor_entity_utils import ActorStatusEvaluator
 from extended_systems.prop_file import (
-    PropFile,
     generate_prop_file_appearance_prompt,
 )
 
-
-####################################################################################################################################
-def _generate_invalid_target_prompt(source_name: str, target_name: str) -> str:
-    return f"""# 提示: {source_name} 对 {target_name} 进行执行 探查 行动失败。
-# 原因分析
-- {target_name} 不存在，或者不是可以被 探查 的对象。
-- {target_name} 与 {source_name} 已不在同一个场景中。"""
-
-
-#######################################################################################################################################
-def _generate_inspect_prompt(
-    source_name: str,
-    target_name: str,
-    health_description: str,
-    prop_files: List[PropFile],
-) -> str:
-    # 道具信息
-    props_prompt = [generate_prop_file_appearance_prompt(prop) for prop in prop_files]
-    if len(props_prompt) == 0:
-        props_prompt.append("无")
-
-    # 最终返回
-    return f"""# 发生事件: {source_name} 对 {target_name} 进行了探查。获得了如下信息。
-## {target_name} 健康状态
-生命值: {health_description}
-## {target_name} 可以被探查到的道具
-{"\n".join(props_prompt)}"""
-
-
-####################################################################################################################################
-####################################################################################################################################
-####################################################################################################################################
 @final
 class InspectActionSystem(ReactiveProcessor):
 
@@ -89,22 +54,19 @@ class InspectActionSystem(ReactiveProcessor):
             return
 
         for target_name in inspect_action.values:
-
             if (
                 gameplay_systems.action_component_utils.validate_conversation(
                     self._context, source_entity, target_name
                 )
                 != gameplay_systems.action_component_utils.ConversationError.VALID
             ):
+                # 目标不存在
                 self._notify_invalid_target_event(source_entity, target_name)
                 continue
 
             target_entity = self._context.get_entity_by_name(target_name)
             assert target_entity is not None, f"未找到名为 {target_name} 的实体。"
-            if target_entity is None or not target_entity.has(ActorComponent):
-                # 不存在的目标
-                self._notify_invalid_target_event(source_entity, target_name)
-                continue
+            assert target_entity.has(ActorComponent)
 
             self._notify_inspect_event(source_entity, target_entity)
 
@@ -115,15 +77,28 @@ class InspectActionSystem(ReactiveProcessor):
 
         assert target_entity.has(ActorComponent)
         actor_status_evaluator = ActorStatusEvaluator(self._context, target_entity)
+
+        source_name = self._context.safe_get_entity_name(source_entity)
+
+        # 道具信息
+        inspectable_props_prompt = [
+            generate_prop_file_appearance_prompt(prop)
+            for prop in actor_status_evaluator.inspectable_prop_files
+        ]
+        if len(inspectable_props_prompt) == 0:
+            inspectable_props_prompt.append("无")
+
+        # 最终提示
+        prompt = f"""# 发生事件: {source_name} 对 {actor_status_evaluator.actor_name} 进行了探查{InspectAction.__name__}。获得了如下信息。
+## 健康状态
+生命值: {actor_status_evaluator.format_health_info}
+## 可被探查到的道具
+{"\n".join(inspectable_props_prompt)}"""
+
         self._context.notify_event(
             set({source_entity}),
             AgentEvent(
-                message=_generate_inspect_prompt(
-                    self._context.safe_get_entity_name(source_entity),
-                    actor_status_evaluator.actor_name,
-                    actor_status_evaluator.format_health_info,
-                    actor_status_evaluator.inspectable_prop_files,
-                )
+                message=prompt,
             ),
         )
 
@@ -134,14 +109,15 @@ class InspectActionSystem(ReactiveProcessor):
         target_name: str,
     ) -> None:
 
+        source_name = self._context.safe_get_entity_name(source_entity)
+        prompt = f"""# 提示: {source_name} 对 {target_name} 进行执行 {InspectAction.__name__}失败。
+# 原因分析
+- {target_name} 不存在，或者不是可以被探查的对象。
+- {target_name} 与 {source_name} 已不在同一个场景中。"""
+
         self._context.notify_event(
             set({source_entity}),
-            AgentEvent(
-                message=_generate_invalid_target_prompt(
-                    self._context.safe_get_entity_name(source_entity),
-                    target_name,
-                )
-            ),
+            AgentEvent(message=prompt),
         )
 
     ####################################################################################################################################

@@ -249,6 +249,7 @@ class DamageActionSystem(ReactiveProcessor):
                 target_entity_name,
                 source_entity_name,
                 prop_file.name,
+                prop_file.count,
             )
 
     ######################################################################################################################################################

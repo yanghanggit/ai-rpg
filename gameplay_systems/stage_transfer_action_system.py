@@ -25,7 +25,7 @@ from my_models.editor_models import GUIDType
 def _generate_stage_transfer_success_prompt(
     source_name: str, target_name: str, prop_name: str
 ) -> str:
-    return f"""# 放生事件: {source_name} 成功将 {prop_name} 转移给了 {target_name}。"""
+    return f"""# 放生事件: {source_name} 成功将 {prop_name} 转移至 {target_name}。"""
 
 
 ####################################################################################################################################

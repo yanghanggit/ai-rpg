@@ -15,35 +15,6 @@ from extended_systems.prop_file import PropFile
 import my_format_string.target_message
 from rpg_game.rpg_game import RPGGame
 from my_models.event_models import AgentEvent
-from loguru import logger
-
-
-####################################################################################################################################
-def _generate_steal_notification_prompt(
-    source_name: str, target_name: str, prop_name: str, action_result: bool
-) -> str:
-    if not action_result:
-        return f"""# 发生事件: {source_name} 试图从 {target_name} 盗取 {prop_name}, 但是失败了。
-## 建议
-可以尝试使用 {InspectAction.__name__} 动作来查看目标的道具。"""
-
-    return f"""# 发生事件: {source_name} 从 {target_name} 成功盗取了 {prop_name}。
-## 导致结果
-- {target_name} 现在不再拥有 {prop_name}。
-- {source_name} 现在拥有了 {prop_name}。"""
-
-
-####################################################################################################################################
-def _generate_steal_target_error_message_prompt(
-    source_name: str, target_name: str
-) -> str:
-    return f"""# 提示: {source_name} 试图对一个不存在的目标 {target_name} 进行盗取。
-## 原因分析与建议
-- 请检查目标的全名: {target_name}，确保是完整匹配:游戏规则-全名机制
-- 请检查目标是否存在于当前场景中。"""
-
-
-####################################################################################################################################
 
 
 @final
@@ -90,87 +61,116 @@ class StealActionSystem(ReactiveProcessor):
                 self._context, source_entity, target_entity_name
             )
             if error != gameplay_systems.action_component_utils.ConversationError.VALID:
-
-                if (
-                    error
-                    == gameplay_systems.action_component_utils.ConversationError.INVALID_TARGET
-                ):
-                    self._context.notify_event(
-                        set({source_entity}),
-                        AgentEvent(
-                            message=_generate_steal_target_error_message_prompt(
-                                steal_action.name, target_entity_name
-                            ),
-                        ),
-                    )
-
-                # 总之就是不对，不会继续执行。
+                # 目标不存在
+                self._notify_target_inaccessible_event(
+                    source_entity, target_entity_name
+                )
                 continue
 
             target_entity = self._context.get_entity_by_name(target_entity_name)
             assert target_entity is not None
-            if target_entity is None:
-                # 不存在的目标
-                continue
 
             # 判断文件的合理性
             target_prop_file = self._context.file_system.get_file(
                 PropFile, target_entity_name, prop_file_name
             )
 
-            if target_prop_file is None or not target_prop_file.is_non_consumable_item:
-                self._notify_steal_event(
-                    source_entity=source_entity,
+            if target_prop_file is None:
+                # 道具不存在。
+                self._notify_prop_not_found_event(
+                    source_entity,
                     target_entity=target_entity,
                     prop_file_name=prop_file_name,
-                    steal_action_result=False,
                 )
                 continue
 
-            ## 执行偷窃
-            self._execute_steal_action(source_entity, target_entity, target_prop_file)
+            if not target_prop_file.is_non_consumable_item:
+                # 道具不可被盗取, 就当道具不存在提示。
+                self._notify_prop_not_found_event(
+                    source_entity,
+                    target_entity=target_entity,
+                    prop_file_name=prop_file_name,
+                )
+                continue
 
-            ## 通知事件
-            self._notify_steal_event(
+            ## 执行偷窃 = 执行了道具的转移
+            self._execute_transfer_prop(source_entity, target_entity, target_prop_file)
+
+            ## 通知事件，成功盗取完成
+            self._notify_steal_completed(
                 source_entity=target_entity,
                 target_entity=target_entity,
-                prop_file_name=prop_file_name,
-                steal_action_result=True,
+                target_prop_file=target_prop_file,
             )
 
     ####################################################################################################################################
-    def _notify_steal_event(
-        self,
-        source_entity: Entity,
-        target_entity: Entity,
-        prop_file_name: str,
-        steal_action_result: bool,
+    def _notify_prop_not_found_event(
+        self, source_entity: Entity, target_entity: Entity, prop_file_name: str
     ) -> None:
 
-        target_entity_name = self._context.safe_get_entity_name(target_entity)
+        source_name = self._context.safe_get_entity_name(source_entity)
+        target_name = self._context.safe_get_entity_name(target_entity)
+
+        prompt = f"""# 提示: {source_name} 试图从 {target_name} 盗取道具 {prop_file_name}，但是失败了。
+## 原因分析与建议
+- 请检查道具的全名: {prop_file_name}，确保是完整匹配:游戏规则-全名机制
+- 请检查道具是否存在于目标 {target_name} 身上。使用{InspectAction.__name__}查看目标的道具信息。
+- {prop_file_name} 是否是可以被盗取的道具类型。"""
+
         self._context.notify_event(
-            set({source_entity, target_entity}),
-            AgentEvent(
-                message=_generate_steal_notification_prompt(
-                    self._context.safe_get_entity_name(source_entity),
-                    target_entity_name,
-                    prop_file_name,
-                    steal_action_result,
-                )
-            ),
+            set({source_entity}),
+            AgentEvent(message=prompt),
         )
 
     ####################################################################################################################################
-    def _execute_steal_action(
+    def _notify_target_inaccessible_event(
+        self, source_entity: Entity, target_name: str
+    ) -> None:
+        
+        source_name = self._context.safe_get_entity_name(source_entity)
+
+        prompt = f"""# 提示: {source_name} 试图对一个不存在的目标 {target_name} 进行盗取{StealPropAction.__name__}。
+    ## 原因分析与建议
+    - 请检查目标的全名: {target_name}，确保是完整匹配:游戏规则-全名机制
+    - 请检查目标是否存在于当前场景中。"""
+
+        self._context.notify_event(
+            set({source_entity}),
+            AgentEvent(message=prompt),
+        )
+
+    ####################################################################################################################################
+    def _notify_steal_completed(
+        self,
+        source_entity: Entity,
+        target_entity: Entity,
+        target_prop_file: PropFile,
+    ) -> None:
+        
+        source_name = self._context.safe_get_entity_name(source_entity)
+        target_name = self._context.safe_get_entity_name(target_entity)
+        
+        prompt = f"""# 发生事件: {source_name} 从 {target_name} 成功盗取了 {target_prop_file.name}。
+## 导致结果
+- {target_name} 现在不再拥有 {target_prop_file.name}。
+- {source_name} 现在拥有了 {target_prop_file.name}。"""
+
+        self._context.notify_event(
+            set({source_entity, target_entity}),
+            AgentEvent(message=prompt),
+        )
+
+    ####################################################################################################################################
+    def _execute_transfer_prop(
         self, source_entity: Entity, target_entity: Entity, target_prop_file: PropFile
     ) -> None:
 
-        target_actor_name = self._context.safe_get_entity_name(target_entity)
         gameplay_systems.file_system_utils.transfer_file(
             self._context.file_system,
-            target_actor_name,
+            self._context.safe_get_entity_name(target_entity),
             self._context.safe_get_entity_name(source_entity),
             target_prop_file.name,
+            target_prop_file.count,
         )
 
     ####################################################################################################################################

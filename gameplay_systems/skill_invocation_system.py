@@ -413,8 +413,6 @@ class SkillInvocationSystem(ReactiveProcessor):
     ) -> None:
 
         assert len(accessory_weapon_prop_files) > 1
-
-        # 需要给到agent
         self._context.notify_event(
             entities=set({actor_entity}),
             agent_event=AgentEvent(
@@ -437,8 +435,6 @@ class SkillInvocationSystem(ReactiveProcessor):
         adjusted_skill_command: str,
         processed_result: bool,
     ) -> None:
-
-        # 需要给到agent
         self._context.notify_event(
             entities=set({entity}),
             agent_event=AgentEvent(

@@ -6,7 +6,7 @@ from my_components.action_components import (
     GoToAction,
     WhisperAction,
     StealPropAction,
-    GivePropAction,
+    TransferPropAction,
     SkillAction,
     EquipPropAction,
     DeadAction,
@@ -180,7 +180,7 @@ class PlayerSteal(PlayerCommand):
 ####################################################################################################################################
 ####################################################################################################################################
 ####################################################################################################################################
-class PlayerGiveProp(PlayerCommand):
+class PlayerTransferProp(PlayerCommand):
 
     @property
     def format_string(self) -> str:
@@ -197,16 +197,18 @@ class PlayerGiveProp(PlayerCommand):
 
         actor_comp = player_entity.get(ActorComponent)
         player_entity.add(
-            GivePropAction,
+            TransferPropAction,
             actor_comp.name,
             [self.format_string],
         )
-
+        "@xxx/yyy=1"
         assert "@" in self.format_string
         assert "/" in self.format_string
         self.add_ai_message_as_planning(
             player_entity,
-            self.generate_action_message(GivePropAction.__name__, [self.format_string]),
+            self.generate_action_message(
+                TransferPropAction.__name__, [self.format_string]
+            ),
             rpg_game,
         )
 

@@ -198,7 +198,7 @@ class RPGEntitasContext(Context):
     ) -> None:
 
         if not entity.has(ActorComponent):
-            logger.error("实体不是Actor, 目前场景标记只给Actor")
+            assert False, "实体不是Actor, 目前场景标记只给Actor"
             return
 
         # 查看一下，如果一样基本就是错误

@@ -2,7 +2,6 @@ from typing import Set, Optional, List, Dict
 from extended_systems.archive_file import ActorArchiveFile, StageArchiveFile
 from extended_systems.prop_file import PropFile
 from extended_systems.file_system import FileSystem
-from loguru import logger
 from my_models.file_models import (
     EntityProfileModel,
     PropFileModel,
@@ -10,6 +9,21 @@ from my_models.file_models import (
     StageArchiveFileModel,
 )
 from extended_systems.dump_file import EntityProfileFile
+from my_models.entity_models import PropInstanceModel
+from loguru import logger
+
+
+##################################################################################################################################
+def consume_file(
+    file_system: FileSystem, prop_file: PropFile, consume_count: int = 1
+) -> None:
+
+    prop_file.consume(consume_count)
+    if prop_file.count == 0:
+        file_system.remove_file(prop_file)
+        return
+
+    file_system.write_file(prop_file)
 
 
 ##################################################################################################################################
@@ -74,10 +88,39 @@ def persist_entity_profile(
 
 ##################################################################################################################################
 def transfer_file(
-    file_system: FileSystem, source_name: str, target_name: str, file_name: str
+    file_system: FileSystem,
+    source_name: str,
+    target_name: str,
+    file_name: str,
+    transfer_count: int,
 ) -> None:
 
-    swap_file(file_system, source_name, target_name, file_name, "")
+    source_prop_file = file_system.get_file(PropFile, source_name, file_name)
+    if source_prop_file is None:
+        return
+
+    if transfer_count >= source_prop_file.count:
+        # 直接交换
+        swap_file(file_system, source_name, target_name, file_name, "")
+        return
+
+    # 文件部分转移
+    consume_file(file_system, source_prop_file, transfer_count)
+
+    # 文件重新写入
+    transfer_prop_file = PropFile(
+        PropFileModel(
+            owner=target_name,
+            prop_model=source_prop_file.prop_model,
+            prop_instance_model=PropInstanceModel(
+                name=source_prop_file.prop_instance_model.name,
+                guid=source_prop_file.prop_instance_model.guid,
+                count=transfer_count,
+            ),
+        ),
+    )
+    file_system.add_file(transfer_prop_file)
+    file_system.write_file(transfer_prop_file)
 
 
 ##################################################################################################################################
@@ -137,19 +180,6 @@ def categorize_files_by_type(
         ret[file.prop_model.type].append(file)
 
     return ret
-
-
-##################################################################################################################################
-def consume_file(
-    file_system: FileSystem, prop_file: PropFile, consume_count: int = 1
-) -> None:
-
-    prop_file.consume(consume_count)
-    if prop_file.count == 0:
-        file_system.remove_file(prop_file)
-        return
-
-    file_system.write_file(prop_file)
 
 
 ##################################################################################################################################

@@ -50,7 +50,9 @@ class RPGEntitasProcessors(Processors):
         from gameplay_systems.pre_action_system import PreActionSystem
         from gameplay_systems.post_action_system import PostActionSystem
         from gameplay_systems.steal_action_system import StealActionSystem
-        from gameplay_systems.give_prop_action_system import GivePropActionSystem
+        from gameplay_systems.transfer_prop_action_system import (
+            TransferPropActionSystem,
+        )
         from gameplay_systems.agent_ping_validator_system import (
             AgentPingValidatorSystem,
         )
@@ -209,7 +211,7 @@ class RPGEntitasProcessors(Processors):
 
         # 交互类的行为（交换数据），在死亡之后，因为死了就不能执行
         processors.add(StealActionSystem(context, rpg_game))
-        processors.add(GivePropActionSystem(context, rpg_game))
+        processors.add(TransferPropActionSystem(context, rpg_game))
         # 检查与提示类行为，临时放在这个位置。
         processors.add(InspectActionSystem(context, rpg_game))
 

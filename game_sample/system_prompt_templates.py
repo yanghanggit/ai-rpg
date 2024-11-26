@@ -13,7 +13,7 @@ from my_components.action_components import (
     MindVoiceAction,
     AnnounceAction,
     WhisperAction,
-    GivePropAction,
+    TransferPropAction,
     EquipPropAction,
     StageNarrateAction,
     SkillAction,
@@ -59,15 +59,13 @@ ACTOR_SYS_PROMPT_TEMPLATE = f"""# {configuration.SystemPromptReplaceSymbol.NAME}
     "{GoToAction.__name__}":["前往的场景全名"], 
     "{EquipPropAction.__name__}":["你想要装备的武器的道具全名", "你想要装备的衣服的道具全名"], 
     "{SkillAction.__name__}":["@目标角色(的全名)/技能道具(全名)/配置道具1(全名)=消耗数量1/配置道具2(全名)=消耗数量2/配置道具?(全名)=消耗数量?"],
-    "{StealPropAction.__name__}":["@道具拥有者的角色全名(只能是场景内的角色)/目标道具的全名"], 
-    "{InspectAction.__name__}":[角色全名(只能是场景内的角色，你计划查看其拥有的道具与健康状态)",...],
+    "{InspectAction.__name__}":[角色全名(只能是场景内的角色，你计划探查其拥有的道具与健康状态)",...],
+    "{StealPropAction.__name__}":["@道具拥有者的角色全名(只能是场景内的角色)/目标道具的全名"],
+    "{TransferPropAction.__name__}":["@道具接收角色全名(只能是场景内的角色)/交付的道具全名=数量"],
 {game_sample.builtin_prompt.JSON_SAMPLE_END}
 
 ### 注意事项
 {game_sample.builtin_prompt.ADDITIONAL_JSON_OUTPUT_FORMAT_REQUIREMENTS_FOR_ACTOR}"""
-
-
-# "{GivePropAction.__name__}":["@道具接收角色全名/交付的道具全名"],
 ############################################################################################################
 ############################################################################################################
 ############################################################################################################

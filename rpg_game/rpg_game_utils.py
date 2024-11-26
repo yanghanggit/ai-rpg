@@ -34,7 +34,7 @@ from player.player_command import (
     PlayerSpeak,
     PlayerWhisper,
     PlayerSteal,
-    # PlayerGiveProp,
+    PlayerTransferProp,
     PlayerSkill,
     PlayerEquip,
     PlayerKill,
@@ -372,8 +372,8 @@ def add_player_command(
     elif "/steal" in usr_input:
         player_proxy.add_command(PlayerSteal("/steal", usr_input))
 
-    # elif "/give" in usr_input:
-    #     player_proxy.add_command(PlayerGiveProp("/give", usr_input))
+    elif "/transfer" in usr_input:
+        player_proxy.add_command(PlayerTransferProp("/transfer", usr_input))
 
     elif "/skill" in usr_input:
         player_proxy.add_command(PlayerSkill("/skill", usr_input))

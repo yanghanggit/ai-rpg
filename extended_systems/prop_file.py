@@ -132,7 +132,7 @@ class PropFile(BaseFile):
 
 
 ###############################################################################################################################################
-def _generate_prop_type_prompt(prop_file: PropFile) -> str:
+def generate_prop_type_prompt(prop_file: PropFile) -> str:
 
     if prop_file.is_weapon:
         return PropTypeName.WEAPON
@@ -162,7 +162,7 @@ def _determine_prop_appearance_tag(prop_file: PropFile) -> str:
 # 所有信息全要, 一般是用于做核心决策的时候
 def generate_prop_file_total_prompt(prop_file: PropFile) -> str:
     return f"""### {prop_file.name}
-- 类型: {_generate_prop_type_prompt(prop_file)}
+- 类型: {generate_prop_type_prompt(prop_file)}
 - 数量: {prop_file.count}
 - 攻击力: {prop_file.damage}
 - 防御力: {prop_file.defense}
@@ -180,7 +180,7 @@ def generate_skill_prop_file_prompt(
 ) -> str:
     assert prop_file.is_skill, "不是技能文件"
     return f"""### {prop_file.name}
-- 类型: {_generate_prop_type_prompt(prop_file)}
+- 类型: {generate_prop_type_prompt(prop_file)}
 - 攻击力: {prop_file.damage}
 - 防御力: {prop_file.defense}
 - 治疗量: {prop_file.heal}
@@ -195,7 +195,7 @@ def generate_skill_prop_file_prompt(
 def generate_skill_accessory_prop_file_prompt(prop_file: PropFile) -> str:
     assert not prop_file.is_skill, "不是技能文件"
     return f"""### {prop_file.name}
-- 类型: {_generate_prop_type_prompt(prop_file)}
+- 类型: {generate_prop_type_prompt(prop_file)}
 - 数量: {prop_file.count}
 道具描述: 
 {prop_file.details}"""
@@ -206,7 +206,7 @@ def generate_skill_accessory_prop_file_prompt(prop_file: PropFile) -> str:
 def generate_prop_file_appearance_prompt(prop_file: PropFile) -> str:
     assert not prop_file.is_skill, "不是技能文件"
     return f"""### {prop_file.name}
-- 类型: {_generate_prop_type_prompt(prop_file)}
+- 类型: {generate_prop_type_prompt(prop_file)}
 {_determine_prop_appearance_tag(prop_file)}: 
 {prop_file.appearance}"""
 
@@ -216,7 +216,7 @@ def generate_prop_file_appearance_prompt(prop_file: PropFile) -> str:
 def generate_prop_file_for_stage_condition_prompt(prop_file: PropFile) -> str:
     assert not prop_file.is_skill, "不是技能文件"
     return f"""### {prop_file.name}
-- 类型: {_generate_prop_type_prompt(prop_file)}
+- 类型: {generate_prop_type_prompt(prop_file)}
 道具描述: 
 {prop_file.details}
 {_determine_prop_appearance_tag(prop_file)}: 

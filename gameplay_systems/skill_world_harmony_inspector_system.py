@@ -45,7 +45,7 @@ def _generate_error_summary_prompt(
 ## 技能指令内容
 {skill_command}
 ## 系统判断的原因
-{inspector_content}"""
+{inspector_content if inspector_content != "" else "未知错误"}"""
 
 
 ################################################################################################################################################
@@ -121,7 +121,6 @@ def _generate_world_harmony_inspector_prompt(
    - 判断角色基础形态是否满足技能释放条件。
      - 如果不符合，则技能释放失败，标记为 {prompt_utils.SkillResultPromptTag.FAILURE}。
      - 如果符合，则技能释放成功，标记为 {prompt_utils.SkillResultPromptTag.SUCCESS}；如角色信息有增益效果，则标记为 {prompt_utils.SkillResultPromptTag.CRITICAL_SUCCESS}。
-
 3. **正常释放**：
    - 如果技能无道具需求，且角色无特殊增益，技能按正常释放计算。
    
@@ -129,7 +128,7 @@ def _generate_world_harmony_inspector_prompt(
 1. 成功或大成功时：
    - 必须描述：技能使用者的全名，释放的技能名称和描述，技能目标的全名，配置的道具信息。
    - 描述需用逻辑合理且生动的句子，润色后以第三人称呈现。
-   - 不需涉及目标被命中后的反应，仅限于技能释放的过程。
+   - 不需涉及目标的反应，仅限于技能释放的过程。
    - 可以参考 上述 技能信息 中的 技能表现的描述。
    - 注意结合配置道具信息的内容
 2. 失败时：
@@ -423,7 +422,7 @@ class SkillWorldHarmonyInspectorSystem(ExecuteProcessor):
                         process_data.actor_entity
                     ),
                     prop_file=prop_file,
-                    actual_consumed_amount=prop_file.count - previous_count,
+                    actual_consumed_amount=previous_count - prop_file.count,
                 )
             ),
         )

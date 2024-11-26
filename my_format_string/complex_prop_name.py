@@ -1,12 +1,12 @@
 ############################################################################################################
-def check_complex_prop_info_format(data: str) -> bool:
+def is_complex_prop_name(data: str) -> bool:
     return data.startswith("/") and "=" in data
 
 
 ############################################################################################################
 def _parse_prop_name_and_count(format_string: str) -> tuple[str, int]:
 
-    assert check_complex_prop_info_format(
+    assert is_complex_prop_name(
         format_string
     ), f"Invalid format string: {format_string}"
 
@@ -20,7 +20,7 @@ def _parse_prop_name_and_count(format_string: str) -> tuple[str, int]:
 
 
 ############################################################################################################
-def parse_complex_prop_info_string(prop_info_string: str) -> tuple[str, int]:
+def parse_complex_prop_name(prop_info_string: str) -> tuple[str, int]:
 
     # 如果data字符串在[0]第一个位置没有 "/", 就插入一个"/" 形成一个新字符串
     processed_prop_string = str(prop_info_string)
@@ -49,6 +49,12 @@ def parse_complex_prop_info_string(prop_info_string: str) -> tuple[str, int]:
 def format_prop_name_with_count(prop_name: str, count: int) -> str:
     assert count > 0, f"Invalid count: {count}"
     return f"/{prop_name}={count}"
+
+
+######################################################################################################################################################
+def match_prop_name(prop_name: str, complex_prop_name: str) -> bool:
+    parsed_prop_name, _ = parse_complex_prop_name(complex_prop_name)
+    return prop_name == parsed_prop_name
 
 
 ############################################################################################################

@@ -4,7 +4,7 @@ from typing import Optional, List
 #################################################################################################################################
 # 我方定义的规则字符串
 def _extract_target_message(
-    content: str, symbol1: str = "@", symbol2: str = ">"
+    content: str, symbol1: str = "@", symbol2: str = ":"
 ) -> tuple[Optional[str], Optional[str]]:
     # 检查是否包含'@'和'>'符号
     if symbol1 not in content or symbol2 not in content:
@@ -35,7 +35,7 @@ def _extract_target_message(
 #################################################################################################################################
 # 是否是有效的目标和消息格式
 def _has_target_message_format(
-    content: str, symbol1: str = "@", symbol2: str = ">"
+    content: str, symbol1: str = "@", symbol2: str = ":"
 ) -> bool:
     if symbol1 not in content or symbol2 not in content:
         return False
@@ -44,14 +44,14 @@ def _has_target_message_format(
 
 #################################################################################################################################
 def generate_target_message_pair(
-    target: str, message: str, symbol1: str = "@", symbol2: str = ">"
+    target: str, message: str, symbol1: str = "@", symbol2: str = ":"
 ) -> str:
     return f"{symbol1}{target}{symbol2}{message}"
 
 
 #################################################################################################################################
 def extract_target_message_pairs(
-    values: List[str], symbol1: str = "@", symbol2: str = ">"
+    values: List[str], symbol1: str = "@", symbol2: str = ":"
 ) -> List[tuple[str, str]]:
 
     result: List[tuple[str, str]] = []

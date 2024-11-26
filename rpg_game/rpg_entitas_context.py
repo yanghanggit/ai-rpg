@@ -256,7 +256,6 @@ class RPGEntitasContext(Context):
         entity: Entity,
         agent_event: AgentEvent,
         exclude_entities: Set[Entity] = set(),
-        keep_original_message_content: bool = False,
     ) -> None:
 
         stage_entity = self.safe_get_stage_entity(entity)
@@ -270,19 +269,16 @@ class RPGEntitasContext(Context):
         if len(exclude_entities) > 0:
             need_broadcast_entities = need_broadcast_entities - exclude_entities
 
-        self.notify_event(
-            need_broadcast_entities, agent_event, keep_original_message_content
-        )
+        self.notify_event(need_broadcast_entities, agent_event)
 
     #############################################################################################################################
     def notify_event(
         self,
         entities: Set[Entity],
         agent_event: AgentEvent,
-        keep_original_message_content: bool = False,
     ) -> None:
 
-        self._notify_event(entities, agent_event, keep_original_message_content)
+        self._notify_event(entities, agent_event)
         self._notify_event_to_players(entities, agent_event)
 
     #############################################################################################################################
@@ -290,19 +286,13 @@ class RPGEntitasContext(Context):
         self,
         entities: Set[Entity],
         agent_event: AgentEvent,
-        keep_original_message_content: bool,
     ) -> None:
 
         for entity in entities:
 
             safe_name = self.safe_get_entity_name(entity)
 
-            if keep_original_message_content:
-                replace_message = agent_event.message
-            else:
-                replace_message = prompt_utils.replace_you(
-                    agent_event.message, safe_name
-                )
+            replace_message = prompt_utils.replace_you(agent_event.message, safe_name)
 
             self.agent_system.append_human_message(safe_name, replace_message)
             logger.warning(f"{safe_name} ==> {replace_message}")

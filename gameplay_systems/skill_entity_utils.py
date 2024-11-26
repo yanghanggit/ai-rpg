@@ -27,9 +27,7 @@ def parse_skill_accessory_prop_files(
     ret: List[tuple[PropFile, int]] = []
     for format_string in skill_comp.skill_accessory_props:
 
-        if not my_format_string.complex_prop_name.check_complex_prop_info_format(
-            format_string
-        ):
+        if not my_format_string.complex_prop_name.is_complex_prop_name(format_string):
             logger.error(f"Invalid prop name and count format: {format_string}")
             continue
 

@@ -24,9 +24,9 @@ from extended_systems.prop_file import (
 
 ####################################################################################################################################
 def _generate_invalid_target_prompt(source_name: str, target_name: str) -> str:
-    return f"""# 提示: {source_name} 对 {target_name} 进行执行‘检查’行动失败。
+    return f"""# 提示: {source_name} 对 {target_name} 进行执行 探查 行动失败。
 # 原因分析
-- {target_name} 不存在，或者不是可以被检查的对象。
+- {target_name} 不存在，或者不是可以被 探查 的对象。
 - {target_name} 与 {source_name} 已不在同一个场景中。"""
 
 
@@ -43,10 +43,10 @@ def _generate_inspect_prompt(
         props_prompt.append("无")
 
     # 最终返回
-    return f"""# 发生事件: {source_name} 对 {target_name} 进行了检查。获得了如下信息。
+    return f"""# 发生事件: {source_name} 对 {target_name} 进行了探查。获得了如下信息。
 ## {target_name} 健康状态
 生命值: {health_description}
-## {target_name} 持有的道具
+## {target_name} 可以被探查到的道具
 {"\n".join(props_prompt)}"""
 
 
@@ -96,7 +96,6 @@ class InspectActionSystem(ReactiveProcessor):
                 )
                 != gameplay_systems.action_component_utils.ConversationError.VALID
             ):
-                # 不能交谈就是不能进行检查。
                 self._notify_invalid_target_event(source_entity, target_name)
                 continue
 

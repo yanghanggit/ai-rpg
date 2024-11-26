@@ -82,13 +82,19 @@ class AgentPlanResponse:
             logger.error(f"json_data is not dict: {json_data}")
             return False
 
-        for key, value in json_data.items():
-            if not isinstance(key, str):
+        for str_key, list_value in json_data.items():
+            if not isinstance(str_key, str):
                 return False
-            if not isinstance(value, list) or not all(
-                isinstance(v, str) for v in value
-            ):
+
+            if not isinstance(list_value, list):
                 return False
+
+            for i in range(len(list_value)):
+                if isinstance(list_value[i], int):
+                    list_value[i] = str(list_value[i])
+
+                if not isinstance(list_value[i], str):
+                    return False
 
         return True
 

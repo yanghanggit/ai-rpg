@@ -140,7 +140,7 @@ class ExcelEditorActor:
             if prop_info == "":
                 continue
 
-            parse = my_format_string.complex_prop_name.parse_complex_prop_info_string(
+            parse = my_format_string.complex_prop_name.parse_complex_prop_name(
                 prop_info
             )
             prop_name = parse[0]

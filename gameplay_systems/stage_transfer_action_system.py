@@ -91,7 +91,7 @@ class StageTransferActionSystem(ReactiveProcessor):
                 continue
 
             prop_name, transfer_count = (
-                my_format_string.complex_prop_name.parse_complex_prop_info_string(
+                my_format_string.complex_prop_name.parse_complex_prop_name(
                     complex_prop_info
                 )
             )

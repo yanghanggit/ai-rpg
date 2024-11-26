@@ -28,7 +28,7 @@ def _generate_notify_skill_hit_prompt(
     actor_name: str, target_name: str, inspector_content: str, inspector_tag: str
 ) -> str:
 
-    return f"""# 发生事件: {actor_name} 向 {target_name} 使用技能并命中。
+    return f"""# 发生事件: {actor_name} 向 {target_name} 使用技能。
 ## 技能事件描述
 {inspector_content}
 ## 系统判断结果
@@ -41,7 +41,7 @@ def _generate_broadcast_skill_event_prompt(
     target_name: str,
     inspector_content: str,
 ) -> str:
-    return f"""# 发生事件: {source_name} 向 {target_name} 使用技能并命中。
+    return f"""# 发生事件: {source_name} 向 {target_name} 使用技能。
 ## 事件描述
 {inspector_content}"""
 

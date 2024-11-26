@@ -163,12 +163,14 @@ def _determine_prop_appearance_tag(prop_file: PropFile) -> str:
 def generate_prop_file_total_prompt(prop_file: PropFile) -> str:
     return f"""### {prop_file.name}
 - 类型: {_generate_prop_type_prompt(prop_file)}
-- 道具数量: {prop_file.count}
+- 数量: {prop_file.count}
 - 攻击力: {prop_file.damage}
 - 防御力: {prop_file.defense}
 - 治疗量: {prop_file.heal}
-- 道具描述: {prop_file.details}
-- {_determine_prop_appearance_tag(prop_file)}: {prop_file.appearance}"""
+道具描述: 
+{prop_file.details}
+{_determine_prop_appearance_tag(prop_file)}: 
+{prop_file.appearance}"""
 
 
 ###############################################################################################################################################
@@ -182,8 +184,10 @@ def generate_skill_prop_file_prompt(
 - 攻击力: {prop_file.damage}
 - 防御力: {prop_file.defense}
 - 治疗量: {prop_file.heal}
-- 道具描述: {prop_file.details} {prop_file.insight if enable_insight_detail else ""}
-- {_determine_prop_appearance_tag(prop_file)}: {prop_file.appearance}"""
+道具描述: 
+{prop_file.details} {prop_file.insight if enable_insight_detail else ""}
+{_determine_prop_appearance_tag(prop_file)}: 
+{prop_file.appearance}"""
 
 
 ###############################################################################################################################################
@@ -192,8 +196,9 @@ def generate_skill_accessory_prop_file_prompt(prop_file: PropFile) -> str:
     assert not prop_file.is_skill, "不是技能文件"
     return f"""### {prop_file.name}
 - 类型: {_generate_prop_type_prompt(prop_file)}
-- 道具数量: {prop_file.count}
-- 道具描述: {prop_file.details}"""
+- 数量: {prop_file.count}
+道具描述: 
+{prop_file.details}"""
 
 
 ###############################################################################################################################################
@@ -202,7 +207,8 @@ def generate_prop_file_appearance_prompt(prop_file: PropFile) -> str:
     assert not prop_file.is_skill, "不是技能文件"
     return f"""### {prop_file.name}
 - 类型: {_generate_prop_type_prompt(prop_file)}
-- {_determine_prop_appearance_tag(prop_file)}: {prop_file.appearance}"""
+{_determine_prop_appearance_tag(prop_file)}: 
+{prop_file.appearance}"""
 
 
 ###############################################################################################################################################
@@ -211,8 +217,10 @@ def generate_prop_file_for_stage_condition_prompt(prop_file: PropFile) -> str:
     assert not prop_file.is_skill, "不是技能文件"
     return f"""### {prop_file.name}
 - 类型: {_generate_prop_type_prompt(prop_file)}
-- 道具描述: {prop_file.details}
-- {_determine_prop_appearance_tag(prop_file)}: {prop_file.appearance}"""
+道具描述: 
+{prop_file.details}
+{_determine_prop_appearance_tag(prop_file)}: 
+{prop_file.appearance}"""
 
 
 ###############################################################################################################################################

@@ -20,6 +20,7 @@ from my_models.entity_models import Attributes
 import gameplay_systems.prompt_utils
 import my_format_string.complex_prop_name
 from my_models.file_models import PropSkillUsageMode
+import my_format_string.complex_skill_command
 
 
 ################################################################################################################################################
@@ -39,8 +40,8 @@ def _generate_skill_invocation_result_prompt(
 
     if initial_skill_command == adjusted_skill_command:
         return f"""# 提示: {actor_name} 计划执行动作: {SkillAction.__name__}，结果为：系统经过判断后，允许继续，并执行下一步判断。
-    ## 输入的起效的 技能指令 如下:
-    {initial_skill_command}"""
+## 输入的起效的 技能指令 如下:
+{initial_skill_command}"""
 
     return f"""# 提示: {actor_name} 计划执行动作: {SkillAction.__name__}，结果为：系统经过判断，并做了调整之后，允许继续，并执行下一步判断。
 ## 输入的 技能指令 如下:
@@ -61,7 +62,7 @@ def _generate_weapon_count_exceed_prompt(
 ## 请分析问题，并再次理解规则:
 {gameplay_systems.prompt_utils.skill_action_rule_prompt()}
 ## 配置的武器数量过多，只能配置一个武器，但是配置了多个武器如下:
-{";".join(weapon_prop_file_names)}"""
+{"\n".join(weapon_prop_file_names)}"""
 
 
 ######################################################################################################################################################
@@ -69,6 +70,7 @@ def _generate_weapon_count_exceed_prompt(
 ######################################################################################################################################################
 @final
 class SkillCommandParser:
+
     def __init__(
         self,
         context: RPGEntitasContext,
@@ -118,31 +120,28 @@ class SkillCommandParser:
     ######################################################################################################################################################
     @property
     def output_skill_command(self) -> str:
-        # 格式示例：@目标角色(全名);/技能道具(全名);/配置道具(全名)=消耗数量;/配置道具(全名)=消耗数量;...
-        data: List[str] = []
-        for target_entity_name in self.target_entity_names:
-            data.append(f"""@{target_entity_name}""")
 
-        for skill_prop in self._parsed_skill_prop_files:
-            data.append(f"""/{skill_prop.name}""")
+        assert len(self._parsed_skill_prop_files) > 0
 
+        skill_accessory_props: List[tuple[str, int]] = []
         for skill_accessory_prop_file_info in self._parsed_skill_accessory_prop_files:
             skill_accessory_prop_file, consume_count = skill_accessory_prop_file_info
-            data.append(
-                my_format_string.complex_prop_name.format_prop_name_with_count(
-                    skill_accessory_prop_file.name, consume_count
-                )
+            skill_accessory_props.append(
+                (skill_accessory_prop_file.name, consume_count)
             )
 
-        return ";".join(data)
+        return my_format_string.complex_skill_command.compose_skill_command(
+            self.target_entity_names,
+            self._parsed_skill_prop_files[0].name,
+            skill_accessory_props,
+        )
 
     ######################################################################################################################################################
     @property
     def command_queue(self) -> List[str]:
-        symbol = ";"
-        if not symbol in self._input_skill_command:
-            return []
-        return self._input_skill_command.split(symbol)
+        return my_format_string.complex_skill_command.decompose_skill_command(
+            self._input_skill_command
+        )
 
     ######################################################################################################################################################
     @property
@@ -194,19 +193,6 @@ class SkillCommandParser:
                 self._parsed_mapping = {fisrt_key: first_value}
 
     ######################################################################################################################################################
-    def _match_target_entity_name(self, check_name: str, target_name: str) -> bool:
-        return f"""@{check_name}""" == target_name
-
-    ######################################################################################################################################################
-    def _match_prop_name(self, check_name: str, complex_prop_name: str) -> bool:
-        prop_name, consume_count = (
-            my_format_string.complex_prop_name.parse_complex_prop_info_string(
-                complex_prop_name
-            )
-        )
-        return check_name == prop_name
-
-    ######################################################################################################################################################
     def _parse_command(
         self,
         parsed_command: str,
@@ -217,26 +203,30 @@ class SkillCommandParser:
     ) -> None:
 
         # 分析目标
-        if self._match_target_entity_name(stage_name, parsed_command):
+        if stage_name == parsed_command:
             self._parsed_mapping.setdefault(stage_name, parsed_command)
         else:
             for actor_name in actors_on_stage:
-                if self._match_target_entity_name(actor_name, parsed_command):
+                if actor_name == parsed_command:
                     self._parsed_mapping.setdefault(actor_name, parsed_command)
 
         # 分析使用的技能
         for skill_prop in skill_prop_files:
             assert skill_prop.is_skill
-            if self._match_prop_name(skill_prop.name, parsed_command):
+            if my_format_string.complex_prop_name.match_prop_name(
+                skill_prop.name, parsed_command
+            ):
                 self._parsed_skill_prop_files.append(skill_prop)
 
         # 分析技能配件
         for accessory_prop_file in accessory_prop_files:
-            if not self._match_prop_name(accessory_prop_file.name, parsed_command):
+            if not my_format_string.complex_prop_name.match_prop_name(
+                accessory_prop_file.name, parsed_command
+            ):
                 continue
 
             prop_name, consume_count = (
-                my_format_string.complex_prop_name.parse_complex_prop_info_string(
+                my_format_string.complex_prop_name.parse_complex_prop_name(
                     parsed_command
                 )
             )
@@ -437,7 +427,6 @@ class SkillInvocationSystem(ReactiveProcessor):
                     ],
                 )
             ),
-            keep_original_message_content=True,
         )
 
     ######################################################################################################################################################
@@ -460,7 +449,6 @@ class SkillInvocationSystem(ReactiveProcessor):
                     processed_result=processed_result,
                 )
             ),
-            keep_original_message_content=True,
         )
 
     ######################################################################################################################################################

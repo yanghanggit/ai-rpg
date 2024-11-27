@@ -32,3 +32,8 @@ assert GAMES_RUNTIME_DIR.exists(), f"找不到目录: {GAMES_RUNTIME_DIR}"
 GAMES_ARCHIVE_DIR: Path = Path("game_archive")
 GAMES_ARCHIVE_DIR.mkdir(parents=True, exist_ok=True)
 assert GAMES_ARCHIVE_DIR.exists(), f"找不到目录: {GAMES_ARCHIVE_DIR}"
+
+# 生成log的目录
+LOGS_DIR: Path = Path("logs")
+LOGS_DIR.mkdir(parents=True, exist_ok=True)
+assert LOGS_DIR.exists(), f"找不到目录: {LOGS_DIR}"

@@ -38,6 +38,11 @@ async def run_terminal_game(option: TerminalGameOption) -> None:
     game_runtime_dir.mkdir(parents=True, exist_ok=True)
     assert game_runtime_dir.exists()
 
+    # 创建log
+    log_start_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    log_dir = rpg_game_config.LOGS_DIR / option.user_name / game_name
+    logger.add(log_dir / f"{log_start_time}.log", level="DEBUG")
+
     # 根据创建还是载入进行不同的处理
     game_resource: Optional[RPGGameResource] = None
     if option.new_game:
@@ -285,11 +290,8 @@ async def terminal_continue(game: RPGGame) -> None:
 if __name__ == "__main__":
     import asyncio
 
-    log_start_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    logger.add(f"logs/{log_start_time}.log", level="DEBUG")
-
     option = TerminalGameOption(
-        user_name="北京柏林互动科技有限公司",
+        user_name="terminal_player",
         default_game="World5",
         check_game_resource_version=rpg_game_config.CHECK_GAME_RESOURCE_VERSION,
         show_client_message_count=20,

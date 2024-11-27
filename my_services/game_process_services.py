@@ -1,3 +1,4 @@
+import datetime
 from fastapi import APIRouter
 from loguru import logger
 from ws_config import (
@@ -136,6 +137,11 @@ async def create(request_data: CreateRequest) -> Dict[str, Any]:
 
     game_runtime_dir.mkdir(parents=True, exist_ok=True)
     assert game_runtime_dir.exists()
+
+    # 创建log
+    log_start_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    log_dir = rpg_game_config.LOGS_DIR / request_data.user_name / request_data.game_name
+    logger.add(log_dir / f"{log_start_time}.log", level="DEBUG")
 
     # 游戏启动资源路径
     game_resource_file_path = (

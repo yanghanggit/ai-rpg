@@ -512,7 +512,7 @@ def web_run() -> None:
 
     client_state = GameStateController(GameState.UNLOGGED)
     client_context = SimuWebAPP()
-    default_user_name = "北京柏林互动科技有限公司"
+    default_user_name = "web_player"
 
     while True:
 

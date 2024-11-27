@@ -33,7 +33,6 @@ class BaseFile(ABC):
     def write(self, write_path: Path) -> int:
         try:
             write_content = self.serialization()
-            assert write_content != ""
             return write_path.write_text(write_content, encoding="utf-8")
         except Exception as e:
             logger.error(f"{self._name}, {self._owner_name} 写文件失败: {write_path}")

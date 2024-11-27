@@ -115,8 +115,8 @@ def main() -> None:
     尤其是改了生成之后。
     """
 
-    log_start_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    logger.add(f"logs/{log_start_time}.log", level="DEBUG")
+    # log_start_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    # logger.add(f"logs/{log_start_time}.log", level="DEBUG")
 
     final_game_names: List[str] = []
 

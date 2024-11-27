@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from loguru import logger
 from ws_config import (
-    WS_CONFIG,
+    WsConfig,
     APIEndpointsConfigRequest,
     APIEndpointsConfigResponse,
 )
@@ -20,17 +20,17 @@ async def api_endpoints(request_data: APIEndpointsConfigRequest) -> Dict[str, An
     logger.info(f"api_endpoints: {request_data.content}")
 
     gen_api_endpoints_config: APIEndpointsConfigModel = APIEndpointsConfigModel(
-        LOGIN=f"http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/login/",
-        CREATE=f"http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/create/",
-        JOIN=f"http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/join/",
-        START=f"http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/start/",
-        EXIT=f"http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/exit/",
-        EXECUTE=f"http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/execute/",
-        SURVEY_STAGE_ACTION=f"http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/survey_stage_action/",
-        STATUS_INVENTORY_CHECK_ACTION=f"http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/status_inventory_check_action/",
-        FETCH_MESSAGES=f"http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/fetch_messages/",
-        RETRIEVE_ACTOR_ARCHIVES=f"http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/retrieve_actor_archives/",
-        RETRIEVE_STAGE_ARCHIVES=f"http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/retrieve_stage_archives/",
+        LOGIN=f"http://{WsConfig.LOCALHOST}:{WsConfig.DEFAULT_PORT}/login/",
+        CREATE=f"http://{WsConfig.LOCALHOST}:{WsConfig.DEFAULT_PORT}/create/",
+        JOIN=f"http://{WsConfig.LOCALHOST}:{WsConfig.DEFAULT_PORT}/join/",
+        START=f"http://{WsConfig.LOCALHOST}:{WsConfig.DEFAULT_PORT}/start/",
+        EXIT=f"http://{WsConfig.LOCALHOST}:{WsConfig.DEFAULT_PORT}/exit/",
+        EXECUTE=f"http://{WsConfig.LOCALHOST}:{WsConfig.DEFAULT_PORT}/execute/",
+        SURVEY_STAGE_ACTION=f"http://{WsConfig.LOCALHOST}:{WsConfig.DEFAULT_PORT}/survey_stage_action/",
+        STATUS_INVENTORY_CHECK_ACTION=f"http://{WsConfig.LOCALHOST}:{WsConfig.DEFAULT_PORT}/status_inventory_check_action/",
+        FETCH_MESSAGES=f"http://{WsConfig.LOCALHOST}:{WsConfig.DEFAULT_PORT}/fetch_messages/",
+        RETRIEVE_ACTOR_ARCHIVES=f"http://{WsConfig.LOCALHOST}:{WsConfig.DEFAULT_PORT}/retrieve_actor_archives/",
+        RETRIEVE_STAGE_ARCHIVES=f"http://{WsConfig.LOCALHOST}:{WsConfig.DEFAULT_PORT}/retrieve_stage_archives/",
     )
 
     return APIEndpointsConfigResponse(

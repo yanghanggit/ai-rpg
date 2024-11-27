@@ -1,6 +1,6 @@
 import requests
 from ws_config import (
-    WS_CONFIG,
+    WsConfig,
     LoginRequest,
     LoginResponse,
     CreateResponse,
@@ -72,7 +72,7 @@ def _api_endpoints(
 
     time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     response = requests.post(
-        f"""http://{WS_CONFIG.LOCAL_HOST}:{WS_CONFIG.PORT}/api_endpoints/""",
+        f"""http://{WsConfig.LOCALHOST}:{WsConfig.DEFAULT_PORT}/api_endpoints/""",
         json=APIEndpointsConfigRequest(content=f"time = {time}").model_dump(),
     )
 

@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from ws_config import (
-    WS_CONFIG,
+    WsConfig,
 )
 
 from fastapi.middleware.cors import CORSMiddleware
@@ -24,4 +24,4 @@ fastapi_app.include_router(game_play_api_router)
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(fastapi_app, host=WS_CONFIG.LOCAL_HOST, port=WS_CONFIG.PORT)
+    uvicorn.run(fastapi_app, host=WsConfig.LOCALHOST, port=WsConfig.DEFAULT_PORT)

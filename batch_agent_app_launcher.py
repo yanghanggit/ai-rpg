@@ -1,12 +1,11 @@
 from loguru import logger
-import datetime
 import os
 from typing import Set, List
 import json
 from my_models.config_models import GameAgentsConfigModel
 import rpg_game.rpg_game_config as rpg_game_config
 from pathlib import Path
-from my_models.config_models import AllGamesConfigModel
+from my_models.config_models import GlobalConfigModel
 
 
 ####################################################################################################################################
@@ -115,22 +114,17 @@ def main() -> None:
     尤其是改了生成之后。
     """
 
-    # log_start_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    # logger.add(f"logs/{log_start_time}.log", level="DEBUG")
-
     final_game_names: List[str] = []
 
     # 读config.json
     config_file_config = rpg_game_config.ROOT_GEN_GAMES_DIR / f"config.json"
     assert config_file_config.exists()
     read_config_content = config_file_config.read_text(encoding="utf-8")
-    all_games_config_model = AllGamesConfigModel.model_validate_json(
-        read_config_content
-    )
+    global_config_model = GlobalConfigModel.model_validate_json(read_config_content)
 
     #
     available_games: List[str] = []
-    for game_config in all_games_config_model.game_configs:
+    for game_config in global_config_model.game_configs:
         available_games.append(game_config.game_name)
 
     #

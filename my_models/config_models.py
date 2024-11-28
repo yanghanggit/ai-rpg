@@ -4,11 +4,11 @@ from pydantic import BaseModel
 
 class GameConfigModel(BaseModel):
     game_name: str = ""
-    about_game: str = ""
+    epoch_script: str = ""
     players: Dict[str, str] = {}
 
 
-class AllGamesConfigModel(BaseModel):
+class GlobalConfigModel(BaseModel):
     game_configs: List[GameConfigModel] = []
 
 

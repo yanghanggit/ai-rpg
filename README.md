@@ -16,7 +16,7 @@ pip install langchain langchain_core langserve fastapi langchain_openai sse_star
 ```
 
 ## 严格模式检查
-- mypy --strict game_sample/gen_game.py batch_agent_app_launcher.py run_terminal_game.py run_game_server.py simulate_web_client.py game_sample/base_form_prompt_editor.py game_sample/actor_profile_prompt_editor.py game_sample/actor_conversational_style_prompt_editor.py
+- mypy --strict game_sample/gen_game.py batch_agent_app_launcher.py run_terminal_game.py run_game_server.py run_python_client.py game_sample/base_form_prompt_editor.py game_sample/actor_profile_prompt_editor.py game_sample/actor_conversational_style_prompt_editor.py
 
 
 ## 说明
@@ -24,7 +24,7 @@ pip install langchain langchain_core langserve fastapi langchain_openai sse_star
 - batch_agent_app_launcher.py 可以批量启动agent
 - run_terminal_game.py 利用终端启动游戏，方便调试
 - server_run.py 启动一个服务器
-- simulate_web_client.py 模拟一个网页客户端，与run_game_server.py进行交互。
+- run_python_client.py 模拟一个网页客户端，与run_game_server.py进行交互。
 
 ## Windows平台运行问题
 

@@ -1,6 +1,5 @@
 from fastapi import APIRouter
-from loguru import logger
-from ws_config import (
+from my_models.api_models import (
     SurveyStageRequest,
     SurveyStageResponse,
     StatusInventoryCheckRequest,
@@ -10,19 +9,23 @@ from ws_config import (
     RetrieveStageArchivesRequest,
     RetrieveStageArchivesResponse,
 )
-from typing import Dict, Any
-from my_services.room_manager import RoomManagerInstance
 import rpg_game.rpg_game_utils
+from my_services.game_server import GameServer
+
+# from loguru import logger
 
 
 game_play_api_router = APIRouter()
 
 
 ###############################################################################################################################################
-@game_play_api_router.post("/survey_stage_action/")
-async def survey_stage_action(request_data: SurveyStageRequest) -> Dict[str, Any]:
+@game_play_api_router.post(
+    path="/survey_stage_action/", response_model=SurveyStageResponse
+)
+async def survey_stage_action(request_data: SurveyStageRequest) -> SurveyStageResponse:
+    assert GameServer.Instance is not None
 
-    room = RoomManagerInstance.get_room(request_data.user_name)
+    room = GameServer.Instance.room_manager.get_room(request_data.user_name)
     if room is None or room.game is None:
         return SurveyStageResponse(
             user_name=request_data.user_name,
@@ -30,7 +33,7 @@ async def survey_stage_action(request_data: SurveyStageRequest) -> Dict[str, Any
             actor_name=request_data.actor_name,
             error=1,
             message="room is None",
-        ).model_dump()
+        )
 
     # 没有客户端就不能看
     player_proxy = room.get_player()
@@ -42,7 +45,7 @@ async def survey_stage_action(request_data: SurveyStageRequest) -> Dict[str, Any
             actor_name=request_data.actor_name,
             error=1,
             message="player_proxy is None",
-        ).model_dump()
+        )
 
     # 获得消息
     watch_action_model = rpg_game.rpg_game_utils.gen_player_survey_stage_model(
@@ -56,7 +59,7 @@ async def survey_stage_action(request_data: SurveyStageRequest) -> Dict[str, Any
             actor_name=request_data.actor_name,
             error=2,
             message="watch_action_model is None",
-        ).model_dump()
+        )
 
     # 返回观察游戏的信息
     return SurveyStageResponse(
@@ -64,16 +67,21 @@ async def survey_stage_action(request_data: SurveyStageRequest) -> Dict[str, Any
         game_name=request_data.game_name,
         actor_name=request_data.actor_name,
         action_model=watch_action_model,
-    ).model_dump()
+    )
 
 
 ###############################################################################################################################################
-@game_play_api_router.post("/status_inventory_check_action/")
+@game_play_api_router.post(
+    path="/status_inventory_check_action/", response_model=StatusInventoryCheckResponse
+)
 async def status_inventory_check_action(
     request_data: StatusInventoryCheckRequest,
-) -> Dict[str, Any]:
+) -> StatusInventoryCheckResponse:
 
-    room = RoomManagerInstance.get_room(request_data.user_name)
+    assert GameServer.Instance is not None
+    room_manager = GameServer.Instance.room_manager
+
+    room = room_manager.get_room(request_data.user_name)
     if room is None or room.game is None:
         return StatusInventoryCheckResponse(
             user_name=request_data.user_name,
@@ -81,7 +89,7 @@ async def status_inventory_check_action(
             actor_name=request_data.actor_name,
             error=100,
             message="game_room._game is None",
-        ).model_dump()
+        )
 
     # 没有客户端就不能看
     player_proxy = room.get_player()
@@ -92,7 +100,7 @@ async def status_inventory_check_action(
             actor_name=request_data.actor_name,
             error=1,
             message="player_proxy is None",
-        ).model_dump()
+        )
 
     # 获得消息
     check_action_model = (
@@ -108,7 +116,7 @@ async def status_inventory_check_action(
             actor_name=request_data.actor_name,
             error=2,
             message="check_action_model is None",
-        ).model_dump()
+        )
 
     # 返回检查游戏的信息
     return StatusInventoryCheckResponse(
@@ -116,16 +124,21 @@ async def status_inventory_check_action(
         game_name=request_data.game_name,
         actor_name=request_data.actor_name,
         action_model=check_action_model,
-    ).model_dump()
+    )
 
 
 ###############################################################################################################################################
-@game_play_api_router.post("/retrieve_actor_archives/")
+@game_play_api_router.post(
+    path="/retrieve_actor_archives/", response_model=RetrieveActorArchivesResponse
+)
 async def retrieve_actor_archives(
     request_data: RetrieveActorArchivesRequest,
-) -> Dict[str, Any]:
+) -> RetrieveActorArchivesResponse:
 
-    room = RoomManagerInstance.get_room(request_data.user_name)
+    assert GameServer.Instance is not None
+    room_manager = GameServer.Instance.room_manager
+
+    room = room_manager.get_room(request_data.user_name)
     if room is None or room.game is None:
         return RetrieveActorArchivesResponse(
             user_name=request_data.user_name,
@@ -133,7 +146,7 @@ async def retrieve_actor_archives(
             actor_name=request_data.actor_name,
             error=100,
             message="game_room._game is None",
-        ).model_dump()
+        )
 
     # 没有客户端就不能看
     player_proxy = room.get_player()
@@ -144,7 +157,7 @@ async def retrieve_actor_archives(
             actor_name=request_data.actor_name,
             error=1,
             message="player_proxy is None",
-        ).model_dump()
+        )
 
     # 获得消息
     retrieve_actor_archives_action_model = (
@@ -160,23 +173,28 @@ async def retrieve_actor_archives(
             actor_name=request_data.actor_name,
             error=2,
             message="retrieve_actor_archives_action_model is None",
-        ).model_dump()
+        )
 
     return RetrieveActorArchivesResponse(
         user_name=request_data.user_name,
         game_name=request_data.game_name,
         actor_name=request_data.actor_name,
         action_model=retrieve_actor_archives_action_model,
-    ).model_dump()
+    )
 
 
 ###############################################################################################################################################
-@game_play_api_router.post("/retrieve_stage_archives/")
+@game_play_api_router.post(
+    path="/retrieve_stage_archives/", response_model=RetrieveStageArchivesResponse
+)
 async def retrieve_stage_archives(
     request_data: RetrieveStageArchivesRequest,
-) -> Dict[str, Any]:
+) -> RetrieveStageArchivesResponse:
 
-    room = RoomManagerInstance.get_room(request_data.user_name)
+    assert GameServer.Instance is not None
+    room_manager = GameServer.Instance.room_manager
+
+    room = room_manager.get_room(request_data.user_name)
     if room is None or room.game is None:
         return RetrieveStageArchivesResponse(
             user_name=request_data.user_name,
@@ -184,7 +202,7 @@ async def retrieve_stage_archives(
             actor_name=request_data.actor_name,
             error=100,
             message="game_room._game is None",
-        ).model_dump()
+        )
 
     player_proxy = room.get_player()
     if player_proxy is None:
@@ -194,7 +212,7 @@ async def retrieve_stage_archives(
             actor_name=request_data.actor_name,
             error=1,
             message="player_proxy is None",
-        ).model_dump()
+        )
 
     retrieve_stage_archives_action_model = (
         rpg_game.rpg_game_utils.gen_player_retrieve_stage_archives_action_model(
@@ -209,14 +227,14 @@ async def retrieve_stage_archives(
             actor_name=request_data.actor_name,
             error=2,
             message="retrieve_stage_archives_action_model is None",
-        ).model_dump()
+        )
 
     return RetrieveStageArchivesResponse(
         user_name=request_data.user_name,
         game_name=request_data.game_name,
         actor_name=request_data.actor_name,
         action_model=retrieve_stage_archives_action_model,
-    ).model_dump()
+    )
 
 
 ###############################################################################################################################################

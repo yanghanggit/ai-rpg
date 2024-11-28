@@ -1,6 +1,5 @@
 import requests
-from ws_config import (
-    WsConfig,
+from my_models.api_models import (
     LoginRequest,
     LoginResponse,
     CreateResponse,
@@ -34,6 +33,7 @@ from my_services.game_state_manager import GameStateController, GameState
 
 
 FETCH_MESSAGES_COUNT: Final[int] = 9999  # 多要一点得了。
+API_ENDPOINTS_CONFIG_URL: Final[str] = f"http://127.0.0.1:8000/api_endpoints/"
 
 
 class SimuWebAPP:
@@ -72,7 +72,7 @@ def _api_endpoints(
 
     time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     response = requests.post(
-        f"""http://{WsConfig.LOCALHOST}:{WsConfig.DEFAULT_PORT}/api_endpoints/""",
+        API_ENDPOINTS_CONFIG_URL,
         json=APIEndpointsConfigRequest(content=f"time = {time}").model_dump(),
     )
 
@@ -342,9 +342,6 @@ def _web_player_input(
         usr_input = input(
             f"[{client_context._user_name}|{client_context._actor_name}]:"
         )
-        # if usr_input == "":
-        #     logger.warning("输入不能为空")
-        #     continue
 
         if usr_input == "/quit":
             _requesting_exit(client_context, state_manager)

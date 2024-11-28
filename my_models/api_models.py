@@ -1,8 +1,7 @@
-from dataclasses import dataclass
 from pydantic import BaseModel, Field
-from typing import List, Optional, Final
+from typing import List, Optional
 from my_models.entity_models import GameModel
-from my_models.config_models import APIEndpointsConfigModel, AllGamesConfigModel
+from my_models.config_models import APIEndpointsConfigModel, GlobalConfigModel
 from my_models.player_models import (
     SurveyStageModel,
     StatusInventoryCheckModel,
@@ -10,12 +9,6 @@ from my_models.player_models import (
     RetrieveStageArchivesActionModel,
     PlayerClientMessage,
 )
-
-
-@dataclass
-class WsConfig:
-    LOCALHOST: Final[str] = "127.0.0.1"
-    DEFAULT_PORT: Final[int] = 8080
 
 
 ###############################################################################################################################################
@@ -39,7 +32,7 @@ class LoginRequest(BaseModel):
 
 class LoginResponse(BaseModel):
     user_name: str = ""
-    game_config: AllGamesConfigModel = Field(default_factory=AllGamesConfigModel)
+    global_config: GlobalConfigModel = Field(default_factory=GlobalConfigModel)
     error: int = 0
     message: str = ""
 

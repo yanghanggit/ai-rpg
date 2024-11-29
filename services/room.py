@@ -1,7 +1,7 @@
 from typing import Optional
-from rpg_game.web_game import WebGame
+from game.web_game import WebGame
 from player.player_proxy import PlayerProxy
-from my_services.game_state_manager import GameStateController, GameState
+from services.game_state_manager import GameStateController, GameState
 
 
 class Room:

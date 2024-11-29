@@ -1,8 +1,8 @@
 from typing import List, List
 from pydantic import BaseModel
 from enum import StrEnum, unique
-from my_models.event_models import BaseEvent
-from my_models.file_models import ActorArchiveFileModel, StageArchiveFileModel
+from models.event_models import BaseEvent
+from models.file_models import ActorArchiveFileModel, StageArchiveFileModel
 
 
 @unique

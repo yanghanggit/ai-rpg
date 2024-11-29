@@ -1,6 +1,6 @@
 from entitas import ExecuteProcessor, Matcher, Entity, InitializeProcessor  # type: ignore
-from rpg_game.rpg_entitas_context import RPGEntitasContext
-from my_components.components import (
+from game.rpg_entitas_context import RPGEntitasContext
+from components.components import (
     ActorComponent,
     StageComponent,
     KickOffContentComponent,
@@ -8,11 +8,11 @@ from my_components.components import (
 )
 from typing import Set, final, override, Dict
 import gameplay_systems.file_system_utils
-from rpg_game.rpg_game import RPGGame
+from game.rpg_game import RPGGame
 from extended_systems.archive_file import ActorArchiveFile, StageArchiveFile
 import gameplay_systems.file_system_utils
 import gameplay_systems.stage_entity_utils
-from my_models.event_models import UpdateArchiveEvent
+from models.event_models import UpdateArchiveEvent
 
 
 @final

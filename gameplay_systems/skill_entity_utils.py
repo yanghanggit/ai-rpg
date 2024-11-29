@@ -1,10 +1,10 @@
 from entitas import Entity  # type: ignore
-from rpg_game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_entitas_context import RPGEntitasContext
 from typing import List
 from loguru import logger
 from extended_systems.prop_file import PropFile
-import my_format_string.complex_prop_name
-from my_components.components import ActorComponent, SkillComponent, DestroyComponent
+import format_string.complex_prop_name
+from components.components import ActorComponent, SkillComponent, DestroyComponent
 
 
 ################################################################################################################################################
@@ -25,14 +25,16 @@ def parse_skill_accessory_prop_files(
 
     #
     ret: List[tuple[PropFile, int]] = []
-    for format_string in skill_comp.skill_accessory_props:
+    for complex_prop_name in skill_comp.skill_accessory_props:
 
-        if not my_format_string.complex_prop_name.is_complex_prop_name(format_string):
-            logger.error(f"Invalid prop name and count format: {format_string}")
+        if not format_string.complex_prop_name.is_complex_prop_name(complex_prop_name):
+            logger.error(f"Invalid prop name and count format: {complex_prop_name}")
             continue
 
         prop_name, consume_count = (
-            my_format_string.complex_prop_name._parse_prop_name_and_count(format_string)
+            format_string.complex_prop_name._parse_prop_name_and_count(
+                complex_prop_name
+            )
         )
 
         prop_file = context.file_system.get_file(PropFile, actor_comp.name, prop_name)

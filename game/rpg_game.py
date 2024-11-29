@@ -2,7 +2,7 @@ from entitas import Matcher, Entity  # type: ignore
 from typing import List, Optional, Set
 from overrides import override
 from loguru import logger
-from my_components.components import (
+from components.components import (
     WorldComponent,
     StageComponent,
     ActorComponent,
@@ -21,13 +21,13 @@ from my_components.components import (
     StageEnvironmentComponent,
     StageStaticFlagComponent,
 )
-from rpg_game.rpg_entitas_context import RPGEntitasContext
-from rpg_game.rpg_game_resource import RPGGameResource
+from game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_game_resource import RPGGameResource
 from extended_systems.prop_file import PropFile
-from rpg_game.base_game import BaseGame
+from game.base_game import BaseGame
 import gameplay_systems.file_system_utils
-from rpg_game.rpg_entitas_processors import RPGEntitasProcessors
-from my_models.entity_models import (
+from game.rpg_entitas_processors import RPGEntitasProcessors
+from models.entity_models import (
     ActorInstanceModel,
     StageInstanceModel,
     ActorModel,
@@ -35,12 +35,12 @@ from my_models.entity_models import (
     WorldSystemModel,
     WorldSystemInstanceModel,
 )
-from my_models.event_models import BaseEvent
-from my_models.file_models import PropFileModel
-from my_models.entity_models import Attributes
+from models.event_models import BaseEvent
+from models.file_models import PropFileModel
+from models.entity_models import Attributes
 from player.player_proxy import PlayerProxy
 import gameplay_systems.prompt_utils as prompt_utils
-from my_format_string.complex_actor_name import ComplexActorName
+from format_string.complex_actor_name import ComplexActorName
 
 
 class RPGGame(BaseGame):

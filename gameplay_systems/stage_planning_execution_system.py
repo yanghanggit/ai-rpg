@@ -1,27 +1,27 @@
 from entitas import Matcher, ExecuteProcessor  # type: ignore
 from overrides import override
-from my_components.components import (
+from components.components import (
     StageComponent,
     PlanningFlagComponent,
     AgentPingFlagComponent,
     KickOffFlagComponent,
     StageStaticFlagComponent,
 )
-from my_components.action_components import (
+from components.action_components import (
     StageNarrateAction,
     StageTagAction,
     TagAction,
 )
-from my_agent.agent_plan import AgentPlanResponse
-from rpg_game.rpg_entitas_context import RPGEntitasContext
+from agent.agent_plan import AgentPlanResponse
+from game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from typing import Dict, List, final
 import gameplay_systems.action_component_utils
 import gameplay_systems.prompt_utils
-from my_agent.agent_task import (
+from agent.agent_task import (
     AgentTask,
 )
-from rpg_game.rpg_game import RPGGame
+from game.rpg_game import RPGGame
 import gameplay_systems.stage_entity_utils
 
 

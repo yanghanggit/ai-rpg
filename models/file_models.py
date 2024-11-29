@@ -1,7 +1,7 @@
 from typing import List, Dict, List, Any
 from pydantic import BaseModel
 from enum import StrEnum, unique
-from my_models.entity_models import PropInstanceModel, PropModel
+from models.entity_models import PropInstanceModel, PropModel
 
 
 @unique

@@ -4,7 +4,7 @@ from langchain_core.messages import HumanMessage, AIMessage
 import asyncio
 
 # import time
-from my_agent.lang_serve_agent import LangServeAgent
+from agent.lang_serve_agent import LangServeAgent
 from enum import Flag, auto
 
 

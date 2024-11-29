@@ -1,18 +1,18 @@
 from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity  # type: ignore
-from rpg_game.rpg_entitas_context import RPGEntitasContext
-from my_components.action_components import (
+from game.rpg_entitas_context import RPGEntitasContext
+from components.action_components import (
     TransferPropAction,
     DeadAction,
 )
-from my_components.components import ActorComponent
+from components.components import ActorComponent
 import gameplay_systems.action_component_utils
 from typing import final, override
 import gameplay_systems.file_system_utils
 from extended_systems.prop_file import PropFile
-import my_format_string.target_message
-from rpg_game.rpg_game import RPGGame
-from my_models.event_models import AgentEvent
-import my_format_string.complex_prop_name
+import format_string.target_message
+from game.rpg_game import RPGGame
+from models.event_models import AgentEvent
+import format_string.complex_prop_name
 from extended_systems.prop_file import generate_prop_type_prompt
 
 
@@ -48,10 +48,8 @@ class TransferPropActionSystem(ReactiveProcessor):
     def _process_transfer_prop_action(self, entity: Entity) -> None:
 
         transfer_prop_action = entity.get(TransferPropAction)
-        target_and_message = (
-            my_format_string.target_message.extract_target_message_pairs(
-                values=transfer_prop_action.values, symbol1="@", symbol2="/"
-            )
+        target_and_message = format_string.target_message.extract_target_message_pairs(
+            values=transfer_prop_action.values, symbol1="@", symbol2="/"
         )
 
         for target_name, complex_prop_name in target_and_message:
@@ -72,7 +70,7 @@ class TransferPropActionSystem(ReactiveProcessor):
 
             ## 分析数据
             parsed_prop_name, parsed_transfer_count = (
-                my_format_string.complex_prop_name.parse_complex_prop_name(
+                format_string.complex_prop_name.parse_complex_prop_name(
                     complex_prop_name
                 )
             )

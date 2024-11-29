@@ -1,16 +1,16 @@
 from dataclasses import dataclass
 from entitas import Matcher, ExecuteProcessor, Entity  # type: ignore
-from my_components.action_components import (
+from components.action_components import (
     TagAction,
     MindVoiceAction,
     AnnounceAction,
 )
-from my_components.components import (
+from components.components import (
     WeaponDirectAttackSkill,
     SkillComponent,
     DestroyComponent,
 )
-from rpg_game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_entitas_context import RPGEntitasContext
 from typing import final, override, List, Dict, Set
 from loguru import logger
 from extended_systems.prop_file import (
@@ -19,13 +19,13 @@ from extended_systems.prop_file import (
     generate_skill_accessory_prop_file_prompt,
 )
 import gameplay_systems.prompt_utils
-from my_agent.agent_task import AgentTask
-from my_agent.agent_plan import AgentPlanResponse
-from rpg_game.rpg_game import RPGGame
+from agent.agent_task import AgentTask
+from agent.agent_plan import AgentPlanResponse
+from game.rpg_game import RPGGame
 import gameplay_systems.skill_entity_utils
-from my_agent.lang_serve_agent import LangServeAgent
-from my_models.entity_models import Attributes
-from my_models.file_models import PropSkillUsageMode
+from agent.lang_serve_agent import LangServeAgent
+from models.entity_models import Attributes
+from models.file_models import PropSkillUsageMode
 
 
 ################################################################################################################################################

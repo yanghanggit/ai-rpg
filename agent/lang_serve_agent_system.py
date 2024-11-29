@@ -2,9 +2,9 @@ from loguru import logger
 from typing import Dict, List, Optional, Set, cast, final
 from langchain_core.messages import HumanMessage, AIMessage
 from pathlib import Path
-from my_agent.lang_serve_agent import LangServeAgent
-from my_agent.remote_runnable_connector import RemoteRunnableConnector
-from my_models.agent_models import (
+from agent.lang_serve_agent import LangServeAgent
+from agent.remote_runnable_connector import RemoteRunnableConnector
+from models.agent_models import (
     AgentMessageType,
     AgentMessageModel,
     AgentChatHistoryDumpModel,

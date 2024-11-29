@@ -53,9 +53,9 @@ from ws_config import (
 )
 
 from fastapi.middleware.cors import CORSMiddleware
-from my_services.api_endpoints_services import api_endpoints_router
-from my_services.game_process_services import game_process_api_router
-from my_services.game_play_services import game_play_api_router
+from services.api_endpoints_services import api_endpoints_router
+from services.game_process_services import game_process_api_router
+from services.game_play_services import game_play_api_router
 
 fastapi_app = FastAPI()
 fastapi_app.add_middleware(

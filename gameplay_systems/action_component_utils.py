@@ -1,14 +1,14 @@
 from entitas import Entity, Matcher  # type: ignore
 from loguru import logger
 from typing import Any, FrozenSet, Optional
-from my_agent.agent_plan import AgentPlanResponse, AgentAction
-from rpg_game.rpg_entitas_context import RPGEntitasContext
+from agent.agent_plan import AgentPlanResponse, AgentAction
+from game.rpg_entitas_context import RPGEntitasContext
 from enum import Enum
-from my_components.action_components import (
+from components.action_components import (
     ACTOR_AVAILABLE_ACTIONS_REGISTER,
     STAGE_AVAILABLE_ACTIONS_REGISTER,
 )
-from my_components.components import ActorComponent, StageComponent
+from components.components import ActorComponent, StageComponent
 
 
 class ConversationError(Enum):

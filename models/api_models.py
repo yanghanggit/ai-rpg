@@ -1,8 +1,8 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional
-from my_models.entity_models import GameModel
-from my_models.config_models import APIEndpointsConfigModel, GlobalConfigModel
-from my_models.player_models import (
+from models.entity_models import GameModel
+from models.config_models import APIEndpointsConfigModel, GlobalConfigModel
+from models.player_models import (
     SurveyStageModel,
     StatusInventoryCheckModel,
     RetrieveActorArchivesModel,

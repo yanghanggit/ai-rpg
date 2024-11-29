@@ -2,10 +2,10 @@ from loguru import logger
 import os
 from typing import Set, List
 import json
-from my_models.config_models import GameAgentsConfigModel
-import rpg_game.rpg_game_config as rpg_game_config
+from models.config_models import GameAgentsConfigModel
+import game.rpg_game_config as rpg_game_config
 from pathlib import Path
-from my_models.config_models import GlobalConfigModel
+from models.config_models import GlobalConfigModel
 
 
 ####################################################################################################################################

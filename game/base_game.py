@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Set
-from my_models.event_models import BaseEvent
+from models.event_models import BaseEvent
 
 
 # 基础类，定义基本行为，其实是为了桥一下并做隔离

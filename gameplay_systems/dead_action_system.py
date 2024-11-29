@@ -1,18 +1,18 @@
 from entitas import Matcher, ExecuteProcessor  # type: ignore
 from typing import final, override, Any
-from my_components.components import (
+from components.components import (
     PlayerComponent,
     DestroyComponent,
     ActorComponent,
     AttributesComponent,
     ActorComponent,
 )
-from my_components.action_components import (
+from components.action_components import (
     DeadAction,
     ACTOR_INTERACTIVE_ACTIONS_REGISTER,
 )
-from rpg_game.rpg_entitas_context import RPGEntitasContext
-from rpg_game.rpg_game import RPGGame
+from game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_game import RPGGame
 from typing import FrozenSet, Any
 from loguru import logger
 

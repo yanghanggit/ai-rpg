@@ -1,6 +1,6 @@
 from entitas import Entity  # type: ignore
-from rpg_game.rpg_entitas_context import RPGEntitasContext
-from my_components.components import (
+from game.rpg_entitas_context import RPGEntitasContext
+from components.components import (
     AttributesComponent,
     ClothesComponent,
     WeaponComponent,
@@ -10,7 +10,7 @@ from my_components.components import (
 from typing import List, Dict, Optional
 from extended_systems.prop_file import PropFile
 import gameplay_systems.file_system_utils
-from my_models.file_models import PropType
+from models.file_models import PropType
 
 
 # 简单方便的一次性获取需要的信息。这个类是一个工具类。

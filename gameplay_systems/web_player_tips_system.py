@@ -1,24 +1,24 @@
 from entitas import Entity, ExecuteProcessor  # type: ignore
 from typing import final, override, List
-from rpg_game.rpg_entitas_context import RPGEntitasContext
-from rpg_game.rpg_game import RPGGame
-from my_components.components import (
+from game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_game import RPGGame
+from components.components import (
     PlayerComponent,
     ActorComponent,
 )
 from player.player_proxy import PlayerProxy
-from my_models.event_models import AgentEvent
-from rpg_game.web_game import WebGame
+from models.event_models import AgentEvent
+from game.web_game import WebGame
 from loguru import logger
 from extended_systems.archive_file import StageArchiveFile
-from my_components.components import (
+from components.components import (
     PlayerComponent,
     ActorComponent,
     StageGraphComponent,
     GUIDComponent,
 )
 
-# from my_format_string.complex_stage_name import ComplexStageName
+# from format_string.complex_stage_name import ComplexStageName
 
 
 @final

@@ -6,7 +6,7 @@ sys.path.append(str(root_dir))
 from pathlib import Path
 import game_sample.utils
 import game_sample.configuration as configuration
-from my_components.action_components import (
+from components.action_components import (
     SpeakAction,
     GoToAction,
     TagAction,

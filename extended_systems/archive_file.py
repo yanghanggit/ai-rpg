@@ -1,6 +1,6 @@
 from typing import final, List
 from overrides import override
-from my_models.file_models import (
+from models.file_models import (
     StageArchiveFileModel,
     ActorArchiveFileModel,
 )

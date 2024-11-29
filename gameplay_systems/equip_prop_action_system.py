@@ -1,11 +1,11 @@
 from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity  # type: ignore
-from rpg_game.rpg_entitas_context import RPGEntitasContext
-from my_components.action_components import (
+from game.rpg_entitas_context import RPGEntitasContext
+from components.action_components import (
     EquipPropAction,
     DeadAction,
     UpdateAppearanceAction,
 )
-from my_components.components import (
+from components.components import (
     ActorComponent,
     WeaponComponent,
     ClothesComponent,
@@ -13,8 +13,8 @@ from my_components.components import (
 from loguru import logger
 from typing import final, override, Optional
 from extended_systems.prop_file import PropFile
-from rpg_game.rpg_game import RPGGame
-from my_models.event_models import AgentEvent
+from game.rpg_game import RPGGame
+from models.event_models import AgentEvent
 
 
 ################################################################################################################################################

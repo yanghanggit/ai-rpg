@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from rpg_game.rpg_game_resource import RPGGameResource
+from game.rpg_game_resource import RPGGameResource
 from typing import Any, Optional
 
 

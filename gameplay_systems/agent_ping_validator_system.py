@@ -1,14 +1,14 @@
 import asyncio
 from entitas import Matcher, Entity, ExecuteProcessor  # type: ignore
 from typing import Any, Coroutine, Set, final, override, List
-from my_components.components import (
+from components.components import (
     WorldComponent,
     StageComponent,
     ActorComponent,
     AgentPingFlagComponent,
 )
-from rpg_game.rpg_entitas_context import RPGEntitasContext
-from rpg_game.rpg_game import RPGGame
+from game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_game import RPGGame
 
 # from loguru import logger
 

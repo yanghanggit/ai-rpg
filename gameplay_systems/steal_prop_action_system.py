@@ -1,20 +1,20 @@
 from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity  # type: ignore
-from rpg_game.rpg_entitas_context import RPGEntitasContext
-from my_components.action_components import (
+from game.rpg_entitas_context import RPGEntitasContext
+from components.action_components import (
     StealPropAction,
     DeadAction,
     InspectAction,
 )
-from my_components.components import (
+from components.components import (
     ActorComponent,
 )
 import gameplay_systems.action_component_utils
 from typing import final, override
 import gameplay_systems.file_system_utils
 from extended_systems.prop_file import PropFile
-import my_format_string.target_message
-from rpg_game.rpg_game import RPGGame
-from my_models.event_models import AgentEvent
+import format_string.target_message
+from game.rpg_game import RPGGame
+from models.event_models import AgentEvent
 
 
 @final
@@ -49,10 +49,8 @@ class StealPropActionSystem(ReactiveProcessor):
     def _process_steal_action(self, source_entity: Entity) -> None:
 
         steal_action: StealPropAction = source_entity.get(StealPropAction)
-        target_and_message = (
-            my_format_string.target_message.extract_target_message_pairs(
-                values=steal_action.values, symbol1="@", symbol2="/"
-            )
+        target_and_message = format_string.target_message.extract_target_message_pairs(
+            values=steal_action.values, symbol1="@", symbol2="/"
         )
 
         for target_entity_name, prop_file_name in target_and_message:

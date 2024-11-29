@@ -1,13 +1,13 @@
 from entitas import InitializeProcessor, ExecuteProcessor, Matcher, Entity  # type: ignore
 from overrides import override
-from rpg_game.rpg_entitas_context import RPGEntitasContext
-from my_components.components import (
+from game.rpg_entitas_context import RPGEntitasContext
+from components.components import (
     PlanningFlagComponent,
     StageComponent,
     ActorComponent,
     EnterStageFlagComponent,
 )
-from rpg_game.rpg_game import RPGGame
+from game.rpg_game import RPGGame
 from typing import List, Dict, Optional, final
 from queue import Queue
 

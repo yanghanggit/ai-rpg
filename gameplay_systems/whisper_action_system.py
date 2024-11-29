@@ -1,11 +1,11 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: ignore
-from my_components.action_components import WhisperAction
-from rpg_game.rpg_entitas_context import RPGEntitasContext
+from components.action_components import WhisperAction
+from game.rpg_entitas_context import RPGEntitasContext
 from typing import final, override
 import gameplay_systems.action_component_utils
-import my_format_string.target_message
-from rpg_game.rpg_game import RPGGame
-from my_models.event_models import WhisperEvent, AgentEvent
+import format_string.target_message
+from game.rpg_game import RPGGame
+from models.event_models import WhisperEvent, AgentEvent
 
 
 ################################################################################################################################################
@@ -56,10 +56,8 @@ class WhisperActionSystem(ReactiveProcessor):
     ####################################################################################################################################
     def _process_whisper_action(self, entity: Entity) -> None:
         whisper_action = entity.get(WhisperAction)
-        target_and_message = (
-            my_format_string.target_message.extract_target_message_pairs(
-                whisper_action.values
-            )
+        target_and_message = format_string.target_message.extract_target_message_pairs(
+            whisper_action.values
         )
 
         for target_name, message in target_and_message:

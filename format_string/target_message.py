@@ -27,7 +27,7 @@ def _extract_target_message(
 
         return target, message
     except Exception as e:
-        pass  # 如果有任何异常，返回原始内容和异常提示
+        pass  # 如果有任何异常，返回原始内容和异常提示, 以便调试
 
     return None, content
 

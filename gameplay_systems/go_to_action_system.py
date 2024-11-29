@@ -1,15 +1,15 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: ignore
-from my_components.action_components import GoToAction, DeadAction
-from my_components.components import (
+from components.action_components import GoToAction, DeadAction
+from components.components import (
     ActorComponent,
     EnterStageFlagComponent,
     StageGraphComponent,
     StageEnvironmentComponent,
 )
-from rpg_game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_entitas_context import RPGEntitasContext
 from typing import final, override, Optional, Dict, List
-from rpg_game.rpg_game import RPGGame
-from my_models.event_models import AgentEvent, PreStageExitEvent, PostStageEnterEvent
+from game.rpg_game import RPGGame
+from models.event_models import AgentEvent, PreStageExitEvent, PostStageEnterEvent
 import copy
 from loguru import logger
 

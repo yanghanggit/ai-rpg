@@ -1,7 +1,7 @@
 from typing import cast
-from my_services.room_manager import RoomManager
-from my_services.game_server import ServerConfig
-from my_services.game_server import GameServer
+from services.room_manager import RoomManager
+from services.game_server import ServerConfig
+from services.game_server import GameServer
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI
 
@@ -18,9 +18,9 @@ GameServer.Instance = GameServer(
 def main(game_server: GameServer) -> None:
     import argparse
     import uvicorn
-    from my_services.api_endpoints_services import api_endpoints_router
-    from my_services.game_process_services import game_process_api_router
-    from my_services.game_play_services import game_play_api_router
+    from services.api_endpoints_services import api_endpoints_router
+    from services.game_process_services import game_process_api_router
+    from services.game_play_services import game_play_api_router
 
     game_server.fast_api.add_middleware(
         CORSMiddleware,

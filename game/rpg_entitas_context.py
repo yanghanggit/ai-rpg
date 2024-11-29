@@ -1,6 +1,6 @@
 from entitas import Entity, Matcher, Context  # type: ignore
 from loguru import logger
-from my_components.components import (
+from components.components import (
     WorldComponent,
     StageComponent,
     ActorComponent,
@@ -11,13 +11,13 @@ from my_components.components import (
 )
 from extended_systems.file_system import FileSystem
 from extended_systems.query_component_system import QueryComponentSystem
-from my_agent.lang_serve_agent_system import LangServeAgentSystem
+from agent.lang_serve_agent_system import LangServeAgentSystem
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from typing import Optional, Dict, Set
 import gameplay_systems.prompt_utils as prompt_utils
-from my_models.event_models import AgentEvent
-from rpg_game.base_game import BaseGame
-from my_agent.lang_serve_agent import LangServeAgent
+from models.event_models import AgentEvent
+from game.base_game import BaseGame
+from agent.lang_serve_agent import LangServeAgent
 
 
 class RPGEntitasContext(Context):

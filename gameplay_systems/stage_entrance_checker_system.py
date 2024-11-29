@@ -1,29 +1,29 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: ignore
-from my_components.action_components import (
+from components.action_components import (
     GoToAction,
     TagAction,
     DeadAction,
     WhisperAction,
 )
-from my_components.components import (
+from components.components import (
     ActorComponent,
     StageComponent,
     KickOffContentComponent,
 )
-from rpg_game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_entitas_context import RPGEntitasContext
 import gameplay_systems.prompt_utils as prompt_utils
 from typing import final, override, List, Set, Any, Dict
 from gameplay_systems.actor_entity_utils import ActorStatusEvaluator
-from my_agent.agent_task import AgentTask
-from my_agent.agent_plan import AgentPlanResponse
+from agent.agent_task import AgentTask
+from agent.agent_plan import AgentPlanResponse
 from extended_systems.prop_file import (
     PropFile,
     generate_prop_file_for_stage_condition_prompt,
 )
-from rpg_game.rpg_game import RPGGame
-from my_models.event_models import AgentEvent
+from game.rpg_game import RPGGame
+from models.event_models import AgentEvent
 from loguru import logger
-from my_agent.lang_serve_agent import LangServeAgent
+from agent.lang_serve_agent import LangServeAgent
 
 
 ################################################################################################################################################

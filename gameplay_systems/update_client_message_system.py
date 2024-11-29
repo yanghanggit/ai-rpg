@@ -1,17 +1,17 @@
 from entitas import ExecuteProcessor, Entity, Matcher  # type: ignore
-from rpg_game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_entitas_context import RPGEntitasContext
 from player.player_proxy import PlayerProxy
-from rpg_game.rpg_entitas_context import RPGEntitasContext
-from my_components.action_components import (
+from game.rpg_entitas_context import RPGEntitasContext
+from components.action_components import (
     # StageNarrateAction,
     StageTagAction,
     GoToAction,
 )
 from typing import final, override
 from loguru import logger
-from rpg_game.rpg_game import RPGGame
-from my_models.event_models import AgentEvent, StageTagEvent
-from my_components.components import StageComponent
+from game.rpg_game import RPGGame
+from models.event_models import AgentEvent, StageTagEvent
+from components.components import StageComponent
 import gameplay_systems.stage_entity_utils
 
 

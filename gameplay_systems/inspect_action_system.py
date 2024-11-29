@@ -1,17 +1,17 @@
 from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity  # type: ignore
-from rpg_game.rpg_entitas_context import RPGEntitasContext
-from my_components.action_components import (
+from game.rpg_entitas_context import RPGEntitasContext
+from components.action_components import (
     InspectAction,
     DeadAction,
 )
-from my_components.components import (
+from components.components import (
     ActorComponent,
 )
 from typing import final, override
-from rpg_game.rpg_game import RPGGame
+from game.rpg_game import RPGGame
 import gameplay_systems.file_system_utils
-from rpg_game.rpg_game import RPGGame
-from my_models.event_models import AgentEvent
+from game.rpg_game import RPGGame
+from models.event_models import AgentEvent
 import gameplay_systems.action_component_utils
 from gameplay_systems.actor_entity_utils import ActorStatusEvaluator
 from extended_systems.prop_file import (

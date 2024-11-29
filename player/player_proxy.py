@@ -1,6 +1,6 @@
 from typing import List, Any
 from loguru import logger
-from my_models.event_models import (
+from models.event_models import (
     BaseEvent,
     # UpdateAppearanceEvent,
     # PreStageExitEvent,
@@ -8,7 +8,7 @@ from my_models.event_models import (
     # UpdateArchiveEvent,
     # PostStageEnterEvent,
 )
-from my_models.player_models import (
+from models.player_models import (
     PlayerClientMessage,
     PlayerClientMessageTag,
     PlayerProxyModel,

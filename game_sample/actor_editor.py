@@ -7,16 +7,16 @@ from typing import List, Dict, Any, Optional, cast
 from game_sample.prop_data import ExcelDataProp
 from game_sample.actor_data import ExcelDataActor
 from game_sample.guid_generator import editor_guid_generator
-from my_models.entity_models import (
+from models.entity_models import (
     ActorModel,
     Attributes,
     ActorInstanceModel,
     PropInstanceModel,
 )
-from my_models.editor_models import EditorEntityType, EditorProperty
-import my_format_string.ints_string
-import my_format_string.complex_prop_name
-from my_format_string.complex_actor_name import ComplexActorName
+from models.editor_models import EditorEntityType, EditorProperty
+import format_string.ints_string
+import format_string.complex_prop_name
+from format_string.complex_actor_name import ComplexActorName
 
 
 class ExcelEditorActor:
@@ -95,7 +95,7 @@ class ExcelEditorActor:
         assert self._data is not None
         data = cast(str, self._data[EditorProperty.ATTRIBUTES])
         assert "," in data, f"raw_string_val: {data} is not valid."
-        values = my_format_string.ints_string.convert_string_to_ints(data)
+        values = format_string.ints_string.convert_string_to_ints(data)
         if len(values) < Attributes.MAX:
             values.extend([0] * (Attributes.MAX - len(values)))
         return values
@@ -140,9 +140,7 @@ class ExcelEditorActor:
             if prop_info == "":
                 continue
 
-            parse = my_format_string.complex_prop_name.parse_complex_prop_name(
-                prop_info
-            )
+            parse = format_string.complex_prop_name.parse_complex_prop_name(prop_info)
             prop_name = parse[0]
             prop_count = parse[1]
 

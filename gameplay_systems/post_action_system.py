@@ -1,13 +1,13 @@
 from entitas import ExecuteProcessor, Matcher  # type: ignore
 from typing import final, override
-from rpg_game.rpg_entitas_context import RPGEntitasContext
-from my_components.action_components import (
+from game.rpg_entitas_context import RPGEntitasContext
+from components.action_components import (
     STAGE_AVAILABLE_ACTIONS_REGISTER,
     ACTOR_AVAILABLE_ACTIONS_REGISTER,
 )
 import gameplay_systems.action_component_utils
-from rpg_game.rpg_game import RPGGame
-from my_components.components import SkillComponent, DestroyComponent
+from game.rpg_game import RPGGame
+from components.components import SkillComponent, DestroyComponent
 from loguru import logger
 
 

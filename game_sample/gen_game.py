@@ -22,7 +22,7 @@ from game_sample.system_prompt_templates import (
     WORLD_SYSTEM_SYS_PROMPT_TEMPLATE,
 )
 import shutil
-import rpg_game.rpg_game_config as rpg_game_config
+import game.rpg_game_config as rpg_game_config
 import game_sample.utils
 
 

@@ -1,11 +1,11 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: ignore
-from my_components.action_components import SpeakAction
-from rpg_game.rpg_entitas_context import RPGEntitasContext
+from components.action_components import SpeakAction
+from game.rpg_entitas_context import RPGEntitasContext
 import gameplay_systems.action_component_utils
 from typing import final, override
-import my_format_string.target_message
-from rpg_game.rpg_game import RPGGame
-from my_models.event_models import SpeakEvent, AgentEvent
+import format_string.target_message
+from game.rpg_game import RPGGame
+from models.event_models import SpeakEvent, AgentEvent
 
 
 ####################################################################################################################################
@@ -54,10 +54,8 @@ class SpeakActionSystem(ReactiveProcessor):
     def _process_speak_action(self, entity: Entity) -> None:
 
         speak_action = entity.get(SpeakAction)
-        target_and_message = (
-            my_format_string.target_message.extract_target_message_pairs(
-                speak_action.values
-            )
+        target_and_message = format_string.target_message.extract_target_message_pairs(
+            speak_action.values
         )
 
         for target_name, message in target_and_message:

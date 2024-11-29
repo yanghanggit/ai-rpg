@@ -1,6 +1,6 @@
 from typing import Optional, Dict
-from my_models.config_models import GlobalConfigModel
-from my_services.room import Room
+from models.config_models import GlobalConfigModel
+from services.room import Room
 
 
 class RoomManager:

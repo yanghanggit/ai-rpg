@@ -1,6 +1,6 @@
-from rpg_game.base_game import BaseGame
+from game.base_game import BaseGame
 from loguru import logger
-from my_components.action_components import (
+from components.action_components import (
     AnnounceAction,
     SpeakAction,
     GoToAction,
@@ -13,7 +13,7 @@ from my_components.action_components import (
 )
 
 from overrides import override
-from my_components.components import ActorComponent
+from components.components import ActorComponent
 from player.player_proxy import PlayerProxy
 from typing import cast
 from player.base_command import PlayerCommand
@@ -30,7 +30,7 @@ class PlayerGoTo(PlayerCommand):
 
     @override
     def execute(self, game: BaseGame, player_proxy: PlayerProxy) -> None:
-        from rpg_game.rpg_game import RPGGame
+        from game.rpg_game import RPGGame
 
         rpg_game = cast(RPGGame, game)
         player_entity = rpg_game.context.get_player_entity(player_proxy.name)
@@ -58,7 +58,7 @@ class PlayerAnnounce(PlayerCommand):
 
     @override
     def execute(self, game: BaseGame, player_proxy: PlayerProxy) -> None:
-        from rpg_game.rpg_game import RPGGame
+        from game.rpg_game import RPGGame
 
         rpg_game = cast(RPGGame, game)
         player_entity = rpg_game.context.get_player_entity(player_proxy.name)
@@ -92,7 +92,7 @@ class PlayerSpeak(PlayerCommand):
 
     @override
     def execute(self, game: BaseGame, player_proxy: PlayerProxy) -> None:
-        from rpg_game.rpg_game import RPGGame
+        from game.rpg_game import RPGGame
 
         rpg_game = cast(RPGGame, game)
         player_entity = rpg_game.context.get_player_entity(player_proxy.name)
@@ -120,7 +120,7 @@ class PlayerWhisper(PlayerCommand):
 
     @override
     def execute(self, game: BaseGame, player_proxy: PlayerProxy) -> None:
-        from rpg_game.rpg_game import RPGGame
+        from game.rpg_game import RPGGame
 
         rpg_game = cast(RPGGame, game)
         player_entity = rpg_game.context.get_player_entity(player_proxy.name)
@@ -154,7 +154,7 @@ class PlayerStealProp(PlayerCommand):
 
     @override
     def execute(self, game: BaseGame, player_proxy: PlayerProxy) -> None:
-        from rpg_game.rpg_game import RPGGame
+        from game.rpg_game import RPGGame
 
         rpg_game = cast(RPGGame, game)
         player_entity = rpg_game.context.get_player_entity(player_proxy.name)
@@ -188,7 +188,7 @@ class PlayerTransferProp(PlayerCommand):
 
     @override
     def execute(self, game: BaseGame, player_proxy: PlayerProxy) -> None:
-        from rpg_game.rpg_game import RPGGame
+        from game.rpg_game import RPGGame
 
         rpg_game = cast(RPGGame, game)
         player_entity = rpg_game.context.get_player_entity(player_proxy.name)
@@ -224,7 +224,7 @@ class PlayerSkill(PlayerCommand):
 
     @override
     def execute(self, game: BaseGame, player_proxy: PlayerProxy) -> None:
-        from rpg_game.rpg_game import RPGGame
+        from game.rpg_game import RPGGame
 
         rpg_game = cast(RPGGame, game)
         player_entity = rpg_game.context.get_player_entity(player_proxy.name)
@@ -258,7 +258,7 @@ class PlayerEquip(PlayerCommand):
 
     @override
     def execute(self, game: BaseGame, player_proxy: PlayerProxy) -> None:
-        from rpg_game.rpg_game import RPGGame
+        from game.rpg_game import RPGGame
 
         rpg_game = cast(RPGGame, game)
         player_entity = rpg_game.context.get_player_entity(player_proxy.name)
@@ -290,7 +290,7 @@ class PlayerKill(PlayerCommand):
 
     @override
     def execute(self, game: BaseGame, player_proxy: PlayerProxy) -> None:
-        from rpg_game.rpg_game import RPGGame
+        from game.rpg_game import RPGGame
 
         rpg_game = cast(RPGGame, game)
         player_entity = rpg_game.context.get_player_entity(player_proxy.name)

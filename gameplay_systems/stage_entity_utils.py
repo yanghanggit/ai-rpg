@@ -1,13 +1,13 @@
 from entitas import Entity  # type: ignore
-from my_components.components import (
+from components.components import (
     StageComponent,
     StageEnvironmentComponent,
 )
-from my_components.action_components import (
+from components.action_components import (
     StageNarrateAction,
 )
-from my_agent.agent_plan import AgentPlanResponse
-from rpg_game.rpg_entitas_context import RPGEntitasContext
+from agent.agent_plan import AgentPlanResponse
+from game.rpg_entitas_context import RPGEntitasContext
 
 
 ######################################################################################################################################################

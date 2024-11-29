@@ -1,5 +1,5 @@
 from entitas import Entity  # type: ignore
-from rpg_game.base_game import BaseGame
+from game.base_game import BaseGame
 from player.player_proxy import PlayerProxy
 from abc import ABC, abstractmethod
 from typing import cast, List, Dict
@@ -19,7 +19,7 @@ class PlayerCommand(ABC):
     def add_ai_message_as_planning(
         self, entity: Entity, human_message_content: str, game: BaseGame
     ) -> None:
-        from rpg_game.rpg_game import RPGGame
+        from game.rpg_game import RPGGame
 
         rpg_game = cast(RPGGame, game)
         rpg_game.context.safe_add_ai_message(entity, human_message_content)

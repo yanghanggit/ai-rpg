@@ -1,22 +1,22 @@
 from dataclasses import dataclass
 from entitas import Matcher, ExecuteProcessor, Entity  # type: ignore
-from my_components.action_components import (
+from components.action_components import (
     DamageAction,
     HealAction,
 )
-from my_components.components import (
+from components.components import (
     AttributesComponent,
     DestroyComponent,
     SkillComponent,
 )
-from rpg_game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_entitas_context import RPGEntitasContext
 from typing import final, override, List, Optional, Set
 import gameplay_systems.prompt_utils
-import my_format_string.target_message
-import my_format_string.ints_string
-from rpg_game.rpg_game import RPGGame
-from my_models.entity_models import Attributes
-from my_models.event_models import AgentEvent
+import format_string.target_message
+import format_string.ints_string
+from game.rpg_game import RPGGame
+from models.entity_models import Attributes
+from models.event_models import AgentEvent
 import gameplay_systems.skill_entity_utils
 import gameplay_systems.action_component_utils
 
@@ -272,9 +272,9 @@ class SkillHitImpactSystem(ExecuteProcessor):
 
         #
         formatted_heal_message = (
-            my_format_string.target_message.generate_target_message_pair(
+            format_string.target_message.generate_target_message_pair(
                 self._context.safe_get_entity_name(source_entity),
-                my_format_string.ints_string.convert_ints_to_string(
+                format_string.ints_string.convert_ints_to_string(
                     total_skill_attributes
                 ),
             )
@@ -309,9 +309,9 @@ class SkillHitImpactSystem(ExecuteProcessor):
 
         #
         formatted_damage_message = (
-            my_format_string.target_message.generate_target_message_pair(
+            format_string.target_message.generate_target_message_pair(
                 self._context.safe_get_entity_name(source_entity),
-                my_format_string.ints_string.convert_ints_to_string(
+                format_string.ints_string.convert_ints_to_string(
                     total_skill_attributes
                 ),
             )

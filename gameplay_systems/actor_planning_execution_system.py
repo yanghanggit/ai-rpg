@@ -1,6 +1,6 @@
 from entitas import Entity, Matcher, ExecuteProcessor  # type: ignore
 from overrides import override
-from my_components.components import (
+from components.components import (
     ActorComponent,
     PlanningFlagComponent,
     StageGraphComponent,
@@ -8,26 +8,26 @@ from my_components.components import (
     AgentPingFlagComponent,
     KickOffFlagComponent,
 )
-from my_components.action_components import (
+from components.action_components import (
     GoToAction,
     TagAction,
 )
-from my_agent.agent_plan import AgentPlanResponse
-from rpg_game.rpg_entitas_context import RPGEntitasContext
+from agent.agent_plan import AgentPlanResponse
+from game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from typing import Dict, Set, List, Optional, final
 import gameplay_systems.action_component_utils
 import gameplay_systems.prompt_utils
-from my_agent.agent_task import (
+from agent.agent_task import (
     AgentTask,
 )
-from rpg_game.rpg_game import RPGGame
+from game.rpg_game import RPGGame
 from gameplay_systems.actor_entity_utils import ActorStatusEvaluator
 from extended_systems.prop_file import (
     PropFile,
     generate_prop_file_total_prompt,
 )
-from my_models.file_models import PropType
+from models.file_models import PropType
 import gameplay_systems.stage_entity_utils
 
 

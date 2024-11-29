@@ -1,4 +1,4 @@
-from my_models.editor_models import GUIDType
+from models.editor_models import GUIDType
 
 
 class GUIDGenerator:

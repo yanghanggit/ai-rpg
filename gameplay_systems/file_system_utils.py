@@ -2,14 +2,14 @@ from typing import Set, Optional, List, Dict
 from extended_systems.archive_file import ActorArchiveFile, StageArchiveFile
 from extended_systems.prop_file import PropFile
 from extended_systems.file_system import FileSystem
-from my_models.file_models import (
+from models.file_models import (
     EntityProfileModel,
     PropFileModel,
     ActorArchiveFileModel,
     StageArchiveFileModel,
 )
 from extended_systems.dump_file import EntityProfileFile
-from my_models.entity_models import PropInstanceModel
+from models.entity_models import PropInstanceModel
 from loguru import logger
 
 

@@ -1,5 +1,5 @@
 from typing import Any, List, Optional, Dict
-from my_models.entity_models import (
+from models.entity_models import (
     ActorInstanceModel,
     StageInstanceModel,
     WorldSystemInstanceModel,
@@ -14,14 +14,14 @@ from my_models.entity_models import (
 from pathlib import Path
 import json
 from loguru import logger
-from my_models.file_models import (
+from models.file_models import (
     EntityProfileModel,
     ActorArchiveFileModel,
     StageArchiveFileModel,
 )
-from my_models.player_models import PlayerProxyModel
-from my_models.agent_models import AgentChatHistoryDumpModel
-from my_format_string.complex_actor_name import ComplexActorName
+from models.player_models import PlayerProxyModel
+from models.agent_models import AgentChatHistoryDumpModel
+from format_string.complex_actor_name import ComplexActorName
 
 
 class ActorInstanceName:

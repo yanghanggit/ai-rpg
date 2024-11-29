@@ -5,7 +5,7 @@ from pathlib import Path
 root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
-from rpg_game.rpg_game_resource import RPGGameResource
+from game.rpg_game_resource import RPGGameResource
 from typing import Any, Optional
 
 

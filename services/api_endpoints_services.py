@@ -1,13 +1,13 @@
 from fastapi import APIRouter
 from loguru import logger
-from my_models.api_models import (
+from models.api_models import (
     APIEndpointsConfigRequest,
     APIEndpointsConfigResponse,
 )
-from my_models.config_models import (
+from models.config_models import (
     APIEndpointsConfigModel,
 )
-from my_services.game_server import GameServer
+from services.game_server import GameServer
 
 
 api_endpoints_router = APIRouter()

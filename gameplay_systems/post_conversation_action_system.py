@@ -1,14 +1,14 @@
 from typing import final
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: ignore
 from overrides import override
-from my_components.action_components import (
+from components.action_components import (
     SpeakAction,
     AnnounceAction,
     WhisperAction,
 )
-from my_components.components import PlayerComponent, ActorComponent
-from rpg_game.rpg_entitas_context import RPGEntitasContext
-from rpg_game.rpg_game import RPGGame
+from components.components import PlayerComponent, ActorComponent
+from game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_game import RPGGame
 
 
 #################################################################################################################################################

@@ -1,7 +1,7 @@
 from entitas import ExecuteProcessor, Matcher, Entity  # type: ignore
-from rpg_game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
-from my_components.components import (
+from components.components import (
     StageComponent,
     ActorComponent,
     PlayerComponent,
@@ -12,8 +12,8 @@ from my_components.components import (
     StageSpawnerComponent,
 )
 from typing import final, override, List
-from rpg_game.rpg_game import RPGGame
-from my_models.entity_models import (
+from game.rpg_game import RPGGame
+from models.entity_models import (
     GameModel,
     ActorInstanceModel,
     PropInstanceModel,
@@ -22,7 +22,7 @@ from my_models.entity_models import (
 )
 from extended_systems.prop_file import PropFile
 from pathlib import Path
-from rpg_game.rpg_game_resource import RPGGameResource
+from game.rpg_game_resource import RPGGameResource
 
 
 @final

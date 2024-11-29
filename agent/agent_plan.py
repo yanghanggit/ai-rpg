@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Final, List, Dict, Any, Optional, cast
 import json
 from loguru import logger
-from my_format_string.json_plan_response_handler import (
+from format_string.json_plan_response_handler import (
     JsonPlanResponseHandler,
 )
 

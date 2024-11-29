@@ -6,12 +6,12 @@ sys.path.append(str(root_dir))
 from typing import List, Dict, Any, cast, Set
 from game_sample.prop_data import ExcelDataProp
 from game_sample.actor_data import ExcelDataActor
-from my_models.entity_models import (
+from models.entity_models import (
     SpawnerModel,
 )
-from my_models.editor_models import EditorProperty
+from models.editor_models import EditorProperty
 from loguru import logger
-from my_format_string.complex_actor_name import ComplexActorName
+from format_string.complex_actor_name import ComplexActorName
 from game_sample.actor_editor import ExcelEditorActor
 
 

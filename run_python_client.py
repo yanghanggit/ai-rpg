@@ -1,5 +1,5 @@
 import requests
-from my_models.api_models import (
+from models.api_models import (
     LoginRequest,
     LoginResponse,
     CreateResponse,
@@ -28,8 +28,8 @@ from my_models.api_models import (
 from loguru import logger
 from typing import Final, List
 import datetime
-from my_models.config_models import APIEndpointsConfigModel
-from my_services.game_state_manager import GameStateController, GameState
+from models.config_models import APIEndpointsConfigModel
+from services.game_state_manager import GameStateController, GameState
 
 
 FETCH_MESSAGES_COUNT: Final[int] = 9999  # 多要一点得了。

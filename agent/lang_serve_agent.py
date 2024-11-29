@@ -1,7 +1,7 @@
 from langserve import RemoteRunnable  # type: ignore
 from typing import List, Union, Optional, final
 from langchain_core.messages import HumanMessage, AIMessage
-from my_agent.remote_runnable_connector import RemoteRunnableConnector
+from agent.remote_runnable_connector import RemoteRunnableConnector
 
 
 @final

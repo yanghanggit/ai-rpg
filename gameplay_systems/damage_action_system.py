@@ -1,21 +1,21 @@
 from entitas import Matcher, ReactiveProcessor, GroupEvent, Entity  # type: ignore
-from my_components.action_components import DamageAction, DeadAction
-from my_components.components import (
+from components.action_components import DamageAction, DeadAction
+from components.components import (
     AttributesComponent,
     ClothesComponent,
     ActorComponent,
     StageComponent,
 )
-from rpg_game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_entitas_context import RPGEntitasContext
 from typing import final, override
 from extended_systems.prop_file import PropFile
-import my_format_string.target_message
-import my_format_string.ints_string
-from rpg_game.rpg_game import RPGGame
-from my_models.entity_models import Attributes
+import format_string.target_message
+import format_string.ints_string
+from game.rpg_game import RPGGame
+from models.entity_models import Attributes
 import gameplay_systems.file_system_utils
-from my_models.file_models import PropType
-from my_models.event_models import AgentEvent
+from models.file_models import PropType
+from models.event_models import AgentEvent
 from loguru import logger
 
 
@@ -95,10 +95,10 @@ class DamageActionSystem(ReactiveProcessor):
         for (
             source_entity_name,
             attribute_values_string,
-        ) in my_format_string.target_message.extract_target_message_pairs(
+        ) in format_string.target_message.extract_target_message_pairs(
             damage_action.values
         ):
-            attribute_values = my_format_string.ints_string.convert_string_to_ints(
+            attribute_values = format_string.ints_string.convert_string_to_ints(
                 attribute_values_string
             )
 

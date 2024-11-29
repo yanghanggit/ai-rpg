@@ -1,10 +1,10 @@
 from entitas import ExecuteProcessor  # type: ignore
 from typing import final, override
-from rpg_game.rpg_entitas_context import RPGEntitasContext
-from rpg_game.rpg_game import RPGGame
-from my_components.components import PlanningFlagComponent
+from game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_game import RPGGame
+from components.components import PlanningFlagComponent
 from loguru import logger
-from rpg_game.web_game import WebGame
+from game.web_game import WebGame
 
 
 ############################################################################################################

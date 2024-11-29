@@ -1,9 +1,9 @@
 from enum import unique, StrEnum
 from entitas import ExecuteProcessor, Matcher  # type: ignore
-from rpg_game.rpg_entitas_context import RPGEntitasContext
-from my_components.components import ActorComponent, StageComponent
+from game.rpg_entitas_context import RPGEntitasContext
+from components.components import ActorComponent, StageComponent
 from typing import final, override, Dict
-from rpg_game.rpg_game import RPGGame
+from game.rpg_game import RPGGame
 import gameplay_systems.prompt_utils as prompt_utils
 
 

@@ -2,7 +2,7 @@ from typing import final
 from overrides import override
 import json
 from loguru import logger
-from my_models.file_models import (
+from models.file_models import (
     EntityProfileModel,
 )
 from extended_systems.base_file import BaseFile

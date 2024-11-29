@@ -1,11 +1,11 @@
 from typing import final
 from overrides import override
-from my_models.entity_models import (
+from models.entity_models import (
     PropModel,
     PropInstanceModel,
 )
-from my_models.entity_models import Attributes
-from my_models.file_models import (
+from models.entity_models import Attributes
+from models.file_models import (
     PropType,
     PropFileModel,
     PropTypeName,

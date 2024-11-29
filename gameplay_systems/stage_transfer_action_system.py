@@ -1,23 +1,23 @@
 from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity  # type: ignore
-from rpg_game.rpg_entitas_context import RPGEntitasContext
-from my_components.action_components import (
+from game.rpg_entitas_context import RPGEntitasContext
+from components.action_components import (
     StageTransferAction,
 )
-from my_components.components import (
+from components.components import (
     StageComponent,
 )
 from typing import final, override
-from rpg_game.rpg_game import RPGGame
-import my_format_string.target_message
+from game.rpg_game import RPGGame
+import format_string.target_message
 import gameplay_systems.file_system_utils
 import gameplay_systems.action_component_utils
 from loguru import logger
-import my_format_string.complex_prop_name
+import format_string.complex_prop_name
 from extended_systems.prop_file import PropFile
-from my_models.file_models import PropFileModel
-from my_models.entity_models import PropInstanceModel
-from my_models.event_models import AgentEvent
-from my_models.editor_models import GUIDType
+from models.file_models import PropFileModel
+from models.entity_models import PropInstanceModel
+from models.event_models import AgentEvent
+from models.editor_models import GUIDType
 
 
 ####################################################################################################################################
@@ -72,10 +72,8 @@ class StageTransferActionSystem(ReactiveProcessor):
         """@A/道具A=1""", """@B/道具B=2"""
 
         stage_transfer_action = stage_entity.get(StageTransferAction)
-        target_and_message = (
-            my_format_string.target_message.extract_target_message_pairs(
-                stage_transfer_action.values, "@", "/"
-            )
+        target_and_message = format_string.target_message.extract_target_message_pairs(
+            stage_transfer_action.values, "@", "/"
         )
 
         for target_name, complex_prop_info in target_and_message:
@@ -91,7 +89,7 @@ class StageTransferActionSystem(ReactiveProcessor):
                 continue
 
             prop_name, transfer_count = (
-                my_format_string.complex_prop_name.parse_complex_prop_name(
+                format_string.complex_prop_name.parse_complex_prop_name(
                     complex_prop_info
                 )
             )

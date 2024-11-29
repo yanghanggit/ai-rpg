@@ -1,11 +1,11 @@
 from entitas import ExecuteProcessor, Matcher  # type: ignore
 from overrides import override
-from rpg_game.rpg_entitas_context import RPGEntitasContext
-from my_components.components import (
+from game.rpg_entitas_context import RPGEntitasContext
+from components.components import (
     PlanningFlagComponent,
     StageComponent,
 )
-from rpg_game.rpg_game import RPGGame
+from game.rpg_game import RPGGame
 from typing import final
 
 

@@ -1,26 +1,26 @@
 from entitas import Matcher, ReactiveProcessor, GroupEvent, Entity  # type: ignore
-from my_components.action_components import (
+from components.action_components import (
     SkillAction,
     EquipPropAction,
 )
-from my_components.components import (
+from components.components import (
     SkillComponent,
     ActorComponent,
     WeaponDirectAttackSkill,
 )
-from rpg_game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_entitas_context import RPGEntitasContext
 from typing import Final, final, override, Set, List, Dict, Optional
 from extended_systems.prop_file import PropFile
-from rpg_game.rpg_game import RPGGame
-from my_models.event_models import AgentEvent
-import my_format_string.complex_prop_name
+from game.rpg_game import RPGGame
+from models.event_models import AgentEvent
+import format_string.complex_prop_name
 from loguru import logger
 from gameplay_systems.actor_entity_utils import ActorStatusEvaluator
-from my_models.entity_models import Attributes
+from models.entity_models import Attributes
 import gameplay_systems.prompt_utils
-import my_format_string.complex_prop_name
-from my_models.file_models import PropSkillUsageMode
-import my_format_string.complex_skill_command
+import format_string.complex_prop_name
+from models.file_models import PropSkillUsageMode
+import format_string.complex_skill_command
 
 
 ################################################################################################################################################
@@ -130,7 +130,7 @@ class SkillCommandParser:
                 (skill_accessory_prop_file.name, consume_count)
             )
 
-        return my_format_string.complex_skill_command.compose_skill_command(
+        return format_string.complex_skill_command.compose_skill_command(
             self.target_entity_names,
             self._parsed_skill_prop_files[0].name,
             skill_accessory_props,
@@ -139,7 +139,7 @@ class SkillCommandParser:
     ######################################################################################################################################################
     @property
     def command_queue(self) -> List[str]:
-        return my_format_string.complex_skill_command.decompose_skill_command(
+        return format_string.complex_skill_command.decompose_skill_command(
             self._input_skill_command
         )
 
@@ -213,22 +213,20 @@ class SkillCommandParser:
         # 分析使用的技能
         for skill_prop in skill_prop_files:
             assert skill_prop.is_skill
-            if my_format_string.complex_prop_name.match_prop_name(
+            if format_string.complex_prop_name.match_prop_name(
                 skill_prop.name, parsed_command
             ):
                 self._parsed_skill_prop_files.append(skill_prop)
 
         # 分析技能配件
         for accessory_prop_file in accessory_prop_files:
-            if not my_format_string.complex_prop_name.match_prop_name(
+            if not format_string.complex_prop_name.match_prop_name(
                 accessory_prop_file.name, parsed_command
             ):
                 continue
 
             prop_name, consume_count = (
-                my_format_string.complex_prop_name.parse_complex_prop_name(
-                    parsed_command
-                )
+                format_string.complex_prop_name.parse_complex_prop_name(parsed_command)
             )
             assert prop_name == accessory_prop_file.name
             logger.debug(
@@ -469,7 +467,7 @@ class SkillInvocationSystem(ReactiveProcessor):
         ) in skill_command_parser._parsed_skill_accessory_prop_files:
             skill_accessory_prop_file, consume_count = skill_accessory_prop_file_info
             skill_accessory_props.append(
-                my_format_string.complex_prop_name.format_prop_name_with_count(
+                format_string.complex_prop_name.format_prop_name_with_count(
                     skill_accessory_prop_file.name, consume_count
                 )
             )

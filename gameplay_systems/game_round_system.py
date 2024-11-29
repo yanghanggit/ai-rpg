@@ -1,15 +1,15 @@
 from entitas import ExecuteProcessor, Matcher, Entity  # type: ignore
 from typing import final, override, Set
-from rpg_game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
-from rpg_game.rpg_game import RPGGame
-from my_components.components import (
+from game.rpg_game import RPGGame
+from components.components import (
     WorldComponent,
     ActorComponent,
     StageComponent,
     RoundEventsRecordComponent,
 )
-from my_models.event_models import GameRoundEvent
+from models.event_models import GameRoundEvent
 import gameplay_systems.prompt_utils
 
 

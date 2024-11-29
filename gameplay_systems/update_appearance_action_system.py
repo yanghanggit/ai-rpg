@@ -1,11 +1,11 @@
 from dataclasses import dataclass
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: ignore
 from overrides import override
-from rpg_game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
 from typing import Dict, Final, List, final, Optional
 import json
-from my_components.components import (
+from components.components import (
     FinalAppearanceComponent,
     BaseFormComponent,
     ActorComponent,
@@ -15,11 +15,11 @@ from my_components.components import (
     WeaponComponent,
 )
 from extended_systems.prop_file import PropFile
-from my_agent.agent_task import AgentTask
-from my_components.action_components import UpdateAppearanceAction
-from rpg_game.rpg_game import RPGGame
-from my_models.event_models import UpdateAppearanceEvent
-from my_agent.lang_serve_agent import LangServeAgent
+from agent.agent_task import AgentTask
+from components.action_components import UpdateAppearanceAction
+from game.rpg_game import RPGGame
+from models.event_models import UpdateAppearanceEvent
+from agent.lang_serve_agent import LangServeAgent
 
 
 ################################################################################################################################################

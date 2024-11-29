@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional, Final
-from my_services.room_manager import RoomManager
+from services.room_manager import RoomManager
 from fastapi import FastAPI
 import os
 

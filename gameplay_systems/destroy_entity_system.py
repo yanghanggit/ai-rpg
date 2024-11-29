@@ -1,8 +1,8 @@
 from entitas import Matcher, ExecuteProcessor  # type: ignore
 from typing import final, override
-from my_components.components import DestroyComponent
-from rpg_game.rpg_entitas_context import RPGEntitasContext
-from rpg_game.rpg_game import RPGGame
+from components.components import DestroyComponent
+from game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_game import RPGGame
 
 
 @final

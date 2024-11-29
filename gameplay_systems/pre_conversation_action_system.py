@@ -1,23 +1,23 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: ignore
 from overrides import override
-from my_components.action_components import (
+from components.action_components import (
     SpeakAction,
     AnnounceAction,
     WhisperAction,
     MindVoiceAction,
     TagAction,
 )
-from my_components.components import (
+from components.components import (
     PlayerComponent,
     ActorComponent,
     AgentPingFlagComponent,
 )
-from rpg_game.rpg_entitas_context import RPGEntitasContext
-from my_agent.agent_task import AgentTask
+from game.rpg_entitas_context import RPGEntitasContext
+from agent.agent_task import AgentTask
 from typing import List, final
 import copy
-from rpg_game.rpg_game import RPGGame
-from my_agent.agent_plan import AgentPlanResponse
+from game.rpg_game import RPGGame
+from agent.agent_plan import AgentPlanResponse
 
 
 ################################################################################################################################################

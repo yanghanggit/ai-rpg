@@ -1,14 +1,14 @@
 from entitas import ExecuteProcessor, Matcher  # type: ignore
-from rpg_game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_entitas_context import RPGEntitasContext
 from loguru import logger
-from my_components.components import (
+from components.components import (
     StageComponent,
     ActorComponent,
 )
 from typing import final, override, Any, FrozenSet
 import gameplay_systems.file_system_utils
-from rpg_game.rpg_game import RPGGame
-from my_models.file_models import ComponentDumpModel, EntityProfileModel
+from game.rpg_game import RPGGame
+from models.file_models import ComponentDumpModel, EntityProfileModel
 from collections import OrderedDict
 
 

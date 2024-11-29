@@ -1,15 +1,15 @@
 from entitas import Entity, Matcher, ExecuteProcessor  # type: ignore
 from overrides import override
-from my_components.components import (
+from components.components import (
     StageComponent,
     StageSpawnerComponent,
 )
-from rpg_game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_entitas_context import RPGEntitasContext
 from typing import final, List
-from rpg_game.rpg_game import RPGGame
+from game.rpg_game import RPGGame
 import copy
-from my_format_string.complex_actor_name import ComplexActorName
-from my_models.editor_models import GUIDType
+from format_string.complex_actor_name import ComplexActorName
+from models.editor_models import GUIDType
 
 
 ######################################################################################################################################################

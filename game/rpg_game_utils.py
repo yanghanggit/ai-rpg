@@ -1,12 +1,12 @@
 from entitas import Entity  # type: ignore
 from typing import Optional, Any, cast, List, Dict
 from loguru import logger
-from rpg_game.rpg_game_resource import RPGGameResource
-from rpg_game.rpg_game import RPGGame
-from rpg_game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_game_resource import RPGGameResource
+from game.rpg_game import RPGGame
+from game.rpg_entitas_context import RPGEntitasContext
 from extended_systems.file_system import FileSystem
 from typing import Optional
-from my_agent.lang_serve_agent_system import LangServeAgentSystem
+from agent.lang_serve_agent_system import LangServeAgentSystem
 from extended_systems.query_component_system import QueryComponentSystem
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from chaos_engineering.empty_engineering_system import EmptyChaosEngineeringSystem
@@ -15,11 +15,11 @@ from game_sample.game_sample_chaos_engineering_system import (
 )
 from pathlib import Path
 import json
-from rpg_game.terminal_game import TerminalGame
-from rpg_game.web_game import WebGame
+from game.terminal_game import TerminalGame
+from game.web_game import WebGame
 from player.player_proxy import PlayerProxy
 from extended_systems.archive_file import ActorArchiveFile, StageArchiveFile
-from my_components.components import (
+from components.components import (
     ActorComponent,
     PlayerComponent,
     PlanningFlagComponent,
@@ -42,8 +42,8 @@ from player.player_command import (
 import datetime
 import shutil
 import zipfile
-from my_models.event_models import AgentEvent
-from my_models.player_models import (
+from models.event_models import AgentEvent
+from models.player_models import (
     SurveyStageModel,
     StatusInventoryCheckModel,
     RetrieveActorArchivesModel,

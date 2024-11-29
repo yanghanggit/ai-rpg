@@ -2,9 +2,11 @@ from typing import List, Any
 from loguru import logger
 from my_models.event_models import (
     BaseEvent,
-    UpdateAppearanceEvent,
-    PreStageExitEvent,
-    GameRoundEvent,
+    # UpdateAppearanceEvent,
+    # PreStageExitEvent,
+    # GameRoundEvent,
+    # UpdateArchiveEvent,
+    # PostStageEnterEvent,
 )
 from my_models.player_models import (
     PlayerClientMessage,
@@ -90,11 +92,15 @@ class PlayerProxy:
 
     ##########################################################################################################################################################
     def _should_ignore_event(self, send_event: BaseEvent) -> bool:
-        return (
-            isinstance(send_event, UpdateAppearanceEvent)
-            or isinstance(send_event, PreStageExitEvent)
-            or isinstance(send_event, GameRoundEvent)
-        )
+        # 先不管，全都拿。
+        return False
+        # return (
+        #     isinstance(send_event, UpdateAppearanceEvent)
+        #     or isinstance(send_event, PreStageExitEvent)
+        #     or isinstance(send_event, GameRoundEvent)
+        #     or isinstance(send_event, UpdateArchiveEvent)
+        #     or isinstance(send_event, PostStageEnterEvent)
+        # )
 
     ##########################################################################################################################################################
     def add_stage_message(self, stage_name: str, agent_event: BaseEvent) -> None:

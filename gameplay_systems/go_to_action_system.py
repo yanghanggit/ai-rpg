@@ -4,17 +4,14 @@ from my_components.components import (
     ActorComponent,
     EnterStageFlagComponent,
     StageGraphComponent,
-    # StageComponent,
+    StageEnvironmentComponent,
 )
 from rpg_game.rpg_entitas_context import RPGEntitasContext
 from typing import final, override, Optional, Dict, List
 from rpg_game.rpg_game import RPGGame
-from extended_systems.archive_file import StageArchiveFile
-from my_models.event_models import AgentEvent, PreStageExitEvent
-from loguru import logger
-
-# import gameplay_systems.stage_entity_utils
+from my_models.event_models import AgentEvent, PreStageExitEvent, PostStageEnterEvent
 import copy
+from loguru import logger
 
 
 ################################################################################################################################################
@@ -66,7 +63,7 @@ def _generate_last_impression_prompt(
 ## {actor_name} 对于场景——{current_stage}，最后的印象(场景描述):
 {stage_narrate}
 ### (如从本场景离开)可以去往的场景
-{"\n".join(stage_graph)}   
+{"\n".join(stage_graph)}
 
 ## {actor_name} 对于其他角色最后的印象:
 {"\n".join(actor_appearance_mapping_prompt)}"""
@@ -169,10 +166,12 @@ class GoToActionSystem(ReactiveProcessor):
 
         # 离开前的处理
         self._prepare_for_exit_stage(helper)
-        # 离开
+        # 正式离开
         self._exit_current_stage(helper)
         # 进入新的场景
         self._enter_target_stage(helper)
+        # 进入新场景之后的处理
+        self._handle_post_stage_entry(helper)
 
     ###############################################################################################################################################
     def _enter_target_stage(self, helper: StageTransitionHandler) -> None:
@@ -219,35 +218,52 @@ class GoToActionSystem(ReactiveProcessor):
         )
 
     ###############################################################################################################################################
-    def _prepare_for_exit_stage(self, helper: StageTransitionHandler) -> None:
+    def _handle_post_stage_entry(self, helper: StageTransitionHandler) -> None:
 
+        stage_entity = self._context.safe_get_stage_entity(helper._entity)
+        assert stage_entity is not None
+        assert stage_entity == helper.target_stage_entity
+
+        # 外观拿出来。组织信息
         my_name = self._context.safe_get_entity_name(helper._entity)
+        actor_names = self._context.retrieve_actor_names_on_stage(stage_entity)
+        actor_names.discard(my_name)
+        if len(actor_names) == 0:
+            actor_names.add("无任何角色。")
 
-        stage_archive = self._context.file_system.get_file(
-            StageArchiveFile, my_name, helper._current_stage_name
+        # 组织提示词
+        prompt = f"""# 提示: 场景: {helper.target_stage_name} 的信息
+## 场景内角色
+{"\n".join(actor_names)}"""
+
+        # 通知
+        self._context.notify_event(
+            set({helper._entity}),
+            PostStageEnterEvent(message=prompt),
         )
 
-        assert (
-            stage_archive is not None
-        ), f"stage_archive is None, {my_name}, {helper._current_stage_name}"
-        if stage_archive is None:
-            return
+    ###############################################################################################################################################
+    def _prepare_for_exit_stage(self, helper: StageTransitionHandler) -> None:
+        assert helper.current_stage_entity.has(StageGraphComponent)
+        assert helper.current_stage_entity.has(StageEnvironmentComponent)
 
         # 外观拿出来。
+        my_name = self._context.safe_get_entity_name(helper._entity)
         actor_appearance_on_stage = self._context.retrieve_stage_actor_appearance(
             helper.current_stage_entity
         )
         actor_appearance_on_stage.pop(my_name)
 
         # 最后通知
-        assert helper.current_stage_entity.has(StageGraphComponent)
         self._context.notify_event(
             set({helper._entity}),
             PreStageExitEvent(
                 message=_generate_last_impression_prompt(
                     actor_name=my_name,
                     current_stage=helper._current_stage_name,
-                    stage_narrate=stage_archive.stage_narrate,
+                    stage_narrate=helper.current_stage_entity.get(
+                        StageEnvironmentComponent
+                    ).narrate,
                     actor_appearance_mapping=actor_appearance_on_stage,
                     stage_graph=copy.deepcopy(
                         helper.current_stage_entity.get(StageGraphComponent).stage_graph

@@ -51,7 +51,9 @@ def main(game_server: GameServer) -> None:
     args = parser.parse_args()
 
     # 启动 FastAPI 应用
-    print(f"!!!!启动 FastAPI 应用在 {args.host}:{args.port}!!!!!!!")
+    print(
+        f"!!!!启动 FastAPI 应用在 {args.host}:{args.port}!!!!!!!, pid={game_server.pid}"
+    )
     uvicorn.run(
         game_server.fast_api,
         host=cast(str, args.host),

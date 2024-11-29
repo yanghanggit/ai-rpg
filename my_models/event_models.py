@@ -32,6 +32,17 @@ class PreStageExitEvent(AgentEvent):
     pass
 
 
+@final
+class PostStageEnterEvent(AgentEvent):
+    pass
+
+
+# 这个事件是用来通知更新档案的。
+@final
+class UpdateArchiveEvent(AgentEvent):
+    pass
+
+
 # 广播内容事件
 @final
 class AnnounceEvent(AgentEvent):

@@ -7,12 +7,12 @@ from components.action_components import (
     StageNarrateAction,
 )
 from agent.agent_plan import AgentPlanResponse
-from game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_game_context import RPGGameContext
 
 
 ######################################################################################################################################################
 def apply_stage_narration(
-    context: RPGEntitasContext, plan_response: AgentPlanResponse
+    context: RPGGameContext, plan_response: AgentPlanResponse
 ) -> None:
 
     stage_narrate_action = plan_response.get_action(StageNarrateAction.__name__)
@@ -30,7 +30,7 @@ def apply_stage_narration(
 
 
 ######################################################################################################################################################
-def extract_current_stage_narrative(context: RPGEntitasContext, entity: Entity) -> str:
+def extract_current_stage_narrative(context: RPGGameContext, entity: Entity) -> str:
     stage_entity = context.safe_get_stage_entity(entity)
     if stage_entity is None:
         return ""

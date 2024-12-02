@@ -7,7 +7,7 @@ from components.components import (
     ActorComponent,
     AgentPingFlagComponent,
 )
-from game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_game_context import RPGGameContext
 from game.rpg_game import RPGGame
 
 # from loguru import logger
@@ -15,8 +15,8 @@ from game.rpg_game import RPGGame
 
 @final
 class AgentPingValidatorSystem(ExecuteProcessor):
-    def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
-        self._context: RPGEntitasContext = context
+    def __init__(self, context: RPGGameContext, rpg_game: RPGGame) -> None:
+        self._context: RPGGameContext = context
         self._game: RPGGame = rpg_game
 
     ###############################################################################################################################################

@@ -12,7 +12,7 @@ from components.components import (
     ActorComponent,
     AgentPingFlagComponent,
 )
-from game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_game_context import RPGGameContext
 from agent.agent_task import AgentTask
 from typing import List, final
 import copy
@@ -82,9 +82,9 @@ class InternalPlanResponse(AgentPlanResponse):
 @final
 class PreConversationActionSystem(ReactiveProcessor):
 
-    def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
+    def __init__(self, context: RPGGameContext, rpg_game: RPGGame) -> None:
         super().__init__(context)
-        self._context: RPGEntitasContext = context
+        self._context: RPGGameContext = context
         self._game: RPGGame = rpg_game
         self._entities_copy: List[Entity] = []
 

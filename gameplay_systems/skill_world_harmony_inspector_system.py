@@ -11,7 +11,7 @@ from components.components import (
     DestroyComponent,
     WeaponDirectAttackSkill,
 )
-from game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_game_context import RPGGameContext
 from typing import final, override, List, Set, Optional
 from loguru import logger
 from extended_systems.prop_file import (
@@ -237,9 +237,9 @@ class InternalProcessData:
 class SkillWorldHarmonyInspectorSystem(ExecuteProcessor):
 
     def __init__(
-        self, context: RPGEntitasContext, rpg_game: RPGGame, world_system_name: str
+        self, context: RPGGameContext, rpg_game: RPGGame, world_system_name: str
     ) -> None:
-        self._context: RPGEntitasContext = context
+        self._context: RPGGameContext = context
         self._game: RPGGame = rpg_game
         self._world_system_name: str = world_system_name
 

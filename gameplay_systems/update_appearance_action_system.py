@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: ignore
 from overrides import override
-from game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_game_context import RPGGameContext
 from loguru import logger
 from typing import Dict, Final, List, final, Optional
 import json
@@ -101,10 +101,10 @@ class InternalProcessData:
 class UpdateAppearanceActionSystem(ReactiveProcessor):
 
     def __init__(
-        self, context: RPGEntitasContext, rpg_game: RPGGame, world_system_name: str
+        self, context: RPGGameContext, rpg_game: RPGGame, world_system_name: str
     ) -> None:
         super().__init__(context)
-        self._context: RPGEntitasContext = context
+        self._context: RPGGameContext = context
         self._game: RPGGame = rpg_game
         self._world_system_name: str = str(world_system_name)
         self._batch_size: Final[int] = 5

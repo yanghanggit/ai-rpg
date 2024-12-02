@@ -1,6 +1,6 @@
 from entitas import Entity, ExecuteProcessor  # type: ignore
 from typing import final, override, List
-from game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_game_context import RPGGameContext
 from game.rpg_game import RPGGame
 from components.components import (
     PlayerComponent,
@@ -8,7 +8,7 @@ from components.components import (
 )
 from player.player_proxy import PlayerProxy
 from models.event_models import AgentEvent
-from game.web_game import WebGame
+from game.web_rpg_game import WebRPGGame
 from loguru import logger
 from extended_systems.archive_file import StageArchiveFile
 from components.components import (
@@ -23,15 +23,15 @@ from components.components import (
 
 @final
 class WebPlayerTipsSystem(ExecuteProcessor):
-    def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
-        self._context: RPGEntitasContext = context
+    def __init__(self, context: RPGGameContext, rpg_game: RPGGame) -> None:
+        self._context: RPGGameContext = context
         self._game: RPGGame = rpg_game
         self._test_index: int = 0
 
     ############################################################################################################
     @override
     def execute(self) -> None:
-        if not isinstance(self._game, WebGame):
+        if not isinstance(self._game, WebRPGGame):
             logger.debug("不是终端游戏，无法使用这个系统")
             return
 

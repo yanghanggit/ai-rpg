@@ -2,7 +2,7 @@ from entitas import Entity, Matcher  # type: ignore
 from loguru import logger
 from typing import Any, FrozenSet, Optional
 from agent.agent_plan import AgentPlanResponse, AgentAction
-from game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_game_context import RPGGameContext
 from enum import Enum
 from components.action_components import (
     ACTOR_AVAILABLE_ACTIONS_REGISTER,
@@ -20,7 +20,7 @@ class ConversationError(Enum):
 
 # 检查是否可以对话
 def validate_conversation(
-    context: RPGEntitasContext, stage_or_actor_entity: Entity, target_name: str
+    context: RPGGameContext, stage_or_actor_entity: Entity, target_name: str
 ) -> ConversationError:
 
     actor_entity: Optional[Entity] = context.get_actor_entity(target_name)
@@ -84,7 +84,7 @@ def _add_action(
 
 ######################################################################################################################################
 def clear_registered_actions(
-    context: RPGEntitasContext, registered_actions: FrozenSet[type[Any]]
+    context: RPGGameContext, registered_actions: FrozenSet[type[Any]]
 ) -> None:
     entities = context.get_group(Matcher(any_of=registered_actions)).entities.copy()
     for entity in entities:
@@ -95,7 +95,7 @@ def clear_registered_actions(
 
 ######################################################################################################################################
 def add_actor_actions(
-    context: RPGEntitasContext,
+    context: RPGGameContext,
     actor_entity: Entity,
     actor_planning_response: AgentPlanResponse,
     registered_actions: FrozenSet[type[Any]] = ACTOR_AVAILABLE_ACTIONS_REGISTER,
@@ -120,7 +120,7 @@ def add_actor_actions(
 
 ######################################################################################################################################
 def add_stage_actions(
-    context: RPGEntitasContext,
+    context: RPGGameContext,
     stage_entity: Entity,
     stage_planning_response: AgentPlanResponse,
     registered_actions: FrozenSet[type[Any]] = STAGE_AVAILABLE_ACTIONS_REGISTER,

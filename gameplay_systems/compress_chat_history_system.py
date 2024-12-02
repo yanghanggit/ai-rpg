@@ -1,6 +1,6 @@
 from enum import unique, StrEnum
 from entitas import ExecuteProcessor, Matcher  # type: ignore
-from game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_game_context import RPGGameContext
 from components.components import ActorComponent, StageComponent
 from typing import final, override, Dict
 from game.rpg_game import RPGGame
@@ -17,8 +17,8 @@ class CompressChatHistoryConstantPrompt(StrEnum):
 
 @final
 class CompressChatHistorySystem(ExecuteProcessor):
-    def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
-        self._context: RPGEntitasContext = context
+    def __init__(self, context: RPGGameContext, rpg_game: RPGGame) -> None:
+        self._context: RPGGameContext = context
         self._game: RPGGame = rpg_game
 
     ############################################################################################################

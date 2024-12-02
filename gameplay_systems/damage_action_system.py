@@ -6,7 +6,7 @@ from components.components import (
     ActorComponent,
     StageComponent,
 )
-from game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_game_context import RPGGameContext
 from typing import final, override
 from extended_systems.prop_file import PropFile
 import format_string.target_message
@@ -60,9 +60,9 @@ def _generate_damage_event_description_prompt2(
 @final
 class DamageActionSystem(ReactiveProcessor):
 
-    def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
+    def __init__(self, context: RPGGameContext, rpg_game: RPGGame) -> None:
         super().__init__(context)
-        self._context: RPGEntitasContext = context
+        self._context: RPGGameContext = context
         self._game: RPGGame = rpg_game
 
     ######################################################################################################################################################

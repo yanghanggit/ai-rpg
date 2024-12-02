@@ -1,6 +1,6 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: ignore
 from components.action_components import WhisperAction
-from game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_game_context import RPGGameContext
 from typing import final, override
 import gameplay_systems.action_component_utils
 import format_string.target_message
@@ -32,9 +32,9 @@ def _generate_invalid_whisper_target_prompt(speaker_name: str, target_name: str)
 @final
 class WhisperActionSystem(ReactiveProcessor):
 
-    def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
+    def __init__(self, context: RPGGameContext, rpg_game: RPGGame) -> None:
         super().__init__(context)
-        self._context: RPGEntitasContext = context
+        self._context: RPGGameContext = context
         self._game: RPGGame = rpg_game
 
     ####################################################################################################################################

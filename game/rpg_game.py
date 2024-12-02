@@ -21,12 +21,12 @@ from components.components import (
     StageEnvironmentComponent,
     StageStaticFlagComponent,
 )
-from game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_game_context import RPGGameContext
 from game.rpg_game_resource import RPGGameResource
 from extended_systems.prop_file import PropFile
 from game.base_game import BaseGame
 import gameplay_systems.file_system_utils
-from game.rpg_entitas_processors import RPGEntitasProcessors
+from game.rpg_game_processors import RPGGameProcessors
 from models.entity_models import (
     ActorInstanceModel,
     StageInstanceModel,
@@ -44,28 +44,23 @@ from format_string.complex_actor_name import ComplexActorName
 
 
 class RPGGame(BaseGame):
-    """
-    RPG 的测试类游戏
-    """
 
-    def __init__(self, name: str, context: RPGEntitasContext) -> None:
+    def __init__(self, name: str, context: RPGGameContext) -> None:
         # 必须实现父
         super().__init__(name)
 
         ## 尽量不要再加东西了，Game就只管上下文，创建世界的数据，和Processors。其中上下文可以做运行中的全局数据管理者
-        self._entitas_context: RPGEntitasContext = context
+        self._entitas_context: RPGGameContext = context
         self._entitas_context._game = self
 
         self._game_resource: Optional[RPGGameResource] = None
-        self._processors: RPGEntitasProcessors = RPGEntitasProcessors.create(
-            self, context
-        )
+        self._processors: RPGGameProcessors = RPGGameProcessors.create(self, context)
         self._players: List[PlayerProxy] = []
         self._runtime_round: int = 0
 
     ###############################################################################################################################################
     @property
-    def context(self) -> RPGEntitasContext:
+    def context(self) -> RPGGameContext:
         return self._entitas_context
 
     ###############################################################################################################################################
@@ -197,7 +192,7 @@ class RPGGame(BaseGame):
         self,
         world_system_instance: WorldSystemInstanceModel,
         world_system_model: WorldSystemModel,
-        context: RPGEntitasContext,
+        context: RPGGameContext,
     ) -> Entity:
 
         # 创建实体
@@ -303,7 +298,7 @@ class RPGGame(BaseGame):
         self,
         actor_instance: ActorInstanceModel,
         actor_model: ActorModel,
-        context: RPGEntitasContext,
+        context: RPGGameContext,
     ) -> Entity:
 
         if actor_instance.name != actor_model.name:
@@ -443,7 +438,7 @@ class RPGGame(BaseGame):
         self,
         stage_instance: StageInstanceModel,
         stage_model: StageModel,
-        context: RPGEntitasContext,
+        context: RPGGameContext,
     ) -> Entity:
 
         assert stage_instance is not None
@@ -546,7 +541,7 @@ class RPGGame(BaseGame):
 
     ###############################################################################################################################################
     def _load_game(
-        self, context: RPGEntitasContext, game_resource: RPGGameResource
+        self, context: RPGGameContext, game_resource: RPGGameResource
     ) -> None:
 
         # 存储的局数拿回来
@@ -560,7 +555,7 @@ class RPGGame(BaseGame):
 
     ###############################################################################################################################################
     def _load_entities(
-        self, context: RPGEntitasContext, game_resource: RPGGameResource
+        self, context: RPGGameContext, game_resource: RPGGameResource
     ) -> None:
 
         assert game_resource.is_load
@@ -646,7 +641,7 @@ class RPGGame(BaseGame):
 
     ###############################################################################################################################################
     def _load_agents(
-        self, context: RPGEntitasContext, game_resource: RPGGameResource
+        self, context: RPGGameContext, game_resource: RPGGameResource
     ) -> None:
 
         assert game_resource.is_load
@@ -668,7 +663,7 @@ class RPGGame(BaseGame):
 
     ###############################################################################################################################################
     def _load_archives(
-        self, context: RPGEntitasContext, game_resource: RPGGameResource
+        self, context: RPGGameContext, game_resource: RPGGameResource
     ) -> None:
 
         assert game_resource.is_load
@@ -694,7 +689,7 @@ class RPGGame(BaseGame):
 
     ###############################################################################################################################################
     def _load_players(
-        self, context: RPGEntitasContext, game_resource: RPGGameResource
+        self, context: RPGGameContext, game_resource: RPGGameResource
     ) -> None:
 
         assert game_resource.is_load

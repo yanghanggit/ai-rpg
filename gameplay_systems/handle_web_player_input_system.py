@@ -1,24 +1,24 @@
 from entitas import ExecuteProcessor  # type: ignore
 from typing import final, override
-from game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_game_context import RPGGameContext
 from game.rpg_game import RPGGame
 from components.components import PlanningFlagComponent
 from loguru import logger
-from game.web_game import WebGame
+from game.web_rpg_game import WebRPGGame
 
 
 ############################################################################################################
 @final
 class HandleWebPlayerInputSystem(ExecuteProcessor):
-    def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
-        self._context: RPGEntitasContext = context
+    def __init__(self, context: RPGGameContext, rpg_game: RPGGame) -> None:
+        self._context: RPGGameContext = context
         self._game: RPGGame = rpg_game
 
     ############################################################################################################
     @override
     def execute(self) -> None:
 
-        if not isinstance(self._game, WebGame):
+        if not isinstance(self._game, WebRPGGame):
             return
 
         for player_proxy in self._game.players:

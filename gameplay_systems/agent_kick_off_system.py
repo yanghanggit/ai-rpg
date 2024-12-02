@@ -9,7 +9,7 @@ from components.components import (
     KickOffFlagComponent,
     AgentPingFlagComponent,
 )
-from game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_game_context import RPGGameContext
 from typing import Dict, Set, final
 from agent.agent_task import AgentTask
 from game.rpg_game import RPGGame
@@ -84,8 +84,8 @@ def _generate_world_system_kick_off_prompt(epoch_script: str) -> str:
 ######################################################################################################################################################
 @final
 class AgentKickOffSystem(ExecuteProcessor):
-    def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
-        self._context: RPGEntitasContext = context
+    def __init__(self, context: RPGGameContext, rpg_game: RPGGame) -> None:
+        self._context: RPGGameContext = context
         self._game: RPGGame = rpg_game
 
     ######################################################################################################################################################

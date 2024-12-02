@@ -1,7 +1,7 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: ignore
 from typing import final, override
 from components.action_components import AnnounceAction
-from game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_game_context import RPGGameContext
 from game.rpg_game import RPGGame
 from models.event_models import AnnounceEvent
 
@@ -19,9 +19,9 @@ def _generate_announce_prompt(speaker_name: str, stage_name: str, content: str) 
 @final
 class AnnounceActionSystem(ReactiveProcessor):
 
-    def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
+    def __init__(self, context: RPGGameContext, rpg_game: RPGGame) -> None:
         super().__init__(context)
-        self._context: RPGEntitasContext = context
+        self._context: RPGGameContext = context
         self._game: RPGGame = rpg_game
 
     ####################################################################################################

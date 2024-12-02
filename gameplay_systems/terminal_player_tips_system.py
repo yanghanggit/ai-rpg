@@ -1,6 +1,6 @@
 from entitas import Entity, ExecuteProcessor  # type: ignore
 from typing import final, override, List
-from game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_game_context import RPGGameContext
 from game.rpg_game import RPGGame
 from components.components import (
     PlayerComponent,
@@ -11,7 +11,7 @@ from components.components import (
 from extended_systems.archive_file import StageArchiveFile
 from player.player_proxy import PlayerProxy
 from models.event_models import AgentEvent
-from game.terminal_game import TerminalGame
+from game.terminal_rpg_game import TerminalRPGGame
 from loguru import logger
 
 # from format_string.complex_stage_name import ComplexStageName
@@ -19,14 +19,14 @@ from loguru import logger
 
 @final
 class TerminalPlayerTipsSystem(ExecuteProcessor):
-    def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
-        self._context: RPGEntitasContext = context
+    def __init__(self, context: RPGGameContext, rpg_game: RPGGame) -> None:
+        self._context: RPGGameContext = context
         self._game: RPGGame = rpg_game
 
     ############################################################################################################
     @override
     def execute(self) -> None:
-        if not isinstance(self._game, TerminalGame):
+        if not isinstance(self._game, TerminalRPGGame):
             logger.debug("不是终端游戏，无法使用这个系统")
             return
         self.tips_stages()

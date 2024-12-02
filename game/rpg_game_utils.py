@@ -3,7 +3,7 @@ from typing import Optional, Any, cast, List, Dict
 from loguru import logger
 from game.rpg_game_resource import RPGGameResource
 from game.rpg_game import RPGGame
-from game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_game_context import RPGGameContext
 from extended_systems.file_system import FileSystem
 from typing import Optional
 from agent.lang_serve_agent_system import LangServeAgentSystem
@@ -15,8 +15,8 @@ from game_sample.game_sample_chaos_engineering_system import (
 )
 from pathlib import Path
 import json
-from game.terminal_game import TerminalGame
-from game.web_game import WebGame
+from game.terminal_rpg_game import TerminalRPGGame
+from game.web_rpg_game import WebRPGGame
 from player.player_proxy import PlayerProxy
 from extended_systems.archive_file import ActorArchiveFile, StageArchiveFile
 from components.components import (
@@ -121,7 +121,7 @@ def load_game_resource(
 #######################################################################################################################################
 def _create_entitas_context(
     option_chaos_engineering: Optional[IChaosEngineering],
-) -> RPGEntitasContext:
+) -> RPGGameContext:
 
     chaos_engineering_system: IChaosEngineering = EmptyChaosEngineeringSystem(
         "empty_chaos"
@@ -130,7 +130,7 @@ def _create_entitas_context(
         chaos_engineering_system = option_chaos_engineering
 
     # 创建上下文
-    context = RPGEntitasContext(
+    context = RPGGameContext(
         FileSystem(),
         LangServeAgentSystem(),
         QueryComponentSystem(),
@@ -141,36 +141,29 @@ def _create_entitas_context(
 
 
 #######################################################################################################################################
-def create_terminal_rpg_game(game_resource: RPGGameResource) -> Optional[TerminalGame]:
+def create_terminal_rpg_game(
+    game_resource: RPGGameResource,
+) -> Optional[TerminalRPGGame]:
 
     rpg_context = _create_entitas_context(
         GameSampleChaosEngineeringSystem("terminal_rpg_game_chaos")
     )
 
-    rpg_game = TerminalGame(game_resource._game_name, rpg_context)
+    rpg_game = TerminalRPGGame(game_resource._game_name, rpg_context)
     rpg_game.build(game_resource)
     return rpg_game
 
 
 #######################################################################################################################################
-def create_web_rpg_game(game_resource: RPGGameResource) -> Optional[WebGame]:
+def create_web_rpg_game(game_resource: RPGGameResource) -> Optional[WebRPGGame]:
 
     rpg_context = _create_entitas_context(
         GameSampleChaosEngineeringSystem("web_rpg_game_chaos")
     )
 
-    rpg_game = WebGame(game_resource._game_name, rpg_context)
+    rpg_game = WebRPGGame(game_resource._game_name, rpg_context)
     rpg_game.build(game_resource)
     return rpg_game
-
-
-#######################################################################################################################################
-# def get_props_in_stage(game_name: RPGGame, player_entity: Entity) -> List[PropFile]:
-#     stage_entity = game_name.context.safe_get_stage_entity(player_entity)
-#     if stage_entity is None:
-#         return []
-#     stage_name = game_name.context.safe_get_entity_name(stage_entity)
-#     return game_name.context.file_system.get_files(PropFile, stage_name)
 
 
 #######################################################################################################################################
@@ -249,9 +242,6 @@ def gen_player_status_inventory_check_model(
 
     #
     actor_status_evaluator = ActorStatusEvaluator(game_name.context, player_entity)
-
-    # 生命值
-    # health = actor_status_evaluator.health_ratio * 100
 
     # 道具信息
     actor_props_prompt = (

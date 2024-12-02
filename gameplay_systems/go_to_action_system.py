@@ -6,7 +6,7 @@ from components.components import (
     StageGraphComponent,
     StageEnvironmentComponent,
 )
-from game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_game_context import RPGGameContext
 from typing import final, override, Optional, Dict, List
 from game.rpg_game import RPGGame
 from models.event_models import AgentEvent, PreStageExitEvent, PostStageEnterEvent
@@ -75,10 +75,10 @@ def _generate_last_impression_prompt(
 class StageTransitionHandler:
 
     def __init__(
-        self, context: RPGEntitasContext, entity: Entity, target_stage_name: str
+        self, context: RPGGameContext, entity: Entity, target_stage_name: str
     ) -> None:
 
-        self._context: RPGEntitasContext = context
+        self._context: RPGGameContext = context
         self._entity: Entity = entity
         self._target_stage_name: str = target_stage_name
 
@@ -122,9 +122,9 @@ class StageTransitionHandler:
 @final
 class GoToActionSystem(ReactiveProcessor):
 
-    def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
+    def __init__(self, context: RPGGameContext, rpg_game: RPGGame) -> None:
         super().__init__(context)
-        self._context: RPGEntitasContext = context
+        self._context: RPGGameContext = context
         self._game: RPGGame = rpg_game
 
     ###############################################################################################################################################

@@ -1,6 +1,6 @@
 from entitas import ExecuteProcessor, Matcher, Entity  # type: ignore
 from typing import final, override, Set
-from game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_game_context import RPGGameContext
 from loguru import logger
 from game.rpg_game import RPGGame
 from components.components import (
@@ -26,8 +26,8 @@ def _generate_game_round_prompt(game_round: int) -> str:
 @final
 class GameRoundSystem(ExecuteProcessor):
     ############################################################################################################
-    def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
-        self._context: RPGEntitasContext = context
+    def __init__(self, context: RPGGameContext, rpg_game: RPGGame) -> None:
+        self._context: RPGGameContext = context
         self._game: RPGGame = rpg_game
 
     ############################################################################################################

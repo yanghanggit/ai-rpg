@@ -1,5 +1,5 @@
 from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity  # type: ignore
-from game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_game_context import RPGGameContext
 from components.action_components import (
     StageTransferAction,
 )
@@ -45,9 +45,9 @@ def _generate_stage_transfer_prop_is_not_found_prompt(
 @final
 class StageTransferActionSystem(ReactiveProcessor):
 
-    def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame):
+    def __init__(self, context: RPGGameContext, rpg_game: RPGGame):
         super().__init__(context)
-        self._context: RPGEntitasContext = context
+        self._context: RPGGameContext = context
         self._game: RPGGame = rpg_game
         self._gen_index: int = 0
 

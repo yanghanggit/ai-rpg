@@ -1,5 +1,5 @@
 from entitas import Entity  # type: ignore
-from game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_game_context import RPGGameContext
 from typing import List
 from loguru import logger
 from extended_systems.prop_file import PropFile
@@ -9,7 +9,7 @@ from components.components import ActorComponent, SkillComponent, DestroyCompone
 
 ################################################################################################################################################
 def parse_skill_accessory_prop_files(
-    context: RPGEntitasContext, skill_entity: Entity, actor_entity: Entity
+    context: RPGGameContext, skill_entity: Entity, actor_entity: Entity
 ) -> List[tuple[PropFile, int]]:
 
     assert skill_entity.has(SkillComponent)
@@ -48,7 +48,7 @@ def parse_skill_accessory_prop_files(
 
 ################################################################################################################################################
 def retrieve_skill_accessory_files(
-    context: RPGEntitasContext, skill_entity: Entity, actor_entity: Entity
+    context: RPGGameContext, skill_entity: Entity, actor_entity: Entity
 ) -> List[PropFile]:
     assert skill_entity.has(SkillComponent)
     assert actor_entity.has(ActorComponent)
@@ -58,7 +58,7 @@ def retrieve_skill_accessory_files(
 
 ################################################################################################################################################
 def parse_skill_prop_files(
-    context: RPGEntitasContext, skill_entity: Entity, actor_entity: Entity
+    context: RPGGameContext, skill_entity: Entity, actor_entity: Entity
 ) -> List[PropFile]:
 
     assert skill_entity.has(SkillComponent)

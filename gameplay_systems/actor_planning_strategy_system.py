@@ -1,6 +1,6 @@
 from entitas import InitializeProcessor, ExecuteProcessor, Matcher, Entity  # type: ignore
 from overrides import override
-from game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_game_context import RPGGameContext
 from components.components import (
     PlanningFlagComponent,
     StageComponent,
@@ -16,8 +16,8 @@ from queue import Queue
 class ActorPlanningStrategySystem(InitializeProcessor, ExecuteProcessor):
 
     @override
-    def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
-        self._context: RPGEntitasContext = context
+    def __init__(self, context: RPGGameContext, rpg_game: RPGGame) -> None:
+        self._context: RPGGameContext = context
         self._game: RPGGame = rpg_game
         self._order_queues: Dict[str, Queue[str]] = {}
 

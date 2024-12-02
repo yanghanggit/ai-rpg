@@ -1,21 +1,21 @@
 from entitas import ExecuteProcessor  # type: ignore
 from typing import final, override
-from game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_game_context import RPGGameContext
 from game.rpg_game import RPGGame
-from game.terminal_game import TerminalGame
+from game.terminal_rpg_game import TerminalRPGGame
 
 
 @final
 class TerminalPlayerInterruptWaitSystem(ExecuteProcessor):
-    def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
-        self._context: RPGEntitasContext = context
+    def __init__(self, context: RPGGameContext, rpg_game: RPGGame) -> None:
+        self._context: RPGGameContext = context
         self._game: RPGGame = rpg_game
 
     ############################################################################################################
     @override
     def execute(self) -> None:
 
-        if not isinstance(self._game, TerminalGame):
+        if not isinstance(self._game, TerminalRPGGame):
             return
 
         while True:

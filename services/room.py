@@ -1,5 +1,5 @@
 from typing import Optional
-from game.web_game import WebGame
+from game.web_rpg_game import WebRPGGame
 from player.player_proxy import PlayerProxy
 from services.game_state_manager import GameStateController, GameState
 
@@ -8,14 +8,14 @@ class Room:
 
     def __init__(self, user_name: str) -> None:
         self._user_name = user_name
-        self._game: Optional[WebGame] = None
+        self._game: Optional[WebRPGGame] = None
         self._state_controller: GameStateController = GameStateController(
             GameState.UNLOGGED
         )
 
     ###############################################################################################################################################
     @property
-    def game(self) -> Optional[WebGame]:
+    def game(self) -> Optional[WebRPGGame]:
         return self._game
 
     ###############################################################################################################################################

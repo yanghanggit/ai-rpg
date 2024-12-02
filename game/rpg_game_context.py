@@ -20,7 +20,7 @@ from game.base_game import BaseGame
 from agent.lang_serve_agent import LangServeAgent
 
 
-class RPGEntitasContext(Context):
+class RPGGameContext(Context):
 
     #
     def __init__(

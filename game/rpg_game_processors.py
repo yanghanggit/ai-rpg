@@ -1,17 +1,14 @@
 from entitas import Processors  # type: ignore
 from overrides import override
 from typing import Any, cast
-from game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_game_context import RPGGameContext
 from game.rpg_game_config import WorldSystemNames
 
-# import time
-# from loguru import logger
 
-
-class RPGEntitasProcessors(Processors):
+class RPGGameProcessors(Processors):
 
     @staticmethod
-    def create(game: Any, context: RPGEntitasContext) -> "RPGEntitasProcessors":
+    def create(game: Any, context: RPGGameContext) -> "RPGGameProcessors":
 
         ### 不这样就循环引用
         from game.rpg_game import RPGGame
@@ -121,7 +118,7 @@ class RPGEntitasProcessors(Processors):
         ##
         rpg_game = cast(RPGGame, game)
 
-        processors = RPGEntitasProcessors()
+        processors = RPGGameProcessors()
 
         # 初始化系统########################
         processors.add(

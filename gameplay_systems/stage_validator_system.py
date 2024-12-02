@@ -7,7 +7,7 @@ from components.components import (
     ActorComponent,
     StageGraphComponent,
 )
-from game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_game_context import RPGGameContext
 from loguru import logger
 from typing import final, override, Set, Any
 from game.rpg_game import RPGGame
@@ -37,9 +37,9 @@ def _generate_stage_conflict_prompt(actor_name: str, stage_name: str) -> str:
 @final
 class StageValidatorSystem(ReactiveProcessor):
 
-    def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
+    def __init__(self, context: RPGGameContext, rpg_game: RPGGame) -> None:
         super().__init__(context)
-        self._context: RPGEntitasContext = context
+        self._context: RPGGameContext = context
         self._game: RPGGame = rpg_game
 
     ###############################################################################################################################################

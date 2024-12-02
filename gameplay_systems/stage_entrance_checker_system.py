@@ -10,7 +10,7 @@ from components.components import (
     StageComponent,
     KickOffContentComponent,
 )
-from game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_game_context import RPGGameContext
 import gameplay_systems.prompt_utils as prompt_utils
 from typing import final, override, List, Set, Any, Dict
 from gameplay_systems.actor_entity_utils import ActorStatusEvaluator
@@ -101,9 +101,9 @@ class InternalPlanResponse(AgentPlanResponse):
 @final
 class StageEntranceCheckerSystem(ReactiveProcessor):
 
-    def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
+    def __init__(self, context: RPGGameContext, rpg_game: RPGGame) -> None:
         super().__init__(context)
-        self._context: RPGEntitasContext = context
+        self._context: RPGGameContext = context
         self._game: RPGGame = rpg_game
         self._react_entities_copy: List[Entity] = []
 

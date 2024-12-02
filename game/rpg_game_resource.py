@@ -1,4 +1,4 @@
-from typing import Any, List, Optional, Dict
+from typing import Any, List, Optional, Dict, Final
 from models.entity_models import (
     ActorInstanceModel,
     StageInstanceModel,
@@ -24,31 +24,28 @@ from models.agent_models import AgentChatHistoryDumpModel
 from format_string.complex_actor_name import ComplexActorName
 
 
-class ActorInstanceName:
+class ActorNameHandler:
 
-    def __init__(self, original_name: str) -> None:
-        self._original_name: str = original_name
+    def __init__(self, initial_name: str) -> None:
+        self._initial_name: Final[str] = str(initial_name)
 
     @property
-    def original_name(self) -> str:
-        return self._original_name
+    def initial_name(self) -> str:
+        return self._initial_name
 
     @property
     def base_name(self) -> str:
-        return ComplexActorName.extract_name(self._original_name)
+        return ComplexActorName.extract_name(self._initial_name)
 
     @property
     def guid(self) -> int:
-        return ComplexActorName.extract_guid(self._original_name)
+        return ComplexActorName.extract_guid(self._initial_name)
 
 
 ###############################################################################################################################################
 
 
 class DataBase:
-    """
-    将所有的数据存储在这里，以便于在游戏中使用。
-    """
 
     def __init__(self, model: Optional[DataBaseModel]) -> None:
 
@@ -94,7 +91,7 @@ class DataBase:
 
     ###############################################################################################################################################
     def get_actor(self, actor_name: str) -> Optional[ActorModel]:
-        instance_name = ActorInstanceName(actor_name)
+        instance_name = ActorNameHandler(actor_name)
         return self._actors.get(instance_name.base_name, None)
 
     ###############################################################################################################################################

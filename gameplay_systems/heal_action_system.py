@@ -5,7 +5,7 @@ from components.components import (
     ActorComponent,
     StageComponent,
 )
-from game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_game_context import RPGGameContext
 from typing import final, override
 import format_string.target_message
 import format_string.ints_string
@@ -44,9 +44,9 @@ def _generate_heal_event_description_prompt2(
 @final
 class HealActionSystem(ReactiveProcessor):
 
-    def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
+    def __init__(self, context: RPGGameContext, rpg_game: RPGGame) -> None:
         super().__init__(context)
-        self._context: RPGEntitasContext = context
+        self._context: RPGGameContext = context
         self._game: RPGGame = rpg_game
 
     ######################################################################################################################################################

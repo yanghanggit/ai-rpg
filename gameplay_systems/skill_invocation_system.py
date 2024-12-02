@@ -8,7 +8,7 @@ from components.components import (
     ActorComponent,
     WeaponDirectAttackSkill,
 )
-from game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_game_context import RPGGameContext
 from typing import Final, final, override, Set, List, Dict, Optional
 from extended_systems.prop_file import PropFile
 from game.rpg_game import RPGGame
@@ -73,11 +73,11 @@ class SkillCommandParser:
 
     def __init__(
         self,
-        context: RPGEntitasContext,
+        context: RPGGameContext,
         input_skill_command: str,
         actor_status_evaluator: ActorStatusEvaluator,
     ) -> None:
-        self._context: Final[RPGEntitasContext] = context
+        self._context: Final[RPGGameContext] = context
         self._actor_status_evaluator: Final[ActorStatusEvaluator] = (
             actor_status_evaluator
         )
@@ -273,9 +273,9 @@ class SkillCommandParser:
 @final
 class SkillInvocationSystem(ReactiveProcessor):
 
-    def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
+    def __init__(self, context: RPGGameContext, rpg_game: RPGGame) -> None:
         super().__init__(context)
-        self._context: RPGEntitasContext = context
+        self._context: RPGGameContext = context
         self._game: RPGGame = rpg_game
 
     ######################################################################################################################################################

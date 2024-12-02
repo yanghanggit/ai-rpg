@@ -1,7 +1,7 @@
 from entitas import ExecuteProcessor, Entity, Matcher  # type: ignore
-from game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_game_context import RPGGameContext
 from player.player_proxy import PlayerProxy
-from game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_game_context import RPGGameContext
 from components.action_components import (
     # StageNarrateAction,
     StageTagAction,
@@ -17,8 +17,8 @@ import gameplay_systems.stage_entity_utils
 
 @final
 class UpdateClientMessageSystem(ExecuteProcessor):
-    def __init__(self, context: RPGEntitasContext, rpg_game: RPGGame) -> None:
-        self._context: RPGEntitasContext = context
+    def __init__(self, context: RPGGameContext, rpg_game: RPGGame) -> None:
+        self._context: RPGGameContext = context
         self._game: RPGGame = rpg_game
 
     ############################################################################################################

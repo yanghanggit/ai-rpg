@@ -1,5 +1,5 @@
 from entitas import Entity  # type: ignore
-from game.rpg_entitas_context import RPGEntitasContext
+from game.rpg_game_context import RPGGameContext
 from components.components import (
     AttributesComponent,
     ClothesComponent,
@@ -16,7 +16,7 @@ from models.file_models import PropType
 # 简单方便的一次性获取需要的信息。这个类是一个工具类。
 class ActorStatusEvaluator:
 
-    def __init__(self, context: RPGEntitasContext, actor_entity: Entity) -> None:
+    def __init__(self, context: RPGGameContext, actor_entity: Entity) -> None:
 
         assert actor_entity.has(ActorComponent)
 
@@ -57,7 +57,7 @@ class ActorStatusEvaluator:
         return self._appearance
 
     ######################################################################################################################################
-    def _validate_state(self, context: RPGEntitasContext, actor_entity: Entity) -> None:
+    def _validate_state(self, context: RPGGameContext, actor_entity: Entity) -> None:
         # 检查场景信息
         self._retrieve_stage_name(context, actor_entity)
         # 检查道具信息
@@ -74,14 +74,14 @@ class ActorStatusEvaluator:
 
     ######################################################################################################################################
     def _retrieve_stage_name(
-        self, context: RPGEntitasContext, actor_entity: Entity
+        self, context: RPGGameContext, actor_entity: Entity
     ) -> None:
         # 害怕，就拷贝了。
         self._stage_name = actor_entity.get(ActorComponent).current_stage
 
     ######################################################################################################################################
     def _retrieve_category_files(
-        self, context: RPGEntitasContext, actor_entity: Entity
+        self, context: RPGGameContext, actor_entity: Entity
     ) -> None:
         safe_name = context.safe_get_entity_name(actor_entity)
         self._category_prop_files = (
@@ -100,7 +100,7 @@ class ActorStatusEvaluator:
 
     ######################################################################################################################################
     def _validate_equipment(
-        self, context: RPGEntitasContext, actor_entity: Entity
+        self, context: RPGGameContext, actor_entity: Entity
     ) -> None:
         safe_name = context.safe_get_entity_name(actor_entity)
 

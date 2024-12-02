@@ -19,8 +19,8 @@ from extended_systems.prop_file import (
     generate_skill_accessory_prop_file_prompt,
 )
 import gameplay_systems.prompt_utils
-from agent.agent_task import AgentTask
-from agent.agent_plan import AgentPlanResponse
+from agent.agent_request_handler import AgentRequestHandler
+from agent.agent_plan_response import AgentPlanResponse
 from game.rpg_game import RPGGame
 import gameplay_systems.skill_entity_utils
 from agent.lang_serve_agent import LangServeAgent
@@ -116,7 +116,7 @@ class InternalProcessData:
     actor_entity: Entity
     skill_entity: Entity
     agent: LangServeAgent
-    agent_task: AgentTask
+    agent_task: AgentRequestHandler
     is_weapon_direct_attack_skill: bool
 
 
@@ -176,7 +176,9 @@ class SkillReadinessValidatorSystem(ExecuteProcessor):
                     actor_entity=actor_entity,
                     skill_entity=skill_entity,
                     agent=agent,
-                    agent_task=AgentTask.create_without_context(agent=agent, prompt=""),
+                    agent_task=AgentRequestHandler.create_without_context(
+                        agent=agent, prompt=""
+                    ),
                     is_weapon_direct_attack_skill=skill_entity.has(
                         WeaponDirectAttackSkill
                     ),
@@ -192,7 +194,7 @@ class SkillReadinessValidatorSystem(ExecuteProcessor):
         agent_tasks = self._generate_agent_tasks(internal_process_data)
         if len(agent_tasks) == 0:
             return
-        await AgentTask.gather([task for task in agent_tasks.values()])
+        await AgentRequestHandler.gather([task for task in agent_tasks.values()])
 
     ######################################################################################################################################################
     def _process_agent_tasks(
@@ -290,9 +292,9 @@ class SkillReadinessValidatorSystem(ExecuteProcessor):
     ######################################################################################################################################################
     def _generate_agent_tasks(
         self, internal_process_data: List[InternalProcessData]
-    ) -> Dict[str, AgentTask]:
+    ) -> Dict[str, AgentRequestHandler]:
 
-        ret: Dict[str, AgentTask] = {}
+        ret: Dict[str, AgentRequestHandler] = {}
 
         for process_data in internal_process_data:
             if process_data.is_weapon_direct_attack_skill:
@@ -317,7 +319,7 @@ class SkillReadinessValidatorSystem(ExecuteProcessor):
             )
 
             process_data.agent_task = ret[process_data.agent.name] = (
-                AgentTask.create_with_full_context(
+                AgentRequestHandler.create_with_full_context(
                     process_data.agent,
                     gameplay_systems.prompt_utils.replace_you(
                         skill_readiness_prompt, process_data.agent.name

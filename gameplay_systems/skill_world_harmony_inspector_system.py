@@ -20,8 +20,8 @@ from extended_systems.prop_file import (
     generate_skill_accessory_prop_file_prompt,
 )
 import gameplay_systems.prompt_utils as prompt_utils
-from agent.agent_task import AgentTask
-from agent.agent_plan import AgentPlanResponse
+from agent.agent_request_handler import AgentRequestHandler
+from agent.agent_plan_response import AgentPlanResponse
 from game.rpg_game import RPGGame
 import gameplay_systems.file_system_utils
 from models.event_models import AgentEvent
@@ -226,7 +226,7 @@ class InternalProcessData:
     actor_entity: Entity
     skill_entity: Entity
     agent: LangServeAgent
-    agent_task: AgentTask
+    agent_task: AgentRequestHandler
     plan_response: InternalPlanResponse
 
 
@@ -307,7 +307,9 @@ class SkillWorldHarmonyInspectorSystem(ExecuteProcessor):
                     actor_entity=actor_entity,
                     skill_entity=skill_entity,
                     agent=world_system_agent,
-                    agent_task=AgentTask.create_without_context(world_system_agent, ""),
+                    agent_task=AgentRequestHandler.create_without_context(
+                        world_system_agent, ""
+                    ),
                     plan_response=InternalPlanResponse(skill_comp.name, ""),
                 )
             )
@@ -325,7 +327,7 @@ class SkillWorldHarmonyInspectorSystem(ExecuteProcessor):
             self._clear(internal_process_data)
             return
 
-        responses = await AgentTask.gather(agent_tasks)
+        responses = await AgentRequestHandler.gather(agent_tasks)
         if len(responses) == 0:
             logger.error("responses is empty")
             self._clear(internal_process_data)
@@ -499,9 +501,9 @@ class SkillWorldHarmonyInspectorSystem(ExecuteProcessor):
     def _generate_agent_tasks(
         self,
         internal_process_data: List[InternalProcessData],
-    ) -> List[AgentTask]:
+    ) -> List[AgentRequestHandler]:
 
-        ret: List[AgentTask] = []
+        ret: List[AgentRequestHandler] = []
         for process_data in internal_process_data:
 
             prompt = _generate_world_harmony_inspector_prompt(
@@ -520,7 +522,7 @@ class SkillWorldHarmonyInspectorSystem(ExecuteProcessor):
                 process_data.skill_entity.get(SkillComponent).command,
             )
 
-            create_task = AgentTask.create_with_input_only_context(
+            create_task = AgentRequestHandler.create_with_input_only_context(
                 process_data.agent, prompt
             )
 

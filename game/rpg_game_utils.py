@@ -6,7 +6,7 @@ from game.rpg_game import RPGGame
 from game.rpg_game_context import RPGGameContext
 from extended_systems.file_system import FileSystem
 from typing import Optional
-from agent.lang_serve_agent_system import LangServeAgentSystem
+from agent.agent_system import AgentSystem
 from extended_systems.query_component_system import QueryComponentSystem
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from chaos_engineering.empty_engineering_system import EmptyChaosEngineeringSystem
@@ -132,7 +132,7 @@ def _create_entitas_context(
     # 创建上下文
     context = RPGGameContext(
         FileSystem(),
-        LangServeAgentSystem(),
+        AgentSystem(),
         QueryComponentSystem(),
         chaos_engineering_system,
     )

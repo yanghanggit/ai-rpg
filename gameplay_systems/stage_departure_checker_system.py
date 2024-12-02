@@ -14,8 +14,8 @@ from game.rpg_game_context import RPGGameContext
 import gameplay_systems.prompt_utils as prompt_utils
 from typing import final, override, List, Set, Any, Dict
 from gameplay_systems.actor_entity_utils import ActorStatusEvaluator
-from agent.agent_task import AgentTask
-from agent.agent_plan import AgentPlanResponse
+from agent.agent_request_handler import AgentRequestHandler
+from agent.agent_plan_response import AgentPlanResponse
 from extended_systems.prop_file import (
     PropFile,
     generate_prop_file_for_stage_condition_prompt,
@@ -141,7 +141,7 @@ class StageDepartureCheckerSystem(ReactiveProcessor):
         if len(agent_tasks) == 0:
             return
 
-        agent_responses = await AgentTask.gather(
+        agent_responses = await AgentRequestHandler.gather(
             [task for task in agent_tasks.values()],
         )
 
@@ -155,9 +155,9 @@ class StageDepartureCheckerSystem(ReactiveProcessor):
     ######################################################################################################################################################
     def _initialize_agent_tasks(
         self, actor_entities: List[Entity]
-    ) -> Dict[str, AgentTask]:
+    ) -> Dict[str, AgentRequestHandler]:
 
-        ret: Dict[str, AgentTask] = {}
+        ret: Dict[str, AgentRequestHandler] = {}
 
         for actor_entity in actor_entities:
 
@@ -180,9 +180,9 @@ class StageDepartureCheckerSystem(ReactiveProcessor):
     ######################################################################################################################################################
     def _generate_agent_task(
         self, actor_entity: Entity, current_stage_agent: LangServeAgent
-    ) -> AgentTask:
+    ) -> AgentRequestHandler:
         actor_status_evaluator = ActorStatusEvaluator(self._context, actor_entity)
-        return AgentTask.create_with_input_only_context(
+        return AgentRequestHandler.create_with_input_only_context(
             current_stage_agent,
             _generate_exit_conditions_prompt(
                 actor_name=actor_status_evaluator.actor_name,
@@ -193,7 +193,7 @@ class StageDepartureCheckerSystem(ReactiveProcessor):
         )
 
     ######################################################################################################################################################
-    def _handle_agent_responses(self, tasks: Dict[str, AgentTask]) -> None:
+    def _handle_agent_responses(self, tasks: Dict[str, AgentRequestHandler]) -> None:
 
         for actor_name, stage_agent_task in tasks.items():
 

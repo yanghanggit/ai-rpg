@@ -6,7 +6,7 @@ from components.components import (
 from components.action_components import (
     StageNarrateAction,
 )
-from agent.agent_plan import AgentPlanResponse
+from agent.agent_plan_response import AgentPlanResponse
 from game.rpg_game_context import RPGGameContext
 
 

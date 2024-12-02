@@ -4,7 +4,7 @@ from typing import Optional, final
 
 
 @final
-class RemoteRunnableConnector:
+class RemoteRunnableHandler:
 
     def __init__(self, url: str) -> None:
         self._url: str = url
@@ -16,13 +16,13 @@ class RemoteRunnableConnector:
         return self._url
 
     #################################################################################################################################################
-    async def establish_connection(self, message: str) -> bool:
+    async def establish_connection(self, ping_message: str) -> bool:
 
         if self._remote_runnable is not None:
             logger.error(f"pin establish_connection: already initialized = {self._url}")
             return False
 
-        remote_runnable = await self._establish_remote_runnable(self._url, message)
+        remote_runnable = await self._establish_remote_runnable(self._url, ping_message)
         if remote_runnable is None:
             logger.error(
                 f"pin establish_connection: remote_runnable is None = {self._url}"

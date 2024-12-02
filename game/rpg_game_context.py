@@ -11,7 +11,7 @@ from components.components import (
 )
 from extended_systems.file_system import FileSystem
 from extended_systems.query_component_system import QueryComponentSystem
-from agent.lang_serve_agent_system import LangServeAgentSystem
+from agent.agent_system import AgentSystem
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from typing import Optional, Dict, Set
 import gameplay_systems.prompt_utils as prompt_utils
@@ -26,7 +26,7 @@ class RPGGameContext(Context):
     def __init__(
         self,
         file_system: FileSystem,
-        langserve_agent_system: LangServeAgentSystem,
+        agent_system: AgentSystem,
         query_component_system: QueryComponentSystem,
         chaos_engineering_system: IChaosEngineering,
     ) -> None:
@@ -38,7 +38,7 @@ class RPGGameContext(Context):
         self._file_system: FileSystem = file_system
 
         # agent 系统
-        self._agent_system: LangServeAgentSystem = langserve_agent_system
+        self._agent_system: AgentSystem = agent_system
 
         # （方便快速查找用）
         self._query_component_system: QueryComponentSystem = query_component_system
@@ -56,7 +56,7 @@ class RPGGameContext(Context):
 
     #############################################################################################################################
     @property
-    def agent_system(self) -> LangServeAgentSystem:
+    def agent_system(self) -> AgentSystem:
         return self._agent_system
 
     #############################################################################################################################

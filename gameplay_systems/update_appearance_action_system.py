@@ -15,7 +15,7 @@ from components.components import (
     WeaponComponent,
 )
 from extended_systems.prop_file import PropFile
-from agent.agent_task import AgentTask
+from agent.agent_request_handler import AgentRequestHandler
 from components.action_components import UpdateAppearanceAction
 from game.rpg_game import RPGGame
 from models.event_models import UpdateAppearanceEvent
@@ -174,7 +174,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
             return
 
         # 如果 actor_appearance_info过长，需要分批推理，每次推理最多5个
-        batch_processing_tasks: List[AgentTask] = []
+        batch_processing_tasks: List[AgentRequestHandler] = []
         for i in range(0, len(actor_appearance_info), batch_size):
             batch = actor_appearance_info[i : i + batch_size]
             batch_processing_tasks.append(
@@ -184,7 +184,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
             )
 
         # 并发
-        await AgentTask.gather(batch_processing_tasks)
+        await AgentRequestHandler.gather(batch_processing_tasks)
 
         # 处理
         for process_task in batch_processing_tasks:
@@ -219,7 +219,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
         self,
         batch_appearance_info: List[InternalProcessData],
         world_system_agent: LangServeAgent,
-    ) -> AgentTask:
+    ) -> AgentRequestHandler:
 
         gen_mapping = {
             data.actor_name: (
@@ -230,7 +230,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
             for data in batch_appearance_info
         }
 
-        return AgentTask.create_without_context(
+        return AgentRequestHandler.create_without_context(
             world_system_agent,
             _generate_appearance_reasoning_prompt(gen_mapping),
         )
@@ -238,7 +238,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
     ###############################################################################################################################################
     def _process_agent_appearance_task(
         self,
-        agent_task: AgentTask,
+        agent_task: AgentRequestHandler,
     ) -> None:
 
         try:

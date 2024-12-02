@@ -14,8 +14,8 @@ from game.rpg_game_context import RPGGameContext
 import gameplay_systems.prompt_utils as prompt_utils
 from typing import final, override, List, Set, Any, Dict
 from gameplay_systems.actor_entity_utils import ActorStatusEvaluator
-from agent.agent_task import AgentTask
-from agent.agent_plan import AgentPlanResponse
+from agent.agent_request_handler import AgentRequestHandler
+from agent.agent_plan_response import AgentPlanResponse
 from extended_systems.prop_file import (
     PropFile,
     generate_prop_file_for_stage_condition_prompt,
@@ -142,7 +142,7 @@ class StageEntranceCheckerSystem(ReactiveProcessor):
         if len(agent_tasks) == 0:
             return
 
-        agent_responses = await AgentTask.gather(
+        agent_responses = await AgentRequestHandler.gather(
             [task for task in agent_tasks.values()],
         )
 
@@ -155,9 +155,9 @@ class StageEntranceCheckerSystem(ReactiveProcessor):
     ######################################################################################################################################################
     def _initialize_agent_tasks(
         self, actor_entities: List[Entity]
-    ) -> Dict[str, AgentTask]:
+    ) -> Dict[str, AgentRequestHandler]:
 
-        ret: Dict[str, AgentTask] = {}
+        ret: Dict[str, AgentRequestHandler] = {}
 
         for actor_entity in actor_entities:
 
@@ -193,7 +193,7 @@ class StageEntranceCheckerSystem(ReactiveProcessor):
         actor_entity: Entity,
         target_stage_entity: Entity,
         target_stage_agent: LangServeAgent,
-    ) -> AgentTask:
+    ) -> AgentRequestHandler:
 
         # target_stage_name = self._context.safe_get_entity_name(target_stage_entity)
         actor_status_evaluator = ActorStatusEvaluator(self._context, actor_entity)
@@ -204,7 +204,9 @@ class StageEntranceCheckerSystem(ReactiveProcessor):
             prop_files=actor_status_evaluator.available_stage_condition_prop_files,
         )
 
-        return AgentTask.create_with_input_only_context(target_stage_agent, prompt)
+        return AgentRequestHandler.create_with_input_only_context(
+            target_stage_agent, prompt
+        )
 
     ###############################################################################################################################################
     def _resolve_actor_target_stage(self, actor_entity: Entity) -> str:
@@ -216,7 +218,7 @@ class StageEntranceCheckerSystem(ReactiveProcessor):
         return str(goto_action.values[0])
 
     ######################################################################################################################################################
-    def _handle_agent_responses(self, tasks: Dict[str, AgentTask]) -> None:
+    def _handle_agent_responses(self, tasks: Dict[str, AgentRequestHandler]) -> None:
 
         for actor_name, stage_agent_task in tasks.items():
 

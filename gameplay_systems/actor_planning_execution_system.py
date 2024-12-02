@@ -12,14 +12,14 @@ from components.action_components import (
     GoToAction,
     TagAction,
 )
-from agent.agent_plan import AgentPlanResponse
+from agent.agent_plan_response import AgentPlanResponse
 from game.rpg_game_context import RPGGameContext
 from loguru import logger
 from typing import Dict, Set, List, Optional, final
 import gameplay_systems.action_component_utils
 import gameplay_systems.prompt_utils
-from agent.agent_task import (
-    AgentTask,
+from agent.agent_request_handler import (
+    AgentRequestHandler,
 )
 from game.rpg_game import RPGGame
 from gameplay_systems.actor_entity_utils import ActorStatusEvaluator
@@ -147,7 +147,7 @@ class ActorPlanningExecutionSystem(ExecuteProcessor):
     @override
     async def a_execute1(self) -> None:
         # step1: 添加任务
-        tasks: Dict[str, AgentTask] = {}
+        tasks: Dict[str, AgentRequestHandler] = {}
         self._populate_agent_tasks(tasks)
         # step可选：混沌工程做测试
         self._context.chaos_engineering_system.on_actor_planning_system_execute(
@@ -157,7 +157,7 @@ class ActorPlanningExecutionSystem(ExecuteProcessor):
         if len(tasks) == 0:
             return
 
-        responses = await AgentTask.gather([task for task in tasks.values()])
+        responses = await AgentRequestHandler.gather([task for task in tasks.values()])
         if len(responses) == 0:
             logger.warning(f"ActorPlanningSystem: request_result is empty.")
             return
@@ -166,7 +166,9 @@ class ActorPlanningExecutionSystem(ExecuteProcessor):
         tasks.clear()
 
     #######################################################################################################################################
-    def _process_agent_tasks(self, request_tasks: Dict[str, AgentTask]) -> None:
+    def _process_agent_tasks(
+        self, request_tasks: Dict[str, AgentRequestHandler]
+    ) -> None:
 
         for actor_name, agent_task in request_tasks.items():
 
@@ -192,7 +194,9 @@ class ActorPlanningExecutionSystem(ExecuteProcessor):
                 continue
 
     #######################################################################################################################################
-    def _populate_agent_tasks(self, planned_agent_tasks: Dict[str, AgentTask]) -> None:
+    def _populate_agent_tasks(
+        self, planned_agent_tasks: Dict[str, AgentRequestHandler]
+    ) -> None:
 
         planned_agent_tasks.clear()
 
@@ -216,20 +220,22 @@ class ActorPlanningExecutionSystem(ExecuteProcessor):
             )
             actor_appearance_mapping.pop(actor_comp.name, None)  # 自己不要
 
-            planned_agent_tasks[actor_comp.name] = AgentTask.create_with_full_context(
-                self._context.safe_get_agent(actor_entity),
-                _generate_actor_plan_prompt(
-                    current_stage=self._retrieve_stage_name(actor_entity),
-                    stage_narrate=gameplay_systems.stage_entity_utils.extract_current_stage_narrative(
-                        self._context, actor_entity
+            planned_agent_tasks[actor_comp.name] = (
+                AgentRequestHandler.create_with_full_context(
+                    self._context.safe_get_agent(actor_entity),
+                    _generate_actor_plan_prompt(
+                        current_stage=self._retrieve_stage_name(actor_entity),
+                        stage_narrate=gameplay_systems.stage_entity_utils.extract_current_stage_narrative(
+                            self._context, actor_entity
+                        ),
+                        stage_graph=set(self._retrieve_stage_graph(actor_entity)),
+                        actor_appearance_mapping=actor_appearance_mapping,
+                        health_description=check_self.format_health_info,
+                        actor_props=check_self._category_prop_files,
+                        current_weapon=check_self._current_weapon,
+                        current_clothes=check_self._current_clothes,
                     ),
-                    stage_graph=set(self._retrieve_stage_graph(actor_entity)),
-                    actor_appearance_mapping=actor_appearance_mapping,
-                    health_description=check_self.format_health_info,
-                    actor_props=check_self._category_prop_files,
-                    current_weapon=check_self._current_weapon,
-                    current_clothes=check_self._current_clothes,
-                ),
+                )
             )
 
     #######################################################################################################################################

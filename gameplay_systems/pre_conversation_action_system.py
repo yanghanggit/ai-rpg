@@ -13,11 +13,11 @@ from components.components import (
     AgentPingFlagComponent,
 )
 from game.rpg_game_context import RPGGameContext
-from agent.agent_task import AgentTask
+from agent.agent_request_handler import AgentRequestHandler
 from typing import List, final
 import copy
 from game.rpg_game import RPGGame
-from agent.agent_plan import AgentPlanResponse
+from agent.agent_plan_response import AgentPlanResponse
 
 
 ################################################################################################################################################
@@ -123,12 +123,12 @@ class PreConversationActionSystem(ReactiveProcessor):
             return
 
         # 生成agent任务
-        agent_tasks: List[AgentTask] = []
+        agent_tasks: List[AgentRequestHandler] = []
         for player_entity in entities:
             agent_tasks.append(self._populate_agent_task(player_entity))
 
         # 执行agent任务
-        await AgentTask.gather(agent_tasks)
+        await AgentRequestHandler.gather(agent_tasks)
 
         # 处理agent任务的返回值
         self._process_response_tasks(agent_tasks)
@@ -137,8 +137,8 @@ class PreConversationActionSystem(ReactiveProcessor):
     def _populate_agent_task(
         self,
         player_entity: Entity,
-    ) -> AgentTask:
-        return AgentTask.create_without_context(
+    ) -> AgentRequestHandler:
+        return AgentRequestHandler.create_without_context(
             self._context.safe_get_agent(player_entity),
             _generate_conversation_check_prompt(
                 self._get_announce_content(player_entity),
@@ -181,7 +181,7 @@ class PreConversationActionSystem(ReactiveProcessor):
             player_entity.remove(WhisperAction)
 
     #################################################################################################################################################
-    def _process_response_tasks(self, tasks: List[AgentTask]) -> None:
+    def _process_response_tasks(self, tasks: List[AgentRequestHandler]) -> None:
         for task in tasks:
             player_entity = self._context.get_actor_entity(task.agent_name)
             assert player_entity is not None

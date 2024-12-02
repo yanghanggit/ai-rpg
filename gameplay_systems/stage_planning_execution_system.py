@@ -12,14 +12,14 @@ from components.action_components import (
     StageTagAction,
     TagAction,
 )
-from agent.agent_plan import AgentPlanResponse
+from agent.agent_plan_response import AgentPlanResponse
 from game.rpg_game_context import RPGGameContext
 from loguru import logger
 from typing import Dict, List, final
 import gameplay_systems.action_component_utils
 import gameplay_systems.prompt_utils
-from agent.agent_task import (
-    AgentTask,
+from agent.agent_request_handler import (
+    AgentRequestHandler,
 )
 from game.rpg_game import RPGGame
 import gameplay_systems.stage_entity_utils
@@ -81,7 +81,7 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
     async def _execute_stage_tasks(self) -> None:
 
         # step1: 添加任务
-        tasks: Dict[str, AgentTask] = {}
+        tasks: Dict[str, AgentRequestHandler] = {}
         self._populate_agent_tasks(tasks)
 
         # step可选：混沌工程做测试
@@ -93,7 +93,7 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
         if len(tasks) == 0:
             return
 
-        await AgentTask.gather([task for task in tasks.values()])
+        await AgentRequestHandler.gather([task for task in tasks.values()])
 
         # step3: 处理结果
         self._process_agent_tasks(tasks)
@@ -102,7 +102,9 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
         tasks.clear()
 
     #######################################################################################################################################
-    def _process_agent_tasks(self, agent_task_requests: Dict[str, AgentTask]) -> None:
+    def _process_agent_tasks(
+        self, agent_task_requests: Dict[str, AgentRequestHandler]
+    ) -> None:
 
         for stage_name, agent_task in agent_task_requests.items():
 
@@ -133,7 +135,7 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
 
     #######################################################################################################################################
     def _populate_agent_tasks(
-        self, requested_agent_tasks: Dict[str, AgentTask]
+        self, requested_agent_tasks: Dict[str, AgentRequestHandler]
     ) -> None:
         requested_agent_tasks.clear()
         stage_entities = self._context.get_group(
@@ -149,11 +151,13 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
         ).entities
         for stage_entity in stage_entities:
             agent = self._context.safe_get_agent(stage_entity)
-            requested_agent_tasks[agent.name] = AgentTask.create_with_full_context(
-                agent,
-                _generate_stage_plan_prompt(
-                    self._context.retrieve_stage_actor_appearance(stage_entity),
-                ),
+            requested_agent_tasks[agent.name] = (
+                AgentRequestHandler.create_with_full_context(
+                    agent,
+                    _generate_stage_plan_prompt(
+                        self._context.retrieve_stage_actor_appearance(stage_entity),
+                    ),
+                )
             )
 
     #######################################################################################################################################

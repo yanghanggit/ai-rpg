@@ -14,6 +14,9 @@ class AgentAction:
     values: List[str]
 
 
+############################################################################################################
+
+
 class AgentPlanResponse:
 
     def __init__(self, agent_name: str, response_content: str) -> None:
@@ -106,11 +109,11 @@ class AgentPlanResponse:
         return None
 
     ############################################################################################################
-    def _concatenate_values(self, action_name: str) -> str:
+    def _concatenate_values(self, action_name: str, symbol: str = "") -> str:
         action = self.get_action(action_name)
         if action is None or len(action.values) == 0:
             return ""
-        return " ".join(action.values)
+        return symbol.join(action.values)
 
     ############################################################################################################
     def _parse_boolean(self, action_name: str) -> bool:

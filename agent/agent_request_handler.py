@@ -8,6 +8,7 @@ from agent.lang_serve_agent import LangServeAgent
 from enum import Flag, auto
 
 
+################################################################################################################################################################################
 class ChatHistoryOperationOptions(Flag):
     NONE = auto()
     INPUT_CHAT_HISTORY = auto()
@@ -15,11 +16,14 @@ class ChatHistoryOperationOptions(Flag):
     APPEND_RESPONSE_TO_CHAT_HISTORY = auto()
 
 
-class AgentTask:
+################################################################################################################################################################################
+
+
+class AgentRequestHandler:
 
     ################################################################################################################################################################################
     @staticmethod
-    async def gather(tasks: List["AgentTask"]) -> List[Any]:
+    async def gather(tasks: List["AgentRequestHandler"]) -> List[Any]:
         if len(tasks) == 0:
             return []
         coros = [task.a_request() for task in tasks]
@@ -34,8 +38,8 @@ class AgentTask:
     def create_with_full_context(
         agent: LangServeAgent,
         prompt: str,
-    ) -> "AgentTask":
-        return AgentTask(
+    ) -> "AgentRequestHandler":
+        return AgentRequestHandler(
             agent,
             prompt,
             ChatHistoryOperationOptions.INPUT_CHAT_HISTORY
@@ -45,15 +49,19 @@ class AgentTask:
 
     ################################################################################################################################################################################
     @staticmethod
-    def create_without_context(agent: LangServeAgent, prompt: str) -> "AgentTask":
-        return AgentTask(agent, prompt, ChatHistoryOperationOptions.NONE)
+    def create_without_context(
+        agent: LangServeAgent, prompt: str
+    ) -> "AgentRequestHandler":
+        return AgentRequestHandler(agent, prompt, ChatHistoryOperationOptions.NONE)
 
     ################################################################################################################################################################################
     @staticmethod
     def create_with_input_only_context(
         agent: LangServeAgent, prompt: str
-    ) -> "AgentTask":
-        return AgentTask(agent, prompt, ChatHistoryOperationOptions.INPUT_CHAT_HISTORY)
+    ) -> "AgentRequestHandler":
+        return AgentRequestHandler(
+            agent, prompt, ChatHistoryOperationOptions.INPUT_CHAT_HISTORY
+        )
 
     ################################################################################################################################################################################
     def __init__(
@@ -117,7 +125,7 @@ class AgentTask:
             )
 
             if self.response is not None:
-                self._finalize_task()
+                self._update_chat_history()
                 logger.info(
                     f"{self.agent_name} request response:\n{self.response_content}"
                 )
@@ -149,7 +157,7 @@ class AgentTask:
             )
 
             if self.response is not None:
-                self._finalize_task()
+                self._update_chat_history()
                 logger.info(
                     f"{self.agent_name} a_request response:\n{self.response_content}"
                 )
@@ -160,7 +168,7 @@ class AgentTask:
         return self.response
 
     ################################################################################################################################################################################
-    def _finalize_task(self) -> None:
+    def _update_chat_history(self) -> None:
 
         if (
             ChatHistoryOperationOptions.APPEND_PROMPT_TO_CHAT_HISTORY

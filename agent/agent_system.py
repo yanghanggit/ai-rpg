@@ -3,7 +3,7 @@ from typing import Dict, List, Optional, Set, cast, final
 from langchain_core.messages import HumanMessage, AIMessage
 from pathlib import Path
 from agent.lang_serve_agent import LangServeAgent
-from agent.remote_runnable_connector import RemoteRunnableConnector
+from agent.remote_runnable_handler import RemoteRunnableHandler
 from models.agent_models import (
     AgentMessageType,
     AgentMessageModel,
@@ -12,13 +12,12 @@ from models.agent_models import (
 
 
 @final
-class LangServeAgentSystem:
-    """LangServeAgentSystem Because it involves net operations, an independent system is more convenient."""
+class AgentSystem:
 
     def __init__(self) -> None:
         self._agents: Dict[str, LangServeAgent] = {}
         self._runtime_dir: Optional[Path] = None
-        self._remote_executable_connectors: Dict[str, RemoteRunnableConnector] = {}
+        self._remote_runnable_handlers: Dict[str, RemoteRunnableHandler] = {}
 
     ################################################################################################################################################################################
     ### 必须设置根部的执行路行
@@ -39,10 +38,10 @@ class LangServeAgentSystem:
             logger.error(f"register_agent: {agent_name} has been registered.")
             return self._agents[agent_name]
 
-        remote_runnable = self._remote_executable_connectors.get(url, None)
+        remote_runnable = self._remote_runnable_handlers.get(url, None)
         if remote_runnable is None:
-            remote_runnable = RemoteRunnableConnector(url)
-            self._remote_executable_connectors[url] = remote_runnable
+            remote_runnable = RemoteRunnableHandler(url)
+            self._remote_runnable_handlers[url] = remote_runnable
 
         new_agent = LangServeAgent(agent_name, remote_runnable)
         self._agents[agent_name] = new_agent

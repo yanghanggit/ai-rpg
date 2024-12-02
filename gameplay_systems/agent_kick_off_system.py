@@ -11,7 +11,7 @@ from components.components import (
 )
 from game.rpg_game_context import RPGGameContext
 from typing import Dict, Set, final
-from agent.agent_task import AgentTask
+from agent.agent_request_handler import AgentRequestHandler
 from game.rpg_game import RPGGame
 from components.action_components import (
     MindVoiceAction,
@@ -21,7 +21,7 @@ from components.action_components import (
 )
 from components.action_components import UpdateAppearanceAction
 import gameplay_systems.prompt_utils
-from agent.agent_plan import AgentPlanResponse
+from agent.agent_plan_response import AgentPlanResponse
 import gameplay_systems.stage_entity_utils
 from loguru import logger
 
@@ -89,9 +89,9 @@ class AgentKickOffSystem(ExecuteProcessor):
         self._game: RPGGame = rpg_game
 
     ######################################################################################################################################################
-    def _initialize_tasks(self) -> Dict[str, AgentTask]:
+    def _initialize_tasks(self) -> Dict[str, AgentRequestHandler]:
 
-        ret: Dict[str, AgentTask] = {}
+        ret: Dict[str, AgentRequestHandler] = {}
 
         world_tasks = self._initialize_world_system_tasks()
         stage_tasks = self._initialize_stage_tasks()
@@ -120,12 +120,12 @@ class AgentKickOffSystem(ExecuteProcessor):
 
     ######################################################################################################################################################
     async def _process_kick_off_tasks(self) -> None:
-        agent_tasks: Dict[str, AgentTask] = self._initialize_tasks()
+        agent_tasks: Dict[str, AgentRequestHandler] = self._initialize_tasks()
         if len(agent_tasks) == 0:
             return
 
         # 执行全部的任务
-        await AgentTask.gather([task for task in agent_tasks.values()])
+        await AgentRequestHandler.gather([task for task in agent_tasks.values()])
 
         # 处理结果
         self._process_agent_tasks(agent_tasks)
@@ -134,9 +134,9 @@ class AgentKickOffSystem(ExecuteProcessor):
         self._process_stage_narrate_action(agent_tasks)
 
     ######################################################################################################################################################
-    def _initialize_world_system_tasks(self) -> Dict[str, AgentTask]:
+    def _initialize_world_system_tasks(self) -> Dict[str, AgentRequestHandler]:
 
-        ret: Dict[str, AgentTask] = {}
+        ret: Dict[str, AgentRequestHandler] = {}
 
         world_entities: Set[Entity] = self._context.get_group(
             Matcher(
@@ -154,7 +154,7 @@ class AgentKickOffSystem(ExecuteProcessor):
                 len(agent._chat_history) == 0
             ), f"chat_history is not empty, {agent._chat_history}"
 
-            ret[agent.name] = AgentTask.create_with_full_context(
+            ret[agent.name] = AgentRequestHandler.create_with_full_context(
                 agent,
                 _generate_world_system_kick_off_prompt(epoch_script=""),
             )
@@ -162,9 +162,9 @@ class AgentKickOffSystem(ExecuteProcessor):
         return ret
 
     ######################################################################################################################################################
-    def _initialize_stage_tasks(self) -> Dict[str, AgentTask]:
+    def _initialize_stage_tasks(self) -> Dict[str, AgentRequestHandler]:
 
-        ret: Dict[str, AgentTask] = {}
+        ret: Dict[str, AgentRequestHandler] = {}
 
         stage_entities: Set[Entity] = self._context.get_group(
             Matcher(
@@ -190,14 +190,16 @@ class AgentKickOffSystem(ExecuteProcessor):
                 ),
                 epoch_script=self._game.epoch_script,
             )
-            ret[agent.name] = AgentTask.create_with_full_context(agent, kick_off_prompt)
+            ret[agent.name] = AgentRequestHandler.create_with_full_context(
+                agent, kick_off_prompt
+            )
 
         return ret
 
     ######################################################################################################################################################
-    def _initialize_actor_tasks(self) -> Dict[str, AgentTask]:
+    def _initialize_actor_tasks(self) -> Dict[str, AgentRequestHandler]:
 
-        ret: Dict[str, AgentTask] = {}
+        ret: Dict[str, AgentRequestHandler] = {}
 
         actor_entities: Set[Entity] = self._context.get_group(
             Matcher(
@@ -216,7 +218,7 @@ class AgentKickOffSystem(ExecuteProcessor):
             ), f"chat_history is not empty, {agent._chat_history}"
 
             kick_off_comp = actor_entity.get(KickOffContentComponent)
-            ret[agent.name] = AgentTask.create_with_full_context(
+            ret[agent.name] = AgentRequestHandler.create_with_full_context(
                 agent,
                 _generate_actor_kick_off_prompt(
                     kick_off_message=kick_off_comp.content,
@@ -227,7 +229,7 @@ class AgentKickOffSystem(ExecuteProcessor):
         return ret
 
     ######################################################################################################################################################
-    def _process_agent_tasks(self, tasks: Dict[str, AgentTask]) -> None:
+    def _process_agent_tasks(self, tasks: Dict[str, AgentRequestHandler]) -> None:
         for agent_name, _ in tasks.items():
             entity = self._context.get_entity_by_name(agent_name)
             assert entity is not None, f"entity is None, {agent_name}"
@@ -236,7 +238,9 @@ class AgentKickOffSystem(ExecuteProcessor):
             entity.replace(KickOffFlagComponent, agent_name)
 
     ######################################################################################################################################################
-    def _process_stage_narrate_action(self, tasks: Dict[str, AgentTask]) -> None:
+    def _process_stage_narrate_action(
+        self, tasks: Dict[str, AgentRequestHandler]
+    ) -> None:
         for agent_name, agent_task in tasks.items():
             entity = self._context.get_entity_by_name(agent_name)
             assert entity is not None, f"entity is None, {agent_name}"

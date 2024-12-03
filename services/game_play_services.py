@@ -48,7 +48,7 @@ async def survey_stage_action(request_data: SurveyStageRequest) -> SurveyStageRe
         )
 
     # 获得消息
-    watch_action_model = game.rpg_game_utils.gen_player_survey_stage_model(
+    watch_action_model = game.rpg_game_utils.gen_survey_stage_model(
         room.game, player_proxy
     )
 
@@ -103,7 +103,7 @@ async def status_inventory_check_action(
         )
 
     # 获得消息
-    check_action_model = game.rpg_game_utils.gen_player_status_inventory_check_model(
+    check_action_model = game.rpg_game_utils.gen_status_inventory_check_model(
         room.game, player_proxy
     )
 
@@ -159,7 +159,7 @@ async def retrieve_actor_archives(
 
     # 获得消息
     retrieve_actor_archives_action_model = (
-        game.rpg_game_utils.gen_player_retrieve_actor_archives_action_model(
+        game.rpg_game_utils.gen_retrieve_actor_archives_action_model(
             room.game, player_proxy
         )
     )
@@ -213,7 +213,7 @@ async def retrieve_stage_archives(
         )
 
     retrieve_stage_archives_action_model = (
-        game.rpg_game_utils.gen_player_retrieve_stage_archives_action_model(
+        game.rpg_game_utils.gen_retrieve_stage_archives_action_model(
             room.game, player_proxy
         )
     )

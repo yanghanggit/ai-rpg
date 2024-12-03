@@ -20,6 +20,7 @@ class TerminalGameOption:
     new_game: bool = True
 
 
+###############################################################################################################################################
 async def run_terminal_game(option: TerminalGameOption) -> None:
 
     game_name = input(
@@ -94,22 +95,20 @@ async def run_terminal_game(option: TerminalGameOption) -> None:
     player_proxy: Optional[PlayerProxy] = None
     if option.new_game:
         # 是否是控制actor游戏
-        player_actor_name = terminal_player_input_select_actor(new_game)
+        player_actor_name = terminal_select_actor_from_input(new_game)
         if player_actor_name != "":
             logger.info(f"{option.user_name}:{game_name}:{player_actor_name}")
             player_proxy = PlayerProxy(PlayerProxyModel(name=option.user_name))
             new_game.add_player(player_proxy)
 
-            game.rpg_game_utils.player_play_new_game(
-                new_game, player_proxy, player_actor_name
-            )
+            game.rpg_game_utils.new_game(new_game, player_proxy, player_actor_name)
         else:
             logger.warning(
                 "没有找到可以控制的角色，可能是game resource里没设置Player，此时就是观看。"
             )
     else:
 
-        player_proxy = game.rpg_game_utils.player_play_again(new_game, option.user_name)
+        player_proxy = game.rpg_game_utils.rejoin_game(new_game, option.user_name)
 
     # 核心循环
     while True:
@@ -128,7 +127,7 @@ async def run_terminal_game(option: TerminalGameOption) -> None:
 
         # 有客户端才进行控制。
         player_proxy.log_recent_client_messages(option.show_client_message_count)
-        if game.rpg_game_utils.is_player_turn(new_game, player_proxy):
+        if game.rpg_game_utils.is_turn_of_player(new_game, player_proxy):
             # 是你的输入回合
             await terminal_player_input(new_game, player_proxy)
         else:
@@ -144,8 +143,8 @@ async def run_terminal_game(option: TerminalGameOption) -> None:
 
 
 ###############################################################################################################################################
-def terminal_player_input_select_actor(rpg_game: RPGGame) -> str:
-    all_names = game.rpg_game_utils.get_player_actor(rpg_game)
+def terminal_select_actor_from_input(rpg_game: RPGGame) -> str:
+    all_names = game.rpg_game_utils.list_player_actors(rpg_game)
     if len(all_names) == 0:
         return ""
 
@@ -164,20 +163,6 @@ def terminal_player_input_select_actor(rpg_game: RPGGame) -> str:
     return ""
 
 
-#######################################################################################################################################
-def terminal_player_input_watch(game_name: RPGGame, player_proxy: PlayerProxy) -> None:
-    watch_action_model = game.rpg_game_utils.gen_player_survey_stage_model(
-        game_name, player_proxy
-    )
-    if watch_action_model is None:
-        return
-
-    while True:
-        logger.info(watch_action_model.model_dump_json())
-        input(f"按任意键继续")
-        break
-
-
 ###############################################################################################################################################
 async def terminal_player_input(rpg_game: RPGGame, player_proxy: PlayerProxy) -> None:
 
@@ -193,25 +178,41 @@ async def terminal_player_input(rpg_game: RPGGame, player_proxy: PlayerProxy) ->
             break
 
         elif usr_input == "/survey_stage_action" or usr_input == "/ssa":
-            terminal_player_input_watch(rpg_game, player_proxy)
+            terminal_survey_stage(rpg_game, player_proxy)
 
         elif usr_input == "/status_inventory_check_action" or usr_input == "/sica":
-            terminal_player_input_check(rpg_game, player_proxy)
+            terminal_status_inventory_check(rpg_game, player_proxy)
 
         elif usr_input == "/retrieve_actor_archives" or usr_input == "/raa":
-            terminal_player_input_retrieve_actor_archives(rpg_game, player_proxy)
+            terminal_retrieve_actor_archives_action(rpg_game, player_proxy)
 
         elif usr_input == "/retrieve_stage_archives" or usr_input == "/rsa":
-            terminal_player_input_retrieve_stage_archives(rpg_game, player_proxy)
+            terminal_retrieve_stage_archives_action(rpg_game, player_proxy)
 
         else:
-            game.rpg_game_utils.add_player_command(rpg_game, player_proxy, usr_input)
+            game.rpg_game_utils.add_command(rpg_game, player_proxy, usr_input)
             break
 
 
 #######################################################################################################################################
-def terminal_player_input_check(game_name: RPGGame, player_proxy: PlayerProxy) -> None:
-    check_action_model = game.rpg_game_utils.gen_player_status_inventory_check_model(
+def terminal_survey_stage(game_name: RPGGame, player_proxy: PlayerProxy) -> None:
+    watch_action_model = game.rpg_game_utils.gen_survey_stage_model(
+        game_name, player_proxy
+    )
+    if watch_action_model is None:
+        return
+
+    while True:
+        logger.info(watch_action_model.model_dump_json())
+        input(f"按任意键继续")
+        break
+
+
+#######################################################################################################################################
+def terminal_status_inventory_check(
+    game_name: RPGGame, player_proxy: PlayerProxy
+) -> None:
+    check_action_model = game.rpg_game_utils.gen_status_inventory_check_model(
         game_name, player_proxy
     )
 
@@ -225,11 +226,11 @@ def terminal_player_input_check(game_name: RPGGame, player_proxy: PlayerProxy) -
 
 
 #######################################################################################################################################
-def terminal_player_input_retrieve_actor_archives(
+def terminal_retrieve_actor_archives_action(
     game_name: RPGGame, player_proxy: PlayerProxy
 ) -> None:
     get_actor_archives_model = (
-        game.rpg_game_utils.gen_player_retrieve_actor_archives_action_model(
+        game.rpg_game_utils.gen_retrieve_actor_archives_action_model(
             game_name, player_proxy
         )
     )
@@ -244,11 +245,11 @@ def terminal_player_input_retrieve_actor_archives(
 
 
 #######################################################################################################################################
-def terminal_player_input_retrieve_stage_archives(
+def terminal_retrieve_stage_archives_action(
     game_name: RPGGame, player_proxy: PlayerProxy
 ) -> None:
     get_stage_archives_model = (
-        game.rpg_game_utils.gen_player_retrieve_stage_archives_action_model(
+        game.rpg_game_utils.gen_retrieve_stage_archives_action_model(
             game_name, player_proxy
         )
     )

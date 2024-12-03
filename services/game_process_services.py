@@ -201,7 +201,7 @@ async def create(request_data: CreateRequest) -> CreateResponse:
         )
 
     # 检查是否有可以控制的角色, 没有就不让玩, 因为是客户端进来的。没有可以控制的觉得暂时就不允许玩。
-    player_actors = game.rpg_game_utils.get_player_actor(new_game)
+    player_actors = game.rpg_game_utils.list_player_actors(new_game)
     if len(player_actors) == 0:
         logger.warning(f"create_rpg_game 没有可以控制的角色 = {request_data.game_name}")
         return CreateResponse(
@@ -263,9 +263,7 @@ async def join(request_data: JoinRequest) -> JoinResponse:
     user_room.game.add_player(player_proxy)
 
     # 加入游戏
-    game.rpg_game_utils.player_play_new_game(
-        user_room.game, player_proxy, request_data.actor_name
-    )
+    game.rpg_game_utils.new_game(user_room.game, player_proxy, request_data.actor_name)
 
     # 返回加入游戏的信息
     return JoinResponse(
@@ -381,12 +379,12 @@ async def execute(request_data: ExecuteRequest) -> ExecuteResponse:
             usr_input != "/retrieve_stage_archives" and usr_input != "/rsa"
         ), "不应该有这个命令"
 
-        game.rpg_game_utils.add_player_command(user_room.game, player_proxy, usr_input)
+        game.rpg_game_utils.add_command(user_room.game, player_proxy, usr_input)
 
     if not user_room.game._will_exit:
         await user_room.game.a_execute()
 
-    turn_player_actors = game.rpg_game_utils.get_turn_player_actors(user_room.game)
+    turn_player_actors = game.rpg_game_utils.list_planning_player_actors(user_room.game)
 
     # 返回执行游戏的信息
     return ExecuteResponse(

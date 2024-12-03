@@ -167,7 +167,7 @@ def create_web_rpg_game(game_resource: RPGGameResource) -> Optional[WebRPGGame]:
 
 
 #######################################################################################################################################
-def get_stage_narrate_content_from_stage_archive_file(
+def _retrieve_stage_narrative_from_archive(
     game_name: RPGGame, player_entity: Entity
 ) -> str:
 
@@ -191,14 +191,14 @@ def get_stage_narrate_content_from_stage_archive_file(
 
 
 #######################################################################################################################################
-def gen_player_survey_stage_model(
+def gen_survey_stage_model(
     game_name: RPGGame, player_proxy: PlayerProxy
 ) -> Optional[SurveyStageModel]:
     player_entity = game_name.context.get_player_entity(player_proxy.name)
     if player_entity is None:
         return None
 
-    stage_narrate_content = get_stage_narrate_content_from_stage_archive_file(
+    stage_narrate_content = _retrieve_stage_narrative_from_archive(
         game_name, player_entity
     )
 
@@ -233,7 +233,7 @@ def gen_player_survey_stage_model(
 
 
 #######################################################################################################################################
-def gen_player_status_inventory_check_model(
+def gen_status_inventory_check_model(
     game_name: RPGGame, player_proxy: PlayerProxy
 ) -> Optional[StatusInventoryCheckModel]:
     player_entity = game_name.context.get_player_entity(player_proxy.name)
@@ -271,7 +271,7 @@ def gen_player_status_inventory_check_model(
 
 
 #######################################################################################################################################
-def gen_player_retrieve_actor_archives_action_model(
+def gen_retrieve_actor_archives_action_model(
     game_name: RPGGame, player_proxy: PlayerProxy
 ) -> Optional[RetrieveActorArchivesModel]:
 
@@ -295,7 +295,7 @@ def gen_player_retrieve_actor_archives_action_model(
 
 
 #######################################################################################################################################
-def gen_player_retrieve_stage_archives_action_model(
+def gen_retrieve_stage_archives_action_model(
     game_name: RPGGame, player_proxy: PlayerProxy
 ) -> Optional[RetrieveStageArchivesActionModel]:
 
@@ -340,9 +340,7 @@ def save_game(rpg_game: RPGGame, archive_dir: Path, format: str = "zip") -> None
 
 
 #######################################################################################################################################
-def add_player_command(
-    rpg_game: RPGGame, player_proxy: PlayerProxy, usr_input: str
-) -> bool:
+def add_command(rpg_game: RPGGame, player_proxy: PlayerProxy, usr_input: str) -> bool:
 
     if "/goto" in usr_input:
         player_proxy.add_command(PlayerGoTo("/goto", usr_input))
@@ -379,7 +377,7 @@ def add_player_command(
 
 
 #######################################################################################################################################
-def player_play_new_game(
+def new_game(
     rpg_game: RPGGame, player_proxy: PlayerProxy, player_actor_name: str
 ) -> None:
 
@@ -414,7 +412,7 @@ def player_play_new_game(
 
 
 #######################################################################################################################################
-def player_play_again(rpg_game: RPGGame, player_name: str) -> Optional[PlayerProxy]:
+def rejoin_game(rpg_game: RPGGame, player_name: str) -> Optional[PlayerProxy]:
 
     player_proxy = rpg_game.get_player(player_name)
     if player_proxy is None:
@@ -440,7 +438,7 @@ def player_play_again(rpg_game: RPGGame, player_name: str) -> Optional[PlayerPro
 
 
 #######################################################################################################################################
-def get_player_actor(rpg_game: RPGGame) -> List[str]:
+def list_player_actors(rpg_game: RPGGame) -> List[str]:
 
     actor_entities = rpg_game.context.get_player_entities()
     ret: List[str] = []
@@ -452,7 +450,7 @@ def get_player_actor(rpg_game: RPGGame) -> List[str]:
 
 
 #######################################################################################################################################
-def get_turn_player_actors(rpg_game: RPGGame) -> List[str]:
+def list_planning_player_actors(rpg_game: RPGGame) -> List[str]:
 
     ret: List[str] = []
 
@@ -465,7 +463,7 @@ def get_turn_player_actors(rpg_game: RPGGame) -> List[str]:
 
 
 #######################################################################################################################################
-def is_player_turn(rpg_game: RPGGame, player_proxy: PlayerProxy) -> bool:
+def is_turn_of_player(rpg_game: RPGGame, player_proxy: PlayerProxy) -> bool:
     player_entity = rpg_game.context.get_player_entity(player_proxy.name)
     if player_entity is None:
         return False

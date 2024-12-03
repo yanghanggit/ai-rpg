@@ -29,7 +29,7 @@ class KickOffFlagComponent(NamedTuple):
 
 # 例如，世界级的entity就标记这个组件
 @final
-class WorldComponent(NamedTuple):
+class WorldSystemComponent(NamedTuple):
     name: str
 
 

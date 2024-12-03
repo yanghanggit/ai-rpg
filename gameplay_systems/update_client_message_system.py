@@ -26,7 +26,7 @@ class UpdateClientMessageSystem(ExecuteProcessor):
     def execute(self) -> None:
 
         for player_proxy in self._game.players:
-            player_entity = self._context.get_player_entity(player_proxy.name)
+            player_entity = self._context.get_player_entity(player_proxy.player_name)
             if player_entity is None or player_proxy is None:
                 continue
 
@@ -44,7 +44,7 @@ class UpdateClientMessageSystem(ExecuteProcessor):
         self._add_stage_tag_action_message(player_proxy, player_entity)
 
         # 如果有登陆信息就直接上登陆信息
-        player_proxy.flush_kickoff_messages()
+        player_proxy.clear_and_send_kickoff_messages()
 
         # 去往信息？
         self._add_go_to_action_message(player_proxy, player_entity)

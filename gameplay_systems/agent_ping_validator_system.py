@@ -2,7 +2,7 @@ import asyncio
 from entitas import Matcher, Entity, ExecuteProcessor  # type: ignore
 from typing import Any, Coroutine, Set, final, override, List
 from components.components import (
-    WorldComponent,
+    WorldSystemComponent,
     StageComponent,
     ActorComponent,
     AgentPingFlagComponent,
@@ -31,7 +31,7 @@ class AgentPingValidatorSystem(ExecuteProcessor):
         # 准备所有未连接的实体
         unverified_agents = self._context.get_group(
             Matcher(
-                any_of=[WorldComponent, StageComponent, ActorComponent],
+                any_of=[WorldSystemComponent, StageComponent, ActorComponent],
                 none_of=[AgentPingFlagComponent],
             )
         ).entities.copy()

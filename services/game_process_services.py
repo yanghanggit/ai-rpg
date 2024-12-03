@@ -259,7 +259,7 @@ async def join(request_data: JoinRequest) -> JoinResponse:
 
     # 切换状态到游戏加入完成
     user_room.state_controller.transition(GameState.GAME_JOINED)
-    player_proxy = PlayerProxy(PlayerProxyModel(name=request_data.user_name))
+    player_proxy = PlayerProxy(PlayerProxyModel(player_name=request_data.user_name))
     user_room.game.add_player(player_proxy)
 
     # 加入游戏
@@ -312,7 +312,7 @@ async def start(request_data: StartRequest) -> StartResponse:
         user_name=request_data.user_name,
         game_name=request_data.game_name,
         actor_name=request_data.actor_name,
-        total=len(player_proxy.model.client_messages),
+        total=len(player_proxy.client_messages),
     )
 
 
@@ -359,7 +359,7 @@ async def execute(request_data: ExecuteRequest) -> ExecuteResponse:
         )
 
     # 人物死亡了，不能推动游戏
-    if player_proxy.is_over:
+    if player_proxy.is_player_dead:
         return ExecuteResponse(
             user_name=request_data.user_name, error=105, message="player_proxy.over"
         )
@@ -392,7 +392,7 @@ async def execute(request_data: ExecuteRequest) -> ExecuteResponse:
         game_name=request_data.game_name,
         actor_name=user_room.get_player_actor_name(),
         turn_player_actor=turn_player_actors[0] if len(turn_player_actors) > 0 else "",
-        total=len(player_proxy.model.client_messages),
+        total=len(player_proxy.client_messages),
         game_round=user_room.game.current_round,
     )
 
@@ -456,7 +456,7 @@ async def fetch_messages(request_data: FetchMessagesRequest) -> FetchMessagesRes
 
     # 临时输出一下。
     logger.warning(
-        f"fetch_messages, player = {player_proxy.name}, count = {len(fetch_messages)}"
+        f"fetch_messages, player = {player_proxy.player_name}, count = {len(fetch_messages)}"
     )
     for fetch_message in fetch_messages:
         json_str = fetch_message.model_dump_json()
@@ -467,7 +467,7 @@ async def fetch_messages(request_data: FetchMessagesRequest) -> FetchMessagesRes
         game_name=request_data.game_name,
         actor_name=request_data.actor_name,
         messages=fetch_messages,
-        total=len(player_proxy.model.client_messages),
+        total=len(player_proxy.client_messages),
         game_round=user_room.game.current_round,
     )
 

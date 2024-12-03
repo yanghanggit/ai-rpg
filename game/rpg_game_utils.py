@@ -194,7 +194,7 @@ def _retrieve_stage_narrative_from_archive(
 def gen_survey_stage_model(
     game_name: RPGGame, player_proxy: PlayerProxy
 ) -> Optional[SurveyStageModel]:
-    player_entity = game_name.context.get_player_entity(player_proxy.name)
+    player_entity = game_name.context.get_player_entity(player_proxy.player_name)
     if player_entity is None:
         return None
 
@@ -221,7 +221,7 @@ def gen_survey_stage_model(
     stage_name = game_name.context.safe_get_entity_name(stage_entity)
 
     # 最终返回
-    message = f"""# {player_proxy.name} | {player_proxy.actor_name} 获取场景信息
+    message = f"""# {player_proxy.player_name} | {player_proxy.actor_name} 获取场景信息
 
 ## 场景描述: {stage_name}
 {stage_narrate_content}
@@ -236,7 +236,7 @@ def gen_survey_stage_model(
 def gen_status_inventory_check_model(
     game_name: RPGGame, player_proxy: PlayerProxy
 ) -> Optional[StatusInventoryCheckModel]:
-    player_entity = game_name.context.get_player_entity(player_proxy.name)
+    player_entity = game_name.context.get_player_entity(player_proxy.player_name)
     if player_entity is None:
         return None
 
@@ -254,7 +254,7 @@ def gen_status_inventory_check_model(
         actor_props_prompt.append("无任何道具。")
 
     # 最终返回
-    message = f"""# {player_proxy.name} | {player_proxy.actor_name}
+    message = f"""# {player_proxy.player_name} | {player_proxy.actor_name}
 
 ## 所在的场景：{actor_status_evaluator.stage_name}
 
@@ -275,7 +275,7 @@ def gen_retrieve_actor_archives_action_model(
     game_name: RPGGame, player_proxy: PlayerProxy
 ) -> Optional[RetrieveActorArchivesModel]:
 
-    player_entity = game_name.context.get_player_entity(player_proxy.name)
+    player_entity = game_name.context.get_player_entity(player_proxy.player_name)
     if player_entity is None:
         return None
 
@@ -299,7 +299,7 @@ def gen_retrieve_stage_archives_action_model(
     game_name: RPGGame, player_proxy: PlayerProxy
 ) -> Optional[RetrieveStageArchivesActionModel]:
 
-    player_entity = game_name.context.get_player_entity(player_proxy.name)
+    player_entity = game_name.context.get_player_entity(player_proxy.player_name)
     if player_entity is None:
         return None
 
@@ -387,7 +387,7 @@ def new_game(
         return
 
     # 更改算作登陆成功
-    player_entity.replace(PlayerComponent, player_proxy.name)
+    player_entity.replace(PlayerComponent, player_proxy.player_name)
     player_proxy.set_actor(player_actor_name)
 
     # 添加游戏介绍
@@ -396,12 +396,12 @@ def new_game(
     # log 信息
     time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     logger.info(
-        f"time = {time}, 玩家登陆游戏 = {player_proxy.name}, 控制角色 = {player_actor_name}"
+        f"time = {time}, 玩家登陆游戏 = {player_proxy.player_name}, 控制角色 = {player_actor_name}"
     )
 
     # 配置的启动故事，因为player的kickoff只能在这里
     kick_off_comp = player_entity.get(KickOffContentComponent)
-    player_proxy.cache_kickoff_message(
+    player_proxy.store_kickoff_message(
         player_actor_name,
         AgentEvent(message=kick_off_comp.content),
     )
@@ -421,10 +421,10 @@ def rejoin_game(rpg_game: RPGGame, player_name: str) -> Optional[PlayerProxy]:
 
     time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     logger.info(
-        f"time = {time}, 玩家登陆游戏 = {player_proxy.name}, 控制角色 = {player_proxy.actor_name}"
+        f"time = {time}, 玩家登陆游戏 = {player_proxy.player_name}, 控制角色 = {player_proxy.actor_name}"
     )
 
-    player_proxy.cache_kickoff_message(
+    player_proxy.store_kickoff_message(
         player_proxy.actor_name,
         AgentEvent(message=f"再次游戏: {rpg_game._name}。"),
     )
@@ -464,7 +464,7 @@ def list_planning_player_actors(rpg_game: RPGGame) -> List[str]:
 
 #######################################################################################################################################
 def is_turn_of_player(rpg_game: RPGGame, player_proxy: PlayerProxy) -> bool:
-    player_entity = rpg_game.context.get_player_entity(player_proxy.name)
+    player_entity = rpg_game.context.get_player_entity(player_proxy.player_name)
     if player_entity is None:
         return False
 

@@ -2,9 +2,6 @@ from entitas import ExecuteProcessor  # type: ignore
 from typing import final, override
 from game.rpg_game_context import RPGGameContext
 from game.rpg_game import RPGGame
-from pathlib import Path
-from models.player_models import PlayerProxyModel
-from loguru import logger
 
 
 @final
@@ -23,23 +20,11 @@ class SavePlayerSystem(ExecuteProcessor):
         for player_proxy in self._game.players:
             assert self._game._game_resource is not None
             path = self._game._game_resource.resolve_player_proxy_save_file_path(
-                player_proxy.name
+                player_proxy.player_name
             )
-            self._write_model(player_proxy.model, path)
+            player_proxy.write_model_to_file(path)
 
     ############################################################################################################
-    def _write_model(
-        self, player_proxy_model: PlayerProxyModel, write_path: Path
-    ) -> int:
-
-        try:
-            dump_json = player_proxy_model.model_dump_json()
-            return write_path.write_text(dump_json, encoding="utf-8")
-
-        except Exception as e:
-            logger.error(f"写文件失败: {write_path}, e = {e}")
-
-        return -1
 
 
 ############################################################################################################

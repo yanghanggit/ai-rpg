@@ -8,7 +8,7 @@ from components.components import (
     GUIDComponent,
     WeaponComponent,
     ClothesComponent,
-    WorldComponent,
+    WorldSystemComponent,
     StageSpawnerComponent,
 )
 from typing import final, override, List
@@ -81,11 +81,11 @@ class SaveGameResourceSystem(ExecuteProcessor):
         runtime_game_model.world_systems.clear()
 
         world_system_entities = self._context.get_group(
-            Matcher(all_of=[WorldComponent, GUIDComponent])
+            Matcher(all_of=[WorldSystemComponent, GUIDComponent])
         ).entities
         for world_system_entity in world_system_entities:
 
-            world_comp = world_system_entity.get(WorldComponent)
+            world_comp = world_system_entity.get(WorldSystemComponent)
             guid_comp = world_system_entity.get(GUIDComponent)
             runtime_game_model.world_systems.append(
                 WorldSystemInstanceModel(name=world_comp.name, guid=guid_comp.GUID)

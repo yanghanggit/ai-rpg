@@ -1,7 +1,7 @@
 from entitas import Entity, Matcher, ExecuteProcessor  # type: ignore
 from overrides import override
 from components.components import (
-    WorldComponent,
+    WorldSystemComponent,
     StageComponent,
     ActorComponent,
     FinalAppearanceComponent,
@@ -141,7 +141,7 @@ class AgentKickOffSystem(ExecuteProcessor):
         world_entities: Set[Entity] = self._context.get_group(
             Matcher(
                 all_of=[
-                    WorldComponent,
+                    WorldSystemComponent,
                     KickOffContentComponent,
                     AgentPingFlagComponent,
                 ],

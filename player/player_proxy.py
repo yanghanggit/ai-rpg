@@ -1,18 +1,12 @@
 from typing import List, Any
 from loguru import logger
-from models.event_models import (
-    BaseEvent,
-    # UpdateAppearanceEvent,
-    # PreStageExitEvent,
-    # GameRoundEvent,
-    # UpdateArchiveEvent,
-    # PostStageEnterEvent,
-)
+from models.event_models import BaseEvent
 from models.player_models import (
     PlayerClientMessage,
     PlayerClientMessageTag,
     PlayerProxyModel,
 )
+from pathlib import Path
 
 
 class PlayerProxy:
@@ -32,13 +26,13 @@ class PlayerProxy:
 
     ##########################################################################################################################################################
     @property
-    def model(self) -> PlayerProxyModel:
-        return self._model
+    def client_messages(self) -> List[PlayerClientMessage]:
+        return self._model.client_messages
 
     ##########################################################################################################################################################
     @property
-    def name(self) -> str:
-        return self._model.name
+    def player_name(self) -> str:
+        return self._model.player_name
 
     ##########################################################################################################################################################
     @property
@@ -47,8 +41,8 @@ class PlayerProxy:
 
     ##########################################################################################################################################################
     @property
-    def is_over(self) -> bool:
-        return self._model.over
+    def is_player_dead(self) -> bool:
+        return self._model.is_player_dead
 
     ##########################################################################################################################################################
     def set_actor(self, actor_name: str) -> None:
@@ -79,8 +73,8 @@ class PlayerProxy:
 
     ##########################################################################################################################################################
     def add_actor_message(self, actor_name: str, agent_event: BaseEvent) -> None:
-        if self._should_ignore_event(agent_event):
-            return
+        # if self._should_ignore_event(agent_event):
+        #     return
 
         self._add_client_message(
             PlayerClientMessage(
@@ -92,15 +86,22 @@ class PlayerProxy:
 
     ##########################################################################################################################################################
     def _should_ignore_event(self, send_event: BaseEvent) -> bool:
-        # 先不管，全都拿。
-        return False
-        # return (
-        #     isinstance(send_event, UpdateAppearanceEvent)
-        #     or isinstance(send_event, PreStageExitEvent)
-        #     or isinstance(send_event, GameRoundEvent)
-        #     or isinstance(send_event, UpdateArchiveEvent)
-        #     or isinstance(send_event, PostStageEnterEvent)
-        # )
+
+        from models.event_models import (
+            UpdateAppearanceEvent,
+            PreStageExitEvent,
+            GameRoundEvent,
+            UpdateArchiveEvent,
+            PostStageEnterEvent,
+        )
+
+        return (
+            isinstance(send_event, UpdateAppearanceEvent)
+            or isinstance(send_event, PreStageExitEvent)
+            or isinstance(send_event, GameRoundEvent)
+            or isinstance(send_event, UpdateArchiveEvent)
+            or isinstance(send_event, PostStageEnterEvent)
+        )
 
     ##########################################################################################################################################################
     def add_stage_message(self, stage_name: str, agent_event: BaseEvent) -> None:
@@ -137,31 +138,47 @@ class PlayerProxy:
 
     ##########################################################################################################################################################
     def on_dead(self) -> None:
-        self.model.over = True
-        logger.warning(f"{self._model.name} : {self._model.actor_name}, 死亡了!!!!!")
+        self._model.is_player_dead = True
+        logger.warning(
+            f"{self._model.player_name} : {self._model.actor_name}, 死亡了!!!!!"
+        )
 
     ##########################################################################################################################################################
     def on_load(self) -> None:
-        logger.warning(f"{self._model.name} : {self._model.actor_name}, 加载了!!!!!")
+        logger.warning(
+            f"{self._model.player_name} : {self._model.actor_name}, 加载了!!!!!"
+        )
 
     ##########################################################################################################################################################
     # todo
-    def flush_kickoff_messages(self) -> None:
+    def clear_and_send_kickoff_messages(self) -> None:
 
-        for message in self._model.cache_kickoff_messages:
+        for message in self._model.stored_kickoff_messages:
             self._add_client_message(message)
 
-        self._model.cache_kickoff_messages.clear()
+        self._model.stored_kickoff_messages.clear()
 
     ##########################################################################################################################################################
-    def cache_kickoff_message(self, actor_name: str, agent_event: BaseEvent) -> None:
+    def store_kickoff_message(self, actor_name: str, agent_event: BaseEvent) -> None:
 
-        self._model.cache_kickoff_messages.append(
+        self._model.stored_kickoff_messages.append(
             PlayerClientMessage(
                 tag=PlayerClientMessageTag.KICKOFF,
                 sender=actor_name,
                 agent_event=agent_event,
             )
         )
+
+    ##########################################################################################################################################################
+    def write_model_to_file(self, path: Path) -> int:
+
+        try:
+            dump_json = self._model.model_dump_json()
+            return path.write_text(dump_json, encoding="utf-8")
+
+        except Exception as e:
+            logger.error(f"写文件失败: {path}, e = {e}")
+
+        return -1
 
     ##########################################################################################################################################################

@@ -98,7 +98,7 @@ async def run_terminal_game(option: TerminalGameOption) -> None:
         player_actor_name = terminal_select_actor_from_input(new_game)
         if player_actor_name != "":
             logger.info(f"{option.user_name}:{game_name}:{player_actor_name}")
-            player_proxy = PlayerProxy(PlayerProxyModel(name=option.user_name))
+            player_proxy = PlayerProxy(PlayerProxyModel(player_name=option.user_name))
             new_game.add_player(player_proxy)
 
             game.rpg_game_utils.new_game(new_game, player_proxy, player_actor_name)
@@ -168,12 +168,12 @@ async def terminal_player_input(rpg_game: RPGGame, player_proxy: PlayerProxy) ->
 
     while True:
 
-        usr_input = input(f"[{player_proxy.name}]:")
+        usr_input = input(f"[{player_proxy.player_name}]:")
         if usr_input == "":
             break
 
         if usr_input == "/quit":
-            logger.info(f"玩家退出游戏 = {player_proxy.name}")
+            logger.info(f"玩家退出游戏 = {player_proxy.player_name}")
             rpg_game._will_exit = True
             break
 
@@ -267,7 +267,7 @@ def terminal_retrieve_stage_archives_action(
 async def terminal_player_wait(game: RPGGame, player_proxy: PlayerProxy) -> None:
     while True:
         input(
-            f"<<<<<<<<<<<<<<<<<<<<<<< 不是你{player_proxy.name},{player_proxy.actor_name}的回合，按任意键继续游戏:{game._name} >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+            f"<<<<<<<<<<<<<<<<<<<<<<< 不是你{player_proxy.player_name},{player_proxy.actor_name}的回合，按任意键继续游戏:{game._name} >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
         )
         break
 

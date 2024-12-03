@@ -3,7 +3,7 @@ from typing import List, Optional, Set
 from overrides import override
 from loguru import logger
 from components.components import (
-    WorldComponent,
+    WorldSystemComponent,
     StageComponent,
     ActorComponent,
     PlayerComponent,
@@ -203,7 +203,7 @@ class RPGGame(BaseGame):
         world_system_entity.add(
             GUIDComponent, world_system_model.name, world_system_instance.guid
         )
-        world_system_entity.add(WorldComponent, world_system_model.name)
+        world_system_entity.add(WorldSystemComponent, world_system_model.name)
         world_system_entity.add(KickOffContentComponent, world_system_model.name, "")
         world_system_entity.add(RoundEventsRecordComponent, world_system_model.name, [])
 
@@ -535,7 +535,7 @@ class RPGGame(BaseGame):
     ###############################################################################################################################################
     def get_player(self, player_name: str) -> Optional[PlayerProxy]:
         for player in self._players:
-            if player.name == player_name:
+            if player.player_name == player_name:
                 return player
         return None
 

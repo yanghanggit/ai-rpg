@@ -1,7 +1,7 @@
 from entitas import Entity, Matcher, Context  # type: ignore
 from loguru import logger
 from components.components import (
-    WorldComponent,
+    WorldSystemComponent,
     StageComponent,
     ActorComponent,
     PlayerComponent,
@@ -72,7 +72,7 @@ class RPGGameContext(Context):
     #############################################################################################################################
     def get_world_entity(self, world_name: str) -> Optional[Entity]:
         entity: Optional[Entity] = self.get_entity_by_name(world_name)
-        if entity is not None and entity.has(WorldComponent):
+        if entity is not None and entity.has(WorldSystemComponent):
             return entity
         return None
 
@@ -162,8 +162,8 @@ class RPGGameContext(Context):
             return entity.get(ActorComponent).name
         elif entity.has(StageComponent):
             return entity.get(StageComponent).name
-        elif entity.has(WorldComponent):
-            return entity.get(WorldComponent).name
+        elif entity.has(WorldSystemComponent):
+            return entity.get(WorldSystemComponent).name
         return ""
 
     #############################################################################################################################

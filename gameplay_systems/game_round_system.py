@@ -4,7 +4,7 @@ from game.rpg_game_context import RPGGameContext
 from loguru import logger
 from game.rpg_game import RPGGame
 from components.components import (
-    WorldComponent,
+    WorldSystemComponent,
     ActorComponent,
     StageComponent,
     RoundEventsRecordComponent,
@@ -48,11 +48,8 @@ class GameRoundSystem(ExecuteProcessor):
     def _dispatch_game_round_events(self) -> None:
 
         entities: Set[Entity] = self._context.get_group(
-            Matcher(any_of=[WorldComponent, StageComponent, ActorComponent])
+            Matcher(any_of=[WorldSystemComponent, StageComponent, ActorComponent])
         ).entities
-
-        # 移除上一回合的信息？
-        # self.clear_previous_game_round_events(entities)
 
         self._context.notify_event(
             entities,
@@ -60,19 +57,6 @@ class GameRoundSystem(ExecuteProcessor):
                 message=_generate_game_round_prompt(self._game.current_round)
             ),
         )
-
-    ############################################################################################################
-    # def clear_previous_game_round_events(self, entities: Set[Entity]) -> None:
-    #     for entity in entities:
-    #         safe_name = self._context.safe_get_entity_name(entity)
-    #         retrieve_relevant_messages = self._context.agent_system.extract_messages_by_keywords(
-    #             safe_name,
-    #             set({gameplay_systems.prompt_utils.PromptTag.CURRENT_ROUND_TAG}),
-    #         )
-    #         self._context.agent_system.remove_excluded_messages(
-    #             safe_name,
-    #             retrieve_relevant_messages,
-    #         )
 
     ############################################################################################################
     def _reset_round_event_records(self) -> None:
@@ -86,6 +70,3 @@ class GameRoundSystem(ExecuteProcessor):
             entity.replace(RoundEventsRecordComponent, rounds_comp.name, [])
 
     ############################################################################################################
-
-
-############################################################################################################

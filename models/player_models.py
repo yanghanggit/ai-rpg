@@ -24,11 +24,11 @@ class PlayerClientMessage(BaseModel):
 
 # 玩家代理模型
 class PlayerProxyModel(BaseModel):
-    name: str = ""
-    client_messages: List[PlayerClientMessage] = []
-    cache_kickoff_messages: List[PlayerClientMessage] = []
-    over: bool = False
+    player_name: str = ""
     actor_name: str = ""
+    is_player_dead: bool = False
+    client_messages: List[PlayerClientMessage] = []
+    stored_kickoff_messages: List[PlayerClientMessage] = []
 
 
 # 看看场景内的信息

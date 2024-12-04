@@ -7,20 +7,14 @@ from fastapi import FastAPI
 
 
 ###############################################################################################################################################
-GameServer.Instance = GameServer(
-    fast_api=FastAPI(),
-    room_manager=RoomManager(),
-    server_config=ServerConfig(server_ip_address="127.0.0.1", server_port=8000),
-)
-
-
-###############################################################################################################################################
 def main(game_server: GameServer) -> None:
     import argparse
     import uvicorn
     from services.api_endpoints_services import api_endpoints_router
     from services.game_process_services import game_process_api_router
     from services.game_play_services import game_play_api_router
+
+    game_server.on_begin()
 
     game_server.fast_api.add_middleware(
         CORSMiddleware,
@@ -60,6 +54,16 @@ def main(game_server: GameServer) -> None:
         port=cast(int, args.port),
     )
 
+    game_server.on_end()
+
 
 if __name__ == "__main__":
+
+    assert GameServer.Instance is None
+    GameServer.Instance = GameServer(
+        fast_api=FastAPI(),
+        room_manager=RoomManager(),
+        server_config=ServerConfig(server_ip_address="127.0.0.1", server_port=8000),
+    )
+
     main(GameServer.Instance)

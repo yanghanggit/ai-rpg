@@ -1,6 +1,6 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: ignore
 from typing import final, override
-from components.action_components import StageTagAction
+from components.actions import StageTagAction
 from game.rpg_game_context import RPGGameContext
 from game.rpg_game import RPGGame
 from extended_systems.archive_file import StageArchiveFile

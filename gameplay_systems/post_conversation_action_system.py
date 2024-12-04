@@ -1,7 +1,7 @@
 from typing import final
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: ignore
 from overrides import override
-from components.action_components import (
+from components.actions import (
     SpeakAction,
     AnnounceAction,
     WhisperAction,

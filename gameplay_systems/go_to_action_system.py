@@ -1,5 +1,5 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: ignore
-from components.action_components import GoToAction, DeadAction
+from components.actions import GoToAction, DeadAction
 from components.components import (
     ActorComponent,
     EnterStageFlagComponent,

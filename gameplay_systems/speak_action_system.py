@@ -1,5 +1,5 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: ignore
-from components.action_components import SpeakAction
+from components.actions import SpeakAction
 from game.rpg_game_context import RPGGameContext
 import gameplay_systems.action_component_utils
 from typing import final, override

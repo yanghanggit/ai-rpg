@@ -1,5 +1,5 @@
 from enum import StrEnum, unique
-from components.action_components import (
+from components.actions import (
     StageNarrateAction,
     SkillAction,
     EquipPropAction,

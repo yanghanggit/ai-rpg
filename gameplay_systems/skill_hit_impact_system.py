@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from entitas import Matcher, ExecuteProcessor, Entity  # type: ignore
-from components.action_components import (
+from components.actions import (
     DamageAction,
     HealAction,
 )

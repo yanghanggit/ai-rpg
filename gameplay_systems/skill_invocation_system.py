@@ -1,5 +1,5 @@
 from entitas import Matcher, ReactiveProcessor, GroupEvent, Entity  # type: ignore
-from components.action_components import (
+from components.actions import (
     SkillAction,
     EquipPropAction,
 )

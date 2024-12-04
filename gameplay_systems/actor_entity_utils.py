@@ -106,12 +106,12 @@ class ActorStatusEvaluator:
 
         if actor_entity.has(WeaponComponent):
             self._current_weapon = context.file_system.get_file(
-                PropFile, safe_name, actor_entity.get(WeaponComponent).propname
+                PropFile, safe_name, actor_entity.get(WeaponComponent).prop_name
             )
 
         if actor_entity.has(ClothesComponent):
             self._current_clothes = context.file_system.get_file(
-                PropFile, safe_name, actor_entity.get(ClothesComponent).propname
+                PropFile, safe_name, actor_entity.get(ClothesComponent).prop_name
             )
 
     ######################################################################################################################################

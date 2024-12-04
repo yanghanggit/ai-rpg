@@ -1,5 +1,5 @@
 from entitas import Matcher, ReactiveProcessor, GroupEvent, Entity  # type: ignore
-from components.action_components import DamageAction, DeadAction
+from components.actions import DamageAction, DeadAction
 from components.components import (
     AttributesComponent,
     ClothesComponent,
@@ -265,7 +265,7 @@ class DamageActionSystem(ReactiveProcessor):
         if entity.has(ClothesComponent):
             clothes_comp = entity.get(ClothesComponent)
             current_clothe_prop_file = self._context.file_system.get_file(
-                PropFile, clothes_comp.name, clothes_comp.propname
+                PropFile, clothes_comp.name, clothes_comp.prop_name
             )
             assert current_clothe_prop_file is not None
             if current_clothe_prop_file is not None:

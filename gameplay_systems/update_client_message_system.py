@@ -2,7 +2,7 @@ from entitas import ExecuteProcessor, Entity, Matcher  # type: ignore
 from game.rpg_game_context import RPGGameContext
 from player.player_proxy import PlayerProxy
 from game.rpg_game_context import RPGGameContext
-from components.action_components import (
+from components.actions import (
     # StageNarrateAction,
     StageTagAction,
     GoToAction,

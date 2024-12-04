@@ -1,6 +1,6 @@
 from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity  # type: ignore
 from game.rpg_game_context import RPGGameContext
-from components.action_components import (
+from components.actions import (
     StageTransferAction,
 )
 from components.components import (

@@ -377,7 +377,7 @@ def add_command(rpg_game: RPGGame, player_proxy: PlayerProxy, usr_input: str) ->
 
 
 #######################################################################################################################################
-def new_game(
+def play_new_game(
     rpg_game: RPGGame, player_proxy: PlayerProxy, player_actor_name: str
 ) -> None:
 
@@ -412,7 +412,7 @@ def new_game(
 
 
 #######################################################################################################################################
-def rejoin_game(rpg_game: RPGGame, player_name: str) -> Optional[PlayerProxy]:
+def resume_game(rpg_game: RPGGame, player_name: str) -> Optional[PlayerProxy]:
 
     player_proxy = rpg_game.get_player(player_name)
     if player_proxy is None:

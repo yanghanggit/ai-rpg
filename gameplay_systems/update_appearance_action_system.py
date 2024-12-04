@@ -16,7 +16,7 @@ from components.components import (
 )
 from extended_systems.prop_file import PropFile
 from agent.agent_request_handler import AgentRequestHandler
-from components.action_components import UpdateAppearanceAction
+from components.actions import UpdateAppearanceAction
 from game.rpg_game import RPGGame
 from models.event_models import UpdateAppearanceEvent
 from agent.lang_serve_agent import LangServeAgent
@@ -286,7 +286,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
 
         clothes_comp = actor_entity.get(ClothesComponent)
         clothe_prop_file = self._context.file_system.get_file(
-            PropFile, clothes_comp.name, clothes_comp.propname
+            PropFile, clothes_comp.name, clothes_comp.prop_name
         )
         assert (
             clothe_prop_file is not None
@@ -303,7 +303,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
 
         weapon_comp = actor_entity.get(WeaponComponent)
         weapon_prop_file = self._context.file_system.get_file(
-            PropFile, weapon_comp.name, weapon_comp.propname
+            PropFile, weapon_comp.name, weapon_comp.prop_name
         )
         assert (
             weapon_prop_file is not None

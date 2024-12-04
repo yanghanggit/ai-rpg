@@ -121,11 +121,11 @@ class SaveGameResourceSystem(ExecuteProcessor):
 
         if actor_entity.has(WeaponComponent):
             current_weapon_comp = actor_entity.get(WeaponComponent)
-            ret.actor_equipped_props.append(current_weapon_comp.propname)
+            ret.actor_equipped_props.append(current_weapon_comp.prop_name)
 
         if actor_entity.has(ClothesComponent):
             current_clothes_comp = actor_entity.get(ClothesComponent)
-            ret.actor_equipped_props.append(current_clothes_comp.propname)
+            ret.actor_equipped_props.append(current_clothes_comp.prop_name)
 
         return ret
 

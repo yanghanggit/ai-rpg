@@ -8,12 +8,14 @@ class GUIDComponent(NamedTuple):
     GUID: int
 
 
+############################################################################################################
 # 标记agent连接完成
 @final
 class AgentPingFlagComponent(NamedTuple):
     name: str
 
 
+############################################################################################################
 # 记录kick off原始信息
 @final
 class KickOffContentComponent(NamedTuple):
@@ -21,24 +23,28 @@ class KickOffContentComponent(NamedTuple):
     content: str
 
 
+############################################################################################################
 # 标记kick off已经完成
 @final
 class KickOffFlagComponent(NamedTuple):
     name: str
 
 
+############################################################################################################
 # 例如，世界级的entity就标记这个组件
 @final
 class WorldSystemComponent(NamedTuple):
     name: str
 
 
+############################################################################################################
 # 场景标记
 @final
 class StageComponent(NamedTuple):
     name: str
 
 
+############################################################################################################
 # 场景可以去往的地方
 @final
 class StageGraphComponent(NamedTuple):
@@ -46,6 +52,7 @@ class StageGraphComponent(NamedTuple):
     stage_graph: List[str]
 
 
+############################################################################################################
 # 场景可以产生actor的孵化器
 @final
 class StageSpawnerComponent(NamedTuple):
@@ -53,6 +60,7 @@ class StageSpawnerComponent(NamedTuple):
     spawners: List[str]
 
 
+############################################################################################################
 # 记录场景的描述 #Environment
 @final
 class StageEnvironmentComponent(NamedTuple):
@@ -60,12 +68,14 @@ class StageEnvironmentComponent(NamedTuple):
     narrate: str
 
 
+############################################################################################################
 # 一旦标记这个，就说明这个场景是静态的，不会发生变化，就是不会参与planning的执行中去。
 @final
 class StageStaticFlagComponent(NamedTuple):
     name: str
 
 
+############################################################################################################
 # 角色标记
 @final
 class ActorComponent(NamedTuple):
@@ -73,24 +83,28 @@ class ActorComponent(NamedTuple):
     current_stage: str
 
 
+############################################################################################################
 # 玩家标记
 @final
 class PlayerComponent(NamedTuple):
     name: str
 
 
+############################################################################################################
 # 摧毁Entity标记
 @final
 class DestroyComponent(NamedTuple):
     name: str
 
 
+############################################################################################################
 # 自动规划的标记 planning
 @final
 class PlanningFlagComponent(NamedTuple):
     name: str
 
 
+############################################################################################################
 # 基础形态。，用于和衣服组成完整的外观信息。如果是动物等，就是动物的外观信息
 @final
 class BaseFormComponent(NamedTuple):
@@ -98,6 +112,7 @@ class BaseFormComponent(NamedTuple):
     base_form: str
 
 
+############################################################################################################
 # 角色外观信息
 @final
 class FinalAppearanceComponent(NamedTuple):
@@ -105,6 +120,7 @@ class FinalAppearanceComponent(NamedTuple):
     final_appearance: str
 
 
+############################################################################################################
 # 标记进入新的舞台
 @final
 class EnterStageFlagComponent(NamedTuple):
@@ -112,6 +128,7 @@ class EnterStageFlagComponent(NamedTuple):
     enter_stage: str
 
 
+############################################################################################################
 # RPG游戏的属性组件
 @final
 class AttributesComponent(NamedTuple):
@@ -123,20 +140,23 @@ class AttributesComponent(NamedTuple):
     heal: int
 
 
+############################################################################################################
 # RPG游戏的当前武器组件
 @final
 class WeaponComponent(NamedTuple):
     name: str
-    propname: str
+    prop_name: str
 
 
+############################################################################################################
 # RPG游戏的当前衣服组件
 @final
 class ClothesComponent(NamedTuple):
     name: str
-    propname: str
+    prop_name: str
 
 
+############################################################################################################
 # 每一局的消息记录下来，为了处理archives的问题
 @final
 class RoundEventsRecordComponent(NamedTuple):
@@ -144,6 +164,7 @@ class RoundEventsRecordComponent(NamedTuple):
     events: List[str]
 
 
+############################################################################################################
 # 技能
 @final
 class SkillComponent(NamedTuple):
@@ -158,9 +179,13 @@ class SkillComponent(NamedTuple):
     inspector_value: int
 
 
+############################################################################################################
 # 这种技能就是，直接使用装备的武器，并不配置任何强化或者增幅的道具。直接对目标进行攻击。
 # 这种技能的优点是：简单，直接，不需要额外的配置。消耗算力小。
 @final
 class WeaponDirectAttackSkill(NamedTuple):
     name: str
     skill_name: str
+
+
+############################################################################################################

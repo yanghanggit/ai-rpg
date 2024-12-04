@@ -22,6 +22,8 @@ class PrePlanningSystem(ExecuteProcessor):
             Matcher(PlanningFlagComponent)
         ).entities.copy()
         for entity in entities:
-            entity.remove(PlanningFlagComponent)
+            assert entity.has(PlanningFlagComponent)
+            if entity.has(PlanningFlagComponent):
+                entity.remove(PlanningFlagComponent)
 
     ############################################################################################################

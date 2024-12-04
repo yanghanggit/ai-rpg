@@ -13,13 +13,13 @@ from game.rpg_game_context import RPGGameContext
 from typing import Dict, Set, final
 from agent.agent_request_handler import AgentRequestHandler
 from game.rpg_game import RPGGame
-from components.action_components import (
+from components.actions import (
     MindVoiceAction,
     TagAction,
     StageNarrateAction,
     UpdateAppearanceAction,
 )
-from components.action_components import UpdateAppearanceAction
+from components.actions import UpdateAppearanceAction
 import gameplay_systems.prompt_utils
 from agent.agent_plan_response import AgentPlanResponse
 import gameplay_systems.stage_entity_utils

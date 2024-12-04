@@ -1,5 +1,5 @@
 from entitas import Matcher, ReactiveProcessor, GroupEvent, Entity  # type: ignore
-from components.action_components import HealAction
+from components.actions import HealAction
 from components.components import (
     AttributesComponent,
     ActorComponent,

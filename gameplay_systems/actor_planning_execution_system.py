@@ -8,7 +8,7 @@ from components.components import (
     AgentPingFlagComponent,
     KickOffFlagComponent,
 )
-from components.action_components import (
+from components.actions import (
     GoToAction,
     TagAction,
 )

@@ -4,7 +4,7 @@ from typing import Any, FrozenSet, Optional
 from agent.agent_plan_response import AgentPlanResponse, AgentAction
 from game.rpg_game_context import RPGGameContext
 from enum import Enum
-from components.action_components import (
+from components.actions import (
     ACTOR_AVAILABLE_ACTIONS_REGISTER,
     STAGE_AVAILABLE_ACTIONS_REGISTER,
 )

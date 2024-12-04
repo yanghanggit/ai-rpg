@@ -7,7 +7,7 @@ from components.components import (
     KickOffFlagComponent,
     StageStaticFlagComponent,
 )
-from components.action_components import (
+from components.actions import (
     StageNarrateAction,
     StageTagAction,
     TagAction,

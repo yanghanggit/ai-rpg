@@ -190,8 +190,8 @@ async def create(request_data: CreateRequest) -> CreateResponse:
     )
 
     # 创建游戏
-    new_game = game.rpg_game_utils.create_web_rpg_game(game_resource)
-    if new_game is None or new_game._game_resource is None:
+    web_rpg_game = game.rpg_game_utils.create_web_rpg_game(game_resource)
+    if web_rpg_game is None or web_rpg_game._game_resource is None:
         logger.error(f"create_rpg_game 失败 = {request_data.game_name}")
         return CreateResponse(
             user_name=request_data.user_name,
@@ -201,7 +201,7 @@ async def create(request_data: CreateRequest) -> CreateResponse:
         )
 
     # 检查是否有可以控制的角色, 没有就不让玩, 因为是客户端进来的。没有可以控制的觉得暂时就不允许玩。
-    player_actors = game.rpg_game_utils.list_player_actors(new_game)
+    player_actors = game.rpg_game_utils.list_player_actors(web_rpg_game)
     if len(player_actors) == 0:
         logger.warning(f"create_rpg_game 没有可以控制的角色 = {request_data.game_name}")
         return CreateResponse(
@@ -214,7 +214,7 @@ async def create(request_data: CreateRequest) -> CreateResponse:
     logger.info(f"create: {request_data.user_name}, {request_data.game_name}")
 
     # 切换状态到游戏创建完成。
-    user_room._game = new_game
+    user_room._game = web_rpg_game
     user_room.state_controller.transition(GameState.GAME_CREATED)
 
     # 返回可以选择的角色，以及游戏模型
@@ -222,7 +222,7 @@ async def create(request_data: CreateRequest) -> CreateResponse:
         user_name=request_data.user_name,
         game_name=request_data.game_name,
         selectable_actors=player_actors,
-        game_model=new_game._game_resource._model,
+        game_model=web_rpg_game._game_resource._model,
     )
 
 
@@ -263,7 +263,9 @@ async def join(request_data: JoinRequest) -> JoinResponse:
     user_room.game.add_player(player_proxy)
 
     # 加入游戏
-    game.rpg_game_utils.new_game(user_room.game, player_proxy, request_data.actor_name)
+    game.rpg_game_utils.play_new_game(
+        user_room.game, player_proxy, request_data.actor_name
+    )
 
     # 返回加入游戏的信息
     return JoinResponse(

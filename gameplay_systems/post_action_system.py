@@ -1,7 +1,7 @@
 from entitas import ExecuteProcessor, Matcher  # type: ignore
 from typing import final, override
 from game.rpg_game_context import RPGGameContext
-from components.action_components import (
+from components.actions import (
     STAGE_AVAILABLE_ACTIONS_REGISTER,
     ACTOR_AVAILABLE_ACTIONS_REGISTER,
 )

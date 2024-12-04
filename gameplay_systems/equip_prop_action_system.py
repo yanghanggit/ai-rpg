@@ -1,6 +1,6 @@
 from entitas import ReactiveProcessor, Matcher, GroupEvent, Entity  # type: ignore
 from game.rpg_game_context import RPGGameContext
-from components.action_components import (
+from components.actions import (
     EquipPropAction,
     DeadAction,
     UpdateAppearanceAction,
@@ -90,7 +90,9 @@ class EquipPropActionSystem(ReactiveProcessor):
 
         # 移除装备动作
         for entity in entities:
-            entity.remove(EquipPropAction)
+            assert entity.has(EquipPropAction)
+            if entity.has(EquipPropAction):
+                entity.remove(EquipPropAction)
 
     ####################################################################################################################################
     def _process_equipment_action(self, entity: Entity) -> None:
@@ -155,7 +157,7 @@ class EquipPropActionSystem(ReactiveProcessor):
         if entity.has(WeaponComponent):
             weapon_component = entity.get(WeaponComponent)
             previous_prop_file_weapon = self._context.file_system.get_file(
-                PropFile, weapon_component.name, weapon_component.propname
+                PropFile, weapon_component.name, weapon_component.prop_name
             )
             assert previous_prop_file_weapon is not None
             if previous_prop_file_weapon.name == weapon_prop_file_to_equip.name:
@@ -202,7 +204,7 @@ class EquipPropActionSystem(ReactiveProcessor):
         if entity.has(ClothesComponent):
             clothes_component = entity.get(ClothesComponent)
             previous_prop_file_clothes = self._context.file_system.get_file(
-                PropFile, clothes_component.name, clothes_component.propname
+                PropFile, clothes_component.name, clothes_component.prop_name
             )
             assert previous_prop_file_clothes is not None
             if previous_prop_file_clothes.name == clothes_prop_file_to_equip.name:

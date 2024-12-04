@@ -7,9 +7,9 @@ from components.components import (
     AttributesComponent,
     ActorComponent,
 )
-from components.action_components import (
+from components.actions import (
     DeadAction,
-    ACTOR_INTERACTIVE_ACTIONS_REGISTER,
+    ACTOR_AVAILABLE_ACTIONS_REGISTER,
 )
 from game.rpg_game_context import RPGGameContext
 from game.rpg_game import RPGGame
@@ -30,7 +30,7 @@ class DeadActionSystem(ExecuteProcessor):
         # 处理血量为0的情况
         self._update_entities_to_dead_state()
         # 移除后续动作
-        self._clear_actions(ACTOR_INTERACTIVE_ACTIONS_REGISTER)
+        self._clear_actions(ACTOR_AVAILABLE_ACTIONS_REGISTER)
         # 玩家死亡就游戏结束
         self._process_player_death()
         # 添加销毁
@@ -57,6 +57,10 @@ class DeadActionSystem(ExecuteProcessor):
 
         for entity in actor_entities:
             for action_class in action_comps:
+                if action_class == DeadAction:
+                    # 死亡动作不移除。
+                    continue
+
                 if entity.has(action_class):
                     entity.remove(action_class)
 

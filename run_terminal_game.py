@@ -17,7 +17,7 @@ class TerminalGameOption:
     default_game: str
     check_game_resource_version: str
     show_client_message_count: int = 20
-    new_game: bool = True
+    is_new_game: bool = True
 
 
 ###############################################################################################################################################
@@ -46,7 +46,7 @@ async def run_terminal_game(option: TerminalGameOption) -> None:
 
     # 根据创建还是载入进行不同的处理
     game_resource: Optional[RPGGameResource] = None
-    if option.new_game:
+    if option.is_new_game:
         game_resource_file_path = (
             rpg_game_config.ROOT_GEN_GAMES_DIR / f"{game_name}.json"
         )
@@ -86,60 +86,64 @@ async def run_terminal_game(option: TerminalGameOption) -> None:
         return
 
     # 创建游戏
-    new_game = game.rpg_game_utils.create_terminal_rpg_game(game_resource)
-    if new_game is None:
+    terminal_rpg_game = game.rpg_game_utils.create_terminal_rpg_game(game_resource)
+    if terminal_rpg_game is None:
         logger.error(f"create_rpg_game 失败 = {game_name}")
         return
 
     # 模拟一个客户端
     player_proxy: Optional[PlayerProxy] = None
-    if option.new_game:
+    if option.is_new_game:
         # 是否是控制actor游戏
-        player_actor_name = terminal_select_actor_from_input(new_game)
+        player_actor_name = terminal_select_actor_from_input(terminal_rpg_game)
         if player_actor_name != "":
             logger.info(f"{option.user_name}:{game_name}:{player_actor_name}")
             player_proxy = PlayerProxy(PlayerProxyModel(player_name=option.user_name))
-            new_game.add_player(player_proxy)
+            terminal_rpg_game.add_player(player_proxy)
 
-            game.rpg_game_utils.new_game(new_game, player_proxy, player_actor_name)
+            game.rpg_game_utils.play_new_game(
+                terminal_rpg_game, player_proxy, player_actor_name
+            )
         else:
             logger.warning(
                 "没有找到可以控制的角色，可能是game resource里没设置Player，此时就是观看。"
             )
     else:
 
-        player_proxy = game.rpg_game_utils.rejoin_game(new_game, option.user_name)
+        player_proxy = game.rpg_game_utils.resume_game(
+            terminal_rpg_game, option.user_name
+        )
 
     # 核心循环
     while True:
 
-        if new_game._will_exit:
+        if terminal_rpg_game._will_exit:
             break
 
         # 运行一个回合
-        await new_game.a_execute()
+        await terminal_rpg_game.a_execute()
 
         # 如果没有客户端就继续
         if player_proxy is None:
             # 游戏的进程可以看log
-            await terminal_continue(new_game)
+            await terminal_continue(terminal_rpg_game)
             continue
 
         # 有客户端才进行控制。
         player_proxy.log_recent_client_messages(option.show_client_message_count)
-        if game.rpg_game_utils.is_turn_of_player(new_game, player_proxy):
+        if game.rpg_game_utils.is_turn_of_player(terminal_rpg_game, player_proxy):
             # 是你的输入回合
-            await terminal_player_input(new_game, player_proxy)
+            await terminal_player_input(terminal_rpg_game, player_proxy)
         else:
             # 不是你的输入回合
-            await terminal_player_wait(new_game, player_proxy)
+            await terminal_player_wait(terminal_rpg_game, player_proxy)
 
     game.rpg_game_utils.save_game(
-        rpg_game=new_game,
+        rpg_game=terminal_rpg_game,
         archive_dir=rpg_game_config.GAMES_ARCHIVE_DIR / option.user_name,
     )
-    new_game.exit()
-    new_game = None  # 其实是废话，习惯性写着吧
+    terminal_rpg_game.exit()
+    terminal_rpg_game = None  # 其实是废话，习惯性写着吧
 
 
 ###############################################################################################################################################

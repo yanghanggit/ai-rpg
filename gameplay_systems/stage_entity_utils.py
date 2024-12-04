@@ -3,7 +3,7 @@ from components.components import (
     StageComponent,
     StageEnvironmentComponent,
 )
-from components.action_components import (
+from components.actions import (
     StageNarrateAction,
 )
 from agent.agent_plan_response import AgentPlanResponse

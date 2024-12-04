@@ -1,6 +1,6 @@
 from game.base_game import BaseGame
 from loguru import logger
-from components.action_components import (
+from components.actions import (
     AnnounceAction,
     SpeakAction,
     GoToAction,

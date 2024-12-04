@@ -51,7 +51,7 @@ def format_prop_name_with_count(prop_name: str, count: int) -> str:
     return f"/{prop_name}={count}"
 
 
-######################################################################################################################################################
+############################################################################################################
 def match_prop_name(prop_name: str, complex_prop_name: str) -> bool:
     parsed_prop_name, _ = parse_complex_prop_name(complex_prop_name)
     return prop_name == parsed_prop_name

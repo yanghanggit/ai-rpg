@@ -34,7 +34,7 @@ class AgentPlanResponse:
                 JsonPlanResponseHandler(response_content)
                 .strip_json_code()
                 .combine_duplicate_fragments()
-                .output
+                .format_output
             )
 
             # 核心执行

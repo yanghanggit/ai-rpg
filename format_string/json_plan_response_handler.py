@@ -1,10 +1,9 @@
-from typing import List, Dict, Any, Optional, cast
+from typing import List, Dict, Any, Optional, cast, final
 import json
 import re
 
 
 ############################################################################################################
-## 当LLM穿回来的json是重复的错误的时候，可以尝试做合并处理
 def _combine_json_fragments(json_str: str) -> Optional[Dict[str, List[str]]]:
 
     try:
@@ -53,20 +52,17 @@ def _combine_json_fragments(json_str: str) -> Optional[Dict[str, List[str]]]:
 
 
 ############################################################################################################
-## 检查是否是“当LLM穿回来的json是重复的错误的时候，可以尝试做合并处理”
 def _contains_duplicate_segments(json_response: str) -> bool:
     json_parts = re.split(r"}\s*{", json_response)
     return len(json_parts) > 1
 
 
 ############################################################################################################
-## 是否是MD的JSON块
 def _contains_json_code(markdown_text: str) -> bool:
     return "```json" in markdown_text
 
 
 ############################################################################################################
-## 提取MD的JSON块内容
 def _strip_json_code_block(markdown_text: str) -> str:
 
     if "```json" in markdown_text:
@@ -82,29 +78,35 @@ def _strip_json_code_block(markdown_text: str) -> str:
 ############################################################################################################
 
 
+@final
 class JsonPlanResponseHandler:
 
     def __init__(self, source_string: str) -> None:
         self._source_string: str = str(source_string)
-        self._output: str = str(source_string)
+        self._formatted_output: str = str(source_string)
 
     ############################################################################################################
     def strip_json_code(self) -> "JsonPlanResponseHandler":
-        if _contains_json_code(self._output):
-            self._output = _strip_json_code_block(self._output)
+        if _contains_json_code(self._formatted_output):
+            self._formatted_output = _strip_json_code_block(self._formatted_output)
         return self
 
     ############################################################################################################
     def combine_duplicate_fragments(self) -> "JsonPlanResponseHandler":
-        if _contains_duplicate_segments(self._output):
-            merge_res = _combine_json_fragments(self._output)
+        if _contains_duplicate_segments(self._formatted_output):
+            merge_res = _combine_json_fragments(self._formatted_output)
             if merge_res is not None:
-                self._output = json.dumps(merge_res, ensure_ascii=False)
+                self._formatted_output = json.dumps(merge_res, ensure_ascii=False)
         return self
 
     ############################################################################################################
     @property
-    def output(self) -> str:
-        return self._output
+    def source_string(self) -> str:
+        return self._source_string
+
+    ############################################################################################################
+    @property
+    def format_output(self) -> str:
+        return self._formatted_output
 
     ############################################################################################################

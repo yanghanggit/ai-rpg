@@ -2,7 +2,6 @@ from typing import Optional, List
 
 
 #################################################################################################################################
-# 我方定义的规则字符串
 def _extract_target_message(
     content: str, symbol1: str = "@", symbol2: str = ":"
 ) -> tuple[Optional[str], Optional[str]]:
@@ -33,7 +32,6 @@ def _extract_target_message(
 
 
 #################################################################################################################################
-# 是否是有效的目标和消息格式
 def _has_target_message_format(
     content: str, symbol1: str = "@", symbol2: str = ":"
 ) -> bool:

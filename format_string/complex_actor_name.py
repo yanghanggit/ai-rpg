@@ -1,3 +1,4 @@
+from typing import final
 from loguru import logger
 from enum import StrEnum, unique
 
@@ -9,6 +10,7 @@ class ComplexActorNameSymbol(StrEnum):
     GUID_FLAG = "%"
 
 
+@final
 class ComplexActorName:
 
     #################################################################################################################################

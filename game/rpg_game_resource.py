@@ -1,4 +1,4 @@
-from typing import Any, List, Optional, Dict, Final
+from typing import List, Optional, Dict, Final
 from models.entity_models import (
     ActorInstanceModel,
     StageInstanceModel,
@@ -123,7 +123,7 @@ class RPGGameResource:
     def generate_runtime_file_name(game_name: str) -> str:
         return f"""{game_name}_runtime.json"""
 
-    def __init__(self, name: str, data: Any, game_runtime_dir: Path) -> None:
+    def __init__(self, name: str, data: str, game_runtime_dir: Path) -> None:
 
         #
         self._game_name: str = name
@@ -133,15 +133,13 @@ class RPGGameResource:
         assert self._runtime_dir.exists()
 
         # 核心数据
-        self._model = GameModel.model_validate_json(
-            json.dumps(data, ensure_ascii=False)
-        )
+        self._model = GameModel.model_validate_json(data)
 
         # 数据单独处理
         self._data_base = DataBase(self._model.database)
 
         # 运行时模型，用于后续的存储时候用。
-        self._runtime_model = self._model.model_copy(deep=True)
+        self._runtime_model = GameModel.model_validate_json(data)
 
         # load 相关的数据结构
         self._load_dir: Optional[Path] = None

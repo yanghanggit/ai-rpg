@@ -1,5 +1,5 @@
 from entitas import Entity  # type: ignore
-from typing import Optional, Any, cast, List, Dict
+from typing import Optional, cast, List, Dict
 from loguru import logger
 from game.rpg_game_resource import RPGGameResource
 from game.rpg_game import RPGGame
@@ -52,25 +52,36 @@ from models.player_models import (
 
 
 #######################################################################################################################################
-def _load_game_resource_file(file_path: Path, version: str) -> Any:
+def _read_game_resource_file(file_path: Path, check_version: str) -> str:
 
     if not file_path.exists():
-        return None
+        return ""
 
-    content = file_path.read_text(encoding="utf-8")
-    if content is None:
-        return None
+    resource_file_content = file_path.read_text(encoding="utf-8")
+    if resource_file_content is None:
+        return ""
 
-    data = json.loads(content)
-    if data is None:
-        return None
+    if check_version != "":
 
-    version = cast(str, data["version"])
-    if version != version:
-        logger.error(f"版本不匹配，期望版本 = {version}, 实际版本 = {version}")
-        return None
+        try:
 
-    return data
+            data = json.loads(resource_file_content)
+            if data is None:
+                return ""
+
+            resource_version = cast(str, data["version"])
+            if resource_version != check_version:
+                logger.error(
+                    f"版本不匹配，期望版本 = {check_version}, 实际版本 = {resource_version}"
+                )
+                return ""
+
+        except Exception as e:
+            logger.error(e)
+            assert False, e
+            return ""
+
+    return resource_file_content
 
 
 #######################################################################################################################################
@@ -79,8 +90,8 @@ def create_game_resource(
 ) -> Optional[RPGGameResource]:
 
     assert game_resource_file_path.exists()
-    game_data = _load_game_resource_file(game_resource_file_path, check_version)
-    if game_data is None:
+    game_data = _read_game_resource_file(game_resource_file_path, check_version)
+    if game_data == "":
         return None
 
     return RPGGameResource(game_resource_file_path.stem, game_data, game_runtime_dir)
@@ -109,8 +120,8 @@ def load_game_resource(
         assert False, f"找不到游戏资源文件 = {game_archive_file_path}"
         return None
 
-    game_data = _load_game_resource_file(game_archive_file_path, check_version)
-    if game_data is None:
+    game_data = _read_game_resource_file(game_archive_file_path, check_version)
+    if game_data == "":
         return None
 
     load_game_resource = RPGGameResource(game_name, game_data, game_runtime_dir)

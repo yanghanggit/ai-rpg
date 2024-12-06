@@ -1,5 +1,5 @@
 from loguru import logger
-from typing import List, Union, cast, Any
+from typing import List, Union, cast, Any, Optional
 from langchain_core.messages import HumanMessage, AIMessage
 import asyncio
 
@@ -73,7 +73,7 @@ class AgentRequestHandler:
 
         self._agent: LangServeAgent = agent
         self._prompt: str = prompt
-        self._response: Any = None
+        self._response: Optional[Any] = None
         self._chat_history_options: ChatHistoryOperationOptions = (
             context_operation_options
         )
@@ -92,7 +92,7 @@ class AgentRequestHandler:
 
     ################################################################################################################################################################################
     @property
-    def response(self) -> Any:
+    def response(self) -> Optional[Any]:
         return self._response
 
     ################################################################################################################################################################################
@@ -104,7 +104,7 @@ class AgentRequestHandler:
         return []
 
     ################################################################################################################################################################################
-    def request(self) -> Any:
+    def request(self) -> Optional[Any]:
         assert self.response is None
         if self._agent.remote_runnable is None:
             return None
@@ -136,7 +136,7 @@ class AgentRequestHandler:
         return self.response
 
     ################################################################################################################################################################################
-    async def a_request(self) -> Any:
+    async def a_request(self) -> Optional[Any]:
         assert self.response is None
         if self._agent.remote_runnable is None:
             return None

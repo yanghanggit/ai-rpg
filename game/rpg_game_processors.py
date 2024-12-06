@@ -1,14 +1,15 @@
 from entitas import Processors  # type: ignore
 from overrides import override
-from typing import Any, cast
+from typing import cast
 from game.rpg_game_context import RPGGameContext
 from game.rpg_game_config import WorldSystemNames
+from game.base_game import BaseGame
 
 
 class RPGGameProcessors(Processors):
 
     @staticmethod
-    def create(game: Any, context: RPGGameContext) -> "RPGGameProcessors":
+    def create(game: BaseGame, context: RPGGameContext) -> "RPGGameProcessors":
 
         ### 不这样就循环引用
         from game.rpg_game import RPGGame

@@ -123,9 +123,7 @@ def _create_entitas_context(
     option_chaos_engineering: Optional[IChaosEngineering],
 ) -> RPGGameContext:
 
-    chaos_engineering_system: IChaosEngineering = EmptyChaosEngineeringSystem(
-        "empty_chaos"
-    )
+    chaos_engineering_system: IChaosEngineering = EmptyChaosEngineeringSystem()
     if option_chaos_engineering is not None:
         chaos_engineering_system = option_chaos_engineering
 
@@ -145,10 +143,7 @@ def create_terminal_rpg_game(
     game_resource: RPGGameResource,
 ) -> Optional[TerminalRPGGame]:
 
-    rpg_context = _create_entitas_context(
-        GameSampleChaosEngineeringSystem("terminal_rpg_game_chaos")
-    )
-
+    rpg_context = _create_entitas_context(GameSampleChaosEngineeringSystem())
     rpg_game = TerminalRPGGame(game_resource._game_name, rpg_context)
     rpg_game.build(game_resource)
     return rpg_game
@@ -157,10 +152,7 @@ def create_terminal_rpg_game(
 #######################################################################################################################################
 def create_web_rpg_game(game_resource: RPGGameResource) -> Optional[WebRPGGame]:
 
-    rpg_context = _create_entitas_context(
-        GameSampleChaosEngineeringSystem("web_rpg_game_chaos")
-    )
-
+    rpg_context = _create_entitas_context(GameSampleChaosEngineeringSystem())
     rpg_game = WebRPGGame(game_resource._game_name, rpg_context)
     rpg_game.build(game_resource)
     return rpg_game

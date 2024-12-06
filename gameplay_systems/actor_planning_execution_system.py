@@ -149,10 +149,7 @@ class ActorPlanningExecutionSystem(ExecuteProcessor):
         # step1: 添加任务
         tasks: Dict[str, AgentRequestHandler] = {}
         self._populate_agent_tasks(tasks)
-        # step可选：混沌工程做测试
-        self._context.chaos_engineering_system.on_actor_planning_system_execute(
-            self._context
-        )
+
         # step2: 并行执行requests
         if len(tasks) == 0:
             return

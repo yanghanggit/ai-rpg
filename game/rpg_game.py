@@ -84,9 +84,8 @@ class RPGGame(BaseGame):
     def build(self, game_resource: RPGGameResource) -> "RPGGame":
 
         # 混沌系统，准备测试
-        self.context.chaos_engineering_system.on_pre_create_game(
-            self.context, game_resource
-        )
+        self.context.chaos_engineering_system.initialize(self)
+        self.context.chaos_engineering_system.on_pre_create_game()
 
         ## 第1步，设置根路径
         self._game_resource = game_resource
@@ -116,9 +115,7 @@ class RPGGame(BaseGame):
             self._load_game(self.context, game_resource)
 
         ## 最后！混沌系统，准备测试
-        self.context.chaos_engineering_system.on_post_create_game(
-            self.context, game_resource
-        )
+        self.context.chaos_engineering_system.on_post_create_game()
 
         return self
 

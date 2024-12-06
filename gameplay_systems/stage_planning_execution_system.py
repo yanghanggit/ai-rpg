@@ -84,11 +84,6 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
         tasks: Dict[str, AgentRequestHandler] = {}
         self._populate_agent_tasks(tasks)
 
-        # step可选：混沌工程做测试
-        self._context.chaos_engineering_system.on_stage_planning_system_excute(
-            self._context
-        )
-
         # step2: 并行执行requests
         if len(tasks) == 0:
             return

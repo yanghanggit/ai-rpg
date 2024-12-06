@@ -9,7 +9,7 @@ from components.components import (
 )
 from game.rpg_game_context import RPGGameContext
 from loguru import logger
-from typing import final, override, Set, Any
+from typing import final, override, Set, NamedTuple
 from game.rpg_game import RPGGame
 from models.event_models import AgentEvent
 
@@ -130,7 +130,7 @@ class StageValidatorSystem(ReactiveProcessor):
 
     ###############################################################################################################################################
     def _remove_action_component(
-        self, actor_entity: Entity, action_comps: Set[type[Any]] = {GoToAction}
+        self, actor_entity: Entity, action_comps: Set[type[NamedTuple]] = {GoToAction}
     ) -> None:
 
         for action_comp in action_comps:

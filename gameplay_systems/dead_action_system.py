@@ -1,5 +1,5 @@
 from entitas import Matcher, ExecuteProcessor  # type: ignore
-from typing import final, override, Any
+from typing import final, override
 from components.components import (
     PlayerComponent,
     DestroyComponent,
@@ -13,7 +13,7 @@ from components.actions import (
 )
 from game.rpg_game_context import RPGGameContext
 from game.rpg_game import RPGGame
-from typing import FrozenSet, Any
+from typing import FrozenSet, NamedTuple
 from loguru import logger
 
 
@@ -47,7 +47,7 @@ class DeadActionSystem(ExecuteProcessor):
                 entity.add(DeadAction, rpg_attributes.name, [])
 
     ########################################################################################################################################################################
-    def _clear_actions(self, action_comps: FrozenSet[type[Any]]) -> None:
+    def _clear_actions(self, action_comps: FrozenSet[type[NamedTuple]]) -> None:
         actor_entities = self._context.get_group(
             Matcher(
                 all_of=[ActorComponent, DeadAction],

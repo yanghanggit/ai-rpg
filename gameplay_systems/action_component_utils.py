@@ -1,6 +1,6 @@
 from entitas import Entity, Matcher  # type: ignore
 from loguru import logger
-from typing import Any, FrozenSet, Optional
+from typing import NamedTuple, FrozenSet, Optional
 from agent.agent_plan_response import AgentPlanResponse, AgentAction
 from game.rpg_game_context import RPGGameContext
 from enum import Enum
@@ -45,8 +45,8 @@ def validate_conversation(
 
 ######################################################################################################################################
 def _retrieve_registered_component(
-    class_name: str, registered_components: FrozenSet[type[Any]]
-) -> Any:
+    class_name: str, registered_components: FrozenSet[type[NamedTuple]]
+) -> Optional[type[NamedTuple]]:
     for component in registered_components:
         if class_name == component.__name__:
             return component
@@ -57,7 +57,7 @@ def _retrieve_registered_component(
 ######################################################################################################################################
 def _validate_actions(
     plan_response: AgentPlanResponse,
-    registered_actions: FrozenSet[type[Any]],
+    registered_actions: FrozenSet[type[NamedTuple]],
 ) -> bool:
     if len(plan_response._actions) == 0:
         return False
@@ -74,7 +74,7 @@ def _validate_actions(
 
 #######################################################################################################################################
 def _add_action(
-    entity: Entity, action: AgentAction, registered_actions: FrozenSet[type[Any]]
+    entity: Entity, action: AgentAction, registered_actions: FrozenSet[type[NamedTuple]]
 ) -> None:
     comp_class = _retrieve_registered_component(action.action_name, registered_actions)
     if comp_class is None:
@@ -84,7 +84,7 @@ def _add_action(
 
 ######################################################################################################################################
 def clear_registered_actions(
-    context: RPGGameContext, registered_actions: FrozenSet[type[Any]]
+    context: RPGGameContext, registered_actions: FrozenSet[type[NamedTuple]]
 ) -> None:
     entities = context.get_group(Matcher(any_of=registered_actions)).entities.copy()
     for entity in entities:
@@ -98,7 +98,7 @@ def add_actor_actions(
     context: RPGGameContext,
     actor_entity: Entity,
     actor_planning_response: AgentPlanResponse,
-    registered_actions: FrozenSet[type[Any]] = ACTOR_AVAILABLE_ACTIONS_REGISTER,
+    registered_actions: FrozenSet[type[NamedTuple]] = ACTOR_AVAILABLE_ACTIONS_REGISTER,
 ) -> bool:
 
     assert actor_entity.has(
@@ -123,7 +123,7 @@ def add_stage_actions(
     context: RPGGameContext,
     stage_entity: Entity,
     stage_planning_response: AgentPlanResponse,
-    registered_actions: FrozenSet[type[Any]] = STAGE_AVAILABLE_ACTIONS_REGISTER,
+    registered_actions: FrozenSet[type[NamedTuple]] = STAGE_AVAILABLE_ACTIONS_REGISTER,
 ) -> bool:
 
     assert stage_entity.has(

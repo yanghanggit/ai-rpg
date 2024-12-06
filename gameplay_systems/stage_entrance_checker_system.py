@@ -12,7 +12,7 @@ from components.components import (
 )
 from game.rpg_game_context import RPGGameContext
 import gameplay_systems.prompt_utils as prompt_utils
-from typing import final, override, List, Set, Any, Dict
+from typing import final, override, List, Set, NamedTuple, Dict
 from gameplay_systems.actor_entity_utils import ActorStatusEvaluator
 from agent.agent_request_handler import AgentRequestHandler
 from agent.agent_plan_response import AgentPlanResponse
@@ -247,7 +247,7 @@ class StageEntranceCheckerSystem(ReactiveProcessor):
     def _remove_all_entities_actions(
         self,
         actor_entities: List[Entity],
-        action_components: Set[type[Any]] = {GoToAction},
+        action_components: Set[type[NamedTuple]] = {GoToAction},
     ) -> None:
 
         for actor_entity in actor_entities:
@@ -255,7 +255,9 @@ class StageEntranceCheckerSystem(ReactiveProcessor):
 
     ###############################################################################################################################################
     def _remove_action_components(
-        self, actor_entity: Entity, action_components: Set[type[Any]] = {GoToAction}
+        self,
+        actor_entity: Entity,
+        action_components: Set[type[NamedTuple]] = {GoToAction},
     ) -> None:
 
         for action_component in action_components:

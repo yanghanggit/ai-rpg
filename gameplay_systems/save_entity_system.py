@@ -5,7 +5,7 @@ from components.components import (
     StageComponent,
     ActorComponent,
 )
-from typing import final, override, Any, FrozenSet
+from typing import final, override, NamedTuple, FrozenSet
 import gameplay_systems.file_system_utils
 from game.rpg_game import RPGGame
 from models.file_models import ComponentDumpModel, EntityProfileModel
@@ -38,7 +38,7 @@ class SaveEntitySystem(ExecuteProcessor):
 
     ############################################################################################################
     def _get_entity_profiles(
-        self, component_types: FrozenSet[type[Any]]
+        self, component_types: FrozenSet[type[NamedTuple]]
     ) -> OrderedDict[str, EntityProfileModel]:
 
         ret: OrderedDict[str, EntityProfileModel] = OrderedDict()

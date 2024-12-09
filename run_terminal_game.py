@@ -29,6 +29,7 @@ async def run_terminal_game(option: TerminalGameOption) -> None:
 
     # 如果没有输入就用默认的
     if game_name == "":
+        assert option.default_game != ""
         game_name = option.default_game
 
     # 创建游戏运行时目录，每一次运行都会删除
@@ -203,88 +204,88 @@ async def terminal_player_input(rpg_game: RPGGame, player_proxy: PlayerProxy) ->
 
 
 #######################################################################################################################################
-def terminal_survey_stage(game_name: RPGGame, player_proxy: PlayerProxy) -> None:
-    watch_action_model = game.rpg_game_utils.gen_survey_stage_model(
-        game_name, player_proxy
+def terminal_survey_stage(rpg_game: RPGGame, player_proxy: PlayerProxy) -> None:
+    survey_stage_model = game.rpg_game_utils.gen_survey_stage_model(
+        rpg_game, player_proxy
     )
-    if watch_action_model is None:
+    if survey_stage_model is None:
         return
 
     while True:
-        logger.info(watch_action_model.model_dump_json())
+        logger.info(survey_stage_model.model_dump_json())
         input(f"按任意键继续")
         break
 
 
 #######################################################################################################################################
 def terminal_status_inventory_check(
-    game_name: RPGGame, player_proxy: PlayerProxy
+    rpg_game: RPGGame, player_proxy: PlayerProxy
 ) -> None:
-    check_action_model = game.rpg_game_utils.gen_status_inventory_check_model(
-        game_name, player_proxy
+    status_inventory_check_model = game.rpg_game_utils.gen_status_inventory_check_model(
+        rpg_game, player_proxy
     )
 
-    if check_action_model is None:
+    if status_inventory_check_model is None:
         return
 
     while True:
-        logger.info(check_action_model.model_dump_json())
+        logger.info(status_inventory_check_model.model_dump_json())
         input(f"按任意键继续")
         break
 
 
 #######################################################################################################################################
 def terminal_retrieve_actor_archives_action(
-    game_name: RPGGame, player_proxy: PlayerProxy
+    rpg_game: RPGGame, player_proxy: PlayerProxy
 ) -> None:
-    get_actor_archives_model = (
+    retrieve_actor_archives_action_model = (
         game.rpg_game_utils.gen_retrieve_actor_archives_action_model(
-            game_name, player_proxy
+            rpg_game, player_proxy
         )
     )
 
-    if get_actor_archives_model is None:
+    if retrieve_actor_archives_action_model is None:
         return
 
     while True:
-        logger.info(get_actor_archives_model.model_dump_json())
+        logger.info(retrieve_actor_archives_action_model.model_dump_json())
         input(f"按任意键继续")
         break
 
 
 #######################################################################################################################################
 def terminal_retrieve_stage_archives_action(
-    game_name: RPGGame, player_proxy: PlayerProxy
+    rpg_game: RPGGame, player_proxy: PlayerProxy
 ) -> None:
-    get_stage_archives_model = (
+    retrieve_stage_archives_action_model = (
         game.rpg_game_utils.gen_retrieve_stage_archives_action_model(
-            game_name, player_proxy
+            rpg_game, player_proxy
         )
     )
 
-    if get_stage_archives_model is None:
+    if retrieve_stage_archives_action_model is None:
         return
 
     while True:
-        logger.info(get_stage_archives_model.model_dump_json())
+        logger.info(retrieve_stage_archives_action_model.model_dump_json())
         input(f"按任意键继续")
         break
 
 
 ###############################################################################################################################################
-async def terminal_player_wait(game: RPGGame, player_proxy: PlayerProxy) -> None:
+async def terminal_player_wait(rpg_game: RPGGame, player_proxy: PlayerProxy) -> None:
     while True:
         input(
-            f"<<<<<<<<<<<<<<<<<<<<<<< 不是你{player_proxy.player_name},{player_proxy.actor_name}的回合，按任意键继续游戏:{game._name} >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+            f"<<<<<<<<<<<<<<<<<<<<<<< 不是你{player_proxy.player_name},{player_proxy.actor_name}的回合，按任意键继续游戏:{rpg_game._name} >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
         )
         break
 
 
 ###############################################################################################################################################
-async def terminal_continue(game: RPGGame) -> None:
+async def terminal_continue(rpg_game: RPGGame) -> None:
     while True:
         input(
-            f"<<<<<<<<<<<<<<<<<<<<<<< {game._name} 游戏继续，没有玩家 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+            f"<<<<<<<<<<<<<<<<<<<<<<< {rpg_game._name} 游戏继续，没有玩家 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
         )
         break
 

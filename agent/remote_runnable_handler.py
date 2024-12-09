@@ -1,13 +1,13 @@
 from langserve import RemoteRunnable  # type: ignore
 from loguru import logger
-from typing import Optional, final
+from typing import Final, Optional, final
 
 
 @final
 class RemoteRunnableHandler:
 
     def __init__(self, url: str) -> None:
-        self._url: str = url
+        self._url: Final[str] = url
         self._remote_runnable: Optional[RemoteRunnable] = None
 
     #################################################################################################################################################

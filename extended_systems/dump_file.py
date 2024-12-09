@@ -1,6 +1,5 @@
 from typing import final
 from overrides import override
-import json
 from loguru import logger
 from models.file_models import (
     EntityProfileModel,
@@ -10,6 +9,7 @@ from extended_systems.base_file import BaseFile
 
 @final
 class EntityProfileFile(BaseFile):
+
     def __init__(self, model: EntityProfileModel) -> None:
         super().__init__(model.name, model.name)
         self._model: EntityProfileModel = model

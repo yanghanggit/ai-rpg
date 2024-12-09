@@ -121,7 +121,7 @@ class FinalAppearanceComponent(NamedTuple):
 
 
 ############################################################################################################
-# 标记进入新的舞台
+# 标记进入新的
 @final
 class EnterStageFlagComponent(NamedTuple):
     name: str

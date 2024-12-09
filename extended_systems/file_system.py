@@ -13,7 +13,6 @@ FileType = TypeVar("FileType")
 
 @final
 class FileSystem:
-    """FileSystem Because it involves IO operations, an independent system is more convenient."""
 
     def __init__(self) -> None:
 

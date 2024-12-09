@@ -12,7 +12,7 @@ from components.actions import (
     StageTagAction,
     TagAction,
 )
-from agent.agent_plan_response import AgentPlanResponse
+from agent.agent_response_handler import AgentResponseHandler
 from game.rpg_game_context import RPGGameContext
 from loguru import logger
 from typing import Dict, List, final
@@ -110,7 +110,9 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
             if stage_entity is None:
                 continue
 
-            plan_response = AgentPlanResponse(stage_name, agent_task.response_content)
+            plan_response = AgentResponseHandler(
+                stage_name, agent_task.response_content
+            )
             action_add_result = (
                 gameplay_systems.action_component_utils.add_stage_actions(
                     self._context,

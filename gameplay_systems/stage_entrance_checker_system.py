@@ -15,7 +15,7 @@ import gameplay_systems.prompt_utils as prompt_utils
 from typing import final, override, List, Set, NamedTuple, Dict
 from gameplay_systems.actor_entity_utils import ActorStatusEvaluator
 from agent.agent_request_handler import AgentRequestHandler
-from agent.agent_plan_response import AgentPlanResponse
+from agent.agent_response_handler import AgentResponseHandler
 from extended_systems.prop_file import (
     PropFile,
     generate_prop_file_for_stage_condition_prompt,
@@ -78,7 +78,7 @@ def _generate_entry_denial_prompt(
 
 ################################################################################################################################################
 @final
-class InternalPlanResponse(AgentPlanResponse):
+class InternalPlanResponse(AgentResponseHandler):
 
     def __init__(self, name: str, response_content: str) -> None:
         super().__init__(name, response_content)

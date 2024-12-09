@@ -20,7 +20,7 @@ from extended_systems.prop_file import (
 )
 import gameplay_systems.prompt_utils
 from agent.agent_request_handler import AgentRequestHandler
-from agent.agent_plan_response import AgentPlanResponse
+from agent.agent_response_handler import AgentResponseHandler
 from game.rpg_game import RPGGame
 import gameplay_systems.skill_entity_utils
 from agent.lang_serve_agent import LangServeAgent
@@ -92,7 +92,7 @@ def _generate_skill_readiness_validator_prompt(
 ######################################################################################################################################################
 ######################################################################################################################################################
 @final
-class InternalPlanResponse(AgentPlanResponse):
+class InternalPlanResponse(AgentResponseHandler):
 
     def __init__(self, name: str, input_str: str) -> None:
         super().__init__(name, input_str)

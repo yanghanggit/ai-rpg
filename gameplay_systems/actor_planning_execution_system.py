@@ -12,7 +12,7 @@ from components.actions import (
     GoToAction,
     TagAction,
 )
-from agent.agent_plan_response import AgentPlanResponse
+from agent.agent_response_handler import AgentResponseHandler
 from game.rpg_game_context import RPGGameContext
 from loguru import logger
 from typing import Dict, Set, List, Optional, final
@@ -181,7 +181,7 @@ class ActorPlanningExecutionSystem(ExecuteProcessor):
                 gameplay_systems.action_component_utils.add_actor_actions(
                     self._context,
                     actor_entity,
-                    AgentPlanResponse(actor_name, agent_task.response_content),
+                    AgentResponseHandler(actor_name, agent_task.response_content),
                 )
             )
 

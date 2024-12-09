@@ -17,7 +17,7 @@ from agent.agent_request_handler import AgentRequestHandler
 from typing import List, final
 import copy
 from game.rpg_game import RPGGame
-from agent.agent_plan_response import AgentPlanResponse
+from agent.agent_response_handler import AgentResponseHandler
 
 
 ################################################################################################################################################
@@ -64,7 +64,7 @@ def _generate_conversation_check_prompt(
 ################################################################################################################################################
 ################################################################################################################################################
 @final
-class InternalPlanResponse(AgentPlanResponse):
+class InternalPlanResponse(AgentResponseHandler):
 
     def __init__(self, name: str, input_str: str) -> None:
         super().__init__(name, input_str)

@@ -464,11 +464,11 @@ def _requesting_retrieve_stage_archives(
     )
     if stage_archives_response.error > 0:
         logger.warning(
-            f"获取舞台档案失败: {stage_archives_response.user_name}, {stage_archives_response.game_name}, {stage_archives_response.actor_name}"
+            f"获取档案失败: {stage_archives_response.user_name}, {stage_archives_response.game_name}, {stage_archives_response.actor_name}"
         )
         return
 
-    logger.warning(f"获取舞台档案: {stage_archives_response.model_dump_json()}")
+    logger.warning(f"获取档案: {stage_archives_response.model_dump_json()}")
 
 
 ###############################################################################################################################################

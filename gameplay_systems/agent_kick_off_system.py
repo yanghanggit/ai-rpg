@@ -21,7 +21,7 @@ from components.actions import (
 )
 from components.actions import UpdateAppearanceAction
 import gameplay_systems.prompt_utils
-from agent.agent_plan_response import AgentPlanResponse
+from agent.agent_response_handler import AgentResponseHandler
 import gameplay_systems.stage_entity_utils
 from loguru import logger
 
@@ -249,7 +249,7 @@ class AgentKickOffSystem(ExecuteProcessor):
 
             gameplay_systems.stage_entity_utils.apply_stage_narration(
                 self._context,
-                AgentPlanResponse(agent_name, agent_task.response_content),
+                AgentResponseHandler(agent_name, agent_task.response_content),
             )
 
     ######################################################################################################################################################

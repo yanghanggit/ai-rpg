@@ -33,7 +33,7 @@ class ActorPlanningStrategySystem(InitializeProcessor, ExecuteProcessor):
     ############################################################################################################
     @override
     def execute(self) -> None:
-        # 如果有最近的舞台转换，就处理
+        # 如果有最近的转换，就处理
         self._handle_recent_stage_transition_actors()
         # 添加自动规划组件
         self._handle_add_planning_component()

@@ -6,13 +6,13 @@ from components.components import (
 from components.actions import (
     StageNarrateAction,
 )
-from agent.agent_plan_response import AgentPlanResponse
+from agent.agent_response_handler import AgentResponseHandler
 from game.rpg_game_context import RPGGameContext
 
 
 ######################################################################################################################################################
 def apply_stage_narration(
-    context: RPGGameContext, plan_response: AgentPlanResponse
+    context: RPGGameContext, plan_response: AgentResponseHandler
 ) -> None:
 
     stage_narrate_action = plan_response.get_action(StageNarrateAction.__name__)

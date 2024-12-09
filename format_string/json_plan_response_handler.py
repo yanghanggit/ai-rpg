@@ -86,20 +86,6 @@ class JsonPlanResponseHandler:
         self._formatted_output: str = str(source_string)
 
     ############################################################################################################
-    def strip_json_code(self) -> "JsonPlanResponseHandler":
-        if _contains_json_code(self._formatted_output):
-            self._formatted_output = _strip_json_code_block(self._formatted_output)
-        return self
-
-    ############################################################################################################
-    def combine_duplicate_fragments(self) -> "JsonPlanResponseHandler":
-        if _contains_duplicate_segments(self._formatted_output):
-            merge_res = _combine_json_fragments(self._formatted_output)
-            if merge_res is not None:
-                self._formatted_output = json.dumps(merge_res, ensure_ascii=False)
-        return self
-
-    ############################################################################################################
     @property
     def source_string(self) -> str:
         return self._source_string
@@ -108,5 +94,21 @@ class JsonPlanResponseHandler:
     @property
     def format_output(self) -> str:
         return self._formatted_output
+
+    ############################################################################################################
+    def strip_json_code(self) -> "JsonPlanResponseHandler":
+        if _contains_json_code(self._formatted_output):
+            self._formatted_output = _strip_json_code_block(self._formatted_output)
+        return self
+
+    ############################################################################################################
+    def combine_duplicate_fragments(self) -> "JsonPlanResponseHandler":
+        if _contains_duplicate_segments(self._formatted_output):
+            merged_json_fragments = _combine_json_fragments(self._formatted_output)
+            if merged_json_fragments is not None:
+                self._formatted_output = json.dumps(
+                    merged_json_fragments, ensure_ascii=False
+                )
+        return self
 
     ############################################################################################################

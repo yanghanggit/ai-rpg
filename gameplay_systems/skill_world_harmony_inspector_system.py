@@ -21,7 +21,7 @@ from extended_systems.prop_file import (
 )
 import gameplay_systems.prompt_utils as prompt_utils
 from agent.agent_request_handler import AgentRequestHandler
-from agent.agent_plan_response import AgentPlanResponse
+from agent.agent_response_handler import AgentResponseHandler
 from game.rpg_game import RPGGame
 import gameplay_systems.file_system_utils
 from models.event_models import AgentEvent
@@ -178,7 +178,7 @@ def _generate_item_consumption_report_prompt(
 ######################################################################################################################################################
 ######################################################################################################################################################
 @final
-class InternalPlanResponse(AgentPlanResponse):
+class InternalPlanResponse(AgentResponseHandler):
 
     def __init__(self, name: str, response_content: str) -> None:
         super().__init__(name, response_content)

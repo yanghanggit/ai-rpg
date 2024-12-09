@@ -1,4 +1,5 @@
 from typing import List, Dict, List, Any
+from overrides import final
 from pydantic import BaseModel
 from enum import StrEnum, unique
 from models.entity_models import PropInstanceModel, PropModel
@@ -14,16 +15,19 @@ class PropType(StrEnum):
     TYPE_SKILL = "Skill"
 
 
+@final
 class ComponentDumpModel(BaseModel):
     name: str
     data: Dict[str, Any]
 
 
+@final
 class EntityProfileModel(BaseModel):
     name: str
     components: List[ComponentDumpModel]
 
 
+@final
 class StageArchiveFileModel(BaseModel):
     name: str
     owner: str
@@ -31,12 +35,14 @@ class StageArchiveFileModel(BaseModel):
     stage_tags: List[str]
 
 
+@final
 class ActorArchiveFileModel(BaseModel):
     name: str
     owner: str
     appearance: str
 
 
+@final
 class PropFileModel(BaseModel):
     owner: str
     prop_model: PropModel

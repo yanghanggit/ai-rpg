@@ -17,7 +17,7 @@ pip install langchain langchain_core langserve fastapi langchain_openai sse_star
 
 ## 严格模式检查
 - mypy --strict run_terminal_game.py run_game_server.py run_python_client.py batch_agent_app_launcher.py game_sample/gen_game.py game_sample/base_form_prompt_editor.py game_sample/actor_profile_prompt_editor.py game_sample/actor_conversational_style_prompt_editor.py
-
+- mypy --strict game_sample/agentpy_templats/azure_chat_openai_gpt_4o_template.py
 
 
 ## 说明

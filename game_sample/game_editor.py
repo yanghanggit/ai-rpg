@@ -11,7 +11,7 @@ from game_sample.actor_data import ExcelDataActor
 from game_sample.actor_editor import ExcelEditorActor
 from game_sample.stage_editor import ExcelEditorStage
 from game_sample.world_system_editor import ExcelEditorWorldSystem
-import pandas as pd
+import pandas
 import game_sample.utils
 from models.entity_models import (
     GameModel,
@@ -267,7 +267,7 @@ class ExcelEditorGame:
         if len(self.editor_configs) == 0:
             return ""
         data = self.editor_configs[0]
-        if not pd.isna(data[EditorProperty.DESCRIPTION]):
+        if not pandas.isna(data[EditorProperty.DESCRIPTION]):
             return str(data[EditorProperty.DESCRIPTION])
         return ""
 

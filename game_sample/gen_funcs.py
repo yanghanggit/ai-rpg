@@ -3,7 +3,7 @@ from pathlib import Path
 
 root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
-import pandas as pd
+import pandas
 from loguru import logger
 from pandas.core.frame import DataFrame
 from typing import Dict, List
@@ -14,7 +14,7 @@ from pathlib import Path
 import game_sample.utils
 from game_sample.actor_data import ExcelDataActor
 from game_sample.game_editor import ExcelEditorGame
-import game_sample.configuration as configuration
+import game_sample.configuration
 from models.config_models import GlobalConfigModel, GameConfigModel
 
 
@@ -22,20 +22,24 @@ from models.config_models import GlobalConfigModel, GameConfigModel
 def gen_actors_data_base(sheet: DataFrame, output: Dict[str, ExcelDataActor]) -> None:
     ## 读取Excel文件
     for index, row in sheet.iterrows():
-        if pd.isna(row["name"]):
+        if pandas.isna(row["name"]):
             continue
 
         excel_actor = ExcelDataActor(row)
         #
         system_prompt_path = (
-            configuration.GAME_SAMPLE_DIR / excel_actor.system_prompt_template_path
+            game_sample.configuration.GAME_SAMPLE_DIR
+            / excel_actor.system_prompt_template_path
         )
         assert system_prompt_path.exists(), f"File not found: {system_prompt_path}"
-        excel_actor.gen_system_prompt(game_sample.utils.read_text_file(system_prompt_path))
+        excel_actor.gen_system_prompt(
+            game_sample.utils.read_text_file(system_prompt_path)
+        )
         excel_actor.write_system_prompt()
         #
         agentpy_template_path = (
-            configuration.GAME_SAMPLE_DIR / excel_actor.agentpy_template_path
+            game_sample.configuration.GAME_SAMPLE_DIR
+            / excel_actor.agentpy_template_path
         )
         assert (
             agentpy_template_path.exists()
@@ -50,20 +54,24 @@ def gen_actors_data_base(sheet: DataFrame, output: Dict[str, ExcelDataActor]) ->
 def gen_stages_data_base(sheet: DataFrame, output: Dict[str, ExcelDataStage]) -> None:
     ## 读取Excel文件
     for index, row in sheet.iterrows():
-        if pd.isna(row["name"]):
+        if pandas.isna(row["name"]):
             continue
 
         excel_stage = ExcelDataStage(row)
         #
         system_prompt_path = (
-            configuration.GAME_SAMPLE_DIR / excel_stage.system_prompt_template_path
+            game_sample.configuration.GAME_SAMPLE_DIR
+            / excel_stage.system_prompt_template_path
         )
         assert system_prompt_path.exists(), f"File not found: {system_prompt_path}"
-        excel_stage.gen_system_prompt(game_sample.utils.read_text_file(system_prompt_path))
+        excel_stage.gen_system_prompt(
+            game_sample.utils.read_text_file(system_prompt_path)
+        )
         excel_stage.write_system_prompt()
         #
         agentpy_template_path = (
-            configuration.GAME_SAMPLE_DIR / excel_stage.agentpy_template_path
+            game_sample.configuration.GAME_SAMPLE_DIR
+            / excel_stage.agentpy_template_path
         )
         assert (
             agentpy_template_path.exists()
@@ -80,13 +88,14 @@ def gen_world_system_data_base(
 ) -> None:
     ## 读取Excel文件
     for index, row in sheet.iterrows():
-        if pd.isna(row["name"]):
+        if pandas.isna(row["name"]):
             continue
 
         excel_world_system = ExcelDataWorldSystem(row)
         #
         system_prompt_path = (
-            configuration.GAME_SAMPLE_DIR / excel_world_system.system_prompt_template_path
+            game_sample.configuration.GAME_SAMPLE_DIR
+            / excel_world_system.system_prompt_template_path
         )
         assert system_prompt_path.exists(), f"File not found: {system_prompt_path}"
         excel_world_system.gen_system_prompt(
@@ -95,7 +104,8 @@ def gen_world_system_data_base(
         excel_world_system.write_system_prompt()
         #
         agentpy_template_path = (
-            configuration.GAME_SAMPLE_DIR / excel_world_system.agentpy_template_path
+            game_sample.configuration.GAME_SAMPLE_DIR
+            / excel_world_system.agentpy_template_path
         )
         assert (
             agentpy_template_path.exists()
@@ -112,7 +122,7 @@ def gen_world_system_data_base(
 def gen_prop_data_base(sheet: DataFrame, output: Dict[str, ExcelDataProp]) -> None:
     ## 读取Excel文件
     for index, row in sheet.iterrows():
-        if pd.isna(row["name"]):
+        if pandas.isna(row["name"]):
             continue
         excelprop = ExcelDataProp(row)
         output[excelprop.name] = excelprop

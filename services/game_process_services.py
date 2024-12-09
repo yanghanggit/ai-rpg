@@ -20,7 +20,7 @@ from models.api_models import (
 from typing import Optional
 import game.rpg_game_utils
 from player.player_proxy import PlayerProxy
-import game.rpg_game_config as rpg_game_config
+import game.rpg_game_config
 import shutil
 from models.player_models import PlayerProxyModel
 from models.config_models import (
@@ -67,7 +67,7 @@ async def login(request_data: LoginRequest) -> LoginResponse:
     try:
         # 读取游戏配置
         game_manager_config_file_path = (
-            rpg_game_config.ROOT_GEN_GAMES_DIR / "config.json"
+            game.rpg_game_config.ROOT_GEN_GAMES_DIR / "config.json"
         )
         assert game_manager_config_file_path.exists()
 
@@ -141,7 +141,7 @@ async def create(request_data: CreateRequest) -> CreateResponse:
 
     # 准备这个app的运行时路径，用于存放游戏的运行时数据
     game_runtime_dir = (
-        rpg_game_config.GAMES_RUNTIME_DIR
+        game.rpg_game_config.GAMES_RUNTIME_DIR
         / request_data.user_name
         / request_data.game_name
     )
@@ -153,12 +153,14 @@ async def create(request_data: CreateRequest) -> CreateResponse:
 
     # 创建log
     log_start_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    log_dir = rpg_game_config.LOGS_DIR / request_data.user_name / request_data.game_name
+    log_dir = (
+        game.rpg_game_config.LOGS_DIR / request_data.user_name / request_data.game_name
+    )
     logger.add(log_dir / f"{log_start_time}.log", level="DEBUG")
 
     # 游戏启动资源路径
     game_resource_file_path = (
-        rpg_game_config.ROOT_GEN_GAMES_DIR / f"{request_data.game_name}.json"
+        game.rpg_game_config.ROOT_GEN_GAMES_DIR / f"{request_data.game_name}.json"
     )
 
     if not game_resource_file_path.exists():
@@ -174,7 +176,7 @@ async def create(request_data: CreateRequest) -> CreateResponse:
     game_resource = game.rpg_game_utils.create_game_resource(
         game_resource_file_path,
         game_runtime_dir,
-        rpg_game_config.CHECK_GAME_RESOURCE_VERSION,
+        game.rpg_game_config.CHECK_GAME_RESOURCE_VERSION,
     )
     if game_resource is None:
         return CreateResponse(
@@ -503,7 +505,7 @@ async def exit(request_data: ExitRequest) -> ExitResponse:
     user_room.game._will_exit = True
     game.rpg_game_utils.save_game(
         rpg_game=user_room.game,
-        archive_dir=rpg_game_config.GAMES_ARCHIVE_DIR / request_data.user_name,
+        archive_dir=game.rpg_game_config.GAMES_ARCHIVE_DIR / request_data.user_name,
     )
     user_room.game.exit()
 

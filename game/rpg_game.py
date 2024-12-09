@@ -39,7 +39,7 @@ from models.event_models import BaseEvent
 from models.file_models import PropFileModel
 from models.entity_models import Attributes
 from player.player_proxy import PlayerProxy
-import gameplay_systems.prompt_utils as prompt_utils
+import gameplay_systems.prompt_utils
 from format_string.complex_actor_name import ComplexActorName
 
 
@@ -714,7 +714,7 @@ class RPGGame(BaseGame):
                 continue
 
             assert player_proxy.actor_name != ""
-            send_event.message = prompt_utils.replace_you(
+            send_event.message = gameplay_systems.prompt_utils.replace_you(
                 send_event.message,
                 player_proxy.actor_name,
             )

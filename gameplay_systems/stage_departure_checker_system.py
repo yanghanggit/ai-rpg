@@ -11,7 +11,7 @@ from components.components import (
     StageComponent,
 )
 from game.rpg_game_context import RPGGameContext
-import gameplay_systems.prompt_utils as prompt_utils
+import gameplay_systems.prompt_utils
 from typing import final, override, List, Set, NamedTuple, Dict
 from gameplay_systems.actor_entity_utils import ActorStatusEvaluator
 from agent.agent_request_handler import AgentRequestHandler
@@ -46,7 +46,7 @@ def _generate_exit_conditions_prompt(
     return f"""# 提示: {actor_name} 试图离开场景：{current_stage_name}
 
 ## 判断步骤
-1. 回顾状态：参考 {prompt_utils.PromptTag.STAGE_EXIT_TAG} 确定场景当前状态。
+1. 回顾状态：参考 {gameplay_systems.prompt_utils.PromptTag.STAGE_EXIT_TAG} 确定场景当前状态。
 2. 状态验证：结合事件回顾和场景设定，更新场景状态：
     - 事件回顾：分析角色行为、对话及道具使用的影响，以及场景的逻辑性变化。切勿推测未发生的活动。
     - 状态更新：推理并更新场景的最新状态。
@@ -247,7 +247,7 @@ class StageDepartureCheckerSystem(ReactiveProcessor):
         assert stage_entity.has(StageComponent)
         assert stage_entity.has(KickOffContentComponent)
         return (
-            prompt_utils.PromptTag.STAGE_EXIT_TAG
+            gameplay_systems.prompt_utils.PromptTag.STAGE_EXIT_TAG
             in stage_entity.get(KickOffContentComponent).content
         )
 

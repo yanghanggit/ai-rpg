@@ -5,7 +5,7 @@ root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 from pathlib import Path
 import game_sample.utils
-import game_sample.configuration as configuration
+import game_sample.configuration
 from components.actions import (
     SpeakAction,
     GoToAction,
@@ -26,8 +26,8 @@ import game_sample.builtin_prompt
 ############################################################################################################
 ############################################################################################################
 ############################################################################################################
-ACTOR_SYSTEM_PROMPT_TEMPLATE = f"""# {configuration.SystemPromptReplaceSymbol.NAME}
-你扮演这个游戏世界中的一个角色: {configuration.SystemPromptReplaceSymbol.NAME}。
+ACTOR_SYSTEM_PROMPT_TEMPLATE = f"""# {game_sample.configuration.SystemPromptReplaceSymbol.NAME}
+你扮演这个游戏世界中的一个角色: {game_sample.configuration.SystemPromptReplaceSymbol.NAME}。
 
 ## 游戏背景
 {game_sample.builtin_prompt.GAME_BACKGROUND_FOR_ACTOR}
@@ -39,13 +39,13 @@ ACTOR_SYSTEM_PROMPT_TEMPLATE = f"""# {configuration.SystemPromptReplaceSymbol.NA
 {game_sample.builtin_prompt.GAME_PROCESS}
 
 ## 你的角色设定
-{configuration.SystemPromptReplaceSymbol.SYSTEM_PROMPT}
+{game_sample.configuration.SystemPromptReplaceSymbol.SYSTEM_PROMPT}
 
 ## 你的初始的基础形态（未穿戴衣物时的基础形态）
-{configuration.SystemPromptReplaceSymbol.BASE_FORM}
+{game_sample.configuration.SystemPromptReplaceSymbol.BASE_FORM}
 
 ## 你的说话风格与语气
-{configuration.SystemPromptReplaceSymbol.CONVERSATIONAL_STYLE}
+{game_sample.configuration.SystemPromptReplaceSymbol.CONVERSATIONAL_STYLE}
 
 ## 输出要求
 ### 输出格式指南
@@ -69,8 +69,8 @@ ACTOR_SYSTEM_PROMPT_TEMPLATE = f"""# {configuration.SystemPromptReplaceSymbol.NA
 ############################################################################################################
 ############################################################################################################
 ############################################################################################################
-STAGE_SYSTEM_PROMPT_TEMPLATE = f"""# {configuration.SystemPromptReplaceSymbol.NAME}
-你扮演这个游戏世界中的一个场景: {configuration.SystemPromptReplaceSymbol.NAME}。
+STAGE_SYSTEM_PROMPT_TEMPLATE = f"""# {game_sample.configuration.SystemPromptReplaceSymbol.NAME}
+你扮演这个游戏世界中的一个场景: {game_sample.configuration.SystemPromptReplaceSymbol.NAME}。
 
 ## 游戏背景
 {game_sample.builtin_prompt.GAME_BACKGROUND_FOR_STAGE}
@@ -82,10 +82,10 @@ STAGE_SYSTEM_PROMPT_TEMPLATE = f"""# {configuration.SystemPromptReplaceSymbol.NA
 {game_sample.builtin_prompt.GAME_PROCESS}
 
 ## 场景设定
-{configuration.SystemPromptReplaceSymbol.SYSTEM_PROMPT}
+{game_sample.configuration.SystemPromptReplaceSymbol.SYSTEM_PROMPT}
 
 ## 你的说话风格与语气
-{configuration.SystemPromptReplaceSymbol.CONVERSATIONAL_STYLE}
+{game_sample.configuration.SystemPromptReplaceSymbol.CONVERSATIONAL_STYLE}
 
 ## 输出要求
 ### 输出格式指南
@@ -102,8 +102,8 @@ STAGE_SYSTEM_PROMPT_TEMPLATE = f"""# {configuration.SystemPromptReplaceSymbol.NA
 ############################################################################################################
 ############################################################################################################
 ############################################################################################################
-WORLD_SYSTEM_SYSTEM_PROMPT_TEMPLATE = f"""# {configuration.SystemPromptReplaceSymbol.NAME}
-你扮演这个游戏世界中一个‘世界系统’: {configuration.SystemPromptReplaceSymbol.NAME}。
+WORLD_SYSTEM_SYSTEM_PROMPT_TEMPLATE = f"""# {game_sample.configuration.SystemPromptReplaceSymbol.NAME}
+你扮演这个游戏世界中一个‘世界系统’: {game_sample.configuration.SystemPromptReplaceSymbol.NAME}。
 
 ## 游戏背景
 {game_sample.builtin_prompt.GAME_BACKGROUND_FOR_WORLD_SYSTEM}
@@ -112,7 +112,7 @@ WORLD_SYSTEM_SYSTEM_PROMPT_TEMPLATE = f"""# {configuration.SystemPromptReplaceSy
 {game_sample.builtin_prompt.GAME_RULES_SETTING}
 
 ## 你的设定
-{configuration.SystemPromptReplaceSymbol.SYSTEM_PROMPT}"""
+{game_sample.configuration.SystemPromptReplaceSymbol.SYSTEM_PROMPT}"""
 ############################################################################################################
 ############################################################################################################
 ############################################################################################################

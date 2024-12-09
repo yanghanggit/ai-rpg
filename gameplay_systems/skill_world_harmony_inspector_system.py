@@ -19,7 +19,6 @@ from extended_systems.prop_file import (
     generate_skill_prop_file_prompt,
     generate_skill_accessory_prop_file_prompt,
 )
-import gameplay_systems.prompt_utils as prompt_utils
 from agent.agent_request_handler import AgentRequestHandler
 from agent.agent_response_handler import AgentResponseHandler
 from game.rpg_game import RPGGame
@@ -115,12 +114,12 @@ def _generate_world_harmony_inspector_prompt(
 ## 判断的逻辑步骤
 1. **道具优先**：
    - 如果存在“配置道具”，需要结合道具与技能的信息推理。
-     - 如果推理结果违反游戏规则或世界观设计，则技能释放失败，标记为 {prompt_utils.SkillResultPromptTag.FAILURE}。
-     - 如果推理结果合理，则技能释放成功，标记为 {prompt_utils.SkillResultPromptTag.SUCCESS}；如道具提供额外增益，则标记为 {prompt_utils.SkillResultPromptTag.CRITICAL_SUCCESS}。
+     - 如果推理结果违反游戏规则或世界观设计，则技能释放失败，标记为 {gameplay_systems.prompt_utils.SkillResultPromptTag.FAILURE}。
+     - 如果推理结果合理，则技能释放成功，标记为 {gameplay_systems.prompt_utils.SkillResultPromptTag.SUCCESS}；如道具提供额外增益，则标记为 {gameplay_systems.prompt_utils.SkillResultPromptTag.CRITICAL_SUCCESS}。
 2. **无道具时**：
    - 判断角色基础形态是否满足技能释放条件。
-     - 如果不符合，则技能释放失败，标记为 {prompt_utils.SkillResultPromptTag.FAILURE}。
-     - 如果符合，则技能释放成功，标记为 {prompt_utils.SkillResultPromptTag.SUCCESS}；如角色信息有增益效果，则标记为 {prompt_utils.SkillResultPromptTag.CRITICAL_SUCCESS}。
+     - 如果不符合，则技能释放失败，标记为 {gameplay_systems.prompt_utils.SkillResultPromptTag.FAILURE}。
+     - 如果符合，则技能释放成功，标记为 {gameplay_systems.prompt_utils.SkillResultPromptTag.SUCCESS}；如角色信息有增益效果，则标记为 {gameplay_systems.prompt_utils.SkillResultPromptTag.CRITICAL_SUCCESS}。
 3. **正常释放**：
    - 如果技能无道具需求，且角色无特殊增益，技能按正常释放计算。
    
@@ -136,16 +135,16 @@ def _generate_world_harmony_inspector_prompt(
 
 ## 关于 {InspectAction.__name__} 的输出规则
 - 对结果的评估值规则：
-  - {prompt_utils.SkillResultPromptTag.FAILURE}: 0。
-  - {prompt_utils.SkillResultPromptTag.SUCCESS}: 100。
-  - {prompt_utils.SkillResultPromptTag.CRITICAL_SUCCESS}: 100~200。
+  - {gameplay_systems.prompt_utils.SkillResultPromptTag.FAILURE}: 0。
+  - {gameplay_systems.prompt_utils.SkillResultPromptTag.SUCCESS}: 100。
+  - {gameplay_systems.prompt_utils.SkillResultPromptTag.CRITICAL_SUCCESS}: 100~200。
 
 ## 输出要求
 ### 输出格式指南
 请严格遵循以下 JSON 结构示例: 
 {{
   "{AnnounceAction.__name__}": ["输出技能使用过程的描述（见上文）"],
-  "{TagAction.__name__}": ["{prompt_utils.SkillResultPromptTag.CRITICAL_SUCCESS} 或 {prompt_utils.SkillResultPromptTag.SUCCESS} 或 {prompt_utils.SkillResultPromptTag.FAILURE}"],
+  "{TagAction.__name__}": ["{gameplay_systems.prompt_utils.SkillResultPromptTag.CRITICAL_SUCCESS} 或 {gameplay_systems.prompt_utils.SkillResultPromptTag.SUCCESS} 或 {gameplay_systems.prompt_utils.SkillResultPromptTag.FAILURE}"],
   "{InspectAction.__name__}": ["一个0~200的数字，代表你对结果的评估值（见上文）"]
 }}
 ### 注意事项
@@ -188,15 +187,17 @@ class InternalPlanResponse(AgentResponseHandler):
 
         action = self.get_action(TagAction.__name__)
         if action is None or len(action.values) == 0:
-            return prompt_utils.SkillResultPromptTag.FAILURE
+            return gameplay_systems.prompt_utils.SkillResultPromptTag.FAILURE
 
         if (
-            action.values[0] == prompt_utils.SkillResultPromptTag.CRITICAL_SUCCESS
-            or action.values[0] == prompt_utils.SkillResultPromptTag.SUCCESS
+            action.values[0]
+            == gameplay_systems.prompt_utils.SkillResultPromptTag.CRITICAL_SUCCESS
+            or action.values[0]
+            == gameplay_systems.prompt_utils.SkillResultPromptTag.SUCCESS
         ):
             return action.values[0]
 
-        return prompt_utils.SkillResultPromptTag.FAILURE
+        return gameplay_systems.prompt_utils.SkillResultPromptTag.FAILURE
 
     @property
     def inspector_content(self) -> str:
@@ -345,7 +346,7 @@ class SkillWorldHarmonyInspectorSystem(ExecuteProcessor):
 
             if (
                 process_data.plan_response.inspector_tag
-                == prompt_utils.SkillResultPromptTag.FAILURE
+                == gameplay_systems.prompt_utils.SkillResultPromptTag.FAILURE
             ):
                 self._notify_inspector_failure_event(process_data)
                 gameplay_systems.skill_entity_utils.destroy_skill_entity(
@@ -355,9 +356,9 @@ class SkillWorldHarmonyInspectorSystem(ExecuteProcessor):
 
             assert (
                 process_data.plan_response.inspector_tag
-                == prompt_utils.SkillResultPromptTag.SUCCESS
+                == gameplay_systems.prompt_utils.SkillResultPromptTag.SUCCESS
                 or process_data.plan_response.inspector_tag
-                == prompt_utils.SkillResultPromptTag.CRITICAL_SUCCESS
+                == gameplay_systems.prompt_utils.SkillResultPromptTag.CRITICAL_SUCCESS
             )
             self._notify_inspector_success_event(process_data)
             self._add_world_harmony_inspector_data(process_data)

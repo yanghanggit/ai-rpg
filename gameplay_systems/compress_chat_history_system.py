@@ -4,7 +4,7 @@ from game.rpg_game_context import RPGGameContext
 from components.components import ActorComponent, StageComponent
 from typing import final, override, Dict
 from game.rpg_game import RPGGame
-import gameplay_systems.prompt_utils as prompt_utils
+import gameplay_systems.prompt_utils
 
 
 class CompressChatHistoryConstantPrompt(StrEnum):
@@ -30,8 +30,8 @@ class CompressChatHistorySystem(ExecuteProcessor):
     ############################################################################################################
     def _process_chat_history_compression(self) -> None:
         chat_history_replacement_map: Dict[str, str] = {
-            prompt_utils.PromptTag.ACTOR_PLAN_PROMPT_TAG: CompressChatHistoryConstantPrompt.COMPRESS_ACTOR_PLAN_PROMPT,
-            prompt_utils.PromptTag.STAGE_PLAN_PROMPT_TAG: CompressChatHistoryConstantPrompt.COMPRESS_STAGE_PLAN_PROMPT,
+            gameplay_systems.prompt_utils.PromptTag.ACTOR_PLAN_PROMPT_TAG: CompressChatHistoryConstantPrompt.COMPRESS_ACTOR_PLAN_PROMPT,
+            gameplay_systems.prompt_utils.PromptTag.STAGE_PLAN_PROMPT_TAG: CompressChatHistoryConstantPrompt.COMPRESS_STAGE_PLAN_PROMPT,
         }
 
         entities = self._context.get_group(

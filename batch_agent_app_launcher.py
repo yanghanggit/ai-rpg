@@ -3,7 +3,7 @@ import os
 from typing import Set, List
 import json
 from models.config_models import GameAgentsConfigModel
-import game.rpg_game_config as rpg_game_config
+import game.rpg_game_config
 from pathlib import Path
 from models.config_models import GlobalConfigModel
 
@@ -16,7 +16,7 @@ def _get_unique_agentpy_names(game_names: List[str]) -> Set[str]:
     for game_name in game_names:
 
         agents_config_file_path = (
-            rpg_game_config.ROOT_GEN_GAMES_DIR / f"{game_name}_agents.json"
+            game.rpg_game_config.ROOT_GEN_GAMES_DIR / f"{game_name}_agents.json"
         )
         if (
             not agents_config_file_path.exists()
@@ -56,8 +56,8 @@ def _get_unique_agentpy_file_paths(unique_agentpy_names: Set[str]) -> List[Path]
 
     ## 只读这个目录下的agentpy文件
     final_gen_agents_dir = (
-        rpg_game_config.ROOT_GEN_AGENTS_DIR
-        / rpg_game_config.CHECK_GAME_RESOURCE_VERSION
+        game.rpg_game_config.ROOT_GEN_AGENTS_DIR
+        / game.rpg_game_config.CHECK_GAME_RESOURCE_VERSION
     )
     if not final_gen_agents_dir.exists():
         assert False, f"final_gen_agents_dir does not exist: {final_gen_agents_dir}"
@@ -117,7 +117,7 @@ def main() -> None:
     final_game_names: List[str] = []
 
     # 读config.json
-    config_file_config = rpg_game_config.ROOT_GEN_GAMES_DIR / f"config.json"
+    config_file_config = game.rpg_game_config.ROOT_GEN_GAMES_DIR / f"config.json"
     assert config_file_config.exists()
     read_config_content = config_file_config.read_text(encoding="utf-8")
     global_config_model = GlobalConfigModel.model_validate_json(read_config_content)

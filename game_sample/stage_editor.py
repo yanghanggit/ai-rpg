@@ -15,7 +15,7 @@ from models.entity_models import (
     StageInstanceModel,
     StageActorInstanceProxy,
 )
-import game_sample.configuration as configuration
+import game_sample.configuration
 from models.editor_models import EditorEntityType, EditorProperty
 import format_string.ints_string
 from game_sample.actor_editor import ExcelEditorActor
@@ -187,7 +187,7 @@ class ExcelEditorStage:
     @property
     def spawners_on_stage(self) -> List[str]:
 
-        if not configuration.EN_SPAWNER_FEATURE:
+        if not game_sample.configuration.EN_SPAWNER_FEATURE:
             return []
 
         org_data: Optional[str] = self._data[EditorProperty.SPAWNERS_ON_STAGE]

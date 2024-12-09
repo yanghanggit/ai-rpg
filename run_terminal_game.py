@@ -5,7 +5,7 @@ import game.rpg_game_utils
 from game.rpg_game import RPGGame
 from typing import Optional
 from dataclasses import dataclass
-import game.rpg_game_config as rpg_game_config
+import game.rpg_game_config
 import shutil
 from game.rpg_game_resource import RPGGameResource
 from models.player_models import PlayerProxyModel
@@ -32,7 +32,9 @@ async def run_terminal_game(option: TerminalGameOption) -> None:
         game_name = option.default_game
 
     # 创建游戏运行时目录，每一次运行都会删除
-    game_runtime_dir = rpg_game_config.GAMES_RUNTIME_DIR / option.user_name / game_name
+    game_runtime_dir = (
+        game.rpg_game_config.GAMES_RUNTIME_DIR / option.user_name / game_name
+    )
     if game_runtime_dir.exists():
         shutil.rmtree(game_runtime_dir)
 
@@ -41,14 +43,14 @@ async def run_terminal_game(option: TerminalGameOption) -> None:
 
     # 创建log
     log_start_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    log_dir = rpg_game_config.LOGS_DIR / option.user_name / game_name
+    log_dir = game.rpg_game_config.LOGS_DIR / option.user_name / game_name
     logger.add(log_dir / f"{log_start_time}.log", level="DEBUG")
 
     # 根据创建还是载入进行不同的处理
     game_resource: Optional[RPGGameResource] = None
     if option.is_new_game:
         game_resource_file_path = (
-            rpg_game_config.ROOT_GEN_GAMES_DIR / f"{game_name}.json"
+            game.rpg_game_config.ROOT_GEN_GAMES_DIR / f"{game_name}.json"
         )
 
         # 如果找不到游戏资源文件就退出
@@ -71,7 +73,9 @@ async def run_terminal_game(option: TerminalGameOption) -> None:
     else:
         # 测试用的load!!!!!!!!!!!!!!!!
         load_archive_zip_path = (
-            rpg_game_config.GAMES_ARCHIVE_DIR / option.user_name / f"{game_name}.zip"
+            game.rpg_game_config.GAMES_ARCHIVE_DIR
+            / option.user_name
+            / f"{game_name}.zip"
         )
         if load_archive_zip_path.exists():
             game_resource = game.rpg_game_utils.load_game_resource(
@@ -140,7 +144,7 @@ async def run_terminal_game(option: TerminalGameOption) -> None:
 
     game.rpg_game_utils.save_game(
         rpg_game=terminal_rpg_game,
-        archive_dir=rpg_game_config.GAMES_ARCHIVE_DIR / option.user_name,
+        archive_dir=game.rpg_game_config.GAMES_ARCHIVE_DIR / option.user_name,
     )
     terminal_rpg_game.exit()
     terminal_rpg_game = None  # 其实是废话，习惯性写着吧
@@ -294,7 +298,7 @@ if __name__ == "__main__":
     option = TerminalGameOption(
         user_name="terminal_player",
         default_game="World5",
-        check_game_resource_version=rpg_game_config.CHECK_GAME_RESOURCE_VERSION,
+        check_game_resource_version=game.rpg_game_config.CHECK_GAME_RESOURCE_VERSION,
         show_client_message_count=20,
     )
     asyncio.run(run_terminal_game(option))  # todo

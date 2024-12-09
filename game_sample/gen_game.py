@@ -17,9 +17,9 @@ from game_sample.game_editor import ExcelEditorGame
 from typing import List, Dict, Any
 from game_sample.actor_data import ExcelDataActor
 from game_sample.system_prompt_templates import (
-    ACTOR_SYS_PROMPT_TEMPLATE,
-    STAGE_SYS_PROMPT_TEMPLATE,
-    WORLD_SYSTEM_SYS_PROMPT_TEMPLATE,
+    ACTOR_SYSTEM_PROMPT_TEMPLATE,
+    STAGE_SYSTEM_PROMPT_TEMPLATE,
+    WORLD_SYSTEM_SYSTEM_PROMPT_TEMPLATE,
 )
 import shutil
 import game.rpg_game_config as rpg_game_config
@@ -29,19 +29,19 @@ import game_sample.utils
 def gen_system_prompt_templates() -> None:
 
     game_sample.utils.write_text_file(
-        configuration.GAME_SAMPLE_OUT_PUT_SYS_PROMPT_TEMPLATES_DIR,
-        "actor_sys_prompt_template.md",
-        ACTOR_SYS_PROMPT_TEMPLATE,
+        configuration.GAME_SAMPLE_OUT_PUT_SYSTEM_PROMPT_TEMPLATES_DIR,
+        "actor_system_prompt_template.md",
+        ACTOR_SYSTEM_PROMPT_TEMPLATE,
     )
     game_sample.utils.write_text_file(
-        configuration.GAME_SAMPLE_OUT_PUT_SYS_PROMPT_TEMPLATES_DIR,
-        "stage_sys_prompt_template.md",
-        STAGE_SYS_PROMPT_TEMPLATE,
+        configuration.GAME_SAMPLE_OUT_PUT_SYSTEM_PROMPT_TEMPLATES_DIR,
+        "stage_system_prompt_template.md",
+        STAGE_SYSTEM_PROMPT_TEMPLATE,
     )
     game_sample.utils.write_text_file(
-        configuration.GAME_SAMPLE_OUT_PUT_SYS_PROMPT_TEMPLATES_DIR,
-        "world_system_sys_prompt_template.md",
-        WORLD_SYSTEM_SYS_PROMPT_TEMPLATE,
+        configuration.GAME_SAMPLE_OUT_PUT_SYSTEM_PROMPT_TEMPLATES_DIR,
+        "world_system_system_prompt_template.md",
+        WORLD_SYSTEM_SYSTEM_PROMPT_TEMPLATE,
     )
 
     logger.debug("Generated system prompt templates.")

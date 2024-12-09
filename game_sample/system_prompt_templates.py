@@ -26,7 +26,7 @@ import game_sample.builtin_prompt
 ############################################################################################################
 ############################################################################################################
 ############################################################################################################
-ACTOR_SYS_PROMPT_TEMPLATE = f"""# {configuration.SystemPromptReplaceSymbol.NAME}
+ACTOR_SYSTEM_PROMPT_TEMPLATE = f"""# {configuration.SystemPromptReplaceSymbol.NAME}
 你扮演这个游戏世界中的一个角色: {configuration.SystemPromptReplaceSymbol.NAME}。
 
 ## 游戏背景
@@ -69,7 +69,7 @@ ACTOR_SYS_PROMPT_TEMPLATE = f"""# {configuration.SystemPromptReplaceSymbol.NAME}
 ############################################################################################################
 ############################################################################################################
 ############################################################################################################
-STAGE_SYS_PROMPT_TEMPLATE = f"""# {configuration.SystemPromptReplaceSymbol.NAME}
+STAGE_SYSTEM_PROMPT_TEMPLATE = f"""# {configuration.SystemPromptReplaceSymbol.NAME}
 你扮演这个游戏世界中的一个场景: {configuration.SystemPromptReplaceSymbol.NAME}。
 
 ## 游戏背景
@@ -102,7 +102,7 @@ STAGE_SYS_PROMPT_TEMPLATE = f"""# {configuration.SystemPromptReplaceSymbol.NAME}
 ############################################################################################################
 ############################################################################################################
 ############################################################################################################
-WORLD_SYSTEM_SYS_PROMPT_TEMPLATE = f"""# {configuration.SystemPromptReplaceSymbol.NAME}
+WORLD_SYSTEM_SYSTEM_PROMPT_TEMPLATE = f"""# {configuration.SystemPromptReplaceSymbol.NAME}
 你扮演这个游戏世界中一个‘世界系统’: {configuration.SystemPromptReplaceSymbol.NAME}。
 
 ## 游戏背景

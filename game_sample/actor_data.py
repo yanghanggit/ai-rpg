@@ -81,7 +81,7 @@ class ExcelDataActor:
 
     ############################################################################################################
     @property
-    def sys_prompt_template_path(self) -> str:
+    def system_prompt_template_path(self) -> str:
         return str(self._data[DataActorProperty.SYSTEM_PROMPT_TEMPLATE])
 
     ############################################################################################################
@@ -109,7 +109,7 @@ class ExcelDataActor:
         return float(self._data[DataActorProperty.TEMPERATURE])
 
     ############################################################################################################
-    def gen_sys_prompt(self, system_prompt_template: str) -> str:
+    def gen_system_prompt(self, system_prompt_template: str) -> str:
         gen_prompt = str(system_prompt_template)
         gen_prompt = gen_prompt.replace(
             game_sample.configuration.SystemPromptReplaceSymbol.NAME, self.name
@@ -157,10 +157,10 @@ class ExcelDataActor:
         return self._gen_agentpy
 
     ############################################################################################################
-    def write_sys_prompt(self) -> None:
+    def write_system_prompt(self) -> None:
         game_sample.utils.write_text_file(
-            game_sample.configuration.GAME_SAMPLE_OUT_PUT_ACTOR_SYS_PROMPT_DIR,
-            f"{self.codename}_sys_prompt.md",
+            game_sample.configuration.GAME_SAMPLE_OUT_PUT_ACTOR_SYSTEM_PROMPT_DIR,
+            f"{self.codename}_system_prompt.md",
             self._gen_system_prompt,
         )
 

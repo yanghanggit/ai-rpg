@@ -6,7 +6,7 @@ from enum import StrEnum, unique, IntEnum
 @unique
 class SystemPromptReplaceSymbol(StrEnum):
     NAME = "<%name>"
-    SYSTEM_PROMPT = "<%sys_prompt>"
+    SYSTEM_PROMPT = "<%system_prompt>"
     BASE_FORM = "<%base_form>"
     CONVERSATIONAL_STYLE = "<%conversational_style>"
 
@@ -40,31 +40,31 @@ assert (
 ), f"找不到Excel文件: {GAME_SAMPLE_EXCEL_FILE_PATH}"
 
 ## 输出路径gen_actor_system_prompt
-GAME_SAMPLE_OUT_PUT_ACTOR_SYS_PROMPT_DIR: Path = Path(
+GAME_SAMPLE_OUT_PUT_ACTOR_SYSTEM_PROMPT_DIR: Path = Path(
     "game_sample/gen_actor_system_prompt"
 )
-GAME_SAMPLE_OUT_PUT_ACTOR_SYS_PROMPT_DIR.mkdir(parents=True, exist_ok=True)
+GAME_SAMPLE_OUT_PUT_ACTOR_SYSTEM_PROMPT_DIR.mkdir(parents=True, exist_ok=True)
 assert (
-    GAME_SAMPLE_OUT_PUT_ACTOR_SYS_PROMPT_DIR.exists()
-), f"找不到目录: {GAME_SAMPLE_OUT_PUT_ACTOR_SYS_PROMPT_DIR}"
+    GAME_SAMPLE_OUT_PUT_ACTOR_SYSTEM_PROMPT_DIR.exists()
+), f"找不到目录: {GAME_SAMPLE_OUT_PUT_ACTOR_SYSTEM_PROMPT_DIR}"
 
 ## 输出路径gen_stage_system_prompt
-GAME_SAMPLE_OUT_PUT_STAGE_SYS_PROMPT_DIR: Path = Path(
+GAME_SAMPLE_OUT_PUT_STAGE_SYSTEM_PROMPT_DIR: Path = Path(
     "game_sample/gen_stage_system_prompt"
 )
-GAME_SAMPLE_OUT_PUT_STAGE_SYS_PROMPT_DIR.mkdir(parents=True, exist_ok=True)
+GAME_SAMPLE_OUT_PUT_STAGE_SYSTEM_PROMPT_DIR.mkdir(parents=True, exist_ok=True)
 assert (
-    GAME_SAMPLE_OUT_PUT_STAGE_SYS_PROMPT_DIR.exists()
-), f"找不到目录: {GAME_SAMPLE_OUT_PUT_STAGE_SYS_PROMPT_DIR}"
+    GAME_SAMPLE_OUT_PUT_STAGE_SYSTEM_PROMPT_DIR.exists()
+), f"找不到目录: {GAME_SAMPLE_OUT_PUT_STAGE_SYSTEM_PROMPT_DIR}"
 
 ## 输出路径gen_world_system_prompt
-GAME_SAMPLE_OUT_PUT_WORLD_SYS_PROMPT_DIR: Path = Path(
+GAME_SAMPLE_OUT_PUT_WORLD_SYSTEM_PROMPT_DIR: Path = Path(
     "game_sample/gen_world_system_prompt"
 )
-GAME_SAMPLE_OUT_PUT_WORLD_SYS_PROMPT_DIR.mkdir(parents=True, exist_ok=True)
+GAME_SAMPLE_OUT_PUT_WORLD_SYSTEM_PROMPT_DIR.mkdir(parents=True, exist_ok=True)
 assert (
-    GAME_SAMPLE_OUT_PUT_WORLD_SYS_PROMPT_DIR.exists()
-), f"找不到目录: {GAME_SAMPLE_OUT_PUT_WORLD_SYS_PROMPT_DIR}"
+    GAME_SAMPLE_OUT_PUT_WORLD_SYSTEM_PROMPT_DIR.exists()
+), f"找不到目录: {GAME_SAMPLE_OUT_PUT_WORLD_SYSTEM_PROMPT_DIR}"
 
 # 输出路径gen_agent
 GAME_SAMPLE_OUT_PUT_AGENT_DIR: Path = Path("game_sample/gen_agents")
@@ -73,14 +73,14 @@ assert (
     GAME_SAMPLE_OUT_PUT_AGENT_DIR.exists()
 ), f"找不到目录: {GAME_SAMPLE_OUT_PUT_AGENT_DIR}"
 
-# 输出路径gen_sys_prompt_templates
-GAME_SAMPLE_OUT_PUT_SYS_PROMPT_TEMPLATES_DIR: Path = Path(
+# 输出路径gen_system_prompt_templates
+GAME_SAMPLE_OUT_PUT_SYSTEM_PROMPT_TEMPLATES_DIR: Path = Path(
     "game_sample/gen_system_prompt_templates"
 )
-GAME_SAMPLE_OUT_PUT_SYS_PROMPT_TEMPLATES_DIR.mkdir(parents=True, exist_ok=True)
+GAME_SAMPLE_OUT_PUT_SYSTEM_PROMPT_TEMPLATES_DIR.mkdir(parents=True, exist_ok=True)
 assert (
-    GAME_SAMPLE_OUT_PUT_SYS_PROMPT_TEMPLATES_DIR.exists()
-), f"找不到目录: {GAME_SAMPLE_OUT_PUT_SYS_PROMPT_TEMPLATES_DIR}"
+    GAME_SAMPLE_OUT_PUT_SYSTEM_PROMPT_TEMPLATES_DIR.exists()
+), f"找不到目录: {GAME_SAMPLE_OUT_PUT_SYSTEM_PROMPT_TEMPLATES_DIR}"
 
 # 输出路径gen_games
 GAME_SAMPLE_OUT_PUT_GAME_DIR: Path = Path("game_sample/gen_games")

@@ -16,7 +16,7 @@ class DataStageProperty(StrEnum):
     CODENAME = "codename"
     STAGE_PROFILE = "stage_profile"
     RAG = "RAG"
-    SYS_PROMPT_TEMPLATE = "sys_prompt_template"
+    SYSTEM_PROMPT_TEMPLATE = "system_prompt_template"
     AGENTPY_TEMPLATE = "agentpy_template"
     CONVERSATIONAL_STYLE = "conversational_style"
     TEMPERATURE = "temperature"
@@ -69,7 +69,7 @@ class ExcelDataStage:
     ############################################################################################################
     @property
     def sys_prompt_template_path(self) -> str:
-        return str(self._data[DataStageProperty.SYS_PROMPT_TEMPLATE])
+        return str(self._data[DataStageProperty.SYSTEM_PROMPT_TEMPLATE])
 
     ############################################################################################################
     @property
@@ -94,8 +94,8 @@ class ExcelDataStage:
         return float(self._data[DataStageProperty.TEMPERATURE])
 
     ############################################################################################################
-    def gen_sys_prompt(self, sys_prompt_template: str) -> str:
-        gen_prompt = str(sys_prompt_template)
+    def gen_sys_prompt(self, system_prompt_template: str) -> str:
+        gen_prompt = str(system_prompt_template)
         gen_prompt = gen_prompt.replace(
             game_sample.configuration.SystemPromptReplaceSymbol.NAME, self.name
         )

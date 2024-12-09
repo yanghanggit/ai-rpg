@@ -16,7 +16,7 @@ class DataWorldSystemProperty(StrEnum):
     CODENAME = "codename"
     WORLD_SYSTEM_PROFILE = "world_system_profile"
     RAG = "RAG"
-    SYS_PROMPT_TEMPLATE = "sys_prompt_template"
+    SYSTEM_PROMPT_TEMPLATE = "system_prompt_template"
     AGENTPY_TEMPLATE = "agentpy_template"
     TEMPERATURE = "temperature"
 
@@ -70,7 +70,7 @@ class ExcelDataWorldSystem:
     ############################################################################################################
     @property
     def sys_prompt_template_path(self) -> str:
-        return str(self._data[DataWorldSystemProperty.SYS_PROMPT_TEMPLATE])
+        return str(self._data[DataWorldSystemProperty.SYSTEM_PROMPT_TEMPLATE])
 
     ############################################################################################################
     @property
@@ -90,8 +90,8 @@ class ExcelDataWorldSystem:
         return float(self._data[DataWorldSystemProperty.TEMPERATURE])
 
     ############################################################################################################
-    def gen_sys_prompt(self, sys_prompt_template: str) -> str:
-        gen_prompt = str(sys_prompt_template)
+    def gen_sys_prompt(self, system_prompt_template: str) -> str:
+        gen_prompt = str(system_prompt_template)
         gen_prompt = gen_prompt.replace(
             game_sample.configuration.SystemPromptReplaceSymbol.NAME, self.name
         )

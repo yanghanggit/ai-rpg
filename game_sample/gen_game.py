@@ -26,7 +26,7 @@ import game.rpg_game_config as rpg_game_config
 import game_sample.utils
 
 
-def gen_sys_prompt_templates() -> None:
+def gen_system_prompt_templates() -> None:
 
     game_sample.utils.write_text_file(
         configuration.GAME_SAMPLE_OUT_PUT_SYS_PROMPT_TEMPLATES_DIR,
@@ -108,7 +108,7 @@ def main(game_names: List[str]) -> None:
     world_system_data_base: Dict[str, ExcelDataWorldSystem] = {}
 
     # 准备基础数据
-    gen_sys_prompt_templates()
+    gen_system_prompt_templates()
 
     # 分析必要数据
     gen_funcs.gen_actors_data_base(actor_sheet, actor_data_base)

@@ -39,27 +39,27 @@ assert (
     GAME_SAMPLE_EXCEL_FILE_PATH.exists()
 ), f"找不到Excel文件: {GAME_SAMPLE_EXCEL_FILE_PATH}"
 
-## 输出路径gen_actor_sys_prompt
+## 输出路径gen_actor_system_prompt
 GAME_SAMPLE_OUT_PUT_ACTOR_SYS_PROMPT_DIR: Path = Path(
-    "game_sample/gen_actor_sys_prompt"
+    "game_sample/gen_actor_system_prompt"
 )
 GAME_SAMPLE_OUT_PUT_ACTOR_SYS_PROMPT_DIR.mkdir(parents=True, exist_ok=True)
 assert (
     GAME_SAMPLE_OUT_PUT_ACTOR_SYS_PROMPT_DIR.exists()
 ), f"找不到目录: {GAME_SAMPLE_OUT_PUT_ACTOR_SYS_PROMPT_DIR}"
 
-## 输出路径gen_stage_sys_prompt
+## 输出路径gen_stage_system_prompt
 GAME_SAMPLE_OUT_PUT_STAGE_SYS_PROMPT_DIR: Path = Path(
-    "game_sample/gen_stage_sys_prompt"
+    "game_sample/gen_stage_system_prompt"
 )
 GAME_SAMPLE_OUT_PUT_STAGE_SYS_PROMPT_DIR.mkdir(parents=True, exist_ok=True)
 assert (
     GAME_SAMPLE_OUT_PUT_STAGE_SYS_PROMPT_DIR.exists()
 ), f"找不到目录: {GAME_SAMPLE_OUT_PUT_STAGE_SYS_PROMPT_DIR}"
 
-## 输出路径gen_world_sys_prompt
+## 输出路径gen_world_system_prompt
 GAME_SAMPLE_OUT_PUT_WORLD_SYS_PROMPT_DIR: Path = Path(
-    "game_sample/gen_world_sys_prompt"
+    "game_sample/gen_world_system_prompt"
 )
 GAME_SAMPLE_OUT_PUT_WORLD_SYS_PROMPT_DIR.mkdir(parents=True, exist_ok=True)
 assert (
@@ -75,7 +75,7 @@ assert (
 
 # 输出路径gen_sys_prompt_templates
 GAME_SAMPLE_OUT_PUT_SYS_PROMPT_TEMPLATES_DIR: Path = Path(
-    "game_sample/gen_sys_prompt_templates"
+    "game_sample/gen_system_prompt_templates"
 )
 GAME_SAMPLE_OUT_PUT_SYS_PROMPT_TEMPLATES_DIR.mkdir(parents=True, exist_ok=True)
 assert (

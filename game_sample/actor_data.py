@@ -17,7 +17,7 @@ class DataActorProperty(StrEnum):
     ACTOR_PROFILE = "actor_profile"
     CONVERSATIONAL_STYLE = "conversational_style"
     RAG = "RAG"
-    SYS_PROMPT_TEMPLATE = "sys_prompt_template"
+    SYSTEM_PROMPT_TEMPLATE = "system_prompt_template"
     AGENTPY_TEMPLATE = "agentpy_template"
     BASE_FORM = "base_form"
     TEMPERATURE = "temperature"
@@ -82,7 +82,7 @@ class ExcelDataActor:
     ############################################################################################################
     @property
     def sys_prompt_template_path(self) -> str:
-        return str(self._data[DataActorProperty.SYS_PROMPT_TEMPLATE])
+        return str(self._data[DataActorProperty.SYSTEM_PROMPT_TEMPLATE])
 
     ############################################################################################################
     @property
@@ -109,8 +109,8 @@ class ExcelDataActor:
         return float(self._data[DataActorProperty.TEMPERATURE])
 
     ############################################################################################################
-    def gen_sys_prompt(self, sys_prompt_template: str) -> str:
-        gen_prompt = str(sys_prompt_template)
+    def gen_sys_prompt(self, system_prompt_template: str) -> str:
+        gen_prompt = str(system_prompt_template)
         gen_prompt = gen_prompt.replace(
             game_sample.configuration.SystemPromptReplaceSymbol.NAME, self.name
         )

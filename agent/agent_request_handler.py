@@ -1,9 +1,7 @@
 from loguru import logger
-from typing import List, Union, cast, Any, Optional
+from typing import List, Union, cast, Any, Optional, override
 from langchain_core.messages import HumanMessage, AIMessage
-import asyncio
-
-# import time
+from agent.task_request_handler import TaskRequestHandler
 from agent.lang_serve_agent import LangServeAgent
 from enum import Flag, auto
 
@@ -19,19 +17,7 @@ class ChatHistoryOperationOptions(Flag):
 ################################################################################################################################################################################
 
 
-class AgentRequestHandler:
-
-    ################################################################################################################################################################################
-    @staticmethod
-    async def gather(tasks: List["AgentRequestHandler"]) -> List[Any]:
-        if len(tasks) == 0:
-            return []
-        coros = [task.a_request() for task in tasks]
-        # start_time = time.time()
-        future = await asyncio.gather(*coros)
-        # end_time = time.time()
-        # logger.debug(f"AgentTask.gather:{end_time - start_time:.2f} seconds")
-        return future
+class AgentRequestHandler(TaskRequestHandler):
 
     ################################################################################################################################################################################
     @staticmethod
@@ -104,6 +90,7 @@ class AgentRequestHandler:
         return []
 
     ################################################################################################################################################################################
+    @override
     def request(self) -> Optional[Any]:
         assert self.response is None
         if self._agent.remote_runnable is None:
@@ -136,6 +123,7 @@ class AgentRequestHandler:
         return self.response
 
     ################################################################################################################################################################################
+    @override
     async def a_request(self) -> Optional[Any]:
         assert self.response is None
         if self._agent.remote_runnable is None:

@@ -23,6 +23,7 @@ from agent.agent_request_handler import (
 )
 from game.rpg_game import RPGGame
 import gameplay_systems.stage_entity_utils
+import gameplay_systems.task_request_utils
 
 
 ###############################################################################################################################################
@@ -88,7 +89,9 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
         if len(tasks) == 0:
             return
 
-        await AgentRequestHandler.gather([task for task in tasks.values()])
+        await gameplay_systems.task_request_utils.gather(
+            [task for task in tasks.values()]
+        )
 
         # step3: 处理结果
         self._process_agent_tasks(tasks)

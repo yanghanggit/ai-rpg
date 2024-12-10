@@ -29,6 +29,7 @@ from extended_systems.prop_file import (
 )
 from models.file_models import PropType
 import gameplay_systems.stage_entity_utils
+import gameplay_systems.task_request_utils
 
 
 ###############################################################################################################################################
@@ -154,7 +155,9 @@ class ActorPlanningExecutionSystem(ExecuteProcessor):
         if len(tasks) == 0:
             return
 
-        responses = await AgentRequestHandler.gather([task for task in tasks.values()])
+        responses = await gameplay_systems.task_request_utils.gather(
+            [task for task in tasks.values()]
+        )
         if len(responses) == 0:
             logger.warning(f"ActorPlanningSystem: request_result is empty.")
             return

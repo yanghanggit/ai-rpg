@@ -24,6 +24,7 @@ import gameplay_systems.prompt_utils
 from agent.agent_response_handler import AgentResponseHandler
 import gameplay_systems.stage_entity_utils
 from loguru import logger
+import gameplay_systems.task_request_utils
 
 
 ###############################################################################################################################################
@@ -125,7 +126,9 @@ class AgentKickOffSystem(ExecuteProcessor):
             return
 
         # 执行全部的任务
-        await AgentRequestHandler.gather([task for task in agent_tasks.values()])
+        await gameplay_systems.task_request_utils.gather(
+            [task for task in agent_tasks.values()]
+        )
 
         # 处理结果
         self._process_agent_tasks(agent_tasks)

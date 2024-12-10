@@ -24,6 +24,7 @@ from game.rpg_game import RPGGame
 from models.event_models import AgentEvent
 from loguru import logger
 from agent.lang_serve_agent import LangServeAgent
+import gameplay_systems.task_request_utils
 
 
 ################################################################################################################################################
@@ -142,7 +143,7 @@ class StageEntranceCheckerSystem(ReactiveProcessor):
         if len(agent_tasks) == 0:
             return
 
-        agent_responses = await AgentRequestHandler.gather(
+        agent_responses = await gameplay_systems.task_request_utils.gather(
             [task for task in agent_tasks.values()],
         )
 

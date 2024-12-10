@@ -26,6 +26,7 @@ import gameplay_systems.skill_entity_utils
 from agent.lang_serve_agent import LangServeAgent
 from models.entity_models import Attributes
 from models.file_models import PropSkillUsageMode
+import gameplay_systems.task_request_utils
 
 
 ################################################################################################################################################
@@ -194,7 +195,9 @@ class SkillReadinessValidatorSystem(ExecuteProcessor):
         agent_tasks = self._generate_agent_tasks(internal_process_data)
         if len(agent_tasks) == 0:
             return
-        await AgentRequestHandler.gather([task for task in agent_tasks.values()])
+        await gameplay_systems.task_request_utils.gather(
+            [task for task in agent_tasks.values()]
+        )
 
     ######################################################################################################################################################
     def _process_agent_tasks(

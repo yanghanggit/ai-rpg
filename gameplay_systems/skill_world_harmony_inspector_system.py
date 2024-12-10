@@ -28,6 +28,7 @@ import gameplay_systems.skill_entity_utils
 from agent.lang_serve_agent import LangServeAgent
 from models.entity_models import Attributes
 import gameplay_systems.prompt_utils
+import gameplay_systems.task_request_utils
 
 
 ################################################################################################################################################
@@ -328,7 +329,9 @@ class SkillWorldHarmonyInspectorSystem(ExecuteProcessor):
             self._clear(internal_process_data)
             return
 
-        responses = await AgentRequestHandler.gather(agent_tasks)
+        responses = await gameplay_systems.task_request_utils.gather(
+            [task for task in agent_tasks]
+        )
         if len(responses) == 0:
             logger.error("responses is empty")
             self._clear(internal_process_data)

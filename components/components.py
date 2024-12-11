@@ -180,10 +180,9 @@ class SkillComponent(NamedTuple):
 
 
 ############################################################################################################
-# 这种技能就是，直接使用装备的武器，并不配置任何强化或者增幅的道具。直接对目标进行攻击。
-# 这种技能的优点是：简单，直接，不需要额外的配置。消耗算力小。
+# 直接技能的标记。如果标记这个，world_skill_system 将不会进行推理。
 @final
-class WeaponDirectAttackSkill(NamedTuple):
+class DirectSkillFlagComponent(NamedTuple):
     name: str
     skill_name: str
 

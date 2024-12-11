@@ -6,7 +6,6 @@ from components.actions import (
 from components.components import (
     SkillComponent,
     ActorComponent,
-    WeaponDirectAttackSkill,
 )
 from game.rpg_game_context import RPGGameContext
 from typing import Final, final, override, Set, List, Dict, Optional
@@ -248,23 +247,6 @@ class SkillCommandParser:
         return ret
 
     ######################################################################################################################################################
-    @property
-    def is_using_single_weapon(self) -> bool:
-        current_weapon = self._actor_status_evaluator._current_weapon
-        return (
-            len(self.accessory_weapon_prop_files) == 1
-            and current_weapon is not None
-            and current_weapon == self.accessory_weapon_prop_files[0]
-        )
-
-    ######################################################################################################################################################
-    @property
-    def has_insight_info(self) -> bool:
-        if len(self._parsed_skill_prop_files) == 0:
-            return False
-        return self._parsed_skill_prop_files[0].insight != ""
-
-    ######################################################################################################################################################
 
 
 ######################################################################################################################################################
@@ -485,15 +467,6 @@ class SkillInvocationSystem(ReactiveProcessor):
             "",
             Attributes.BASE_VALUE_SCALE,
         )
-
-        if (
-            skill_command_parser.is_using_single_weapon
-            and not skill_command_parser.has_insight_info
-        ):
-            # 直接技能。
-            skill_entity.add(
-                WeaponDirectAttackSkill, actor_name, skill_command_parser.skill_name
-            )
 
         logger.debug(
             f"_create_skill_entity skill_comp: {skill_entity.get(SkillComponent)._asdict()}"

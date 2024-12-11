@@ -1,5 +1,5 @@
-from dataclasses import dataclass
 from entitas import Matcher, ExecuteProcessor, Entity  # type: ignore
+from dataclasses import dataclass
 from components.actions import (
     TagAction,
     AnnounceAction,
@@ -9,7 +9,7 @@ from components.components import (
     BaseFormComponent,
     SkillComponent,
     DestroyComponent,
-    WeaponDirectAttackSkill,
+    DirectSkillFlagComponent,
 )
 from game.rpg_game_context import RPGGameContext
 from typing import final, override, List, Set, Optional
@@ -262,7 +262,7 @@ class SkillWorldHarmonyInspectorSystem(ExecuteProcessor):
         skill_entities = self._context.get_group(
             Matcher(
                 all_of=[SkillComponent],
-                none_of=[DestroyComponent, WeaponDirectAttackSkill],
+                none_of=[DestroyComponent, DirectSkillFlagComponent],
             )
         ).entities.copy()
 
@@ -518,7 +518,7 @@ class SkillWorldHarmonyInspectorSystem(ExecuteProcessor):
                     skill_entity=process_data.skill_entity,
                     actor_entity=process_data.actor_entity,
                 ),
-                gameplay_systems.skill_entity_utils.retrieve_skill_accessory_files(
+                gameplay_systems.skill_entity_utils.retrieve_skill_accessory_prop_files(
                     context=self._context,
                     skill_entity=process_data.skill_entity,
                     actor_entity=process_data.actor_entity,

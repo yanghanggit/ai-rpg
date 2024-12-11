@@ -130,10 +130,9 @@ ACTOR_SPECIFIC_ACTIONS_REGISTER: Final[FrozenSet[type[NamedTuple]]] = frozenset(
 ############################################################################################################
 
 
-# 场景专用
 # 场景专用: 场景环境的描述
 @final
-class StageNarrateAction(ActionComponent):
+class StageNarrationAction(ActionComponent):
     pass
 
 
@@ -153,7 +152,7 @@ class StageTransferAction(ActionComponent):
 STAGE_AVAILABLE_ACTIONS_REGISTER: Final[FrozenSet[type[NamedTuple]]] = (
     frozenset(
         {
-            StageNarrateAction,
+            StageNarrationAction,
             StageTagAction,
             StageTransferAction,
         }

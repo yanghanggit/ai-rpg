@@ -15,7 +15,7 @@ import gameplay_systems.prompt_utils
 
 ################################################################################################################################################
 def _generate_game_round_prompt(game_round: int) -> str:
-    return f"""# 提示: {gameplay_systems.prompt_utils.PromptTag.CURRENT_ROUND_TAG}:{game_round}"""
+    return f"""# 提示: {gameplay_systems.prompt_utils.GeneralPromptTag.CURRENT_ROUND_TAG}:{game_round}"""
 
 
 ################################################################################################################################################

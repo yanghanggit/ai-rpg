@@ -1,6 +1,6 @@
 from enum import StrEnum, unique
 from components.actions import (
-    StageNarrateAction,
+    StageNarrationAction,
     SkillAction,
     EquipPropAction,
 )
@@ -10,7 +10,7 @@ from extended_systems.prop_file import PropFile
 
 ################################################################################################################################################
 @unique
-class PromptTag(StrEnum):
+class GeneralPromptTag(StrEnum):
 
     CURRENT_ROUND_TAG = "<当前回合数>"
 
@@ -32,7 +32,7 @@ class SkillResultPromptTag(StrEnum):
 
 
 ################################################################################################################################################
-def replace_you(input_text: str, your_name: str) -> str:
+def replace_with_you(input_text: str, your_name: str) -> str:
 
     if len(input_text) == 0 or your_name not in input_text:
         return input_text
@@ -46,9 +46,9 @@ def replace_you(input_text: str, your_name: str) -> str:
 
 
 ################################################################################################################################################
-def insert_stage_narrate_action_prompt() -> str:
-    return f"""## 注意！{StageNarrateAction.__name__} —— 场景描述 生成规则
-请注意回顾 输出格式指南 的 {StageNarrateAction.__name__} 的 键值对的格式：
+def generate_stage_narration_prompt() -> str:
+    return f"""## 注意！{StageNarrationAction.__name__} —— 场景描述 生成规则
+请注意回顾 输出格式指南 的 {StageNarrationAction.__name__} 的 键值对的格式：
 ### 步骤
 1. 事件回顾：回顾场景内已发生的角色行为、对话及道具使用，判断这些事件对场景状态的具体影响。场景会根据自身设定进行逻辑性变化，例如自然发展的状态变化（如火焰蔓延）。切勿推测未发生的活动。
 2. 状态更新与描述：结合事件回顾和场景设定，推理并更新场景的最新状态。生成的场景描述应着重展示环境背景及关键细节，如光线、气味和音效。
@@ -59,7 +59,7 @@ def insert_stage_narrate_action_prompt() -> str:
 
 
 ################################################################################################################################################
-def skill_action_rule_prompt() -> str:
+def generate_skill_action_command_prompt() -> str:
     return f"""## 关于动作: {SkillAction.__name__} —— 技能指令 书写与生成规则
 ### 注意！请严格遵循以下格式书写，否则系统将无法识别：
 格式示例：@目标角色(的全名)/技能道具(全名)/配置道具1(全名)=消耗数量1/配置道具2(全名)=消耗数量2/配置道具?(全名)=消耗数量?
@@ -76,15 +76,15 @@ def skill_action_rule_prompt() -> str:
 
 
 ################################################################################################################################################
-def insert_skill_action_prompt(props: List[PropFile]) -> str:
+def generate_skill_action_prompt(props: List[PropFile]) -> str:
     if len(props) == 0:
         return ""
     assert all([prop.is_skill for prop in props]), "不是技能文件"
-    return skill_action_rule_prompt()
+    return generate_skill_action_command_prompt()
 
 
 ################################################################################################################################################
-def insert_equip_prop_action_prompt() -> str:
+def generate_equip_action_prompt() -> str:
     return f"""## 关于动作: {EquipPropAction.__name__}。
 - 未装备武器或衣服时，可从“你的全部道具”中选择装备。
 - 已装备时，可根据需要更换。

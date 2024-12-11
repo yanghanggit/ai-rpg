@@ -99,7 +99,7 @@ def _generate_world_harmony_inspector_prompt(
     return f"""# 提示: {actor_name} 准备使用技能。请你作为系统，判断其技能使用的合理性（是否符合游戏规则和世界观设计）。在尽量保证游戏乐趣的前提下，润色技能使用过程的描述。
 
 ## 技能规则摘要
-{gameplay_systems.prompt_utils.skill_action_rule_prompt()}
+{gameplay_systems.prompt_utils.generate_skill_action_command_prompt()}
 
 ## 输入信息
 ### {actor_name} 的基础形态

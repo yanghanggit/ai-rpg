@@ -35,7 +35,7 @@ def _generate_skill_invocation_result_prompt(
 ## 输入的错误的 技能指令 如下:
 {initial_skill_command}    
 ## 请分析问题，并再次理解规则:
-{gameplay_systems.prompt_utils.skill_action_rule_prompt()}"""
+{gameplay_systems.prompt_utils.generate_skill_action_command_prompt()}"""
 
     if initial_skill_command == adjusted_skill_command:
         return f"""# 提示: {actor_name} 计划执行动作: {SkillAction.__name__}，结果为：系统经过判断后，允许继续，并执行下一步判断。
@@ -59,7 +59,7 @@ def _generate_weapon_count_exceed_prompt(
 ## 输入的错误的 技能指令 如下:
 {initial_skill_command}  
 ## 请分析问题，并再次理解规则:
-{gameplay_systems.prompt_utils.skill_action_rule_prompt()}
+{gameplay_systems.prompt_utils.generate_skill_action_command_prompt()}
 ## 配置的武器数量过多，只能配置一个武器，但是配置了多个武器如下:
 {"\n".join(weapon_prop_file_names)}"""
 

@@ -8,7 +8,7 @@ from components.components import (
     StageStaticFlagComponent,
 )
 from components.actions import (
-    StageNarrateAction,
+    StageNarrationAction,
     StageTagAction,
     TagAction,
 )
@@ -43,17 +43,17 @@ def _generate_stage_plan_prompt(
         actor_appearance_mapping_prompt.append("无任何角色。")
 
     # 最终生成
-    return f"""# 请制定你的计划({gameplay_systems.prompt_utils.PromptTag.STAGE_PLAN_PROMPT_TAG})
+    return f"""# 请制定你的计划({gameplay_systems.prompt_utils.GeneralPromptTag.STAGE_PLAN_PROMPT_TAG})
 规则见 游戏流程 - 制定计划
 
 ## 场景内的角色
 {"\n".join(actor_appearance_mapping_prompt)}
 
-{gameplay_systems.prompt_utils.insert_stage_narrate_action_prompt()}
+{gameplay_systems.prompt_utils.generate_stage_narration_prompt()}
 
 ## 输出要求
 - 请遵循 输出格式指南。
-- 返回结果 至少 包含 {StageNarrateAction.__name__} 和 {TagAction.__name__}。"""
+- 返回结果 至少 包含 {StageNarrationAction.__name__} 和 {TagAction.__name__}。"""
 
 
 #######################################################################################################################################
@@ -177,7 +177,7 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
         for stage_entity in stage_entities:
 
             stage_name = stage_entity.get(StageComponent).name
-            if not stage_entity.has(StageNarrateAction):
+            if not stage_entity.has(StageNarrationAction):
                 logger.warning(
                     f"StagePlanningSystem: add StageNarrateAction = {stage_name}"
                 )
@@ -189,7 +189,7 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
                 )
 
                 stage_entity.replace(
-                    StageNarrateAction,
+                    StageNarrationAction,
                     stage_name,
                     [narrate],
                 )

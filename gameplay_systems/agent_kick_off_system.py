@@ -16,7 +16,7 @@ from game.rpg_game import RPGGame
 from components.actions import (
     MindVoiceAction,
     TagAction,
-    StageNarrateAction,
+    StageNarrationAction,
     UpdateAppearanceAction,
 )
 from components.actions import UpdateAppearanceAction
@@ -69,12 +69,12 @@ def _generate_stage_kick_off_prompt(
 ## 你的初始设定
 {kick_off_message}
 
-{gameplay_systems.prompt_utils.insert_stage_narrate_action_prompt()}
+{gameplay_systems.prompt_utils.generate_stage_narration_prompt()}
 
 ## 输出要求
 - 生成的内容应符合当前世界背景。
 - 请遵循 输出格式指南。
-- 返回结果 只 包含:{StageNarrateAction.__name__} 和 {TagAction.__name__}。"""
+- 返回结果 只 包含:{StageNarrationAction.__name__} 和 {TagAction.__name__}。"""
 
 
 ###############################################################################################################################################

@@ -284,7 +284,7 @@ class SkillReadinessValidatorSystem(ExecuteProcessor):
             process_data.agent_request_handler = ret[process_data.agent.name] = (
                 AgentRequestHandler.create_with_full_context(
                     process_data.agent,
-                    gameplay_systems.prompt_utils.replace_you(
+                    gameplay_systems.prompt_utils.replace_with_you(
                         skill_readiness_prompt, process_data.agent.name
                     ),
                 )

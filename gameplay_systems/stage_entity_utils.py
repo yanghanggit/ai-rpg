@@ -4,7 +4,7 @@ from components.components import (
     StageEnvironmentComponent,
 )
 from components.actions import (
-    StageNarrateAction,
+    StageNarrationAction,
 )
 from agent.agent_response_handler import AgentResponseHandler
 from game.rpg_game_context import RPGGameContext
@@ -15,7 +15,7 @@ def apply_stage_narration(
     context: RPGGameContext, plan_response: AgentResponseHandler
 ) -> None:
 
-    stage_narrate_action = plan_response.get_action(StageNarrateAction.__name__)
+    stage_narrate_action = plan_response.get_action(StageNarrationAction.__name__)
     if stage_narrate_action is None or len(stage_narrate_action.values) == 0:
         return
 

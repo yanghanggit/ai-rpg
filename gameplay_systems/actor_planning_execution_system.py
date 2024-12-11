@@ -94,7 +94,7 @@ def _generate_actor_plan_prompt(
     if len(stage_graph) == 0:
         stage_graph.add(f"无可去往场景(你不可以执行{GoToAction.__name__})")
 
-    return f"""# 请制定你的计划({gameplay_systems.prompt_utils.PromptTag.ACTOR_PLAN_PROMPT_TAG})
+    return f"""# 请制定你的计划({gameplay_systems.prompt_utils.GeneralPromptTag.ACTOR_PLAN_PROMPT_TAG})
 规则见 游戏流程 - 制定计划
 
 ## 你当前所在的场景
@@ -119,9 +119,9 @@ def _generate_actor_plan_prompt(
 - 武器: {current_weapon is not None and current_weapon.name or "无"}
 - 衣服: {current_clothes is not None and current_clothes.name or "无"}
 
-{gameplay_systems.prompt_utils.insert_equip_prop_action_prompt()}
+{gameplay_systems.prompt_utils.generate_equip_action_prompt()}
 
-{gameplay_systems.prompt_utils.insert_skill_action_prompt(actor_props.get(PropType.TYPE_SKILL, []))}
+{gameplay_systems.prompt_utils.generate_skill_action_prompt(actor_props.get(PropType.TYPE_SKILL, []))}
 
 ## 输出要求
 - 请遵循 输出格式指南。

@@ -1,6 +1,6 @@
 from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: ignore
 from typing import final, override
-from components.actions import StageNarrateAction
+from components.actions import StageNarrationAction
 from game.rpg_game_context import RPGGameContext
 from game.rpg_game import RPGGame
 
@@ -16,12 +16,12 @@ class StageNarrateActionSystem(ReactiveProcessor):
     ############################################################################################################
     @override
     def get_trigger(self) -> dict[Matcher, GroupEvent]:
-        return {Matcher(StageNarrateAction): GroupEvent.ADDED}
+        return {Matcher(StageNarrationAction): GroupEvent.ADDED}
 
     ############################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(StageNarrateAction)
+        return entity.has(StageNarrationAction)
 
     ############################################################################################################
     @override

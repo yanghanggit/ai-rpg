@@ -30,8 +30,8 @@ class CompressChatHistorySystem(ExecuteProcessor):
     ############################################################################################################
     def _process_chat_history_compression(self) -> None:
         chat_history_replacement_map: Dict[str, str] = {
-            gameplay_systems.prompt_utils.PromptTag.ACTOR_PLAN_PROMPT_TAG: CompressChatHistoryConstantPrompt.COMPRESS_ACTOR_PLAN_PROMPT,
-            gameplay_systems.prompt_utils.PromptTag.STAGE_PLAN_PROMPT_TAG: CompressChatHistoryConstantPrompt.COMPRESS_STAGE_PLAN_PROMPT,
+            gameplay_systems.prompt_utils.GeneralPromptTag.ACTOR_PLAN_PROMPT_TAG: CompressChatHistoryConstantPrompt.COMPRESS_ACTOR_PLAN_PROMPT,
+            gameplay_systems.prompt_utils.GeneralPromptTag.STAGE_PLAN_PROMPT_TAG: CompressChatHistoryConstantPrompt.COMPRESS_STAGE_PLAN_PROMPT,
         }
 
         entities = self._context.get_group(

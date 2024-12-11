@@ -714,7 +714,7 @@ class RPGGame(BaseGame):
                 continue
 
             assert player_proxy.actor_name != ""
-            send_event.message = gameplay_systems.prompt_utils.replace_you(
+            send_event.message = gameplay_systems.prompt_utils.replace_with_you(
                 send_event.message,
                 player_proxy.actor_name,
             )

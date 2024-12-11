@@ -15,7 +15,7 @@ from components.actions import (
     WhisperAction,
     TransferPropAction,
     EquipPropAction,
-    StageNarrateAction,
+    StageNarrationAction,
     SkillAction,
     InspectAction,
     StealPropAction,
@@ -94,7 +94,7 @@ STAGE_SYSTEM_PROMPT_TEMPLATE = f"""# {game_sample.configuration.SystemPromptRepl
     "{AnnounceAction.__name__}":["你要说的内容（无特定目标，场景内所有角色都会听见）",...], 
     "{WhisperAction.__name__}":["@角色全名(你要对谁说,只能是场景内的角色):你想私下说的内容（只有你和目标知道）",...], 
     "{TagAction.__name__}":["你的特征标签",...], 
-    "{StageNarrateAction.__name__}":["场景描述",...],
+    "{StageNarrationAction.__name__}":["场景描述",...],
 {game_sample.builtin_prompt.JSON_SAMPLE_END}
 
 ### 注意事项

@@ -178,7 +178,7 @@ def _generate_item_consumption_report_prompt(
 ######################################################################################################################################################
 ######################################################################################################################################################
 @final
-class InternalPlanResponse(AgentResponseHandler):
+class InternalResponseHandler(AgentResponseHandler):
 
     def __init__(self, name: str, response_content: str) -> None:
         super().__init__(name, response_content)
@@ -228,8 +228,8 @@ class InternalProcessData:
     actor_entity: Entity
     skill_entity: Entity
     agent: LangServeAgent
-    agent_task: AgentRequestHandler
-    plan_response: InternalPlanResponse
+    agent_request_handler: AgentRequestHandler
+    internal_response_handler: InternalResponseHandler
 
 
 ######################################################################################################################################################
@@ -309,10 +309,12 @@ class SkillWorldHarmonyInspectorSystem(ExecuteProcessor):
                     actor_entity=actor_entity,
                     skill_entity=skill_entity,
                     agent=world_system_agent,
-                    agent_task=AgentRequestHandler.create_without_context(
+                    agent_request_handler=AgentRequestHandler.create_without_context(
                         world_system_agent, ""
                     ),
-                    plan_response=InternalPlanResponse(skill_comp.name, ""),
+                    internal_response_handler=InternalResponseHandler(
+                        skill_comp.name, ""
+                    ),
                 )
             )
 
@@ -348,7 +350,7 @@ class SkillWorldHarmonyInspectorSystem(ExecuteProcessor):
         for process_data in internal_process_data:
 
             if (
-                process_data.plan_response.inspector_tag
+                process_data.internal_response_handler.inspector_tag
                 == gameplay_systems.prompt_utils.SkillResultPromptTag.FAILURE
             ):
                 self._notify_inspector_failure_event(process_data)
@@ -358,9 +360,9 @@ class SkillWorldHarmonyInspectorSystem(ExecuteProcessor):
                 continue
 
             assert (
-                process_data.plan_response.inspector_tag
+                process_data.internal_response_handler.inspector_tag
                 == gameplay_systems.prompt_utils.SkillResultPromptTag.SUCCESS
-                or process_data.plan_response.inspector_tag
+                or process_data.internal_response_handler.inspector_tag
                 == gameplay_systems.prompt_utils.SkillResultPromptTag.CRITICAL_SUCCESS
             )
             self._notify_inspector_success_event(process_data)
@@ -430,7 +432,7 @@ class SkillWorldHarmonyInspectorSystem(ExecuteProcessor):
         process_data: InternalProcessData,
     ) -> None:
 
-        assert process_data.plan_response is not None
+        assert process_data.internal_response_handler is not None
         skill_comp = process_data.skill_entity.get(SkillComponent)
         process_data.skill_entity.replace(
             SkillComponent,
@@ -440,9 +442,9 @@ class SkillWorldHarmonyInspectorSystem(ExecuteProcessor):
             skill_comp.stage,
             skill_comp.targets,
             skill_comp.skill_accessory_props,
-            process_data.plan_response.inspector_tag,
-            process_data.plan_response.inspector_content,
-            process_data.plan_response.inspector_value,
+            process_data.internal_response_handler.inspector_tag,
+            process_data.internal_response_handler.inspector_content,
+            process_data.internal_response_handler.inspector_value,
         )
 
     ######################################################################################################################################################
@@ -451,9 +453,9 @@ class SkillWorldHarmonyInspectorSystem(ExecuteProcessor):
     ) -> None:
 
         for process_data in internal_process_data:
-            process_data.plan_response = InternalPlanResponse(
-                process_data.agent_task.agent_name,
-                process_data.agent_task.response_content,
+            process_data.internal_response_handler = InternalResponseHandler(
+                process_data.agent_request_handler.agent_name,
+                process_data.agent_request_handler.response_content,
             )
 
     ######################################################################################################################################################
@@ -475,9 +477,9 @@ class SkillWorldHarmonyInspectorSystem(ExecuteProcessor):
                     actor_name=self._context.safe_get_entity_name(
                         process_data.actor_entity
                     ),
-                    inspector_tag=process_data.plan_response.inspector_tag,
+                    inspector_tag=process_data.internal_response_handler.inspector_tag,
                     skill_command=process_data.skill_entity.get(SkillComponent).command,
-                    inspector_content=process_data.plan_response.inspector_content,
+                    inspector_content=process_data.internal_response_handler.inspector_content,
                 )
             ),
         )
@@ -494,9 +496,9 @@ class SkillWorldHarmonyInspectorSystem(ExecuteProcessor):
                     actor_name=self._context.safe_get_entity_name(
                         process_data.actor_entity
                     ),
-                    inspector_tag=process_data.plan_response.inspector_tag,
+                    inspector_tag=process_data.internal_response_handler.inspector_tag,
                     skill_command=process_data.skill_entity.get(SkillComponent).command,
-                    inspector_content=process_data.plan_response.inspector_content,
+                    inspector_content=process_data.internal_response_handler.inspector_content,
                 )
             ),
         )
@@ -534,7 +536,7 @@ class SkillWorldHarmonyInspectorSystem(ExecuteProcessor):
             ret.append(create_task)
 
             ##记录下
-            process_data.agent_task = create_task
+            process_data.agent_request_handler = create_task
 
         return ret
 

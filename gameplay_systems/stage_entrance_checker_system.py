@@ -79,7 +79,7 @@ def _generate_entry_denial_prompt(
 
 ################################################################################################################################################
 @final
-class InternalPlanResponse(AgentResponseHandler):
+class InternalResponseHandler(AgentResponseHandler):
 
     def __init__(self, name: str, response_content: str) -> None:
         super().__init__(name, response_content)
@@ -223,10 +223,10 @@ class StageEntranceCheckerSystem(ReactiveProcessor):
 
         for actor_name, stage_agent_task in tasks.items():
 
-            agent_response_plan = InternalPlanResponse(
+            agent_response_handler = InternalResponseHandler(
                 stage_agent_task.agent_name, stage_agent_task.response_content
             )
-            if not agent_response_plan.is_allowed:
+            if not agent_response_handler.is_allowed:
 
                 actor_entity = self._context.get_actor_entity(actor_name)
                 assert actor_entity is not None
@@ -237,7 +237,7 @@ class StageEntranceCheckerSystem(ReactiveProcessor):
                         message=_generate_entry_denial_prompt(
                             actor_name,
                             stage_agent_task.agent_name,
-                            agent_response_plan.hint,
+                            agent_response_handler.hint,
                         )
                     ),
                 )

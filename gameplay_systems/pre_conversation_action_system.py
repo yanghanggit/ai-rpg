@@ -65,7 +65,7 @@ def _generate_conversation_check_prompt(
 ################################################################################################################################################
 ################################################################################################################################################
 @final
-class InternalPlanResponse(AgentResponseHandler):
+class InternalResponseHandler(AgentResponseHandler):
 
     def __init__(self, name: str, input_str: str) -> None:
         super().__init__(name, input_str)
@@ -190,8 +190,10 @@ class PreConversationActionSystem(ReactiveProcessor):
                 continue
 
             # 处理agent任务的返回值
-            plan_response = InternalPlanResponse(task.agent_name, task.response_content)
-            if not plan_response.is_allowed:
+            response_handler = InternalResponseHandler(
+                task.agent_name, task.response_content
+            )
+            if not response_handler.is_allowed:
                 self._clear_player_communication_actions(player_entity)
 
     #################################################################################################################################################

@@ -16,7 +16,7 @@ from components.components import (
 )
 from extended_systems.prop_file import PropFile
 from agent.agent_request_handler import AgentRequestHandler
-from components.actions import UpdateAppearanceAction
+from components.actions import UpdateAppearanceAction, KickOffAction
 from game.rpg_game import RPGGame
 from models.event_models import UpdateAppearanceEvent
 from agent.lang_serve_agent import LangServeAgent
@@ -141,16 +141,18 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
     ###############################################################################################################################################
     async def _process_appearance_update(self, entities: List[Entity]) -> None:
 
-        actor_appearance_info = self._generate_actor_appearance_info((entities))
-        if len(actor_appearance_info) == 0:
+        actor_appearance_info_list = self._generate_actor_appearance_info_list(
+            (entities)
+        )
+        if len(actor_appearance_info_list) == 0:
             return
 
         # 没有衣服的，直接更新外观，也是默认设置，防止世界系统无法推理
-        self._apply_default(actor_appearance_info)
+        self._apply_default(actor_appearance_info_list)
 
         # 有衣服的，请求更新，通过LLM来推理外观
         await self._process_world_system_update_appearance(
-            actor_appearance_info, self._batch_size
+            actor_appearance_info_list, self._batch_size
         )
 
         # 广播更新外观事件
@@ -161,12 +163,12 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
 
     ###############################################################################################################################################
     async def _process_world_system_update_appearance(
-        self, actor_appearance_info: List[InternalProcessData], batch_size: int
+        self, actor_appearance_info_list: List[InternalProcessData], batch_size: int
     ) -> None:
 
         assert batch_size > 0, "batch_size must be greater than 0."
         if (
-            len(actor_appearance_info) == 0
+            len(actor_appearance_info_list) == 0
             or self.world_system_entity is None
             or not self.world_system_entity.has(AgentPingFlagComponent)
             or not self.world_system_entity.has(KickOffContentComponent)
@@ -175,10 +177,10 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
             return
 
         # 如果 actor_appearance_info过长，需要分批推理，每次推理最多5个
-        batch_processing_tasks: List[AgentRequestHandler] = []
-        for i in range(0, len(actor_appearance_info), batch_size):
-            batch = actor_appearance_info[i : i + batch_size]
-            batch_processing_tasks.append(
+        batch_processing_request_handlers: List[AgentRequestHandler] = []
+        for i in range(0, len(actor_appearance_info_list), batch_size):
+            batch = actor_appearance_info_list[i : i + batch_size]
+            batch_processing_request_handlers.append(
                 self._generate_agent_appearance_task(
                     batch, self._context.safe_get_agent(self.world_system_entity)
                 )
@@ -186,11 +188,11 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
 
         # 并发
         await gameplay_systems.task_request_utils.gather(
-            [task for task in batch_processing_tasks]
+            [task for task in batch_processing_request_handlers]
         )
 
         # 处理
-        for process_task in batch_processing_tasks:
+        for process_task in batch_processing_request_handlers:
             self._process_agent_appearance_task(process_task)
 
     ###############################################################################################################################################
@@ -199,9 +201,9 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
         return self._context.get_world_entity(self._world_system_name)
 
     ###############################################################################################################################################
-    def _apply_default(self, appearance_info: List[InternalProcessData]) -> None:
+    def _apply_default(self, appearance_info_list: List[InternalProcessData]) -> None:
 
-        for data in appearance_info:
+        for data in appearance_info_list:
             assert data.base_form != "", "base_form is empty."
             if data.base_form == "":
                 continue
@@ -220,7 +222,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
     ###############################################################################################################################################
     def _generate_agent_appearance_task(
         self,
-        batch_appearance_info: List[InternalProcessData],
+        batch_appearance_info_list: List[InternalProcessData],
         world_system_agent: LangServeAgent,
     ) -> AgentRequestHandler:
 
@@ -230,7 +232,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
                 data.clothe,
                 data.weapon,
             )
-            for data in batch_appearance_info
+            for data in batch_appearance_info_list
         }
 
         return AgentRequestHandler.create_without_context(
@@ -241,12 +243,14 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
     ###############################################################################################################################################
     def _process_agent_appearance_task(
         self,
-        agent_task: AgentRequestHandler,
+        agent_request_handler: AgentRequestHandler,
     ) -> None:
 
         try:
 
-            json_reponse: Dict[str, str] = json.loads(agent_task.response_content)
+            json_reponse: Dict[str, str] = json.loads(
+                agent_request_handler.response_content
+            )
             self._update_appearance_components(json_reponse)
 
         except Exception as e:
@@ -254,9 +258,9 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
 
     ###############################################################################################################################################
     def _update_appearance_components(
-        self, appearance_change_map: Dict[str, str]
+        self, appearance_change_mapping: Dict[str, str]
     ) -> None:
-        for name, appearance in appearance_change_map.items():
+        for name, appearance in appearance_change_mapping.items():
             entity = self._context.get_actor_entity(name)
             assert entity is not None, f"entity is None, name: {name}"
             if entity is None:
@@ -264,7 +268,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
             entity.replace(FinalAppearanceComponent, name, appearance)
 
     ###############################################################################################################################################
-    def _generate_actor_appearance_info(
+    def _generate_actor_appearance_info_list(
         self, actor_entities: List[Entity]
     ) -> List[InternalProcessData]:
 
@@ -319,19 +323,36 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
     ###############################################################################################################################################
     def _notify_appearance_change_event(self, actor_entities: List[Entity]) -> None:
         for actor_entity in actor_entities:
-            current_stage_entity = self._context.safe_get_stage_entity(actor_entity)
-            if current_stage_entity is None:
-                continue
 
-            appearance_comp = actor_entity.get(FinalAppearanceComponent)
-            self._context.broadcast_event(
-                current_stage_entity,
-                UpdateAppearanceEvent(
-                    message=_generate_appearance_update_prompt(
-                        appearance_comp.name, appearance_comp.final_appearance
-                    )
-                ),
-            )
+            final_appearance_comp = actor_entity.get(FinalAppearanceComponent)
+            if actor_entity.has(KickOffAction):
+                # 如果有KickOffAction，说明是说明在kickoff阶段，这个消息不需要广播。只需要通知自己即可
+                self._context.notify_event(
+                    set({actor_entity}),
+                    UpdateAppearanceEvent(
+                        message=_generate_appearance_update_prompt(
+                            final_appearance_comp.name,
+                            final_appearance_comp.final_appearance,
+                        )
+                    ),
+                )
+
+            else:
+                # 如果没有KickOffAction，说明是在正常阶段，需要广播
+                current_stage_entity = self._context.safe_get_stage_entity(actor_entity)
+                assert current_stage_entity is not None, "current_stage_entity is None"
+                if current_stage_entity is None:
+                    continue
+
+                self._context.broadcast_event(
+                    current_stage_entity,
+                    UpdateAppearanceEvent(
+                        message=_generate_appearance_update_prompt(
+                            final_appearance_comp.name,
+                            final_appearance_comp.final_appearance,
+                        )
+                    ),
+                )
 
     ###############################################################################################################################################
     def _clear_appearance_actions(self, entities: List[Entity]) -> None:

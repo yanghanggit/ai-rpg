@@ -75,10 +75,12 @@ class SkillHitImpactSystem(ExecuteProcessor):
             Matcher(all_of=[SkillComponent], none_of=[DestroyComponent])
         ).entities.copy()
 
-        internal_process_data = self._initialize_internal_process_data(skill_entities)
-        for process_data in internal_process_data:
-            self._notify_skill_hit(process_data)
-            self._process_skill_impact(process_data)
+        internal_process_data_list = self._initialize_internal_process_data_list(
+            skill_entities
+        )
+        for internal_process_data in internal_process_data_list:
+            self._notify_skill_hit(internal_process_data)
+            self._process_skill_impact(internal_process_data)
 
     ######################################################################################################################################################
     def _notify_skill_hit(self, internal_process_data: InternalProcessData) -> None:
@@ -105,7 +107,7 @@ class SkillHitImpactSystem(ExecuteProcessor):
             )
 
     ######################################################################################################################################################
-    def _initialize_internal_process_data(
+    def _initialize_internal_process_data_list(
         self, skill_entities: Set[Entity]
     ) -> List[InternalProcessData]:
 

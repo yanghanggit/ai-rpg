@@ -18,12 +18,12 @@ from components.actions import (
     TagAction,
     StageNarrationAction,
     UpdateAppearanceAction,
+    KickOffAction,
 )
 from components.actions import UpdateAppearanceAction
 import gameplay_systems.prompt_utils
 from agent.agent_response_handler import AgentResponseHandler
 import gameplay_systems.stage_entity_utils
-from loguru import logger
 import gameplay_systems.task_request_utils
 
 
@@ -239,6 +239,11 @@ class AgentKickOffSystem(ExecuteProcessor):
             if entity is None:
                 continue
             entity.replace(KickOffFlagComponent, agent_name)
+            entity.replace(
+                KickOffAction,
+                agent_name,
+                [],
+            )
 
     ######################################################################################################################################################
     def _process_stage_narrate_action(

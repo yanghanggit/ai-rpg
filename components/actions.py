@@ -99,6 +99,12 @@ SKILL_ACTIONS_REGISTER: Final[FrozenSet[type[NamedTuple]]] = frozenset(
 ############################################################################################################
 
 
+# 标记 kickoff 动作
+@final
+class KickOffAction(ActionComponent):
+    pass
+
+
 @final
 class DeadAction(ActionComponent):
     pass
@@ -123,7 +129,7 @@ class InspectAction(ActionComponent):
 
 
 ACTOR_SPECIFIC_ACTIONS_REGISTER: Final[FrozenSet[type[NamedTuple]]] = frozenset(
-    {DeadAction, UpdateAppearanceAction, GoToAction, InspectAction}
+    {KickOffAction, DeadAction, UpdateAppearanceAction, GoToAction, InspectAction}
 )
 ############################################################################################################
 ############################################################################################################

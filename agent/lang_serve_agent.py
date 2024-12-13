@@ -1,5 +1,5 @@
-from langserve import RemoteRunnable  # type: ignore
-from typing import Final, List, Union, Optional, final
+from langserve import RemoteRunnable
+from typing import Final, List, Union, Optional, final, Any
 from langchain_core.messages import HumanMessage, AIMessage
 from agent.remote_runnable_handler import RemoteRunnableHandler
 
@@ -25,5 +25,5 @@ class LangServeAgent:
         return self._remote_connector
 
     @property
-    def remote_runnable(self) -> Optional[RemoteRunnable]:
+    def remote_runnable(self) -> Optional[RemoteRunnable[Any, Any]]:
         return self._remote_connector._remote_runnable

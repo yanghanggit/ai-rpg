@@ -60,7 +60,7 @@ class ExcelDataWorldSystem:
     def api_path(self) -> str:
         assert self.codename != "", "codename must not be empty."
         assert "/" not in self.codename
-        return f"/world_system/{self.codename}"
+        return f"/world_system/{self.codename}/"
 
     ############################################################################################################
     @property
@@ -80,7 +80,7 @@ class ExcelDataWorldSystem:
     ############################################################################################################
     @property
     def localhost_api_url(self) -> str:
-        return f"http://localhost:{self.port}{self.api_path}/"
+        return f"http://localhost:{self.port}{self.api_path}"
 
     ############################################################################################################
     @property

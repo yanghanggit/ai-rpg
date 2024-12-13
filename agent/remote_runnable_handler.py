@@ -1,6 +1,6 @@
-from langserve import RemoteRunnable  # type: ignore
+from langserve import RemoteRunnable
 from loguru import logger
-from typing import Final, Optional, final
+from typing import Final, Optional, final, Any
 
 
 @final
@@ -8,7 +8,8 @@ class RemoteRunnableHandler:
 
     def __init__(self, url: str) -> None:
         self._url: Final[str] = url
-        self._remote_runnable: Optional[RemoteRunnable] = None
+        logger.debug(f"{self._url}")
+        self._remote_runnable: Optional[RemoteRunnable[Any, Any]] = None
 
     #################################################################################################################################################
     @property
@@ -35,10 +36,10 @@ class RemoteRunnableHandler:
     #################################################################################################################################################
     async def _establish_remote_runnable(
         self, url: str, ping_message: str
-    ) -> Optional[RemoteRunnable]:
+    ) -> Optional[RemoteRunnable[Any, Any]]:
 
         try:
-            remote_runnable = RemoteRunnable(url)
+            remote_runnable: RemoteRunnable[Any, Any] = RemoteRunnable(url)
             response = await remote_runnable.ainvoke(
                 {
                     "input": ping_message,

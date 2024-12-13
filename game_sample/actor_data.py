@@ -72,7 +72,7 @@ class ExcelDataActor:
     def api_path(self) -> str:
         assert self.codename != ""
         assert "/" not in self.codename
-        return f"/actor/{self.codename}"
+        return f"/actor/{self.codename}/"
 
     ############################################################################################################
     @property
@@ -99,7 +99,8 @@ class ExcelDataActor:
     ############################################################################################################
     @property
     def localhost_api_url(self) -> str:
-        return f"http://localhost:{self.port}{self.api_path}/"
+        assert self.api_path.endswith("/")
+        return f"http://localhost:{self.port}{self.api_path}"
 
     ############################################################################################################
     @property

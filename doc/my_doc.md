@@ -1,156 +1,420 @@
-# hi，我在做一个网络游戏。有一些技术问题希望和你探讨。
+# hi, 我写了一个langgraph的对话机器人，请你看一下，并理解。然后我再提出我的需求
 
-## 客户端我使用 Unity游戏引擎的 Web 方案，我的游戏客户端是网页。
-
-## 服务端我使用 Python 来实现。
-目前我已经用python写了一个游戏app的服务端，用到fastapi框架。
-这个服务端是一个简单的http服务器。
-它可以接收客户端的post请求，然后运行游戏逻辑，然后返回数据。
-即: 每一次均由客户端发起请求，服务端响应的模式来推动游戏。因为我做的是一个回合制的游戏。
-
-## 我的目前想和你讨论的问题是：
-因为我做的是网络游戏，会有很多玩家同时在线。
-一个玩家会占据一个 游戏app的服务端，也就是一个进程。
-我应该以什么样的方式启动和管理这些进程呢？
-
-## 我的需求
-1. 请你理解我目前做的事情，如果有疑问可以问我。
-2. 在理解了我的需求之后，你可以给我一些建议吗？
-
-
-
-## 关于“一些问题以更好地理解你的需求”，我的回答如下
-1. 关于问题：一个玩家占用一个服务端进程：这里的"服务端进程"是指独立的 FastAPI 应用进程吗？这些进程是否会独立监听不同的端口，还是通过某种网关来区分？
-    - 是的我希望一个玩家占用一个服务端进程。这个服务端进程是一个FastAPI应用进程。这些进程会独立监听不同的端口。
-    - 一个玩家占用一个服务器进程能起到资源隔离的作用，这样可以避免一个玩家的操作错误影响到其他玩家。
-2. 关于问题：进程状态管理：这些进程是否需要在玩家离线后保存某些状态？如果需要，这些状态是如何持久化的？
-    - 目前我的demo在游戏运行时状态会随时用Pathlib写入到Text文件中。临时算作持久化。后续等我游戏逻辑稳定之后，我会考虑用数据库来持久化。
-3. 关于问题：并发需求：你预计会有多少个玩家同时在线？这对你的资源（如 CPU 和内存）管理可能有直接影响。
-    - 目前游戏处于开发阶段，只有很少的公司内部人员在测试。这个目前不是问题
-4. 关于问题：是否有分布式需求：如果玩家规模增加到单机服务器无法承受的程度，你是否计划将这些进程分布到多台服务器上？
-    - 根据上面的回答，目前不需要分布式。因为我的目标是能单个玩家占用一个服务端进程，我认为未来做分布式也不会太难。
-
-
-## 关于你的这段代码，我理解subprocess.Popen的意义就是启动一个新的进程，然后将这个进程的信息保存在player_process_map中。
-这样就可以通过player_process_map来管理这些进程了。这个代码是在服务端启动时调用的。
+## 代码
 ```python
-def start_player_server(player_id, port):
-    # 启动 FastAPI 应用的子进程
-    process = subprocess.Popen(
-        ["uvicorn", "app:app", "--host", "127.0.0.1", "--port", str(port)],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE
-    )
-    player_process_map[player_id] = {"process": process, "port": port}
-    print(f"玩家 {player_id} 的服务端启动在端口 {port}")
+import os
+from typing import Annotated
+from typing_extensions import TypedDict
+from langgraph.graph import StateGraph
+from langgraph.graph.message import add_messages
+from langchain_openai import AzureChatOpenAI
+from langchain_core.messages import BaseMessage
+from pydantic import SecretStr
+
+
+class State(TypedDict):
+    messages: Annotated[list[BaseMessage], add_messages]
+
+
+graph_builder = StateGraph(State)
+
+
+llm = AzureChatOpenAI(
+    azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+    api_key=SecretStr(str(os.getenv("AZURE_OPENAI_API_KEY"))),
+    azure_deployment="gpt-4o",
+    api_version="2024-02-01",
+)
+
+
+# 定义节点
+def chatbot(state: State) -> dict[str, list[BaseMessage]]:
+    return {"messages": [llm.invoke(state["messages"])]}
+
+
+# 构建
+graph_builder.add_node("chatbot", chatbot)
+graph_builder.set_entry_point("chatbot")
+graph_builder.set_finish_point("chatbot")
+graph = graph_builder.compile()
+
+
+def stream_graph_updates(user_input: str) -> None:
+    for event in graph.stream({"messages": [("user", user_input)]}):
+        for value in event.values():
+            print("Assistant:", value["messages"][-1].content)
+
+
+# 测试
+while True:
+
+    try:
+        user_input = input("User: ")
+        if user_input.lower() in ["quit", "exit", "q"]:
+            print("Goodbye!")
+            break
+
+        stream_graph_updates(user_input)
+    except:
+        # fallback if input() is not available
+        user_input = "What do you know about LangGraph?"
+        print("User: " + user_input)
+        stream_graph_updates(user_input)
+        break
 ```
 
-## 我的demo目前的 fastapi app 是这样的
+
+
+
+# 针对 流式运行图，即 stream_graph_updates，我有问题。
+## 问题1: stream_graph_updates 是无法让agent有‘上下文’的对么？
+- 因为我看到，每次调用提交给LLM的prompt只有 {"messages": [("user", user_input)]}。
+- 我还有一个疑问：State这个类本身不会将messages的历史记录下来对吧？
+
+
+# 我的同事有一些旧的代码，我发给你，我认为对后续我提出需求有借鉴意义。这个是比较老的langchain的版本，而且不是langgraph的实现。
+
+## 补充信息
+- 我询问了我的同事，他说这叫做langserve。
+- 我们公司目前在使用的LLM服务为Azure的OpenAI。
+
+## 代码如下
 ```python
+import sys
+import os
+from pathlib import Path
+
+root_dir = Path(__file__).resolve().parent.parent
+sys.path.append(str(root_dir))
+from typing import List, Union
 from fastapi import FastAPI
-from ws_config import (
-    WsConfig,
-)
+from langchain.agents import AgentExecutor, create_openai_functions_agent
+from langchain.prompts import MessagesPlaceholder
+from langchain_core.messages import AIMessage, FunctionMessage, HumanMessage
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_openai import AzureChatOpenAI
+from langserve import add_routes  # type: ignore
+from langserve.pydantic_v1 import BaseModel, Field  # type: ignore
+from langchain_core.tools import tool
+from langchain_core.pydantic_v1 import SecretStr
 
-from fastapi.middleware.cors import CORSMiddleware
-from services.api_endpoints_services import api_endpoints_router
-from services.game_process_services import game_process_api_router
-from services.game_play_services import game_play_api_router
+PORT: int = 8405
+TEMPERATURE: float = 0.7
+API: str = """/actor/test_npc"""
+SYSTEM_PROMPT: str = """# TestNPC
+你扮演这个游戏世界中的一个角色: TestNPC。
+## 游戏背景
+。。。。。"""
 
-fastapi_app = FastAPI()
-fastapi_app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+class Input(BaseModel):
+    input: str
+    chat_history: List[Union[HumanMessage, AIMessage, FunctionMessage]] = Field(
+        ...,
+        extra={"widget": {"type": "chat", "input": "input", "output": "output"}},
+    )
 
-fastapi_app.include_router(api_endpoints_router)
-fastapi_app.include_router(game_process_api_router)
-fastapi_app.include_router(game_play_api_router)
 
-if __name__ == "__main__":
+class Output(BaseModel):
+    output: str
+
+def main() -> None:
+
+    chat_prompt_template = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                SYSTEM_PROMPT,
+            ),
+            MessagesPlaceholder(variable_name="chat_history"),
+            ("user", "{input}"),
+            MessagesPlaceholder(variable_name="agent_scratchpad"),
+        ]
+    )
+
+    print(
+        f'endpoint:{os.getenv("AZURE_OPENAI_ENDPOINT")}\n key:{os.getenv("AZURE_OPENAI_API_KEY")}'
+    )
+
+    llm = AzureChatOpenAI(
+        azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+        api_key=SecretStr(str(os.getenv("AZURE_OPENAI_API_KEY"))),
+        azure_deployment="gpt-4o",
+        api_version="2024-02-01",
+        temperature=TEMPERATURE,
+    )
+
+    @tool
+    def debug_tool() -> str:
+        """debug"""
+        return "Debug tool"
+
+    tools = [debug_tool]
+
+    agent = create_openai_functions_agent(llm, tools, chat_prompt_template)
+
+    agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+
+    app = FastAPI(
+        title="Chat module",
+        version="1.0",
+        description="Gen chat",
+    )
+
+    add_routes(
+        app, agent_executor.with_types(input_type=Input, output_type=Output), path=API
+    )
+
     import uvicorn
 
-    uvicorn.run(fastapi_app, host=WsConfig.LOCALHOST, port=WsConfig.DEFAULT_PORT)
+    uvicorn.run(app, host="localhost", port=PORT)
+
+
+if __name__ == "__main__":
+    main()
 ```
 
-## 我的问题，我应该如何调用 subprocess.Popen 来启动呢？
 
+# 关于老代码我还有一个问题。关于ChatPromptTemplate的问题。
 
-
-
-# 关于这段代码 我有问题。
-
+## 请看如下代码片段，
 ```python
-from fastapi import FastAPI, HTTPException
-import httpx
-
-app = FastAPI()
-
-# 假设玩家与端口的映射
-player_port_map = {
-    "player_1": 8001,
-    "player_2": 8002,
-}
-
-@app.post("/{player_id}/action")
-async def route_request(player_id: str, payload: dict):
-    if player_id not in player_port_map:
-        raise HTTPException(status_code=404, detail="玩家不存在")
-    port = player_port_map[player_id]
-    async with httpx.AsyncClient() as client:
-        response = await client.post(f"http://127.0.0.1:{port}/action", json=payload)
-        return response.json()
+chat_prompt_template = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                SYSTEM_PROMPT,
+            ),
+            MessagesPlaceholder(variable_name="chat_history"),
+            ("user", "{input}"),
+            MessagesPlaceholder(variable_name="agent_scratchpad"),
+        ]
+    )
 ```
 
-## 问题
-1. 这是一个服务器程序对吧？也就是说后续你得启动这个app（代码中出现的）。作为和拥有start_player_server函数的那个‘fastapi app’ 同时启动运行在我的服务器上的程序对吧？
-2. 在web客户端，我应该如何调用呢.能给我例子代码让我理解一下嘛？
+## 我的问题
+1. 根据老的代码这个py文件的写法。如果启动，也就是意味着 SYSTEM_PROMPT 设定不会更改。
+2. 根据 ChatPromptTemplate.from_messages 的写法。我看到每次调用会有 chat_history 与 input。通过 class Input(BaseModel)。传过来
+3. 根据1，2。我们可以认为。agent每次推理的‘上下文’是由 "system", "chat_history",  ("user", "{input}"), "agent_scratchpad" 组成的?
+
+
+# 好的，我理解了。回到我的代码，这个langgraph的实现。
+## 我关注这个函数
+```python
+def stream_graph_updates(user_input: str) -> None:
+```
+## 我的问题与需求
+- 问题：这个函数是否可以跟老代码中的 ChatPromptTemplate.from_messages 有类似的功能或实现？
+    - 这样我可以借鉴老代码的实现，让agent有‘上下文’。
+- 请你思考一下，如果可以请回顾langchain与langgraph的开发文档信息。
+- 然后给我提出建议如何实现这个功能。
+
+
+# hi, 我写了langgraph的对话机器人，代码如下，请你看一下，并理解。然后我再提出我的需求
+
+## 代码
+```python
+import os
+from typing import Annotated, Final, cast, Dict, List, Union
+from typing_extensions import TypedDict
+from langgraph.graph import StateGraph
+from langgraph.graph.message import add_messages
+from langchain_openai import AzureChatOpenAI
+from langchain_core.messages import BaseMessage
+from pydantic import SecretStr
+from langchain.schema import AIMessage, HumanMessage, SystemMessage, FunctionMessage
+from fastapi import FastAPI
+from pydantic import BaseModel
+
+############################################################################################################
+PORT: Final[int] = int("""<%PORT>""")  # 会在运行时替换为真实的端口号
+TEMPERATURE: Final[float] = float("""<%TEMPERATURE>""")  # 会在运行时替换为真实的温度值
+API: Final[str] = """<%API>"""  # 会在运行时替换为真实的API路径
+SYSTEM_PROMPT: Final[str] = (
+    """<%SYSTEM_PROMPT_CONTENT>"""  # 会在运行时替换为真实的系统提示内容
+)
+
+
+############################################################################################################
+############################################################################################################
+############################################################################################################
+class State(TypedDict):
+    messages: Annotated[List[BaseMessage], add_messages]
+
+
+############################################################################################################
+llm = AzureChatOpenAI(
+    azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+    api_key=SecretStr(str(os.getenv("AZURE_OPENAI_API_KEY"))),
+    azure_deployment="gpt-4o",
+    api_version="2024-02-01",
+    temperature=TEMPERATURE,
+)
+
+
+############################################################################################################
+def chatbot(state: State) -> Dict[str, List[BaseMessage]]:
+    return {"messages": [llm.invoke(state["messages"])]}
+
+
+############################################################################################################
+graph_builder = StateGraph(State)
+graph_builder.add_node("chatbot", chatbot)
+graph_builder.set_entry_point("chatbot")
+graph_builder.set_finish_point("chatbot")
+graph = graph_builder.compile()
+
+
+############################################################################################################
+def stream_graph_updates(
+    system_state: State,
+    chat_history_stage: State,
+    user_input: State,
+) -> List[BaseMessage]:
+
+    ret: List[BaseMessage] = []
+
+    merged_message_context = {
+        "messages": system_state["messages"]
+        + chat_history_stage["messages"]
+        + user_input["messages"]
+    }
+
+    for event in graph.stream(merged_message_context):
+        for value in event.values():
+            ai_messages: List[AIMessage] = cast(List[AIMessage], value["messages"])
+            print("Assistant:", ai_messages[-1].content)
+            ret.extend(ai_messages)
+
+    return ret
+
+
+############################################################################################################
+app = FastAPI(
+    title="agent app",
+    version="0.0.1",
+    description="chat",
+)
+
+
+class RequestModel(BaseModel):
+    input: str = ""
+    chat_history: List[Union[HumanMessage, AIMessage, FunctionMessage]] = []
+
+    class Config:
+        arbitrary_types_allowed = True
+
+
+class ResponseModel(BaseModel):
+    output: str = ""
+
+    class Config:
+        arbitrary_types_allowed = True
+
+
+############################################################################################################
+@app.post(API, response_model=ResponseModel)
+async def handle_post_action(req: RequestModel) -> ResponseModel:
+
+    # 组织历史数据
+    system_state: State = {"messages": [SystemMessage(content=SYSTEM_PROMPT)]}
+    chat_history_state: State = {"messages": [message for message in req.chat_history]}
+    user_input_state: State = {"messages": [HumanMessage(content=req.input)]}
+
+    # 用模型进行推理
+    update_messages = stream_graph_updates(
+        system_state, chat_history_state, user_input_state
+    )
+
+    if len(update_messages) > 0:
+        return ResponseModel(output=cast(str, update_messages[-1].content))
+    return ResponseModel(output="")
+
+
+############################################################################################################
+def main() -> None:
+    import uvicorn
+
+    uvicorn.run(app, host="localhost", port=PORT)
+
+
+############################################################################################################
+def test() -> None:
+    system_state: State = {"messages": [SystemMessage(content=SYSTEM_PROMPT)]}
+    chat_history_state: State = {"messages": []}
+
+    while True:
+
+        try:
+            user_input = input("User: ")
+            if user_input.lower() in ["quit", "exit", "q"]:
+                print("Goodbye!")
+                break
+
+            user_input_state: State = {"messages": [HumanMessage(content=user_input)]}
+            update_messages = stream_graph_updates(
+                system_state, chat_history_state, user_input_state
+            )
+
+            # 记录上下文。
+            chat_history_state["messages"].extend(user_input_state["messages"])
+            chat_history_state["messages"].extend(update_messages)
+
+        except:
+            assert False, "Error in processing user input"
+            break
+
+
+############################################################################################################
+if __name__ == "__main__":
+    main()
+    # test()
+```
 
 
 
-
-# hi，我想设计一个网络-房间制的游戏。我希望你能帮我起一些必要的class的名字。
-
-## 我的游戏有如下要素组成。
-1. 玩家。
-2. 游戏。
-3. 房间。一个房间有一个游戏，可以有多个玩家。
-4. 房间的容器。容纳多个房间。
-
-## 我的需求，请给我这些class的名字的建议。
-
-
-研发：fast api，langchain. python，用户系统后端。
-
-
-
-
-# hi, 我做了一个游戏的验证项目（是‘AI + Game’ 的验证）。介绍如下：
-
-## 技术部分
-1. langchain：用于做LLM APP的框架。
-2. LLM. 我用的是Azure OpenAI 的服务。
-3. fastapi：用于做后端的框架。
-4. python: 用于开发后端的业务逻辑（游戏逻辑），在这里和langchain交互。
-### 目前状态：
-- 我已经开发了一个房间制的游戏demo。这个demo是一个回合制的游戏。
-
-
-## 游戏玩法部分
-1. 利用langchain + LLM完成一个multi-agent的游戏。所以 => 每一个agent代表一个可以独立思考的NPC。
-2. 基于1，一个房间制的游戏（1游戏对应1房间，对应1个玩家和多个NPC），的回合制游戏。
-3. 基于2，因为是回合制游戏，而且具备LLM的特性（泛化，推理，多样性），所以可以在RPG游戏和SLG游戏类型中进行验证。
-### 目前状态：
-- 正在规划。目前我倾向于做一个RPG游戏，历史题材，可以采用《三国演义》这样的题材。
-
+# 你是否知道langserve?
+## 如果你知道请给我简单介绍下。
 ## 我的需求
-1. 我希望你理解我在做什么。
-2. 我需要招募2个实习生来为我辅助做这个项目。
-    - 一个是技术开发方向的。注意看我的‘’技术部分‘’。
-    - 一个是游戏设计方向的。而且需要prompt工程和游戏设计文案的能力。
-3. 请帮我写2分招聘需求的文案。
+- 我希望以上的代码——fastapi-app, RequestModel, ResponseModel, handle_post_action, main()，这些部分用langserve的方式来实现。
+- 如果可以实现，这个python文件作为启动一个服务端。请你给我一个客户端示例，如何调用这个服务端。
+- 补充信息：据我所知，langserve 有一个RemoteRunnable的类，可以负责在远程调用服务端。我希望使用这个类。
 
-主要职责
+
+
+# 这段代码无法通过严格模式检查
+## 请你帮我看一下，我应该如何修改这段代码，使其通过严格模式检查。
+```python
+class ChatRunnable(Runnable):
+    """
+    这是一个Runnable类，用于langserve部署。
+    input: dict 包含 {"input": str, "chat_history": List[BaseMessage]} 
+    output: str (AI回答)
+    """
+    def invoke(self, input_data: Dict[str, Any]) -> str:
+        user_input = input_data.get("input", "")
+        chat_history = input_data.get("chat_history", [])
+
+        # 构建state
+        system_state: State = {"messages": [SystemMessage(content=SYSTEM_PROMPT)]}
+        chat_history_state: State = {"messages": chat_history}
+        user_input_state: State = {"messages": [HumanMessage(content=user_input)]}
+
+        # 获取回复
+        update_messages = stream_graph_updates(
+            system_state, chat_history_state, user_input_state
+        )
+        if len(update_messages) > 0:
+            return update_messages[-1].content
+        return ""
+```
+## 报错信息如下
+mypy --strict game_sample/agentpy_templats/azure_chat_openai_gpt_4o_graph_template.py
+game_sample/agentpy_templats/azure_chat_openai_gpt_4o_graph_template.py:122: error: Missing type parameters for generic type "Runnable"  [type-arg]
+game_sample/agentpy_templats/azure_chat_openai_gpt_4o_graph_template.py:128: error: Signature of "invoke" incompatible with supertype "Runnable"  [override]
+game_sample/agentpy_templats/azure_chat_openai_gpt_4o_graph_template.py:128: note:      Superclass:
+game_sample/agentpy_templats/azure_chat_openai_gpt_4o_graph_template.py:128: note:          def invoke(self, input: Any, config: RunnableConfig | None = ..., **kwargs: Any) -> Any
+game_sample/agentpy_templats/azure_chat_openai_gpt_4o_graph_template.py:128: note:      Subclass:
+game_sample/agentpy_templats/azure_chat_openai_gpt_4o_graph_template.py:128: note:          def invoke(self, input_data: dict[str, Any]) -> str
+game_sample/agentpy_templats/azure_chat_openai_gpt_4o_graph_template.py:142: error: Incompatible return value type (got "str | list[str | dict[Any, Any]]", expected "str")  [return-value]
+
+## def invoke(self, input_data: Dict[str, Any]) -> str: 这个函数能将传入参数与返回值使用RequestModel与ResponseModel么

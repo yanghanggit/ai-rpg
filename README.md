@@ -9,15 +9,15 @@ conda create -n Name python=3.12.2
 
 conda activate Name
 
-pip install langchain langchain_core langserve fastapi langchain_openai sse_starlette faiss-cpu loguru mypy pandas openpyxl overrides Jinja2 jsonschema black pandas-stubs
+pip install langchain langchain_core langserve langgraph fastapi langchain_openai sse_starlette faiss-cpu loguru mypy pandas openpyxl overrides Jinja2 jsonschema black pandas-stubs
 
 # Name 是环境的名，任取。
 # 如果用vscode 进行代码调试，需要用 >Python Interpreter. 将python环境指向这个Name代表的环境
 ```
 
 ## 严格模式检查
-- mypy --strict run_terminal_game.py run_game_server.py run_python_client.py batch_agent_app_launcher.py game_sample/gen_game.py game_sample/base_form_prompt_editor.py game_sample/actor_profile_prompt_editor.py game_sample/actor_conversational_style_prompt_editor.py
-- mypy --strict game_sample/agentpy_templats/azure_chat_openai_gpt_4o_template.py
+- mypy --strict run_terminal_game.py run_game_server.py run_python_client.py batch_agent_app_launcher.py game_sample/gen_game.py game_sample/base_form_prompt_editor.py game_sample/actor_profile_prompt_editor.py game_sample/actor_conversational_style_prompt_editor.py game_sample/agentpy_templats/azure_chat_openai_gpt_4o_graph_template.py
+- mypy --strict run_test_agent.py
 
 
 ## 说明
@@ -30,3 +30,8 @@ pip install langchain langchain_core langserve fastapi langchain_openai sse_star
 ## Windows平台运行问题
 - agent的server代码报错：UnicodeEncodeError: 'gbk' codec can't encode character '\u26a0' in position 0: illegal multibyte sequence 
     - 在Windows的环境变量中加入 `PYTHONIOENCODING=utf-8`
+
+
+## 升级langchain
+- pip install --upgrade langchain langchain_core langserve langchain_openai langchain-community 
+- pip show langchain langchain_core langserve langchain_openai langchain-community

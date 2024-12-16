@@ -48,7 +48,10 @@ class ResponseModel(BaseModel):
 
 
 ############################################################################################################
-def generate_chatbot_state_compiled_graph() -> CompiledStateGraph:
+def _create_compiled_stage_graph(
+    node_name: str = "azure_chat_openai_chatbot_node",
+) -> CompiledStateGraph:
+    assert node_name != "", "node_name is empty"
 
     llm = AzureChatOpenAI(
         azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
@@ -58,15 +61,16 @@ def generate_chatbot_state_compiled_graph() -> CompiledStateGraph:
         temperature=TEMPERATURE,
     )
 
-    def chatbot(state: State) -> Dict[str, List[BaseMessage]]:
+    def invoke_azure_chat_openai_llm_action(
+        state: State,
+    ) -> Dict[str, List[BaseMessage]]:
         return {"messages": [llm.invoke(state["messages"])]}
 
     graph_builder = StateGraph(State)
-    graph_builder.add_node("chatbot", chatbot)
-    graph_builder.set_entry_point("chatbot")
-    graph_builder.set_finish_point("chatbot")
-    compiled_chatbot_state_graph: CompiledStateGraph = graph_builder.compile()
-    return compiled_chatbot_state_graph
+    graph_builder.add_node(node_name, invoke_azure_chat_openai_llm_action)
+    graph_builder.set_entry_point(node_name)
+    graph_builder.set_finish_point(node_name)
+    return graph_builder.compile()
 
 
 ############################################################################################################
@@ -97,9 +101,9 @@ def stream_graph_updates(
 ############################################################################################################
 class ChatExecutor(Runnable[Dict[str, Any], Dict[str, Any]]):
 
-    def __init__(self, state_compiled_graph: CompiledStateGraph) -> None:
+    def __init__(self, compiled_state_graph: CompiledStateGraph) -> None:
         super().__init__()
-        self._state_compiled_graph = state_compiled_graph
+        self._compiled_state_graph = compiled_state_graph
 
     def _process_chat_request(self, request: RequestModel) -> ResponseModel:
 
@@ -116,7 +120,7 @@ class ChatExecutor(Runnable[Dict[str, Any], Dict[str, Any]]):
 
         # 获取回复
         update_messages = stream_graph_updates(
-            state_compiled_graph=self._state_compiled_graph,
+            state_compiled_graph=self._compiled_state_graph,
             system_state=system_state,
             chat_history_state=chat_history_state,
             user_input_state=user_input_state,
@@ -132,8 +136,7 @@ class ChatExecutor(Runnable[Dict[str, Any], Dict[str, Any]]):
         self, input: Dict[str, Any], config: RunnableConfig | None = None, **kwargs: Any
     ) -> Dict[str, Any]:
         # 处理请求
-        response_model = self._process_chat_request(RequestModel(**input))
-        return response_model.model_dump()
+        return self._process_chat_request(RequestModel(**input)).model_dump()
 
 
 ############################################################################################################
@@ -153,7 +156,7 @@ def main() -> None:
 
     add_routes(
         app,
-        ChatExecutor(state_compiled_graph=generate_chatbot_state_compiled_graph()),
+        ChatExecutor(compiled_state_graph=_create_compiled_stage_graph()),
         path=api,
     )
     uvicorn.run(app, host="localhost", port=PORT)
@@ -169,7 +172,7 @@ def test() -> None:
     chat_history_state: State = {"messages": []}
 
     # 生成聊天机器人状态图
-    chatbot_state_compiled_graph = generate_chatbot_state_compiled_graph()
+    compiled_stage_graph = _create_compiled_stage_graph()
 
     while True:
 
@@ -185,7 +188,7 @@ def test() -> None:
 
             # 获取回复
             update_messages = stream_graph_updates(
-                state_compiled_graph=chatbot_state_compiled_graph,
+                state_compiled_graph=compiled_stage_graph,
                 system_state=system_state,
                 chat_history_state=chat_history_state,
                 user_input_state=user_input_state,

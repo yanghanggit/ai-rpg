@@ -28,7 +28,7 @@ from models.config_models import (
     GameConfigModel,
 )
 from services.game_state_manager import GameState
-from services.game_server import GameServer
+from services.game_server_instance import GameServerInstance
 
 game_process_api_router = APIRouter()
 
@@ -49,12 +49,13 @@ def _match_game_with_players(
 
 ###############################################################################################################################################
 @game_process_api_router.post(path="/login/", response_model=LoginResponse)
-async def login(request_data: LoginRequest) -> LoginResponse:
+async def login(
+    request_data: LoginRequest, game_server: GameServerInstance
+) -> LoginResponse:
 
     logger.info(f"login: {request_data.user_name}")
 
-    assert GameServer.Instance is not None
-    room_manager = GameServer.Instance.room_manager
+    room_manager = game_server.room_manager
 
     # 已经有房间不能登录，因为一个用户只能有一个房间
     if room_manager.has_room(request_data.user_name):
@@ -100,11 +101,12 @@ async def login(request_data: LoginRequest) -> LoginResponse:
 
 ###############################################################################################################################################
 @game_process_api_router.post(path="/create/", response_model=CreateResponse)
-async def create(request_data: CreateRequest) -> CreateResponse:
+async def create(
+    request_data: CreateRequest, game_server: GameServerInstance
+) -> CreateResponse:
     logger.info(f"create: {request_data.user_name}, {request_data.game_name}")
 
-    assert GameServer.Instance is not None
-    room_manager = GameServer.Instance.room_manager
+    room_manager = game_server.room_manager
 
     # 没有房间不能创建游戏
     if not room_manager.has_room(request_data.user_name):
@@ -230,13 +232,14 @@ async def create(request_data: CreateRequest) -> CreateResponse:
 
 ###############################################################################################################################################
 @game_process_api_router.post(path="/join/", response_model=JoinResponse)
-async def join(request_data: JoinRequest) -> JoinResponse:
+async def join(
+    request_data: JoinRequest, game_server: GameServerInstance
+) -> JoinResponse:
     logger.info(
         f"join: {request_data.user_name}, {request_data.game_name}, {request_data.actor_name}"
     )
 
-    assert GameServer.Instance is not None
-    room_manager = GameServer.Instance.room_manager
+    room_manager = game_server.room_manager
 
     if not room_manager.has_room(request_data.user_name):
         return JoinResponse(user_name=request_data.user_name, error=100, message="")
@@ -279,13 +282,14 @@ async def join(request_data: JoinRequest) -> JoinResponse:
 
 ###############################################################################################################################################
 @game_process_api_router.post(path="/start/", response_model=StartResponse)
-async def start(request_data: StartRequest) -> StartResponse:
+async def start(
+    request_data: StartRequest, game_server: GameServerInstance
+) -> StartResponse:
     logger.info(
         f"start: {request_data.user_name}, {request_data.game_name}, {request_data.actor_name}"
     )
 
-    assert GameServer.Instance is not None
-    room_manager = GameServer.Instance.room_manager
+    room_manager = game_server.room_manager
 
     if not room_manager.has_room(request_data.user_name):
         return StartResponse(user_name=request_data.user_name, error=100, message="")
@@ -322,13 +326,14 @@ async def start(request_data: StartRequest) -> StartResponse:
 
 ###############################################################################################################################################
 @game_process_api_router.post(path="/execute/", response_model=ExecuteResponse)
-async def execute(request_data: ExecuteRequest) -> ExecuteResponse:
+async def execute(
+    request_data: ExecuteRequest, game_server: GameServerInstance
+) -> ExecuteResponse:
     logger.info(
         f"execute: {request_data.user_name}, {request_data.game_name}, {request_data.user_input}"
     )
 
-    assert GameServer.Instance is not None
-    room_manager = GameServer.Instance.room_manager
+    room_manager = game_server.room_manager
 
     if not room_manager.has_room(request_data.user_name):
         return ExecuteResponse(user_name=request_data.user_name, error=100, message="")
@@ -405,10 +410,11 @@ async def execute(request_data: ExecuteRequest) -> ExecuteResponse:
 @game_process_api_router.post(
     path="/fetch_messages/", response_model=FetchMessagesResponse
 )
-async def fetch_messages(request_data: FetchMessagesRequest) -> FetchMessagesResponse:
+async def fetch_messages(
+    request_data: FetchMessagesRequest, game_server: GameServerInstance
+) -> FetchMessagesResponse:
 
-    assert GameServer.Instance is not None
-    room_manager = GameServer.Instance.room_manager
+    room_manager = game_server.room_manager
 
     # 不能获取消息
     if request_data.index < 0 or request_data.count <= 0:
@@ -478,10 +484,11 @@ async def fetch_messages(request_data: FetchMessagesRequest) -> FetchMessagesRes
 
 ###############################################################################################################################################
 @game_process_api_router.post(path="/exit/", response_model=ExitResponse)
-async def exit(request_data: ExitRequest) -> ExitResponse:
+async def exit(
+    request_data: ExitRequest, game_server: GameServerInstance
+) -> ExitResponse:
 
-    assert GameServer.Instance is not None
-    room_manager = GameServer.Instance.room_manager
+    room_manager = game_server.room_manager
 
     if not room_manager.has_room(request_data.user_name):
         return ExitResponse(user_name=request_data.user_name, error=100, message="")

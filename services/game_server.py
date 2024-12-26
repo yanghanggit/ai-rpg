@@ -16,7 +16,7 @@ class ServerConfig:
 ###############################################################################################################################################
 class GameServer:
 
-    Instance: Optional["GameServer"] = None
+    _singleton: Optional["GameServer"] = None
 
     def __init__(
         self, fast_api: FastAPI, room_manager: RoomManager, server_config: ServerConfig

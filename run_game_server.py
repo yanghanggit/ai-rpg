@@ -1,13 +1,13 @@
 from typing import cast
-from services.room_manager import RoomManager
-from services.game_server import ServerConfig
-from services.game_server import GameServer
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi import FastAPI
+from services.game_server_instance import (
+    GameServerInstance,
+    initialize_game_server_instance,
+)
 
 
 ###############################################################################################################################################
-def main(game_server: GameServer) -> None:
+def main(game_server: GameServerInstance) -> None:
     import argparse
     import uvicorn
     from services.api_endpoints_services import api_endpoints_router
@@ -58,12 +58,6 @@ def main(game_server: GameServer) -> None:
 
 
 if __name__ == "__main__":
-
-    assert GameServer.Instance is None
-    GameServer.Instance = GameServer(
-        fast_api=FastAPI(),
-        room_manager=RoomManager(),
-        server_config=ServerConfig(server_ip_address="127.0.0.1", server_port=8000),
+    main(
+        initialize_game_server_instance(server_ip_address="127.0.0.1", server_port=8000)
     )
-
-    main(GameServer.Instance)

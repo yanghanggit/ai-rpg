@@ -7,7 +7,7 @@ from models.api_models import (
 from models.config_models import (
     APIEndpointsConfigModel,
 )
-from services.game_server import GameServer
+from services.game_server_instance import GameServerInstance
 
 
 api_endpoints_router = APIRouter()
@@ -18,13 +18,13 @@ api_endpoints_router = APIRouter()
 )
 async def api_endpoints(
     request_data: APIEndpointsConfigRequest,
+    game_server: GameServerInstance,
 ) -> APIEndpointsConfigResponse:
 
     logger.info(f"api_endpoints: {request_data.content}")
-    assert GameServer.Instance is not None
 
-    server_ip_address = GameServer.Instance.server_ip_address
-    server_port = GameServer.Instance.server_port
+    server_ip_address = game_server.server_ip_address
+    server_port = game_server.server_port
 
     generated_api_endpoints: APIEndpointsConfigModel = APIEndpointsConfigModel(
         LOGIN=f"http://{server_ip_address}:{server_port}/login/",

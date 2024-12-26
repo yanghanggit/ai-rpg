@@ -10,9 +10,7 @@ from models.api_models import (
     RetrieveStageArchivesResponse,
 )
 import game.rpg_game_utils
-from services.game_server import GameServer
-
-# from loguru import logger
+from services.game_server_instance import GameServerInstance
 
 
 game_play_api_router = APIRouter()
@@ -22,10 +20,11 @@ game_play_api_router = APIRouter()
 @game_play_api_router.post(
     path="/survey_stage_action/", response_model=SurveyStageResponse
 )
-async def survey_stage_action(request_data: SurveyStageRequest) -> SurveyStageResponse:
-    assert GameServer.Instance is not None
+async def survey_stage_action(
+    request_data: SurveyStageRequest, game_server: GameServerInstance
+) -> SurveyStageResponse:
 
-    room = GameServer.Instance.room_manager.get_room(request_data.user_name)
+    room = game_server.room_manager.get_room(request_data.user_name)
     if room is None or room.game is None:
         return SurveyStageResponse(
             user_name=request_data.user_name,
@@ -75,11 +74,10 @@ async def survey_stage_action(request_data: SurveyStageRequest) -> SurveyStageRe
     path="/status_inventory_check_action/", response_model=StatusInventoryCheckResponse
 )
 async def status_inventory_check_action(
-    request_data: StatusInventoryCheckRequest,
+    request_data: StatusInventoryCheckRequest, game_server: GameServerInstance
 ) -> StatusInventoryCheckResponse:
 
-    assert GameServer.Instance is not None
-    room_manager = GameServer.Instance.room_manager
+    room_manager = game_server.room_manager
 
     room = room_manager.get_room(request_data.user_name)
     if room is None or room.game is None:
@@ -130,11 +128,10 @@ async def status_inventory_check_action(
     path="/retrieve_actor_archives/", response_model=RetrieveActorArchivesResponse
 )
 async def retrieve_actor_archives(
-    request_data: RetrieveActorArchivesRequest,
+    request_data: RetrieveActorArchivesRequest, game_server: GameServerInstance
 ) -> RetrieveActorArchivesResponse:
 
-    assert GameServer.Instance is not None
-    room_manager = GameServer.Instance.room_manager
+    room_manager = game_server.room_manager
 
     room = room_manager.get_room(request_data.user_name)
     if room is None or room.game is None:
@@ -186,11 +183,10 @@ async def retrieve_actor_archives(
     path="/retrieve_stage_archives/", response_model=RetrieveStageArchivesResponse
 )
 async def retrieve_stage_archives(
-    request_data: RetrieveStageArchivesRequest,
+    request_data: RetrieveStageArchivesRequest, game_server: GameServerInstance
 ) -> RetrieveStageArchivesResponse:
 
-    assert GameServer.Instance is not None
-    room_manager = GameServer.Instance.room_manager
+    room_manager = game_server.room_manager
 
     room = room_manager.get_room(request_data.user_name)
     if room is None or room.game is None:

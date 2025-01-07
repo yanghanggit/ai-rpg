@@ -162,15 +162,15 @@ class ActorPlanningExecutionSystem(ExecuteProcessor):
             logger.warning(f"ActorPlanningSystem: request_result is empty.")
             return
 
-        self._process_agent_tasks(tasks)
+        self._handle_agent_requests(tasks)
         tasks.clear()
 
     #######################################################################################################################################
-    def _process_agent_tasks(
-        self, request_tasks: Dict[str, AgentRequestHandler]
+    def _handle_agent_requests(
+        self, agent_requests_map: Dict[str, AgentRequestHandler]
     ) -> None:
 
-        for actor_name, agent_task in request_tasks.items():
+        for actor_name, agent_request in agent_requests_map.items():
 
             actor_entity = self._context.get_actor_entity(actor_name)
             assert (
@@ -180,17 +180,17 @@ class ActorPlanningExecutionSystem(ExecuteProcessor):
             if actor_entity is None:
                 continue
 
-            action_add_result = (
-                gameplay_systems.action_component_utils.add_actor_actions(
-                    self._context,
-                    actor_entity,
-                    AgentResponseHandler(actor_name, agent_task.response_content),
-                )
+            is_action_added = gameplay_systems.action_component_utils.add_actor_actions(
+                self._context,
+                actor_entity,
+                AgentResponseHandler(actor_name, agent_request.response_content),
             )
 
-            if not action_add_result:
+            if not is_action_added:
                 logger.warning("ActorPlanningSystem: action_add_result is False.")
-                self._context.discard_last_human_ai_conversation(actor_entity)
+                self._context.agent_system.discard_last_human_ai_conversation(
+                    agent_request.agent_name
+                )
                 continue
 
     #######################################################################################################################################

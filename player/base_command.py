@@ -22,7 +22,9 @@ class PlayerCommand(ABC):
         from game.rpg_game import RPGGame
 
         rpg_game = cast(RPGGame, game)
-        rpg_game.context.safe_add_ai_message(entity, human_message_content)
+        rpg_game.context.agent_system.append_ai_message(
+            rpg_game.context.safe_get_entity_name(entity), human_message_content
+        )
 
     def split_command(self, input_val: str, split_str: str) -> str:
         if split_str in input_val:

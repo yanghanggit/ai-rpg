@@ -66,7 +66,7 @@ class AgentSystem:
             agent._chat_history.extend([AIMessage(content=chat)])
 
     ################################################################################################################################################################################
-    def _discard_last_human_ai_conversation(
+    def discard_last_human_ai_conversation(
         self, agent_name: str
     ) -> List[HumanMessage | AIMessage]:
 

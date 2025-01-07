@@ -94,17 +94,17 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
         )
 
         # step3: 处理结果
-        self._process_agent_tasks(tasks)
+        self._handle_agent_requests(tasks)
 
-        # step: 清理，习惯性动作
+        # step: 习惯性清空
         tasks.clear()
 
     #######################################################################################################################################
-    def _process_agent_tasks(
-        self, agent_task_requests: Dict[str, AgentRequestHandler]
+    def _handle_agent_requests(
+        self, agent_requests_map: Dict[str, AgentRequestHandler]
     ) -> None:
 
-        for stage_name, agent_task in agent_task_requests.items():
+        for stage_name, agent_request in agent_requests_map.items():
 
             stage_entity = self._context.get_stage_entity(stage_name)
             assert (
@@ -113,24 +113,25 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
             if stage_entity is None:
                 continue
 
-            plan_response = AgentResponseHandler(
-                stage_name, agent_task.response_content
-            )
-            action_add_result = (
-                gameplay_systems.action_component_utils.add_stage_actions(
-                    self._context,
-                    stage_entity,
-                    plan_response,
-                )
+            response_handler = AgentResponseHandler(
+                stage_name, agent_request.response_content
             )
 
-            if not action_add_result:
+            is_action_added = gameplay_systems.action_component_utils.add_stage_actions(
+                self._context,
+                stage_entity,
+                response_handler,
+            )
+
+            if not is_action_added:
                 logger.warning("StagePlanningSystem: action_add_result is False.")
-                self._context.discard_last_human_ai_conversation(stage_entity)
+                self._context.agent_system.discard_last_human_ai_conversation(
+                    agent_request.agent_name
+                )
                 continue
 
             gameplay_systems.stage_entity_utils.apply_stage_narration(
-                self._context, plan_response
+                self._context, response_handler
             )
 
     #######################################################################################################################################

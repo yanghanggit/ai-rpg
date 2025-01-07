@@ -13,13 +13,19 @@ from extended_systems.file_system import FileSystem
 from extended_systems.query_component_system import QueryComponentSystem
 from agent.agent_system import AgentSystem
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
-from typing import Optional, Dict, Set
+from typing import Optional, Dict, Set, final
 import gameplay_systems.prompt_utils
 from models.event_models import AgentEvent
 from game.base_game import BaseGame
 from agent.lang_serve_agent import LangServeAgent
 
+# 放到这个里面的函数需要精挑细选一下，不要什么都放。
+# 目前，我放的基本是一些通用的函数，比如：获取实体，获取场景，获取玩家等等
+# 还有 event 的广播，通知。
+# 其他的尽量不要再加了，如果有需要，可以考虑放到其他的系统里面。或者utils里面。
 
+
+@final
 class RPGGameContext(Context):
 
     #
@@ -167,29 +173,13 @@ class RPGGameContext(Context):
         return ""
 
     #############################################################################################################################
-    def safe_add_human_message(
-        self, target_entity: Entity, message_content: str
-    ) -> None:
-        logger.warning(
-            f"请检查调用这个函数的调用点，确定合理，safe_add_human_message_to_entity: {message_content}"
-        )
-        self.agent_system.append_human_message(
-            self.safe_get_entity_name(target_entity), message_content
-        )
-
-    #############################################################################################################################
-    def safe_add_ai_message(self, target_entity: Entity, message_content: str) -> None:
-        logger.warning(
-            f"请检查调用这个函数的调用点，确定合理，safe_add_ai_message_to_entity: {message_content}"
-        )
-        self.agent_system.append_ai_message(
-            self.safe_get_entity_name(target_entity), message_content
-        )
-
-    #############################################################################################################################
-    def discard_last_human_ai_conversation(self, entity: Entity) -> None:
-        agent = self.safe_get_agent(entity)
-        self.agent_system._discard_last_human_ai_conversation(agent.name)
+    def safe_get_agent(self, entity: Entity) -> LangServeAgent:
+        safe_name = self.safe_get_entity_name(entity)
+        agent = self.agent_system.get_agent(safe_name)
+        assert agent is not None, f"无法找到agent: {safe_name}"
+        if agent is None:
+            return LangServeAgent.create_empty()
+        return agent
 
     #############################################################################################################################
     # 更改场景的标记组件
@@ -322,14 +312,5 @@ class RPGGameContext(Context):
 
         assert self._game is not None
         self._game.send_event(player_proxy_names, agent_event)
-
-    #############################################################################################################################
-    def safe_get_agent(self, entity: Entity) -> LangServeAgent:
-        safe_name = self.safe_get_entity_name(entity)
-        agent = self.agent_system.get_agent(safe_name)
-        assert agent is not None, f"无法找到agent: {safe_name}"
-        if agent is None:
-            return LangServeAgent.create_empty()
-        return agent
 
     #############################################################################################################################

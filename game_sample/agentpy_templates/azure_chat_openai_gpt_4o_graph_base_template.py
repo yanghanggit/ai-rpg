@@ -74,7 +74,7 @@ def _create_compiled_stage_graph(
 
 
 ############################################################################################################
-def stream_graph_updates(
+def _stream_graph_updates(
     state_compiled_graph: CompiledStateGraph,
     system_state: State,
     chat_history_state: State,
@@ -119,7 +119,7 @@ class ChatExecutor(Runnable[Dict[str, Any], Dict[str, Any]]):
         user_input_state: State = {"messages": [HumanMessage(content=request.input)]}
 
         # 获取回复
-        update_messages = stream_graph_updates(
+        update_messages = _stream_graph_updates(
             state_compiled_graph=self._compiled_state_graph,
             system_state=system_state,
             chat_history_state=chat_history_state,
@@ -187,7 +187,7 @@ def test() -> None:
             user_input_state: State = {"messages": [HumanMessage(content=user_input)]}
 
             # 获取回复
-            update_messages = stream_graph_updates(
+            update_messages = _stream_graph_updates(
                 state_compiled_graph=compiled_stage_graph,
                 system_state=system_state,
                 chat_history_state=chat_history_state,

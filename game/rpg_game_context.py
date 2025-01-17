@@ -281,7 +281,6 @@ class RPGGameContext(Context):
         for entity in entities:
 
             safe_name = self.safe_get_entity_name(entity)
-
             replace_message = gameplay_systems.prompt_utils.replace_with_you(
                 agent_event.message, safe_name
             )
@@ -290,27 +289,24 @@ class RPGGameContext(Context):
             logger.warning(f"{safe_name} ==> {replace_message}")
 
             if entity.has(RoundEventsRecordComponent):
-                round_events_comp = entity.get(RoundEventsRecordComponent)
-                round_events_comp.events.append(replace_message)
+                entity.get(RoundEventsRecordComponent).events.append(replace_message)
+
+    #############################################################################################################################
+    def _extract_player_names(self, entities: Set[Entity]) -> Set[str]:
+        ret: Set[str] = set()
+        for entity in entities:
+            if entity.has(PlayerComponent):
+                ret.add(entity.get(PlayerComponent).name)
+        return ret
 
     #############################################################################################################################
     def _notify_event_to_players(
         self, entities: Set[Entity], agent_event: AgentEvent
     ) -> None:
-
-        if len(entities) == 0:
+        player_names = self._extract_player_names(entities)
+        if len(player_names) == 0:
             return
-
-        player_proxy_names: Set[str] = set()
-        for entity in entities:
-            if entity.has(PlayerComponent):
-                player_comp = entity.get(PlayerComponent)
-                player_proxy_names.add(player_comp.name)
-
-        if len(player_proxy_names) == 0:
-            return
-
         assert self._game is not None
-        self._game.send_event(player_proxy_names, agent_event)
+        self._game.send_event(player_names, agent_event)
 
     #############################################################################################################################

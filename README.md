@@ -16,7 +16,7 @@ pip install langchain langchain_core langserve langgraph fastapi langchain_opena
 ```
 
 ## 严格模式检查
-- mypy --strict run_terminal_game.py run_game_server.py run_python_client.py batch_agent_app_launcher.py game_sample/gen_game.py game_sample/base_form_prompt_editor.py game_sample/actor_profile_prompt_editor.py game_sample/actor_conversational_style_prompt_editor.py game_sample/agentpy_templats/azure_chat_openai_gpt_4o_graph_template.py
+- mypy --strict run_terminal_game.py run_game_server.py run_python_client.py batch_agent_app_launcher.py game_sample/gen_game.py game_sample/base_form_prompt_editor.py game_sample/actor_profile_prompt_editor.py game_sample/actor_conversational_style_prompt_editor.py game_sample/agentpy_templats/azure_chat_openai_gpt_4o_graph_base_template.py
 - mypy --strict run_test_agent.py
 
 

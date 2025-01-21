@@ -18,7 +18,7 @@ from typing import List, final
 import copy
 from game.rpg_game import RPGGame
 from agent.agent_response_handler import AgentResponseHandler
-import gameplay_systems.task_request_utils
+import rpg_game_systems.task_request_utils
 
 
 ################################################################################################################################################
@@ -129,7 +129,7 @@ class PreConversationActionSystem(ReactiveProcessor):
             agent_tasks.append(self._populate_agent_task(player_entity))
 
         # 执行agent任务
-        await gameplay_systems.task_request_utils.gather([task for task in agent_tasks])
+        await rpg_game_systems.task_request_utils.gather([task for task in agent_tasks])
 
         # 处理agent任务的返回值
         self._process_response_tasks(agent_tasks)

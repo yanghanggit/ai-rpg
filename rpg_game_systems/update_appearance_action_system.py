@@ -20,7 +20,7 @@ from components.actions import UpdateAppearanceAction, KickOffAction
 from game.rpg_game import RPGGame
 from models.event_models import UpdateAppearanceEvent
 from agent.lang_serve_agent import LangServeAgent
-import gameplay_systems.task_request_utils
+import rpg_game_systems.task_request_utils
 
 
 ################################################################################################################################################
@@ -187,7 +187,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
             )
 
         # 并发
-        await gameplay_systems.task_request_utils.gather(
+        await rpg_game_systems.task_request_utils.gather(
             [task for task in batch_processing_request_handlers]
         )
 

@@ -13,7 +13,7 @@ import format_string.target_message
 import format_string.ints_string
 from game.rpg_game import RPGGame
 from models.entity_models import Attributes
-import gameplay_systems.file_system_utils
+import rpg_game_systems.file_system_utils
 from models.file_models import PropType
 from models.event_models import AgentEvent
 from loguru import logger
@@ -238,13 +238,13 @@ class DamageActionSystem(ReactiveProcessor):
 
         target_entity_name = self._context.safe_get_entity_name(target_entity)
         categorized_prop_files = (
-            gameplay_systems.file_system_utils.categorize_files_by_type(
+            rpg_game_systems.file_system_utils.categorize_files_by_type(
                 self._context.file_system, target_entity_name
             )
         )
 
         for prop_file in categorized_prop_files[PropType.TYPE_NON_CONSUMABLE_ITEM]:
-            gameplay_systems.file_system_utils.transfer_file(
+            rpg_game_systems.file_system_utils.transfer_file(
                 self._context.file_system,
                 target_entity_name,
                 source_entity_name,

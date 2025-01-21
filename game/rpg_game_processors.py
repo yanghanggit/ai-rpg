@@ -13,108 +13,108 @@ class RPGGameProcessors(Processors):
 
         ### 不这样就循环引用
         from game.rpg_game import RPGGame
-        from gameplay_systems.stage_planning_execution_system import (
+        from rpg_game_systems.stage_planning_execution_system import (
             StagePlanningExecutionSystem,
         )
-        from gameplay_systems.actor_planning_execution_system import (
+        from rpg_game_systems.actor_planning_execution_system import (
             ActorPlanningExecutionSystem,
         )
-        from gameplay_systems.speak_action_system import SpeakActionSystem
-        from gameplay_systems.go_to_action_system import GoToActionSystem
-        from gameplay_systems.stage_validator_system import StageValidatorSystem
-        from gameplay_systems.stage_departure_checker_system import (
+        from rpg_game_systems.speak_action_system import SpeakActionSystem
+        from rpg_game_systems.go_to_action_system import GoToActionSystem
+        from rpg_game_systems.stage_validator_system import StageValidatorSystem
+        from rpg_game_systems.stage_departure_checker_system import (
             StageDepartureCheckerSystem,
         )
-        from gameplay_systems.stage_entrance_checker_system import (
+        from rpg_game_systems.stage_entrance_checker_system import (
             StageEntranceCheckerSystem,
         )
 
-        from gameplay_systems.destroy_entity_system import DestroyEntitySystem
-        from gameplay_systems.tag_action_system import TagActionSystem
-        from gameplay_systems.announce_action_system import AnnounceActionSystem
-        from gameplay_systems.whisper_action_system import WhisperActionSystem
-        from gameplay_systems.mind_voice_action_system import MindVoiceActionSystem
-        from gameplay_systems.begin_system import BeginSystem
-        from gameplay_systems.end_system import EndSystem
-        from gameplay_systems.pre_planning_system import PrePlanningSystem
-        from gameplay_systems.stage_planning_strategy_system import (
+        from rpg_game_systems.destroy_entity_system import DestroyEntitySystem
+        from rpg_game_systems.tag_action_system import TagActionSystem
+        from rpg_game_systems.announce_action_system import AnnounceActionSystem
+        from rpg_game_systems.whisper_action_system import WhisperActionSystem
+        from rpg_game_systems.mind_voice_action_system import MindVoiceActionSystem
+        from rpg_game_systems.begin_system import BeginSystem
+        from rpg_game_systems.end_system import EndSystem
+        from rpg_game_systems.pre_planning_system import PrePlanningSystem
+        from rpg_game_systems.stage_planning_strategy_system import (
             StagePlanningStrategySystem,
         )
-        from gameplay_systems.actor_planning_strategy_system import (
+        from rpg_game_systems.actor_planning_strategy_system import (
             ActorPlanningStrategySystem,
         )
 
-        from gameplay_systems.post_planning_system import PostPlanningSystem
-        from gameplay_systems.pre_action_system import PreActionSystem
-        from gameplay_systems.post_action_system import PostActionSystem
-        from gameplay_systems.steal_prop_action_system import StealPropActionSystem
-        from gameplay_systems.transfer_prop_action_system import (
+        from rpg_game_systems.post_planning_system import PostPlanningSystem
+        from rpg_game_systems.pre_action_system import PreActionSystem
+        from rpg_game_systems.post_action_system import PostActionSystem
+        from rpg_game_systems.steal_prop_action_system import StealPropActionSystem
+        from rpg_game_systems.transfer_prop_action_system import (
             TransferPropActionSystem,
         )
-        from gameplay_systems.agent_ping_validator_system import (
+        from rpg_game_systems.agent_ping_validator_system import (
             AgentPingValidatorSystem,
         )
-        from gameplay_systems.compress_chat_history_system import (
+        from rpg_game_systems.compress_chat_history_system import (
             CompressChatHistorySystem,
         )
-        from gameplay_systems.post_conversation_action_system import (
+        from rpg_game_systems.post_conversation_action_system import (
             PostConversationActionSystem,
         )
-        from gameplay_systems.pre_conversation_action_system import (
+        from rpg_game_systems.pre_conversation_action_system import (
             PreConversationActionSystem,
         )
-        from gameplay_systems.update_appearance_action_system import (
+        from rpg_game_systems.update_appearance_action_system import (
             UpdateAppearanceActionSystem,
         )
-        from gameplay_systems.stage_narrate_action_system import (
+        from rpg_game_systems.stage_narrate_action_system import (
             StageNarrateActionSystem,
         )
-        from gameplay_systems.skill_invocation_system import (
+        from rpg_game_systems.skill_invocation_system import (
             SkillInvocationSystem,
         )
-        from gameplay_systems.skill_hit_impact_system import (
+        from rpg_game_systems.skill_hit_impact_system import (
             SkillHitImpactSystem,
         )
-        from gameplay_systems.damage_action_system import DamageActionSystem
-        from gameplay_systems.handle_terminal_player_input_system import (
+        from rpg_game_systems.damage_action_system import DamageActionSystem
+        from rpg_game_systems.handle_terminal_player_input_system import (
             HandleTerminalPlayerInputSystem,
         )
-        from gameplay_systems.update_client_message_system import (
+        from rpg_game_systems.update_client_message_system import (
             UpdateClientMessageSystem,
         )
-        from gameplay_systems.dead_action_system import DeadActionSystem
-        from gameplay_systems.terminal_player_interrupt_wait_system import (
+        from rpg_game_systems.dead_action_system import DeadActionSystem
+        from rpg_game_systems.terminal_player_interrupt_wait_system import (
             TerminalPlayerInterruptWaitSystem,
         )
 
-        from gameplay_systems.agent_kick_off_system import AgentKickOffSystem
-        from gameplay_systems.update_archive_system import UpdateArchiveSystem
-        from gameplay_systems.terminal_player_tips_system import (
+        from rpg_game_systems.agent_kick_off_system import AgentKickOffSystem
+        from rpg_game_systems.update_archive_system import UpdateArchiveSystem
+        from rpg_game_systems.terminal_player_tips_system import (
             TerminalPlayerTipsSystem,
         )
-        from gameplay_systems.equip_prop_action_system import EquipPropActionSystem
-        from gameplay_systems.skill_readiness_validator_system import (
+        from rpg_game_systems.equip_prop_action_system import EquipPropActionSystem
+        from rpg_game_systems.skill_readiness_validator_system import (
             SkillReadinessValidatorSystem,
         )
-        from gameplay_systems.skill_world_harmony_inspector_system import (
+        from rpg_game_systems.skill_world_harmony_inspector_system import (
             SkillWorldHarmonyInspectorSystem,
         )
-        from gameplay_systems.save_game_resource_system import SaveGameResourceSystem
-        from gameplay_systems.save_entity_system import SaveEntitySystem
-        from gameplay_systems.save_player_system import SavePlayerSystem
-        from gameplay_systems.web_player_tips_system import WebPlayerTipsSystem
-        from gameplay_systems.stage_spawner_system import StageSpawnerSystem
-        from gameplay_systems.game_round_system import GameRoundSystem
-        from gameplay_systems.handle_web_player_input_system import (
+        from rpg_game_systems.save_game_resource_system import SaveGameResourceSystem
+        from rpg_game_systems.save_entity_system import SaveEntitySystem
+        from rpg_game_systems.save_player_system import SavePlayerSystem
+        from rpg_game_systems.web_player_tips_system import WebPlayerTipsSystem
+        from rpg_game_systems.stage_spawner_system import StageSpawnerSystem
+        from rpg_game_systems.game_round_system import GameRoundSystem
+        from rpg_game_systems.handle_web_player_input_system import (
             HandleWebPlayerInputSystem,
         )
-        from gameplay_systems.stage_tag_action_system import StageTagActionSystem
-        from gameplay_systems.inspect_action_system import InspectActionSystem
-        from gameplay_systems.stage_transfer_action_system import (
+        from rpg_game_systems.stage_tag_action_system import StageTagActionSystem
+        from rpg_game_systems.inspect_action_system import InspectActionSystem
+        from rpg_game_systems.stage_transfer_action_system import (
             StageTransferActionSystem,
         )
-        from gameplay_systems.skill_feedback_system import SkillFeedbackSystem
-        from gameplay_systems.heal_action_system import HealActionSystem
+        from rpg_game_systems.skill_feedback_system import SkillFeedbackSystem
+        from rpg_game_systems.heal_action_system import HealActionSystem
 
         ##
         rpg_game = cast(RPGGame, game)

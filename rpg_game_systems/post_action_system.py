@@ -5,10 +5,9 @@ from components.actions import (
     STAGE_AVAILABLE_ACTIONS_REGISTER,
     ACTOR_AVAILABLE_ACTIONS_REGISTER,
 )
-import gameplay_systems.action_component_utils
+import rpg_game_systems.action_component_utils
 from game.rpg_game import RPGGame
 from components.components import SkillComponent, DestroyComponent
-from loguru import logger
 
 
 @final
@@ -26,7 +25,7 @@ class PostActionSystem(ExecuteProcessor):
 
     ############################################################################################################
     def _remove_all_actions(self) -> None:
-        gameplay_systems.action_component_utils.clear_registered_actions(
+        rpg_game_systems.action_component_utils.clear_registered_actions(
             self._context,
             (ACTOR_AVAILABLE_ACTIONS_REGISTER | STAGE_AVAILABLE_ACTIONS_REGISTER),
         )

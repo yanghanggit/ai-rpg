@@ -5,9 +5,9 @@ from components.actions import (
     DeadAction,
 )
 from components.components import ActorComponent
-import gameplay_systems.action_component_utils
+import rpg_game_systems.action_component_utils
 from typing import final, override
-import gameplay_systems.file_system_utils
+import rpg_game_systems.file_system_utils
 from extended_systems.prop_file import PropFile
 import format_string.target_message
 from game.rpg_game import RPGGame
@@ -55,10 +55,10 @@ class TransferPropActionSystem(ReactiveProcessor):
         for target_name, complex_prop_name in target_and_message:
 
             if (
-                gameplay_systems.action_component_utils.validate_conversation(
+                rpg_game_systems.action_component_utils.validate_conversation(
                     self._context, entity, target_name
                 )
-                != gameplay_systems.action_component_utils.ConversationError.VALID
+                != rpg_game_systems.action_component_utils.ConversationError.VALID
             ):
                 # 目标不存在
                 self._notify_target_inaccessible_event(entity, target_name)
@@ -102,7 +102,7 @@ class TransferPropActionSystem(ReactiveProcessor):
                 continue
 
             # 核心执行逻辑
-            gameplay_systems.file_system_utils.transfer_file(
+            rpg_game_systems.file_system_utils.transfer_file(
                 self._context.file_system,
                 transferable_prop_file.owner_name,
                 self._context.safe_get_entity_name(target_entity),

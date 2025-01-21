@@ -26,8 +26,8 @@ from components.components import (
     KickOffContentComponent,
     KickOffFlagComponent,
 )
-from gameplay_systems.actor_entity_utils import ActorStatusEvaluator
-import gameplay_systems.actor_planning_execution_system
+from rpg_game_systems.actor_entity_utils import ActorStatusEvaluator
+import rpg_game_systems.actor_planning_execution_system
 from player.player_command import (
     PlayerGoTo,
     PlayerAnnounce,
@@ -248,7 +248,7 @@ def gen_status_inventory_check_model(
 
     # 道具信息
     actor_props_prompt = (
-        gameplay_systems.actor_planning_execution_system._generate_props_prompt(
+        rpg_game_systems.actor_planning_execution_system._generate_props_prompt(
             actor_status_evaluator._category_prop_files
         )
     )

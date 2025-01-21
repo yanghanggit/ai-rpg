@@ -11,14 +11,14 @@ from components.components import (
 )
 from game.rpg_game_context import RPGGameContext
 from typing import final, override, List, Optional, Set
-import gameplay_systems.prompt_utils
+import rpg_game_systems.prompt_utils
 import format_string.target_message
 import format_string.ints_string
 from game.rpg_game import RPGGame
 from models.entity_models import Attributes
 from models.event_models import AgentEvent
-import gameplay_systems.skill_entity_utils
-import gameplay_systems.action_component_utils
+import rpg_game_systems.skill_entity_utils
+import rpg_game_systems.action_component_utils
 
 
 ################################################################################################################################################
@@ -374,7 +374,7 @@ class SkillHitImpactSystem(ExecuteProcessor):
         if len(skill_attribute_outputs) == 0:
             return
 
-        data = gameplay_systems.skill_entity_utils.parse_skill_accessory_prop_files(
+        data = rpg_game_systems.skill_entity_utils.parse_skill_accessory_prop_files(
             context=self._context,
             skill_entity=internal_process_data.skill_entity,
             actor_entity=internal_process_data.source_entity,
@@ -406,7 +406,7 @@ class SkillHitImpactSystem(ExecuteProcessor):
         self, internal_process_data: InternalProcessData
     ) -> List[int]:
 
-        skill_prop_files = gameplay_systems.skill_entity_utils.parse_skill_prop_files(
+        skill_prop_files = rpg_game_systems.skill_entity_utils.parse_skill_prop_files(
             context=self._context,
             skill_entity=internal_process_data.skill_entity,
             actor_entity=internal_process_data.source_entity,

@@ -5,40 +5,31 @@ from game.rpg_game import RPGGame
 from components.components import (
     PlayerComponent,
     ActorComponent,
+    StageGraphComponent,
 )
+from extended_systems.archive_file import StageArchiveFile
 from player.player_proxy import PlayerProxy
 from models.event_models import AgentEvent
-from game.web_rpg_game import WebRPGGame
+from game.terminal_rpg_game import TerminalRPGGame
 from loguru import logger
-from extended_systems.archive_file import StageArchiveFile
-from components.components import (
-    PlayerComponent,
-    ActorComponent,
-    StageGraphComponent,
-    GUIDComponent,
-)
-
-# from format_string.complex_stage_name import ComplexStageName
 
 
 @final
-class WebPlayerTipsSystem(ExecuteProcessor):
+class TerminalPlayerTipsSystem(ExecuteProcessor):
     def __init__(self, context: RPGGameContext, rpg_game: RPGGame) -> None:
         self._context: RPGGameContext = context
         self._game: RPGGame = rpg_game
-        self._test_index: int = 0
 
     ############################################################################################################
     @override
     def execute(self) -> None:
-        if not isinstance(self._game, WebRPGGame):
+        if not isinstance(self._game, TerminalRPGGame):
             logger.debug("不是终端游戏，无法使用这个系统")
             return
-
-        self._add_tips()
+        self.tips_stages()
 
     ############################################################################################################
-    def _add_tips(self) -> None:
+    def tips_stages(self) -> None:
 
         for player_proxy in self._game.players:
 
@@ -55,19 +46,9 @@ class WebPlayerTipsSystem(ExecuteProcessor):
 
             # 当前场景能去往的场景
             self.tips_next_stages(player_proxy, player_entity)
-            # self._add_test_tips(player_proxy, player_entity)
 
-    ############################################################################################################
-    def _add_test_tips(self, player_proxy: PlayerProxy, player_entity: Entity) -> None:
-        assert player_entity is not None
-        assert player_proxy is not None
-
-        self._test_index += 1
-        actor_name = self._context.safe_get_entity_name(player_entity)
-        player_proxy.add_tip_message(
-            actor_name,
-            AgentEvent(message=f"这是一个测试的消息{self._test_index}"),
-        )
+            # 人物已知的场景
+            self.tip_stage_archives(player_proxy, player_entity)
 
     ############################################################################################################
     def tips_next_stages(
@@ -114,3 +95,29 @@ class WebPlayerTipsSystem(ExecuteProcessor):
         return stage_name
 
     ############################################################################################################
+    def tip_stage_archives(
+        self, player_proxy: PlayerProxy, player_entity: Entity
+    ) -> None:
+
+        assert player_entity is not None
+        assert player_proxy is not None
+
+        actor_name = self._context.safe_get_entity_name(player_entity)
+        stage_archives = self._context.file_system.get_files(
+            StageArchiveFile, actor_name
+        )
+        stage_names: List[str] = [
+            stage_archive.name for stage_archive in stage_archives
+        ]
+
+        if len(stage_names) > 0:
+
+            player_proxy.add_tip_message(
+                actor_name,
+                AgentEvent(message=f"已知场景:\n{'\n'.join(stage_names)}"),
+            )
+        else:
+            player_proxy.add_tip_message(actor_name, AgentEvent(message="没有已知场景"))
+
+
+############################################################################################################

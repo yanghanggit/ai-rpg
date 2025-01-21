@@ -9,7 +9,7 @@ from components.components import (
 )
 from typing import List, Dict, Optional
 from extended_systems.prop_file import PropFile
-import gameplay_systems.file_system_utils
+import rpg_game_systems.file_system_utils
 from models.file_models import PropType
 
 
@@ -85,7 +85,7 @@ class ActorStatusEvaluator:
     ) -> None:
         safe_name = context.safe_get_entity_name(actor_entity)
         self._category_prop_files = (
-            gameplay_systems.file_system_utils.categorize_files_by_type(
+            rpg_game_systems.file_system_utils.categorize_files_by_type(
                 context.file_system, safe_name
             )
         )

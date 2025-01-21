@@ -1,10 +1,10 @@
-from enum import unique, StrEnum
+from enum import StrEnum
 from entitas import ExecuteProcessor, Matcher  # type: ignore
 from game.rpg_game_context import RPGGameContext
 from components.components import ActorComponent, StageComponent
 from typing import final, override, Dict
 from game.rpg_game import RPGGame
-import gameplay_systems.prompt_utils
+import rpg_game_systems.prompt_utils
 
 
 class CompressChatHistoryConstantPrompt(StrEnum):
@@ -30,8 +30,8 @@ class CompressChatHistorySystem(ExecuteProcessor):
     ############################################################################################################
     def _process_chat_history_compression(self) -> None:
         chat_history_replacement_map: Dict[str, str] = {
-            gameplay_systems.prompt_utils.GeneralPromptTag.ACTOR_PLAN_PROMPT_TAG: CompressChatHistoryConstantPrompt.COMPRESS_ACTOR_PLAN_PROMPT,
-            gameplay_systems.prompt_utils.GeneralPromptTag.STAGE_PLAN_PROMPT_TAG: CompressChatHistoryConstantPrompt.COMPRESS_STAGE_PLAN_PROMPT,
+            rpg_game_systems.prompt_utils.GeneralPromptTag.ACTOR_PLAN_PROMPT_TAG: CompressChatHistoryConstantPrompt.COMPRESS_ACTOR_PLAN_PROMPT,
+            rpg_game_systems.prompt_utils.GeneralPromptTag.STAGE_PLAN_PROMPT_TAG: CompressChatHistoryConstantPrompt.COMPRESS_STAGE_PLAN_PROMPT,
         }
 
         entities = self._context.get_group(

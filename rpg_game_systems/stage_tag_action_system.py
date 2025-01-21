@@ -4,7 +4,7 @@ from components.actions import StageTagAction
 from game.rpg_game_context import RPGGameContext
 from game.rpg_game import RPGGame
 from extended_systems.archive_file import StageArchiveFile
-import gameplay_systems.file_system_utils
+import rpg_game_systems.file_system_utils
 
 
 ############################################################################################################
@@ -47,7 +47,7 @@ class StageTagActionSystem(ReactiveProcessor):
                 StageArchiveFile, actor_name, stage_tag_action.name
             ):
                 # 保证必须有
-                gameplay_systems.file_system_utils.register_stage_archives(
+                rpg_game_systems.file_system_utils.register_stage_archives(
                     self._context.file_system,
                     actor_name,
                     set({stage_tag_action.name}),

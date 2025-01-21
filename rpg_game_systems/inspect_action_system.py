@@ -9,11 +9,11 @@ from components.components import (
 )
 from typing import final, override
 from game.rpg_game import RPGGame
-import gameplay_systems.file_system_utils
+import rpg_game_systems.file_system_utils
 from game.rpg_game import RPGGame
 from models.event_models import AgentEvent
-import gameplay_systems.action_component_utils
-from gameplay_systems.actor_entity_utils import ActorStatusEvaluator
+import rpg_game_systems.action_component_utils
+from rpg_game_systems.actor_entity_utils import ActorStatusEvaluator
 from extended_systems.prop_file import (
     generate_prop_file_appearance_prompt,
 )
@@ -56,10 +56,10 @@ class InspectActionSystem(ReactiveProcessor):
 
         for target_name in inspect_action.values:
             if (
-                gameplay_systems.action_component_utils.validate_conversation(
+                rpg_game_systems.action_component_utils.validate_conversation(
                     self._context, source_entity, target_name
                 )
-                != gameplay_systems.action_component_utils.ConversationError.VALID
+                != rpg_game_systems.action_component_utils.ConversationError.VALID
             ):
                 # 目标不存在
                 self._notify_invalid_target_event(source_entity, target_name)

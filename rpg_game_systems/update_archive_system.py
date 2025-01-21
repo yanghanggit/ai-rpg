@@ -7,11 +7,11 @@ from components.components import (
     RoundEventsRecordComponent,
 )
 from typing import Set, final, override, Dict
-import gameplay_systems.file_system_utils
+import rpg_game_systems.file_system_utils
 from game.rpg_game import RPGGame
 from extended_systems.archive_file import ActorArchiveFile, StageArchiveFile
-import gameplay_systems.file_system_utils
-import gameplay_systems.stage_entity_utils
+import rpg_game_systems.file_system_utils
+import rpg_game_systems.stage_entity_utils
 from models.event_models import UpdateArchiveEvent
 
 
@@ -131,7 +131,7 @@ class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
         assert my_stage_archive is not None
         if my_stage_archive is not None:
             stage_narrate = (
-                gameplay_systems.stage_entity_utils.extract_current_stage_narrative(
+                rpg_game_systems.stage_entity_utils.extract_current_stage_narrative(
                     self._context, stage_entity
                 )
             )
@@ -210,7 +210,7 @@ class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
             if not self._context.file_system.has_file(
                 StageArchiveFile, actor_name, stage_name
             ):
-                gameplay_systems.file_system_utils.register_stage_archives(
+                rpg_game_systems.file_system_utils.register_stage_archives(
                     self._context.file_system, actor_name, {stage_name}
                 )
 
@@ -226,7 +226,7 @@ class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
                 if not self._context.file_system.has_file(
                     ActorArchiveFile, actor_name, other_name
                 ):
-                    gameplay_systems.file_system_utils.register_actor_archives(
+                    rpg_game_systems.file_system_utils.register_actor_archives(
                         self._context.file_system, actor_name, {other_name}
                     )
 
@@ -249,7 +249,7 @@ class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
             ):
                 continue
 
-            gameplay_systems.file_system_utils.register_actor_archives(
+            rpg_game_systems.file_system_utils.register_actor_archives(
                 self._context.file_system, safe_name, {archive_actor_name}
             )
 
@@ -272,7 +272,7 @@ class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
             ):
                 continue
 
-            gameplay_systems.file_system_utils.register_stage_archives(
+            rpg_game_systems.file_system_utils.register_stage_archives(
                 self._context.file_system, safe_name, {archive_stage_name}
             )
 
@@ -298,7 +298,7 @@ class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
                 ):
                     continue
 
-                gameplay_systems.file_system_utils.register_actor_archives(
+                rpg_game_systems.file_system_utils.register_actor_archives(
                     self._context.file_system,
                     actor_comp.name,
                     {actor_to_archive},
@@ -327,7 +327,7 @@ class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
                 ):
                     continue
 
-                gameplay_systems.file_system_utils.register_stage_archives(
+                rpg_game_systems.file_system_utils.register_stage_archives(
                     self._context.file_system,
                     actor_comp.name,
                     {stage_to_archive},

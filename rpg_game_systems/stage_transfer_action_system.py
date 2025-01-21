@@ -9,8 +9,8 @@ from components.components import (
 from typing import final, override
 from game.rpg_game import RPGGame
 import format_string.target_message
-import gameplay_systems.file_system_utils
-import gameplay_systems.action_component_utils
+import rpg_game_systems.file_system_utils
+import rpg_game_systems.action_component_utils
 from loguru import logger
 import format_string.complex_prop_name
 from extended_systems.prop_file import PropFile
@@ -79,10 +79,10 @@ class StageTransferActionSystem(ReactiveProcessor):
         for target_name, complex_prop_info in target_and_message:
 
             if (
-                gameplay_systems.action_component_utils.validate_conversation(
+                rpg_game_systems.action_component_utils.validate_conversation(
                     self._context, stage_entity, target_name
                 )
-                != gameplay_systems.action_component_utils.ConversationError.VALID
+                != rpg_game_systems.action_component_utils.ConversationError.VALID
             ):
                 # 不能交谈就是不能交换道具
                 logger.warning("不能交谈就是不能交换道具")

@@ -408,13 +408,13 @@ class ChatRunnable(Runnable):
         return ""
 ```
 ## 报错信息如下
-mypy --strict game_sample/agentpy_templats/azure_chat_openai_gpt_4o_graph_base_template.py
-game_sample/agentpy_templats/azure_chat_openai_gpt_4o_graph_base_template.py:122: error: Missing type parameters for generic type "Runnable"  [type-arg]
-game_sample/agentpy_templats/azure_chat_openai_gpt_4o_graph_base_template.py:128: error: Signature of "invoke" incompatible with supertype "Runnable"  [override]
-game_sample/agentpy_templats/azure_chat_openai_gpt_4o_graph_base_template.py:128: note:      Superclass:
-game_sample/agentpy_templats/azure_chat_openai_gpt_4o_graph_base_template.py:128: note:          def invoke(self, input: Any, config: RunnableConfig | None = ..., **kwargs: Any) -> Any
-game_sample/agentpy_templats/azure_chat_openai_gpt_4o_graph_base_template.py:128: note:      Subclass:
-game_sample/agentpy_templats/azure_chat_openai_gpt_4o_graph_base_template.py:128: note:          def invoke(self, input_data: dict[str, Any]) -> str
-game_sample/agentpy_templats/azure_chat_openai_gpt_4o_graph_base_template.py:142: error: Incompatible return value type (got "str | list[str | dict[Any, Any]]", expected "str")  [return-value]
+mypy --strict game_sample/agentpy_templates/azure_chat_openai_gpt_4o_graph_base_template.py
+game_sample/agentpy_templates/azure_chat_openai_gpt_4o_graph_base_template.py:122: error: Missing type parameters for generic type "Runnable"  [type-arg]
+game_sample/agentpy_templates/azure_chat_openai_gpt_4o_graph_base_template.py:128: error: Signature of "invoke" incompatible with supertype "Runnable"  [override]
+game_sample/agentpy_templates/azure_chat_openai_gpt_4o_graph_base_template.py:128: note:      Superclass:
+game_sample/agentpy_templates/azure_chat_openai_gpt_4o_graph_base_template.py:128: note:          def invoke(self, input: Any, config: RunnableConfig | None = ..., **kwargs: Any) -> Any
+game_sample/agentpy_templates/azure_chat_openai_gpt_4o_graph_base_template.py:128: note:      Subclass:
+game_sample/agentpy_templates/azure_chat_openai_gpt_4o_graph_base_template.py:128: note:          def invoke(self, input_data: dict[str, Any]) -> str
+game_sample/agentpy_templates/azure_chat_openai_gpt_4o_graph_base_template.py:142: error: Incompatible return value type (got "str | list[str | dict[Any, Any]]", expected "str")  [return-value]
 
 ## def invoke(self, input_data: Dict[str, Any]) -> str: 这个函数能将传入参数与返回值使用RequestModel与ResponseModel么

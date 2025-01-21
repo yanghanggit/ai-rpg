@@ -10,12 +10,12 @@ from components.components import (
     RoundEventsRecordComponent,
 )
 from models.event_models import GameRoundEvent
-import gameplay_systems.prompt_utils
+import rpg_game_systems.prompt_utils
 
 
 ################################################################################################################################################
 def _generate_game_round_prompt(game_round: int) -> str:
-    return f"""# 提示: {gameplay_systems.prompt_utils.GeneralPromptTag.CURRENT_ROUND_TAG}:{game_round}"""
+    return f"""# 提示: {rpg_game_systems.prompt_utils.GeneralPromptTag.CURRENT_ROUND_TAG}:{game_round}"""
 
 
 ################################################################################################################################################

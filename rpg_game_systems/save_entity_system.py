@@ -1,12 +1,11 @@
 from entitas import ExecuteProcessor, Matcher  # type: ignore
 from game.rpg_game_context import RPGGameContext
-from loguru import logger
 from components.components import (
     StageComponent,
     ActorComponent,
 )
 from typing import final, override, NamedTuple, FrozenSet
-import gameplay_systems.file_system_utils
+import rpg_game_systems.file_system_utils
 from game.rpg_game import RPGGame
 from models.file_models import ComponentDumpModel, EntityProfileModel
 from collections import OrderedDict
@@ -32,7 +31,7 @@ class SaveEntitySystem(ExecuteProcessor):
             frozenset({StageComponent, ActorComponent})
         )
         for key, value in entity_dumps.items():
-            gameplay_systems.file_system_utils.persist_entity_profile(
+            rpg_game_systems.file_system_utils.persist_entity_profile(
                 self._context.file_system, value
             )
 

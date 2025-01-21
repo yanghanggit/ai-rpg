@@ -14,7 +14,7 @@ from extended_systems.query_component_system import QueryComponentSystem
 from agent.agent_system import AgentSystem
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from typing import Optional, Dict, Set, final
-import gameplay_systems.prompt_utils
+import rpg_game_systems.prompt_utils
 from models.event_models import AgentEvent
 from game.base_game import BaseGame
 from agent.lang_serve_agent import LangServeAgent
@@ -281,7 +281,7 @@ class RPGGameContext(Context):
         for entity in entities:
 
             safe_name = self.safe_get_entity_name(entity)
-            replace_message = gameplay_systems.prompt_utils.replace_with_you(
+            replace_message = rpg_game_systems.prompt_utils.replace_with_you(
                 agent_event.message, safe_name
             )
 

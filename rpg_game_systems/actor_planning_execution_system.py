@@ -16,20 +16,20 @@ from agent.agent_response_handler import AgentResponseHandler
 from game.rpg_game_context import RPGGameContext
 from loguru import logger
 from typing import Dict, Set, List, Optional, final
-import gameplay_systems.action_component_utils
-import gameplay_systems.prompt_utils
+import rpg_game_systems.action_component_utils
+import rpg_game_systems.prompt_utils
 from agent.agent_request_handler import (
     AgentRequestHandler,
 )
 from game.rpg_game import RPGGame
-from gameplay_systems.actor_entity_utils import ActorStatusEvaluator
+from rpg_game_systems.actor_entity_utils import ActorStatusEvaluator
 from extended_systems.prop_file import (
     PropFile,
     generate_prop_file_total_prompt,
 )
 from models.file_models import PropType
-import gameplay_systems.stage_entity_utils
-import gameplay_systems.task_request_utils
+import rpg_game_systems.stage_entity_utils
+import rpg_game_systems.task_request_utils
 
 
 ###############################################################################################################################################
@@ -94,7 +94,7 @@ def _generate_actor_plan_prompt(
     if len(stage_graph) == 0:
         stage_graph.add(f"无可去往场景(你不可以执行{GoToAction.__name__})")
 
-    return f"""# 请制定你的计划({gameplay_systems.prompt_utils.GeneralPromptTag.ACTOR_PLAN_PROMPT_TAG})
+    return f"""# 请制定你的计划({rpg_game_systems.prompt_utils.GeneralPromptTag.ACTOR_PLAN_PROMPT_TAG})
 规则见 游戏流程 - 制定计划
 
 ## 你当前所在的场景
@@ -119,9 +119,9 @@ def _generate_actor_plan_prompt(
 - 武器: {current_weapon is not None and current_weapon.name or "无"}
 - 衣服: {current_clothes is not None and current_clothes.name or "无"}
 
-{gameplay_systems.prompt_utils.generate_equip_action_prompt()}
+{rpg_game_systems.prompt_utils.generate_equip_action_prompt()}
 
-{gameplay_systems.prompt_utils.generate_skill_action_prompt(actor_props.get(PropType.TYPE_SKILL, []))}
+{rpg_game_systems.prompt_utils.generate_skill_action_prompt(actor_props.get(PropType.TYPE_SKILL, []))}
 
 ## 输出要求
 - 请遵循 输出格式指南。
@@ -155,7 +155,7 @@ class ActorPlanningExecutionSystem(ExecuteProcessor):
         if len(tasks) == 0:
             return
 
-        responses = await gameplay_systems.task_request_utils.gather(
+        responses = await rpg_game_systems.task_request_utils.gather(
             [task for task in tasks.values()]
         )
         if len(responses) == 0:
@@ -180,7 +180,7 @@ class ActorPlanningExecutionSystem(ExecuteProcessor):
             if actor_entity is None:
                 continue
 
-            is_action_added = gameplay_systems.action_component_utils.add_actor_actions(
+            is_action_added = rpg_game_systems.action_component_utils.add_actor_actions(
                 self._context,
                 actor_entity,
                 AgentResponseHandler(actor_name, agent_request.response_content),
@@ -225,7 +225,7 @@ class ActorPlanningExecutionSystem(ExecuteProcessor):
                     self._context.safe_get_agent(actor_entity),
                     _generate_actor_plan_prompt(
                         current_stage=self._retrieve_stage_name(actor_entity),
-                        stage_narrate=gameplay_systems.stage_entity_utils.extract_current_stage_narrative(
+                        stage_narrate=rpg_game_systems.stage_entity_utils.extract_current_stage_narrative(
                             self._context, actor_entity
                         ),
                         stage_graph=set(self._retrieve_stage_graph(actor_entity)),

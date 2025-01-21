@@ -18,15 +18,15 @@ from extended_systems.prop_file import (
     generate_skill_prop_file_prompt,
     generate_skill_accessory_prop_file_prompt,
 )
-import gameplay_systems.prompt_utils
+import rpg_game_systems.prompt_utils
 from agent.agent_request_handler import AgentRequestHandler
 from agent.agent_response_handler import AgentResponseHandler
 from game.rpg_game import RPGGame
-import gameplay_systems.skill_entity_utils
+import rpg_game_systems.skill_entity_utils
 from agent.lang_serve_agent import LangServeAgent
 from models.entity_models import Attributes
 from models.file_models import PropSkillUsageMode
-import gameplay_systems.task_request_utils
+import rpg_game_systems.task_request_utils
 
 
 ################################################################################################################################################
@@ -191,7 +191,7 @@ class SkillReadinessValidatorSystem(ExecuteProcessor):
         agent_tasks = self._generate_agent_tasks(internal_process_data)
         if len(agent_tasks) == 0:
             return
-        await gameplay_systems.task_request_utils.gather(
+        await rpg_game_systems.task_request_utils.gather(
             [task for task in agent_tasks.values()]
         )
 
@@ -203,7 +203,7 @@ class SkillReadinessValidatorSystem(ExecuteProcessor):
         for process_data in internal_process_data_list:
 
             if not self._is_skill_ready(process_data):
-                gameplay_systems.skill_entity_utils.destroy_skill_entity(
+                rpg_game_systems.skill_entity_utils.destroy_skill_entity(
                     process_data.skill_entity
                 )
                 continue
@@ -217,13 +217,13 @@ class SkillReadinessValidatorSystem(ExecuteProcessor):
                 skill_comp.stage,
                 skill_comp.targets,
                 skill_comp.skill_accessory_props,
-                gameplay_systems.prompt_utils.SkillResultPromptTag.SUCCESS,
+                rpg_game_systems.prompt_utils.SkillResultPromptTag.SUCCESS,
                 self._extract_inspector_content(process_data),
                 Attributes.BASE_VALUE_SCALE,
             )
 
             # 标记直接技能
-            if gameplay_systems.skill_entity_utils.validate_direct_skill(
+            if rpg_game_systems.skill_entity_utils.validate_direct_skill(
                 self._context, process_data.skill_entity, process_data.actor_entity
             ):
                 process_data.skill_entity.replace(
@@ -242,10 +242,10 @@ class SkillReadinessValidatorSystem(ExecuteProcessor):
     ######################################################################################################################################################
     def _extract_inspector_content(self, process_data: InternalProcessData) -> str:
 
-        if gameplay_systems.skill_entity_utils.validate_direct_skill(
+        if rpg_game_systems.skill_entity_utils.validate_direct_skill(
             self._context, process_data.skill_entity, process_data.actor_entity
         ):
-            return gameplay_systems.skill_entity_utils.format_direct_skill_inspector_content(
+            return rpg_game_systems.skill_entity_utils.format_direct_skill_inspector_content(
                 self._context, process_data.skill_entity
             )
 
@@ -269,12 +269,12 @@ class SkillReadinessValidatorSystem(ExecuteProcessor):
 
             skill_readiness_prompt = _generate_skill_readiness_validator_prompt(
                 process_data.agent.name,
-                gameplay_systems.skill_entity_utils.parse_skill_prop_files(
+                rpg_game_systems.skill_entity_utils.parse_skill_prop_files(
                     context=self._context,
                     skill_entity=process_data.skill_entity,
                     actor_entity=process_data.actor_entity,
                 ),
-                gameplay_systems.skill_entity_utils.retrieve_skill_accessory_prop_files(
+                rpg_game_systems.skill_entity_utils.retrieve_skill_accessory_prop_files(
                     context=self._context,
                     skill_entity=process_data.skill_entity,
                     actor_entity=process_data.actor_entity,
@@ -284,7 +284,7 @@ class SkillReadinessValidatorSystem(ExecuteProcessor):
             process_data.agent_request_handler = ret[process_data.agent.name] = (
                 AgentRequestHandler.create_with_full_context(
                     process_data.agent,
-                    gameplay_systems.prompt_utils.replace_with_you(
+                    rpg_game_systems.prompt_utils.replace_with_you(
                         skill_readiness_prompt, process_data.agent.name
                     ),
                 )

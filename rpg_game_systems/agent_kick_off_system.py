@@ -21,10 +21,10 @@ from components.actions import (
     KickOffAction,
 )
 from components.actions import UpdateAppearanceAction
-import gameplay_systems.prompt_utils
+import rpg_game_systems.prompt_utils
 from agent.agent_response_handler import AgentResponseHandler
-import gameplay_systems.stage_entity_utils
-import gameplay_systems.task_request_utils
+import rpg_game_systems.stage_entity_utils
+import rpg_game_systems.task_request_utils
 
 
 ###############################################################################################################################################
@@ -69,7 +69,7 @@ def _generate_stage_kick_off_prompt(
 ## 你的初始设定
 {kick_off_message}
 
-{gameplay_systems.prompt_utils.generate_stage_narration_prompt()}
+{rpg_game_systems.prompt_utils.generate_stage_narration_prompt()}
 
 ## 输出要求
 - 生成的内容应符合当前世界背景。
@@ -126,7 +126,7 @@ class AgentKickOffSystem(ExecuteProcessor):
             return
 
         # 执行全部的任务
-        await gameplay_systems.task_request_utils.gather(
+        await rpg_game_systems.task_request_utils.gather(
             [task for task in agent_tasks.values()]
         )
 
@@ -255,7 +255,7 @@ class AgentKickOffSystem(ExecuteProcessor):
             if entity is None or not entity.has(StageComponent):
                 continue
 
-            gameplay_systems.stage_entity_utils.apply_stage_narration(
+            rpg_game_systems.stage_entity_utils.apply_stage_narration(
                 self._context,
                 AgentResponseHandler(agent_name, agent_task.response_content),
             )

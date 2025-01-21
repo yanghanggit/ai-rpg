@@ -10,8 +10,6 @@ from components.components import (
 from game.rpg_game_context import RPGGameContext
 from game.rpg_game import RPGGame
 
-# from loguru import logger
-
 
 @final
 class AgentPingValidatorSystem(ExecuteProcessor):

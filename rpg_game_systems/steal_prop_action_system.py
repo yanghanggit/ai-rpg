@@ -8,9 +8,9 @@ from components.actions import (
 from components.components import (
     ActorComponent,
 )
-import gameplay_systems.action_component_utils
+import rpg_game_systems.action_component_utils
 from typing import final, override
-import gameplay_systems.file_system_utils
+import rpg_game_systems.file_system_utils
 from extended_systems.prop_file import PropFile
 import format_string.target_message
 from game.rpg_game import RPGGame
@@ -55,10 +55,10 @@ class StealPropActionSystem(ReactiveProcessor):
 
         for target_entity_name, prop_file_name in target_and_message:
 
-            error = gameplay_systems.action_component_utils.validate_conversation(
+            error = rpg_game_systems.action_component_utils.validate_conversation(
                 self._context, source_entity, target_entity_name
             )
-            if error != gameplay_systems.action_component_utils.ConversationError.VALID:
+            if error != rpg_game_systems.action_component_utils.ConversationError.VALID:
                 # 目标不存在
                 self._notify_target_inaccessible_event(
                     source_entity, target_entity_name
@@ -163,7 +163,7 @@ class StealPropActionSystem(ReactiveProcessor):
         self, source_entity: Entity, target_entity: Entity, target_prop_file: PropFile
     ) -> None:
 
-        gameplay_systems.file_system_utils.transfer_file(
+        rpg_game_systems.file_system_utils.transfer_file(
             self._context.file_system,
             self._context.safe_get_entity_name(target_entity),
             self._context.safe_get_entity_name(source_entity),

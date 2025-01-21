@@ -16,14 +16,14 @@ from agent.agent_response_handler import AgentResponseHandler
 from game.rpg_game_context import RPGGameContext
 from loguru import logger
 from typing import Dict, List, final
-import gameplay_systems.action_component_utils
-import gameplay_systems.prompt_utils
+import rpg_game_systems.action_component_utils
+import rpg_game_systems.prompt_utils
 from agent.agent_request_handler import (
     AgentRequestHandler,
 )
 from game.rpg_game import RPGGame
-import gameplay_systems.stage_entity_utils
-import gameplay_systems.task_request_utils
+import rpg_game_systems.stage_entity_utils
+import rpg_game_systems.task_request_utils
 
 
 ###############################################################################################################################################
@@ -43,13 +43,13 @@ def _generate_stage_plan_prompt(
         actor_appearance_mapping_prompt.append("无任何角色。")
 
     # 最终生成
-    return f"""# 请制定你的计划({gameplay_systems.prompt_utils.GeneralPromptTag.STAGE_PLAN_PROMPT_TAG})
+    return f"""# 请制定你的计划({rpg_game_systems.prompt_utils.GeneralPromptTag.STAGE_PLAN_PROMPT_TAG})
 规则见 游戏流程 - 制定计划
 
 ## 场景内的角色
 {"\n".join(actor_appearance_mapping_prompt)}
 
-{gameplay_systems.prompt_utils.generate_stage_narration_prompt()}
+{rpg_game_systems.prompt_utils.generate_stage_narration_prompt()}
 
 ## 输出要求
 - 请遵循 输出格式指南。
@@ -89,7 +89,7 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
         if len(tasks) == 0:
             return
 
-        await gameplay_systems.task_request_utils.gather(
+        await rpg_game_systems.task_request_utils.gather(
             [task for task in tasks.values()]
         )
 
@@ -117,7 +117,7 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
                 stage_name, agent_request.response_content
             )
 
-            is_action_added = gameplay_systems.action_component_utils.add_stage_actions(
+            is_action_added = rpg_game_systems.action_component_utils.add_stage_actions(
                 self._context,
                 stage_entity,
                 response_handler,
@@ -130,7 +130,7 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
                 )
                 continue
 
-            gameplay_systems.stage_entity_utils.apply_stage_narration(
+            rpg_game_systems.stage_entity_utils.apply_stage_narration(
                 self._context, response_handler
             )
 
@@ -184,7 +184,7 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
                 )
 
                 narrate = (
-                    gameplay_systems.stage_entity_utils.extract_current_stage_narrative(
+                    rpg_game_systems.stage_entity_utils.extract_current_stage_narrative(
                         self._context, stage_entity
                     )
                 )

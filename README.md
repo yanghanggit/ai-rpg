@@ -35,3 +35,6 @@ pip install langchain langchain_core langserve langgraph fastapi langchain_opena
 ## 升级langchain
 - pip install --upgrade langchain langchain_core langserve langchain_openai langchain-community 
 - pip show langchain langchain_core langserve langchain_openai langchain-community
+
+## 自动化测试 (安装)
+- conda install pytest

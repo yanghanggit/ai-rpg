@@ -1,6 +1,6 @@
 from langserve import RemoteRunnable
 from typing import Final, List, Union, Optional, final, Any
-from langchain_core.messages import HumanMessage, AIMessage
+from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from agent.remote_runnable_handler import RemoteRunnableHandler
 
 
@@ -14,7 +14,7 @@ class LangServeAgent:
     def __init__(self, name: str, remote_connector: RemoteRunnableHandler) -> None:
         self._name: Final[str] = name
         self._remote_connector: Final[RemoteRunnableHandler] = remote_connector
-        self._chat_history: List[Union[HumanMessage, AIMessage]] = []
+        self._chat_history: List[Union[SystemMessage, HumanMessage, AIMessage]] = []
 
     @property
     def name(self) -> str:

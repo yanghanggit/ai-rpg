@@ -1,6 +1,6 @@
 from loguru import logger
 from typing import Dict, List, Optional, Set, cast, final
-from langchain_core.messages import HumanMessage, AIMessage
+from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from pathlib import Path
 from agent.lang_serve_agent import LangServeAgent
 from agent.remote_runnable_handler import RemoteRunnableHandler
@@ -66,9 +66,16 @@ class AgentSystem:
             agent._chat_history.extend([AIMessage(content=chat)])
 
     ################################################################################################################################################################################
+    def append_system_message(self, agent_name: str, chat: str) -> None:
+        agent = self.get_agent(agent_name)
+        assert agent is not None, f"add_chat_history: {agent_name} is not registered."
+        if agent is not None:
+            agent._chat_history.extend([SystemMessage(content=f"{chat}")])
+
+    ################################################################################################################################################################################
     def discard_last_human_ai_conversation(
         self, agent_name: str
-    ) -> List[HumanMessage | AIMessage]:
+    ) -> List[SystemMessage | HumanMessage | AIMessage]:
 
         agent = self.get_agent(agent_name)
         if agent is None:
@@ -83,7 +90,7 @@ class AgentSystem:
             return []
 
         ## 是AI的回答，需要删除AI的回答和人的问题
-        ret: List[HumanMessage | AIMessage] = []
+        ret: List[SystemMessage | HumanMessage | AIMessage] = []
 
         ai_message = chat_history.pop()
         ret.insert(0, ai_message)
@@ -171,13 +178,13 @@ class AgentSystem:
     ################################################################################################################################################################################
     def extract_messages_by_keywords(
         self, name: str, filtered_words: Set[str]
-    ) -> List[HumanMessage | AIMessage]:
+    ) -> List[SystemMessage | HumanMessage | AIMessage]:
 
         agent = self.get_agent(name)
         if agent is None:
             return []
 
-        ret: List[HumanMessage | AIMessage] = []
+        ret: List[SystemMessage | HumanMessage | AIMessage] = []
         for message in agent._chat_history:
             for content in filtered_words:
                 if content in cast(str, message.content):

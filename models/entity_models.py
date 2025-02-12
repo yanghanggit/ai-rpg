@@ -47,6 +47,7 @@ class ActorModel(BaseModel):
     name: str
     codename: str
     url: str
+    system_prompt: str
     kick_off_message: str
     actor_archives: List[str]
     stage_archives: List[str]
@@ -57,8 +58,8 @@ class ActorModel(BaseModel):
 class StageModel(BaseModel):
     name: str
     codename: str
-    stage_profile: str
     url: str
+    system_prompt: str
     kick_off_message: str
     stage_graph: List[str]
     attributes: List[int]
@@ -78,6 +79,7 @@ class WorldSystemModel(BaseModel):
     name: str
     codename: str
     url: str
+    system_prompt: str
 
 
 class SpawnerModel(BaseModel):

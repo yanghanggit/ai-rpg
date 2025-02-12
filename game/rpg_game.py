@@ -20,6 +20,7 @@ from components.components import (
     StageSpawnerComponent,
     StageEnvironmentComponent,
     StageStaticFlagComponent,
+    AgentSystemPromptComponent,
 )
 from game.rpg_game_context import RPGGameContext
 from game.rpg_game_resource import RPGGameResource
@@ -201,6 +202,11 @@ class RPGGame(BaseGame):
             GUIDComponent, world_system_model.name, world_system_instance.guid
         )
         world_system_entity.add(WorldSystemComponent, world_system_model.name)
+        world_system_entity.add(
+            AgentSystemPromptComponent,
+            world_system_model.name,
+            world_system_model.system_prompt,
+        )  # 系统提示词
         world_system_entity.add(KickOffContentComponent, world_system_model.name, "")
         world_system_entity.add(RoundEventsRecordComponent, world_system_model.name, [])
 
@@ -327,6 +333,11 @@ class RPGGame(BaseGame):
             FinalAppearanceComponent,
             actor_instance.name,
             "",
+        )
+
+        # 系统提示词
+        actor_entity.add(
+            AgentSystemPromptComponent, actor_instance.name, actor_model.system_prompt
         )
 
         actor_entity.add(
@@ -459,6 +470,11 @@ class RPGGame(BaseGame):
             stage_model.attributes[Attributes.DAMAGE],
             stage_model.attributes[Attributes.DEFENSE],
             stage_model.attributes[Attributes.HEAL],
+        )
+
+        # 系统提示词
+        stage_entity.add(
+            AgentSystemPromptComponent, stage_model.name, stage_model.system_prompt
         )
 
         # 记录用

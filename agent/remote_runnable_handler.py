@@ -42,6 +42,8 @@ class RemoteRunnableHandler:
             remote_runnable: RemoteRunnable[Any, Any] = RemoteRunnable(url)
             response = await remote_runnable.ainvoke(
                 {
+                    "agent_name": "",
+                    "user_name": "",
                     "input": ping_message,
                     "chat_history": [],
                 }

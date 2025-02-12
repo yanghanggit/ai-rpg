@@ -14,7 +14,6 @@ class SystemPromptReplaceSymbol(StrEnum):
 # 文件内容替换的标记
 @unique
 class AgentAppReplaceSymbol(StrEnum):
-    SYSTEM_PROMPT_CONTENT = "<%SYSTEM_PROMPT_CONTENT>"
     RAG_CONTENT = "<%RAG_CONTENT>"
     PORT = "<%PORT>"
     API = "<%API>"

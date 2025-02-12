@@ -95,6 +95,12 @@ class ExcelEditorStage:
 
     ################################################################################################################################
     @property
+    def system_prompt(self) -> str:
+        assert self.excel_data is not None
+        return self.excel_data._gen_system_prompt
+
+    ################################################################################################################################
+    @property
     def stage_graph(self) -> List[str]:
         assert self._data is not None
         if self._data[EditorProperty.STAGE_GRAPH] is None:
@@ -154,8 +160,8 @@ class ExcelEditorStage:
         return StageModel(
             name=self.excel_data.name,
             codename=self.excel_data.codename,
-            stage_profile=self.excel_data.stage_profile,
             url=self.excel_data.localhost_api_url,
+            system_prompt=self.system_prompt,
             kick_off_message=self.kick_off_message,
             stage_graph=self.stage_graph,
             attributes=self.attributes,

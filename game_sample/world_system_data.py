@@ -105,10 +105,6 @@ class ExcelDataWorldSystem:
     ############################################################################################################
     def gen_agentpy(self, agent_py_template: str) -> str:
         gen_py = str(agent_py_template)
-        gen_py = gen_py.replace(
-            game_sample.configuration.AgentAppReplaceSymbol.SYSTEM_PROMPT_CONTENT,
-            self._gen_system_prompt,
-        )
 
         gen_py = gen_py.replace(
             game_sample.configuration.AgentAppReplaceSymbol.RAG_CONTENT,

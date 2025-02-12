@@ -53,12 +53,19 @@ class ExcelEditorWorldSystem:
         return self.excel_data.codename
 
     ######################################################################################################################
+    @property
+    def system_prompt(self) -> str:
+        assert self.excel_data is not None
+        return self.excel_data._gen_system_prompt
+
+    ######################################################################################################################
     def gen_model(self) -> WorldSystemModel:
 
         return WorldSystemModel(
             name=self.excel_data.name,
             codename=self.excel_data.codename,
             url=self.excel_data.localhost_api_url,
+            system_prompt=self.system_prompt,
         )
 
     ######################################################################################################################

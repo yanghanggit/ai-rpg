@@ -104,7 +104,15 @@ class ExcelEditorActor:
     @property
     def kick_off_message(self) -> str:
         assert self._data is not None
+        if self._data[EditorProperty.KICK_OFF_MESSAGE] is None:
+            return "无"
         return cast(str, self._data[EditorProperty.KICK_OFF_MESSAGE])
+
+    #################################################################################################################################
+    @property
+    def system_prompt(self) -> str:
+        assert self.excel_data is not None
+        return self.excel_data._gen_system_prompt
 
     #################################################################################################################################
     @property
@@ -162,6 +170,7 @@ class ExcelEditorActor:
             name=self.data_base_name,
             codename=self.codename,
             url=self.excel_data.localhost_api_url,
+            system_prompt=self.system_prompt,
             kick_off_message=self.kick_off_message,
             actor_archives=self.excel_data._actor_archives,
             stage_archives=self.excel_data._stage_archives,

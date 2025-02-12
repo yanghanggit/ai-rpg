@@ -8,6 +8,7 @@ from components.components import (
     KickOffContentComponent,
     KickOffFlagComponent,
     AgentPingFlagComponent,
+    AgentSystemPromptComponent,
 )
 from game.rpg_game_context import RPGGameContext
 from typing import Dict, Set, final
@@ -25,6 +26,7 @@ import rpg_game_systems.prompt_utils
 from agent.agent_response_handler import AgentResponseHandler
 import rpg_game_systems.stage_entity_utils
 import rpg_game_systems.task_request_utils
+from loguru import logger
 
 
 ###############################################################################################################################################
@@ -105,6 +107,28 @@ class AgentKickOffSystem(ExecuteProcessor):
         return ret
 
     ######################################################################################################################################################
+    def _initialize_profile_system_message(self) -> None:
+        entities: Set[Entity] = self._context.get_group(
+            Matcher(
+                all_of=[
+                    AgentSystemPromptComponent,
+                ],
+                any_of=[ActorComponent, StageComponent, WorldSystemComponent],
+                none_of=[KickOffFlagComponent],
+            )
+        ).entities
+
+        for entity in entities:
+            agent = self._context.safe_get_agent(entity)
+            if agent.name == "":
+                continue
+            logger.debug(f"agent.name: {agent.name}")
+            agent_profile_comp = entity.get(AgentSystemPromptComponent)
+            self._context.agent_system.append_system_message(
+                agent.name, agent_profile_comp.content
+            )
+
+    ######################################################################################################################################################
     @override
     def execute(self) -> None:
         pass
@@ -112,6 +136,9 @@ class AgentKickOffSystem(ExecuteProcessor):
     ######################################################################################################################################################
     @override
     async def a_execute1(self) -> None:
+
+        # 初始化profile系统的消息
+        self._initialize_profile_system_message()
 
         # 处理kick off任务
         await self._process_kick_off_tasks()
@@ -153,10 +180,6 @@ class AgentKickOffSystem(ExecuteProcessor):
         ).entities
         for world_entity in world_entities:
             agent = self._context.safe_get_agent(world_entity)
-            assert (
-                len(agent._chat_history) == 0
-            ), f"chat_history is not empty, {agent._chat_history}"
-
             ret[agent.name] = AgentRequestHandler.create_with_full_context(
                 agent,
                 _generate_world_system_kick_off_prompt(epoch_script=""),
@@ -181,10 +204,6 @@ class AgentKickOffSystem(ExecuteProcessor):
         ).entities
         for stage_entity in stage_entities:
             agent = self._context.safe_get_agent(stage_entity)
-            assert (
-                len(agent._chat_history) == 0
-            ), f"chat_history is not empty, {agent._chat_history}"
-
             kick_off_comp = stage_entity.get(KickOffContentComponent)
             kick_off_prompt = _generate_stage_kick_off_prompt(
                 kick_off_message=kick_off_comp.content,
@@ -216,10 +235,6 @@ class AgentKickOffSystem(ExecuteProcessor):
         ).entities
         for actor_entity in actor_entities:
             agent = self._context.safe_get_agent(actor_entity)
-            assert (
-                len(agent._chat_history) == 0
-            ), f"chat_history is not empty, {agent._chat_history}"
-
             kick_off_comp = actor_entity.get(KickOffContentComponent)
             ret[agent.name] = AgentRequestHandler.create_with_full_context(
                 agent,

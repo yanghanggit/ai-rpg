@@ -23,6 +23,8 @@ def main() -> None:
                 break
 
             request_data = {
+                "agent_name": "test_agent",
+                "user_name": "test_user",
                 "input": user_input,
                 "chat_history": [],
             }

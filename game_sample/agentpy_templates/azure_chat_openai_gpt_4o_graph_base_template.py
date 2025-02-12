@@ -22,7 +22,6 @@ TEMPERATURE: Final[float] = float("""<%TEMPERATURE>""")
 ############################################################################################################
 API: Final[str] = """<%API>"""
 ############################################################################################################
-SYSTEM_PROMPT: Final[str] = f"""<%SYSTEM_PROMPT_CONTENT>"""
 
 
 ############################################################################################################
@@ -32,8 +31,12 @@ class State(TypedDict):
 
 ############################################################################################################
 class RequestModel(BaseModel):
+    agent_name: str = ""
+    user_name: str = ""
     input: str = ""
-    chat_history: List[Union[HumanMessage, AIMessage, FunctionMessage]] = []
+    chat_history: List[
+        Union[SystemMessage, HumanMessage, AIMessage, FunctionMessage]
+    ] = []
 
     class Config:
         arbitrary_types_allowed = True
@@ -41,6 +44,8 @@ class RequestModel(BaseModel):
 
 ############################################################################################################
 class ResponseModel(BaseModel):
+    agent_name: str = ""
+    user_name: str = ""
     output: str = ""
 
     class Config:
@@ -76,7 +81,6 @@ def _create_compiled_stage_graph(
 ############################################################################################################
 def _stream_graph_updates(
     state_compiled_graph: CompiledStateGraph,
-    system_state: State,
     chat_history_state: State,
     user_input_state: State,
 ) -> List[BaseMessage]:
@@ -84,9 +88,7 @@ def _stream_graph_updates(
     ret: List[BaseMessage] = []
 
     merged_message_context = {
-        "messages": system_state["messages"]
-        + chat_history_state["messages"]
-        + user_input_state["messages"]
+        "messages": chat_history_state["messages"] + user_input_state["messages"]
     }
 
     for event in state_compiled_graph.stream(merged_message_context):
@@ -107,9 +109,6 @@ class ChatExecutor(Runnable[Dict[str, Any], Dict[str, Any]]):
 
     def _process_chat_request(self, request: RequestModel) -> ResponseModel:
 
-        # 系统提示词
-        system_state: State = {"messages": [SystemMessage(content=SYSTEM_PROMPT)]}
-
         # 聊天历史
         chat_history_state: State = {
             "messages": [message for message in request.chat_history]
@@ -121,15 +120,20 @@ class ChatExecutor(Runnable[Dict[str, Any], Dict[str, Any]]):
         # 获取回复
         update_messages = _stream_graph_updates(
             state_compiled_graph=self._compiled_state_graph,
-            system_state=system_state,
             chat_history_state=chat_history_state,
             user_input_state=user_input_state,
         )
 
         # 返回
         if len(update_messages) > 0:
-            return ResponseModel(output=cast(str, update_messages[-1].content))
-        return ResponseModel(output="")
+            return ResponseModel(
+                agent_name=request.agent_name,
+                user_name=request.user_name,
+                output=cast(str, update_messages[-1].content),
+            )
+        return ResponseModel(
+            agent_name=request.agent_name, user_name=request.user_name, output=""
+        )
 
     @override
     def invoke(
@@ -165,9 +169,6 @@ def main() -> None:
 ############################################################################################################
 def test() -> None:
 
-    # 系统提示词
-    system_state: State = {"messages": [SystemMessage(content=SYSTEM_PROMPT)]}
-
     # 聊天历史
     chat_history_state: State = {"messages": []}
 
@@ -189,7 +190,6 @@ def test() -> None:
             # 获取回复
             update_messages = _stream_graph_updates(
                 state_compiled_graph=compiled_stage_graph,
-                system_state=system_state,
                 chat_history_state=chat_history_state,
                 user_input_state=user_input_state,
             )

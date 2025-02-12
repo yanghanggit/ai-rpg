@@ -1,6 +1,6 @@
 from loguru import logger
 from typing import List, Union, cast, Any, Optional, override
-from langchain_core.messages import HumanMessage, AIMessage
+from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from agent.task_request_handler import TaskRequestHandler
 from agent.lang_serve_agent import LangServeAgent
 from enum import Flag, auto
@@ -83,7 +83,9 @@ class AgentRequestHandler(TaskRequestHandler):
 
     ################################################################################################################################################################################
     @property
-    def chat_history_as_context(self) -> List[Union[HumanMessage, AIMessage]]:
+    def chat_history_as_context(
+        self,
+    ) -> List[Union[SystemMessage, HumanMessage, AIMessage]]:
 
         if ChatHistoryOperationOptions.INPUT_CHAT_HISTORY in self._chat_history_options:
             return self._agent._chat_history
@@ -106,6 +108,8 @@ class AgentRequestHandler(TaskRequestHandler):
 
             self._response = self._agent.remote_runnable.invoke(
                 {
+                    "agent_name": self.agent_name,
+                    "user_name": "",
                     "input": self._prompt,
                     "chat_history": self.chat_history_as_context,
                 }
@@ -139,6 +143,8 @@ class AgentRequestHandler(TaskRequestHandler):
 
             self._response = await self._agent.remote_runnable.ainvoke(
                 {
+                    "agent_name": self.agent_name,
+                    "user_name": "",
                     "input": self._prompt,
                     "chat_history": self.chat_history_as_context,
                 }

@@ -50,7 +50,7 @@ ACTOR_SYSTEM_PROMPT_TEMPLATE = f"""# {game_sample.configuration.SystemPromptRepl
 ## 输出要求
 ### 输出格式指南
 请严格遵循以下 JSON 结构示例： 
-{game_sample.builtin_prompt.JSON_SAMPLE_BEGINE}
+{{
     "{TagAction.__name__}":["你的特征标签",...], 
     "{SpeakAction.__name__}":["@角色全名(你要对谁说,只能是场景内的角色):你要说的内容（场景内其他角色会听见）",...], 
     "{WhisperAction.__name__}":["@角色全名(你要对谁说,只能是场景内的角色):你想私下说的内容（只有你和目标知道）",...], 
@@ -62,7 +62,7 @@ ACTOR_SYSTEM_PROMPT_TEMPLATE = f"""# {game_sample.configuration.SystemPromptRepl
     "{InspectAction.__name__}":[角色全名(只能是场景内的角色，你计划探查其拥有的道具与健康状态)",...],
     "{StealPropAction.__name__}":["@道具拥有者的角色全名(只能是场景内的角色)/目标道具的全名"],
     "{TransferPropAction.__name__}":["@道具接收角色全名(只能是场景内的角色)/交付的道具全名=数量"],
-{game_sample.builtin_prompt.JSON_SAMPLE_END}
+}}
 
 ### 注意事项
 {game_sample.builtin_prompt.ADDITIONAL_JSON_OUTPUT_FORMAT_REQUIREMENTS_FOR_ACTOR}"""
@@ -90,12 +90,12 @@ STAGE_SYSTEM_PROMPT_TEMPLATE = f"""# {game_sample.configuration.SystemPromptRepl
 ## 输出要求
 ### 输出格式指南
 请严格遵循以下 JSON 结构示例： 
-{game_sample.builtin_prompt.JSON_SAMPLE_BEGINE}
+{{
     "{AnnounceAction.__name__}":["你要说的内容（无特定目标，场景内所有角色都会听见）",...], 
     "{WhisperAction.__name__}":["@角色全名(你要对谁说,只能是场景内的角色):你想私下说的内容（只有你和目标知道）",...], 
     "{TagAction.__name__}":["你的特征标签",...], 
     "{StageNarrationAction.__name__}":["场景描述",...],
-{game_sample.builtin_prompt.JSON_SAMPLE_END}
+}}
 
 ### 注意事项
 {game_sample.builtin_prompt.ADDITIONAL_JSON_OUTPUT_FORMAT_REQUIREMENTS_FOR_STAGE}"""

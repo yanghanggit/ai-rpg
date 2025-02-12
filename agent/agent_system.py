@@ -100,7 +100,7 @@ class AgentSystem:
             if isinstance(chat_history[i], HumanMessage):
                 human_message = chat_history.pop(i)
                 ret.insert(0, human_message)
-            elif isinstance(chat_history[i], AIMessage):
+            else:
                 break
 
         return ret
@@ -160,6 +160,13 @@ class AgentSystem:
                         content=cast(str, message.content),
                     )
                 )
+            elif isinstance(message, SystemMessage):
+                ret.chat_history.append(
+                    AgentMessageModel(
+                        message_type=AgentMessageType.STSTEM,
+                        content=cast(str, message.content),
+                    )
+                )
 
         return ret
 
@@ -171,39 +178,43 @@ class AgentSystem:
             return
 
         for key_word, replace_content in message_replacements.items():
-            extracted_messages = self.extract_messages_by_keywords(name, {key_word})
+            extracted_messages = self._extract_human_or_ai_messages_by_keywords(
+                name, {key_word}
+            )
             for message in extracted_messages:
                 message.content = replace_content
 
     ################################################################################################################################################################################
-    def extract_messages_by_keywords(
+    def _extract_human_or_ai_messages_by_keywords(
         self, name: str, filtered_words: Set[str]
-    ) -> List[SystemMessage | HumanMessage | AIMessage]:
+    ) -> List[HumanMessage | AIMessage]:
 
         agent = self.get_agent(name)
         if agent is None:
             return []
 
-        ret: List[SystemMessage | HumanMessage | AIMessage] = []
+        ret: List[HumanMessage | AIMessage] = []
         for message in agent._chat_history:
+            if isinstance(message, SystemMessage):
+                continue
             for content in filtered_words:
                 if content in cast(str, message.content):
                     ret.append(message)
         return ret
 
     ################################################################################################################################################################################
-    def remove_excluded_messages(
-        self, name: str, excluded_messages: List[HumanMessage | AIMessage]
-    ) -> None:
+    # def remove_excluded_messages(
+    #     self, name: str, excluded_messages: List[HumanMessage | AIMessage]
+    # ) -> None:
 
-        agent = self.get_agent(name)
-        if agent is None:
-            return
+    #     agent = self.get_agent(name)
+    #     if agent is None:
+    #         return
 
-        shallow_copy = agent._chat_history.copy()
-        for message in excluded_messages:
-            if message in shallow_copy:
-                shallow_copy.remove(message)
+    #     shallow_copy = agent._chat_history.copy()
+    #     for message in excluded_messages:
+    #         if message in shallow_copy:
+    #             shallow_copy.remove(message)
 
     ################################################################################################################################################################################
     def initialize_chat_history(
@@ -220,5 +231,7 @@ class AgentSystem:
                 agent._chat_history.extend([HumanMessage(content=message.content)])
             elif message.message_type == AgentMessageType.AI:
                 agent._chat_history.extend([AIMessage(content=message.content)])
+            elif message.message_type == AgentMessageType.STSTEM:
+                agent._chat_history.extend([SystemMessage(content=message.content)])
 
     ################################################################################################################################################################################

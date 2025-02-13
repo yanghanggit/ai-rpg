@@ -87,18 +87,20 @@ class AgentResponseHandler:
             return False
 
         for str_key, list_value in json_data.items():
+
+            # 判断key是否是字符串
             if not isinstance(str_key, str):
                 return False
 
+            # 如果value不是list，转换成list
             if not isinstance(list_value, list):
-                return False
+                json_data[str_key] = [list_value]
+                list_value = json_data[str_key]
 
             for i in range(len(list_value)):
-                if isinstance(list_value[i], int):
-                    list_value[i] = str(list_value[i])
-
+                # 如果value不是字符串，转换成字符串
                 if not isinstance(list_value[i], str):
-                    return False
+                    list_value[i] = str(list_value[i])
 
         return True
 

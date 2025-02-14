@@ -48,7 +48,7 @@ pip install langchain langchain_core langserve langgraph fastapi langchain_opena
 wsl --install
 
 # 3.安装系统，运行：
-wsl --install -d Ubuntu-22.04
+wsl --install -d Ubuntu-24.04
 
 # 4.安装过程中配置用户名和密码
 ```
@@ -83,8 +83,9 @@ pm2 --version
 sudo apt install git
 git --version
 ```
-### 安装zsh
+### 安装zsh(optional)
 ```shell
+# 用于配置每次开shell前导入的环境变量等，嫌麻烦可以直接写进.bashrc
 # 安装
 sudo apt-get install zsh
 
@@ -92,10 +93,59 @@ sudo apt-get install zsh
 zsh
 
 # 程序首次运行前，需要在运行程序的shell中(即VScode的终端中)运行一次
-source .zshrc
+source ~/.zshrc
+```
+### 配置代理(optional)
+
+以v2rayN为例
+
+如果要在wsl中使用代理需要从windows宿主机的局域网端口连接
+1. 在代理软件中允许来自局域网的连接
+2. windows防火墙中给代理软件白名单
+3. 添加代理，写进.zshrc或.bashrc都行
+```shell
+# 添加http/https代理, apt代理, git代理
+export hostip=$(ip route | grep default | awk '{print $3}')
+export hostport=10809
+alias proxy='
+    export https_proxy="http://${hostip}:${hostport}";
+    export http_proxy="http://${hostip}:${hostport}";
+    export all_proxy="http://${hostip}:${hostport}";
+    git config --global http.proxy "http://${hostip}:${hostport}"
+    git config --global https.proxy "http://${hostip}:${hostport}"
+    echo -e "Acquire::http::Proxy \"http://${hostip}:${hostport}\";" | sudo tee -a /etc/apt/apt.conf.d/proxy.conf > /dev/null;
+    echo -e "Acquire::https::Proxy \"http://${hostip}:${hostport}\";" | sudo tee -a /etc/apt/apt.conf.d/proxy.conf > /dev/null;
+'
+alias unproxy='
+    unset https_proxy;
+    unset http_proxy;
+    unset all_proxy;
+    git config --global --unset http.proxy
+    git config --global --unset https.proxy
+    sudo sed -i -e '/Acquire::http::Proxy/d' /etc/apt/apt.conf.d/proxy.conf;
+    sudo sed -i -e '/Acquire::https::Proxy/d' /etc/apt/apt.conf.d/proxy.conf;
+'
+```
+4. 运行
+```bash
+proxy
 ```
 ## 配置VScode
 具体可以参考[官方文档](https://code.visualstudio.com/docs/remote/wsl)
 1. 安装WSL插件
 2. 把项目clone到虚拟环境中，open folder选择项目文件夹，随后点击弹窗中的```open in wsl```
 3. 打开Extensions，在WSL环境中安装需要的插件，如Copilot，Python，Python Debugger，Pylance...
+### 配置VScode代理
+
+需要用copilot的情况，vscode不走wsl的代理，需要单独设置。
+
+1. 打开File->Preferences->Settings，搜索proxy
+2. 配置如下，ip地址换成自己的，可以直接echo $https_proxy
+```
+{
+    "http.proxySupport": "on",
+    "http.proxy": "http://172.28.0.1:10809",
+    "http.proxyAuthorization": null,
+    "http.proxyStrictSSL": false
+}
+```

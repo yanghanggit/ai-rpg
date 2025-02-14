@@ -39,6 +39,8 @@ class RemoteRunnableHandler:
     ) -> Optional[RemoteRunnable[Any, Any]]:
 
         try:
+
+            # server_url = "http://localhost:8100/v1/llm_serve/chat/"
             remote_runnable: RemoteRunnable[Any, Any] = RemoteRunnable(url)
             response = await remote_runnable.ainvoke(
                 {

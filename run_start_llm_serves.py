@@ -19,7 +19,7 @@ GEN_CONFIGS_DIR.mkdir(parents=True, exist_ok=True)
 assert GEN_CONFIGS_DIR.exists(), f"找不到目录: {GEN_CONFIGS_DIR}"
 
 ##################################################################################################################
-START_LLM_SERVES_DIR: Path = GEN_CONFIGS_DIR / "start_llm_serves"
+START_LLM_SERVES_DIR: Path = GEN_CONFIGS_DIR / "start_llm_serves.json"
 
 
 ##################################################################################################################
@@ -37,6 +37,27 @@ def _gen_config() -> None:
 
     # 生成配置文件, 写死先
     start_configurations = _gen_start_config_list(START_LLM_SERVES_DIR.name)
+
+    # 打印配置文件
+    for config in start_configurations.config_list:
+
+        logger.debug(f"port: {config.port}")
+        assert config.port > 0, "port is 0"
+
+        logger.debug(f"temperature: {config.temperature}")
+        assert config.temperature > 0, "temperature is 0"
+
+        logger.debug(f"api: {config.api}")
+        assert config.api != "", "api is empty"
+
+        logger.debug(f"fast_api_title: {config.fast_api_title}")
+        assert config.fast_api_title != "", "fast_api_title is empty"
+
+        logger.debug(f"fast_api_version: {config.fast_api_version}")
+        assert config.fast_api_version != "", "fast_api_version is empty"
+
+        logger.debug(f"fast_api_description: {config.fast_api_description}")
+        assert config.fast_api_description != "", "fast_api_description is empty"
 
     # 保存配置文件
     try:
@@ -81,7 +102,7 @@ def main() -> None:
     _gen_config()
 
     # 启动服务
-    _start_llm_serves("gen_configs/start_llm_serves")  # 写死？
+    _start_llm_serves("gen_configs/start_llm_serves.json")  # 写死？
 
 
 ##################################################################################################################

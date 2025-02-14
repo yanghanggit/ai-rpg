@@ -17,8 +17,7 @@ pip install langchain langchain_core langserve langgraph fastapi langchain_opena
 
 ## 严格模式检查
 - mypy --strict run_terminal_rpg_game.py run_rpg_game_server.py run_python_rpg_client.py batch_agent_app_launcher.py game_sample/gen_game.py game_sample/base_form_prompt_editor.py game_sample/actor_profile_prompt_editor.py game_sample/actor_conversational_style_prompt_editor.py game_sample/agentpy_templates/azure_chat_openai_gpt_4o_graph_base_template.py
-- mypy --strict run_test_lang_serve.py
-
+- mypy --strict run_start_llm_serves.py run_test_llm_serve.py
 
 ## 说明
 - game_sample/gen_game.py 是生成游戏世界的配置

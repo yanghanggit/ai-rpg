@@ -12,3 +12,4 @@ game_sample/gen_stage_system_prompt
 game_sample/gen_actor_system_prompt
 game_sample/gen_world_system_prompt
 game_sample/gen_system_prompt_templates
+gen_configs/

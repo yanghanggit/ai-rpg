@@ -5,13 +5,8 @@ from typing import cast, Any
 ################################################################################################
 def main() -> None:
 
-    # http://localhost:8701/world_system/world_appearance_system/
-    # http://localhost:8702/world_system/world_skill_system/
-    # http://localhost:8405/actor/chen_luo/
-    # http://localhost:8406/actor/deng_mao/
-    # http://localhost:8106/stage/xuzhou_langyaguo_pianyuanshancun_cunkou/
-
-    server_url = "http://localhost:8405/actor/chen_luo/"
+    # 测试这个地址 lang_serve的
+    server_url = "http://localhost:8100/v1/llm_serve/chat/"
     remote: RemoteRunnable[Any, Any] = RemoteRunnable(url=server_url)
 
     while True:

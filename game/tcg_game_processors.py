@@ -20,6 +20,14 @@ class TCGGameProcessors(Processors):
         assert isinstance(tcg_game, TCGGame)
         processors = TCGGameProcessors()
 
+        ## 添加一些系统。。。
+        from tcg_game_systems.begin_system import BeginSystem
+        from tcg_game_systems.end_system import EndSystem
+
+        processors.add(BeginSystem(context))
+
+        processors.add(EndSystem(context))
+
         return processors
 
     ###################################################################################################################################################################

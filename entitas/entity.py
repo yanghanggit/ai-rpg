@@ -68,7 +68,6 @@ class Entity(object):
             )
 
         new_comp = comp_type._make(args)
-        new_comp.__init__(args)  ##yh add
         self._components[comp_type] = new_comp
         self.on_component_added(self, new_comp)
 
@@ -117,7 +116,6 @@ class Entity(object):
             self.on_component_removed(self, previous_comp)
         else:
             new_comp = comp_type._make(args)
-            new_comp.__init__(args)  ##yh add
             self._components[comp_type] = new_comp
             self.on_component_replaced(self, previous_comp, new_comp)
 
@@ -171,3 +169,23 @@ class Entity(object):
             self._creation_index,
             ", ".join([str(self._components[x]) for x in self._components]),
         )
+
+    # yh add
+    def insert(self, comp_type: Type[Any], comp_obj: Any) -> None:
+
+        if not self._is_enabled:
+            raise EntityNotEnabled(
+                "Cannot add component {!r}: {} is not enabled.".format(
+                    comp_type.__name__, self
+                )
+            )
+
+        if self.has(comp_type):
+            raise AlreadyAddedComponent(
+                "Cannot add another component {!r} to {}.".format(
+                    comp_type.__name__, self
+                )
+            )
+
+        self._components[comp_type] = comp_obj
+        self.on_component_added(self, comp_obj)

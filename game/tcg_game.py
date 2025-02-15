@@ -5,17 +5,21 @@ from game.tcg_game_context import TCGGameContext
 from game.base_game import BaseGame
 from game.tcg_game_processors import TCGGameProcessors
 from models.event_models import BaseEvent
+from models.entity_models import WorldRuntime, WorldRoot
 
 
 class TCGGame(BaseGame):
 
-    def __init__(self, name: str, context: TCGGameContext) -> None:
+    def __init__(
+        self, name: str, world_runtime: WorldRuntime, context: TCGGameContext
+    ) -> None:
 
         # 必须实现父
         super().__init__(name)
 
         self._context: TCGGameContext = context
         self._context._game = self
+        self._world_runtime: WorldRuntime = world_runtime
         self._processors: TCGGameProcessors = TCGGameProcessors.create(self, context)
 
     ###############################################################################################################################################

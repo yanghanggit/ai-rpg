@@ -4,27 +4,16 @@ import game.rpg_game_utils
 from dataclasses import dataclass
 import game.tcg_game_config
 import shutil
-from pydantic import BaseModel
 from game.tcg_game_context import TCGGameContext
 from game.terminal_tcg_game import TerminalTCGGame
+from models.entity_models import WorldRoot, WorldRuntime
 
 
-# WGC_WorldGenesisCore
-# CTS_ChronotraceSnapshot
-
-
+###############################################################################################################################################
 @dataclass
 class OptionParameters:
     user: str
     game: str
-
-
-class WorldRoot(BaseModel):
-    name: str = ""
-    version: str = ""
-
-class WorldRuntime(BaseModel):
-    root: WorldRoot = WorldRoot()
 
 
 ###############################################################################################################################################
@@ -46,23 +35,13 @@ async def run_game(option: OptionParameters) -> None:
         if game_name != "":
             break
 
-   
-
-
-
-
-
-
     # 创建log
     log_start_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     log_dir = game.tcg_game_config.LOGS_DIR / user_name / game_name
     logger.add(log_dir / f"{log_start_time}.log", level="DEBUG")
     logger.info(f"准备进入游戏 = {game_name}, {user_name}")
 
-
-
-
-    # 测试，临时写一个json文件, 以后会用自动化生成的
+    # todo 测试，临时写一个json文件, 以后会用自动化生成的
     world_root = WorldRoot(name=game_name, version="0.0.1")
     try:
         write_path = game.tcg_game_config.GEN_WORLD_DIR / f"{game_name}.json"
@@ -70,23 +49,15 @@ async def run_game(option: OptionParameters) -> None:
     except Exception as e:
         logger.error(f"An error occurred: {e}")
 
-
-
-
-    # 读取world_genesis_core文件
+    # 读取world_root文件
     world_root_file_path = game.tcg_game_config.GEN_WORLD_DIR / f"{game_name}.json"
     if not world_root_file_path.exists():
-        logger.error(f"找不到启动游戏世界的文件 = {world_root_file_path}, 没有用编辑器生成")
+        logger.error(
+            f"找不到启动游戏世界的文件 = {world_root_file_path}, 没有用编辑器生成"
+        )
         return
 
-
-
-
-
-
-
-
-    # 创建游戏运行时目录，每一次运行都会删除
+    # 创建游戏运行时目录
     users_world_runtime_dir = (
         game.tcg_game_config.GEN_RUNTIME_DIR / user_name / game_name
     )
@@ -99,15 +70,8 @@ async def run_game(option: OptionParameters) -> None:
     users_world_runtime_dir.mkdir(parents=True, exist_ok=True)
     assert users_world_runtime_dir.exists()
 
-
     # 游戏资源可以被创建，则将game_resource_file_path这个文件拷贝一份到root_runtime_dir下
-    shutil.copy(
-        world_root_file_path, users_world_runtime_dir
-    )
-
-
-
-
+    shutil.copy(world_root_file_path, users_world_runtime_dir)
 
     # 读取启动游戏的文件
     world_root_file_content = world_root_file_path.read_text(encoding="utf-8")
@@ -116,16 +80,15 @@ async def run_game(option: OptionParameters) -> None:
     # 创建runtime model chrono_trace_snapshot
     world_runtime = WorldRuntime(root=world_root)
     users_world_runtime_file_path = users_world_runtime_dir / f"runtime.json"
-    users_world_runtime_file_path.write_text(world_runtime.model_dump_json(), encoding="utf-8")
+    users_world_runtime_file_path.write_text(
+        world_runtime.model_dump_json(), encoding="utf-8"
+    )
 
     # 创建空游戏
-    terminal_tcg_game = TerminalTCGGame(game_name, TCGGameContext())
-
-
-
-
-
-
+    terminal_tcg_game = TerminalTCGGame(game_name, world_runtime, TCGGameContext())
+    terminal_tcg_game.context.restore_from_snapshot(
+        terminal_tcg_game._world_runtime.entities_snapshot
+    )
 
     # 核心循环
     while True:
@@ -159,8 +122,4 @@ async def run_game(option: OptionParameters) -> None:
 if __name__ == "__main__":
     import asyncio
 
-    asyncio.run(
-        run_game(
-            OptionParameters(user="yanghang", game="Game1")
-        )
-    )
+    asyncio.run(run_game(OptionParameters(user="yanghang", game="Game1")))

@@ -1,4 +1,4 @@
-from typing import NamedTuple, List, final
+from typing import Any, Dict, Final, NamedTuple, List, final
 
 
 # 全局唯一标识符
@@ -196,3 +196,32 @@ class DirectSkillFlagComponent(NamedTuple):
 
 
 ############################################################################################################
+
+
+# 场景可以用的所有动作
+COMPONENTS_REGISTRY: Final[Dict[str, Any]] = {
+    GUIDComponent.__name__: GUIDComponent,
+    AgentPingFlagComponent.__name__: AgentPingFlagComponent,
+    AgentSystemPromptComponent.__name__: AgentSystemPromptComponent,
+    KickOffContentComponent.__name__: KickOffContentComponent,
+    KickOffFlagComponent.__name__: KickOffFlagComponent,
+    WorldSystemComponent.__name__: WorldSystemComponent,
+    StageComponent.__name__: StageComponent,
+    StageGraphComponent.__name__: StageGraphComponent,
+    StageSpawnerComponent.__name__: StageSpawnerComponent,
+    StageEnvironmentComponent.__name__: StageEnvironmentComponent,
+    StageStaticFlagComponent.__name__: StageStaticFlagComponent,
+    ActorComponent.__name__: ActorComponent,
+    PlayerComponent.__name__: PlayerComponent,
+    DestroyComponent.__name__: DestroyComponent,
+    PlanningFlagComponent.__name__: PlanningFlagComponent,
+    BaseFormComponent.__name__: BaseFormComponent,
+    FinalAppearanceComponent.__name__: FinalAppearanceComponent,
+    EnterStageFlagComponent.__name__: EnterStageFlagComponent,
+    AttributesComponent.__name__: AttributesComponent,
+    WeaponComponent.__name__: WeaponComponent,
+    ClothesComponent.__name__: ClothesComponent,
+    RoundEventsRecordComponent.__name__: RoundEventsRecordComponent,
+    SkillComponent.__name__: SkillComponent,
+    DirectSkillFlagComponent.__name__: DirectSkillFlagComponent,
+}

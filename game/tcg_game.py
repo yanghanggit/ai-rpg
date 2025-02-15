@@ -1,5 +1,5 @@
-from entitas import Entity  # type: ignore
-from typing import Set, List, Optional
+from entitas import Entity, Matcher  # type: ignore
+from typing import Set, List, Optional, Dict
 from overrides import override
 from loguru import logger
 from game.tcg_game_context import TCGGameContext
@@ -26,22 +26,55 @@ from components.components import (
 from player.player_proxy import PlayerProxy
 from format_string.tcg_complex_name import ComplexName
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
+from agent.lang_serve_system import LangServeSystem
+from chaos_engineering.chaos_engineering_system import IChaosEngineering
+from pathlib import Path
 
 
 class TCGGame(BaseGame):
 
     def __init__(
-        self, name: str, world_runtime: WorldRuntime, context: TCGGameContext
+        self,
+        name: str,
+        world_runtime: WorldRuntime,
+        world_runtime_path: Path,
+        context: TCGGameContext,
+        langserve_system: LangServeSystem,
+        chaos_engineering_system: IChaosEngineering,
     ) -> None:
 
         # 必须实现父
         super().__init__(name)
 
+        # 上下文
         self._context: TCGGameContext = context
         self._context._game = self
+
+        # 世界运行时
         self._world_runtime: WorldRuntime = world_runtime
+        self._world_runtime_path: Path = world_runtime_path
+
+        # 处理器
         self._processors: TCGGameProcessors = TCGGameProcessors.create(self, context)
+
+        # 玩家
         self._players: List[PlayerProxy] = []
+
+        # agent 系统
+        self._langserve_system: LangServeSystem = langserve_system
+
+        # 混沌工程系统
+        self._chaos_engineering_system: IChaosEngineering = chaos_engineering_system
+
+    ###############################################################################################################################################
+    @property
+    def langserve_system(self) -> LangServeSystem:
+        return self._langserve_system
+
+    ###############################################################################################################################################
+    @property
+    def chaos_engineering_system(self) -> IChaosEngineering:
+        return self._chaos_engineering_system
 
     ###############################################################################################################################################
     @property
@@ -54,11 +87,52 @@ class TCGGame(BaseGame):
         return self._world_runtime
 
     ###############################################################################################################################################
-    def build(self) -> None:
+    @override
+    def execute(self) -> None:
+        # 顺序不要动
+        current_processors = self._processors
+        if not current_processors._initialized:
+            current_processors._initialized = True
+            current_processors.activate_reactive_processors()
+            current_processors.initialize()
+
+        current_processors.execute()
+        current_processors.cleanup()
+
+    ###############################################################################################################################################
+    @override
+    async def a_execute(self) -> None:
+        # 顺序不要动
+        current_processors = self._processors
+        if not current_processors._initialized:
+            current_processors._initialized = True
+            current_processors.activate_reactive_processors()
+            current_processors.initialize()
+
+        await current_processors.a_execute()
+        current_processors.cleanup()
+
+    ###############################################################################################################################################
+    @override
+    def exit(self) -> None:
+        all = [self._processors]
+        for processor in all:
+            processor.tear_down()
+            processor.clear_reactive_processors()
+
+        logger.info(f"{self._name}, game over!!!!!!!!!!!!!!!!!!!!")
+
+    ###############################################################################################################################################
+    @override
+    def send_event(self, player_proxy_names: Set[str], send_event: BaseEvent) -> None:
+        pass
+
+    ###############################################################################################################################################
+    def build_entitas(self) -> "TCGGame":
 
         # 混沌系统
-        self.context.chaos_engineering_system.initialize(self)
-        self.context.chaos_engineering_system.on_pre_create_game()
+        self.chaos_engineering_system.initialize(self)
+        self.chaos_engineering_system.on_pre_create_game()
 
         #
         world_root = self._world_runtime.root
@@ -76,7 +150,28 @@ class TCGGame(BaseGame):
         self._create_stage_entities(world_root.stages, world_root.data_base)
 
         ## 最后！混沌系统，准备测试
-        self.context.chaos_engineering_system.on_post_create_game()
+        self.chaos_engineering_system.on_post_create_game()
+
+        return self
+
+    ###############################################################################################################################################
+    # 测试！回复ecs
+    def restore_entitas(self) -> "TCGGame":
+
+        self.context.restore_from_snapshot(self.world_runtime.entities_snapshot)
+        return self
+
+    ###############################################################################################################################################
+    def save(self) -> "TCGGame":
+
+        self.world_runtime.entities_snapshot = self.context.make_snapshot()
+
+        assert self._world_runtime_path.exists()
+        self._world_runtime_path.write_text(
+            self.world_runtime.model_dump_json(), encoding="utf-8"
+        )
+
+        return self
 
     ###############################################################################################################################################
     def _create_world_system_entities(
@@ -205,10 +300,6 @@ class TCGGame(BaseGame):
         return []
 
     ###############################################################################################################################################
-    def restore(self) -> None:
-        self.context.restore_from_snapshot(self._world_runtime.entities_snapshot)
-
-    ###############################################################################################################################################
     def add_player(self, player_proxy: PlayerProxy) -> None:
         assert player_proxy not in self._players
         if player_proxy not in self._players:
@@ -220,47 +311,6 @@ class TCGGame(BaseGame):
             if player.player_name == player_name:
                 return player
         return None
-
-    ###############################################################################################################################################
-    @override
-    def execute(self) -> None:
-        # 顺序不要动
-        current_processors = self._processors
-        if not current_processors._initialized:
-            current_processors._initialized = True
-            current_processors.activate_reactive_processors()
-            current_processors.initialize()
-
-        current_processors.execute()
-        current_processors.cleanup()
-
-    ###############################################################################################################################################
-    @override
-    async def a_execute(self) -> None:
-        # 顺序不要动
-        current_processors = self._processors
-        if not current_processors._initialized:
-            current_processors._initialized = True
-            current_processors.activate_reactive_processors()
-            current_processors.initialize()
-
-        await current_processors.a_execute()
-        current_processors.cleanup()
-
-    ###############################################################################################################################################
-    @override
-    def exit(self) -> None:
-        all = [self._processors]
-        for processor in all:
-            processor.tear_down()
-            processor.clear_reactive_processors()
-
-        logger.info(f"{self._name}, game over!!!!!!!!!!!!!!!!!!!!")
-
-    ###############################################################################################################################################
-    @override
-    def send_event(self, player_proxy_names: Set[str], send_event: BaseEvent) -> None:
-        pass
 
     ###############################################################################################################################################
     def get_system_message(self, entity: Entity) -> str:
@@ -313,5 +363,31 @@ class TCGGame(BaseGame):
         agent_short_term_memory = self.get_agent_short_term_memory(entity)
         assert len(agent_short_term_memory.chat_history) == 0
         agent_short_term_memory.chat_history.extend([SystemMessage(content=chat)])
+
+    ###############################################################################################################################################
+    def retrieve_stage_actor_mapping(self) -> Dict[str, List[str]]:
+
+        ret: Dict[str, List[str]] = {}
+
+        actor_entities: Set[Entity] = self.context.get_group(
+            Matcher(all_of=[ActorComponent])
+        ).entities
+
+        for actor_entity in actor_entities:
+
+            actor_comp = actor_entity.get(ActorComponent)
+            stage_entity = self.context.get_stage_entity(actor_comp.current_stage)
+            assert stage_entity is not None
+            if stage_entity is None:
+                continue
+            ret.setdefault(actor_comp.current_stage, []).append(actor_entity._name)
+
+        stage_entities: Set[Entity] = self.context.get_group(
+            Matcher(all_of=[StageComponent])
+        ).entities
+        for stage_entity in stage_entities:
+            ret.setdefault(stage_entity._name, [])
+
+        return ret
 
     ###############################################################################################################################################

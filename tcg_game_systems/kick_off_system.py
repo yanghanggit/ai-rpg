@@ -73,13 +73,17 @@ class KickOffSystem(ExecuteProcessor):
             )
 
         # 并发
-        await self._context.langserve_system.gather(request_handlers=request_handlers)
+        await self._game.langserve_system.gather(request_handlers=request_handlers)
 
         # 添加上下文。
         for request_handler in request_handlers:
             logger.warning(
                 f"Agent: {request_handler._name}, Response: {request_handler.response_content}"
             )
+
+            if request_handler.response_content == "":
+                continue
+
             entity2 = self._context.get_entity_by_name(request_handler._name)
             assert entity2 is not None
             self._game.append_human_message(entity2, request_handler._prompt)

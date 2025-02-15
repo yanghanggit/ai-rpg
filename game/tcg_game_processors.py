@@ -24,11 +24,11 @@ class TCGGameProcessors(Processors):
         from tcg_game_systems.begin_system import BeginSystem
         from tcg_game_systems.end_system import EndSystem
         from tcg_game_systems.kick_off_system import KickOffSystem
+        from tcg_game_systems.save_system import SaveSystem
 
         processors.add(BeginSystem(context))
-
         processors.add(KickOffSystem(context))
-
+        processors.add(SaveSystem(context))
         processors.add(EndSystem(context))
 
         return processors

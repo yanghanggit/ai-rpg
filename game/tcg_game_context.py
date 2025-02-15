@@ -21,21 +21,11 @@ class TCGGameContext(Context):
     ###############################################################################################################################################
     def __init__(
         self,
-        langserve_system: LangServeSystem,
-        chaos_engineering_system: IChaosEngineering,
     ) -> None:
         #
         super().__init__()
         self._game: Optional[BaseGame] = None
-
-        # agent 系统
-        self._langserve_system: LangServeSystem = langserve_system
-
-        # 混沌工程系统
-        self._chaos_engineering_system: IChaosEngineering = chaos_engineering_system
-
-        # （方便快速查找用）
-        self._query_entities: Dict[str, Entity] = {}
+        self._query_entities: Dict[str, Entity] = {}  # （方便快速查找用）
 
     ###############################################################################################################################################
     def __create_entity__(self, name: str) -> Entity:
@@ -49,16 +39,6 @@ class TCGGameContext(Context):
     def destroy_entity(self, entity: Entity) -> None:
         self._query_entities.pop(entity._name, None)
         return super().destroy_entity(entity)
-
-    ###############################################################################################################################################
-    @property
-    def langserve_system(self) -> LangServeSystem:
-        return self._langserve_system
-
-    ###############################################################################################################################################
-    @property
-    def chaos_engineering_system(self) -> IChaosEngineering:
-        return self._chaos_engineering_system
 
     ###############################################################################################################################################
     def make_snapshot(self) -> List[EntitySnapshot]:
@@ -82,6 +62,10 @@ class TCGGameContext(Context):
 
     ###############################################################################################################################################
     def restore_from_snapshot(self, entity_snapshots: List[EntitySnapshot]) -> None:
+
+        assert len(self._entities) == 0
+        if len(self._entities) > 0:
+            return
 
         for en_snapshot in entity_snapshots:
 

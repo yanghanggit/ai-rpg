@@ -107,34 +107,24 @@ async def run_game(option: OptionParameters) -> None:
 
     # 创建空游戏
     terminal_tcg_game = TerminalTCGGame(
-        game_name,
-        world_runtime,
-        TCGGameContext(
-            lang_serve_system,
-            EmptyChaosEngineeringSystem(),
-        ),
+        name=game_name,
+        world_runtime=world_runtime,
+        world_runtime_path=users_world_runtime_file_path,
+        context=TCGGameContext(),
+        langserve_system=lang_serve_system,
+        chaos_engineering_system=EmptyChaosEngineeringSystem(),
     )
 
     # 启动游戏的判断，是第一次建立还是恢复？
     if len(terminal_tcg_game.world_runtime.entities_snapshot) == 0:
         logger.warning(f"游戏中没有实体 = {game_name}, 说明是第一次创建游戏")
-        # 测试！创建世界
-        terminal_tcg_game.build()
-
-        # 强行写一次，做测试。
-        terminal_tcg_game.world_runtime.entities_snapshot = (
-            terminal_tcg_game.context.make_snapshot()
-        )
-        users_world_runtime_file_path.write_text(
-            world_runtime.model_dump_json(), encoding="utf-8"
-        )
-
+        terminal_tcg_game.build_entitas().save()
     else:
         logger.warning(
             f"游戏中有实体 = {game_name}，需要通过数据恢复实体，是游戏回复的过程"
         )
         # 测试！回复ecs
-        terminal_tcg_game.restore()
+        terminal_tcg_game.restore_entitas().save()
 
     # 加入玩家的数据结构
     player_proxy = PlayerProxy(PlayerProxyModel(player_name=user_name))

@@ -11,6 +11,7 @@ class BeginSystem(ExecuteProcessor):
     def __init__(self, context: TCGGameContext) -> None:
         self._context: TCGGameContext = context
         self._game: TCGGame = cast(TCGGame, context._game)
+        assert self._game is not None
 
     ############################################################################################################
     @override

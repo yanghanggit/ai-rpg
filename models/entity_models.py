@@ -88,11 +88,11 @@ class SpawnerModel(BaseModel):
 
 
 class DataBaseModel(BaseModel):
-    actors: List[ActorModel]
-    stages: List[StageModel]
-    props: List[PropModel]
-    world_systems: List[WorldSystemModel]
-    spawners: List[SpawnerModel]
+    actors: List[ActorModel] = []
+    stages: List[StageModel] = []
+    props: List[PropModel] = []
+    world_systems: List[WorldSystemModel] = []
+    spawners: List[SpawnerModel] = []
 
 
 class GameModel(BaseModel):
@@ -104,33 +104,3 @@ class GameModel(BaseModel):
     database: DataBaseModel
     epoch_script: str
     version: str
-
-
-###############################################################################################################################################
-@final
-class ComponentSnapshot(BaseModel):
-    name: str
-    data: Dict[str, Any]
-
-
-###############################################################################################################################################
-@final
-class EntitySnapshot(BaseModel):
-    name: str
-    components: List[ComponentSnapshot]
-
-
-###############################################################################################################################################
-# 生成世界的根文件，就是世界的起点
-@final
-class WorldRoot(BaseModel):
-    name: str = ""
-    version: str = ""
-
-
-###############################################################################################################################################
-# 生成世界的运行时文件，记录世界的状态
-@final
-class WorldRuntime(BaseModel):
-    root: WorldRoot = WorldRoot()
-    entities_snapshot: List[EntitySnapshot] = []

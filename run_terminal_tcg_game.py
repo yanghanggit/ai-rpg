@@ -12,6 +12,7 @@ from agent.lang_serve_system import LangServeSystem
 from player.player_proxy import PlayerProxy
 from models.player_models import PlayerProxyModel
 import game.tcg_game_utils
+from extended_systems.prop_file2 import PropFile, PropFileManageSystem
 
 
 ###############################################################################################################################################
@@ -112,6 +113,7 @@ async def run_game(option: OptionParameters) -> None:
         world_runtime_path=users_world_runtime_file_path,
         context=TCGGameContext(),
         langserve_system=lang_serve_system,
+        prop_file_system=PropFileManageSystem(),
         chaos_engineering_system=EmptyChaosEngineeringSystem(),
     )
 

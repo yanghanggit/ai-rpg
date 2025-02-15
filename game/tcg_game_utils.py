@@ -71,8 +71,8 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
         code_name="iron_sword",
         details="一把普通的铁剑",
         type="weapon",
-        appearance="一把普通的铁剑",
-        insight="一把普通的铁剑",
+        appearance="黑颜色的剑身，剑柄上有一只狮子的图案",
+        insight="有魔法？",
     )
 
     prop2 = PropPrototype(
@@ -98,8 +98,8 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
         code_name="short_sword",
         details="一把普通的短剑",
         type="weapon",
-        appearance="一把普通的短剑",
-        insight="一把普通的短剑",
+        appearance="一把普通的短剑，长度适中",
+        insight="有毒",
     )
 
     world_root.data_base.props.setdefault(prop1.name, prop1)

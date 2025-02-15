@@ -13,6 +13,8 @@ from models.tcg_models import (
     ActorInstance,
     StageInstance,
     AgentShortTermMemory,
+    PropInstance,
+    PropPrototype,
 )
 from components.components import (
     WorldSystemComponent,
@@ -29,6 +31,7 @@ from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from agent.lang_serve_system import LangServeSystem
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from pathlib import Path
+from extended_systems.prop_file2 import PropFile, PropFileManageSystem
 
 
 class TCGGame(BaseGame):
@@ -40,6 +43,7 @@ class TCGGame(BaseGame):
         world_runtime_path: Path,
         context: TCGGameContext,
         langserve_system: LangServeSystem,
+        prop_file_system: PropFileManageSystem,
         chaos_engineering_system: IChaosEngineering,
     ) -> None:
 
@@ -63,8 +67,14 @@ class TCGGame(BaseGame):
         # agent 系统
         self._langserve_system: LangServeSystem = langserve_system
 
+        # 道具系统
+        self._prop_file_system: PropFileManageSystem = prop_file_system
+
         # 混沌工程系统
         self._chaos_engineering_system: IChaosEngineering = chaos_engineering_system
+
+        # 初始化子系统。。。。
+        self._initialize_prop_file_system()
 
     ###############################################################################################################################################
     @property
@@ -389,5 +399,48 @@ class TCGGame(BaseGame):
             ret.setdefault(stage_entity._name, [])
 
         return ret
+
+    ###############################################################################################################################################
+    def _initialize_prop_file_system(self) -> None:
+
+        self._prop_file_system.clear()
+
+        #
+        world_root = self._world_runtime.root
+        data_base = world_root.data_base
+
+        # 所有的角色，包括玩家管理道具
+        all_actors = world_root.actors + world_root.players
+        for actor_instance in all_actors:
+            for prop_instance in actor_instance.props:
+
+                prop_prototype = self._get_prop_prototype(prop_instance, data_base)
+                assert prop_prototype is not None
+                if prop_prototype is None:
+                    logger.error(f"db is None: {prop_instance.name}")
+                    continue
+
+                prop_file = PropFile(prop_instance, prop_prototype)
+                self._prop_file_system.add_file(actor_instance.name, prop_file)
+
+        # 所有的舞台，包括舞台管理道具
+        for stage_instance in world_root.stages:
+            for prop_instance in stage_instance.props:
+
+                prop_prototype = self._get_prop_prototype(prop_instance, data_base)
+                assert prop_prototype is not None
+                if prop_prototype is None:
+                    logger.error(f"db is None: {prop_instance.name}")
+                    continue
+
+                prop_file = PropFile(prop_instance, prop_prototype)
+                self._prop_file_system.add_file(stage_instance.name, prop_file)
+
+    ###############################################################################################################################################
+    def _get_prop_prototype(
+        self, prop_instance: PropInstance, data_base: WorldDataBase
+    ) -> Optional[PropPrototype]:
+        complex_name = ComplexName(prop_instance.name)
+        return data_base.props.get(complex_name.parse_name, None)
 
     ###############################################################################################################################################

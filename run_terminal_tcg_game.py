@@ -47,17 +47,6 @@ async def run_game(option: OptionParameters) -> None:
     logger.add(log_dir / f"{log_start_time}.log", level="DEBUG")
     logger.info(f"准备进入游戏 = {game_name}, {user_name}")
 
-    # todo
-    game.tcg_game_utils.create_test_world(game_name, "0.0.1")
- 
-    # 读取world_root文件
-    world_root_file_path = game.tcg_game_config.GEN_WORLD_DIR / f"{game_name}.json"
-    if not world_root_file_path.exists():
-        logger.error(
-            f"找不到启动游戏世界的文件 = {world_root_file_path}, 没有用编辑器生成"
-        )
-        return
-
     # 创建游戏运行时目录
     users_world_runtime_dir = (
         game.tcg_game_config.GEN_RUNTIME_DIR / user_name / game_name
@@ -65,26 +54,51 @@ async def run_game(option: OptionParameters) -> None:
 
     # todo 强制删除一次
     if users_world_runtime_dir.exists():
-        #pass
+        # pass
         shutil.rmtree(users_world_runtime_dir)
 
     # 创建目录
     users_world_runtime_dir.mkdir(parents=True, exist_ok=True)
     assert users_world_runtime_dir.exists()
 
+    # todo
+    game.tcg_game_utils.create_test_world(game_name, "0.0.1")
+
+    # 创建游戏的根文件是否存在。
+    world_root_file_path = game.tcg_game_config.GEN_WORLD_DIR / f"{game_name}.json"
+    if not world_root_file_path.exists():
+        logger.error(
+            f"找不到启动游戏世界的文件 = {world_root_file_path}, 没有用编辑器生成"
+        )
+        return
+
     # 游戏资源可以被创建，则将game_resource_file_path这个文件拷贝一份到root_runtime_dir下
     shutil.copy(world_root_file_path, users_world_runtime_dir)
 
-    # 读取启动游戏的文件
-    world_root_file_content = world_root_file_path.read_text(encoding="utf-8")
-    world_root = WorldRoot.model_validate_json(world_root_file_content)
-
-    # 创建runtime model chrono_trace_snapshot
-    world_runtime = WorldRuntime(root=world_root)
+    # 创建runtime
+    world_runtime = WorldRuntime()
     users_world_runtime_file_path = users_world_runtime_dir / f"runtime.json"
-    users_world_runtime_file_path.write_text(
-        world_runtime.model_dump_json(), encoding="utf-8"
-    )
+    if not users_world_runtime_file_path.exists():
+
+        # runtime文件不存在，需要做第一次创建
+        copy_root_path = users_world_runtime_dir / f"{game_name}.json"
+        assert copy_root_path.exists()
+
+        world_root_file_content = copy_root_path.read_text(encoding="utf-8")
+        world_root = WorldRoot.model_validate_json(world_root_file_content)
+
+        world_runtime = WorldRuntime(root=world_root)
+        users_world_runtime_file_path.write_text(
+            world_runtime.model_dump_json(), encoding="utf-8"
+        )
+
+    else:
+
+        # runtime文件存在，需要做恢复
+        world_runtime_file_content = users_world_runtime_file_path.read_text(
+            encoding="utf-8"
+        )
+        world_runtime = WorldRuntime.model_validate_json(world_runtime_file_content)
 
     # 创建空游戏
     terminal_tcg_game = TerminalTCGGame(
@@ -92,7 +106,6 @@ async def run_game(option: OptionParameters) -> None:
         world_runtime,
         TCGGameContext(
             LangServeSystem(f"{game_name}-langserve_system"),
-            QueryComponentSystem(),
             EmptyChaosEngineeringSystem(),
         ),
     )

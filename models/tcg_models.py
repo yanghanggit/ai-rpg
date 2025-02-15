@@ -12,6 +12,7 @@ class ComponentSnapshot(BaseModel):
 ###############################################################################################################################################
 @final
 class EntitySnapshot(BaseModel):
+    name: str
     components: List[ComponentSnapshot]
 
 

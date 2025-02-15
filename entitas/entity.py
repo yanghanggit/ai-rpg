@@ -24,6 +24,8 @@ class Entity(object):
 
     def __init__(self) -> None:
 
+        self._name = ""  ##yh add
+
         #: Occurs when a component gets added.
         self.on_component_added = Event()
 

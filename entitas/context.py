@@ -88,14 +88,14 @@ class Context(object):
 
         return group
 
-    def set_unique_component(self, comp_type: Any, *args: Any) -> None:
-        self.create_entity().add(comp_type, *args)
+    # def set_unique_component(self, comp_type: Any, *args: Any) -> None:
+    #     self.create_entity().add(comp_type, *args)
 
-    def get_unique_component(self, comp_type: Any) -> Any:
-        group = self.get_group(Matcher(comp_type))
-        if group.single_entity is not None:
-            return group.single_entity.get(comp_type)
-        return None
+    # def get_unique_component(self, comp_type: Any) -> Any:
+    #     group = self.get_group(Matcher(comp_type))
+    #     if group.single_entity is not None:
+    #         return group.single_entity.get(comp_type)
+    #     return None
 
     def add_entity_index(self, entity_index: AbstractEntityIndex) -> None:
         self._entity_indices[entity_index.type] = entity_index

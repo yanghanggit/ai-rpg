@@ -1,9 +1,64 @@
 
-``` json
-{
-  "title": "My Doc",
-  "description": "This is my doc",
-  "tags": ["doc", "my_doc"],
-  "content": "This is my doc content"
-}
-```
+
+
+
+# hi, 我是一个游戏开发者，我目前在开发一个游戏。
+
+## 我目前开发的游戏是一个RPG类的游戏。
+1. 这个游戏一开始会根据一个 启动文件（例如叫A），来第一次生成世界。
+2. 在世界运行的过程中，会根据与玩家的交互，来动态改变世界，世界在运行过程中会不断的保存。这个保存文件叫 运行时文件（例如叫B）。
+3. 如果这么设计，那么任意时刻，我都可以根据A和B来重现这个世界到任意时刻的状态。
+
+## 我的需求是：
+1. 我希望你给我的 启动文件-A, 起一个编程用的名字。
+2. 我希望你给我的 运行时文件-B, 起一个编程用的名字。
+3. 2个名字我希望贴切，毕竟是游戏非常重要的文件。
+
+
+
+基于游戏机制和文件用途的特性，我为这两个核心文件设计了以下命名方案：
+
+启动文件-A（世界生成器）
+推荐名称：WorldGenesisCore
+
+Genesis体现"创世纪"的初始生成概念
+
+Core强调这是世界规则的核心蓝图
+
+组合后暗示该文件承载着世界生成的底层逻辑
+
+运行时文件-B（动态世界状态）
+推荐名称：ChronotraceSnapshot
+
+Chrono（时间）+ Trace（轨迹）构成时间维度的记录
+
+Snapshot突出每个保存点都是完整的世界状态快照
+
+整体传达"时空轨迹记录"的动态持续性
+
+扩展说明：
+
+命名采用大驼峰格式，符合编程规范
+
+两者形成"起源-演化"的哲学对应关系
+
+保留了RPG常见的神秘感命名风格（如Genesis/Chrono）
+
+在代码库中可通过前缀快速识别：
+
+WGC_WorldGenesisCore
+
+CTS_ChronotraceSnapshot
+
+替代方案备选：
+
+启动文件：WorldPrimordial / RealityBlueprint
+
+运行时文件：TemporalArchive / DynamicEidos
+
+建议在代码注释中保持命名一致性：
+
+
+# 世界生成系统架构：
+# WGC_WorldGenesisCore → 初始世界种子（不可变）
+# CTS_ChronotraceSnapshot → 动态世界状态堆栈（可变）

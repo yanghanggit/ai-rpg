@@ -107,7 +107,7 @@ class TCGGameContext(Context):
             return entity
         return None
 
-    #############################################################################################################################
+    ###############################################################################################################################################
     def get_player_entity(self, player_name: str) -> Optional[Entity]:
         entities: Set[Entity] = self.get_group(
             Matcher(all_of=[PlayerComponent, ActorComponent])
@@ -118,25 +118,25 @@ class TCGGameContext(Context):
                 return entity
         return None
 
-    #############################################################################################################################
+    ###############################################################################################################################################
     def get_entity_by_name(self, name: str) -> Optional[Entity]:
         return self._query_entities.get(name, None)
 
-    #############################################################################################################################
+    ###############################################################################################################################################
     def get_stage_entity(self, stage_name: str) -> Optional[Entity]:
         entity: Optional[Entity] = self.get_entity_by_name(stage_name)
         if entity is not None and entity.has(StageComponent):
             return entity
         return None
 
-    #############################################################################################################################
+    ###############################################################################################################################################
     def get_actor_entity(self, actor_name: str) -> Optional[Entity]:
         entity: Optional[Entity] = self.get_entity_by_name(actor_name)
         if entity is not None and entity.has(ActorComponent):
             return entity
         return None
 
-    #############################################################################################################################
+    ###############################################################################################################################################
     def safe_get_stage_entity(self, entity: Entity) -> Optional[Entity]:
         if entity.has(StageComponent):
             return entity
@@ -145,7 +145,7 @@ class TCGGameContext(Context):
             return self.get_stage_entity(actor_comp.current_stage)
         return None
 
-    #############################################################################################################################
+    ###############################################################################################################################################
     def get_entity_by_guid(self, guid: int) -> Optional[Entity]:
 
         for entity in self.get_group(Matcher(GUIDComponent)).entities:
@@ -155,4 +155,4 @@ class TCGGameContext(Context):
 
         return None
 
-    #############################################################################################################################
+    ###############################################################################################################################################

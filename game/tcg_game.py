@@ -12,6 +12,7 @@ from models.tcg_models import (
     WorldDataBase,
     ActorInstance,
     StageInstance,
+    AgentShortTermMemory,
 )
 from components.components import (
     WorldSystemComponent,
@@ -19,9 +20,12 @@ from components.components import (
     ActorComponent,
     PlayerComponent,
     GUIDComponent,
+    SystemMessageComponent,
+    KickOffMessageComponent,
 )
 from player.player_proxy import PlayerProxy
 from format_string.tcg_complex_name import ComplexName
+from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 
 
 class TCGGame(BaseGame):
@@ -43,6 +47,11 @@ class TCGGame(BaseGame):
     @property
     def context(self) -> TCGGameContext:
         return self._context
+
+    ###############################################################################################################################################
+    @property
+    def world_runtime(self) -> WorldRuntime:
+        return self._world_runtime
 
     ###############################################################################################################################################
     def build(self) -> None:
@@ -94,6 +103,12 @@ class TCGGame(BaseGame):
             # 必要组件
             world_system_entity.add(GUIDComponent, instance.name, instance.guid)
             world_system_entity.add(WorldSystemComponent, instance.name)
+            world_system_entity.add(
+                SystemMessageComponent, instance.name, prototype.system_message
+            )
+            world_system_entity.add(
+                KickOffMessageComponent, instance.name, instance.kick_off_message
+            )
 
             # 添加到返回值
             ret.append(world_system_entity)
@@ -122,6 +137,12 @@ class TCGGame(BaseGame):
             # 必要组件
             actor_entity.add(GUIDComponent, instance.name, instance.guid)
             actor_entity.add(ActorComponent, instance.name, "")
+            actor_entity.add(
+                SystemMessageComponent, instance.name, prototype.system_message
+            )
+            actor_entity.add(
+                KickOffMessageComponent, instance.name, instance.kick_off_message
+            )
 
             # 添加到返回值
             ret.append(actor_entity)
@@ -164,6 +185,12 @@ class TCGGame(BaseGame):
             # 必要组件
             stage_entity.add(GUIDComponent, instance.name, instance.guid)
             stage_entity.add(StageComponent, instance.name)
+            stage_entity.add(
+                SystemMessageComponent, instance.name, prototype.system_message
+            )
+            stage_entity.add(
+                KickOffMessageComponent, instance.name, instance.kick_off_message
+            )
 
             ## 重新设置Actor和stage的关系
             for actor_name in instance.actors:
@@ -234,5 +261,57 @@ class TCGGame(BaseGame):
     @override
     def send_event(self, player_proxy_names: Set[str], send_event: BaseEvent) -> None:
         pass
+
+    ###############################################################################################################################################
+    def get_system_message(self, entity: Entity) -> str:
+
+        data_base = self.world_runtime.root.data_base
+        complex_name = ComplexName(entity._name)
+
+        if entity.has(ActorComponent):
+            actor_prototype = data_base.actors.get(complex_name.parse_name, None)
+            assert actor_prototype is not None
+            if actor_prototype is not None:
+                return actor_prototype.system_message
+
+        elif entity.has(StageComponent):
+
+            stage_prototype = data_base.stages.get(complex_name.parse_name, None)
+            assert stage_prototype is not None
+            if stage_prototype is not None:
+                return stage_prototype.system_message
+
+        elif entity.has(WorldSystemComponent):
+
+            world_system_prototype = data_base.world_systems.get(
+                complex_name.parse_name, None
+            )
+            assert world_system_prototype is not None
+            if world_system_prototype is not None:
+                return world_system_prototype.system_message
+
+        return ""
+
+    ###############################################################################################################################################
+    def get_agent_short_term_memory(self, entity: Entity) -> AgentShortTermMemory:
+        return self.world_runtime.agents_short_term_memory.setdefault(
+            entity._name, AgentShortTermMemory(name=entity._name, chat_history=[])
+        )
+
+    ###############################################################################################################################################
+    def append_human_message(self, entity: Entity, chat: str) -> None:
+        agent_short_term_memory = self.get_agent_short_term_memory(entity)
+        agent_short_term_memory.chat_history.extend([HumanMessage(content=chat)])
+
+    ###############################################################################################################################################
+    def append_ai_message(self, entity: Entity, chat: str) -> None:
+        agent_short_term_memory = self.get_agent_short_term_memory(entity)
+        agent_short_term_memory.chat_history.extend([AIMessage(content=chat)])
+
+    ###############################################################################################################################################
+    def append_system_message(self, entity: Entity, chat: str) -> None:
+        agent_short_term_memory = self.get_agent_short_term_memory(entity)
+        assert len(agent_short_term_memory.chat_history) == 0
+        agent_short_term_memory.chat_history.extend([SystemMessage(content=chat)])
 
     ###############################################################################################################################################

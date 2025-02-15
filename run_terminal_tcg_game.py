@@ -8,7 +8,6 @@ from game.tcg_game_context import TCGGameContext
 from game.terminal_tcg_game import TerminalTCGGame
 from models.tcg_models import WorldRoot, WorldRuntime
 from chaos_engineering.empty_engineering_system import EmptyChaosEngineeringSystem
-from extended_systems.query_component_system import QueryComponentSystem
 from agent.lang_serve_system import LangServeSystem
 from player.player_proxy import PlayerProxy
 from models.player_models import PlayerProxyModel
@@ -20,6 +19,7 @@ import game.tcg_game_utils
 class OptionParameters:
     user: str
     game: str
+    new_game: bool = True
 
 
 ###############################################################################################################################################
@@ -52,10 +52,10 @@ async def run_game(option: OptionParameters) -> None:
         game.tcg_game_config.GEN_RUNTIME_DIR / user_name / game_name
     )
 
-    # todo 强制删除一次
+    # 强制删除一次
     if users_world_runtime_dir.exists():
-        # pass
-        shutil.rmtree(users_world_runtime_dir)
+        if option.new_game:
+            shutil.rmtree(users_world_runtime_dir)
 
     # 创建目录
     users_world_runtime_dir.mkdir(parents=True, exist_ok=True)
@@ -100,24 +100,29 @@ async def run_game(option: OptionParameters) -> None:
         )
         world_runtime = WorldRuntime.model_validate_json(world_runtime_file_content)
 
+    # 先写死。后续需要改成配置文件
+    server_url = "http://localhost:8100/v1/llm_serve/chat/"
+    lang_serve_system = LangServeSystem(f"{game_name}-langserve_system")
+    lang_serve_system.add_remote_runnable(url=server_url)
+
     # 创建空游戏
     terminal_tcg_game = TerminalTCGGame(
         game_name,
         world_runtime,
         TCGGameContext(
-            LangServeSystem(f"{game_name}-langserve_system"),
+            lang_serve_system,
             EmptyChaosEngineeringSystem(),
         ),
     )
 
     # 启动游戏的判断，是第一次建立还是恢复？
-    if len(terminal_tcg_game._world_runtime.entities_snapshot) == 0:
+    if len(terminal_tcg_game.world_runtime.entities_snapshot) == 0:
         logger.warning(f"游戏中没有实体 = {game_name}, 说明是第一次创建游戏")
         # 测试！创建世界
         terminal_tcg_game.build()
 
         # 强行写一次，做测试。
-        terminal_tcg_game._world_runtime.entities_snapshot = (
+        terminal_tcg_game.world_runtime.entities_snapshot = (
             terminal_tcg_game.context.make_snapshot()
         )
         users_world_runtime_file_path.write_text(

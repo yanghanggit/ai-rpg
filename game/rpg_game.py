@@ -14,13 +14,13 @@ from components.components import (
     WeaponComponent,
     ClothesComponent,
     StageGraphComponent,
-    KickOffContentComponent,
+    KickOffMessageComponent,
     RoundEventsRecordComponent,
     KickOffFlagComponent,
     StageSpawnerComponent,
     StageEnvironmentComponent,
     StageStaticFlagComponent,
-    AgentSystemPromptComponent,
+    SystemMessageComponent,
 )
 from game.rpg_game_context import RPGGameContext
 from game.rpg_game_resource import RPGGameResource
@@ -203,11 +203,11 @@ class RPGGame(BaseGame):
         )
         world_system_entity.add(WorldSystemComponent, world_system_model.name)
         world_system_entity.add(
-            AgentSystemPromptComponent,
+            SystemMessageComponent,
             world_system_model.name,
             world_system_model.system_prompt,
         )  # 系统提示词
-        world_system_entity.add(KickOffContentComponent, world_system_model.name, "")
+        world_system_entity.add(KickOffMessageComponent, world_system_model.name, "")
         world_system_entity.add(RoundEventsRecordComponent, world_system_model.name, [])
 
         # 添加扩展子系统的功能: Agent
@@ -337,11 +337,11 @@ class RPGGame(BaseGame):
 
         # 系统提示词
         actor_entity.add(
-            AgentSystemPromptComponent, actor_instance.name, actor_model.system_prompt
+            SystemMessageComponent, actor_instance.name, actor_model.system_prompt
         )
 
         actor_entity.add(
-            KickOffContentComponent, actor_instance.name, actor_model.kick_off_message
+            KickOffMessageComponent, actor_instance.name, actor_model.kick_off_message
         )
 
         actor_entity.add(RoundEventsRecordComponent, actor_instance.name, [])
@@ -474,12 +474,12 @@ class RPGGame(BaseGame):
 
         # 系统提示词
         stage_entity.add(
-            AgentSystemPromptComponent, stage_model.name, stage_model.system_prompt
+            SystemMessageComponent, stage_model.name, stage_model.system_prompt
         )
 
         # 记录用
         stage_entity.add(
-            KickOffContentComponent, stage_model.name, stage_model.kick_off_message
+            KickOffMessageComponent, stage_model.name, stage_model.kick_off_message
         )
 
         # 记录用

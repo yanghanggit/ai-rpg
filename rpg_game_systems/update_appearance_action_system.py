@@ -11,7 +11,7 @@ from components.components import (
     ActorComponent,
     ClothesComponent,
     AgentPingFlagComponent,
-    KickOffContentComponent,
+    KickOffMessageComponent,
     WeaponComponent,
 )
 from extended_systems.prop_file import PropFile
@@ -171,7 +171,7 @@ class UpdateAppearanceActionSystem(ReactiveProcessor):
             len(actor_appearance_info_list) == 0
             or self.world_system_entity is None
             or not self.world_system_entity.has(AgentPingFlagComponent)
-            or not self.world_system_entity.has(KickOffContentComponent)
+            or not self.world_system_entity.has(KickOffMessageComponent)
             or batch_size <= 0
         ):
             return

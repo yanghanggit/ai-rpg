@@ -8,7 +8,7 @@ from components.actions import (
 from components.components import (
     ActorComponent,
     StageComponent,
-    KickOffContentComponent,
+    KickOffMessageComponent,
 )
 from game.rpg_game_context import RPGGameContext
 import rpg_game_systems.prompt_utils
@@ -269,10 +269,10 @@ class StageEntranceCheckerSystem(ReactiveProcessor):
     def _has_conditions(self, stage_entity: Entity) -> bool:
 
         assert stage_entity.has(StageComponent)
-        assert stage_entity.has(KickOffContentComponent)
+        assert stage_entity.has(KickOffMessageComponent)
         return (
             rpg_game_systems.prompt_utils.GeneralPromptTag.STAGE_ENTRY_TAG
-            in stage_entity.get(KickOffContentComponent).content
+            in stage_entity.get(KickOffMessageComponent).content
         )
 
     ###############################################################################################################################################

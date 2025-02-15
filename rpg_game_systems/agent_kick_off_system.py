@@ -5,10 +5,10 @@ from components.components import (
     StageComponent,
     ActorComponent,
     FinalAppearanceComponent,
-    KickOffContentComponent,
+    KickOffMessageComponent,
     KickOffFlagComponent,
     AgentPingFlagComponent,
-    AgentSystemPromptComponent,
+    SystemMessageComponent,
 )
 from game.rpg_game_context import RPGGameContext
 from typing import Dict, Set, final
@@ -111,7 +111,7 @@ class AgentKickOffSystem(ExecuteProcessor):
         entities: Set[Entity] = self._context.get_group(
             Matcher(
                 all_of=[
-                    AgentSystemPromptComponent,
+                    SystemMessageComponent,
                 ],
                 any_of=[ActorComponent, StageComponent, WorldSystemComponent],
                 none_of=[KickOffFlagComponent],
@@ -123,7 +123,7 @@ class AgentKickOffSystem(ExecuteProcessor):
             if agent.name == "":
                 continue
             logger.debug(f"agent.name: {agent.name}")
-            agent_profile_comp = entity.get(AgentSystemPromptComponent)
+            agent_profile_comp = entity.get(SystemMessageComponent)
             self._context.agent_system.append_system_message(
                 agent.name, agent_profile_comp.content
             )
@@ -172,7 +172,7 @@ class AgentKickOffSystem(ExecuteProcessor):
             Matcher(
                 all_of=[
                     WorldSystemComponent,
-                    KickOffContentComponent,
+                    KickOffMessageComponent,
                     AgentPingFlagComponent,
                 ],
                 none_of=[KickOffFlagComponent],
@@ -196,7 +196,7 @@ class AgentKickOffSystem(ExecuteProcessor):
             Matcher(
                 all_of=[
                     StageComponent,
-                    KickOffContentComponent,
+                    KickOffMessageComponent,
                     AgentPingFlagComponent,
                 ],
                 none_of=[KickOffFlagComponent],
@@ -204,7 +204,7 @@ class AgentKickOffSystem(ExecuteProcessor):
         ).entities
         for stage_entity in stage_entities:
             agent = self._context.safe_get_agent(stage_entity)
-            kick_off_comp = stage_entity.get(KickOffContentComponent)
+            kick_off_comp = stage_entity.get(KickOffMessageComponent)
             kick_off_prompt = _generate_stage_kick_off_prompt(
                 kick_off_message=kick_off_comp.content,
                 input_actors_on_stage=self._context.retrieve_actor_names_on_stage(
@@ -227,7 +227,7 @@ class AgentKickOffSystem(ExecuteProcessor):
             Matcher(
                 all_of=[
                     ActorComponent,
-                    KickOffContentComponent,
+                    KickOffMessageComponent,
                     AgentPingFlagComponent,
                 ],
                 none_of=[KickOffFlagComponent],
@@ -235,7 +235,7 @@ class AgentKickOffSystem(ExecuteProcessor):
         ).entities
         for actor_entity in actor_entities:
             agent = self._context.safe_get_agent(actor_entity)
-            kick_off_comp = actor_entity.get(KickOffContentComponent)
+            kick_off_comp = actor_entity.get(KickOffMessageComponent)
             ret[agent.name] = AgentRequestHandler.create_with_full_context(
                 agent,
                 _generate_actor_kick_off_prompt(

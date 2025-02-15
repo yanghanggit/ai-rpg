@@ -3,7 +3,7 @@ from game.rpg_game_context import RPGGameContext
 from components.components import (
     ActorComponent,
     StageComponent,
-    KickOffContentComponent,
+    KickOffMessageComponent,
     RoundEventsRecordComponent,
 )
 from typing import Set, final, override, Dict
@@ -27,7 +27,7 @@ class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
     def initialize(self) -> None:
         # 对于所有的actor，如果没有档案，就加一个档案
         actor_entities: Set[Entity] = self._context.get_group(
-            Matcher(all_of=[ActorComponent, KickOffContentComponent])
+            Matcher(all_of=[ActorComponent, KickOffMessageComponent])
         ).entities
         self._archive_kick_off_actors(actor_entities, self.all_actor_names)
         self._archive_kick_off_stages(actor_entities, self.all_stage_names)
@@ -284,7 +284,7 @@ class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
         for actor_entity in actor_entities:
 
             actor_comp = actor_entity.get(ActorComponent)
-            kick_off_comp = actor_entity.get(KickOffContentComponent)
+            kick_off_comp = actor_entity.get(KickOffMessageComponent)
 
             for actor_to_archive in actors_to_archive:
                 if (
@@ -312,7 +312,7 @@ class UpdateArchiveSystem(InitializeProcessor, ExecuteProcessor):
         for actor_entity in actor_entities:
 
             actor_comp = actor_entity.get(ActorComponent)
-            kick_off_comp = actor_entity.get(KickOffContentComponent)
+            kick_off_comp = actor_entity.get(KickOffMessageComponent)
 
             for stage_to_archive in stages_to_archive:
 

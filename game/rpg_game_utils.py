@@ -23,7 +23,7 @@ from components.components import (
     ActorComponent,
     PlayerComponent,
     PlanningFlagComponent,
-    KickOffContentComponent,
+    KickOffMessageComponent,
     KickOffFlagComponent,
 )
 from rpg_game_systems.actor_entity_utils import ActorStatusEvaluator
@@ -403,7 +403,7 @@ def play_new_game(
     )
 
     # 配置的启动故事，因为player的kickoff只能在这里
-    kick_off_comp = player_entity.get(KickOffContentComponent)
+    kick_off_comp = player_entity.get(KickOffMessageComponent)
     player_proxy.store_kickoff_message(
         player_actor_name,
         AgentEvent(message=kick_off_comp.content),

@@ -1,5 +1,13 @@
 from typing import List, Dict, Any, final
 from pydantic import BaseModel
+from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
+
+
+###############################################################################################################################################
+@final
+class AgentShortTermMemory(BaseModel):
+    name: str = ""
+    chat_history: List[SystemMessage | HumanMessage | AIMessage] = []
 
 
 ###############################################################################################################################################
@@ -22,7 +30,6 @@ class ActorPrototype(BaseModel):
     name: str
     code_name: str
     system_message: str
-    kick_off_message: str
     base_form: str
 
 
@@ -32,7 +39,6 @@ class StagePrototype(BaseModel):
     name: str
     code_name: str
     system_message: str
-    kick_off_message: str
 
 
 ###############################################################################################################################################
@@ -77,6 +83,7 @@ class PropInstance(BaseModel):
 class ActorInstance(BaseModel):
     name: str
     guid: int
+    kick_off_message: str
     props: List[PropInstance]
     attributes: List[int]
 
@@ -87,6 +94,7 @@ class StageInstance(BaseModel):
     name: str
     guid: int
     actors: List[str]
+    kick_off_message: str
     props: List[PropInstance]
     attributes: List[int]
 
@@ -96,6 +104,7 @@ class StageInstance(BaseModel):
 class WorldSystemInstance(BaseModel):
     name: str
     guid: int
+    kick_off_message: str
 
 
 ###############################################################################################################################################
@@ -118,6 +127,7 @@ class WorldRoot(BaseModel):
 class WorldRuntime(BaseModel):
     root: WorldRoot = WorldRoot()
     entities_snapshot: List[EntitySnapshot] = []
+    agents_short_term_memory: Dict[str, AgentShortTermMemory] = {}
 
 
 ###############################################################################################################################################

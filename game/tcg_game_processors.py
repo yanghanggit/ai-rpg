@@ -23,8 +23,11 @@ class TCGGameProcessors(Processors):
         ## 添加一些系统。。。
         from tcg_game_systems.begin_system import BeginSystem
         from tcg_game_systems.end_system import EndSystem
+        from tcg_game_systems.kick_off_system import KickOffSystem
 
         processors.add(BeginSystem(context))
+
+        processors.add(KickOffSystem(context))
 
         processors.add(EndSystem(context))
 

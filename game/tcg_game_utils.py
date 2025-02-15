@@ -14,41 +14,37 @@ import game.tcg_game_config
 
 
 #######################################################################################################################################
-def create_world1(world_root: WorldRoot) -> WorldRoot:
+def test_world1(world_root: WorldRoot) -> WorldRoot:
 
     # 添加角色
     actor1 = ActorPrototype(
         name="战士",
         code_name="warrior",
         system_message="你是一名战士",
-        kick_off_message="你开始在这个奇幻世界开始你的冒险",
         base_form="你身材高大",
     )
-    actor2 = ActorPrototype(
-        name="法师",
-        code_name="mage",
-        system_message="你是一名法师",
-        kick_off_message="你开始在这个奇幻世界开始你的冒险",
-        base_form="你身材纤细",
-    )
-    actor3 = ActorPrototype(
-        name="牧师",
-        code_name="priest",
-        system_message="你是一名牧师",
-        kick_off_message="你开始在这个奇幻世界开始你的冒险",
-        base_form="你身材矮小",
-    )
+    # actor2 = ActorPrototype(
+    #     name="法师",
+    #     code_name="mage",
+    #     system_message="你是一名法师",
+    #     base_form="你身材纤细",
+    # )
+    # actor3 = ActorPrototype(
+    #     name="牧师",
+    #     code_name="priest",
+    #     system_message="你是一名牧师",
+    #     base_form="你身材矮小",
+    # )
     monster1 = ActorPrototype(
         name="哥布林",
         code_name="goblin",
         system_message="你是一名哥布林",
-        kick_off_message="你开始在这个奇幻世界开始你的冒险",
         base_form="你身材矮小",
     )
 
     world_root.data_base.actors.setdefault(actor1.name, actor1)
-    world_root.data_base.actors.setdefault(actor2.name, actor2)
-    world_root.data_base.actors.setdefault(actor3.name, actor3)
+    # world_root.data_base.actors.setdefault(actor2.name, actor2)
+    # world_root.data_base.actors.setdefault(actor3.name, actor3)
     world_root.data_base.actors.setdefault(monster1.name, monster1)
 
     # 添加舞台
@@ -56,7 +52,6 @@ def create_world1(world_root: WorldRoot) -> WorldRoot:
         name="城镇",
         code_name="town",
         system_message="你是一个城镇",
-        kick_off_message="你开始作为这个奇幻世界内的一个小镇开始你的故事",
     )
 
     world_root.data_base.stages.setdefault(stage1.name, stage1)
@@ -147,27 +142,31 @@ def create_world1(world_root: WorldRoot) -> WorldRoot:
         guid=100,
         props=[prop_instance1],
         attributes=[],  # 暂时不用
+        kick_off_message="你开始作为一名战士在这个奇幻世界开始你的冒险",
     )
 
-    actor_instance2 = ActorInstance(
-        name=f"{actor2.name}%{200}",
-        guid=200,
-        props=[prop_instance2],
-        attributes=[],  # 暂时不用
-    )
+    # actor_instance2 = ActorInstance(
+    #     name=f"{actor2.name}%{200}",
+    #     guid=200,
+    #     props=[prop_instance2],
+    #     attributes=[],  # 暂时不用
+    #     kick_off_message="你开始作为一名法师在这个奇幻世界开始你的冒险",
+    # )
 
-    actor_instance3 = ActorInstance(
-        name=f"{actor3.name}%{300}",
-        guid=300,
-        props=[prop_instance3],
-        attributes=[],  # 暂时不用
-    )
+    # actor_instance3 = ActorInstance(
+    #     name=f"{actor3.name}%{300}",
+    #     guid=300,
+    #     props=[prop_instance3],
+    #     attributes=[],  # 暂时不用
+    #     kick_off_message="你开始作为一名牧师在这个奇幻世界开始你的冒险",
+    # )
 
     actor_instance4 = ActorInstance(
         name=f"{monster1.name}%{400}",
         guid=400,
         props=[prop_instance4],
         attributes=[],  # 暂时不用
+        kick_off_message="你开始作为一名哥布林在这个奇幻世界开始你的冒险",
     )
 
     #
@@ -176,23 +175,25 @@ def create_world1(world_root: WorldRoot) -> WorldRoot:
         guid=10000,
         actors=[
             actor_instance1.name,
-            actor_instance2.name,
-            actor_instance3.name,
+            # actor_instance2.name,
+            # actor_instance3.name,
             actor_instance4.name,
         ],
         props=[],
-        attributes=[],  # 暂时不用
+        attributes=[],  # 暂时不用,
+        kick_off_message="你开始作为这个奇幻世界内的一个小镇开始你的故事",
     )
 
     world_system_instance1 = WorldSystemInstance(
         name=f"{world_system1.name}%{100000}",
         guid=100000,
+        kick_off_message="你开始作为这个世界的战斗系统开始运行",
     )
 
     # 角色
     world_root.players.append(actor_instance1)
-    world_root.actors.append(actor_instance2)
-    world_root.actors.append(actor_instance3)
+    # world_root.actors.append(actor_instance2)
+    # world_root.actors.append(actor_instance3)
     world_root.actors.append(actor_instance4)
 
     # 场景
@@ -211,7 +212,7 @@ def create_world1(world_root: WorldRoot) -> WorldRoot:
 def create_test_world(game_name: str, version: str) -> WorldRoot:
 
     world_root = WorldRoot(name=game_name, version=version)
-    create_world1(world_root)
+    test_world1(world_root)
 
     try:
         write_path = game.tcg_game_config.GEN_WORLD_DIR / f"{game_name}.json"

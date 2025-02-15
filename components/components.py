@@ -18,7 +18,7 @@ class AgentPingFlagComponent(NamedTuple):
 ############################################################################################################
 # 记录 系统提示词 的组件
 @final
-class AgentSystemPromptComponent(NamedTuple):
+class SystemMessageComponent(NamedTuple):
     name: str
     content: str
 
@@ -26,7 +26,7 @@ class AgentSystemPromptComponent(NamedTuple):
 ############################################################################################################
 # 记录kick off原始信息
 @final
-class KickOffContentComponent(NamedTuple):
+class KickOffMessageComponent(NamedTuple):
     name: str
     content: str
 
@@ -202,8 +202,8 @@ class DirectSkillFlagComponent(NamedTuple):
 COMPONENTS_REGISTRY: Final[Dict[str, Any]] = {
     GUIDComponent.__name__: GUIDComponent,
     AgentPingFlagComponent.__name__: AgentPingFlagComponent,
-    AgentSystemPromptComponent.__name__: AgentSystemPromptComponent,
-    KickOffContentComponent.__name__: KickOffContentComponent,
+    SystemMessageComponent.__name__: SystemMessageComponent,
+    KickOffMessageComponent.__name__: KickOffMessageComponent,
     KickOffFlagComponent.__name__: KickOffFlagComponent,
     WorldSystemComponent.__name__: WorldSystemComponent,
     StageComponent.__name__: StageComponent,

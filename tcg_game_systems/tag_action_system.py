@@ -1,18 +1,12 @@
-from entitas import Entity, Matcher, ReactiveProcessor, GroupEvent  # type: ignore
+from entitas import Entity, Matcher, GroupEvent  # type: ignore
 from typing import final, override, cast
 from components.actions import TagAction
-from game.tcg_game_context import TCGGameContext
-from game.tcg_game import TCGGame
+from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
 
 
 ####################################################################################################
 @final
-class TagActionSystem(ReactiveProcessor):
-
-    def __init__(self, context: TCGGameContext) -> None:
-        self._context: TCGGameContext = context
-        self._game: TCGGame = cast(TCGGame, context._game)
-        assert self._game is not None
+class TagActionSystem(BaseActionReactiveSystem):
 
     ####################################################################################################
     @override

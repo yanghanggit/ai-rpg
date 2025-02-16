@@ -32,7 +32,8 @@ from extended_systems.lang_serve_system import LangServeSystem
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from pathlib import Path
 from extended_systems.prop_file2 import PropFile, PropFileManageSystem
-from player.player_command2 import PlayerCommand2
+import rpg_game_systems.prompt_utils
+from models.event_models import AgentEvent
 
 
 class TCGGame(BaseGame):
@@ -382,30 +383,18 @@ class TCGGame(BaseGame):
             agent_short_term_memory.chat_history.extend([SystemMessage(content=chat)])
 
     ###############################################################################################################################################
-    def retrieve_stage_actor_mapping(self) -> Dict[str, List[str]]:
+    def retrieve_actors_on_stage(self, entity: Entity) -> Set[Entity]:
 
-        ret: Dict[str, List[str]] = {}
+        stage_entity = self.context.safe_get_stage_entity(entity)
+        assert stage_entity is not None
+        if stage_entity is None:
+            return set()
 
-        actor_entities: Set[Entity] = self.context.get_group(
-            Matcher(all_of=[ActorComponent])
-        ).entities
+        mapping = self.context.retrieve_stage_actor_mapping()
+        if stage_entity not in mapping:
+            return set()
 
-        for actor_entity in actor_entities:
-
-            actor_comp = actor_entity.get(ActorComponent)
-            stage_entity = self.context.get_stage_entity(actor_comp.current_stage)
-            assert stage_entity is not None
-            if stage_entity is None:
-                continue
-            ret.setdefault(actor_comp.current_stage, []).append(actor_entity._name)
-
-        stage_entities: Set[Entity] = self.context.get_group(
-            Matcher(all_of=[StageComponent])
-        ).entities
-        for stage_entity in stage_entities:
-            ret.setdefault(stage_entity._name, [])
-
-        return ret
+        return mapping.get(stage_entity, set())
 
     ###############################################################################################################################################
     def _initialize_prop_file_system(self) -> None:
@@ -480,5 +469,40 @@ class TCGGame(BaseGame):
         logger.info(f"{self._name}, game ready!!!!!!!!!!!!!!!!!!!!")
         logger.info(f"player name = {only_one_player_proxy.player_name}")
         return True
+
+    ###############################################################################################################################################
+    def broadcast_event(
+        self,
+        entity: Entity,
+        agent_event: AgentEvent,
+        exclude_entities: Set[Entity] = set(),
+    ) -> None:
+
+        stage_entity = self.context.safe_get_stage_entity(entity)
+        assert stage_entity is not None, "stage is None, actor无所在场景是有问题的"
+        if stage_entity is None:
+            return
+
+        need_broadcast_entities = self.retrieve_actors_on_stage(stage_entity)
+        need_broadcast_entities.add(stage_entity)
+
+        if len(exclude_entities) > 0:
+            need_broadcast_entities = need_broadcast_entities - exclude_entities
+
+        self.notify_event(need_broadcast_entities, agent_event)
+
+    ###############################################################################################################################################
+    def notify_event(
+        self,
+        entities: Set[Entity],
+        agent_event: AgentEvent,
+    ) -> None:
+
+        for entity in entities:
+            replace_message = rpg_game_systems.prompt_utils.replace_with_you(
+                agent_event.message, entity._name
+            )
+            self.append_human_message(entity, replace_message)
+            logger.warning(f"{entity._name} ==> {replace_message}")
 
     ###############################################################################################################################################

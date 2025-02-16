@@ -140,3 +140,31 @@ class TCGGameContext(Context):
         return None
 
     ###############################################################################################################################################
+    def retrieve_stage_actor_mapping(self) -> Dict[Entity, Set[Entity]]:
+
+        ret: Dict[Entity, Set[Entity]] = {}
+
+        actor_entities: Set[Entity] = self.get_group(
+            Matcher(all_of=[ActorComponent])
+        ).entities
+
+        # 以stage为key，actor为value
+        for actor_entity in actor_entities:
+
+            stage_entity = self.safe_get_stage_entity(actor_entity)
+            assert stage_entity is not None
+            if stage_entity is None:
+                continue
+            ret.setdefault(stage_entity, set()).add(actor_entity)
+
+        # 补一下没有actor的stage
+        stage_entities: Set[Entity] = self.get_group(
+            Matcher(all_of=[StageComponent])
+        ).entities
+        for stage_entity in stage_entities:
+            if stage_entity not in ret:
+                ret.setdefault(stage_entity, set())
+
+        return ret
+
+    ###############################################################################################################################################

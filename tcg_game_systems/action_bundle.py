@@ -1,5 +1,6 @@
 from dataclasses import dataclass
-from typing import Final, List, Dict, Any, Optional, cast
+from entitas import Entity  # type: ignore
+from typing import Final, List, Dict, Any, Optional, cast, final, FrozenSet, NamedTuple
 import json
 from loguru import logger
 from format_string.json_format import (
@@ -7,8 +8,9 @@ from format_string.json_format import (
 )
 
 
+############################################################################################################
 @dataclass
-class ActionResponse:
+class ActionParameters:
     name: str
     action_name: str
     values: List[str]
@@ -17,12 +19,13 @@ class ActionResponse:
 ############################################################################################################
 
 
-class AgentResponseHandler:
+@final
+class ActionBundle:
 
     def __init__(self, agent_name: str, response_content: str) -> None:
 
         self._agent_name: Final[str] = agent_name
-        self._actions: List[ActionResponse] = []
+        self._actions: List[ActionParameters] = []
         self._raw_response_content: Final[str] = str(response_content)
 
         # 准备开始处理了
@@ -77,7 +80,7 @@ class AgentResponseHandler:
     def _initialize_actions(self, json: Dict[str, List[str]]) -> None:
         self._actions.clear()
         for key, value in json.items():
-            self._actions.append(ActionResponse(self._agent_name, key, value))
+            self._actions.append(ActionParameters(self._agent_name, key, value))
 
     ############################################################################################################
     def _validate_json_format(self, json_data: Any) -> bool:
@@ -105,7 +108,7 @@ class AgentResponseHandler:
         return True
 
     ############################################################################################################
-    def get_action(self, action_name: str) -> Optional[ActionResponse]:
+    def retrieve_action(self, action_name: str) -> Optional[ActionParameters]:
         for action in self._actions:
             if action.action_name == action_name:
                 return action
@@ -113,16 +116,74 @@ class AgentResponseHandler:
 
     ############################################################################################################
     def _concatenate_values(self, action_name: str, symbol: str = "") -> str:
-        action = self.get_action(action_name)
+        action = self.retrieve_action(action_name)
         if action is None or len(action.values) == 0:
             return ""
         return symbol.join(action.values)
 
     ############################################################################################################
     def _parse_boolean(self, action_name: str) -> bool:
-        action = self.get_action(action_name)
+        action = self.retrieve_action(action_name)
         if action is None or len(action.values) == 0:
             return False
         return action.values[0].lower() == "yes" or action.values[0].lower() == "true"
+
+    ############################################################################################################
+    def _find_registered_component(
+        self, class_name: str, registered_components: FrozenSet[type[NamedTuple]]
+    ) -> Optional[type[NamedTuple]]:
+        for component in registered_components:
+            if class_name == component.__name__:
+                return component
+        logger.warning(f"{class_name}不在{registered_components}中")
+        return None
+
+    ############################################################################################################
+    def _ensure_actions_registered(
+        self,
+        registered_actions: FrozenSet[type[NamedTuple]],
+    ) -> bool:
+        if len(self._actions) == 0:
+            return False
+
+        for action in self._actions:
+            if (
+                self._find_registered_component(action.action_name, registered_actions)
+                is None
+            ):
+                logger.warning(f"action is not correct, {action}")
+                return False
+        return True
+
+    ############################################################################################################
+    def _assign_action_to_entity(
+        self,
+        entity: Entity,
+        action: ActionParameters,
+        registered_actions: FrozenSet[type[NamedTuple]],
+    ) -> None:
+        comp_class = self._find_registered_component(
+            action.action_name, registered_actions
+        )
+        if comp_class is None:
+            return
+        entity.replace(comp_class, action.name, action.values)
+
+    ############################################################################################################
+    def assign_actions_to_entity(
+        self,
+        target_entity: Entity,
+        allowed_action_types: FrozenSet[type[NamedTuple]],
+    ) -> bool:
+
+        if not self._ensure_actions_registered(allowed_action_types):
+            logger.warning(f"add_actor_actions, {self.raw_response_content}")
+            return False
+
+        ## 不能停了，只能一直继续
+        for action in self._actions:
+            self._assign_action_to_entity(target_entity, action, allowed_action_types)
+
+        return True
 
     ############################################################################################################

@@ -79,7 +79,7 @@ def _strip_json_code_block(markdown_text: str) -> str:
 
 
 @final
-class JsonPlanResponseHandler:
+class JsonFormat:
 
     def __init__(self, source_string: str) -> None:
         self._source_string: str = str(source_string)
@@ -96,13 +96,13 @@ class JsonPlanResponseHandler:
         return self._formatted_output
 
     ############################################################################################################
-    def strip_json_code(self) -> "JsonPlanResponseHandler":
+    def strip_json_code(self) -> "JsonFormat":
         if _contains_json_code(self._formatted_output):
             self._formatted_output = _strip_json_code_block(self._formatted_output)
         return self
 
     ############################################################################################################
-    def combine_duplicate_fragments(self) -> "JsonPlanResponseHandler":
+    def combine_duplicate_fragments(self) -> "JsonFormat":
         if _contains_duplicate_segments(self._formatted_output):
             merged_json_fragments = _combine_json_fragments(self._formatted_output)
             if merged_json_fragments is not None:

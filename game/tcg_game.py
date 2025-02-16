@@ -28,7 +28,7 @@ from components.components import (
 from player.player_proxy import PlayerProxy
 from format_string.tcg_complex_name import ComplexName
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
-from agent.lang_serve_system import LangServeSystem
+from extended_systems.lang_serve_system import LangServeSystem
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from pathlib import Path
 from extended_systems.prop_file2 import PropFile, PropFileManageSystem
@@ -139,7 +139,7 @@ class TCGGame(BaseGame):
         pass
 
     ###############################################################################################################################################
-    def build_entitas(self) -> "TCGGame":
+    def build_entities(self) -> "TCGGame":
 
         # 混沌系统
         self.chaos_engineering_system.initialize(self)
@@ -167,15 +167,16 @@ class TCGGame(BaseGame):
 
     ###############################################################################################################################################
     # 测试！回复ecs
-    def restore_entitas(self) -> "TCGGame":
-
-        self.context.restore_from_snapshot(self.world_runtime.entities_snapshot)
+    def restore_entities(self) -> "TCGGame":
+        self.context.restore_entities_from_snapshot(
+            self.world_runtime.entities_snapshot
+        )
         return self
 
     ###############################################################################################################################################
     def save(self) -> "TCGGame":
 
-        self.world_runtime.entities_snapshot = self.context.make_snapshot()
+        self.world_runtime.entities_snapshot = self.context.make_entities_snapshot()
 
         assert self._world_runtime_path.exists()
         self._world_runtime_path.write_text(
@@ -448,13 +449,6 @@ class TCGGame(BaseGame):
     ) -> Optional[PropPrototype]:
         complex_name = ComplexName(prop_instance.name)
         return data_base.props.get(complex_name.parse_name, None)
-
-    ###############################################################################################################################################
-    # def execute_player_command(
-    #     self, player_proxy: PlayerProxy, command: PlayerCommand2
-    # ) -> None:
-    #     logger.debug(f"player_proxy = {player_proxy.player_name}")
-    #     logger.debug(f"command={command}")
 
     ###############################################################################################################################################
     # todo

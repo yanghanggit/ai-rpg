@@ -34,15 +34,68 @@ class TCGGameProcessors(Processors):
         from tcg_game_systems.terminal_player_interrupt_wait_system import (
             TerminalPlayerInterruptWaitSystem,
         )
+        from tcg_game_systems.mind_voice_action_system import (
+            MindVoiceActionSystem,
+        )
+        from tcg_game_systems.whisper_action_system import WhisperActionSystem
+
+        from tcg_game_systems.speak_action_system import SpeakActionSystem
+        from tcg_game_systems.announce_action_system import AnnounceActionSystem
+        from tcg_game_systems.pre_action_system import PreActionSystem
+        from tcg_game_systems.post_action_system import PostActionSystem
+        from tcg_game_systems.destroy_system import DestroySystem
+        from tcg_game_systems.dead_action_system import DeadActionSystem
+        from tcg_game_systems.pre_planning_system import PrePlanningSystem
+        from tcg_game_systems.post_planning_system import PostPlanningSystem
+        from tcg_game_systems.stage_planning_system import StagePlanningSystem
+        from tcg_game_systems.actor_planning_system import ActorPlanningSystem
+        from tcg_game_systems.world_system_planning_system import (
+            WorldSystemPlanningSystem,
+        )
+        from tcg_game_systems.tag_action_system import TagActionSystem
 
         processors.add(BeginSystem(context))
-        processors.add(HandleTerminalPlayerInputSystem(context))
-        processors.add(HandleWebPlayerInputSystem(context))
+
+        # 启动agent的提示词。启动阶段
         processors.add(KickOffSystem(context))
 
+        # 进入动作前，处理输入。
+        processors.add(HandleTerminalPlayerInputSystem(context))
+        processors.add(HandleWebPlayerInputSystem(context))
+
+        # 动作处理相关的系统
+        processors.add(PreActionSystem(context))
+
+        processors.add(TagActionSystem(context))
+        processors.add(MindVoiceActionSystem(context))
+        processors.add(WhisperActionSystem(context))
+        processors.add(AnnounceActionSystem(context))
+        processors.add(SpeakActionSystem(context))
+
+        # ?
+        processors.add(DeadActionSystem(context))
+
+        # ?
+        processors.add(PostActionSystem(context))
+
+        # 动作处理后，可能清理。
+        processors.add(DestroySystem(context))
+
+        #
         processors.add(TerminalPlayerInterruptWaitSystem(context))
 
+        # 规划逻辑
+        processors.add(PrePlanningSystem(context))  ######## 在所有规划之前!
+
+        processors.add(WorldSystemPlanningSystem(context))
+        processors.add(StagePlanningSystem(context))
+        processors.add(ActorPlanningSystem(context))
+
+        processors.add(PostPlanningSystem(context))  ####### 在所有规划之后!
+
+        # 存储系统。
         processors.add(SaveSystem(context))
+
         processors.add(EndSystem(context))
 
         return processors

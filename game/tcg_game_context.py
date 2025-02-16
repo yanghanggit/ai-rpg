@@ -1,7 +1,7 @@
 from entitas import Context, Entity, Matcher  # type: ignore
 from typing import final, Optional, List, Set, override, Dict
 from game.base_game import BaseGame
-from models.tcg_models import ComponentSnapshot, EntitySnapshot, WorldRoot
+from models.tcg_models import ComponentSnapshot, EntitySnapshot
 from components.components import (
     WorldSystemComponent,
     StageComponent,
@@ -11,8 +11,6 @@ from components.components import (
     COMPONENTS_REGISTRY,
 )
 from loguru import logger
-from agent.lang_serve_system import LangServeSystem
-from chaos_engineering.chaos_engineering_system import IChaosEngineering
 
 
 @final
@@ -41,7 +39,7 @@ class TCGGameContext(Context):
         return super().destroy_entity(entity)
 
     ###############################################################################################################################################
-    def make_snapshot(self) -> List[EntitySnapshot]:
+    def make_entities_snapshot(self) -> List[EntitySnapshot]:
 
         ret: List[EntitySnapshot] = []
 
@@ -61,7 +59,9 @@ class TCGGameContext(Context):
         return ret
 
     ###############################################################################################################################################
-    def restore_from_snapshot(self, entity_snapshots: List[EntitySnapshot]) -> None:
+    def restore_entities_from_snapshot(
+        self, entity_snapshots: List[EntitySnapshot]
+    ) -> None:
 
         assert len(self._entities) == 0
         if len(self._entities) > 0:

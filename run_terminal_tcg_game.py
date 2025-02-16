@@ -8,7 +8,7 @@ from game.tcg_game_context import TCGGameContext
 from game.terminal_tcg_game import TerminalTCGGame
 from models.tcg_models import WorldRoot, WorldRuntime
 from chaos_engineering.empty_engineering_system import EmptyChaosEngineeringSystem
-from agent.lang_serve_system import LangServeSystem
+from extended_systems.lang_serve_system import LangServeSystem
 from player.player_proxy import PlayerProxy
 from models.player_models import PlayerProxyModel
 import game.tcg_game_utils
@@ -121,13 +121,13 @@ async def run_game(option: OptionParameters) -> None:
     # 启动游戏的判断，是第一次建立还是恢复？
     if len(terminal_tcg_game.world_runtime.entities_snapshot) == 0:
         logger.warning(f"游戏中没有实体 = {game_name}, 说明是第一次创建游戏")
-        terminal_tcg_game.build_entitas().save()
+        terminal_tcg_game.build_entities().save()
     else:
         logger.warning(
             f"游戏中有实体 = {game_name}，需要通过数据恢复实体，是游戏回复的过程"
         )
         # 测试！回复ecs
-        terminal_tcg_game.restore_entitas().save()
+        terminal_tcg_game.restore_entities().save()
 
     # 加入玩家的数据结构
     player_proxy = PlayerProxy(PlayerProxyModel(player_name=user_name))

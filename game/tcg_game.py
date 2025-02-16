@@ -32,6 +32,7 @@ from agent.lang_serve_system import LangServeSystem
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from pathlib import Path
 from extended_systems.prop_file2 import PropFile, PropFileManageSystem
+from player.player_command2 import PlayerCommand2
 
 
 class TCGGame(BaseGame):
@@ -323,6 +324,11 @@ class TCGGame(BaseGame):
         return None
 
     ###############################################################################################################################################
+    @property
+    def players(self) -> List[PlayerProxy]:
+        return self._players
+
+    ###############################################################################################################################################
     def get_system_message(self, entity: Entity) -> str:
 
         data_base = self.world_runtime.root.data_base
@@ -371,8 +377,8 @@ class TCGGame(BaseGame):
     ###############################################################################################################################################
     def append_system_message(self, entity: Entity, chat: str) -> None:
         agent_short_term_memory = self.get_agent_short_term_memory(entity)
-        assert len(agent_short_term_memory.chat_history) == 0
-        agent_short_term_memory.chat_history.extend([SystemMessage(content=chat)])
+        if len(agent_short_term_memory.chat_history) == 0:
+            agent_short_term_memory.chat_history.extend([SystemMessage(content=chat)])
 
     ###############################################################################################################################################
     def retrieve_stage_actor_mapping(self) -> Dict[str, List[str]]:
@@ -442,5 +448,43 @@ class TCGGame(BaseGame):
     ) -> Optional[PropPrototype]:
         complex_name = ComplexName(prop_instance.name)
         return data_base.props.get(complex_name.parse_name, None)
+
+    ###############################################################################################################################################
+    # def execute_player_command(
+    #     self, player_proxy: PlayerProxy, command: PlayerCommand2
+    # ) -> None:
+    #     logger.debug(f"player_proxy = {player_proxy.player_name}")
+    #     logger.debug(f"command={command}")
+
+    ###############################################################################################################################################
+    # todo
+    def ready(self) -> bool:
+
+        assert len(self._players) > 0
+        if len(self._players) == 0:
+            logger.error(f"no player proxy")
+            return False
+
+        player_entities: Set[Entity] = self.context.get_group(
+            Matcher(all_of=[PlayerComponent])
+        ).entities
+
+        assert len(player_entities) > 0
+        if len(player_entities) == 0:
+            logger.error(f"no player entity")
+            return False
+
+        only_one_player_entity = next(iter(player_entities))
+        only_one_player_proxy = self._players[0]
+
+        player_comp = only_one_player_entity.get(PlayerComponent)
+        assert player_comp is not None
+        only_one_player_entity.replace(
+            PlayerComponent, only_one_player_proxy.player_name
+        )
+
+        logger.info(f"{self._name}, game ready!!!!!!!!!!!!!!!!!!!!")
+        logger.info(f"player name = {only_one_player_proxy.player_name}")
+        return True
 
     ###############################################################################################################################################

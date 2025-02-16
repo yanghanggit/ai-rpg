@@ -25,9 +25,23 @@ class TCGGameProcessors(Processors):
         from tcg_game_systems.end_system import EndSystem
         from tcg_game_systems.kick_off_system import KickOffSystem
         from tcg_game_systems.save_system import SaveSystem
+        from tcg_game_systems.handle_terminal_player_input_system import (
+            HandleTerminalPlayerInputSystem,
+        )
+        from tcg_game_systems.handle_web_player_input_system import (
+            HandleWebPlayerInputSystem,
+        )
+        from tcg_game_systems.terminal_player_interrupt_wait_system import (
+            TerminalPlayerInterruptWaitSystem,
+        )
 
         processors.add(BeginSystem(context))
+        processors.add(HandleTerminalPlayerInputSystem(context))
+        processors.add(HandleWebPlayerInputSystem(context))
         processors.add(KickOffSystem(context))
+
+        processors.add(TerminalPlayerInterruptWaitSystem(context))
+
         processors.add(SaveSystem(context))
         processors.add(EndSystem(context))
 

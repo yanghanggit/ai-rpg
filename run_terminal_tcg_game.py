@@ -12,7 +12,8 @@ from agent.lang_serve_system import LangServeSystem
 from player.player_proxy import PlayerProxy
 from models.player_models import PlayerProxyModel
 import game.tcg_game_utils
-from extended_systems.prop_file2 import PropFile, PropFileManageSystem
+from extended_systems.prop_file2 import PropFileManageSystem
+from player.player_command2 import PlayerCommand2
 
 
 ###############################################################################################################################################
@@ -132,20 +133,27 @@ async def run_game(option: OptionParameters) -> None:
     player_proxy = PlayerProxy(PlayerProxyModel(player_name=user_name))
     terminal_tcg_game.add_player(player_proxy)
 
+    if not terminal_tcg_game.ready():
+        logger.error(f"游戏准备失败 = {game_name}")
+        exit(1)
+
     # 核心循环
     while True:
 
         usr_input = input(f"[{player_proxy.player_name}]:")
         if usr_input == "":
+            logger.debug(f"玩家输入为空 = {player_proxy.player_name}，空跑一次")
+            await terminal_tcg_game.a_execute()
             continue
 
         if usr_input == "/quit" or usr_input == "/q":
             logger.info(f"玩家退出游戏 = {player_proxy.player_name}")
             break
 
-        if usr_input == "/execute" or usr_input == "/ex":
-            await terminal_tcg_game.a_execute()
-            continue
+        player_proxy.add_player_command(
+            PlayerCommand2(user=player_proxy.player_name, command=usr_input)
+        )
+        await terminal_tcg_game.a_execute()
 
         # 处理退出
         if terminal_tcg_game._will_exit:

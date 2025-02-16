@@ -1,6 +1,7 @@
 from typing import Final, final, Dict, List
 from models.tcg_models import PropInstance, PropPrototype
 
+
 @final
 class PropFile:
 

@@ -7,6 +7,7 @@ from models.player_models import (
     PlayerProxyModel,
 )
 from pathlib import Path
+from player.player_command2 import PlayerCommand2
 
 
 class PlayerProxy:
@@ -23,6 +24,8 @@ class PlayerProxy:
         from player.base_command import PlayerCommand
 
         self._commands: List[PlayerCommand] = []
+
+        self._player_commands: List[PlayerCommand2] = []
 
     ##########################################################################################################################################################
     @property
@@ -180,5 +183,10 @@ class PlayerProxy:
             logger.error(f"写文件失败: {path}, e = {e}")
 
         return -1
+
+    ##########################################################################################################################################################
+    def add_player_command(self, command: PlayerCommand2) -> None:
+        logger.info(f"add_player_command: {command}")
+        self._player_commands.append(command)
 
     ##########################################################################################################################################################

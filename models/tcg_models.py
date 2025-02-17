@@ -98,6 +98,7 @@ class StageInstance(BaseModel):
     kick_off_message: str
     props: List[PropInstance]
     attributes: List[int]
+    next: str
 
 
 ###############################################################################################################################################

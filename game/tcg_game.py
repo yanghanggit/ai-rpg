@@ -24,6 +24,7 @@ from components.components import (
     GUIDComponent,
     SystemMessageComponent,
     KickOffMessageComponent,
+    StageGraphComponent,
 )
 from player.player_proxy import PlayerProxy
 from format_string.tcg_complex_name import ComplexName
@@ -31,7 +32,7 @@ from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from extended_systems.lang_serve_system import LangServeSystem
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from pathlib import Path
-from extended_systems.prop_file2 import PropFile, PropFileManageSystem
+from extended_systems.tcg_prop_file_manage_system import PropFile, PropFileManageSystem
 import rpg_game_systems.prompt_utils
 from models.event_models import AgentEvent
 
@@ -299,6 +300,9 @@ class TCGGame(BaseGame):
             stage_entity.add(
                 KickOffMessageComponent, instance.name, instance.kick_off_message
             )
+
+            # 添加场景可以连接的场景
+            stage_entity.add(StageGraphComponent, instance.name, instance.next)
 
             ## 重新设置Actor和stage的关系
             for actor_name in instance.actors:

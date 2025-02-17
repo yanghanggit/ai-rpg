@@ -2,6 +2,9 @@ from typing import Final, final, Dict, List
 from models.tcg_models import PropInstance, PropPrototype
 
 
+# TCG 游戏用的道具文件管理系统！！！！！！！！！！！！！！
+
+
 @final
 class PropFile:
 

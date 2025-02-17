@@ -12,7 +12,7 @@ from extended_systems.lang_serve_system import LangServeSystem
 from player.player_proxy import PlayerProxy
 from models.player_models import PlayerProxyModel
 import game.tcg_game_utils
-from extended_systems.prop_file2 import PropFileManageSystem
+from extended_systems.tcg_prop_file_manage_system import PropFileManageSystem
 from player.player_command2 import PlayerCommand2
 
 

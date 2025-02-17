@@ -53,6 +53,7 @@ class TCGGameProcessors(Processors):
             WorldSystemPlanningSystem,
         )
         from tcg_game_systems.tag_action_system import TagActionSystem
+        from tcg_game_systems.go_to_action_system import GoToActionSystem
 
         processors.add(BeginSystem(context))
 
@@ -74,6 +75,9 @@ class TCGGameProcessors(Processors):
 
         # ?
         processors.add(DeadActionSystem(context))
+
+        # 战斗之后，执行场景更换的逻辑，如果上面死亡了，就不能执行下面的！
+        processors.add(GoToActionSystem(context))
 
         # ?
         processors.add(PostActionSystem(context))

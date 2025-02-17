@@ -182,7 +182,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
         props=[],
         attributes=[],  # 暂时不用,
         kick_off_message="你开始作为这个奇幻世界内的一个小镇开始你的故事",
-        next="",
+        next=[],
     )
 
     world_system_instance1 = WorldSystemInstance(

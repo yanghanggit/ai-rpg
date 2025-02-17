@@ -8,6 +8,7 @@ from models.player_models import (
 )
 from pathlib import Path
 from player.player_command2 import PlayerCommand2
+from models.tcg_models import PlayerNotification
 
 
 class PlayerProxy:
@@ -26,6 +27,8 @@ class PlayerProxy:
         self._commands: List[PlayerCommand] = []
 
         self._player_commands: List[PlayerCommand2] = []
+
+        self._player_notifications: List[PlayerNotification] = []
 
     ##########################################################################################################################################################
     @property
@@ -188,5 +191,20 @@ class PlayerProxy:
     def add_player_command(self, command: PlayerCommand2) -> None:
         logger.info(f"add_player_command: {command}")
         self._player_commands.append(command)
+
+    ##########################################################################################################################################################
+
+    ##########################################################################################################################################################
+    def append_event_to_notifications(
+        self, tag: str, sendder: str, event: BaseEvent
+    ) -> None:
+        logger.debug(f"add_event: {event}")
+        self._player_notifications.append(
+            PlayerNotification(
+                tag=tag,
+                sender=sendder,
+                agent_event=event,
+            )
+        )
 
     ##########################################################################################################################################################

@@ -1,5 +1,5 @@
 from entitas import Entity, Matcher  # type: ignore
-from typing import Set, List, Optional, Dict
+from typing import Set, List, Optional
 from overrides import override
 from loguru import logger
 from game.tcg_game_context import TCGGameContext
@@ -499,10 +499,25 @@ class TCGGame(BaseGame):
     ) -> None:
 
         for entity in entities:
+
+            # 针对agent的事件通知。
             replace_message = rpg_game_systems.prompt_utils.replace_with_you(
                 agent_event.message, entity._name
             )
             self.append_human_message(entity, replace_message)
             logger.warning(f"{entity._name} ==> {replace_message}")
+
+            # 如果是玩家，就要补充一个事件信息，用于客户端接收
+            if entity.has(PlayerComponent):
+                player_comp = entity.get(PlayerComponent)
+                player_proxy = self.get_player(player_comp.name)
+                assert player_proxy is not None
+                if player_proxy is None:
+                    continue
+
+                agent_event.message = replace_message
+                player_proxy.append_event_to_notifications(
+                    tag="", sendder="", event=agent_event
+                )
 
     ###############################################################################################################################################

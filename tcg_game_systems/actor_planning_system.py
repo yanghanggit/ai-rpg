@@ -15,6 +15,7 @@ from game.tcg_game import TCGGame
 from loguru import logger
 from tcg_game_systems.action_bundle import ActionBundle
 
+
 #######################################################################################################################################
 @final
 class ActorPlanningSystem(ExecuteProcessor):
@@ -74,7 +75,7 @@ class ActorPlanningSystem(ExecuteProcessor):
 
         for request_handler in request_handlers:
             logger.warning(
-                f"Agent: {request_handler._name}, Response: {request_handler.response_content}"
+                f"Agent: {request_handler._name}, Response:\n{request_handler.response_content}"
             )
 
             if request_handler.response_content == "":
@@ -100,10 +101,7 @@ def _generate_actor_plan_prompt() -> str:
 ### 输出格式指南
 请严格遵循以下 JSON 结构示例： 
 {{
-    "{MindVoiceAction.__name__}":["你的内心独白",...],
-    "{WhisperAction.__name__}":["@角色全名(你要对谁说,只能是场景内的角色):你想私下说的内容（只有你和目标知道）",...],
-    "{AnnounceAction.__name__}":["你要说的内容（无特定目标，场景内所有角色都会听见）",...],
-    "{SpeakAction.__name__}":["@角色全名(你要对谁说,只能是场景内的角色):你要说的内容（场景内其他角色会听见）",...]
+    "{AnnounceAction.__name__}":["你要说的内容（无特定目标，场景内所有角色都会听见）",...],  
 }}
 
 ### 注意事项
@@ -117,3 +115,8 @@ def _generate_actor_plan_prompt() -> str:
 - 输出不得包含超出所需 JSON 格式的其他文本、解释或附加信息。
 - 不要使用```json```来封装内容。
 """
+
+
+#  "{MindVoiceAction.__name__}":["你的内心独白",...],
+#     "{WhisperAction.__name__}":["@角色全名(你要对谁说,只能是场景内的角色):你想私下说的内容（只有你和目标知道）",...],
+#     "{SpeakAction.__name__}":["@角色全名(你要对谁说,只能是场景内的角色):你要说的内容（场景内其他角色会听见）",...],

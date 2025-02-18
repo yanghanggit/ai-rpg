@@ -503,7 +503,7 @@ class TCGGame(BaseGame):
                 agent_event.message, entity._name
             )
             self.append_human_message(entity, replace_message)
-            logger.warning(f"通知{entity._name}事件:\n{replace_message}")
+            logger.warning(f"事件通知 => {entity._name}:\n{replace_message}")
 
             # 如果是玩家，就要补充一个事件信息，用于客户端接收
             if entity.has(PlayerComponent):

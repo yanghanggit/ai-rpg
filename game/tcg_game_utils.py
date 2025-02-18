@@ -3,9 +3,9 @@ from models.tcg_models import (
     WorldRoot,
     ActorPrototype,
     StagePrototype,
-    #PropPrototype,
+    # PropPrototype,
     WorldSystemPrototype,
-    #PropInstance,
+    # PropInstance,
     ActorInstance,
     StageInstance,
     WorldSystemInstance,
@@ -161,7 +161,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
         guid=100,
         props=[],
         attributes=[],  # 暂时不用
-        kick_off_message="你作为角色.战士.凯尔接到了附近村庄的委托，前几日有一名村民被掳进了哥布林的巢穴。于是你做足准备，只身进入了洞穴搜寻村民的踪迹。",
+        kick_off_message="你接到了附近村庄的委托，前几日有一名村民被掳进了哥布林的巢穴。于是你做足准备，只身进入了洞穴搜寻村民的踪迹。",
     )
 
     actor_instance2 = ActorInstance(
@@ -169,7 +169,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
         guid=400,
         props=[],
         attributes=[],  # 暂时不用
-        kick_off_message="你作为角色.怪物.哥布林小队，前几日在外遭遇了一名落单的村民，你们把他活捉回洞穴献给了哥布林大王。哥布林大王赏赐给你们很多的酒和肉吃，你们正狂欢完躺在洞穴深处休息。",
+        kick_off_message="你前几日在外遭遇了一名落单的村民，你们把他活捉回洞穴献给了哥布林大王。哥布林大王赏赐给你们很多的酒和肉吃，你们正狂欢完躺在洞穴深处休息。",
     )
 
     #
@@ -182,7 +182,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
         ],
         props=[],
         attributes=[],  # 暂时不用,
-        kick_off_message="你开始作为这个奇幻世界内的一个哥布林洞穴开始你的故事",
+        kick_off_message="洞穴中十分吵闹",
         next=[],
     )
 
@@ -200,7 +200,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
     world_root.stages.append(stage_instance1)
 
     # 世界系统
-    world_root.world_systems.append(world_system_instance1)
+    # world_root.world_systems.append(world_system_instance1)
 
     #
 

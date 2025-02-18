@@ -17,20 +17,21 @@ from player.player_command2 import PlayerCommand2
 
 
 # For test TODO
-class Counter():
-    value : int = 0
+class Counter:
+    value: int = 0
 
     @classmethod
-    def add(cls):
+    def add(cls) -> None:
         cls.value += 1
-    
+
     @classmethod
-    def get(cls):
+    def get(cls) -> int:
         return cls.value
-    
+
     @classmethod
-    def reset(cls):
+    def reset(cls) -> None:
         cls.value = 0
+
 
 ###############################################################################################################################################
 @dataclass
@@ -184,5 +185,5 @@ async def run_game(option: OptionParameters) -> None:
 if __name__ == "__main__":
     import asyncio
 
-    Counter.reset() # For test TODO
+    Counter.reset()  # For test TODO
     asyncio.run(run_game(OptionParameters(user="yanghang", game="Game1")))

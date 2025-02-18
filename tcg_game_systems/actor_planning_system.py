@@ -6,7 +6,12 @@ from components.actions import (
     AnnounceAction,
     SpeakAction,
 )
-from components.components import ActorComponent, KickOffFlagComponent, PlayerComponent, StageComponent
+from components.components import (
+    ActorComponent,
+    KickOffFlagComponent,
+    PlayerComponent,
+    StageComponent,
+)
 from entitas import ExecuteProcessor, Matcher, Entity  # type: ignore
 from overrides import override
 from typing import List, final, cast
@@ -60,25 +65,23 @@ class ActorPlanningSystem(ExecuteProcessor):
 
         request_handlers: List[ChatRequestHandler] = []
 
-        Counter.add() # For test TODO
+        Counter.add()  # For test TODO
         for entity in actor_entities:
             # For test TODO
-            if Counter.get()%2==0 and entity._name!="角色.战士.凯尔":
+            if Counter.get() % 2 == 0 and entity._name != "角色.战士.凯尔":
                 continue
-            if Counter.get()%2!=0 and entity._name!="角色.怪物.哥布林小队":
+            if Counter.get() % 2 != 0 and entity._name != "角色.怪物.哥布林小队":
                 continue
 
             # 找到当前场景
             current_stage = self._context.safe_get_stage_entity(entity)
+            assert current_stage is not None
             # 找到当前场景内所有角色
             actors_set = self._game.retrieve_actors_on_stage(current_stage)
             actors_set.remove(entity)
             # 移除自己后，剩下的角色的名字
-            actors_name_list : List[str] = [actor._name for actor in actors_set]
-            message = _generate_actor_plan_prompt(
-                current_stage._name,
-                actors_name_list
-                )
+            actors_name_list: List[str] = [actor._name for actor in actors_set]
+            message = _generate_actor_plan_prompt(current_stage._name, actors_name_list)
             assert message is not None
             agent_short_term_memory = self._game.get_agent_short_term_memory(entity)
             request_handlers.append(
@@ -113,7 +116,9 @@ class ActorPlanningSystem(ExecuteProcessor):
 #######################################################################################################################################
 
 
-def _generate_actor_plan_prompt(current_stage_name : str, actors_name_list) -> str:
+def _generate_actor_plan_prompt(
+    current_stage_name: str, actors_name_list: List[str]
+) -> str:
     assert current_stage_name is not "", "current_stage is empty"
     return f"""
 # 请制定你的行动计划
@@ -122,7 +127,7 @@ def _generate_actor_plan_prompt(current_stage_name : str, actors_name_list) -> s
 {current_stage_name}
 
 ### 场景内除你之外的其他角色
-{actors_name_list}
+{"\n".join(actors_name_list)}
 
 ## 输出要求
 ### 输出格式指南

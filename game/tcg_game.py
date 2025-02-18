@@ -27,7 +27,8 @@ from components.components import (
     StageGraphComponent,
 )
 from player.player_proxy import PlayerProxy
-from format_string.tcg_complex_name import ComplexName
+
+# from format_string.tcg_complex_name import ComplexName
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from extended_systems.lang_serve_system import LangServeSystem
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
@@ -198,8 +199,7 @@ class TCGGame(BaseGame):
 
         for instance in world_system_instances:
 
-            complex_name = ComplexName(instance.name)
-            prototype = data_base.world_systems.get(complex_name.parse_name, None)
+            prototype = data_base.world_systems.get(instance.name, None)
             assert prototype is not None
             if prototype is None:
                 logger.error(f"db is None: {instance.name}")
@@ -232,8 +232,7 @@ class TCGGame(BaseGame):
         ret: List[Entity] = []
         for instance in actor_instances:
 
-            complex_name = ComplexName(instance.name)
-            prototype = data_base.actors.get(complex_name.parse_name, None)
+            prototype = data_base.actors.get(instance.name, None)
             assert prototype is not None
             if prototype is None:
                 logger.error(f"db is None: {instance.name}")
@@ -281,8 +280,7 @@ class TCGGame(BaseGame):
 
         for instance in stage_instances:
 
-            complex_name = ComplexName(instance.name)
-            prototype = data_base.stages.get(complex_name.parse_name, None)
+            prototype = data_base.stages.get(instance.name, None)
             assert prototype is not None
             if prototype is None:
                 logger.error(f"db is None: {instance.name}")
@@ -338,26 +336,23 @@ class TCGGame(BaseGame):
     def get_system_message(self, entity: Entity) -> str:
 
         data_base = self.world_runtime.root.data_base
-        complex_name = ComplexName(entity._name)
 
         if entity.has(ActorComponent):
-            actor_prototype = data_base.actors.get(complex_name.parse_name, None)
+            actor_prototype = data_base.actors.get(entity._name, None)
             assert actor_prototype is not None
             if actor_prototype is not None:
                 return actor_prototype.system_message
 
         elif entity.has(StageComponent):
 
-            stage_prototype = data_base.stages.get(complex_name.parse_name, None)
+            stage_prototype = data_base.stages.get(entity._name, None)
             assert stage_prototype is not None
             if stage_prototype is not None:
                 return stage_prototype.system_message
 
         elif entity.has(WorldSystemComponent):
 
-            world_system_prototype = data_base.world_systems.get(
-                complex_name.parse_name, None
-            )
+            world_system_prototype = data_base.world_systems.get(entity._name, None)
             assert world_system_prototype is not None
             if world_system_prototype is not None:
                 return world_system_prototype.system_message
@@ -440,8 +435,7 @@ class TCGGame(BaseGame):
     def _get_prop_prototype(
         self, prop_instance: PropInstance, data_base: WorldDataBase
     ) -> Optional[PropPrototype]:
-        complex_name = ComplexName(prop_instance.name)
-        return data_base.props.get(complex_name.parse_name, None)
+        return data_base.props.get(prop_instance.name, None)
 
     ###############################################################################################################################################
     # todo
@@ -509,7 +503,7 @@ class TCGGame(BaseGame):
                 agent_event.message, entity._name
             )
             self.append_human_message(entity, replace_message)
-            logger.warning(f"{entity._name} ==> {replace_message}")
+            logger.warning(f"通知{entity._name}事件:\n{replace_message}")
 
             # 如果是玩家，就要补充一个事件信息，用于客户端接收
             if entity.has(PlayerComponent):

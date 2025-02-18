@@ -27,9 +27,9 @@ class SpeakActionSystem(BaseActionReactiveSystem):
     ####################################################################################################################################
     @override
     def react(self, entities: list[Entity]) -> None:
-        #for entity in entities:
+        # for entity in entities:
         #    self._prosses_speak_action(entity)
-        pass # TEST
+        pass  # TEST
 
     ####################################################################################################################################
     def _prosses_speak_action(self, entity: Entity) -> None:

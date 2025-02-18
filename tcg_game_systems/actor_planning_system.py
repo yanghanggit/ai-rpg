@@ -1,5 +1,11 @@
 from agent.chat_request_handler import ChatRequestHandler
-from components.actions import ACTOR_AVAILABLE_ACTIONS_REGISTER
+from components.actions import (
+    ACTOR_AVAILABLE_ACTIONS_REGISTER,
+    MindVoiceAction,
+    WhisperAction,
+    AnnounceAction,
+    SpeakAction,
+)
 from components.components import ActorComponent, KickOffFlagComponent, PlayerComponent
 from entitas import ExecuteProcessor, Matcher  # type: ignore
 from overrides import override
@@ -8,7 +14,6 @@ from game.tcg_game_context import TCGGameContext
 from game.tcg_game import TCGGame
 from loguru import logger
 from tcg_game_systems.action_bundle import ActionBundle
-
 
 #######################################################################################################################################
 @final
@@ -89,17 +94,17 @@ class ActorPlanningSystem(ExecuteProcessor):
 
 
 def _generate_actor_plan_prompt() -> str:
-    return """
+    return f"""
 # 请制定你的行动计划
 ## 输出要求
 ### 输出格式指南
 请严格遵循以下 JSON 结构示例： 
-{
-    "MindVoiceAction":["你的内心独白",...],
-    "WhisperAction":["@角色全名(你要对谁说,只能是场景内的角色):你想私下说的内容（只有你和目标知道）",...],
-    "AnnounceAction":["你要说的内容（无特定目标，场景内所有角色都会听见）",...],
-    "SpeakAction":["@角色全名(你要对谁说,只能是场景内的角色):你要说的内容（场景内其他角色会听见）",...]
-}
+{{
+    "{MindVoiceAction.__name__}":["你的内心独白",...],
+    "{WhisperAction.__name__}":["@角色全名(你要对谁说,只能是场景内的角色):你想私下说的内容（只有你和目标知道）",...],
+    "{AnnounceAction.__name__}":["你要说的内容（无特定目标，场景内所有角色都会听见）",...],
+    "{SpeakAction.__name__}":["@角色全名(你要对谁说,只能是场景内的角色):你要说的内容（场景内其他角色会听见）",...]
+}}
 
 ### 注意事项
 - 所有输出必须为第一人称视角。

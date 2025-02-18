@@ -26,7 +26,7 @@ class SaveSystem(ExecuteProcessor):
 
     ############################################################################################################
     def _mapping(self) -> None:
-        
+
         entities_mapping = self._game.context.retrieve_stage_actor_mapping()
         if len(entities_mapping) == 0:
             return

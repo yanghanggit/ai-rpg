@@ -8,7 +8,6 @@ from models.event_models import AnnounceEvent
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
 
 
-
 @final
 class AnnounceActionSystem(BaseActionReactiveSystem):
 
@@ -35,7 +34,7 @@ class AnnounceActionSystem(BaseActionReactiveSystem):
             return
 
         announce_action = entity.get(AnnounceAction)
-        stage_name = self._context.safe_get_stage_entity(stage_entity).get(StageComponent).name
+        stage_name = stage_entity.get(StageComponent).name
         content = " ".join(announce_action.values)
         self._game.broadcast_event(
             stage_entity,
@@ -52,6 +51,7 @@ class AnnounceActionSystem(BaseActionReactiveSystem):
         )
 
     ####################################################################################################################################
+
 
 def _generate_announce_prompt(speaker_name: str, stage_name: str, content: str) -> str:
     return f"# 发生事件: {speaker_name} 对 {stage_name} 里的所有角色说: {content}"

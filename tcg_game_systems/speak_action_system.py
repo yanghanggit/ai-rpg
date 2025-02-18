@@ -3,7 +3,12 @@ from components.actions import (
     SpeakAction,
 )
 from typing import final, override
-from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
+from tcg_game_systems.base_action_reactive_system import (
+    BaseActionReactiveSystem,
+    ConversationError,
+)
+import format_string.target_message
+from models.event_models import AgentEvent, SpeakEvent
 
 
 @final
@@ -22,6 +27,57 @@ class SpeakActionSystem(BaseActionReactiveSystem):
     ####################################################################################################################################
     @override
     def react(self, entities: list[Entity]) -> None:
-        pass
+        for entity in entities:
+            self._prosses_speak_action(entity)
 
     ####################################################################################################################################
+    def _prosses_speak_action(self, entity: Entity) -> None:
+        stage_entity = self._context.safe_get_stage_entity(entity)
+        if stage_entity is None:
+            return
+
+        speak_action = entity.get(SpeakAction)
+        target_and_message = format_string.target_message.extract_target_message_pairs(
+            speak_action.values
+        )
+
+        for target_name, message in target_and_message:
+
+            error = self.validate_conversation(entity, target_name)
+            if error != ConversationError.VALID:
+                if error == ConversationError.INVALID_TARGET:
+                    self._game.notify_event(
+                        set({entity}),
+                        AgentEvent(
+                            message=_generate_invalid_speak_target_prompt(
+                                speak_action.name, target_name
+                            )
+                        ),
+                    )
+                continue
+
+            assert self._context.get_entity_by_name(target_name) is not None
+            self._game.broadcast_event(
+                stage_entity,
+                SpeakEvent(
+                    message=_generate_speak_prompt(
+                        speak_action.name, target_name, message
+                    ),
+                    speaker_name=speak_action.name,
+                    target_name=target_name,
+                    content=message,
+                ),
+            )
+
+    ####################################################################################################################################
+
+
+def _generate_speak_prompt(speaker_name: str, target_name: str, content: str) -> str:
+    return f"# 发生事件: {speaker_name} 对 {target_name} 说: {content}"
+
+
+def _generate_invalid_speak_target_prompt(speaker_name: str, target_name: str) -> str:
+    return f"""# 提示: {speaker_name} 试图和一个不存在的目标 {target_name} 进行对话。
+## 原因分析与建议
+- 请检查目标的全名: {target_name}，确保是完整匹配:游戏规则-全名机制
+- 请检查目标是否存在于当前场景中。"""

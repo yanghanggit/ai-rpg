@@ -45,7 +45,7 @@ def _generate_default_appearance_prompt(
 
 ################################################################################################################################################
 def _generate_appearance_reasoning_prompt(
-    base_form_and_clothe_info: Dict[str, tuple[str, str, str]]
+    base_form_and_clothe_info: Dict[str, tuple[str, str, str]],
 ) -> str:
 
     reference_info: List[str] = []

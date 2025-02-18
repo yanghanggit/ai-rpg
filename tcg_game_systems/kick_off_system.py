@@ -16,6 +16,7 @@ from agent.chat_request_handler import ChatRequestHandler
 from components.actions import (
     ACTOR_AVAILABLE_ACTIONS_REGISTER,
     MindVoiceAction,
+    StageNarrationAction,
 )
 from tcg_game_systems.action_bundle import ActionBundle
 
@@ -52,7 +53,17 @@ def _generate_stage_kick_off_prompt(
 ## 你的初始设定与状态
 {kick_off_message}
 ## 输出要求
-输出你的场景环境描写。尽量简短。"""
+### 输出格式指南
+请严格遵循以下 JSON 结构示例： 
+{{
+    "{StageNarrationAction.__name__}":["描述场景信息",...], 
+}}
+### 注意事项
+- 所有输出必须为第一人称视角。
+- 含有“...”的键可以接收多个值，否则只能接收一个值。
+- 输出不得包含超出所需 JSON 格式的其他文本、解释或附加信息。
+- 不要使用```json```来封装内容。
+- 尽量简短"""
 
 
 ###############################################################################################################################################

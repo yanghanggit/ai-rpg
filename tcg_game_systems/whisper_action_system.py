@@ -10,6 +10,7 @@ from tcg_game_systems.base_action_reactive_system import (
 import format_string.target_message
 from models.event_models import AgentEvent, WhisperEvent
 
+
 ####################################################################################################################################
 @final
 class WhisperActionSystem(BaseActionReactiveSystem):
@@ -35,7 +36,7 @@ class WhisperActionSystem(BaseActionReactiveSystem):
         stage_entity = self._context.safe_get_stage_entity(entity)
         if stage_entity is None:
             return
-        
+
         whisper_action = entity.get(WhisperAction)
         target_and_message = format_string.target_message.extract_target_message_pairs(
             whisper_action.values
@@ -68,7 +69,6 @@ class WhisperActionSystem(BaseActionReactiveSystem):
                     content=message,
                 ),
             )
-
 
     ####################################################################################################################################
 

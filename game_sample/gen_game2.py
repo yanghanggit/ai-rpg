@@ -513,7 +513,7 @@ class GameEditor:
 
         # step 1: 构建数据
         self._build_world_data_base()
-        
+
         # step 2: 构建实例
         self._build_world_root_instances()
 
@@ -600,14 +600,16 @@ class GameEditor:
             self._link_stage_props(stage_instance, stage_editor)
             self._link_stage_actors(stage_instance, stage_editor)
             self._world_root.stages.append(stage_instance)
-            
+
     ############################################################################################################
     def _link_stage_actors(
         self, stage_instance: StageInstance, stage_editor: StageEditor
     ) -> None:
         for actor1 in stage_editor.actors_on_stage:
             for actor2 in self._world_root.players + self._world_root.actors:
-                logger.warning(f"actor1: {actor1}, actor2: {actor2.name}, 其实是想的不全面的后续的怪物还是要group")
+                logger.warning(
+                    f"actor1: {actor1}, actor2: {actor2.name}, 其实是想的不全面的后续的怪物还是要group"
+                )
                 if actor1 in actor2.name:
                     stage_instance.actors.append(actor2.name)
 

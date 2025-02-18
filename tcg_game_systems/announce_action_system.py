@@ -34,18 +34,21 @@ class AnnounceActionSystem(BaseActionReactiveSystem):
             return
 
         announce_action = entity.get(AnnounceAction)
-        stage_name = self._context.safe_get_stage_entity(stage_entity).get(StageComponent).name
+        assert announce_action is not None
+
+        stage_name = stage_entity.get(StageComponent).name
+
         content = " ".join(announce_action.values)
         self._game.broadcast_event(
             stage_entity,
             AnnounceEvent(
                 message=_generate_announce_prompt(
                     announce_action.name,
-                    stage_comp.name,
+                    stage_name,
                     content,
                 ),
                 announcer_name=announce_action.name,
-                stage_name=stage_comp.name,
+                stage_name=stage_name,
                 content=content,
             ),
         )

@@ -111,10 +111,10 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
 
     # 添加舞台
     stage1 = StagePrototype(
-        name="洞窟",
+        name="场景.洞窟",
         code_name="cave",
         system_message=_comple_stage_system_prompt(
-            name="洞窟",
+            name="场景.洞窟",
             epoch_script=world_root.epoch_script,
             stage_profile="你是一个哥布林洞窟，内部狭长拥挤，错综复杂，臭气熏天，设有许多危险的陷阱，哥布林们躲藏在暗处伺机而动。",
         ),

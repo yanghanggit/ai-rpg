@@ -6,8 +6,8 @@ from components.actions import (
     AnnounceAction,
     SpeakAction,
 )
-from components.components import ActorComponent, KickOffFlagComponent, PlayerComponent
-from entitas import ExecuteProcessor, Matcher  # type: ignore
+from components.components import ActorComponent, KickOffFlagComponent, PlayerComponent, StageComponent
+from entitas import ExecuteProcessor, Matcher, Entity  # type: ignore
 from overrides import override
 from typing import List, final, cast
 from game.tcg_game_context import TCGGameContext
@@ -68,7 +68,17 @@ class ActorPlanningSystem(ExecuteProcessor):
             if Counter.get()%2!=0 and entity._name!="角色.怪物.哥布林小队":
                 continue
 
-            message = _generate_actor_plan_prompt()
+            # 找到当前场景
+            current_stage = self._context.safe_get_stage_entity(entity)
+            # 找到当前场景内所有角色
+            actors_set = self._game.retrieve_actors_on_stage(current_stage)
+            actors_set.remove(entity)
+            # 移除自己后，剩下的角色的名字
+            actors_name_list : List[str] = [actor._name for actor in actors_set]
+            message = _generate_actor_plan_prompt(
+                current_stage._name,
+                actors_name_list
+                )
             assert message is not None
             agent_short_term_memory = self._game.get_agent_short_term_memory(entity)
             request_handlers.append(
@@ -94,17 +104,26 @@ class ActorPlanningSystem(ExecuteProcessor):
             self._game.append_human_message(entity2, request_handler._prompt)
             self._game.append_ai_message(entity2, request_handler.response_content)
             bundle = ActionBundle(entity2._name, request_handler.response_content)
-            assert bundle.assign_actions_to_entity(
+            ret = bundle.assign_actions_to_entity(
                 entity2, ACTOR_AVAILABLE_ACTIONS_REGISTER
             )
+            assert ret is True, "Action Bundle Error"
 
 
 #######################################################################################################################################
 
 
-def _generate_actor_plan_prompt() -> str:
+def _generate_actor_plan_prompt(current_stage_name : str, actors_name_list) -> str:
+    assert current_stage_name is not "", "current_stage is empty"
     return f"""
 # 请制定你的行动计划
+
+## 你当前所在的场景
+{current_stage_name}
+
+### 场景内除你之外的其他角色
+{actors_name_list}
+
 ## 输出要求
 ### 输出格式指南
 请严格遵循以下 JSON 结构示例： 
@@ -114,7 +133,6 @@ def _generate_actor_plan_prompt() -> str:
 
 ### 注意事项
 - 所有输出必须为第一人称视角。
-- 输出的键值对中，键名为‘游戏流程的动作’的类名，值为对应的参数。用于游戏系统执行。
 - JSON 对象中可以包含上述键中的一个或多个。
 - 注意！不允许重复使用上述的键！ 
 - 注意！不允许使用不在上述列表中的键！（即未定义的键位），注意看‘输出要求’

@@ -86,7 +86,6 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
     actor1 = ActorPrototype(
         name="角色.战士.凯尔",
         code_name="warrior",
-        # system_message="你扮演这个游戏世界中的一个人类角色：角色.战士.凯尔。\n你的背景：生于边境的偏远山村，你的家乡由于哥布林的劫掠而被毁灭，你的家人也都在那场浩劫中不幸遇难，因此你十分痛恨哥布林，一生致力于消灭这些邪恶的怪物，如今成为了一名娴熟的战士。你的生活简朴，靠帮附近的村子剿灭哥布林为生，除日常生活外的所有开销都用于保养和升级自己的装备。附近的村民虽然都把你当作怪人，但都对你带有几分敬意。\n你的性格：冷静，谨慎，内向。你从不轻敌，沉着地评估现状并快速做出反应的能力帮助你数次逃出哥布林的陷阱。\n你的目标：你的首要目标是生存，你的次要目标是剿灭哥布林。\n你的恐惧：哥布林的突然袭击。\n你的弱点：左臂还未痊愈的旧伤。\n你的说话风格与语气示例：（认真）哥布林虽小，但狡猾残忍，绝不能掉以轻心！；（严肃）没有侥幸，只有准备。；（坚定）杀光它们，一个不留，这就是我的方式。；（冷酷）我不在乎荣誉，也不在乎名声。我的目标很简单——清除所有的哥布林，直到最后一个倒下。；（略带嘲讽）那些自以为英雄的家伙，总是低估哥布林的威胁。等他们被包围时，才会明白自己的愚蠢。",
         system_message=_comple_actor_system_prompt(
             name="角色.战士.凯尔",
             epoch_script=world_root.epoch_script,
@@ -98,7 +97,6 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
     actor2 = ActorPrototype(
         name="角色.怪物.哥布林小队",
         code_name="goblin",
-        # system_message="你扮演这个游戏世界中的一个怪物角色：角色.怪物.哥布林小队。\n你的背景：哥布林小队由数只哥布林组成。你们都生活在偏僻郊野的地下洞穴中，倾向以小队的形式组团行动，时不时与其他哥布林们一起组成哥布林大军出去劫掠以满足生计。你们最喜欢去附近的村庄中偷农产品或偷偷宰杀他们的牲畜带回洞穴，有时还会猎杀落单的人类满足自己的施虐本性和口腹之欲，或是把人类献给哥布林大王以乞求奖赏。你们也经常与其他哥布林们起冲突，甚至于因为自私自利而与小队内的其他哥布林内讧。你们虽然单体战斗力很弱，可一旦组成小队士气便会大幅增加。\n你们的性格：狡猾，恶毒，懒惰，自私自利。一旦形式对己方明显不利，一些哥布林便很有可能抛弃同伴逃跑。\n你的目标：你的首要目标是生存，你的次要目标是满足自己变态的施虐心和纵欲。\n你的恐惧：自己陷入危险和被哥布林大王惩罚。\n你的弱点：力量弱小，智力低下。\n你的说话风格与语气示例：（哥布林A）（高兴）来...来人！有猎...猎物送上门来了！（哥布林B）（癫狂）晚上吃人...人肉！；（哥布林A）（恐惧）大王...大王会...会怪罪我们的！（哥布林B）（愤怒）你...你这个胆小鬼！（哥布林C）（恐惧）不...不要...不要撒（杀）我！；注：由于哥布林很笨，所以有时说话时会结巴或说错。",
         system_message=_comple_actor_system_prompt(
             name="角色.怪物.哥布林小队",
             epoch_script=world_root.epoch_script,
@@ -115,7 +113,6 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
     stage1 = StagePrototype(
         name="洞窟",
         code_name="cave",
-        # system_message="你是一个哥布林洞窟，内部狭长拥挤，错综复杂，臭气熏天，设有许多危险的陷阱，哥布林们躲藏在暗处伺机而动。",
         system_message=_comple_stage_system_prompt(
             name="洞窟",
             epoch_script=world_root.epoch_script,
@@ -201,7 +198,5 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
 
     # 世界系统
     world_root.world_systems.append(world_system_instance1)
-
-    #
 
     return world_root

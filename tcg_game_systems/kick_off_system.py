@@ -15,6 +15,24 @@ from loguru import logger
 from agent.chat_request_handler import ChatRequestHandler
 
 
+###############################################################################################################################################
+def _generate_actor_kick_off_prompt(kick_off_message: str, epoch_script: str) -> str:
+    return f"""# 游戏启动!
+你将开始你的扮演，此时的世界背景如下，请仔细阅读并牢记，以确保你的行为和言语符合游戏设定，不会偏离时代背景。
+
+## 当前世界背景
+{epoch_script}
+
+## 你的初始设定
+{kick_off_message}
+
+## 输出要求
+请简短回复。"""
+
+
+###############################################################################################################################################
+
+
 ######################################################################################################################################################
 @final
 class KickOffSystem(ExecuteProcessor):
@@ -36,8 +54,8 @@ class KickOffSystem(ExecuteProcessor):
         entities: Set[Entity] = self._context.get_group(
             Matcher(
                 all_of=[SystemMessageComponent, KickOffMessageComponent],
-                any_of=[ActorComponent, StageComponent, WorldSystemComponent],
-                none_of=[KickOffFlagComponent],
+                any_of=[ActorComponent, WorldSystemComponent],
+                none_of=[KickOffFlagComponent, StageComponent],  # todo 场景先不要
             )
         ).entities.copy()
 
@@ -67,7 +85,10 @@ class KickOffSystem(ExecuteProcessor):
             request_handlers.append(
                 ChatRequestHandler(
                     name=entity1._name,
-                    prompt=kick_off_message,
+                    # prompt=kick_off_message,
+                    prompt=_generate_actor_kick_off_prompt(
+                        kick_off_message, self._game.world_runtime.root.epoch_script
+                    ),
                     chat_history=agent_short_term_memory.chat_history,
                 )
             )
@@ -78,7 +99,7 @@ class KickOffSystem(ExecuteProcessor):
         # 添加上下文。
         for request_handler in request_handlers:
             logger.warning(
-                f"Agent: {request_handler._name}, Response: {request_handler.response_content}"
+                f"Agent: {request_handler._name}, Response:\n{request_handler.response_content}"
             )
 
             if request_handler.response_content == "":

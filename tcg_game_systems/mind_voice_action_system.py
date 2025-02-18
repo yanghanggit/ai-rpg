@@ -35,6 +35,6 @@ class MindVoiceActionSystem(BaseActionReactiveSystem):
         assert mind_voice_action is not None
 
         content = " ".join(mind_voice_action.values)
-        logger.info(f"MindVoiceActionSystem:\n{mind_voice_action.name}: {content}")
+        logger.info(f"MindVoiceActionSystem:\n{mind_voice_action.name}:\n{content}")
 
     ####################################################################################################################################

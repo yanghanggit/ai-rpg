@@ -1,5 +1,5 @@
 from entitas import Entity, Matcher  # type: ignore
-from typing import Set, List, Optional, Dict
+from typing import Set, List, Optional
 from overrides import override
 from loguru import logger
 from game.tcg_game_context import TCGGameContext
@@ -24,6 +24,7 @@ from components.components import (
     GUIDComponent,
     SystemMessageComponent,
     KickOffMessageComponent,
+    StageGraphComponent,
 )
 from player.player_proxy import PlayerProxy
 from format_string.tcg_complex_name import ComplexName
@@ -31,7 +32,7 @@ from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from extended_systems.lang_serve_system import LangServeSystem
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from pathlib import Path
-from extended_systems.prop_file2 import PropFile, PropFileManageSystem
+from extended_systems.tcg_prop_file_manage_system import PropFile, PropFileManageSystem
 import rpg_game_systems.prompt_utils
 from models.event_models import AgentEvent
 
@@ -300,6 +301,9 @@ class TCGGame(BaseGame):
                 KickOffMessageComponent, instance.name, instance.kick_off_message
             )
 
+            # 添加场景可以连接的场景
+            stage_entity.add(StageGraphComponent, instance.name, instance.next)
+
             ## 重新设置Actor和stage的关系
             for actor_name in instance.actors:
                 actor_entity: Optional[Entity] = self.context.get_actor_entity(
@@ -499,10 +503,25 @@ class TCGGame(BaseGame):
     ) -> None:
 
         for entity in entities:
+
+            # 针对agent的事件通知。
             replace_message = rpg_game_systems.prompt_utils.replace_with_you(
                 agent_event.message, entity._name
             )
             self.append_human_message(entity, replace_message)
             logger.warning(f"{entity._name} ==> {replace_message}")
+
+            # 如果是玩家，就要补充一个事件信息，用于客户端接收
+            if entity.has(PlayerComponent):
+                player_comp = entity.get(PlayerComponent)
+                player_proxy = self.get_player(player_comp.name)
+                assert player_proxy is not None
+                if player_proxy is None:
+                    continue
+
+                agent_event.message = replace_message
+                player_proxy.append_event_to_notifications(
+                    tag="", sendder="", event=agent_event
+                )
 
     ###############################################################################################################################################

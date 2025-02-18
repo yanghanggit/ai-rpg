@@ -1,6 +1,7 @@
 from typing import List, Dict, Any, final
 from pydantic import BaseModel
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
+from models.event_models import BaseEvent
 
 
 ###############################################################################################################################################
@@ -97,6 +98,7 @@ class StageInstance(BaseModel):
     kick_off_message: str
     props: List[PropInstance]
     attributes: List[int]
+    next: List[str]
 
 
 ###############################################################################################################################################
@@ -131,3 +133,11 @@ class WorldRuntime(BaseModel):
 
 
 ###############################################################################################################################################
+
+
+# 玩家客户端消息
+class PlayerNotification(BaseModel):
+    tag: str
+    sender: str
+    index: int = 0
+    agent_event: BaseEvent  # 要根部的类，其实只需要它的序列化能力，其余的不要，所以不要出现具体类型的调用！

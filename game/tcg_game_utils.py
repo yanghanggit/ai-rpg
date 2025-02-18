@@ -182,6 +182,7 @@ import game.tcg_game_config
         props=[],
         attributes=[],  # 暂时不用,
         kick_off_message="你开始作为这个奇幻世界内的一个小镇开始你的故事",
+        next=[],
     )
 
     world_system_instance1 = WorldSystemInstance(
@@ -224,6 +225,7 @@ def create_test_world(game_name: str, version: str) -> WorldRoot:
 
 
 #######################################################################################################################################
+
 
 def test_world1(world_root: WorldRoot) -> WorldRoot:
 
@@ -326,6 +328,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
         props=[],
         attributes=[],  # 暂时不用,
         kick_off_message="你开始作为这个奇幻世界内的一个哥布林洞穴开始你的故事",
+        next=[],
     )
 
     world_system_instance1 = WorldSystemInstance(

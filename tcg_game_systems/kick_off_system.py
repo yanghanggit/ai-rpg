@@ -82,6 +82,7 @@ class KickOffSystem(ExecuteProcessor):
             )
 
             if request_handler.response_content == "":
+                logger.warning(f"Agent: {request_handler._name}, Response is empty.")
                 continue
 
             entity2 = self._context.get_entity_by_name(request_handler._name)

@@ -16,6 +16,22 @@ from extended_systems.tcg_prop_file_manage_system import PropFileManageSystem
 from player.player_command2 import PlayerCommand2
 
 
+# For test TODO
+class Counter():
+    value : int = 0
+
+    @classmethod
+    def add(cls):
+        cls.value += 1
+    
+    @classmethod
+    def get(cls):
+        return cls.value
+    
+    @classmethod
+    def reset(cls):
+        cls.value = 0
+
 ###############################################################################################################################################
 @dataclass
 class OptionParameters:
@@ -168,4 +184,5 @@ async def run_game(option: OptionParameters) -> None:
 if __name__ == "__main__":
     import asyncio
 
+    Counter.reset() # For test TODO
     asyncio.run(run_game(OptionParameters(user="yanghang", game="Game1")))

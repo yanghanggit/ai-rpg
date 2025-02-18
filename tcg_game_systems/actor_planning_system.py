@@ -14,6 +14,7 @@ from game.tcg_game_context import TCGGameContext
 from game.tcg_game import TCGGame
 from loguru import logger
 from tcg_game_systems.action_bundle import ActionBundle
+from run_terminal_tcg_game import Counter
 
 
 #######################################################################################################################################
@@ -59,7 +60,14 @@ class ActorPlanningSystem(ExecuteProcessor):
 
         request_handlers: List[ChatRequestHandler] = []
 
+        Counter.add() # For test TODO
         for entity in actor_entities:
+            # For test TODO
+            if Counter.get()%2==0 and entity._name!="角色.战士.凯尔":
+                continue
+            if Counter.get()%2!=0 and entity._name!="角色.怪物.哥布林小队":
+                continue
+
             message = _generate_actor_plan_prompt()
             assert message is not None
             agent_short_term_memory = self._game.get_agent_short_term_memory(entity)

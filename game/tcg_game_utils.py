@@ -158,7 +158,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
         guid=100,
         props=[],
         attributes=[],  # 暂时不用
-        kick_off_message="你接到了附近村庄的委托，前几日有一名村民被掳进了哥布林的巢穴。于是你做足准备，只身进入了洞穴搜寻村民的踪迹。",
+        kick_off_message="你接到了附近村庄剿灭哥布林的委托，于是你做足准备只身进入了洞穴，遇到了一群正在狂欢作乐的哥布林。",
     )
 
     actor_instance2 = ActorInstance(
@@ -166,7 +166,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
         guid=400,
         props=[],
         attributes=[],  # 暂时不用
-        kick_off_message="你前几日在外遭遇了一名落单的村民，你们把他活捉回洞穴献给了哥布林大王。哥布林大王赏赐给你们很多的酒和肉吃，你们正狂欢完躺在洞穴深处休息。",
+        kick_off_message="你前几日在外遭遇了一名落单的村民，你们把他活捉回洞穴献给了哥布林大王，得到了许多酒肉作为奖励。正在你们于洞穴深处的房间狂欢时，一个人类突然出现在了门口。",
     )
 
     #

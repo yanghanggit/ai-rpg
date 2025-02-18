@@ -1,9 +1,12 @@
+from components.components import StageComponent
 from entitas import Entity, Matcher, GroupEvent  # type: ignore
 from components.actions import (
     AnnounceAction,
 )
 from typing import final, override
+from models.event_models import AnnounceEvent
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
+
 
 
 @final
@@ -22,6 +25,33 @@ class AnnounceActionSystem(BaseActionReactiveSystem):
     ####################################################################################################################################
     @override
     def react(self, entities: list[Entity]) -> None:
-        pass
+        for entity in entities:
+            self._process_announce_action(entity)
 
     ####################################################################################################################################
+    def _process_announce_action(self, entity: Entity) -> None:
+        stage_entity = self._context.safe_get_stage_entity(entity)
+        if stage_entity is None:
+            return
+
+        announce_action = entity.get(AnnounceAction)
+        stage_name = self._context.safe_get_stage_entity(stage_entity).get(StageComponent).name
+        content = " ".join(announce_action.values)
+        self._game.broadcast_event(
+            stage_entity,
+            AnnounceEvent(
+                message=_generate_announce_prompt(
+                    announce_action.name,
+                    stage_name,
+                    content,
+                ),
+                announcer_name=announce_action.name,
+                stage_name=stage_name,
+                content=content,
+            ),
+        )
+
+    ####################################################################################################################################
+
+def _generate_announce_prompt(speaker_name: str, stage_name: str, content: str) -> str:
+    return f"# 发生事件: {speaker_name} 对 {stage_name} 里的所有角色说: {content}"

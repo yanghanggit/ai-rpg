@@ -27,8 +27,6 @@ from components.components import (
     StageGraphComponent,
 )
 from player.player_proxy import PlayerProxy
-
-# from format_string.tcg_complex_name import ComplexName
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from extended_systems.lang_serve_system import LangServeSystem
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
@@ -36,6 +34,7 @@ from pathlib import Path
 from extended_systems.tcg_prop_file_manage_system import PropFile, PropFileManageSystem
 import rpg_game_systems.prompt_utils
 from models.event_models import AgentEvent
+import copy
 
 
 class TCGGame(BaseGame):
@@ -513,7 +512,6 @@ class TCGGame(BaseGame):
                 if player_proxy is None:
                     continue
 
-                agent_event.message = replace_message
                 player_proxy.append_event_to_notifications(
                     tag="", sendder="", event=agent_event
                 )

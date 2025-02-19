@@ -14,7 +14,7 @@ from components.components import (
     StageEnvironmentComponent,
     FinalAppearanceComponent,
 )
-from entitas import ExecuteProcessor, Matcher, Entity  # type: ignore
+from entitas import ExecuteProcessor, Matcher  # type: ignore
 from overrides import override
 from typing import List, final, cast
 from game.tcg_game_context import TCGGameContext
@@ -88,8 +88,10 @@ class ActorPlanningSystem(ExecuteProcessor):
                 if actor.has(FinalAppearanceComponent)
             ]
             message = _generate_actor_plan_prompt(
+                self._game.world_runtime.root.epoch_script,
                 current_stage._name,
                 current_stage.get(StageEnvironmentComponent).narrate,
+                entity.get(FinalAppearanceComponent).final_appearance,
                 actors_info_list,
             )
             assert message is not None
@@ -127,19 +129,27 @@ class ActorPlanningSystem(ExecuteProcessor):
 
 
 def _generate_actor_plan_prompt(
-    current_stage_name: str, current_stage_narration: str, actors_info_list: List[str]
+    epoch_script: str,
+    current_stage_name: str,
+    current_stage_narration: str,
+    self_appearence: str,
+    actors_info_list: List[str],
 ) -> str:
     assert current_stage_name is not "", "current_stage is empty"
     return f"""
 # 请制定你的行动计划，此时的世界背景及场景信息如下，请仔细阅读并牢记，以确保你的行为和言语符合游戏设定，不会偏离时代背景。
 
 ## 当前世界背景
+{epoch_script}
 
 ## 你当前所在的场景
 {current_stage_name}
 
 ### 场景描述
 {current_stage_narration}
+
+### 你的外观特征
+{self_appearence}
 
 ### 场景内除你之外的其他角色的名称与外观特征
 {"\n".join(actors_info_list)}

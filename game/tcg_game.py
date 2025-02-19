@@ -13,8 +13,6 @@ from models.tcg_models import (
     ActorInstance,
     StageInstance,
     AgentShortTermMemory,
-    PropObject,
-    # PropPrototype,
 )
 from components.components import (
     WorldSystemComponent,
@@ -31,11 +29,8 @@ from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from extended_systems.lang_serve_system import LangServeSystem
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from pathlib import Path
-
-# from extended_systems.tcg_prop_file_manage_system import PropFile, PropFileManageSystem
 import rpg_game_systems.prompt_utils
 from models.event_models import AgentEvent
-import copy
 
 
 class TCGGame(BaseGame):

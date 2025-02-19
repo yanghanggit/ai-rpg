@@ -336,6 +336,25 @@ class TCGGame(BaseGame):
         return None
 
     ###############################################################################################################################################
+    def get_player_entity(self) -> Optional[PlayerProxy]:
+        assert len(self._players) == 1, "Player numbers more than 1"
+        player_entity: Entity
+        for player_proxy in self.players:
+
+            player_entity = self._context.get_player_entity(player_proxy.player_name)
+            if player_entity is None:
+                logger.warning(
+                    f"player_entity is None, player_proxy.name={player_proxy.player_name}"
+                )
+                continue
+            elif not player_entity.has(PlayerComponent):
+                logger.warning(
+                    f"player_entity don't have player component, player_proxy.name={player_proxy.player_name}"
+                )
+                continue
+        return player_entity
+
+    ###############################################################################################################################################
     @property
     def players(self) -> List[PlayerProxy]:
         return self._players

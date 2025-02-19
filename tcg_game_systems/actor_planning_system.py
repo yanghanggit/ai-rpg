@@ -62,14 +62,24 @@ class ActorPlanningSystem(ExecuteProcessor):
             )
         ).entities.copy()
 
+        # 获取玩家所在stage，随后剔除不在玩家所在场景内的actor
+        player_stage = self._context.safe_get_stage_entity(
+            self._game.get_player_entity()
+        )
+        actor_entities = [
+            entity
+            for entity in actor_entities
+            if self._context.safe_get_stage_entity(entity) == player_stage
+        ]
+
         if len(actor_entities) == 0:
             return
 
         request_handlers: List[ChatRequestHandler] = []
 
-        Counter.add()  # For test TODO
+        # 为了测试交叉对话，后面需要改成其他方式,TODO
+        Counter.add()
         for entity in actor_entities:
-            # For test TODO
             if Counter.get() % 2 == 0 and entity._name != "角色.战士.凯尔":
                 continue
             if Counter.get() % 2 != 0 and entity._name != "角色.怪物.哥布林小队":

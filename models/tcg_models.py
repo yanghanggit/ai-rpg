@@ -31,7 +31,7 @@ class ActorPrototype(BaseModel):
     name: str
     code_name: str
     system_message: str
-    base_form: str
+    appearance: str
 
 
 ###############################################################################################################################################

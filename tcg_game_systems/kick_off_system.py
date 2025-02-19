@@ -7,6 +7,7 @@ from components.components import (
     KickOffMessageComponent,
     KickOffFlagComponent,
     SystemMessageComponent,
+    StageEnvironmentComponent,
 )
 from typing import Set, final, cast, List
 from game.tcg_game_context import TCGGameContext
@@ -16,7 +17,6 @@ from agent.chat_request_handler import ChatRequestHandler
 from components.actions import (
     ACTOR_AVAILABLE_ACTIONS_REGISTER,
     MindVoiceAction,
-    StageNarrationAction,
 )
 from tcg_game_systems.action_bundle import ActionBundle
 
@@ -53,17 +53,7 @@ def _generate_stage_kick_off_prompt(
 ## 你的初始设定与状态
 {kick_off_message}
 ## 输出要求
-### 输出格式指南
-请严格遵循以下 JSON 结构示例： 
-{{
-    "{StageNarrationAction.__name__}":["描述场景信息",...], 
-}}
-### 注意事项
-- 所有输出必须为第一人称视角。
-- 含有“...”的键可以接收多个值，否则只能接收一个值。
-- 输出不得包含超出所需 JSON 格式的其他文本、解释或附加信息。
-- 不要使用```json```来封装内容。
-- 尽量简短"""
+尽量简短。"""
 
 
 ###############################################################################################################################################
@@ -151,6 +141,13 @@ class KickOffSystem(ExecuteProcessor):
             assert entity2 is not None
             self._game.append_human_message(entity2, request_handler._prompt)
             self._game.append_ai_message(entity2, request_handler.response_content)
+            # 若是场景，用response替换narrate
+            if entity2.has(StageComponent):
+                entity2.replace(
+                    StageEnvironmentComponent,
+                    entity2._name,
+                    request_handler.response_content,
+                )
 
             entity2.replace(KickOffFlagComponent, entity2._name)
 

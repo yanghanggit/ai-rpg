@@ -25,6 +25,8 @@ from components.components import (
     SystemMessageComponent,
     KickOffMessageComponent,
     StageGraphComponent,
+    FinalAppearanceComponent,
+    StageEnvironmentComponent,
 )
 from player.player_proxy import PlayerProxy
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
@@ -250,6 +252,9 @@ class TCGGame(BaseGame):
             actor_entity.add(
                 KickOffMessageComponent, instance.name, instance.kick_off_message
             )
+            actor_entity.add(
+                FinalAppearanceComponent, instance.name, prototype.appearance
+            )
 
             # 添加到返回值
             ret.append(actor_entity)
@@ -296,6 +301,9 @@ class TCGGame(BaseGame):
             )
             stage_entity.add(
                 KickOffMessageComponent, instance.name, instance.kick_off_message
+            )
+            stage_entity.add(
+                StageEnvironmentComponent, instance.name, instance.kick_off_message
             )
 
             # 添加场景可以连接的场景

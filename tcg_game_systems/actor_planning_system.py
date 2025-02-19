@@ -11,6 +11,8 @@ from components.components import (
     KickOffFlagComponent,
     PlayerComponent,
     StageComponent,
+    StageEnvironmentComponent,
+    FinalAppearanceComponent,
 )
 from entitas import ExecuteProcessor, Matcher, Entity  # type: ignore
 from overrides import override
@@ -79,9 +81,17 @@ class ActorPlanningSystem(ExecuteProcessor):
             # 找到当前场景内所有角色
             actors_set = self._game.retrieve_actors_on_stage(current_stage)
             actors_set.remove(entity)
-            # 移除自己后，剩下的角色的名字
-            actors_name_list: List[str] = [actor._name for actor in actors_set]
-            message = _generate_actor_plan_prompt(current_stage._name, actors_name_list)
+            # 移除自己后，剩下的角色的名字+外观信息
+            actors_info_list: List[str] = [
+                f"{actor._name}:{actor.get(FinalAppearanceComponent).final_appearance}"
+                for actor in actors_set
+                if actor.has(FinalAppearanceComponent)
+            ]
+            message = _generate_actor_plan_prompt(
+                current_stage._name,
+                current_stage.get(StageEnvironmentComponent).narrate,
+                actors_info_list,
+            )
             assert message is not None
             agent_short_term_memory = self._game.get_agent_short_term_memory(entity)
             request_handlers.append(
@@ -117,17 +127,22 @@ class ActorPlanningSystem(ExecuteProcessor):
 
 
 def _generate_actor_plan_prompt(
-    current_stage_name: str, actors_name_list: List[str]
+    current_stage_name: str, current_stage_narration: str, actors_info_list: List[str]
 ) -> str:
     assert current_stage_name is not "", "current_stage is empty"
     return f"""
-# 请制定你的行动计划
+# 请制定你的行动计划，此时的世界背景及场景信息如下，请仔细阅读并牢记，以确保你的行为和言语符合游戏设定，不会偏离时代背景。
+
+## 当前世界背景
 
 ## 你当前所在的场景
 {current_stage_name}
 
-### 场景内除你之外的其他角色
-{"\n".join(actors_name_list)}
+### 场景描述
+{current_stage_narration}
+
+### 场景内除你之外的其他角色的名称与外观特征
+{"\n".join(actors_info_list)}
 
 ## 输出要求
 ### 输出格式指南

@@ -638,7 +638,7 @@ class GameEditor:
                 name=actor.name,
                 code_name=actor._actor_data.code_name,
                 system_message=actor._actor_data.actor_profile,
-                base_form=actor._actor_data.base_form,
+                appearance=actor._actor_data.base_form,
             )
 
             self._world_root.data_base.actors[actor_prototype.name] = actor_prototype

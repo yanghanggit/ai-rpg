@@ -249,7 +249,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
         ],
         props=[],
         attributes=[],  # 暂时不用,
-        kick_off_message="洞穴中十分吵闹",
+        kick_off_message="洞穴中十分吵闹.",
         next=[],
     )
 

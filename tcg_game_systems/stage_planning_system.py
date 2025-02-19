@@ -94,9 +94,6 @@ class StagePlanningSystem(ExecuteProcessor):
                 entity2._name,
                 request_handler.response_content,
             )
-            logger.warning(
-                f"StagePlanningSystem: {entity2._name} update narrate: {request_handler.response_content}"
-            )
             # space for bundle..?
 
     #######################################################################################################################################
@@ -117,5 +114,5 @@ def _generate_stage_plan_prompt(epoch_script: str) -> str:
 
 
 def _compress_stage_plan_prompt(prompt: str) -> str:
-    logger.debug(f"原来的提示词为:\n{prompt}")
+    # logger.debug(f"原来的提示词为:\n{prompt}")
     return "# 请推理你的环境可能发生哪些变化。尽量简短输出。"

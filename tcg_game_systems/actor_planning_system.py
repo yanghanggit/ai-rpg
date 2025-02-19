@@ -169,7 +169,7 @@ def _generate_actor_plan_prompt(
 ### 输出格式指南
 请严格遵循以下 JSON 结构示例： 
 {{
-    "{SpeakAction.__name__}":["@角色全名(你要对谁说,只能是场景内的角色):(若你扮演多人，此处标记个体名)你要说的内容（场景内其他角色会听见）",...],
+    "{SpeakAction.__name__}":["@角色全名(你要对谁说,只能是场景内的角色):你要说的内容（场景内其他角色会听见）",...],
 }}
 
 ### 注意事项
@@ -193,5 +193,5 @@ def _compress_actor_plan_prompt(
     prompt: str,
 ) -> str:
 
-    logger.debug(f"原来的提示词为:\n{prompt}")
+    # logger.debug(f"原来的提示词为:\n{prompt}")
     return "# 请做出你的计划，决定你将要做什么，并以 JSON 格式输出。"

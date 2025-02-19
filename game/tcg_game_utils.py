@@ -5,12 +5,14 @@ from models.tcg_models import (
     StagePrototype,
     # PropPrototype,
     WorldSystemPrototype,
-    # PropInstance,
+    PropObject,
     ActorInstance,
     StageInstance,
     WorldSystemInstance,
 )
 import game.tcg_game_config
+from typing import List
+import copy
 
 
 #######################################################################################################################################
@@ -75,6 +77,44 @@ def _comple_stage_system_prompt(
 {stage_profile}"""
 
     return prompt
+
+
+#######################################################################################################################################
+def create_prop_object(
+    world_root: WorldRoot,
+    name: str,
+    guid: int,
+    count: int,
+    code_name: str,
+    details: str,
+    type: str,
+    appearance: str,
+    insight: str,
+    attributes: List[int],
+) -> PropObject:
+
+    if name in world_root.data_base.props:
+        return world_root.data_base.props[name]
+
+    # 创建一个新的PropObject
+    data = PropObject(
+        name=name,
+        guid=0,
+        count=count,
+        code_name=code_name,
+        details=details,
+        type=type,
+        appearance=appearance,
+        insight=insight,
+        attributes=attributes,
+    )
+
+    world_root.data_base.props.setdefault(data.name, data)
+
+    # 为了不改变原始数据，这里使用深拷贝
+    copy_data = copy.deepcopy(data)
+    copy_data.guid = guid
+    return copy_data
 
 
 #######################################################################################################################################
@@ -161,12 +201,42 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
         kick_off_message="你接到了附近村庄剿灭哥布林的委托，于是你做足准备只身进入了洞穴，遇到了一群正在狂欢作乐的哥布林。",
     )
 
+    actor_instance1.props.append(
+        create_prop_object(
+            world_root=world_root,
+            name="铁剑",
+            guid=1000,
+            count=1,
+            code_name="iron_sword",
+            details="一把普通的铁剑",
+            type="weapon",
+            appearance="黑颜色的剑身，剑柄上有一只狮子的图案",
+            insight="有魔法？",
+            attributes=[],
+        )
+    )
+
     actor_instance2 = ActorInstance(
         name=f"{actor2.name}",
         guid=400,
         props=[],
         attributes=[],  # 暂时不用
         kick_off_message="你前几日在外遭遇了一名落单的村民，你们把他活捉回洞穴献给了哥布林大王，得到了许多酒肉作为奖励。正在你们于洞穴深处的房间狂欢时，一个人类突然出现在了门口。",
+    )
+
+    actor_instance2.props.append(
+        create_prop_object(
+            world_root=world_root,
+            name="简陋短剑",
+            guid=1001,
+            count=1,
+            code_name="short_sword",
+            details="一把简陋的短剑",
+            type="weapon",
+            appearance="一把简陋的短剑，剑身锈迹斑斑，满布裂纹",
+            insight="有毒",
+            attributes=[],
+        )
     )
 
     #

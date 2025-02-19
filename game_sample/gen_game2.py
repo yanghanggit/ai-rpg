@@ -14,12 +14,13 @@ from models.tcg_models import (
     WorldDataBase,
     ActorPrototype,
     StagePrototype,
-    PropPrototype,
+    # PropPrototype,
     WorldSystemPrototype,
-    PropInstance,
+    PropObject,
     ActorInstance,
     StageInstance,
     WorldSystemInstance,
+    PropObject,
 )
 import game.tcg_game_config
 
@@ -521,33 +522,35 @@ class GameEditor:
     def _link_actor_props(
         self, actor_instance: ActorInstance, actor_editor: ActorEditor
     ) -> None:
-        for prop1 in actor_editor.actor_props:
-            for prop2 in self.props:
-                if prop1 == prop2.name:
-                    guid = self._gen_guid()
-                    prop_instance = PropInstance(
-                        name=self.make_complex_name(prop2.name, guid),
-                        guid=guid,
-                        count=1,
-                        attributes=prop2.attributes,
-                    )
-                    actor_instance.props.append(prop_instance)
+        pass
+        # for prop1 in actor_editor.actor_props:
+        #     for prop2 in self.props:
+        #         if prop1 == prop2.name:
+        #             guid = self._gen_guid()
+        #             prop_instance = PropInstance(
+        #                 name=self.make_complex_name(prop2.name, guid),
+        #                 guid=guid,
+        #                 count=1,
+        #                 attributes=prop2.attributes,
+        #             )
+        #             actor_instance.props.append(prop_instance)
 
     ############################################################################################################
     def _link_stage_props(
         self, stage_instance: StageInstance, stage_editor: StageEditor
     ) -> None:
-        for prop1 in stage_editor.actor_props:
-            for prop2 in self.props:
-                if prop1 == prop2.name:
-                    guid = self._gen_guid()
-                    prop_instance = PropInstance(
-                        name=self.make_complex_name(prop2.name, guid),
-                        guid=guid,
-                        count=1,
-                        attributes=prop2.attributes,
-                    )
-                    stage_instance.props.append(prop_instance)
+        pass
+        # for prop1 in stage_editor.actor_props:
+        #     for prop2 in self.props:
+        #         if prop1 == prop2.name:
+        #             guid = self._gen_guid()
+        #             prop_instance = PropInstance(
+        #                 name=self.make_complex_name(prop2.name, guid),
+        #                 guid=guid,
+        #                 count=1,
+        #                 attributes=prop2.attributes,
+        #             )
+        #             stage_instance.props.append(prop_instance)
 
     ############################################################################################################
     def _build_world_root_instances(self) -> None:
@@ -651,16 +654,16 @@ class GameEditor:
             )
             self._world_root.data_base.stages[stage_prototype.name] = stage_prototype
 
-        for prop in self.props:
-            prop_prototype = PropPrototype(
-                name=prop.name,
-                code_name=prop._prop_data.code_name,
-                details=prop._prop_data.details,
-                type=prop._prop_data.type,
-                appearance=prop._prop_data.appearance,
-                insight=prop._prop_data.insight,
-            )
-            self._world_root.data_base.props[prop_prototype.name] = prop_prototype
+        # for prop in self.props:
+        #     prop_prototype = PropPrototype(
+        #         name=prop.name,
+        #         code_name=prop._prop_data.code_name,
+        #         details=prop._prop_data.details,
+        #         type=prop._prop_data.type,
+        #         appearance=prop._prop_data.appearance,
+        #         insight=prop._prop_data.insight,
+        #     )
+        #     self._world_root.data_base.props[prop_prototype.name] = prop_prototype
 
         for world_system in self.world_systems:
             world_system_prototype = WorldSystemPrototype(

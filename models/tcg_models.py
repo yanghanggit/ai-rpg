@@ -44,17 +44,6 @@ class StagePrototype(BaseModel):
 
 ###############################################################################################################################################
 @final
-class PropPrototype(BaseModel):
-    name: str
-    code_name: str
-    details: str
-    type: str
-    appearance: str
-    insight: str
-
-
-###############################################################################################################################################
-@final
 class WorldSystemPrototype(BaseModel):
     name: str
     code_name: str
@@ -63,20 +52,25 @@ class WorldSystemPrototype(BaseModel):
 
 ###############################################################################################################################################
 @final
-class WorldDataBase(BaseModel):
-    actors: Dict[str, ActorPrototype] = {}
-    stages: Dict[str, StagePrototype] = {}
-    props: Dict[str, PropPrototype] = {}
-    world_systems: Dict[str, WorldSystemPrototype] = {}
+class PropObject(BaseModel):
+    name: str
+    guid: int
+    count: int
+    code_name: str
+    details: str
+    type: str
+    appearance: str
+    insight: str
+    attributes: List[int]
 
 
 ###############################################################################################################################################
 @final
-class PropInstance(BaseModel):
-    name: str
-    guid: int
-    count: int
-    attributes: List[int]
+class WorldDataBase(BaseModel):
+    actors: Dict[str, ActorPrototype] = {}
+    stages: Dict[str, StagePrototype] = {}
+    props: Dict[str, PropObject] = {}  # 这里就放这个。
+    world_systems: Dict[str, WorldSystemPrototype] = {}
 
 
 ###############################################################################################################################################
@@ -85,7 +79,7 @@ class ActorInstance(BaseModel):
     name: str
     guid: int
     kick_off_message: str
-    props: List[PropInstance]
+    props: List[PropObject]
     attributes: List[int]
 
 
@@ -96,7 +90,7 @@ class StageInstance(BaseModel):
     guid: int
     actors: List[str]
     kick_off_message: str
-    props: List[PropInstance]
+    props: List[PropObject]
     attributes: List[int]
     next: List[str]
 

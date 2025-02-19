@@ -104,13 +104,18 @@ class ActorPlanningSystem(ExecuteProcessor):
 
             entity2 = self._context.get_entity_by_name(request_handler._name)
             assert entity2 is not None
-            self._game.append_human_message(entity2, request_handler._prompt)
+            # self._game.append_human_message(entity2, request_handler._prompt)
+            self._game.append_human_message(
+                entity2, _compress_actor_plan_prompt(request_handler._prompt)
+            )
             self._game.append_ai_message(entity2, request_handler.response_content)
             bundle = ActionBundle(entity2._name, request_handler.response_content)
             ret = bundle.assign_actions_to_entity(
                 entity2, ACTOR_AVAILABLE_ACTIONS_REGISTER
             )
             assert ret is True, "Action Bundle Error"
+
+    #######################################################################################################################################
 
 
 #######################################################################################################################################
@@ -151,3 +156,11 @@ def _generate_actor_plan_prompt(
 #  "{WhisperAction.__name__}":["@角色全名(你要对谁说,只能是场景内的角色):你想私下说的内容（只有你和目标知道）",...],
 #  "{AnnounceAction.__name__}":["你要说的内容（无特定目标，场景内所有角色都会听见）",...],
 #  "{SpeakAction.__name__}":["@角色全名(你要对谁说,只能是场景内的角色):你要说的内容（场景内其他角色会听见）",...],
+
+
+def _compress_actor_plan_prompt(
+    prompt: str,
+) -> str:
+
+    logger.debug(f"原来的提示词为:\n{prompt}")
+    return "# 请做出你的计划，决定你将要做什么，并以 JSON 格式输出。"

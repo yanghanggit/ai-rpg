@@ -6,6 +6,7 @@ from components.registry import register_component_class
 # 命名规则
 1. 以Component结尾
 2. 除Actor，Stage，System外，不存储数据仅作标识用的组件，以FlagComponent结尾，比如KickOffDoneFlagComponent    考虑吧Component去掉？省点字数
+   反过来讲，需要做标记时遵循组件>属性的思想
 3. 标记Actor，Stage，System类型的组件，需要在FlagComponent前加上对应类型，比如HeroActorFlagComponent
 """
 

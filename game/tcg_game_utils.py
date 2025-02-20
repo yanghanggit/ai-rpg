@@ -3,7 +3,6 @@ from models.tcg_models import (
     WorldRoot,
     ActorPrototype,
     StagePrototype,
-    # PropPrototype,
     WorldSystemPrototype,
     PropObject,
     ActorInstance,
@@ -11,8 +10,20 @@ from models.tcg_models import (
     WorldSystemInstance,
 )
 import game.tcg_game_config
-from typing import List
+from typing import List, Final
 import copy
+
+
+GLOBAL_GAME_RULES: Final[
+    str
+] = """### 核心要素：
+角色：包括人、动物、怪物等与之交流和交互的对象。
+场景：角色活动的地点，仅在场景中活动。
+道具：如卡牌，药水与遗物等，由角色持有并可以改变角色能力或提供特殊能力。
+### 全名机制：
+游戏中的角色、道具、场景等都有全名，全名是游戏系统中的唯一标识符。
+名字可以由多个单词组成，单词之间用英文句号`.`分隔。例如：角色.战士.凯尔。
+注意请完整引用全名以确保一致性。"""
 
 
 #######################################################################################################################################
@@ -42,10 +53,7 @@ def _comple_actor_system_prompt(
 {epoch_script}
 
 ## 游戏规则
-### 全名机制：
-游戏中的角色、道具、场景等都有全名，全名是游戏系统中的唯一标识符。
-名字可以由多个单词组成，单词之间用英文句号`.`分隔。例如：角色.战士.凯尔。
-注意请完整引用全名以确保一致性。
+{GLOBAL_GAME_RULES}
 
 ## 你的角色设定
 {actor_profile}
@@ -68,10 +76,7 @@ def _comple_stage_system_prompt(
 {epoch_script}
 
 ## 游戏规则
-### 全名机制：
-游戏中的角色、道具、场景等都有全名，全名是游戏系统中的唯一标识符。
-名字可以由多个单词组成，单词之间用英文句号`.`分隔。例如：角色.战士.凯尔。
-注意!请完整引用全名以确保一致性。
+{GLOBAL_GAME_RULES}
 
 ## 场景设定
 {stage_profile}"""

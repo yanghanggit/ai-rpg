@@ -1,8 +1,8 @@
-from typing import List, Dict, Any, final
+from typing import List, Dict, Any, Union, final
 from pydantic import BaseModel
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from models.event_models import BaseEvent
-from enum import Enum
+from enum import StrEnum
 
 
 ###############################################################################################################################################
@@ -38,7 +38,7 @@ class ActorPrototype(BaseModel):
 ###############################################################################################################################################
 @final
 class StagePrototype(BaseModel):
-    class StageType(Enum):
+    class StageType(StrEnum):
         UNDIFINED = "Undefined"
         HOME = "Home"
         DUNGEON = "Dungeon"
@@ -46,7 +46,7 @@ class StagePrototype(BaseModel):
     name: str
     code_name: str
     system_message: str
-    type: StageType
+    type: Union[StageType, str]
 
 
 ###############################################################################################################################################

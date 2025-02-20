@@ -169,5 +169,4 @@ async def run_game(option: OptionParameters) -> None:
 if __name__ == "__main__":
     import asyncio
 
-    Counter.reset()  # For test TODO
     asyncio.run(run_game(OptionParameters(user="yanghang", game="Game1")))

@@ -62,15 +62,15 @@ class ActorPlanningSystem(ExecuteProcessor):
             )
         ).entities.copy()
 
-        # 获取玩家所在stage，随后剔除不在玩家所在场景内的actor
-        player_stage = self._context.safe_get_stage_entity(
-            self._game.get_player_entity()
-        )
-        actor_entities = [
+        # 获取玩家所在stage，随后剔除不在玩家所在场景内的actor TODO，有了strategy后删掉
+        player_entity = self._game.get_player_entity()
+        assert player_entity is not None
+        player_stage = self._context.safe_get_stage_entity(player_entity)
+        actor_entities = {
             entity
             for entity in actor_entities
             if self._context.safe_get_stage_entity(entity) == player_stage
-        ]
+        }
 
         if len(actor_entities) == 0:
             return

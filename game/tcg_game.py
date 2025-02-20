@@ -336,9 +336,10 @@ class TCGGame(BaseGame):
         return None
 
     ###############################################################################################################################################
-    def get_player_entity(self) -> Optional[PlayerProxy]:
+    # 临时的，考虑后面把player直接挂在context或者game里，因为player设计上唯一
+    def get_player_entity(self) -> Optional[Entity]:
         assert len(self._players) == 1, "Player numbers more than 1"
-        player_entity: Entity
+        player_entity = None
         for player_proxy in self.players:
 
             player_entity = self._context.get_player_entity(player_proxy.player_name)

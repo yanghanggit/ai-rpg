@@ -158,6 +158,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
             epoch_script=world_root.epoch_script,
             stage_profile="你是一个哥布林洞窟，内部狭长拥挤，错综复杂，臭气熏天，设有许多危险的陷阱，哥布林们躲藏在暗处伺机而动。",
         ),
+        type=StagePrototype.StageType.DUNGEON,
     )
 
     world_root.data_base.stages.setdefault(stage1.name, stage1)

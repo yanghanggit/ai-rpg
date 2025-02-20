@@ -196,9 +196,23 @@ class DirectSkillFlagComponent(NamedTuple):
 
 
 ############################################################################################################
+# Stage专用，标记该Stage是Home
+@final
+class HomeStageComponent(NamedTuple):
+    name: str
 
 
-# 场景可以用的所有动作
+############################################################################################################
+# Stage专用，标记该Stage是Dungeon
+@final
+class DungeonStageComponent(NamedTuple):
+    name: str
+
+
+############################################################################################################
+
+
+# 场景可以用的所有组件
 COMPONENTS_REGISTRY: Final[Dict[str, Any]] = {
     GUIDComponent.__name__: GUIDComponent,
     AgentPingFlagComponent.__name__: AgentPingFlagComponent,
@@ -224,4 +238,6 @@ COMPONENTS_REGISTRY: Final[Dict[str, Any]] = {
     RoundEventsRecordComponent.__name__: RoundEventsRecordComponent,
     SkillComponent.__name__: SkillComponent,
     DirectSkillFlagComponent.__name__: DirectSkillFlagComponent,
+    HomeStageComponent.__name__: HomeStageComponent,
+    DungeonStageComponent.__name__: DungeonStageComponent,
 }

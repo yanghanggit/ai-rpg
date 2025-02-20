@@ -20,7 +20,6 @@ class TCGGameContext(Context):
     def __init__(
         self,
     ) -> None:
-        #
         super().__init__()
         self._game: Optional[BaseGame] = None
         self._query_entities: Dict[str, Entity] = {}  # （方便快速查找用）

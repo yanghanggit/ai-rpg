@@ -23,6 +23,8 @@ from components.components import (
     SystemMessageComponent,
     KickOffMessageComponent,
     StageGraphComponent,
+    FinalAppearanceComponent,
+    StageEnvironmentComponent,
 )
 from player.player_proxy import PlayerProxy
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
@@ -246,6 +248,9 @@ class TCGGame(BaseGame):
             actor_entity.add(
                 KickOffMessageComponent, instance.name, instance.kick_off_message
             )
+            actor_entity.add(
+                FinalAppearanceComponent, instance.name, prototype.appearance
+            )
 
             # 添加到返回值
             ret.append(actor_entity)
@@ -293,6 +298,9 @@ class TCGGame(BaseGame):
             stage_entity.add(
                 KickOffMessageComponent, instance.name, instance.kick_off_message
             )
+            stage_entity.add(
+                StageEnvironmentComponent, instance.name, instance.kick_off_message
+            )
 
             # 添加场景可以连接的场景
             stage_entity.add(StageGraphComponent, instance.name, instance.next)
@@ -321,6 +329,26 @@ class TCGGame(BaseGame):
             if player.player_name == player_name:
                 return player
         return None
+
+    ###############################################################################################################################################
+    # 临时的，考虑后面把player直接挂在context或者game里，因为player设计上唯一
+    def get_player_entity(self) -> Optional[Entity]:
+        assert len(self._players) == 1, "Player numbers more than 1"
+        player_entity = None
+        for player_proxy in self.players:
+
+            player_entity = self._context.get_player_entity(player_proxy.player_name)
+            if player_entity is None:
+                logger.warning(
+                    f"player_entity is None, player_proxy.name={player_proxy.player_name}"
+                )
+                continue
+            elif not player_entity.has(PlayerComponent):
+                logger.warning(
+                    f"player_entity don't have player component, player_proxy.name={player_proxy.player_name}"
+                )
+                continue
+        return player_entity
 
     ###############################################################################################################################################
     @property

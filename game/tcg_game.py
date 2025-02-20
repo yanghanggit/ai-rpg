@@ -11,6 +11,7 @@ from models.tcg_models import (
     WorldSystemInstance,
     WorldDataBase,
     ActorInstance,
+    StagePrototype,
     StageInstance,
     AgentShortTermMemory,
     PropObject,
@@ -27,6 +28,8 @@ from components.components import (
     StageGraphComponent,
     FinalAppearanceComponent,
     StageEnvironmentComponent,
+    HomeStageComponent,
+    DungeonStageComponent,
 )
 from player.player_proxy import PlayerProxy
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
@@ -306,6 +309,14 @@ class TCGGame(BaseGame):
             stage_entity.add(
                 StageEnvironmentComponent, instance.name, instance.kick_off_message
             )
+
+            # 根据类型添加场景类型
+            if prototype.type == StagePrototype.StageType.UNDIFINED:
+                assert False, "stage type is not defined"
+            elif prototype.type == StagePrototype.StageType.DUNGEON:
+                stage_entity.add(DungeonStageComponent, instance.name)
+            elif prototype.type == StagePrototype.StageType.HOME:
+                stage_entity.add(HomeStageComponent, instance.name)
 
             # 添加场景可以连接的场景
             stage_entity.add(StageGraphComponent, instance.name, instance.next)

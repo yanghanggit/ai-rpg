@@ -67,7 +67,7 @@ class TCGGameProcessors(Processors):
         # 动作处理相关的系统
         processors.add(PreActionSystem(context))
 
-        processors.add(TagActionSystem(context))
+        # processors.add(TagActionSystem(context))
         processors.add(MindVoiceActionSystem(context))
         processors.add(WhisperActionSystem(context))
         processors.add(AnnounceActionSystem(context))

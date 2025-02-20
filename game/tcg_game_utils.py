@@ -140,15 +140,15 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
         appearance="身材精瘦，但穿上铠甲后显得十分高大。为了防备突袭总是带着头盔，就连睡觉时也不摘下。身上有多处伤疤，淡化在肤色之中，记录着曾经的战斗。",
     )
     actor2 = ActorPrototype(
-        name="角色.怪物.哥布林小队",
+        name="角色.怪物.强壮哥布林",
         code_name="goblin",
         system_message=_comple_actor_system_prompt(
-            name="角色.怪物.哥布林小队",
+            name="角色.怪物.强壮哥布林",
             epoch_script=world_root.epoch_script,
-            actor_profile="你的背景：哥布林小队由数只臭味相投的哥布林组成。你们都生活在偏僻郊野的地下洞穴中，倾向以小队的形式组团行动，时不时与其他哥布林们一起组成哥布林大军出去劫掠以满足生计。你们最喜欢去附近的村庄中偷农产品或偷偷宰杀他们的牲畜带回洞穴，有时还会猎杀落单的人类满足自己的施虐本性和口腹之欲，或是把人类献给哥布林大王以乞求奖赏。你们也经常与其他哥布林们起冲突，甚至于因为自私自利而与小队内的其他哥布林内讧。你们虽然单体战斗力很弱，可一旦成群结队后就无所畏惧。\n你们的性格：狡猾，恶毒，懒惰，自私自利。一旦形式对己方明显不利，一些哥布林便很有可能抛弃同伴逃跑。\n你的目标：你的首要目标是生存，你的次要目标是满足自己变态的施虐心和纵欲。\n你的恐惧：自己陷入危险和被哥布林大王惩罚。\n你的弱点：力量弱小，智力低下。\n你的说话风格与语气示例：（高兴）来...来人！有猎...猎物送上门来了！；（癫狂）晚上吃人...人漏（肉）！；（恐惧）大王...大王会...会惩罚我们的！；（愤怒）你...你这个胆小贵（鬼）！；（恐惧）不...不要...不要撒（杀）我！；注：由于哥布林很笨，所以有时说话时会结巴或说错音。由于你扮演的是一个哥布林小队，所以更倾向于一次说两句及以上的句子。",
-            appearance="你们身材矮小，胖瘦不一，皮肤是深绿色的，有着尖尖的耳朵和简陋的服装与武器。你们的身上有很浓重的臭味。",
+            actor_profile="你的背景：生活在偏僻郊野的地下洞穴中，时不时与其他哥布林们一起组成劫掠大军。你最喜欢劫掠附近村子的农产品和牲畜，猎杀落单的人类取乐，或是把战利品献给哥布林大王以乞求奖赏。出于哥布林本性中的自私，你经常与其他哥布林们起冲突，甚至于在争斗中杀死同类。你虽然单体战斗力只相当于普通人类，可一旦成群结队后就无所畏惧。\n你的性格：狡猾，恶毒，懒惰，自私自利。一旦形式对己方明显不利，便很有可能抛弃同伴逃跑。\n你的目标：你的首要目标是生存，你的次要目标是满足自己变态的施虐心和纵欲。\n你的恐惧：自己陷入危险和被哥布林大王惩罚。\n你的弱点：智力低下。\n你的说话风格与语气示例：（高兴）来...来人！有猎...猎物送上门来了！；（癫狂）晚上吃人...人漏（肉）！；（恐惧）大王...大王会...会惩罚我们的！；（愤怒）你...你这个混蛋！；（恐惧）不...不要...不要撒（杀）我！；注：由于哥布林很笨，所以有时说话时会结巴或说错音。",
+            appearance="你和其他哥布林一样有深绿色的皮肤和尖尖的耳朵。但你的体格比普通哥布林更加强壮。你的身上有很浓重的臭味。",
         ),
-        appearance="身材矮小，胖瘦不一，皮肤是深绿色的，有着尖尖的耳朵，装备简陋的服装与武器，散发着腐臭味。",
+        appearance="你和其他哥布林一样有深绿色的皮肤和尖尖的耳朵。但你的体格比普通哥布林更加强壮。你的身上有很浓重的臭味。",
     )
 
     world_root.data_base.actors.setdefault(actor1.name, actor1)
@@ -166,7 +166,20 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
         type=StagePrototype.StageType.DUNGEON,
     )
 
+    stage2 = StagePrototype(
+        name="场景.营地",
+        code_name="camp",
+        system_message=_comple_stage_system_prompt(
+            name="场景.营地",
+            epoch_script=world_root.epoch_script,
+            stage_profile="你是一个由冒险者在古代城堡的遗迹之上建设的临时营地，遗迹四周是一片未开发的原野。营地中有帐篷，营火，仓库等设施，虽然简陋，却也足够帮助冒险者稍事休息，准备下一次冒险。",
+        ),
+        type=StagePrototype.StageType.DUNGEON,
+    )
+
     world_root.data_base.stages.setdefault(stage1.name, stage1)
+    world_root.data_base.stages.setdefault(stage2.name, stage2)
+
 
     # 添加世界系统
     world_system1 = WorldSystemPrototype(
@@ -182,7 +195,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
         guid=100,
         props=[],
         attributes=[],  # 暂时不用
-        kick_off_message="你接到了附近村庄剿灭哥布林的委托，于是你充分准备后只身进入了洞穴，遇到了一群正在狂欢作乐的哥布林。",
+        kick_off_message="你接到了剿灭哥布林的委托，在目标地不远处搭建起了营地。",
     )
 
     actor_instance1.props.append(
@@ -205,7 +218,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
         guid=400,
         props=[],
         attributes=[],  # 暂时不用
-        kick_off_message="你们前几日在外遭遇了一名落单的村民，你们把他活捉回洞穴献给了哥布林大王，得到了许多酒肉作为奖励。你们正在于洞穴深处的房间狂欢时，一个人类突然出现在了门口。",
+        kick_off_message="你们前几日活捉了一名附近村庄的村民献给了哥布林大王，得到了许多酒肉作为奖励，你们正在于洞穴深处的房间中纵情狂欢。",
     )
 
     actor_instance2.props.append(
@@ -223,17 +236,27 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
         )
     )
 
-    #
     stage_instance1 = StageInstance(
         name=f"{stage1.name}",
         guid=10000,
         actors=[
             actor_instance1.name,
+        ],
+        props=[],
+        attributes=[],  # 暂时不用,
+        kick_off_message="洞穴中十分吵闹",
+        next=[],
+    )
+
+    stage_instance2 = StageInstance(
+        name=f"{stage2.name}",
+        guid=50000,
+        actors=[
             actor_instance2.name,
         ],
         props=[],
         attributes=[],  # 暂时不用,
-        kick_off_message="洞穴中十分吵闹.",
+        kick_off_message="营火默默地燃烧着",
         next=[],
     )
 
@@ -249,6 +272,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
 
     # 场景
     world_root.stages.append(stage_instance1)
+    world_root.stages.append(stage_instance2)
 
     # 世界系统
     # world_root.world_systems.append(world_system_instance1)

@@ -1,5 +1,4 @@
 from typing import Optional, Dict
-from models.config_models import GlobalConfigModel
 from services.room import Room
 
 
@@ -8,18 +7,6 @@ class RoomManager:
     def __init__(self) -> None:
 
         self._rooms: Dict[str, Room] = {}
-        self._global_config: GlobalConfigModel = GlobalConfigModel()
-
-    ###############################################################################################################################################
-    @property
-    def global_config(self) -> GlobalConfigModel:
-        return self._global_config
-
-    ###############################################################################################################################################
-    @global_config.setter
-    def global_config(self, value: GlobalConfigModel) -> None:
-        assert len(value.game_configs) > 0, "no game config"
-        self._global_config = value
 
     ###############################################################################################################################################
     def has_room(self, user_name: str) -> bool:

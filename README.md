@@ -16,15 +16,15 @@ pip install langchain langchain_core langserve langgraph fastapi langchain_opena
 ```
 
 ## 严格模式检查
-- mypy --strict run_terminal_rpg_game.py run_rpg_game_server.py run_python_rpg_client.py batch_agent_app_launcher.py game_sample/gen_game.py game_sample/base_form_prompt_editor.py game_sample/actor_profile_prompt_editor.py game_sample/actor_conversational_style_prompt_editor.py game_sample/agentpy_templates/azure_chat_openai_gpt_4o_graph_base_template.py run_terminal_tcg_game.py game_sample/gen_game2.py
+- mypy --strict run_terminal_rpg_game.py run_tcg_game_server.py run_python_tcg_client.py batch_agent_app_launcher.py game_sample/gen_game.py game_sample/base_form_prompt_editor.py game_sample/actor_profile_prompt_editor.py game_sample/actor_conversational_style_prompt_editor.py game_sample/agentpy_templates/azure_chat_openai_gpt_4o_graph_base_template.py run_terminal_tcg_game.py game_sample/gen_game2.py
 - mypy --strict run_start_llm_serves.py run_test_lang_serve_system.py
 
 ## 说明
 - game_sample/gen_game.py 是生成游戏世界的配置
 - batch_agent_app_launcher.py 可以批量启动agent
 - run_terminal_rpg_game.py 利用终端启动游戏，方便调试
-- run_rpg_game_server.py 启动一个服务器
-- run_python_rpg_client.py 模拟一个网页客户端，与run_game_server.py进行交互。
+- run_tcg_game_server.py 启动一个服务器。
+- run_python_tcg_client.py 模拟一个网页客户端。
 
 ## Windows平台运行问题
 - agent的server代码报错：UnicodeEncodeError: 'gbk' codec can't encode character '\u26a0' in position 0: illegal multibyte sequence 

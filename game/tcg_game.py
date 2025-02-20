@@ -1,5 +1,5 @@
 from entitas import Entity, Matcher  # type: ignore
-from typing import Set, List, Optional
+from typing import Dict, Set, List, Optional
 from overrides import override
 from loguru import logger
 from game.tcg_game_context import TCGGameContext
@@ -464,7 +464,7 @@ class TCGGame(BaseGame):
     #     return data_base.props.get(prop_instance.name, None)
 
     ###############################################################################################################################################
-    # todo
+    # TODO 目前是写死的
     def ready(self) -> bool:
 
         assert len(self._players) > 0
@@ -544,3 +544,49 @@ class TCGGame(BaseGame):
                 )
 
     ###############################################################################################################################################
+    def teleport_actors_to_stage(
+        self, going_actors: Set[Entity], stage_name: str
+    ) -> None:
+
+        if len(going_actors) == 0:
+            return
+
+        # 找到目标stage
+        target_stage = self.context.get_stage_entity(stage_name)
+        if target_stage is None:
+            logger.error(f"stage is None: {stage_name}")
+            return
+
+        # 得到stage和actor的对应关系
+        stages_actor_map: Dict[Entity, Set[Entity]] = (
+            self.context.retrieve_stage_actor_mapping()
+        )
+        # 得到传送者所在stage，和该stage内除传送者之外的其他actor的map
+        # TODO 这个得改一下，应该是被传送的人和场景内其他人的对应关系，因为同行者也需要知道
+        filtered_map: Dict[Entity, Set[Entity]] = {
+            stage: actors - going_actors
+            for stage, actors in stages_actor_map.items()
+            if any(actor in going_actors for actor in actors)
+        }
+
+        for going_actor in going_actors:
+            if going_actor is None or not going_actor.has(ActorComponent):
+                assert False, "actor is None or have no actor component"
+                return
+
+            # 告知场景里的其他人，这个人被传送走了，不用boardcast，因为可能有人不会察觉到
+            departure_stage = self._context.safe_get_stage_entity(going_actor)
+            # 告知场景这个人被传送了
+            for stay_actor in filtered_map[departure_stage]:
+                # TODO 占位，判断这个人需不需要知道
+                if False:
+                    return
+                # self.append_human_message(
+                #     stay_actor, f"{going_actor._name}被传送到{stage_name}"
+                # )
+                self.append_human_message(
+                    stay_actor,
+                    f"{going_actor._name}被传送离开了当前场景:{departure_stage._name}",
+                )
+            # 告知被传送的人自己被传送了
+            # 重新绑定actor和stage关系

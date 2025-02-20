@@ -180,7 +180,6 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
     world_root.data_base.stages.setdefault(stage1.name, stage1)
     world_root.data_base.stages.setdefault(stage2.name, stage2)
 
-
     # 添加世界系统
     world_system1 = WorldSystemPrototype(
         name="战斗系统",

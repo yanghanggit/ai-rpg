@@ -47,7 +47,7 @@ class TerminalPlayerTipsSystem(ExecuteProcessor):
             # 当前场景能去往的场景
             self.tips_next_stages(player_proxy, player_entity)
 
-            # 人物已知的场景
+            # 已知的场景
             self.tip_stage_archives(player_proxy, player_entity)
 
     ############################################################################################################

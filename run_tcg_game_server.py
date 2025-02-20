@@ -4,6 +4,8 @@ from services.game_server_instance import (
     GameServerInstance,
     initialize_game_server_instance,
 )
+from fastapi.staticfiles import StaticFiles
+import os
 
 
 ###############################################################################################################################################
@@ -12,6 +14,19 @@ def main(game_server: GameServerInstance) -> None:
     import uvicorn
 
     from services.api_endpoints_services import api_endpoints_router
+
+    # get测试。
+    # 指向包含 runtime.json 的目录
+    static_dir = os.path.join(
+        os.path.dirname(__file__), "gen_runtimes", "yanghang", "Game1"
+    )
+
+    # 将该目录挂载到 "/files" 路径上
+    game_server.fast_api.mount(
+        "/files", StaticFiles(directory=static_dir), name="files"
+    )
+
+    # http://127.0.0.1:8000/files/runtime.json
 
     game_server.fast_api.add_middleware(
         CORSMiddleware,

@@ -3,7 +3,6 @@ from typing import Optional, Final
 from services.room_manager import RoomManager
 from fastapi import FastAPI
 import os
-from loguru import logger
 
 
 ###############################################################################################################################################
@@ -24,7 +23,6 @@ class GameServer:
         self._fast_api: Final[FastAPI] = fast_api
         self._room_manager: Final[RoomManager] = room_manager
         self._server_config: Final[ServerConfig] = server_config
-        self._pid: Final[int] = os.getpid()
 
     ###############################################################################################################################################
     @property
@@ -54,14 +52,6 @@ class GameServer:
     ###############################################################################################################################################
     @property
     def pid(self) -> int:
-        return self._pid
-
-    ###############################################################################################################################################
-    def on_begin(self) -> None:
-        logger.debug("GameServer on_begin")
-
-    ###############################################################################################################################################
-    def on_end(self) -> None:
-        logger.debug(f"GameServer on_end = {self.pid}")
+        return os.getpid()
 
     ###############################################################################################################################################

@@ -647,12 +647,14 @@ class GameEditor:
             self._world_root.data_base.actors[actor_prototype.name] = actor_prototype
 
         for stage in self.stages:
-            stage_prototype = StagePrototype(
-                name=stage.name,
-                code_name=stage._stage_data.code_name,
-                system_message=stage._stage_data.stage_profile,
-            )
-            self._world_root.data_base.stages[stage_prototype.name] = stage_prototype
+            pass
+
+            # stage_prototype = StagePrototype(
+            #     name=stage.name,
+            #     code_name=stage._stage_data.code_name,
+            #     system_message=stage._stage_data.stage_profile,
+            # )
+            # self._world_root.data_base.stages[stage_prototype.name] = stage_prototype
 
         # for prop in self.props:
         #     prop_prototype = PropPrototype(

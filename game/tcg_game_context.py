@@ -8,9 +8,9 @@ from components.components import (
     ActorComponent,
     PlayerComponent,
     GUIDComponent,
-    COMPONENTS_REGISTRY,
 )
 from loguru import logger
+from components.registry import COMPONENTS_REGISTRY
 
 
 @final

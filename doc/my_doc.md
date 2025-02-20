@@ -62,3 +62,32 @@ CTS_ChronotraceSnapshot
 # 世界生成系统架构：
 # WGC_WorldGenesisCore → 初始世界种子（不可变）
 # CTS_ChronotraceSnapshot → 动态世界状态堆栈（可变）
+
+
+
+
+
+# hi，我写了这样一个类
+
+```python
+class StageEnvironmentComponent(NamedTuple):
+    name: str
+    narrate: str
+```
+
+## 我的需求。
+是否可以用一个装饰器，将这个类在定义的时刻装入一个Dict里面？
+key 是 “StageEnvironmentComponent”
+value 是 这个类本身。
+
+
+
+# 关于这部分的代码，
+
+```python
+def register_class(cls):
+    class_registry["StageEnvironmentComponent"] = cls
+    return cls
+```
+目前 class_registry["StageEnvironmentComponent"] 的 "StageEnvironmentComponent" 是“写死”的。
+有办法能从cls里获取到这个类的名字吗？

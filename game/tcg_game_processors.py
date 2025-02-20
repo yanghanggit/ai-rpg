@@ -77,7 +77,7 @@ class TCGGameProcessors(Processors):
         processors.add(DeadActionSystem(context))
 
         # 战斗之后，执行场景更换的逻辑，如果上面死亡了，就不能执行下面的！
-        processors.add(GoToActionSystem(context))
+        # processors.add(GoToActionSystem(context))
 
         # ?
         processors.add(PostActionSystem(context))

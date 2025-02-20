@@ -10,11 +10,8 @@ from services.game_server_instance import (
 def main(game_server: GameServerInstance) -> None:
     import argparse
     import uvicorn
-    from services.api_endpoints_services import api_endpoints_router
-    from services.game_process_services import game_process_api_router
-    from services.game_play_services import game_play_api_router
 
-    game_server.on_begin()
+    from services.api_endpoints_services import api_endpoints_router
 
     game_server.fast_api.add_middleware(
         CORSMiddleware,
@@ -26,8 +23,7 @@ def main(game_server: GameServerInstance) -> None:
 
     # API Endpoints
     game_server.fast_api.include_router(router=api_endpoints_router)
-    game_server.fast_api.include_router(router=game_process_api_router)
-    game_server.fast_api.include_router(router=game_play_api_router)
+    # 加一些其他的。。。。。
 
     parser = argparse.ArgumentParser(description="启动 FastAPI 应用")
     parser.add_argument(
@@ -53,8 +49,6 @@ def main(game_server: GameServerInstance) -> None:
         host=cast(str, args.host),
         port=cast(int, args.port),
     )
-
-    game_server.on_end()
 
 
 if __name__ == "__main__":

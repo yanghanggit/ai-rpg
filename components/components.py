@@ -1,4 +1,4 @@
-from typing import Any, Dict, Final, NamedTuple, List, final
+from typing import NamedTuple, List, final
 from components.registry import register_component_class
 
 
@@ -223,6 +223,7 @@ class DirectSkillFlagComponent(NamedTuple):
 ############################################################################################################
 # Stage专用，标记该Stage是Home
 @final
+@register_component_class
 class HomeStageComponent(NamedTuple):
     name: str
 
@@ -230,37 +231,9 @@ class HomeStageComponent(NamedTuple):
 ############################################################################################################
 # Stage专用，标记该Stage是Dungeon
 @final
+@register_component_class
 class DungeonStageComponent(NamedTuple):
     name: str
 
 
 ############################################################################################################
-
-
-# # 场景可以用的所有动作
-# COMPONENTS_REGISTRY: Final[Dict[str, Any]] = {
-#     GUIDComponent.__name__: GUIDComponent,
-#     AgentPingFlagComponent.__name__: AgentPingFlagComponent,
-#     SystemMessageComponent.__name__: SystemMessageComponent,
-#     KickOffMessageComponent.__name__: KickOffMessageComponent,
-#     KickOffFlagComponent.__name__: KickOffFlagComponent,
-#     WorldSystemComponent.__name__: WorldSystemComponent,
-#     StageComponent.__name__: StageComponent,
-#     StageGraphComponent.__name__: StageGraphComponent,
-#     StageSpawnerComponent.__name__: StageSpawnerComponent,
-#     StageEnvironmentComponent.__name__: StageEnvironmentComponent,
-#     StageStaticFlagComponent.__name__: StageStaticFlagComponent,
-#     ActorComponent.__name__: ActorComponent,
-#     PlayerComponent.__name__: PlayerComponent,
-#     DestroyComponent.__name__: DestroyComponent,
-#     PlanningFlagComponent.__name__: PlanningFlagComponent,
-#     BaseFormComponent.__name__: BaseFormComponent,
-#     FinalAppearanceComponent.__name__: FinalAppearanceComponent,
-#     EnterStageFlagComponent.__name__: EnterStageFlagComponent,
-#     AttributesComponent.__name__: AttributesComponent,
-#     WeaponComponent.__name__: WeaponComponent,
-#     ClothesComponent.__name__: ClothesComponent,
-#     RoundEventsRecordComponent.__name__: RoundEventsRecordComponent,
-#     SkillComponent.__name__: SkillComponent,
-#     DirectSkillFlagComponent.__name__: DirectSkillFlagComponent,
-# }

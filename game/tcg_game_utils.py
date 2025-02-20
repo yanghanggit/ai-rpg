@@ -155,7 +155,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
     world_root.data_base.actors.setdefault(actor2.name, actor2)
 
     # 添加舞台
-    stage1 = StagePrototype(
+    stage2 = StagePrototype(
         name="场景.洞窟",
         code_name="cave",
         system_message=_comple_stage_system_prompt(
@@ -166,7 +166,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
         type=StagePrototype.StageType.DUNGEON,
     )
 
-    stage2 = StagePrototype(
+    stage1 = StagePrototype(
         name="场景.营地",
         code_name="camp",
         system_message=_comple_stage_system_prompt(
@@ -218,7 +218,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
         guid=400,
         props=[],
         attributes=[],  # 暂时不用
-        kick_off_message="你们前几日活捉了一名附近村庄的村民献给了哥布林大王，得到了许多酒肉作为奖励，你们正在于洞穴深处的房间中纵情狂欢。",
+        kick_off_message="你前几日活捉了一名附近村庄的村民献给了哥布林大王，得到了许多酒肉作为奖励，正在于洞穴深处的房间中纵情狂欢。",
     )
 
     actor_instance2.props.append(
@@ -244,7 +244,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
         ],
         props=[],
         attributes=[],  # 暂时不用,
-        kick_off_message="洞穴中十分吵闹",
+        kick_off_message="营火静静地燃烧着",
         next=[],
     )
 
@@ -256,7 +256,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
         ],
         props=[],
         attributes=[],  # 暂时不用,
-        kick_off_message="营火默默地燃烧着",
+        kick_off_message="洞穴中十分吵闹",
         next=[],
     )
 

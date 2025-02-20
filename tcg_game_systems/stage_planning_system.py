@@ -1,9 +1,10 @@
 from agent.chat_request_handler import ChatRequestHandler
 from components.components import (
     StageComponent,
-    KickOffFlagComponent,
-    PlayerComponent,
+    KickOffDoneFlagComponent,
+    PlayerActorFlagComponent,
     StageEnvironmentComponent,
+    StageNarratePlanningPermitFlagComponent,
 )
 from components.actions import (
     STAGE_AVAILABLE_ACTIONS_REGISTER,
@@ -47,10 +48,8 @@ class StagePlanningSystem(ExecuteProcessor):
         stage_entities = self._context.get_group(
             Matcher(
                 all_of=[
-                    StageComponent,
-                    KickOffFlagComponent,
-                ],
-                none_of=[PlayerComponent],
+                    StageNarratePlanningPermitFlagComponent,
+                ]
             )
         ).entities.copy()
 
@@ -94,7 +93,6 @@ class StagePlanningSystem(ExecuteProcessor):
                 entity2._name,
                 request_handler.response_content,
             )
-            # space for bundle..?
 
     #######################################################################################################################################
 

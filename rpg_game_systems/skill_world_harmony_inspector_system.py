@@ -8,7 +8,7 @@ from components.actions import (
 from components.components import (
     BaseFormComponent,
     SkillComponent,
-    DestroyComponent,
+    DestroyFlagComponent,
     DirectSkillFlagComponent,
 )
 from game.rpg_game_context import RPGGameContext
@@ -262,7 +262,7 @@ class SkillWorldHarmonyInspectorSystem(ExecuteProcessor):
         skill_entities = self._context.get_group(
             Matcher(
                 all_of=[SkillComponent],
-                none_of=[DestroyComponent, DirectSkillFlagComponent],
+                none_of=[DestroyFlagComponent, DirectSkillFlagComponent],
             )
         ).entities.copy()
 

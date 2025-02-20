@@ -1,7 +1,7 @@
 from entitas import Matcher, ExecuteProcessor  # type: ignore
 from typing import final, override, cast
 from components.components import (
-    DestroyComponent,
+    DestroyFlagComponent,
 )
 from components.actions import (
     DeadAction,
@@ -29,7 +29,7 @@ class DeadActionSystem(ExecuteProcessor):
         entities = self._context.get_group(Matcher(DeadAction)).entities
         for entity in entities:
             dead_caction = entity.get(DeadAction)
-            entity.replace(DestroyComponent, dead_caction.name)
+            entity.replace(DestroyFlagComponent, dead_caction.name)
 
 
 ########################################################################################################################################################################

@@ -5,7 +5,7 @@ from components.components import (
     StageComponent,
     ActorComponent,
     KickOffMessageComponent,
-    KickOffFlagComponent,
+    KickOffDoneFlagComponent,
     SystemMessageComponent,
     StageEnvironmentComponent,
 )
@@ -89,7 +89,7 @@ class KickOffSystem(ExecuteProcessor):
             Matcher(
                 all_of=[SystemMessageComponent, KickOffMessageComponent],
                 any_of=[ActorComponent, WorldSystemComponent, StageComponent],
-                none_of=[KickOffFlagComponent],
+                none_of=[KickOffDoneFlagComponent],
             )
         ).entities.copy()
 
@@ -149,7 +149,7 @@ class KickOffSystem(ExecuteProcessor):
                     request_handler.response_content,
                 )
 
-            entity2.replace(KickOffFlagComponent, entity2._name)
+            entity2.replace(KickOffDoneFlagComponent, entity2._name)
 
             # 添加行动
             self._assign_entity_actions(entity2, request_handler.response_content)

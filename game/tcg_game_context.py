@@ -6,7 +6,7 @@ from components.components import (
     WorldSystemComponent,
     StageComponent,
     ActorComponent,
-    PlayerComponent,
+    PlayerActorFlagComponent,
     GUIDComponent,
 )
 from loguru import logger
@@ -93,10 +93,10 @@ class TCGGameContext(Context):
     ###############################################################################################################################################
     def get_player_entity(self, player_name: str) -> Optional[Entity]:
         entities: Set[Entity] = self.get_group(
-            Matcher(all_of=[PlayerComponent, ActorComponent])
+            Matcher(all_of=[PlayerActorFlagComponent, ActorComponent])
         ).entities
         for entity in entities:
-            player_comp = entity.get(PlayerComponent)
+            player_comp = entity.get(PlayerActorFlagComponent)
             if player_comp.name == player_name:
                 return entity
         return None

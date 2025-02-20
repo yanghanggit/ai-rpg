@@ -4,7 +4,7 @@ from components.components import (
     WorldSystemComponent,
     StageComponent,
     ActorComponent,
-    PlayerComponent,
+    PlayerActorFlagComponent,
     FinalAppearanceComponent,
     GUIDComponent,
     RoundEventsRecordComponent,
@@ -85,10 +85,10 @@ class RPGGameContext(Context):
     #############################################################################################################################
     def get_player_entity(self, player_name: str) -> Optional[Entity]:
         entities: Set[Entity] = self.get_group(
-            Matcher(all_of=[PlayerComponent, ActorComponent])
+            Matcher(all_of=[PlayerActorFlagComponent, ActorComponent])
         ).entities
         for entity in entities:
-            player_comp = entity.get(PlayerComponent)
+            player_comp = entity.get(PlayerActorFlagComponent)
             if player_comp.name == player_name:
                 return entity
         return None
@@ -96,7 +96,7 @@ class RPGGameContext(Context):
     #############################################################################################################################
     def get_player_entities(self) -> Set[Entity]:
         entities: Set[Entity] = self.get_group(
-            Matcher(all_of=[PlayerComponent, ActorComponent])
+            Matcher(all_of=[PlayerActorFlagComponent, ActorComponent])
         ).entities
         return entities
 
@@ -295,8 +295,8 @@ class RPGGameContext(Context):
     def _extract_player_names(self, entities: Set[Entity]) -> Set[str]:
         ret: Set[str] = set()
         for entity in entities:
-            if entity.has(PlayerComponent):
-                ret.add(entity.get(PlayerComponent).name)
+            if entity.has(PlayerActorFlagComponent):
+                ret.add(entity.get(PlayerActorFlagComponent).name)
         return ret
 
     #############################################################################################################################

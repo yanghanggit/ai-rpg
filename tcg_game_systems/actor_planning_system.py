@@ -8,11 +8,12 @@ from components.actions import (
 )
 from components.components import (
     ActorComponent,
-    KickOffFlagComponent,
-    PlayerComponent,
+    KickOffDoneFlagComponent,
+    PlayerActorFlagComponent,
     StageComponent,
     StageEnvironmentComponent,
     FinalAppearanceComponent,
+    ActorRolePlayPlanningPermitFlagComponent,
 )
 from entitas import ExecuteProcessor, Matcher  # type: ignore
 from overrides import override
@@ -21,7 +22,6 @@ from game.tcg_game_context import TCGGameContext
 from game.tcg_game import TCGGame
 from loguru import logger
 from tcg_game_systems.action_bundle import ActionBundle
-from run_terminal_tcg_game import Counter
 
 
 #######################################################################################################################################
@@ -55,37 +55,17 @@ class ActorPlanningSystem(ExecuteProcessor):
         actor_entities = self._context.get_group(
             Matcher(
                 all_of=[
-                    ActorComponent,
-                    KickOffFlagComponent,
+                    ActorRolePlayPlanningPermitFlagComponent,
                 ],
-                # none_of=[PlayerComponent], TODO, For Test
             )
         ).entities.copy()
-
-        # 获取玩家所在stage，随后剔除不在玩家所在场景内的actor TODO，有了strategy后删掉
-        player_entity = self._game.get_player_entity()
-        assert player_entity is not None
-        player_stage = self._context.safe_get_stage_entity(player_entity)
-        actor_entities = {
-            entity
-            for entity in actor_entities
-            if self._context.safe_get_stage_entity(entity) == player_stage
-        }
 
         if len(actor_entities) == 0:
             return
 
         request_handlers: List[ChatRequestHandler] = []
-
-        # 为了测试交叉对话，后面需要改成其他方式,TODO
-        Counter.add()
         for entity in actor_entities:
-            if Counter.get() % 2 == 0 and entity._name != "角色.战士.凯尔":
-                continue
-            if Counter.get() % 2 != 0 and entity._name != "角色.怪物.哥布林小队":
-                continue
-
-            # 找到当前场景
+            # 找到当前场景, TODO 如果只有player在的stage才能更新这个规则不变，可以把下面挪到循环外，省一下复杂度
             current_stage = self._context.safe_get_stage_entity(entity)
             assert current_stage is not None
             # 找到当前场景内所有角色
@@ -126,7 +106,6 @@ class ActorPlanningSystem(ExecuteProcessor):
 
             entity2 = self._context.get_entity_by_name(request_handler._name)
             assert entity2 is not None
-            # self._game.append_human_message(entity2, request_handler._prompt)
             self._game.append_human_message(
                 entity2, _compress_actor_plan_prompt(request_handler._prompt)
             )

@@ -4,7 +4,7 @@ from loguru import logger
 from components.components import (
     StageComponent,
     ActorComponent,
-    PlayerComponent,
+    PlayerActorFlagComponent,
     GUIDComponent,
     WeaponComponent,
     ClothesComponent,
@@ -55,7 +55,7 @@ class SaveGameResourceSystem(ExecuteProcessor):
         runtime_game_model.players.clear()
 
         player_entities = self._context.get_group(
-            Matcher(all_of=[ActorComponent, PlayerComponent, GUIDComponent])
+            Matcher(all_of=[ActorComponent, PlayerActorFlagComponent, GUIDComponent])
         ).entities
         for player_entity in player_entities:
             runtime_game_model.players.append(
@@ -68,7 +68,10 @@ class SaveGameResourceSystem(ExecuteProcessor):
         runtime_game_model.actors.clear()
 
         actor_entities = self._context.get_group(
-            Matcher(all_of=[ActorComponent, GUIDComponent], none_of=[PlayerComponent])
+            Matcher(
+                all_of=[ActorComponent, GUIDComponent],
+                none_of=[PlayerActorFlagComponent],
+            )
         ).entities
         for actor_entity in actor_entities:
             runtime_game_model.actors.append(

@@ -6,7 +6,7 @@ from components.actions import (
     AnnounceAction,
     WhisperAction,
 )
-from components.components import PlayerComponent, ActorComponent
+from components.components import PlayerActorFlagComponent, ActorComponent
 from game.rpg_game_context import RPGGameContext
 from game.rpg_game import RPGGame
 
@@ -31,7 +31,7 @@ class PostConversationActionSystem(ReactiveProcessor):
     #################################################################################################################################################
     @override
     def filter(self, entity: Entity) -> bool:
-        return entity.has(PlayerComponent) and entity.has(ActorComponent)
+        return entity.has(PlayerActorFlagComponent) and entity.has(ActorComponent)
 
     #################################################################################################################################################
     @override

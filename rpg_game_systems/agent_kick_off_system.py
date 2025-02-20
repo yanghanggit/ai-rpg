@@ -6,7 +6,7 @@ from components.components import (
     ActorComponent,
     FinalAppearanceComponent,
     KickOffMessageComponent,
-    KickOffFlagComponent,
+    KickOffDoneFlagComponent,
     AgentPingFlagComponent,
     SystemMessageComponent,
 )
@@ -114,7 +114,7 @@ class AgentKickOffSystem(ExecuteProcessor):
                     SystemMessageComponent,
                 ],
                 any_of=[ActorComponent, StageComponent, WorldSystemComponent],
-                none_of=[KickOffFlagComponent],
+                none_of=[KickOffDoneFlagComponent],
             )
         ).entities
 
@@ -175,7 +175,7 @@ class AgentKickOffSystem(ExecuteProcessor):
                     KickOffMessageComponent,
                     AgentPingFlagComponent,
                 ],
-                none_of=[KickOffFlagComponent],
+                none_of=[KickOffDoneFlagComponent],
             )
         ).entities
         for world_entity in world_entities:
@@ -199,7 +199,7 @@ class AgentKickOffSystem(ExecuteProcessor):
                     KickOffMessageComponent,
                     AgentPingFlagComponent,
                 ],
-                none_of=[KickOffFlagComponent],
+                none_of=[KickOffDoneFlagComponent],
             )
         ).entities
         for stage_entity in stage_entities:
@@ -230,7 +230,7 @@ class AgentKickOffSystem(ExecuteProcessor):
                     KickOffMessageComponent,
                     AgentPingFlagComponent,
                 ],
-                none_of=[KickOffFlagComponent],
+                none_of=[KickOffDoneFlagComponent],
             )
         ).entities
         for actor_entity in actor_entities:
@@ -253,7 +253,7 @@ class AgentKickOffSystem(ExecuteProcessor):
             assert entity is not None, f"entity is None, {agent_name}"
             if entity is None:
                 continue
-            entity.replace(KickOffFlagComponent, agent_name)
+            entity.replace(KickOffDoneFlagComponent, agent_name)
             entity.replace(
                 KickOffAction,
                 agent_name,

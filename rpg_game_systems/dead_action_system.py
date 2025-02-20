@@ -1,8 +1,8 @@
 from entitas import Matcher, ExecuteProcessor  # type: ignore
 from typing import final, override
 from components.components import (
-    PlayerComponent,
-    DestroyComponent,
+    PlayerActorFlagComponent,
+    DestroyFlagComponent,
     ActorComponent,
     AttributesComponent,
     ActorComponent,
@@ -67,10 +67,10 @@ class DeadActionSystem(ExecuteProcessor):
     ########################################################################################################################################################################
     def _process_player_death(self) -> None:
         player_entities = self._context.get_group(
-            Matcher(DeadAction, PlayerComponent)
+            Matcher(DeadAction, PlayerActorFlagComponent)
         ).entities
         for player_entity in player_entities:
-            player_comp = player_entity.get(PlayerComponent)
+            player_comp = player_entity.get(PlayerActorFlagComponent)
             player_proxy = self._game.get_player(player_comp.name)
             if player_proxy is None:
                 logger.error(f"player {player_comp.name} not found")
@@ -82,7 +82,7 @@ class DeadActionSystem(ExecuteProcessor):
         entities = self._context.get_group(Matcher(DeadAction)).entities
         for entity in entities:
             dead_caction = entity.get(DeadAction)
-            entity.replace(DestroyComponent, dead_caction.name)
+            entity.replace(DestroyFlagComponent, dead_caction.name)
 
 
 ########################################################################################################################################################################

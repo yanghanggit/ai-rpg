@@ -11,7 +11,7 @@ import format_string.complex_prop_name
 from components.components import (
     ActorComponent,
     SkillComponent,
-    DestroyComponent,
+    DestroyFlagComponent,
     WeaponComponent,
 )
 from models.file_models import PropSkillUsageMode
@@ -96,7 +96,7 @@ def destroy_skill_entity(skill_entity: Entity) -> None:
     assert skill_entity.has(SkillComponent)
     skill_comp = skill_entity.get(SkillComponent)
     logger.debug(f"Destroying skill entity: {skill_comp.name}, {skill_comp.skill_name}")
-    skill_entity.replace(DestroyComponent, "")
+    skill_entity.replace(DestroyFlagComponent, "")
 
 
 ################################################################################################################################################

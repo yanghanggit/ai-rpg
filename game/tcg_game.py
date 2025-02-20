@@ -19,15 +19,15 @@ from components.components import (
     WorldSystemComponent,
     StageComponent,
     ActorComponent,
-    PlayerComponent,
+    PlayerActorFlagComponent,
     GUIDComponent,
     SystemMessageComponent,
     KickOffMessageComponent,
     StageGraphComponent,
     FinalAppearanceComponent,
     StageEnvironmentComponent,
-    HomeStageComponent,
-    DungeonStageComponent,
+    HomeStageFlagComponent,
+    DungeonStageFlagComponent,
 )
 from player.player_proxy import PlayerProxy
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
@@ -129,6 +129,7 @@ class TCGGame(BaseGame):
     ###############################################################################################################################################
     @override
     def exit(self) -> None:
+        # TODO 加上所有processors pipeline
         all = [self._processors]
         for processor in all:
             processor.tear_down()
@@ -269,8 +270,8 @@ class TCGGame(BaseGame):
         for actor_entity in actor_entities:
             assert actor_entity is not None
             assert actor_entity.has(ActorComponent)
-            assert not actor_entity.has(PlayerComponent)
-            actor_entity.add(PlayerComponent, "")
+            assert not actor_entity.has(PlayerActorFlagComponent)
+            actor_entity.add(PlayerActorFlagComponent, "")
 
         return actor_entities
 
@@ -309,9 +310,9 @@ class TCGGame(BaseGame):
             if prototype.type == StagePrototype.StageType.UNDIFINED:
                 assert False, "stage type is not defined"
             elif prototype.type == StagePrototype.StageType.DUNGEON:
-                stage_entity.add(DungeonStageComponent, instance.name)
+                stage_entity.add(DungeonStageFlagComponent, instance.name)
             elif prototype.type == StagePrototype.StageType.HOME:
-                stage_entity.add(HomeStageComponent, instance.name)
+                stage_entity.add(HomeStageFlagComponent, instance.name)
 
             # 添加场景可以连接的场景
             stage_entity.add(StageGraphComponent, instance.name, instance.next)
@@ -344,22 +345,13 @@ class TCGGame(BaseGame):
     ###############################################################################################################################################
     # 临时的，考虑后面把player直接挂在context或者game里，因为player设计上唯一
     def get_player_entity(self) -> Optional[Entity]:
-        assert len(self._players) == 1, "Player numbers more than 1"
-        player_entity = None
-        for player_proxy in self.players:
-
-            player_entity = self._context.get_player_entity(player_proxy.player_name)
-            if player_entity is None:
-                logger.warning(
-                    f"player_entity is None, player_proxy.name={player_proxy.player_name}"
-                )
-                continue
-            elif not player_entity.has(PlayerComponent):
-                logger.warning(
-                    f"player_entity don't have player component, player_proxy.name={player_proxy.player_name}"
-                )
-                continue
-        return player_entity
+        player_entity = self._context.get_group(
+            Matcher(
+                all_of=[PlayerActorFlagComponent],
+            )
+        ).entities.copy()
+        assert len(player_entity) == 1, "Player number is not 1"
+        return next(iter(player_entity), None)
 
     ###############################################################################################################################################
     @property
@@ -481,7 +473,7 @@ class TCGGame(BaseGame):
             return False
 
         player_entities: Set[Entity] = self.context.get_group(
-            Matcher(all_of=[PlayerComponent])
+            Matcher(all_of=[PlayerActorFlagComponent])
         ).entities
 
         assert len(player_entities) > 0
@@ -492,10 +484,10 @@ class TCGGame(BaseGame):
         only_one_player_entity = next(iter(player_entities))
         only_one_player_proxy = self._players[0]
 
-        player_comp = only_one_player_entity.get(PlayerComponent)
+        player_comp = only_one_player_entity.get(PlayerActorFlagComponent)
         assert player_comp is not None
         only_one_player_entity.replace(
-            PlayerComponent, only_one_player_proxy.player_name
+            PlayerActorFlagComponent, only_one_player_proxy.player_name
         )
 
         logger.info(f"{self._name}, game ready!!!!!!!!!!!!!!!!!!!!")
@@ -540,8 +532,8 @@ class TCGGame(BaseGame):
             logger.warning(f"事件通知 => {entity._name}:\n{replace_message}")
 
             # 如果是玩家，就要补充一个事件信息，用于客户端接收
-            if entity.has(PlayerComponent):
-                player_comp = entity.get(PlayerComponent)
+            if entity.has(PlayerActorFlagComponent):
+                player_comp = entity.get(PlayerActorFlagComponent)
                 player_proxy = self.get_player(player_comp.name)
                 assert player_proxy is not None
                 if player_proxy is None:

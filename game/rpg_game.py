@@ -6,7 +6,7 @@ from components.components import (
     WorldSystemComponent,
     StageComponent,
     ActorComponent,
-    PlayerComponent,
+    PlayerActorFlagComponent,
     AttributesComponent,
     FinalAppearanceComponent,
     BaseFormComponent,
@@ -16,7 +16,7 @@ from components.components import (
     StageGraphComponent,
     KickOffMessageComponent,
     RoundEventsRecordComponent,
-    KickOffFlagComponent,
+    KickOffDoneFlagComponent,
     StageSpawnerComponent,
     StageEnvironmentComponent,
     StageStaticFlagComponent,
@@ -243,8 +243,8 @@ class RPGGame(BaseGame):
 
             assert actor_entity is not None
             assert actor_entity.has(ActorComponent)
-            assert not actor_entity.has(PlayerComponent)
-            actor_entity.add(PlayerComponent, "")
+            assert not actor_entity.has(PlayerActorFlagComponent)
+            actor_entity.add(PlayerActorFlagComponent, "")
 
         return actor_entities
 
@@ -578,8 +578,8 @@ class RPGGame(BaseGame):
                 any_of=[
                     AttributesComponent,
                     FinalAppearanceComponent,
-                    PlayerComponent,
-                    KickOffFlagComponent,
+                    PlayerActorFlagComponent,
+                    KickOffDoneFlagComponent,
                     BaseFormComponent,
                     StageEnvironmentComponent,
                 ]
@@ -623,14 +623,14 @@ class RPGGame(BaseGame):
                             appearance_comp.final_appearance,
                         )
 
-                    case PlayerComponent.__name__:
-                        player_comp = PlayerComponent(**comp.data)
-                        load_entity.replace(PlayerComponent, player_comp.name)
+                    case PlayerActorFlagComponent.__name__:
+                        player_comp = PlayerActorFlagComponent(**comp.data)
+                        load_entity.replace(PlayerActorFlagComponent, player_comp.name)
 
-                    case KickOffFlagComponent.__name__:
-                        kick_off_flag_comp = KickOffFlagComponent(**comp.data)
+                    case KickOffDoneFlagComponent.__name__:
+                        kick_off_flag_comp = KickOffDoneFlagComponent(**comp.data)
                         load_entity.replace(
-                            KickOffFlagComponent, kick_off_flag_comp.name
+                            KickOffDoneFlagComponent, kick_off_flag_comp.name
                         )
 
                     case BaseFormComponent.__name__:
@@ -706,11 +706,13 @@ class RPGGame(BaseGame):
     ) -> None:
 
         assert game_resource.is_load
-        player_entities = context.get_group(Matcher(any_of=[PlayerComponent])).entities
+        player_entities = context.get_group(
+            Matcher(any_of=[PlayerActorFlagComponent])
+        ).entities
 
         for player_entity in player_entities:
 
-            player_comp = player_entity.get(PlayerComponent)
+            player_comp = player_entity.get(PlayerActorFlagComponent)
             player_proxy_model = game_resource.get_player_proxy(player_comp.name)
             if player_proxy_model is None:
                 continue

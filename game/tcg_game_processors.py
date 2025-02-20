@@ -54,6 +54,12 @@ class TCGGameProcessors(Processors):
         )
         from tcg_game_systems.tag_action_system import TagActionSystem
         from tcg_game_systems.go_to_action_system import GoToActionSystem
+        from tcg_game_systems.actor_roleplay_planning_permit_system import (
+            ActorRoleplayPlanningPermitSystem,
+        )
+        from tcg_game_systems.stage_narrate_planning_permit_system import (
+            StageNarratePlanningPermitSystem,
+        )
 
         processors.add(BeginSystem(context))
 
@@ -90,6 +96,9 @@ class TCGGameProcessors(Processors):
 
         # 规划逻辑
         processors.add(PrePlanningSystem(context))  ######## 在所有规划之前!
+
+        processors.add(StageNarratePlanningPermitSystem(context))
+        processors.add(ActorRoleplayPlanningPermitSystem(context))
 
         processors.add(WorldSystemPlanningSystem(context))
         processors.add(StagePlanningSystem(context))

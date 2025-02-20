@@ -4,9 +4,9 @@ from components.components import (
     ActorComponent,
     PlanningFlagComponent,
     StageGraphComponent,
-    PlayerComponent,
+    PlayerActorFlagComponent,
     AgentPingFlagComponent,
-    KickOffFlagComponent,
+    KickOffDoneFlagComponent,
 )
 from components.actions import (
     GoToAction,
@@ -206,9 +206,9 @@ class ActorPlanningExecutionSystem(ExecuteProcessor):
                     ActorComponent,
                     PlanningFlagComponent,
                     AgentPingFlagComponent,
-                    KickOffFlagComponent,
+                    KickOffDoneFlagComponent,
                 ],
-                none_of=[PlayerComponent],
+                none_of=[PlayerActorFlagComponent],
             )
         ).entities
         for actor_entity in actor_entities:

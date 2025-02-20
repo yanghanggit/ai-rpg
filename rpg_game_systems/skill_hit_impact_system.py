@@ -6,7 +6,7 @@ from components.actions import (
 )
 from components.components import (
     AttributesComponent,
-    DestroyComponent,
+    DestroyFlagComponent,
     SkillComponent,
 )
 from game.rpg_game_context import RPGGameContext
@@ -72,7 +72,7 @@ class SkillHitImpactSystem(ExecuteProcessor):
     async def a_execute1(self) -> None:
 
         skill_entities = self._context.get_group(
-            Matcher(all_of=[SkillComponent], none_of=[DestroyComponent])
+            Matcher(all_of=[SkillComponent], none_of=[DestroyFlagComponent])
         ).entities.copy()
 
         internal_process_data_list = self._initialize_internal_process_data_list(

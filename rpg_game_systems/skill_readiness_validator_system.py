@@ -7,7 +7,7 @@ from components.actions import (
 )
 from components.components import (
     SkillComponent,
-    DestroyComponent,
+    DestroyFlagComponent,
     DirectSkillFlagComponent,
 )
 from game.rpg_game_context import RPGGameContext
@@ -141,7 +141,7 @@ class SkillReadinessValidatorSystem(ExecuteProcessor):
 
         # 只关注技能
         skill_entities = self._context.get_group(
-            Matcher(all_of=[SkillComponent], none_of=[DestroyComponent])
+            Matcher(all_of=[SkillComponent], none_of=[DestroyFlagComponent])
         ).entities.copy()
 
         # 组成成方便的数据结构

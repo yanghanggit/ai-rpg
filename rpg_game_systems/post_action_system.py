@@ -7,7 +7,7 @@ from components.actions import (
 )
 import rpg_game_systems.action_component_utils
 from game.rpg_game import RPGGame
-from components.components import SkillComponent, DestroyComponent
+from components.components import SkillComponent, DestroyFlagComponent
 
 
 @final
@@ -35,10 +35,10 @@ class PostActionSystem(ExecuteProcessor):
     # todo
     def _remove_all_skills(self) -> None:
         skill_entities = self._context.get_group(
-            Matcher(all_of=[SkillComponent], none_of=[DestroyComponent])
+            Matcher(all_of=[SkillComponent], none_of=[DestroyFlagComponent])
         ).entities.copy()
         for skill_entity in skill_entities:
-            skill_entity.replace(DestroyComponent, "")
+            skill_entity.replace(DestroyFlagComponent, "")
 
     ############################################################################################################
     def _test(self) -> None:

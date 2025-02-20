@@ -17,23 +17,6 @@ import game.tcg_game_utils
 from player.player_command2 import PlayerCommand2
 
 
-# For test TODO
-class Counter:
-    value: int = 0
-
-    @classmethod
-    def add(cls) -> None:
-        cls.value += 1
-
-    @classmethod
-    def get(cls) -> int:
-        return cls.value
-
-    @classmethod
-    def reset(cls) -> None:
-        cls.value = 0
-
-
 ###############################################################################################################################################
 @dataclass
 class OptionParameters:

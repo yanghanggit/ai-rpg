@@ -8,7 +8,7 @@ from components.actions import (
     TagAction,
 )
 from components.components import (
-    PlayerComponent,
+    PlayerActorFlagComponent,
     ActorComponent,
     AgentPingFlagComponent,
 )
@@ -102,7 +102,7 @@ class PreConversationActionSystem(ReactiveProcessor):
     @override
     def filter(self, entity: Entity) -> bool:
         return (
-            entity.has(PlayerComponent)
+            entity.has(PlayerActorFlagComponent)
             and entity.has(ActorComponent)
             and entity.has(AgentPingFlagComponent)
         )

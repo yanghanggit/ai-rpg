@@ -4,7 +4,7 @@ from components.components import (
     StageComponent,
     PlanningFlagComponent,
     AgentPingFlagComponent,
-    KickOffFlagComponent,
+    KickOffDoneFlagComponent,
     StageStaticFlagComponent,
 )
 from components.actions import (
@@ -145,7 +145,7 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
                     StageComponent,
                     PlanningFlagComponent,
                     AgentPingFlagComponent,
-                    KickOffFlagComponent,
+                    KickOffDoneFlagComponent,
                 ],
                 none_of=[StageStaticFlagComponent],
             )
@@ -170,7 +170,7 @@ class StagePlanningExecutionSystem(ExecuteProcessor):
                     StageComponent,
                     PlanningFlagComponent,
                     AgentPingFlagComponent,
-                    KickOffFlagComponent,
+                    KickOffDoneFlagComponent,
                 ]
             )
         ).entities

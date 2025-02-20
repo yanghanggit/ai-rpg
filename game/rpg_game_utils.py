@@ -21,10 +21,10 @@ from player.player_proxy import PlayerProxy
 from extended_systems.archive_file import ActorArchiveFile, StageArchiveFile
 from components.components import (
     ActorComponent,
-    PlayerComponent,
+    PlayerActorFlagComponent,
     PlanningFlagComponent,
     KickOffMessageComponent,
-    KickOffFlagComponent,
+    KickOffDoneFlagComponent,
 )
 from rpg_game_systems.actor_entity_utils import ActorStatusEvaluator
 import rpg_game_systems.actor_planning_execution_system
@@ -385,12 +385,12 @@ def play_new_game(
 ) -> None:
 
     player_entity = rpg_game.context.get_actor_entity(player_actor_name)
-    if player_entity is None or not player_entity.has(PlayerComponent):
+    if player_entity is None or not player_entity.has(PlayerActorFlagComponent):
         logger.error(f"没有找到角色 = {player_actor_name}")
         return
 
     # 更改算作登陆成功
-    player_entity.replace(PlayerComponent, player_proxy.player_name)
+    player_entity.replace(PlayerActorFlagComponent, player_proxy.player_name)
     player_proxy.set_actor(player_actor_name)
 
     # 添加游戏介绍
@@ -410,8 +410,8 @@ def play_new_game(
     )
 
     # 做kickoff标记 完成
-    assert not player_entity.has(KickOffFlagComponent)
-    player_entity.replace(KickOffFlagComponent, player_proxy.actor_name)
+    assert not player_entity.has(KickOffDoneFlagComponent)
+    player_entity.replace(KickOffDoneFlagComponent, player_proxy.actor_name)
 
 
 #######################################################################################################################################
@@ -435,7 +435,7 @@ def resume_game(rpg_game: RPGGame, player_name: str) -> Optional[PlayerProxy]:
     # 因为是load的，到了这里肯定有！！！
     player_entity = rpg_game.context.get_actor_entity(player_proxy.actor_name)
     assert player_entity is not None
-    assert player_entity.has(KickOffFlagComponent)
+    assert player_entity.has(KickOffDoneFlagComponent)
 
     return player_proxy
 

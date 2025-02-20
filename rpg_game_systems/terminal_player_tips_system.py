@@ -3,7 +3,7 @@ from typing import final, override, List
 from game.rpg_game_context import RPGGameContext
 from game.rpg_game import RPGGame
 from components.components import (
-    PlayerComponent,
+    PlayerActorFlagComponent,
     ActorComponent,
     StageGraphComponent,
 )
@@ -41,7 +41,7 @@ class TerminalPlayerTipsSystem(ExecuteProcessor):
                 continue
 
             assert player_entity is not None
-            assert player_entity.has(PlayerComponent)
+            assert player_entity.has(PlayerActorFlagComponent)
             assert player_entity.has(ActorComponent)
 
             # 当前场景能去往的场景

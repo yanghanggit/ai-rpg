@@ -3,7 +3,7 @@ from typing import final, override, List
 from game.rpg_game_context import RPGGameContext
 from game.rpg_game import RPGGame
 from components.components import (
-    PlayerComponent,
+    PlayerActorFlagComponent,
     ActorComponent,
 )
 from player.player_proxy import PlayerProxy
@@ -12,7 +12,7 @@ from game.web_rpg_game import WebRPGGame
 from loguru import logger
 from extended_systems.archive_file import StageArchiveFile
 from components.components import (
-    PlayerComponent,
+    PlayerActorFlagComponent,
     ActorComponent,
     StageGraphComponent,
 )
@@ -47,7 +47,7 @@ class WebPlayerTipsSystem(ExecuteProcessor):
                 continue
 
             assert player_entity is not None
-            assert player_entity.has(PlayerComponent)
+            assert player_entity.has(PlayerActorFlagComponent)
             assert player_entity.has(ActorComponent)
 
             # 当前场景能去往的场景

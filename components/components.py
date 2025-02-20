@@ -2,6 +2,14 @@ from typing import NamedTuple, List, final
 from components.registry import register_component_class
 
 
+"""
+# 命名规则
+1. 以Component结尾
+2. 除Actor，Stage，System外，不存储数据仅作标识用的组件，以FlagComponent结尾，比如KickOffDoneFlagComponent    考虑吧Component去掉？省点字数
+3. 标记Actor，Stage，System类型的组件，需要在FlagComponent前加上对应类型，比如HeroActorFlagComponent
+"""
+
+
 # 全局唯一标识符
 @final
 @register_component_class
@@ -11,7 +19,7 @@ class GUIDComponent(NamedTuple):
 
 
 ############################################################################################################
-# 标记agent连接完成
+# 标记agent连接完成 TODO:旧组件，用上的时候把这个删了
 @final
 @register_component_class
 class AgentPingFlagComponent(NamedTuple):
@@ -40,7 +48,7 @@ class KickOffMessageComponent(NamedTuple):
 # 标记kick off已经完成
 @final
 @register_component_class
-class KickOffFlagComponent(NamedTuple):
+class KickOffDoneFlagComponent(NamedTuple):
     name: str
 
 
@@ -70,7 +78,7 @@ class StageGraphComponent(NamedTuple):
 
 
 ############################################################################################################
-# 场景可以产生actor的孵化器
+# 场景可以产生actor的孵化器 TODO:旧组件，用上的时候把这个删了
 @final
 @register_component_class
 class StageSpawnerComponent(NamedTuple):
@@ -108,7 +116,7 @@ class ActorComponent(NamedTuple):
 # 玩家标记
 @final
 @register_component_class
-class PlayerComponent(NamedTuple):
+class PlayerActorFlagComponent(NamedTuple):
     name: str
 
 
@@ -116,12 +124,12 @@ class PlayerComponent(NamedTuple):
 # 摧毁Entity标记
 @final
 @register_component_class
-class DestroyComponent(NamedTuple):
+class DestroyFlagComponent(NamedTuple):
     name: str
 
 
 ############################################################################################################
-# 自动规划的标记 planning
+# 自动规划的标记 planning TODO:旧组件，用上的时候把这个删了
 @final
 @register_component_class
 class PlanningFlagComponent(NamedTuple):
@@ -129,7 +137,7 @@ class PlanningFlagComponent(NamedTuple):
 
 
 ############################################################################################################
-# 基础形态。，用于和衣服组成完整的外观信息。如果是动物等，就是动物的外观信息
+# 基础形态。，用于和衣服组成完整的外观信息。如果是动物等，就是动物的外观信息 TODO:旧组件，用上的时候把这个删了
 @final
 @register_component_class
 class BaseFormComponent(NamedTuple):
@@ -147,7 +155,7 @@ class FinalAppearanceComponent(NamedTuple):
 
 
 ############################################################################################################
-# 标记进入新的
+# 标记进入新的 TODO:旧组件，用上的时候把这个删了
 @final
 @register_component_class
 class EnterStageFlagComponent(NamedTuple):
@@ -156,7 +164,7 @@ class EnterStageFlagComponent(NamedTuple):
 
 
 ############################################################################################################
-# RPG游戏的属性组件
+# RPG游戏的属性组件 TODO:旧组件，用上的时候把这个删了
 @final
 @register_component_class
 class AttributesComponent(NamedTuple):
@@ -169,7 +177,7 @@ class AttributesComponent(NamedTuple):
 
 
 ############################################################################################################
-# RPG游戏的当前武器组件
+# RPG游戏的当前武器组件 TODO:旧组件，用上的时候把这个删了
 @final
 @register_component_class
 class WeaponComponent(NamedTuple):
@@ -178,7 +186,7 @@ class WeaponComponent(NamedTuple):
 
 
 ############################################################################################################
-# RPG游戏的当前衣服组件
+# RPG游戏的当前衣服组件 TODO:旧组件，用上的时候把这个删了
 @final
 @register_component_class
 class ClothesComponent(NamedTuple):
@@ -187,7 +195,7 @@ class ClothesComponent(NamedTuple):
 
 
 ############################################################################################################
-# 每一局的消息记录下来，为了处理archives的问题
+# 每一局的消息记录下来，为了处理archives的问题 TODO:旧组件，用上的时候把这个删了
 @final
 @register_component_class
 class RoundEventsRecordComponent(NamedTuple):
@@ -196,7 +204,7 @@ class RoundEventsRecordComponent(NamedTuple):
 
 
 ############################################################################################################
-# 技能
+# 技能 TODO:旧组件，用上的时候把这个删了
 @final
 @register_component_class
 class SkillComponent(NamedTuple):
@@ -212,7 +220,7 @@ class SkillComponent(NamedTuple):
 
 
 ############################################################################################################
-# 直接技能的标记。如果标记这个，world_skill_system 将不会进行推理。
+# 直接技能的标记。如果标记这个，world_skill_system 将不会进行推理。 TODO:旧组件，用上的时候把这个删了
 @final
 @register_component_class
 class DirectSkillFlagComponent(NamedTuple):
@@ -224,7 +232,7 @@ class DirectSkillFlagComponent(NamedTuple):
 # Stage专用，标记该Stage是Home
 @final
 @register_component_class
-class HomeStageComponent(NamedTuple):
+class HomeStageFlagComponent(NamedTuple):
     name: str
 
 
@@ -232,8 +240,45 @@ class HomeStageComponent(NamedTuple):
 # Stage专用，标记该Stage是Dungeon
 @final
 @register_component_class
-class DungeonStageComponent(NamedTuple):
+class DungeonStageFlagComponent(NamedTuple):
     name: str
 
 
 ############################################################################################################
+# Actor专用，标记该Actor是Hero
+@final
+@register_component_class
+class HeroActorFlagComponent(NamedTuple):
+    name: str
+
+
+############################################################################################################
+# Actor专用，标记该Actor是Monster
+@final
+@register_component_class
+class MonsterActorFlagComponent(NamedTuple):
+    name: str
+
+
+############################################################################################################
+# Actor专用，标记该Actor是MR
+@final
+@register_component_class
+class MagicRulerActorFlagComponent(NamedTuple):
+    name: str
+
+
+############################################################################################################
+# Actor专用，标记该Actor需要进行角色扮演推理（心理活动，说话...），如有需要，单独列入Plan
+@final
+@register_component_class
+class ActorRolePlayPlanningPermitFlagComponent(NamedTuple):
+    name: str
+
+
+############################################################################################################
+# State专用，标记该State需要进行场景描写推理，如有需要，单独列入Plan
+@final
+@register_component_class
+class StageNarratePlanningPermitFlagComponent(NamedTuple):
+    name: str

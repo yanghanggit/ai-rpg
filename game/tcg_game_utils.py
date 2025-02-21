@@ -138,6 +138,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
             appearance="身材精瘦，但穿上铠甲后显得十分高大。为了防备突袭总是带着头盔，就连睡觉时也不摘下。身上有多处伤疤，淡化在肤色之中，记录着曾经的战斗。",
         ),
         appearance="身材精瘦，但穿上铠甲后显得十分高大。为了防备突袭总是带着头盔，就连睡觉时也不摘下。身上有多处伤疤，淡化在肤色之中，记录着曾经的战斗。",
+        type=ActorPrototype.ActorType.PLAYER,
     )
     actor2 = ActorPrototype(
         name="角色.怪物.强壮哥布林",
@@ -149,6 +150,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
             appearance="你和其他哥布林一样有深绿色的皮肤和尖尖的耳朵。但你的体格比普通哥布林更加强壮。你的身上有很浓重的臭味。",
         ),
         appearance="和其他哥布林一样有深绿色的皮肤和尖尖的耳朵。但体格比普通哥布林更加强壮。身上有很浓重的臭味。",
+        type=ActorPrototype.ActorType.MONSTER,
     )
 
     world_root.data_base.actors.setdefault(actor1.name, actor1)

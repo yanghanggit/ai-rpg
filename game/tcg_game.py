@@ -7,6 +7,7 @@ from game.base_game import BaseGame
 from game.tcg_game_processors import TCGGameProcessors
 from models.event_models import BaseEvent
 from models.tcg_models import (
+    ActorPrototype,
     WorldRuntime,
     WorldSystemInstance,
     WorldDataBase,
@@ -28,6 +29,8 @@ from components.components import (
     StageEnvironmentComponent,
     HomeStageFlagComponent,
     DungeonStageFlagComponent,
+    HeroActorFlagComponent,
+    MonsterActorFlagComponent,
 )
 from player.player_proxy import PlayerProxy
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
@@ -256,6 +259,20 @@ class TCGGame(BaseGame):
                 FinalAppearanceComponent, instance.name, prototype.appearance
             )
 
+            # 根据类型添加角色类型
+            if prototype.type == ActorPrototype.ActorType.UNDIFINED:
+                assert False, "actor type is not defined"
+            elif prototype.type == ActorPrototype.ActorType.PLAYER:
+                actor_entity.add(HeroActorFlagComponent, instance.name)
+                assert not actor_entity.has(PlayerActorFlagComponent)
+                actor_entity.add(PlayerActorFlagComponent, "")
+            elif prototype.type == ActorPrototype.ActorType.HERO:
+                actor_entity.add(HeroActorFlagComponent, instance.name)
+            elif prototype.type == ActorPrototype.ActorType.MONSTER:
+                actor_entity.add(MonsterActorFlagComponent, instance.name)
+            elif prototype.type == ActorPrototype.ActorType.BOSS:
+                actor_entity.add(MonsterActorFlagComponent, instance.name)
+
             # 添加到返回值
             ret.append(actor_entity)
 
@@ -267,12 +284,6 @@ class TCGGame(BaseGame):
     ) -> List[Entity]:
 
         actor_entities = self._create_actor_entities(players, data_base)
-        for actor_entity in actor_entities:
-            assert actor_entity is not None
-            assert actor_entity.has(ActorComponent)
-            assert not actor_entity.has(PlayerActorFlagComponent)
-            actor_entity.add(PlayerActorFlagComponent, "")
-
         return actor_entities
 
     ###############################################################################################################################################

@@ -29,10 +29,18 @@ class EntitySnapshot(BaseModel):
 ###############################################################################################################################################
 @final
 class ActorPrototype(BaseModel):
+    class ActorType(StrEnum):
+        UNDIFINED = "Undefined"
+        PLAYER = "Player"
+        HERO = "Hero"
+        MONSTER = "Monster"
+        BOSS = "Boss"
+
     name: str
     code_name: str
     system_message: str
     appearance: str
+    type: Union[ActorType, str]
 
 
 ###############################################################################################################################################

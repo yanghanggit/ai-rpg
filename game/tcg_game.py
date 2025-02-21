@@ -576,6 +576,7 @@ class TCGGame(BaseGame):
 
             # 告知场景里的其他人，这个人被传送走了，不用boardcast，因为可能有人不会察觉到
             departure_stage = self._context.safe_get_stage_entity(going_actor)
+            assert departure_stage is not None
             # 告知场景这个人被传送了
             for stay_actor in filtered_map[departure_stage]:
                 # TODO 占位，判断这个人需不需要知道

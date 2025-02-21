@@ -151,6 +151,10 @@ async def run_game(option: OptionParameters) -> None:
             logger.info(f"玩家退出游戏 = {player_proxy.player_name}")
             break
 
+        if usr_input == "/tp":
+            terminal_tcg_game.teleport_actors_to_stage({terminal_tcg_game.get_player_entity()}, "场景.洞窟")
+            continue
+
         player_proxy.add_player_command(
             PlayerCommand2(user=player_proxy.player_name, command=usr_input)
         )

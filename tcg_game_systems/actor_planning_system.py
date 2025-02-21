@@ -78,7 +78,6 @@ class ActorPlanningSystem(ExecuteProcessor):
                 if actor.has(FinalAppearanceComponent)
             ]
             message = _generate_actor_plan_prompt(
-                self._game.world_runtime.root.epoch_script,
                 current_stage._name,
                 current_stage.get(StageEnvironmentComponent).narrate,
                 entity.get(FinalAppearanceComponent).final_appearance,
@@ -123,7 +122,6 @@ class ActorPlanningSystem(ExecuteProcessor):
 
 
 def _generate_actor_plan_prompt(
-    epoch_script: str,
     current_stage_name: str,
     current_stage_narration: str,
     self_appearence: str,
@@ -131,16 +129,7 @@ def _generate_actor_plan_prompt(
 ) -> str:
     assert current_stage_name is not "", "current_stage is empty"
     return f"""
-# 请制定你的行动计划，此时的世界背景及场景信息如下，请仔细阅读并牢记，以确保你的行为和言语符合游戏设定，不会偏离时代背景。
-
-## 游戏规则
-### 全名机制：
-游戏中的角色、道具、场景等都有全名，全名是游戏系统中的唯一标识符。
-名字可以由多个单词组成，单词之间用英文句号`.`分隔。例如：角色.战士.凯尔。
-注意请完整引用全名以确保一致性。
-
-## 当前游戏背景
-{epoch_script}
+# 请制定你的行动计划，请确保你的行为和言语符合游戏规则和设定
 
 ## 当前所在的场景
 {current_stage_name}
@@ -162,6 +151,7 @@ def _generate_actor_plan_prompt(
 }}
 
 ### 注意事项
+- 引用角色或场景时，请严格遵守全名机制
 - 所有输出必须为第一人称视角。
 - JSON 对象中可以包含上述键中的一个或多个。
 - 注意！不允许重复使用上述的键！ 

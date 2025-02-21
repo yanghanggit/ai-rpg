@@ -544,6 +544,7 @@ class TCGGame(BaseGame):
                 )
 
     ###############################################################################################################################################
+    # 传送角色set里的角色到指定场景，游戏层面的行为，会添加记忆但不会触发action
     def teleport_actors_to_stage(
         self, going_actors: Set[Entity], destination: Union[str, Entity]
     ) -> None:

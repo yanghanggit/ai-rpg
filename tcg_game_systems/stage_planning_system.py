@@ -58,9 +58,7 @@ class StagePlanningSystem(ExecuteProcessor):
 
         request_handlers: List[ChatRequestHandler] = []
         for entity in stage_entities:
-            message = _generate_stage_plan_prompt(
-                self._game.world_runtime.root.epoch_script
-            )
+            message = _generate_stage_plan_prompt()
             assert message is not None
             agent_short_term_memory = self._game.get_agent_short_term_memory(entity)
             request_handlers.append(
@@ -100,10 +98,8 @@ class StagePlanningSystem(ExecuteProcessor):
 #######################################################################################################################################
 
 
-def _generate_stage_plan_prompt(epoch_script: str) -> str:
-    return f"""# 请推理你的环境是否会发生变化并输出变化后的场景描述，，此时的世界背景如下，请仔细阅读并牢记，以确保你的描述符合游戏设定，不会偏离时代背景。
-## 当前世界背景
-{epoch_script}
+def _generate_stage_plan_prompt() -> str:
+    return f"""# 请推理你的环境是否会发生变化并输出变化后的场景描述，请确保你的描述符合游戏设定，不会偏离时代背景。
 ## 场景内角色进行的动作
 {'无,TODO'}
 ## 输出要求

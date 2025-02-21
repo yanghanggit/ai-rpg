@@ -152,7 +152,9 @@ async def run_game(option: OptionParameters) -> None:
             break
 
         if usr_input == "/tp":
-            terminal_tcg_game.teleport_actors_to_stage({terminal_tcg_game.get_player_entity()}, "场景.洞窟")
+            terminal_tcg_game.teleport_actors_to_stage(
+                {terminal_tcg_game.get_player_entity()}, "场景.洞窟"
+            )
             continue
 
         player_proxy.add_player_command(

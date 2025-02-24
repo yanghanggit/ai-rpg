@@ -141,25 +141,6 @@ async def run_game(option: OptionParameters) -> None:
     # 核心循环
     while True:
 
-        usr_input = input(f"[{player_proxy.player_name}]:")
-        if usr_input == "":
-            logger.debug(f"玩家输入为空 = {player_proxy.player_name}，空跑一次")
-            await terminal_tcg_game.a_execute()
-            continue
-
-        if usr_input == "/quit" or usr_input == "/q":
-            logger.info(f"玩家退出游戏 = {player_proxy.player_name}")
-            break
-
-        if usr_input == "/tp":
-            terminal_tcg_game.teleport_actors_to_stage(
-                {terminal_tcg_game.get_player_entity()}, "场景.洞窟"
-            )
-            continue
-
-        player_proxy.add_player_command(
-            PlayerCommand2(user=player_proxy.player_name, command=usr_input)
-        )
         await terminal_tcg_game.a_execute()
 
         # 处理退出

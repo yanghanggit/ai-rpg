@@ -26,7 +26,7 @@ from tcg_game_systems.action_bundle import ActionBundle
 
 #######################################################################################################################################
 @final
-class ActorPlanningSystem(ExecuteProcessor):
+class ActorRoleplayPlanningSystem(ExecuteProcessor):
 
     def __init__(self, context: TCGGameContext) -> None:
         self._context: TCGGameContext = context

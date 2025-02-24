@@ -283,3 +283,6 @@ class ActorRolePlayPlanningPermitFlagComponent(NamedTuple):
 @register_component_class
 class StageNarratePlanningPermitFlagComponent(NamedTuple):
     name: str
+
+
+############################################################################################################

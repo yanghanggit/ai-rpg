@@ -19,7 +19,7 @@ from loguru import logger
 
 #######################################################################################################################################
 @final
-class StagePlanningSystem(ExecuteProcessor):
+class StageNarratePlanningSystem(ExecuteProcessor):
 
     def __init__(self, context: TCGGameContext) -> None:
         self._context: TCGGameContext = context

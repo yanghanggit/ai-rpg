@@ -47,8 +47,8 @@ class TCGGameProcessors(Processors):
         from tcg_game_systems.dead_action_system import DeadActionSystem
         from tcg_game_systems.pre_planning_system import PrePlanningSystem
         from tcg_game_systems.post_planning_system import PostPlanningSystem
-        from tcg_game_systems.stage_planning_system import StagePlanningSystem
-        from tcg_game_systems.actor_planning_system import ActorPlanningSystem
+        from tcg_game_systems.stage_narrate_planning_system import StageNarratePlanningSystem
+        from tcg_game_systems.actor_roleplay_planning_system import ActorRoleplayPlanningSystem
         from tcg_game_systems.world_system_planning_system import (
             WorldSystemPlanningSystem,
         )
@@ -101,8 +101,8 @@ class TCGGameProcessors(Processors):
         processors.add(ActorRoleplayPlanningPermitSystem(context))
 
         processors.add(WorldSystemPlanningSystem(context))
-        processors.add(StagePlanningSystem(context))
-        processors.add(ActorPlanningSystem(context))
+        processors.add(StageNarratePlanningSystem(context))
+        processors.add(ActorRoleplayPlanningSystem(context))
 
         processors.add(PostPlanningSystem(context))  ####### 在所有规划之后!
 

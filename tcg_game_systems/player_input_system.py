@@ -32,6 +32,7 @@ class PlayerInputSystem(ExecuteProcessor):
 
             if usr_input == "/quit" or usr_input == "/q":
                 logger.info(f"玩家退出游戏 = {player_proxy.player_name}")
+                self._game._will_exit = True
                 break
 
             if usr_input == "/tp":

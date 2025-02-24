@@ -4,7 +4,7 @@ from models.tcg_models import (
     ActorPrototype,
     StagePrototype,
     WorldSystemPrototype,
-    PropObject,
+    CardObject,
     ActorInstance,
     StageInstance,
     WorldSystemInstance,
@@ -85,7 +85,7 @@ def _comple_stage_system_prompt(
 
 
 #######################################################################################################################################
-def create_prop_object(
+""" def create_prop_object(
     world_root: WorldRoot,
     name: str,
     guid: int,
@@ -117,6 +117,33 @@ def create_prop_object(
     world_root.data_base.props.setdefault(data.name, data)
 
     # 为了不改变原始数据，这里使用深拷贝
+    copy_data = copy.deepcopy(data)
+    copy_data.guid = guid
+    return copy_data """
+
+
+def create_card_object(
+    name: str,
+    guid: int,
+    code: str,
+    holder: str,
+    performer: str,
+    description: str,
+    insight: str,
+    target: str,
+    value: List[int],
+) -> CardObject:
+    data = CardObject(
+        name=name,
+        guid=0,
+        code=code,
+        holder=holder,
+        performer=performer,
+        description=description,
+        insight=insight,
+        target=target,
+        value=value,
+    )
     copy_data = copy.deepcopy(data)
     copy_data.guid = guid
     return copy_data
@@ -194,56 +221,78 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
     actor_instance1 = ActorInstance(
         name=f"{actor1.name}",
         guid=100,
-        props=[],
+        card_pool=[],
         attributes=[],  # 暂时不用
         kick_off_message="你接到了剿灭哥布林的委托，在目标地不远处搭建起了营地。",
     )
 
-    actor_instance1.props.append(
-        create_prop_object(
-            world_root=world_root,
-            name="铁剑",
-            guid=1000,
-            count=1,
-            code_name="iron_sword",
-            details="一把普通的铁剑",
-            type="weapon",
-            appearance="黑颜色的剑身，剑柄上有一只狮子的图案",
-            insight="有魔法？",
-            attributes=[],
+    actor_instance1.card_pool.append(
+        create_card_object(
+            name="战士攻击",
+            guid=1001,
+            code="warrior attack",
+            holder=actor_instance1.name,
+            performer=actor_instance1.name,
+            description="对身前的敌人进行一次物理攻击，造成{value[0]}点物理伤害。",
+            insight="对哥布林十分有效。",
+            target="Enemy",
+            value=[10],
+        )
+    )
+    actor_instance1.card_pool.append(
+        create_card_object(
+            name="战士防御",
+            guid=2001,
+            code="warrior defense",
+            holder=actor_instance1.name,
+            performer=actor_instance1.name,
+            description="摆出防御的姿势，使自身下次受到的物理伤害降低{value[0]}点",
+            insight="对哥布林的攻击十分有效。",
+            target="Alley",
+            value=[10],
+        )
+    )
+    actor_instance1.card_pool.append(
+        create_card_object(
+            name="战士奔跑",
+            guid=3001,
+            code="warrior run",
+            holder=actor_instance1.name,
+            performer=actor_instance1.name,
+            description="快速接近敌人，使下次的物理攻击变得更有效",
+            insight="地面不利于奔跑时，效果下降",
+            target="Alley",
+            value=[],
         )
     )
 
     actor_instance2 = ActorInstance(
         name=f"{actor2.name}",
         guid=400,
-        props=[],
+        card_pool=[],
         attributes=[],  # 暂时不用
         kick_off_message="你前几日活捉了一名附近村庄的村民献给了哥布林大王，得到了许多酒肉作为奖励，正在于洞穴深处的房间中纵情狂欢。",
     )
 
-    actor_instance2.props.append(
-        create_prop_object(
-            world_root=world_root,
-            name="简陋短剑",
-            guid=1001,
-            count=1,
-            code_name="short_sword",
-            details="一把简陋的短剑",
-            type="weapon",
-            appearance="一把简陋的短剑，剑身锈迹斑斑，满布裂纹",
-            insight="有毒",
-            attributes=[],
-        )
+    actor_instance2.card_pool.append(
+        create_card_object(
+            name="哥布林咆哮",
+            guid=20001,
+            code="golbin roar",
+            holder=actor_instance2.name,
+            performer=actor_instance2.name,
+            description="发出瘆人的咆哮，对敌人造成{value[0]}点魔法伤害。",
+            insight="对胆小之人十分有效。",
+            target="Enemy",
+            value=[10],
+        ),
     )
 
     stage_instance1 = StageInstance(
         name=f"{stage1.name}",
         guid=10000,
         actors=[
-            actor_instance1.name,
         ],
-        props=[],
         attributes=[],  # 暂时不用,
         kick_off_message="营火静静地燃烧着",
         next=[],
@@ -253,9 +302,9 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
         name=f"{stage2.name}",
         guid=50000,
         actors=[
+            actor_instance1.name,
             actor_instance2.name,
         ],
-        props=[],
         attributes=[],  # 暂时不用,
         kick_off_message="洞穴中十分吵闹",
         next=[],

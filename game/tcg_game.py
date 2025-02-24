@@ -15,6 +15,7 @@ from models.tcg_models import (
     StagePrototype,
     StageInstance,
     AgentShortTermMemory,
+    CardObject,
 )
 from components.components import (
     WorldSystemComponent,
@@ -31,6 +32,10 @@ from components.components import (
     DungeonStageFlagComponent,
     HeroActorFlagComponent,
     MonsterActorFlagComponent,
+    CardHolderActorComponent,
+    ItemComponent,
+    CardItemComponent,
+    ItemDescriptionComponent,
 )
 from player.player_proxy import PlayerProxy
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
@@ -229,6 +234,37 @@ class TCGGame(BaseGame):
         return ret
 
     ###############################################################################################################################################
+    # TODO 写死的，直接创建card_pool的所有牌并写死持有者
+    def _create_card_entites(self, actor_instance: ActorInstance) -> List[Entity]:
+        assert actor_instance is not None, "actor instance is none"
+
+        ret: List[Entity] = []
+        for card_obj in actor_instance.card_pool:
+
+            card_entity = self.context.__create_entity__(card_obj.name)
+            assert card_entity is not None
+
+            card_entity.add(ItemComponent, card_obj.name, actor_instance.name)
+            card_entity.add(
+                CardItemComponent,
+                card_obj.name,
+                card_obj.performer,
+                "Deck",
+                card_obj.target,
+                card_obj.value,
+            )
+            card_entity.add(
+                ItemDescriptionComponent,
+                card_obj.name,
+                card_obj.description,
+                card_obj.insight,
+            )
+
+            ret.append(card_entity)
+
+        return ret
+
+    ###############################################################################################################################################
     def _create_actor_entities(
         self, actor_instances: List[ActorInstance], data_base: WorldDataBase
     ) -> List[Entity]:
@@ -259,19 +295,27 @@ class TCGGame(BaseGame):
                 FinalAppearanceComponent, instance.name, prototype.appearance
             )
 
-            # 根据类型添加角色类型
+            # 根据类型添加角色类型flag
             if prototype.type == ActorPrototype.ActorType.UNDIFINED:
                 assert False, "actor type is not defined"
             elif prototype.type == ActorPrototype.ActorType.PLAYER:
                 actor_entity.add(HeroActorFlagComponent, instance.name)
-                assert not actor_entity.has(PlayerActorFlagComponent)
                 actor_entity.add(PlayerActorFlagComponent, "")
+                actor_entity.add(CardHolderActorComponent, instance.name)
+                # 写死 TODO
+                self._create_card_entites(instance)
             elif prototype.type == ActorPrototype.ActorType.HERO:
                 actor_entity.add(HeroActorFlagComponent, instance.name)
             elif prototype.type == ActorPrototype.ActorType.MONSTER:
                 actor_entity.add(MonsterActorFlagComponent, instance.name)
+                actor_entity.add(CardHolderActorComponent, instance.name)
+                # 写死 TODO
+                self._create_card_entites(instance)
             elif prototype.type == ActorPrototype.ActorType.BOSS:
                 actor_entity.add(MonsterActorFlagComponent, instance.name)
+                actor_entity.add(CardHolderActorComponent, instance.name)
+                # 写死 TODO
+                self._create_card_entites(instance)
 
             # 添加到返回值
             ret.append(actor_entity)
@@ -563,6 +607,11 @@ class TCGGame(BaseGame):
         if len(going_actors) == 0:
             return
 
+        for going_actor in going_actors:
+            if going_actor is None or not going_actor.has(ActorComponent):
+                assert False, "actor is None or have no actor component"
+                return
+
         # 找到目标stage，否则报错
         target_stage = (
             self.context.get_stage_entity(destination)
@@ -580,9 +629,6 @@ class TCGGame(BaseGame):
 
         # 传送前处理
         for going_actor in going_actors:
-            if going_actor is None or not going_actor.has(ActorComponent):
-                assert False, "actor is None or have no actor component"
-                return
 
             # 检查自身是否已经在目标场景
             current_stage = self.context.safe_get_stage_entity(going_actor)
@@ -609,18 +655,12 @@ class TCGGame(BaseGame):
 
         # 传送中处理
         for going_actor in going_actors:
-            if going_actor is None or not going_actor.has(ActorComponent):
-                assert False, "actor is None or have no actor component"
-                return
 
             # 更改所处场景的标识
             going_actor.replace(ActorComponent, going_actor._name, target_stage._name)
 
         # 传送后处理
         for going_actor in going_actors:
-            if going_actor is None or not going_actor.has(ActorComponent):
-                assert False, "actor is None or have no actor component"
-                return
 
             # 向所在场景及所在场景内除自身外的其他人宣布，这货到了
             self.broadcast_event(

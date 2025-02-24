@@ -66,7 +66,7 @@ class WorldSystemPrototype(BaseModel):
 
 
 ###############################################################################################################################################
-@final
+""" @final
 class PropObject(BaseModel):
     name: str
     guid: int
@@ -76,7 +76,20 @@ class PropObject(BaseModel):
     type: str
     appearance: str
     insight: str
-    attributes: List[int]
+    attributes: List[int] """
+
+
+@final
+class CardObject(BaseModel):  # 可能以后改成ItemObject，类型选card，现阶段先这样 TODO
+    name: str
+    guid: int
+    code: str
+    holder: str
+    performer: str
+    description: str
+    insight: str
+    target: str
+    value: List[int]
 
 
 ###############################################################################################################################################
@@ -84,7 +97,8 @@ class PropObject(BaseModel):
 class WorldDataBase(BaseModel):
     actors: Dict[str, ActorPrototype] = {}
     stages: Dict[str, StagePrototype] = {}
-    props: Dict[str, PropObject] = {}  # 这里就放这个。
+    # props: Dict[str, PropObject] = {}  # 这里就放这个。
+    # cards: Dict[str, CardObject] = {} # 真的需要吗？ 把卡池数据存在actor里就行，后续用item的时候再加上 TODO
     world_systems: Dict[str, WorldSystemPrototype] = {}
 
 
@@ -94,7 +108,7 @@ class ActorInstance(BaseModel):
     name: str
     guid: int
     kick_off_message: str
-    props: List[PropObject]
+    card_pool: List[CardObject]  # 感觉这个应该放进Prototype里 TODO
     attributes: List[int]
 
 
@@ -105,7 +119,7 @@ class StageInstance(BaseModel):
     guid: int
     actors: List[str]
     kick_off_message: str
-    props: List[PropObject]
+    # props: List[PropObject]
     attributes: List[int]
     next: List[str]
 

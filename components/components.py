@@ -1,4 +1,5 @@
-from typing import NamedTuple, List, final
+from enum import StrEnum
+from typing import NamedTuple, List, Union, final
 from components.registry import register_component_class
 
 
@@ -291,7 +292,7 @@ class StageNarratePlanningPermitFlagComponent(NamedTuple):
 @register_component_class
 class CardHolderActorComponent(NamedTuple):
     name: str
-    list: list[str]
+    # list: list[str]
 
 
 ############################################################################################################
@@ -309,16 +310,34 @@ class ItemComponent(NamedTuple):
 @register_component_class
 class StackableItemComponent(NamedTuple):
     name: str
-    count: int
+    count_num: int
 
 
 ############################################################################################################
 # Item专用，标记该Item是Card
+class CardState(StrEnum):
+    UNDEFINED = "Undefined"
+    DECK = "Deck"
+    HAND = "Hand"
+    DISCARD = "Discard"
+    BANNED = "Banned"
+
+
+class TargetType(StrEnum):
+    UNDEFINED = "Undefined"
+    ENEMY = "Enemy"
+    ALLEY = "Alley"
+    NULL = "Null"
+
+
 @final
 @register_component_class
 class CardItemComponent(NamedTuple):
     name: str
     performer: str
+    state: Union[CardState, str]
+    target: Union[TargetType, str]
+    value: List[int]
 
 
 ############################################################################################################

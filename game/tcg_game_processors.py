@@ -64,9 +64,7 @@ class TCGGameProcessors(Processors):
         from tcg_game_systems.stage_narrate_planning_permit_system import (
             StageNarratePlanningPermitSystem,
         )
-        from tcg_game_systems.player_input_system import (
-            PlayerInputSystem
-        )
+        from tcg_game_systems.player_input_system import PlayerInputSystem
 
         processors.add(BeginSystem(context))
 

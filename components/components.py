@@ -286,3 +286,46 @@ class StageNarratePlanningPermitFlagComponent(NamedTuple):
 
 
 ############################################################################################################
+# Actor专用，标记该Actor能携带card，通常只能加到Player和Monster身上
+@final
+@register_component_class
+class CardHolderActorComponent(NamedTuple):
+    name: str
+    list: list[str]
+
+
+############################################################################################################
+# 物品组件
+@final
+@register_component_class
+class ItemComponent(NamedTuple):
+    name: str
+    holder: str
+
+
+############################################################################################################
+# 可堆叠物品组件 TODO 可能没用，反正现阶段不做card以外的道具
+@final
+@register_component_class
+class StackableItemComponent(NamedTuple):
+    name: str
+    count: int
+
+
+############################################################################################################
+# Item专用，标记该Item是Card
+@final
+@register_component_class
+class CardItemComponent(NamedTuple):
+    name: str
+    performer: str
+
+
+############################################################################################################
+# Item专用，Item的描述, TODO tags如有需要，也放在这里？
+@final
+@register_component_class
+class ItemDescriptionComponent(NamedTuple):
+    name: str
+    description: str
+    insight: str

@@ -291,8 +291,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
     stage_instance1 = StageInstance(
         name=f"{stage1.name}",
         guid=10000,
-        actors=[
-        ],
+        actors=[],
         attributes=[],  # 暂时不用,
         kick_off_message="营火静静地燃烧着",
         next=[],

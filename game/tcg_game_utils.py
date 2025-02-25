@@ -143,6 +143,9 @@ def create_card_object(
         insight=insight,
         target=target,
         value=value,
+        # TODO
+        count=1,
+        level=1,
     )
     copy_data = copy.deepcopy(data)
     copy_data.guid = guid

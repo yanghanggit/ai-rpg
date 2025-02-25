@@ -79,17 +79,22 @@ class PropObject(BaseModel):
     attributes: List[int] """
 
 
-@final
-class CardObject(BaseModel):  # 可能以后改成ItemObject，类型选card，现阶段先这样 TODO
+class ItemObject(BaseModel):
     name: str
     guid: int
     code: str
+    count: int
+    value: List[int]
+
+
+@final
+class CardObject(ItemObject):  # 可能以后改成ItemObject，类型选card，现阶段先这样 TODO
+    level: int
     holder: str
     performer: str
     description: str
     insight: str
     target: str
-    value: List[int]
 
 
 ###############################################################################################################################################

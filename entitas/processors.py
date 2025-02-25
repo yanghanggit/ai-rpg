@@ -7,12 +7,14 @@ from .group import GroupEvent
 from typing import Any
 
 
+# pipeline被第一次调用时执行的processor
 class InitializeProcessor(metaclass=ABCMeta):
     @abstractmethod
     def initialize(self) -> None:
         pass
 
 
+# 执行processor
 class ExecuteProcessor(metaclass=ABCMeta):
     @abstractmethod
     def execute(self) -> None:
@@ -25,18 +27,21 @@ class ExecuteProcessor(metaclass=ABCMeta):
         pass
 
 
+# 每次执行后使用的processor
 class CleanupProcessor(metaclass=ABCMeta):
     @abstractmethod
     def cleanup(self) -> None:
         pass
 
 
+# game exit时执行的processor
 class TearDownProcessor(metaclass=ABCMeta):
     @abstractmethod
     def tear_down(self) -> None:
         pass
 
 
+# 响应action的processor
 class ReactiveProcessor(ExecuteProcessor):
 
     def __init__(self, context: Context) -> None:

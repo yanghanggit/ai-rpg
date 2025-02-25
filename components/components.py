@@ -287,11 +287,13 @@ class StageNarratePlanningPermitFlagComponent(NamedTuple):
 
 
 ############################################################################################################
-# Actor专用，标记该Actor能携带card，通常只能加到Player和Monster身上
+# Actor专用，标记该Actor能打牌，通常只能加到Player和Monster身上
 @final
 @register_component_class
-class CardHolderActorComponent(NamedTuple):
+class CardPlayerActorComponent(NamedTuple):
     name: str
+    draw_num: int
+    play_num: int
     # list: list[str]
 
 
@@ -348,3 +350,28 @@ class ItemDescriptionComponent(NamedTuple):
     name: str
     description: str
     insight: str
+
+
+############################################################################################################
+# Card Item专用，标识这张卡是玩家的卡
+@final
+@register_component_class
+class PlayerCardItemFlagComponent(NamedTuple):
+    name: str
+
+
+############################################################################################################
+# Card Item专用，标识这张卡是Monster的卡
+@final
+@register_component_class
+class MonsterCardItemFlagComponent(NamedTuple):
+    name: str
+
+
+############################################################################################################
+# 表示这张卡会被执行效果
+@final
+@register_component_class
+class CardEffectComponent(NamedTuple):
+    name: str
+    order: int

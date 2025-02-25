@@ -64,7 +64,6 @@ class TCGGameProcessors(Processors):
         from tcg_game_systems.stage_narrate_planning_permit_system import (
             StageNarratePlanningPermitSystem,
         )
-        from tcg_game_systems.player_input_system import PlayerInputSystem
 
         processors.add(BeginSystem(context))
 
@@ -97,7 +96,6 @@ class TCGGameProcessors(Processors):
         processors.add(DestroySystem(context))
 
         #
-        processors.add(PlayerInputSystem(context))
         processors.add(TerminalPlayerInterruptWaitSystem(context))
 
         # 规划逻辑

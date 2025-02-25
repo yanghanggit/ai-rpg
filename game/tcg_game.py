@@ -32,10 +32,12 @@ from components.components import (
     DungeonStageFlagComponent,
     HeroActorFlagComponent,
     MonsterActorFlagComponent,
-    CardHolderActorComponent,
+    CardPlayerActorComponent,
     ItemComponent,
     CardItemComponent,
     ItemDescriptionComponent,
+    PlayerCardItemFlagComponent,
+    MonsterCardItemFlagComponent,
 )
 from player.player_proxy import PlayerProxy
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
@@ -235,7 +237,11 @@ class TCGGame(BaseGame):
 
     ###############################################################################################################################################
     # TODO 写死的，直接创建card_pool的所有牌并写死持有者
-    def _create_card_entites(self, actor_instance: ActorInstance) -> List[Entity]:
+    def _create_card_entites(
+        self,
+        actor_instance: ActorInstance,
+        actor_prototype: ActorPrototype,
+    ) -> List[Entity]:
         assert actor_instance is not None, "actor instance is none"
 
         ret: List[Entity] = []
@@ -259,6 +265,16 @@ class TCGGame(BaseGame):
                 card_obj.description,
                 card_obj.insight,
             )
+            if (
+                actor_prototype.type == ActorPrototype.ActorType.PLAYER
+                or actor_prototype.type == ActorPrototype.ActorType.HERO
+            ):
+                card_entity.add(PlayerCardItemFlagComponent, card_obj.name)
+            elif (
+                actor_prototype.type == ActorPrototype.ActorType.MONSTER
+                or actor_prototype.type == ActorPrototype.ActorType.BOSS
+            ):
+                card_entity.add(MonsterCardItemFlagComponent, card_obj.name)
 
             ret.append(card_entity)
 
@@ -301,21 +317,16 @@ class TCGGame(BaseGame):
             elif prototype.type == ActorPrototype.ActorType.PLAYER:
                 actor_entity.add(HeroActorFlagComponent, instance.name)
                 actor_entity.add(PlayerActorFlagComponent, "")
-                actor_entity.add(CardHolderActorComponent, instance.name)
+                actor_entity.add(CardPlayerActorComponent, instance.name, 5, 3)
                 # 写死 TODO
-                self._create_card_entites(instance)
+                self._create_card_entites(instance, prototype)
             elif prototype.type == ActorPrototype.ActorType.HERO:
                 actor_entity.add(HeroActorFlagComponent, instance.name)
             elif prototype.type == ActorPrototype.ActorType.MONSTER:
                 actor_entity.add(MonsterActorFlagComponent, instance.name)
-                actor_entity.add(CardHolderActorComponent, instance.name)
+                actor_entity.add(CardPlayerActorComponent, instance.name, 3, 3)
                 # 写死 TODO
-                self._create_card_entites(instance)
-            elif prototype.type == ActorPrototype.ActorType.BOSS:
-                actor_entity.add(MonsterActorFlagComponent, instance.name)
-                actor_entity.add(CardHolderActorComponent, instance.name)
-                # 写死 TODO
-                self._create_card_entites(instance)
+                self._create_card_entites(instance, prototype)
 
             # 添加到返回值
             ret.append(actor_entity)

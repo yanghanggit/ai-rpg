@@ -23,10 +23,10 @@ from agent.agent_request_handler import AgentRequestHandler
 from agent.agent_response_handler import AgentResponseHandler
 from game.rpg_game import RPGGame
 import rpg_game_systems.file_system_utils
-from models.event_models import AgentEvent
+from rpg_models.event_models import AgentEvent
 import rpg_game_systems.skill_entity_utils
 from agent.lang_serve_agent import LangServeAgent
-from models.entity_models import Attributes
+from rpg_models.entity_models import Attributes
 import rpg_game_systems.prompt_utils
 import rpg_game_systems.task_request_utils
 

@@ -7,7 +7,7 @@ from components.components import (
     ActorComponent,
 )
 from player.player_proxy import PlayerProxy
-from models.event_models import AgentEvent
+from rpg_models.event_models import AgentEvent
 from game.web_rpg_game import WebRPGGame
 from loguru import logger
 from extended_systems.archive_file import StageArchiveFile

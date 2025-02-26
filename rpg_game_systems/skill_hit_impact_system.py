@@ -15,8 +15,8 @@ import rpg_game_systems.prompt_utils
 import format_string.target_message
 import format_string.ints_string
 from game.rpg_game import RPGGame
-from models.entity_models import Attributes
-from models.event_models import AgentEvent
+from rpg_models.entity_models import Attributes
+from rpg_models.event_models import AgentEvent
 import rpg_game_systems.skill_entity_utils
 import rpg_game_systems.action_component_utils
 

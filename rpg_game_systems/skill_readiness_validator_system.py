@@ -24,8 +24,8 @@ from agent.agent_response_handler import AgentResponseHandler
 from game.rpg_game import RPGGame
 import rpg_game_systems.skill_entity_utils
 from agent.lang_serve_agent import LangServeAgent
-from models.entity_models import Attributes
-from models.file_models import PropSkillUsageMode
+from rpg_models.entity_models import Attributes
+from rpg_models.file_models import PropSkillUsageMode
 import rpg_game_systems.task_request_utils
 
 

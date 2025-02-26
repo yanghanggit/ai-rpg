@@ -1,12 +1,12 @@
 from entitas import Entity, Matcher  # type: ignore
-from typing import Dict, Set, List, Optional, Union
+from typing import Set, List, Optional, Union
 from overrides import override
 from loguru import logger
 from game.tcg_game_context import TCGGameContext
 from game.base_game import BaseGame
 from game.tcg_game_processors import TCGGameProcessors
-from models.event_models import BaseEvent
-from models.tcg_models import (
+from rpg_models.event_models import BaseEvent
+from tcg_models.v_0_0_1 import (
     ActorPrototype,
     WorldRuntime,
     WorldSystemInstance,
@@ -15,7 +15,7 @@ from models.tcg_models import (
     StagePrototype,
     StageInstance,
     AgentShortTermMemory,
-    CardObject,
+    # CardObject,
 )
 from components.components import (
     WorldSystemComponent,
@@ -45,7 +45,7 @@ from extended_systems.lang_serve_system import LangServeSystem
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from pathlib import Path
 import rpg_game_systems.prompt_utils
-from models.event_models import AgentEvent
+from rpg_models.event_models import AgentEvent
 
 
 class TCGGame(BaseGame):
@@ -149,7 +149,7 @@ class TCGGame(BaseGame):
 
     ###############################################################################################################################################
     @override
-    def send_event(self, player_proxy_names: Set[str], send_event: BaseEvent) -> None:
+    def send_message(self, player_proxy_names: Set[str], send_event: BaseEvent) -> None:
         pass
 
     ###############################################################################################################################################
@@ -168,8 +168,9 @@ class TCGGame(BaseGame):
         )
 
         ## 第2步，创建actor
-        self._create_player_entities(world_root.players, world_root.data_base)
-        self._create_actor_entities(world_root.actors, world_root.data_base)
+        self._create_actor_entities(
+            world_root.players + world_root.actors, world_root.data_base
+        )
 
         ## 第3步，创建stage
         self._create_stage_entities(world_root.stages, world_root.data_base)
@@ -298,48 +299,66 @@ class TCGGame(BaseGame):
             actor_entity = self.context.__create_entity__(instance.name)
             assert actor_entity is not None
 
-            # 必要组件
+            # 必要组件：guid
             actor_entity.add(GUIDComponent, instance.name, instance.guid)
+
+            # 必要组件：身份类型标记-角色Actor
             actor_entity.add(ActorComponent, instance.name, "")
+
+            # 必要组件：系统消息
             actor_entity.add(
                 SystemMessageComponent, instance.name, prototype.system_message
             )
+
+            # 必要组件：启动消息
             actor_entity.add(
                 KickOffMessageComponent, instance.name, instance.kick_off_message
             )
+
+            # 必要组件：外观
             actor_entity.add(
                 FinalAppearanceComponent, instance.name, prototype.appearance
             )
 
             # 根据类型添加角色类型flag
-            if prototype.type == ActorPrototype.ActorType.UNDIFINED:
-                assert False, "actor type is not defined"
-            elif prototype.type == ActorPrototype.ActorType.PLAYER:
-                actor_entity.add(HeroActorFlagComponent, instance.name)
-                actor_entity.add(PlayerActorFlagComponent, "")
-                actor_entity.add(CardPlayerActorComponent, instance.name, 5, 3)
-                # 写死 TODO
-                self._create_card_entites(instance, prototype)
-            elif prototype.type == ActorPrototype.ActorType.HERO:
-                actor_entity.add(HeroActorFlagComponent, instance.name)
-            elif prototype.type == ActorPrototype.ActorType.MONSTER:
-                actor_entity.add(MonsterActorFlagComponent, instance.name)
-                actor_entity.add(CardPlayerActorComponent, instance.name, 3, 3)
-                # 写死 TODO
-                self._create_card_entites(instance, prototype)
+            # if prototype.type == ActorPrototype.ActorType.UNDIFINED:
+            #     assert False, "actor type is not defined"
+            # elif prototype.type == ActorPrototype.ActorType.PLAYER:
+            #     actor_entity.add(HeroActorFlagComponent, instance.name)
+            #     actor_entity.add(PlayerActorFlagComponent, "")
+            #     actor_entity.add(CardPlayerActorComponent, instance.name, 5, 3)
+            #     # 写死 TODO
+            #     self._create_card_entites(instance, prototype)
+            # elif prototype.type == ActorPrototype.ActorType.HERO:
+            #     actor_entity.add(HeroActorFlagComponent, instance.name)
+            # elif prototype.type == ActorPrototype.ActorType.MONSTER:
+            #     actor_entity.add(MonsterActorFlagComponent, instance.name)
+            #     actor_entity.add(CardPlayerActorComponent, instance.name, 3, 3)
+            #     # 写死 TODO
+            #     self._create_card_entites(instance, prototype)
+
+            # 请将上面的实现写成match的样式
+            match prototype.type:
+                case ActorPrototype.ActorType.UNDIFINED:
+                    assert False, "actor type is not defined"
+                case ActorPrototype.ActorType.PLAYER:
+                    actor_entity.add(HeroActorFlagComponent, instance.name)
+                    actor_entity.add(PlayerActorFlagComponent, "")
+                    actor_entity.add(CardPlayerActorComponent, instance.name, 5, 3)
+                    # 写死 TODO
+                    self._create_card_entites(instance, prototype)
+                case ActorPrototype.ActorType.HERO:
+                    actor_entity.add(HeroActorFlagComponent, instance.name)
+                case ActorPrototype.ActorType.MONSTER:
+                    actor_entity.add(MonsterActorFlagComponent, instance.name)
+                    actor_entity.add(CardPlayerActorComponent, instance.name, 3, 3)
+                    # 写死 TODO
+                    self._create_card_entites(instance, prototype)
 
             # 添加到返回值
             ret.append(actor_entity)
 
         return ret
-
-    ###############################################################################################################################################
-    def _create_player_entities(
-        self, players: List[ActorInstance], data_base: WorldDataBase
-    ) -> List[Entity]:
-
-        actor_entities = self._create_actor_entities(players, data_base)
-        return actor_entities
 
     ###############################################################################################################################################
     def _create_stage_entities(
@@ -488,48 +507,6 @@ class TCGGame(BaseGame):
         return mapping.get(stage_entity, set())
 
     ###############################################################################################################################################
-    # def _initialize_prop_file_system(self) -> None:
-
-    #     self._prop_file_system.clear()
-
-    #     #
-    #     world_root = self._world_runtime.root
-    #     data_base = world_root.data_base
-
-    #     # 所有的角色，包括玩家管理道具
-    #     all_actors = world_root.actors + world_root.players
-    #     for actor_instance in all_actors:
-    #         for prop_instance in actor_instance.props:
-
-    #             prop_prototype = self._get_prop_prototype(prop_instance, data_base)
-    #             assert prop_prototype is not None
-    #             if prop_prototype is None:
-    #                 logger.error(f"db is None: {prop_instance.name}")
-    #                 continue
-
-    #             prop_file = PropFile(prop_instance, prop_prototype)
-    #             self._prop_file_system.add_file(actor_instance.name, prop_file)
-
-    #     # 所有的舞台，包括舞台管理道具
-    #     for stage_instance in world_root.stages:
-    #         for prop_instance in stage_instance.props:
-
-    #             prop_prototype = self._get_prop_prototype(prop_instance, data_base)
-    #             assert prop_prototype is not None
-    #             if prop_prototype is None:
-    #                 logger.error(f"db is None: {prop_instance.name}")
-    #                 continue
-
-    #             prop_file = PropFile(prop_instance, prop_prototype)
-    #             self._prop_file_system.add_file(stage_instance.name, prop_file)
-
-    ###############################################################################################################################################
-    # def _get_prop_prototype(
-    #     self, prop_instance: PropInstance, data_base: WorldDataBase
-    # ) -> Optional[PropPrototype]:
-    #     return data_base.props.get(prop_instance.name, None)
-
-    ###############################################################################################################################################
     # TODO 目前是写死的
     def ready(self) -> bool:
 
@@ -605,9 +582,7 @@ class TCGGame(BaseGame):
                 if player_proxy is None:
                     continue
 
-                player_proxy.append_event_to_notifications(
-                    tag="", sendder="", event=agent_event
-                )
+                player_proxy.add_notification(event=agent_event)
 
     ###############################################################################################################################################
     # 传送角色set里的角色到指定场景，游戏层面的行为，会添加记忆但不会触发action
@@ -688,3 +663,5 @@ class TCGGame(BaseGame):
                     message=f"你被传送到了 {target_stage._name}",
                 ),
             )
+
+    ###############################################################################################################################################

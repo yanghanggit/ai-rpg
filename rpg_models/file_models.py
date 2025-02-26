@@ -2,7 +2,7 @@ from typing import List, Dict, List, Any
 from overrides import final
 from pydantic import BaseModel
 from enum import StrEnum, unique
-from models.entity_models import PropInstanceModel, PropModel
+from rpg_models.entity_models import PropInstanceModel, PropModel
 
 
 @unique

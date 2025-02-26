@@ -6,11 +6,11 @@ sys.path.append(str(root_dir))
 from typing import Dict, Any, cast
 from game_sample.world_system_data import ExcelDataWorldSystem
 from game_sample.guid_generator import editor_guid_generator
-from models.entity_models import (
+from rpg_models.entity_models import (
     WorldSystemModel,
     WorldSystemInstanceModel,
 )
-from models.editor_models import EditorEntityType, EditorProperty
+from rpg_models.editor_models import EditorEntityType, EditorProperty
 
 
 ######################################################################################################################

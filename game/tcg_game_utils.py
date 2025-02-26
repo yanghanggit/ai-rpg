@@ -1,5 +1,5 @@
 from loguru import logger
-from models.tcg_models import (
+from tcg_models.v_0_0_1 import (
     WorldRoot,
     ActorPrototype,
     StagePrototype,
@@ -8,6 +8,7 @@ from models.tcg_models import (
     ActorInstance,
     StageInstance,
     WorldSystemInstance,
+    ItemAttributes,
 )
 import game.tcg_game_config
 from typing import List, Final
@@ -133,10 +134,15 @@ def create_card_object(
     target: str,
     value: List[int],
 ) -> CardObject:
+
+    # 如果属性不够，就做一下扩展。
+    if len(value) < ItemAttributes.MAX:
+        value.extend([0] * (ItemAttributes.MAX - len(value)))
+
     data = CardObject(
         name=name,
         guid=0,
-        code=code,
+        code_name=code,
         holder=holder,
         performer=performer,
         description=description,
@@ -144,8 +150,8 @@ def create_card_object(
         target=target,
         value=value,
         # TODO
-        count=1,
-        level=1,
+        # count=1,
+        # level=1,
     )
     copy_data = copy.deepcopy(data)
     copy_data.guid = guid

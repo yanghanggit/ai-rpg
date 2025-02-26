@@ -1,14 +1,14 @@
 from typing import List, Any
 from loguru import logger
-from models.event_models import BaseEvent
-from models.player_models import (
+from rpg_models.event_models import BaseEvent
+from rpg_models.player_models import (
     PlayerClientMessage,
     PlayerClientMessageTag,
     PlayerProxyModel,
 )
 from pathlib import Path
 from player.player_command2 import PlayerCommand2
-from models.tcg_models import PlayerNotification
+from tcg_models.player_notification import PlayerNotification
 
 
 class PlayerProxy:
@@ -93,7 +93,7 @@ class PlayerProxy:
     ##########################################################################################################################################################
     def _should_ignore_event(self, send_event: BaseEvent) -> bool:
 
-        from models.event_models import (
+        from rpg_models.event_models import (
             UpdateAppearanceEvent,
             PreStageExitEvent,
             GameRoundEvent,
@@ -195,15 +195,11 @@ class PlayerProxy:
     ##########################################################################################################################################################
 
     ##########################################################################################################################################################
-    def append_event_to_notifications(
-        self, tag: str, sendder: str, event: BaseEvent
-    ) -> None:
+    def add_notification(self, event: BaseEvent) -> None:
         logger.debug(f"add_event: {event}")
         self._player_notifications.append(
             PlayerNotification(
-                tag=tag,
-                sender=sendder,
-                agent_event=event,
+                data=event,
             )
         )
 

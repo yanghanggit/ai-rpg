@@ -9,14 +9,14 @@ from game_sample.prop_data import ExcelDataProp
 from game_sample.actor_data import ExcelDataActor
 from game_sample.stage_data import ExcelDataStage
 from game_sample.guid_generator import editor_guid_generator
-from models.entity_models import (
+from rpg_models.entity_models import (
     Attributes,
     StageModel,
     StageInstanceModel,
     StageActorInstanceProxy,
 )
 import game_sample.configuration
-from models.editor_models import EditorEntityType, EditorProperty
+from rpg_models.editor_models import EditorEntityType, EditorProperty
 import format_string.ints_string
 from game_sample.actor_editor import ExcelEditorActor
 from format_string.complex_actor_name import ComplexActorName

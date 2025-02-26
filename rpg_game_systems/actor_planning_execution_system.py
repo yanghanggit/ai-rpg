@@ -27,7 +27,7 @@ from extended_systems.prop_file import (
     PropFile,
     generate_prop_file_total_prompt,
 )
-from models.file_models import PropType
+from rpg_models.file_models import PropType
 import rpg_game_systems.stage_entity_utils
 import rpg_game_systems.task_request_utils
 

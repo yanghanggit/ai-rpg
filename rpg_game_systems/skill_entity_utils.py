@@ -14,7 +14,7 @@ from components.components import (
     DestroyFlagComponent,
     WeaponComponent,
 )
-from models.file_models import PropSkillUsageMode
+from rpg_models.file_models import PropSkillUsageMode
 
 
 ################################################################################################################################################

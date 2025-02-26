@@ -7,13 +7,13 @@ from typing import List, Dict, Any, Optional, cast
 from game_sample.prop_data import ExcelDataProp
 from game_sample.actor_data import ExcelDataActor
 from game_sample.guid_generator import editor_guid_generator
-from models.entity_models import (
+from rpg_models.entity_models import (
     ActorModel,
     Attributes,
     ActorInstanceModel,
     PropInstanceModel,
 )
-from models.editor_models import EditorEntityType, EditorProperty
+from rpg_models.editor_models import EditorEntityType, EditorProperty
 import format_string.ints_string
 import format_string.complex_prop_name
 from format_string.complex_actor_name import ComplexActorName

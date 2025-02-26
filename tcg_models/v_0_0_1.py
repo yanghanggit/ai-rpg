@@ -1,8 +1,11 @@
-from typing import List, Dict, Any, Union, final
-from pydantic import BaseModel
+from typing import Final, List, Dict, Any, Union, final
+from pydantic import BaseModel, Field
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
-from models.event_models import BaseEvent
-from enum import StrEnum
+from rpg_models.event_models import BaseEvent
+from enum import IntEnum, StrEnum, unique
+
+# 注意，不允许动！
+SCHEMA_VERSION: Final[str] = "0.0.1"
 
 
 ###############################################################################################################################################
@@ -82,19 +85,33 @@ class PropObject(BaseModel):
 class ItemObject(BaseModel):
     name: str
     guid: int
-    code: str
-    count: int
+    code_name: str
+    count: int = 1
     value: List[int]
+
+
+@unique
+class ItemAttributes(IntEnum):
+    MAX_HP = 0
+    CUR_HP = 1
+    MAX = 20
 
 
 @final
 class CardObject(ItemObject):  # 可能以后改成ItemObject，类型选card，现阶段先这样 TODO
-    level: int
+    level: int = 1
     holder: str
     performer: str
     description: str
     insight: str
     target: str
+
+    # 测试的属性
+    @property
+    def max_hp(self) -> int:
+        if len(self.value) < ItemAttributes.MAX:
+            return self.value[ItemAttributes.MAX_HP]
+        return 0
 
 
 ###############################################################################################################################################
@@ -155,17 +172,10 @@ class WorldRoot(BaseModel):
 # 生成世界的运行时文件，记录世界的状态
 @final
 class WorldRuntime(BaseModel):
+    version: str = SCHEMA_VERSION
     root: WorldRoot = WorldRoot()
     entities_snapshot: List[EntitySnapshot] = []
     agents_short_term_memory: Dict[str, AgentShortTermMemory] = {}
 
 
 ###############################################################################################################################################
-
-
-# 玩家客户端消息
-class PlayerNotification(BaseModel):
-    tag: str
-    sender: str
-    index: int = 0
-    agent_event: BaseEvent  # 要根部的类，其实只需要它的序列化能力，其余的不要，所以不要出现具体类型的调用！

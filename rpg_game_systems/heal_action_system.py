@@ -10,8 +10,8 @@ from typing import final, override
 import format_string.target_message
 import format_string.ints_string
 from game.rpg_game import RPGGame
-from models.entity_models import Attributes
-from models.event_models import AgentEvent
+from rpg_models.entity_models import Attributes
+from rpg_models.event_models import AgentEvent
 from loguru import logger
 
 

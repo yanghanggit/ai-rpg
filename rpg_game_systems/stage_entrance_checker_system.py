@@ -21,7 +21,7 @@ from extended_systems.prop_file import (
     generate_prop_file_for_stage_condition_prompt,
 )
 from game.rpg_game import RPGGame
-from models.event_models import AgentEvent
+from rpg_models.event_models import AgentEvent
 from loguru import logger
 from agent.lang_serve_agent import LangServeAgent
 import rpg_game_systems.task_request_utils

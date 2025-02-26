@@ -53,11 +53,12 @@ class TCGGameProcessors(Processors):
         from tcg_game_systems.actor_roleplay_planning_system import (
             ActorRoleplayPlanningSystem,
         )
-        from tcg_game_systems.world_system_planning_system import (
-            WorldSystemPlanningSystem,
-        )
-        from tcg_game_systems.tag_action_system import TagActionSystem
-        from tcg_game_systems.go_to_action_system import GoToActionSystem
+
+        # from tcg_game_systems.world_system_planning_system import (
+        #     WorldSystemPlanningSystem,
+        # )
+        # from tcg_game_systems.tag_action_system import TagActionSystem
+        # from tcg_game_systems.go_to_action_system import GoToActionSystem
         from tcg_game_systems.actor_roleplay_planning_permit_system import (
             ActorRoleplayPlanningPermitSystem,
         )
@@ -104,7 +105,7 @@ class TCGGameProcessors(Processors):
         processors.add(StageNarratePlanningPermitSystem(context))
         processors.add(ActorRoleplayPlanningPermitSystem(context))
 
-        processors.add(WorldSystemPlanningSystem(context))
+        # processors.add(WorldSystemPlanningSystem(context))
         processors.add(StageNarratePlanningSystem(context))
         processors.add(ActorRoleplayPlanningSystem(context))
 

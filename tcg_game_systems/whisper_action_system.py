@@ -8,7 +8,7 @@ from tcg_game_systems.base_action_reactive_system import (
     ConversationError,
 )
 import format_string.target_message
-from models.event_models import AgentEvent, WhisperEvent
+from rpg_models.event_models import AgentEvent, WhisperEvent
 
 
 ####################################################################################################################################

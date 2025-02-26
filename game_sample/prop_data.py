@@ -4,8 +4,8 @@ from pathlib import Path
 root_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(root_dir))
 from typing import Any, List, cast
-from models.entity_models import PropModel, Attributes
-from models.file_models import PropType, PropSkillUsageMode
+from rpg_models.entity_models import PropModel, Attributes
+from rpg_models.file_models import PropType, PropSkillUsageMode
 from enum import StrEnum, unique
 import pandas
 

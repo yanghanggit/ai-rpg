@@ -15,7 +15,7 @@ import game_sample.utils
 from game_sample.actor_data import ExcelDataActor
 from game_sample.game_editor import ExcelEditorGame
 import game_sample.configuration
-from models.config_models import GlobalConfigModel, GameConfigModel
+from rpg_models.config_models import GlobalConfigModel, GameConfigModel
 
 
 ############################################################################################################

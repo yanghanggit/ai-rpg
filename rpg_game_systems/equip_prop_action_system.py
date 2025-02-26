@@ -14,7 +14,7 @@ from loguru import logger
 from typing import final, override, Optional
 from extended_systems.prop_file import PropFile
 from game.rpg_game import RPGGame
-from models.event_models import AgentEvent
+from rpg_models.event_models import AgentEvent
 
 
 ################################################################################################################################################

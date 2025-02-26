@@ -6,11 +6,12 @@ import game.tcg_game_config
 import shutil
 from game.tcg_game_context import TCGGameContext
 from game.terminal_tcg_game import TerminalTCGGame
-from models.tcg_models import WorldRoot, WorldRuntime
+from tcg_models.v_0_0_1 import WorldRoot, WorldRuntime
+from tcg_models.v_0_0_2 import WorldRuntime as WorldRuntime_v_0_0_2
 from chaos_engineering.empty_engineering_system import EmptyChaosEngineeringSystem
 from extended_systems.lang_serve_system import LangServeSystem
 from player.player_proxy import PlayerProxy
-from models.player_models import PlayerProxyModel
+from rpg_models.player_models import PlayerProxyModel
 import game.tcg_game_utils
 
 # from extended_systems.tcg_prop_file_manage_system import PropFileManageSystem
@@ -80,6 +81,12 @@ async def run_game(option: OptionParameters) -> None:
 
     # 创建runtime
     world_runtime = WorldRuntime()
+
+    # yanghang test
+    # world_runtime_v_0_0_2 = WorldRuntime_v_0_0_2()
+    # world_runtime_v_0_0_2.previous = world_runtime
+
+    #
     users_world_runtime_file_path = users_world_runtime_dir / f"runtime.json"
     if not users_world_runtime_file_path.exists():
 

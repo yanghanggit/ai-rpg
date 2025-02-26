@@ -15,7 +15,7 @@ from agent.agent_system import AgentSystem
 from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from typing import Optional, Dict, Set, final
 import rpg_game_systems.prompt_utils
-from models.event_models import AgentEvent
+from rpg_models.event_models import AgentEvent
 from game.base_game import BaseGame
 from agent.lang_serve_agent import LangServeAgent
 
@@ -307,6 +307,6 @@ class RPGGameContext(Context):
         if len(player_names) == 0:
             return
         assert self._game is not None
-        self._game.send_event(player_names, agent_event)
+        self._game.send_message(player_names, agent_event)
 
     #############################################################################################################################

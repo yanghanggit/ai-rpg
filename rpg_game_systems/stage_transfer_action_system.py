@@ -14,10 +14,10 @@ import rpg_game_systems.action_component_utils
 from loguru import logger
 import format_string.complex_prop_name
 from extended_systems.prop_file import PropFile
-from models.file_models import PropFileModel
-from models.entity_models import PropInstanceModel
-from models.event_models import AgentEvent
-from models.editor_models import GUIDType
+from rpg_models.file_models import PropFileModel
+from rpg_models.entity_models import PropInstanceModel
+from rpg_models.event_models import AgentEvent
+from rpg_models.editor_models import GUIDType
 
 
 ####################################################################################################################################

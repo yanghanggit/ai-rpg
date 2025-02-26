@@ -1,5 +1,5 @@
 from typing import List, Optional, Dict, Final
-from models.entity_models import (
+from rpg_models.entity_models import (
     ActorInstanceModel,
     StageInstanceModel,
     WorldSystemInstanceModel,
@@ -14,13 +14,13 @@ from models.entity_models import (
 from pathlib import Path
 import json
 from loguru import logger
-from models.file_models import (
+from rpg_models.file_models import (
     EntityProfileModel,
     ActorArchiveFileModel,
     StageArchiveFileModel,
 )
-from models.player_models import PlayerProxyModel
-from models.agent_models import AgentChatHistoryDumpModel
+from rpg_models.player_models import PlayerProxyModel
+from rpg_models.agent_models import AgentChatHistoryDumpModel
 from format_string.complex_actor_name import ComplexActorName
 
 

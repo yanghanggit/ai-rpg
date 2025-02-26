@@ -1,11 +1,11 @@
 from typing import final
 from overrides import override
-from models.entity_models import (
+from rpg_models.entity_models import (
     PropModel,
     PropInstanceModel,
 )
-from models.entity_models import Attributes
-from models.file_models import (
+from rpg_models.entity_models import Attributes
+from rpg_models.file_models import (
     PropType,
     PropFileModel,
     PropTypeName,

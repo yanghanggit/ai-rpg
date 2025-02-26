@@ -9,7 +9,7 @@ from components.components import (
 )
 from extended_systems.archive_file import StageArchiveFile
 from player.player_proxy import PlayerProxy
-from models.event_models import AgentEvent
+from rpg_models.event_models import AgentEvent
 from game.terminal_rpg_game import TerminalRPGGame
 from loguru import logger
 

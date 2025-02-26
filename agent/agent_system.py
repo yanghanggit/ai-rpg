@@ -4,7 +4,7 @@ from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from pathlib import Path
 from agent.lang_serve_agent import LangServeAgent
 from agent.remote_runnable_handler import RemoteRunnableHandler
-from models.agent_models import (
+from rpg_models.agent_models import (
     AgentMessageType,
     AgentMessageModel,
     AgentChatHistoryDumpModel,

@@ -9,7 +9,7 @@ from components.components import (
 from game.rpg_game_context import RPGGameContext
 from typing import final, override, Optional, Dict, List
 from game.rpg_game import RPGGame
-from models.event_models import AgentEvent, PreStageExitEvent, PostStageEnterEvent
+from rpg_models.event_models import AgentEvent, PreStageExitEvent, PostStageEnterEvent
 import copy
 from loguru import logger
 

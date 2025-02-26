@@ -12,10 +12,10 @@ from extended_systems.prop_file import PropFile
 import format_string.target_message
 import format_string.ints_string
 from game.rpg_game import RPGGame
-from models.entity_models import Attributes
+from rpg_models.entity_models import Attributes
 import rpg_game_systems.file_system_utils
-from models.file_models import PropType
-from models.event_models import AgentEvent
+from rpg_models.file_models import PropType
+from rpg_models.event_models import AgentEvent
 from loguru import logger
 
 

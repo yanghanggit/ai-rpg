@@ -4,7 +4,7 @@ from components.actions import (
     AnnounceAction,
 )
 from typing import final, override
-from models.event_models import AnnounceEvent
+from rpg_models.event_models import AnnounceEvent
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
 
 

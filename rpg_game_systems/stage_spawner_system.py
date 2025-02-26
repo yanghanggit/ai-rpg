@@ -9,7 +9,7 @@ from typing import final, List
 from game.rpg_game import RPGGame
 import copy
 from format_string.complex_actor_name import ComplexActorName
-from models.editor_models import GUIDType
+from rpg_models.editor_models import GUIDType
 
 
 ######################################################################################################################################################

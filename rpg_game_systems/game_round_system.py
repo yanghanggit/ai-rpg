@@ -9,7 +9,7 @@ from components.components import (
     StageComponent,
     RoundEventsRecordComponent,
 )
-from models.event_models import GameRoundEvent
+from rpg_models.event_models import GameRoundEvent
 import rpg_game_systems.prompt_utils
 
 

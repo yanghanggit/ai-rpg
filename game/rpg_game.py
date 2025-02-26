@@ -28,7 +28,7 @@ from extended_systems.prop_file import PropFile
 from game.base_game import BaseGame
 import rpg_game_systems.file_system_utils
 from game.rpg_game_processors import RPGGameProcessors
-from models.entity_models import (
+from rpg_models.entity_models import (
     ActorInstanceModel,
     StageInstanceModel,
     ActorModel,
@@ -36,9 +36,9 @@ from models.entity_models import (
     WorldSystemModel,
     WorldSystemInstanceModel,
 )
-from models.event_models import BaseEvent
-from models.file_models import PropFileModel
-from models.entity_models import Attributes
+from rpg_models.event_models import BaseEvent
+from rpg_models.file_models import PropFileModel
+from rpg_models.entity_models import Attributes
 from player.player_proxy import PlayerProxy
 import rpg_game_systems.prompt_utils
 from format_string.complex_actor_name import ComplexActorName
@@ -723,7 +723,7 @@ class RPGGame(BaseGame):
 
     ###############################################################################################################################################
     @override
-    def send_event(self, player_proxy_names: Set[str], send_event: BaseEvent) -> None:
+    def send_message(self, player_proxy_names: Set[str], send_event: BaseEvent) -> None:
 
         for player_proxy_name in player_proxy_names:
             player_proxy = self.get_player(player_proxy_name)

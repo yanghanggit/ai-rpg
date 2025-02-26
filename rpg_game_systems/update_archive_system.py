@@ -12,7 +12,7 @@ from game.rpg_game import RPGGame
 from extended_systems.archive_file import ActorArchiveFile, StageArchiveFile
 import rpg_game_systems.file_system_utils
 import rpg_game_systems.stage_entity_utils
-from models.event_models import UpdateArchiveEvent
+from rpg_models.event_models import UpdateArchiveEvent
 
 
 @final

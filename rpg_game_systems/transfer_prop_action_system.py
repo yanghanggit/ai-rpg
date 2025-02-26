@@ -11,7 +11,7 @@ import rpg_game_systems.file_system_utils
 from extended_systems.prop_file import PropFile
 import format_string.target_message
 from game.rpg_game import RPGGame
-from models.event_models import AgentEvent
+from rpg_models.event_models import AgentEvent
 import format_string.complex_prop_name
 from extended_systems.prop_file import generate_prop_type_prompt
 

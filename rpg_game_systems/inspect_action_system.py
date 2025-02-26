@@ -11,7 +11,7 @@ from typing import final, override
 from game.rpg_game import RPGGame
 import rpg_game_systems.file_system_utils
 from game.rpg_game import RPGGame
-from models.event_models import AgentEvent
+from rpg_models.event_models import AgentEvent
 import rpg_game_systems.action_component_utils
 from rpg_game_systems.actor_entity_utils import ActorStatusEvaluator
 from extended_systems.prop_file import (

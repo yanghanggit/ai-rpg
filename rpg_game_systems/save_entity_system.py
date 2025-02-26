@@ -7,7 +7,7 @@ from components.components import (
 from typing import final, override, NamedTuple, FrozenSet
 import rpg_game_systems.file_system_utils
 from game.rpg_game import RPGGame
-from models.file_models import ComponentDumpModel, EntityProfileModel
+from rpg_models.file_models import ComponentDumpModel, EntityProfileModel
 from collections import OrderedDict
 
 

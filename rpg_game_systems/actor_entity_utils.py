@@ -10,7 +10,7 @@ from components.components import (
 from typing import List, Dict, Optional
 from extended_systems.prop_file import PropFile
 import rpg_game_systems.file_system_utils
-from models.file_models import PropType
+from rpg_models.file_models import PropType
 
 
 # 简单方便的一次性获取需要的信息。这个类是一个工具类。

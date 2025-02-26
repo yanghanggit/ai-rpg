@@ -18,7 +18,7 @@ from extended_systems.prop_file import PropFile
 from agent.agent_request_handler import AgentRequestHandler
 from components.actions import UpdateAppearanceAction, KickOffAction
 from game.rpg_game import RPGGame
-from models.event_models import UpdateAppearanceEvent
+from rpg_models.event_models import UpdateAppearanceEvent
 from agent.lang_serve_agent import LangServeAgent
 import rpg_game_systems.task_request_utils
 

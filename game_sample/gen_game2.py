@@ -9,7 +9,7 @@
 # from pandas.core.frame import DataFrame
 # from typing import List, Dict, Any, final, cast, Optional
 # import format_string.ints_string
-# from models.tcg_models import (
+# from rpg_models.tcg_models import (
 #     WorldRoot,
 #     WorldDataBase,
 #     ActorPrototype,

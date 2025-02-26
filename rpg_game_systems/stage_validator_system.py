@@ -11,7 +11,7 @@ from game.rpg_game_context import RPGGameContext
 from loguru import logger
 from typing import final, override, Set, NamedTuple
 from game.rpg_game import RPGGame
-from models.event_models import AgentEvent
+from rpg_models.event_models import AgentEvent
 
 
 ################################################################################################################################################

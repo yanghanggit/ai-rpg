@@ -5,7 +5,7 @@ from typing import final, override
 import rpg_game_systems.action_component_utils
 import format_string.target_message
 from game.rpg_game import RPGGame
-from models.event_models import WhisperEvent, AgentEvent
+from rpg_models.event_models import WhisperEvent, AgentEvent
 
 
 ################################################################################################################################################

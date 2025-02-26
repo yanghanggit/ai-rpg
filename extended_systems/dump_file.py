@@ -1,7 +1,7 @@
 from typing import final
 from overrides import override
 from loguru import logger
-from models.file_models import (
+from rpg_models.file_models import (
     EntityProfileModel,
 )
 from extended_systems.base_file import BaseFile

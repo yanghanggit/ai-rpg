@@ -11,14 +11,14 @@ from game.rpg_game_context import RPGGameContext
 from typing import Final, final, override, Set, List, Dict, Optional
 from extended_systems.prop_file import PropFile
 from game.rpg_game import RPGGame
-from models.event_models import AgentEvent
+from rpg_models.event_models import AgentEvent
 import format_string.complex_prop_name
 from loguru import logger
 from rpg_game_systems.actor_entity_utils import ActorStatusEvaluator
-from models.entity_models import Attributes
+from rpg_models.entity_models import Attributes
 import rpg_game_systems.prompt_utils
 import format_string.complex_prop_name
-from models.file_models import PropSkillUsageMode
+from rpg_models.file_models import PropSkillUsageMode
 import format_string.complex_skill_command
 
 

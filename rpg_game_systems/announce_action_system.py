@@ -3,7 +3,7 @@ from typing import final, override
 from components.actions import AnnounceAction
 from game.rpg_game_context import RPGGameContext
 from game.rpg_game import RPGGame
-from models.event_models import AnnounceEvent
+from rpg_models.event_models import AnnounceEvent
 
 
 ####################################################################################################

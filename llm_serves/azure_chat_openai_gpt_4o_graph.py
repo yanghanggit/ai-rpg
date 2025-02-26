@@ -47,7 +47,7 @@ class ResponseModel(BaseModel):
 
 ############################################################################################################
 def _create_compiled_stage_graph(
-    node_name: str = "azure_chat_openai_chatbot_node", temperature=0.7
+    node_name: str = "azure_chat_openai_chatbot_node", temperature: float = 0.7
 ) -> CompiledStateGraph:
     assert node_name != "", "node_name is empty"
 
@@ -151,7 +151,7 @@ def main() -> None:
 
     # 获取参数
     arg_port: Final[int] = int(arguments[0])
-    arg_temperature: Final[float] = arguments[1]
+    arg_temperature: Final[float] = float(arguments[1])
     arg_api: Final[str] = arguments[2]
     arg_fast_api_title: Final[str] = arguments[3]
     arg_fast_api_version: Final[str] = arguments[4]

@@ -21,6 +21,11 @@ class AnnounceAction(ActionComponent):
     pass
 
 
+@final
+class CardAction(ActionComponent):
+    pass
+
+
 # 私下交流
 @final
 class WhisperAction(ActionComponent):
@@ -40,7 +45,7 @@ class TagAction(ActionComponent):
 
 
 GENERAL_CONVERSATION_ACTIONS_REGISTER: Final[FrozenSet[type[NamedTuple]]] = frozenset(
-    {TagAction, MindVoiceAction, SpeakAction, AnnounceAction, WhisperAction}
+    {TagAction, MindVoiceAction, SpeakAction, AnnounceAction, WhisperAction, CardAction}
 )
 ############################################################################################################
 ############################################################################################################

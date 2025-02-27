@@ -111,7 +111,7 @@ class KickOffSystem(ExecuteProcessor):
         for entity1 in entities:
             # 不同实体生成不同的提示
             gen_prompt = self._generate_kick_off_prompt(entity1)
-            assert gen_prompt is not ""
+            # assert gen_prompt is not ""
             if gen_prompt == "":
                 continue
 
@@ -129,18 +129,23 @@ class KickOffSystem(ExecuteProcessor):
 
         # 添加上下文。
         for request_handler in request_handlers:
+
+            if request_handler.response_content == "":
+                logger.error(f"Agent: {request_handler._name}, Response is empty.")
+                continue
+
             logger.warning(
                 f"Agent: {request_handler._name}, Response:\n{request_handler.response_content}"
             )
-
-            if request_handler.response_content == "":
-                logger.warning(f"Agent: {request_handler._name}, Response is empty.")
-                continue
 
             entity2 = self._context.get_entity_by_name(request_handler._name)
             assert entity2 is not None
             self._game.append_human_message(entity2, request_handler._prompt)
             self._game.append_ai_message(entity2, request_handler.response_content)
+
+            # 必须执行
+            entity2.replace(KickOffDoneFlagComponent, entity2._name)
+
             # 若是场景，用response替换narrate
             if entity2.has(StageComponent):
                 entity2.replace(
@@ -148,8 +153,6 @@ class KickOffSystem(ExecuteProcessor):
                     entity2._name,
                     request_handler.response_content,
                 )
-
-            entity2.replace(KickOffDoneFlagComponent, entity2._name)
 
             # 添加行动
             self._assign_entity_actions(entity2, request_handler.response_content)

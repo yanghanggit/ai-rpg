@@ -6,6 +6,8 @@ from loguru import logger
 from game.terminal_tcg_game import TerminalTCGGame
 from player.player_proxy import PlayerProxy
 from player.player_command2 import PlayerCommand2
+from components.components import ActorComponent
+from components.actions import CardAction
 
 
 ############################################################################################################
@@ -25,15 +27,6 @@ class HandleTerminalPlayerInputSystem(ExecuteProcessor):
         if not isinstance(self._game, TerminalTCGGame):
             return
 
-        # for player_proxy in self._game.players:
-
-        # player_entity = self._context.get_player_entity(self._game.player.player_name)
-        # if player_entity is None:
-        #     logger.warning(
-        #         f"player_entity is None, player_proxy.name={self._game.player.player_name}"
-        #     )
-        #     return
-
         for command in self._game.player._commands2:
             self._execute_player_command(self._game.player, command)
 
@@ -46,6 +39,20 @@ class HandleTerminalPlayerInputSystem(ExecuteProcessor):
         logger.debug(
             f"player = {player_proxy.name}, actor = {player_proxy.actor_name}, command = {command}"
         )
+
+        if "/card" in command.command or "/c" in command.command:
+
+            # TODO
+            player_entity = self._game.get_player_entity()
+            assert player_entity is not None
+
+            actor_comp = player_entity.get(ActorComponent)
+            player_entity.add(
+                CardAction,
+                actor_comp.name,
+                [],
+            )
+            return
 
 
 ############################################################################################################

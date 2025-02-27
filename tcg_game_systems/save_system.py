@@ -38,6 +38,6 @@ class SaveSystem(ExecuteProcessor):
             stage_name = stage_entity._name
             names_mapping[stage_name] = actor_names
 
-        logger.debug(f"names_mapping = {names_mapping}")
+        logger.warning(f"names_mapping = {names_mapping}")
 
     ############################################################################################################

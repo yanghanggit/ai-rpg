@@ -6,9 +6,12 @@ from game.base_game import BaseGame
 
 
 class TCGGameProcessors(Processors):
+    """
+    熟悉项目用的，后续会做改良在HOME时候使用
+    """
 
     @staticmethod
-    def create(game: BaseGame, context: TCGGameContext) -> "TCGGameProcessors":
+    def create_test(game: BaseGame, context: TCGGameContext) -> "TCGGameProcessors":
 
         assert context is not None
 
@@ -54,11 +57,6 @@ class TCGGameProcessors(Processors):
             ActorRoleplayPlanningSystem,
         )
 
-        # from tcg_game_systems.world_system_planning_system import (
-        #     WorldSystemPlanningSystem,
-        # )
-        # from tcg_game_systems.tag_action_system import TagActionSystem
-        # from tcg_game_systems.go_to_action_system import GoToActionSystem
         from tcg_game_systems.actor_roleplay_planning_permit_system import (
             ActorRoleplayPlanningPermitSystem,
         )
@@ -110,6 +108,84 @@ class TCGGameProcessors(Processors):
         processors.add(ActorRoleplayPlanningSystem(context))
 
         processors.add(PostPlanningSystem(context))  ####### 在所有规划之后!
+
+        # 存储系统。
+        processors.add(SaveSystem(context))
+
+        processors.add(EndSystem(context))
+
+        return processors
+
+    ###################################################################################################################################################################
+
+    """
+    临时先这么写！！！！！！！！！1
+    """
+
+    @staticmethod
+    def create_test_battle(
+        game: BaseGame, context: TCGGameContext
+    ) -> "TCGGameProcessors":
+
+        assert context is not None
+
+        ### 不这样就循环引用
+        from game.tcg_game import TCGGame
+
+        #
+        ##
+        tcg_game = cast(TCGGame, game)
+        assert isinstance(tcg_game, TCGGame)
+        processors = TCGGameProcessors()
+
+        ## 添加一些系统。。。
+        from tcg_game_systems.begin_system import BeginSystem
+        from tcg_game_systems.end_system import EndSystem
+        from tcg_game_systems.kick_off_system import KickOffSystem
+        from tcg_game_systems.save_system import SaveSystem
+        from tcg_game_systems.handle_terminal_player_input_system import (
+            HandleTerminalPlayerInputSystem,
+        )
+        from tcg_game_systems.handle_web_player_input_system import (
+            HandleWebPlayerInputSystem,
+        )
+        from tcg_game_systems.destroy_system import DestroySystem
+        from tcg_game_systems.test_card_action_system import CardActionSystem
+        from tcg_game_systems.pre_action_system import PreActionSystem
+        from tcg_game_systems.post_action_system import PostActionSystem
+        from tcg_game_systems.dead_action_system import DeadActionSystem
+
+        processors.add(BeginSystem(context))
+
+        # 启动agent的提示词。启动阶段
+        processors.add(KickOffSystem(context))
+
+        # 进入动作前，处理输入。
+        processors.add(HandleTerminalPlayerInputSystem(context))
+        processors.add(HandleWebPlayerInputSystem(context))
+
+        # 动作处理相关的系统
+        processors.add(PreActionSystem(context))
+
+        processors.add(CardActionSystem(context))
+
+        # processors.add(TagActionSystem(context))
+        # processors.add(MindVoiceActionSystem(context))
+        # processors.add(WhisperActionSystem(context))
+        # processors.add(AnnounceActionSystem(context))
+        # processors.add(SpeakActionSystem(context))
+
+        # ?
+        processors.add(DeadActionSystem(context))
+
+        # 战斗之后，执行场景更换的逻辑，如果上面死亡了，就不能执行下面的！
+        # processors.add(GoToActionSystem(context))
+
+        # ?
+        processors.add(PostActionSystem(context))
+
+        # 动作处理后，可能清理。
+        processors.add(DestroySystem(context))
 
         # 存储系统。
         processors.add(SaveSystem(context))

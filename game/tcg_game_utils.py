@@ -9,10 +9,14 @@ from tcg_models.v_0_0_1 import (
     StageInstance,
     WorldSystemInstance,
     ItemAttributes,
+    ActorType,
+    StageType,
 )
 import game.tcg_game_config
 from typing import List, Final
 import copy
+
+# from components.components import TargetType
 
 
 GLOBAL_GAME_RULES: Final[
@@ -126,13 +130,13 @@ def _comple_stage_system_prompt(
 def create_card_object(
     name: str,
     guid: int,
-    code: str,
-    holder: str,
-    performer: str,
+    code_name: str,
+    # holder: str,
+    # performer: str,
     description: str,
     insight: str,
-    target: str,
-    value: List[int],
+    # target: str,
+    value: List[int] = [],
 ) -> CardObject:
 
     # 如果属性不够，就做一下扩展。
@@ -142,12 +146,12 @@ def create_card_object(
     data = CardObject(
         name=name,
         guid=0,
-        code_name=code,
-        holder=holder,
-        performer=performer,
+        code_name=code_name,
+        # holder=holder,
+        # performer=performer,
         description=description,
         insight=insight,
-        target=target,
+        # target=target,
         value=value,
         # TODO
         # count=1,
@@ -174,7 +178,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
             appearance="身材精瘦，但穿上铠甲后显得十分高大。为了防备突袭总是带着头盔，就连睡觉时也不摘下。身上有多处伤疤，淡化在肤色之中，记录着曾经的战斗。",
         ),
         appearance="身材精瘦，但穿上铠甲后显得十分高大。为了防备突袭总是带着头盔，就连睡觉时也不摘下。身上有多处伤疤，淡化在肤色之中，记录着曾经的战斗。",
-        type=ActorPrototype.ActorType.PLAYER,
+        type=ActorType.HERO,
     )
     actor2 = ActorPrototype(
         name="角色.怪物.强壮哥布林",
@@ -186,7 +190,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
             appearance="你和其他哥布林一样有深绿色的皮肤和尖尖的耳朵。但你的体格比普通哥布林更加强壮。你的身上有很浓重的臭味。",
         ),
         appearance="和其他哥布林一样有深绿色的皮肤和尖尖的耳朵。但体格比普通哥布林更加强壮。身上有很浓重的臭味。",
-        type=ActorPrototype.ActorType.MONSTER,
+        type=ActorType.MONSTER,
     )
 
     world_root.data_base.actors.setdefault(actor1.name, actor1)
@@ -201,7 +205,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
             epoch_script=world_root.epoch_script,
             stage_profile="你是一个哥布林洞窟，内部狭长拥挤，错综复杂，臭气熏天，设有许多危险的陷阱，哥布林们躲藏在暗处伺机而动。",
         ),
-        type=StagePrototype.StageType.DUNGEON,
+        type=StageType.DUNGEON,
     )
 
     stage1 = StagePrototype(
@@ -212,7 +216,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
             epoch_script=world_root.epoch_script,
             stage_profile="你是一个建在古代城堡的遗迹之上的临时营地，遗迹四周是一片未开发的原野。营地中有帐篷，营火，仓库等设施，虽然简陋，却也足够让人稍事休息，准备下一次冒险。",
         ),
-        type=StagePrototype.StageType.DUNGEON,
+        type=StageType.HOME,
     )
 
     world_root.data_base.stages.setdefault(stage1.name, stage1)
@@ -235,42 +239,47 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
         kick_off_message="你接到了剿灭哥布林的委托，在目标地不远处搭建起了营地。",
     )
 
+    # 添加卡牌
     actor_instance1.card_pool.append(
         create_card_object(
-            name="战士攻击",
+            name="破阵突袭",
             guid=1001,
-            code="warrior attack",
-            holder=actor_instance1.name,
-            performer=actor_instance1.name,
-            description="对身前的敌人进行一次物理攻击，造成{value[0]}点物理伤害。",
-            insight="对哥布林十分有效。",
-            target="Enemy",
-            value=[10],
+            code_name="warrior_rush",
+            # holder=actor_instance1.name,
+            # performer=actor_instance1.name,
+            description="双脚猛踏地面，身体前倾以高速朝目标冲刺。伴随战斗怒吼，目的是直取对手要害，让对手短暂丧失防备。",
+            insight="令目标陷入【眩晕】状态，使其在下一次行动前无法正常出招。地面不利于奔跑时，效果下降",
+            # target=TargetType.ENEMY,
+            # value=[],
         )
     )
+
+    # 添加卡牌
     actor_instance1.card_pool.append(
         create_card_object(
-            name="战士防御",
+            name="上挑攻击",
             guid=2001,
-            code="warrior defense",
-            holder=actor_instance1.name,
-            performer=actor_instance1.name,
-            description="摆出防御的姿势，使自身下次受到的物理伤害降低{value[0]}点",
-            insight="对哥布林的攻击十分有效。",
-            target="Alley",
-            value=[10],
+            code_name="warrior_uppercut",
+            # holder=actor_instance1.name,
+            # performer=actor_instance1.name,
+            description="紧握武器并借助腰胯之力猛然挥斩，从下至上划过敌人身躯，战士随后怒吼或爆发出斗气，彰显绝对的攻击欲望。目的是将敌人击飞至半空之中",
+            insight="若目标未处于【浮空】状态，则将其击飞并施加【浮空】。敌人在【浮空】状态下将受到来自某些技能的额外伤害或效果。",
+            # target=TargetType.ENEMY,
+            value=[],
         )
     )
+
+    # 添加卡牌
     actor_instance1.card_pool.append(
         create_card_object(
-            name="战士奔跑",
+            name="撼地重击",
             guid=3001,
-            code="warrior run",
-            holder=actor_instance1.name,
-            performer=actor_instance1.name,
-            description="快速接近敌人，使下次的物理攻击变得更有效",
-            insight="地面不利于奔跑时，效果下降",
-            target="Alley",
+            code_name="warrior_ground_strike",
+            # holder=actor_instance1.name,
+            # performer=actor_instance1.name,
+            description="将武器高高举起，身躯下沉蓄力片刻后，猛力下击地面或目标身体",
+            insight="若目标处于【浮空】状态，则额外造成一次高额伤害（或一定倍数伤害）",
+            # target=TargetType.ENEMY,
             value=[],
         )
     )
@@ -280,22 +289,22 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
         guid=400,
         card_pool=[],
         attributes=[],  # 暂时不用
-        kick_off_message="你前几日活捉了一名附近村庄的村民献给了哥布林大王，得到了许多酒肉作为奖励，正在于洞穴深处的房间中纵情狂欢。",
+        kick_off_message="你前几日活捉了一名附近村庄的村民献给了哥布林大王，得到了许多酒肉作为奖励，正在于洞穴深处的房间中纵情狂欢。这时一个人类战士闯入了你的领地！",
     )
 
-    actor_instance2.card_pool.append(
-        create_card_object(
-            name="哥布林咆哮",
-            guid=20001,
-            code="golbin roar",
-            holder=actor_instance2.name,
-            performer=actor_instance2.name,
-            description="发出瘆人的咆哮，对敌人造成{value[0]}点魔法伤害。",
-            insight="对胆小之人十分有效。",
-            target="Enemy",
-            value=[10],
-        ),
-    )
+    # actor_instance2.card_pool.append(
+    #     create_card_object(
+    #         name="哥布林咆哮",
+    #         guid=20001,
+    #         code_name="golbin roar",
+    #         # holder=actor_instance2.name,
+    #         # performer=actor_instance2.name,
+    #         description="发出瘆人的咆哮，对敌人造成{value[0]}点魔法伤害。",
+    #         insight="对胆小之人十分有效。",
+    #         # target="Enemy",
+    #         value=[10],
+    #     ),
+    # )
 
     stage_instance1 = StageInstance(
         name=f"{stage1.name}",
@@ -333,6 +342,6 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
     world_root.stages.append(stage_instance2)
 
     # 世界系统
-    # world_root.world_systems.append(world_system_instance1)
+    world_root.world_systems.append(world_system_instance1)
 
     return world_root

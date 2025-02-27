@@ -2,7 +2,8 @@ from entitas import ExecuteProcessor  # type: ignore
 from typing import final, override, cast
 from game.tcg_game_context import TCGGameContext
 from game.tcg_game import TCGGame
-from loguru import logger
+
+# from loguru import logger
 
 
 @final
@@ -15,4 +16,7 @@ class EndSystem(ExecuteProcessor):
     ############################################################################################################
     @override
     def execute(self) -> None:
-        logger.info("EndSystem execute")
+        pass
+
+    ############################################################################################################
+    # logger.info("EndSystem execute")

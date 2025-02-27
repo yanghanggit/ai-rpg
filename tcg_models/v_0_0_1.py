@@ -1,7 +1,6 @@
 from typing import Final, List, Dict, Any, Union, final
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
-from rpg_models.event_models import BaseEvent
 from enum import IntEnum, StrEnum, unique
 
 # 注意，不允许动！
@@ -31,14 +30,16 @@ class EntitySnapshot(BaseModel):
 
 ###############################################################################################################################################
 @final
-class ActorPrototype(BaseModel):
-    class ActorType(StrEnum):
-        UNDIFINED = "Undefined"
-        PLAYER = "Player"
-        HERO = "Hero"
-        MONSTER = "Monster"
-        BOSS = "Boss"
+@unique
+class ActorType(StrEnum):
+    UNDIFINED = "Undefined"
+    HERO = "Hero"
+    MONSTER = "Monster"
 
+
+###############################################################################################################################################
+@final
+class ActorPrototype(BaseModel):
     name: str
     code_name: str
     system_message: str
@@ -48,12 +49,16 @@ class ActorPrototype(BaseModel):
 
 ###############################################################################################################################################
 @final
-class StagePrototype(BaseModel):
-    class StageType(StrEnum):
-        UNDIFINED = "Undefined"
-        HOME = "Home"
-        DUNGEON = "Dungeon"
+@unique
+class StageType(StrEnum):
+    UNDIFINED = "Undefined"
+    HOME = "Home"
+    DUNGEON = "Dungeon"
 
+
+###############################################################################################################################################
+@final
+class StagePrototype(BaseModel):
     name: str
     code_name: str
     system_message: str
@@ -69,17 +74,6 @@ class WorldSystemPrototype(BaseModel):
 
 
 ###############################################################################################################################################
-""" @final
-class PropObject(BaseModel):
-    name: str
-    guid: int
-    count: int
-    code_name: str
-    details: str
-    type: str
-    appearance: str
-    insight: str
-    attributes: List[int] """
 
 
 class ItemObject(BaseModel):
@@ -90,6 +84,7 @@ class ItemObject(BaseModel):
     value: List[int]
 
 
+###############################################################################################################################################
 @unique
 class ItemAttributes(IntEnum):
     MAX_HP = 0
@@ -100,11 +95,8 @@ class ItemAttributes(IntEnum):
 @final
 class CardObject(ItemObject):  # 可能以后改成ItemObject，类型选card，现阶段先这样 TODO
     level: int = 1
-    holder: str
-    performer: str
     description: str
     insight: str
-    target: str
 
     # 测试的属性
     @property
@@ -119,8 +111,6 @@ class CardObject(ItemObject):  # 可能以后改成ItemObject，类型选card，
 class WorldDataBase(BaseModel):
     actors: Dict[str, ActorPrototype] = {}
     stages: Dict[str, StagePrototype] = {}
-    # props: Dict[str, PropObject] = {}  # 这里就放这个。
-    # cards: Dict[str, CardObject] = {} # 真的需要吗？ 把卡池数据存在actor里就行，后续用item的时候再加上 TODO
     world_systems: Dict[str, WorldSystemPrototype] = {}
 
 
@@ -141,7 +131,6 @@ class StageInstance(BaseModel):
     guid: int
     actors: List[str]
     kick_off_message: str
-    # props: List[PropObject]
     attributes: List[int]
     next: List[str]
 

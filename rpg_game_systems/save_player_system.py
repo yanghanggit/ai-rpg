@@ -20,7 +20,7 @@ class SavePlayerSystem(ExecuteProcessor):
         for player_proxy in self._game.players:
             assert self._game._game_resource is not None
             path = self._game._game_resource.resolve_player_proxy_save_file_path(
-                player_proxy.player_name
+                player_proxy.name
             )
             player_proxy.write_model_to_file(path)
 

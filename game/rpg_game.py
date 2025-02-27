@@ -548,7 +548,7 @@ class RPGGame(BaseGame):
     ###############################################################################################################################################
     def get_player(self, player_name: str) -> Optional[PlayerProxy]:
         for player in self._players:
-            if player.player_name == player_name:
+            if player.name == player_name:
                 return player
         return None
 

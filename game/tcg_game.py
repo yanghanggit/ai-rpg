@@ -427,6 +427,7 @@ class TCGGame(BaseGame):
     @property
     def player(self) -> PlayerProxy:
         return self._player
+
     ###############################################################################################################################################
     @player.setter
     def player(self, player_proxy: PlayerProxy) -> None:
@@ -541,12 +542,10 @@ class TCGGame(BaseGame):
 
         player_comp = only_one_player_entity.get(PlayerActorFlagComponent)
         assert player_comp is not None
-        only_one_player_entity.replace(
-            PlayerActorFlagComponent, self.player.player_name
-        )
+        only_one_player_entity.replace(PlayerActorFlagComponent, self.player.name)
 
         logger.info(f"{self._name}, game ready!!!!!!!!!!!!!!!!!!!!")
-        logger.info(f"player name = {self.player.player_name}")
+        logger.info(f"player name = {self.player.name}")
         return True
 
     ###############################################################################################################################################
@@ -589,7 +588,7 @@ class TCGGame(BaseGame):
             # 如果是玩家，就要补充一个事件信息，用于客户端接收
             if entity.has(PlayerActorFlagComponent):
                 player_comp = entity.get(PlayerActorFlagComponent)
-                assert player_comp.name == self.player.player_name
+                assert player_comp.name == self.player.name
 
                 # player_proxy = self.get_player(player_comp.name)
                 # assert player_proxy is not None

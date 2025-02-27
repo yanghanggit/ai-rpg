@@ -32,15 +32,13 @@ class TerminalPlayerInterruptWaitSystem(ExecuteProcessor):
         # player_proxy = self._game._players[0]
 
         while True:
-            usr_input = input(f"[{self._game.player.player_name}]:")
+            usr_input = input(f"[{self._game.player.name}]:")
             if usr_input == "":
-                logger.debug(
-                    f"玩家输入为空 = {self._game.player.player_name}，空跑一次"
-                )
+                logger.debug(f"玩家输入为空 = {self._game.player.name}，空跑一次")
                 break
 
             if usr_input == "/quit" or usr_input == "/q":
-                logger.info(f"玩家退出游戏 = {self._game.player.player_name}")
+                logger.info(f"玩家退出游戏 = {self._game.player.name}")
                 self._game._will_exit = True
                 break
 
@@ -50,8 +48,8 @@ class TerminalPlayerInterruptWaitSystem(ExecuteProcessor):
                 self._game.teleport_actors_to_stage({player_entity}, "场景.洞窟")
                 continue
 
-            self._game.player.add_player_command(
-                PlayerCommand2(user=self._game.player.player_name, command=usr_input)
+            self._game.player.add_command2(
+                PlayerCommand2(user=self._game.player.name, command=usr_input)
             )
 
 

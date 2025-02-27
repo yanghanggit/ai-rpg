@@ -34,17 +34,17 @@ class HandleTerminalPlayerInputSystem(ExecuteProcessor):
         #     )
         #     return
 
-        for command in self._game.player._player_commands:
+        for command in self._game.player._commands2:
             self._execute_player_command(self._game.player, command)
 
-        self._game.player._player_commands.clear()
+        self._game.player._commands2.clear()
 
     ############################################################################################################
     def _execute_player_command(
         self, player_proxy: PlayerProxy, command: PlayerCommand2
     ) -> None:
         logger.debug(
-            f"player = {player_proxy.player_name}, actor = {player_proxy.actor_name}, command = {command}"
+            f"player = {player_proxy.name}, actor = {player_proxy.actor_name}, command = {command}"
         )
 
 

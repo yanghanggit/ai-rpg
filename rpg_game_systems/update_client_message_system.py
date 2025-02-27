@@ -25,7 +25,7 @@ class UpdateClientMessageSystem(ExecuteProcessor):
     def execute(self) -> None:
 
         for player_proxy in self._game.players:
-            player_entity = self._context.get_player_entity(player_proxy.player_name)
+            player_entity = self._context.get_player_entity(player_proxy.name)
             if player_entity is None or player_proxy is None:
                 continue
 

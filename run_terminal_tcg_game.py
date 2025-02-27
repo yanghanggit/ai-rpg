@@ -7,7 +7,8 @@ import shutil
 from game.tcg_game_context import TCGGameContext
 from game.terminal_tcg_game import TerminalTCGGame
 from tcg_models.v_0_0_1 import WorldRoot, WorldRuntime
-from tcg_models.v_0_0_2 import WorldRuntime as WorldRuntime_v_0_0_2
+
+# from tcg_models.v_0_0_2 import WorldRuntime as WorldRuntime_v_0_0_2
 from chaos_engineering.empty_engineering_system import EmptyChaosEngineeringSystem
 from extended_systems.lang_serve_system import LangServeSystem
 from player.player_proxy import PlayerProxy
@@ -139,7 +140,7 @@ async def run_game(option: OptionParameters) -> None:
 
     # 加入玩家的数据结构
     # player_proxy = PlayerProxy(PlayerProxyModel(player_name=user_name))
-    terminal_tcg_game.player = PlayerProxy(PlayerProxyModel(player_name=user_name))
+    terminal_tcg_game.player = PlayerProxy(PlayerProxyModel(name=user_name))
 
     if not terminal_tcg_game.ready():
         logger.error(f"游戏准备失败 = {game_name}")

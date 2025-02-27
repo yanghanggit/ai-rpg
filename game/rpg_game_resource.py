@@ -463,6 +463,6 @@ class RPGGameResource:
                 continue
 
             model = PlayerProxyModel.model_validate_json(content)
-            self._load_player_proxy_dict[model.player_name] = model
+            self._load_player_proxy_dict[model.name] = model
 
     ###############################################################################################################################################

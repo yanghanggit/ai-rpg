@@ -24,7 +24,7 @@ class PlayerClientMessage(BaseModel):
 
 # 玩家代理模型
 class PlayerProxyModel(BaseModel):
-    player_name: str = ""
+    name: str = ""
     actor_name: str = ""
     is_player_dead: bool = False
     client_messages: List[PlayerClientMessage] = []

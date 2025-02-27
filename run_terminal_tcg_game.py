@@ -138,8 +138,8 @@ async def run_game(option: OptionParameters) -> None:
         terminal_tcg_game.restore_entities().save()
 
     # 加入玩家的数据结构
-    player_proxy = PlayerProxy(PlayerProxyModel(player_name=user_name))
-    terminal_tcg_game.add_player(player_proxy)
+    # player_proxy = PlayerProxy(PlayerProxyModel(player_name=user_name))
+    terminal_tcg_game.player = PlayerProxy(PlayerProxyModel(player_name=user_name))
 
     if not terminal_tcg_game.ready():
         logger.error(f"游戏准备失败 = {game_name}")

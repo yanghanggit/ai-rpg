@@ -25,19 +25,19 @@ class HandleWebPlayerInputSystem(ExecuteProcessor):
         if not isinstance(self._game, WebTCGGame):
             return
 
-        for player_proxy in self._game.players:
+        # for player_proxy in self._game.players:
 
-            player_entity = self._context.get_player_entity(player_proxy.player_name)
-            if player_entity is None:
-                logger.warning(
-                    f"player_entity is None, player_proxy.name={player_proxy.player_name}"
-                )
-                continue
+        # player_entity = self._context.get_player_entity(self._game.player.player_name)
+        # if player_entity is None:
+        #     logger.warning(
+        #         f"player_entity is None, player_proxy.name={self._game.player.player_name}"
+        #     )
+        #     return
 
-            for command in player_proxy._player_commands:
-                self._execute_player_command(player_proxy, command)
+        for command in self._game.player._player_commands:
+            self._execute_player_command(self._game.player, command)
 
-            player_proxy._player_commands.clear()
+        self._game.player._player_commands.clear()
 
     ############################################################################################################
     def _execute_player_command(

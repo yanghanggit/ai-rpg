@@ -76,7 +76,8 @@ class TCGGame(BaseGame):
         self._processors: TCGGameProcessors = TCGGameProcessors.create(self, context)
 
         # 玩家
-        self._players: List[PlayerProxy] = []
+        # self._players: List[PlayerProxy] = []
+        self._player: PlayerProxy = PlayerProxy()
 
         # agent 系统
         self._langserve_system: LangServeSystem = langserve_system
@@ -415,17 +416,28 @@ class TCGGame(BaseGame):
         return []
 
     ###############################################################################################################################################
-    def add_player(self, player_proxy: PlayerProxy) -> None:
-        assert player_proxy not in self._players
-        if player_proxy not in self._players:
-            self._players.append(player_proxy)
-
+    # def add_player(self, player_proxy: PlayerProxy) -> None:
+    #     assert player_proxy not in self._players
+    #     if player_proxy not in self._players:
+    #         self._players.append(player_proxy)
     ###############################################################################################################################################
-    def get_player(self, player_name: str) -> Optional[PlayerProxy]:
-        for player in self._players:
-            if player.player_name == player_name:
-                return player
-        return None
+    # def set_player(self, player_proxy: PlayerProxy) -> None:
+    #     self._player = player_proxy
+    ###############################################################################################################################################
+    @property
+    def player(self) -> PlayerProxy:
+        return self._player
+    ###############################################################################################################################################
+    @player.setter
+    def player(self, player_proxy: PlayerProxy) -> None:
+        self._player = player_proxy
+
+    # ###############################################################################################################################################
+    # def get_player(self, player_name: str) -> Optional[PlayerProxy]:
+    #     for player in self._players:
+    #         if player.player_name == player_name:
+    #             return player
+    #     return None
 
     ###############################################################################################################################################
     # 临时的，考虑后面把player直接挂在context或者game里，因为player设计上唯一
@@ -439,9 +451,9 @@ class TCGGame(BaseGame):
         return next(iter(player_entity), None)
 
     ###############################################################################################################################################
-    @property
-    def players(self) -> List[PlayerProxy]:
-        return self._players
+    # @property
+    # def players(self) -> List[PlayerProxy]:
+    #     return self._players
 
     ###############################################################################################################################################
     def get_system_message(self, entity: Entity) -> str:
@@ -510,10 +522,10 @@ class TCGGame(BaseGame):
     # TODO 目前是写死的
     def ready(self) -> bool:
 
-        assert len(self._players) > 0
-        if len(self._players) == 0:
-            logger.error(f"no player proxy")
-            return False
+        # assert len(self._players) > 0
+        # if len(self._players) == 0:
+        #     logger.error(f"no player proxy")
+        #     return False
 
         player_entities: Set[Entity] = self.context.get_group(
             Matcher(all_of=[PlayerActorFlagComponent])
@@ -525,16 +537,16 @@ class TCGGame(BaseGame):
             return False
 
         only_one_player_entity = next(iter(player_entities))
-        only_one_player_proxy = self._players[0]
+        # only_one_player_proxy = self._players[0]
 
         player_comp = only_one_player_entity.get(PlayerActorFlagComponent)
         assert player_comp is not None
         only_one_player_entity.replace(
-            PlayerActorFlagComponent, only_one_player_proxy.player_name
+            PlayerActorFlagComponent, self.player.player_name
         )
 
         logger.info(f"{self._name}, game ready!!!!!!!!!!!!!!!!!!!!")
-        logger.info(f"player name = {only_one_player_proxy.player_name}")
+        logger.info(f"player name = {self.player.player_name}")
         return True
 
     ###############################################################################################################################################
@@ -577,12 +589,13 @@ class TCGGame(BaseGame):
             # 如果是玩家，就要补充一个事件信息，用于客户端接收
             if entity.has(PlayerActorFlagComponent):
                 player_comp = entity.get(PlayerActorFlagComponent)
-                player_proxy = self.get_player(player_comp.name)
-                assert player_proxy is not None
-                if player_proxy is None:
-                    continue
+                assert player_comp.name == self.player.player_name
 
-                player_proxy.add_notification(event=agent_event)
+                # player_proxy = self.get_player(player_comp.name)
+                # assert player_proxy is not None
+                # if player_proxy is None:
+                #     continue
+                self.player.add_notification(event=agent_event)
 
     ###############################################################################################################################################
     # 传送角色set里的角色到指定场景，游戏层面的行为，会添加记忆但不会触发action

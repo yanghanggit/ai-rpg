@@ -17,7 +17,7 @@ class PlayerProxy:
 
     def __init__(
         self,
-        player_proxy_model: PlayerProxyModel,
+        player_proxy_model: PlayerProxyModel = PlayerProxyModel(),
     ) -> None:
 
         self._model = player_proxy_model

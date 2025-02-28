@@ -248,7 +248,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
             # holder=actor_instance1.name,
             # performer=actor_instance1.name,
             description="双脚猛踏地面，身体前倾以高速朝目标冲刺。伴随战斗怒吼，目的是直取对手要害，让对手短暂丧失防备。",
-            insight="令目标陷入【眩晕】状态，使其在下一次行动前无法正常出招。地面不利于奔跑时，效果下降",
+            insight="给予自身<近身>TAG。给予目标<眩晕>TAG。当地面不利于奔跑时效果下降。",
             # target=TargetType.ENEMY,
             # value=[],
         )
@@ -263,7 +263,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
             # holder=actor_instance1.name,
             # performer=actor_instance1.name,
             description="紧握武器并借助腰胯之力猛然挥斩，从下至上划过敌人身躯，战士随后怒吼或爆发出斗气，彰显绝对的攻击欲望。目的是将敌人击飞至半空之中",
-            insight="若目标未处于【浮空】状态，则将其击飞并施加【浮空】。敌人在【浮空】状态下将受到来自某些技能的额外伤害或效果。",
+            insight="自身持有<近身>TAG时才有效。给予目标<升空>TAG。效果部分取决于双方力量和体重之差。",
             # target=TargetType.ENEMY,
             value=[],
         )
@@ -278,7 +278,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
             # holder=actor_instance1.name,
             # performer=actor_instance1.name,
             description="将武器高高举起，身躯下沉蓄力片刻后，猛力下击地面或目标身体",
-            insight="若目标处于【浮空】状态，则额外造成一次高额伤害（或一定倍数伤害）",
+            insight="自身持有<近身>TAG时才有效。若目标有<升空>TAG，则消耗该TAG，使本技能效果极大增强。",
             # target=TargetType.ENEMY,
             value=[],
         )

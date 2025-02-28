@@ -17,7 +17,7 @@ from tcg_models.v_0_0_1 import (
     StageInstance,
     AgentShortTermMemory,
     CardObject,
-    # ActorType,
+    ActorType,
     StageType,
 )
 from components.components import (
@@ -33,8 +33,8 @@ from components.components import (
     StageEnvironmentComponent,
     HomeStageFlagComponent,
     DungeonStageFlagComponent,
-    # HeroActorFlagComponent,
-    # MonsterActorFlagComponent,
+    HeroActorFlagComponent,
+    MonsterActorFlagComponent,
     # CardPlayerActorComponent,
     # ItemComponent,
     # CardItemComponent,
@@ -362,22 +362,22 @@ class TCGGame(BaseGame):
             #     self._create_card_entites(instance, prototype)
 
             # 请将上面的实现写成match的样式
-            # match prototype.type:
-            #     case ActorType.UNDIFINED:
-            #         assert False, "actor type is not defined"
-            #     case ActorType.PLAYER:
-            #         actor_entity.add(HeroActorFlagComponent, instance.name)
-            #         actor_entity.add(PlayerActorFlagComponent, "")
-            #         actor_entity.add(CardPlayerActorComponent, instance.name, 5, 3)
-            #         # 写死 TODO
-            #         self._create_card_entites(instance, prototype)
-            #     case ActorType.HERO:
-            #         actor_entity.add(HeroActorFlagComponent, instance.name)
-            #     case ActorType.MONSTER:
-            #         actor_entity.add(MonsterActorFlagComponent, instance.name)
-            #         actor_entity.add(CardPlayerActorComponent, instance.name, 3, 3)
-            #         # 写死 TODO
-            #         self._create_card_entites(instance, prototype)
+            match prototype.type:
+                case ActorType.UNDIFINED:
+                    assert False, "actor type is not defined"
+                # case ActorType.PLAYER:
+                #     actor_entity.add(HeroActorFlagComponent, instance.name)
+                #     actor_entity.add(PlayerActorFlagComponent, "")
+                #     actor_entity.add(CardPlayerActorComponent, instance.name, 5, 3)
+                #     # 写死 TODO
+                #     self._create_card_entites(instance, prototype)
+                case ActorType.HERO:
+                    actor_entity.add(HeroActorFlagComponent, instance.name)
+                case ActorType.MONSTER:
+                    actor_entity.add(MonsterActorFlagComponent, instance.name)
+                    # actor_entity.add(CardPlayerActorComponent, instance.name, 3, 3)
+                    # # 写死 TODO
+                    # self._create_card_entites(instance, prototype)
 
             # 添加到返回值
             ret.append(actor_entity)

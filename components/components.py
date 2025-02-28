@@ -247,18 +247,18 @@ class DungeonStageFlagComponent(NamedTuple):
 
 ############################################################################################################
 # Actor专用，标记该Actor是Hero
-# @final
-# @register_component_class
-# class HeroActorFlagComponent(NamedTuple):
-#     name: str
+@final
+@register_component_class
+class HeroActorFlagComponent(NamedTuple):
+    name: str
 
 
-# ############################################################################################################
-# # Actor专用，标记该Actor是Monster
-# @final
-# @register_component_class
-# class MonsterActorFlagComponent(NamedTuple):
-#     name: str
+############################################################################################################
+# Actor专用，标记该Actor是Monster
+@final
+@register_component_class
+class MonsterActorFlagComponent(NamedTuple):
+    name: str
 
 
 ############################################################################################################

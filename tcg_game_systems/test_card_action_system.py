@@ -1,11 +1,13 @@
 from entitas import Entity, Matcher, GroupEvent  # type: ignore
 from components.actions import (
     CardAction,
+    RemoveTagAction,
+    AddTagAction
 )
 from typing import final, override, Optional, Set, List
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
 from loguru import logger
-from components.components import WorldSystemComponent
+from components.components import WorldSystemComponent, TagsComponent
 from agent.chat_request_handler import ChatRequestHandler
 from tcg_models.v_0_0_1 import CardObject
 import copy
@@ -100,7 +102,7 @@ class CardActionSystem(BaseActionReactiveSystem):
     def _gen_card_prompt(self, card_object: CardObject) -> str:
 
         return f"""{card_object.name}
-- 描述与效果：{card_object.description}
+- 描述：{card_object.description}
 - 隐藏信息：{card_object.insight}"""
 
     ####################################################################################################################################
@@ -117,15 +119,21 @@ class CardActionSystem(BaseActionReactiveSystem):
         for index, card_object in enumerate(player_cards):
             card_names.append(f"{index + 1}. {card_object.name}")
 
+        #
+        user_tags = list(entity.get(TagsComponent).tags).copy()
+
+        #
+        stage_tags = list(self._context.safe_get_stage_entity(entity).get(TagsComponent).tags).copy()
+
         return f"""#行动者： {entity._name} 
 ## 行动者所持TAG：
-<强壮>
+{"\n".join(user_tags)}
 # 目标： 角色.怪物.强壮哥布林
 ## 目标所持TAG：
 <强壮>,<哥布林>
 # 场景： 场景.洞穴
 ## 场景所持TAG：
-<恶臭>
+{"\n".join(stage_tags)}
 # 卡牌的信息如下：
 {"\n".join(card_prompt_list)}
 ## 卡牌的执行顺序如下:

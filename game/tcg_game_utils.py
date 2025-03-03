@@ -11,6 +11,7 @@ from tcg_models.v_0_0_1 import (
     ItemAttributes,
     ActorType,
     StageType,
+    TagInfo,
 )
 import game.tcg_game_config
 from typing import List, Final
@@ -137,6 +138,7 @@ def create_card_object(
     insight: str,
     # target: str,
     value: List[int] = [],
+    owner: str = "",
 ) -> CardObject:
 
     # 如果属性不够，就做一下扩展。
@@ -156,6 +158,7 @@ def create_card_object(
         # TODO
         # count=1,
         # level=1,
+        owner=owner,
     )
     copy_data = copy.deepcopy(data)
     copy_data.guid = guid
@@ -192,9 +195,22 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
         appearance="和其他哥布林一样有深绿色的皮肤和尖尖的耳朵。但体格比普通哥布林更加强壮。身上有很浓重的臭味。",
         type=ActorType.MONSTER,
     )
+    actor3 = ActorPrototype(
+        name="角色.法师.露西",
+        code_name="wizard",
+        system_message=_comple_actor_system_prompt(
+            name="角色.法师.露西",
+            epoch_script=world_root.epoch_script,
+            actor_profile="你的背景：你是生于声名显赫的贵族家庭的千金小姐，从小接受全方面的精英教育。但你不愿循规蹈矩，遵从家族的安排成为联姻的工具。在你16岁那天，你毅然决然离开了家乡，踏上了前往未知世界的旅途。如今的你是一名初出茅庐的法师，虽然能力过人，但经验尚浅。\n你的性格：自尊心强，自大，好奇心强。无论出身卑贱或是高贵，你都看不起只知道享乐的酒囊饭袋，相反，你喜欢有能之人。你的自尊心很强，因此总会吵架，经常逞能。\n你的目标：你的首要目标是生存，你的次要目标是探索这个神奇的世界。\n你的恐惧：你怕鬼。\n你的弱点：你有洁癖。\n你的说话风格与语气示例：哦？你以为你那些华丽的衣服和空洞的头衔能让我高看你一眼？真是可笑。我见过的‘贵族’多了，像你这样只会炫耀家世的，不过是披着金丝的稻草人罢了。有本事拿出点真本事来，别让我觉得浪费时间。；天哪！这地方简直是个垃圾堆！（捂住鼻子，一脸嫌弃）我宁愿去和鬼魂打交道，也不想在这种地方多待一秒。你们这些人是怎么忍受的？……算了，我自己清理一下，免得被这种污秽影响了我的魔法；（咬着嘴唇，强忍不甘）这次只是我大意了，下次绝不会再犯这种低级错误！……不过，如果你敢把这件事说出去，我保证你会后悔的。我的自尊可不允许任何人嘲笑我的失败。",
+            appearance="身着一袭深紫色法师长袍，衣料上绣着精致的银色符文，既显高贵又不失神秘；金色的长发如瀑布般垂至腰间，发间别着一枚镶嵌蓝宝石的发饰，闪烁着微光；眼神锐利而自信，微微抬起的下巴透露出骨子里的骄傲，仿佛随时准备用魔法证明自己的不凡。",
+        ),
+        appearance="身着一袭深紫色法师长袍，衣料上绣着精致的银色符文，既显高贵又不失神秘；金色的长发如瀑布般垂至腰间，发间别着一枚镶嵌蓝宝石的发饰，闪烁着微光；眼神锐利而自信，微微抬起的下巴透露出骨子里的骄傲，仿佛随时准备用魔法证明自己的不凡。",
+        type=ActorType.HERO,
+    )
 
     world_root.data_base.actors.setdefault(actor1.name, actor1)
     world_root.data_base.actors.setdefault(actor2.name, actor2)
+    world_root.data_base.actors.setdefault(actor3.name, actor3)
 
     # 添加舞台
     stage2 = StagePrototype(
@@ -226,7 +242,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
     world_system1 = WorldSystemPrototype(
         name="战斗系统",
         code_name="battle_system",
-        system_message="你是一个战斗系统",
+        system_message="你是一个战斗系统，你的职责类似于DND中的GM。玩家角色执行的动作会以卡牌的形式给出，你需要判断这些动作的合理性和有效性，并发挥天马行空的想象，以故事讲述者的语气给出精彩的描述。你可以把玩家使用的卡牌描述成一系列的连招，也可以将它们组合成一个绝招。",
     )
 
     world_root.data_base.world_systems.setdefault(world_system1.name, world_system1)
@@ -237,22 +253,30 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
         card_pool=[],
         attributes=[],  # 暂时不用
         kick_off_message="你接到了剿灭哥布林的委托，在目标地不远处搭建起了营地。",
-        tags={}
+        tags=[],
     )
 
-    actor_instance1.tags.add("<仇视哥布林>")
-    actor_instance1.tags.add("<冷静>")
+    actor_instance1.tags.append(
+        TagInfo(name="<仇视哥布林>", description="该角色的招式对哥布林更有效。")
+    )
+    """ actor_instance1.tags.append(
+        TagInfo(name="<冷静>", description="该角色沉着冷静，不易陷入混乱。")
+    ) """
+    actor_instance1.tags.append(
+        TagInfo(name="<鲁莽>", description="该角色虽颇为勇猛，却鲁莽冒进。")
+    )
 
     # 添加卡牌
     actor_instance1.card_pool.append(
         create_card_object(
-            name="破阵突袭",
+            name="投掷",
             guid=1001,
             code_name="warrior_rush",
             # holder=actor_instance1.name,
             # performer=actor_instance1.name,
-            description="双脚猛踏地面，身体前倾以高速朝目标冲刺。伴随战斗怒吼，目的是直取对手要害，让对手短暂丧失防备。",
-            insight="给予自身<近身>TAG。给予目标<眩晕>TAG。当地面不利于奔跑时效果下降。",
+            description="投掷武器或是道具。",
+            insight="如果上一张或下一张牌生成了可投掷的物品，则投掷对应物品。否则投掷场景内物品。效果取决于使用者的力量和投掷品。",
+            owner=actor_instance1.name,
             # target=TargetType.ENEMY,
             # value=[],
         )
@@ -261,30 +285,32 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
     # 添加卡牌
     actor_instance1.card_pool.append(
         create_card_object(
-            name="上挑攻击",
+            name="上挑",
             guid=2001,
             code_name="warrior_uppercut",
             # holder=actor_instance1.name,
             # performer=actor_instance1.name,
-            description="紧握武器并借助腰胯之力猛然挥斩，从下至上划过敌人身躯，战士随后怒吼或爆发出斗气，彰显绝对的攻击欲望。目的是将敌人击飞至半空之中",
-            insight="自身持有<近身>TAG时才有效。给予目标<升空>TAG。效果部分取决于双方力量和体重之差。",
+            description="使用手中武器将目标挑至半空。",
+            insight="给予目标<升空>TAG。效果取决于双方力量和体重之差。",
             # target=TargetType.ENEMY,
             value=[],
+            owner=actor_instance1.name,
         )
     )
 
     # 添加卡牌
     actor_instance1.card_pool.append(
         create_card_object(
-            name="撼地重击",
+            name="重砸",
             guid=3001,
             code_name="warrior_ground_strike",
             # holder=actor_instance1.name,
             # performer=actor_instance1.name,
-            description="将武器高高举起，身躯下沉蓄力片刻后，猛力下击地面或目标身体",
-            insight="自身持有<近身>TAG时才有效。若目标有<升空>TAG，则消耗该TAG，使本技能效果极大增强。",
+            description="将武器高高举起，蓄力片刻后猛力下击地面或目标身体",
+            insight="若目标有<升空>TAG，则消耗该TAG，使本技能效果极大增强。",
             # target=TargetType.ENEMY,
             value=[],
+            owner=actor_instance1.name,
         )
     )
 
@@ -294,11 +320,65 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
         card_pool=[],
         attributes=[],  # 暂时不用
         kick_off_message="你前几日活捉了一名附近村庄的村民献给了哥布林大王，得到了许多酒肉作为奖励，正在于洞穴深处的房间中纵情狂欢。这时一个人类战士闯入了你的领地！",
-        tags={}
+        tags=[],
     )
 
-    actor_instance2.tags.add("<强壮>")
-    actor_instance2.tags.add("<哥布林>")
+    actor_instance2.tags.append(
+        TagInfo(name="<强壮>", description="该角色肌肉发达，力量超群。")
+    )
+    actor_instance2.tags.append(
+        TagInfo(name="<哥布林>", description="该角色是哥布林。")
+    )
+    actor_instance2.tags.append(
+        TagInfo(name="<藤甲>", description="该角色身穿由特殊处理过的藤条编织而成的铠甲，刀枪不入，但非常易燃。")
+    )
+
+    actor_instance3 = ActorInstance(
+        name=f"{actor3.name}",
+        guid=500,
+        card_pool=[],
+        attributes=[],  # 暂时不用
+        kick_off_message="你为了赚取赏金，与最近认识的队友一起潜入了哥布林的巢穴。",
+        tags=[],
+    )
+
+    actor_instance3.tags.append(
+        TagInfo(name="<华丽>", description="该角色外表华丽，引人注目。")
+    )
+
+    actor_instance3.tags.append(
+        TagInfo(name="<洁癖>", description="该角色讨厌脏东西。")
+    )
+
+    actor_instance3.card_pool.append(
+        create_card_object(
+            name="火球",
+            guid=777,
+            code_name="wizard_fire_ball",
+            # holder=actor_instance1.name,
+            # performer=actor_instance1.name,
+            description="挥动法杖，默念咒语，在法杖尖端生成一团炽热的火球向目标射去。",
+            insight="该攻击有<范围>TAG，更容易命中敌人，但也可能误伤友军。会让受到攻击者得到<燃烧>TAG。",
+            # target=TargetType.ENEMY,
+            value=[],
+            owner=actor_instance3.name,
+        )
+    )
+
+    actor_instance3.card_pool.append(
+        create_card_object(
+            name="冰雾",
+            guid=888,
+            code_name="wizard_ice_fog",
+            # holder=actor_instance1.name,
+            # performer=actor_instance1.name,
+            description="挥动法杖，默念咒语，在周围生成冰冷的雾气。",
+            insight="该攻击有<范围>TAG，更容易命中敌人，但也可能误伤友军。会让受到攻击者得到<冻伤>TAG。",
+            # target=TargetType.ENEMY,
+            value=[],
+            owner=actor_instance3.name,
+        )
+    )
 
     # actor_instance2.card_pool.append(
     #     create_card_object(
@@ -321,7 +401,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
         attributes=[],  # 暂时不用,
         kick_off_message="营火静静地燃烧着",
         next=[],
-        tags={},
+        tags=[],
     )
 
     stage_instance2 = StageInstance(
@@ -330,14 +410,17 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
         actors=[
             actor_instance1.name,
             actor_instance2.name,
+            actor_instance3.name,
         ],
         attributes=[],  # 暂时不用,
         kick_off_message="洞穴中十分吵闹",
         next=[],
-        tags={},
+        tags=[],
     )
 
-    stage_instance2.tags.add("<恶臭>")
+    stage_instance2.tags.append(
+        TagInfo(name="<恶臭>", description="对象恶臭熏天，令人难以忍受。")
+    )
 
     world_system_instance1 = WorldSystemInstance(
         name=f"{world_system1.name}",
@@ -348,6 +431,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
     # 角色
     world_root.players.append(actor_instance1)
     world_root.actors.append(actor_instance2)
+    world_root.actors.append(actor_instance3)
 
     # 场景
     world_root.stages.append(stage_instance1)

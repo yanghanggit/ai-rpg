@@ -1,5 +1,6 @@
 from entitas import ExecuteProcessor  # type: ignore
 from typing import final, override, cast
+from entitas.matcher import Matcher
 from game.tcg_game_context import TCGGameContext
 from game.tcg_game import TCGGame
 from loguru import logger
@@ -52,6 +53,21 @@ class HandleTerminalPlayerInputSystem(ExecuteProcessor):
                 actor_comp.name,
                 [],
             )
+
+            actors = self._context.get_group(
+                Matcher(
+                    all_of=[ActorComponent],
+                )
+            ).entities.copy()
+            actors.remove(player_entity)
+            for actor in actors:
+                comp = actor.get(ActorComponent)
+                actor.add(
+                    CardAction,
+                    comp.name,
+                    [],
+                )
+
             return
 
 

@@ -1,4 +1,4 @@
-from typing import Final, List, Dict, Any, Set, Union, final
+from typing import Final, List, Dict, Any, Union, final
 from pydantic import BaseModel
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from enum import IntEnum, StrEnum, unique
@@ -97,6 +97,8 @@ class CardObject(ItemObject):  # 可能以后改成ItemObject，类型选card，
     level: int = 1
     description: str
     insight: str
+    # tags: Set[TagInfo]
+    owner: str  # 测试用的属性，以后用管理系统的方法 TODO
 
     # 测试的属性
     @property
@@ -115,6 +117,17 @@ class WorldDataBase(BaseModel):
 
 
 ###############################################################################################################################################
+# TODO 不确定是否保留
+@final
+class TagInfo(BaseModel):
+    name: str
+    description: str
+
+    class Config:
+        frozen = True
+
+
+###############################################################################################################################################
 @final
 class ActorInstance(BaseModel):
     name: str
@@ -122,7 +135,7 @@ class ActorInstance(BaseModel):
     kick_off_message: str
     card_pool: List[CardObject]  # 感觉这个应该放进Prototype里 TODO
     attributes: List[int]
-    tags: Set[str]
+    tags: List[TagInfo]  # prototype也应该带tags，作为这个角色的初始tag
 
 
 ###############################################################################################################################################
@@ -134,7 +147,7 @@ class StageInstance(BaseModel):
     kick_off_message: str
     attributes: List[int]
     next: List[str]
-    tags: Set[str]
+    tags: List[TagInfo]
 
 
 ###############################################################################################################################################

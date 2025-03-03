@@ -1,11 +1,13 @@
 from entitas import Entity, Matcher, GroupEvent  # type: ignore
 from components.actions import (
     CardAction,
+    RemoveTagAction,
+    AddTagAction
 )
 from typing import final, override, Optional, Set, List
 from tcg_game_systems.base_action_reactive_system import BaseActionReactiveSystem
 from loguru import logger
-from components.components import WorldSystemComponent
+from components.components import WorldSystemComponent, TagsComponent
 from agent.chat_request_handler import ChatRequestHandler
 from tcg_models.v_0_0_1 import CardObject
 import copy
@@ -100,7 +102,7 @@ class CardActionSystem(BaseActionReactiveSystem):
     def _gen_card_prompt(self, card_object: CardObject) -> str:
 
         return f"""{card_object.name}
-- 描述与效果：{card_object.description}
+- 描述：{card_object.description}
 - 隐藏信息：{card_object.insight}"""
 
     ####################################################################################################################################

@@ -1,4 +1,4 @@
-from typing import Final, List, Dict, Any, Union, final
+from typing import Final, List, Dict, Any, Set, Union, final
 from pydantic import BaseModel
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from enum import IntEnum, StrEnum, unique
@@ -122,6 +122,7 @@ class ActorInstance(BaseModel):
     kick_off_message: str
     card_pool: List[CardObject]  # 感觉这个应该放进Prototype里 TODO
     attributes: List[int]
+    tags: Set[str]
 
 
 ###############################################################################################################################################
@@ -133,6 +134,7 @@ class StageInstance(BaseModel):
     kick_off_message: str
     attributes: List[int]
     next: List[str]
+    tags: Set[str]
 
 
 ###############################################################################################################################################

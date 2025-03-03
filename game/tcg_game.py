@@ -42,6 +42,7 @@ from components.components import (
     # PlayerCardItemFlagComponent,
     # MonsterCardItemFlagComponent,
     MagicRulerActorFlagComponent,
+    TagsComponent,
 )
 from player.player_proxy import PlayerProxy
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
@@ -344,6 +345,11 @@ class TCGGame(BaseGame):
                 FinalAppearanceComponent, instance.name, prototype.appearance
             )
 
+            # TODO, 测试组件，tag
+            actor_entity.add(
+                TagsComponent, instance.name, instance.tags
+            )
+
             # 根据类型添加角色类型flag
             # if prototype.type == ActorPrototype.ActorType.UNDIFINED:
             #     assert False, "actor type is not defined"
@@ -425,6 +431,11 @@ class TCGGame(BaseGame):
             )
             stage_entity.add(
                 StageEnvironmentComponent, instance.name, instance.kick_off_message
+            )
+
+            # TODO, 测试组件，tag
+            stage_entity.add(
+                TagsComponent, instance.name, instance.tags
             )
 
             # 根据类型添加场景类型

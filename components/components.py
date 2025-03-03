@@ -1,4 +1,4 @@
-from typing import NamedTuple, List, final
+from typing import NamedTuple, List, Set, final
 from components.registry import register_component_class
 
 
@@ -374,3 +374,10 @@ class StageNarratePlanningPermitFlagComponent(NamedTuple):
 # class CardEffectComponent(NamedTuple):
 #     name: str
 #     order: int
+
+# TODO 存储TAG用的组件，测试用
+@final
+@register_component_class
+class TagsComponent(NamedTuple):
+    name: str
+    tags: Set[str]

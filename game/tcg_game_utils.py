@@ -330,7 +330,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
         TagInfo(name="<哥布林>", description="该角色是哥布林。")
     )
     actor_instance2.tags.append(
-        TagInfo(name="<藤甲>", description="该角色身穿由特殊处理过的藤条编织而成的铠甲，刀枪不入。")
+        TagInfo(name="<藤甲>", description="该角色身穿由特殊处理过的藤条编织而成的铠甲，刀枪不入，但非常易燃。")
     )
 
     actor_instance3 = ActorInstance(

@@ -237,7 +237,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
         card_pool=[],
         attributes=[],  # 暂时不用
         kick_off_message="你接到了剿灭哥布林的委托，在目标地不远处搭建起了营地。",
-        tags={}
+        tags=set(),
     )
 
     actor_instance1.tags.add("<仇视哥布林>")
@@ -294,7 +294,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
         card_pool=[],
         attributes=[],  # 暂时不用
         kick_off_message="你前几日活捉了一名附近村庄的村民献给了哥布林大王，得到了许多酒肉作为奖励，正在于洞穴深处的房间中纵情狂欢。这时一个人类战士闯入了你的领地！",
-        tags={}
+        tags=set(),
     )
 
     actor_instance2.tags.add("<强壮>")
@@ -321,7 +321,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
         attributes=[],  # 暂时不用,
         kick_off_message="营火静静地燃烧着",
         next=[],
-        tags={},
+        tags=set(),
     )
 
     stage_instance2 = StageInstance(
@@ -334,7 +334,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
         attributes=[],  # 暂时不用,
         kick_off_message="洞穴中十分吵闹",
         next=[],
-        tags={},
+        tags=set(),
     )
 
     stage_instance2.tags.add("<恶臭>")

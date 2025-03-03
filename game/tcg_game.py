@@ -346,9 +346,7 @@ class TCGGame(BaseGame):
             )
 
             # TODO, 测试组件，tag
-            actor_entity.add(
-                TagsComponent, instance.name, instance.tags
-            )
+            actor_entity.add(TagsComponent, instance.name, instance.tags)
 
             # 根据类型添加角色类型flag
             # if prototype.type == ActorPrototype.ActorType.UNDIFINED:
@@ -434,9 +432,7 @@ class TCGGame(BaseGame):
             )
 
             # TODO, 测试组件，tag
-            stage_entity.add(
-                TagsComponent, instance.name, instance.tags
-            )
+            stage_entity.add(TagsComponent, instance.name, instance.tags)
 
             # 根据类型添加场景类型
             if prototype.type == StageType.UNDIFINED:

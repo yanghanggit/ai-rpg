@@ -375,6 +375,7 @@ class StageNarratePlanningPermitFlagComponent(NamedTuple):
 #     name: str
 #     order: int
 
+
 # TODO 存储TAG用的组件，测试用
 @final
 @register_component_class

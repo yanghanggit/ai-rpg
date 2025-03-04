@@ -350,7 +350,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
     )
 
     actor_instance3.tags.append(
-        TagInfo(name="<洁癖>", description="该角色讨厌脏东西。")
+        TagInfo(name="<洁癖>", description="该角色讨厌脏东西。位于肮脏的环境中时就会手脚发软，脾气暴躁。")
     )
 
     actor_instance3.card_pool.append(

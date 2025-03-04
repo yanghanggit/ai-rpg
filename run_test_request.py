@@ -30,7 +30,8 @@ async def run():
 # TAG细节
 1. TAG是LLM用于判断卡牌合理性，有效性的依据。
 2. TAG的格式为 <TAG名>: Tag描述， 以字典形式存储。
-3. 对于每张牌，需要尽可能多的TAG来全面且详细地描述这张牌。例如<物理>：这是物理攻击，<火焰>：这是火属性攻击，<范围>：此攻击范围很大，更易命中，但也可能误伤友方。TAG描述要客观。
+3. 对于每张牌，需要尽可能多的TAG来全面且详细地描述这张牌。例如<物理>：这是物理攻击，<火焰>：这是火属性攻击，<范围>：此攻击范围很大，更易命中，但也可能误伤友方。
+4. TAG是对事物的客观，外在的描述。
 # 牌的输出格式
 - 请以json格式返回牌。
 - 格式示例：{“牌名”: {"discription": "卡牌描述", "effect": "卡牌效果", "tags": {TAG字典}},...}
@@ -38,7 +39,6 @@ async def run():
 - 请尽量发挥想象力，让卡牌尽可能夸张，无厘头，有趣。
 - 尽量使每张牌都能与其他牌形成combo。
 
-\n我希望先完成“鲁莽的战士”，“怕鬼的法师”，“纯真的猎人”三个角色的卡牌。
 \n你需要了解的信息如上，接下来卡牌设计师将给你具体的指示。"""
     logger.error(system_msg)
     history.append(SystemMessage(content=system_msg))
@@ -50,7 +50,7 @@ async def run():
         if usr_input is "/q":
             print("退出！")
             run_flag = False
-            continue
+            return
         elif usr_input is "":
             print("空输入！")
             continue

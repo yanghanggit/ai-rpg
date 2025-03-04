@@ -103,7 +103,7 @@ class CardActionSystem(BaseActionReactiveSystem):
     ####################################################################################################################################
     def _gen_card_prompt(self, card_object: CardObject) -> str:
 
-        return f"""{card_object.name}
+        return f"""##{card_object.name}:
 - 使用者：{card_object.owner}
 - 描述：{card_object.description}
 - 隐藏信息：{card_object.insight}"""
@@ -142,6 +142,8 @@ class CardActionSystem(BaseActionReactiveSystem):
 - 发挥天马行空的想象，给出富有戏剧性的结果，但必须基于逻辑和TAG的相互作用。
 # 角色信息：
 {"\n".join(user_tags)}
+## 团结度
+- 15
 ### 目标：
 - 角色.怪物.强壮哥布林
 # 场景信息：
@@ -154,9 +156,9 @@ class CardActionSystem(BaseActionReactiveSystem):
 {"\n".join(card_names)}
 # 输出内容：
 ## 输出内容1:
-判断每张牌的对应动作的有效性，返回范围为[0，2]的整数评分。0代表效果很差，1代表效果一般，2代表效果极佳。最后给出所有评分之和。
+判断每张牌的对应动作对目标的有效性，返回范围为[1，5]的整数评分，数字越大代表有效性越高。1代表效果很差，3代表效果一般，5代表效果极佳。误伤友军不会影响评分。最后给出所有评分之和。
 ## 输出内容2：
-给出每个角色最终需要添加的和移除的TAG。
+给出场景和所有角色最终需要添加的和移除的TAG。
 ## 输出内容3：
 给出最终描述。
 ## 输出内容4：

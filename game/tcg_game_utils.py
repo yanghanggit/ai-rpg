@@ -242,7 +242,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
     world_system1 = WorldSystemPrototype(
         name="战斗系统",
         code_name="battle_system",
-        system_message="你是一个战斗系统，你的职责类似于DND中的GM。玩家角色执行的动作会以卡牌的形式给出，你需要判断这些动作的合理性和有效性，并发挥天马行空的想象，以故事讲述者的语气给出精彩的描述。你可以把玩家使用的卡牌描述成一系列的连招，也可以将它们组合成一个绝招。",
+        system_message="你是一个战斗系统，你的职责类似于DND中的GM。玩家角色执行的动作会以卡牌的形式给出，你需要判断这些动作的合理性和有效性，并发挥天马行空的想象，以故事讲述者的语气给出精彩的描述。你可以把玩家使用的卡牌描述成一系列的连招，也可以将它们组合成一个绝招。角色的TAG可以被移除。代表道具和装备的TAG在其损坏时/会被移除。注意元素之间的相互作用，如风、火、水、电等元素间的反应。团结度体现了团队的团结程度，其值为[0,99],团结度高时，团队的配合将更娴熟，更默契，技能效果更强。团结度低时，团队的配合更差，技能效果更弱，团结度低于30时，极有可能发生队友间的误伤或蓄意报复。",
     )
 
     world_root.data_base.world_systems.setdefault(world_system1.name, world_system1)
@@ -275,7 +275,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
             # holder=actor_instance1.name,
             # performer=actor_instance1.name,
             description="投掷武器或是道具。",
-            insight="如果上一张或下一张牌生成了可投掷的物品，则投掷对应物品。否则投掷场景内物品。效果取决于使用者的力量和投掷品。",
+            insight="\n###效果：\n- 投掷物品进行攻击。投掷的物品可以相邻的牌代表或生成的物品，场地内的物品，自己的武器等。选择其中效果最好的投掷。也可能投掷讨厌的队友或敌人。效果取决于自身力量和投掷的物品。\n###TAG：\n- <物理>： 该行动是物理攻击。",
             owner=actor_instance1.name,
             # target=TargetType.ENEMY,
             # value=[],
@@ -291,7 +291,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
             # holder=actor_instance1.name,
             # performer=actor_instance1.name,
             description="使用手中武器将目标挑至半空。",
-            insight="给予目标<升空>TAG。效果取决于双方力量和体重之差。",
+            insight="\n###效果：\n- 效果取决于双方力量和体重之差。效果强时为目标添加<升空>TAG。\n###TAG：\n- <物理>： 该行动是物理攻击。",
             # target=TargetType.ENEMY,
             value=[],
             owner=actor_instance1.name,
@@ -307,7 +307,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
             # holder=actor_instance1.name,
             # performer=actor_instance1.name,
             description="将武器高高举起，蓄力片刻后猛力下击地面或目标身体",
-            insight="若目标有<升空>TAG，则消耗该TAG，使本技能效果极大增强。",
+            insight="\n###效果：\n- 若目标有<升空>TAG，则消耗该TAG，使本技能效果极大增强。\n###TAG：\n- <物理>： 该行动是物理攻击。",
             # target=TargetType.ENEMY,
             value=[],
             owner=actor_instance1.name,
@@ -330,7 +330,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
         TagInfo(name="<哥布林>", description="该角色是哥布林。")
     )
     actor_instance2.tags.append(
-        TagInfo(name="<藤甲>", description="该角色身穿由特殊处理过的藤条编织而成的铠甲，刀枪不入，但非常易燃。")
+        TagInfo(name="<藤甲>", description="该角色身穿由特殊处理过的藤条编织而成的铠甲，刀枪不入，能极大减弱物理攻击的效果。但非常易燃。")
     )
 
     actor_instance3 = ActorInstance(
@@ -358,7 +358,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
             # holder=actor_instance1.name,
             # performer=actor_instance1.name,
             description="挥动法杖，默念咒语，在法杖尖端生成一团炽热的火球向目标射去。",
-            insight="该攻击有<范围>TAG，更容易命中敌人，但也可能误伤友军。会让受到攻击者得到<燃烧>TAG。",
+            insight="\n###效果：\n效果一般及以上时会让受到攻击者得到<燃烧>TAG。\n###TAG：\n- <魔法>：该技能是魔法攻击。\n- <火焰>：该技能是火焰伤害。\n- <范围>：该技能是范围攻击，有可能误伤友方，尤其是处于近战状态下的友方。",
             # target=TargetType.ENEMY,
             value=[],
             owner=actor_instance3.name,
@@ -373,7 +373,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
             # holder=actor_instance1.name,
             # performer=actor_instance1.name,
             description="挥动法杖，默念咒语，在周围生成冰冷的雾气。",
-            insight="该攻击有<范围>TAG，更容易命中敌人，但也可能误伤友军。会让受到攻击者得到<冻伤>TAG。",
+            insight="\n###效果：\n效果一般及以上时会让受到攻击者得到<冻伤>TAG。\n###TAG：\n- <魔法>：该技能是魔法攻击。\n- <冰霜>：该技能是冰霜伤害。\n- <范围>：该技能是范围攻击，有可能误伤友方，尤其是处于近战状态下的友方。",
             # target=TargetType.ENEMY,
             value=[],
             owner=actor_instance3.name,

@@ -122,7 +122,7 @@ class CardActionSystem(BaseActionReactiveSystem):
         #
         card_names = []
         for index, card_object in enumerate(player_cards):
-            card_names.append(f"{index + 1}. {card_object.name}")
+            card_names.append(f"第{index + 1}步:{card_object.name}")
 
         #
         user_tags = []
@@ -151,6 +151,7 @@ class CardActionSystem(BaseActionReactiveSystem):
 - <恶臭>： 对象恶臭熏天，令人难以忍受。
 # 卡牌的信息如下：
 {"\n".join(card_prompt_list)}
+
 ## 卡牌的执行顺序如下:
 {"\n".join(card_names)}
 # 输出内容：

@@ -97,7 +97,6 @@ class CardObject(ItemObject):  # 可能以后改成ItemObject，类型选card，
     level: int = 1
     description: str
     insight: str
-    # tags: Set[TagInfo]
     owner: str  # 测试用的属性，以后用管理系统的方法 TODO
 
     # 测试的属性

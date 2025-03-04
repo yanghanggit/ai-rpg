@@ -263,28 +263,56 @@ card_warrior_ground_strike = create_card_object(
     guid=0,
     code_name="warrior_ground_strike",
     description="将武器高高举起，蓄力片刻后猛力下击地面或目标身体",
-    insight="\n###效果：\n- 若目标有<升空>TAG，则消耗该TAG，使本技能效果极大增强。\n###TAG：\n- <物理>： 该行动是物理攻击。",
+    insight="如果击中目标身体，会造成大量伤害",
     owner="",
 )
 #######################################################################################################################################
-card_wizard_fire_ball = create_card_object(
-    name="火球",
+#######################################################################################################################################
+#######################################################################################################################################
+card_wizard_fire_element = create_card_object(
+    name="火元素",
     guid=0,
-    code_name="wizard_fire_ball",
-    description="挥动法杖，默念咒语，在法杖尖端生成一团炽热的火球向目标射去。",
-    insight="\n###效果：\n效果一般及以上时会让受到攻击者得到<燃烧>TAG。\n###TAG：\n- <魔法>：该技能是魔法攻击。\n- <火焰>：该技能是火焰伤害。\n- <范围>：该技能是范围攻击，有可能误伤友方，尤其是处于近战状态下的友方。",
+    code_name="wizard_fire_element",
+    description="创造火焰能量悬浮在场景内，会对周围环境产生影响。",
+    insight="和其他元素结合，会产生不同的效果。",
     owner="",
 )
 #######################################################################################################################################
-card_wizard_ice_fog = create_card_object(
-    name="冰雾",
+card_wizard_ice_element = create_card_object(
+    name="冰元素",
     guid=0,
-    code_name="wizard_ice_fog",
-    description="挥动法杖，默念咒语，在周围生成冰冷的雾气。",
-    insight="\n###效果：\n效果一般及以上时会让受到攻击者得到<冻伤>TAG。\n###TAG：\n- <魔法>：该技能是魔法攻击。\n- <冰霜>：该技能是冰霜伤害。\n- <范围>：该技能是范围攻击，有可能误伤友方，尤其是处于近战状态下的友方。",
+    code_name="wizard_ice_element",
+    description="创造寒冰能量悬浮在场景内，会对周围环境产生影响。",
+    insight="和其他元素结合，会产生不同的效果。",
     owner="",
 )
-
+#######################################################################################################################################
+card_wizard_lightning_element = create_card_object(
+    name="雷元素",
+    guid=0,
+    code_name="wizard_lightning_element",
+    description="创造雷电能量悬浮在场景内，会对周围环境产生影响。",
+    insight="和其他元素结合，会产生不同的效果。",
+    owner="",
+)
+#######################################################################################################################################
+card_wizard_elemental_shot = create_card_object(
+    name="元素发射",
+    guid=0,
+    code_name="wizard_elemental_shot",
+    description="将悬浮在场景内的所有元素能量结合，向目标发射。",
+    insight="根据结合元素的种类与数量不同，生成不同效果的法术。本技能使用后，场景内的元素能量会消失。",
+    owner="",
+)
+#######################################################################################################################################
+card_wizard_elemental_absorption = create_card_object(
+    name="元素吸收",
+    guid=0,
+    code_name="wizard_elemental_absorption",
+    description="将存在于场景内的元素能量吸收进自身（转化为自身的强化效果），并同时强化友方（进行元素附魔）。",
+    insight="根据结合元素的种类与数量不同，生成不同效果的法术。本技能使用后，场景内的元素能量会消失。",
+    owner="",
+)
 #######################################################################################################################################
 #######################################################################################################################################
 #######################################################################################################################################
@@ -444,7 +472,8 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
             "<冷静>": "该角色沉着冷静，不易陷入混乱。",
             "<鲁莽>": "该角色虽颇为勇猛，却鲁莽冒进。",
         },
-        cards=[card_warrior_rush, card_warrior_uppercut, card_warrior_ground_strike],
+        # cards=[card_warrior_rush, card_warrior_uppercut, card_warrior_ground_strike],
+        cards=[card_warrior_ground_strike],
     )
 
     # 创建实例：角色.法师.露西
@@ -458,7 +487,13 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
             "<华丽>": "该角色外表华丽，引人注目。",
             "<洁癖>": "该角色讨厌脏东西。",
         },
-        cards=[card_wizard_fire_ball, card_wizard_ice_fog],
+        cards=[
+            card_wizard_fire_element,
+            card_wizard_ice_element,
+            card_wizard_lightning_element,
+            card_wizard_elemental_shot,
+            card_wizard_elemental_absorption,
+        ],
     )
 
     # 创建实例：角色.怪物.强壮哥布林

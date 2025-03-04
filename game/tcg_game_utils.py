@@ -97,6 +97,26 @@ def _comple_stage_system_prompt(
 
 
 #######################################################################################################################################
+def _comple_world_system_system_prompt(
+    name: str, epoch_script: str, world_system_profile: str
+) -> str:
+
+    prompt = f"""# {name}
+你扮演这个游戏世界中的一个系统: {name}
+
+## 游戏背景
+{epoch_script}
+
+## 游戏规则
+{GLOBAL_GAME_RULES}
+
+## 你的系统设定
+{world_system_profile}"""
+
+    return prompt
+
+
+#######################################################################################################################################
 def create_card_object(
     name: str,
     guid: int,
@@ -196,8 +216,22 @@ stage_camp = StagePrototype(
 world_system_battle_system = WorldSystemPrototype(
     name="战斗系统",
     code_name="battle_system",
-    system_message="你是一个战斗系统，你的职责类似于DND中的GM。玩家角色执行的动作会以卡牌的形式给出，你需要判断这些动作的合理性和有效性，并发挥天马行空的想象，以故事讲述者的语气给出精彩的描述。你可以把玩家使用的卡牌描述成一系列的连招，也可以将它们组合成一个绝招。角色的TAG可以被移除。代表道具和装备的TAG在其损坏时/会被移除。注意元素之间的相互作用，如风、火、水、电等元素间的反应。团结度体现了团队的团结程度，其值为[0,99],团结度高时，团队的配合将更娴熟，更默契，技能效果更强。团结度低时，团队的配合更差，技能效果更弱，团结度低于30时，极有可能发生队友间的误伤或蓄意报复。",
+    system_message=_comple_world_system_system_prompt(
+        name="战斗系统",
+        epoch_script=EPOCH_SCRIPT,
+        world_system_profile="""你是一个战斗系统，你的职责类似于DND中的GM。
+玩家角色执行的动作会以卡牌的形式给出，你需要判断这些动作的合理性和有效性，并发挥想象，以故事讲述者的语气给出精彩的描述。""",
+    ),
 )
+
+# 保存！！！！
+#  world_system_profile="""你是一个战斗系统，你的职责类似于DND中的GM。
+# 玩家角色执行的动作会以卡牌的形式给出，你需要判断这些动作的合理性和有效性，并发挥天马行空的想象，以故事讲述者的语气给出精彩的描述。
+# 你可以把玩家使用的卡牌描述成一系列的连招，也可以将它们组合成一个绝招。
+# 角色的TAG可以被移除。代表道具和装备的TAG在其损坏时/会被移除。
+# 注意元素之间的相互作用，如风、火、水、电等元素间的反应。团结度体现了团队的团结程度，其值为[0,99],团结度高时，团队的配合将更娴熟，更默契，技能效果更强。
+# 团结度低时，团队的配合更差，技能效果更弱，团结度低于30时，极有可能发生队友间的误伤或蓄意报复。""",
+#     ),
 #######################################################################################################################################
 #######################################################################################################################################
 #######################################################################################################################################
@@ -402,7 +436,9 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
     actor_warrior_instance = _create_actor_instance(
         world_root=world_root,
         actor=actor_warrior,
-        kick_off_message="你接到了剿灭哥布林的委托，在目标地不远处搭建起了营地。",
+        kick_off_message=f"""你接到了剿灭哥布林的委托，和最近认识不久的队友 {actor_wizard.name} 一起潜入了哥布林的巢穴。面前是一只强壮的哥布林，你准备开始战斗。
+你对 {actor_wizard.name} 的印象：很强大，但是有点装，你不太喜欢她，为了达成目的你需要一个法师的队友。
+""",
         tags={
             "<仇视哥布林>": "该角色的招式对哥布林更有效。",
             "<冷静>": "该角色沉着冷静，不易陷入混乱。",
@@ -411,23 +447,13 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
         cards=[card_warrior_rush, card_warrior_uppercut, card_warrior_ground_strike],
     )
 
-    # 创建实例：角色.怪物.强壮哥布林
-    actor_goblin_instance = _create_actor_instance(
-        world_root=world_root,
-        actor=actor_goblin,
-        kick_off_message="你前几日活捉了一名附近村庄的村民献给了哥布林大王，得到了许多酒肉作为奖励，正在于洞穴深处的房间中纵情狂欢。这时一个人类战士闯入了你的领地！",
-        tags={
-            "<强壮>": "该角色肌肉发达，力量超群。",
-            "<哥布林>": "该角色是哥布林。",
-            "<藤甲>": "该角色身穿由特殊处理过的藤条编织而成的铠甲，刀枪不入，能极大减弱物理攻击的效果。但非常易燃。",
-        },
-    )
-
     # 创建实例：角色.法师.露西
     actor_wizard_instance = _create_actor_instance(
         world_root=world_root,
         actor=actor_wizard,
-        kick_off_message="你为了赚取赏金，与最近认识的队友一起潜入了哥布林的巢穴。",
+        kick_off_message=f"""你为了赚取赏金，与最近认识的队友 {actor_warrior.name} 一起潜入了哥布林的巢穴。面前是一只强壮的哥布林，你准备开始战斗。
+你对 {actor_warrior.name} 的印象：有些蠢（你讨厌头脑简单四肢发达的人）。但够壮实，关键时刻还是可以依靠的。        
+""",
         tags={
             "<华丽>": "该角色外表华丽，引人注目。",
             "<洁癖>": "该角色讨厌脏东西。",
@@ -435,16 +461,23 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
         cards=[card_wizard_fire_ball, card_wizard_ice_fog],
     )
 
-    # 创建实例：场景.营地
-    stage_camp_instance = _create_stage_instance(
-        world_root, stage_camp, "营火静静地燃烧着"
+    # 创建实例：角色.怪物.强壮哥布林
+    actor_goblin_instance = _create_actor_instance(
+        world_root=world_root,
+        actor=actor_goblin,
+        kick_off_message=f"""你前几日活捉了一名附近村庄的村民献给了哥布林大王，得到了许多酒肉作为奖励，正在于洞穴深处的房间中纵情狂欢。这时一个两个人类闯入了你的领地，绝不能让他们离开！""",
+        tags={
+            "<强壮>": "该角色肌肉发达，力量超群。",
+            "<哥布林>": "该角色是哥布林。",
+            "<藤甲>": "该角色身穿由特殊处理过的藤条编织而成的铠甲，刀枪不入，能极大减弱物理攻击的效果。但非常易燃。",
+        },
     )
 
     # 创建实例：场景.洞窟
     stage_cave_instance = _create_stage_instance(
         world_root=world_root,
         stage=stage_cave,
-        kick_off_message="洞穴中十分吵闹",
+        kick_off_message="洞穴中十分吵闹，一场战斗即将开始。",
         actors=[actor_warrior_instance, actor_goblin_instance, actor_wizard_instance],
         tags={
             "<恶臭>": "对象恶臭熏天，令人难以忍受。",
@@ -461,7 +494,7 @@ def test_world1(world_root: WorldRoot) -> WorldRoot:
         world_root,
         [actor_warrior_instance],
         [actor_goblin_instance, actor_wizard_instance],
-        [stage_camp_instance, stage_cave_instance],
+        [stage_cave_instance],
         [world_system_battle_system_instance],
     )
 

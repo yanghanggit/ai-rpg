@@ -1,5 +1,5 @@
 from loguru import logger
-from entitas import InitializeProcessor, ExecuteProcessor, Matcher  # type: ignore
+from entitas import ExecuteProcessor  # type: ignore
 from overrides import override
 from typing import cast, final, Set
 from entitas import Entity  # type: ignore

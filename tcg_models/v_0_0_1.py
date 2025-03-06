@@ -32,7 +32,7 @@ class EntitySnapshot(BaseModel):
 @final
 @unique
 class ActorType(StrEnum):
-    UNDIFINED = "Undefined"
+    NONE = "None"
     HERO = "Hero"
     MONSTER = "Monster"
 
@@ -51,7 +51,7 @@ class ActorPrototype(BaseModel):
 @final
 @unique
 class StageType(StrEnum):
-    UNDIFINED = "Undefined"
+    NONE = "None"
     HOME = "Home"
     DUNGEON = "Dungeon"
 
@@ -76,23 +76,23 @@ class WorldSystemPrototype(BaseModel):
 ###############################################################################################################################################
 
 
-class ItemObject(BaseModel):
+""" class ItemObject(BaseModel):
     name: str
     guid: int
     code_name: str
     count: int = 1
-    value: List[int]
+    value: List[int] """
 
 
 ###############################################################################################################################################
-@unique
+""" @unique
 class ItemAttributes(IntEnum):
     MAX_HP = 0
     CUR_HP = 1
-    MAX = 20
+    MAX = 20 """
 
 
-@final
+""" @final
 class CardObject(ItemObject):  # 可能以后改成ItemObject，类型选card，现阶段先这样 TODO
     level: int = 1
     description: str
@@ -105,7 +105,7 @@ class CardObject(ItemObject):  # 可能以后改成ItemObject，类型选card，
     def max_hp(self) -> int:
         if len(self.value) < ItemAttributes.MAX:
             return self.value[ItemAttributes.MAX_HP]
-        return 0
+        return 0 """
 
 
 ###############################################################################################################################################
@@ -123,8 +123,59 @@ class TagInfo(BaseModel):
     name: str
     description: str
 
-    class Config:
-        frozen = True
+
+###############################################################################################################################################
+# TODO，这个框里的全是临时的，没细想，能跑就行，等重构
+class SkillInfo(BaseModel):
+    name: str
+    description: str
+    values: List[float]
+
+
+class ActiveSkill(SkillInfo):
+    pass
+
+
+class TriggerSkill(SkillInfo):
+    pass
+
+
+class HitType(StrEnum):
+    NONE = "None"
+    ADDBUFF = "AddBuff"
+    DAMAGE = "Damage"
+    HEAL = "Heal"
+
+
+class DamageTypeTag(StrEnum):
+    RANGE = "Range"
+    PHYSICAL = "Physical"
+    MAGIC = "Magic"
+
+
+class HitInfo(BaseModel):
+    skill: SkillInfo
+    source: str
+    target: str
+    value: int
+    type: HitType
+    tags: List[DamageTypeTag]
+    talk: str
+
+
+class BattleMsg(BaseModel):
+    hit: List[HitInfo]
+    description: str
+
+
+class EventMsg(BaseModel):
+    event: str
+    option: int
+    result: str
+
+
+class BattleHistory(BaseModel):
+    logs: Dict[int, List[Union[BattleMsg, EventMsg]]]
 
 
 ###############################################################################################################################################
@@ -133,9 +184,9 @@ class ActorInstance(BaseModel):
     name: str
     guid: int
     kick_off_message: str
-    card_pool: List[CardObject]  # 感觉这个应该放进Prototype里 TODO
-    attributes: List[int]
-    tags: List[TagInfo]  # prototype也应该带tags，作为这个角色的初始tag
+    active_skills: List[SkillInfo]
+    attributes: List[int]  # HP/MaxHP/ActionTimes/MaxActionTimes/STR/AGI/WIS
+    tags: List[TagInfo]
 
 
 ###############################################################################################################################################

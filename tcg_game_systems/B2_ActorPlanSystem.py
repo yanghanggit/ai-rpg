@@ -50,6 +50,11 @@ class B2_ActorPlanSystem(ExecuteProcessor):
         if comp.action_times <= 0:
             assert False, "角色行动力<=0但是没删掉"
 
+        # 检查这个时候触发的buff，虽然此阶段也只有一个眩晕就是了
+        if any(buff.name == "眩晕" for buff in comp.buffs):
+            self._game._battle_manager.add_history(f"{thinker_name} 被眩晕了，无法行动！")
+            return
+
         # 问他做什么决定
         # 得到所有角色和场景信息
         current_stage = self._context.safe_get_stage_entity(thinker)

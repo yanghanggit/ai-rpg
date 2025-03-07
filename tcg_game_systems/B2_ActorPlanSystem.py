@@ -31,7 +31,7 @@ class B2_ActorPlanSystem(ExecuteProcessor):
 
     @override
     async def a_execute1(self) -> None:
-        return await super().a_execute1()
+        await self._make_plan()
 
     async def _make_plan(self) -> None:
         if self._game._battle_manager._new_turn_flag:
@@ -52,7 +52,9 @@ class B2_ActorPlanSystem(ExecuteProcessor):
 
         # 检查这个时候触发的buff，虽然此阶段也只有一个眩晕就是了
         if any(buff.name == "眩晕" for buff in comp.buffs):
-            self._game._battle_manager.add_history(f"{thinker_name} 被眩晕了，无法行动！")
+            self._game._battle_manager.add_history(
+                f"{thinker_name} 被眩晕了，无法行动！"
+            )
             return
 
         # 问他做什么决定

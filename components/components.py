@@ -119,6 +119,7 @@ class ActorComponent(NamedTuple):
     name: str
     current_stage: str
 
+
 @final
 @register_component_class
 class AttributeCompoment(NamedTuple):

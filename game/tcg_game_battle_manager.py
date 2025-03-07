@@ -28,7 +28,7 @@ class BattleManager:
         self._hits_stack: Deque[HitInfo] = deque()
         self._order_queue: Deque[str] = deque()
         self.battle_history: BattleHistory
-        self._event_msg : EventMsg
+        self._event_msg: EventMsg
 
     def add_history(self, msg: str) -> None:
         self.battle_history.logs[self._turn_num].append(msg)

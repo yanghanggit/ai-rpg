@@ -6,9 +6,15 @@ from game.tcg_game_context import TCGGameContext
 from game.tcg_game import TCGGame
 from typing import Deque, List, final, cast
 from tcg_models.v_0_0_1 import ActorInstance, ActiveSkill
-from components.components import AttributeCompoment,ActorComponent, FinalAppearanceComponent, StageEnvironmentComponent
+from components.components import (
+    AttributeCompoment,
+    ActorComponent,
+    FinalAppearanceComponent,
+    StageEnvironmentComponent,
+)
 from loguru import logger
 import json
+
 
 class ChoiceRet:
     num: int
@@ -26,7 +32,7 @@ class B2_ActorPlanSystem(ExecuteProcessor):
     @override
     async def a_execute1(self) -> None:
         return await super().a_execute1()
-    
+
     async def _make_plan(self) -> None:
         if self._game._battle_manager._new_turn_flag:
             return
@@ -34,22 +40,15 @@ class B2_ActorPlanSystem(ExecuteProcessor):
             return
         if len(self._game._battle_manager._order_queue) is 0:
             return
-        
+
         # 找出当前应该做决定的角色
         thinker_name = self._game._battle_manager._order_queue[0]
         thinker = self._context.get_entity_by_name(thinker_name)
         if thinker is None:
             assert False, "can't find entity by thinker name"
-        # 如果角色没行动力了，直接下一个
         comp = thinker.get(AttributeCompoment)
-        while comp.action_times <= 0:
-            self._game._battle_manager._order_queue.popleft()
-            thinker_name = self._game._battle_manager._order_queue[0]
-            thinker = self._context.get_entity_by_name(thinker_name)
-            if thinker is None:
-                assert False, "can't find entity by thinker name"
-            # 如果角色没行动力了，直接下一个
-            comp = thinker.get(AttributeCompoment)
+        if comp.action_times <= 0:
+            assert False, "角色行动力<=0但是没删掉"
 
         # 问他做什么决定
         # 得到所有角色和场景信息
@@ -57,24 +56,32 @@ class B2_ActorPlanSystem(ExecuteProcessor):
         assert current_stage is not None
         actors_set = self._game.retrieve_actors_on_stage(current_stage)
         actors_info_list: List[str] = [
-                f"{actor._name}：\n外表：{actor.get(FinalAppearanceComponent).final_appearance}\n生命值：{actor.get(AttributeCompoment).hp}/{actor.get(AttributeCompoment).maxhp}\n行动力：{actor.get(AttributeCompoment).action_times}/{actor.get(AttributeCompoment).max_action_times}"
-                for actor in actors_set
-                if actor.has(FinalAppearanceComponent)
-            ]
+            f"{actor._name}：\n外表：{actor.get(FinalAppearanceComponent).final_appearance}\n生命值：{actor.get(AttributeCompoment).hp}/{actor.get(AttributeCompoment).maxhp}\n行动力：{actor.get(AttributeCompoment).action_times}/{actor.get(AttributeCompoment).max_action_times}"
+            for actor in actors_set
+            if actor.has(FinalAppearanceComponent)
+        ]
         # 得到自己的所有技能信息 问题：让不让角色能看其他人的技能？
-        active_skills = [f"{index} {x.name}: {x.description}" for index, x in enumerate(comp.active_skills)]
-        trigger_skills = [f"{index} {x.name}: {x.description}" for index, x in enumerate(comp.trigger_skills)]
+        active_skills = [
+            f"{index} {x.name}: {x.description}"
+            for index, x in enumerate(comp.active_skills)
+        ]
+        trigger_skills = [
+            f"{index} {x.name}: {x.description}"
+            for index, x in enumerate(comp.trigger_skills)
+        ]
         # 得到除掉自己后的行动队列
         order = self._game._battle_manager._order_queue.copy()
         order.popleft()
         message = _gen_prompt(
             current_stage_name=current_stage._name,
-            current_stage_narration=current_stage.get(StageEnvironmentComponent).narrate,
+            current_stage_narration=current_stage.get(
+                StageEnvironmentComponent
+            ).narrate,
             actors_info_list=actors_info_list,
             active_skill_list=active_skills,
             trigger_skill_list=trigger_skills,
             act_order=order,
-            battle_history=self._game._battle_manager.battle_history.model_dump_json()
+            battle_history=self._game._battle_manager.battle_history.model_dump_json(),
         )
         request_handlers: List[ChatRequestHandler] = []
         agent_short_term_memory = self._game.get_agent_short_term_memory(thinker)
@@ -82,16 +89,12 @@ class B2_ActorPlanSystem(ExecuteProcessor):
             ChatRequestHandler(
                 name=thinker._name,
                 prompt=message,
-                chat_history=agent_short_term_memory.chat_history
+                chat_history=agent_short_term_memory.chat_history,
             )
         )
         await self._game.langserve_system.gather(request_handlers=request_handlers)
-        self._game.append_human_message(
-            thinker, message
-        )
-        self._game.append_ai_message(
-            thinker, request_handlers[0].response_content
-        )
+        self._game.append_human_message(thinker, message)
+        self._game.append_ai_message(thinker, request_handlers[0].response_content)
 
         # 得到回复后，构建hit
         try:
@@ -103,7 +106,7 @@ class B2_ActorPlanSystem(ExecuteProcessor):
             ret.target = thinker_name
             ret.text = "error"
         if ret.num is -1:
-            _skill = ActiveSkill(name="跳过行动",description="",values=[.0])
+            _skill = ActiveSkill(name="跳过行动", description="", values=[0.0])
             hit = self._game._battle_manager.generate_hit(
                 _skill, thinker_name, thinker_name, ret.text
             )
@@ -115,15 +118,14 @@ class B2_ActorPlanSystem(ExecuteProcessor):
         self._game._battle_manager._hits_stack.append(hit)
 
 
-
 def _gen_prompt(
-        current_stage_name:str,
-        current_stage_narration:str,
-        actors_info_list: List[str],
-        active_skill_list: List[str],
-        trigger_skill_list: List[str],
-        act_order: Deque[str],
-        battle_history: str
+    current_stage_name: str,
+    current_stage_narration: str,
+    actors_info_list: List[str],
+    active_skill_list: List[str],
+    trigger_skill_list: List[str],
+    act_order: Deque[str],
+    battle_history: str,
 ) -> str:
     return f"""
 # 你的回合开始，请思考并给出本回合的行动计划。

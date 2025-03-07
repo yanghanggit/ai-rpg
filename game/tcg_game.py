@@ -16,9 +16,9 @@ from tcg_models.v_0_0_1 import (
     # StagePrototype,
     StageInstance,
     AgentShortTermMemory,
-    CardObject,
     ActorType,
     StageType,
+    CardObject,
 )
 from components.components import (
     WorldSystemComponent,
@@ -41,8 +41,8 @@ from components.components import (
     # ItemDescriptionComponent,
     # PlayerCardItemFlagComponent,
     # MonsterCardItemFlagComponent,
-    MagicRulerActorFlagComponent,
-    TagsComponent,
+    # MagicRulerActorFlagComponent,
+    # TagsComponent,
 )
 from player.player_proxy import PlayerProxy
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
@@ -51,6 +51,7 @@ from chaos_engineering.chaos_engineering_system import IChaosEngineering
 from pathlib import Path
 import rpg_game_systems.prompt_utils
 from rpg_models.event_models import AgentEvent
+from game.tcg_game_battle_manager import BattleManager
 
 
 @unique
@@ -102,6 +103,8 @@ class TCGGame(BaseGame):
 
         # 混沌工程系统
         self._chaos_engineering_system: IChaosEngineering = chaos_engineering_system
+
+        self._battle_manager = BattleManager()
 
     ###############################################################################################################################################
     @property
@@ -346,7 +349,7 @@ class TCGGame(BaseGame):
             )
 
             # TODO, 测试组件，tag
-            actor_entity.add(TagsComponent, instance.name, set(instance.tags))
+            # actor_entity.add(TagsComponent, instance.name, set(instance.tags))
 
             # 根据类型添加角色类型flag
             # if prototype.type == ActorPrototype.ActorType.UNDIFINED:
@@ -367,8 +370,8 @@ class TCGGame(BaseGame):
 
             # 请将上面的实现写成match的样式
             match prototype.type:
-                case ActorType.UNDIFINED:
-                    assert False, "actor type is not defined"
+                # case ActorType.UNDIFINED:
+                #    assert False, "actor type is not defined"
                 # case ActorType.PLAYER:
                 #     actor_entity.add(HeroActorFlagComponent, instance.name)
                 #     actor_entity.add(PlayerActorFlagComponent, "")
@@ -432,12 +435,12 @@ class TCGGame(BaseGame):
             )
 
             # TODO, 测试组件，tag
-            stage_entity.add(TagsComponent, instance.name, set(instance.tags))
+            # stage_entity.add(TagsComponent, instance.name, set(instance.tags))
 
             # 根据类型添加场景类型
-            if prototype.type == StageType.UNDIFINED:
-                assert False, "stage type is not defined"
-            elif prototype.type == StageType.DUNGEON:
+            # if prototype.type == StageType.UNDIFINED:
+            #    assert False, "stage type is not defined"
+            if prototype.type == StageType.DUNGEON:
                 stage_entity.add(DungeonStageFlagComponent, instance.name)
             elif prototype.type == StageType.HOME:
                 stage_entity.add(HomeStageFlagComponent, instance.name)
@@ -564,7 +567,7 @@ class TCGGame(BaseGame):
         logger.info(f"{self.player.name} => {player_actor_entity._name}")
 
         ## 设置玩家的魔法统治者标记
-        player_actor_entity.replace(MagicRulerActorFlagComponent, self.player.name)
+        # player_actor_entity.replace(MagicRulerActorFlagComponent, self.player.name)
 
         ## 因为写死了。
         stage_entity = self.context.safe_get_stage_entity(player_actor_entity)
@@ -710,13 +713,13 @@ class TCGGame(BaseGame):
     ###############################################################################################################################################
     # TODO
     def get_card_pool(self, entity: Entity) -> List[CardObject]:
-
-        root = self.world_runtime.root
+        return []
+        """ root = self.world_runtime.root
         for actor in root.actors + root.players:
             if actor.name == entity._name:
                 return actor.card_pool
 
-        return []
+        return [] """
 
     ###############################################################################################################################################
 

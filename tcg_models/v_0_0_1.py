@@ -76,23 +76,23 @@ class WorldSystemPrototype(BaseModel):
 ###############################################################################################################################################
 
 
-""" class ItemObject(BaseModel):
+class ItemObject(BaseModel):
     name: str
     guid: int
     code_name: str
     count: int = 1
-    value: List[int] """
+    value: List[int]
 
 
 ###############################################################################################################################################
-""" @unique
+@unique
 class ItemAttributes(IntEnum):
     MAX_HP = 0
     CUR_HP = 1
-    MAX = 20 """
+    MAX = 20
 
 
-""" @final
+@final
 class CardObject(ItemObject):  # 可能以后改成ItemObject，类型选card，现阶段先这样 TODO
     level: int = 1
     description: str
@@ -105,7 +105,7 @@ class CardObject(ItemObject):  # 可能以后改成ItemObject，类型选card，
     def max_hp(self) -> int:
         if len(self.value) < ItemAttributes.MAX:
             return self.value[ItemAttributes.MAX_HP]
-        return 0 """
+        return 0
 
 
 ###############################################################################################################################################
@@ -160,12 +160,7 @@ class HitInfo(BaseModel):
     value: int
     type: HitType
     tags: List[DamageTypeTag]
-    talk: str
-
-
-class BattleMsg(BaseModel):
-    hit: List[HitInfo]
-    description: str
+    log: str
 
 
 class EventMsg(BaseModel):
@@ -175,7 +170,16 @@ class EventMsg(BaseModel):
 
 
 class BattleHistory(BaseModel):
-    logs: Dict[int, List[Union[BattleMsg, EventMsg]]]
+    logs: Dict[int, List[Union[str, EventMsg]]]
+
+
+class BuffKey(StrEnum):
+    WOOD_ARMOR = "藤甲"
+    DEF_UP = "防御提升"
+
+
+class BuffDict(BaseModel):
+    buffs: Dict[Union[BuffKey, str], str]
 
 
 ###############################################################################################################################################

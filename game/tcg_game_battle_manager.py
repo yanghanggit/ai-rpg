@@ -1,11 +1,10 @@
 from collections import deque
 import json
-from typing import Deque, List
-from game.tcg_game import TCGGame, TCGGameContext
+from typing import Deque, List, Union
+from game.tcg_game import TCGGame
 from tcg_models.v_0_0_1 import (
     BattleHistory,
     EventMsg,
-    BattleMsg,
     ActiveSkill,
     HitInfo,
     HitType,
@@ -14,9 +13,22 @@ from tcg_models.v_0_0_1 import (
 )
 from components.components import ActorComponent
 
+
 # TODO 整个系统都是prototype里临时用的！！demo全重写！
 class BattleManager:
-    def __init__(self, game: TCGGame, context: TCGGameContext) -> None:
+    def __init__(self) -> None:
+        self._combat_num: int = 0
+        self._turn_num: int = 0
+        self._new_turn_flag: bool = False
+        self._battle_end_flag: bool = False
+        self._hits_stack: Deque[HitInfo] = deque()
+        self._order_queue: Deque[str] = deque()
+        self.battle_history: BattleHistory
+
+    def add_history(self, msg: Union[str, EventMsg]) -> None:
+        self.battle_history.logs[self._turn_num].append(msg)
+
+    """ def __init__(self, game: TCGGame, context: TCGGameContext) -> None:
         self._battle_num: int = 0
         self._log_path: str = ""
         self._game: TCGGame = game
@@ -81,3 +93,4 @@ class BattleManager:
     def save_log(self) -> None:
         with open(self._log_path, "w", encoding="utf-8") as file:
             json.dump(self.battle_history, file)
+ """

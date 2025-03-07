@@ -1,5 +1,6 @@
 from typing import NamedTuple, List, Set, final
 from components.registry import register_component_class
+from tcg_models.v_0_0_1 import BuffKey, TagInfo
 
 
 """
@@ -105,6 +106,12 @@ class StageStaticFlagComponent(NamedTuple):
 
 
 ############################################################################################################
+class Buff:
+    name: BuffKey
+    description: str
+    last_time: int
+
+
 # 角色标记
 @final
 @register_component_class
@@ -112,7 +119,13 @@ class ActorComponent(NamedTuple):
     name: str
     current_stage: str
     hp: int
+    maxhp: int
     action_times: int
+    max_action_times: int
+    strength: int
+    agility: int
+    wisdom: int
+    buffs: List[Buff]
 
 
 ############################################################################################################
@@ -380,10 +393,9 @@ class StageNarratePlanningPermitFlagComponent(NamedTuple):
 # from tcg_models.v_0_0_1 import TagInfo
 
 
-""" # TODO 存储TAG用的组件，测试用
+# TODO 存储TAG用的组件，测试用
 @final
 @register_component_class
 class TagsComponent(NamedTuple):
     name: str
     tags: Set[TagInfo]
- """

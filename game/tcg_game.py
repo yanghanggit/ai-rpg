@@ -104,7 +104,7 @@ class TCGGame(BaseGame):
         # 混沌工程系统
         self._chaos_engineering_system: IChaosEngineering = chaos_engineering_system
 
-        self._battle_manager = BattleManager()
+        self._battle_manager = BattleManager(game=self)
 
     ###############################################################################################################################################
     @property

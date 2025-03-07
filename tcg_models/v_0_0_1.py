@@ -142,14 +142,18 @@ class TriggerSkill(SkillInfo):
 class HitType(StrEnum):
     NONE = "None"
     ADDBUFF = "AddBuff"
+    REMOVEBUFF = "RemoveBuff"
     DAMAGE = "Damage"
     HEAL = "Heal"
 
 
-class DamageTypeTag(StrEnum):
-    RANGE = "Range"
+class DamageType(StrEnum):
     PHYSICAL = "Physical"
     MAGIC = "Magic"
+    FIRE = "Fire"
+    ICE = "Ice"
+    HEAL = "Heal"
+    BUFF = "Buff"
 
 
 class HitInfo(BaseModel):
@@ -158,8 +162,9 @@ class HitInfo(BaseModel):
     target: str
     value: int
     type: HitType
-    tags: List[DamageTypeTag]
-    log: str
+    dmgtype: DamageType
+    log: str  # 写在战斗历史里的log，比如A对B用了X技能，造成Y伤害
+    text: str  # 角色执行这个动作时想说的话，执行的时候需要广播或者notify出去
 
 
 class EventMsg(BaseModel):
@@ -169,16 +174,11 @@ class EventMsg(BaseModel):
 
 
 class BattleHistory(BaseModel):
-    logs: Dict[int, List[Union[str, EventMsg]]]
-
-
-class BuffKey(StrEnum):
-    WOOD_ARMOR = "藤甲"
-    DEF_UP = "防御提升"
+    logs: Dict[int, List[str]]
 
 
 class BuffDict(BaseModel):
-    buffs: Dict[Union[BuffKey, str], str]
+    buffs: Dict[str, str]
 
 
 ###############################################################################################################################################

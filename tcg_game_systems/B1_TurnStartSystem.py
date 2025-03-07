@@ -5,7 +5,7 @@ from game.tcg_game_context import TCGGameContext
 from game.tcg_game import TCGGame
 from typing import List, final, cast
 from tcg_models.v_0_0_1 import ActorInstance
-from components.components import ActorComponent
+from components.components import ActorComponent, AttributeCompoment
 
 class B1_TurnStartSystem(ExecuteProcessor):
 
@@ -38,11 +38,11 @@ class B1_TurnStartSystem(ExecuteProcessor):
         # 需不需要让角色也接收这个信息？
 
         # 根据速度给每个活着的排行动顺序
-        self._set_order(actor_entities.copy())
+        self._set_order(list(actor_entities.copy()))
 
         # 对每个角色，更新状态，没考虑回合开始时触发的事件
         for actor in actor_entities:
-            comp = actor.get(ActorComponent)
+            comp = actor.get(AttributeCompoment)
             # 减少buff轮数
             buffs = comp.buffs
             for buff in buffs:
@@ -53,9 +53,21 @@ class B1_TurnStartSystem(ExecuteProcessor):
                         f"{actor._name} 的 {buff.name} 的持续时间结束了。"
                     )
                     # 要不要加到角色的history里
-            
-            # 角色行动力回复
-            comp.action_times = comp.max_action_times
+            # 回复行动力
+            actor.replace(
+                AttributeCompoment,
+                comp.name,
+                comp.hp,
+                comp.maxhp,
+                comp.max_action_times,
+                comp.max_action_times,
+                comp.strength,
+                comp.agility,
+                comp.wisdom,
+                comp.buffs,
+                comp.active_skills,
+                comp.trigger_skills
+                )
 
         # 双重保险，清一下新回合的东西
         self._game._battle_manager._hits_stack.clear()
@@ -66,9 +78,9 @@ class B1_TurnStartSystem(ExecuteProcessor):
 
     def _set_order(self, actor_entities: List[Entity]) -> None:
         actor_list = sorted(
-            (actor for actor in actor_entities if actor.get(ActorComponent).hp > 0),
-            key=lambda x: x.get(ActorComponent).agility,  # 排序规则
+            (actor for actor in actor_entities if actor.get(AttributeCompoment).hp > 0),
+            key=lambda x: x.get(AttributeCompoment).agility,  # 排序规则
             reverse=True  # 从大到小排序
         )
         for actor in actor_list:
-            self._game._battle_manager._order_queue.append(actor.get(ActorComponent).name)
+            self._game._battle_manager._order_queue.append(actor.get(AttributeCompoment).name)

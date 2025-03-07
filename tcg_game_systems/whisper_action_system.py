@@ -5,10 +5,10 @@ from components.actions import (
 from typing import final, override
 from tcg_game_systems.base_action_reactive_system import (
     BaseActionReactiveSystem,
-    ConversationError,
 )
 import format_string.target_message
 from rpg_models.event_models import AgentEvent, WhisperEvent
+from game.tcg_game import ConversationError
 
 
 ####################################################################################################################################
@@ -44,7 +44,7 @@ class WhisperActionSystem(BaseActionReactiveSystem):
 
         for target_name, message in target_and_message:
 
-            error = self.validate_conversation(entity, target_name)
+            error = self._game.validate_conversation(entity, target_name)
             if error != ConversationError.VALID:
                 if error == ConversationError.INVALID_TARGET:
                     self._game.notify_event(

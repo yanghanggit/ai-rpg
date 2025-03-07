@@ -1,4 +1,4 @@
-from enum import IntEnum, unique
+from enum import Enum, IntEnum, unique
 from entitas import Entity, Matcher  # type: ignore
 from typing import Set, List, Optional, Union
 from overrides import override
@@ -59,6 +59,14 @@ class TCGGameState(IntEnum):
     NONE = 0
     HOME = 1
     DUNGEON = 2
+
+
+@unique
+class ConversationError(Enum):
+    VALID = 0
+    INVALID_TARGET = 1
+    NO_STAGE = 2
+    NOT_SAME_STAGE = 3
 
 
 class TCGGame(BaseGame):
@@ -766,3 +774,25 @@ class TCGGame(BaseGame):
     #         ret.append(card_entity)
 
     #     return ret
+
+    ###############################################################################################################################################
+    # 检查是否可以对话
+    def validate_conversation(
+        self, stage_or_actor: Entity, target_name: str
+    ) -> ConversationError:
+
+        actor_entity: Optional[Entity] = self._context.get_actor_entity(target_name)
+        if actor_entity is None:
+            return ConversationError.INVALID_TARGET
+
+        current_stage_entity = self._context.safe_get_stage_entity(stage_or_actor)
+        if current_stage_entity is None:
+            return ConversationError.NO_STAGE
+
+        target_stage_entity = self._context.safe_get_stage_entity(actor_entity)
+        if target_stage_entity != current_stage_entity:
+            return ConversationError.NOT_SAME_STAGE
+
+        return ConversationError.VALID
+
+    ###############################################################################################################################################

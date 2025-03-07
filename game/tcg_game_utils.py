@@ -360,9 +360,10 @@ def _create_actor_instance(
     ret = ActorInstance(
         name=f"{actor.name}",
         guid=GUID_INDEX,
-        card_pool=[],
+        # card_pool=[],
         attributes=[],  # 暂时不用
         kick_off_message=kick_off_message,
+        active_skills=[],
         tags=[],
     )
 
@@ -376,7 +377,7 @@ def _create_actor_instance(
         GUID_INDEX += 1
         copy_card.guid = GUID_INDEX
         copy_card.owner = ret.name
-        ret.card_pool.append(copy_card)
+        # ret.card_pool.append(copy_card)
 
     return ret
 

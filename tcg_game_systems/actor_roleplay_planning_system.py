@@ -1,16 +1,9 @@
 from agent.chat_request_handler import ChatRequestHandler
 from components.actions import (
     ACTOR_AVAILABLE_ACTIONS_REGISTER,
-    MindVoiceAction,
-    WhisperAction,
-    AnnounceAction,
     SpeakAction,
 )
 from components.components import (
-    ActorComponent,
-    KickOffDoneFlagComponent,
-    PlayerActorFlagComponent,
-    StageComponent,
     StageEnvironmentComponent,
     FinalAppearanceComponent,
     ActorRolePlayPlanningPermitFlagComponent,

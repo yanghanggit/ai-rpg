@@ -1,13 +1,7 @@
 from agent.chat_request_handler import ChatRequestHandler
 from components.components import (
-    StageComponent,
-    KickOffDoneFlagComponent,
-    PlayerActorFlagComponent,
     StageEnvironmentComponent,
     StageNarratePlanningPermitFlagComponent,
-)
-from components.actions import (
-    STAGE_AVAILABLE_ACTIONS_REGISTER,
 )
 from entitas import ExecuteProcessor, Matcher  # type: ignore
 from overrides import override

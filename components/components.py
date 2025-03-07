@@ -111,6 +111,8 @@ class StageStaticFlagComponent(NamedTuple):
 class ActorComponent(NamedTuple):
     name: str
     current_stage: str
+    hp: int
+    action_times: int
 
 
 ############################################################################################################
@@ -263,10 +265,10 @@ class MonsterActorFlagComponent(NamedTuple):
 
 ############################################################################################################
 # Actor专用，标记该Actor是MR
-@final
+""" @final
 @register_component_class
 class MagicRulerActorFlagComponent(NamedTuple):
-    name: str
+    name: str """
 
 
 ############################################################################################################
@@ -375,12 +377,13 @@ class StageNarratePlanningPermitFlagComponent(NamedTuple):
 #     name: str
 #     order: int
 
-from tcg_models.v_0_0_1 import TagInfo
+# from tcg_models.v_0_0_1 import TagInfo
 
 
-# TODO 存储TAG用的组件，测试用
+""" # TODO 存储TAG用的组件，测试用
 @final
 @register_component_class
 class TagsComponent(NamedTuple):
     name: str
     tags: Set[TagInfo]
+ """

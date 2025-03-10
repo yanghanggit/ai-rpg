@@ -169,7 +169,7 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
             hit.log += f"{source_name} 对 {target_name} 造成了 {value} 点伤害。"
             # 扣血
             hp_value = target_comp.hp - value
-            hp_value = hp_value if hp_value <= 0 else 0
+            hp_value = hp_value if hp_value > 0 else 0
             if hp_value is 0:
                 hit.log += f"{target_name} 被击败了！"
         # 如果是个加血行为
@@ -208,35 +208,52 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
         # 修改血量, 广播说话
         stage_name = actor_comp.current_stage
         self._modify_hp_action_times_and_announce(
-            source, hp_value, hit.text, stage_name
+            source, target, hp_value, hit.text, stage_name
         )
         return True
 
     def _modify_hp_action_times_and_announce(
-        self, actor: Entity, hp: int, text: str, stage_name: str
+        self, source: Entity, target: Entity, hp: int, text: str, stage_name: str
     ) -> None:
-        actor_comp = actor.get(AttributeCompoment)
-        if actor_comp is None:
-            assert False, "actor_comp is None"
-        actor.replace(
+        source_comp = source.get(AttributeCompoment)
+        target_comp = target.get(AttributeCompoment)
+        if source_comp is None:
+            assert False, "source_comp is None"
+        if target_comp is None:
+            assert False, "target_comp is None"
+        source.replace(
             AttributeCompoment,
-            actor_comp.name,
+            source_comp.name,
+            source_comp.hp,
+            source_comp.maxhp,
+            source_comp.action_times - 1,
+            source_comp.max_action_times,
+            source_comp.strength,
+            source_comp.agility,
+            source_comp.wisdom,
+            source_comp.buffs,
+            source_comp.active_skills,
+            source_comp.trigger_skills,
+        )
+        target.replace(
+            AttributeCompoment,
+            target_comp.name,
             hp,
-            actor_comp.maxhp,
-            actor_comp.action_times - 1,
-            actor_comp.max_action_times,
-            actor_comp.strength,
-            actor_comp.agility,
-            actor_comp.wisdom,
-            actor_comp.buffs,
-            actor_comp.active_skills,
-            actor_comp.trigger_skills,
+            target_comp.maxhp,
+            target_comp.action_times,
+            target_comp.max_action_times,
+            target_comp.strength,
+            target_comp.agility,
+            target_comp.wisdom,
+            target_comp.buffs,
+            target_comp.active_skills,
+            target_comp.trigger_skills,
         )
         self._game.broadcast_event(
-            actor,
+            source,
             AnnounceEvent(
-                message=f"{actor_comp.name}说：",
-                announcer_name=actor_comp.name,
+                message=f"{source._name}说：" + text,
+                announcer_name=source._name,
                 stage_name=stage_name,
                 content=text,
             ),

@@ -115,7 +115,9 @@ class B2_ActorPlanSystem(ExecuteProcessor):
 
         # 得到回复后，构建hit
         try:
-            ret : ChoiceRet = ChoiceRet.model_validate_json(request_handlers[0].response_content)
+            ret: ChoiceRet = ChoiceRet.model_validate_json(
+                request_handlers[0].response_content
+            )
         except:
             logger.error("返回格式错误")
             ret = ChoiceRet()

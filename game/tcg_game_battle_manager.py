@@ -64,7 +64,7 @@ class BattleManager:
         # 有效性，先不问ai了，随便roll一个吧
         match skill.name:
             case "斩击":
-                value = int(skill.values[random.randint(1, 4)] * 50)
+                value = int(skill.values[random.randint(0, 3)] * 50)
                 type = HitType.DAMAGE
                 dmgtype = DamageType.PHYSICAL
             case "战地治疗":
@@ -72,19 +72,19 @@ class BattleManager:
                 type = HitType.HEAL
                 dmgtype = DamageType.HEAL
             case "火球":
-                value = int(skill.values[random.randint(1, 4)] * 60)
+                value = int(skill.values[random.randint(0, 3)] * 60)
                 type = HitType.DAMAGE
                 dmgtype = DamageType.FIRE
             case "冰雾":
-                value = int(skill.values[random.randint(1, 4)] * 60)
+                value = int(skill.values[random.randint(0, 3)] * 60)
                 type = HitType.DAMAGE
                 dmgtype = DamageType.ICE
             case "猛砸":
-                value = int(skill.values[random.randint(1, 4)] * 80)
+                value = int(skill.values[random.randint(0, 3)] * 80)
                 type = HitType.DAMAGE
                 dmgtype = DamageType.PHYSICAL
             case "乱舞":
-                value = int(skill.values[random.randint(1, 4)] * 80)
+                value = int(skill.values[random.randint(0, 3)] * 80)
                 type = HitType.DAMAGE
                 dmgtype = DamageType.PHYSICAL
 

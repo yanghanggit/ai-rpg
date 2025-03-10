@@ -32,8 +32,8 @@ class BattleManager:
         self._battle_end_flag: bool = False
         self._hits_stack: Deque[HitInfo] = deque()
         self._order_queue: Deque[str] = deque()
-        self.battle_history: BattleHistory
-        self._event_msg: EventMsg
+        self.battle_history: BattleHistory = BattleHistory(logs={})
+        self._event_msg: EventMsg = EventMsg(event="", option=0, result="")
 
         try:
             write_path: Path = Path("battlelog") / "battle_history.json"
@@ -46,6 +46,8 @@ class BattleManager:
         self.add_history("战斗开始！")
 
     def add_history(self, msg: str) -> None:
+        if self._turn_num not in self.battle_history.logs:
+            self.battle_history.logs[self._turn_num] = []
         self.battle_history.logs[self._turn_num].append(msg)
 
     def generate_hit(

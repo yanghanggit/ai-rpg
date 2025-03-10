@@ -50,8 +50,8 @@ class B2_ActorPlanSystem(ExecuteProcessor):
         if comp.action_times <= 0:
             assert False, "角色行动力<=0但是没删掉"
 
-        # 检查这个时候触发的buff，虽然此阶段也只有一个眩晕就是了
-        if any(buff.name == "眩晕" for buff in comp.buffs):
+        # 检查这个时候触发的buff，写的太硬了给我自己看笑了
+        if any(buff.name == "眩晕" for buff, last_times in comp.buffs.items()):
             self._game._battle_manager.add_history(
                 f"{thinker_name} 被眩晕了，无法行动！"
             )
@@ -79,6 +79,7 @@ class B2_ActorPlanSystem(ExecuteProcessor):
         # 得到除掉自己后的行动队列
         order = self._game._battle_manager._order_queue.copy()
         order.popleft()
+        # 生成prompt
         message = _gen_prompt(
             current_stage_name=current_stage._name,
             current_stage_narration=current_stage.get(
@@ -90,6 +91,7 @@ class B2_ActorPlanSystem(ExecuteProcessor):
             act_order=order,
             battle_history=self._game._battle_manager.battle_history.model_dump_json(),
         )
+        # 开问
         request_handlers: List[ChatRequestHandler] = []
         agent_short_term_memory = self._game.get_agent_short_term_memory(thinker)
         request_handlers.append(
@@ -113,10 +115,9 @@ class B2_ActorPlanSystem(ExecuteProcessor):
             ret.target = thinker_name
             ret.text = "error"
         if ret.num is -1:
-            _skill = ActiveSkill(name="跳过行动", description="", values=[0.0])
-            hit = self._game._battle_manager.generate_hit(
-                _skill, thinker_name, thinker_name, ret.text
-            )
+            msg = f"{thinker_name}决定跳过行动，原因是：{ret.text}"
+            self._game._battle_manager.add_history(msg)
+            return
         else:
             hit = self._game._battle_manager.generate_hit(
                 comp.active_skills[ret.num], thinker_name, ret.target, ret.text
@@ -136,29 +137,29 @@ def _gen_prompt(
 ) -> str:
     return f"""
 # 你的回合开始，请思考并给出本回合的行动计划。
-# 战场形式
-## 当前所在的场景
+## 战场形式
+### 当前所在的场景
 {current_stage_name}
-## 当前场景描述
+### 当前场景描述
 {current_stage_narration}
-## 当前场景内所有角色的状态
+### 当前场景内所有角色的状态
 {"\n".join(actors_info_list)}
-## 你的主动技能列表
+### 你的主动技能列表
 {"\n".join(active_skill_list)}
-## 你的被动技能列表
+### 你的被动技能列表
 {"\n".join(trigger_skill_list)}
-## 本回合尚未未行动角色行动顺序队列
+### 本回合尚未未行动角色行动顺序队列
 {", ".join(f"{index}: {item}" for index, item in enumerate(act_order))}
-## 战斗历史
+### 战斗历史
 {battle_history}
-# 行动计划规则
+## 行动计划规则
 你需要选择使用技能，或不使用技能。
-## 使用技能
+### 使用技能
 如果你选择了使用技能，你需要给出三个值：\n
 1. 从你的主动技能中选择想要使用的技能的序号。
 2. 选择释放技能的目标角色的名称。
 3. 释放技能时你想说的话。
-## 不使用技能
+### 不使用技能
 如果你选择不使用技能，代表你认为使用技能对你并不重要，或并不符合你的目标。你需要给出你不想使用技能的原因。此时：
 1. 你想使用的技能的序号固定为-1。
 2. 释放技能的目标角色的名称固定为你的名称。

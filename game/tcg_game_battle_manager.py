@@ -1,9 +1,10 @@
 from collections import deque
 import json
-from typing import Deque, List, Union
+from typing import Deque, List, Optional, Union
 from game.tcg_game import TCGGame
 from tcg_models.v_0_0_1 import (
     BattleHistory,
+    Buff,
     DamageType,
     EventMsg,
     ActiveSkill,
@@ -39,8 +40,9 @@ class BattleManager:
         value: int
         type: HitType
         dmgtype: DamageType
+        buff: Optional[Buff] = skill.buff
         log: str
-        log = f"{source} 对 {target} 使用了 {skill.name}"
+        log = f"{source} 对 {target} 使用了 {skill.name}。"
 
         # 这里应该是造成属性多少倍的伤害，懒得写好长的get了，原型里写死吧
         # 有效性，先不问ai了，随便roll一个吧
@@ -79,6 +81,7 @@ class BattleManager:
             value=value,
             type=type,
             dmgtype=dmgtype,
+            buff=buff,
             log=log,
             text=text,
         )

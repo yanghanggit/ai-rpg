@@ -56,12 +56,12 @@ class B1_TurnStartSystem(ExecuteProcessor):
             comp = actor.get(AttributeCompoment)
             # 减少buff轮数
             buffs = comp.buffs
-            for buff, last_time in buffs.items():
-                buffs[buff] -= 1
-                if buffs[buff] <= 0:
-                    msg = f"{actor._name} 的 {buff.name} 的持续时间结束了。"
+            for buff_name, last_time in buffs.items():
+                buffs[buff_name] -= 1
+                if buffs[buff_name] <= 0:
+                    msg = f"{actor._name} 的 {buff_name} 的持续时间结束了。"
                     self._game._battle_manager.add_history(msg)
-                    del buffs[buff]
+                    del buffs[buff_name]
                     # 要不要加到角色的history里
             # 回复行动力
             actor.replace(

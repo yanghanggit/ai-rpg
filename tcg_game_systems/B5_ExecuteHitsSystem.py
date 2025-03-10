@@ -9,7 +9,7 @@ from rpg_models.event_models import AnnounceEvent
 from tcg_models.v_0_0_1 import (
     ActorInstance,
     ActiveSkill,
-    BuffTriggerType,
+    TriggerType,
     HitInfo,
     HitType,
     DamageType,
@@ -144,19 +144,27 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
         elif hit.type is HitType.DAMAGE:
             value = hit.value
             # 检查被攻击时触发的buff，应该包装个新函数
-            for buff, last_time in target_comp.buffs.items():
-                if buff.timing is BuffTriggerType.ON_ATTACKED:
+            for buff_name, last_time in target_comp.buffs.items():
+                buff = self._game.world_runtime.root.data_base.buffs[buff_name]
+                if buff.timing is TriggerType.ON_ATTACKED:
                     match buff.name:
                         case "护盾":
-                            value = int(value * 0.5)
-                            hit.log += (
-                                f"{target_name} 由于 {buff.name} 的效果抵挡了伤害。"
-                            )
+                            if hit.dmgtype is DamageType.PHYSICAL:
+                                value = int(value * 0.5)
+                                hit.log += (
+                                    f"{target_name} 由于 {buff.name} 的效果抵挡了伤害。"
+                                )
                         case "藤甲":
-                            value = 1
-                            hit.log += (
-                                f"{target_name} 由于 {buff.name} 的效果抵挡了伤害。"
-                            )
+                            if hit.dmgtype is DamageType.PHYSICAL:
+                                value = 1
+                                hit.log += (
+                                    f"{target_name} 由于 {buff.name} 的效果抵挡了伤害。"
+                                )
+                            elif hit.dmgtype is DamageType.FIRE:
+                                value = int(value * 1.5)
+                                hit.log += (
+                                    f"{target_name} 由于 {buff.name} 的效果增强了伤害。"
+                                )
             # 记录log
             hit.log += f"{source_name} 对 {target_name} 造成了 {value} 点伤害。"
             # 扣血
@@ -180,7 +188,7 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
             # 记录log
             hit.log += f"{source_name} 对 {target_name} 施加了 {buff.name}。"
             # 加buff
-            target_comp.buffs[buff] = hit.value
+            target_comp.buffs[buff.name] = hit.value
             hp_value = target_comp.hp
         # 如果是个减buff行为
         elif hit.type is HitType.REMOVEBUFF:
@@ -188,11 +196,11 @@ class B5_ExecuteHitsSystem(ExecuteProcessor):
                 assert False, "buff is None"
             buff = hit.buff
             # 判断有没有要减的buff
-            if buff in target_comp.buffs:
+            if buff.name in target_comp.buffs:
                 # 记录log
                 hit.log += f"{source_name} 对 {target_name} 解除了 {buff.name}。"
                 # 减buff
-                del target_comp.buffs[buff]
+                del target_comp.buffs[buff.name]
             else:
                 hit.log += f"{target_name} 没有 {buff.name}。"
             hp_value = target_comp.hp

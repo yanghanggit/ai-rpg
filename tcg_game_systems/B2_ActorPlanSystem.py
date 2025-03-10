@@ -58,7 +58,7 @@ class B2_ActorPlanSystem(ExecuteProcessor):
             return
 
         # 检查这个时候触发的buff，写的太硬了给我自己看笑了
-        if any(buff.name == "眩晕" for buff, last_times in comp.buffs.items()):
+        if any(buff_name == "眩晕" for buff_name, last_times in comp.buffs.items()):
             self._game._battle_manager.add_history(
                 f"{thinker_name} 被眩晕了，无法行动！"
             )

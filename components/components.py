@@ -125,7 +125,7 @@ class AttributeCompoment(NamedTuple):
     strength: int
     agility: int
     wisdom: int
-    buffs: Dict[Buff, int]
+    buffs: Dict[str, int]
     active_skills: List[ActiveSkill]
     trigger_skills: List[TriggerSkill]
 

@@ -1,7 +1,9 @@
 from collections import deque
 import json
+from pathlib import Path
 from typing import Deque, List, Optional, Union
-from game.tcg_game import TCGGame
+
+from loguru import logger
 from tcg_models.v_0_0_1 import (
     BattleHistory,
     Buff,
@@ -20,8 +22,10 @@ import random
 
 # TODO 整个系统都是prototype里临时用的！！demo全重写！
 class BattleManager:
-    def __init__(self, game: TCGGame) -> None:
-        self._game = game
+    def __init__(self) -> None:
+        from game.tcg_game import TCGGame
+
+        self._game: Optional[TCGGame] = None
         self._combat_num: int = 0
         self._turn_num: int = 0
         self._new_turn_flag: bool = False
@@ -30,6 +34,16 @@ class BattleManager:
         self._order_queue: Deque[str] = deque()
         self.battle_history: BattleHistory
         self._event_msg: EventMsg
+
+        try:
+            write_path: Path = Path("battlelog") / "battle_history.json"
+            write_path.write_text(
+                self.battle_history.model_dump_json(), encoding="utf-8"
+            )
+        except Exception as e:
+            logger.error(f"An error occurred: {e}")
+
+        self.add_history("战斗开始！")
 
     def add_history(self, msg: str) -> None:
         self.battle_history.logs[self._turn_num].append(msg)

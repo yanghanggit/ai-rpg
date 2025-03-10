@@ -108,14 +108,6 @@ class CardObject(ItemObject):  # 可能以后改成ItemObject，类型选card，
 
 
 ###############################################################################################################################################
-@final
-class WorldDataBase(BaseModel):
-    actors: Dict[str, ActorPrototype] = {}
-    stages: Dict[str, StagePrototype] = {}
-    world_systems: Dict[str, WorldSystemPrototype] = {}
-
-
-###############################################################################################################################################
 # TODO 不确定是否保留
 @final
 class TagInfo(BaseModel):
@@ -125,7 +117,7 @@ class TagInfo(BaseModel):
 
 ###############################################################################################################################################
 # TODO，这个框里的全是临时的，没细想，能跑就行，等重构
-class BuffTriggerType(StrEnum):
+class TriggerType(StrEnum):
     NONE = "None"
     TURN_START = "TurnStart"
     ON_ATTACKED = "OnAttacked"
@@ -135,8 +127,17 @@ class BuffTriggerType(StrEnum):
 class Buff(BaseModel):
     name: str
     description: str
-    timing: BuffTriggerType
+    timing: TriggerType
     is_debuff: bool
+
+
+###############################################################################################################################################
+@final
+class WorldDataBase(BaseModel):
+    actors: Dict[str, ActorPrototype] = {}
+    stages: Dict[str, StagePrototype] = {}
+    world_systems: Dict[str, WorldSystemPrototype] = {}
+    buffs: Dict[str, Buff] = {}
 
 
 class SkillInfo(BaseModel):
@@ -151,6 +152,7 @@ class ActiveSkill(SkillInfo):
 
 
 class TriggerSkill(SkillInfo):
+    timing: TriggerType
     pass
 
 
@@ -199,7 +201,9 @@ class ActorInstance(BaseModel):
     name: str
     guid: int
     kick_off_message: str
-    active_skills: List[SkillInfo]
+    active_skills: List[ActiveSkill]
+    trigger_skills: List[TriggerSkill]
+    buffs: Dict[str, int]
     attributes: List[int]  # HP/MaxHP/ActionTimes/MaxActionTimes/STR/AGI/WIS
     # tags: List[TagInfo]
 
